@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using Lyricify.Lyrics.Providers.Web.Netease;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using Microsoft.UI.Xaml.Media;
@@ -154,7 +155,15 @@ namespace WinUIMusicPlayer.ViewModel
         public double TempVolume { get; set => SetProperty(ref field, value); } = 50;
         public string PlayTimeText { get; set => SetProperty(ref field, value); } = "00:00/00:00";
         public double ProgressSliderMax { get; set => SetProperty(ref field, value); } = 100;
-        public List<LyricLine> UILyrics { get; set => SetProperty(ref field, value); } = [];
+        public List<LyricLine> UILyrics
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                    WeakReferenceMessenger.Default.Send(new UILyricsMessage(value));
+            }
+        } = [];
         public int LastLyricIndex { get; set => SetProperty(ref field, value); } = -1;
         public byte[] LyricPageBackgroundData { get; set => SetProperty(ref field, value); } = [];
         public bool IsInitialized { get; set => SetProperty(ref field, value); } = false;
@@ -328,6 +337,7 @@ namespace WinUIMusicPlayer.ViewModel
             SongsSource.CollectionChanged += SongsSource_CollectionChanged;
             ProgressTimer = new System.Timers.Timer(200);
             ProgressTimer.Elapsed += ProgressTimer_Elapsed;
+            WeakReferenceMessenger.Default.Register<RequestLyricsSettingsMessage>(this, (r, m) => SendFullLyricsSync());
         }
 
         public void UpdatePlayPauseButtonIcon()
@@ -387,16 +397,17 @@ namespace WinUIMusicPlayer.ViewModel
                 TotalTime = TimeSpan.FromSeconds(totalSeconds);
                 CurrentTime = TimeSpan.FromSeconds(currentSeconds);
                 TimeStringBuilder.Clear();
+                double currentTimeMs = currentSeconds * 1000.0;
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
                     CurrentPlayingTime = CurrentTime;
-                    WeakReferenceMessenger.Default.Send(new CurrentPlayingTimeMessage(currentSeconds * 1000.0));
+                    WeakReferenceMessenger.Default.Send(new CurrentPlayingTimeMessage(currentTimeMs));
                     if (!IsManualSelect)
                     {
                         try
                         {
-                            ProgressSlider = CurrentTime.TotalSeconds;
-                            ProgressSliderMax = TotalTime.TotalSeconds;
+                            ProgressSlider = currentSeconds;
+                            ProgressSliderMax = totalSeconds;
                             if (TotalTime.TotalHours >= 1)
                             {
                                 PlayTimeText = TimeStringBuilder
@@ -444,42 +455,6 @@ namespace WinUIMusicPlayer.ViewModel
                 });
             });
             
-        }
-
-        public void UpdateLyricsToUI(int index)
-        {
-            if (LastLyricIndex == index)
-                return;
-
-            if (index >= 0 && index < UILyrics.Count)
-            {
-                int nextIndex = index + 1;
-                if (nextIndex < UILyrics.Count)
-                {
-                    LyricsDurationTime = TimeSpan.FromMilliseconds(UILyrics[nextIndex].StartMs - UILyrics[index].StartMs);
-                }
-            }
-
-            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-            {
-                try
-                {
-                    // O(1)：只改变前后两个索引，不遍历全部
-                    if (LastLyricIndex >= 0 && LastLyricIndex < UILyrics.Count)
-                    {
-                        UILyrics[LastLyricIndex].IsCurrent = false;
-                    }
-                    if (index >= 0 && index < UILyrics.Count)
-                    {
-                        UILyrics[index].IsCurrent = true;
-                    }
-                    LastLyricIndex = index;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"UpdateLyricsToUI 更新歌词失败: {ex.Message}");
-                }
-            });
         }
 
         public void AdjustVolume(int delta)
@@ -1008,6 +983,67 @@ namespace WinUIMusicPlayer.ViewModel
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        private DispatcherQueueTimer? _settingsDebounceTimer;
+
+        private void ScheduleSettingsBroadcast()
+        {
+            if (_settingsDebounceTimer is null)
+            {
+                _settingsDebounceTimer = App.MainWindow.DispatcherQueue.CreateTimer();
+                _settingsDebounceTimer.Interval = TimeSpan.FromMilliseconds(1000);
+                _settingsDebounceTimer.Tick += (s, e) =>
+                {
+                    _settingsDebounceTimer?.Stop();
+                    SendLyricsSettings();
+                };
+            }
+            _settingsDebounceTimer.Start();
+        }
+
+        public void SendLyricsSettings()
+        {
+            double fontSize = IsGlobalFontSizeEnabled ? GlobalFontSize : LyricsFontSize;
+            string fontFamilyName = FontFamily?.FontFamily?.Source ?? "Segoe UI";
+            var alignment = LyricsAlignment switch
+            {
+                "Center" => Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment.Center,
+                "Right" => Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment.Right,
+                _ => Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment.Left,
+            };
+
+            WeakReferenceMessenger.Default.Send(new LyricsSettingsSyncMessage(
+                LyricsFontSize: fontSize,
+                FontFamilyName: fontFamilyName,
+                LyricsTextAlignment: alignment,
+                IsDark: IsDarkMode,
+                OffsetMs: CurrentPlayingMusic?.LyricsOffsetMs ?? 0,
+                ScrollSensitivity: 1.0,
+                LyricsBlurAmount: LyricsBlurAmount,
+                GlowAmount: GlowAmount,
+                CharFloatAmount: CharFloatAmount,
+                CharScaleAmount: CharScaleAmount,
+                LongSyllableThreshold: LongSyllableThreshold,
+                IsFadeOutEnabled: true,
+                IsOutOfSightEnabled: true,
+                UnplayedOpacity: UnplayedOpacityPercent / 100.0,
+                TranslatedOpacity: TranslatedOpacityPercent / 100.0,
+                StrokeWidth: 0.0,
+                ScrollEasingType: AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2.EasingType.Sine,
+                ScrollEasingMode: AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2.EaseMode.Out,
+                PlayingLineTopOffset: PlayingLineTopOffsetPercent / 100.0,
+                TargetFrameRate: TargetFrameRate));
+        }
+
+        private void SendFullLyricsSync()
+        {
+            _settingsDebounceTimer?.Stop();
+            SendLyricsSettings();
+            WeakReferenceMessenger.Default.Send(new IsPlayingMessage(IsPlaying));
+            WeakReferenceMessenger.Default.Send(new CurrentPlayingTimeMessage(CurrentTime.TotalMilliseconds));
+            if (UILyrics.Count > 0)
+                WeakReferenceMessenger.Default.Send(new UILyricsMessage(UILyrics));
         }
 
         private void Dispose(bool dispose) {

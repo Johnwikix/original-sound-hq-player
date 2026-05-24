@@ -19,7 +19,11 @@ using Windows.UI;
 
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 {
-    public sealed class UnifiedLyricsCanvasControlV2 : Control
+    public sealed class UnifiedLyricsCanvasControlV2 : Control,
+        IRecipient<CurrentPlayingTimeMessage>,
+        IRecipient<IsPlayingMessage>,
+        IRecipient<UILyricsMessage>,
+        IRecipient<LyricsSettingsSyncMessage>
     {
         public event EventHandler<TimeSpan>? LyricLineClicked;
         public event EventHandler<Exception>? RenderError;
@@ -143,20 +147,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void OnControlLoaded(object sender, RoutedEventArgs e)
         {
-            WeakReferenceMessenger.Default.Register<CurrentPlayingTimeMessage>(this, (r, m) =>
-            {
-                _cachedCurrentPlayingTime = TimeSpan.FromMilliseconds(m.TotalMilliseconds);
-            });
-            WeakReferenceMessenger.Default.Register<IsPlayingMessage>(this, (r, m) =>
-            {
-                _cachedIsPlaying = m.Value;
-            });
+            WeakReferenceMessenger.Default.RegisterAll(this);
+            WeakReferenceMessenger.Default.Send(new RequestLyricsSettingsMessage());
         }
 
         private void OnControlUnloaded(object sender, RoutedEventArgs e)
         {
-            WeakReferenceMessenger.Default.Unregister<CurrentPlayingTimeMessage>(this);
-            WeakReferenceMessenger.Default.Unregister<IsPlayingMessage>(this);
+            WeakReferenceMessenger.Default.UnregisterAll(this);
             PrepareForShutdown();
         }
 
@@ -195,7 +192,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / _cachedTargetFrameRate);
             }
 
-            OnIsDarkChanged();
+            OnIsDarkChanged(false);
         }
 
         private void OnCanvasCreateResources(CanvasAnimatedControl sender, Microsoft.Graphics.Canvas.UI.CanvasCreateResourcesEventArgs args)
@@ -206,242 +203,61 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _cachedEdgeFadeHeight = -1;
         }
 
-        #region Dependency Properties
+        #region IRecipient Implementations
 
-        public static readonly DependencyProperty UILyricsProperty =
-            DependencyProperty.Register(nameof(UILyrics), typeof(IList<LyricLine>), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(null, (d, e) => ((UnifiedLyricsCanvasControlV2)d).OnUILyricsChanged(e.NewValue as IList<LyricLine>)));
-
-        public static readonly DependencyProperty CurrentPlayingTimeProperty =
-            DependencyProperty.Register(nameof(CurrentPlayingTime), typeof(TimeSpan), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(TimeSpan.Zero, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedCurrentPlayingTime = (TimeSpan)e.NewValue));
-
-        public static readonly DependencyProperty IsPlayingProperty =
-            DependencyProperty.Register(nameof(IsPlaying), typeof(bool), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(false, (d, e) => { var c = (UnifiedLyricsCanvasControlV2)d; c._cachedIsPlaying = (bool)e.NewValue; }));
-
-        public static readonly DependencyProperty LyricsFontSizeProperty =
-            DependencyProperty.Register(nameof(LyricsFontSize), typeof(double), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(36.0, (d, e) => { var c = (UnifiedLyricsCanvasControlV2)d; c._cachedLyricsFontSize = (double)e.NewValue; c._layoutDirty = true; }));
-
-        public static readonly DependencyProperty FontFamilyNameProperty =
-            DependencyProperty.Register(nameof(FontFamilyName), typeof(string), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata("Segoe UI", (d, e) => { var c = (UnifiedLyricsCanvasControlV2)d; c._cachedFontFamilyName = (string)e.NewValue; c._layoutDirty = true; }));
-
-        public static readonly DependencyProperty LyricsTextAlignmentProperty =
-            DependencyProperty.Register(nameof(LyricsTextAlignment), typeof(CanvasHorizontalAlignment), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(CanvasHorizontalAlignment.Left, (d, e) => { var c = (UnifiedLyricsCanvasControlV2)d; c._cachedLyricsTextAlignment = (CanvasHorizontalAlignment)e.NewValue; c._layoutDirty = true; }));
-
-        public static readonly DependencyProperty IsDarkProperty =
-            DependencyProperty.Register(nameof(IsDark), typeof(bool), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(false, (d, e) => ((UnifiedLyricsCanvasControlV2)d).OnIsDarkChanged()));
-
-        public static readonly DependencyProperty OffsetMsProperty =
-            DependencyProperty.Register(nameof(OffsetMs), typeof(double), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(0.0, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedOffsetMs = (double)e.NewValue));
-
-        public static readonly DependencyProperty ScrollSensitivityProperty =
-            DependencyProperty.Register(nameof(ScrollSensitivity), typeof(double), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(1.0, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedScrollSensitivity = (double)e.NewValue));
-
-        public static readonly DependencyProperty LyricsBlurAmountProperty =
-            DependencyProperty.Register(nameof(LyricsBlurAmount), typeof(double), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(4.0, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedLyricsBlurAmount = (double)e.NewValue));
-
-        public static readonly DependencyProperty GlowAmountProperty =
-            DependencyProperty.Register(nameof(GlowAmount), typeof(double), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(0.0, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedGlowAmount = (double)e.NewValue));
-
-        public static readonly DependencyProperty CharFloatAmountProperty =
-            DependencyProperty.Register(nameof(CharFloatAmount), typeof(double), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(0.0, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedCharFloatAmount = (double)e.NewValue));
-
-        public static readonly DependencyProperty CharScaleAmountProperty =
-            DependencyProperty.Register(nameof(CharScaleAmount), typeof(double), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(0.0, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedCharScaleAmount = (double)e.NewValue));
-
-        public static readonly DependencyProperty LongSyllableThresholdProperty =
-            DependencyProperty.Register(nameof(LongSyllableThreshold), typeof(double), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(500.0, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedLongSyllableThreshold = (double)e.NewValue));
-
-        public static readonly DependencyProperty IsFadeOutEnabledProperty =
-            DependencyProperty.Register(nameof(IsFadeOutEnabled), typeof(bool), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(true, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedIsFadeOutEnabled = (bool)e.NewValue));
-
-        public static readonly DependencyProperty IsOutOfSightEnabledProperty =
-            DependencyProperty.Register(nameof(IsOutOfSightEnabled), typeof(bool), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(true, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedIsOutOfSightEnabled = (bool)e.NewValue));
-
-        public static readonly DependencyProperty UnplayedOpacityProperty =
-            DependencyProperty.Register(nameof(UnplayedOpacity), typeof(double), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(0.5, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedUnplayedOpacity = (double)e.NewValue));
-
-        public static readonly DependencyProperty TranslatedOpacityProperty =
-            DependencyProperty.Register(nameof(TranslatedOpacity), typeof(double), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(0.6, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedTranslatedOpacity = (double)e.NewValue));
-
-        public static readonly DependencyProperty StrokeWidthProperty =
-            DependencyProperty.Register(nameof(StrokeWidth), typeof(double), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(0.0, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedStrokeWidth = (double)e.NewValue));
-
-        public static readonly DependencyProperty ScrollEasingTypeProperty =
-            DependencyProperty.Register(nameof(ScrollEasingType), typeof(EasingType), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(EasingType.Sine, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedScrollEasingType = (EasingType)e.NewValue));
-
-        public static readonly DependencyProperty ScrollEasingModeProperty =
-            DependencyProperty.Register(nameof(ScrollEasingMode), typeof(EaseMode), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(EaseMode.Out, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedScrollEasingMode = (EaseMode)e.NewValue));
-
-        public static readonly DependencyProperty PlayingLineTopOffsetProperty =
-            DependencyProperty.Register(nameof(PlayingLineTopOffset), typeof(double), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(0.35, (d, e) => ((UnifiedLyricsCanvasControlV2)d)._cachedPlayingLineTopOffset = (double)e.NewValue));
-
-        public static readonly DependencyProperty TargetFrameRateProperty =
-            DependencyProperty.Register(nameof(TargetFrameRate), typeof(double), typeof(UnifiedLyricsCanvasControlV2),
-                new PropertyMetadata(60.0, (d, e) =>
-                {
-                    var c = (UnifiedLyricsCanvasControlV2)d;
-                    c._cachedTargetFrameRate = (double)e.NewValue;
-                    if (c._canvas != null)
-                        c._canvas.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / c._cachedTargetFrameRate);
-                }));
-
-        public IList<LyricLine>? UILyrics
+        public void Receive(CurrentPlayingTimeMessage message)
         {
-            get => (IList<LyricLine>?)GetValue(UILyricsProperty);
-            set => SetValue(UILyricsProperty, value);
+            _cachedCurrentPlayingTime = TimeSpan.FromMilliseconds(message.TotalMilliseconds);
         }
 
-        public TimeSpan CurrentPlayingTime
+        public void Receive(IsPlayingMessage message)
         {
-            get => _cachedCurrentPlayingTime;
-            set => SetValue(CurrentPlayingTimeProperty, value);
+            _cachedIsPlaying = message.Value;
         }
 
-        public bool IsPlaying
+        public void Receive(UILyricsMessage message)
         {
-            get => _cachedIsPlaying;
-            set => SetValue(IsPlayingProperty, value);
+            OnUILyricsChanged(message.Lines);
         }
 
-        public double LyricsFontSize
+        public void Receive(LyricsSettingsSyncMessage message)
         {
-            get => _cachedLyricsFontSize;
-            set => SetValue(LyricsFontSizeProperty, value);
-        }
+            _cachedLyricsFontSize = message.LyricsFontSize;
+            _cachedFontFamilyName = message.FontFamilyName;
+            _cachedLyricsTextAlignment = message.LyricsTextAlignment;
+            _cachedOffsetMs = message.OffsetMs;
+            _cachedScrollSensitivity = message.ScrollSensitivity;
+            _cachedLyricsBlurAmount = message.LyricsBlurAmount;
+            _cachedGlowAmount = message.GlowAmount;
+            _cachedCharFloatAmount = message.CharFloatAmount;
+            _cachedCharScaleAmount = message.CharScaleAmount;
+            _cachedLongSyllableThreshold = message.LongSyllableThreshold;
+            _cachedIsFadeOutEnabled = message.IsFadeOutEnabled;
+            _cachedIsOutOfSightEnabled = message.IsOutOfSightEnabled;
+            _cachedUnplayedOpacity = message.UnplayedOpacity;
+            _cachedTranslatedOpacity = message.TranslatedOpacity;
+            _cachedStrokeWidth = message.StrokeWidth;
+            _cachedScrollEasingType = message.ScrollEasingType;
+            _cachedScrollEasingMode = message.ScrollEasingMode;
+            _cachedPlayingLineTopOffset = message.PlayingLineTopOffset;
+            _cachedTargetFrameRate = message.TargetFrameRate;
+            if (_canvas != null)
+                _canvas.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / message.TargetFrameRate);
 
-        public string FontFamilyName
-        {
-            get => _cachedFontFamilyName;
-            set => SetValue(FontFamilyNameProperty, value);
-        }
+            bool isDark = message.IsDark;
+            if (isDark)
+            {
+                _playedColor = Colors.White;
+                _unplayedColor = Colors.White;
+            }
+            else
+            {
+                _playedColor = Color.FromArgb(255, 0, 0, 0);
+                _unplayedColor = Color.FromArgb(255, 0, 0, 0);
+            }
 
-        public CanvasHorizontalAlignment LyricsTextAlignment
-        {
-            get => _cachedLyricsTextAlignment;
-            set => SetValue(LyricsTextAlignmentProperty, value);
-        }
-
-        public bool IsDark
-        {
-            get => (bool)GetValue(IsDarkProperty);
-            set => SetValue(IsDarkProperty, value);
-        }
-
-        public double OffsetMs
-        {
-            get => _cachedOffsetMs;
-            set => SetValue(OffsetMsProperty, value);
-        }
-
-        public double ScrollSensitivity
-        {
-            get => _cachedScrollSensitivity;
-            set => SetValue(ScrollSensitivityProperty, value);
-        }
-
-        public double LyricsBlurAmount
-        {
-            get => _cachedLyricsBlurAmount;
-            set => SetValue(LyricsBlurAmountProperty, value);
-        }
-
-        public double GlowAmount
-        {
-            get => _cachedGlowAmount;
-            set => SetValue(GlowAmountProperty, value);
-        }
-
-        public double CharFloatAmount
-        {
-            get => _cachedCharFloatAmount;
-            set => SetValue(CharFloatAmountProperty, value);
-        }
-
-        public double CharScaleAmount
-        {
-            get => _cachedCharScaleAmount;
-            set => SetValue(CharScaleAmountProperty, value);
-        }
-
-        public double LongSyllableThreshold
-        {
-            get => _cachedLongSyllableThreshold;
-            set => SetValue(LongSyllableThresholdProperty, value);
-        }
-
-        public bool IsFadeOutEnabled
-        {
-            get => _cachedIsFadeOutEnabled;
-            set => SetValue(IsFadeOutEnabledProperty, value);
-        }
-
-        public bool IsOutOfSightEnabled
-        {
-            get => _cachedIsOutOfSightEnabled;
-            set => SetValue(IsOutOfSightEnabledProperty, value);
-        }
-
-        public double UnplayedOpacity
-        {
-            get => _cachedUnplayedOpacity;
-            set => SetValue(UnplayedOpacityProperty, value);
-        }
-
-        public double TranslatedOpacity
-        {
-            get => _cachedTranslatedOpacity;
-            set => SetValue(TranslatedOpacityProperty, value);
-        }
-
-        public double StrokeWidth
-        {
-            get => _cachedStrokeWidth;
-            set => SetValue(StrokeWidthProperty, value);
-        }
-
-        public EasingType ScrollEasingType
-        {
-            get => _cachedScrollEasingType;
-            set => SetValue(ScrollEasingTypeProperty, value);
-        }
-
-        public EaseMode ScrollEasingMode
-        {
-            get => _cachedScrollEasingMode;
-            set => SetValue(ScrollEasingModeProperty, value);
-        }
-
-        public double PlayingLineTopOffset
-        {
-            get => _cachedPlayingLineTopOffset;
-            set => SetValue(PlayingLineTopOffsetProperty, value);
-        }
-
-        public double TargetFrameRate
-        {
-            get => _cachedTargetFrameRate;
-            set => SetValue(TargetFrameRateProperty, value);
+            _layoutDirty = true;
+            _canvas?.Invalidate();
         }
 
         #endregion
@@ -469,9 +285,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _canvas?.Invalidate();
         }
 
-        private void OnIsDarkChanged()
+        private void OnIsDarkChanged(bool isDark)
         {
-            bool isDark = (bool)GetValue(IsDarkProperty);
             if (isDark)
             {
                 _playedColor = Colors.White;

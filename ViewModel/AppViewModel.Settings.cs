@@ -346,7 +346,14 @@ namespace WinUIMusicPlayer.ViewModel
         public bool IsDarkMode
         {
             get => field;
-            set => SetProperty(ref field, value);
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                        SendLyricsSettings();
+                }
+            }
         } = false;
 
         public EffectComboBoxItem Win2dTextEffectType
@@ -401,6 +408,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
+                        SendLyricsSettings();
                     }
                 }
             }
@@ -476,6 +484,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
+                        SendLyricsSettings();
                     }
                 }
             }
@@ -492,6 +501,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
+                        SendLyricsSettings();
                     }
                 }
             }
@@ -507,12 +517,27 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
+                        SendLyricsSettings();
                     }
                 }
             }
         } = 32f;
 
-        public double LyricsFontSize { get => field; set => SetProperty(ref field, value); } = 32;
+        public double LyricsFontSize
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        SendLyricsSettings();
+                    }
+                }
+            }
+        } = 32;
 
         public string MusicCoverCache
         {
@@ -593,6 +618,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
+                        ScheduleSettingsBroadcast();
                     }
                 }
             }
@@ -608,6 +634,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
+                        ScheduleSettingsBroadcast();
                     }
                 }
             }
@@ -623,6 +650,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
+                        ScheduleSettingsBroadcast();
                     }
                 }
             }
@@ -638,6 +666,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
+                        ScheduleSettingsBroadcast();
                     }
                 }
             }
@@ -653,6 +682,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
+                        ScheduleSettingsBroadcast();
                     }
                 }
             }
@@ -668,6 +698,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
+                        ScheduleSettingsBroadcast();
                     }
                 }
             }
@@ -683,6 +714,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
+                        ScheduleSettingsBroadcast();
                     }
                 }
             }
@@ -698,6 +730,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
+                        ScheduleSettingsBroadcast();
                     }
                 }
             }
@@ -713,6 +746,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
+                        SendLyricsSettings();
                     }
                 }
             }

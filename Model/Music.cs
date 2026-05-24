@@ -45,6 +45,7 @@ namespace WinUIMusicPlayer.Model
                 if (SetProperty(ref field, value)) 
                 {
                     if (App.Services.GetRequiredService<AppViewModel>().IsInitialized) {
+                        App.Services.GetRequiredService<AppViewModel>().SendLyricsSettings();
                         Save();
                     }                    
                 } 
