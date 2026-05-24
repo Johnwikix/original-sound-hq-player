@@ -22,6 +22,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
     public sealed class UnifiedLyricsCanvasControlV2 : Control,
         IRecipient<CurrentPlayingTimeMessage>,
         IRecipient<IsPlayingMessage>,
+        IRecipient<OffsetMsMessage>,
+        IRecipient<LyricsFontSizeMessage>,
         IRecipient<UILyricsMessage>,
         IRecipient<LyricsSettingsSyncMessage>
     {
@@ -215,6 +217,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _cachedIsPlaying = message.Value;
         }
 
+        public void Receive(OffsetMsMessage message)
+        {
+            _cachedOffsetMs = message.Value;
+        }
+
+        public void Receive(LyricsFontSizeMessage message)
+        {
+            _cachedLyricsFontSize = message.Value;
+        }
+
         public void Receive(UILyricsMessage message)
         {
             OnUILyricsChanged(message.Lines);
@@ -222,10 +234,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         public void Receive(LyricsSettingsSyncMessage message)
         {
-            _cachedLyricsFontSize = message.LyricsFontSize;
             _cachedFontFamilyName = message.FontFamilyName;
             _cachedLyricsTextAlignment = message.LyricsTextAlignment;
-            _cachedOffsetMs = message.OffsetMs;
             _cachedScrollSensitivity = message.ScrollSensitivity;
             _cachedLyricsBlurAmount = message.LyricsBlurAmount;
             _cachedGlowAmount = message.GlowAmount;

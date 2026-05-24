@@ -501,7 +501,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
-                        SendLyricsSettings();
+                        SendLyricsFontSize();
                     }
                 }
             }
@@ -517,7 +517,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
-                        SendLyricsSettings();
+                        SendLyricsFontSize();
                     }
                 }
             }
@@ -533,7 +533,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
-                        SendLyricsSettings();
+                        SendLyricsFontSize();
                     }
                 }
             }

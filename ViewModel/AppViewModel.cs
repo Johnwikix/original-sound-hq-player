@@ -112,7 +112,7 @@ namespace WinUIMusicPlayer.ViewModel
             get => field; 
             set {
                 if (SetProperty(ref field, value) && IsInitialized) {
-                    SendLyricsSettings();
+                    WeakReferenceMessenger.Default.Send(new OffsetMsMessage(value?.LyricsOffsetMs ?? 0));
                 }
             } 
         }
@@ -1011,7 +1011,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void SendLyricsSettings()
         {
-            double fontSize = IsGlobalFontSizeEnabled ? GlobalFontSize : LyricsFontSize;
+          
             string fontFamilyName = FontFamily?.FontFamily?.Source ?? "Segoe UI";
             var alignment = LyricsAlignment switch
             {
@@ -1019,13 +1019,10 @@ namespace WinUIMusicPlayer.ViewModel
                 "Right" => Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment.Right,
                 _ => Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment.Left,
             };
-
             WeakReferenceMessenger.Default.Send(new LyricsSettingsSyncMessage(
-                LyricsFontSize: fontSize,
                 FontFamilyName: fontFamilyName,
                 LyricsTextAlignment: alignment,
                 IsDark: IsDarkMode,
-                OffsetMs: CurrentPlayingMusic?.LyricsOffsetMs ?? 0,
                 ScrollSensitivity: 1.0,
                 LyricsBlurAmount: LyricsBlurAmount,
                 GlowAmount: GlowAmount,
@@ -1043,12 +1040,19 @@ namespace WinUIMusicPlayer.ViewModel
                 TargetFrameRate: TargetFrameRate));
         }
 
+        private void SendLyricsFontSize() {
+            double fontSize = IsGlobalFontSizeEnabled ? GlobalFontSize : LyricsFontSize;
+            WeakReferenceMessenger.Default.Send(new LyricsFontSizeMessage(fontSize));
+        }
+
         private void SendFullLyricsSync()
         {
             _settingsDebounceTimer?.Stop();
             SendLyricsSettings();
+            SendLyricsFontSize();
             WeakReferenceMessenger.Default.Send(new IsPlayingMessage(IsPlaying));
             WeakReferenceMessenger.Default.Send(new CurrentPlayingTimeMessage(CurrentTime.TotalMilliseconds));
+            WeakReferenceMessenger.Default.Send(new OffsetMsMessage(CurrentPlayingMusic?.LyricsOffsetMs ?? 0));
             if (UILyrics.Count > 0)
                 WeakReferenceMessenger.Default.Send(new UILyricsMessage(UILyrics));
         }

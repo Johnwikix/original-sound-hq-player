@@ -1,5 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
+using AnimatedWin2dControls.Messages;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Imaging;
@@ -44,10 +46,11 @@ namespace WinUIMusicPlayer.Model
             set { 
                 if (SetProperty(ref field, value)) 
                 {
-                    if (App.Services.GetRequiredService<AppViewModel>().IsInitialized) {
-                        App.Services.GetRequiredService<AppViewModel>().SendLyricsSettings();
+                    if (App.Services.GetRequiredService<AppViewModel>().IsInitialized)
+                    {
+                        WeakReferenceMessenger.Default.Send(new OffsetMsMessage(value));
                         Save();
-                    }                    
+                    }
                 } 
             } 
         } = 0;

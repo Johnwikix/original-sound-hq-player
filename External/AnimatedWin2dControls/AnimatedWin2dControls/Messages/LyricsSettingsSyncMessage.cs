@@ -4,11 +4,9 @@ using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2;
 namespace AnimatedWin2dControls.Messages;
 
 public sealed record LyricsSettingsSyncMessage(
-    double LyricsFontSize,
     string FontFamilyName,
     CanvasHorizontalAlignment LyricsTextAlignment,
     bool IsDark,
-    double OffsetMs,
     double ScrollSensitivity,
     double LyricsBlurAmount,
     double GlowAmount,
