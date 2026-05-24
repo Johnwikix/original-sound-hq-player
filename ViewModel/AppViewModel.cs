@@ -108,7 +108,14 @@ namespace WinUIMusicPlayer.ViewModel
         public BulkObservableCollection<Music> AlbumSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<Music> ArtistSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<Music> FolderSongs { get; set => SetProperty(ref field, value); } = [];
-        public Music CurrentPlayingMusic { get; set => SetProperty(ref field, value); }
+        public Music CurrentPlayingMusic { 
+            get => field; 
+            set {
+                if (SetProperty(ref field, value) && IsInitialized) {
+                    SendLyricsSettings();
+                }
+            } 
+        }
         public string PlayModeFlyoutText { get; set => SetProperty(ref field, value); }
         public ObservableCollection<Music> SequentialPlayingList 
         { 
