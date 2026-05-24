@@ -13,7 +13,6 @@
     xmlns:model="using:WinUIMusicPlayer.Model"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
     xmlns:ui="using:CommunityToolkit.WinUI"
-    NavigationCacheMode="Enabled"
     mc:Ignorable="d">
 
     <Page.Resources>
@@ -173,6 +172,7 @@
                                     Command="{x:Bind ViewModel.AppViewModel.OpenCoverCacheLocationCommand, Mode=OneWay}">
                                     <Button.Content>
                                         <dev:AutoScrollView
+                                            x:Name="AutoScrollViewControl"
                                             Grid.Row="0"
                                             Margin="0,0,10,0"
                                             IsPlaying="False"

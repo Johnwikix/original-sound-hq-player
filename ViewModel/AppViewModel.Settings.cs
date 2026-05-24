@@ -57,11 +57,13 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = 0;
 
-        public bool IsWin2dCoverImageControlEnable {
+        public bool IsWin2dCoverImageControlEnable
+        {
             get => field;
-            set 
+            set
             {
-                if (SetProperty(ref field, value)) {
+                if (SetProperty(ref field, value))
+                {
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
@@ -70,7 +72,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = false;
 
-        public bool IsWin2dAnimatedText {
+        public bool IsWin2dAnimatedText
+        {
             get => field;
             set
             {
@@ -332,7 +335,7 @@ namespace WinUIMusicPlayer.ViewModel
                             _ = _musicDatabaseService.SaveSettingAsync();
                         }
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         _logger.LogError(ex, ex.Message);
                     }
@@ -340,8 +343,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = "Default";
 
-        public bool IsDarkMode 
-        { 
+        public bool IsDarkMode
+        {
             get => field;
             set => SetProperty(ref field, value);
         } = false;
@@ -359,7 +362,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = new EffectComboBoxItem { DisplayName= ToolUtils.GetString("TextDefaultEffect"), Value= AnimatedTextEffect.TextDefaultEffect };
+        } = new EffectComboBoxItem { DisplayName = ToolUtils.GetString("TextDefaultEffect"), Value = AnimatedTextEffect.TextDefaultEffect };
 
         public string Version
         {
@@ -732,11 +735,11 @@ namespace WinUIMusicPlayer.ViewModel
         public List<double> TargetFrameRateOptions { get; } = [60, 72, 80, 90, 120, 144, 160, 165, 180, 240];
 
         public ObservableCollection<EffectComboBoxItem> TextEffectItems =
-        [        
+        [
             new EffectComboBoxItem { DisplayName = ToolUtils.GetString("TextDefaultEffect"), Value = AnimatedTextEffect.TextDefaultEffect },
             new EffectComboBoxItem { DisplayName = ToolUtils.GetString("TextElasticEffect"), Value = AnimatedTextEffect.TextElasticEffect },
             new EffectComboBoxItem { DisplayName = ToolUtils.GetString("TextZoomEffect"), Value = AnimatedTextEffect.TextZoomEffect },
-            new EffectComboBoxItem { DisplayName = ToolUtils.GetString("TextBlurEffect"), Value = AnimatedTextEffect.TextBlurEffect },                    
+            new EffectComboBoxItem { DisplayName = ToolUtils.GetString("TextBlurEffect"), Value = AnimatedTextEffect.TextBlurEffect },
             new EffectComboBoxItem { DisplayName = ToolUtils.GetString("TextMotionBlurEffect"), Value = AnimatedTextEffect.TextMotionBlurEffect },
             new EffectComboBoxItem { DisplayName = ToolUtils.GetString("TextPivotEffect"), Value = AnimatedTextEffect.TextPivotEffect },
             new EffectComboBoxItem { DisplayName = ToolUtils.GetString("TextFadeEffect"), Value = AnimatedTextEffect.TextFadeEffect },
@@ -744,96 +747,98 @@ namespace WinUIMusicPlayer.ViewModel
 
         ];
 
-    public async Task GetWasapiDeviceAsync()
+        public async Task GetWasapiDeviceAsync()
         {
             if (_isLoadingDevices) return;
             _isLoadingDevices = true;
             try
             {
-            BassOutputDevices.Clear();
-            //默认设备
-            BassOutputDevices.Add(new BassOutputDevice
-            {
-                Name = "DefaultDevice",
-                Tag = ToolUtils.GetString("DefaultDevice") + " [DirectSound]",
-                Id = -1,
-                OutputMode = "DirectSound"
-            });
-            BassOutputDevices.Add(new BassOutputDevice
-            {
-                Name = "DefaultDevice",
-                Tag = $"{ToolUtils.GetString("DefaultDevice")} [{ToolUtils.GetString("WasapiSharedText")}]",
-                Id = -1,
-                OutputMode = "WasapiShared"
-            });
-            BassOutputDevices.Add(new BassOutputDevice
-            {
-                Name = "DefaultDevice",
-                Tag = $"{ToolUtils.GetString("DefaultDevice")} [{ToolUtils.GetString("WasapiExclusivePushText")}]",
-                Id = -1,
-                OutputMode = "WasapiExclusivePush"
-            });
-            BassOutputDevices.Add(new BassOutputDevice
-            {
-                Name = "DefaultDevice",
-                Tag = $"{ToolUtils.GetString("DefaultDevice")} [{ToolUtils.GetString("WasapiExclusiveEventText")}]",
-                Id = -1,
-                OutputMode = "WasapiExclusiveEvent"
-            });
-
-            var cmd = App.Services.GetRequiredService<BassPlayerCommandService>();          
-
-            // ASIO devices from server
-            var asioDevices = await cmd.GetAsioDevices();
-            foreach (var (id, name) in asioDevices)
-            {
+                BassOutputDevices.Clear();
+                //默认设备
                 BassOutputDevices.Add(new BassOutputDevice
                 {
-                    Name = name, Tag = name + " [ASIO]",
-                    AsioId = id, OutputMode = "ASIO"
+                    Name = "DefaultDevice",
+                    Tag = ToolUtils.GetString("DefaultDevice") + " [DirectSound]",
+                    Id = -1,
+                    OutputMode = "DirectSound"
                 });
-            }
+                BassOutputDevices.Add(new BassOutputDevice
+                {
+                    Name = "DefaultDevice",
+                    Tag = $"{ToolUtils.GetString("DefaultDevice")} [{ToolUtils.GetString("WasapiSharedText")}]",
+                    Id = -1,
+                    OutputMode = "WasapiShared"
+                });
+                BassOutputDevices.Add(new BassOutputDevice
+                {
+                    Name = "DefaultDevice",
+                    Tag = $"{ToolUtils.GetString("DefaultDevice")} [{ToolUtils.GetString("WasapiExclusivePushText")}]",
+                    Id = -1,
+                    OutputMode = "WasapiExclusivePush"
+                });
+                BassOutputDevices.Add(new BassOutputDevice
+                {
+                    Name = "DefaultDevice",
+                    Tag = $"{ToolUtils.GetString("DefaultDevice")} [{ToolUtils.GetString("WasapiExclusiveEventText")}]",
+                    Id = -1,
+                    OutputMode = "WasapiExclusiveEvent"
+                });
 
-            // WASAPI devices from server
-            var wasapiDevices = await cmd.GetWasapiDevices();
-            foreach (var (id, name) in wasapiDevices)
-            {
-                if (!BassOutputDevices.AsValueEnumerable().Any(d => d.Name == name))
+                var cmd = App.Services.GetRequiredService<BassPlayerCommandService>();
+
+                // ASIO devices from server
+                var asioDevices = await cmd.GetAsioDevices();
+                foreach (var (id, name) in asioDevices)
                 {
                     BassOutputDevices.Add(new BassOutputDevice
                     {
                         Name = name,
-                        Tag = $"{name} [{ToolUtils.GetString("WasapiSharedText")}]",
-                        Id = id,
-                        OutputMode = "WasapiShared"
-                    });
-                    BassOutputDevices.Add(new BassOutputDevice
-                    {
-                        Name = name,
-                        Tag = $"{name} [{ToolUtils.GetString("WasapiExclusivePushText")}]",
-                        Id = id,
-                        OutputMode = "WasapiExclusivePush"
-                    });
-                    BassOutputDevices.Add(new BassOutputDevice
-                    {
-                        Name = name,
-                        Tag = $"{name} [{ToolUtils.GetString("WasapiExclusiveEventText")}]",
-                        Id = id,
-                        OutputMode = "WasapiExclusiveEvent"
+                        Tag = name + " [ASIO]",
+                        AsioId = id,
+                        OutputMode = "ASIO"
                     });
                 }
-            }
 
-            var device = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == AppSettings.DeviceName && d.OutputMode == AppSettings.OutputMode);
-            if (device is null)
-            {
-                SelectedDevice = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == "DefaultDevice" && d.OutputMode == "DirectSound");
-                AppSettings.BassOutputDeviceId = -1;
-            }
-            else
-            {
-                SelectedDevice = device;
-            }
+                // WASAPI devices from server
+                var wasapiDevices = await cmd.GetWasapiDevices();
+                foreach (var (id, name) in wasapiDevices)
+                {
+                    if (!BassOutputDevices.AsValueEnumerable().Any(d => d.Name == name))
+                    {
+                        BassOutputDevices.Add(new BassOutputDevice
+                        {
+                            Name = name,
+                            Tag = $"{name} [{ToolUtils.GetString("WasapiSharedText")}]",
+                            Id = id,
+                            OutputMode = "WasapiShared"
+                        });
+                        BassOutputDevices.Add(new BassOutputDevice
+                        {
+                            Name = name,
+                            Tag = $"{name} [{ToolUtils.GetString("WasapiExclusivePushText")}]",
+                            Id = id,
+                            OutputMode = "WasapiExclusivePush"
+                        });
+                        BassOutputDevices.Add(new BassOutputDevice
+                        {
+                            Name = name,
+                            Tag = $"{name} [{ToolUtils.GetString("WasapiExclusiveEventText")}]",
+                            Id = id,
+                            OutputMode = "WasapiExclusiveEvent"
+                        });
+                    }
+                }
+
+                var device = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == AppSettings.DeviceName && d.OutputMode == AppSettings.OutputMode);
+                if (device is null)
+                {
+                    SelectedDevice = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == "DefaultDevice" && d.OutputMode == "DirectSound");
+                    AppSettings.BassOutputDeviceId = -1;
+                }
+                else
+                {
+                    SelectedDevice = device;
+                }
             }
             finally { _isLoadingDevices = false; }
         }
@@ -880,7 +885,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void OnThemeTypeChanged(string type)
         {
-            ThemeType = type;            
+            ThemeType = type;
         }
 
         private void OnDefaultEntryComboBoxTagChanged(string value)

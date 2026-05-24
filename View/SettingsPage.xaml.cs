@@ -7,7 +7,6 @@ using Microsoft.UI.Xaml.Navigation;
 using System;
 using Windows.System;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 
@@ -19,27 +18,35 @@ namespace WinUIMusicPlayer.View
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class SettingsPage : Page, INavigatable
+    public sealed partial class SettingsPage : Page
     {
         private ContentDialog? _thirdPartyDialog;
         public SettingsViewModel ViewModel { get; }
         public SettingsPage()
         {
-            this.InitializeComponent();
+            InitializeComponent();
             ViewModel = App.Services.GetRequiredService<SettingsViewModel>();
             DataContext = this;
-            NavigationCacheMode = NavigationCacheMode.Disabled;
-        }
-
-        public async void ReceiveNavigationParameter(object parameter)
-        {
-            LoadOutputDevices();
+            NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
+            Unloaded += OnUnloaded;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
             LoadOutputDevices();
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            Unloaded -= OnUnloaded;
+            if (AutoScrollViewControl is not null)
+            {
+                AutoScrollViewControl.PointerEntered -= AutoScrollHover_PointerEntered;
+                AutoScrollViewControl.PointerExited -= AutoScrollHover_PointerExited;
+                AutoScrollViewControl.PointerCanceled -= AutoScrollHover_PointerCanceled;
+            }
+            _thirdPartyDialog = null;
         }
 
         private void LoadOutputDevices()

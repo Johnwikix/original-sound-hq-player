@@ -12,7 +12,6 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
-    NavigationCacheMode="Enabled"
     mc:Ignorable="d">
     <Grid Margin="0">
         <SemanticZoom>
