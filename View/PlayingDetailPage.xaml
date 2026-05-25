@@ -265,37 +265,54 @@
                             Foreground="Red"
                             Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
                     </Button>
-                    <Button
-                        Grid.Row="1"
-                        Grid.Column="1"
-                        Margin="0"
-                        VerticalAlignment="Center"
-                        Background="Transparent"
-                        BorderBrush="Transparent"
-                        BorderThickness="0"
-                        Style="{StaticResource MenuButtonStyle}">
-                        <FontIcon
-                            Grid.Column="0"
+                    <StackPanel Grid.Row="1" Grid.Column="1">
+                        <Button
                             Margin="0"
                             VerticalAlignment="Center"
-                            FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
-                            Glyph="&#xE917;" />
-                        <Button.Flyout>
-                            <Flyout Placement="Right">
-                                <NumberBox
-                                    Width="175"
-                                    LargeChange="1000"
-                                    Maximum="100000"
-                                    Minimum="-100000"
-                                    SmallChange="100"
-                                    SpinButtonPlacementMode="Inline"
-                                    Value="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.LyricsOffsetMs, Mode=TwoWay}" />
-                            </Flyout>
-                        </Button.Flyout>
-                        <ToolTipService.ToolTip>
-                            <ToolTip x:Uid="LyricsTimeOffset" />
-                        </ToolTipService.ToolTip>
-                    </Button>
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            Style="{StaticResource MenuButtonStyle}">
+                            <FontIcon
+                                Grid.Column="0"
+                                Margin="0"
+                                VerticalAlignment="Center"
+                                FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
+                                Glyph="&#xE917;" />
+                            <Button.Flyout>
+                                <Flyout Placement="Right">
+                                    <NumberBox
+                                        Width="175"
+                                        LargeChange="1000"
+                                        Maximum="100000"
+                                        Minimum="-100000"
+                                        SmallChange="100"
+                                        SpinButtonPlacementMode="Inline"
+                                        Value="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.LyricsOffsetMs, Mode=TwoWay}" />
+                                </Flyout>
+                            </Button.Flyout>
+                            <ToolTipService.ToolTip>
+                                <ToolTip x:Uid="LyricsTimeOffset" />
+                            </ToolTipService.ToolTip>
+                        </Button>
+                        <Button
+                            Margin="0"
+                            VerticalAlignment="Center"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            Style="{StaticResource MenuButtonStyle}">
+                            <FontIcon
+                                Grid.Column="0"
+                                Margin="0"
+                                VerticalAlignment="Center"
+                                FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
+                                Glyph="&#xF035;" />
+                            <ToolTipService.ToolTip>
+                                <ToolTip x:Uid="LyricsTimeOffset" />
+                            </ToolTipService.ToolTip>
+                        </Button>
+                    </StackPanel>
                 </Grid>
                 <StackPanel
                     Grid.Row="3"
