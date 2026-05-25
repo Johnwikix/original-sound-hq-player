@@ -1,4 +1,5 @@
 ﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V1;
 using AnimatedWin2dControls.Messages;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Graphics.Canvas;
@@ -23,7 +24,7 @@ using Windows.UI;
 
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 {
-    public sealed class UnifiedLyricsCanvasControl : Control,
+    public sealed partial class UnifiedLyricsCanvasControlV1 : Control,
         IRecipient<CurrentPlayingTimeMessage>,
         IRecipient<IsPlayingMessage>,
         IRecipient<OffsetMsMessage>,
@@ -44,35 +45,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private CanvasControl? _canvas;
 
         // ─────────────────────────────────────────────────────────────────────
-        // 布局缓存结构体
+        // 布局缓存
         // ─────────────────────────────────────────────────────────────────────
-
-        private struct WordLayout
-        {
-            public string Text;
-            public float X, Y, FullWidth, Height;
-        }
-
-        private struct LineLayout
-        {
-            public int WordStart;
-            public int WordCount;
-            public float OffsetY;
-            public float Height;
-            public float TranslateOffsetY;
-            public bool HasTranslate;
-        }
-
-        private struct VisualRow
-        {
-            public float MinX, MaxX, Y, H;
-            public int WordStart, WordEnd;
-        }
-
-        private struct LineVisualRowRange
-        {
-            public int Start, Count;
-        }
 
         private WordLayout[] _wordLayouts = [];
         private int _totalWordCount = 0;
@@ -89,20 +63,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         // ─────────────────────────────────────────────────────────────────────
         // 速度曲线（Hermite Catmull-Rom）
         // ─────────────────────────────────────────────────────────────────────
-
-        private struct CurvePoint
-        {
-            public double TimeMs;
-            public float PixelX;
-            public float VelIn, VelOut;
-        }
-
-        private struct RowCurve
-        {
-            public TimeSpan Origin;
-            public CurvePoint[]? Points;
-            public int Count;
-        }
 
         private RowCurve[] _rowCurves = [];
         private int _rowCurveCount = 0;
@@ -226,9 +186,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         // 构造 / 生命周期
         // ─────────────────────────────────────────────────────────────────────
 
-        public UnifiedLyricsCanvasControl()
+        public UnifiedLyricsCanvasControlV1()
         {
-            DefaultStyleKey = typeof(UnifiedLyricsCanvasControl);
+            DefaultStyleKey = typeof(UnifiedLyricsCanvasControlV1);
             UpdateColors(false);
             Loaded += OnControlLoaded;
             Unloaded += OnUnloaded;
@@ -429,7 +389,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private static readonly DependencyProperty CurrentLineOffsetYProperty =
             DependencyProperty.Register(nameof(CurrentLineOffsetY), typeof(double),
-                typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(0.0));
+                typeof(UnifiedLyricsCanvasControlV1), new PropertyMetadata(0.0));
 
         public double CurrentLineOffsetY
         {
@@ -573,56 +533,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             ref readonly var ll = ref _lineLayouts[_currentLineIndex];
             double lineCenter = ll.OffsetY + ll.Height / 2.0;
             _targetScrollY = ClampScrollY(lineCenter);
-        }
-
-        // ═════════════════════════════════════════════════════════════════════
-        // 时钟
-        // ═════════════════════════════════════════════════════════════════════
-
-        private void UpdateTimerState()
-        {
-            var lyrics = _cachedUILyrics;
-            bool shouldRun = _isPlaying && lyrics != null && lyrics.Count > 0;
-            if (shouldRun)
-            {
-                if (_timer is null) CreateTimer();
-                if (!_timer!.IsEnabled)
-                {
-                    _lastTickAt = DateTimeOffset.UtcNow;
-                    _timer.Start();
-                }
-            }
-            else
-            {
-                _timer?.Stop();
-            }
-        }
-
-        private void CreateTimer()
-        {
-            _timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(12.5) };
-            _timer.Tick += OnTimerTick;
-            _lastTickAt = DateTimeOffset.UtcNow;
-        }
-
-        private void DestroyTimer()
-        {
-            if (_timer is null) return;
-            _timer.Stop();
-            _timer.Tick -= OnTimerTick;
-            _timer = null;
-        }
-
-        private void OnTimerTick(object? sender, object e)
-        {
-            var now = DateTimeOffset.UtcNow;
-            var delta = now - _lastTickAt;
-            _lastTickAt = now;
-            if (delta > TimeSpan.FromSeconds(1)) delta = TimeSpan.FromMilliseconds(25);
-
-            _currentTime += delta;
-            MatchLyricLine(_currentTime);
-            _canvas?.Invalidate();
         }
 
         // ═════════════════════════════════════════════════════════════════════
@@ -1146,133 +1056,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         }
 
         // ═════════════════════════════════════════════════════════════════════
-        // 缓存辅助
-        // ═════════════════════════════════════════════════════════════════════
-
-        private void InvalidateLayoutCache()
-        {
-            _cachedLayoutKey = null;
-            _cachedLayoutWidth = 0f;
-            _lineLayoutCount = 0;
-            _totalWordCount = 0;
-            _visualRowCount = 0;
-            _rowCurveCount = 0;
-            DisposeAllClearCache();
-            _cacheWindowLo = -1;
-            _cacheWindowHi = -1;
-            ResetSmoothedRevealX();
-            DisposeFmtCache();
-        }
-
-        private void DisposeAllClearCache()
-        {
-            foreach (var rt in _clearLineCache) rt?.Dispose();
-            _clearLineCache = [];
-            _blurAlpha = [];
-        }
-
-        private void ResetSmoothedRevealX()
-        {
-            for (int i = 0; i < _smoothedRevealX.Length; i++)
-                _smoothedRevealX[i] = float.NaN;
-        }
-
-        private void EnsureSmoothedRevealXCapacity(int count)
-        {
-            if (_smoothedRevealX.Length >= count) return;
-            _smoothedRevealX = new float[count + 4];
-            for (int i = 0; i < _smoothedRevealX.Length; i++)
-                _smoothedRevealX[i] = float.NaN;
-        }
-
-        private void DisposeFmtCache()
-        {
-            _lyricsFmt?.Dispose(); _lyricsFmt = null;
-            _transFmt?.Dispose(); _transFmt = null;
-            _cachedFontFamily = null;
-        }
-
-        private CanvasTextFormat GetLyricsFmt(float dpi)
-        {
-            float sz = (float)Math.Round(_cachedLyricsFontSize * 96f / dpi);
-            string fam = _cachedFontFamilyName;
-            if (_lyricsFmt is null || _cachedFontFamily != fam || _cachedLyricsFontSizeForFmt != sz)
-            {
-                _lyricsFmt?.Dispose();
-                _lyricsFmt = new CanvasTextFormat
-                {
-                    FontFamily = fam,
-                    FontSize = sz,
-                    FontWeight = new Windows.UI.Text.FontWeight { Weight = 700 },
-                    WordWrapping = CanvasWordWrapping.WholeWord,
-                    HorizontalAlignment = CanvasHorizontalAlignment.Left,
-                };
-                _cachedFontFamily = fam;
-                _cachedLyricsFontSizeForFmt = sz;
-            }
-            return _lyricsFmt;
-        }
-
-        private CanvasTextFormat GetTransFmt(float dpi)
-        {
-            float sz = (float)Math.Round(_cachedLyricsFontSize * 0.75f * 96f / dpi);
-            string fam = _cachedFontFamilyName;
-            var align = _cachedLyricsTextAlignment;
-            if (_transFmt is null || _cachedFontFamily != fam ||
-                _cachedTransFontSizeForFmt != sz || _cachedTransAlignmentForFmt != align)
-            {
-                _transFmt?.Dispose();
-                _transFmt = new CanvasTextFormat
-                {
-                    FontFamily = fam,
-                    FontSize = sz,
-                    FontWeight = new Windows.UI.Text.FontWeight { Weight = 700 },
-                    WordWrapping = CanvasWordWrapping.WholeWord,
-                    HorizontalAlignment = align,
-                };
-                _cachedTransFontSizeForFmt = sz;
-                _cachedTransAlignmentForFmt = align;
-                _cachedFontFamily = fam;
-            }
-            return _transFmt;
-        }
-
-        private void UpdateColors(bool isDark)
-        {
-            byte unplayedAlpha = (byte)(_cachedUnplayedOpacity * 255);
-            byte translateAlpha = (byte)(_cachedTranslatedOpacity * 255);
-            if (isDark)
-            {
-                _dimColor = Color.FromArgb(unplayedAlpha, 255, 255, 255);
-                _brightColor = Color.FromArgb(255, 255, 255, 255);
-                _translateColor = Color.FromArgb(translateAlpha, 255, 255, 255);
-            }
-            else
-            {
-                _dimColor = Color.FromArgb(unplayedAlpha, 0, 0, 0);
-                _brightColor = Color.FromArgb(255, 0, 0, 0);
-                _translateColor = Color.FromArgb(translateAlpha, 0, 0, 0);
-            }
-            _gradBrushDirty = true;
-        }
-                
-        private static string BuildLayoutKey(IList<LyricLine> lyrics)
-        {
-            var sb = new StringBuilder(lyrics.Count * 8);
-            foreach (var line in lyrics)
-                sb.Append(line.Words.Count).Append('|')
-                  .Append(line.TransLateText?.Length ?? 0).Append(';');
-            return sb.ToString();
-        }
-
-        private static string BuildFullText(IList<LyricWord> words)
-        {
-            var sb = new StringBuilder(words.Count * 6);
-            foreach (var w in words) sb.Append(w.Word);
-            return sb.ToString();
-        }
-
-        // ═════════════════════════════════════════════════════════════════════
         // OnDraw：虚拟化渲染 + 内置滚动步进
         // ═════════════════════════════════════════════════════════════════════
 
@@ -1489,8 +1272,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                         if (fv > lv) continue;
 
                         float targetRevealX = (curveIdx < _rowCurveCount && _rowCurves[curveIdx].Count > 0)
-                            ? CalcRevealXHermite(ref _rowCurves[curveIdx], effectiveTime, minX, maxX)
-                            : CalcRevealXFallback(line.Words, ll.WordStart, fv, lv, minX, effectiveTime);
+                            ? CurveInterpolator.CalcRevealXHermite(ref _rowCurves[curveIdx], effectiveTime, minX, maxX)
+                            : CurveInterpolator.CalcRevealXFallback(line.Words, ll.WordStart, fv, lv, minX, effectiveTime, _wordLayouts);
 
                         float smoothed = curveIdx < _smoothedRevealX.Length
                             ? _smoothedRevealX[curveIdx] : float.NaN;
@@ -1592,87 +1375,5 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
         }
 
-        // ═════════════════════════════════════════════════════════════════════
-        // 插值
-        // ═════════════════════════════════════════════════════════════════════
-
-        private static float HermiteInterp(float p0, float p1, float m0, float m1,
-            double dt, double elapsed)
-        {
-            if (dt <= 0) return p1;
-            float t = Math.Clamp((float)(elapsed / dt), 0f, 1f);
-            float t2 = t * t, t3 = t2 * t;
-            return (2 * t3 - 3 * t2 + 1) * p0
-                 + (t3 - 2 * t2 + t) * (m0 * (float)dt)
-                 + (-2 * t3 + 3 * t2) * p1
-                 + (t3 - t2) * (m1 * (float)dt);
-        }
-
-        private static float CalcRevealXHermite(ref RowCurve curve,
-            TimeSpan effectiveTime, float minX, float maxX)
-        {
-            if (curve.Count == 0 || curve.Points is null) return minX;
-            var pts = curve.Points;
-            int ptCount = curve.Count;
-            double elapsedMs = (effectiveTime - curve.Origin).TotalMilliseconds;
-            if (elapsedMs <= pts[0].TimeMs) return minX;
-            if (elapsedMs >= pts[ptCount - 1].TimeMs) return maxX;
-
-            int lo = 0, hi = ptCount - 2;
-            while (lo < hi)
-            {
-                int mid = (lo + hi) / 2;
-                if (pts[mid + 1].TimeMs <= elapsedMs) lo = mid + 1;
-                else hi = mid;
-            }
-            ref readonly var p0 = ref pts[lo];
-            ref readonly var p1 = ref pts[lo + 1];
-            float px = HermiteInterp(p0.PixelX, p1.PixelX, p0.VelOut, p1.VelIn,
-                                     p1.TimeMs - p0.TimeMs, elapsedMs - p0.TimeMs);
-            return minX + Math.Clamp(px, Math.Min(p0.PixelX, p1.PixelX), Math.Max(p0.PixelX, p1.PixelX));
-        }
-
-        private float CalcRevealXFallback(IList<LyricWord> words,
-            int lineWordBase, int globalFv, int globalLv,
-            float minX, TimeSpan effectiveTime)
-        {
-            int firstLocal = globalFv - lineWordBase;
-            int lastLocal = globalLv - lineWordBase;
-            if (firstLocal < 0 || lastLocal >= words.Count) return minX;
-            if (effectiveTime <= TimeSpan.FromMilliseconds(words[firstLocal].StartMs)) return minX;
-
-            float totalW = 0f;
-            for (int gi = globalFv; gi <= globalLv; gi++)
-                totalW += _wordLayouts[gi].FullWidth;
-
-            if (effectiveTime >= TimeSpan.FromMilliseconds(words[lastLocal].StartMs + words[lastLocal].DurationMs))
-                return minX + totalW;
-
-            float accX = minX;
-            for (int gi = globalFv; gi <= globalLv; gi++)
-            {
-                int local = gi - lineWordBase;
-                ref readonly var wl = ref _wordLayouts[gi];
-                if (wl.FullWidth <= 0) continue;
-                var word = words[local];
-                var wordEnd = TimeSpan.FromMilliseconds(word.StartMs + word.DurationMs);
-                if (effectiveTime >= wordEnd)
-                {
-                    accX += wl.FullWidth;
-                }
-                else if (effectiveTime >= TimeSpan.FromMilliseconds(word.StartMs))
-                {
-                    float t = word.DurationMs > 0
-                        ? Math.Clamp((float)((effectiveTime.TotalMilliseconds - word.StartMs)
-                                             / word.DurationMs), 0f, 1f)
-                        : 1f;
-                    float t2 = t * t;
-                    accX += wl.FullWidth * (t2 * (3f - 2f * t));
-                    break;
-                }
-                else break;
-            }
-            return accX;
-        }
     }
 }
