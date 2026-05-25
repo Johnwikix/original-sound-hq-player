@@ -1,4 +1,6 @@
 ﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+using AnimatedWin2dControls.Messages;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Effects;
@@ -21,7 +23,13 @@ using Windows.UI;
 
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 {
-    public sealed class UnifiedLyricsCanvasControl : Control
+    public sealed class UnifiedLyricsCanvasControl : Control,
+        IRecipient<CurrentPlayingTimeMessage>,
+        IRecipient<IsPlayingMessage>,
+        IRecipient<OffsetMsMessage>,
+        IRecipient<LyricsFontSizeMessage>,
+        IRecipient<UILyricsMessage>,
+        IRecipient<LyricsSettingsSyncMessage>
     {
         // ─────────────────────────────────────────────────────────────────────
         // 公开事件
@@ -148,6 +156,21 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private double _currentLineOffsetY = 0.0;
 
         // ─────────────────────────────────────────────────────────────────────
+        // Messenger 缓存字段（替代原有 DP 输入）
+        // ─────────────────────────────────────────────────────────────────────
+        private IList<LyricLine>? _cachedUILyrics;
+        private double _cachedLyricsFontSize = 36.0 * 1.33;
+        private string _cachedFontFamilyName = "Segoe UI";
+        private CanvasHorizontalAlignment _cachedLyricsTextAlignment = CanvasHorizontalAlignment.Left;
+        private bool _cachedIsDark;
+        private double _cachedOffsetMs;
+        private double _cachedScrollSensitivity = 1.0;
+        private double _cachedLyricsBlurAmount = 2.0;
+        private double _cachedTranslatedOpacity = 0.6;
+        private double _cachedUnplayedOpacity = 0.5;
+        private const double AnimationSmoothness = 0.65;
+
+        // ─────────────────────────────────────────────────────────────────────
         // 视觉常量
         // ─────────────────────────────────────────────────────────────────────
         private Color _dimColor;
@@ -207,6 +230,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             DefaultStyleKey = typeof(UnifiedLyricsCanvasControl);
             UpdateColors(false);
+            Loaded += OnControlLoaded;
             Unloaded += OnUnloaded;
         }
 
@@ -241,7 +265,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
+            WeakReferenceMessenger.Default.UnregisterAll(this);
             PrepareForShutdown();
+        }
+
+        private void OnControlLoaded(object sender, RoutedEventArgs e)
+        {
+            WeakReferenceMessenger.Default.RegisterAll(this);
+            WeakReferenceMessenger.Default.Send(new RequestLyricsSettingsMessage());
         }
 
         protected override void OnApplyTemplate()
@@ -278,7 +309,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas.ClearColor = Colors.Transparent;
                 _canvas.ManipulationMode = ManipulationModes.None;
             }
-            UpdateColors(IsDark);
+            UpdateColors(_cachedIsDark);
             UpdateTimerState();
         }
 
@@ -295,178 +326,106 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         protected override Size MeasureOverride(Size availableSize) => new Size(0, 0);
 
-        // ═════════════════════════════════════════════════════════════════════
-        // 依赖属性
-        // ═════════════════════════════════════════════════════════════════════
+        #region IRecipient Implementations
 
-        public static readonly DependencyProperty UILyricsProperty =
-            DependencyProperty.Register(nameof(UILyrics),
-                typeof(IList<LyricLine>), typeof(UnifiedLyricsCanvasControl),
-                new PropertyMetadata(null, (d, _) =>
-                {
-                    if (d is not UnifiedLyricsCanvasControl c) return;
-                    c._currentLineIndex = -1;
-                    c._currentTime = TimeSpan.Zero;
-                    c._lastExternalTime = TimeSpan.Zero;
-                    c._targetScrollY = 0;
-                    c._smoothedScrollY = 0;
-                    c._flingY = 0;
-                    c.DestroyTimer();
-                    c.InvalidateLayoutCache();
-                    c._canvas?.Invalidate();
-                }));
-
-        public IList<LyricLine>? UILyrics
+        public void Receive(CurrentPlayingTimeMessage message)
         {
-            get => (IList<LyricLine>?)GetValue(UILyricsProperty);
-            set => SetValue(UILyricsProperty, value);
-        }
+            var extMs = message.TotalMilliseconds;
+            _lastExternalTime = TimeSpan.FromMilliseconds(extMs);
 
-        public static readonly DependencyProperty CurrentPlayingTimeProperty =
-            DependencyProperty.Register(nameof(CurrentPlayingTime),
-                typeof(TimeSpan), typeof(UnifiedLyricsCanvasControl),
-                new PropertyMetadata(TimeSpan.Zero, OnCurrentPlayingTimeChanged));
-
-        public TimeSpan CurrentPlayingTime
-        {
-            get => (TimeSpan)GetValue(CurrentPlayingTimeProperty);
-            set => SetValue(CurrentPlayingTimeProperty, value);
-        }
-
-        private static void OnCurrentPlayingTimeChanged(DependencyObject d,
-            DependencyPropertyChangedEventArgs e)
-        {
-            if (d is not UnifiedLyricsCanvasControl c) return;
-            var ext = (TimeSpan)e.NewValue;
-            c._lastExternalTime = ext;
-
-            if (c._timer is null || !c._timer.IsEnabled)
+            if (_timer is null || !_timer.IsEnabled)
             {
-                c._currentTime = ext;
-                c.MatchLyricLine(ext);
-                c._canvas?.Invalidate();
+                _currentTime = TimeSpan.FromMilliseconds(extMs);
+                MatchLyricLine(_currentTime);
+                _canvas?.Invalidate();
                 return;
             }
 
-            if (Math.Abs((ext - c._currentTime).TotalMilliseconds) > SyncThresholdMs)
+            if (Math.Abs(extMs - _currentTime.TotalMilliseconds) > SyncThresholdMs)
             {
-                c._currentTime = ext;
-                c._lastTickAt = DateTimeOffset.UtcNow;
-                c.ResetSmoothedRevealX();
-                c.MatchLyricLine(ext);
-                c._canvas?.Invalidate();
+                _currentTime = TimeSpan.FromMilliseconds(extMs);
+                _lastTickAt = DateTimeOffset.UtcNow;
+                ResetSmoothedRevealX();
+                MatchLyricLine(_currentTime);
+                _canvas?.Invalidate();
             }
         }
 
-        public static readonly DependencyProperty IsPlayingProperty =
-            DependencyProperty.Register(nameof(IsPlaying),
-                typeof(bool), typeof(UnifiedLyricsCanvasControl),
-                new PropertyMetadata(false, OnIsPlayingChanged));
-
-        public bool IsPlaying
+        public void Receive(IsPlayingMessage message)
         {
-            get => (bool)GetValue(IsPlayingProperty);
-            set => SetValue(IsPlayingProperty, value);
+            _isPlaying = message.Value;
+            if (_isPlaying && _timer is not null)
+                _lastTickAt = DateTimeOffset.UtcNow;
+            UpdateTimerState();
         }
 
-        private static void OnIsPlayingChanged(DependencyObject d,
-            DependencyPropertyChangedEventArgs e)
+        public void Receive(OffsetMsMessage message)
         {
-            if (d is not UnifiedLyricsCanvasControl c) return;
-            c._isPlaying = (bool)e.NewValue;
-            if (c._isPlaying && c._timer is not null)
-                c._lastTickAt = DateTimeOffset.UtcNow;
-            c.UpdateTimerState();
+            _cachedOffsetMs = message.Value;
+            _canvas?.Invalidate();
         }
 
-        public static readonly DependencyProperty LyricsFontSizeProperty =
-            DependencyProperty.Register(nameof(LyricsFontSize), typeof(double),
-                typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(36.0, OnLayoutPropertyChanged));
-
-        public double LyricsFontSize
+        public void Receive(LyricsFontSizeMessage message)
         {
-            get => (double)GetValue(LyricsFontSizeProperty);
-            set => SetValue(LyricsFontSizeProperty, value);
+            _cachedLyricsFontSize = message.Value * 1.33;
+            InvalidateLayoutCache();
         }
 
-        public static readonly DependencyProperty FontFamilyNameProperty =
-            DependencyProperty.Register(nameof(FontFamilyName), typeof(string),
-                typeof(UnifiedLyricsCanvasControl), new PropertyMetadata("Segoe UI", OnLayoutPropertyChanged));
-
-        public string FontFamilyName
+        public void Receive(UILyricsMessage message)
         {
-            get => (string)GetValue(FontFamilyNameProperty);
-            set => SetValue(FontFamilyNameProperty, value);
+            _cachedUILyrics = message.Lines;
+            _currentLineIndex = -1;
+            _currentTime = TimeSpan.Zero;
+            _lastExternalTime = TimeSpan.Zero;
+            _targetScrollY = 0;
+            _smoothedScrollY = 0;
+            _flingY = 0;
+            DestroyTimer();
+            InvalidateLayoutCache();
+            _canvas?.Invalidate();
         }
 
-        public static readonly DependencyProperty LyricsTextAlignmentProperty =
-            DependencyProperty.Register(nameof(LyricsTextAlignment), typeof(CanvasHorizontalAlignment),
-                typeof(UnifiedLyricsCanvasControl),
-                new PropertyMetadata(CanvasHorizontalAlignment.Left, OnLayoutPropertyChanged));
-
-        public CanvasHorizontalAlignment LyricsTextAlignment
+        public void Receive(LyricsSettingsSyncMessage message)
         {
-            get => (CanvasHorizontalAlignment)GetValue(LyricsTextAlignmentProperty);
-            set => SetValue(LyricsTextAlignmentProperty, value);
+            _cachedFontFamilyName = message.FontFamilyName;
+            _cachedLyricsTextAlignment = message.LyricsTextAlignment;
+            _cachedScrollSensitivity = message.ScrollSensitivity;
+            _cachedLyricsBlurAmount = message.LyricsBlurAmount / 2.0;
+            _cachedUnplayedOpacity = message.UnplayedOpacity;
+            _cachedTranslatedOpacity = message.TranslatedOpacity;
+            _cachedPlayingLineTopOffset = message.PlayingLineTopOffset;
+
+            bool isDark = message.IsDark;
+            if (_cachedIsDark != isDark)
+            {
+                _cachedIsDark = isDark;
+                UpdateColors(isDark);
+                _gradBrushDirty = true;
+                foreach (var rt in _clearLineCache) rt?.Dispose();
+                _clearLineCache = _lineLayoutCount > 0
+                    ? new CanvasRenderTarget?[_lineLayoutCount]
+                    : [];
+                _blurAlpha = _lineLayoutCount > 0
+                    ? new float[_lineLayoutCount]
+                    : [];
+                _cacheWindowLo = -1;
+                _cacheWindowHi = -1;
+            }
+            else
+            {
+                UpdateColors(isDark);
+            }
+
+            InvalidateLayoutCache();
+            AutoScrollToCurrentLine();
+            _canvas?.Invalidate();
         }
 
-        public static readonly DependencyProperty IsDarkProperty =
-            DependencyProperty.Register(nameof(IsDark), typeof(bool),
-                typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(false, OnIsDarkChanged));
+        #endregion
 
-        public bool IsDark
-        {
-            get => (bool)GetValue(IsDarkProperty);
-            set => SetValue(IsDarkProperty, value);
-        }
-
-        private static void OnIsDarkChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            if (d is not UnifiedLyricsCanvasControl c) return;
-            c.UpdateColors((bool)e.NewValue);
-            c._gradBrushDirty = true;
-            // 清晰 RT 颜色已过时，重建槽位数组（保留行数，内容置 null）
-            foreach (var rt in c._clearLineCache) rt?.Dispose();
-            c._clearLineCache = c._lineLayoutCount > 0
-                ? new CanvasRenderTarget?[c._lineLayoutCount]
-                : [];
-            c._blurAlpha = c._lineLayoutCount > 0
-                ? new float[c._lineLayoutCount]
-                : [];
-            c._cacheWindowLo = -1;
-            c._cacheWindowHi = -1;
-            c._canvas?.Invalidate();
-        }
-
-        public static readonly DependencyProperty AnimationSmoothnessProperty =
-            DependencyProperty.Register(nameof(AnimationSmoothness), typeof(double),
-                typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(0.65, OnAnimationSmoothnessChanged));
-
-        public double AnimationSmoothness
-        {
-            get => (double)GetValue(AnimationSmoothnessProperty);
-            set => SetValue(AnimationSmoothnessProperty, Math.Clamp(value, 0.0, 1.0));
-        }
-
-        private static void OnAnimationSmoothnessChanged(DependencyObject d,
-            DependencyPropertyChangedEventArgs e)
-        {
-            if (d is not UnifiedLyricsCanvasControl c) return;
-            c._rowCurveCount = 0;
-            c.RebuildAllRowCurves();
-            c._canvas?.Invalidate();
-        }
-
-        public static readonly DependencyProperty OffsetMsProperty =
-            DependencyProperty.Register(nameof(OffsetMs), typeof(double),
-                typeof(UnifiedLyricsCanvasControl),
-                new PropertyMetadata(0.0, (d, _) => (d as UnifiedLyricsCanvasControl)?._canvas?.Invalidate()));
-
-        public double OffsetMs
-        {
-            get => (double)GetValue(OffsetMsProperty);
-            set => SetValue(OffsetMsProperty, value);
-        }
+        // ═════════════════════════════════════════════════════════════════════
+        // 依赖属性（输出）
+        // ═════════════════════════════════════════════════════════════════════
 
         private static readonly DependencyProperty CurrentLineOffsetYProperty =
             DependencyProperty.Register(nameof(CurrentLineOffsetY), typeof(double),
@@ -478,83 +437,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             private set => SetValue(CurrentLineOffsetYProperty, value);
         }
 
-        public static readonly DependencyProperty ScrollSensitivityProperty =
-            DependencyProperty.Register(nameof(ScrollSensitivity), typeof(double),
-                typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(1.0));
-
-        public double ScrollSensitivity
-        {
-            get => (double)GetValue(ScrollSensitivityProperty);
-            set => SetValue(ScrollSensitivityProperty, Math.Clamp(value, 0.1, 10.0));
-        }
-
-        private static void OnLayoutPropertyChanged(DependencyObject d,
-            DependencyPropertyChangedEventArgs e)
-        {
-            if (d is not UnifiedLyricsCanvasControl c) return;
-            c.InvalidateLayoutCache();
-        }
-
-        public static readonly DependencyProperty LyricsBlurAmountProperty =
-            DependencyProperty.Register(nameof(LyricsBlurAmount), typeof(double),
-            typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(4.0,
-            (d, _) => (d as UnifiedLyricsCanvasControl)?._canvas?.Invalidate()));
-
-        public double LyricsBlurAmount
-        {
-            get => (double)GetValue(LyricsBlurAmountProperty);
-            set => SetValue(LyricsBlurAmountProperty, Math.Max(0.0, value));
-        }
-
-        public static readonly DependencyProperty TranslatedOpacityProperty =
-            DependencyProperty.Register(nameof(TranslatedOpacity), typeof(double),
-                typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(0.6, OnOpacityPropertyChanged));
-
-        public double TranslatedOpacity
-        {
-            get => (double)GetValue(TranslatedOpacityProperty);
-            set => SetValue(TranslatedOpacityProperty, Math.Clamp(value, 0.0, 1.0));
-        }
-
-        public static readonly DependencyProperty UnplayedOpacityProperty =
-            DependencyProperty.Register(nameof(UnplayedOpacity), typeof(double),
-                typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(0.5, OnOpacityPropertyChanged));
-
-        public double UnplayedOpacity
-        {
-            get => (double)GetValue(UnplayedOpacityProperty);
-            set => SetValue(UnplayedOpacityProperty, Math.Clamp(value, 0.0, 1.0));
-        }
-
-        public static readonly DependencyProperty PlayingLineTopOffsetProperty =
-            DependencyProperty.Register(nameof(PlayingLineTopOffset), typeof(double),
-                typeof(UnifiedLyricsCanvasControl), new PropertyMetadata(0.5, OnPlayingLineTopOffsetChanged));
-
-        public double PlayingLineTopOffset
-        {
-            get => (double)GetValue(PlayingLineTopOffsetProperty);
-            set => SetValue(PlayingLineTopOffsetProperty, Math.Clamp(value, 0.0, 1.0));
-        }
-
-        private static void OnOpacityPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            if (d is UnifiedLyricsCanvasControl c)
-            {
-                c.UpdateColors((bool)c.GetValue(IsDarkProperty));
-                c._canvas?.Invalidate();
-            }
-        }
-
-        private static void OnPlayingLineTopOffsetChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        {
-            if (d is UnifiedLyricsCanvasControl c)
-            {
-                c._cachedPlayingLineTopOffset = (double)e.NewValue;
-                c.AutoScrollToCurrentLine();
-                c._canvas?.Invalidate();
-            }
-        }
-
         // ═════════════════════════════════════════════════════════════════════
         // 输入：鼠标滚轮
         // ═════════════════════════════════════════════════════════════════════
@@ -562,7 +444,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private void OnPointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
             var pp = e.GetCurrentPoint(_canvas);
-            double delta = -(pp.Properties.MouseWheelDelta / 120.0) * WheelScrollPixels * ScrollSensitivity;
+            double delta = -(pp.Properties.MouseWheelDelta / 120.0) * WheelScrollPixels * _cachedScrollSensitivity;
             _targetScrollY = ClampScrollY(_targetScrollY + delta);
             _smoothedScrollY = _targetScrollY;
             _userScrolling = true;
@@ -666,9 +548,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void MatchLyricLine(TimeSpan position)
         {
-            var lyrics = UILyrics;
+            var lyrics = _cachedUILyrics;
             if (lyrics is null || lyrics.Count == 0) return;
-            var effectivePosition = position - TimeSpan.FromMilliseconds(OffsetMs);
+            var effectivePosition = position - TimeSpan.FromMilliseconds(_cachedOffsetMs);
             int matched = -1;
             for (int i = 0; i < lyrics.Count; i++)
             {
@@ -699,7 +581,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void UpdateTimerState()
         {
-            var lyrics = UILyrics;
+            var lyrics = _cachedUILyrics;
             bool shouldRun = _isPlaying && lyrics != null && lyrics.Count > 0;
             if (shouldRun)
             {
@@ -786,7 +668,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 ref readonly var ll = ref _lineLayouts[li];
                 if (tapY >= ll.OffsetY && tapY < ll.OffsetY + ll.Height)
                 {
-                    var lyrics = UILyrics;
+                    var lyrics = _cachedUILyrics;
                     if (lyrics != null && li < lyrics.Count)
                     {
                         _userScrolling = false;
@@ -823,7 +705,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void EnsureLayout(ICanvasResourceCreator creator, float availableWidth,float dpiScale)
         {
-            var lyrics = UILyrics;
+            var lyrics = _cachedUILyrics;
             if (lyrics is null || lyrics.Count == 0)
             {
                 _totalCanvasHeight = 0;
@@ -844,11 +726,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (_wordLayouts.Length < totalWords + 8) _wordLayouts = new WordLayout[totalWords + 32];
 
             float layoutWidth = Math.Max(1f, availableWidth - RenderPaddingH * 2f);
-            float fontSize = (float)Math.Round(LyricsFontSize / dpiScale);
+            float fontSize = (float)Math.Round(_cachedLyricsFontSize / dpiScale);
 
             using var lyricsFmtTmp = new CanvasTextFormat
             {
-                FontFamily = FontFamilyName,
+                FontFamily = _cachedFontFamilyName,
                 FontSize = fontSize,
                 FontWeight = new Windows.UI.Text.FontWeight { Weight = 700 },
                 WordWrapping = CanvasWordWrapping.WholeWord,
@@ -861,7 +743,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _rowCurveCount = 0;
 
             float cursorY = 0f;
-            var alignment = LyricsTextAlignment;
+            var alignment = _cachedLyricsTextAlignment;
 
             for (int li = 0; li < lineCount; li++)
             {
@@ -917,8 +799,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 {
                     using var transFmtTmp = new CanvasTextFormat
                     {
-                        FontFamily = FontFamilyName,
-                        FontSize = (float)Math.Round(0.75f * LyricsFontSize / dpiScale),
+                        FontFamily = _cachedFontFamilyName,
+                        FontSize = (float)Math.Round(0.75f * _cachedLyricsFontSize / dpiScale),
                         FontWeight = new Windows.UI.Text.FontWeight { Weight = 700 },
                         WordWrapping = CanvasWordWrapping.WholeWord,
                         HorizontalAlignment = CanvasHorizontalAlignment.Left,
@@ -1044,7 +926,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             if (li < 0 || li >= _lineLayoutCount) return;
             ref readonly var ll = ref _lineLayouts[li];
-            var lyrics = UILyrics;
+            var lyrics = _cachedUILyrics;
             if (lyrics is null || li >= lyrics.Count) return;
             var line = lyrics[li];
 
@@ -1145,7 +1027,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void RebuildAllRowCurves()
         {
-            var lyrics = UILyrics;
+            var lyrics = _cachedUILyrics;
             if (lyrics is null || _lineLayoutCount == 0) return;
 
             double smoothness = Math.Clamp(AnimationSmoothness, 0.0, 1.0);
@@ -1312,8 +1194,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private CanvasTextFormat GetLyricsFmt(float dpi)
         {
-            float sz = (float)Math.Round(LyricsFontSize * 96f / dpi);
-            string fam = FontFamilyName;
+            float sz = (float)Math.Round(_cachedLyricsFontSize * 96f / dpi);
+            string fam = _cachedFontFamilyName;
             if (_lyricsFmt is null || _cachedFontFamily != fam || _cachedLyricsFontSizeForFmt != sz)
             {
                 _lyricsFmt?.Dispose();
@@ -1333,9 +1215,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private CanvasTextFormat GetTransFmt(float dpi)
         {
-            float sz = (float)Math.Round(LyricsFontSize * 0.75f * 96f / dpi);
-            string fam = FontFamilyName;
-            var align = LyricsTextAlignment;
+            float sz = (float)Math.Round(_cachedLyricsFontSize * 0.75f * 96f / dpi);
+            string fam = _cachedFontFamilyName;
+            var align = _cachedLyricsTextAlignment;
             if (_transFmt is null || _cachedFontFamily != fam ||
                 _cachedTransFontSizeForFmt != sz || _cachedTransAlignmentForFmt != align)
             {
@@ -1357,8 +1239,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void UpdateColors(bool isDark)
         {
-            byte unplayedAlpha = (byte)(UnplayedOpacity * 255);
-            byte translateAlpha = (byte)(TranslatedOpacity * 255);
+            byte unplayedAlpha = (byte)(_cachedUnplayedOpacity * 255);
+            byte translateAlpha = (byte)(_cachedTranslatedOpacity * 255);
             if (isDark)
             {
                 _dimColor = Color.FromArgb(unplayedAlpha, 255, 255, 255);
@@ -1399,7 +1281,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             var ds = args.DrawingSession;
             float dpi = ds.Dpi;
             float scale = dpi / 96f;
-            var lyrics = UILyrics;
+            var lyrics = _cachedUILyrics;
             if (lyrics is null || lyrics.Count == 0) return;
 
             float w = (float)sender.ActualWidth;
@@ -1465,7 +1347,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             // ── 【优化】更新滑动窗口 ─────────────────────────────────────────
             if (visLo <= visHi)
                 UpdateCacheWindow(sender, w, visLo, visHi, dpi);
-            float blurAmount = (float)LyricsBlurAmount;
+            float blurAmount = (float)_cachedLyricsBlurAmount;
             // ── 窗口外行的 blurAlpha 直接跳变，不进绘制循环 ──────────────────
             for (int li = 0; li < visLo; li++)
             {
@@ -1501,7 +1383,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             var lyricsFmt = GetLyricsFmt(dpi);
             var transFmt = GetTransFmt(dpi);
             float layoutWidth = Math.Max(1f, w - RenderPaddingH * 2f);
-            var effectiveTime = _currentTime - TimeSpan.FromMilliseconds(OffsetMs);
+            var effectiveTime = _currentTime - TimeSpan.FromMilliseconds(_cachedOffsetMs);
 
             // ── 只循环可见行 [visLo, visHi] ──────────────────────────────────
             for (int li = visLo; li <= visHi; li++)
@@ -1516,7 +1398,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 if (li == _hoveredLineIndex)
                 {
                     byte hoverAlpha = 30;
-                    var overlayColor = IsDark
+                    var overlayColor = _cachedIsDark
                         ? Color.FromArgb(hoverAlpha, 255, 255, 255)
                         : Color.FromArgb(hoverAlpha, 0, 0, 0);
                     ds.FillRoundedRectangle(
