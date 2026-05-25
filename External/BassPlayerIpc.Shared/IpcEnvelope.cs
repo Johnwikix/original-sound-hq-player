@@ -11,10 +11,11 @@ public static class IpcEnvelope
         MemoryMappedViewAccessor accessor,
         long offset,
         CommandId commandId,
+        byte sequenceId,
         scoped ReadOnlySpan<byte> payload,
         int maxSize = IpcConstants.MaxRequestSize)
     {
-        WriteEnvelope(accessor, offset, (short)commandId, payload, maxSize);
+        WriteEnvelope(accessor, offset, (short)commandId, sequenceId, payload, maxSize);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -22,10 +23,11 @@ public static class IpcEnvelope
         MemoryMappedViewAccessor accessor,
         long offset,
         MessageTypeId typeId,
+        byte sequenceId,
         scoped ReadOnlySpan<byte> payload,
         int maxSize = IpcConstants.MaxResponseSize)
     {
-        WriteEnvelope(accessor, offset, (short)typeId, payload, maxSize);
+        WriteEnvelope(accessor, offset, (short)typeId, sequenceId, payload, maxSize);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -33,6 +35,7 @@ public static class IpcEnvelope
         MemoryMappedViewAccessor accessor,
         long offset,
         short typeId,
+        byte sequenceId,
         scoped ReadOnlySpan<byte> payload,
         int maxSize)
     {
@@ -47,6 +50,7 @@ public static class IpcEnvelope
 
         accessor.Write(offset, typeId);
         accessor.Write(offset + 2, (short)payloadLen);
+        accessor.Write(offset + 4, sequenceId);
 
         if (payloadLen > 0)
         {
@@ -79,6 +83,12 @@ public static class IpcEnvelope
     public static short ReadPayloadLength(MemoryMappedViewAccessor accessor, long offset)
     {
         return accessor.ReadInt16(offset + 2);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static byte ReadSequenceId(MemoryMappedViewAccessor accessor, long offset)
+    {
+        return accessor.ReadByte(offset + 4);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

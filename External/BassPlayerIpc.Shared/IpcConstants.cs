@@ -13,7 +13,7 @@ public static class IpcConstants
     public const int MaxResponseSize = 512;
     public const int MaxNotificationSize = 512;
 
-    public const int EnvelopeHeaderSize = 4; // int16 + int16
+    public const int EnvelopeHeaderSize = 5; // int16 + int16 + byte(seq)
 
     public static readonly long MmfSize = MaxRequestSize + MaxResponseSize + MaxNotificationSize;
     public const long RequestBufferOffset = 0;

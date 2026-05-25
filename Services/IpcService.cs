@@ -29,6 +29,7 @@ namespace WinUIMusicPlayer.Services
 
         private readonly SemaphoreSlim _sendLock = new(1, 1);
         private bool _isConnected = false;
+        private byte _seqCounter;
 
         private CancellationTokenSource? _notificationCts;
         private Task? _notificationListenerTask;
@@ -125,7 +126,7 @@ namespace WinUIMusicPlayer.Services
         }
 
         public async Task<(MessageTypeId Type, int ResponseLen)> SendWithResponseAsync(
-            CommandId commandId, ReadOnlyMemory<byte> payload, byte[] responseBuffer)
+            CommandId commandId, ReadOnlyMemory<byte> payload, byte[] responseBuffer, int timeoutMs = 1000)
         {
             if (!_isConnected)
             {
@@ -136,12 +137,16 @@ namespace WinUIMusicPlayer.Services
             await _sendLock.WaitAsync();
             try
             {
-                IpcEnvelope.WriteCommand(_accessor!, RequestBufferOffset, commandId, payload.Span);
+                byte seq = unchecked(++_seqCounter);
+                IpcEnvelope.WriteCommand(_accessor!, RequestBufferOffset, commandId, seq, payload.Span);
                 try { _requestReadySemaphore!.Release(); }
                 catch (SemaphoreFullException) { }
 
-                bool responded = await Task.Run(() => _responseReadySemaphore!.WaitOne(1000));
+                bool responded = await Task.Run(() => _responseReadySemaphore!.WaitOne(timeoutMs));
                 if (!responded) return (MessageTypeId.Failed, 0);
+
+                byte respSeq = IpcEnvelope.ReadSequenceId(_accessor!, ResponseBufferOffset);
+                if (respSeq != seq) return (MessageTypeId.Failed, 0);
 
                 var typeId = IpcEnvelope.ReadMessageTypeId(_accessor!, ResponseBufferOffset);
                 int respLen = IpcEnvelope.ReadPayload(
@@ -369,7 +374,7 @@ namespace WinUIMusicPlayer.Services
                         BinarySerializer.WriteGetDevicesRequest(reqBuf, req);
                         var (resType, respLen) = await SendWithResponseAsync(commandId,
                             new ReadOnlyMemory<byte>(reqBuf, 0, BinarySerializer.GetDevicesRequestSize),
-                            respBuf);
+                            respBuf, timeoutMs: 5000);
                         if (resType != expectedResponse) break;
 
                         var resp = respBuf.AsSpan(0, respLen);
