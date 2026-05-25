@@ -85,7 +85,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private double _cachedLyricsFontSize = 36.0;
         private string _cachedFontFamilyName = "Segoe UI";
         private CanvasHorizontalAlignment _cachedLyricsTextAlignment = CanvasHorizontalAlignment.Left;
-        private TimeSpan _cachedCurrentPlayingTime = TimeSpan.Zero;
+        private double _cachedCurrentPlayingTimeMs = 0.0;
         private double _cachedOffsetMs;
         private bool _cachedIsPlaying;
         private double _cachedLyricsBlurAmount = 4.0;
@@ -209,7 +209,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         public void Receive(CurrentPlayingTimeMessage message)
         {
-            _cachedCurrentPlayingTime = TimeSpan.FromMilliseconds(message.TotalMilliseconds);
+            _cachedCurrentPlayingTimeMs = message.TotalMilliseconds;
         }
 
         public void Receive(IsPlayingMessage message)
@@ -378,7 +378,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 var lines = _renderLines;
             if (lines.Count == 0) return;
 
-            double externalTimeMs = _cachedCurrentPlayingTime.TotalMilliseconds;
+            double externalTimeMs = _cachedCurrentPlayingTimeMs;
 
             bool isPrimaryPlayingLineChanged = false;
             double currentTimeMs = 0;
