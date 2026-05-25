@@ -225,6 +225,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         public void Receive(LyricsFontSizeMessage message)
         {
             _cachedLyricsFontSize = message.Value;
+            _layoutDirty = true;
+            _canvas?.Invalidate();
         }
 
         public void Receive(UILyricsMessage message)
@@ -251,8 +253,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _cachedScrollEasingMode = message.ScrollEasingMode;
             _cachedPlayingLineTopOffset = message.PlayingLineTopOffset;
             _cachedTargetFrameRate = message.TargetFrameRate;
-            if (_canvas != null)
-                _canvas.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / message.TargetFrameRate);
+            _canvas?.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / message.TargetFrameRate);
 
             bool isDark = message.IsDark;
             if (isDark)
