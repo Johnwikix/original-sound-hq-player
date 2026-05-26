@@ -1,13 +1,16 @@
 ﻿using ATL;
 using ManagedBass;
 using ManagedBass.Enc;
-using System;
-using System.IO;
 using Microsoft.Extensions.Logging;
-
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Threading.Tasks;
 using WinUIMusicPlayer;
 using WinUIMusicPlayer.Manager;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Reader;
+using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.AudioConverters
 {
@@ -252,6 +255,7 @@ namespace WinUIMusicPlayer.AudioConverters
         {
             try
             {
+                byte[] pic = ToolUtils.GetRawImage(music).Result;
                 Track newFile = new Track(outputPath)
                 {
                     Title = music.Title,
@@ -261,6 +265,13 @@ namespace WinUIMusicPlayer.AudioConverters
                     TrackNumber = music.TrackNumber,
                     DiscNumber = music.DiskNumber
                 };
+                newFile.EmbeddedPictures.Add(PictureInfo.fromBinaryData(pic));
+                string[] lines = music.Lyrics.Split([Environment.NewLine], StringSplitOptions.None);
+                newFile.Lyrics = new List<LyricsInfo>(lines.Length);
+                foreach (string line in lines)
+                {
+                    newFile.Lyrics.Add(new LyricsInfo { UnsynchronizedLyrics = line });
+                }
                 newFile.Save();
             }
             catch (Exception ex)

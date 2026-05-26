@@ -139,7 +139,6 @@
     <PackageReference Include="System.Data.SqlClient" Version="4.9.1" />
     <PackageReference Include="System.IO.Hashing" Version="10.0.7" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.7" />
-    <PackageReference Include="TagLibSharp" Version="2.3.0" />
     <PackageReference Include="WinUIEx" Version="2.9.0" />
     <PackageReference Include="z440.atl.core" Version="7.14.0" />
     <PackageReference Include="ZLinq" Version="1.5.6" />
@@ -270,7 +269,6 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-	  <TrimmerRootAssembly Include="TagLibSharp" />
 	  <TrimmerRootAssembly Include="SQLite-net" />
 	  <TrimmerRootAssembly Include="SQLitePCLRaw.core" />
 	  <TrimmerRootAssembly Include="Lyricify.Lyrics.Helper" />

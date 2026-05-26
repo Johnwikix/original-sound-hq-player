@@ -1,3 +1,4 @@
+using ATL;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI;
@@ -6,21 +7,18 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.Windows.Storage.Pickers;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using TagLib;
 using Windows.Storage;
 using WinUIEx;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.WebService;
-using ZLinq;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -213,28 +211,30 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async Task UpdateFile(DateTime updateTime)
         {
-            using (TagLib.File audioFile = TagLib.File.Create(MusicDetail.Path))
+            try
             {
-                Tag tag = audioFile.Tag;
-                tag.Pictures = Array.Empty<IPicture>();
-                byte[] albumArtData = AlbumCoverData;
-                Picture albumArt = new Picture
+                Track theTrack = new(MusicDetail.Path);
+                theTrack.Title = MusicDetail.Title;
+                theTrack.Album = MusicDetail.Album;
+                theTrack.Artist = MusicDetail.Author;
+                theTrack.TrackNumber = MusicDetail.TrackNumber;
+                theTrack.DiscNumber = MusicDetail.DiskNumber;
+                theTrack.Year = MusicDetail.Year;
+                theTrack.EmbeddedPictures.Clear();
+                theTrack.EmbeddedPictures.Add(PictureInfo.fromBinaryData(AlbumCoverData));
+                string[] lines = MusicDetail.Lyrics.Split([Environment.NewLine], StringSplitOptions.None);
+                theTrack.Lyrics = new List<LyricsInfo>(lines.Length);
+                foreach (string line in lines)
                 {
-                    Type = PictureType.FrontCover,
-                    MimeType = System.Net.Mime.MediaTypeNames.Image.Jpeg,
-                    Description = "Album Art",
-                    Data = new ByteVector(albumArtData)
-                };
-                tag.Pictures = new IPicture[] { albumArt };
-                tag.Title = MusicDetail.Title;
-                tag.Album = MusicDetail.Album;
-                tag.Performers = new string[] { MusicDetail.Author };
-                tag.Track = (uint)MusicDetail.TrackNumber;
-                tag.Disc = (uint)MusicDetail.DiskNumber;
-                tag.Year = (uint)MusicDetail.Year;
-                tag.Lyrics = MusicDetail.Lyrics;
+                    theTrack.Lyrics.Add(new LyricsInfo { UnsynchronizedLyrics = line });
+                }
                 IsLoading = true;
-                await Task.Run(() => audioFile.Save());
+                await Task.Run(() => theTrack.Save());
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"UpdateFile 更新文件失败: {ex.Message}");
+                NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
             MusicDetail.UpdateTime = updateTime;
             await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(MusicDetail);

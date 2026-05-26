@@ -19,14 +19,11 @@ using System.Globalization;
 using System.IO;
 using System.IO.Hashing;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using TagLib;
 using Windows.Storage;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Behaviors;
@@ -166,46 +163,7 @@ namespace WinUIMusicPlayer.Utils
                     }
                 });
             }
-        }
-
-        public static async Task<BitmapImage> ReadBitmapImageAsync(IPicture picture, int maxSize = 0)
-        {
-            byte[] imageData = picture.Data.Data.AsValueEnumerable().ToArray();
-            if (picture?.Data?.Data is null)
-            {
-                return null;
-            }
-            if (!IsValidImageData(imageData))
-            {
-                return null;
-            }
-            var tcs = new TaskCompletionSource<BitmapImage>();
-            App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
-            {
-                try
-                {
-                    using (var ms = new MemoryStream(imageData))
-                    {
-                        var bitmapImage = new BitmapImage { DecodePixelWidth = maxSize };
-                        await bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
-                        tcs.SetResult(bitmapImage);
-                    }
-                }
-                catch (COMException ex)
-                {
-                    tcs.SetException(new InvalidOperationException("图片格式无效或已损坏", ex));
-                }
-                catch (TaskCanceledException)
-                {
-                    tcs.SetCanceled();
-                }
-                catch (Exception ex)
-                {
-                    tcs.SetException(ex);
-                }
-            });
-            return await tcs.Task;
-        }        
+        }         
 
         private static bool IsValidImageData(byte[] data)
         {

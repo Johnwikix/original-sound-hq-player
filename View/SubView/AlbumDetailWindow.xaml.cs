@@ -1,3 +1,4 @@
+using ATL;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI;
@@ -10,12 +11,10 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
-using TagLib;
 using Windows.Storage;
 using WinUIEx;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
@@ -170,30 +169,18 @@ namespace WinUIMusicPlayer.View.SubView
         {
             LoadingGrid.Visibility = Visibility.Visible;
             AlbumDetail.Visibility = Visibility.Collapsed;
-            // �����ظ�д���־λ
             bool isResultAssigned = false;
             foreach (var music in AlbumMusics)
             {
-                using (TagLib.File audioFile = TagLib.File.Create(music.Path))
+                Track theTrack = new(music.Path);
+                theTrack.Album = music.Album;
+                theTrack.Year = music.Year;
+                if (albumCoverData is not null)
                 {
-                    Tag tag = audioFile.Tag;
-                    tag.Pictures = [];
-                    if (albumCoverData is not null)
-                    {
-                        byte[] albumArtData = albumCoverData;
-                        Picture albumArt = new()
-                        {
-                            Type = PictureType.FrontCover,
-                            MimeType = System.Net.Mime.MediaTypeNames.Image.Jpeg,
-                            Description = "Album Art",
-                            Data = [.. albumArtData]
-                        };
-                        tag.Pictures = [albumArt];
-                    }
-                    tag.Album = music.Album;
-                    tag.Year = (uint)music.Year;
-                    await Task.Run(() => audioFile.Save());
-                }
+                    theTrack.EmbeddedPictures.Clear();
+                    theTrack.EmbeddedPictures.Add(PictureInfo.fromBinaryData(albumCoverData));
+                }                
+                await Task.Run(() => theTrack.Save());
                 await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
                 if (!isResultAssigned)
                 {
@@ -204,7 +191,6 @@ namespace WinUIMusicPlayer.View.SubView
                     isResultAssigned = true;
                 }
             }
-            //App.Services.GetRequiredService<AppViewModel>().RefreshDataSource();
         }
 
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)
@@ -224,14 +210,6 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void GetImageFromNet_Click(object sender, RoutedEventArgs e)
         {
-            //if (string.IsNullOrEmpty(AppSettings.LrcAPISource) || AppSettings.LrcAPISource == "https://api.lrc.cx")
-            //{
-            //    albumCoverData = await CloudMusicSearchHelper.GetSongAlbum(musicDetail.Title, musicDetail.Album, musicDetail.Author);
-            //}
-            //else
-            //{
-            //    albumCoverData = await LrcService.GetCoverImageAsync(musicDetail.Title, musicDetail.Album, musicDetail.Author);
-            //}
             albumCoverData = await App.Services.GetRequiredService<LrcService>().GetMixedCoverImageAsync(MusicDetail);
             if (albumCoverData is not null)
             {
@@ -248,12 +226,10 @@ namespace WinUIMusicPlayer.View.SubView
             try
             {
                 var openPicker = new Microsoft.Windows.Storage.Pickers.FileOpenPicker(App.MainWindow.AppWindow.Id);
-                // ����m3u8�ļ�ɸѡ��
                 openPicker.FileTypeFilter.Add(".jpg");
                 openPicker.FileTypeFilter.Add(".jpeg");
                 openPicker.FileTypeFilter.Add(".png");
                 openPicker.ViewMode = PickerViewMode.List;
-                // ��ʾ�ļ�ѡ��������ȡ���
                 var filePickerResult = await openPicker.PickSingleFileAsync();
                 var file = await StorageFile.GetFileFromPathAsync(filePickerResult.Path);
 

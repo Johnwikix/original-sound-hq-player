@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using TagLib;
 using Windows.Storage;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
