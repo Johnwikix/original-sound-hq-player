@@ -38,7 +38,7 @@ namespace WinUIMusicPlayer.View
             ViewModel.SetCurrentPage(this);
             DataContext = this;
             MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
-            this.NavigationCacheMode = NavigationCacheMode.Required;
+            this.NavigationCacheMode = NavigationCacheMode.Enabled;
         }
 
         private async void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
