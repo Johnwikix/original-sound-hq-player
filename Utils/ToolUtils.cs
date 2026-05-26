@@ -1,12 +1,11 @@
 ﻿using ATL;
-using DffTagReader;
-using Lyricify.Lyrics.Providers.Web.SodaMusic;
+using Lyricify.Lyrics.Providers.Web.Netease;
 using ManagedBass;
 using ManagedBass.Dsd;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.International.Converters.PinYinConverter;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.VisualBasic.FileIO;
@@ -27,7 +26,6 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using TagLib;
 using Windows.Storage;
 using Windows.Storage.Streams;
@@ -393,6 +391,7 @@ namespace WinUIMusicPlayer.Utils
             BassManager.Initialize();
             int stream = 0;
             AudioFileInfo fileInfo = new();
+            Track track = new(file.Path);
             try
             {
                 if (Path.GetExtension(file.Path) == ".dff")
@@ -409,34 +408,27 @@ namespace WinUIMusicPlayer.Utils
                     fileInfo.BitRate = (int)bitrate;
                     fileInfo.SampleRate = info.Frequency * 16;
                     fileInfo.Duration = TimeSpan.FromSeconds(totalSeconds);
-                    var dict = DffId3v2Parser.ReadId3v2TagsFromDff(file.Path, true);
-                    fileInfo.Title = dict?.TextTags["TIT2"] ?? Path.GetFileNameWithoutExtension(file.Path);
-                    fileInfo.Album = dict?.TextTags["TALB"] ?? "未知专辑";
-                    fileInfo.Artist = dict?.TextTags["TPE1"] ?? "未知艺术家";
-                    fileInfo.Year = int.TryParse(dict?.TextTags["TYER"], out int year) ? year : 0;
-                    fileInfo.TrackNumber = int.TryParse(dict?.TextTags["TRCK"], out int track) ? track : 0;
                 }
                 else
                 {
                     stream = Bass.CreateStream(file.Path, 0, 0, BassFlags.Default | BassFlags.AsyncFile);
                     Bass.ChannelGetInfo(stream, out ChannelInfo info);
-                    Track track = new(file.Path);
-                    fileInfo.Title = string.IsNullOrEmpty(track?.Title) ? Path.GetFileNameWithoutExtension(file.Path) : track.Title;
-                    fileInfo.Album = string.IsNullOrEmpty(track?.Album) ? "未知专辑" : track.Album;
-                    fileInfo.Artist = string.IsNullOrEmpty(track?.Artist) ? "未知艺术家" : track.Artist;
-                    fileInfo.Duration = (track?.Duration ?? 0) != 0
-                                        ? TimeSpan.FromSeconds(track.Duration) : TimeSpan.FromSeconds(Bass.ChannelBytes2Seconds(stream, Bass.ChannelGetLength(stream)));
                     fileInfo.SampleRate = (int)(track?.SampleRate ?? info.Frequency);
                     fileInfo.ChannelCount = info.Channels;
                     fileInfo.BitDepth = info.OriginalResolution;
-                    fileInfo.BitRate = track?.Bitrate ?? 0;
-                    fileInfo.Year = track?.Year ?? 0;
-                    fileInfo.TrackNumber = track?.TrackNumber ?? 0;
-                    fileInfo.DiskNumber = track?.DiscNumber ?? 0;
-                    fileInfo.Lyrics = track?.Lyrics?.AsValueEnumerable().Count() > 0
-                        ? ParseLyrics(track.Lyrics[0].SynchronizedLyrics)
-                        : string.Empty;
+                    fileInfo.Duration = (track?.Duration ?? 0) != 0
+                                   ? TimeSpan.FromSeconds(track?.Duration ?? 0) : TimeSpan.FromSeconds(Bass.ChannelBytes2Seconds(stream, Bass.ChannelGetLength(stream)));
                 }
+                fileInfo.Title = string.IsNullOrEmpty(track?.Title) ? Path.GetFileNameWithoutExtension(file.Path) : track.Title;
+                fileInfo.Album = string.IsNullOrEmpty(track?.Album) ? "未知专辑" : track.Album;
+                fileInfo.Artist = string.IsNullOrEmpty(track?.Artist) ? "未知艺术家" : track.Artist; 
+                fileInfo.BitRate = track?.Bitrate ?? 0;
+                fileInfo.Year = track?.Year ?? 0;
+                fileInfo.TrackNumber = track?.TrackNumber ?? 0;
+                fileInfo.DiskNumber = track?.DiscNumber ?? 0;
+                fileInfo.Lyrics = track?.Lyrics?.AsValueEnumerable().Count() > 0
+                    ? ParseLyrics(track.Lyrics[0].SynchronizedLyrics)
+                    : string.Empty;
                 return fileInfo;
             }
             catch (Exception ex)
