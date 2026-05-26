@@ -55,6 +55,7 @@
                 <Button
                     x:Name="CancelPlayingDetailButton"
                     Margin="10,0,0,0"
+                    Padding="10,8"
                     Background="Transparent"
                     BorderBrush="Transparent"
                     BorderThickness="0"
@@ -67,6 +68,7 @@
                 </Button>
                 <Button
                     Margin="0"
+                    Padding="10,8"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     Background="Transparent"
@@ -87,6 +89,7 @@
                 </Button>
                 <Button
                     Margin="0"
+                    Padding="10,8"
                     HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     Background="Transparent"
@@ -153,7 +156,6 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
@@ -265,8 +267,13 @@
                             Foreground="Red"
                             Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
                     </Button>
-                    <StackPanel Grid.Row="1" Grid.Column="1">
+                    <Grid Grid.Row="1" Grid.Column="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
                         <Button
+                            Grid.Row="0"
                             Margin="0"
                             VerticalAlignment="Center"
                             Background="Transparent"
@@ -296,6 +303,7 @@
                             </ToolTipService.ToolTip>
                         </Button>
                         <Button
+                            Grid.Row="1"
                             Margin="0"
                             VerticalAlignment="Center"
                             Background="Transparent"
@@ -312,7 +320,7 @@
                                 <ToolTip x:Uid="LyricsTimeOffset" />
                             </ToolTipService.ToolTip>
                         </Button>
-                    </StackPanel>
+                    </Grid>
                 </Grid>
                 <StackPanel
                     Grid.Row="3"

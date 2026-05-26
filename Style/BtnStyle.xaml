@@ -163,15 +163,13 @@
         <Setter Property="BorderBrush" Value="{ThemeResource AppBarButtonBorderBrush}" />
         <Setter Property="CornerRadius" Value="{ThemeResource ControlCornerRadius}" />
         <Setter Property="Foreground" Value="{ThemeResource AppBarButtonForeground}" />
-        <Setter Property="Height" Value="37" />
-        <Setter Property="Padding" Value="0" />
+        <Setter Property="Padding" Value="8,5" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Grid
                         x:Name="Root"
-                        MinWidth="{TemplateBinding MinWidth}"
-                        MaxWidth="{TemplateBinding MaxWidth}"
+                        Padding="{TemplateBinding Padding}"
                         Background="{TemplateBinding Background}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}"
@@ -213,7 +211,6 @@
                 </ControlTemplate>
             </Setter.Value>
         </Setter>
-        <Setter Property="Width" Value="37" />
         <Setter Property="animations:FluentAnimation.PointerOverOffset" Value="-1" />
     </Style>
 
