@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 
 namespace WinUIMusicPlayer.Reader;
+
 public static class AudioCoverReader
 {
     private const int MaxCoverBytes = 30 * 1024 * 1024;
@@ -67,8 +68,18 @@ public static class AudioCoverReader
                 ? DecodeSynchsafe(frameBuf[4], frameBuf[5], frameBuf[6], frameBuf[7])
                 : BE32(frameBuf[4..]);
 
+            ushort frameFlags = (ushort)(frameBuf[8] << 8 | frameBuf[9]);
+            bool hasDataLengthIndicator = ver == 4 && (frameFlags & 0x0001) != 0;
+
             if (frameId == "APIC")
+            {
+                if (hasDataLengthIndicator)
+                {
+                    if (!Skip(s, 4)) return Array.Empty<byte>();
+                    frameSize -= 4;
+                }
                 return ReadApicFrame(s, frameSize);
+            }
 
             if (!Skip(s, frameSize)) break;
         }
@@ -99,9 +110,9 @@ public static class AudioCoverReader
         consumed++;
 
         // 跳过 description
+        Span<byte> two = stackalloc byte[2];
         if (enc is 1 or 2)
         {
-            Span<byte> two = stackalloc byte[2];
             while (consumed + 2 <= size)
             {
                 if (!ReadExact(s, two)) return Array.Empty<byte>();
@@ -260,6 +271,7 @@ public static class AudioCoverReader
         bool identSkipped = false;
         int pageCount = 0;
 
+        Span<byte> segtab = stackalloc byte[255];
         while (pageCount++ < 2048) // 封面大图可能跨几百页，放宽限制
         {
             if (!ReadExact(s, hdr)) return null;
@@ -269,11 +281,11 @@ public static class AudioCoverReader
             byte headerType = hdr[5];
             byte nsegs = hdr[26];
 
-            Span<byte> segtab = stackalloc byte[nsegs];
+            if (!ReadExact(s, segtab[..nsegs])) return null;
             if (!ReadExact(s, segtab)) return null;
 
             int pageDataLen = 0;
-            foreach (byte b in segtab) pageDataLen += b;
+            foreach (byte b in segtab[..nsegs]) pageDataLen += b;
 
             if ((headerType & 0x02) != 0 && !identSkipped)
             {
@@ -399,6 +411,7 @@ public static class AudioCoverReader
         if (isMeta) { if (!Skip(s, 4)) return false; }
 
         Span<byte> hdr = stackalloc byte[8];
+        Span<byte> ext = stackalloc byte[8];
         while (s.Position + 8 <= end)
         {
             if (!ReadExact(s, hdr)) return false;
@@ -410,7 +423,6 @@ public static class AudioCoverReader
 
             if (boxSize == 1) // 64-bit extended size
             {
-                Span<byte> ext = stackalloc byte[8];
                 if (!ReadExact(s, ext)) return false;
                 boxSize = (long)BinaryPrimitives.ReadUInt64BigEndian(ext);
                 dataStart = s.Position;
@@ -499,6 +511,7 @@ public static class AudioCoverReader
 
         // 遍历 items
         Span<byte> itemHdr = stackalloc byte[8];
+        Span<byte> oneByte = stackalloc byte[1];
         for (int i = 0; i < itemCount; i++)
         {
             if (!ReadExact(s, itemHdr)) break;
@@ -507,7 +520,6 @@ public static class AudioCoverReader
 
             // 读 key（null 终止 ASCII，通常很短）
             using var keyBuf = new MemoryStream(32);
-            Span<byte> oneByte = stackalloc byte[1];
             while (true)
             {
                 if (!ReadExact(s, oneByte)) return Array.Empty<byte>();
