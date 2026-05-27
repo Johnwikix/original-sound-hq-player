@@ -164,7 +164,8 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static async Task SaveMetaData(Music music,string filePath ,byte[] pic) {
+        public static void SaveMetaData(Music music,string filePath ,byte[] pic) {
+            Settings.FileBufferSize = 1024 * 256;
             Track theTrack = new(filePath)
             {
                 Title = music.Title,
@@ -177,12 +178,15 @@ namespace WinUIMusicPlayer.Utils
             theTrack.EmbeddedPictures.Clear();
             theTrack.EmbeddedPictures.Add(PictureInfo.fromBinaryData(pic));
             string[] lines = music.Lyrics.Split([Environment.NewLine], StringSplitOptions.None);
+            if (lines.Length == 0) {
+                lines = music.Krc.Split([Environment.NewLine], StringSplitOptions.None);
+            }           
             theTrack.Lyrics = new List<LyricsInfo>(lines.Length);
             foreach (string line in lines)
             {
                 theTrack.Lyrics.Add(new LyricsInfo { UnsynchronizedLyrics = line });
             }
-            await Task.Run(() => theTrack.Save());
+            theTrack.Save();
         }
 
         public static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
@@ -255,13 +259,21 @@ namespace WinUIMusicPlayer.Utils
                 if (FastReadExtensions.Contains(music.Extension))
                 {
                     picture = AudioCoverReader.ReadCover(music.Path);
+                    if(picture is null || picture.Length == 0)
+                    {
+                        Track track = new(music.Path);
+                        if (track?.EmbeddedPictures is not null && track?.EmbeddedPictures.Count > 0)
+                        {
+                            picture = track.EmbeddedPictures.AsValueEnumerable().FirstOrDefault()?.PictureData;
+                        }
+                    }
                 }
                 else
                 {
                     Track track = new(music.Path);
                     if (track?.EmbeddedPictures is not null && track?.EmbeddedPictures.Count > 0)
                     {
-                        picture = track.EmbeddedPictures[0].PictureData;
+                        picture = picture = track.EmbeddedPictures.AsValueEnumerable().FirstOrDefault()?.PictureData;
                     }
                 }
                 if (picture is null || picture.Length == 0)

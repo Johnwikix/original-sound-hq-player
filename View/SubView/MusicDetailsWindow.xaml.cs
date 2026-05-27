@@ -141,10 +141,10 @@ namespace WinUIMusicPlayer.View.SubView
             themeStyleHelper.SetAppTheme();
         }
 
-        private async void InitalizeData(Music music)
+        private void InitalizeData(Music music)
         {
             MusicDetail = music;  
-            AlbumCoverData = await ToolUtils.GetRawImage(music, true);
+            AlbumCoverData = ToolUtils.GetRawImage(music, true).Result;
             DispatcherQueue.TryEnqueue(async () => {
                 AlbumCoverBitmap = await ToolUtils.ConvertByteArrayToBitmapImage(AlbumCoverData);
             });
@@ -214,7 +214,7 @@ namespace WinUIMusicPlayer.View.SubView
             try
             {
                 IsLoading = true;
-                await ToolUtils.SaveMetaData(MusicDetail, MusicDetail.Path, AlbumCoverData);                
+                ToolUtils.SaveMetaData(MusicDetail, MusicDetail.Path, AlbumCoverData);
             }
             catch (Exception ex)
             {
