@@ -34,6 +34,10 @@ namespace WinUIMusicPlayer.WebService
         {
             try
             {
+                if(AppData.UnknownAlbums.Contains(music.Album))
+                {
+                    return null;
+                }
                 var imageBytes = await GetCoverImageAsync(music, Searchers.Netease, cancellationToken);
                 if (imageBytes is null || imageBytes.Length == 0)
                 {
