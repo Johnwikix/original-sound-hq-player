@@ -42,7 +42,7 @@
 | [WinUIEx](https://github.com/dotMorten/WinUIEx)                                                          | 扩展 WinUI 窗口功能                   | MIT                |
 | [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet)                                      | MVVM 框架                            | MIT                |
 | [DevWinUI](https://github.com/ghost1372/DevWinUI) | WinUI 扩展组件                       | MIT                |
-| [atldotnet](https://github.com/Zeugma440/atldotnet) | 读取并处理多种音频格式的元数据        | LGPL-2.1/MIT       |
+| [atldotnet](https://github.com/Zeugma440/atldotnet) | 读取并处理多种音频格式的元数据        | MIT				   |
 | [BASS](https://www.un4seen.com/)和[ManagedBass](https://github.com/ManagedBass/ManagedBass)              | 用于音乐播放的音频库                 | non-commercial use |
 | [Lyricify.Lyrics.Helper](https://github.com/WXRIW/Lyricify-Lyrics-Helper) | 歌词搜索与解析                       | MIT                |
 | [Isolation](https://github.com/Storyteller-Studios/Isolation) | 着色器流体背景 | MIT |

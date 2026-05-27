@@ -1,14 +1,11 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
-using CommunityToolkit.Mvvm.ComponentModel;
-using System;
-using System.Collections.ObjectModel;
-using System.Linq;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
+using System.Collections.Generic;
 
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 {
     public partial class LyricLine : ObservableObject
     {
-        public ObservableCollection<LyricWord> Words { get => field; set => SetProperty(ref field, value); } = [];
+        public List<LyricWord> Words { get => field; set => SetProperty(ref field, value); } = [];
         public string TransLateText
         {
             get => field;
