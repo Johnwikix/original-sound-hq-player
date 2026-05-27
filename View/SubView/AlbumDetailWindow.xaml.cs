@@ -44,7 +44,7 @@ namespace WinUIMusicPlayer.View.SubView
                 }
             }
         }
-        public BitmapImage AlbumCoverBitmap
+        public BitmapImage? AlbumCoverBitmap
         {
             get;
             set
@@ -59,7 +59,7 @@ namespace WinUIMusicPlayer.View.SubView
         private List<Music> AlbumMusics {get;set;}
         //public EventHandler<Music> AlbumDetailChanged;
         private NotificationService NotificationService { get; set;  }
-        private byte[] albumCoverData = null;
+        private byte[]? albumCoverData = null;
         private nint hwnd;
         private ThemeStyleHelper themeStyleHelper;
 

@@ -213,23 +213,8 @@ namespace WinUIMusicPlayer.View.SubView
         {
             try
             {
-                Track theTrack = new(MusicDetail.Path);
-                theTrack.Title = MusicDetail.Title;
-                theTrack.Album = MusicDetail.Album;
-                theTrack.Artist = MusicDetail.Author;
-                theTrack.TrackNumber = MusicDetail.TrackNumber;
-                theTrack.DiscNumber = MusicDetail.DiskNumber;
-                theTrack.Year = MusicDetail.Year;
-                theTrack.EmbeddedPictures.Clear();
-                theTrack.EmbeddedPictures.Add(PictureInfo.fromBinaryData(AlbumCoverData));
-                string[] lines = MusicDetail.Lyrics.Split([Environment.NewLine], StringSplitOptions.None);
-                theTrack.Lyrics = new List<LyricsInfo>(lines.Length);
-                foreach (string line in lines)
-                {
-                    theTrack.Lyrics.Add(new LyricsInfo { UnsynchronizedLyrics = line });
-                }
                 IsLoading = true;
-                await Task.Run(() => theTrack.Save());
+                await ToolUtils.SaveMetaData(MusicDetail, MusicDetail.Path, AlbumCoverData);                
             }
             catch (Exception ex)
             {

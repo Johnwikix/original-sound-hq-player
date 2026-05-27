@@ -1,5 +1,4 @@
 ﻿using ATL;
-using Lyricify.Lyrics.Providers.Web.Netease;
 using ManagedBass;
 using ManagedBass.Dsd;
 using Microsoft.Extensions.DependencyInjection;
@@ -163,68 +162,27 @@ namespace WinUIMusicPlayer.Utils
                     }
                 });
             }
-        }         
-
-        private static bool IsValidImageData(byte[] data)
-        {
-            if (data is null || data.Length < 10) return false;
-
-            // 检查常见图像文件头
-            return IsPng(data) || IsJpeg(data) || IsGif(data) || IsBmp(data) || IsWebP(data) || IsTiff(data);
         }
 
-        private static bool IsTiff(byte[] data)
-        {
-            // II* or MM*
-            return data.Length >= 4 &&
-                  ((data[0] == 0x49 && data[1] == 0x49 && data[2] == 0x2A && data[3] == 0x00) ||
-                   (data[0] == 0x4D && data[1] == 0x4D && data[2] == 0x00 && data[3] == 0x2A));
-        }
-
-        private static bool IsWebP(byte[] data)
-        {
-            // RIFF....WEBP
-            return data.Length >= 12 &&
-                   data[0] == 0x52 && data[1] == 0x49 && data[2] == 0x46 && data[3] == 0x46 &&
-                   data[8] == 0x57 && data[9] == 0x45 && data[10] == 0x42 && data[11] == 0x50;
-        }
-
-        private static bool IsPng(byte[] data)
-        {
-            return data.Length >= 8 &&
-                   data[0] == 0x89 &&
-                   data[1] == 0x50 &&
-                   data[2] == 0x4E &&
-                   data[3] == 0x47 &&
-                   data[4] == 0x0D &&
-                   data[5] == 0x0A &&
-                   data[6] == 0x1A &&
-                   data[7] == 0x0A;
-        }
-
-        private static bool IsJpeg(byte[] data)
-        {
-            return data.Length >= 2 &&
-                   data[0] == 0xFF &&
-                   data[1] == 0xD8;
-        }
-
-        private static bool IsGif(byte[] data)
-        {
-            return data.Length >= 6 &&
-                   data[0] == 0x47 &&
-                   data[1] == 0x49 &&
-                   data[2] == 0x46 &&
-                   data[3] == 0x38 &&
-                  (data[4] == 0x37 || data[4] == 0x39) &&
-                   data[5] == 0x61;
-        }
-
-        private static bool IsBmp(byte[] data)
-        {
-            return data.Length >= 2 &&
-                   data[0] == 0x42 &&
-                   data[1] == 0x4D;
+        public static async Task SaveMetaData(Music music,string filePath ,byte[] pic) {
+            Track theTrack = new(filePath)
+            {
+                Title = music.Title,
+                Album = music.Album,
+                Artist = music.Author,
+                TrackNumber = music.TrackNumber,
+                DiscNumber = music.DiskNumber,
+                Year = music.Year
+            };
+            theTrack.EmbeddedPictures.Clear();
+            theTrack.EmbeddedPictures.Add(PictureInfo.fromBinaryData(pic));
+            string[] lines = music.Lyrics.Split([Environment.NewLine], StringSplitOptions.None);
+            theTrack.Lyrics = new List<LyricsInfo>(lines.Length);
+            foreach (string line in lines)
+            {
+                theTrack.Lyrics.Add(new LyricsInfo { UnsynchronizedLyrics = line });
+            }
+            await Task.Run(() => theTrack.Save());
         }
 
         public static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject

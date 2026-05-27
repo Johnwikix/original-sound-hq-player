@@ -1,5 +1,4 @@
-﻿using ATL;
-using CommunityToolkit.WinUI;
+﻿using CommunityToolkit.WinUI;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -17,7 +16,6 @@ using Windows.Graphics.Imaging;
 using Windows.Storage;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Behaviors;
