@@ -358,7 +358,8 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (!IsUserDraggingProgressSlider)
                 {
-                    double currentPlayPosition = await App.Services.GetRequiredService<BassPlayerCommandService>().GetCurrentPosition();
+                    var (curMs, _) = await App.Services.GetRequiredService<BassPlayerCommandService>().GetTimeProgress();
+                    double currentPlayPosition = curMs / 1000.0;
                     if (Math.Abs(value - currentPlayPosition) > 2.0)
                     {
                         _ = Task.Run(() =>
@@ -399,12 +400,11 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                double totalSeconds = await App.Services.GetRequiredService<BassPlayerCommandService>().GetTotalPosition();
-                double currentSeconds = await App.Services.GetRequiredService<BassPlayerCommandService>().GetCurrentPosition();
-                TotalTime = TimeSpan.FromSeconds(totalSeconds);
-                CurrentTime = TimeSpan.FromSeconds(currentSeconds);
+                var (curMs, totalMs) = await App.Services.GetRequiredService<BassPlayerCommandService>().GetTimeProgress();
+                TotalTime = TimeSpan.FromMilliseconds(totalMs);
+                CurrentTime = TimeSpan.FromMilliseconds(curMs);
                 TimeStringBuilder.Clear();
-                double currentTimeMs = currentSeconds * 1000.0;
+                double currentTimeMs = curMs;
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
                     CurrentPlayingTime = CurrentTime;
@@ -413,8 +413,8 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         try
                         {
-                            ProgressSlider = currentSeconds;
-                            ProgressSliderMax = totalSeconds;
+                            ProgressSlider = curMs / 1000.0;
+                            ProgressSliderMax = totalMs / 1000.0;
                             if (TotalTime.TotalHours >= 1)
                             {
                                 PlayTimeText = TimeStringBuilder

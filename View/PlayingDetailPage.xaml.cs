@@ -159,7 +159,7 @@ namespace WinUIMusicPlayer.View
         private async void Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
         {
             ViewModel.AppViewModel.IsUserDraggingProgressSlider = false;
-            double newPosition = Math.Max(0, Math.Min(ViewModel.AppViewModel.ProgressSlider, await App.Services.GetRequiredService<BassPlayerCommandService>().GetTotalPosition()));
+            double newPosition = Math.Max(0, Math.Min(ViewModel.AppViewModel.ProgressSlider, (await App.Services.GetRequiredService<BassPlayerCommandService>().GetTimeProgress()).totalMs / 1000.0));
             _ = Task.Run(() =>
             {
                 ViewModel.AppViewModel.IsManualSelect = true;

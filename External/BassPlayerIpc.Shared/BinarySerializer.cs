@@ -23,6 +23,7 @@ public static class BinarySerializer
     public const int PlayStateResponseSize = 1;
     public const int PositionResponseSize = 8;
     public const int VolumeResponseSize = 4;
+    public const int TimeProgressSize = 16;
 
     // ──────────────────────── String helpers ────────────────────────
 
@@ -227,6 +228,22 @@ public static class BinarySerializer
     public static VolumeResponse ReadVolumeResponse(ReadOnlySpan<byte> src)
     {
         return new() { Volume = BinaryPrimitives.ReadSingleLittleEndian(src) };
+    }
+
+    // ──────────────────────── TimeProgress ────────────────────────
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void WriteTimeProgress(Span<byte> dest, long currentMs, long totalMs)
+    {
+        BinaryPrimitives.WriteInt64LittleEndian(dest, currentMs);
+        BinaryPrimitives.WriteInt64LittleEndian(dest[8..], totalMs);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static (long currentMs, long totalMs) ReadTimeProgress(ReadOnlySpan<byte> src)
+    {
+        return (BinaryPrimitives.ReadInt64LittleEndian(src),
+                BinaryPrimitives.ReadInt64LittleEndian(src[8..]));
     }
 
     // ──────────────────────── Device paging ────────────────────────

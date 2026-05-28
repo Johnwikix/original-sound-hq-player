@@ -191,7 +191,7 @@ namespace WinUIMusicPlayer.View
 
             ContentDialog contentDialog = new ContentDialog
             {
-                // Ê¹ÓÃ×Ô¶¨ÒåÃæ°å×÷Îª±êÌâ
+                // Ê¹ï¿½ï¿½ï¿½Ô¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½
                 Title = titlePanel,
                 Content = new Microsoft.UI.Xaml.Controls.TextBox { PlaceholderText = ToolUtils.GetString("EnterPlaylistName") },
                 PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
@@ -200,7 +200,7 @@ namespace WinUIMusicPlayer.View
             };
             contentDialog.RequestedTheme = AppSettings.ElementTheme;
 
-            // ÉùÃ÷ÊÂ¼þ´¦Àí·½·¨£¨·½±ãºóÐø½â³ý¶©ÔÄ£©
+            // ï¿½ï¿½ï¿½ï¿½ï¿½Â¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä£ï¿½
             async void buttonClickHandler(object s, RoutedEventArgs e)
             {
                 List<PlayList> newPlaylists = await OpenM3u8File();
@@ -369,7 +369,7 @@ namespace WinUIMusicPlayer.View
         private async void Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
         {
             ViewModel.AppViewModel.IsUserDraggingProgressSlider = false;
-            double newPosition = Math.Max(0, Math.Min(ViewModel.AppViewModel.ProgressSlider, await ViewModel.MusicPlaybackService.GetTotalPosition()));
+            double newPosition = Math.Max(0, Math.Min(ViewModel.AppViewModel.ProgressSlider, (await ViewModel.MusicPlaybackService.GetTimeProgress()).totalMs / 1000.0));
             _ = Task.Run(() =>
             {
                 ViewModel.AppViewModel.IsManualSelect = true;

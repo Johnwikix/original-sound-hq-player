@@ -29,6 +29,9 @@ public enum CommandId : short
     // Devices
     GetWasapiDevices = 17,
     GetAsioDevices = 18,
+
+    // Time
+    GetTimeProgress = 19,
 }
 
 public enum MessageTypeId : short
@@ -46,6 +49,7 @@ public enum MessageTypeId : short
     NotificationDropped = 10,
     WasapiDevices = 11,
     AsioDevices = 12,
+    TimeProgress = 13,
 }
 
 public enum ErrorCode : short

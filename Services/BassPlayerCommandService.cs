@@ -202,6 +202,19 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        public async Task<(long currentMs, long totalMs)> GetTimeProgress()
+        {
+            try
+            {
+                return await IpcService.GetTimeProgress();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"GetTimeProgress failed: {ex.Message}");
+                return (0, 0);
+            }
+        }
+
         public async Task<double> AdjustPlaybackPosition(int seconds)
         {
             try

@@ -38,6 +38,7 @@ namespace WinUIMusicPlayer.Services
 
         private readonly byte[] _responseBuffer = new byte[IpcConstants.MaxResponseSize];
         private readonly byte[] _posBuf = new byte[BinarySerializer.PositionResponseSize];
+        private readonly byte[] _timeProgressBuf = new byte[BinarySerializer.TimeProgressSize];
         private readonly byte[] _notificationBuffer = new byte[IpcConstants.MaxNotificationSize];
 
         public event Action<MessageTypeId, ReadOnlyMemory<byte>>? NotificationReceived;
@@ -285,6 +286,17 @@ namespace WinUIMusicPlayer.Services
                 return r.PositionSeconds;
             }
             return 0;
+        }
+
+        public async Task<(long currentMs, long totalMs)> GetTimeProgress()
+        {
+            var (resType, _) = await SendWithResponseAsync(CommandId.GetTimeProgress, ReadOnlyMemory<byte>.Empty, _timeProgressBuf);
+            if (resType == MessageTypeId.TimeProgress)
+            {
+                var (curMs, totalMs) = BinarySerializer.ReadTimeProgress(_timeProgressBuf);
+                return (curMs, totalMs);
+            }
+            return (0, 0);
         }
 
         public void SetPosition(double position)
