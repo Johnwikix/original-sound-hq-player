@@ -194,9 +194,9 @@
                                 <ColumnDefinition Width="1.5*" />
                                 <ColumnDefinition Width="3*" />
                                 <ColumnDefinition Width="0.5*" />
-                                <ColumnDefinition Width="0.5*" />
-                                <ColumnDefinition Width="0.5*" />
-                                <ColumnDefinition Width="0.25*" />
+                                <ColumnDefinition Width="70" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="50" />
                             </Grid.ColumnDefinitions>
                             <Button
                                 x:Name="CoverThumbnail"
