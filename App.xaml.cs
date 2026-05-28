@@ -8,6 +8,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using Windows.System.UserProfile;
@@ -103,6 +104,9 @@ namespace WinUIMusicPlayer
         public App()
         {
             GCSettings.LatencyMode = GCLatencyMode.Interactive;
+            Debug.WriteLine(Environment.Version);                          // CLR 版本，如 9.0.0
+            Debug.WriteLine(RuntimeInformation.FrameworkDescription);      // 如 .NET 10.0.0-preview.3
+            Debug.WriteLine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory());
             this.InitializeComponent();            
             Services = _host.Services;
             _logger = Services.GetRequiredService<ILogger<App>>();
