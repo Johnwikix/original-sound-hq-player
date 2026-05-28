@@ -206,7 +206,7 @@ namespace WinUIMusicPlayer
                     Environment.Exit(0);
                     return;
                 }
-                Process.Start(new ProcessStartInfo
+                Process.StartAndForget(new ProcessStartInfo
                 {
                     FileName = "BassPlayerSharp.exe",
                     CreateNoWindow = true,
