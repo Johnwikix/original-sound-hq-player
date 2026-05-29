@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using BassPlayerIpc.Shared;
+﻿using BassPlayerIpc.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using System.Collections.ObjectModel;
-using System.Linq;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.ViewModel;
 using ZLinq;
 using static WinUIMusicPlayer.Utils.ToolUtils;

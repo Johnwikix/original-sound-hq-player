@@ -1,15 +1,12 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
-using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -33,7 +30,7 @@ namespace WinUIMusicPlayer.ViewModel
         private int _currentPlayListId { get; set; }
         private ILogger<PlayListSongViewModel> _logger;
 
-        public PlayListSongViewModel(MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<PlayListSongViewModel> logger) 
+        public PlayListSongViewModel(MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<PlayListSongViewModel> logger)
         {
             _musicBrowseViewModel = musicBrowseViewModel;
             AppViewModel = appViewModel;
@@ -66,7 +63,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void UpDateUsbDeviceMenuflyout()
         {
-            var usbFlyout = MenuOptions.FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
+            var usbFlyout = MenuOptions.AsValueEnumerable().FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
             if (AppData.UsbStorageDevices.Count == 0)
             {
                 if (usbFlyout is not null) MenuOptions.Remove(usbFlyout);
@@ -173,7 +170,7 @@ namespace WinUIMusicPlayer.ViewModel
                 AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(AppViewModel.PlayListSongs.Select(x => x.Music));
                 _musicBrowseViewModel.PlayMusic(music: SelectedMusic.Music, IsChangeList: true).Wait();
             }
-        }        
+        }
 
         public void AlbumTextBlock_Tapped(string albumName)
         {
@@ -183,7 +180,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void AuthorTextBlock_Tapped(string artist)
         {
             _musicBrowseViewModel?.SelectBarArtist(artist);
-        }       
+        }
 
         [RelayCommand]
         private async Task OnPlayAll()
@@ -258,7 +255,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         public async Task ReGetLyrics()
         {
-            await AppViewModel.ReGetLyrics(SelectedMusics.Select(x=>x.Music), SelectedMusic.Music);
+            await AppViewModel.ReGetLyrics(SelectedMusics.Select(x => x.Music), SelectedMusic.Music);
         }
 
         [RelayCommand]
@@ -317,7 +314,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         public async Task TransmitFileToUsb(UsbStorageDevice usbDevice)
         {
-            await AppViewModel.TransmitFileToUsb(SelectedMusics.Select(x=>x.Music), usbDevice);
+            await AppViewModel.TransmitFileToUsb(SelectedMusics.Select(x => x.Music), usbDevice);
         }
     }
 }

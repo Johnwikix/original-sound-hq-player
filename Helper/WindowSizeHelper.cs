@@ -1,10 +1,8 @@
 ﻿using Microsoft.UI.Windowing;
-using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Windows.Graphics;
-using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Helper
 {
@@ -138,7 +136,8 @@ namespace WinUIMusicPlayer.Helper
             appWindow.Move(new PointInt32(x, y));
         }
 
-        public static float GetScaleFactor(IntPtr hwnd) {
+        public static float GetScaleFactor(IntPtr hwnd)
+        {
             return GetDpiForWindow(hwnd) / 96.0f;
         }
 

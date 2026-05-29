@@ -1,16 +1,12 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -30,9 +26,9 @@ namespace WinUIMusicPlayer.ViewModel
         public AppViewModel AppViewModel { get; }
         public MusicBrowseViewModel MusicBrowseViewModel { get; set; }
         private MusicDatabaseService _musicDatabaseService { get; }
-        private SongCollectionPage _currentPage{ get; set; }
+        private SongCollectionPage _currentPage { get; set; }
         private ILogger<SongCollectionViewModel> _logger;
-       
+
         public SongCollectionViewModel(MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<SongCollectionViewModel> logger)
         {
             AppViewModel = appViewModel;
@@ -67,7 +63,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void UpDateUsbDeviceMenuflyout()
         {
-            var usbFlyout = MenuOptions.FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
+            var usbFlyout = MenuOptions.AsValueEnumerable().FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
             if (AppData.UsbStorageDevices.Count == 0)
             {
                 if (usbFlyout is not null) MenuOptions.Remove(usbFlyout);
@@ -113,7 +109,7 @@ namespace WinUIMusicPlayer.ViewModel
                     .Where(music => music.Album == AppViewModel.CurrentAlbumObj.Album)
                     .Select(music => music.Author)
                     .Distinct().ToArray());
-                ThirdTitle = $"{(AppViewModel.CurrentAlbumObj.Year != 0 ? $"{AppViewModel.CurrentAlbumObj.Year} · ".ToString() : "")}{AppViewModel.SongsSource.AsValueEnumerable().Count(music => music.Album == AppViewModel.CurrentAlbumObj.Album)} {ToolUtils.GetString("NumberOfSongs")}";             
+                ThirdTitle = $"{(AppViewModel.CurrentAlbumObj.Year != 0 ? $"{AppViewModel.CurrentAlbumObj.Year} · ".ToString() : "")}{AppViewModel.SongsSource.AsValueEnumerable().Count(music => music.Album == AppViewModel.CurrentAlbumObj.Album)} {ToolUtils.GetString("NumberOfSongs")}";
             }
         }
 
@@ -155,7 +151,7 @@ namespace WinUIMusicPlayer.ViewModel
                 AppViewModel.SequentialPlayingList = new(AppViewModel.AlbumSongs);
                 MusicBrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true).Wait();
             }
-        }        
+        }
 
         public void AuthorTextBlock_Tapped(string artist)
         {
@@ -309,7 +305,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         public void AddMusicToCurrentPlayList(Music music)
         {
-             AppViewModel.AddMusicToCurrentPlayList(music);
+            AppViewModel.AddMusicToCurrentPlayList(music);
         }
 
         [RelayCommand]

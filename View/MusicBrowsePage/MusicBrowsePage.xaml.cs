@@ -1,31 +1,16 @@
 using DevWinUI;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using Microsoft.Graphics.Canvas.Effects;
-using Microsoft.UI;
-using Microsoft.UI.Composition;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
-using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Numerics;
-using System.Runtime.CompilerServices;
-using System.Threading;
 using System.Threading.Tasks;
-using Windows.Foundation;
-using Windows.UI;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
 using ZLinq;
 using static WinUIMusicPlayer.Utils.ToolUtils;
@@ -39,7 +24,7 @@ namespace WinUIMusicPlayer.View
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
     public sealed partial class MusicBrowsePage : Page
-    {        
+    {
         public MusicBrowseViewModel ViewModel { get; }
         public MusicBrowsePage()
         {
@@ -131,7 +116,8 @@ namespace WinUIMusicPlayer.View
                 {
                     NavigatePage(typeof(SongArtistListPage), null, new DrillInNavigationTransitionInfo());
                 }
-                else if (ContentFrame.Content is SongArtistListPage) {
+                else if (ContentFrame.Content is SongArtistListPage)
+                {
                     App.Services.GetRequiredService<AppViewModel>().RefreshSongsSource();
                 }
                 else
@@ -204,7 +190,7 @@ namespace WinUIMusicPlayer.View
             async void buttonClickHandler(object s, RoutedEventArgs e)
             {
                 List<PlayList> newPlaylists = await OpenM3u8File();
-                if (newPlaylists is not null && newPlaylists.Count > 0 )
+                if (newPlaylists is not null && newPlaylists.Count > 0)
                 {
                     await ViewModel.AppViewModel.AllPlayList.AddRangeAsync(newPlaylists);
                 }
@@ -295,7 +281,7 @@ namespace WinUIMusicPlayer.View
             {
                 playListSongPage?.UpdateMusicListView();
             }
-        }  
+        }
 
         private void VolumeSlider_PointerEntered(object sender, PointerRoutedEventArgs e)
         {

@@ -1,23 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using ManagedBass.Asio;
-using ManagedBass.Wasapi;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
-using Microsoft.Windows.Storage.Pickers;
 using System;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.IO;
-using System.Threading.Tasks;
-using Windows.Storage;
-using Windows.System;
-using Windows.UI;
-using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.View;
-using ZLinq;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -27,8 +10,8 @@ namespace WinUIMusicPlayer.ViewModel
 
         public SettingsViewModel(AppViewModel appViewModel)
         {
-            AppViewModel = appViewModel;            
-        }        
+            AppViewModel = appViewModel;
+        }
 
         public Visibility CheckSystemVersion()
         {
@@ -46,6 +29,6 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
             return Visibility.Collapsed;
-        }        
+        }
     }
 }

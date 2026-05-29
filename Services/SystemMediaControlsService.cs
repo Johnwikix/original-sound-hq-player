@@ -6,7 +6,6 @@ using Windows.Media;
 using Windows.Media.Playback;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -23,7 +22,7 @@ namespace WinUIMusicPlayer.Services
         public SystemMediaControlsService(ILogger<SystemMediaControlsService> logger)
         {
             _logger = logger;
-            InitializeSystemMediaTransportControls();            
+            InitializeSystemMediaTransportControls();
         }
 
         private void InitializeSystemMediaTransportControls()
@@ -119,7 +118,7 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                if (SystemMediaControls is null || _timelineProperties is null) return; 
+                if (SystemMediaControls is null || _timelineProperties is null) return;
                 _timelineProperties.StartTime = TimeSpan.Zero;
                 _timelineProperties.EndTime = totalDuration;
                 _timelineProperties.Position = currentPosition;

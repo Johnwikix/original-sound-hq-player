@@ -1,6 +1,4 @@
-﻿using DevWinUI;
-using Microsoft.UI;
-using Microsoft.UI.Composition.SystemBackdrops;
+﻿using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using System;
@@ -27,17 +25,20 @@ namespace WinUIMusicPlayer.Helper
         {
             _window = window;
             _appWindow = appWindow;
-            _acrylicSystemBackdrop = new CustomAcrylicSystemBackdrop(window) { 
+            _acrylicSystemBackdrop = new CustomAcrylicSystemBackdrop(window)
+            {
                 IsInputActive = AppSettings.IsUpdateBackDrop
             };
-            _micaSystemBackdrop = new CustomMicaSystemBackdrop(window) {
+            _micaSystemBackdrop = new CustomMicaSystemBackdrop(window)
+            {
                 IsInputActive = AppSettings.IsUpdateBackDrop
             };
             _transparentTintBackdrop = new TransparentTintBackdrop(Colors.Transparent);
 
         }
 
-        private static Color GetUiColor() {
+        private static Color GetUiColor()
+        {
             var isDarkTheme = AppSettings.AppTheme switch
             {
                 "Dark" => true,
@@ -54,7 +55,7 @@ namespace WinUIMusicPlayer.Helper
         {
             try
             {
-                
+
                 var backdrop = _window.SystemBackdrop as CustomAcrylicSystemBackdrop;
                 switch (AppSettings.AppStyle)
                 {
@@ -82,7 +83,7 @@ namespace WinUIMusicPlayer.Helper
                             _acrylicSystemBackdrop.LuminosityOpacity = 0.4f;
                             _acrylicSystemBackdrop.TintColor = GetUiColor();
                             _window.SystemBackdrop = _acrylicSystemBackdrop;
-                        }                        
+                        }
                         break;
                     case "Mica":
                         if (_window.SystemBackdrop is not CustomMicaSystemBackdrop)
@@ -115,7 +116,7 @@ namespace WinUIMusicPlayer.Helper
                                                         AppSettings.CustomColorGreen,
                                                         AppSettings.CustomColorBlue);
                             _window.SystemBackdrop = _acrylicSystemBackdrop;
-                        }                        
+                        }
                         break;
                     default:
                         _acrylicSystemBackdrop.TintOpacity = 0.5f;

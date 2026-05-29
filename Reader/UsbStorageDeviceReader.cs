@@ -1,12 +1,11 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Management;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Windows.Devices.Enumeration;
 using Windows.Storage;
-using WinUIMusicPlayer;
 using WinUIMusicPlayer.Model;
 using ZLinq;
 

@@ -27,7 +27,7 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicDatabaseService _musicDatabaseService { get; }
         private FavouritePlayListPage currentPage { get; set; }
         private ILogger<FavouritePlayListViewModel> _logger;
-        public FavouritePlayListViewModel(MusicBrowseViewModel browseViewModel,AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<FavouritePlayListViewModel> logger)
+        public FavouritePlayListViewModel(MusicBrowseViewModel browseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<FavouritePlayListViewModel> logger)
         {
             BrowseViewModel = browseViewModel;
             AppViewModel = appViewModel;
@@ -60,8 +60,9 @@ namespace WinUIMusicPlayer.ViewModel
             MenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutDeleteItem"), Tag = "DeleteMenuItem", Command = DeleteMenuItemCommand });
         }
 
-        public void UpDateUsbDeviceMenuflyout() {
-            var usbFlyout = MenuOptions.FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
+        public void UpDateUsbDeviceMenuflyout()
+        {
+            var usbFlyout = MenuOptions.AsValueEnumerable().FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
             if (AppData.UsbStorageDevices.Count == 0)
             {
                 if (usbFlyout is not null) MenuOptions.Remove(usbFlyout);
@@ -165,7 +166,7 @@ namespace WinUIMusicPlayer.ViewModel
                 AppViewModel.SequentialPlayingList = new(AppViewModel.FavoriteSongs);
                 BrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true).Wait();
             }
-        }       
+        }
 
         [RelayCommand]
         public async Task ConvertAudio(string tag)

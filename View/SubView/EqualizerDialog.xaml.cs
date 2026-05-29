@@ -18,7 +18,7 @@ namespace WinUIMusicPlayer.View.SubView
         private List<Slider> _sliders;
         private bool _isInitializedSliderValue = false;
         public EventHandler<string> EqualizerGainChanged { get; set; }
-        public EventHandler ClearEqualizer {  get; set; }        
+        public EventHandler ClearEqualizer { get; set; }
 
         public EqualizerDialog()
         {
@@ -27,7 +27,7 @@ namespace WinUIMusicPlayer.View.SubView
             InitializePresets();
             InitializingSettings();
             InitializeSilderAttach();
-            _isInitializedSliderValue = true;           
+            _isInitializedSliderValue = true;
         }
 
         private void InitializingSettings()
@@ -104,7 +104,8 @@ namespace WinUIMusicPlayer.View.SubView
         private void ToggleSwitchEqualizer_Toggled(object sender, RoutedEventArgs e)
         {
             AppSettings.IsEqualizerEnabled = ToggleSwitchEqualizer.IsOn;
-            if (AppSettings.IsEqualizerEnabled) { 
+            if (AppSettings.IsEqualizerEnabled)
+            {
                 AppSettings.OnEqUpdated();
             }
             DispatcherQueue.TryEnqueue(() =>
@@ -154,7 +155,8 @@ namespace WinUIMusicPlayer.View.SubView
             _isInitializedSliderValue = true;
         }
 
-        private void InitializeSilderAttach() {
+        private void InitializeSilderAttach()
+        {
             AttachMouseWheelToSlider(Slider32Hz);
             AttachMouseWheelToSlider(Slider64Hz);
             AttachMouseWheelToSlider(Slider125Hz);

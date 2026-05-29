@@ -1,10 +1,10 @@
+using Microsoft.Graphics.Canvas.UI.Xaml;
+using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml;
 using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Graphics.Canvas.UI.Xaml;
-using Microsoft.UI.Dispatching;
-using Microsoft.UI.Xaml;
 using Windows.Graphics.Imaging;
 
 namespace AnimatedWin2dControls.Controls.AlbumImgControl
@@ -127,14 +127,14 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private static async Task<DecodedFrame?> DecodeImageAsync(byte[] bytes, CancellationToken ct)
         {
-            using var mem    = new MemoryStream(bytes, writable: false);
+            using var mem = new MemoryStream(bytes, writable: false);
             using var stream = mem.AsRandomAccessStream();
             var decoder = await BitmapDecoder.CreateAsync(stream).AsTask(ct).ConfigureAwait(false);
 
             uint srcW = decoder.PixelWidth, srcH = decoder.PixelHeight;
-            float sc   = Math.Min(1f, Math.Min(HardMaxSize / srcW, HardMaxSize / srcH));
-            uint  dstW = Math.Max(1, (uint)(srcW * sc));
-            uint  dstH = Math.Max(1, (uint)(srcH * sc));
+            float sc = Math.Min(1f, Math.Min(HardMaxSize / srcW, HardMaxSize / srcH));
+            uint dstW = Math.Max(1, (uint)(srcW * sc));
+            uint dstH = Math.Max(1, (uint)(srcH * sc));
 
             ct.ThrowIfCancellationRequested();
 
@@ -142,8 +142,8 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 BitmapPixelFormat.Rgba8, BitmapAlphaMode.Premultiplied,
                 new BitmapTransform
                 {
-                    ScaledWidth       = dstW,
-                    ScaledHeight      = dstH,
+                    ScaledWidth = dstW,
+                    ScaledHeight = dstH,
                     InterpolationMode = BitmapInterpolationMode.Fant,
                 },
                 ExifOrientationMode.RespectExifOrientation,
@@ -162,14 +162,14 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private static async Task<DecodedFrame?> GetOrDecodeDefaultAsync(bool isDark, CancellationToken ct)
         {
             // 快速路径：已缓存
-            if (isDark  && _cachedDefaultDark.HasValue)  return _cachedDefaultDark;
+            if (isDark && _cachedDefaultDark.HasValue) return _cachedDefaultDark;
             if (!isDark && _cachedDefaultLight.HasValue) return _cachedDefaultLight;
 
             await _defaultCacheLock.WaitAsync(ct).ConfigureAwait(false);
             try
             {
                 // 双重检查
-                if (isDark  && _cachedDefaultDark.HasValue)  return _cachedDefaultDark;
+                if (isDark && _cachedDefaultDark.HasValue) return _cachedDefaultDark;
                 if (!isDark && _cachedDefaultLight.HasValue) return _cachedDefaultLight;
 
                 string name = isDark ? "default_cover_black.png" : "default_cover_white.png";
@@ -179,7 +179,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 var file = await Windows.Storage.StorageFile
                     .GetFileFromPathAsync(path).AsTask(ct).ConfigureAwait(false);
 
-                using var s  = await file.OpenReadAsync().AsTask(ct).ConfigureAwait(false);
+                using var s = await file.OpenReadAsync().AsTask(ct).ConfigureAwait(false);
                 var ms = new MemoryStream();
                 using (var rs = s.AsStream())
                     await rs.CopyToAsync(ms, ct).ConfigureAwait(false);
@@ -187,8 +187,8 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 var frame = await DecodeImageAsync(ms.ToArray(), ct).ConfigureAwait(false);
                 if (frame == null) return null;
 
-                if (isDark) _cachedDefaultDark  = frame;
-                else        _cachedDefaultLight = frame;
+                if (isDark) _cachedDefaultDark = frame;
+                else _cachedDefaultLight = frame;
 
                 return frame;
             }

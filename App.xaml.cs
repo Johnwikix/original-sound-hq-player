@@ -69,7 +69,7 @@ namespace WinUIMusicPlayer
                  services.AddTransient<INavigationService, NavigationService>();
                  services.AddSingleton<INavigationServiceFactory, NavigationServiceFactory>();
                  services.AddSingleton<MainWindow>();
-                 services.AddSingleton<MainPage>();                 
+                 services.AddSingleton<MainPage>();
                  services.AddSingleton<PlayingDetailPage>();
                  services.AddSingleton<MainViewModel>();
                  services.AddSingleton<AppViewModel>();
@@ -85,14 +85,14 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<PlayListViewModel>();
                  services.AddSingleton<SongListViewModel>();
                  services.AddSingleton<SongCollectionViewModel>();
-                 services.AddSingleton<PlayListSongViewModel>();                 
+                 services.AddSingleton<PlayListSongViewModel>();
                  services.AddSingleton<PlayingDetailViewModel>();
                  services.AddSingleton<SystemMediaControlsService>();
                  services.AddSingleton<AudioConverterService>();
                  services.AddSingleton<NotificationService>();
                  services.AddSingleton<LyricsRefreshService>();
                  services.AddSingleton<IpcService>();
-                 services.AddSingleton<BassPlayerCommandService>();                 
+                 services.AddSingleton<BassPlayerCommandService>();
                  services.AddSingleton<MusicDatabaseService>();
                  services.AddSingleton<LrcService>();
              }).Build();
@@ -107,7 +107,7 @@ namespace WinUIMusicPlayer
             Debug.WriteLine(Environment.Version);                          // CLR 版本，如 9.0.0
             Debug.WriteLine(RuntimeInformation.FrameworkDescription);      // 如 .NET 10.0.0-preview.3
             Debug.WriteLine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory());
-            this.InitializeComponent();            
+            this.InitializeComponent();
             Services = _host.Services;
             _logger = Services.GetRequiredService<ILogger<App>>();
             UnhandledException += App_UnhandledException;
@@ -231,10 +231,10 @@ namespace WinUIMusicPlayer
                 await _host.StopAsync();
                 Services.GetRequiredService<LrcService>().Dispose();
                 Services.GetRequiredService<PlayingDetailPage>().Dispose();
-                Services.GetRequiredService<AppViewModel>().Dispose();                
+                Services.GetRequiredService<AppViewModel>().Dispose();
                 //_host.Dispose();
                 MainWindow.Dispose();
-                _logger?.LogInformation("应用程序退出完成");                
+                _logger?.LogInformation("应用程序退出完成");
             }
             catch (Exception ex)
             {

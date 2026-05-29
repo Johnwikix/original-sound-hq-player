@@ -1,5 +1,4 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
-using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V1;
+﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V1;
 using AnimatedWin2dControls.Messages;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Graphics.Canvas;
@@ -8,16 +7,12 @@ using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
-using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
 using System.Numerics;
-using System.Text;
 using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.UI;
@@ -613,7 +608,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         // 布局计算
         // ═════════════════════════════════════════════════════════════════════
 
-        private void EnsureLayout(ICanvasResourceCreator creator, float availableWidth,float dpiScale)
+        private void EnsureLayout(ICanvasResourceCreator creator, float availableWidth, float dpiScale)
         {
             var lyrics = _cachedUILyrics;
             if (lyrics is null || lyrics.Count == 0)
@@ -775,7 +770,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         /// 窗口外的行释放 RT，窗口内未就绪的行立即烘焙。
         /// </summary>
         private void UpdateCacheWindow(ICanvasResourceCreator creator,
-            float canvasWidth, int visLo, int visHi,float dpi)
+            float canvasWidth, int visLo, int visHi, float dpi)
         {
             int lo = Math.Max(0, visLo - BlurCacheWindow);
             int hi = Math.Min(_lineLayoutCount - 1, visHi + BlurCacheWindow);

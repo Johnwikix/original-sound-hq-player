@@ -4,18 +4,12 @@ using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 using DevWinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media;
 using System;
-using System.Linq;
 using System.Threading.Tasks;
-using Windows.UI;
-using WinUIMusicPlayer.Controls;
-using WinUIMusicPlayer.Controls.Lyrics;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -31,7 +25,7 @@ namespace WinUIMusicPlayer.View
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class PlayingDetailPage : Page,IDisposable
+    public sealed partial class PlayingDetailPage : Page, IDisposable
     {
         public PlayingDetailViewModel ViewModel { get; }
         private ILogger<PlayingDetailPage> _logger;
@@ -79,7 +73,7 @@ namespace WinUIMusicPlayer.View
         {
             var windowSize = App.MainWindow.AppWindow.Size;
             double width = windowSize.Width / AppData.AppDpiScale;
-            double effectiveSize = windowSize.Width * windowSize.Height; 
+            double effectiveSize = windowSize.Width * windowSize.Height;
             var lyrics = effectiveSize switch
             {
                 <= 1280 * 720 => 32,
@@ -89,17 +83,18 @@ namespace WinUIMusicPlayer.View
                 _ => 84
             };
 
-            var (title, artist, firstSize,secondSize,shapeSize, info, margin) = width switch
+            var (title, artist, firstSize, secondSize, shapeSize, info, margin) = width switch
             {
-                < 1280 => (26, 22, 22, 16, 28, 12,new Thickness(2,0,2,0)),
-                < 1920  => (32, 28, 28, 22, 40,16,new Thickness(5,0,5,0)),
-                < 2560 => (36, 32, 36, 26, 60,18,new Thickness(10,0,10,0)),
-                < 2880  => (38, 34, 40, 28, 66,20,new Thickness(12,0,12,0)),
-                _ => (42, 38, 46, 32, 72,22,new Thickness(15,0,15,0))
+                < 1280 => (26, 22, 22, 16, 28, 12, new Thickness(2, 0, 2, 0)),
+                < 1920 => (32, 28, 28, 22, 40, 16, new Thickness(5, 0, 5, 0)),
+                < 2560 => (36, 32, 36, 26, 60, 18, new Thickness(10, 0, 10, 0)),
+                < 2880 => (38, 34, 40, 28, 66, 20, new Thickness(12, 0, 12, 0)),
+                _ => (42, 38, 46, 32, 72, 22, new Thickness(15, 0, 15, 0))
             };
 
             // 4. 应用变更
-            App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            {
                 ViewModel.TitleFontSize = title;
                 ViewModel.ArtistAlbumFontSize = artist;
                 ViewModel.InfoFontSize = info;
@@ -114,7 +109,7 @@ namespace WinUIMusicPlayer.View
         }
 
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
-        {           
+        {
             App.Services.GetRequiredService<MainPage>().NavigatebackToMusicBrowsePage();
         }
 
@@ -129,7 +124,7 @@ namespace WinUIMusicPlayer.View
             {
                 ViewModel.AppViewModel.TopControlsOpacity = 0.0f;
             }
-        }       
+        }
 
         private void ProgressSlider_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
@@ -229,7 +224,7 @@ namespace WinUIMusicPlayer.View
 
         private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            if(ViewModel.AppViewModel.IsWin2dAnimatedText) return;
+            if (ViewModel.AppViewModel.IsWin2dAnimatedText) return;
             if (sender is AutoScrollView autoScrollView)
             {
                 autoScrollView.IsPlaying = true;
@@ -279,7 +274,8 @@ namespace WinUIMusicPlayer.View
 
         private void Dispose(bool dispose)
         {
-            if (dispose) {
+            if (dispose)
+            {
                 App.MainWindow.SizeChanged -= MainWindow_SizeChanged;
                 LyricsView?.LyricInteracted -= LyricsView_LyricInteracted;
                 LyricsView?.ExceptionInteracted -= LyricsView_ExceptionInteracted;
@@ -297,7 +293,7 @@ namespace WinUIMusicPlayer.View
             {
                 AppSettings.AppTheme = "Dark";
                 AppSettings.ElementTheme = ElementTheme.Dark;
-               
+
             }
             else
             {
@@ -325,7 +321,7 @@ namespace WinUIMusicPlayer.View
 
         private void LyricsView_ExceptionInteracted(object? sender, Exception e)
         {
-            _logger.LogError(e,"歌词渲染错误");
+            _logger.LogError(e, "歌词渲染错误");
         }
 
         private void BackGround_ExceptionOccurred(object? sender, Exception e)

@@ -30,7 +30,7 @@ namespace WinUIMusicPlayer.View
             InitializeComponent();
             ViewModel = viewModel;
             DataContext = this;
-            // ÂØºËà™ÊúçÂä°
+            // µº∫Ω∑˛ŒÒ
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
             _playingNavigation = navigationServiceFactory.CreateNavigationService(PlayingFrame);
             _playingNavigation.RegisterPage<PlayingDetailPage>();
@@ -39,7 +39,7 @@ namespace WinUIMusicPlayer.View
             NavigationViewControl.Visibility = Visibility.Visible;
         }
 
-        private void NavigateTo(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo =null)
+        private void NavigateTo(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)
         {
             MainFrame.Navigate(pageType, parameter, navigationTransitionInfo);
             MainFrame.BackStack.Clear();
@@ -128,10 +128,11 @@ namespace WinUIMusicPlayer.View
                     case "MusicBrowse":
                         NavigateTo(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
                         if (AppData.IsPlayingDetail)
-                        {                            
+                        {
                             NavigateToPlayingDetailPage();
                         }
-                        else {
+                        else
+                        {
                             MainFrame.Visibility = Visibility.Visible;
                         }
                         break;
@@ -162,7 +163,7 @@ namespace WinUIMusicPlayer.View
                     if (Interlocked.Decrement(ref pendingCount) == 0)
                         _isPageTransitioning = false;
                 }
-                MainFrame.Visibility = Visibility.Collapsed;              
+                MainFrame.Visibility = Visibility.Collapsed;
                 _playingNavigation.Show(typeof(PlayingDetailPage), 300, onCompleted: OnOneCompleted);
             }
             else

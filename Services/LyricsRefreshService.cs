@@ -5,16 +5,12 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
-using WinUIMusicPlayer.Controls.Lyrics;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.WebService;
-using ZLinq;
 
 namespace WinUIMusicPlayer.Services
 {

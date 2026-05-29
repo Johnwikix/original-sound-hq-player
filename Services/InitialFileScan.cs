@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
@@ -54,8 +53,8 @@ namespace WinUIMusicPlayer.Services
         {
             var allSongs = await App.Services.GetRequiredService<MusicDatabaseService>().GetMusicListAsync();
             IEnumerable<Music> songsToDelete = allSongs.AsValueEnumerable().GroupBy(song => song.Path)
-                        .Where(group => group.Count() > 1)
-                        .SelectMany(group => group.Skip(1))
+                        .Where(group => group.AsValueEnumerable().Count() > 1)
+                        .SelectMany(group => group.AsValueEnumerable().Skip(1))
                         .ToList();
             await App.Services.GetRequiredService<MusicDatabaseService>().DeletedMusicList(songsToDelete);
         }
@@ -100,7 +99,7 @@ namespace WinUIMusicPlayer.Services
                             FileInfo fileInfo = new FileInfo(filePath);
                             DateTime lastModifiedDate = fileInfo.LastWriteTime;
 
-                            Music music = allSongsCache.FirstOrDefault(m => m.Path.Equals(filePath, StringComparison.OrdinalIgnoreCase));
+                            Music music = allSongsCache.AsValueEnumerable().FirstOrDefault(m => m.Path.Equals(filePath, StringComparison.OrdinalIgnoreCase));
 
                             if (music != null)
                             {

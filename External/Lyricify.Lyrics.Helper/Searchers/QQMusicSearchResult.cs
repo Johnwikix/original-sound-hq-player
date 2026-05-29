@@ -7,7 +7,7 @@ namespace Lyricify.Lyrics.Searchers
     {
         public ISearcher Searcher => new QQMusicSearcher();
 
-        public QQMusicSearchResult(string title, string[] artists, string album, string albumId,string[]? albumArtists, int durationMs, string id, string mid)
+        public QQMusicSearchResult(string title, string[] artists, string album, string albumId, string[]? albumArtists, int durationMs, string id, string mid)
         {
             Title = title;
             Artists = artists;

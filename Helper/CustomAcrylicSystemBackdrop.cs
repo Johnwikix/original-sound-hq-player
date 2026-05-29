@@ -3,7 +3,6 @@ using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Windows.UI;
-using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Helper
 {
@@ -16,7 +15,7 @@ namespace WinUIMusicPlayer.Helper
         // 保存 window 对象引用
         private ICompositionSupportsSystemBackdrop _currentTarget;
         private bool _isConnected = false;
-        private Window _window;        
+        private Window _window;
 
         // 透明度属性
         public double TintOpacity { get; set; } = 0.5;
@@ -130,7 +129,7 @@ namespace WinUIMusicPlayer.Helper
                 ElementTheme.Default => SystemBackdropTheme.Default,
                 _ => SystemBackdropTheme.Default
             };
-            UpdateUiColor(element.ActualTheme);            
+            UpdateUiColor(element.ActualTheme);
         }
 
         // 设置亚克力效果的属性
@@ -165,7 +164,8 @@ namespace WinUIMusicPlayer.Helper
         {
             TintOpacity = tintOpacity;
             LuminosityOpacity = luminosityOpacity;
-            if (tintColor is not null) {
+            if (tintColor is not null)
+            {
                 TintColor = tintColor.Value;
             }
             SetAcrylicProperties();

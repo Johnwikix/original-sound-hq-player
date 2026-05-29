@@ -54,7 +54,7 @@ public class CloudMusicSearchHelper
         }
     }
 
-    public static async Task<(string,string)> GetSongLyrics(string title, string album, string author, CancellationToken cancellationToken = default)
+    public static async Task<(string, string)> GetSongLyrics(string title, string album, string author, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -165,7 +165,7 @@ public class CloudMusicSearchHelper
         }
     }
 
-    private static async Task<(string,string)> GetLyricsUrl(string songId, CancellationToken cancellationToken = default)
+    private static async Task<(string, string)> GetLyricsUrl(string songId, CancellationToken cancellationToken = default)
     {
         if (songId is not null)
         {
@@ -187,7 +187,7 @@ public class CloudMusicSearchHelper
                 {
                 }
             }
-            return (lyrics,translatedLyrics);
+            return (lyrics, translatedLyrics);
         }
         else
         {

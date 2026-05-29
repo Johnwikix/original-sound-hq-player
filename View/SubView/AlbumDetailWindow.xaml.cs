@@ -54,11 +54,11 @@ namespace WinUIMusicPlayer.View.SubView
                     field = value;
                     OnPropertyChanged();
                 }
-            } 
+            }
         }
-        private List<Music> AlbumMusics {get;set;}
+        private List<Music> AlbumMusics { get; set; }
         //public EventHandler<Music> AlbumDetailChanged;
-        private NotificationService NotificationService { get; set;  }
+        private NotificationService NotificationService { get; set; }
         private byte[]? albumCoverData = null;
         private nint hwnd;
         private ThemeStyleHelper themeStyleHelper;
@@ -145,7 +145,8 @@ namespace WinUIMusicPlayer.View.SubView
         {
             try
             {
-                foreach (Music music in AlbumMusics) {
+                foreach (Music music in AlbumMusics)
+                {
                     music.Album = MusicDetail.Album;
                     music.Year = MusicDetail.Year;
                     await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
@@ -179,7 +180,7 @@ namespace WinUIMusicPlayer.View.SubView
                 {
                     theTrack.EmbeddedPictures.Clear();
                     theTrack.EmbeddedPictures.Add(PictureInfo.fromBinaryData(albumCoverData));
-                }                
+                }
                 await Task.Run(() => theTrack.Save());
                 await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
                 if (!isResultAssigned)

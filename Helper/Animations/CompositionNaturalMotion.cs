@@ -1,6 +1,6 @@
+using Microsoft.UI.Composition;
 using System;
 using System.Numerics;
-using Microsoft.UI.Composition;
 
 namespace WinUIMusicPlayer.Helper.Animations;
 

@@ -1,8 +1,6 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock;
-using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 using System.Collections.Generic;
-using System.Linq;
-
+using ZLinq;
 namespace AnimatedWin2dControls.Controls.AnimatedTextBlock.Internals;
 
 internal partial class GraphemeClusterDiff
@@ -20,7 +18,7 @@ internal partial class GraphemeClusterDiff
     {
         List<TextDiffResult> results = new List<TextDiffResult>();
 
-        if (!oldClusters.Any() && !newClusters.Any())
+        if (!oldClusters.AsValueEnumerable().Any() && !newClusters.AsValueEnumerable().Any())
         {
             return results;
         }

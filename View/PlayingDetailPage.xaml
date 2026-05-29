@@ -302,7 +302,7 @@
                                 <ToolTip x:Uid="LyricsTimeOffset" />
                             </ToolTipService.ToolTip>
                         </Button>
-                        <Button
+                        <!--<Button
                             Grid.Row="1"
                             Margin="0"
                             VerticalAlignment="Center"
@@ -319,7 +319,7 @@
                             <ToolTipService.ToolTip>
                                 <ToolTip x:Uid="LyricsTimeOffset" />
                             </ToolTipService.ToolTip>
-                        </Button>
+                        </Button>-->
                     </Grid>
                 </Grid>
                 <StackPanel

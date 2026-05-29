@@ -1,5 +1,4 @@
-﻿using ABI.Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Data;
+﻿using Microsoft.UI.Xaml.Data;
 using System;
 
 namespace WinUIMusicPlayer.Converters
@@ -20,7 +19,7 @@ namespace WinUIMusicPlayer.Converters
         {
             if (value is double doubleValue)
             {
-                return new Microsoft.UI.Xaml.Thickness(doubleValue,0,doubleValue,0);
+                return new Microsoft.UI.Xaml.Thickness(doubleValue, 0, doubleValue, 0);
             }
             return new Microsoft.UI.Xaml.Thickness(20, 0, 20, 0);
         }

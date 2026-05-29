@@ -23,7 +23,7 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicBrowseViewModel MusicBrowseViewModel { get; set; }
         public AppViewModel AppViewModel { get; }
 
-        public AlbumViewModel(MusicBrowseViewModel musicBrowseViewModel,AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
+        public AlbumViewModel(MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
             MusicBrowseViewModel = musicBrowseViewModel;
             AppViewModel = appViewModel;
@@ -31,24 +31,27 @@ namespace WinUIMusicPlayer.ViewModel
             InitalizeOption();
         }
 
-        private void InitalizeOption() {
+        private void InitalizeOption()
+        {
             AlbumMenuOptions.Add(new() { Title = "播放", Tag = "Play", Command = PlayCommand });
-            AlbumMenuOptions.Add(new() { Title = "添加到最爱", Tag = "AddToFavour" ,Command = AddToFavourCommand});
-            AlbumMenuOptions.Add(new(){ Title = "添加到播放列表",Tag = "AddToPlayList",Children = []});
-            AlbumMenuOptions.Add(new() { Title = "属性", Tag = "Property",Command = ShowPropertyWindowCommand});
+            AlbumMenuOptions.Add(new() { Title = "添加到最爱", Tag = "AddToFavour", Command = AddToFavourCommand });
+            AlbumMenuOptions.Add(new() { Title = "添加到播放列表", Tag = "AddToPlayList", Children = [] });
+            AlbumMenuOptions.Add(new() { Title = "属性", Tag = "Property", Command = ShowPropertyWindowCommand });
         }
 
-        public void UpdateAlbumMenuOptionsPlayList() {
+        public void UpdateAlbumMenuOptionsPlayList()
+        {
             var option = AlbumMenuOptions.AsValueEnumerable().FirstOrDefault(a => (string)a.Tag == "AddToPlayList");
             option?.Children.Clear();
-            foreach (var item in AppViewModel.AllPlayList) {
-                option?.Children.Add(new() { Title = item.Name, Tag = item.Id, Command=AddToPlayListCommand});
+            foreach (var item in AppViewModel.AllPlayList)
+            {
+                option?.Children.Add(new() { Title = item.Name, Tag = item.Id, Command = AddToPlayListCommand });
             }
         }
 
         public void UpDateUsbDeviceMenuflyout()
         {
-            var usbFlyout = AlbumMenuOptions.FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
+            var usbFlyout = AlbumMenuOptions.AsValueEnumerable().FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
             if (AppData.UsbStorageDevices.Count == 0)
             {
                 if (usbFlyout is not null) AlbumMenuOptions.Remove(usbFlyout);
@@ -73,7 +76,7 @@ namespace WinUIMusicPlayer.ViewModel
             AppViewModel.PageType = "albumBrowse";
             AppViewModel.IsBackBtnEnable = false;
         }
-        
+
 
         public void AlbumGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
@@ -86,18 +89,19 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     AppViewModel.PageType = "album";
                     AppViewModel.CurrentAlbumObj = album;
-                    MusicBrowseViewModel.NavigatePage(typeof(SongCollectionPage),null, new DrillInNavigationTransitionInfo());
+                    MusicBrowseViewModel.NavigatePage(typeof(SongCollectionPage), null, new DrillInNavigationTransitionInfo());
 
                 }
             }
         }
 
         [RelayCommand]
-        private async Task Play() {
+        private async Task Play()
+        {
             var albums = AppViewModel.SongsSource.AsValueEnumerable()
-                .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album,StringComparison.OrdinalIgnoreCase))
+                .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(m => m.TrackNumber).ToList();
-            if (albums is not null &&albums.Count > 0)
+            if (albums is not null && albums.Count > 0)
             {
                 if (MusicBrowseViewModel is not null)
                 {
@@ -112,12 +116,14 @@ namespace WinUIMusicPlayer.ViewModel
             var albums = AppViewModel.SongsSource.AsValueEnumerable()
                .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
                .OrderByDescending(m => m.TrackNumber);
-            foreach (var album in albums) {
+            foreach (var album in albums)
+            {
                 album.AddToFavourite();
             }
         }
         [RelayCommand]
-        private void ShowPropertyWindow() {
+        private void ShowPropertyWindow()
+        {
             var albumDetailWindow = new AlbumDetailWindow(SelectedItem);
             albumDetailWindow.Activate();
         }

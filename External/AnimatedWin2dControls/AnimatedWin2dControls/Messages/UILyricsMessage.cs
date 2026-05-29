@@ -1,5 +1,5 @@
-using System.Collections.Generic;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+using System.Collections.Generic;
 
 namespace AnimatedWin2dControls.Messages;
 

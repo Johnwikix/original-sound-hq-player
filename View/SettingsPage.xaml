@@ -639,45 +639,6 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
 
-                <!--  动画设置  -->
-                <!--<controls:SettingsExpander x:Uid="AnimationSettings" Margin="10,0,10,0">
-                    <controls:SettingsExpander.Items>
-                        <controls:SettingsCard x:Uid="EntranceAnimationTime">
-                            <NumberBox
-                                x:Name="EntranceAnimationTimeNumberBox"
-                                Width="300"
-                                LargeChange="100"
-                                Maximum="10000"
-                                Minimum="0"
-                                SmallChange="10"
-                                SpinButtonPlacementMode="Inline"
-                                Value="{x:Bind ViewModel.AppViewModel.EntranceAnimationTime, Mode=TwoWay}" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard x:Uid="SlideAnimationTime">
-                            <NumberBox
-                                x:Name="SlideAnimationTimeNumberBox"
-                                Width="300"
-                                LargeChange="100"
-                                Maximum="10000"
-                                Minimum="0"
-                                SmallChange="10"
-                                SpinButtonPlacementMode="Inline"
-                                Value="{x:Bind ViewModel.AppViewModel.SlideAnimationTime, Mode=TwoWay}" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard x:Uid="DrillInAnimationTime">
-                            <NumberBox
-                                x:Name="DrillInAnimationTimeBox"
-                                Width="300"
-                                LargeChange="100"
-                                Maximum="10000"
-                                Minimum="0"
-                                SmallChange="10"
-                                SpinButtonPlacementMode="Inline"
-                                Value="{x:Bind ViewModel.AppViewModel.DrillInAnimationTime, Mode=TwoWay}" />
-                        </controls:SettingsCard>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>-->
-
                 <!--  窗口大小设置  -->
                 <controls:SettingsExpander x:Uid="MainWindowSizeSettings" Margin="10,0,10,0">
                     <controls:SettingsExpander.Items>

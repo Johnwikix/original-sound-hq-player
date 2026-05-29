@@ -1,9 +1,8 @@
+using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Brushes;
 using System;
 using System.Linq;
 using System.Numerics;
-using Microsoft.Graphics.Canvas;
-using Microsoft.Graphics.Canvas.Brushes;
-using Microsoft.UI;
 using Windows.Foundation;
 using Windows.UI;
 

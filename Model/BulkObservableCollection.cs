@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace WinUIMusicPlayer.Model
@@ -47,7 +46,7 @@ namespace WinUIMusicPlayer.Model
         {
             // 1. 检查数据是否真的变了（防止无效刷新）
             // 如果你传入的是同一个引用且数量一致，可以选择跳过
-            var newList = items.ToList();
+            var newList = items;
 
             // 2. 悄悄修改内部原始列表
             this.Items.Clear();

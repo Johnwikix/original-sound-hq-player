@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.Services
@@ -40,10 +39,10 @@ namespace WinUIMusicPlayer.Services
             await Task.WhenAll(longOpsTask);
             ToolUtils.CleanupStaleCacheFiles();
             await App.Services.GetRequiredService<MusicBrowseViewModel>().LoadPlayStateToMusicBrowsePage();
-            await App.Services.GetRequiredService<IpcService>().InitializeMusic(App.Services.GetRequiredService<AppViewModel>().CurrentPlayingMusic);           
+            await App.Services.GetRequiredService<IpcService>().InitializeMusic(App.Services.GetRequiredService<AppViewModel>().CurrentPlayingMusic);
             App.MainWindow.ShowMainPage();
             AppData.AppDpiScale = WindowSizeHelper.GetScaleFactor(AppData.HWnd);
-            App.Services.GetRequiredService<AppViewModel>().IsInitialized = true;            
+            App.Services.GetRequiredService<AppViewModel>().IsInitialized = true;
         }
 
         // 应用关闭时执行清理

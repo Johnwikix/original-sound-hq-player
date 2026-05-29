@@ -33,22 +33,22 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             float aspect = srcW / srcH;
             float dw, dh;
             if (aspect >= cw / ch) { dw = cw; dh = dw / aspect; }
-            else                   { dh = ch; dw = dh * aspect; }
+            else { dh = ch; dw = dh * aspect; }
 
             return new Rect(cr.X + (cw - dw) * 0.5f, cr.Y + (ch - dh) * 0.5f, dw, dh);
         }
 
         // ── 缓动函数 ──────────────────────────────────────────────────────────
 
-        private static float EaseIn(float t)  => t * t;
+        private static float EaseIn(float t) => t * t;
         private static float EaseOut(float t) => 1f - (1f - t) * (1f - t);
 
         // ── 去重（dedup）工具 ─────────────────────────────────────────────────
 
         private void InvalidateDedup()
         {
-            _lastLength         = NeverInitialized;
-            _lastHash           = 0;
+            _lastLength = NeverInitialized;
+            _lastHash = 0;
             _currentDisplayHash = -1;
         }
 
@@ -69,11 +69,11 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             if (b == null || b.Length == 0)
             {
                 _lastLength = -1;
-                _lastHash   = 0;
+                _lastHash = 0;
                 return;
             }
             _lastLength = b.Length;
-            _lastHash   = ToolUtils.ComputeFastHash(b);
+            _lastHash = ToolUtils.ComputeFastHash(b);
         }
 
         // ── Dispose ───────────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         private void Dispose(bool disposing)
         {
             if (!disposing || _disposed) return;
-            _disposed           = true;
+            _disposed = true;
             _isResourcesCreated = false;
 
             var pCts = Interlocked.Exchange(ref _pipelineCts, new CancellationTokenSource());

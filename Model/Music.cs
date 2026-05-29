@@ -1,17 +1,16 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+﻿using AnimatedWin2dControls.Messages;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
-using AnimatedWin2dControls.Messages;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Media.Imaging;
 using SQLite;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.ViewModel;
+using ZLinq;
 
 namespace WinUIMusicPlayer.Model
 {
@@ -41,18 +40,20 @@ namespace WinUIMusicPlayer.Model
         public string TranslatedLyrics { get; set => SetProperty(ref field, value); } = string.Empty;
         public string Krc { get; set => SetProperty(ref field, value); } = string.Empty;
         public string TKrc { get; set => SetProperty(ref field, value); } = string.Empty;
-        public int LyricsOffsetMs { 
-            get; 
-            set { 
-                if (SetProperty(ref field, value)) 
+        public int LyricsOffsetMs
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value))
                 {
                     if (App.Services.GetRequiredService<AppViewModel>().IsInitialized)
                     {
                         WeakReferenceMessenger.Default.Send(new OffsetMsMessage(value));
                         Save();
                     }
-                } 
-            } 
+                }
+            }
         } = 0;
         public int PlayCount { get; set; } = 0;
         public bool IsLrcSearched { get; set; } = false;
@@ -64,9 +65,10 @@ namespace WinUIMusicPlayer.Model
         public DateTime UpdateTime { get; set => SetProperty(ref field, value); }
 
         [RelayCommand]
-        public async Task Play(string page) 
+        public async Task Play(string page)
         {
-            switch (page) {
+            switch (page)
+            {
                 case "FavoriteSongsView":
                     App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().FavoriteSongs);
                     break;
@@ -96,17 +98,19 @@ namespace WinUIMusicPlayer.Model
         }
 
         [RelayCommand]
-        public void UpdateFavourite() {
+        public void UpdateFavourite()
+        {
             IsFavorite = !IsFavorite;
             if (IsFavorite)
             {
-                Order = App.Services.GetRequiredService<AppViewModel>().SongsSource
+                Order = App.Services.GetRequiredService<AppViewModel>().SongsSource.AsValueEnumerable()
                                          .Where(m => m.IsFavorite)
                                          .OrderByDescending(m => m.Order)
                                          .FirstOrDefault()?.Order + 1 ?? 1;
                 App.Services.GetRequiredService<AppViewModel>().AddToFavoriteSongs(this);
             }
-            else {
+            else
+            {
                 App.Services.GetRequiredService<AppViewModel>().RemoveFromFavoriteSongs(this);
                 Order = 0;
             }
@@ -115,11 +119,11 @@ namespace WinUIMusicPlayer.Model
 
         [RelayCommand]
         public void AddToFavourite()
-        {            
+        {
             if (!IsFavorite)
             {
                 IsFavorite = true;
-                Order = App.Services.GetRequiredService<AppViewModel>().SongsSource
+                Order = App.Services.GetRequiredService<AppViewModel>().SongsSource.AsValueEnumerable()
                                          .Where(m => m.IsFavorite)
                                          .OrderByDescending(m => m.Order)
                                          .FirstOrDefault()?.Order + 1 ?? 1;
@@ -128,7 +132,7 @@ namespace WinUIMusicPlayer.Model
             _ = App.Services.GetRequiredService<MusicDatabaseService>().AddToFavourite(this);
         }
 
-        public async void Remove() 
+        public async void Remove()
         {
             await App.Services.GetRequiredService<MusicDatabaseService>().RemoveMusic(Id);
             App.Services.GetRequiredService<AppViewModel>().RemoveFromSongsSource(this);
@@ -136,7 +140,7 @@ namespace WinUIMusicPlayer.Model
             App.Services.GetRequiredService<AppViewModel>().RemoveFromPlayListSongs(this);
         }
 
-        private async void Save() 
+        private async void Save()
         {
             await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(this);
         }

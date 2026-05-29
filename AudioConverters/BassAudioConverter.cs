@@ -251,7 +251,7 @@ namespace WinUIMusicPlayer.AudioConverters
             try
             {
                 byte[] pic = ToolUtils.GetRawImage(music).Result;
-                ToolUtils.SaveMetaData(music,outputPath,pic);
+                ToolUtils.SaveMetaData(music, outputPath, pic);
             }
             catch (Exception ex)
             {

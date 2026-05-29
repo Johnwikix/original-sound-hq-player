@@ -1,9 +1,8 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using WinUIMusicPlayer.Model;
+using ZLinq;
 
 namespace WinUIMusicPlayer.Extensions
 {
@@ -56,7 +55,7 @@ namespace WinUIMusicPlayer.Extensions
         private static MenuFlyoutItemBase CreateMenuItem(MenuModel model)
         {
             // 处理子菜单 (Children)
-            if (model.Children != null && model.Children.Any())
+            if (model.Children != null && model.Children.AsValueEnumerable().Any())
             {
                 var subItem = new MenuFlyoutSubItem { Text = model.Title };
 

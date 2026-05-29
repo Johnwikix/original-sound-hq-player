@@ -1,5 +1,4 @@
 using System;
-using Windows.Foundation;
 
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
 {

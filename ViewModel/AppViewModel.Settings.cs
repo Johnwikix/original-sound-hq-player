@@ -7,9 +7,7 @@ using Microsoft.Windows.Storage.Pickers;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.System;
@@ -18,7 +16,6 @@ using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.View;
 using ZLinq;
 
 namespace WinUIMusicPlayer.ViewModel

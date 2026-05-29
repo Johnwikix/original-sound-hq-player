@@ -2,26 +2,24 @@
 using Lyricify.Lyrics.Models;
 using Lyricify.Lyrics.Searchers;
 using Lyricify.Lyrics.Searchers.Helpers;
-using System;
 using Microsoft.Extensions.Logging;
+using System;
 using System.Net;
 using System.Net.Http;
-using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Media.Protection.PlayReady;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.OnlineAPIs.CloudMusicAPI;
 
 namespace WinUIMusicPlayer.WebService
 {
 
-    public class LrcService:IDisposable
+    public class LrcService : IDisposable
     {
         private HttpClient _httpClient;
         private readonly HttpClientHandler _clientHandler;
         private ILogger<LrcService> _logger;
-        public LrcService(ILogger<LrcService> logger) {
+        public LrcService(ILogger<LrcService> logger)
+        {
             _logger = logger;
             _clientHandler = new HttpClientHandler
             {
@@ -34,7 +32,7 @@ namespace WinUIMusicPlayer.WebService
         {
             try
             {
-                if(AppData.UnknownAlbums.Contains(music.Album))
+                if (AppData.UnknownAlbums.Contains(music.Album))
                 {
                     return null;
                 }
@@ -110,7 +108,7 @@ namespace WinUIMusicPlayer.WebService
             }
         }
 
-        public async Task<(string,string)> GetLyricsAsync(Music music,Searchers searchers = Searchers.QQMusic, CancellationToken cancellationToken = default)
+        public async Task<(string, string)> GetLyricsAsync(Music music, Searchers searchers = Searchers.QQMusic, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -128,7 +126,8 @@ namespace WinUIMusicPlayer.WebService
                     cancellationToken.ThrowIfCancellationRequested();
                     return (res?.Lrc.Lyric ?? string.Empty, (AppData.SystemLanguage.Contains("zh") == true ? res?.Tlyric.Lyric ?? string.Empty : string.Empty));
                 }
-                else if (search is QQMusicSearchResult qQMusicSearchResult) {
+                else if (search is QQMusicSearchResult qQMusicSearchResult)
+                {
                     var res = await ProviderHelper.QQMusicApi.GetLyric(qQMusicSearchResult.Mid);
                     cancellationToken.ThrowIfCancellationRequested();
                     return (res?.Lyric ?? string.Empty, (AppData.SystemLanguage.Contains("zh") == true ? res?.Trans ?? string.Empty : string.Empty));
@@ -181,7 +180,7 @@ namespace WinUIMusicPlayer.WebService
         {
             try
             {
-                if(string.IsNullOrEmpty(url)) return null;
+                if (string.IsNullOrEmpty(url)) return null;
                 cancellationToken.ThrowIfCancellationRequested();
                 byte[] imageBytes = await _httpClient.GetByteArrayAsync(url, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();

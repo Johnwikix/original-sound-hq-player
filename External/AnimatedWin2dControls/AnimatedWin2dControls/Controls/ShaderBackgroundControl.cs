@@ -743,8 +743,9 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void RaiseException(Exception ex)
     {
-        try { 
-            ExceptionOccurred?.Invoke(this, ex); 
+        try
+        {
+            ExceptionOccurred?.Invoke(this, ex);
         }
         catch { /* 订阅者异常不再递归上报 */ }
     }

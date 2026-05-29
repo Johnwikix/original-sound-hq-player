@@ -7,7 +7,7 @@ namespace Lyricify.Lyrics.Searchers
     {
         public ISearcher Searcher => new MusixmatchSearcher();
 
-        public MusixmatchSearchResult(string title, string[] artists, string album,string albumId, string[]? albumArtists, int durationMs, int id, string isrc, string vanityId)
+        public MusixmatchSearchResult(string title, string[] artists, string album, string albumId, string[]? albumArtists, int durationMs, int id, string isrc, string vanityId)
         {
             Title = title;
             Artists = artists;

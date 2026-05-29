@@ -4,31 +4,26 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.View;
 using ZLinq;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.ViewModel.Pages
 {
-    public partial class PlayingDetailViewModel:ObservableObject
+    public partial class PlayingDetailViewModel : ObservableObject
     {
         public AppViewModel AppViewModel { get; }
         public double TitleFontSize { get; set => SetProperty(ref field, value); } = 24;
         public double ArtistAlbumFontSize { get => field; set => SetProperty(ref field, value); } = 22;
         public double InfoFontSize { get; set => SetProperty(ref field, value); } = 12;
-        public double FirstControlSize { get; set => SetProperty(ref field, value); } = 26; 
+        public double FirstControlSize { get; set => SetProperty(ref field, value); } = 26;
         public double SecondControlSize { get; set => SetProperty(ref field, value); } = 26;
         public double FirstShapeSize { get; set => SetProperty(ref field, value); } = 40;
         public Thickness ControlMargin { get; set => SetProperty(ref field, value); } = new Thickness(5, 0, 5, 0);
         private ILogger<PlayingDetailViewModel> _logger;
-        public PlayingDetailViewModel(AppViewModel appViewModel,ILogger<PlayingDetailViewModel> logger)
+        public PlayingDetailViewModel(AppViewModel appViewModel, ILogger<PlayingDetailViewModel> logger)
         {
             AppViewModel = appViewModel;
             _logger = logger;

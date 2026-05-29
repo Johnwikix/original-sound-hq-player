@@ -1,7 +1,6 @@
-using System;
-using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using System;
 
 namespace WinUIMusicPlayer.Controls.Lyrics
 {
@@ -63,7 +62,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         private void LyricsCanvas_RenderError(object sender, Exception e)
         {
-            ExceptionInteracted?.Invoke(this,e);
+            ExceptionInteracted?.Invoke(this, e);
         }
     }
 }

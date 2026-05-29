@@ -16,7 +16,8 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs e)
         {
-            if (_lastDpi == 0f) {
+            if (_lastDpi == 0f)
+            {
                 _lastDpi = e.DrawingSession.Dpi;
             }
             ConsumeDecodeChannel(sender, _lastDpi);
@@ -32,7 +33,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         // ── 解码通道消费 ──────────────────────────────────────────────────────
 
-        private void ConsumeDecodeChannel(CanvasControl sender,float dpi)
+        private void ConsumeDecodeChannel(CanvasControl sender, float dpi)
         {
             if (!_decodeChannel.Reader.TryRead(out var item)) return;
 
@@ -82,14 +83,14 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             {
                 FinishFadeImmediately();
                 _currentBmp?.Dispose();
-                _currentBmp  = bmp;
+                _currentBmp = bmp;
                 _currentInfo = info;
                 _canvas?.Invalidate();
                 return;
             }
 
             FinishFadeImmediately();
-            _nextBmp  = bmp;
+            _nextBmp = bmp;
             _nextInfo = info;
             BeginTransition();
         }
@@ -101,15 +102,15 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             if (_nextBmp != null)
             {
                 _currentBmp?.Dispose();
-                _currentBmp  = _nextBmp;
+                _currentBmp = _nextBmp;
                 _currentInfo = _nextInfo;
-                _nextBmp     = null;
+                _nextBmp = null;
                 // 强制结束时同步 _currentDisplayHash，防止 dedup 误判
                 _currentDisplayHash = _lastHash;
             }
 
-            _isFading      = false;
-            _t             = 0f;
+            _isFading = false;
+            _t = 0f;
             _lastDrawTicks = 0;
         }
 
@@ -158,9 +159,9 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             var contentDest = CalcAspectFitRect(info.SrcW, info.SrcH, _contentRect);
             if (contentDest.Width <= 0 || contentDest.Height <= 0) return;
 
-            double cx   = contentDest.X + contentDest.Width  * 0.5;
-            double cy   = contentDest.Y + contentDest.Height * 0.5;
-            double bmpW = (contentDest.Width  + info.Pad * 2) * scale;
+            double cx = contentDest.X + contentDest.Width * 0.5;
+            double cy = contentDest.Y + contentDest.Height * 0.5;
+            double bmpW = (contentDest.Width + info.Pad * 2) * scale;
             double bmpH = (contentDest.Height + info.Pad * 2) * scale;
             var dest = new Rect(cx - bmpW * 0.5, cy - bmpH * 0.5, bmpW, bmpH);
 
@@ -187,7 +188,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         {
             if (frame.W <= 0 || frame.H <= 0 || contentW <= 0 || contentH <= 0) return null;
 
-            var   device = sender.Device;
+            var device = sender.Device;
             using var srcBmp = CanvasBitmap.CreateFromBytes(
                 device, frame.Pixels, frame.W, frame.H,
                 Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized,
@@ -196,7 +197,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             float aspect = (float)frame.W / frame.H;
             float drawW, drawH;
             if (aspect >= contentW / contentH) { drawW = contentW; drawH = drawW / aspect; }
-            else                               { drawH = contentH; drawW = drawH * aspect; }
+            else { drawH = contentH; drawW = drawH * aspect; }
 
             int dstW = Math.Max(1, (int)drawW);
             int dstH = Math.Max(1, (int)drawH);
@@ -222,9 +223,9 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                     }
                 }
 
-                float pad  = shadow ? ShadowPad : 0f;
-                int   rtW  = dstW + (int)(pad * 2);
-                int   rtH  = dstH + (int)(pad * 2);
+                float pad = shadow ? ShadowPad : 0f;
+                int rtW = dstW + (int)(pad * 2);
+                int rtH = dstH + (int)(pad * 2);
 
                 var finalRt = new CanvasRenderTarget(device, rtW, rtH, dpi,
                     Windows.Graphics.DirectX.DirectXPixelFormat.R8G8B8A8UIntNormalized,
@@ -239,13 +240,13 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                         // blur 和 shadowEffect 必须在 scaledRt dispose 之前 DrawImage 完成
                         using var blur = new GaussianBlurEffect
                         {
-                            Source     = scaledRt,
+                            Source = scaledRt,
                             BlurAmount = 4f,
                             BorderMode = EffectBorderMode.Soft,
                         };
                         using var shadowEffect = new ColorMatrixEffect
                         {
-                            Source      = blur,
+                            Source = blur,
                             ColorMatrix = new Microsoft.Graphics.Canvas.Effects.Matrix5x4 { M44 = 100f / 255f }
                         };
                         ds.DrawImage(shadowEffect, new Vector2(pad + 1, pad + 2));

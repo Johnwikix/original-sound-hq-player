@@ -17,7 +17,6 @@ using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.IO.Hashing;
-using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -164,7 +163,8 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static void SaveMetaData(Music music,string filePath ,byte[] pic) {
+        public static void SaveMetaData(Music music, string filePath, byte[] pic)
+        {
             Settings.FileBufferSize = 1024 * 256;
             Track theTrack = new(filePath)
             {
@@ -178,9 +178,10 @@ namespace WinUIMusicPlayer.Utils
             theTrack.EmbeddedPictures.Clear();
             theTrack.EmbeddedPictures.Add(PictureInfo.fromBinaryData(pic));
             string[] lines = music.Lyrics.Split([Environment.NewLine], StringSplitOptions.None);
-            if (lines.Length == 0) {
+            if (lines.Length == 0)
+            {
                 lines = music.Krc.Split([Environment.NewLine], StringSplitOptions.None);
-            }           
+            }
             theTrack.Lyrics = new List<LyricsInfo>(lines.Length);
             foreach (string line in lines)
             {
@@ -259,7 +260,7 @@ namespace WinUIMusicPlayer.Utils
                 if (FastReadExtensions.Contains(music.Extension))
                 {
                     picture = AudioCoverReader.ReadCover(music.Path);
-                    if(picture is null || picture.Length == 0)
+                    if (picture is null || picture.Length == 0)
                     {
                         Track track = new(music.Path);
                         if (track?.EmbeddedPictures is not null && track?.EmbeddedPictures.Count > 0)
@@ -349,7 +350,7 @@ namespace WinUIMusicPlayer.Utils
                 }
                 fileInfo.Title = string.IsNullOrEmpty(track?.Title) ? Path.GetFileNameWithoutExtension(file.Path) : track.Title;
                 fileInfo.Album = string.IsNullOrEmpty(track?.Album) ? "未知专辑" : track.Album;
-                fileInfo.Artist = string.IsNullOrEmpty(track?.Artist) ? "未知艺术家" : track.Artist; 
+                fileInfo.Artist = string.IsNullOrEmpty(track?.Artist) ? "未知艺术家" : track.Artist;
                 fileInfo.BitRate = track?.Bitrate ?? 0;
                 fileInfo.Year = track?.Year ?? 0;
                 fileInfo.TrackNumber = track?.TrackNumber ?? 0;
@@ -684,7 +685,7 @@ namespace WinUIMusicPlayer.Utils
 
 
         public static async Task<(string, string)> GetLyricsFromNet(Music musicDetail)
-        {         
+        {
             return await App.Services.GetRequiredService<LrcService>().GetMixedLyricsAsync(musicDetail);
         }
 
@@ -746,7 +747,7 @@ namespace WinUIMusicPlayer.Utils
                 int year = track.Year ?? 0;
                 duration = TimeSpan.FromMilliseconds(track.DurationMs);
                 int channelCount = track.ChannelsArrangement.NbChannels;
-                LyricsInfo? lyricsInfo = track.Lyrics.FirstOrDefault();
+                LyricsInfo? lyricsInfo = track.Lyrics.AsValueEnumerable().FirstOrDefault();
                 if (lyricsInfo is not null)
                 {
                     foreach (LyricsInfo.LyricsPhrase phrase in lyricsInfo.SynchronizedLyrics)

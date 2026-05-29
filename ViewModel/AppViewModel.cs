@@ -2,14 +2,11 @@
 using AnimatedWin2dControls.Messages;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
-using Lyricify.Lyrics.Providers.Web.Netease;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -19,13 +16,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Timers;
 using WinUIMusicPlayer.Behaviors;
-using WinUIMusicPlayer.Controls.Lyrics;
 using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.View;
 using ZLinq;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
@@ -34,7 +29,8 @@ namespace WinUIMusicPlayer.ViewModel
     public partial class AppViewModel : ObservableObject, IDisposable
     {
         private int _loadingMusicId;
-        public Music? CurrentArtistObj {
+        public Music? CurrentArtistObj
+        {
             get => field;
             set
             {
@@ -44,7 +40,8 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        public Music? CurrentAlbumObj {
+        public Music? CurrentAlbumObj
+        {
             get => field;
             set
             {
@@ -54,7 +51,8 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        public Music? CurrentFolderObj {
+        public Music? CurrentFolderObj
+        {
             get => field;
             set
             {
@@ -82,7 +80,7 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         } = PlayMode.ListLoop;
-        
+
         public string SearchText
         {
             get => field;
@@ -94,31 +92,34 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        private CancellationTokenSource? SearchCts { get; set;  }
+        private CancellationTokenSource? SearchCts { get; set; }
         public BulkObservableCollection<Music> SongsSource { get; set => SetProperty(ref field, value); } = [];
-        public BulkObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];        
+        public BulkObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<PlayListMusicItem> PlayListSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<PlayList> AllPlayList { get; set => SetProperty(ref field, value); } = [];
         public PlayList CurrentPlayList { get; set => SetProperty(ref field, value); }
         public int CurrentPlayListId { get; set => SetProperty(ref field, value); }
-        public CollectionViewSource AlbumPageSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource() { IsSourceGrouped = true};
+        public CollectionViewSource AlbumPageSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource() { IsSourceGrouped = true };
         public CollectionViewSource ArtistPageSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource() { IsSourceGrouped = true };
         public CollectionViewSource FolderPageSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource() { IsSourceGrouped = true };
         public BulkObservableCollection<Music> ListSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<Music> AlbumSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<Music> ArtistSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<Music> FolderSongs { get; set => SetProperty(ref field, value); } = [];
-        public Music CurrentPlayingMusic { 
-            get => field; 
-            set {
-                if (SetProperty(ref field, value) && IsInitialized) {
+        public Music CurrentPlayingMusic
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value) && IsInitialized)
+                {
                     WeakReferenceMessenger.Default.Send(new OffsetMsMessage(value?.LyricsOffsetMs ?? 0));
                 }
-            } 
+            }
         }
         public string PlayModeFlyoutText { get; set => SetProperty(ref field, value); }
-        public ObservableCollection<Music> SequentialPlayingList 
-        { 
+        public ObservableCollection<Music> SequentialPlayingList
+        {
             get => field;
             set
             {
@@ -128,7 +129,8 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         CurrentPlayingList = value.CreateShuffled();
                     }
-                    else {
+                    else
+                    {
                         CurrentPlayingList = value;
                     }
                 }
@@ -185,7 +187,7 @@ namespace WinUIMusicPlayer.ViewModel
         public string PageType { get; set => SetProperty(ref field, value); } = string.Empty;
         public bool IsInNaviView { get; set => SetProperty(ref field, value); } = false;
         public float TopControlsOpacity { get; set => SetProperty(ref field, value); } = 1.0f;
-        public bool IsBackBtnEnable { get; set => SetProperty(ref field, value); } = false;        
+        public bool IsBackBtnEnable { get; set => SetProperty(ref field, value); } = false;
         public TimeSpan LyricsDurationTime { get; set; } = TimeSpan.Zero;
         public bool IsManualSelect { get; set; } = false;
         public bool IsMouseOverVolumeSlider { get; set; } = false;
@@ -193,7 +195,7 @@ namespace WinUIMusicPlayer.ViewModel
         private TimeSpan TotalTime { get; set; }
         private TimeSpan CurrentTime { get; set; }
         public TimeSpan CurrentPlayingTime { get; set => SetProperty(ref field, value); } = TimeSpan.Zero;
-        private StringBuilder TimeStringBuilder { get; set; } = new StringBuilder(16);        
+        private StringBuilder TimeStringBuilder { get; set; } = new StringBuilder(16);
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
 
         // 带有复杂逻辑的属性重构
@@ -269,7 +271,7 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
-                    }                    
+                    }
                 }
             }
         }
@@ -310,7 +312,7 @@ namespace WinUIMusicPlayer.ViewModel
                     HandleProgressSliderChange(value);
                 }
             }
-        } = 0;        
+        } = 0;
 
         public bool IsPlaying
         {
@@ -335,9 +337,9 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicDatabaseService _musicDatabaseService { get; }
         private ILogger<AppViewModel> _logger;
 
-        public AppViewModel(MusicDatabaseService musicDatabaseService,SystemMediaControlsService systemMediaControlsService,ILogger<AppViewModel> logger)
+        public AppViewModel(MusicDatabaseService musicDatabaseService, SystemMediaControlsService systemMediaControlsService, ILogger<AppViewModel> logger)
         {
-            _musicDatabaseService = musicDatabaseService;  
+            _musicDatabaseService = musicDatabaseService;
             SystemMediaControlsService = systemMediaControlsService;
             _logger = logger;
             AllPlayList.CollectionChanged += AllPlayList_CollectionChanged;
@@ -392,7 +394,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex,ex.Message);
+                _logger.LogError(ex, ex.Message);
             }
         }
 
@@ -434,9 +436,10 @@ namespace WinUIMusicPlayer.ViewModel
                         }
                     }
                 });
-                _ = Task.Run(() => {
+                _ = Task.Run(() =>
+                {
                     SystemMediaControlsService.UpdateTimelineProperties(CurrentTime, TotalTime);
-                } );
+                });
             }
             catch (Exception ex)
             {
@@ -454,14 +457,15 @@ namespace WinUIMusicPlayer.ViewModel
                 //设置播放服务中的歌词
                 List<LyricLine> parsedLyrics = await App.Services.GetRequiredService<LyricsRefreshService>().SetLyrics(music);
                 // 解析歌词并添加到UI集合
-                App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
                     if (_loadingMusicId == music.Id)
                     {
                         UILyrics = parsedLyrics;
                     }
                 });
             });
-            
+
         }
 
         public void AdjustVolume(int delta)
@@ -473,7 +477,8 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void SongsSource_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            if (IsInitialized) {
+            if (IsInitialized)
+            {
                 RefreshDataSource();
             }
         }
@@ -483,7 +488,8 @@ namespace WinUIMusicPlayer.ViewModel
             UpdateMenuOptionsPlayList();
         }
 
-        public void UpdateMenuOptionsPlayList() {
+        public void UpdateMenuOptionsPlayList()
+        {
             App.Services.GetRequiredService<AlbumViewModel>().UpdateAlbumMenuOptionsPlayList();
             App.Services.GetRequiredService<ArtistViewModel>().UpdateAlbumMenuOptionsPlayList();
             App.Services.GetRequiredService<FolderViewModel>().UpdateAlbumMenuOptionsPlayList();
@@ -501,7 +507,8 @@ namespace WinUIMusicPlayer.ViewModel
         {
             var query = SongsSource.AsEnumerable();
             // 2. 应用外部传入的谓词 (如 s => s.Album == CurrentAlbumObj.Album)
-            if (filterPredicate != null)            {
+            if (filterPredicate != null)
+            {
                 query = query.Where(filterPredicate);
             }
             // 3. 应用搜索过滤 (SearchText)
@@ -512,7 +519,7 @@ namespace WinUIMusicPlayer.ViewModel
                     SongViewType.Album => query.Where(m =>
                     (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false)),
-                    SongViewType.Artist  => query.Where(m =>
+                    SongViewType.Artist => query.Where(m =>
                     (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false)),
                     SongViewType.Folder => query.Where(m =>
@@ -526,7 +533,7 @@ namespace WinUIMusicPlayer.ViewModel
                     (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false))
                 };
-               
+
             }
             // 4. 应用排序逻辑 (参考旧的 UpdateViewSort)
             var tag = SelectedSortOption?.Tag?.ToString() ?? "DefaultOrder";
@@ -537,7 +544,7 @@ namespace WinUIMusicPlayer.ViewModel
                     SongViewType.Album => query.OrderBy(m => m.DiskNumber).ThenBy(m => m.TrackNumber),
                     SongViewType.Artist or SongViewType.Folder =>
                         query.OrderBy(m => m.Album).ThenBy(m => m.DiskNumber).ThenBy(m => m.TrackNumber),
-                    SongViewType.Favorite => query.OrderByDescending(m=>m.Order),
+                    SongViewType.Favorite => query.OrderByDescending(m => m.Order),
                     _ => query.OrderBy(m => m.Title)
                 };
             }
@@ -555,7 +562,8 @@ namespace WinUIMusicPlayer.ViewModel
                     _ => query.OrderBy(m => m.Title)
                 };
             }
-            App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            {
                 _ = targetCollection.ReplaceAllAsync(query);
             });
         }
@@ -569,7 +577,7 @@ namespace WinUIMusicPlayer.ViewModel
                     (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.LastLevelFolderPath?.Contains(SearchText,StringComparison.OrdinalIgnoreCase) ?? false));
+                    (m.LastLevelFolderPath?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
             }
             // 2. 对去重后的专辑进行首字母分组
             var groups = filteredSource
@@ -579,7 +587,8 @@ namespace WinUIMusicPlayer.ViewModel
                 .Select(g => new MusicGroup(g.Key, g.OrderBy(distinctSelector)))
                 .OrderBy(g => g.Key == "ZZZ" ? "#" : g.Key)
                 .ToList();
-            App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            {
                 source.Source = groups;
             });
         }
@@ -629,11 +638,13 @@ namespace WinUIMusicPlayer.ViewModel
                     .ToList();
 
                 // 6. 更新视图数据源
-                App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
                     source.Source = groups;
                 });
             }
-            catch (Exception ex){
+            catch (Exception ex)
+            {
                 _logger.LogError(ex, ex.Message);
             }
         }
@@ -681,7 +692,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public void RefreshDataSource() {
+        public void RefreshDataSource()
+        {
             _ = UpdateSongCollectionsAsync(FavoriteSongs, SongViewType.Favorite, m => m.IsFavorite == true);
             _ = UpdateSongCollectionsAsync(ListSongs, SongViewType.All);
             _ = UpdateSongCollectionsAsync(AlbumSongs, SongViewType.Album, m => m.Album == CurrentAlbumObj?.Album);
@@ -736,7 +748,8 @@ namespace WinUIMusicPlayer.ViewModel
             var results = sortedQuery.ToList();
 
             // 建议：在 UI 线程操作 ObservableCollection
-            App.MainWindow.DispatcherQueue.TryEnqueue(() => {
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            {
                 _ = PlayListSongs.ReplaceAllAsync(results);
             });
         }
@@ -746,7 +759,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (SelectedSortOption == null) return;
             _ = UpdateSongCollectionsAsync(FavoriteSongs, SongViewType.Favorite, m => m.IsFavorite == true);
             _ = UpdateSongCollectionsAsync(ListSongs, SongViewType.All);
-            _ = UpdateSongCollectionsAsync(AlbumSongs,SongViewType.Album,m=>m.Album == CurrentAlbumObj?.Album);
+            _ = UpdateSongCollectionsAsync(AlbumSongs, SongViewType.Album, m => m.Album == CurrentAlbumObj?.Album);
             _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => m.Author == CurrentArtistObj?.Author);
             _ = UpdateSongCollectionsAsync(FolderSongs, SongViewType.Folder, m => m.LastLevelFolderPath == CurrentFolderObj?.LastLevelFolderPath);
             UpdatePlayListCollectionSort(PlayListSongs);
@@ -762,7 +775,7 @@ namespace WinUIMusicPlayer.ViewModel
             Artist,
             Folder,
             Favorite
-        } 
+        }
         private void UpdatePlayListCollectionSort(ObservableCollection<PlayListMusicItem> collection)
         {
             if (collection == null || !collection.Any()) return;
@@ -818,8 +831,10 @@ namespace WinUIMusicPlayer.ViewModel
             FavoriteSongs.Remove(music);
         }
 
-        public void RefreshSongsSource() {
-            App.MainWindow.DispatcherQueue.TryEnqueue(async () => {
+        public void RefreshSongsSource()
+        {
+            App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+            {
                 _ = SongsSource.ReplaceAllAsync(await _musicDatabaseService.GetMusicListAsync());
             });
         }
@@ -839,7 +854,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public void UpDateUsbDeviceMenuflyout() {
+        public void UpDateUsbDeviceMenuflyout()
+        {
             App.Services.GetRequiredService<FavouritePlayListViewModel>().UpDateUsbDeviceMenuflyout();
             App.Services.GetRequiredService<SongArtistViewModel>().UpDateUsbDeviceMenuflyout();
             App.Services.GetRequiredService<SongListViewModel>().UpDateUsbDeviceMenuflyout();
@@ -889,7 +905,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async Task ReGetLyrics(IEnumerable<Music> uniqueSelectedMusics,Music? selectedMusic = null)
+        public async Task ReGetLyrics(IEnumerable<Music> uniqueSelectedMusics, Music? selectedMusic = null)
         {
             if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 0)
             {
@@ -984,7 +1000,7 @@ namespace WinUIMusicPlayer.ViewModel
                 "Light" => false,
                 _ => !GetIsLightTheme(),
             };
-        }        
+        }
 
         public void Dispose()
         {
@@ -1011,7 +1027,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void SendLyricsSettings()
         {
-          
+
             string fontFamilyName = FontFamily?.FontFamily?.Source ?? "Segoe UI";
             var alignment = LyricsAlignment switch
             {
@@ -1040,7 +1056,8 @@ namespace WinUIMusicPlayer.ViewModel
                 TargetFrameRate: TargetFrameRate));
         }
 
-        private void SendLyricsFontSize() {
+        private void SendLyricsFontSize()
+        {
             double fontSize = IsGlobalFontSizeEnabled ? GlobalFontSize : LyricsFontSize;
             WeakReferenceMessenger.Default.Send(new LyricsFontSizeMessage(fontSize));
         }
@@ -1057,8 +1074,10 @@ namespace WinUIMusicPlayer.ViewModel
                 WeakReferenceMessenger.Default.Send(new UILyricsMessage(UILyrics));
         }
 
-        private void Dispose(bool dispose) {
-            if (dispose) {
+        private void Dispose(bool dispose)
+        {
+            if (dispose)
+            {
                 ProgressTimer?.Stop();
                 SearchCts?.Cancel();
                 SearchCts?.Dispose();

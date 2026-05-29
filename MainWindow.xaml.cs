@@ -1,47 +1,34 @@
 using H.NotifyIcon;
 using H.NotifyIcon.EfficiencyMode;
-using ManagedBass.Wasapi;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Controls;
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-using Windows.UI;
 using Windows.UI.ViewManagement;
 using Windows.UI.WindowManagement;
 using WinUIEx;
 using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Taskbar;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
-using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
-using ZLinq;
-using static ATL.LyricsInfo;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
 
 namespace WinUIMusicPlayer
 {
-    public sealed partial class MainWindow : WindowEx,IDisposable
+    public sealed partial class MainWindow : WindowEx, IDisposable
     {
         public event EventHandler themeChanged;
         public event EventHandler styleChanged;
         public event EventHandler customStyleChanged;
         public event EventHandler<bool> backdropInputState;
-        
+
         private ThemeStyleHelper themeStyleHelper;
         private UISettings uiSettings;
         private IntPtr defaultWndProc;
@@ -58,7 +45,7 @@ namespace WinUIMusicPlayer
             AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Standard;
             this.SetTitleBarBackgroundColors(Colors.Transparent);
             _logger = App.GetLogger<MainWindow>();
-            this.Activated += MainWindow_Activated;            
+            this.Activated += MainWindow_Activated;
             themeStyleHelper = new ThemeStyleHelper(this, AppWindow);
             themeStyleHelper.ThemeChanged += (s, e) => themeChanged?.Invoke(this, EventArgs.Empty);
             themeStyleHelper.StyleChanged += (s, e) => styleChanged?.Invoke(this, EventArgs.Empty);
@@ -72,7 +59,7 @@ namespace WinUIMusicPlayer
             WindowHelper.SetWindowLongPtr(AppData.HWnd, WindowHelper.GWLP_WNDPROC, System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));
             SaveMainWindowHandle(AppData.HWnd);
             uiSettings = new UISettings();
-            uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;            
+            uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
         }
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
@@ -114,10 +101,11 @@ namespace WinUIMusicPlayer
             _ = DispatcherQueue.EnqueueAsync(() =>
             {
                 SetAppStyle();
-                if (AppSettings.AppTheme == "Default") {
+                if (AppSettings.AppTheme == "Default")
+                {
                     App.Services.GetRequiredService<MusicBrowseViewModel>().ThemeChangedUpdateCover();
-                }                
-            });            
+                }
+            });
         }
         //显示窗口
         private IntPtr NewWindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
@@ -147,7 +135,7 @@ namespace WinUIMusicPlayer
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex,"处理窗口消息时发生错误");
+                _logger.LogError(ex, "处理窗口消息时发生错误");
                 return IntPtr.Zero;
             }
         }
@@ -161,7 +149,7 @@ namespace WinUIMusicPlayer
                 this.Hide();
             }
             else
-            {                
+            {
                 await App.Current_Exit();
             }
         }
@@ -211,7 +199,7 @@ namespace WinUIMusicPlayer
             backdropInputState?.Invoke(this, isActive);
         }
 
-             
+
 
         public void InitializeTaskbarHelper()
         {
@@ -219,7 +207,7 @@ namespace WinUIMusicPlayer
             {
                 if (_taskbarHelper is null)
                 {
-                    _taskbarHelper = new TaskbarHelper(AppData.HWnd,App.Services.GetRequiredService<MusicBrowseViewModel>());
+                    _taskbarHelper = new TaskbarHelper(AppData.HWnd, App.Services.GetRequiredService<MusicBrowseViewModel>());
                     _taskbarHelper.ErrorOccurred += (_, e) =>
                     {
                         _logger.LogError(e.Exception, "任务栏助手发生错误");

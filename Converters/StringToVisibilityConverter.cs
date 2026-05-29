@@ -1,8 +1,6 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace WinUIMusicPlayer.Converters
 {
@@ -10,8 +8,10 @@ namespace WinUIMusicPlayer.Converters
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            if (value is string transLrc) {
-                if (string.IsNullOrEmpty(transLrc)) { 
+            if (value is string transLrc)
+            {
+                if (string.IsNullOrEmpty(transLrc))
+                {
                     return Visibility.Collapsed;
                 }
                 return Visibility.Visible;

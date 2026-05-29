@@ -1,16 +1,12 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
-using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -66,7 +62,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
         public void UpDateUsbDeviceMenuflyout()
         {
-            var usbFlyout = MenuOptions.FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
+            var usbFlyout = MenuOptions.AsValueEnumerable().FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
             if (AppData.UsbStorageDevices.Count == 0)
             {
                 if (usbFlyout is not null) MenuOptions.Remove(usbFlyout);
@@ -123,7 +119,7 @@ namespace WinUIMusicPlayer.ViewModel
                     .Distinct()
                     .Count();
                 SecondTitle = $"{AppViewModel.SongsSource.AsValueEnumerable().Count(music => music.LastLevelFolderPath == AppViewModel.CurrentFolderObj.LastLevelFolderPath)} {ToolUtils.GetString("NumberOfSongs")} · {albums} {ToolUtils.GetString("NumberOfAlbums")} · {authors} {ToolUtils.GetString("NumberOfArtists")}";
-                ThirdTitle = ToolUtils.GetString("Folder");                
+                ThirdTitle = ToolUtils.GetString("Folder");
             }
         }
 

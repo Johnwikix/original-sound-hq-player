@@ -1,13 +1,10 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Text;
 using System.Windows.Input;
 
 namespace WinUIMusicPlayer.Model
 {
-    public class MenuModel:ObservableObject
+    public class MenuModel : ObservableObject
     {
         public string Title { get; set => SetProperty(ref field, value); }
         public string Glyph { get; set => SetProperty(ref field, value); }

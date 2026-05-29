@@ -1,17 +1,8 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI.Xaml.Media.Animation;
 using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Diagnostics;
-using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.View;
-using ZLinq;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -30,7 +21,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             AppViewModel.CurrentPlayList = null;
             AppViewModel.IsBackBtnEnable = false;
-        }     
+        }
 
         public async void RemovePlayList(PlayList playList)
         {
@@ -38,7 +29,7 @@ namespace WinUIMusicPlayer.ViewModel
 
             await MusicDatabaseService.RemovePlayList(playList);
             AppViewModel.AllPlayList.Remove(playList);
-        }        
+        }
 
         public void ExportPlayList(PlayList playList)
         {

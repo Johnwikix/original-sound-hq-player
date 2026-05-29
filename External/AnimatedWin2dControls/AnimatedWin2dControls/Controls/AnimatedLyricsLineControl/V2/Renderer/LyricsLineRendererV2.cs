@@ -1,10 +1,10 @@
-using System;
-using System.Numerics;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI;
+using System;
+using System.Numerics;
 using Windows.Foundation;
 using Windows.UI;
 
@@ -54,7 +54,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                 bounds.Y + Line.SecondaryPosition.Y - CropVerticalPadding,
                 bounds.Width + CropHorizonPadding * 2, bounds.Height + CropVerticalPadding * 2);
 
-            if (Line.CachedCropEffect is {} crop && Line.CachedBlurEffect is {} blurFx && Line.CachedOpacityEffect is {} opacityFx)
+            if (Line.CachedCropEffect is { } crop && Line.CachedBlurEffect is { } blurFx && Line.CachedOpacityEffect is { } opacityFx)
             {
                 crop.SourceRectangle = srcRect;
                 blurFx.BlurAmount = (float)blur;
@@ -81,7 +81,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                 if (double.IsNaN(opacity) || opacity <= 0) return;
 
                 var blur = Line.BlurAmountTransition.Value;
-                if (Line.CachedCropEffect is {} crop && Line.CachedBlurEffect is {} blurFx && Line.CachedOpacityEffect is {} opacityFx)
+                if (Line.CachedCropEffect is { } crop && Line.CachedBlurEffect is { } blurFx && Line.CachedOpacityEffect is { } opacityFx)
                 {
                     crop.SourceRectangle = srcRect;
                     blurFx.BlurAmount = (float)blur;

@@ -26,29 +26,29 @@ namespace AnimatedWin2dControls.Utils
 
             public Scope(string key)
             {
-                #if DEBUG
+#if DEBUG
                 _key = key;
                 _start = Stopwatch.GetTimestamp();
-                #endif
+#endif
             }
 
             public void Dispose()
             {
-                #if DEBUG
+#if DEBUG
                 double ms = (Stopwatch.GetTimestamp() - _start)
                             * 1000.0 / Stopwatch.Frequency;
                 Record(_key, ms);
-                #endif
+#endif
             }
         }
 
         public static Scope Measure(string key)
         {
-            #if DEBUG
+#if DEBUG
             return new Scope(key);
-            #else
+#else
             return default;
-            #endif
+#endif
         }
 
         [Conditional("DEBUG")]

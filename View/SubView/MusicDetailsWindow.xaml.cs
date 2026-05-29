@@ -1,4 +1,3 @@
-using ATL;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI;
@@ -7,7 +6,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.Windows.Storage.Pickers;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
@@ -28,7 +26,7 @@ namespace WinUIMusicPlayer.View.SubView
     /// <summary>
     /// An empty window that can be used on its own or navigated to within a Frame.
     /// </summary>
-    public sealed partial class MusicDetailsWindow : WinUIEx.WindowEx,INotifyPropertyChanged
+    public sealed partial class MusicDetailsWindow : WinUIEx.WindowEx, INotifyPropertyChanged
     {
         private static ILogger<MusicDetailsWindow> _logger = App.GetLogger<MusicDetailsWindow>();
         private Music MusicDetail
@@ -42,7 +40,7 @@ namespace WinUIMusicPlayer.View.SubView
                     OnPropertyChanged();
                 }
             }
-        }       
+        }
         public BitmapImage? AlbumCoverBitmap
         {
             get;
@@ -143,12 +141,13 @@ namespace WinUIMusicPlayer.View.SubView
 
         private void InitalizeData(Music music)
         {
-            MusicDetail = music;  
+            MusicDetail = music;
             AlbumCoverData = ToolUtils.GetRawImage(music, true).Result;
-            DispatcherQueue.TryEnqueue(async () => {
+            DispatcherQueue.TryEnqueue(async () =>
+            {
                 AlbumCoverBitmap = await ToolUtils.ConvertByteArrayToBitmapImage(AlbumCoverData);
             });
-            
+
         }
 
         private string ConvertDuration(TimeSpan duration)
@@ -177,7 +176,8 @@ namespace WinUIMusicPlayer.View.SubView
             return $"{bitRate}Kbps";
         }
 
-        private string ConvertTime(DateTime time) {
+        private string ConvertTime(DateTime time)
+        {
             return time.ToString("yyyy-MM-dd HH:mm:ss");
         }
 
@@ -186,7 +186,8 @@ namespace WinUIMusicPlayer.View.SubView
             this.Close();
         }
 
-        private Visibility BoolToVisibility(bool isLoading) {
+        private Visibility BoolToVisibility(bool isLoading)
+        {
             return isLoading ? Visibility.Visible : Visibility.Collapsed;
         }
 
@@ -203,7 +204,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"SaveToDataBaseButton_Click Êõ¥Êñ∞Èü≥‰πê‰ø°ÊÅØÂ§±Ë¥•: {ex.Message}");
+                _logger.LogError(ex, $"SaveToDataBaseButton_Click ∏¸–¬“Ù¿÷–≈œ¢ ß∞‹: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
             this.Close();
@@ -218,7 +219,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"UpdateFile Êõ¥Êñ∞Êñá‰ª∂Â§±Ë¥•: {ex.Message}");
+                _logger.LogError(ex, $"UpdateFile ∏¸–¬Œƒº˛ ß∞‹: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
             MusicDetail.UpdateTime = updateTime;
@@ -239,7 +240,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"ConfirmButton_Click Êõ¥Êñ∞Êñá‰ª∂Â§±Ë¥•: {ex.Message}");
+                _logger.LogError(ex, $"ConfirmButton_Click ∏¸–¬Œƒº˛ ß∞‹: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
             this.Close();
@@ -250,9 +251,10 @@ namespace WinUIMusicPlayer.View.SubView
             AlbumCoverData = await App.Services.GetRequiredService<LrcService>().GetMixedCoverImageAsync(MusicDetail);
             if (AlbumCoverData is not null)
             {
-                DispatcherQueue.TryEnqueue(async () => {
+                DispatcherQueue.TryEnqueue(async () =>
+                {
                     AlbumCoverBitmap = await ToolUtils.ConvertByteArrayToBitmapImage(AlbumCoverData);
-                });                
+                });
             }
             else
             {
@@ -262,8 +264,8 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void GetLyricsFromNet_Click(object sender, RoutedEventArgs e)
         {
-            (string lyrics, string transLrc)= await ToolUtils.GetLyricsFromNet(MusicDetail);
-            (string krc,string tKrc) = await ToolUtils.GetKrcFromNet(MusicDetail);
+            (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(MusicDetail);
+            (string krc, string tKrc) = await ToolUtils.GetKrcFromNet(MusicDetail);
             MusicDetail.Lyrics = lyrics ?? string.Empty;
             MusicDetail.TranslatedLyrics = transLrc ?? string.Empty;
             MusicDetail.Krc = krc ?? string.Empty;
@@ -301,7 +303,8 @@ namespace WinUIMusicPlayer.View.SubView
                 }
                 return;
             }
-            if (!string.IsNullOrEmpty(MusicDetail.Lyrics)) {
+            if (!string.IsNullOrEmpty(MusicDetail.Lyrics))
+            {
                 _ = Task.Run(() =>
                 {
                     string lrcFileName = Path.ChangeExtension(sanitizedFileName, ".lrc");
@@ -319,7 +322,7 @@ namespace WinUIMusicPlayer.View.SubView
                         ToolUtils.OpenFileInExplorer(lrcFilePath);
                     });
                 }
-            }            
+            }
         }
 
         private async void OpenFile_Click(object sender, RoutedEventArgs e)
@@ -372,14 +375,15 @@ namespace WinUIMusicPlayer.View.SubView
                 if (file is not null)
                 {
                     AlbumCoverData = await System.IO.File.ReadAllBytesAsync(file.Path);
-                    DispatcherQueue.TryEnqueue(async () => {
+                    DispatcherQueue.TryEnqueue(async () =>
+                    {
                         AlbumCoverBitmap = await ToolUtils.ConvertByteArrayToBitmapImage(AlbumCoverData);
                     });
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"SelectCoverImageButton_Click ÈÄâÊã©Â∞ÅÈù¢ÂõæÁâáÂ§±Ë¥•: {ex.Message}");
+                _logger.LogError(ex, $"SelectCoverImageButton_Click —°‘Ò∑‚√ÊÕº∆¨ ß∞‹: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
         }
@@ -397,11 +401,11 @@ namespace WinUIMusicPlayer.View.SubView
                 {
                     await System.IO.File.WriteAllBytesAsync(file.Path, AlbumCoverData);
                 }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, $"SaveImageButton_Click ‰øùÂ≠òÂ∞ÅÈù¢ÂõæÁâáÂ§±Ë¥•: {ex.Message}");
-                        NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
-                    }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"SaveImageButton_Click ±£¥Ê∑‚√ÊÕº∆¨ ß∞‹: {ex.Message}");
+                    NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
+                }
             }
         }
 

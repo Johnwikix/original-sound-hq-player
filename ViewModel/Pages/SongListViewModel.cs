@@ -1,8 +1,6 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
-using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -10,7 +8,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -31,7 +28,7 @@ namespace WinUIMusicPlayer.ViewModel
         private SongListPage currentPage { get; set; }
         private ILogger<SongListViewModel> _logger;
 
-        public SongListViewModel(MusicBrowseViewModel musicBrowseViewModel,AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<SongListViewModel> logger)
+        public SongListViewModel(MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<SongListViewModel> logger)
         {
             MusicBrowseViewModel = musicBrowseViewModel;
             AppViewModel = appViewModel;
@@ -66,7 +63,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void UpDateUsbDeviceMenuflyout()
         {
-            var usbFlyout = MenuOptions.FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
+            var usbFlyout = MenuOptions.AsValueEnumerable().FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
             if (AppData.UsbStorageDevices.Count == 0)
             {
                 if (usbFlyout is not null) MenuOptions.Remove(usbFlyout);
@@ -172,7 +169,8 @@ namespace WinUIMusicPlayer.ViewModel
             if (!await IsDeleteFromDisk()) return;
             if (SelectedMusics is not null && SelectedMusics.AsValueEnumerable().Count() > 1)
             {
-                foreach (var item in SelectedMusics) {
+                foreach (var item in SelectedMusics)
+                {
                     if (ToolUtils.DeleteFileFromDisk(item.Path))
                     {
                         AppViewModel.SongsSource.FirstOrDefault(m => m.Id == SelectedMusic.Id)?.Remove();
@@ -224,12 +222,12 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 var musicDetailsWindow = new MusicDetailsWindow(SelectedMusics[0]);
                 musicDetailsWindow.Activate();
-            }            
+            }
         }
         [RelayCommand]
         public async Task ReGetLyrics()
         {
-            await AppViewModel.ReGetLyrics(SelectedMusics,SelectedMusic);
+            await AppViewModel.ReGetLyrics(SelectedMusics, SelectedMusic);
         }
 
         [RelayCommand]
@@ -243,7 +241,8 @@ namespace WinUIMusicPlayer.ViewModel
                     await MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
                 }
             }
-            if (SelectedMusics.Count > 1) {
+            if (SelectedMusics.Count > 1)
+            {
                 if (MusicBrowseViewModel is not null)
                 {
                     AppViewModel.SequentialPlayingList = new(SelectedMusics);
@@ -269,7 +268,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (SelectedMusics.Count > 0)
             {
                 _ = _musicDatabaseService.AddMusicListToPlayList(SelectedMusics, playListId);
-            }           
+            }
         }
 
         [RelayCommand]
@@ -277,10 +276,11 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (SelectedMusics.Count > 0)
             {
-                foreach (var item in SelectedMusics) {
+                foreach (var item in SelectedMusics)
+                {
                     AppViewModel.AddMusicToCurrentPlayList(item);
                 }
-            }           
+            }
         }
 
         [RelayCommand]

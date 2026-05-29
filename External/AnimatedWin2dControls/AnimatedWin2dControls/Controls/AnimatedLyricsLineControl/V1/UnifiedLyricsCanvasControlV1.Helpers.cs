@@ -1,4 +1,3 @@
-using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
 using System;
 using System.Collections.Generic;

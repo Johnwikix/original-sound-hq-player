@@ -1,15 +1,13 @@
-﻿using System;
+﻿using BassPlayerIpc.Shared;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Buffers;
 using System.Collections.Generic;
 using System.IO.MemoryMappedFiles;
 using System.Threading;
 using System.Threading.Tasks;
-using BassPlayerIpc.Shared;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.Services

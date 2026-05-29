@@ -4,16 +4,14 @@ using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.UI;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
-using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.InteropServices.WindowsRuntime;
-using System.Text;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
 using Windows.Storage.Streams;
 
 namespace WinUIMusicPlayer.Helper
-{    
+{
     public static class ImageHelper
     {
         private static float blurAmount = 10.0f;
@@ -80,7 +78,8 @@ namespace WinUIMusicPlayer.Helper
                 }
                 return writeableBitmap;
             }
-            catch {
+            catch
+            {
                 return null;
             }
             finally

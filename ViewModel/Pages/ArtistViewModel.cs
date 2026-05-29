@@ -1,22 +1,15 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
-using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
-using WinUIMusicPlayer.View.SubView;
 using ZLinq;
 
 namespace WinUIMusicPlayer.ViewModel
@@ -65,7 +58,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void UpDateUsbDeviceMenuflyout()
         {
-            var usbFlyout = ArtistMenuOptions.FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
+            var usbFlyout = ArtistMenuOptions.AsValueEnumerable().FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
             if (AppData.UsbStorageDevices.Count == 0)
             {
                 if (usbFlyout is not null) ArtistMenuOptions.Remove(usbFlyout);
@@ -92,10 +85,10 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 Music artist = item.Content as Music;
                 if (_musicBrowseViewModel is not null && artist is not null)
-                {  
+                {
                     AppViewModel.PageType = "artist";
                     AppViewModel.CurrentArtistObj = artist;
-                    _musicBrowseViewModel.NavigatePage(typeof(SongArtistListPage),null, new DrillInNavigationTransitionInfo());             
+                    _musicBrowseViewModel.NavigatePage(typeof(SongArtistListPage), null, new DrillInNavigationTransitionInfo());
                 }
             }
         }

@@ -1,12 +1,12 @@
-using System;
-using System.Collections;
-using System.Linq;
 using CommunityToolkit.WinUI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
+using System;
+using System.Collections;
 using Windows.UI;
+using ZLinq;
 
 namespace WinUIMusicPlayer.Helper.Animations;
 
@@ -150,6 +150,7 @@ public sealed class Properties : DependencyObject
                 if (
                     source
                         .FindDescendants()
+                        .AsValueEnumerable()
                         .OfType<FrameworkElement>()
                         .FirstOrDefault(fe => fe.Name == parts[0])
                     is FrameworkElement target
@@ -186,7 +187,7 @@ public sealed class Properties : DependencyObject
                 var parts = key.Split("|");
                 if (
                     source
-                        .FindDescendants()
+                        .FindDescendants().AsValueEnumerable()
                         .OfType<FrameworkElement>()
                         .FirstOrDefault(fe => fe.Name == parts[0])
                     is FrameworkElement target
@@ -295,7 +296,7 @@ public sealed class Properties : DependencyObject
         {
             if (
                 source
-                    .FindDescendants()
+                    .FindDescendants().AsValueEnumerable()
                     .OfType<FrameworkElement>()
                     .FirstOrDefault(fe => fe.Name == src)
                 is FrameworkElement target

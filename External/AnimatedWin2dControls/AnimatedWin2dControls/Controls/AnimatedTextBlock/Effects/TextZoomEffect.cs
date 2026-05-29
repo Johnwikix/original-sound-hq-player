@@ -1,10 +1,8 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock;
-using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Internals;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Text;
-using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -238,5 +236,5 @@ public partial class TextZoomEffect : ITextEffect
             (float)(oldCluster.DrawBounds.Y + (newCluster.DrawBounds.Y - oldCluster.DrawBounds.Y) * p),
             textColor, textFormat);
     }
-    
+
 }

@@ -1,5 +1,5 @@
-using Microsoft.Graphics.Canvas.Text;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2;
+using Microsoft.Graphics.Canvas.Text;
 
 namespace AnimatedWin2dControls.Messages;
 

@@ -2,17 +2,12 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Data;
-using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
-using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -50,7 +45,7 @@ namespace WinUIMusicPlayer.ViewModel
             FolderMenuOptions.Add(new() { Title = "播放", Tag = "Play", Command = PlayCommand });
             FolderMenuOptions.Add(new() { Title = "添加到最爱", Tag = "AddToFavour", Command = AddToFavourCommand });
             FolderMenuOptions.Add(new() { Title = "添加到播放列表", Tag = "AddToPlayList", Children = [] });
-            FolderMenuOptions.Add(new() { Title = "重新扫描", Tag = "Rescan",Command= RescanFolderCommand });
+            FolderMenuOptions.Add(new() { Title = "重新扫描", Tag = "Rescan", Command = RescanFolderCommand });
         }
 
         public void UpdateAlbumMenuOptionsPlayList()
@@ -65,7 +60,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void UpDateUsbDeviceMenuflyout()
         {
-            var usbFlyout = FolderMenuOptions.FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
+            var usbFlyout = FolderMenuOptions.AsValueEnumerable().FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
             if (AppData.UsbStorageDevices.Count == 0)
             {
                 if (usbFlyout is not null) FolderMenuOptions.Remove(usbFlyout);
@@ -97,7 +92,7 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         AppViewModel.PageType = "folder";
                         AppViewModel.CurrentFolderObj = folder;
-                        MusicBrowseViewModel.NavigatePage(typeof(SongFolderListPage),null, new DrillInNavigationTransitionInfo());
+                        MusicBrowseViewModel.NavigatePage(typeof(SongFolderListPage), null, new DrillInNavigationTransitionInfo());
                     }
                     catch (Exception ex)
                     {

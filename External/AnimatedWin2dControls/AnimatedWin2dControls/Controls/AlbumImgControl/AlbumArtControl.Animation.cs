@@ -12,8 +12,8 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private void BeginTransition()
         {
-            _t             = 0f;
-            _isFading      = true;
+            _t = 0f;
+            _isFading = true;
             _lastDrawTicks = 0;
 
             // 先构造新 CTS，再取消旧的，避免 double-dispose
@@ -42,7 +42,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         private void TickAnimation()
         {
-            long  now   = System.Diagnostics.Stopwatch.GetTimestamp();
+            long now = System.Diagnostics.Stopwatch.GetTimestamp();
             float delta = 0f;
 
             if (_lastDrawTicks != 0)
@@ -58,15 +58,15 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             if (_t >= 0.5f && _nextBmp != null)
             {
                 _currentBmp?.Dispose();
-                _currentBmp  = _nextBmp;
+                _currentBmp = _nextBmp;
                 _currentInfo = _nextInfo;
-                _nextBmp     = null;
+                _nextBmp = null;
             }
 
             if (_t >= 1f)
             {
-                _t             = 0f;
-                _isFading      = false;
+                _t = 0f;
+                _isFading = false;
                 _lastDrawTicks = 0;
                 _currentDisplayHash = _lastHash;
             }
@@ -80,12 +80,12 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             _animLock = false;
 
-            var pending         = _pendingAfterAnim;
-            _pendingAfterAnim   = null;
+            var pending = _pendingAfterAnim;
+            _pendingAfterAnim = null;
 
             if (pending == null) return;
 
-            _sequenceActive   = true;
+            _sequenceActive = true;
             _pendingAfterAnim = pending;
             RestartSequenceEndTimer();
         }
@@ -122,7 +122,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             _sequenceActive = false;
 
-            var pending       = _pendingAfterAnim;
+            var pending = _pendingAfterAnim;
             _pendingAfterAnim = null;
 
             if (pending == null) return;

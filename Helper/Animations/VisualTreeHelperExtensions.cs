@@ -5,8 +5,8 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Windows.Foundation;
+using ZLinq;
 
 namespace WinUIMusicPlayer.Helper.Animations;
 
@@ -33,7 +33,7 @@ public static class VisualTreeHelperExtensions
                 && VisualStateManager.GetVisualStateGroups(f) is IList<VisualStateGroup> groups
             )
             {
-                return groups.FirstOrDefault(g => g.Name == groupName);
+                return groups.AsValueEnumerable().FirstOrDefault(g => g.Name == groupName);
             }
             return null;
         }
@@ -79,7 +79,7 @@ public static class VisualTreeHelperExtensions
         /// <returns></returns>
         public T? GetFirstDescendantOfType(string name)
         {
-            return start.FindDescendants().OfType<T>().FirstOrDefault(e => e.Name == name);
+            return start.FindDescendants().AsValueEnumerable().OfType<T>().FirstOrDefault(e => e.Name == name);
         }
     }
 
@@ -103,7 +103,7 @@ public static class VisualTreeHelperExtensions
             }
             else
             {
-                return start.FindDescendants().OfType<T>().FirstOrDefault(predicate);
+                return start.FindDescendants().AsValueEnumerable().OfType<T>().FirstOrDefault(predicate);
             }
         }
     }
@@ -175,7 +175,7 @@ public static class VisualTreeHelperExtensions
                 return true;
             }
 
-            return focused.FindAscendants().Any(a => a == element);
+            return focused.FindAscendants().AsValueEnumerable().Any(a => a == element);
         }
     }
 }

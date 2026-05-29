@@ -1,10 +1,10 @@
-using System;
-using System.Diagnostics;
-using System.Linq;
 using CommunityToolkit.WinUI;
 using Microsoft.UI.Composition;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using System;
+using System.Diagnostics;
+using ZLinq;
 
 namespace WinUIMusicPlayer.Helper.Animations;
 
@@ -251,7 +251,7 @@ public sealed class FluentAnimationHelper
                     name.Contains('.')
                     && name.Split(".") is { Length: 2 } parts
                     && parts[1] == "Content"
-                    && c.FindDescendants()
+                    && c.FindDescendants().AsValueEnumerable()
                         .OfType<ContentPresenter>()
                         .FirstOrDefault(d => d.Name == parts[0])
                         is ContentPresenter pres
@@ -260,7 +260,7 @@ public sealed class FluentAnimationHelper
                     return pres.FindDescendant<FrameworkElement>();
                 }
             }
-            return c.FindDescendants()
+            return c.FindDescendants().AsValueEnumerable()
                 .OfType<FrameworkElement>()
                 .FirstOrDefault(d => d.Name == name);
         }

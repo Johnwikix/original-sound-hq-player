@@ -6,25 +6,15 @@ using Microsoft.Extensions.Logging;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Hosting;
-using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
-using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices.WindowsRuntime;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
-using System.Xml.Linq;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Portable;
-using Windows.Storage.Streams;
-using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
@@ -37,7 +27,7 @@ using static WinUIMusicPlayer.Utils.ToolUtils;
 namespace WinUIMusicPlayer.ViewModel
 {
     public partial class MusicBrowseViewModel : ObservableObject
-    {       
+    {
 
         public SelectorBarItem SelectedPage
         {
@@ -53,10 +43,10 @@ namespace WinUIMusicPlayer.ViewModel
         private ProgressDialog ProgressDialog { get; set; }
         private int ProgressBarValue { get; set; } = 0;
         private bool IsMutiFile { get; set; } = false;
-        private AudioConverterService ConverterService { get; set; }        
-        public int PreviousSelectedIndex { get; set; } = 0;        
+        private AudioConverterService ConverterService { get; set; }
+        public int PreviousSelectedIndex { get; set; } = 0;
         public BassPlayerCommandService MusicPlaybackService { get; set; }
-        private SystemMediaControlsService SystemMediaControlsService{ get; set; }
+        private SystemMediaControlsService SystemMediaControlsService { get; set; }
         private MusicBrowsePage MusicBrowsePage { get; set; }
         private DeviceWatcher DeviceWatcher { get; set; }
         private List<FileSystemWatcher> Watchers { get; set; } = [];
@@ -65,9 +55,9 @@ namespace WinUIMusicPlayer.ViewModel
         private CancellationTokenSource _scanCts;
         private readonly Lock _scanCtsLock = new();
         private ILogger<MusicBrowseViewModel> _logger;
-        public AppViewModel AppViewModel { get;}
+        public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
-        public MusicBrowseViewModel(BassPlayerCommandService bassPlayerCommand,SystemMediaControlsService systemMediaControlsService,AppViewModel appViewModel,MusicDatabaseService musicDatabaseService,AudioConverterService converterService, ILogger<MusicBrowseViewModel> logger)
+        public MusicBrowseViewModel(BassPlayerCommandService bassPlayerCommand, SystemMediaControlsService systemMediaControlsService, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, AudioConverterService converterService, ILogger<MusicBrowseViewModel> logger)
         {
             this.AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
@@ -136,7 +126,8 @@ namespace WinUIMusicPlayer.ViewModel
             ProgressDialog.XamlRoot = MusicBrowsePage.XamlRoot;
             _ = ProgressDialog.ShowAsync();
 
-            foreach (Music music in musics) {
+            foreach (Music music in musics)
+            {
                 await ConverterService.ConvertAudio2Wav(music, targetFormat);
             }
             _ = ProgressDialog.UpdateProgress(100);
@@ -173,7 +164,7 @@ namespace WinUIMusicPlayer.ViewModel
             MusicPlaybackService.UpdateSettings();
         }
 
-       
+
 
         private void AppSettings_OutputSettingsChanged(object? sender, EventArgs e)
         {
@@ -203,7 +194,8 @@ namespace WinUIMusicPlayer.ViewModel
                 // 启动设备监视器
                 DeviceWatcher.Start();
             }
-            catch(Exception ex) {
+            catch (Exception ex)
+            {
                 _logger.LogError(ex, $"启动设备监视器失败:{ex.Message}");
             }
         }
@@ -224,7 +216,7 @@ namespace WinUIMusicPlayer.ViewModel
         private void DeviceWatcher_EnumerationCompleted(DeviceWatcher sender, object args)
         {
             // 设备枚举完成时触发
-                    }
+        }
 
         public void UpdateInfoBar(string message)
         {
@@ -274,7 +266,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async void UsbDeviceComboxSelectionChanged(UsbStorageDevice usbStorageDevice)
         {
-                        AppData.UsbStorageDevice = usbStorageDevice;
+            AppData.UsbStorageDevice = usbStorageDevice;
             List<UsbDeviceMusic> usbDeviceMusics = await _musicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
             if (usbDeviceMusics is not null && usbDeviceMusics.Count > 0)
             {
@@ -282,8 +274,8 @@ namespace WinUIMusicPlayer.ViewModel
                 DateTime startTime = DateTime.Now;
                 UsbDeviceSubFolderRescan usbDeviceSubFolderRescan = new UsbDeviceSubFolderRescan();
                 await usbDeviceSubFolderRescan.UsbDeviceSubFolderAutoScan(usbDeviceMusics, usbStorageDevice.Path, usbStorageDevice.UniqueId);
-                                AppData.MusicOnUsbDevice = await _musicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
-                            }
+                AppData.MusicOnUsbDevice = await _musicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
+            }
             else
             {
                 // 读取USB设备中的音乐文件
@@ -379,7 +371,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async Task InsertPlayList(PlayList newPlaylist) {
+        public async Task InsertPlayList(PlayList newPlaylist)
+        {
             await _musicDatabaseService.InsertPlayList(newPlaylist);
         }
 
@@ -434,7 +427,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     AppViewModel.UILyrics = [];
                 });
-                AppViewModel.LoadLyricsToUI(AppViewModel.CurrentPlayingMusic);                
+                AppViewModel.LoadLyricsToUI(AppViewModel.CurrentPlayingMusic);
             }
         }
 
@@ -530,7 +523,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void PlayButton_Click()
         {
-            MusicPlaybackService.PlayButton();           
+            MusicPlaybackService.PlayButton();
         }
 
         [RelayCommand]
@@ -630,7 +623,8 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        private void PlayDetailButtonVisibleChanged() {
+        private void PlayDetailButtonVisibleChanged()
+        {
             AppViewModel.IsPlayDetailButtonVisible = !AppViewModel.IsPlayDetailButtonVisible;
         }
 
@@ -699,7 +693,7 @@ namespace WinUIMusicPlayer.ViewModel
                     break;
             }
             var slideNavigationTransitionEffect = currentSelectedIndex - PreviousSelectedIndex > 0 ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft;
-            MusicBrowsePage.NavigatePage(AppData.CurrentPage,null, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect });
+            MusicBrowsePage.NavigatePage(AppData.CurrentPage, null, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect });
             PreviousSelectedIndex = currentSelectedIndex;
         }
 
@@ -711,7 +705,7 @@ namespace WinUIMusicPlayer.ViewModel
                 _musicUpdateCts?.Cancel();
                 _musicUpdateCts?.Dispose();
                 _musicUpdateCts = new CancellationTokenSource();
-                var token = _musicUpdateCts.Token;   
+                var token = _musicUpdateCts.Token;
                 MusicPlaybackService.PlayMusic(music);
                 await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
                 {
@@ -720,7 +714,7 @@ namespace WinUIMusicPlayer.ViewModel
                     MusicBrowsePage.UpdateViewList();
                 });
                 _ = UpdatePlayBar(music, token);
-                AppViewModel.LoadLyricsToUI(music);                
+                AppViewModel.LoadLyricsToUI(music);
                 MusicBrowsePage.UpdateCurrentPlayList();
                 AppViewModel.UpdateProgressTimerUI();
                 _ = _musicDatabaseService.SavePlayState([.. AppViewModel.SequentialPlayingList],
@@ -788,6 +782,6 @@ namespace WinUIMusicPlayer.ViewModel
                 "PlayList" => 5,
                 _ => -1
             };
-        }      
+        }
     }
 }

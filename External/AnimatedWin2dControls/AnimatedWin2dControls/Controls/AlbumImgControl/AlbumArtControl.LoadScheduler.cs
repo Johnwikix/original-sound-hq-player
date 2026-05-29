@@ -1,5 +1,4 @@
 using System.Threading;
-using Windows.Foundation;
 
 namespace AnimatedWin2dControls.Controls.AlbumImgControl
 {

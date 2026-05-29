@@ -1,7 +1,7 @@
-using System.Numerics;
 using Microsoft.UI.Composition;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Hosting;
+using System.Numerics;
 
 namespace WinUIMusicPlayer.Helper.Animations;
 

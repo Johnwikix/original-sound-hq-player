@@ -1,6 +1,4 @@
-﻿using Microsoft.Graphics.Canvas.Text;
-using Microsoft.UI.Xaml;
-using Microsoft.UI.Xaml.Media;
+﻿using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using WinUIMusicPlayer.Controls;
@@ -34,7 +32,7 @@ namespace WinUIMusicPlayer.Model
         public static string OutputMode { get; set; } = "DirectSound";
         public static int BassOutputDeviceId { get; set; } = -1;
         public static int BassASIODeviceId { get; set; } = 0;
-        public static string DeviceName { get; set; } = ToolUtils.GetString("DefaultDevice");        
+        public static string DeviceName { get; set; } = ToolUtils.GetString("DefaultDevice");
         //public static double LyricsBlurAmount { get; set; } = 4;
         public static string AppStyle { get; set; } = "TransparentAcrylic";
         public static float CustomAcrylicOpacity { get; set; } = 0.5f;

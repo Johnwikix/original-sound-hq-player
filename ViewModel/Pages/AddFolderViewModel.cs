@@ -25,8 +25,8 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicDatabaseService _musicDatabaseService { get; }
         private ILogger<AddFolderViewModel> _logger { get; }
 
-        public AddFolderViewModel(MusicDatabaseService musicDatabaseService,AppViewModel appViewModel, ILogger<AddFolderViewModel> logger)
-        {            
+        public AddFolderViewModel(MusicDatabaseService musicDatabaseService, AppViewModel appViewModel, ILogger<AddFolderViewModel> logger)
+        {
             _musicDatabaseService = musicDatabaseService;
             AppViewModel = appViewModel;
             _logger = logger;
@@ -70,7 +70,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (result is null) return;
                 await AddFolderMusic(await StorageFolder.GetFolderFromPathAsync(result.Path));
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, $"添加文件夹失败: {ex.Message}");
             }

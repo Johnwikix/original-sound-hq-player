@@ -1,8 +1,7 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock;
-using Microsoft.Graphics.Canvas.Text;
+﻿using Microsoft.Graphics.Canvas.Text;
 using System.Collections.Generic;
-using System.Linq;
 using Windows.Foundation;
+using ZLinq;
 
 namespace AnimatedWin2dControls.Controls.AnimatedTextBlock.Internals;
 
@@ -23,7 +22,7 @@ internal static partial class TextRenderingHelper
             // Detect trimmed clusters
             if (i > 0 && offset > 0 && clusterLayoutRegion.CharacterCount == 0)
             {
-                graphemeClusters.Last().IsTrimmed = true;
+                graphemeClusters.AsValueEnumerable().Last().IsTrimmed = true;
                 break;
             }
             else

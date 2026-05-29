@@ -8,6 +8,7 @@ using System.Numerics;
 using Windows.UI;
 
 namespace AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects;
+
 public enum EasingMode
 {
     Linear,

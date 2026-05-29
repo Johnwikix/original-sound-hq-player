@@ -17,7 +17,7 @@ using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Controls
 {
-    public sealed partial class NotifyIconControl : Microsoft.UI.Xaml.Controls.UserControl,IDisposable
+    public sealed partial class NotifyIconControl : Microsoft.UI.Xaml.Controls.UserControl, IDisposable
     {
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
         public AppViewModel AppViewModel { get; }
@@ -110,7 +110,7 @@ namespace WinUIMusicPlayer.Controls
                     //window.Restore();
                     window.Activate();
                     window.SetForegroundWindow();
-                }                
+                }
             }
             else
             {

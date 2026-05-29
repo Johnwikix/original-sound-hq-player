@@ -1,19 +1,17 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Numerics;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2;
 using AnimatedWin2dControls.Messages;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
-using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using System;
+using System.Collections.Generic;
+using System.Numerics;
 using Windows.Foundation;
 using Windows.UI;
 
@@ -376,7 +374,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private void OnCanvasUpdate(ICanvasAnimatedControl sender, CanvasAnimatedUpdateEventArgs args)
         {
             EnsureLayout(sender);
-                var lines = _renderLines;
+            var lines = _renderLines;
             if (lines.Count == 0) return;
 
             double externalTimeMs = _cachedCurrentPlayingTimeMs;
@@ -773,7 +771,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     _flingY = 0;
                 }
                 var time = line.StartMs + _cachedOffsetMs;
-                if(time<0) time = 0;
+                if (time < 0) time = 0;
                 LyricLineClicked?.Invoke(this, TimeSpan.FromMilliseconds(time));
             }
         }
