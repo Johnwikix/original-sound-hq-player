@@ -213,22 +213,6 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = false;
 
-        public int MaxCoverCacheCount
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AlbumCoverBehavior.MaxCacheSize = value;
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = 1000;
-
         public bool IsFluidBackgroundEnabled
         {
             get => field;
