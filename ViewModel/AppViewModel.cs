@@ -505,37 +505,37 @@ namespace WinUIMusicPlayer.ViewModel
         SongViewType viewType,
         Func<Music, bool>? filterPredicate = null)
         {
-            var query = SongsSource.AsEnumerable();
-            // 2. 应用外部传入的谓词 (如 s => s.Album == CurrentAlbumObj.Album)
-            if (filterPredicate != null)
-            {
-                query = query.Where(filterPredicate);
-            }
-            // 3. 应用搜索过滤 (SearchText)
+            Func<Music, bool>? searchPredicate = null;
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
-                query = viewType switch
+                searchPredicate = viewType switch
                 {
-                    SongViewType.Album => query.Where(m =>
-                    (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false)),
-                    SongViewType.Artist => query.Where(m =>
-                    (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false)),
-                    SongViewType.Folder => query.Where(m =>
-                    (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.LastLevelFolderPath?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false)
-                    ),
-                    _ => query.Where(m =>
-                    (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false))
+                    SongViewType.Album => m =>
+                        (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false),
+                    SongViewType.Artist => m =>
+                        (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false),
+                    SongViewType.Folder => m =>
+                        (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (m.LastLevelFolderPath?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false),
+                    _ => m =>
+                        (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false)
                 };
-
             }
-            // 4. 应用排序逻辑 (参考旧的 UpdateViewSort)
+
+            Func<Music, bool>? combinedPredicate = filterPredicate != null && searchPredicate != null
+                ? m => filterPredicate(m) && searchPredicate(m)
+                : filterPredicate ?? searchPredicate;
+
+            IEnumerable<Music> query = combinedPredicate != null
+                ? SongsSource.AsValueEnumerable().Where(combinedPredicate).ToList()
+                : SongsSource;
+
             var tag = SelectedSortOption?.Tag?.ToString() ?? "DefaultOrder";
             if (tag == "DefaultOrder")
             {
@@ -570,17 +570,16 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void UpdateGroupedByFirstLetter(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, CollectionViewSource source)
         {
-            IEnumerable<Music> filteredSource = SongsSource;
-            if (!string.IsNullOrWhiteSpace(SearchText))
-            {
-                filteredSource = SongsSource.Where(m =>
+            IEnumerable<Music> filteredSource = string.IsNullOrWhiteSpace(SearchText)
+                ? SongsSource
+                : SongsSource.AsValueEnumerable().Where(m =>
                     (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                     (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.LastLevelFolderPath?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
-            }
-            // 2. 对去重后的专辑进行首字母分组
+                    (m.LastLevelFolderPath?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
+
             var groups = filteredSource
+                .AsValueEnumerable()
                 .GroupBy(distinctSelector)
                 .Select(g => g.First())
                 .GroupBy(groupSelector)
@@ -598,18 +597,18 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                var filteredSource = string.IsNullOrWhiteSpace(SearchText)
-                                        ? SongsSource
-                                        : SongsSource.Where(m =>
-                                            (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                                            (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
+                IEnumerable<Music> filteredSource = string.IsNullOrWhiteSpace(SearchText)
+                    ? SongsSource
+                    : SongsSource.AsValueEnumerable().Where(m =>
+                        (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
 
-                // 2. 去重 (每个专辑/艺术家取一个代表)
                 var distinctItems = filteredSource
+                    .AsValueEnumerable()
                     .GroupBy(distinctSelector)
-                    .Select(g => g.First());
+                    .Select(g => g.First())
+                    .ToList();
 
-                // 3. 执行全局排序 (只对去重后的项排序)
                 IEnumerable<Music> sortedItems = distinctItems;
 
                 Func<Music, object> keySelector = SelectedSortOption.Tag switch
@@ -629,15 +628,13 @@ namespace WinUIMusicPlayer.ViewModel
                     ? distinctItems.OrderBy(keySelector)
                     : distinctItems.OrderByDescending(keySelector);
 
-                // 4. 对排好序的项进行首字母分组
-                // 注意：GroupBy 会保持原有序列的顺序（即保持 sortedItems 的顺序）
                 var groups = sortedItems
+                    .AsValueEnumerable()
                     .GroupBy(groupSelector)
                     .Select(g => new MusicGroup(g.Key, g))
                     .OrderBy(g => g.Key == "ZZZ" ? "#" : g.Key)
                     .ToList();
 
-                // 6. 更新视图数据源
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
                     source.Source = groups;
@@ -708,30 +705,28 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void RefreshPlayListSongMapping()
         {
-            // 1. 基础 Join 查询，生成包装器序列
-            var query = AppData.AllPlayListMusics
-                        .Where(plm => plm.PlayListId == CurrentPlayListId)
-                        .Join(
-                            SongsSource,
-                            plm => plm.MusicId,
-                            m => m.Id,
-                            (plm, m) => new PlayListMusicItem
-                            {
-                                Music = m,                // 保持引用
-                                PlayListOrder = plm.Order  // 记录歌单顺序
-                            }
-                        );
-
-            // 2. 搜索过滤 (注意通过 m.Music 访问属性)
+            IEnumerable<PlayListMusicItem> query;
             if (!string.IsNullOrWhiteSpace(SearchText))
             {
-                query = query.Where(m =>
-                    (m.Music.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Music.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Music.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
+                query = AppData.AllPlayListMusics.AsValueEnumerable()
+                    .Where(plm => plm.PlayListId == CurrentPlayListId)
+                    .Join(SongsSource, plm => plm.MusicId, m => m.Id,
+                        (plm, m) => new PlayListMusicItem { Music = m, PlayListOrder = plm.Order })
+                    .Where(item =>
+                        (item.Music.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (item.Music.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (item.Music.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false))
+                    .ToList();
+            }
+            else
+            {
+                query = AppData.AllPlayListMusics.AsValueEnumerable()
+                    .Where(plm => plm.PlayListId == CurrentPlayListId)
+                    .Join(SongsSource, plm => plm.MusicId, m => m.Id,
+                        (plm, m) => new PlayListMusicItem { Music = m, PlayListOrder = plm.Order })
+                    .ToList();
             }
 
-            // 3. 排序逻辑 (修正类型为 IEnumerable<PlayListMusicItem>)
             IEnumerable<PlayListMusicItem> sortedQuery = SelectedSortOption?.Tag switch
             {
                 "A-Z" => query.OrderBy(m => m.Music.Title),
@@ -744,10 +739,8 @@ namespace WinUIMusicPlayer.ViewModel
                 _ => query.OrderByDescending(m => m.PlayListOrder)
             };
 
-            // 4. 更新集合
             var results = sortedQuery.ToList();
 
-            // 建议：在 UI 线程操作 ObservableCollection
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 _ = PlayListSongs.ReplaceAllAsync(results);
@@ -778,7 +771,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
         private void UpdatePlayListCollectionSort(ObservableCollection<PlayListMusicItem> collection)
         {
-            if (collection == null || !collection.Any()) return;
+            if (collection == null || !collection.AsValueEnumerable().Any()) return;
 
             // 1. 定义排序键提取器 (Key Selector)
             // 使用 Func<PlayListMusicItem, object> 统一处理不同类型的排序字段
@@ -804,8 +797,8 @@ namespace WinUIMusicPlayer.ViewModel
 
             // 3. 执行排序并更新集合
             var sortedList = isAscending
-                ? collection.OrderBy(keySelector).ToList()
-                : collection.OrderByDescending(keySelector).ToList();
+                ? collection.AsValueEnumerable().OrderBy(keySelector).ToList()
+                : collection.AsValueEnumerable().OrderByDescending(keySelector).ToList();
 
             // 4. 回填集合 (保持对同一个 ObservableCollection 的引用，以便 UI 刷新)
             collection.Clear();
@@ -847,7 +840,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void RemoveFromPlayListSongs(Music music)
         {
             if (music == null) return;
-            var itemToRemove = PlayListSongs.FirstOrDefault(item => item.Music == music);
+            var itemToRemove = PlayListSongs.AsValueEnumerable().FirstOrDefault(item => item.Music == music);
             if (itemToRemove != null)
             {
                 PlayListSongs.Remove(itemToRemove);
@@ -959,7 +952,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task TransmitFileToUsb(IEnumerable<Music> selectedMusics, UsbStorageDevice usbDevice)
         {
-            if (selectedMusics.Any())
+            if (selectedMusics.AsValueEnumerable().Any())
             {
                 App.Services.GetRequiredService<MusicBrowseViewModel>().ShowTransmission();
                 using (var usbWriter = new UsbWriterHelper())
