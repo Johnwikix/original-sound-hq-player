@@ -22,8 +22,15 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel = App.Services.GetRequiredService<FolderViewModel>(); ;
             this.InitializeComponent();
+            FolderGridView.ContainerContentChanging += FolderGridView_ContainerContentChanging;
             DataContext = this;
             this.NavigationCacheMode = NavigationCacheMode.Enabled;
+        }
+
+        private void FolderGridView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
+        {
+            if (args.InRecycleQueue)
+                WinUIMusicPlayer.Behaviors.AlbumCoverBehavior.ClearImagesInContainer(args.ItemContainer);
         }
 
         public void ReceiveNavigationParameter(object parameter)

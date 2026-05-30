@@ -31,12 +31,18 @@ namespace WinUIMusicPlayer.View
             ViewModel = viewModel;
             DataContext = this;
             // µ¼º½·þÎñ
+            MainFrame.Navigated += MainFrame_Navigated;
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
             _playingNavigation = navigationServiceFactory.CreateNavigationService(PlayingFrame);
             _playingNavigation.RegisterPage<PlayingDetailPage>();
             InitiaizeEqualizerDialog();
             NavigateToDefaultPage();
             NavigationViewControl.Visibility = Visibility.Visible;
+        }
+
+        private void MainFrame_Navigated(object sender, Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+        {
+            GC.Collect(2, GCCollectionMode.Aggressive, true);
         }
 
         private void NavigateTo(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)

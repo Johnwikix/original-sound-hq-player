@@ -29,12 +29,18 @@ namespace WinUIMusicPlayer.View
         public MusicBrowsePage()
         {
             this.InitializeComponent();
+            ContentFrame.Navigated += OnContentFrameNavigated;
             ViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             ViewModel.SetMusicBrowsePage(this);
             DataContext = this;
             this.Focus(FocusState.Programmatic);
             this.Loaded += OnPageLoaded;
             this.NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
+        }
+
+        private void OnContentFrameNavigated(object sender, Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+        {
+            GC.Collect(2, GCCollectionMode.Aggressive, true);
         }
 
         private void OnPageLoaded(object sender, RoutedEventArgs e)

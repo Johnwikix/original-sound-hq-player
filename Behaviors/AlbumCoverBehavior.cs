@@ -72,19 +72,27 @@ public class AlbumCoverBehavior : Behavior<Image>
 
     protected override void OnDetaching()
     {
-        _cts?.Cancel();
-        _cts?.Dispose();
-        _cts = null;
+        CancelLoad();
+        if (AssociatedObject != null)
+        {
+            AssociatedObject.Source = null;
+            AssociatedObject.Opacity = 0;
+        }
         base.OnDetaching();
     }
 
     // ── 核心加载 ──────────────────────────────────────────────────────────
 
-    private void Load(Music? music)
+    public void CancelLoad()
     {
         _cts?.Cancel();
         _cts?.Dispose();
         _cts = null;
+    }
+
+    private void Load(Music? music)
+    {
+        CancelLoad();
 
         if (music == null || AssociatedObject == null) return;
 
@@ -372,5 +380,27 @@ public class AlbumCoverBehavior : Behavior<Image>
         if (n < 100) return 2;
         if (n < 1000) return 3;
         return 4; // coverSize 不会超过 9999
+    }
+
+    // ── ContainerContentChanging 回收清理（虚拟化回收时不触发 Unloaded） ──
+
+    public static void ClearImagesInContainer(DependencyObject parent)
+    {
+        int count = VisualTreeHelper.GetChildrenCount(parent);
+        for (int i = 0; i < count; i++)
+        {
+            var child = VisualTreeHelper.GetChild(parent, i);
+            if (child is Image image)
+            {
+                foreach (var behavior in Interaction.GetBehaviors(image))
+                {
+                    if (behavior is AlbumCoverBehavior acb)
+                        acb.CancelLoad();
+                }
+                image.Source = null;
+                image.Opacity = 0;
+            }
+            ClearImagesInContainer(child);
+        }
     }
 }
