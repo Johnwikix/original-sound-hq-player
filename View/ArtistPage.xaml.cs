@@ -30,7 +30,7 @@ namespace WinUIMusicPlayer.View
         private void ArtistsGridView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
         {
             if (args.InRecycleQueue)
-                WinUIMusicPlayer.Behaviors.AlbumCoverBehavior.ClearImagesInContainer(args.ItemContainer);
+                Behaviors.AlbumCoverBehavior.ClearImagesInContainer(args.ItemContainer);
         }
 
         public void ReceiveNavigationParameter(object parameter)
@@ -58,17 +58,6 @@ namespace WinUIMusicPlayer.View
             }
             e.Handled = true;
         }
-
-        //private void ArtistsGridView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
-        //{
-        //    if (args.InRecycleQueue)
-        //    {
-        //        if (args.Item is Music music)
-        //        {
-        //            //AlbumCoverBehavior.OnMusicUnloaded(music.Id);
-        //        }
-        //    }
-        //}
     }
 
 }
