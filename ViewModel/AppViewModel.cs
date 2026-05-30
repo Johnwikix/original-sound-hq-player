@@ -21,6 +21,7 @@ using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
+using WinUIMusicPlayer.View;
 using ZLinq;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
@@ -29,6 +30,7 @@ namespace WinUIMusicPlayer.ViewModel
     public partial class AppViewModel : ObservableObject, IDisposable
     {
         private int _loadingMusicId;
+        private int _lastDisplayedSecond = -1;
         public Music? CurrentArtistObj
         {
             get => field;
@@ -389,8 +391,12 @@ namespace WinUIMusicPlayer.ViewModel
                 var (curMs, totalMs) = await App.Services.GetRequiredService<BassPlayerCommandService>().GetTimeProgress();
                 TotalTime = TimeSpan.FromMilliseconds(totalMs);
                 CurrentTime = TimeSpan.FromMilliseconds(curMs);
-                TimeStringBuilder.Clear();
                 double currentTimeMs = curMs;
+                int currentSecond = (int)CurrentTime.TotalSeconds;
+                bool secondChanged = currentSecond != _lastDisplayedSecond;
+                if (secondChanged)
+                    _lastDisplayedSecond = currentSecond;
+
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
                     CurrentPlayingTime = CurrentTime;
@@ -401,17 +407,37 @@ namespace WinUIMusicPlayer.ViewModel
                         {
                             ProgressSlider = curMs / 1000.0;
                             ProgressSliderMax = totalMs / 1000.0;
-                            if (TotalTime.TotalHours >= 1)
+                            if (secondChanged)
                             {
-                                PlayTimeText = TimeStringBuilder
-                                    .AppendFormat("{0:hh\\:mm\\:ss}/{1:hh\\:mm\\:ss}", CurrentTime, TotalTime)
-                                    .ToString();
-                            }
-                            else
-                            {
-                                PlayTimeText = TimeStringBuilder
-                                    .AppendFormat("{0:mm\\:ss}/{1:mm\\:ss}", CurrentTime, TotalTime)
-                                    .ToString();
+                                TimeStringBuilder.Clear();
+                                if (TotalTime.TotalHours >= 1)
+                                {
+                                    PlayTimeText = TimeStringBuilder
+                                        .Append(CurrentTime.Hours.ToString("D2"))
+                                        .Append(':')
+                                        .Append(CurrentTime.Minutes.ToString("D2"))
+                                        .Append(':')
+                                        .Append(CurrentTime.Seconds.ToString("D2"))
+                                        .Append('/')
+                                        .Append(TotalTime.Hours.ToString("D2"))
+                                        .Append(':')
+                                        .Append(TotalTime.Minutes.ToString("D2"))
+                                        .Append(':')
+                                        .Append(TotalTime.Seconds.ToString("D2"))
+                                        .ToString();
+                                }
+                                else
+                                {
+                                    PlayTimeText = TimeStringBuilder
+                                        .Append(CurrentTime.Minutes.ToString("D2"))
+                                        .Append(':')
+                                        .Append(CurrentTime.Seconds.ToString("D2"))
+                                        .Append('/')
+                                        .Append(TotalTime.Minutes.ToString("D2"))
+                                        .Append(':')
+                                        .Append(TotalTime.Seconds.ToString("D2"))
+                                        .ToString();
+                                }
                             }
                         }
                         catch (Exception ex)
@@ -420,10 +446,7 @@ namespace WinUIMusicPlayer.ViewModel
                         }
                     }
                 });
-                _ = Task.Run(() =>
-                {
-                    SystemMediaControlsService.UpdateTimelineProperties(CurrentTime, TotalTime);
-                });
+                SystemMediaControlsService.UpdateTimelineProperties(CurrentTime, TotalTime);
             }
             catch (Exception ex)
             {
@@ -463,7 +486,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (IsInitialized)
             {
-                RefreshDataSource();
+                RefreshAllViews();
             }
         }
 
@@ -554,38 +577,15 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void UpdateGroupedByFirstLetter(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, CollectionViewSource source)
         {
-            IEnumerable<Music> filteredSource = string.IsNullOrWhiteSpace(SearchText)
-                ? SongsSource
-                : SongsSource.AsValueEnumerable().Where(m =>
-                    (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.LastLevelFolderPath?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
-
-            var groups = filteredSource
-                .AsValueEnumerable()
-                .GroupBy(distinctSelector)
-                .Select(g => g.First())
-                .GroupBy(groupSelector)
-                .Select(g => new MusicGroup(g.Key, g.OrderBy(distinctSelector)))
-                .OrderBy(g => g.Key == "ZZZ" ? "#" : g.Key)
-                .ToList();
-            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-            {
-                source.Source = groups;
-            });
-        }
-
-
-        private void UpdateGroupedByFirstLetterSort(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, CollectionViewSource source)
-        {
             try
             {
                 IEnumerable<Music> filteredSource = string.IsNullOrWhiteSpace(SearchText)
                     ? SongsSource
                     : SongsSource.AsValueEnumerable().Where(m =>
                         (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                        (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
+                        (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (m.LastLevelFolderPath?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
 
                 var distinctItems = filteredSource
                     .AsValueEnumerable()
@@ -593,24 +593,18 @@ namespace WinUIMusicPlayer.ViewModel
                     .Select(g => g.First())
                     .ToList();
 
-                IEnumerable<Music> sortedItems = distinctItems;
-
-                Func<Music, object> keySelector = SelectedSortOption.Tag switch
+                var sortedItems = SelectedSortOption.Tag switch
                 {
-                    "A-Z" => m => m.Title,
-                    "Artist" => m => m.Author,
-                    "Album" => m => m.Album,
-                    "CreateTimeASC" or "CreateTimeDESC" => m => m.CreateTime,
-                    "UpdateTimeDESC" or "UpdateTimeASC" => m => m.UpdateTime,
-                    "DefaultOrder" => distinctSelector,
-                    _ => distinctSelector
+                    "A-Z" => distinctItems.OrderBy(m => m.Title),
+                    "Artist" => distinctItems.OrderBy(m => m.Author),
+                    "Album" => distinctItems.OrderBy(m => m.Album),
+                    "CreateTimeASC" => distinctItems.OrderBy(m => m.CreateTime),
+                    "CreateTimeDESC" => distinctItems.OrderByDescending(m => m.CreateTime),
+                    "UpdateTimeASC" => distinctItems.OrderBy(m => m.UpdateTime),
+                    "UpdateTimeDESC" => distinctItems.OrderByDescending(m => m.UpdateTime),
+                    "DefaultOrder" => distinctItems.OrderBy(distinctSelector),
+                    _ => distinctItems.OrderBy(distinctSelector)
                 };
-
-                bool isAscending = !SelectedSortOption.Tag.EndsWith("DESC");
-
-                sortedItems = isAscending
-                    ? distinctItems.OrderBy(keySelector)
-                    : distinctItems.OrderByDescending(keySelector);
 
                 var groups = sortedItems
                     .AsValueEnumerable()
@@ -675,6 +669,11 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void RefreshDataSource()
         {
+            RefreshDataForPageType(AppData.CurrentPage);
+        }
+
+        public void RefreshAllViews()
+        {
             _ = UpdateSongCollectionsAsync(FavoriteSongs, SongViewType.Favorite, m => m.IsFavorite == true);
             _ = UpdateSongCollectionsAsync(ListSongs, SongViewType.All);
             _ = UpdateSongCollectionsAsync(AlbumSongs, SongViewType.Album, m => m.Album == CurrentAlbumObj?.Album);
@@ -684,7 +683,55 @@ namespace WinUIMusicPlayer.ViewModel
             UpdateGroupedByFirstLetter(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumPageSource);
             UpdateGroupedByFirstLetter(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistPageSource);
             UpdateGroupedByFirstLetter(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), FolderPageSource);
-            App.Services.GetRequiredService<MusicBrowseViewModel>().UpdateViewList();
+            App.Services.GetRequiredService<MusicBrowseViewModel>()?.UpdateViewList();
+        }
+
+        private void RefreshDataForPageType(Type pageType)
+        {
+            if (pageType == typeof(SongListPage))
+            {
+                _ = UpdateSongCollectionsAsync(ListSongs, SongViewType.All);
+            }
+            else if (pageType == typeof(SongCollectionPage))
+            {
+                _ = UpdateSongCollectionsAsync(AlbumSongs, SongViewType.Album, m => m.Album == CurrentAlbumObj?.Album);
+            }
+            else if (pageType == typeof(AlbumPage))
+            {
+                _ = UpdateSongCollectionsAsync(AlbumSongs, SongViewType.Album, m => m.Album == CurrentAlbumObj?.Album);
+                UpdateGroupedByFirstLetter(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumPageSource);
+            }
+            else if (pageType == typeof(SongArtistListPage))
+            {
+                _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => m.Author == CurrentArtistObj?.Author);
+            }
+            else if (pageType == typeof(ArtistPage))
+            {
+                _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => m.Author == CurrentArtistObj?.Author);
+                UpdateGroupedByFirstLetter(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistPageSource);
+            }
+            else if (pageType == typeof(SongFolderListPage))
+            {
+                _ = UpdateSongCollectionsAsync(FolderSongs, SongViewType.Folder, m => m.LastLevelFolderPath == CurrentFolderObj?.LastLevelFolderPath);
+            }
+            else if (pageType == typeof(FolderBrowsePage))
+            {
+                _ = UpdateSongCollectionsAsync(FolderSongs, SongViewType.Folder, m => m.LastLevelFolderPath == CurrentFolderObj?.LastLevelFolderPath);
+                UpdateGroupedByFirstLetter(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), FolderPageSource);
+            }
+            else if (pageType == typeof(FavouritePlayListPage))
+            {
+                _ = UpdateSongCollectionsAsync(FavoriteSongs, SongViewType.Favorite, m => m.IsFavorite == true);
+            }
+            else if (pageType == typeof(PlayListSongPage) || pageType == typeof(PlayListPage))
+            {
+                RefreshPlayListSongMapping();
+            }
+            else
+            {
+                return;
+            }
+            App.Services.GetRequiredService<MusicBrowseViewModel>()?.UpdateViewList();
         }
 
         public void RefreshPlayListSongMapping()
@@ -733,16 +780,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void OnSelectSortChanged()
         {
-            if (SelectedSortOption == null) return;
-            _ = UpdateSongCollectionsAsync(FavoriteSongs, SongViewType.Favorite, m => m.IsFavorite == true);
-            _ = UpdateSongCollectionsAsync(ListSongs, SongViewType.All);
-            _ = UpdateSongCollectionsAsync(AlbumSongs, SongViewType.Album, m => m.Album == CurrentAlbumObj?.Album);
-            _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => m.Author == CurrentArtistObj?.Author);
-            _ = UpdateSongCollectionsAsync(FolderSongs, SongViewType.Folder, m => m.LastLevelFolderPath == CurrentFolderObj?.LastLevelFolderPath);
-            UpdatePlayListCollectionSort(PlayListSongs);
-            UpdateGroupedByFirstLetterSort(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumPageSource);
-            UpdateGroupedByFirstLetterSort(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistPageSource);
-            UpdateGroupedByFirstLetterSort(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), FolderPageSource);
+            RefreshDataSource();
         }
 
         public enum SongViewType
@@ -757,34 +795,20 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (collection == null || !collection.AsValueEnumerable().Any()) return;
 
-            // 1. 定义排序键提取器 (Key Selector)
-            // 使用 Func<PlayListMusicItem, object> 统一处理不同类型的排序字段
-            Func<PlayListMusicItem, object> keySelector = SelectedSortOption.Tag switch
+            var tag = SelectedSortOption.Tag;
+            var sortedList = tag switch
             {
-                "A-Z" => item => item.Music?.Title,
-                "Artist" => item => item.Music?.Author,
-                "Album" => item => item.Music?.Album,
-                "CreateTimeASC" => item => item.Music?.CreateTime,
-                "CreateTimeDESC" => item => item.Music?.CreateTime,
-                "UpdateTimeASC" => item => item.Music?.UpdateTime,
-                "UpdateTimeDESC" => item => item.Music?.UpdateTime,
-                "DefaultOrder" => item => item.PlayListOrder,
-                _ => item => item.PlayListOrder
+                "A-Z" => collection.AsValueEnumerable().OrderBy(item => item.Music?.Title).ToList(),
+                "Artist" => collection.AsValueEnumerable().OrderBy(item => item.Music?.Author).ToList(),
+                "Album" => collection.AsValueEnumerable().OrderBy(item => item.Music?.Album).ToList(),
+                "CreateTimeASC" => collection.AsValueEnumerable().OrderBy(item => item.Music?.CreateTime).ToList(),
+                "CreateTimeDESC" => collection.AsValueEnumerable().OrderByDescending(item => item.Music?.CreateTime).ToList(),
+                "UpdateTimeASC" => collection.AsValueEnumerable().OrderBy(item => item.Music?.UpdateTime).ToList(),
+                "UpdateTimeDESC" => collection.AsValueEnumerable().OrderByDescending(item => item.Music?.UpdateTime).ToList(),
+                "DefaultOrder" => collection.AsValueEnumerable().OrderByDescending(item => item.PlayListOrder).ToList(),
+                _ => collection.AsValueEnumerable().OrderByDescending(item => item.PlayListOrder).ToList()
             };
 
-            // 2. 确定升降序
-            bool isAscending = SelectedSortOption.Tag switch
-            {
-                "CreateTimeDESC" or "UpdateTimeDESC" or "DefaultOrder" => false,
-                _ => true
-            };
-
-            // 3. 执行排序并更新集合
-            var sortedList = isAscending
-                ? collection.AsValueEnumerable().OrderBy(keySelector).ToList()
-                : collection.AsValueEnumerable().OrderByDescending(keySelector).ToList();
-
-            // 4. 回填集合 (保持对同一个 ObservableCollection 的引用，以便 UI 刷新)
             collection.Clear();
             foreach (var item in sortedList)
             {

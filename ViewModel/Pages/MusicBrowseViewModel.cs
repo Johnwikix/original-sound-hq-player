@@ -692,6 +692,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                     break;
             }
+            AppViewModel.RefreshDataSource();
             var slideNavigationTransitionEffect = currentSelectedIndex - PreviousSelectedIndex > 0 ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft;
             MusicBrowsePage.NavigatePage(AppData.CurrentPage, null, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect });
             PreviousSelectedIndex = currentSelectedIndex;
@@ -756,7 +757,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void UpdateViewList()
         {
-            MusicBrowsePage.UpdateViewList();
+            MusicBrowsePage?.UpdateViewList();
         }
 
         public void HideTransmission()

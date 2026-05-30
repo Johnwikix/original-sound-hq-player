@@ -359,7 +359,7 @@
                             HorizontalAlignment="Right"
                             VerticalAlignment="Bottom"
                             FontSize="{x:Bind ViewModel.InfoFontSize, Mode=OneWay}"
-                            Text="{x:Bind ViewModel.AppViewModel.PlayTimeText, Mode=TwoWay}" />
+                            Text="{x:Bind ViewModel.AppViewModel.PlayTimeText, Mode=OneWay}" />
                     </Grid>
                     <!--  控制面板  -->
                     <Grid x:Name="PlayingDetailControlBar">

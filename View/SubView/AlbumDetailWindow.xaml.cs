@@ -151,7 +151,7 @@ namespace WinUIMusicPlayer.View.SubView
                     music.Year = MusicDetail.Year;
                     await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
                 }
-                App.Services.GetRequiredService<AppViewModel>().RefreshDataSource();
+                App.Services.GetRequiredService<AppViewModel>().RefreshAllViews();
             }
             catch (Exception ex)
             {
