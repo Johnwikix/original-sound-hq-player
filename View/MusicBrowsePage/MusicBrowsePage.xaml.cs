@@ -40,7 +40,7 @@ namespace WinUIMusicPlayer.View
 
         private void OnContentFrameNavigated(object sender, Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
         {
-            GC.Collect(2, GCCollectionMode.Aggressive, true);
+            GC.Collect(2, GCCollectionMode.Optimized, false);
         }
 
         private void OnPageLoaded(object sender, RoutedEventArgs e)

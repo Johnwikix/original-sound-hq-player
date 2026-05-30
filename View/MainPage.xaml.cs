@@ -42,7 +42,7 @@ namespace WinUIMusicPlayer.View
 
         private void MainFrame_Navigated(object sender, Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
         {
-            GC.Collect(2, GCCollectionMode.Aggressive, true);
+            GC.Collect(2, GCCollectionMode.Optimized, false);
         }
 
         private void NavigateTo(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)
