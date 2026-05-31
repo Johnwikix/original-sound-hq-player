@@ -201,16 +201,16 @@
   <data name="DirectSound.Content" xml:space="preserve">
     <value>DirectSound</value>
   </data>
-  <data name="SettingOutputDevice.Header" xml:space="preserve">
+  <data name="SettingOutputDevice.Text" xml:space="preserve">
     <value>Ausgabegerät</value>
   </data>
-  <data name="SettingBufferSize.Header" xml:space="preserve">
+  <data name="SettingBufferSize.Text" xml:space="preserve">
     <value>Puffergröße (ms)</value>
   </data>
   <data name="SettingFunction.Text" xml:space="preserve">
     <value>Funktionen</value>
   </data>
-  <data name="DefaultEntryInterface.Header" xml:space="preserve">
+  <data name="DefaultEntryInterface.Text" xml:space="preserve">
     <value>Standard-Startseite</value>
   </data>
   <data name="AddFolderCombox.Content" xml:space="preserve">
@@ -237,7 +237,7 @@
   <data name="ArtistCombox.Content" xml:space="preserve">
     <value>Künstler</value>
   </data>
-  <data name="DefaultMusicEntryInterface.Header" xml:space="preserve">
+  <data name="DefaultMusicEntryInterface.Text" xml:space="preserve">
     <value>Standard-Musikansicht</value>
   </data>
   <data name="SettingInterface.Header" xml:space="preserve">
@@ -261,16 +261,16 @@
   <data name="CoverServiceLrcAPISourceAuthCode.Header" xml:space="preserve">
     <value>LrcAPI-Authentifizierungscode</value>
   </data>
-  <data name="MaxCoverCacheCount.Header" xml:space="preserve">
+  <data name="MaxCoverCacheCount.Text" xml:space="preserve">
     <value>Laufzeit-Cache-Anzahl für Cover</value>
   </data>
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>Max. Anzahl vorab geladener Cover</value>
   </data>
-  <data name="AutoCoverMatching.Header" xml:space="preserve">
+  <data name="AutoCoverMatching.Text" xml:space="preserve">
     <value>Automatischer Cover-Abgleich</value>
   </data>
-  <data name="AutoLyricMatching.Header" xml:space="preserve">
+  <data name="AutoLyricMatching.Text" xml:space="preserve">
     <value>Automatischer Songtext-Abgleich</value>
   </data>
   <data name="NeedConfigureLrcAPIService" xml:space="preserve">
@@ -594,7 +594,7 @@
   <data name="IconPause" xml:space="preserve">
     <value>Pause</value>
   </data>
-  <data name="SettingDSDGain.Header" xml:space="preserve">
+  <data name="SettingDSDGain.Text" xml:space="preserve">
     <value>DSD-Verstärkung (+db)</value>
   </data>
   <data name="EqualizerDialogTitle.Text" xml:space="preserve">
@@ -624,7 +624,7 @@
   <data name="EqVocal.Content" xml:space="preserve">
     <value>Gesang</value>
   </data>
-  <data name="CoverSize.Header" xml:space="preserve">
+  <data name="CoverSize.Text" xml:space="preserve">
     <value>Größe der Cover-Vorschau</value>
   </data>
   <data name="CoverSizeToolTip" xml:space="preserve">
@@ -690,7 +690,7 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>Ordner wirklich entfernen?</value>
   </data>
-  <data name="FluidBackground.Header" xml:space="preserve">
+  <data name="FluidBackground.Text" xml:space="preserve">
     <value>Flüssiger Hintergrund</value>
   </data>
   <data name="ReGetLyrics" xml:space="preserve">
@@ -720,7 +720,7 @@
   <data name="CoverLoadThreadCountDescription" xml:space="preserve">
     <value>Anzahl der Threads zum Laden von Covern (Neustart erforderlich)</value>
   </data>
-  <data name="FolderWatchEnabled.Header" xml:space="preserve">
+  <data name="FolderWatchEnabled.Text" xml:space="preserve">
     <value>Musikbibliothek-Überwachung</value>
   </data>
   <data name="DiskNumberBox.Text" xml:space="preserve">
@@ -735,13 +735,13 @@
   <data name="MainWindowSizeSettings.Header" xml:space="preserve">
     <value>Fenstergröße</value>
   </data>
-  <data name="IsCustomAppSize.Header" xml:space="preserve">
+  <data name="IsCustomAppSize.Text" xml:space="preserve">
     <value>Benutzerdefinierte Fenstergröße aktivieren</value>
   </data>
-  <data name="AppHeight.Header" xml:space="preserve">
+  <data name="AppHeight.Text" xml:space="preserve">
     <value>Fensterhöhe</value>
   </data>
-  <data name="AppWidth.Header" xml:space="preserve">
+  <data name="AppWidth.Text" xml:space="preserve">
     <value>Fensterbreite</value>
   </data>
   <data name="CustomAppSizeDescription" xml:space="preserve">
@@ -777,7 +777,7 @@
   <data name="LogPath.Content" xml:space="preserve">
     <value>Protokollverzeichnis</value>
   </data>
-  <data name="LyricsFontFamily.Header" xml:space="preserve">
+  <data name="LyricsFontFamily.Text" xml:space="preserve">
     <value>Songtext-Schriftart</value>
   </data>
   <data name="SettingIsGlobalFFmpegEnabled.Header" xml:space="preserve">
@@ -792,10 +792,10 @@
   <data name="CustomOpacity.Text" xml:space="preserve">
     <value>Deckkraft</value>
   </data>
-  <data name="IsUpdateBackDrop.Header" xml:space="preserve">
+  <data name="IsUpdateBackDrop.Text" xml:space="preserve">
     <value>Hintergrundaktualisierung bei Fokusverlust stoppen</value>
   </data>
-  <data name="LyricsAlignment.Header" xml:space="preserve">
+  <data name="LyricsAlignment.Text" xml:space="preserve">
     <value>Songtext-Ausrichtung</value>
   </data>
   <data name="Left.Content" xml:space="preserve">
@@ -807,13 +807,13 @@
   <data name="Right.Content" xml:space="preserve">
     <value>Rechts</value>
   </data>
-  <data name="LyricsMargin.Header" xml:space="preserve">
+  <data name="LyricsMargin.Text" xml:space="preserve">
     <value>Songtext-Seitenabstand</value>
   </data>
   <data name="SpectrumVisualization.Header" xml:space="preserve">
     <value>Audio-Visualisierung</value>
   </data>
-  <data name="LyricsFontSize.Header" xml:space="preserve">
+  <data name="LyricsFontSize.Text" xml:space="preserve">
     <value>Schriftgröße (Songtext)</value>
   </data>
   <data name="AreUSureDeleteFromDisk" xml:space="preserve">
@@ -843,7 +843,7 @@
   <data name="FolderNumberOfSongs.Text" xml:space="preserve">
     <value>Titel</value>
   </data>
-  <data name="CoverDiskCache.Header" xml:space="preserve">
+  <data name="CoverDiskCache.Text" xml:space="preserve">
     <value>Cover-Festplatten-Cache</value>
   </data>
   <data name="OfficialWebSite.Content" xml:space="preserve">
@@ -855,7 +855,7 @@
   <data name="ExportM3u8List.Text" xml:space="preserve">
     <value>Als m3u8 exportieren</value>
   </data>
-  <data name="DSD2PCMFreq.Header" xml:space="preserve">
+  <data name="DSD2PCMFreq.Text" xml:space="preserve">
     <value>DSD-zu-PCM Samplerate</value>
   </data>
   <data name="DsdDopDescription" xml:space="preserve">
@@ -888,37 +888,37 @@
   <data name="FadeInOutDescription" xml:space="preserve">
     <value>Nur wirksam bei DirectSound</value>
   </data>
-  <data name="FadeInOut.Header" xml:space="preserve">
+  <data name="FadeInOut.Text" xml:space="preserve">
     <value>Ein-/Ausblenden</value>
   </data>
   <data name="WFWLyricsEnabled.Header" xml:space="preserve">
     <value>Wort-für-Wort Songtexte</value>
   </data>
-  <data name="LyricsBlurAmount.Header" xml:space="preserve">
+  <data name="LyricsBlurAmount.Text" xml:space="preserve">
     <value>Unschärfegrad (Songtext)</value>
   </data>
-  <data name="CharFloatAmount.Header" xml:space="preserve">
+  <data name="CharFloatAmount.Text" xml:space="preserve">
     <value>Zeichen-Verschiebung</value>
   </data>
-  <data name="CharScaleAmount.Header" xml:space="preserve">
+  <data name="CharScaleAmount.Text" xml:space="preserve">
     <value>Zeichen-Skalierung</value>
   </data>
-  <data name="GlowAmount.Header" xml:space="preserve">
+  <data name="GlowAmount.Text" xml:space="preserve">
     <value>Leuchteffekt-Stärke</value>
   </data>
-  <data name="LongSyllableThreshold.Header" xml:space="preserve">
+  <data name="LongSyllableThreshold.Text" xml:space="preserve">
     <value>Lange Silben-Schwelle (ms)</value>
   </data>
-  <data name="UnplayedOpacity.Header" xml:space="preserve">
+  <data name="UnplayedOpacity.Text" xml:space="preserve">
     <value>Deckkraft ungespielter Texte</value>
   </data>
-  <data name="TranslatedOpacity.Header" xml:space="preserve">
+  <data name="TranslatedOpacity.Text" xml:space="preserve">
     <value>Deckkraft übersetzter Texte</value>
   </data>
-  <data name="PlayingLineTopOffset.Header" xml:space="preserve">
+  <data name="PlayingLineTopOffset.Text" xml:space="preserve">
     <value>Aktive Zeilenposition</value>
   </data>
-  <data name="TargetFrameRate.Header" xml:space="preserve">
+  <data name="TargetFrameRate.Text" xml:space="preserve">
     <value>Songtext-Bildrate</value>
   </data>
   <data name="WFWLyricsDescription" xml:space="preserve">
@@ -927,19 +927,19 @@
   <data name="LrcTranslation.Text" xml:space="preserve">
     <value>Lrc Übersetzung</value>
   </data>
-  <data name="UseImageDominantTheme.Header" xml:space="preserve">
+  <data name="UseImageDominantTheme.Text" xml:space="preserve">
     <value>Albumcover-Thema verwenden</value>
   </data>
-  <data name="EnableLightWave.Header" xml:space="preserve">
+  <data name="EnableLightWave.Text" xml:space="preserve">
     <value>Hintergrund-Lichtwelle aktivieren</value>
   </data>
   <data name="RebootToApply" xml:space="preserve">
     <value>Starten Sie die Anwendung neu, damit die Änderungen wirksam werden.</value>
   </data>
-  <data name="Win2dCover.Header" xml:space="preserve">
+  <data name="Win2dCover.Text" xml:space="preserve">
     <value>Win2D Cover (Experimental)</value>
   </data>
-  <data name="Win2dAnimatedTitle.Header" xml:space="preserve">
+  <data name="Win2dAnimatedTitle.Text" xml:space="preserve">
     <value>Win2D animierter Textblock (Experimentell)</value>
   </data>
   <data name="TextDefaultEffect" xml:space="preserve">
@@ -975,7 +975,7 @@
   <data name="LyricsTimeOffsetTag.Text" xml:space="preserve">
     <value>Liedtext-Zeitverschiebung</value>
   </data>
-  <data name="EnableAdvancedLyricsEffect.Header" xml:space="preserve">
+  <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
     <value>Erweiterte Liedtexteffekte aktivieren (höhere CPU‑ und GPU‑Auslastung)</value>
   </data>
 </root>

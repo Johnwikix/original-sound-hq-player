@@ -201,16 +201,16 @@
   <data name="DirectSound.Content" xml:space="preserve">
     <value>DirectSound</value>
   </data>
-  <data name="SettingOutputDevice.Header" xml:space="preserve">
+  <data name="SettingOutputDevice.Text" xml:space="preserve">
     <value>Устройство вывода</value>
   </data>
-  <data name="SettingBufferSize.Header" xml:space="preserve">
+  <data name="SettingBufferSize.Text" xml:space="preserve">
     <value>Размер буфера (мс)</value>
   </data>
   <data name="SettingFunction.Text" xml:space="preserve">
     <value>Функции</value>
   </data>
-  <data name="DefaultEntryInterface.Header" xml:space="preserve">
+  <data name="DefaultEntryInterface.Text" xml:space="preserve">
     <value>Стартвая страница</value>
   </data>
   <data name="AddFolderCombox.Content" xml:space="preserve">
@@ -237,7 +237,7 @@
   <data name="ArtistCombox.Content" xml:space="preserve">
     <value>Артисты</value>
   </data>
-  <data name="DefaultMusicEntryInterface.Header" xml:space="preserve">
+  <data name="DefaultMusicEntryInterface.Text" xml:space="preserve">
     <value>Стартвая страница музыки</value>
   </data>
   <data name="SettingInterface.Header" xml:space="preserve">
@@ -261,16 +261,16 @@
   <data name="CoverServiceLrcAPISourceAuthCode.Header" xml:space="preserve">
     <value>Код авторизации CoverServiceLrcAPI</value>
   </data>
-  <data name="MaxCoverCacheCount.Header" xml:space="preserve">
+  <data name="MaxCoverCacheCount.Text" xml:space="preserve">
     <value>Количество кэша обложки во время выполнения</value>
   </data>
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>Макс. количество 미리 загруженных обложек</value>
   </data>
-  <data name="AutoCoverMatching.Header" xml:space="preserve">
+  <data name="AutoCoverMatching.Text" xml:space="preserve">
     <value>Автоматическое сопоставление обложек</value>
   </data>
-  <data name="AutoLyricMatching.Header" xml:space="preserve">
+  <data name="AutoLyricMatching.Text" xml:space="preserve">
     <value>Автоподбор текстов песен</value>
   </data>
   <data name="NeedConfigureLrcAPIService" xml:space="preserve">
@@ -594,7 +594,7 @@
   <data name="IconPause" xml:space="preserve">
     <value>Пауза</value>
   </data>
-  <data name="SettingDSDGain.Header" xml:space="preserve">
+  <data name="SettingDSDGain.Text" xml:space="preserve">
     <value>Усиление DSD (+db)</value>
   </data>
   <data name="EqualizerDialogTitle.Text" xml:space="preserve">
@@ -624,7 +624,7 @@
   <data name="EqVocal.Content" xml:space="preserve">
     <value>Вокал</value>
   </data>
-  <data name="CoverSize.Header" xml:space="preserve">
+  <data name="CoverSize.Text" xml:space="preserve">
     <value>Размер миниатюры обложки</value>
   </data>
   <data name="CoverSizeToolTip" xml:space="preserve">
@@ -690,7 +690,7 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>Удалить папку?</value>
   </data>
-  <data name="FluidBackground.Header" xml:space="preserve">
+  <data name="FluidBackground.Text" xml:space="preserve">
     <value>Жидкий фон</value>
   </data>
   <data name="ReGetLyrics" xml:space="preserve">
@@ -720,7 +720,7 @@
   <data name="CoverLoadThreadCountDescription" xml:space="preserve">
     <value>Количество потоков на странице альбома для загрузки обложки.Перезапустить приложение</value>
   </data>
-  <data name="FolderWatchEnabled.Header" xml:space="preserve">
+  <data name="FolderWatchEnabled.Text" xml:space="preserve">
     <value>Прослушивание папок библиотеки</value>
   </data>
   <data name="DiskNumberBox.Text" xml:space="preserve">
@@ -735,13 +735,13 @@
   <data name="MainWindowSizeSettings.Header" xml:space="preserve">
     <value>Параметры размера главного окна</value>
   </data>
-  <data name="IsCustomAppSize.Header" xml:space="preserve">
+  <data name="IsCustomAppSize.Text" xml:space="preserve">
     <value>Включить &amp; размер окна</value>
   </data>
-  <data name="AppHeight.Header" xml:space="preserve">
+  <data name="AppHeight.Text" xml:space="preserve">
     <value>Высота окна</value>
   </data>
-  <data name="AppWidth.Header" xml:space="preserve">
+  <data name="AppWidth.Text" xml:space="preserve">
     <value>Ширина окна</value>
   </data>
   <data name="CustomAppSizeDescription" xml:space="preserve">
@@ -777,7 +777,7 @@
   <data name="LogPath.Content" xml:space="preserve">
     <value>Открыть каталог журнала</value>
   </data>
-  <data name="LyricsFontFamily.Header" xml:space="preserve">
+  <data name="LyricsFontFamily.Text" xml:space="preserve">
     <value>Шрифт текста</value>
   </data>
   <data name="SettingIsGlobalFFmpegEnabled.Header" xml:space="preserve">
@@ -792,10 +792,10 @@
   <data name="CustomOpacity.Text" xml:space="preserve">
     <value>Непрозрачность</value>
   </data>
-  <data name="IsUpdateBackDrop.Header" xml:space="preserve">
+  <data name="IsUpdateBackDrop.Text" xml:space="preserve">
     <value>Остановка фоновых обновлений, когда окна находятся не в фокусе</value>
   </data>
-  <data name="LyricsAlignment.Header" xml:space="preserve">
+  <data name="LyricsAlignment.Text" xml:space="preserve">
     <value>Выравнивание текстов песен</value>
   </data>
   <data name="Left.Content" xml:space="preserve">
@@ -807,13 +807,13 @@
   <data name="Right.Content" xml:space="preserve">
     <value>право</value>
   </data>
-  <data name="LyricsMargin.Header" xml:space="preserve">
+  <data name="LyricsMargin.Text" xml:space="preserve">
     <value>Лирика Margin</value>
   </data>
   <data name="SpectrumVisualization.Header" xml:space="preserve">
     <value>SpectrumVisualization</value>
   </data>
-  <data name="LyricsFontSize.Header" xml:space="preserve">
+  <data name="LyricsFontSize.Text" xml:space="preserve">
     <value>Размер шрифта для текстов песен</value>
   </data>
   <data name="AreUSureDeleteFromDisk" xml:space="preserve">
@@ -843,7 +843,7 @@
   <data name="FolderNumberOfSongs.Text" xml:space="preserve">
     <value>песен</value>
   </data>
-  <data name="CoverDiskCache.Header" xml:space="preserve">
+  <data name="CoverDiskCache.Text" xml:space="preserve">
     <value>Кэш на диске обложки</value>
   </data>
   <data name="OfficialWebSite.Content" xml:space="preserve">
@@ -855,7 +855,7 @@
   <data name="ExportM3u8List.Text" xml:space="preserve">
     <value>Экспорт в M3U8</value>
   </data>
-  <data name="DSD2PCMFreq.Header" xml:space="preserve">
+  <data name="DSD2PCMFreq.Text" xml:space="preserve">
     <value>DSDtoPCM SampleRate</value>
   </data>
   <data name="DsdDopDescription" xml:space="preserve">
@@ -888,37 +888,37 @@
   <data name="FadeInOutDescription" xml:space="preserve">
     <value>Действует только под DirectSound.</value>
   </data>
-  <data name="FadeInOut.Header" xml:space="preserve">
+  <data name="FadeInOut.Text" xml:space="preserve">
     <value>Уйти</value>
   </data>
   <data name="WFWLyricsEnabled.Header" xml:space="preserve">
     <value>Эффект дословного текста</value>
   </data>
-  <data name="LyricsBlurAmount.Header" xml:space="preserve">
+  <data name="LyricsBlurAmount.Text" xml:space="preserve">
     <value>Степень размытия текста</value>
   </data>
-  <data name="CharFloatAmount.Header" xml:space="preserve">
+  <data name="CharFloatAmount.Text" xml:space="preserve">
     <value>Смещение символов</value>
   </data>
-  <data name="CharScaleAmount.Header" xml:space="preserve">
+  <data name="CharScaleAmount.Text" xml:space="preserve">
     <value>Масштаб символов</value>
   </data>
-  <data name="GlowAmount.Header" xml:space="preserve">
+  <data name="GlowAmount.Text" xml:space="preserve">
     <value>Интенсивность свечения</value>
   </data>
-  <data name="LongSyllableThreshold.Header" xml:space="preserve">
+  <data name="LongSyllableThreshold.Text" xml:space="preserve">
     <value>Порог длинного слога (мс)</value>
   </data>
-  <data name="UnplayedOpacity.Header" xml:space="preserve">
+  <data name="UnplayedOpacity.Text" xml:space="preserve">
     <value>Прозрачность непроигранного текста</value>
   </data>
-  <data name="TranslatedOpacity.Header" xml:space="preserve">
+  <data name="TranslatedOpacity.Text" xml:space="preserve">
     <value>Прозрачность перевода</value>
   </data>
-  <data name="PlayingLineTopOffset.Header" xml:space="preserve">
+  <data name="PlayingLineTopOffset.Text" xml:space="preserve">
     <value>Смещение активной строки</value>
   </data>
-  <data name="TargetFrameRate.Header" xml:space="preserve">
+  <data name="TargetFrameRate.Text" xml:space="preserve">
     <value>Частота обновления текстов</value>
   </data>
   <data name="WFWLyricsDescription" xml:space="preserve">
@@ -927,19 +927,19 @@
   <data name="LrcTranslation.Text" xml:space="preserve">
     <value>Перевод LRC</value>
   </data>
-  <data name="UseImageDominantTheme.Header" xml:space="preserve">
+  <data name="UseImageDominantTheme.Text" xml:space="preserve">
     <value>Использовать тему обложки альбома</value>
   </data>
-  <data name="EnableLightWave.Header" xml:space="preserve">
+  <data name="EnableLightWave.Text" xml:space="preserve">
     <value>Включить фоновую световую волну</value>
   </data>
   <data name="RebootToApply" xml:space="preserve">
     <value>Перезапустите приложение, чтобы изменения вступили в силу.</value>
   </data>
-  <data name="Win2dCover.Header" xml:space="preserve">
+  <data name="Win2dCover.Text" xml:space="preserve">
     <value>Обложка Win2D (Экспериментальная)</value>
   </data>
-  <data name="Win2dAnimatedTitle.Header" xml:space="preserve">
+  <data name="Win2dAnimatedTitle.Text" xml:space="preserve">
     <value>Анимированный текстовый блок Win2D (Экспериментальный)</value>
   </data>
   <data name="TextDefaultEffect" xml:space="preserve">
@@ -975,7 +975,7 @@
   <data name="LyricsTimeOffsetTag.Text" xml:space="preserve">
     <value>Смещение времени текста песни</value>
   </data>
-  <data name="EnableAdvancedLyricsEffect.Header" xml:space="preserve">
+  <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
     <value>Включить расширенные эффекты текста песни (повышенная нагрузка на ЦП и ГП)</value>
   </data>
 </root>

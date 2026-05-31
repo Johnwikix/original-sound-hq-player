@@ -201,16 +201,16 @@
   <data name="DirectSound.Content" xml:space="preserve">
     <value>DirectSound</value>
   </data>
-  <data name="SettingOutputDevice.Header" xml:space="preserve">
+  <data name="SettingOutputDevice.Text" xml:space="preserve">
     <value>出力デバイス</value>
   </data>
-  <data name="SettingBufferSize.Header" xml:space="preserve">
+  <data name="SettingBufferSize.Text" xml:space="preserve">
     <value>バッファサイズ (ミリ秒)</value>
   </data>
   <data name="SettingFunction.Text" xml:space="preserve">
     <value>機能</value>
   </data>
-  <data name="DefaultEntryInterface.Header" xml:space="preserve">
+  <data name="DefaultEntryInterface.Text" xml:space="preserve">
     <value>初期表示画面</value>
   </data>
   <data name="AddFolderCombox.Content" xml:space="preserve">
@@ -237,7 +237,7 @@
   <data name="ArtistCombox.Content" xml:space="preserve">
     <value>アーティスト</value>
   </data>
-  <data name="DefaultMusicEntryInterface.Header" xml:space="preserve">
+  <data name="DefaultMusicEntryInterface.Text" xml:space="preserve">
     <value>初期音楽表示画面</value>
   </data>
   <data name="SettingInterface.Header" xml:space="preserve">
@@ -261,16 +261,16 @@
   <data name="CoverServiceLrcAPISourceAuthCode.Header" xml:space="preserve">
     <value>ジャケットサービスLrcAPIソース認証コード</value>
   </data>
-  <data name="MaxCoverCacheCount.Header" xml:space="preserve">
+  <data name="MaxCoverCacheCount.Text" xml:space="preserve">
     <value>表紙ランタイムキャッシュ数</value>
   </data>
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>最大ジャケットプリロード数</value>
   </data>
-  <data name="AutoCoverMatching.Header" xml:space="preserve">
+  <data name="AutoCoverMatching.Text" xml:space="preserve">
     <value>自動ジャケットマッチング</value>
   </data>
-  <data name="AutoLyricMatching.Header" xml:space="preserve">
+  <data name="AutoLyricMatching.Text" xml:space="preserve">
     <value>自動歌詞マッチング</value>
   </data>
   <data name="NeedConfigureLrcAPIService" xml:space="preserve">
@@ -594,7 +594,7 @@
   <data name="IconPause" xml:space="preserve">
     <value>パウズ</value>
   </data>
-  <data name="SettingDSDGain.Header" xml:space="preserve">
+  <data name="SettingDSDGain.Text" xml:space="preserve">
     <value>DSDゲイン(+db)</value>
   </data>
   <data name="EqualizerDialogTitle.Text" xml:space="preserve">
@@ -624,7 +624,7 @@
   <data name="EqVocal.Content" xml:space="preserve">
     <value>ボーカル</value>
   </data>
-  <data name="CoverSize.Header" xml:space="preserve">
+  <data name="CoverSize.Text" xml:space="preserve">
     <value>表紙サムネイルサイズ</value>
   </data>
   <data name="CoverSizeToolTip" xml:space="preserve">
@@ -690,7 +690,7 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>フォルダを削除しますか</value>
   </data>
-  <data name="FluidBackground.Header" xml:space="preserve">
+  <data name="FluidBackground.Text" xml:space="preserve">
     <value>流体背景</value>
   </data>
   <data name="ReGetLyrics" xml:space="preserve">
@@ -720,7 +720,7 @@
   <data name="CoverLoadThreadCountDescription" xml:space="preserve">
     <value>アルバムページのロードカバーのスレッド数，再起動アプリケーションの有効化</value>
   </data>
-  <data name="FolderWatchEnabled.Header" xml:space="preserve">
+  <data name="FolderWatchEnabled.Text" xml:space="preserve">
     <value>ライブラリフォルダの待ち受け</value>
   </data>
   <data name="DiskNumberBox.Text" xml:space="preserve">
@@ -735,13 +735,13 @@
   <data name="MainWindowSizeSettings.Header" xml:space="preserve">
     <value>メインウィンドウのサイズ設定</value>
   </data>
-  <data name="IsCustomAppSize.Header" xml:space="preserve">
+  <data name="IsCustomAppSize.Text" xml:space="preserve">
     <value>カスタムウィンドウサイズを有効にするかどうか</value>
   </data>
-  <data name="AppHeight.Header" xml:space="preserve">
+  <data name="AppHeight.Text" xml:space="preserve">
     <value>ウィンドウの高さ</value>
   </data>
-  <data name="AppWidth.Header" xml:space="preserve">
+  <data name="AppWidth.Text" xml:space="preserve">
     <value>ウィンドウの幅</value>
   </data>
   <data name="CustomAppSizeDescription" xml:space="preserve">
@@ -777,7 +777,7 @@
   <data name="LogPath.Content" xml:space="preserve">
     <value>ログディレクトリを開く</value>
   </data>
-  <data name="LyricsFontFamily.Header" xml:space="preserve">
+  <data name="LyricsFontFamily.Text" xml:space="preserve">
     <value>歌詞フォント</value>
   </data>
   <data name="SettingIsGlobalFFmpegEnabled.Header" xml:space="preserve">
@@ -792,10 +792,10 @@
   <data name="CustomOpacity.Text" xml:space="preserve">
     <value>不透明度</value>
   </data>
-  <data name="IsUpdateBackDrop.Header" xml:space="preserve">
+  <data name="IsUpdateBackDrop.Text" xml:space="preserve">
     <value>ウィンドウがフォーカスを失ったときに背景更新を停止する</value>
   </data>
-  <data name="LyricsAlignment.Header" xml:space="preserve">
+  <data name="LyricsAlignment.Text" xml:space="preserve">
     <value>歌詞のアラインメント</value>
   </data>
   <data name="Left.Content" xml:space="preserve">
@@ -807,13 +807,13 @@
   <data name="Right.Content" xml:space="preserve">
     <value>右</value>
   </data>
-  <data name="LyricsMargin.Header" xml:space="preserve">
+  <data name="LyricsMargin.Text" xml:space="preserve">
     <value>歌詞 マージン</value>
   </data>
   <data name="SpectrumVisualization.Header" xml:space="preserve">
     <value>SpectrumVisualization</value>
   </data>
-  <data name="LyricsFontSize.Header" xml:space="preserve">
+  <data name="LyricsFontSize.Text" xml:space="preserve">
     <value>歌詞のフォントサイズ</value>
   </data>
   <data name="AreUSureDeleteFromDisk" xml:space="preserve">
@@ -843,7 +843,7 @@
   <data name="FolderNumberOfSongs.Text" xml:space="preserve">
     <value>曲</value>
   </data>
-  <data name="CoverDiskCache.Header" xml:space="preserve">
+  <data name="CoverDiskCache.Text" xml:space="preserve">
     <value>カバーディスクキャッシュ</value>
   </data>
   <data name="OfficialWebSite.Content" xml:space="preserve">
@@ -855,7 +855,7 @@
   <data name="ExportM3u8List.Text" xml:space="preserve">
     <value>m3u8としてエクスポート</value>
   </data>
-  <data name="DSD2PCMFreq.Header" xml:space="preserve">
+  <data name="DSD2PCMFreq.Text" xml:space="preserve">
     <value>DSDtoPCM SampleRate</value>
   </data>
   <data name="DsdDopDescription" xml:space="preserve">
@@ -888,37 +888,37 @@
   <data name="FadeInOutDescription" xml:space="preserve">
     <value>DirectSoundでのみ有効</value>
   </data>
-  <data name="FadeInOut.Header" xml:space="preserve">
+  <data name="FadeInOut.Text" xml:space="preserve">
     <value>フェードアウト</value>
   </data>
   <data name="WFWLyricsEnabled.Header" xml:space="preserve">
     <value>逐語歌詞効果</value>
   </data>
-  <data name="LyricsBlurAmount.Header" xml:space="preserve">
+  <data name="LyricsBlurAmount.Text" xml:space="preserve">
     <value>歌詞の曖昧さ</value>
   </data>
-  <data name="CharFloatAmount.Header" xml:space="preserve">
+  <data name="CharFloatAmount.Text" xml:space="preserve">
     <value>文字浮動量</value>
   </data>
-  <data name="CharScaleAmount.Header" xml:space="preserve">
+  <data name="CharScaleAmount.Text" xml:space="preserve">
     <value>文字スケール量</value>
   </data>
-  <data name="GlowAmount.Header" xml:space="preserve">
+  <data name="GlowAmount.Text" xml:space="preserve">
     <value>グロー効果強度</value>
   </data>
-  <data name="LongSyllableThreshold.Header" xml:space="preserve">
+  <data name="LongSyllableThreshold.Text" xml:space="preserve">
     <value>長音節閾値(ms)</value>
   </data>
-  <data name="UnplayedOpacity.Header" xml:space="preserve">
+  <data name="UnplayedOpacity.Text" xml:space="preserve">
     <value>未再生歌詞透明度</value>
   </data>
-  <data name="TranslatedOpacity.Header" xml:space="preserve">
+  <data name="TranslatedOpacity.Text" xml:space="preserve">
     <value>翻訳歌詞透明度</value>
   </data>
-  <data name="PlayingLineTopOffset.Header" xml:space="preserve">
+  <data name="PlayingLineTopOffset.Text" xml:space="preserve">
     <value>現在行オフセット</value>
   </data>
-  <data name="TargetFrameRate.Header" xml:space="preserve">
+  <data name="TargetFrameRate.Text" xml:space="preserve">
     <value>歌詞リフレッシュレート</value>
   </data>
   <data name="WFWLyricsDescription" xml:space="preserve">
@@ -927,19 +927,19 @@
   <data name="LrcTranslation.Text" xml:space="preserve">
     <value>Lrc翻訳</value>
   </data>
-  <data name="UseImageDominantTheme.Header" xml:space="preserve">
+  <data name="UseImageDominantTheme.Text" xml:space="preserve">
     <value>アルバムジャケットテーマを使用する</value>
   </data>
-  <data name="EnableLightWave.Header" xml:space="preserve">
+  <data name="EnableLightWave.Text" xml:space="preserve">
     <value>背景光波を有効にする</value>
   </data>
   <data name="RebootToApply" xml:space="preserve">
     <value>変更を適用するにはアプリを再起動してください。</value>
   </data>
-  <data name="Win2dCover.Header" xml:space="preserve">
+  <data name="Win2dCover.Text" xml:space="preserve">
     <value>Win2D 表紙（実験的）</value>
   </data>
-  <data name="Win2dAnimatedTitle.Header" xml:space="preserve">
+  <data name="Win2dAnimatedTitle.Text" xml:space="preserve">
     <value>Win2D アニメーションテキストブロック（実験的）</value>
   </data>
   <data name="TextDefaultEffect" xml:space="preserve">
@@ -975,7 +975,7 @@
   <data name="LyricsTimeOffsetTag.Text" xml:space="preserve">
     <value>歌詞タイムオフセット</value>
   </data>
-  <data name="EnableAdvancedLyricsEffect.Header" xml:space="preserve">
+  <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
     <value>高度な歌詞エフェクトを有効にする（CPU・GPU 負荷が増加します）</value>
   </data>
 </root>
