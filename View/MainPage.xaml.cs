@@ -212,14 +212,14 @@ namespace WinUIMusicPlayer.View
             App.Services.GetRequiredService<MusicBrowseViewModel>().BackButton();
         }
 
-        private void NavigationViewControl_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
-        {
-            ViewModel.AppViewModel.IsInNaviView = true;
-        }
+        //private void NavigationViewControl_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        //{
+        //    ViewModel.AppViewModel.IsInNaviView = true;
+        //}
 
-        private void NavigationViewControl_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
-        {
-            ViewModel.AppViewModel.IsInNaviView = false;
-        }
+        //private void NavigationViewControl_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
+        //{
+        //    ViewModel.AppViewModel.IsInNaviView = false;
+        //}
     }
 }

@@ -43,7 +43,7 @@
             <StackPanel
                 x:Name="TopControl"
                 Grid.Column="0"
-                Margin="45,5,5,0"
+                Margin="5"
                 VerticalAlignment="Top"
                 Opacity="{x:Bind ViewModel.AppViewModel.TopControlsOpacity, Mode=OneWay}"
                 Orientation="Horizontal"
@@ -54,7 +54,7 @@
                 </StackPanel.OpacityTransition>
                 <Button
                     x:Name="CancelPlayingDetailButton"
-                    Margin="10,0,0,0"
+                    Margin="0"
                     Padding="10,8"
                     Background="Transparent"
                     BorderBrush="Transparent"

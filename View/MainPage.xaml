@@ -39,19 +39,9 @@
                 RelativePanel.AlignLeftWithPanel="True"
                 RelativePanel.AlignRightWithPanel="True"
                 RelativePanel.AlignTopWithPanel="True" />
-            <Frame
-                x:Name="PlayingFrame"
-                RelativePanel.AlignBottomWithPanel="True"
-                RelativePanel.AlignLeftWithPanel="True"
-                RelativePanel.AlignRightWithPanel="True"
-                RelativePanel.AlignTopWithPanel="True"
-                Visibility="Collapsed" />
             <!--  NavigationView 浮在左侧  -->
             <Grid
                 x:Name="NavigationViewControlGrid"
-                Opacity="{x:Bind tools:BindUtils.BoolToOpacityMultParamsConverter(PlayingFrame.Visibility, ViewModel.AppViewModel.IsInNaviView), Mode=OneWay}"
-                PointerEntered="NavigationViewControl_PointerEntered"
-                PointerExited="NavigationViewControl_PointerExited"
                 RelativePanel.AlignBottomWithPanel="True"
                 RelativePanel.AlignLeftWithPanel="True"
                 RelativePanel.AlignTopWithPanel="True">
@@ -86,6 +76,13 @@
                     </NavigationView.MenuItems>
                 </NavigationView>
             </Grid>
+            <Frame
+                x:Name="PlayingFrame"
+                RelativePanel.AlignBottomWithPanel="True"
+                RelativePanel.AlignLeftWithPanel="True"
+                RelativePanel.AlignRightWithPanel="True"
+                RelativePanel.AlignTopWithPanel="True"
+                Visibility="Collapsed" />
         </RelativePanel>
     </Grid>
 </Page>
