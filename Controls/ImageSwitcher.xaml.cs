@@ -92,6 +92,16 @@ namespace WinUIMusicPlayer.Controls
         public ImageSwitcher()
         {
             InitializeComponent();
+            Unloaded += OnUnloaded;
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
+            AlbumArtImage.Source = null;
+            LastAlbumArtImage.Source = null;
         }
 
         // ── 依赖属性回调 ──────────────────────────────────────────────────
@@ -229,6 +239,7 @@ namespace WinUIMusicPlayer.Controls
 
         private void UpdateSourceCrossfade(ImageSource? source)
         {
+            LastAlbumArtImage.Source = null;
             LastAlbumArtImage.Source = AlbumArtImage.Source;
             LastAlbumArtImage.TranslationTransition = null;
             LastAlbumArtImage.OpacityTransition = null;
@@ -249,6 +260,7 @@ namespace WinUIMusicPlayer.Controls
 
         private void UpdateSourceSlide(ImageSource? source)
         {
+            LastAlbumArtImage.Source = null;
             LastAlbumArtImage.Source = AlbumArtImage.Source;
             LastAlbumArtImage.TranslationTransition = null;
             LastAlbumArtImage.OpacityTransition = null;
@@ -272,6 +284,7 @@ namespace WinUIMusicPlayer.Controls
         }
         private void UpdateSourceScaleInOut(ImageSource? source)
         {
+            LastAlbumArtImage.Source = null;
             LastAlbumArtImage.Source = AlbumArtImage.Source;
             LastAlbumArtImage.ScaleTransition = null;
             LastAlbumArtImage.OpacityTransition = null;

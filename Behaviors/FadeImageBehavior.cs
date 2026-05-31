@@ -79,6 +79,8 @@ namespace WinUIMusicPlayer.Behaviors
             if (!(bool)e.NewValue)
             {
                 behavior._cts?.Cancel();
+                behavior._cts?.Dispose();
+                behavior._cts = null;
                 behavior.StopAndCleanup();
                 if (behavior.AssociatedObject != null)
                     behavior.SetSource(null);
@@ -90,6 +92,7 @@ namespace WinUIMusicPlayer.Behaviors
                 if (behavior.AssociatedObject != null && bytes != null)
                 {
                     behavior._cts?.Cancel();
+                    behavior._cts?.Dispose();
                     behavior._cts = new CancellationTokenSource();
                     var token = behavior._cts.Token;
                     _ = behavior.LoadAndTransitionAsync(bytes, token);
@@ -124,6 +127,7 @@ namespace WinUIMusicPlayer.Behaviors
             if (behavior.IsDuplicateAndUpdate(newBytes)) return;
 
             behavior._cts?.Cancel();
+            behavior._cts?.Dispose();
             behavior._cts = new CancellationTokenSource();
             var token = behavior._cts.Token;
 
@@ -211,6 +215,8 @@ namespace WinUIMusicPlayer.Behaviors
 
         private async Task InitAsync()
         {
+            _cts?.Cancel();
+            _cts?.Dispose();
             _cts = new CancellationTokenSource();
             var bitmap = await DecodeToBitmapAsync(ImageBytes, _cts.Token);
             if (AssociatedObject != null)
@@ -220,6 +226,8 @@ namespace WinUIMusicPlayer.Behaviors
         protected override void OnDetaching()
         {
             _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
             StopAndCleanup();
             base.OnDetaching();
         }
@@ -228,6 +236,7 @@ namespace WinUIMusicPlayer.Behaviors
         private void SetSource(ImageSource? source)
         {
             if (AssociatedObject == null) return;
+            AssociatedObject.Source = null;
             AssociatedObject.Source = source;
             ImageVisibility = source != null ? Visibility.Collapsed : Visibility.Visible;
         }
