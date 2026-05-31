@@ -180,7 +180,7 @@
   <data name="SettingAudio.Text" xml:space="preserve">
     <value>Аудио</value>
   </data>
-  <data name="SettingOutput.Header" xml:space="preserve">
+  <data name="SettingOutput.Text" xml:space="preserve">
     <value>Настройки вывода</value>
   </data>
   <data name="SettingOutputMode.Header" xml:space="preserve">
@@ -240,16 +240,16 @@
   <data name="DefaultMusicEntryInterface.Text" xml:space="preserve">
     <value>Стартвая страница музыки</value>
   </data>
-  <data name="SettingInterface.Header" xml:space="preserve">
+  <data name="SettingInterface.Text" xml:space="preserve">
     <value>Настройки интерфейса</value>
   </data>
-  <data name="SettingCover.Header" xml:space="preserve">
+  <data name="SettingCover.Text" xml:space="preserve">
     <value>Настройки обложки</value>
   </data>
   <data name="SettingCoverLyrics.Header" xml:space="preserve">
     <value>Настройки обложки иrics</value>
   </data>
-  <data name="SettingLyrics.Header" xml:space="preserve">
+  <data name="SettingLyrics.Text" xml:space="preserve">
     <value>Настройки текстов песен</value>
   </data>
   <data name="CoverServiceLrcAPISource.Header" xml:space="preserve">
@@ -276,7 +276,7 @@
   <data name="NeedConfigureLrcAPIService" xml:space="preserve">
     <value>Необходимо настроить службуLrcAPI</value>
   </data>
-  <data name="CloseButtonFunction.Header" xml:space="preserve">
+  <data name="CloseButtonFunction.Text" xml:space="preserve">
     <value>Функция кнопки Закрыть</value>
   </data>
   <data name="CloseApp.Content" xml:space="preserve">
@@ -288,7 +288,7 @@
   <data name="Appearance.Text" xml:space="preserve">
     <value>Внешний вид</value>
   </data>
-  <data name="AppStyle.Header" xml:space="preserve">
+  <data name="AppStyle.Text" xml:space="preserve">
     <value>Стиль приложения</value>
   </data>
   <data name="MicaStyle.Content" xml:space="preserve">
@@ -300,7 +300,7 @@
   <data name="TransparentAcrylicStyle.Content" xml:space="preserve">
     <value>Прозрачный акриловый</value>
   </data>
-  <data name="ThemeStyle.Header" xml:space="preserve">
+  <data name="ThemeStyle.Text" xml:space="preserve">
     <value>Тема приложения</value>
   </data>
   <data name="SystemDefaultTheme.Content" xml:space="preserve">
@@ -732,7 +732,7 @@
   <data name="saveConfirm.Text" xml:space="preserve">
     <value>Are you sure to write metadata to the music file</value>
   </data>
-  <data name="MainWindowSizeSettings.Header" xml:space="preserve">
+  <data name="MainWindowSizeSettings.Text" xml:space="preserve">
     <value>Параметры размера главного окна</value>
   </data>
   <data name="IsCustomAppSize.Text" xml:space="preserve">

@@ -180,7 +180,7 @@
   <data name="SettingAudio.Text" xml:space="preserve">
     <value>Audio</value>
   </data>
-  <data name="SettingOutput.Header" xml:space="preserve">
+  <data name="SettingOutput.Text" xml:space="preserve">
     <value>Configuración de salida</value>
   </data>
   <data name="SettingOutputMode.Header" xml:space="preserve">
@@ -240,16 +240,16 @@
   <data name="DefaultMusicEntryInterface.Text" xml:space="preserve">
     <value>Interfaz de entrada predeterminada de música</value>
   </data>
-  <data name="SettingInterface.Header" xml:space="preserve">
+  <data name="SettingInterface.Text" xml:space="preserve">
     <value>Configuración de interfaz</value>
   </data>
-  <data name="SettingCover.Header" xml:space="preserve">
+  <data name="SettingCover.Text" xml:space="preserve">
     <value>Configuración de portada</value>
   </data>
   <data name="SettingCoverLyrics.Header" xml:space="preserve">
     <value>Configuración de portada y letras</value>
   </data>
-  <data name="SettingLyrics.Header" xml:space="preserve">
+  <data name="SettingLyrics.Text" xml:space="preserve">
     <value>Configuración de letras</value>
   </data>
   <data name="CoverServiceLrcAPISource.Header" xml:space="preserve">
@@ -276,7 +276,7 @@
   <data name="NeedConfigureLrcAPIService" xml:space="preserve">
     <value>Se necesita configurar el servicio de API Lrc</value>
   </data>
-  <data name="CloseButtonFunction.Header" xml:space="preserve">
+  <data name="CloseButtonFunction.Text" xml:space="preserve">
     <value>Función del botón Cerrar</value>
   </data>
   <data name="CloseApp.Content" xml:space="preserve">
@@ -288,7 +288,7 @@
   <data name="Appearance.Text" xml:space="preserve">
     <value>Apariencia</value>
   </data>
-  <data name="AppStyle.Header" xml:space="preserve">
+  <data name="AppStyle.Text" xml:space="preserve">
     <value>Estilo de la aplicación</value>
   </data>
   <data name="MicaStyle.Content" xml:space="preserve">
@@ -300,7 +300,7 @@
   <data name="TransparentAcrylicStyle.Content" xml:space="preserve">
     <value>Acrílico transparente</value>
   </data>
-  <data name="ThemeStyle.Header" xml:space="preserve">
+  <data name="ThemeStyle.Text" xml:space="preserve">
     <value>Tema de la aplicación</value>
   </data>
   <data name="SystemDefaultTheme.Content" xml:space="preserve">
@@ -732,7 +732,7 @@
   <data name="saveConfirm.Text" xml:space="preserve">
     <value>Si está seguro de escribir metainformación en el archivo musical</value>
   </data>
-  <data name="MainWindowSizeSettings.Header" xml:space="preserve">
+  <data name="MainWindowSizeSettings.Text" xml:space="preserve">
     <value>Configuración del tamaño de la ventana principal</value>
   </data>
   <data name="IsCustomAppSize.Text" xml:space="preserve">

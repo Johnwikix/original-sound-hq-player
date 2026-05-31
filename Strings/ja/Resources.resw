@@ -180,7 +180,7 @@
   <data name="SettingAudio.Text" xml:space="preserve">
     <value>オーディオ</value>
   </data>
-  <data name="SettingOutput.Header" xml:space="preserve">
+  <data name="SettingOutput.Text" xml:space="preserve">
     <value>出力設定</value>
   </data>
   <data name="SettingOutputMode.Header" xml:space="preserve">
@@ -240,16 +240,16 @@
   <data name="DefaultMusicEntryInterface.Text" xml:space="preserve">
     <value>初期音楽表示画面</value>
   </data>
-  <data name="SettingInterface.Header" xml:space="preserve">
+  <data name="SettingInterface.Text" xml:space="preserve">
     <value>インターフェイス設定</value>
   </data>
-  <data name="SettingCover.Header" xml:space="preserve">
+  <data name="SettingCover.Text" xml:space="preserve">
     <value>ジャケット設定</value>
   </data>
   <data name="SettingCoverLyrics.Header" xml:space="preserve">
     <value>ジャケット・歌詞設定</value>
   </data>
-  <data name="SettingLyrics.Header" xml:space="preserve">
+  <data name="SettingLyrics.Text" xml:space="preserve">
     <value>歌詞設定</value>
   </data>
   <data name="CoverServiceLrcAPISource.Header" xml:space="preserve">
@@ -276,7 +276,7 @@
   <data name="NeedConfigureLrcAPIService" xml:space="preserve">
     <value>LrcAPIサービスを設定が必要です</value>
   </data>
-  <data name="CloseButtonFunction.Header" xml:space="preserve">
+  <data name="CloseButtonFunction.Text" xml:space="preserve">
     <value>閉じるボタンの機能</value>
   </data>
   <data name="CloseApp.Content" xml:space="preserve">
@@ -288,7 +288,7 @@
   <data name="Appearance.Text" xml:space="preserve">
     <value>外観</value>
   </data>
-  <data name="AppStyle.Header" xml:space="preserve">
+  <data name="AppStyle.Text" xml:space="preserve">
     <value>アプリのスタイル</value>
   </data>
   <data name="MicaStyle.Content" xml:space="preserve">
@@ -300,7 +300,7 @@
   <data name="TransparentAcrylicStyle.Content" xml:space="preserve">
     <value>透明アクリル</value>
   </data>
-  <data name="ThemeStyle.Header" xml:space="preserve">
+  <data name="ThemeStyle.Text" xml:space="preserve">
     <value>アプリのテーマ</value>
   </data>
   <data name="SystemDefaultTheme.Content" xml:space="preserve">
@@ -732,7 +732,7 @@
   <data name="saveConfirm.Text" xml:space="preserve">
     <value>音楽ファイルにメタ情報を書き込むかどうかを確認</value>
   </data>
-  <data name="MainWindowSizeSettings.Header" xml:space="preserve">
+  <data name="MainWindowSizeSettings.Text" xml:space="preserve">
     <value>メインウィンドウのサイズ設定</value>
   </data>
   <data name="IsCustomAppSize.Text" xml:space="preserve">

@@ -51,172 +51,173 @@
                         <RepositionThemeTransition IsStaggeringEnabled="False" />
                     </StackPanel.ChildrenTransitions>
 
-                    <controls:SettingsExpander x:Uid="SettingOutput" Margin="10,10,10,0" ItemContainerStyleSelector="{x:Null}">
-                        <controls:SettingsExpander.Items>
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch"
-                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="0,1,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
+                    <Expander
+                        MinHeight="69"
+                        Margin="10,10,10,0"
+                        Padding="0"
+                        HorizontalAlignment="Stretch"
+                        HorizontalContentAlignment="Stretch"
+                        BorderThickness="1"
+                        CornerRadius="{ThemeResource ControlCornerRadius}">
+                        <Expander.Header>
+                            <Grid Padding="16,16,4,16">
                                 <TextBlock
-                                    x:Uid="SettingOutputDevice"
-                                    Grid.Column="0"
+                                    x:Uid="SettingOutput"
                                     VerticalAlignment="Center"
                                     FontSize="14" />
-                                <ComboBox
-                                    x:Name="OutputDeviceComboBox"
-                                    Grid.Column="1"
-                                    Width="300"
-                                    VerticalAlignment="Center"
-                                    ItemsSource="{x:Bind ViewModel.AppViewModel.BassOutputDevices, Mode=OneWay}"
-                                    SelectedItem="{x:Bind ViewModel.AppViewModel.SelectedDevice, Mode=TwoWay}">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate x:DataType="model:BassOutputDevice">
-                                            <TextBlock Text="{x:Bind Tag}" />
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
                             </Grid>
-
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch"
-                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="0,1,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    x:Uid="SettingBufferSize"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <NumberBox
-                                    x:Name="LatencyNumberBox"
-                                    Grid.Column="1"
-                                    Width="300"
-                                    VerticalAlignment="Center"
-                                    LargeChange="100"
-                                    Maximum="900"
-                                    Minimum="100"
-                                    SmallChange="10"
-                                    SpinButtonPlacementMode="Inline"
-                                    Value="{x:Bind ViewModel.AppViewModel.Latency, Mode=TwoWay}" />
-                            </Grid>
-
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch"
-                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="0,1,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    x:Uid="DSD2PCMFreq"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <ComboBox
-                                    Grid.Column="1"
-                                    Width="300"
-                                    VerticalAlignment="Center"
-                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsDopEnabled, Converter={StaticResource BooleanNegationConverter}, Mode=OneWay}"
-                                    ItemsSource="{x:Bind ViewModel.AppViewModel.DsdPcmFreqs, Mode=OneWay}"
-                                    SelectedValue="{x:Bind ViewModel.AppViewModel.DsdPcmFreq, Mode=TwoWay}" />
-                            </Grid>
-
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch"
-                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="0,1,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    x:Uid="SettingDSDGain"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <NumberBox
-                                    x:Name="DSDGainNumberBox"
-                                    Grid.Column="1"
-                                    Width="300"
-                                    VerticalAlignment="Center"
-                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsDopEnabled, Mode=OneWay, Converter={StaticResource BooleanNegationConverter}}"
-                                    Minimum="0"
-                                    SmallChange="1"
-                                    SpinButtonPlacementMode="Inline"
-                                    Value="{x:Bind ViewModel.AppViewModel.DsdGain, Mode=TwoWay}" />
-                            </Grid>
-
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch"
-                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="0,1,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                    <TextBlock FontSize="14" Text="DSD Dop / DSD Native" />
+                        </Expander.Header>
+                        <Expander.Content>
+                            <StackPanel>
+                                <Grid
+                                    MinHeight="52"
+                                    Padding="58,8,44,8"
+                                    HorizontalAlignment="Stretch"
+                                    BorderThickness="0,1,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
                                     <TextBlock
-                                        FontSize="12"
-                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Text="{x:Bind tool:ToolUtils.GetString('DsdDopDescription')}"
-                                        TextWrapping="Wrap" />
-                                </StackPanel>
-                                <ToggleSwitch
-                                    Grid.Column="1"
-                                    MinWidth="0"
-                                    IsOn="{x:Bind ViewModel.AppViewModel.IsDopEnabled, Mode=TwoWay}" />
-                            </Grid>
+                                        x:Uid="SettingOutputDevice"
+                                        Grid.Column="0"
+                                        VerticalAlignment="Center"
+                                        FontSize="14" />
+                                    <ComboBox
+                                        x:Name="OutputDeviceComboBox"
+                                        Grid.Column="1"
+                                        Width="300"
+                                        VerticalAlignment="Center"
+                                        ItemsSource="{x:Bind ViewModel.AppViewModel.BassOutputDevices, Mode=OneWay}"
+                                        SelectedItem="{x:Bind ViewModel.AppViewModel.SelectedDevice, Mode=TwoWay}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate x:DataType="model:BassOutputDevice">
+                                                <TextBlock Text="{x:Bind Tag}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </Grid>
 
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch"
-                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="0,1,0,0">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                    <TextBlock x:Uid="FadeInOut" FontSize="14" />
+                                <Grid
+                                    MinHeight="52"
+                                    Padding="58,8,44,8"
+                                    HorizontalAlignment="Stretch"
+                                    BorderThickness="0,1,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
                                     <TextBlock
-                                        FontSize="12"
-                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Text="{x:Bind tool:ToolUtils.GetString('FadeInOutDescription')}"
-                                        TextWrapping="Wrap" />
-                                </StackPanel>
-                                <ToggleSwitch
-                                    Grid.Column="1"
-                                    MinWidth="0"
-                                    IsOn="{x:Bind ViewModel.AppViewModel.IsFadeEnabled, Mode=TwoWay}" />
-                            </Grid>
-                        </controls:SettingsExpander.Items>
-                    </controls:SettingsExpander>
+                                        x:Uid="SettingBufferSize"
+                                        Grid.Column="0"
+                                        VerticalAlignment="Center"
+                                        FontSize="14" />
+                                    <NumberBox
+                                        x:Name="LatencyNumberBox"
+                                        Grid.Column="1"
+                                        Width="300"
+                                        VerticalAlignment="Center"
+                                        LargeChange="100"
+                                        Maximum="900"
+                                        Minimum="100"
+                                        SmallChange="10"
+                                        SpinButtonPlacementMode="Inline"
+                                        Value="{x:Bind ViewModel.AppViewModel.Latency, Mode=TwoWay}" />
+                                </Grid>
+
+                                <Grid
+                                    MinHeight="52"
+                                    Padding="58,8,44,8"
+                                    HorizontalAlignment="Stretch">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        x:Uid="DSD2PCMFreq"
+                                        Grid.Column="0"
+                                        VerticalAlignment="Center"
+                                        FontSize="14" />
+                                    <ComboBox
+                                        Grid.Column="1"
+                                        Width="300"
+                                        VerticalAlignment="Center"
+                                        IsEnabled="{x:Bind ViewModel.AppViewModel.IsDopEnabled, Converter={StaticResource BooleanNegationConverter}, Mode=OneWay}"
+                                        ItemsSource="{x:Bind ViewModel.AppViewModel.DsdPcmFreqs, Mode=OneWay}"
+                                        SelectedValue="{x:Bind ViewModel.AppViewModel.DsdPcmFreq, Mode=TwoWay}" />
+                                </Grid>
+
+                                <Grid
+                                    MinHeight="52"
+                                    Padding="58,8,44,8"
+                                    HorizontalAlignment="Stretch">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        x:Uid="SettingDSDGain"
+                                        Grid.Column="0"
+                                        VerticalAlignment="Center"
+                                        FontSize="14" />
+                                    <NumberBox
+                                        x:Name="DSDGainNumberBox"
+                                        Grid.Column="1"
+                                        Width="300"
+                                        VerticalAlignment="Center"
+                                        IsEnabled="{x:Bind ViewModel.AppViewModel.IsDopEnabled, Mode=OneWay, Converter={StaticResource BooleanNegationConverter}}"
+                                        Minimum="0"
+                                        SmallChange="1"
+                                        SpinButtonPlacementMode="Inline"
+                                        Value="{x:Bind ViewModel.AppViewModel.DsdGain, Mode=TwoWay}" />
+                                </Grid>
+
+                                <Grid
+                                    MinHeight="52"
+                                    Padding="58,8,44,8"
+                                    HorizontalAlignment="Stretch">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock FontSize="14" Text="DSD Dop / DSD Native" />
+                                        <TextBlock
+                                            FontSize="12"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Text="{x:Bind tool:ToolUtils.GetString('DsdDopDescription')}"
+                                            TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <ToggleSwitch
+                                        Grid.Column="1"
+                                        MinWidth="0"
+                                        IsOn="{x:Bind ViewModel.AppViewModel.IsDopEnabled, Mode=TwoWay}" />
+                                </Grid>
+
+                                <Grid
+                                    MinHeight="52"
+                                    Padding="58,8,44,8"
+                                    HorizontalAlignment="Stretch">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                        <TextBlock x:Uid="FadeInOut" FontSize="14" />
+                                        <TextBlock
+                                            FontSize="12"
+                                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                            Text="{x:Bind tool:ToolUtils.GetString('FadeInOutDescription')}"
+                                            TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <ToggleSwitch
+                                        Grid.Column="1"
+                                        MinWidth="0"
+                                        IsOn="{x:Bind ViewModel.AppViewModel.IsFadeEnabled, Mode=TwoWay}" />
+                                </Grid>
+                            </StackPanel>
+                        </Expander.Content>
+                    </Expander>
 
                     <controls:SettingsCard
                         x:Name="SpectrumVisualization"
@@ -233,864 +234,850 @@
                     x:Uid="SettingFunction"
                     Margin="10,10,0,0"
                     FontSize="16" />
-                <controls:SettingsExpander x:Uid="SettingInterface" Margin="10,10,10,0" ItemContainerStyleSelector="{x:Null}">
-                    <controls:SettingsExpander.Items>
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
+                <Expander
+                    MinHeight="69"
+                    Margin="10,10,10,0"
+                    Padding="0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    CornerRadius="{ThemeResource ControlCornerRadius}">
+                    <Expander.Header>
+                        <Grid Padding="16,16,4,16">
                             <TextBlock
-                                x:Uid="DefaultEntryInterface"
-                                Grid.Column="0"
+                                x:Uid="SettingInterface"
                                 VerticalAlignment="Center"
                                 FontSize="14" />
-                            <ComboBox
-                                Grid.Column="1"
-                                Width="300"
-                                VerticalAlignment="Center"
-                                SelectedValue="{x:Bind ViewModel.AppViewModel.DefaultEntryComboBoxTag, Mode=TwoWay}"
-                                SelectedValuePath="Tag">
-                                <ComboBoxItem x:Uid="AddFolderCombox" Tag="AddFolder" />
-                                <ComboBoxItem x:Uid="MusicBrowseCombox" Tag="MusicBrowse" />
-                            </ComboBox>
                         </Grid>
-
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="DefaultMusicEntryInterface"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <ComboBox
-                                Grid.Column="1"
-                                Width="300"
-                                VerticalAlignment="Center"
-                                SelectedValue="{x:Bind ViewModel.AppViewModel.DefaultPlayListComboBoxTag, Mode=TwoWay}"
-                                SelectedValuePath="Tag">
-                                <ComboBoxItem x:Uid="SongCombox" Tag="song" />
-                                <ComboBoxItem x:Uid="AlbumCombox" Tag="album" />
-                                <ComboBoxItem x:Uid="ArtistCombox" Tag="artist" />
-                                <ComboBoxItem x:Uid="FolderCombox" Tag="folder" />
-                                <ComboBoxItem x:Uid="FavouriteCombox" Tag="favourite" />
-                                <ComboBoxItem x:Uid="PlaylistCombox" Tag="playList" />
-                            </ComboBox>
-                        </Grid>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
-
-                <!--  封面设置  -->
-                <controls:SettingsExpander x:Uid="SettingCover" Margin="10,0,10,0" ItemContainerStyleSelector="{x:Null}">
-                    <controls:SettingsExpander.Items>
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                <TextBlock x:Uid="CoverSize" FontSize="14" />
-                                <TextBlock
-                                    FontSize="12"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="{x:Bind tool:ToolUtils.GetString('CoverSizeToolTip')}"
-                                    TextWrapping="Wrap" />
-                            </StackPanel>
-                            <NumberBox
-                                x:Name="CoverSize"
-                                Grid.Column="1"
-                                Width="300"
-                                VerticalAlignment="Center"
-                                LargeChange="10"
-                                Minimum="0"
-                                SmallChange="1"
-                                SpinButtonPlacementMode="Inline"
-                                Value="{x:Bind ViewModel.AppViewModel.CoverSize, Mode=TwoWay}" />
-                        </Grid>
-
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                <TextBlock x:Uid="CoverDiskCache" FontSize="14" />
-                                <TextBlock
-                                    FontSize="12"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
-                                    TextWrapping="Wrap" />
-                            </StackPanel>
-                            <Grid Grid.Column="1" Width="300">
+                    </Expander.Header>
+                    <Expander.Content>
+                        <StackPanel>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <Button
-                                    Grid.Column="0"
-                                    Margin="0,0,10,0"
-                                    HorizontalAlignment="Stretch"
-                                    HorizontalContentAlignment="Stretch"
-                                    Command="{x:Bind ViewModel.AppViewModel.OpenCoverCacheLocationCommand, Mode=OneWay}">
-                                    <Button.Content>
-                                        <dev:AutoScrollView
-                                            x:Name="AutoScrollViewControl"
-                                            Margin="0,0,10,0"
-                                            IsPlaying="False"
-                                            PointerCanceled="AutoScrollHover_PointerCanceled"
-                                            PointerEntered="AutoScrollHover_PointerEntered"
-                                            PointerExited="AutoScrollHover_PointerExited">
-                                            <TextBlock
-                                                VerticalAlignment="Center"
-                                                Text="{x:Bind ViewModel.AppViewModel.MusicCoverCache, Mode=OneWay}"
-                                                TextAlignment="Right"
-                                                TextTrimming="CharacterEllipsis"
-                                                TextWrapping="NoWrap" />
-                                        </dev:AutoScrollView>
-                                    </Button.Content>
-                                </Button>
-                                <Button
-                                    x:Uid="ChangeMusicCoverCache"
-                                    Grid.Column="1"
-                                    Command="{x:Bind ViewModel.AppViewModel.ChangeCoverCacheLocationCommand, Mode=OneWay}" />
-                            </Grid>
-                        </Grid>
-
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="MaxCoverCacheCount"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <NumberBox
-                                Grid.Column="1"
-                                Width="300"
-                                VerticalAlignment="Center"
-                                LargeChange="10"
-                                SmallChange="1"
-                                SpinButtonPlacementMode="Inline"
-                                Value="{x:Bind ViewModel.AppViewModel.MaxCoverCacheCount, Mode=TwoWay}" />
-                        </Grid>
-
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="AutoCoverMatching"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <ToggleSwitch
-                                Grid.Column="1"
-                                MinWidth="0"
-                                IsOn="{x:Bind ViewModel.AppViewModel.IsAutoCoverEnabled, Mode=TwoWay}" />
-                        </Grid>
-
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="FluidBackground"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <ToggleSwitch
-                                Grid.Column="1"
-                                MinWidth="0"
-                                IsOn="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=TwoWay}" />
-                        </Grid>
-
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="EnableLightWave"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <ToggleSwitch
-                                Grid.Column="1"
-                                MinWidth="0"
-                                IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
-                                IsOn="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=TwoWay}" />
-                        </Grid>
-
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                <TextBlock x:Uid="Win2dCover" FontSize="14" />
                                 <TextBlock
-                                    FontSize="12"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
-                                    TextWrapping="Wrap" />
-                            </StackPanel>
-                            <ToggleSwitch
-                                Grid.Column="1"
-                                MinWidth="0"
-                                IsOn="{x:Bind ViewModel.AppViewModel.IsWin2dCoverImageControlEnable, Mode=TwoWay}" />
-                        </Grid>
-
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                <TextBlock x:Uid="Win2dAnimatedTitle" FontSize="14" />
-                                <TextBlock
-                                    FontSize="12"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
-                                    TextWrapping="Wrap" />
-                            </StackPanel>
-                            <Grid Grid.Column="1" Width="300">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <ToggleSwitch
+                                    x:Uid="DefaultEntryInterface"
                                     Grid.Column="0"
-                                    MinWidth="0"
-                                    Margin="0,0,10,0"
-                                    IsOn="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=TwoWay}" />
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
                                 <ComboBox
                                     Grid.Column="1"
-                                    HorizontalAlignment="Stretch"
+                                    Width="300"
                                     VerticalAlignment="Center"
-                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=OneWay}"
-                                    ItemsSource="{x:Bind ViewModel.AppViewModel.TextEffectItems}"
-                                    SelectedItem="{x:Bind ViewModel.AppViewModel.Win2dTextEffectType, Mode=TwoWay}">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate x:DataType="model:EffectComboBoxItem">
-                                            <TextBlock Text="{x:Bind DisplayName}" />
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
+                                    SelectedValue="{x:Bind ViewModel.AppViewModel.DefaultEntryComboBoxTag, Mode=TwoWay}"
+                                    SelectedValuePath="Tag">
+                                    <ComboBoxItem x:Uid="AddFolderCombox" Tag="AddFolder" />
+                                    <ComboBoxItem x:Uid="MusicBrowseCombox" Tag="MusicBrowse" />
                                 </ComboBox>
                             </Grid>
-                        </Grid>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
 
-                <!--  歌词设置  -->
-                <controls:SettingsExpander x:Uid="SettingLyrics" Margin="10,0,10,0" ItemContainerStyleSelector="{x:Null}">
-                    <controls:SettingsExpander.Items>
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="AutoLyricMatching"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <ToggleSwitch
-                                Grid.Column="1"
-                                MinWidth="0"
-                                IsOn="{x:Bind ViewModel.AppViewModel.IsAutoLyricsEnabled, Mode=TwoWay}" />
-                        </Grid>
-
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                <TextBlock x:Uid="EnableAdvancedLyricsEffect" FontSize="14" />
-                                <TextBlock
-                                    FontSize="12"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
-                                    TextWrapping="Wrap" />
-                            </StackPanel>
-                            <ToggleSwitch
-                                Grid.Column="1"
-                                MinWidth="0"
-                                IsOn="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=TwoWay}" />
-                        </Grid>
-
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="LyricsFontFamily"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <ComboBox
-                                x:Name="LyricsFontFamily"
-                                Grid.Column="1"
-                                Width="300"
-                                VerticalAlignment="Center"
-                                ItemTemplate="{StaticResource FontComboboxTemplate}"
-                                ItemsSource="{x:Bind ViewModel.AppViewModel.FontFamilyList, Mode=OneWay}"
-                                SelectedValue="{x:Bind ViewModel.AppViewModel.FontFamily, Mode=TwoWay}" />
-                        </Grid>
-
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="LyricsFontSize"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <Grid Grid.Column="1" Width="300">
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <ToggleSwitch
+                                <TextBlock
+                                    x:Uid="DefaultMusicEntryInterface"
                                     Grid.Column="0"
-                                    MinWidth="0"
-                                    Margin="0,0,10,0"
-                                    IsOn="{x:Bind ViewModel.AppViewModel.IsGlobalFontSizeEnabled, Mode=TwoWay}" />
-                                <NumberBox
-                                    x:Name="LyricsFontSize"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ComboBox
                                     Grid.Column="1"
+                                    Width="300"
+                                    VerticalAlignment="Center"
+                                    SelectedValue="{x:Bind ViewModel.AppViewModel.DefaultPlayListComboBoxTag, Mode=TwoWay}"
+                                    SelectedValuePath="Tag">
+                                    <ComboBoxItem x:Uid="SongCombox" Tag="song" />
+                                    <ComboBoxItem x:Uid="AlbumCombox" Tag="album" />
+                                    <ComboBoxItem x:Uid="ArtistCombox" Tag="artist" />
+                                    <ComboBoxItem x:Uid="FolderCombox" Tag="folder" />
+                                    <ComboBoxItem x:Uid="FavouriteCombox" Tag="favourite" />
+                                    <ComboBoxItem x:Uid="PlaylistCombox" Tag="playList" />
+                                </ComboBox>
+                            </Grid>
+                        </StackPanel>
+                    </Expander.Content>
+                </Expander>
+
+                <!--  封面设置  -->
+                <Expander
+                    MinHeight="69"
+                    Margin="10,0,10,0"
+                    Padding="0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    CornerRadius="{ThemeResource ControlCornerRadius}">
+                    <Expander.Header>
+                        <Grid Padding="16,16,4,16">
+                            <TextBlock
+                                x:Uid="SettingCover"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                        </Grid>
+                    </Expander.Header>
+                    <Expander.Content>
+                        <StackPanel>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock x:Uid="CoverSize" FontSize="14" />
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="{x:Bind tool:ToolUtils.GetString('CoverSizeToolTip')}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <NumberBox
+                                    x:Name="CoverSize"
+                                    Grid.Column="1"
+                                    Width="300"
                                     VerticalAlignment="Center"
                                     LargeChange="10"
                                     Minimum="0"
                                     SmallChange="1"
                                     SpinButtonPlacementMode="Inline"
-                                    Value="{x:Bind ViewModel.AppViewModel.GlobalFontSize, Mode=TwoWay}" />
+                                    Value="{x:Bind ViewModel.AppViewModel.CoverSize, Mode=TwoWay}" />
                             </Grid>
-                        </Grid>
 
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="LyricsAlignment"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <ComboBox
-                                x:Name="LyricsAlignmentComboBox"
-                                Grid.Column="1"
-                                Width="300"
-                                VerticalAlignment="Center"
-                                SelectedValue="{x:Bind ViewModel.AppViewModel.LyricsAlignment, Mode=TwoWay}"
-                                SelectedValuePath="Tag">
-                                <ComboBoxItem x:Uid="Left" Tag="Left" />
-                                <ComboBoxItem x:Uid="Center" Tag="Center" />
-                                <ComboBoxItem x:Uid="Right" Tag="Right" />
-                            </ComboBox>
-                        </Grid>
-
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="LyricsMargin"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <NumberBox
-                                x:Name="LyricsMarginNumberBox"
-                                Grid.Column="1"
-                                Width="300"
-                                VerticalAlignment="Center"
-                                LargeChange="10"
-                                Minimum="0"
-                                SmallChange="1"
-                                SpinButtonPlacementMode="Inline"
-                                Value="{x:Bind ViewModel.AppViewModel.LyricsMargin, Converter={StaticResource ThicknessToDoubleConverter}, Mode=TwoWay}" />
-                        </Grid>
-
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="LyricsBlurAmount"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <Grid Grid.Column="1" Width="300">
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock x:Uid="CoverDiskCache" FontSize="14" />
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <Grid Grid.Column="1" Width="300">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button
+                                        Grid.Column="0"
+                                        Margin="0,0,10,0"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Stretch"
+                                        Command="{x:Bind ViewModel.AppViewModel.OpenCoverCacheLocationCommand, Mode=OneWay}">
+                                        <Button.Content>
+                                            <dev:AutoScrollView
+                                                x:Name="AutoScrollViewControl"
+                                                Margin="0,0,10,0"
+                                                IsPlaying="False"
+                                                PointerCanceled="AutoScrollHover_PointerCanceled"
+                                                PointerEntered="AutoScrollHover_PointerEntered"
+                                                PointerExited="AutoScrollHover_PointerExited">
+                                                <TextBlock
+                                                    VerticalAlignment="Center"
+                                                    Text="{x:Bind ViewModel.AppViewModel.MusicCoverCache, Mode=OneWay}"
+                                                    TextAlignment="Right"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    TextWrapping="NoWrap" />
+                                            </dev:AutoScrollView>
+                                        </Button.Content>
+                                    </Button>
+                                    <Button
+                                        x:Uid="ChangeMusicCoverCache"
+                                        Grid.Column="1"
+                                        Command="{x:Bind ViewModel.AppViewModel.ChangeCoverCacheLocationCommand, Mode=OneWay}" />
+                                </Grid>
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
+                                    x:Uid="MaxCoverCacheCount"
                                     Grid.Column="0"
-                                    Margin="5,0"
                                     VerticalAlignment="Center"
-                                    Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.LyricsBlurAmount), Mode=OneWay}" />
-                                <Slider
+                                    FontSize="14" />
+                                <NumberBox
                                     Grid.Column="1"
+                                    Width="300"
                                     VerticalAlignment="Center"
-                                    Maximum="10"
+                                    LargeChange="10"
+                                    SmallChange="1"
+                                    SpinButtonPlacementMode="Inline"
+                                    Value="{x:Bind ViewModel.AppViewModel.MaxCoverCacheCount, Mode=TwoWay}" />
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="AutoCoverMatching"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.IsAutoCoverEnabled, Mode=TwoWay}" />
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="FluidBackground"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=TwoWay}" />
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="EnableLightWave"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=TwoWay}" />
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock x:Uid="Win2dCover" FontSize="14" />
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.IsWin2dCoverImageControlEnable, Mode=TwoWay}" />
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock x:Uid="Win2dAnimatedTitle" FontSize="14" />
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <Grid Grid.Column="1" Width="300">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <ToggleSwitch
+                                        Grid.Column="0"
+                                        MinWidth="0"
+                                        Margin="0,0,10,0"
+                                        IsOn="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=TwoWay}" />
+                                    <ComboBox
+                                        Grid.Column="1"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Center"
+                                        IsEnabled="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=OneWay}"
+                                        ItemsSource="{x:Bind ViewModel.AppViewModel.TextEffectItems}"
+                                        SelectedItem="{x:Bind ViewModel.AppViewModel.Win2dTextEffectType, Mode=TwoWay}">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate x:DataType="model:EffectComboBoxItem">
+                                                <TextBlock Text="{x:Bind DisplayName}" />
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
+                                </Grid>
+                            </Grid>
+                        </StackPanel>
+                    </Expander.Content>
+                </Expander>
+
+                <!--  歌词设置  -->
+                <Expander
+                    MinHeight="69"
+                    Margin="10,0,10,0"
+                    Padding="0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    CornerRadius="{ThemeResource ControlCornerRadius}">
+                    <Expander.Header>
+                        <Grid Padding="16,16,4,16">
+                            <TextBlock
+                                x:Uid="SettingLyrics"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                        </Grid>
+                    </Expander.Header>
+                    <Expander.Content>
+                        <StackPanel>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="AutoLyricMatching"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.IsAutoLyricsEnabled, Mode=TwoWay}" />
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock x:Uid="EnableAdvancedLyricsEffect" FontSize="14" />
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=TwoWay}" />
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="LyricsFontFamily"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ComboBox
+                                    x:Name="LyricsFontFamily"
+                                    Grid.Column="1"
+                                    Width="300"
+                                    VerticalAlignment="Center"
+                                    ItemTemplate="{StaticResource FontComboboxTemplate}"
+                                    ItemsSource="{x:Bind ViewModel.AppViewModel.FontFamilyList, Mode=OneWay}"
+                                    SelectedValue="{x:Bind ViewModel.AppViewModel.FontFamily, Mode=TwoWay}" />
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="LyricsFontSize"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <Grid Grid.Column="1" Width="300">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <ToggleSwitch
+                                        Grid.Column="0"
+                                        MinWidth="0"
+                                        Margin="0,0,10,0"
+                                        IsOn="{x:Bind ViewModel.AppViewModel.IsGlobalFontSizeEnabled, Mode=TwoWay}" />
+                                    <NumberBox
+                                        x:Name="LyricsFontSize"
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        LargeChange="10"
+                                        Minimum="0"
+                                        SmallChange="1"
+                                        SpinButtonPlacementMode="Inline"
+                                        Value="{x:Bind ViewModel.AppViewModel.GlobalFontSize, Mode=TwoWay}" />
+                                </Grid>
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="LyricsAlignment"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ComboBox
+                                    x:Name="LyricsAlignmentComboBox"
+                                    Grid.Column="1"
+                                    Width="300"
+                                    VerticalAlignment="Center"
+                                    SelectedValue="{x:Bind ViewModel.AppViewModel.LyricsAlignment, Mode=TwoWay}"
+                                    SelectedValuePath="Tag">
+                                    <ComboBoxItem x:Uid="Left" Tag="Left" />
+                                    <ComboBoxItem x:Uid="Center" Tag="Center" />
+                                    <ComboBoxItem x:Uid="Right" Tag="Right" />
+                                </ComboBox>
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="LyricsMargin"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <NumberBox
+                                    x:Name="LyricsMarginNumberBox"
+                                    Grid.Column="1"
+                                    Width="300"
+                                    VerticalAlignment="Center"
+                                    LargeChange="10"
                                     Minimum="0"
-                                    SnapsTo="Ticks"
-                                    TickFrequency="0.1"
-                                    TickPlacement="Outside"
-                                    Value="{x:Bind ViewModel.AppViewModel.LyricsBlurAmount, Mode=TwoWay}" />
+                                    SmallChange="1"
+                                    SpinButtonPlacementMode="Inline"
+                                    Value="{x:Bind ViewModel.AppViewModel.LyricsMargin, Converter={StaticResource ThicknessToDoubleConverter}, Mode=TwoWay}" />
                             </Grid>
-                        </Grid>
 
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="PlayingLineTopOffset"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <Grid Grid.Column="1" Width="300">
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
+                                    x:Uid="LyricsBlurAmount"
                                     Grid.Column="0"
-                                    Margin="5,0"
                                     VerticalAlignment="Center"
-                                    Text="{x:Bind tool:BindUtils.FormatPercent(ViewModel.AppViewModel.PlayingLineTopOffsetPercent), Mode=OneWay}" />
-                                <Slider
-                                    Grid.Column="1"
-                                    VerticalAlignment="Center"
-                                    Maximum="70"
-                                    Minimum="30"
-                                    SnapsTo="Ticks"
-                                    TickFrequency="1"
-                                    TickPlacement="Outside"
-                                    Value="{x:Bind ViewModel.AppViewModel.PlayingLineTopOffsetPercent, Mode=TwoWay}" />
+                                    FontSize="14" />
+                                <Grid Grid.Column="1" Width="300">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.LyricsBlurAmount), Mode=OneWay}" />
+                                    <Slider
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        Maximum="10"
+                                        Minimum="0"
+                                        SnapsTo="Ticks"
+                                        TickFrequency="0.1"
+                                        TickPlacement="Outside"
+                                        Value="{x:Bind ViewModel.AppViewModel.LyricsBlurAmount, Mode=TwoWay}" />
+                                </Grid>
                             </Grid>
-                        </Grid>
 
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="UnplayedOpacity"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <Grid Grid.Column="1" Width="300">
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
+                                    x:Uid="PlayingLineTopOffset"
                                     Grid.Column="0"
-                                    Margin="5,0"
                                     VerticalAlignment="Center"
-                                    Text="{x:Bind tool:BindUtils.FormatPercent(ViewModel.AppViewModel.UnplayedOpacityPercent), Mode=OneWay}" />
-                                <Slider
-                                    Grid.Column="1"
-                                    VerticalAlignment="Center"
-                                    Maximum="100"
-                                    Minimum="0"
-                                    SnapsTo="Ticks"
-                                    TickFrequency="1"
-                                    TickPlacement="Outside"
-                                    Value="{x:Bind ViewModel.AppViewModel.UnplayedOpacityPercent, Mode=TwoWay}" />
+                                    FontSize="14" />
+                                <Grid Grid.Column="1" Width="300">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        Text="{x:Bind tool:BindUtils.FormatPercent(ViewModel.AppViewModel.PlayingLineTopOffsetPercent), Mode=OneWay}" />
+                                    <Slider
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        Maximum="70"
+                                        Minimum="30"
+                                        SnapsTo="Ticks"
+                                        TickFrequency="1"
+                                        TickPlacement="Outside"
+                                        Value="{x:Bind ViewModel.AppViewModel.PlayingLineTopOffsetPercent, Mode=TwoWay}" />
+                                </Grid>
                             </Grid>
-                        </Grid>
 
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="TranslatedOpacity"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <Grid Grid.Column="1" Width="300">
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
+                                    x:Uid="UnplayedOpacity"
                                     Grid.Column="0"
-                                    Margin="5,0"
                                     VerticalAlignment="Center"
-                                    Text="{x:Bind tool:BindUtils.FormatPercent(ViewModel.AppViewModel.TranslatedOpacityPercent), Mode=OneWay}" />
-                                <Slider
-                                    Grid.Column="1"
-                                    VerticalAlignment="Center"
-                                    Maximum="100"
-                                    Minimum="0"
-                                    SnapsTo="Ticks"
-                                    TickFrequency="1"
-                                    TickPlacement="Outside"
-                                    Value="{x:Bind ViewModel.AppViewModel.TranslatedOpacityPercent, Mode=TwoWay}" />
+                                    FontSize="14" />
+                                <Grid Grid.Column="1" Width="300">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        Text="{x:Bind tool:BindUtils.FormatPercent(ViewModel.AppViewModel.UnplayedOpacityPercent), Mode=OneWay}" />
+                                    <Slider
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        Maximum="100"
+                                        Minimum="0"
+                                        SnapsTo="Ticks"
+                                        TickFrequency="1"
+                                        TickPlacement="Outside"
+                                        Value="{x:Bind ViewModel.AppViewModel.UnplayedOpacityPercent, Mode=TwoWay}" />
+                                </Grid>
                             </Grid>
-                        </Grid>
 
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="CharFloatAmount"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <Grid Grid.Column="1" Width="300">
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100" />
                                     <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
+                                    x:Uid="TranslatedOpacity"
                                     Grid.Column="0"
-                                    Margin="5,0"
                                     VerticalAlignment="Center"
-                                    Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.CharFloatAmount), Mode=OneWay}" />
-                                <Slider
+                                    FontSize="14" />
+                                <Grid Grid.Column="1" Width="300">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        Text="{x:Bind tool:BindUtils.FormatPercent(ViewModel.AppViewModel.TranslatedOpacityPercent), Mode=OneWay}" />
+                                    <Slider
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        Maximum="100"
+                                        Minimum="0"
+                                        SnapsTo="Ticks"
+                                        TickFrequency="1"
+                                        TickPlacement="Outside"
+                                        Value="{x:Bind ViewModel.AppViewModel.TranslatedOpacityPercent, Mode=TwoWay}" />
+                                </Grid>
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="CharFloatAmount"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <Grid Grid.Column="1" Width="300">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.CharFloatAmount), Mode=OneWay}" />
+                                    <Slider
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
+                                        Maximum="10"
+                                        Minimum="0"
+                                        SnapsTo="Ticks"
+                                        TickFrequency="0.1"
+                                        TickPlacement="Outside"
+                                        Value="{x:Bind ViewModel.AppViewModel.CharFloatAmount, Mode=TwoWay}" />
+                                </Grid>
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="CharScaleAmount"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <Grid Grid.Column="1" Width="300">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        Text="{x:Bind tool:BindUtils.FormatF0(ViewModel.AppViewModel.CharScaleAmount), Mode=OneWay}" />
+                                    <Slider
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
+                                        Maximum="150"
+                                        Minimum="50"
+                                        SnapsTo="Ticks"
+                                        TickFrequency="1"
+                                        TickPlacement="Outside"
+                                        Value="{x:Bind ViewModel.AppViewModel.CharScaleAmount, Mode=TwoWay}" />
+                                </Grid>
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="GlowAmount"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <Grid Grid.Column="1" Width="300">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.GlowAmount), Mode=OneWay}" />
+                                    <Slider
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
+                                        Maximum="10"
+                                        Minimum="0"
+                                        SnapsTo="Ticks"
+                                        TickFrequency="0.1"
+                                        TickPlacement="Outside"
+                                        Value="{x:Bind ViewModel.AppViewModel.GlowAmount, Mode=TwoWay}" />
+                                </Grid>
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="LongSyllableThreshold"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <Grid Grid.Column="1" Width="300">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        Text="{x:Bind tool:BindUtils.FormatMs(ViewModel.AppViewModel.LongSyllableThreshold), Mode=OneWay}" />
+                                    <Slider
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
+                                        Maximum="1000"
+                                        Minimum="400"
+                                        SnapsTo="Ticks"
+                                        TickFrequency="10"
+                                        TickPlacement="Outside"
+                                        Value="{x:Bind ViewModel.AppViewModel.LongSyllableThreshold, Mode=TwoWay}" />
+                                </Grid>
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="TargetFrameRate"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ComboBox
                                     Grid.Column="1"
+                                    Width="300"
                                     VerticalAlignment="Center"
                                     IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
-                                    Maximum="10"
-                                    Minimum="0"
-                                    SnapsTo="Ticks"
-                                    TickFrequency="0.1"
-                                    TickPlacement="Outside"
-                                    Value="{x:Bind ViewModel.AppViewModel.CharFloatAmount, Mode=TwoWay}" />
+                                    ItemsSource="{x:Bind ViewModel.AppViewModel.TargetFrameRateOptions}"
+                                    SelectedItem="{x:Bind ViewModel.AppViewModel.TargetFrameRate, Mode=TwoWay}">
+                                    <ComboBox.ItemTemplate>
+                                        <DataTemplate x:DataType="x:Double">
+                                            <TextBlock>
+                                                <Run Text="{x:Bind Mode=OneWay}" />
+                                                <Run Text=" hz" />
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ComboBox.ItemTemplate>
+                                </ComboBox>
                             </Grid>
-                        </Grid>
-
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="CharScaleAmount"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <Grid Grid.Column="1" Width="300">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    Grid.Column="0"
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    Text="{x:Bind tool:BindUtils.FormatF0(ViewModel.AppViewModel.CharScaleAmount), Mode=OneWay}" />
-                                <Slider
-                                    Grid.Column="1"
-                                    VerticalAlignment="Center"
-                                    IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
-                                    Maximum="150"
-                                    Minimum="50"
-                                    SnapsTo="Ticks"
-                                    TickFrequency="1"
-                                    TickPlacement="Outside"
-                                    Value="{x:Bind ViewModel.AppViewModel.CharScaleAmount, Mode=TwoWay}" />
-                            </Grid>
-                        </Grid>
-
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="GlowAmount"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <Grid Grid.Column="1" Width="300">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    Grid.Column="0"
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.GlowAmount), Mode=OneWay}" />
-                                <Slider
-                                    Grid.Column="1"
-                                    VerticalAlignment="Center"
-                                    IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
-                                    Maximum="10"
-                                    Minimum="0"
-                                    SnapsTo="Ticks"
-                                    TickFrequency="0.1"
-                                    TickPlacement="Outside"
-                                    Value="{x:Bind ViewModel.AppViewModel.GlowAmount, Mode=TwoWay}" />
-                            </Grid>
-                        </Grid>
-
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="LongSyllableThreshold"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <Grid Grid.Column="1" Width="300">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="100" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    Grid.Column="0"
-                                    Margin="5,0"
-                                    VerticalAlignment="Center"
-                                    Text="{x:Bind tool:BindUtils.FormatMs(ViewModel.AppViewModel.LongSyllableThreshold), Mode=OneWay}" />
-                                <Slider
-                                    Grid.Column="1"
-                                    VerticalAlignment="Center"
-                                    IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
-                                    Maximum="1000"
-                                    Minimum="400"
-                                    SnapsTo="Ticks"
-                                    TickFrequency="10"
-                                    TickPlacement="Outside"
-                                    Value="{x:Bind ViewModel.AppViewModel.LongSyllableThreshold, Mode=TwoWay}" />
-                            </Grid>
-                        </Grid>
-
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="TargetFrameRate"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <ComboBox
-                                Grid.Column="1"
-                                Width="300"
-                                VerticalAlignment="Center"
-                                IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
-                                ItemsSource="{x:Bind ViewModel.AppViewModel.TargetFrameRateOptions}"
-                                SelectedItem="{x:Bind ViewModel.AppViewModel.TargetFrameRate, Mode=TwoWay}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate x:DataType="x:Double">
-                                        <TextBlock>
-                                            <Run Text="{x:Bind Mode=OneWay}" />
-                                            <Run Text=" hz" />
-                                        </TextBlock>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                        </Grid>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
+                        </StackPanel>
+                    </Expander.Content>
+                </Expander>
 
                 <!--  关闭按钮功能  -->
-                <controls:SettingsExpander x:Uid="CloseButtonFunction" Margin="10,0,10,0" ItemContainerStyleSelector="{x:Null}">
-                    <controls:SettingsExpander.Items>
-                        <StackPanel
-                            Padding="58,8,44,8"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}">
-                            <RadioButton
-                                x:Name="CloseAppRadioButton"
-                                x:Uid="CloseApp"
-                                GroupName="ClosedGroup"
-                                IsChecked="{x:Bind ViewModel.AppViewModel.IsRunningBackend, Mode=TwoWay, Converter={StaticResource BooleanNegationConverter}}"
-                                Tag="Closed" />
-                            <RadioButton
-                                x:Name="RunningBackendRadioButton"
-                                x:Uid="Backgrounder"
-                                GroupName="ClosedGroup"
-                                IsChecked="{x:Bind ViewModel.AppViewModel.IsRunningBackend, Mode=TwoWay}"
-                                Tag="RunningBackend" />
+                <Expander
+                    MinHeight="69"
+                    Margin="10,0,10,0"
+                    Padding="0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    CornerRadius="{ThemeResource ControlCornerRadius}">
+                    <Expander.Header>
+                        <Grid Padding="16,16,4,16">
+                            <TextBlock
+                                x:Uid="CloseButtonFunction"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                        </Grid>
+                    </Expander.Header>
+                    <Expander.Content>
+                        <StackPanel>
+                            <StackPanel Padding="58,8,44,8">
+                                <RadioButton
+                                    x:Name="CloseAppRadioButton"
+                                    x:Uid="CloseApp"
+                                    GroupName="ClosedGroup"
+                                    IsChecked="{x:Bind ViewModel.AppViewModel.IsRunningBackend, Mode=TwoWay, Converter={StaticResource BooleanNegationConverter}}"
+                                    Tag="Closed" />
+                                <RadioButton
+                                    x:Name="RunningBackendRadioButton"
+                                    x:Uid="Backgrounder"
+                                    GroupName="ClosedGroup"
+                                    IsChecked="{x:Bind ViewModel.AppViewModel.IsRunningBackend, Mode=TwoWay}"
+                                    Tag="RunningBackend" />
+                            </StackPanel>
                         </StackPanel>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
+                    </Expander.Content>
+                </Expander>
 
                 <!--  音乐库文件夹监听功能  -->
                 <Grid
-                    MinHeight="68"
+                    Height="69"
                     Margin="10,0,10,0"
-                    Padding="16,16,16,16"
+                    Padding="16,0"
                     HorizontalAlignment="Stretch"
                     Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                     BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
@@ -1103,11 +1090,13 @@
                     <TextBlock
                         x:Uid="FolderWatchEnabled"
                         Grid.Column="0"
+                        Margin="16,0"
                         VerticalAlignment="Center"
                         FontSize="14" />
                     <ToggleSwitch
                         Grid.Column="1"
                         MinWidth="0"
+                        VerticalAlignment="Center"
                         IsOn="{x:Bind ViewModel.AppViewModel.IsFolderWatchEnabled, Mode=TwoWay}" />
                 </Grid>
 
@@ -1118,254 +1107,280 @@
                     FontSize="16" />
 
                 <!--  背景设置  -->
-                <controls:SettingsExpander x:Uid="AppStyle" Margin="10,10,10,0" ItemContainerStyleSelector="{x:Null}">
-                    <controls:SettingsExpander.Items>
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
+                <Expander
+                    MinHeight="69"
+                    Margin="10,10,10,0"
+                    Padding="0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    CornerRadius="{ThemeResource ControlCornerRadius}">
+                    <Expander.Header>
+                        <Grid Padding="16,16,4,16">
                             <TextBlock
-                                x:Uid="IsUpdateBackDrop"
-                                Grid.Column="0"
+                                x:Uid="AppStyle"
                                 VerticalAlignment="Center"
                                 FontSize="14" />
-                            <ToggleSwitch
-                                Grid.Column="1"
-                                MinWidth="0"
-                                IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
-                                IsOn="{x:Bind ViewModel.AppViewModel.IsUpdateBackDrop, Mode=TwoWay}" />
                         </Grid>
+                    </Expander.Header>
+                    <Expander.Content>
+                        <StackPanel>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="IsUpdateBackDrop"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.IsUpdateBackDrop, Mode=TwoWay}" />
+                            </Grid>
 
-                        <StackPanel
-                            Padding="58,8,44,8"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <RadioButton
-                                x:Name="TransparentTintRadioButton"
-                                x:Uid="TransparentTintStyle"
-                                Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
-                                CommandParameter="TransparentTint"
-                                GroupName="BackdropGroup"
-                                IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'TransparentTint')}"
-                                Tag="TransparentTint" />
-                            <RadioButton
-                                x:Name="MicaRadioButton"
-                                x:Uid="MicaStyle"
-                                Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
-                                CommandParameter="Mica"
-                                GroupName="BackdropGroup"
-                                IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'Mica')}"
-                                Tag="Mica" />
-                            <RadioButton
-                                x:Name="AcrylicRadioButton"
-                                x:Uid="AcrylicStyle"
-                                Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
-                                CommandParameter="Acrylic"
-                                GroupName="BackdropGroup"
-                                IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'Acrylic')}"
-                                Tag="Acrylic" />
-                            <RadioButton
-                                x:Name="TransparentAcrylicRadioButton"
-                                x:Uid="TransparentAcrylicStyle"
-                                Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
-                                CommandParameter="TransparentAcrylic"
-                                GroupName="BackdropGroup"
-                                IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'TransparentAcrylic')}"
-                                Tag="TransparentAcrylic" />
-                            <RadioButton
-                                x:Name="CustomAcrylicStyleRadioButton"
-                                x:Uid="CustomAcrylicStyle"
-                                Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
-                                CommandParameter="CustomAcrylicStyle"
-                                GroupName="BackdropGroup"
-                                IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'CustomAcrylicStyle')}"
-                                Tag="CustomAcrylicStyle"
-                                Visibility="{x:Bind ViewModel.CheckSystemVersion()}" />
-                            <StackPanel Visibility="{x:Bind ViewModel.AppViewModel.IsColorPickerVisible, Mode=OneWay}">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock
-                                        x:Uid="CustomOpacity"
-                                        Grid.Column="0"
-                                        Margin="0,0,10,0"
-                                        VerticalAlignment="Center" />
-                                    <Slider
-                                        Grid.Column="1"
-                                        HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Center"
-                                        Maximum="100"
-                                        Minimum="0"
-                                        Value="{x:Bind ViewModel.AppViewModel.CustomOpacity, Mode=TwoWay}" />
-                                </Grid>
-                                <ColorPicker
-                                    ColorSpectrumShape="Ring"
-                                    IsAlphaEnabled="True"
-                                    IsAlphaSliderVisible="True"
-                                    IsAlphaTextInputVisible="True"
-                                    IsColorChannelTextInputVisible="True"
-                                    IsColorSliderVisible="True"
-                                    IsHexInputVisible="False"
-                                    IsMoreButtonVisible="True"
-                                    Color="{x:Bind ViewModel.AppViewModel.CustomColor, Mode=TwoWay}" />
+                            <StackPanel Padding="58,8,44,8">
+                                <RadioButton
+                                    x:Name="TransparentTintRadioButton"
+                                    x:Uid="TransparentTintStyle"
+                                    Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                                    CommandParameter="TransparentTint"
+                                    GroupName="BackdropGroup"
+                                    IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'TransparentTint')}"
+                                    Tag="TransparentTint" />
+                                <RadioButton
+                                    x:Name="MicaRadioButton"
+                                    x:Uid="MicaStyle"
+                                    Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                                    CommandParameter="Mica"
+                                    GroupName="BackdropGroup"
+                                    IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'Mica')}"
+                                    Tag="Mica" />
+                                <RadioButton
+                                    x:Name="AcrylicRadioButton"
+                                    x:Uid="AcrylicStyle"
+                                    Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                                    CommandParameter="Acrylic"
+                                    GroupName="BackdropGroup"
+                                    IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'Acrylic')}"
+                                    Tag="Acrylic" />
+                                <RadioButton
+                                    x:Name="TransparentAcrylicRadioButton"
+                                    x:Uid="TransparentAcrylicStyle"
+                                    Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                                    CommandParameter="TransparentAcrylic"
+                                    GroupName="BackdropGroup"
+                                    IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'TransparentAcrylic')}"
+                                    Tag="TransparentAcrylic" />
+                                <RadioButton
+                                    x:Name="CustomAcrylicStyleRadioButton"
+                                    x:Uid="CustomAcrylicStyle"
+                                    Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                                    CommandParameter="CustomAcrylicStyle"
+                                    GroupName="BackdropGroup"
+                                    IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'CustomAcrylicStyle')}"
+                                    Tag="CustomAcrylicStyle"
+                                    Visibility="{x:Bind ViewModel.CheckSystemVersion()}" />
+                                <StackPanel Visibility="{x:Bind ViewModel.AppViewModel.IsColorPickerVisible, Mode=OneWay}">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock
+                                            x:Uid="CustomOpacity"
+                                            Grid.Column="0"
+                                            Margin="0,0,10,0"
+                                            VerticalAlignment="Center" />
+                                        <Slider
+                                            Grid.Column="1"
+                                            HorizontalAlignment="Stretch"
+                                            VerticalAlignment="Center"
+                                            Maximum="100"
+                                            Minimum="0"
+                                            Value="{x:Bind ViewModel.AppViewModel.CustomOpacity, Mode=TwoWay}" />
+                                    </Grid>
+                                    <ColorPicker
+                                        ColorSpectrumShape="Ring"
+                                        IsAlphaEnabled="True"
+                                        IsAlphaSliderVisible="True"
+                                        IsAlphaTextInputVisible="True"
+                                        IsColorChannelTextInputVisible="True"
+                                        IsColorSliderVisible="True"
+                                        IsHexInputVisible="False"
+                                        IsMoreButtonVisible="True"
+                                        Color="{x:Bind ViewModel.AppViewModel.CustomColor, Mode=TwoWay}" />
+                                </StackPanel>
                             </StackPanel>
                         </StackPanel>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
+                    </Expander.Content>
+                </Expander>
 
                 <!--  主题设置  -->
-                <controls:SettingsExpander x:Uid="ThemeStyle" Margin="10,0,10,0" ItemContainerStyleSelector="{x:Null}">
-                    <controls:SettingsExpander.Items>
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
+                <Expander
+                    MinHeight="69"
+                    Margin="10,0,10,0"
+                    Padding="0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    CornerRadius="{ThemeResource ControlCornerRadius}">
+                    <Expander.Header>
+                        <Grid Padding="16,16,4,16">
                             <TextBlock
-                                x:Uid="UseImageDominantTheme"
-                                Grid.Column="0"
+                                x:Uid="ThemeStyle"
                                 VerticalAlignment="Center"
                                 FontSize="14" />
-                            <ToggleSwitch
-                                Grid.Column="1"
-                                MinWidth="0"
-                                IsOn="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=TwoWay}" />
                         </Grid>
+                    </Expander.Header>
+                    <Expander.Content>
+                        <StackPanel>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="UseImageDominantTheme"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    FlowDirection="RightToLeft"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=TwoWay}" />
+                            </Grid>
 
-                        <StackPanel
-                            Padding="58,8,44,8"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <RadioButton
-                                x:Name="DefaultRadioButton"
-                                x:Uid="SystemDefaultTheme"
-                                Command="{x:Bind ViewModel.AppViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
-                                CommandParameter="Default"
-                                GroupName="ThemeGroup"
-                                IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.ThemeType,'Default')}"
-                                Tag="Default" />
-                            <RadioButton
-                                x:Name="DarkRadioButton"
-                                x:Uid="Dark"
-                                Command="{x:Bind ViewModel.AppViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
-                                CommandParameter="Dark"
-                                GroupName="ThemeGroup"
-                                IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.ThemeType,'Dark')}"
-                                Tag="Dark" />
-                            <RadioButton
-                                x:Name="LightRadioButton"
-                                x:Uid="Light"
-                                Command="{x:Bind ViewModel.AppViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
-                                CommandParameter="Light"
-                                GroupName="ThemeGroup"
-                                IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.ThemeType,'Light')}"
-                                Tag="Light" />
+                            <StackPanel Padding="58,8,44,8">
+                                <RadioButton
+                                    x:Name="DefaultRadioButton"
+                                    x:Uid="SystemDefaultTheme"
+                                    Command="{x:Bind ViewModel.AppViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
+                                    CommandParameter="Default"
+                                    GroupName="ThemeGroup"
+                                    IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.ThemeType,'Default')}"
+                                    Tag="Default" />
+                                <RadioButton
+                                    x:Name="DarkRadioButton"
+                                    x:Uid="Dark"
+                                    Command="{x:Bind ViewModel.AppViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
+                                    CommandParameter="Dark"
+                                    GroupName="ThemeGroup"
+                                    IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.ThemeType,'Dark')}"
+                                    Tag="Dark" />
+                                <RadioButton
+                                    x:Name="LightRadioButton"
+                                    x:Uid="Light"
+                                    Command="{x:Bind ViewModel.AppViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
+                                    CommandParameter="Light"
+                                    GroupName="ThemeGroup"
+                                    IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.ThemeType,'Light')}"
+                                    Tag="Light" />
+                            </StackPanel>
                         </StackPanel>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
+                    </Expander.Content>
+                </Expander>
 
                 <!--  窗口大小设置  -->
-                <controls:SettingsExpander x:Uid="MainWindowSizeSettings" Margin="10,0,10,0" ItemContainerStyleSelector="{x:Null}">
-                    <controls:SettingsExpander.Items>
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                <TextBlock x:Uid="IsCustomAppSize" FontSize="14" />
+                <Expander
+                    MinHeight="69"
+                    Margin="10,0,10,0"
+                    Padding="0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    CornerRadius="{ThemeResource ControlCornerRadius}">
+                    <Expander.Header>
+                        <Grid Padding="16,16,4,16">
+                            <TextBlock
+                                x:Uid="MainWindowSizeSettings"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                        </Grid>
+                    </Expander.Header>
+                    <Expander.Content>
+                        <StackPanel>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock x:Uid="IsCustomAppSize" FontSize="14" />
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="{x:Bind tool:ToolUtils.GetString('CustomAppSizeDescription')}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.IsCustomAppSize, Mode=TwoWay}" />
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
                                 <TextBlock
-                                    FontSize="12"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Text="{x:Bind tool:ToolUtils.GetString('CustomAppSizeDescription')}"
-                                    TextWrapping="Wrap" />
-                            </StackPanel>
-                            <ToggleSwitch
-                                Grid.Column="1"
-                                MinWidth="0"
-                                IsOn="{x:Bind ViewModel.AppViewModel.IsCustomAppSize, Mode=TwoWay}" />
-                        </Grid>
+                                    x:Uid="AppWidth"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <NumberBox
+                                    x:Name="AppWidth"
+                                    Grid.Column="1"
+                                    Width="300"
+                                    VerticalAlignment="Center"
+                                    LargeChange="100"
+                                    Minimum="1280"
+                                    SmallChange="10"
+                                    SpinButtonPlacementMode="Inline"
+                                    Value="{x:Bind ViewModel.AppViewModel.AppWidth, Mode=TwoWay}" />
+                            </Grid>
 
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="AppWidth"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <NumberBox
-                                x:Name="AppWidth"
-                                Grid.Column="1"
-                                Width="300"
-                                VerticalAlignment="Center"
-                                LargeChange="100"
-                                Minimum="1280"
-                                SmallChange="10"
-                                SpinButtonPlacementMode="Inline"
-                                Value="{x:Bind ViewModel.AppViewModel.AppWidth, Mode=TwoWay}" />
-                        </Grid>
-
-                        <Grid
-                            MinHeight="52"
-                            Padding="58,8,44,8"
-                            HorizontalAlignment="Stretch"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="0,1,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                x:Uid="AppHeight"
-                                Grid.Column="0"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                            <NumberBox
-                                x:Name="AppHeight"
-                                Grid.Column="1"
-                                Width="300"
-                                VerticalAlignment="Center"
-                                LargeChange="100"
-                                Minimum="720"
-                                SmallChange="10"
-                                SpinButtonPlacementMode="Inline"
-                                Value="{x:Bind ViewModel.AppViewModel.AppHeight, Mode=TwoWay}" />
-                        </Grid>
-                    </controls:SettingsExpander.Items>
-                </controls:SettingsExpander>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="AppHeight"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <NumberBox
+                                    x:Name="AppHeight"
+                                    Grid.Column="1"
+                                    Width="300"
+                                    VerticalAlignment="Center"
+                                    LargeChange="100"
+                                    Minimum="720"
+                                    SmallChange="10"
+                                    SpinButtonPlacementMode="Inline"
+                                    Value="{x:Bind ViewModel.AppViewModel.AppHeight, Mode=TwoWay}" />
+                            </Grid>
+                        </StackPanel>
+                    </Expander.Content>
+                </Expander>
 
                 <!--  关于  -->
                 <TextBlock

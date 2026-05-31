@@ -180,7 +180,7 @@
   <data name="SettingAudio.Text" xml:space="preserve">
     <value>音频</value>
   </data>
-  <data name="SettingOutput.Header" xml:space="preserve">
+  <data name="SettingOutput.Text" xml:space="preserve">
     <value>输出设置</value>
   </data>
   <data name="SettingOutputMode.Header" xml:space="preserve">
@@ -240,16 +240,16 @@
   <data name="DefaultMusicEntryInterface.Text" xml:space="preserve">
     <value>默认音乐进入界面</value>
   </data>
-  <data name="SettingInterface.Header" xml:space="preserve">
+  <data name="SettingInterface.Text" xml:space="preserve">
     <value>界面设置</value>
   </data>
-  <data name="SettingCover.Header" xml:space="preserve">
+  <data name="SettingCover.Text" xml:space="preserve">
     <value>封面设置</value>
   </data>
   <data name="SettingCoverLyrics.Header" xml:space="preserve">
     <value>封面歌词设置</value>
   </data>
-  <data name="SettingLyrics.Header" xml:space="preserve">
+  <data name="SettingLyrics.Text" xml:space="preserve">
     <value>歌词设置</value>
   </data>
   <data name="CoverServiceLrcAPISource.Header" xml:space="preserve">
@@ -276,7 +276,7 @@
   <data name="NeedConfigureLrcAPIService" xml:space="preserve">
     <value>需要配置LrcAPI服务</value>
   </data>
-  <data name="CloseButtonFunction.Header" xml:space="preserve">
+  <data name="CloseButtonFunction.Text" xml:space="preserve">
     <value>关闭按钮功能</value>
   </data>
   <data name="CloseApp.Content" xml:space="preserve">
@@ -288,7 +288,7 @@
   <data name="Appearance.Text" xml:space="preserve">
     <value>外观</value>
   </data>
-  <data name="AppStyle.Header" xml:space="preserve">
+  <data name="AppStyle.Text" xml:space="preserve">
     <value>应用样式</value>
   </data>
   <data name="MicaStyle.Content" xml:space="preserve">
@@ -300,7 +300,7 @@
   <data name="TransparentAcrylicStyle.Content" xml:space="preserve">
     <value>透明亚克力</value>
   </data>
-  <data name="ThemeStyle.Header" xml:space="preserve">
+  <data name="ThemeStyle.Text" xml:space="preserve">
     <value>应用主题</value>
   </data>
   <data name="SystemDefaultTheme.Content" xml:space="preserve">
@@ -732,7 +732,7 @@
   <data name="saveConfirm.Text" xml:space="preserve">
     <value>是否确定写入元信息至音乐文件</value>
   </data>
-  <data name="MainWindowSizeSettings.Header" xml:space="preserve">
+  <data name="MainWindowSizeSettings.Text" xml:space="preserve">
     <value>主窗口大小设置</value>
   </data>
   <data name="IsCustomAppSize.Text" xml:space="preserve">
