@@ -38,15 +38,20 @@ namespace WinUIMusicPlayer.View
             InitializeComponent();
             ViewModel = viewModel;
             DataContext = this;
-            // ��������
             MainFrame.Navigated += MainFrame_Navigated;
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
             _playingNavigation = navigationServiceFactory.CreateNavigationService(PlayingFrame);
             _playingNavigation.RegisterPage<PlayingDetailPage>();
             InitiaizeEqualizerDialog();
-            NavigateToDefaultPage();
+            NavigateToDefaultPage();            
             NavigationViewControl.Visibility = Visibility.Visible;
             ViewModel.MusicBrowseVM.SetMainPage(this);
+            Loaded += MainPage_Loaded;
+        }
+
+        private void MainPage_Loaded(object sender, RoutedEventArgs e)
+        {
+            NavigationViewControl.IsPaneOpen = false;
         }
 
         private void MainFrame_Navigated(object sender, Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)

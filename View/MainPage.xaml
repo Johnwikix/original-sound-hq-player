@@ -48,9 +48,9 @@
                 BackRequested="NavigationViewControl_BackRequested"
                 IsBackButtonVisible="Visible"
                 IsBackEnabled="{x:Bind ViewModel.AppViewModel.IsBackBtnEnable, Mode=OneWay}"
-                IsPaneOpen="False"
                 IsPaneToggleButtonVisible="True"
                 ItemInvoked="NavigationView_ItemInvoked"
+                OpenPaneLength="150"
                 PaneDisplayMode="Left"
                 Visibility="{x:Bind tools:BindUtils.VisiblilityToVisibilityConverter(PlayingFrame.Visibility), Mode=OneWay}">
                 <NavigationView.KeyboardAccelerators>
