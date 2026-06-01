@@ -7,10 +7,12 @@ namespace WinUIMusicPlayer.ViewModel.Pages
     {
         public AppViewModel AppViewModel { get; }
         public BassPlayerCommandService PlayerCommandService { get; }
-        public MainViewModel(AppViewModel appViewModel, BassPlayerCommandService playerCommandService)
+        public MusicBrowseViewModel MusicBrowseVM { get; }
+        public MainViewModel(AppViewModel appViewModel, BassPlayerCommandService playerCommandService, MusicBrowseViewModel musicBrowseVM)
         {
             AppViewModel = appViewModel;
             PlayerCommandService = playerCommandService;
+            MusicBrowseVM = musicBrowseVM;
         }
     }
 }

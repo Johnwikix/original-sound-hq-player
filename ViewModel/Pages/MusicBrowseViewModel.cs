@@ -48,6 +48,7 @@ namespace WinUIMusicPlayer.ViewModel
         public BassPlayerCommandService MusicPlaybackService { get; set; }
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
         private MusicBrowsePage MusicBrowsePage { get; set; }
+        private MainPage MainPage { get; set; }
         private DeviceWatcher DeviceWatcher { get; set; }
         private List<FileSystemWatcher> Watchers { get; set; } = [];
         private readonly SemaphoreSlim scanSemaphore = new(1, 1);
@@ -490,6 +491,11 @@ namespace WinUIMusicPlayer.ViewModel
             MusicBrowsePage = musicBrowsePage;
         }
 
+        public void SetMainPage(MainPage mainPage)
+        {
+            MainPage = mainPage;
+        }
+
         [RelayCommand]
         public void OnPlayModeChanged()
         {
@@ -570,6 +576,19 @@ namespace WinUIMusicPlayer.ViewModel
         {
             MusicPlaybackService.MusicEnd();
             AppViewModel.ProgressSlider = 0;
+        }
+        [RelayCommand]
+        private void OnAlbumCoverImage()
+        {
+            (MainPage ?? App.Services.GetRequiredService<MainPage>()).NavigateToPlayingDetailPage();
+        }
+        [RelayCommand]
+        private void OnEqualizerButton()
+        {
+            var mainPage = MainPage ?? App.Services.GetRequiredService<MainPage>();
+            mainPage.EqualizerDialog.RequestedTheme = AppSettings.ElementTheme;
+            mainPage.EqualizerDialog.XamlRoot = mainPage.XamlRoot;
+            _ = mainPage.EqualizerDialog.ShowAsync();
         }
         [RelayCommand]
         private void OnFastForwardButton()
@@ -716,7 +735,7 @@ namespace WinUIMusicPlayer.ViewModel
                 });
                 _ = UpdatePlayBar(music, token);
                 AppViewModel.LoadLyricsToUI(music);
-                MusicBrowsePage.UpdateCurrentPlayList();
+                MainPage?.UpdateCurrentPlayList();
                 AppViewModel.UpdateProgressTimerUI();
                 _ = _musicDatabaseService.SavePlayState([.. AppViewModel.SequentialPlayingList],
                         AppViewModel.CurrentPlayMode,

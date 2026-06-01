@@ -1,15 +1,23 @@
+using DevWinUI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.ViewModel.Pages;
+using ZLinq;
+using static WinUIMusicPlayer.Utils.ToolUtils;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -30,7 +38,7 @@ namespace WinUIMusicPlayer.View
             InitializeComponent();
             ViewModel = viewModel;
             DataContext = this;
-            // µ¼º½·þÎñ
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             MainFrame.Navigated += MainFrame_Navigated;
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
             _playingNavigation = navigationServiceFactory.CreateNavigationService(PlayingFrame);
@@ -38,6 +46,7 @@ namespace WinUIMusicPlayer.View
             InitiaizeEqualizerDialog();
             NavigateToDefaultPage();
             NavigationViewControl.Visibility = Visibility.Visible;
+            ViewModel.MusicBrowseVM.SetMainPage(this);
         }
 
         private void MainFrame_Navigated(object sender, Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
@@ -221,5 +230,155 @@ namespace WinUIMusicPlayer.View
         //{
         //    ViewModel.AppViewModel.IsInNaviView = false;
         //}
+
+        private void ProgressSlider_Loaded(object sender, RoutedEventArgs e)
+        {
+            var thumb = FindVisualChild<Thumb>(ProgressSlider);
+            if (thumb is not null)
+            {
+                thumb.DragStarted += Thumb_DragStarted;
+                thumb.DragCompleted += Thumb_DragCompleted;
+            }
+        }
+
+        private void ProgressSlider_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            ViewModel.AppViewModel.IsMouseOverProgressBar = true;
+        }
+
+        private void ProgressSlider_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            ViewModel.AppViewModel.IsMouseOverProgressBar = false;
+        }
+
+        private void VolumeSlider_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            ViewModel.AppViewModel.IsMouseOverVolumeSlider = true;
+        }
+
+        private void VolumeSlider_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            ViewModel.AppViewModel.IsMouseOverVolumeSlider = false;
+        }
+
+        private void VolumeSlider_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+        {
+            if (ViewModel.AppViewModel.IsMouseOverVolumeSlider)
+            {
+                var delta = e.GetCurrentPoint(VolumeSlider).Properties.MouseWheelDelta;
+                if (delta > 0)
+                {
+                    ViewModel.AppViewModel.AdjustVolume(1);
+                }
+                else if (delta < 0)
+                {
+                    ViewModel.AppViewModel.AdjustVolume(-1);
+                }
+                e.Handled = true;
+            }
+        }
+
+        private void Thumb_DragStarted(object sender, DragStartedEventArgs e)
+        {
+            ViewModel.AppViewModel.IsUserDraggingProgressSlider = true;
+        }
+
+        private async void Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
+        {
+            ViewModel.AppViewModel.IsUserDraggingProgressSlider = false;
+            double newPosition = Math.Max(0, Math.Min(ViewModel.AppViewModel.ProgressSlider, (await ViewModel.PlayerCommandService.GetTimeProgress()).totalMs / 1000.0));
+            _ = Task.Run(() =>
+            {
+                ViewModel.AppViewModel.IsManualSelect = true;
+                ViewModel.PlayerCommandService.ChangeWaveChannelTime(TimeSpan.FromSeconds(newPosition));
+                ViewModel.AppViewModel.IsManualSelect = false;
+            });
+        }
+
+        private void AuthorTextBlock_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            if (sender is TextBlock textBlock)
+            {
+                string artist = textBlock.Text;
+                ViewModel.MusicBrowseVM.SelectBarArtist(artist);
+            }
+        }
+
+        private void AlbumTextBlock_Tapped(object sender, TappedRoutedEventArgs e)
+        {
+            if (sender is TextBlock textBlock)
+            {
+                string albumName = textBlock.Text;
+                ViewModel.MusicBrowseVM.SelectBarAlbum(albumName);
+            }
+        }
+
+        private void CurrentPlayListView_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        {
+            var selectedMusic = CurrentPlayListView.SelectedItem as Music;
+            if (selectedMusic is not null)
+            {
+                ViewModel.MusicBrowseVM.PlayMusic(music: selectedMusic, IsChangeList: false).Wait();
+            }
+        }
+
+        private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is AutoScrollView autoScrollView)
+            {
+                autoScrollView.IsPlaying = true;
+            }
+        }
+
+        private void AutoScrollHover_PointerCanceled(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is AutoScrollView autoScrollView)
+            {
+                autoScrollView.IsPlaying = false;
+            }
+        }
+
+        private void AutoScrollHover_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            if (sender is AutoScrollView autoScrollView)
+            {
+                autoScrollView.IsPlaying = false;
+            }
+        }
+
+        private void CurrentPlayListButton_Click(object sender, RoutedEventArgs e)
+        {
+            CurrentPlayListTeachingTip.IsOpen = true;
+            UpdateCurrentPlayList();
+        }
+
+        private void CurrentPlayListTeachingTipCloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            CurrentPlayListTeachingTip.IsOpen = false;
+        }
+
+        public void UpdateCurrentPlayList()
+        {
+            if (ViewModel.AppViewModel.CurrentPlayingList is not null)
+            {
+                if (ViewModel.AppViewModel.CurrentPlayingMusic is not null)
+                {
+                    var selectedMusic = ViewModel.AppViewModel.CurrentPlayingList.AsValueEnumerable().FirstOrDefault(music =>
+                    music.Id == ViewModel.AppViewModel.CurrentPlayingMusic.Id);
+
+                    if (selectedMusic is not null)
+                    {
+                        _ = Task.Delay(100).ContinueWith(_ =>
+                        {
+                            DispatcherQueue.TryEnqueue(() =>
+                            {
+                                CurrentPlayListView.SelectedItem = selectedMusic;
+                                CurrentPlayListView.ScrollIntoView(selectedMusic);
+                            });
+                        });
+                    }
+                }
+            }
+        }
     }
 }
