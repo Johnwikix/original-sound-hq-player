@@ -17,654 +17,640 @@
     IsTabStop="True"
     TabIndex="0"
     mc:Ignorable="d">
-    <Grid Margin="0">
-        <Grid>
-            <Grid
-                Grid.Row="0"
-                Grid.Column="0"
-                Margin="0"
-                Padding="0">
-                <!--<Grid.ChildrenTransitions>
-                    <EntranceThemeTransition FromVerticalOffset="100" IsStaggeringEnabled="True" />
-                    <RepositionThemeTransition IsStaggeringEnabled="False" />
-                </Grid.ChildrenTransitions>-->
-                <Grid Margin="0,32,0,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
-                    <Grid
-                        x:Name="TopPanel"
-                        Grid.Row="0"
-                        Margin="5,0,0,0"
-                        Visibility="Visible">
-                        <StackPanel Orientation="Horizontal">
-                            <SelectorBar x:Name="selectPage" SelectedItem="{x:Bind ViewModel.SelectedPage, Mode=TwoWay}">
-                                <SelectorBarItem
-                                    x:Name="Song"
-                                    x:Uid="SongTab"
-                                    FontSize="20"
-                                    Tag="song" />
-                                <SelectorBarItem
-                                    x:Name="Album"
-                                    x:Uid="AlbumTab"
-                                    FontSize="20"
-                                    Tag="album" />
-                                <SelectorBarItem
-                                    x:Name="Artist"
-                                    x:Uid="ArtistTab"
-                                    FontSize="20"
-                                    Tag="artist" />
-                                <SelectorBarItem
-                                    x:Name="Folder"
-                                    x:Uid="FolderTab"
-                                    FontSize="20"
-                                    Tag="folder" />
-                                <SelectorBarItem
-                                    x:Name="Favourite"
-                                    x:Uid="FavouriteTab"
-                                    FontSize="20"
-                                    Tag="favourite" />
-                                <SelectorBarItem
-                                    x:Name="PlayList"
-                                    x:Uid="PlaylistTab"
-                                    FontSize="20"
-                                    Tag="playList" />
-                            </SelectorBar>
-                            <Button
-                                x:Name="PlayListAddButton"
-                                Background="Transparent"
-                                BorderBrush="Transparent"
-                                BorderThickness="0"
-                                Click="AddPlayList_Click"
-                                FontSize="20"
-                                Tag="PlayListAdd">
-                                <FontIcon
-                                    Margin="0,2,0,0"
-                                    VerticalAlignment="Bottom"
-                                    Glyph="&#xe948;" />
-                            </Button>
-                        </StackPanel>
+    <Grid Margin="0,32,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid
+            x:Name="TopPanel"
+            Grid.Row="0"
+            Margin="5,0,0,0"
+            Visibility="Visible">
+            <StackPanel Orientation="Horizontal">
+                <SelectorBar x:Name="selectPage" SelectedItem="{x:Bind ViewModel.SelectedPage, Mode=TwoWay}">
+                    <SelectorBarItem
+                        x:Name="Song"
+                        x:Uid="SongTab"
+                        FontSize="20"
+                        Tag="song" />
+                    <SelectorBarItem
+                        x:Name="Album"
+                        x:Uid="AlbumTab"
+                        FontSize="20"
+                        Tag="album" />
+                    <SelectorBarItem
+                        x:Name="Artist"
+                        x:Uid="ArtistTab"
+                        FontSize="20"
+                        Tag="artist" />
+                    <SelectorBarItem
+                        x:Name="Folder"
+                        x:Uid="FolderTab"
+                        FontSize="20"
+                        Tag="folder" />
+                    <SelectorBarItem
+                        x:Name="Favourite"
+                        x:Uid="FavouriteTab"
+                        FontSize="20"
+                        Tag="favourite" />
+                    <SelectorBarItem
+                        x:Name="PlayList"
+                        x:Uid="PlaylistTab"
+                        FontSize="20"
+                        Tag="playList" />
+                </SelectorBar>
+                <Button
+                    x:Name="PlayListAddButton"
+                    Background="Transparent"
+                    BorderBrush="Transparent"
+                    BorderThickness="0"
+                    Click="AddPlayList_Click"
+                    FontSize="20"
+                    Tag="PlayListAdd">
+                    <FontIcon
+                        Margin="0,2,0,0"
+                        VerticalAlignment="Bottom"
+                        Glyph="&#xe948;" />
+                </Button>
+            </StackPanel>
 
 
-                        <StackPanel
-                            Margin="10"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            Orientation="Horizontal">
-                            <TextBlock
-                                x:Uid="Transmitting"
-                                Margin="5,0,5,0"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontSize="15"
-                                Visibility="Collapsed" />
-                            <ProgressRing
-                                x:Name="ProcessingRing"
-                                Width="20"
-                                Height="20"
-                                Margin="0,0,5,0"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                IsActive="True"
-                                Visibility="{x:Bind ViewModel.AppViewModel.ProcessRingVisibility, Mode=OneWay}" />
-                            <ComboBox
-                                x:Name="UsbDeviceCombox"
-                                x:Uid="USBDevice"
-                                Margin="10,0,10,0"
-                                VerticalAlignment="Center"
-                                Background="Transparent"
-                                BorderBrush="Transparent"
-                                BorderThickness="0"
-                                FontSize="12"
-                                ItemsSource="{x:Bind ViewModel.AppViewModel.UsbStorageDevices, Mode=OneWay}"
-                                SelectedIndex="{x:Bind ViewModel.AppViewModel.UsbSelectedIndex, Mode=TwoWay}"
-                                SelectionChanged="UsbDeviceCombox_SelectionChanged"
-                                Visibility="{x:Bind ViewModel.AppViewModel.UsbDeviceVisibility, Mode=OneWay}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate x:DataType="model:UsbStorageDevice">
-                                        <StackPanel Orientation="Horizontal">
-                                            <TextBlock Margin="0,0,5,0" Text="{x:Bind Path}" />
-                                            <TextBlock Text="{x:Bind FreeSpaceInGB}" />
-                                            <TextBlock Text=" GB" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                            <StackPanel Margin="0" Orientation="Horizontal">
-                                <ComboBox
-                                    x:Name="SortByComboBox"
-                                    Width="130"
-                                    Margin="0,0,10,0"
-                                    VerticalAlignment="Center"
-                                    Background="Transparent"
-                                    BorderBrush="Transparent"
-                                    BorderThickness="0"
-                                    FontSize="12"
-                                    ItemsSource="{x:Bind ViewModel.AppViewModel.SortOptions, Mode=OneWay}"
-                                    SelectedItem="{x:Bind ViewModel.AppViewModel.SelectedSortOption, Mode=TwoWay}">
-                                    <ComboBox.ItemTemplate>
-                                        <DataTemplate x:DataType="model:SortOption">
-                                            <TextBlock FontSize="12" Text="{x:Bind DisplayText, Mode=OneWay}" />
-                                        </DataTemplate>
-                                    </ComboBox.ItemTemplate>
-                                </ComboBox>
+            <StackPanel
+                Margin="10"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <TextBlock
+                    x:Uid="Transmitting"
+                    Margin="5,0,5,0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    FontSize="15"
+                    Visibility="Collapsed" />
+                <ProgressRing
+                    x:Name="ProcessingRing"
+                    Width="20"
+                    Height="20"
+                    Margin="0,0,5,0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    IsActive="True"
+                    Visibility="{x:Bind ViewModel.AppViewModel.ProcessRingVisibility, Mode=OneWay}" />
+                <ComboBox
+                    x:Name="UsbDeviceCombox"
+                    x:Uid="USBDevice"
+                    Margin="10,0,10,0"
+                    VerticalAlignment="Center"
+                    Background="Transparent"
+                    BorderBrush="Transparent"
+                    BorderThickness="0"
+                    FontSize="12"
+                    ItemsSource="{x:Bind ViewModel.AppViewModel.UsbStorageDevices, Mode=OneWay}"
+                    SelectedIndex="{x:Bind ViewModel.AppViewModel.UsbSelectedIndex, Mode=TwoWay}"
+                    SelectionChanged="UsbDeviceCombox_SelectionChanged"
+                    Visibility="{x:Bind ViewModel.AppViewModel.UsbDeviceVisibility, Mode=OneWay}">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate x:DataType="model:UsbStorageDevice">
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock Margin="0,0,5,0" Text="{x:Bind Path}" />
+                                <TextBlock Text="{x:Bind FreeSpaceInGB}" />
+                                <TextBlock Text=" GB" />
                             </StackPanel>
-                            <TextBox
-                                x:Name="SearchTextBox"
-                                x:Uid="SearchMusic"
-                                Width="200"
-                                Margin="0,0,10,0"
-                                Text="{x:Bind ViewModel.AppViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        </StackPanel>
-                    </Grid>
-                    <InfoBar
-                        x:Name="InfoBar"
-                        Title="{x:Bind ViewModel.AppViewModel.InfoBarTitle, Mode=OneWay}"
-                        Grid.Row="1"
-                        IsOpen="{x:Bind ViewModel.AppViewModel.InfoBarIsOpen, Mode=TwoWay}"
-                        Message="{x:Bind ViewModel.AppViewModel.InfoBarMessage, Mode=OneWay}"
-                        Severity="Informational" />
-                    <Frame
-                        x:Name="ContentFrame"
-                        Grid.Row="2"
-                        Margin="10"
-                        IsNavigationStackEnabled="False"
-                        Visibility="Visible" />
-                    <!--  底部控制区域  -->
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+                <StackPanel Margin="0" Orientation="Horizontal">
+                    <ComboBox
+                        x:Name="SortByComboBox"
+                        Width="130"
+                        Margin="0,0,10,0"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        FontSize="12"
+                        ItemsSource="{x:Bind ViewModel.AppViewModel.SortOptions, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.AppViewModel.SelectedSortOption, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="model:SortOption">
+                                <TextBlock FontSize="12" Text="{x:Bind DisplayText, Mode=OneWay}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+                <TextBox
+                    x:Name="SearchTextBox"
+                    x:Uid="SearchMusic"
+                    Width="200"
+                    Margin="0,0,10,0"
+                    Text="{x:Bind ViewModel.AppViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            </StackPanel>
+        </Grid>
+        <InfoBar
+            x:Name="InfoBar"
+            Title="{x:Bind ViewModel.AppViewModel.InfoBarTitle, Mode=OneWay}"
+            Grid.Row="1"
+            IsOpen="{x:Bind ViewModel.AppViewModel.InfoBarIsOpen, Mode=TwoWay}"
+            Message="{x:Bind ViewModel.AppViewModel.InfoBarMessage, Mode=OneWay}"
+            Severity="Informational" />
+        <Frame
+            x:Name="ContentFrame"
+            Grid.Row="2"
+            Margin="10"
+            IsNavigationStackEnabled="False"
+            Visibility="Visible" />
+        <!--  底部控制区域  -->
+        <Grid
+            x:Name="BottomControlBar"
+            Grid.Row="3"
+            Height="120"
+            Margin="10,0,10,10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!--  进度条和播放时间  -->
+            <Grid Grid.Row="0" Margin="0,0,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Slider
+                    x:Name="ProgressSlider"
+                    Grid.Column="0"
+                    Margin="0"
+                    VerticalAlignment="Center"
+                    Loaded="ProgressSlider_Loaded"
+                    Maximum="{x:Bind ViewModel.AppViewModel.ProgressSliderMax, Mode=TwoWay}"
+                    Minimum="0"
+                    PointerEntered="ProgressSlider_PointerEntered"
+                    PointerExited="ProgressSlider_PointerExited"
+                    ThumbToolTipValueConverter="{StaticResource AdvancedThumbToolTipValueConverter}"
+                    Value="{x:Bind ViewModel.AppViewModel.ProgressSlider, Mode=TwoWay}" />
+                <TextBlock
+                    x:Name="PlayTimeTextBlock"
+                    Grid.Column="1"
+                    Margin="10,0,0,0"
+                    VerticalAlignment="Center"
+                    Text="{x:Bind ViewModel.AppViewModel.PlayTimeText, Mode=OneWay}" />
+            </Grid>
+
+            <Grid Grid.Row="1" Margin="0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <!--  封面、标题、作者组件  -->
+                <StackPanel
+                    x:Name="AlbumCoverAuthorTitleModel"
+                    Grid.Column="0"
+                    Margin="0"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal"
+                    Visibility="Visible">
+                    <Button
+                        x:Name="AlbumCoverImageBtn"
+                        Margin="5,0,5,0"
+                        Padding="0"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        Click="AlbumCoverImage_Click"
+                        CornerRadius="5"
+                        Style="{StaticResource SimpleHoverButtonStyle}">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="Q" />
+                        </Button.KeyboardAccelerators>
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="auto" />
+                            </Grid.RowDefinitions>
+                            <Grid x:Name="AlbumCoverImageGrid" Grid.Row="0">
+                                <Grid
+                                    x:Name="AlbumCoverImage"
+                                    Width="80"
+                                    Height="80"
+                                    Canvas.ZIndex="1">
+                                    <Image
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Stretch="UniformToFill">
+                                        <interactivity:Interaction.Behaviors>
+                                            <behaviors:FadeImageBehavior
+                                                DecodePixelWidth="150"
+                                                ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
+                                                Duration="00:00:1" />
+                                        </interactivity:Interaction.Behaviors>
+                                    </Image>
+                                </Grid>
+                                <Grid
+                                    Width="80"
+                                    Height="80"
+                                    Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
+                                    Canvas.ZIndex="0">
+                                    <FontIcon
+                                        Canvas.ZIndex="0"
+                                        FontSize="40"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Glyph="&#xE93C;" />
+                                </Grid>
+                            </Grid>
+
+                            <FontIcon
+                                x:Name="AlbumCoverImageChevronUp"
+                                Grid.Row="0"
+                                Glyph="&#xE70E;"
+                                Opacity="0" />
+                        </Grid>
+                    </Button>
                     <Grid
-                        x:Name="BottomControlBar"
-                        Grid.Row="3"
-                        Height="120"
-                        Margin="10,0,10,10">
+                        Width="Auto"
+                        Height="80"
+                        MaxWidth="300">
+                        <!--  Rest of your grid content remains the same  -->
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="*" />
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-
-                        <!--  进度条和播放时间  -->
-                        <Grid Grid.Row="0" Margin="0,0,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <Slider
-                                x:Name="ProgressSlider"
-                                Grid.Column="0"
-                                Margin="0"
-                                VerticalAlignment="Center"
-                                Loaded="ProgressSlider_Loaded"
-                                Maximum="{x:Bind ViewModel.AppViewModel.ProgressSliderMax, Mode=TwoWay}"
-                                Minimum="0"
-                                PointerEntered="ProgressSlider_PointerEntered"
-                                PointerExited="ProgressSlider_PointerExited"
-                                ThumbToolTipValueConverter="{StaticResource AdvancedThumbToolTipValueConverter}"
-                                Value="{x:Bind ViewModel.AppViewModel.ProgressSlider, Mode=TwoWay}" />
+                        <dev:AutoScrollView
+                            Grid.Row="0"
+                            Margin="10,0,10,0"
+                            IsPlaying="False"
+                            PointerCanceled="AutoScrollHover_PointerCanceled"
+                            PointerEntered="AutoScrollHover_PointerEntered"
+                            PointerExited="AutoScrollHover_PointerExited">
                             <TextBlock
-                                x:Name="PlayTimeTextBlock"
-                                Grid.Column="1"
-                                Margin="10,0,0,0"
-                                VerticalAlignment="Center"
-                                Text="{x:Bind ViewModel.AppViewModel.PlayTimeText, Mode=OneWay}" />
-                        </Grid>
-
-                        <Grid Grid.Row="1" Margin="0">
+                                x:Name="MusicTitleTextBlock"
+                                FontSize="18"
+                                FontWeight="Bold"
+                                IsTextSelectionEnabled="True"
+                                Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
+                                TextTrimming="CharacterEllipsis" />
+                        </dev:AutoScrollView>
+                        <Button
+                            x:Name="MusicAlbumTextBlock"
+                            Grid.Row="1"
+                            Margin="10,0,10,0"
+                            Padding="1"
+                            VerticalAlignment="Bottom"
+                            Background="Transparent"
+                            BorderThickness="0">
+                            <Button.Content>
+                                <dev:AutoScrollView
+                                    Margin="0"
+                                    IsPlaying="False"
+                                    PointerCanceled="AutoScrollHover_PointerCanceled"
+                                    PointerEntered="AutoScrollHover_PointerEntered"
+                                    PointerExited="AutoScrollHover_PointerExited">
+                                    <TextBlock
+                                        FontSize="12"
+                                        Tapped="AlbumTextBlock_Tapped"
+                                        Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
+                                        TextTrimming="WordEllipsis" />
+                                </dev:AutoScrollView>
+                            </Button.Content>
+                        </Button>
+                        <Button
+                            x:Name="MusicAuthorTextBlock"
+                            Grid.Row="2"
+                            Margin="10,0,10,0"
+                            Padding="1"
+                            VerticalAlignment="Center"
+                            Background="Transparent"
+                            BorderThickness="0">
+                            <Button.Content>
+                                <dev:AutoScrollView
+                                    Margin="0"
+                                    IsPlaying="False"
+                                    PointerCanceled="AutoScrollHover_PointerCanceled"
+                                    PointerEntered="AutoScrollHover_PointerEntered"
+                                    PointerExited="AutoScrollHover_PointerExited">
+                                    <TextBlock
+                                        FontSize="12"
+                                        Tapped="AuthorTextBlock_Tapped"
+                                        Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
+                                        TextTrimming="WordEllipsis" />
+                                </dev:AutoScrollView>
+                            </Button.Content>
+                        </Button>
+                        <Grid Grid.Row="3" VerticalAlignment="Bottom">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <!--  封面、标题、作者组件  -->
-                            <StackPanel
-                                x:Name="AlbumCoverAuthorTitleModel"
+                            <TextBlock
+                                x:Name="MusicInfoTextBlock"
                                 Grid.Column="0"
-                                Margin="0"
-                                VerticalAlignment="Center"
-                                Orientation="Horizontal"
-                                Visibility="Visible">
-                                <Button
-                                    x:Name="AlbumCoverImageBtn"
-                                    Margin="5,0,5,0"
-                                    Padding="0"
-                                    Background="Transparent"
-                                    BorderBrush="Transparent"
-                                    BorderThickness="0"
-                                    Click="AlbumCoverImage_Click"
-                                    CornerRadius="5"
-                                    Style="{StaticResource SimpleHoverButtonStyle}">
-                                    <Button.KeyboardAccelerators>
-                                        <KeyboardAccelerator Key="Q" />
-                                    </Button.KeyboardAccelerators>
-                                    <Grid>
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="auto" />
-                                        </Grid.RowDefinitions>
-                                        <Grid x:Name="AlbumCoverImageGrid" Grid.Row="0">
-                                            <Grid
-                                                x:Name="AlbumCoverImage"
-                                                Width="80"
-                                                Height="80"
-                                                Canvas.ZIndex="1">
-                                                <Image
-                                                    HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center"
-                                                    Stretch="UniformToFill">
-                                                    <interactivity:Interaction.Behaviors>
-                                                        <behaviors:FadeImageBehavior
-                                                            DecodePixelWidth="150"
-                                                            ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
-                                                            Duration="00:00:1" />
-                                                    </interactivity:Interaction.Behaviors>
-                                                </Image>
-                                            </Grid>
-                                            <Grid
-                                                Width="80"
-                                                Height="80"
-                                                Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                                                Canvas.ZIndex="0">
-                                                <FontIcon
-                                                    Canvas.ZIndex="0"
-                                                    FontSize="40"
-                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                    Glyph="&#xE93C;" />
-                                            </Grid>
-                                        </Grid>
-
-                                        <FontIcon
-                                            x:Name="AlbumCoverImageChevronUp"
-                                            Grid.Row="0"
-                                            Glyph="&#xE70E;"
-                                            Opacity="0" />
-                                    </Grid>
-                                </Button>
-                                <Grid
-                                    Width="Auto"
-                                    Height="80"
-                                    MaxWidth="300">
-                                    <!--  Rest of your grid content remains the same  -->
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="Auto" />
-                                        <RowDefinition Height="*" />
-                                        <RowDefinition Height="*" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
-                                    <dev:AutoScrollView
-                                        Grid.Row="0"
-                                        Margin="10,0,10,0"
-                                        IsPlaying="False"
-                                        PointerCanceled="AutoScrollHover_PointerCanceled"
-                                        PointerEntered="AutoScrollHover_PointerEntered"
-                                        PointerExited="AutoScrollHover_PointerExited">
-                                        <TextBlock
-                                            x:Name="MusicTitleTextBlock"
-                                            FontSize="18"
-                                            FontWeight="Bold"
-                                            IsTextSelectionEnabled="True"
-                                            Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
-                                            TextTrimming="CharacterEllipsis" />
-                                    </dev:AutoScrollView>
-                                    <Button
-                                        x:Name="MusicAlbumTextBlock"
-                                        Grid.Row="1"
-                                        Margin="10,0,10,0"
-                                        Padding="1"
-                                        VerticalAlignment="Bottom"
-                                        Background="Transparent"
-                                        BorderThickness="0">
-                                        <Button.Content>
-                                            <dev:AutoScrollView
-                                                Margin="0"
-                                                IsPlaying="False"
-                                                PointerCanceled="AutoScrollHover_PointerCanceled"
-                                                PointerEntered="AutoScrollHover_PointerEntered"
-                                                PointerExited="AutoScrollHover_PointerExited">
-                                                <TextBlock
-                                                    FontSize="12"
-                                                    Tapped="AlbumTextBlock_Tapped"
-                                                    Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
-                                                    TextTrimming="WordEllipsis" />
-                                            </dev:AutoScrollView>
-                                        </Button.Content>
-                                    </Button>
-                                    <Button
-                                        x:Name="MusicAuthorTextBlock"
-                                        Grid.Row="2"
-                                        Margin="10,0,10,0"
-                                        Padding="1"
-                                        VerticalAlignment="Center"
-                                        Background="Transparent"
-                                        BorderThickness="0">
-                                        <Button.Content>
-                                            <dev:AutoScrollView
-                                                Margin="0"
-                                                IsPlaying="False"
-                                                PointerCanceled="AutoScrollHover_PointerCanceled"
-                                                PointerEntered="AutoScrollHover_PointerEntered"
-                                                PointerExited="AutoScrollHover_PointerExited">
-                                                <TextBlock
-                                                    FontSize="12"
-                                                    Tapped="AuthorTextBlock_Tapped"
-                                                    Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
-                                                    TextTrimming="WordEllipsis" />
-                                            </dev:AutoScrollView>
-                                        </Button.Content>
-                                    </Button>
-                                    <Grid Grid.Row="3" VerticalAlignment="Bottom">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <TextBlock
-                                            x:Name="MusicInfoTextBlock"
-                                            Grid.Column="0"
-                                            Margin="10,0,10,0"
-                                            FontSize="12"
-                                            Text="{x:Bind ViewModel.AppViewModel.MusicInfo, Mode=OneWay}" />
-                                        <Image
-                                            x:Name="HRImage"
-                                            Grid.Column="1"
-                                            Height="12"
-                                            Source="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic, Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
-                                    </Grid>
-                                </Grid>
-                            </StackPanel>
-
-                            <!--  播放模式、播放按钮  -->
-                            <Grid
+                                Margin="10,0,10,0"
+                                FontSize="12"
+                                Text="{x:Bind ViewModel.AppViewModel.MusicInfo, Mode=OneWay}" />
+                            <Image
+                                x:Name="HRImage"
                                 Grid.Column="1"
-                                Margin="0,0,0,0"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
+                                Height="12"
+                                Source="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic, Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
+                        </Grid>
+                    </Grid>
+                </StackPanel>
 
-                                <Button
-                                    x:Name="PlayBarFavouriteButton"
-                                    Grid.Column="0"
-                                    Margin="3"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="Transparent"
-                                    BorderBrush="Transparent"
-                                    BorderThickness="0"
-                                    Command="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}"
-                                    Style="{StaticResource MenuButtonStyle}">
-                                    <Button.KeyboardAccelerators>
-                                        <KeyboardAccelerator Key="L" />
-                                    </Button.KeyboardAccelerators>
-                                    <FontIcon Foreground="Red" Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
-                                </Button>
+                <!--  播放模式、播放按钮  -->
+                <Grid
+                    Grid.Column="1"
+                    Margin="0,0,0,0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
 
-                                <Button
-                                    x:Name="FastBackwardButton"
-                                    Grid.Column="1"
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="Transparent"
-                                    BorderBrush="Transparent"
-                                    BorderThickness="0"
-                                    Command="{x:Bind ViewModel.FastBackwardButtonCommand, Mode=OneWay}"
-                                    Style="{StaticResource MenuButtonStyle}">
-                                    <Button.KeyboardAccelerators>
-                                        <KeyboardAccelerator Key="Left" />
-                                    </Button.KeyboardAccelerators>
-                                    <FontIcon FontSize="18" Glyph="&#xED3C;" />
-                                </Button>
+                    <Button
+                        x:Name="PlayBarFavouriteButton"
+                        Grid.Column="0"
+                        Margin="3"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        Command="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}"
+                        Style="{StaticResource MenuButtonStyle}">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="L" />
+                        </Button.KeyboardAccelerators>
+                        <FontIcon Foreground="Red" Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
+                    </Button>
 
-                                <Button
-                                    x:Name="LastMusicButton"
-                                    Grid.Column="2"
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="Transparent"
-                                    BorderBrush="Transparent"
-                                    BorderThickness="0"
-                                    Command="{x:Bind ViewModel.LastMusicButtonChangedCommand, Mode=OneWay}"
-                                    Style="{StaticResource MenuButtonStyle}">
-                                    <Button.KeyboardAccelerators>
-                                        <KeyboardAccelerator Key="Up" />
-                                    </Button.KeyboardAccelerators>
-                                    <FontIcon FontSize="22" Glyph="&#xF8AC;" />
-                                </Button>
+                    <Button
+                        x:Name="FastBackwardButton"
+                        Grid.Column="1"
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        Command="{x:Bind ViewModel.FastBackwardButtonCommand, Mode=OneWay}"
+                        Style="{StaticResource MenuButtonStyle}">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="Left" />
+                        </Button.KeyboardAccelerators>
+                        <FontIcon FontSize="18" Glyph="&#xED3C;" />
+                    </Button>
 
-                                <!--  播放按钮  -->
+                    <Button
+                        x:Name="LastMusicButton"
+                        Grid.Column="2"
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        Command="{x:Bind ViewModel.LastMusicButtonChangedCommand, Mode=OneWay}"
+                        Style="{StaticResource MenuButtonStyle}">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="Up" />
+                        </Button.KeyboardAccelerators>
+                        <FontIcon FontSize="22" Glyph="&#xF8AC;" />
+                    </Button>
+
+                    <!--  播放按钮  -->
+                    <Button
+                        x:Name="PlayPauseButton"
+                        Grid.Column="3"
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        Command="{x:Bind ViewModel.PlayButtonChangedCommand, Mode=OneWay}"
+                        Style="{StaticResource PlayButtonStyle}">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="Space" />
+                        </Button.KeyboardAccelerators>
+                        <FontIcon
+                            Width="45"
+                            Height="45"
+                            FontSize="30"
+                            Glyph="{x:Bind ViewModel.AppViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
+                    </Button>
+
+                    <Button
+                        x:Name="NextMusicButton"
+                        Grid.Column="4"
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        Command="{x:Bind ViewModel.NextMusicButtonChangedCommand, Mode=OneWay}"
+                        Style="{StaticResource MenuButtonStyle}">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="Down" />
+                        </Button.KeyboardAccelerators>
+                        <FontIcon FontSize="22" Glyph="&#xF8AD;" />
+                    </Button>
+
+                    <Button
+                        x:Name="FastForwardButton"
+                        Grid.Column="5"
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        Command="{x:Bind ViewModel.FastForwardButtonCommand, Mode=OneWay}"
+                        Style="{StaticResource MenuButtonStyle}">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="Right" />
+                        </Button.KeyboardAccelerators>
+                        <FontIcon FontSize="18" Glyph="&#xED3D;" />
+                    </Button>
+
+                    <Button
+                        x:Name="StopButton"
+                        Grid.Column="6"
+                        Margin="5"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        Command="{x:Bind ViewModel.StopButtonChangedCommand, Mode=OneWay}"
+                        Style="{StaticResource MenuButtonStyle}">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="End" />
+                        </Button.KeyboardAccelerators>
+                        <FontIcon FontSize="18" Glyph="&#xEE95;" />
+                    </Button>
+                </Grid>
+                <StackPanel
+                    Grid.Column="2"
+                    Margin="0,0,0,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal">
+                    <Button
+                        x:Name="VolumeUp"
+                        Margin="0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Command="{x:Bind ViewModel.VolumeUpChangedCommand, Mode=OneWay}"
+                        IsHitTestVisible="False"
+                        Opacity="0">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="Add" />
+                        </Button.KeyboardAccelerators>
+                        <FontIcon Glyph="&#xE9E9;" />
+                    </Button>
+                    <Button
+                        x:Name="VolumeDown"
+                        Margin="0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Command="{x:Bind ViewModel.VolumeDownChangedCommand, Mode=OneWay}"
+                        IsHitTestVisible="False"
+                        Opacity="0">
+                        <Button.KeyboardAccelerators>
+                            <KeyboardAccelerator Key="Subtract" />
+                        </Button.KeyboardAccelerators>
+                        <FontIcon Glyph="&#xE9E9;" />
+                    </Button>
+                    <Button
+                        x:Name="EqualizerButton"
+                        Margin="10,0,0,0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        Click="EqualizerButton_Click"
+                        Style="{StaticResource MenuButtonStyle}">
+                        <FontIcon x:Name="EqualizerIcon" Glyph="&#xE9E9;" />
+                    </Button>
+                    <Button
+                        x:Name="CurrentPlayListButton"
+                        Margin="10,0,0,0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        Click="CurrentPlayListButton_Click"
+                        Style="{StaticResource MenuButtonStyle}">
+                        <FontIcon x:Name="CurrentPlayListIcon" Glyph="&#xE90B;" />
+                    </Button>
+                    <TeachingTip
+                        x:Name="CurrentPlayListTeachingTip"
+                        IsLightDismissEnabled="True"
+                        Target="{x:Bind CurrentPlayListButton}">
+                        <TeachingTip.Content>
+                            <Grid Width="290">
+                                <!--  ListView内容，给右上角留出空间  -->
+                                <ListView
+                                    x:Name="CurrentPlayListView"
+                                    Width="290"
+                                    MaxHeight="400"
+                                    Margin="0,24,0,0"
+                                    DoubleTapped="CurrentPlayListView_DoubleTapped"
+                                    ItemsSource="{x:Bind ViewModel.AppViewModel.CurrentPlayingList, Mode=OneWay}">
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="model:Music">
+                                            <TextBlock
+                                                Grid.Column="1"
+                                                Margin="5"
+                                                VerticalAlignment="Center"
+                                                Text="{x:Bind Title, Mode=OneWay}"
+                                                TextTrimming="CharacterEllipsis" />
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+
+                                <!--  关闭按钮在最上层  -->
                                 <Button
-                                    x:Name="PlayPauseButton"
-                                    Grid.Column="3"
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
+                                    x:Name="CloseButton"
+                                    Width="24"
+                                    Height="24"
+                                    Margin="0,0,4,0"
+                                    Padding="0"
+                                    HorizontalAlignment="Right"
+                                    VerticalAlignment="Top"
                                     Background="Transparent"
-                                    BorderBrush="Transparent"
                                     BorderThickness="0"
-                                    Command="{x:Bind ViewModel.PlayButtonChangedCommand, Mode=OneWay}"
-                                    Style="{StaticResource PlayButtonStyle}">
-                                    <Button.KeyboardAccelerators>
-                                        <KeyboardAccelerator Key="Space" />
-                                    </Button.KeyboardAccelerators>
+                                    Canvas.ZIndex="999"
+                                    Click="CurrentPlayListTeachingTipCloseButton_Click">
                                     <FontIcon
-                                        Width="45"
-                                        Height="45"
-                                        FontSize="30"
-                                        Glyph="{x:Bind ViewModel.AppViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
-                                </Button>
-
-                                <Button
-                                    x:Name="NextMusicButton"
-                                    Grid.Column="4"
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="Transparent"
-                                    BorderBrush="Transparent"
-                                    BorderThickness="0"
-                                    Command="{x:Bind ViewModel.NextMusicButtonChangedCommand, Mode=OneWay}"
-                                    Style="{StaticResource MenuButtonStyle}">
-                                    <Button.KeyboardAccelerators>
-                                        <KeyboardAccelerator Key="Down" />
-                                    </Button.KeyboardAccelerators>
-                                    <FontIcon FontSize="22" Glyph="&#xF8AD;" />
-                                </Button>
-
-                                <Button
-                                    x:Name="FastForwardButton"
-                                    Grid.Column="5"
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="Transparent"
-                                    BorderBrush="Transparent"
-                                    BorderThickness="0"
-                                    Command="{x:Bind ViewModel.FastForwardButtonCommand, Mode=OneWay}"
-                                    Style="{StaticResource MenuButtonStyle}">
-                                    <Button.KeyboardAccelerators>
-                                        <KeyboardAccelerator Key="Right" />
-                                    </Button.KeyboardAccelerators>
-                                    <FontIcon FontSize="18" Glyph="&#xED3D;" />
-                                </Button>
-
-                                <Button
-                                    x:Name="StopButton"
-                                    Grid.Column="6"
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Background="Transparent"
-                                    BorderBrush="Transparent"
-                                    BorderThickness="0"
-                                    Command="{x:Bind ViewModel.StopButtonChangedCommand, Mode=OneWay}"
-                                    Style="{StaticResource MenuButtonStyle}">
-                                    <Button.KeyboardAccelerators>
-                                        <KeyboardAccelerator Key="End" />
-                                    </Button.KeyboardAccelerators>
-                                    <FontIcon FontSize="18" Glyph="&#xEE95;" />
+                                        FontFamily="Segoe MDL2 Assets"
+                                        FontSize="12"
+                                        Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                        Glyph="&#xE711;" />
                                 </Button>
                             </Grid>
-                            <StackPanel
-                                Grid.Column="2"
-                                Margin="0,0,0,0"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Center"
-                                Orientation="Horizontal">
-                                <Button
-                                    x:Name="VolumeUp"
-                                    Margin="0"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    Command="{x:Bind ViewModel.VolumeUpChangedCommand, Mode=OneWay}"
-                                    IsHitTestVisible="False"
-                                    Opacity="0">
-                                    <Button.KeyboardAccelerators>
-                                        <KeyboardAccelerator Key="Add" />
-                                    </Button.KeyboardAccelerators>
-                                    <FontIcon Glyph="&#xE9E9;" />
-                                </Button>
-                                <Button
-                                    x:Name="VolumeDown"
-                                    Margin="0"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    Command="{x:Bind ViewModel.VolumeDownChangedCommand, Mode=OneWay}"
-                                    IsHitTestVisible="False"
-                                    Opacity="0">
-                                    <Button.KeyboardAccelerators>
-                                        <KeyboardAccelerator Key="Subtract" />
-                                    </Button.KeyboardAccelerators>
-                                    <FontIcon Glyph="&#xE9E9;" />
-                                </Button>
-                                <Button
-                                    x:Name="EqualizerButton"
-                                    Margin="10,0,0,0"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    Background="Transparent"
-                                    BorderBrush="Transparent"
-                                    BorderThickness="0"
-                                    Click="EqualizerButton_Click"
-                                    Style="{StaticResource MenuButtonStyle}">
-                                    <FontIcon x:Name="EqualizerIcon" Glyph="&#xE9E9;" />
-                                </Button>
-                                <Button
-                                    x:Name="CurrentPlayListButton"
-                                    Margin="10,0,0,0"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    Background="Transparent"
-                                    BorderBrush="Transparent"
-                                    BorderThickness="0"
-                                    Click="CurrentPlayListButton_Click"
-                                    Style="{StaticResource MenuButtonStyle}">
-                                    <FontIcon x:Name="CurrentPlayListIcon" Glyph="&#xE90B;" />
-                                </Button>
-                                <TeachingTip
-                                    x:Name="CurrentPlayListTeachingTip"
-                                    IsLightDismissEnabled="True"
-                                    Target="{x:Bind CurrentPlayListButton}">
-                                    <TeachingTip.Content>
-                                        <Grid Width="290">
-                                            <!--  ListView内容，给右上角留出空间  -->
-                                            <ListView
-                                                x:Name="CurrentPlayListView"
-                                                Width="290"
-                                                MaxHeight="400"
-                                                Margin="0,24,0,0"
-                                                DoubleTapped="CurrentPlayListView_DoubleTapped"
-                                                ItemsSource="{x:Bind ViewModel.AppViewModel.CurrentPlayingList, Mode=OneWay}">
-                                                <ListView.ItemTemplate>
-                                                    <DataTemplate x:DataType="model:Music">
-                                                        <TextBlock
-                                                            Grid.Column="1"
-                                                            Margin="5"
-                                                            VerticalAlignment="Center"
-                                                            Text="{x:Bind Title, Mode=OneWay}"
-                                                            TextTrimming="CharacterEllipsis" />
-                                                    </DataTemplate>
-                                                </ListView.ItemTemplate>
-                                            </ListView>
-
-                                            <!--  关闭按钮在最上层  -->
-                                            <Button
-                                                x:Name="CloseButton"
-                                                Width="24"
-                                                Height="24"
-                                                Margin="0,0,4,0"
-                                                Padding="0"
-                                                HorizontalAlignment="Right"
-                                                VerticalAlignment="Top"
-                                                Background="Transparent"
-                                                BorderThickness="0"
-                                                Canvas.ZIndex="999"
-                                                Click="CurrentPlayListTeachingTipCloseButton_Click">
-                                                <FontIcon
-                                                    FontFamily="Segoe MDL2 Assets"
-                                                    FontSize="12"
-                                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                                                    Glyph="&#xE711;" />
-                                            </Button>
-                                        </Grid>
-                                    </TeachingTip.Content>
-                                </TeachingTip>
-                                <!--  播放模式按钮  -->
-                                <Button
-                                    x:Name="PlayModeButton"
-                                    Margin="10"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    Background="Transparent"
-                                    BorderBrush="Transparent"
-                                    BorderThickness="0"
-                                    Command="{x:Bind ViewModel.PlayModeChangedCommand, Mode=OneWay}"
-                                    Style="{StaticResource MenuButtonStyle}">
-                                    <FontIcon x:Name="PlayModeIcon" Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayMode, Converter={StaticResource PlayModeToIconConverter}, Mode=TwoWay}" />
-                                </Button>
-                                <Button
-                                    Margin="0"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    Background="Transparent"
-                                    BorderBrush="Transparent"
-                                    BorderThickness="0"
-                                    Command="{x:Bind ViewModel.VolumeSliderIconButtonChangedCommand, Mode=OneWay}"
-                                    Style="{StaticResource MenuButtonStyle}">
-                                    <FontIcon
-                                        x:Name="VolumeSliderIcon"
-                                        Grid.Column="0"
-                                        Margin="0"
-                                        VerticalAlignment="Center"
-                                        Glyph="{x:Bind ViewModel.AppViewModel.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
-                                </Button>
-                                <Slider
-                                    x:Name="VolumeSlider"
-                                    Grid.Column="1"
-                                    Width="100"
-                                    HorizontalAlignment="Right"
-                                    VerticalAlignment="Center"
-                                    Maximum="100"
-                                    Minimum="0"
-                                    PointerEntered="VolumeSlider_PointerEntered"
-                                    PointerExited="VolumeSlider_PointerExited"
-                                    PointerWheelChanged="VolumeSlider_PointerWheelChanged"
-                                    Value="{x:Bind ViewModel.AppViewModel.Volume, Mode=TwoWay}" />
-                            </StackPanel>
-                        </Grid>
-
-                    </Grid>
-                </Grid>
+                        </TeachingTip.Content>
+                    </TeachingTip>
+                    <!--  播放模式按钮  -->
+                    <Button
+                        x:Name="PlayModeButton"
+                        Margin="10"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        Command="{x:Bind ViewModel.PlayModeChangedCommand, Mode=OneWay}"
+                        Style="{StaticResource MenuButtonStyle}">
+                        <FontIcon x:Name="PlayModeIcon" Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayMode, Converter={StaticResource PlayModeToIconConverter}, Mode=TwoWay}" />
+                    </Button>
+                    <Button
+                        Margin="0"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        Command="{x:Bind ViewModel.VolumeSliderIconButtonChangedCommand, Mode=OneWay}"
+                        Style="{StaticResource MenuButtonStyle}">
+                        <FontIcon
+                            x:Name="VolumeSliderIcon"
+                            Grid.Column="0"
+                            Margin="0"
+                            VerticalAlignment="Center"
+                            Glyph="{x:Bind ViewModel.AppViewModel.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
+                    </Button>
+                    <Slider
+                        x:Name="VolumeSlider"
+                        Grid.Column="1"
+                        Width="100"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Maximum="100"
+                        Minimum="0"
+                        PointerEntered="VolumeSlider_PointerEntered"
+                        PointerExited="VolumeSlider_PointerExited"
+                        PointerWheelChanged="VolumeSlider_PointerWheelChanged"
+                        Value="{x:Bind ViewModel.AppViewModel.Volume, Mode=TwoWay}" />
+                </StackPanel>
             </Grid>
+
         </Grid>
     </Grid>
 </Page>

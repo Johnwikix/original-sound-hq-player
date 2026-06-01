@@ -21,7 +21,7 @@
         </DataTemplate>
     </Page.Resources>
 
-    <Grid Margin="48,32,0,24">
+    <Grid Margin="0,32,0,24">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />

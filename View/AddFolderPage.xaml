@@ -9,7 +9,7 @@
     xmlns:model="using:WinUIMusicPlayer.Model"
     mc:Ignorable="d">
 
-    <Grid Margin="48,0,0,0">
+    <Grid Margin="0">
         <!--  Loading 界面  -->
         <Grid x:Name="LoadingGrid" Visibility="Collapsed">
             <ProgressRing
