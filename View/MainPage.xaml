@@ -23,7 +23,7 @@
                 <Grid
                     x:Name="AppTitleBar"
                     Height="44"
-                    Margin="48,0,0,0"
+                    Margin="50,0,0,0"
                     Padding="0"
                     VerticalAlignment="Top"
                     Opacity="{x:Bind tools:BindUtils.VisibilityToOpacityConverter(NavigationViewControl.Visibility), Mode=OneWay}">
