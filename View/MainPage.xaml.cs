@@ -52,6 +52,7 @@ namespace WinUIMusicPlayer.View
         private void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
             NavigationViewControl.IsPaneOpen = false;
+            Loaded -= MainPage_Loaded;
         }
 
         private void MainFrame_Navigated(object sender, Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)

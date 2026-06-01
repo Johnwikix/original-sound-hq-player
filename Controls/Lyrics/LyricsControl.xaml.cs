@@ -49,6 +49,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         {
             LyricsCanvasV1?.LyricLineClicked += OnCanvasLyricLineClicked;
             LyricsCanvas?.LyricLineClicked += OnCanvasLyricLineClicked;
+            Loaded -= OnControlLoaded;
         }
 
         private void OnCanvasLyricLineClicked(object? sender, TimeSpan ts)

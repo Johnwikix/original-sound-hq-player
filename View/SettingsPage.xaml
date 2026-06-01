@@ -34,13 +34,8 @@
                 FontSize="28" />
         </Grid>
 
-        <ScrollView Grid.Row="1">
-            <StackPanel Margin="10,0,10,0">
-                <StackPanel.ChildrenTransitions>
-                    <EntranceThemeTransition FromVerticalOffset="50" IsStaggeringEnabled="False" />
-                    <RepositionThemeTransition IsStaggeringEnabled="True" />
-                </StackPanel.ChildrenTransitions>
-
+        <ScrollViewer x:Name="ContentScroller" Grid.Row="1">
+            <StackPanel x:Name="ContentPanel" Margin="10,0,10,0">
                 <!--  音频设置  -->
                 <TextBlock
                     x:Uid="SettingAudio"
@@ -1423,6 +1418,6 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
             </StackPanel>
-        </ScrollView>
+        </ScrollViewer>
     </Grid>
 </Page>

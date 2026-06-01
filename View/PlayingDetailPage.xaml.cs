@@ -62,6 +62,7 @@ namespace WinUIMusicPlayer.View
             }
             App.MainWindow.SizeChanged += MainWindow_SizeChanged;
             ChangeControlsFontSize();
+            Loaded -= PlayingDetailPage_Loaded;
         }
 
         private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
