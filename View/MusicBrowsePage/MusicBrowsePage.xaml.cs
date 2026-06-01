@@ -28,14 +28,14 @@ namespace WinUIMusicPlayer.View
         public MusicBrowseViewModel ViewModel { get; }
         public MusicBrowsePage()
         {
-            this.InitializeComponent();
+            InitializeComponent();
             ContentFrame.Navigated += OnContentFrameNavigated;
             ViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             ViewModel.SetMusicBrowsePage(this);
             DataContext = this;
-            this.Focus(FocusState.Programmatic);
-            this.Loaded += OnPageLoaded;
-            this.NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
+            Focus(FocusState.Programmatic);
+            Loaded += OnPageLoaded;
+            NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
         }
 
         private void OnContentFrameNavigated(object sender, Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
@@ -46,7 +46,7 @@ namespace WinUIMusicPlayer.View
         private void OnPageLoaded(object sender, RoutedEventArgs e)
         {
             SelectBarItem(ViewModel.AppViewModel.DefaultPlayListComboBoxTag);
-            this.Loaded -= OnPageLoaded;
+            Loaded -= OnPageLoaded;
         }
 
         public void NavigatePage(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)
@@ -183,7 +183,6 @@ namespace WinUIMusicPlayer.View
 
             ContentDialog contentDialog = new ContentDialog
             {
-                // ʹ���Զ��������Ϊ����
                 Title = titlePanel,
                 Content = new Microsoft.UI.Xaml.Controls.TextBox { PlaceholderText = ToolUtils.GetString("EnterPlaylistName") },
                 PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
@@ -192,7 +191,6 @@ namespace WinUIMusicPlayer.View
             };
             contentDialog.RequestedTheme = AppSettings.ElementTheme;
 
-            // �����¼������������������������ģ�
             async void buttonClickHandler(object s, RoutedEventArgs e)
             {
                 List<PlayList> newPlaylists = await OpenM3u8File();

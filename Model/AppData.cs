@@ -28,7 +28,7 @@ namespace WinUIMusicPlayer.Model
         public static IntPtr HWnd { get; set; } = IntPtr.Zero;
         public static double AppDpiScale { get; set; } = 1.0;
         public static string SystemLanguage { get; set; } = "en";
-        public static bool IsPlayingDetail { get; set; } = false;
+        //public static bool IsPlayingDetail { get; set; } = false;
         public static Type CurrentPage { get; set; } = typeof(SongListPage);
         public static bool IsPlaying { get; set; } = false;
     }

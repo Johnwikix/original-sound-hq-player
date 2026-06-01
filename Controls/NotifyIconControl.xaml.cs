@@ -63,7 +63,6 @@ namespace WinUIMusicPlayer.Controls
             ShowWindow(App.MainWindow);
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
-                App.Services.GetRequiredService<MainPage>()?.NavigateToMusicBrowsePage();
                 App.Services.GetRequiredService<MainPage>().NavigateToPlayingDetailPage();
             });
         }

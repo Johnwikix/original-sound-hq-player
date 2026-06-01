@@ -143,7 +143,7 @@ namespace WinUIMusicPlayer
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "en";
                 AppData.SystemLanguage = "en";
             }
-            //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "de";
+            //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "es";
         }
 
         private void CurrentDomain_FirstChanceException(object? sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)

@@ -60,7 +60,7 @@ namespace WinUIMusicPlayer.View
         }
 
         private void NavigateTo(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)
-        {
+        {            
             MainFrame.Navigate(pageType, parameter, navigationTransitionInfo);
             MainFrame.BackStack.Clear();
         }
@@ -120,11 +120,13 @@ namespace WinUIMusicPlayer.View
         {
             if (PlayingFrame.Visibility is Visibility.Visible)
             {
-                MainFrame.Visibility = Visibility.Visible;
+                NavigationViewControl.Visibility = Visibility.Visible;
                 _playingNavigation.Dismiss(300);
             }
-            NavigationViewControl.SelectedItem = NavigationViewControl.SettingsItem;
-            NavigateTo(typeof(SettingsPage), null, new EntranceNavigationTransitionInfo());
+            if (MainFrame.Content is not SettingsPage) {
+                NavigationViewControl.SelectedItem = NavigationViewControl.SettingsItem;
+                NavigateTo(typeof(SettingsPage), null, new EntranceNavigationTransitionInfo());
+            }            
         }
 
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
@@ -132,8 +134,6 @@ namespace WinUIMusicPlayer.View
             if (args.IsSettingsInvoked)
             {
                 NavigateTo(typeof(SettingsPage), null, new EntranceNavigationTransitionInfo());
-                _playingNavigation.Dismiss(300);
-                MainFrame.Visibility = Visibility.Visible;
             }
             else
             {
@@ -142,19 +142,9 @@ namespace WinUIMusicPlayer.View
                 {
                     case "AddFolder":
                         NavigateTo(typeof(AddFolderPage), null, new EntranceNavigationTransitionInfo());
-                        _playingNavigation.Dismiss(300);
-                        MainFrame.Visibility = Visibility.Visible;
                         break;
                     case "MusicBrowse":
                         NavigateTo(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
-                        if (AppData.IsPlayingDetail)
-                        {
-                            NavigateToPlayingDetailPage();
-                        }
-                        else
-                        {
-                            MainFrame.Visibility = Visibility.Visible;
-                        }
                         break;
                 }
             }
@@ -174,7 +164,6 @@ namespace WinUIMusicPlayer.View
             if (_isPageTransitioning) return;
             _isPageTransitioning = true;
 
-            AppData.IsPlayingDetail = true;
             if (PlayingFrame.Visibility is Visibility.Collapsed)
             {
                 var pendingCount = 1;
@@ -182,9 +171,9 @@ namespace WinUIMusicPlayer.View
                 {
                     if (Interlocked.Decrement(ref pendingCount) == 0)
                         _isPageTransitioning = false;
-                }
-                MainFrame.Visibility = Visibility.Collapsed;
+                }                
                 _playingNavigation.Show(typeof(PlayingDetailPage), 300, onCompleted: OnOneCompleted);
+                NavigationViewControl.Visibility = Visibility.Collapsed;
             }
             else
             {
@@ -197,7 +186,6 @@ namespace WinUIMusicPlayer.View
             if (_isPageTransitioning) return;
             _isPageTransitioning = true;
 
-            AppData.IsPlayingDetail = false;
             if (PlayingFrame.Visibility is Visibility.Visible)
             {
                 var pendingCount = 1;
@@ -205,10 +193,9 @@ namespace WinUIMusicPlayer.View
                 {
                     if (Interlocked.Decrement(ref pendingCount) == 0)
                         _isPageTransitioning = false;
-                }
-                MainFrame.Visibility = Visibility.Visible;
-                //ContentFrame.FadeShow(ViewModel.AppViewModel.EntranceAnimationTime, onCompleted: OnOneCompleted);
+                }                
                 _playingNavigation.Dismiss(300, onCompleted: OnOneCompleted);
+                NavigationViewControl.Visibility = Visibility.Visible;
             }
             else
             {
@@ -225,16 +212,6 @@ namespace WinUIMusicPlayer.View
         {
             App.Services.GetRequiredService<MusicBrowseViewModel>().BackButton();
         }
-
-        //private void NavigationViewControl_PointerEntered(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
-        //{
-        //    ViewModel.AppViewModel.IsInNaviView = true;
-        //}
-
-        //private void NavigationViewControl_PointerExited(object sender, Microsoft.UI.Xaml.Input.PointerRoutedEventArgs e)
-        //{
-        //    ViewModel.AppViewModel.IsInNaviView = false;
-        //}
 
         private void ProgressSlider_Loaded(object sender, RoutedEventArgs e)
         {
