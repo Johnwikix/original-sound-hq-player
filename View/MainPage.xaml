@@ -43,8 +43,8 @@
                 IsPaneOpen="False"
                 IsPaneToggleButtonVisible="True"
                 ItemInvoked="NavigationView_ItemInvoked"
-                Opacity="{x:Bind tools:BindUtils.VisibilityToOpacityReConverter(PlayingFrame.Visibility), Mode=OneWay}"
-                PaneDisplayMode="LeftCompact">
+                PaneDisplayMode="LeftCompact"
+                Visibility="{x:Bind tools:BindUtils.VisiblilityToVisibilityConverter(PlayingFrame.Visibility), Mode=OneWay}">
                 <NavigationView.KeyboardAccelerators>
                     <KeyboardAccelerator Key="Escape" Invoked="KeyboardAccelerator_Invoked" />
                 </NavigationView.KeyboardAccelerators>
