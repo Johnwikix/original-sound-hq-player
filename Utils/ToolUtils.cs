@@ -260,14 +260,14 @@ namespace WinUIMusicPlayer.Utils
                 if (FastReadExtensions.Contains(music.Extension))
                 {
                     picture = AudioCoverReader.ReadCover(music.Path);
-                    if (picture is null || picture.Length == 0)
-                    {
-                        Track track = new(music.Path);
-                        if (track?.EmbeddedPictures is not null && track?.EmbeddedPictures.Count > 0)
-                        {
-                            picture = track.EmbeddedPictures.AsValueEnumerable().FirstOrDefault()?.PictureData;
-                        }
-                    }
+                    //if (picture is null || picture.Length == 0)
+                    //{
+                    //    Track track = new(music.Path);
+                    //    if (track?.EmbeddedPictures is not null && track?.EmbeddedPictures.Count > 0)
+                    //    {
+                    //        picture = track.EmbeddedPictures.AsValueEnumerable().FirstOrDefault()?.PictureData;
+                    //    }
+                    //}
                 }
                 else
                 {
