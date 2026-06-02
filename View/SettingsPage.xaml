@@ -27,7 +27,7 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Grid Grid.Row="0" Margin="10,0,10,0">
+        <Grid Grid.Row="0" Margin="32,0,32,0">
             <TextBlock
                 x:Uid="Settings"
                 Margin="10,20,0,10"
@@ -35,7 +35,7 @@
         </Grid>
 
         <ScrollViewer x:Name="ContentScroller" Grid.Row="1">
-            <StackPanel x:Name="ContentPanel" Margin="10,0,10,0">
+            <StackPanel x:Name="ContentPanel" Margin="32,0,32,0">
                 <StackPanel.ChildrenTransitions>
                     <EntranceThemeTransition FromVerticalOffset="50" IsStaggeringEnabled="False" />
                     <RepositionThemeTransition IsStaggeringEnabled="True" />
