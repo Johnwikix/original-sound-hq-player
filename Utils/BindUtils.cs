@@ -3,6 +3,9 @@ using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using WinRT.OriginalSound_HIFI_PlayerGenericHelpers;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.ViewModel;
 using ZLinq;
@@ -51,6 +54,17 @@ namespace WinUIMusicPlayer.Utils
         public static double VisibilityToOpacityReConverter(Visibility visibility)
         {
             return visibility is Visibility.Visible ? 0 : 1.0;
+        }
+
+        public static bool IsCurrentMusicExist(Music current) {
+            if(current is null) return false;
+            return true;
+        }
+
+        public static bool IsCurrentPlayListExist(IEnumerable<Music> playList)
+        {
+            if (playList is null || !playList.Any()) return false;
+            return true;
         }
 
         public static Visibility VisiblilityToVisibilityConverter(Visibility visibility)

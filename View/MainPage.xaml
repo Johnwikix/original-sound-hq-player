@@ -126,6 +126,7 @@
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.MusicBrowseVM.AlbumCoverImageCommand, Mode=OneWay}"
                             CornerRadius="5"
+                            IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource SimpleHoverButtonStyle}">
                             <Button.KeyboardAccelerators>
                                 <KeyboardAccelerator Key="Q" />
@@ -204,7 +205,8 @@
                                 Padding="1"
                                 VerticalAlignment="Bottom"
                                 Background="Transparent"
-                                BorderThickness="0">
+                                BorderThickness="0"
+                                IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}">
                                 <Button.Content>
                                     <dev:AutoScrollView
                                         Margin="0"
@@ -227,7 +229,8 @@
                                 Padding="1"
                                 VerticalAlignment="Center"
                                 Background="Transparent"
-                                BorderThickness="0">
+                                BorderThickness="0"
+                                IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}">
                                 <Button.Content>
                                     <dev:AutoScrollView
                                         Margin="0"
@@ -291,6 +294,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <Button.KeyboardAccelerators>
                                 <KeyboardAccelerator Key="L" />
@@ -308,6 +312,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.MusicBrowseVM.FastBackwardButtonCommand, Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <Button.KeyboardAccelerators>
                                 <KeyboardAccelerator Key="Left" />
@@ -325,6 +330,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.MusicBrowseVM.LastMusicButtonChangedCommand, Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsCurrentPlayListExist(ViewModel.AppViewModel.CurrentPlayingList), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <Button.KeyboardAccelerators>
                                 <KeyboardAccelerator Key="Up" />
@@ -342,6 +348,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.MusicBrowseVM.PlayButtonChangedCommand, Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource PlayButtonStyle}">
                             <Button.KeyboardAccelerators>
                                 <KeyboardAccelerator Key="Space" />
@@ -363,6 +370,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.MusicBrowseVM.NextMusicButtonChangedCommand, Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsCurrentPlayListExist(ViewModel.AppViewModel.CurrentPlayingList), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <Button.KeyboardAccelerators>
                                 <KeyboardAccelerator Key="Down" />
@@ -380,6 +388,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.MusicBrowseVM.FastForwardButtonCommand, Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <Button.KeyboardAccelerators>
                                 <KeyboardAccelerator Key="Right" />
@@ -397,6 +406,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.MusicBrowseVM.StopButtonChangedCommand, Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <Button.KeyboardAccelerators>
                                 <KeyboardAccelerator Key="End" />
