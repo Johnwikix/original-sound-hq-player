@@ -21,11 +21,11 @@ namespace WinUIMusicPlayer.View.SubView
 {
     public sealed partial class SettingsDialog : ContentDialog
     {
-        private AppViewModel _appViewModel;
+        public AppViewModel VM { get; }
         public SettingsDialog(AppViewModel appViewModel)
         {
             InitializeComponent();
-            _appViewModel = appViewModel;
+            VM = appViewModel;
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
