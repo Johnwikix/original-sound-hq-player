@@ -259,7 +259,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"SaveToDataBaseButton_Click ����������Ϣʧ��: {ex.Message}");
+                _logger.LogError(ex, $"UpdateFile 更新文件失败: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
             this.Close();
@@ -274,7 +274,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"UpdateFile �����ļ�ʧ��: {ex.Message}");
+                _logger.LogError(ex, $"UpdateFile 更新文件失败: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
             MusicDetail.UpdateTime = updateTime;
@@ -295,9 +295,9 @@ namespace WinUIMusicPlayer.View.SubView
                 DateTime newModificationTime = DateTime.Now;
                 await UpdateFile(newModificationTime);
             }
-            catch (Exception ex)
+catch (Exception ex)
             {
-                _logger.LogError(ex, $"ConfirmButton_Click �����ļ�ʧ��: {ex.Message}");
+                _logger.LogError(ex, $"SaveToDataBaseButton_Click 保存数据库信息失败: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
             this.Close();
@@ -439,7 +439,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"SelectCoverImageButton_Click ѡ�����ͼƬʧ��: {ex.Message}");
+                _logger.LogError(ex, $"SelectCoverImageButton_Click 选择封面图片失败: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
         }
@@ -459,7 +459,7 @@ namespace WinUIMusicPlayer.View.SubView
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"SaveImageButton_Click �������ͼƬʧ��: {ex.Message}");
+                    _logger.LogError(ex, $"SaveImageButton_Click 保存封面图片失败: {ex.Message}");
                     NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
                 }
             }

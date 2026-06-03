@@ -1,4 +1,4 @@
-using H.NotifyIcon;
+ï»¿using H.NotifyIcon;
 using H.NotifyIcon.EfficiencyMode;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -53,7 +53,7 @@ namespace WinUIMusicPlayer
             InitializeApp();
             EfficiencyModeUtilities.SetEfficiencyMode(false);
             this.AppWindow.Closing += AppWindow_Closing;
-            //ÖØ¸´Æô¶¯ÏÔÊ¾´°¿Ú
+            //é‡å¤å¯åŠ¨æ˜¾ç¤ºçª—å£
             newWndProcDelegate = new WindowHelper.WndProcDelegate(NewWindowProc);
             defaultWndProc = WindowHelper.GetWindowLongPtr(AppData.HWnd, WindowHelper.GWLP_WNDPROC);
             WindowHelper.SetWindowLongPtr(AppData.HWnd, WindowHelper.GWLP_WNDPROC, System.Runtime.InteropServices.Marshal.GetFunctionPointerForDelegate(newWndProcDelegate));
@@ -85,7 +85,7 @@ namespace WinUIMusicPlayer
         {
             try
             {
-                //Ê¹ÓÃ×¢²á±í
+                //ä½¿ç”¨æ³¨å†Œè¡¨
                 using (var key = Microsoft.Win32.Registry.CurrentUser.CreateSubKey(@"SOFTWARE\SennpeiStudio\OriginalSoundHIFIPlayer"))
                 {
                     key.SetValue("MainWindowHandle", handle.ToInt64());
@@ -93,7 +93,7 @@ namespace WinUIMusicPlayer
             }
             catch (Exception ex)
             {
-                _logger.LogError($"±£´æ´°¿Ú¾ä±úÊ§°Ü: {ex.Message}");
+                _logger.LogError($"ä¿å­˜çª—å£å¥æŸ„å¤±è´¥: {ex.Message}");
             }
         }
         private void UiSettings_ColorValuesChanged(UISettings sender, object args)
@@ -107,14 +107,14 @@ namespace WinUIMusicPlayer
                 }
             });
         }
-        //ÏÔÊ¾´°¿Ú
+        //æ˜¾ç¤ºçª—å£
         private IntPtr NewWindowProc(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam)
         {
             try
             {
                 if (msg == SingleInstanceHelper.WM_SHOWME)
                 {
-                    //Debug.WriteLine("ÊÕµ½ÏÔÊ¾´°¿ÚÏûÏ¢");
+                    //Debug.WriteLine("æ”¶åˆ°æ˜¾ç¤ºçª—å£æ¶ˆæ¯");
                     DispatcherQueue.TryEnqueue(() =>
                     {
                         if (this is null)
@@ -130,12 +130,12 @@ namespace WinUIMusicPlayer
                     });
                     return IntPtr.Zero;
                 }
-                // µ÷ÓÃÄ¬ÈÏ´°¿Ú¹ı³Ì´¦ÀíÆäËûÏûÏ¢
+                // è°ƒç”¨é»˜è®¤çª—å£è¿‡ç¨‹å¤„ç†å…¶ä»–æ¶ˆæ¯
                 return WindowHelper.CallWindowProc(defaultWndProc, hWnd, msg, wParam, lParam);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "´¦Àí´°¿ÚÏûÏ¢Ê±·¢Éú´íÎó");
+                _logger.LogError(ex, "å¤„ç†çª—å£æ¶ˆæ¯æ—¶å‘ç”Ÿé”™è¯¯");
                 return IntPtr.Zero;
             }
         }
@@ -163,7 +163,7 @@ namespace WinUIMusicPlayer
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Ó¦ÓÃÖ÷Ìâ³õÊ¼»¯Ê§°Ü£¬¿ÉÄÜÊÇÒòÎªÏµÍ³Ö÷ÌâÉèÖÃ²»ÊÜÖ§³Ö¡£");
+                _logger.LogWarning(ex, "åº”ç”¨ä¸»é¢˜åˆå§‹åŒ–å¤±è´¥ï¼Œå¯èƒ½æ˜¯å› ä¸ºç³»ç»Ÿä¸»é¢˜è®¾ç½®ä¸å—æ”¯æŒã€‚");
             }
         }
 
@@ -210,7 +210,7 @@ namespace WinUIMusicPlayer
                     _taskbarHelper = new TaskbarHelper(AppData.HWnd, App.Services.GetRequiredService<MusicBrowseViewModel>());
                     _taskbarHelper.ErrorOccurred += (_, e) =>
                     {
-                        _logger.LogError(e.Exception, "ÈÎÎñÀ¸ÖúÊÖ·¢Éú´íÎó");
+                        _logger.LogError(e.Exception, "ä»»åŠ¡æ åŠ©æ‰‹å‘ç”Ÿé”™è¯¯");
                     };
                     _taskbarHelper.InitializeThumbButtons();
                 }
@@ -221,7 +221,7 @@ namespace WinUIMusicPlayer
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "³õÊ¼»¯ÈÎÎñÀ¸ÖúÊÖÊ§°Ü");
+                _logger.LogError(ex, "åˆå§‹åŒ–ä»»åŠ¡æ åŠ©æ‰‹å¤±è´¥");
             }
         }
         public void Dispose()
