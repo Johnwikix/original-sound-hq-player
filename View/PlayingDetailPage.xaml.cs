@@ -329,5 +329,12 @@ namespace WinUIMusicPlayer.View
         {
             _logger.LogError(e, "背景渲染错误");
         }
+
+        private void SettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            App.Services.GetRequiredService<MainPage>().SettingsDialog.RequestedTheme = AppSettings.ElementTheme;
+            App.Services.GetRequiredService<MainPage>().SettingsDialog.XamlRoot = this.XamlRoot;
+            _ = App.Services.GetRequiredService<MainPage>().SettingsDialog.ShowAsync();
+        }
     }
 }

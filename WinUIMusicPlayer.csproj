@@ -50,6 +50,7 @@
     <None Remove="View\SubView\EqualizerDialog.xaml" />
     <None Remove="View\SubView\MusicDetailsWindow.xaml" />
     <None Remove="View\SubView\ProgressDialog.xaml" />
+    <None Remove="View\SubView\SettingsDialog.xaml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -172,6 +173,9 @@
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
+    <Page Update="View\SubView\SettingsDialog.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="Controls\ImageSwitcher.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

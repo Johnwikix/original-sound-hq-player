@@ -302,12 +302,14 @@
                                 <ToolTip x:Uid="LyricsTimeOffset" />
                             </ToolTipService.ToolTip>
                         </Button>
-                        <!--<Button
+                        <Button
+                            x:Name="SettingsButton"
                             Grid.Row="1"
                             Margin="0"
                             VerticalAlignment="Center"
                             Background="Transparent"
                             BorderBrush="Transparent"
+                            Click="SettingsButton_Click"
                             BorderThickness="0"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon
@@ -319,7 +321,7 @@
                             <ToolTipService.ToolTip>
                                 <ToolTip x:Uid="LyricsTimeOffset" />
                             </ToolTipService.ToolTip>
-                        </Button>-->
+                            </Button>
                     </Grid>
                 </Grid>
                 <StackPanel

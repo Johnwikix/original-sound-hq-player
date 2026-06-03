@@ -31,6 +31,7 @@ namespace WinUIMusicPlayer.View
     {
         public MainViewModel ViewModel { get; }
         public EqualizerDialog EqualizerDialog { get; set; }
+        public SettingsDialog SettingsDialog { get; set; }
         private readonly INavigationService _playingNavigation;
         private bool _isPageTransitioning = false;
         public MainPage(MainViewModel viewModel)
@@ -41,10 +42,7 @@ namespace WinUIMusicPlayer.View
             MainFrame.Navigated += MainFrame_Navigated;
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
             _playingNavigation = navigationServiceFactory.CreateNavigationService(PlayingFrame);
-            _playingNavigation.RegisterPage<PlayingDetailPage>();
-            InitiaizeEqualizerDialog();
-            NavigateToDefaultPage();            
-            NavigationViewControl.Visibility = Visibility.Visible;
+            _playingNavigation.RegisterPage<PlayingDetailPage>();             
             ViewModel.MusicBrowseVM.SetMainPage(this);
             Loaded += MainPage_Loaded;
         }
@@ -52,6 +50,10 @@ namespace WinUIMusicPlayer.View
         private void MainPage_Loaded(object sender, RoutedEventArgs e)
         {
             NavigationViewControl.IsPaneOpen = false;
+            NavigateToDefaultPage();
+            InitiaizeEqualizerDialog();
+            SetSettingsDialog();
+            NavigationViewControl.Visibility = Visibility.Visible;
             Loaded -= MainPage_Loaded;
         }
 
@@ -90,6 +92,11 @@ namespace WinUIMusicPlayer.View
                     }
                 };
             }
+        }
+
+        private void SetSettingsDialog()
+        {
+            SettingsDialog ??= new SettingsDialog(ViewModel.AppViewModel);
         }
 
         private void NavigateToDefaultPage()
