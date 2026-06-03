@@ -978,4 +978,7 @@
   <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
     <value>启用高级歌词特效（更高的 CPU 和 GPU 开销）</value>
   </data>
+  <data name="SettingsContent.Content" xml:space="preserve">
+    <value>设置</value>
+  </data>
 </root>

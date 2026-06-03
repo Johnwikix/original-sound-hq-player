@@ -33,7 +33,7 @@ namespace WinUIMusicPlayer.View
             InitializeComponent();
             ViewModel = App.Services.GetRequiredService<SettingsViewModel>();
             DataContext = this;
-            NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
+            NavigationCacheMode = NavigationCacheMode.Disabled;
             //Loaded += SettingsPage_Loaded;
             Unloaded += OnUnloaded;
         }

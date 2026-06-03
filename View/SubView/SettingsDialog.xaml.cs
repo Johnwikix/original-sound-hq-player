@@ -32,5 +32,11 @@ namespace WinUIMusicPlayer.View.SubView
         {
             this.Hide();
         }
+
+        public void LoadOutputDevices()
+        {
+            VM.IsRealDevceChange = false;
+            _ = VM.GetWasapiDeviceAsync();
+        }
     }
 }

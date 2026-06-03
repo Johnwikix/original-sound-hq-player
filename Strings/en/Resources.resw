@@ -978,4 +978,7 @@
   <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
     <value>Enable Advanced Lyrics Effects (Higher CPU and GPU Overhead)</value>
   </data>
+  <data name="SettingsContent.Content" xml:space="preserve">
+    <value>Settings</value>
+  </data>
 </root>

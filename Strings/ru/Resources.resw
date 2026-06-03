@@ -978,4 +978,7 @@
   <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
     <value>Включить расширенные эффекты текста песни (повышенная нагрузка на ЦП и ГП)</value>
   </data>
+  <data name="SettingsContent.Content" xml:space="preserve">
+    <value>Настройки</value>
+  </data>
 </root>

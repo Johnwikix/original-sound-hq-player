@@ -44,8 +44,8 @@
         <ScrollViewer Grid.Row="1">
             <Grid
                 Padding="4,0,4,16"
-                ColumnSpacing="24"
-                RowSpacing="12">
+                ColumnSpacing="16"
+                RowSpacing="8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="300" />
                     <ColumnDefinition Width="300" />
@@ -67,28 +67,48 @@
                     Grid.Column="0"
                     Spacing="4">
                     <TextBlock
-                        x:Uid="AutoLyricMatching"
-                        FontSize="14"
-                        FontWeight="SemiBold" />
-                    <ToggleSwitch IsOn="{x:Bind VM.IsAutoLyricsEnabled, Mode=TwoWay}" />
+                        x:Uid="SettingOutputDevice"
+                        Grid.Column="0"
+                        VerticalAlignment="Center"
+                        FontSize="14" />
+                    <ComboBox
+                        x:Name="OutputDeviceComboBox"
+                        Grid.Column="1"
+                        Width="300"
+                        VerticalAlignment="Center"
+                        ItemsSource="{x:Bind VM.BassOutputDevices, Mode=OneWay}"
+                        SelectedItem="{x:Bind VM.SelectedDevice, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="model:BassOutputDevice">
+                                <TextBlock Text="{x:Bind Tag}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                 </StackPanel>
                 <StackPanel
                     Grid.Row="0"
                     Grid.Column="1"
                     Spacing="4">
                     <TextBlock
-                        x:Uid="EnableAdvancedLyricsEffect"
+                        x:Uid="TargetFrameRate"
                         FontSize="14"
-                        FontWeight="SemiBold"
-                        TextWrapping="Wrap" />
-                    <TextBlock
-                        FontSize="12"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}"
-                        TextWrapping="Wrap" />
-                    <ToggleSwitch IsOn="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=TwoWay}" />
+                        FontWeight="SemiBold" />
+                    <ComboBox
+                        Width="300"
+                        HorizontalAlignment="Left"
+                        IsEnabled="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=OneWay}"
+                        ItemsSource="{x:Bind VM.TargetFrameRateOptions}"
+                        SelectedItem="{x:Bind VM.TargetFrameRate, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="x:Double">
+                                <TextBlock>
+                                    <Run Text="{x:Bind Mode=OneWay}" />
+                                    <Run Text=" hz" />
+                                </TextBlock>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
                 </StackPanel>
-
                 <!--  Row 1: ComboBox ↔ ComboBox  -->
                 <StackPanel
                     Grid.Row="1"
@@ -429,26 +449,30 @@
                     Grid.Column="0"
                     Spacing="4">
                     <TextBlock
-                        x:Uid="TargetFrameRate"
+                        x:Uid="EnableAdvancedLyricsEffect"
+                        FontSize="14"
+                        FontWeight="SemiBold"
+                        TextWrapping="Wrap" />
+                    <TextBlock
+                        FontSize="12"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}"
+                        TextWrapping="Wrap" />
+                    <ToggleSwitch IsOn="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=TwoWay}" />
+                </StackPanel>
+                <StackPanel
+                    Grid.Row="7"
+                    Grid.Column="1"
+                    Spacing="4">
+                    <TextBlock
+                        x:Uid="FluidBackground"
                         FontSize="14"
                         FontWeight="SemiBold" />
-                    <ComboBox
-                        Width="300"
-                        HorizontalAlignment="Left"
-                        IsEnabled="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=OneWay}"
-                        ItemsSource="{x:Bind VM.TargetFrameRateOptions}"
-                        SelectedItem="{x:Bind VM.TargetFrameRate, Mode=TwoWay}">
-                        <ComboBox.ItemTemplate>
-                            <DataTemplate x:DataType="x:Double">
-                                <TextBlock>
-                                    <Run Text="{x:Bind Mode=OneWay}" />
-                                    <Run Text=" hz" />
-                                </TextBlock>
-                            </DataTemplate>
-                        </ComboBox.ItemTemplate>
-                    </ComboBox>
+                    <ToggleSwitch
+                        Grid.Column="1"
+                        MinWidth="0"
+                        IsOn="{x:Bind VM.IsFluidBackgroundEnabled, Mode=TwoWay}" />
                 </StackPanel>
-
             </Grid>
         </ScrollViewer>
     </Grid>

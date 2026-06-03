@@ -978,4 +978,7 @@
   <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
     <value>高度な歌詞エフェクトを有効にする（CPU・GPU 負荷が増加します）</value>
   </data>
+  <data name="SettingsContent.Content" xml:space="preserve">
+    <value>設定</value>
+  </data>
 </root>

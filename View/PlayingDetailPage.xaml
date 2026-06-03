@@ -309,8 +309,8 @@
                             VerticalAlignment="Center"
                             Background="Transparent"
                             BorderBrush="Transparent"
-                            Click="SettingsButton_Click"
                             BorderThickness="0"
+                            Click="SettingsButton_Click"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon
                                 Grid.Column="0"
@@ -319,9 +319,9 @@
                                 FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
                                 Glyph="&#xF035;" />
                             <ToolTipService.ToolTip>
-                                <ToolTip x:Uid="LyricsTimeOffset" />
+                                <ToolTip x:Uid="SettingsContent" />
                             </ToolTipService.ToolTip>
-                            </Button>
+                        </Button>
                     </Grid>
                 </Grid>
                 <StackPanel
