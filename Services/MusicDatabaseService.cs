@@ -47,6 +47,7 @@ namespace WinUIMusicPlayer.Services
             {
                 _dbConnection = new SQLiteAsyncConnection(DbPath);
                 await _dbConnection.CreateTableAsync<Music>();
+                await _dbConnection.CreateTableAsync<MusicLyrics>();
                 await _dbConnection.CreateTableAsync<Folder>();
                 await _dbConnection.CreateTableAsync<SavePlayState>();
                 await _dbConnection.CreateTableAsync<SaveEqualizer>();
@@ -58,6 +59,7 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.CreateTableAsync<UsbDeviceSubFolder>();
             }
             AppViewModel = App.Services.GetRequiredService<AppViewModel>();
+            await MigrateLyricsAsync();
         }
 
         private void InitalizeDbPath()
@@ -266,6 +268,46 @@ namespace WinUIMusicPlayer.Services
         public async Task UpdateMusicInfo(Music music)
         {
             await _dbConnection.UpdateAsync(music);
+        }
+
+        private async Task MigrateLyricsAsync()
+        {
+            var settings = await GetSettings();
+            if (settings.IsLyricsMigrated)
+                return;
+
+            var rowCount = await _dbConnection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM MusicLyrics LIMIT 1");
+            if (rowCount > 0)
+            {
+                settings.IsLyricsMigrated = true;
+                await UpdateSettings(settings);
+                return;
+            }
+
+            await _dbConnection.ExecuteAsync(
+                "INSERT INTO MusicLyrics (MusicId, Lyrics, TranslatedLyrics, Krc, TKrc) SELECT Id, Lyrics, TranslatedLyrics, Krc, TKrc FROM Music WHERE Lyrics IS NOT NULL OR TranslatedLyrics IS NOT NULL OR Krc IS NOT NULL OR TKrc IS NOT NULL");
+
+            settings.IsLyricsMigrated = true;
+            await UpdateSettings(settings);
+        }
+
+        public async Task<(string? lyrics, string? transLrc, string? krc, string? tKrc)> GetLyricsAsync(int musicId)
+        {
+            var lyrics = await _dbConnection.FindAsync<MusicLyrics>(musicId);
+            return (lyrics?.Lyrics, lyrics?.TranslatedLyrics, lyrics?.Krc, lyrics?.TKrc);
+        }
+
+        public async Task SaveLyricsAsync(int musicId, string? lyrics, string? transLrc, string? krc, string? tKrc)
+        {
+            await _dbConnection.InsertOrReplaceAsync(new MusicLyrics
+            {
+                MusicId = musicId,
+                Lyrics = lyrics ?? "",
+                TranslatedLyrics = transLrc ?? "",
+                Krc = krc ?? "",
+                TKrc = tKrc ?? ""
+            });
         }
 
         public IEnumerable<PlayListMusicItem> GetMusicByPlayListIdFromMem(int playListId, string search = null)
@@ -1058,10 +1100,6 @@ namespace WinUIMusicPlayer.Services
                 music.BitRate = newMusic.BitRate;
                 music.SampleRate = newMusic.SampleRate;
                 music.Channel = newMusic.Channel;
-                if (string.IsNullOrEmpty(music.Lyrics))
-                {
-                    music.Lyrics = newMusic.Lyrics;
-                }
                 music.TrackNumber = newMusic.TrackNumber;
                 music.DiskNumber = newMusic.DiskNumber;
                 music.Year = newMusic.Year;

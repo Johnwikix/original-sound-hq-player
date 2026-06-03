@@ -1,10 +1,12 @@
 ﻿using ManagedBass;
 using ManagedBass.Enc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 using WinUIMusicPlayer.Manager;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.AudioConverters
@@ -250,8 +252,9 @@ namespace WinUIMusicPlayer.AudioConverters
         {
             try
             {
+                var (lyricsText, _, krcText, _) = App.Services.GetRequiredService<MusicDatabaseService>().GetLyricsAsync(music.Id).GetAwaiter().GetResult();
                 byte[] pic = ToolUtils.GetRawImage(music).Result;
-                ToolUtils.SaveMetaData(music, outputPath, pic);
+                ToolUtils.SaveMetaData(music, outputPath, pic, lyricsText, krcText);
             }
             catch (Exception ex)
             {

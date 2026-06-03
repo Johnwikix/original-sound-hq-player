@@ -234,7 +234,7 @@
                                             HorizontalAlignment="Stretch"
                                             BorderThickness="0"
                                             ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                            Text="{x:Bind MusicDetail.Lyrics, Mode=TwoWay}"
+                                            Text="{x:Bind LyricsText, Mode=TwoWay}"
                                             TextWrapping="Wrap" />
                                     </PivotItem>
                                     <PivotItem>
@@ -248,7 +248,7 @@
                                             HorizontalAlignment="Stretch"
                                             BorderThickness="0"
                                             ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                            Text="{x:Bind MusicDetail.TranslatedLyrics, Mode=TwoWay}"
+                                            Text="{x:Bind TranslatedLyricsText, Mode=TwoWay}"
                                             TextWrapping="Wrap" />
                                     </PivotItem>
                                     <PivotItem>
@@ -262,7 +262,7 @@
                                             HorizontalAlignment="Stretch"
                                             BorderThickness="0"
                                             ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                            Text="{x:Bind MusicDetail.Krc, Mode=TwoWay}"
+                                            Text="{x:Bind KrcText, Mode=TwoWay}"
                                             TextWrapping="Wrap" />
                                     </PivotItem>
                                     <PivotItem>
@@ -276,7 +276,7 @@
                                             HorizontalAlignment="Stretch"
                                             BorderThickness="0"
                                             ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                            Text="{x:Bind MusicDetail.TKrc, Mode=TwoWay}"
+                                            Text="{x:Bind TKrcText, Mode=TwoWay}"
                                             TextWrapping="Wrap" />
                                     </PivotItem>
                                 </Pivot>

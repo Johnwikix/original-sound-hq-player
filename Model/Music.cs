@@ -36,10 +36,6 @@ namespace WinUIMusicPlayer.Model
         public bool IsFavorite { get; set => SetProperty(ref field, value); } = false;
         public int TrackNumber { get; set => SetProperty(ref field, value); } = 0;
         public int DiskNumber { get; set => SetProperty(ref field, value); } = 0;
-        public string Lyrics { get; set => SetProperty(ref field, value); } = string.Empty;
-        public string TranslatedLyrics { get; set => SetProperty(ref field, value); } = string.Empty;
-        public string Krc { get; set => SetProperty(ref field, value); } = string.Empty;
-        public string TKrc { get; set => SetProperty(ref field, value); } = string.Empty;
         public int LyricsOffsetMs
         {
             get;

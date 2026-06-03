@@ -163,7 +163,7 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static void SaveMetaData(Music music, string filePath, byte[] pic)
+        public static void SaveMetaData(Music music, string filePath, byte[] pic, string? lyricsText = null, string? krcText = null)
         {
             Settings.FileBufferSize = 1024 * 256;
             Track theTrack = new(filePath)
@@ -177,10 +177,10 @@ namespace WinUIMusicPlayer.Utils
             };
             theTrack.EmbeddedPictures.Clear();
             theTrack.EmbeddedPictures.Add(PictureInfo.fromBinaryData(pic));
-            string[] lines = music.Lyrics.Split([Environment.NewLine], StringSplitOptions.None);
+            string[] lines = (lyricsText ?? "").Split([Environment.NewLine], StringSplitOptions.None);
             if (lines.Length == 0)
             {
-                lines = music.Krc.Split([Environment.NewLine], StringSplitOptions.None);
+                lines = (krcText ?? "").Split([Environment.NewLine], StringSplitOptions.None);
             }
             theTrack.Lyrics = new List<LyricsInfo>(lines.Length);
             foreach (string line in lines)
@@ -785,7 +785,6 @@ namespace WinUIMusicPlayer.Utils
                     TrackNumber = trackNumber,
                     DiskNumber = diskNumber,
                     Year = year,
-                    Lyrics = lyrics,
                     CreateTime = ToolUtils.GetSafeFileCreateTime(file.Path),
                     UpdateTime = ToolUtils.GetSafeFileUpdateTime(file.Path)
                 };
@@ -815,7 +814,6 @@ namespace WinUIMusicPlayer.Utils
                         Channel = wavFileInfo.ChannelCount,
                         TrackNumber = wavFileInfo.TrackNumber,
                         DiskNumber = wavFileInfo.DiskNumber,
-                        Lyrics = wavFileInfo.Lyrics,
                         CreateTime = ToolUtils.GetSafeFileCreateTime(file.Path),
                         UpdateTime = ToolUtils.GetSafeFileUpdateTime(file.Path)
                     };

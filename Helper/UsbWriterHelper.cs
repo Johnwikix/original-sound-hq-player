@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Helper
@@ -82,13 +84,14 @@ namespace WinUIMusicPlayer.Helper
                             File.Copy(sourceFilePath, targetFilePath, true);
                         });
                         Console.WriteLine($"已将 {sourceFilePath} 复制到 {targetFilePath}");
-                        if (!string.IsNullOrEmpty(music.Lyrics))
+                        var (lyricsText, _, _, _) = await App.Services.GetRequiredService<MusicDatabaseService>().GetLyricsAsync(music.Id);
+                        if (!string.IsNullOrEmpty(lyricsText))
                         {
                             await Task.Run(() =>
                             {
                                 string lrcFileName = Path.ChangeExtension(sanitizedFileName, ".lrc");
                                 string lrcFilePath = Path.Combine(targetBasePath, lrcFileName);
-                                File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(music.Lyrics));
+                                File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(lyricsText));
                                 Console.WriteLine($"已创建歌词文件: {lrcFilePath}");
                             });
                         }

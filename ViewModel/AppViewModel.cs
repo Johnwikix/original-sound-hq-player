@@ -914,10 +914,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(item);
                     (string krc, string tKrc) = await ToolUtils.GetKrcFromNet(item);
-                    item.Lyrics = lyrics;
-                    item.TranslatedLyrics = transLrc;
-                    item.Krc = krc ?? string.Empty;
-                    item.TKrc = tKrc ?? string.Empty;
+                    await _musicDatabaseService.SaveLyricsAsync(item.Id, lyrics, transLrc, krc ?? "", tKrc ?? "");
                     await _musicDatabaseService.UpdateMusicInfo(item);
                 }
             }

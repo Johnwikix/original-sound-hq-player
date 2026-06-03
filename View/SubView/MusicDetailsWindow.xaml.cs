@@ -65,6 +65,54 @@ namespace WinUIMusicPlayer.View.SubView
                 }
             }
         } = false;
+        public string LyricsText
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged();
+                }
+            }
+        } = "";
+        public string TranslatedLyricsText
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged();
+                }
+            }
+        } = "";
+        public string KrcText
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged();
+                }
+            }
+        } = "";
+        public string TKrcText
+        {
+            get;
+            set
+            {
+                if (field != value)
+                {
+                    field = value;
+                    OnPropertyChanged();
+                }
+            }
+        } = "";
         private NotificationService NotificationService { get; set; }
         private byte[] AlbumCoverData { get; set; } = null;
         private nint hwnd;
@@ -139,9 +187,14 @@ namespace WinUIMusicPlayer.View.SubView
             themeStyleHelper.SetAppTheme();
         }
 
-        private void InitalizeData(Music music)
+        private async void InitalizeData(Music music)
         {
             MusicDetail = music;
+            var (lyrics, trans, krc, tKrc) = await App.Services.GetRequiredService<MusicDatabaseService>().GetLyricsAsync(music.Id);
+            LyricsText = lyrics ?? "";
+            TranslatedLyricsText = trans ?? "";
+            KrcText = krc ?? "";
+            TKrcText = tKrc ?? "";
             AlbumCoverData = ToolUtils.GetRawImage(music, true).Result;
             DispatcherQueue.TryEnqueue(async () =>
             {
@@ -200,11 +253,13 @@ namespace WinUIMusicPlayer.View.SubView
         {
             try
             {
-                await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(MusicDetail);
+                var db = App.Services.GetRequiredService<MusicDatabaseService>();
+                await db.SaveLyricsAsync(MusicDetail.Id, LyricsText, TranslatedLyricsText, KrcText, TKrcText);
+                await db.UpdateMusicInfo(MusicDetail);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"SaveToDataBaseButton_Click ¸üÐÂÒôÀÖÐÅÏ¢Ê§°Ü: {ex.Message}");
+                _logger.LogError(ex, $"SaveToDataBaseButton_Click ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢Ê§ï¿½ï¿½: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
             this.Close();
@@ -215,15 +270,17 @@ namespace WinUIMusicPlayer.View.SubView
             try
             {
                 IsLoading = true;
-                ToolUtils.SaveMetaData(MusicDetail, MusicDetail.Path, AlbumCoverData);
+                ToolUtils.SaveMetaData(MusicDetail, MusicDetail.Path, AlbumCoverData, LyricsText, KrcText);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"UpdateFile ¸üÐÂÎÄ¼þÊ§°Ü: {ex.Message}");
+                _logger.LogError(ex, $"UpdateFile ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½Ê§ï¿½ï¿½: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
             MusicDetail.UpdateTime = updateTime;
-            await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(MusicDetail);
+            var dbUpdate = App.Services.GetRequiredService<MusicDatabaseService>();
+            await dbUpdate.SaveLyricsAsync(MusicDetail.Id, LyricsText, TranslatedLyricsText, KrcText, TKrcText);
+            await dbUpdate.UpdateMusicInfo(MusicDetail);
             if (AppData.albumCoverCache.ContainsKey(MusicDetail.Album) && AlbumCoverBitmap is not null)
             {
                 AppData.albumCoverCache[MusicDetail.Album] = AlbumCoverBitmap;
@@ -240,7 +297,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"ConfirmButton_Click ¸üÐÂÎÄ¼þÊ§°Ü: {ex.Message}");
+                _logger.LogError(ex, $"ConfirmButton_Click ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½Ê§ï¿½ï¿½: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
             this.Close();
@@ -266,10 +323,10 @@ namespace WinUIMusicPlayer.View.SubView
         {
             (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(MusicDetail);
             (string krc, string tKrc) = await ToolUtils.GetKrcFromNet(MusicDetail);
-            MusicDetail.Lyrics = lyrics ?? string.Empty;
-            MusicDetail.TranslatedLyrics = transLrc ?? string.Empty;
-            MusicDetail.Krc = krc ?? string.Empty;
-            MusicDetail.TKrc = tKrc ?? string.Empty;
+            LyricsText = lyrics ?? string.Empty;
+            TranslatedLyricsText = transLrc ?? string.Empty;
+            KrcText = krc ?? string.Empty;
+            TKrcText = tKrc ?? string.Empty;
             if (string.IsNullOrEmpty(lyrics) && string.IsNullOrEmpty(transLrc) && string.IsNullOrEmpty(krc) && string.IsNullOrEmpty(tKrc))
             {
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ToolUtils.GetString("FailedObtainLyrics"));
@@ -282,43 +339,43 @@ namespace WinUIMusicPlayer.View.SubView
             string sanitizedFileName = Path.GetFileNameWithoutExtension(MusicDetail.Path);
             string? targetBasePath = Path.GetDirectoryName(MusicDetail.Path);
             if (targetBasePath is null) { return; }
-            if (!string.IsNullOrEmpty(MusicDetail.Krc))
+            if (!string.IsNullOrEmpty(KrcText))
             {
                 _ = Task.Run(() =>
                 {
                     string lrcFileName = Path.ChangeExtension(sanitizedFileName, ".lrc");
                     string lrcFilePath = Path.Combine(targetBasePath, lrcFileName);
-                    System.IO.File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(MusicDetail.Krc));
+                    System.IO.File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(KrcText));
                     ToolUtils.OpenFileInExplorer(lrcFilePath);
                 });
-                if (!string.IsNullOrEmpty(MusicDetail.TKrc))
+                if (!string.IsNullOrEmpty(TKrcText))
                 {
                     _ = Task.Run(() =>
                     {
                         string newFileName = $"{sanitizedFileName}_Translated.lrc";
                         string lrcFilePath = Path.Combine(targetBasePath, newFileName);
-                        System.IO.File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(MusicDetail.TKrc));
+                        System.IO.File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(TKrcText));
                         ToolUtils.OpenFileInExplorer(lrcFilePath);
                     });
                 }
                 return;
             }
-            if (!string.IsNullOrEmpty(MusicDetail.Lyrics))
+            if (!string.IsNullOrEmpty(LyricsText))
             {
                 _ = Task.Run(() =>
                 {
                     string lrcFileName = Path.ChangeExtension(sanitizedFileName, ".lrc");
                     string lrcFilePath = Path.Combine(targetBasePath, lrcFileName);
-                    System.IO.File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(MusicDetail.Lyrics));
+                    System.IO.File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(LyricsText));
                     ToolUtils.OpenFileInExplorer(lrcFilePath);
                 });
-                if (!string.IsNullOrEmpty(MusicDetail.TranslatedLyrics))
+                if (!string.IsNullOrEmpty(TranslatedLyricsText))
                 {
                     _ = Task.Run(() =>
                     {
                         string newFileName = $"{sanitizedFileName}_Translated.lrc";
                         string lrcFilePath = Path.Combine(targetBasePath, newFileName);
-                        System.IO.File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(MusicDetail.TranslatedLyrics));
+                        System.IO.File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(TranslatedLyricsText));
                         ToolUtils.OpenFileInExplorer(lrcFilePath);
                     });
                 }
@@ -343,7 +400,6 @@ namespace WinUIMusicPlayer.View.SubView
                         MusicDetail.Title = music.Title;
                         MusicDetail.Author = music.Author;
                         MusicDetail.Album = music.Album;
-                        MusicDetail.Lyrics = music.Lyrics;
                         MusicDetail.TrackNumber = music.TrackNumber;
                         MusicDetail.Duration = music.Duration;
                         MusicDetail.BitDepth = music.BitDepth;
@@ -383,7 +439,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"SelectCoverImageButton_Click Ñ¡Ôñ·âÃæÍ¼Æ¬Ê§°Ü: {ex.Message}");
+                _logger.LogError(ex, $"SelectCoverImageButton_Click Ñ¡ï¿½ï¿½ï¿½ï¿½ï¿½Í¼Æ¬Ê§ï¿½ï¿½: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
         }
@@ -403,7 +459,7 @@ namespace WinUIMusicPlayer.View.SubView
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, $"SaveImageButton_Click ±£´æ·âÃæÍ¼Æ¬Ê§°Ü: {ex.Message}");
+                    _logger.LogError(ex, $"SaveImageButton_Click ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Í¼Æ¬Ê§ï¿½ï¿½: {ex.Message}");
                     NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
                 }
             }

@@ -58,8 +58,8 @@ namespace WinUIMusicPlayer.Services
 
             try
             {
-                // 防抖
                 await Task.Delay(500, ct);
+                var (lyricsText, transLrc, krc, tKrc) = await _musicDatabaseService.GetLyricsAsync(music.Id);
 
                 // 1. 本地文件（.krc / .qrc / .lrc）
                 var localLyrics = TryParseLocalLyricsFile(music, ct);
@@ -72,23 +72,26 @@ namespace WinUIMusicPlayer.Services
                 }
 
                 // 2. music.Krc 緩存（KRC/QRC 在線）
-                var krcLyrics = await TryParseKrcLyrics(music, ct);
+                var (krcLyrics, krcOut, tKrcOut) = await TryParseKrcLyricsInternal(music, krc ?? "", tKrc ?? "", ct);
                 if (krcLyrics.Count > 0)
                 {
                     music.PlayCount++;
+                    await _musicDatabaseService.SaveLyricsAsync(music.Id, lyricsText, transLrc, krcOut, tKrcOut);
                     await _musicDatabaseService.UpdateMusicInfo(music);
                     FixEndMs(krcLyrics, music.Duration.TotalMilliseconds);
                     return krcLyrics;
                 }
 
                 // 3. LRC 緩存或在線搜索（本地文件已在步驟1處理）
-                var lyrics = await ParseLrcLyrics(music, null, null, ct);
+                lyricsText ??= krcOut;
+                var (lrcLyrics, lrcOut, transOut) = await ParseLrcLyricsInternal(music, lyricsText ?? "", transLrc ?? "", null, null, ct);
 
                 ct.ThrowIfCancellationRequested();
                 music.PlayCount++;
+                await _musicDatabaseService.SaveLyricsAsync(music.Id, lrcOut, transOut, krcOut, tKrcOut);
                 await _musicDatabaseService.UpdateMusicInfo(music);
-                FixEndMs(lyrics, music.Duration.TotalMilliseconds);
-                return lyrics;
+                FixEndMs(lrcLyrics, music.Duration.TotalMilliseconds);
+                return lrcLyrics;
             }
             catch (OperationCanceledException)
             {
@@ -219,37 +222,35 @@ namespace WinUIMusicPlayer.Services
         //  KRC 解析
         // ──────────────────────────────────────────────────────────────
 
-        private async Task<List<LyricLine>> TryParseKrcLyrics(Music music, CancellationToken cancellationToken = default)
+        private async Task<(List<LyricLine> lyrics, string? krc, string? tKrc)> TryParseKrcLyricsInternal(
+            Music music, string krc, string tKrc, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(music.Krc) && AppSettings.IsAutoLyricsEnabled && !music.IsKrcSearched)
+            if (string.IsNullOrWhiteSpace(krc) && AppSettings.IsAutoLyricsEnabled && !music.IsKrcSearched)
             {
                 try
                 {
-                    var (krc, tkrc) = await App.Services.GetRequiredService<LrcService>()
+                    var (newKrc, newTKrc) = await App.Services.GetRequiredService<LrcService>()
                         .GetKrcLyricsAsync(music, cancellationToken);
-                    if (!string.IsNullOrEmpty(krc))
+                    if (!string.IsNullOrEmpty(newKrc))
                     {
-                        await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
-                        {
-                            music.Krc = krc;
-                            music.TKrc = tkrc;
-                        });
+                        krc = newKrc;
+                        tKrc = newTKrc ?? "";
                     }
                     music.IsKrcSearched = true;
                 }
                 catch (OperationCanceledException) { }
             }
 
-            if (string.IsNullOrWhiteSpace(music.Krc)) return [];
+            if (string.IsNullOrWhiteSpace(krc)) return ([], krc, tKrc);
 
-            var lyrics = IsQrcFormat(music.Krc)
-                ? ParseQrcLyrics(music.Krc, cancellationToken)
-                : ParseKrcLyrics(music.Krc, cancellationToken);
+            var lyrics = IsQrcFormat(krc)
+                ? ParseQrcLyrics(krc, cancellationToken)
+                : ParseKrcLyrics(krc, cancellationToken);
 
-            if (lyrics.Count > 0 && !string.IsNullOrWhiteSpace(music.TKrc))
-                MergeTranslation(lyrics, music.TKrc);
+            if (lyrics.Count > 0 && !string.IsNullOrWhiteSpace(tKrc))
+                MergeTranslation(lyrics, tKrc);
 
-            return lyrics;
+            return (lyrics, krc, tKrc);
         }
 
         /// <summary>
@@ -579,12 +580,13 @@ namespace WinUIMusicPlayer.Services
         /// 從 music.Lyrics 緩存或在線搜索獲取內容，並自動判斷格式（LRC/KRC/QRC）解析。
         /// 本地文件已由 TryParseLocalLyricsFile 處理，此處不再讀取本地文件。
         /// </summary>
-        public async Task<List<LyricLine>> ParseLrcLyrics(Music music, string? lrcContent, string? transLrcStr = null, CancellationToken cancellationToken = default)
+        private async Task<(List<LyricLine> lyrics, string? lrc, string? trans)> ParseLrcLyricsInternal(
+            Music music, string lrcContent, string transLrcStr, string? providedLrc, string? providedTrans, CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(lrcContent))
             {
-                lrcContent = music.Lyrics;
-                transLrcStr = string.IsNullOrWhiteSpace(transLrcStr) ? music.TranslatedLyrics : transLrcStr;
+                lrcContent = providedLrc;
+                transLrcStr = string.IsNullOrWhiteSpace(transLrcStr) ? providedTrans : transLrcStr;
 
                 if (string.IsNullOrWhiteSpace(lrcContent) && AppSettings.IsAutoLyricsEnabled && !music.IsLrcSearched)
                 {
@@ -596,11 +598,6 @@ namespace WinUIMusicPlayer.Services
                         {
                             lrcContent = lyric;
                             transLrcStr = trans;
-                            await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
-                            {
-                                music.Lyrics = lyric;
-                                music.TranslatedLyrics = trans;
-                            });
                         }
                         music.IsLrcSearched = true;
                     }
@@ -614,10 +611,10 @@ namespace WinUIMusicPlayer.Services
             {
                 var parsed = ParseByFormat(lrcContent, transLrcStr, cancellationToken);
                 if (parsed is { Count: > 0 })
-                    return parsed;
+                    return (parsed, lrcContent, transLrcStr);
             }
 
-            return [new LyricLine { StartMs = 0, IsCurrent = true }];
+            return ([new LyricLine { StartMs = 0, IsCurrent = true }], lrcContent, transLrcStr);
         }
 
         // ──────────────────────────────────────────────────────────────
