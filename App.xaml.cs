@@ -103,7 +103,7 @@ namespace WinUIMusicPlayer
         /// </summary>
         public App()
         {
-            GCSettings.LatencyMode = GCLatencyMode.Interactive;
+            GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
             this.InitializeComponent();
             Services = _host.Services;
             _logger = Services.GetRequiredService<ILogger<App>>();
@@ -203,7 +203,7 @@ namespace WinUIMusicPlayer
                     Environment.Exit(0);
                     return;
                 }
-                Process.StartAndForget(new ProcessStartInfo
+                Process.Start(new ProcessStartInfo
                 {
                     FileName = "BassPlayerSharp.exe",
                     CreateNoWindow = true,

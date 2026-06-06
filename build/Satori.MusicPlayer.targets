@@ -1,0 +1,73 @@
+﻿<Project>
+  <Import Project="Satori.targets" />
+  <PropertyGroup>
+    <UseSatoriCoreLibOverride>true</UseSatoriCoreLibOverride>
+    <UseSatoriNativeRuntimeOverride>true</UseSatoriNativeRuntimeOverride>
+  </PropertyGroup>
+
+  <!--
+    MSIX self-contained bundles the .NET runtime DLLs into the Appx payload via
+    PackagingOutputs. Satori.targets adds Satori copies of clrjit.dll / coreclr.dll /
+    System.Private.CoreLib.dll to RuntimePackAsset, but the originals also land in
+    PackagingOutputs with the same TargetPath, causing APPX1101. Strip the originals.
+
+    Sources of the originals:
+      - clrjit.dll, coreclr.dll: Microsoft.NETCore.App.Runtime.win-$(Platform) NuGet
+        (runtimes\win-$(Platform)\native\)
+      - System.Private.CoreLib.dll: R2R build output (obj\...\R2R\, only in Release
+        with PublishReadyToRun=True)
+
+    Satori copies live at obj\...\Satori\clrjit.dll etc. and are not matched by either
+    filter, so they survive and become the only versions in the Appx payload.
+
+    Trade-off: dropping the R2R CoreLib means losing ReadyToRun for the BCL (cold start).
+    Files project makes the same trade-off; for long-running apps, Satori's GC wins.
+  -->
+  <Target Name="ReplaceSatoriInPackagingOutputs"
+          BeforeTargets="_ComputeAppxPackagePayload"
+          DependsOnTargets="GetPackagingOutputs"
+          Condition="'$(EnableMsixTooling)' == 'true'">
+    <ItemGroup>
+      <PackagingOutputs Remove="@(PackagingOutputs)"
+          Condition=" ( '%(Filename)' == 'clrjit' Or '%(Filename)' == 'coreclr' )
+                    And $([System.String]::Copy('%(Identity)').Contains('microsoft.netcore.app.runtime.win-'))" />
+      <PackagingOutputs Remove="@(PackagingOutputs)"
+          Condition=" '%(Filename)%(Extension)' == 'System.Private.CoreLib.dll'
+                    And ( $([System.String]::Copy('%(Identity)').Contains('\R2R\'))
+                          Or $([System.String]::Copy('%(Identity)').Contains('microsoft.netcore.app.runtime.win-')) ) " />
+    </ItemGroup>
+  </Target>
+
+  <!--
+    Satori.targets's strategy of injecting clrjit.dll / coreclr.dll via RuntimePackAsset with
+    AssetType=native works for MSIX self-contained (those DLLs flow into the payload). But
+    System.Private.CoreLib.dll with AssetType=runtime is NOT copied via the standard
+    RuntimePackAsset path - it must come in as a project output (via BuiltProjectOutputGroup
+    for the R2R version) and the .NET SDK excludes RuntimePackAsset runtime assets from
+    the copy-to-output flow. So the Satori CoreLib never reaches the Appx payload or the
+    AppX staging layout.
+
+    Fix: add the Satori CoreLib directly to PackagingOutputs so it flows into the .msix,
+    and also copy it into the AppX staging layout so the .exe can be smoke-tested from there.
+  -->
+  <Target Name="AddSatoriCoreLibToPayload"
+          AfterTargets="GetPackagingOutputs"
+          BeforeTargets="_ComputeAppxPackagePayload"
+          Condition="'$(EnableMsixTooling)' == 'true' And '$(UseSatoriCoreLibOverride)' == 'true' And Exists('$(MSBuildProjectDirectory)\$(IntermediateOutputPath)Satori\System.Private.CoreLib.dll')">
+    <ItemGroup>
+      <PackagingOutputs Include="$(MSBuildProjectDirectory)\$(IntermediateOutputPath)Satori\System.Private.CoreLib.dll">
+        <TargetPath>System.Private.CoreLib.dll</TargetPath>
+        <OutputGroup>SatoriCoreLib</OutputGroup>
+      </PackagingOutputs>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="CopySatoriCoreLibToAppXLayout"
+          AfterTargets="_ComputeAppxPackagePayload"
+          Condition="'$(EnableMsixTooling)' == 'true' And '$(UseSatoriCoreLibOverride)' == 'true' And Exists('$(MSBuildProjectDirectory)\$(IntermediateOutputPath)Satori\System.Private.CoreLib.dll') And '$(LayoutDir)' != ''">
+    <Copy SourceFiles="$(MSBuildProjectDirectory)\$(IntermediateOutputPath)Satori\System.Private.CoreLib.dll"
+          DestinationFolder="$(LayoutDir)"
+          OverwriteReadOnlyFiles="true"
+          SkipUnchangedFiles="false" />
+  </Target>
+</Project>
