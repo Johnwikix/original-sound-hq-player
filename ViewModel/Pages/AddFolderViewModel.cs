@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.System;
+using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using ZLinq;
@@ -80,7 +81,12 @@ namespace WinUIMusicPlayer.ViewModel
             if (folder is not null)
             {
                 await Task.Run(() => _musicDatabaseService.CheckFolderBeforeAdd(folder));
-                await AppViewModel.SongsSource.ReplaceAllAsync(await _musicDatabaseService.GetMusicListAsync());
+                var list = await _musicDatabaseService.GetMusicListAsync();
+                await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+                {
+                    AppViewModel.SongsSource.Clear();
+                    AppViewModel.SongsSource.AddRange(list);
+                });
                 await LoadFoldersAsync();
             }
         }
@@ -88,7 +94,12 @@ namespace WinUIMusicPlayer.ViewModel
         public async Task RemoveFolderButton_Click(int folderId)
         {
             await Task.Run(() => _musicDatabaseService.RemoveFolder(folderId));
-            await AppViewModel.SongsSource.ReplaceAllAsync(await _musicDatabaseService.GetMusicListAsync());
+            var list = await _musicDatabaseService.GetMusicListAsync();
+            await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+            {
+                AppViewModel.SongsSource.Clear();
+                AppViewModel.SongsSource.AddRange(list);
+            });
             await LoadFoldersAsync();
         }
 

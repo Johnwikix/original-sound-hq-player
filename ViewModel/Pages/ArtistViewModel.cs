@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.ObjectModel;
+using ObservableCollections;
 using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
@@ -17,7 +18,7 @@ namespace WinUIMusicPlayer.ViewModel
     public partial class ArtistViewModel : ObservableObject
     {
         public Music SelectedItem { get; set => SetProperty(ref field, value); }
-        public ObservableCollection<MenuModel> ArtistMenuOptions { get; set => SetProperty(ref field, value); } = [];
+        public ObservableList<MenuModel> ArtistMenuOptions { get; set => SetProperty(ref field, value); } = [];
         private MusicBrowseViewModel? _musicBrowseViewModel { get; }
         public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
@@ -103,7 +104,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (_musicBrowseViewModel is not null)
                 {
-                    AppViewModel.SequentialPlayingList = new(artists);
+                    AppViewModel.SetPlayingFrom(artists);
                     await _musicBrowseViewModel.PlayMusic(music: artists[0], IsChangeList: true);
                 }
             }

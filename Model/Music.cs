@@ -63,25 +63,26 @@ namespace WinUIMusicPlayer.Model
         [RelayCommand]
         public async Task Play(string page)
         {
+            var app = App.Services.GetRequiredService<AppViewModel>();
             switch (page)
             {
                 case "FavoriteSongsView":
-                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().FavoriteSongs);
+                    app.SetPlayingFrom(app.FavoriteSongs);
                     break;
                 case "PlayListSongs":
-                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().PlayListSongs.Select(x => x.Music));
+                    app.SetPlayingFrom(app.PlayListSongs.Select(x => x.Music));
                     break;
                 case "SongsSourceView":
-                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().ListSongs);
+                    app.SetPlayingFrom(app.ListSongs);
                     break;
                 case "AlbumSongsView":
-                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().AlbumSongs);
+                    app.SetPlayingFrom(app.AlbumSongs);
                     break;
                 case "ArtistSongsView":
-                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().ArtistSongs);
+                    app.SetPlayingFrom(app.ArtistSongs);
                     break;
                 case "FolderSongsView":
-                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().FolderSongs);
+                    app.SetPlayingFrom(app.FolderSongs);
                     break;
             }
             await App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(music: this, IsChangeList: true);

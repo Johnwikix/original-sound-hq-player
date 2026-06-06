@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using System.Threading;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
@@ -42,7 +43,9 @@ namespace WinUIMusicPlayer.Services
             await App.Services.GetRequiredService<IpcService>().InitializeMusic(App.Services.GetRequiredService<AppViewModel>().CurrentPlayingMusic);
             App.MainWindow.ShowMainPage();
             AppData.AppDpiScale = WindowSizeHelper.GetScaleFactor(AppData.HWnd);
-            App.Services.GetRequiredService<AppViewModel>().IsInitialized = true;
+            var appViewModel = App.Services.GetRequiredService<AppViewModel>();
+            await App.MainWindow.DispatcherQueue.EnqueueAsync(() => appViewModel.RefreshDataSource());
+            appViewModel.IsInitialized = true;
         }
 
         // 应用关闭时执行清理

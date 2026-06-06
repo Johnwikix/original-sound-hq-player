@@ -711,7 +711,26 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                     break;
             }
-            AppViewModel.RefreshDataSource();
+            if (AppViewModel.IsInitialized)
+            {
+                AppViewModel.RefreshDataSource();
+            }
+            if (AppData.CurrentPage == typeof(AlbumPage) && AppViewModel.ConsumeAlbumGroupSourceDirty())
+            {
+                AppViewModel.UpdateGroupedByFirstLetter(m => m.Album, m => ToolUtils.GetFirstLetterAdvanced(m.Album), AppViewModel.AlbumPageSource);
+            }
+            else if (AppData.CurrentPage == typeof(ArtistPage) && AppViewModel.ConsumeArtistGroupSourceDirty())
+            {
+                AppViewModel.UpdateGroupedByFirstLetter(m => m.Author, m => ToolUtils.GetFirstLetterAdvanced(m.Author), AppViewModel.ArtistPageSource);
+            }
+            else if (AppData.CurrentPage == typeof(FolderBrowsePage) && AppViewModel.ConsumeFolderGroupSourceDirty())
+            {
+                AppViewModel.UpdateGroupedByFirstLetter(m => m.LastLevelFolderPath, m => ToolUtils.GetFirstLetterAdvanced(m.LastLevelFolderPath), AppViewModel.FolderPageSource);
+            }
+            else if ((AppData.CurrentPage == typeof(PlayListSongPage) || AppData.CurrentPage == typeof(PlayListPage)) && AppViewModel.ConsumePlayListSongsDirty())
+            {
+                AppViewModel.RefreshPlayListSongMapping();
+            }
             var slideNavigationTransitionEffect = currentSelectedIndex - PreviousSelectedIndex > 0 ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft;
             MusicBrowsePage.NavigatePage(AppData.CurrentPage, null, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect });
             PreviousSelectedIndex = currentSelectedIndex;
@@ -737,7 +756,7 @@ namespace WinUIMusicPlayer.ViewModel
                 AppViewModel.LoadLyricsToUI(music);
                 MainPage?.UpdateCurrentPlayList();
                 AppViewModel.UpdateProgressTimerUI();
-                _ = _musicDatabaseService.SavePlayState([.. AppViewModel.SequentialPlayingList],
+                _ = _musicDatabaseService.SavePlayState([.. AppViewModel.PlayingQueueSnapshot],
                         AppViewModel.CurrentPlayMode,
                         AppViewModel.CurrentPlayingMusic?.Id,
                         (float)(AppViewModel.Volume),

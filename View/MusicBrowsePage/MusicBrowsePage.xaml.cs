@@ -196,7 +196,7 @@ namespace WinUIMusicPlayer.View
                 List<PlayList> newPlaylists = await OpenM3u8File();
                 if (newPlaylists is not null && newPlaylists.Count > 0)
                 {
-                    await ViewModel.AppViewModel.AllPlayList.AddRangeAsync(newPlaylists);
+                    ViewModel.AppViewModel.AllPlayList.AddRange(newPlaylists);
                 }
                 contentDialog.Hide();
                 customButton.Click -= buttonClickHandler;

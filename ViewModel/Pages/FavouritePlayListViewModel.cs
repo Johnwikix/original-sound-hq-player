@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using ObservableCollections;
 using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
@@ -21,7 +22,7 @@ namespace WinUIMusicPlayer.ViewModel
     {
         public Music SelectedMusic { get; set => SetProperty(ref field, value); }
         public List<Music> SelectedMusics { get; set; } = [];
-        public ObservableCollection<MenuModel> MenuOptions { get; set => SetProperty(ref field, value); } = [];
+        public ObservableList<MenuModel> MenuOptions { get; set => SetProperty(ref field, value); } = [];
         public MusicBrowseViewModel BrowseViewModel { get; set; }
         public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
@@ -149,7 +150,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (selectedMusic is not null && BrowseViewModel is not null)
             {
-                AppViewModel.SequentialPlayingList = new(AppViewModel.FavoriteSongs);
+                AppViewModel.SetPlayingFrom(AppViewModel.FavoriteSongs);
                 BrowseViewModel.PlayMusic(music: selectedMusic, IsChangeList: true).Wait();
             }
         }
@@ -158,12 +159,12 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
             {
-                AppViewModel.SequentialPlayingList = new(uniqueSelectedMusics);
+                AppViewModel.SetPlayingFrom(uniqueSelectedMusics);
                 BrowseViewModel.PlayMusic(music: uniqueSelectedMusics.AsValueEnumerable().First(), IsChangeList: true).Wait();
             }
             else
             {
-                AppViewModel.SequentialPlayingList = new(AppViewModel.FavoriteSongs);
+                AppViewModel.SetPlayingFrom(AppViewModel.FavoriteSongs);
                 BrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true).Wait();
             }
         }
@@ -239,7 +240,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (BrowseViewModel is not null)
                 {
-                    AppViewModel.SequentialPlayingList = new(AppViewModel.FavoriteSongs);
+                    AppViewModel.SetPlayingFrom(AppViewModel.FavoriteSongs);
                     BrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true).Wait();
                 }
             }
@@ -247,7 +248,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (BrowseViewModel is not null)
                 {
-                    AppViewModel.SequentialPlayingList = new(SelectedMusics);
+                    AppViewModel.SetPlayingFrom(SelectedMusics);
                     BrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true).Wait();
                 }
             }

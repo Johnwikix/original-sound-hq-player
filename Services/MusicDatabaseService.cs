@@ -15,6 +15,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.UI;
+using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
@@ -260,7 +261,11 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 var list = await _dbConnection.Table<PlayList>().ToListAsync();
-                await AppViewModel.AllPlayList.AddRangeAsync(list);
+                await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+                {
+                    AppViewModel.AllPlayList.Clear();
+                    foreach (var p in list) AppViewModel.AllPlayList.Add(p);
+                });
             }
             catch (Exception ex) { _logger.LogError(ex, $"InitalPlayListAsync 初始化播放列表失败: {ex.Message}"); }
         }
@@ -596,10 +601,18 @@ namespace WinUIMusicPlayer.Services
 
         public async Task LoadMusicList()
         {
-            await AppViewModel.SongsSource.AddRangeAsync(await GetMusicListAsync());
+            var list = await GetMusicListAsync();
+            await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+            {
+                AppViewModel.SongsSource.Clear();
+                AppViewModel.SongsSource.AddRange(list);
+            });
             await InitalPlayListAsync();
             await GetPlayListMusic();
-            AppViewModel.SequentialPlayingList = new(await LoadPlayList(AppViewModel.SongsSource));
+            await App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
+            {
+                AppViewModel.SetPlayingFrom(await LoadPlayList(AppViewModel.SongsSource));
+            });
         }
 
         public async Task<IReadOnlyCollection<Music>> GetMusicListAsync()
@@ -892,7 +905,12 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 await _dbConnection.DeleteAsync<Music>(musicId);
-                await AppViewModel.SongsSource.ReplaceAllAsync(await _dbConnection.Table<Music>().ToListAsync());
+                var remaining = await _dbConnection.Table<Music>().ToListAsync();
+                await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+                {
+                    AppViewModel.SongsSource.Clear();
+                    AppViewModel.SongsSource.AddRange(remaining);
+                });
                 var usbMusicGroups = AppData.MusicOnUsbDevice.AsValueEnumerable()
                     .GroupBy(u => u.Title)
                     .ToDictionary(g => g.Key, g => g.AsValueEnumerable().ToList());

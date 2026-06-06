@@ -120,6 +120,7 @@
     <PackageReference Include="DevWinUI.Controls" Version="9.9.4" />
     <PackageReference Include="H.NotifyIcon.WinUI" Version="2.4.1" />
     <PackageReference Include="ManagedBass" Version="4.0.2" />
+    <PackageReference Include="ObservableCollections" Version="3.3.4" />
     <PackageReference Include="ManagedBass.Asio" Version="4.0.2" />
     <PackageReference Include="ManagedBass.Dsd" Version="4.0.2" />
     <PackageReference Include="ManagedBass.Enc" Version="4.0.2" />

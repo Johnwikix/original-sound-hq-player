@@ -44,6 +44,7 @@ namespace WinUIMusicPlayer
             AppWindow.TitleBar.ExtendsContentIntoTitleBar = true;
             AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Standard;
             this.SetTitleBarBackgroundColors(Colors.Transparent);
+            DispatcherQueueCollectionEventDispatcher.Initialize(this.DispatcherQueue);
             _logger = App.GetLogger<MainWindow>();
             this.Activated += MainWindow_Activated;
             themeStyleHelper = new ThemeStyleHelper(this, AppWindow);

@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.ObjectModel;
+using ObservableCollections;
 using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
@@ -19,7 +20,7 @@ namespace WinUIMusicPlayer.ViewModel
     public partial class FolderViewModel : ObservableObject
     {
         public Music SelectedItem { get; set => SetProperty(ref field, value); }
-        public ObservableCollection<MenuModel> FolderMenuOptions { get; set => SetProperty(ref field, value); } = [];
+        public ObservableList<MenuModel> FolderMenuOptions { get; set => SetProperty(ref field, value); } = [];
         private MusicBrowseViewModel? MusicBrowseViewModel { get; set; }
         public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
@@ -119,7 +120,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (MusicBrowseViewModel is not null)
                 {
-                    AppViewModel.SequentialPlayingList = new(folders);
+                    AppViewModel.SetPlayingFrom(folders);
                     MusicBrowseViewModel.PlayMusic(music: folders[0], IsChangeList: true).Wait();
                 }
             }
