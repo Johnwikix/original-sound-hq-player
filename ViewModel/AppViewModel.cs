@@ -92,9 +92,12 @@ namespace WinUIMusicPlayer.ViewModel
         } = PlayMode.ListLoop;
 
         private readonly Random _rng = new();
+        private readonly ObservableList<Music> _currentPlayingList = new();
+        private ObservableListNotifyAdapter<Music>? _currentPlayingListAdapter;
+        public ObservableListNotifyAdapter<Music> CurrentPlayingList
+            => _currentPlayingListAdapter ??= new ObservableListNotifyAdapter<Music>(_currentPlayingList);
         private List<Music> _originalOrderSnapshot = new();
         public IReadOnlyList<Music> PlayingQueueSnapshot => _originalOrderSnapshot;
-        public ObservableCollection<Music> CurrentPlayingList { get; set; } = [];
 
         public void SetPlayingFrom(IEnumerable<Music> source)
         {
@@ -105,8 +108,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
             foreach (var m in source) snapshot.Add(m);
             _originalOrderSnapshot = new List<Music>(snapshot);
-            CurrentPlayingList.Clear();
-            foreach (var m in snapshot) CurrentPlayingList.Add(m);
+            _currentPlayingList.Clear();
+            foreach (var m in snapshot) _currentPlayingList.Add(m);
             ApplyPlayModeToCurrentList();
         }
 
@@ -114,14 +117,11 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (CurrentPlayMode == PlayMode.RandomLoop)
             {
-                var shuffled = _originalOrderSnapshot.OrderBy(_ => _rng.Next()).ToList();
-                CurrentPlayingList.Clear();
-                foreach (var m in shuffled) CurrentPlayingList.Add(m);
+                CurrentPlayingList.ShuffleInPlace(_rng);
             }
             else
             {
-                CurrentPlayingList.Clear();
-                foreach (var m in _originalOrderSnapshot) CurrentPlayingList.Add(m);
+                CurrentPlayingList.RestoreOrder(_originalOrderSnapshot);
             }
         }
 
@@ -728,39 +728,11 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                IEnumerable<Music> filteredSource = string.IsNullOrWhiteSpace(SearchText)
-                    ? SongsSource
-                    : SongsSource.AsValueEnumerable().Where(m =>
-                        (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                        (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                        (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                        (m.LastLevelFolderPath?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
+                var searchText = SearchText;
+                var sortTag = SelectedSortOption?.Tag?.ToString() ?? "DefaultOrder";
 
-                var distinctItems = filteredSource
-                    .AsValueEnumerable()
-                    .GroupBy(distinctSelector)
-                    .Select(g => g.First())
-                    .ToList();
-
-                var sortedItems = SelectedSortOption.Tag switch
-                {
-                    "A-Z" => distinctItems.OrderBy(m => m.Title),
-                    "Artist" => distinctItems.OrderBy(m => m.Author),
-                    "Album" => distinctItems.OrderBy(m => m.Album),
-                    "CreateTimeASC" => distinctItems.OrderBy(m => m.CreateTime),
-                    "CreateTimeDESC" => distinctItems.OrderByDescending(m => m.CreateTime),
-                    "UpdateTimeASC" => distinctItems.OrderBy(m => m.UpdateTime),
-                    "UpdateTimeDESC" => distinctItems.OrderByDescending(m => m.UpdateTime),
-                    "DefaultOrder" => distinctItems.OrderBy(distinctSelector),
-                    _ => distinctItems.OrderBy(distinctSelector)
-                };
-
-                var groups = sortedItems
-                    .AsValueEnumerable()
-                    .GroupBy(groupSelector)
-                    .Select(g => new MusicGroup(g.Key, g))
-                    .OrderBy(g => g.Key == "ZZZ" ? "#" : g.Key)
-                    .ToList();
+                var groups = ComputeGroupedSnapshot(distinctSelector, groupSelector, searchText, sortTag);
+                if (groups == null) return;
 
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
@@ -771,6 +743,65 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 _logger.LogError(ex, ex.Message);
             }
+        }
+
+        public Task UpdateGroupedByFirstLetterAsync(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, CollectionViewSource source)
+        {
+            try
+            {
+                var searchText = SearchText;
+                var sortTag = SelectedSortOption?.Tag?.ToString() ?? "DefaultOrder";
+                return Task.Run(() =>
+                {
+                    var groups = ComputeGroupedSnapshot(distinctSelector, groupSelector, searchText, sortTag);
+                    if (groups == null) return;
+                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        source.Source = groups;
+                    });
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message);
+                return Task.CompletedTask;
+            }
+        }
+
+        private List<MusicGroup>? ComputeGroupedSnapshot(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, string searchText, string sortTag)
+        {
+            IEnumerable<Music> filteredSource = string.IsNullOrWhiteSpace(searchText)
+                ? SongsSource
+                : SongsSource.AsValueEnumerable().Where(m =>
+                    (m.Title?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (m.Album?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (m.Author?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                    (m.LastLevelFolderPath?.Contains(searchText, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
+
+            var distinctItems = filteredSource
+                .AsValueEnumerable()
+                .GroupBy(distinctSelector)
+                .Select(g => g.First())
+                .ToList();
+
+            var sortedItems = sortTag switch
+            {
+                "A-Z" => distinctItems.OrderBy(m => m.Title),
+                "Artist" => distinctItems.OrderBy(m => m.Author),
+                "Album" => distinctItems.OrderBy(m => m.Album),
+                "CreateTimeASC" => distinctItems.OrderBy(m => m.CreateTime),
+                "CreateTimeDESC" => distinctItems.OrderByDescending(m => m.CreateTime),
+                "UpdateTimeASC" => distinctItems.OrderBy(m => m.UpdateTime),
+                "UpdateTimeDESC" => distinctItems.OrderByDescending(m => m.UpdateTime),
+                _ => distinctItems.OrderBy(distinctSelector)
+            };
+
+            return sortedItems
+                .AsValueEnumerable()
+                .GroupBy(groupSelector)
+                .Select(g => new MusicGroup(g.Key, g))
+                .OrderBy(g => g.Key == "ZZZ" ? "#" : g.Key)
+                .ToList();
         }
 
         public void AddMusicToCurrentPlayList(Music music)
@@ -1015,11 +1046,8 @@ namespace WinUIMusicPlayer.ViewModel
                 .Where(m => newIndex.ContainsKey(m))
                 .OrderBy(m => newIndex[m])
                 .ToList();
-            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-            {
-                CurrentPlayingList.Clear();
-                foreach (var m in resorted) CurrentPlayingList.Add(m);
-            });
+            if (resorted.Count != _currentPlayingList.Count) return;
+            CurrentPlayingList.RestoreOrder(resorted);
         }
 
         private void RefreshGroupedSourceIfOnBrowsePage()
@@ -1027,15 +1055,15 @@ namespace WinUIMusicPlayer.ViewModel
             var pageType = AppData.CurrentPage;
             if (pageType == typeof(AlbumPage))
             {
-                UpdateGroupedByFirstLetter(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumPageSource);
+                _ = UpdateGroupedByFirstLetterAsync(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumPageSource);
             }
             else if (pageType == typeof(ArtistPage))
             {
-                UpdateGroupedByFirstLetter(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistPageSource);
+                _ = UpdateGroupedByFirstLetterAsync(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistPageSource);
             }
             else if (pageType == typeof(FolderBrowsePage))
             {
-                UpdateGroupedByFirstLetter(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), FolderPageSource);
+                _ = UpdateGroupedByFirstLetterAsync(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), FolderPageSource);
             }
             else if (pageType == typeof(PlayListSongPage) || pageType == typeof(PlayListPage))
             {

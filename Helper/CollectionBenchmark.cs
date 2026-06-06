@@ -140,7 +140,13 @@ namespace WinUIMusicPlayer.Helper
             var list = new ObservableList<int>(n);
             for (int i = 0; i < n; i++) list.Add(i);
             var rng = new Random(42);
-            list.ShuffleInPlace(rng);
+            int count = list.Count;
+            while (count > 1)
+            {
+                count--;
+                int k = rng.Next(count + 1);
+                if (k != count) list.Move(count, k);
+            }
             return 0;
         }
 
