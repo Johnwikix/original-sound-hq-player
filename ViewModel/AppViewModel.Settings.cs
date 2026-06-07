@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using WinUIMusicPlayer.Utils;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.System;
@@ -45,7 +46,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    AlbumCoverBehavior.CoverSize = value;
+                    CoverLoadQueue.CoverSize = value;
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
@@ -61,7 +62,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    AlbumCoverBehavior.MaxCacheSize = value;
+                    CoverLoadQueue.MaxCacheSize = value;
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();

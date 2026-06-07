@@ -1027,7 +1027,7 @@ namespace WinUIMusicPlayer.Utils
                 var cacheFolder = Path.Combine(AppSettings.MusicCoverCache, "Cache");
                 if (!Directory.Exists(cacheFolder)) return;
 
-                var pattern = $"*_{AlbumCoverBehavior.CoverSize}.png";
+                var pattern = $"*_{CoverLoadQueue.CoverSize}.png";
                 var validFiles = Directory.EnumerateFiles(cacheFolder, pattern).AsValueEnumerable().ToHashSet();
 
                 foreach (var file in Directory.EnumerateFiles(cacheFolder, "*.png"))

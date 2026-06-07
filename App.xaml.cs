@@ -16,6 +16,7 @@ using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
+using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.ViewModel.Pages;
@@ -229,6 +230,7 @@ namespace WinUIMusicPlayer
                 Services.GetRequiredService<LrcService>().Dispose();
                 Services.GetRequiredService<PlayingDetailPage>().Dispose();
                 Services.GetRequiredService<AppViewModel>().Dispose();
+                CoverLoadQueue.Shutdown(TimeSpan.FromSeconds(3));
                 //_host.Dispose();
                 MainWindow.Dispose();
                 _logger?.LogInformation("应用程序退出完成");
