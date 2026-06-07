@@ -9,7 +9,9 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -29,7 +31,7 @@ namespace WinUIMusicPlayer.View
     {
         public PlayingDetailViewModel ViewModel { get; }
         private ILogger<PlayingDetailPage> _logger;
-
+        private float _dpiScale = 1.0f;
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
         {
             this.InitializeComponent();
@@ -73,15 +75,18 @@ namespace WinUIMusicPlayer.View
         private void ChangeControlsFontSize()
         {
             var windowSize = App.MainWindow.AppWindow.Size;
-            double width = windowSize.Width / AppData.AppDpiScale;
-            double effectiveSize = windowSize.Width * windowSize.Height;
+            _dpiScale = WindowSizeHelper.GetScaleFactor(AppData.HWnd);
+            ViewModel.AppViewModel.DpiValue = 96f * _dpiScale;
+            double width = windowSize.Width / _dpiScale;
+            double height = windowSize.Height / _dpiScale;
+            double effectiveSize = width * height;
             var lyrics = effectiveSize switch
             {
-                <= 1280 * 720 => 32,
-                <= 1920 * 1080 => 48,
-                <= 2560 * 1440 => 56,
-                <= 2880 * 1920 => 60,
-                _ => 84
+                <= 1280 * 720 => 48,
+                <= 1920 * 1080 => 72,
+                <= 2560 * 1440 => 84,
+                <= 2880 * 1920 => 96,
+                _ => 120
             };
 
             var (title, artist, firstSize, secondSize, shapeSize, info, margin) = width switch

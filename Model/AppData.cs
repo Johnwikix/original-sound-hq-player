@@ -26,7 +26,6 @@ namespace WinUIMusicPlayer.Model
         public static ObservableCollection<UsbStorageDevice> UsbStorageDevices { get; set; } = [];
         public static UsbStorageDevice UsbStorageDevice { get; set; } = new();
         public static IntPtr HWnd { get; set; } = IntPtr.Zero;
-        public static double AppDpiScale { get; set; } = 1.0;
         public static string SystemLanguage { get; set; } = "en";
         //public static bool IsPlayingDetail { get; set; } = false;
         public static Type CurrentPage { get; set; } = typeof(SongListPage);
