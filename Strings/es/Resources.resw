@@ -261,9 +261,7 @@
   <data name="CoverServiceLrcAPISourceAuthCode.Header" xml:space="preserve">
     <value>Código de autenticación de la API Lrc para el servicio de portadas</value>
   </data>
-  <data name="MaxCoverCacheCount.Text" xml:space="preserve">
-    <value>Cantidad de caché de portada en tiempo de ejecución</value>
-  </data>
+
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>Número máximo de portadas pre cargadas</value>
   </data>

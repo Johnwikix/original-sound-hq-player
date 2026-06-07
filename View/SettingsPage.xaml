@@ -407,29 +407,6 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
-                                    x:Uid="MaxCoverCacheCount"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <NumberBox
-                                    Grid.Column="1"
-                                    Width="300"
-                                    VerticalAlignment="Center"
-                                    LargeChange="10"
-                                    SmallChange="1"
-                                    SpinButtonPlacementMode="Inline"
-                                    Value="{x:Bind ViewModel.AppViewModel.MaxCoverCacheCount, Mode=TwoWay}" />
-                            </Grid>
-
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
                                     x:Uid="AutoCoverMatching"
                                     Grid.Column="0"
                                     VerticalAlignment="Center"

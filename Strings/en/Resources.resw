@@ -261,9 +261,7 @@
   <data name="CoverServiceLrcAPISourceAuthCode.Header" xml:space="preserve">
     <value>Cover Service LrcAPI Source Auth Code</value>
   </data>
-  <data name="MaxCoverCacheCount.Text" xml:space="preserve">
-    <value>Cover runtime cache count</value>
-  </data>
+
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>Maximum number of pre loaded covers</value>
   </data>

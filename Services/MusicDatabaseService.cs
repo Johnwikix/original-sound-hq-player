@@ -742,7 +742,6 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.Latency = settings.Latency;
                 AppViewModel.BackdropType = settings.AppStyle;
                 AppViewModel.ThemeType = settings.AppTheme;
-                AppViewModel.MaxCoverCacheCount = settings.MaxCoverCacheCount;
                 AppViewModel.IsRunningBackend = settings.IsRunningBackend;
                 AppViewModel.IsAutoLyricsEnabled = settings.IsAutoLyricsEnabled;
                 AppViewModel.IsAutoCoverEnabled = settings.IsAutoCoverEnabled;
@@ -842,7 +841,6 @@ namespace WinUIMusicPlayer.Services
             newSettings.DefualtPlayList = AppViewModel.DefaultPlayListComboBoxTag;
             newSettings.AppStyle = AppViewModel.BackdropType;
             newSettings.AppTheme = AppViewModel.ThemeType;
-            newSettings.MaxCoverCacheCount = AppViewModel.MaxCoverCacheCount;
             newSettings.IsRunningBackend = AppViewModel.IsRunningBackend;
             newSettings.IsAutoLyricsEnabled = AppViewModel.IsAutoLyricsEnabled;
             newSettings.IsAutoCoverEnabled = AppViewModel.IsAutoCoverEnabled;

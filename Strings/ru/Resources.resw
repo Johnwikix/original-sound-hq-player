@@ -261,9 +261,7 @@
   <data name="CoverServiceLrcAPISourceAuthCode.Header" xml:space="preserve">
     <value>Код авторизации CoverServiceLrcAPI</value>
   </data>
-  <data name="MaxCoverCacheCount.Text" xml:space="preserve">
-    <value>Количество кэша обложки во время выполнения</value>
-  </data>
+
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>Макс. количество 미리 загруженных обложек</value>
   </data>

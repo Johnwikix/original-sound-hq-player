@@ -66,13 +66,6 @@ public class AlbumCoverBehavior : Behavior<Image>
 
         if (music == null || AssociatedObject == null) return;
 
-        if (CoverLoadQueue.TryGetCached(music, out var cached) && cached != null)
-        {
-            AssociatedObject.Opacity = 1;
-            AssociatedObject.Source = cached;
-            return;
-        }
-
         AssociatedObject.Opacity = 0;
         _cts = new CancellationTokenSource();
         var token = _cts.Token;

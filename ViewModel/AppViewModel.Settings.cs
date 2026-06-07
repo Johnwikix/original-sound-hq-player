@@ -55,22 +55,6 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = 0;
 
-        public int MaxCoverCacheCount
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    CoverLoadQueue.MaxCacheSize = value;
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = 0;
-
         public bool IsWin2dCoverImageControlEnable
         {
             get => field;

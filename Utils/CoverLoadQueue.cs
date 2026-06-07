@@ -29,7 +29,10 @@ internal static class CoverLoadQueue
     public static int WorkerCount { get; set; } = 2;
 
     public static int CoverSize { get; set; } = 150;
-    public static int MaxCacheSize { get; set; } = 0;
+
+    public static TimeSpan CleanupInterval { get; set; } = TimeSpan.FromMinutes(5);
+
+    private static Timer? _cleanupTimer;
 
     private static readonly Channel<CoverLoadRequest> _channel =
         Channel.CreateUnbounded<CoverLoadRequest>(new UnboundedChannelOptions
@@ -43,9 +46,20 @@ internal static class CoverLoadQueue
     private static readonly object _initLock = new();
     private static int _initialized;
 
-    private static readonly ConcurrentDictionary<string, ImageSource> _coverCache = new();
-    private static readonly ConcurrentQueue<string> _cacheQueue = new();
     private static readonly ConcurrentDictionary<string, Task<ImageSource?>> _pendingTasks = new();
+
+    static CoverLoadQueue()
+    {
+        var interval = CleanupInterval;
+        if (interval > TimeSpan.Zero)
+        {
+            _cleanupTimer = new Timer(
+                _ => RunPeriodicCleanup(),
+                null,
+                interval,
+                interval);
+        }
+    }
 
     private static string? _diskCacheFolder;
     private static string DiskCacheFolder =>
@@ -78,11 +92,6 @@ internal static class CoverLoadQueue
         }
 
         return _pendingTasks[cacheKey];
-    }
-
-    public static bool TryGetCached(Music music, out ImageSource? source)
-    {
-        return _coverCache.TryGetValue(CacheKey(music), out source);
     }
 
     private static void EnsureInitialized()
@@ -209,9 +218,9 @@ internal static class CoverLoadQueue
             });
             if (result != null)
             {
-                AddToCache(CacheKey(music), bitmap, MaxCacheSize);
+                return result;
             }
-            return result;
+            return null;
         }
         catch (Exception ex) { _logger?.LogError(ex, "LoadFromFilePathAsync 操作失败"); return null; }
     }
@@ -261,8 +270,8 @@ internal static class CoverLoadQueue
                     outputStream.Seek(0);
                     await using var fs = new FileStream(
                         cachePath, FileMode.Create, FileAccess.Write,
-                        FileShare.None, bufferSize: 81920, useAsync: true);
-                    await outputStream.AsStream().CopyToAsync(fs);
+                        FileShare.None, bufferSize: 8192, useAsync: true);
+                    await outputStream.AsStream().CopyToAsync(fs, bufferSize: 8192);
                 }
                 catch (Exception ex) { _logger?.LogError(ex, "写磁盘缓存失败"); }
             }
@@ -275,7 +284,6 @@ internal static class CoverLoadQueue
                 try
                 {
                     await bitmap.SetSourceAsync(outputStream);
-                    AddToCache(CacheKey(music), bitmap, MaxCacheSize);
                     result = bitmap;
                 }
                 finally
@@ -299,16 +307,16 @@ internal static class CoverLoadQueue
         }
     }
 
-    private static void AddToCache(string key, ImageSource source, int maxSize)
+    private static void RunPeriodicCleanup()
     {
-        if (maxSize == 0) return;
-        if (!_coverCache.TryAdd(key, source)) return;
-
-        _cacheQueue.Enqueue(key);
-        if (maxSize < 0) return;
-
-        while (_coverCache.Count > maxSize && _cacheQueue.TryDequeue(out var oldestKey))
-            _coverCache.TryRemove(oldestKey, out _);
+        try
+        {
+            GC.Collect(2, GCCollectionMode.Optimized, blocking: false);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "RunPeriodicCleanup 失败");
+        }
     }
 
     public static string CacheKey(Music music) =>
@@ -374,5 +382,8 @@ internal static class CoverLoadQueue
             if (w.IsAlive) _logger?.LogWarning("CoverLoadQueue worker did not exit within {Timeout}", t);
         }
         _workers.Clear();
+
+        _cleanupTimer?.Dispose();
+        _cleanupTimer = null;
     }
 }

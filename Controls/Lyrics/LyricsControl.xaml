@@ -41,7 +41,7 @@
                     </Rectangle.Fill>
                 </Rectangle>
             </controls:OpacityMaskView.OpacityMask>
-<alc:UnifiedLyricsCanvasControlV1
+            <alc:UnifiedLyricsCanvasControlV1
                 x:Name="LyricsCanvasV1"
                 Margin="{x:Bind LyricsMargin, Mode=OneWay}"
                 HorizontalAlignment="Stretch" />
