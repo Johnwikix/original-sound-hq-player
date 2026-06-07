@@ -70,21 +70,40 @@ public class AlbumCoverBehavior : Behavior<Image>
         _cts = new CancellationTokenSource();
         var token = _cts.Token;
 
-        var task = CoverLoadQueue.EnqueueAsync(music, token);
-        _ = WaitAndApplyAsync(task, token);
+        _ = WaitAndApplyAsync(music, token);
     }
 
-    private async Task WaitAndApplyAsync(Task<Microsoft.UI.Xaml.Media.ImageSource> task, CancellationToken token)
+    private async Task WaitAndApplyAsync(Music music, CancellationToken token)
     {
-        try
+        const int maxAttempts = 3;
+        for (int attempt = 0; attempt < maxAttempts; attempt++)
         {
-            var source = await task.WaitAsync(token);
-            if (token.IsCancellationRequested || AssociatedObject == null || source == null) return;
-            AssociatedObject.Source = source;
-            FadeIn();
+            if (token.IsCancellationRequested || AssociatedObject == null) return;
+
+            Task<Microsoft.UI.Xaml.Media.ImageSource> task;
+            try
+            {
+                task = CoverLoadQueue.EnqueueAsync(music, token);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "WaitAndApplyAsync EnqueueAsync 失败");
+                return;
+            }
+
+            try
+            {
+                var source = await task.WaitAsync(token);
+                if (token.IsCancellationRequested || AssociatedObject == null || source == null) return;
+                AssociatedObject.Source = source;
+                FadeIn();
+                return;
+            }
+            catch (OperationCanceledException)
+            {
+                if (token.IsCancellationRequested) return;
+            }
         }
-        catch (OperationCanceledException) { }
-        catch (Exception ex) { _logger.LogError(ex, "WaitAndApplyAsync 操作失败"); }
     }
 
     private void FadeIn()

@@ -79,7 +79,12 @@ internal static class CoverLoadQueue
         var cacheKey = CacheKey(music);
 
         if (_pendingTasks.TryGetValue(cacheKey, out var existing))
-            return existing;
+        {
+            if (!existing.IsCompleted || existing.Status == TaskStatus.RanToCompletion)
+                return existing;
+            ((ICollection<KeyValuePair<string, Task<ImageSource?>>>)_pendingTasks)
+                .Remove(new KeyValuePair<string, Task<ImageSource?>>(cacheKey, existing));
+        }
 
         var tcs = new TaskCompletionSource<ImageSource?>(TaskCreationOptions.RunContinuationsAsynchronously);
         var bitmap = new BitmapImage { DecodePixelWidth = CoverSize };
@@ -147,8 +152,8 @@ internal static class CoverLoadQueue
 
             if (req.Token.IsCancellationRequested)
             {
-                req.Tcs.TrySetCanceled();
                 _pendingTasks.TryRemove(req.CacheKey, out _);
+                req.Tcs.TrySetCanceled();
                 continue;
             }
 
@@ -172,6 +177,8 @@ internal static class CoverLoadQueue
 
     private static async Task<ImageSource?> LoadAndDecodeAsync(CoverLoadRequest req)
     {
+        req.Token.ThrowIfCancellationRequested();
+
         if (!string.IsNullOrEmpty(AppSettings.MusicCoverCache)
             && !string.IsNullOrEmpty(req.Music.ImageHash))
         {
@@ -191,7 +198,12 @@ internal static class CoverLoadQueue
             }
         }
 
+        req.Token.ThrowIfCancellationRequested();
+
         byte[]? picture = await ToolUtils.GetRawImage(req.Music);
+
+        req.Token.ThrowIfCancellationRequested();
+
         return await DecodePictureAsync(picture, req.Music, req.Bitmap, req.CoverSize);
     }
 
