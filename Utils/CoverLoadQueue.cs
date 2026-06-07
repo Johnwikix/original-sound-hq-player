@@ -13,6 +13,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using Windows.Foundation;
 using Windows.Graphics.Imaging;
 using Windows.Storage;
 using Windows.Storage.Streams;
@@ -30,10 +31,6 @@ internal static class CoverLoadQueue
 
     public static int CoverSize { get; set; } = 150;
 
-    public static TimeSpan CleanupInterval { get; set; } = TimeSpan.FromMinutes(5);
-
-    private static Timer? _cleanupTimer;
-
     private static readonly Channel<CoverLoadRequest> _channel =
         Channel.CreateUnbounded<CoverLoadRequest>(new UnboundedChannelOptions
         {
@@ -47,19 +44,6 @@ internal static class CoverLoadQueue
     private static int _initialized;
 
     private static readonly ConcurrentDictionary<string, Task<ImageSource?>> _pendingTasks = new();
-
-    static CoverLoadQueue()
-    {
-        var interval = CleanupInterval;
-        if (interval > TimeSpan.Zero)
-        {
-            _cleanupTimer = new Timer(
-                _ => RunPeriodicCleanup(),
-                null,
-                interval,
-                interval);
-        }
-    }
 
     private static string? _diskCacheFolder;
     private static string DiskCacheFolder =>
@@ -187,7 +171,7 @@ internal static class CoverLoadQueue
             {
                 if (File.GetLastWriteTime(cachePath) > File.GetLastWriteTime(req.Music.Path))
                 {
-                    var result = await LoadFromFilePathAsync(cachePath, req.Music, req.Bitmap, req.CoverSize);
+                    var result = await LoadFromFilePathAsync(cachePath, req.Music, req.Bitmap, req.CoverSize, req.Token);
                     if (result != null) return result;
                 }
                 else
@@ -204,11 +188,11 @@ internal static class CoverLoadQueue
 
         req.Token.ThrowIfCancellationRequested();
 
-        return await DecodePictureAsync(picture, req.Music, req.Bitmap, req.CoverSize);
+        return await DecodePictureAsync(picture, req.Music, req.Bitmap, req.CoverSize, req.Token);
     }
 
     private static async Task<ImageSource?> LoadFromFilePathAsync(
-        string cachePath, Music music, BitmapImage bitmap, int coverSize)
+        string cachePath, Music music, BitmapImage bitmap, int coverSize, CancellationToken token)
     {
         try
         {
@@ -216,6 +200,7 @@ internal static class CoverLoadQueue
             ImageSource? result = null;
             await App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
             {
+                if (token.IsCancellationRequested) { result = null; return; }
                 IRandomAccessStream? stream = null;
                 try
                 {
@@ -238,7 +223,7 @@ internal static class CoverLoadQueue
     }
 
     private static async Task<ImageSource?> DecodePictureAsync(
-        byte[]? picture, Music music, BitmapImage bitmap, int coverSize)
+        byte[]? picture, Music music, BitmapImage bitmap, int coverSize, CancellationToken token)
     {
         if (picture is not { Length: > 0 })
             return null;
@@ -269,7 +254,12 @@ internal static class CoverLoadQueue
                 ColorManagementMode.DoNotColorManage);
 
             outputStream = new InMemoryRandomAccessStream();
-            var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.PngEncoderId, outputStream);
+            var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.JpegEncoderId, outputStream);
+            var qualityProp = new BitmapPropertySet
+            {
+                { "ImageQuality", new BitmapTypedValue(0.85, PropertyType.Single) }
+            };
+            await encoder.BitmapProperties.SetPropertiesAsync(qualityProp);
             encoder.SetSoftwareBitmap(softwareBitmap);
             await encoder.FlushAsync();
 
@@ -293,6 +283,7 @@ internal static class CoverLoadQueue
             ImageSource? result = null;
             await App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
             {
+                if (token.IsCancellationRequested) { result = null; return; }
                 try
                 {
                     await bitmap.SetSourceAsync(outputStream);
@@ -319,18 +310,6 @@ internal static class CoverLoadQueue
         }
     }
 
-    private static void RunPeriodicCleanup()
-    {
-        try
-        {
-            GC.Collect(2, GCCollectionMode.Optimized, blocking: false);
-        }
-        catch (Exception ex)
-        {
-            _logger?.LogError(ex, "RunPeriodicCleanup 失败");
-        }
-    }
-
     public static string CacheKey(Music music) =>
         string.IsNullOrEmpty(music.ImageHash)
             ? string.Intern($"id:{music.Id}")
@@ -348,7 +327,7 @@ internal static class CoverLoadQueue
                 span[pos++] = '_';
                 state.coverSize.TryFormat(span[pos..], out int written);
                 pos += written;
-                ".png".AsSpan().CopyTo(span[pos..]);
+                ".jpg".AsSpan().CopyTo(span[pos..]);
             });
         return Path.Combine(DiskCacheFolder, fileName);
     }
@@ -394,8 +373,5 @@ internal static class CoverLoadQueue
             if (w.IsAlive) _logger?.LogWarning("CoverLoadQueue worker did not exit within {Timeout}", t);
         }
         _workers.Clear();
-
-        _cleanupTimer?.Dispose();
-        _cleanupTimer = null;
     }
 }
