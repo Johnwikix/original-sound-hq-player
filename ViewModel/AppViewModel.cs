@@ -95,12 +95,12 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
         private CancellationTokenSource? SearchCts { get; set; }
-        public BulkObservableCollection<Music> SongsSource { get; set => SetProperty(ref field, value); } = [];
+        public BulkObservableCollection<Music> SongsSource { get; set; } = [];
         public BulkObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<PlayListMusicItem> PlayListSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<PlayList> AllPlayList { get; set => SetProperty(ref field, value); } = [];
         public PlayList CurrentPlayList { get; set => SetProperty(ref field, value); }
-        public int CurrentPlayListId { get; set => SetProperty(ref field, value); }
+        public int CurrentPlayListId { get; set; }
         public CollectionViewSource AlbumPageSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource() { IsSourceGrouped = true };
         public CollectionViewSource ArtistPageSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource() { IsSourceGrouped = true };
         public CollectionViewSource FolderPageSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource() { IsSourceGrouped = true };
@@ -162,8 +162,8 @@ namespace WinUIMusicPlayer.ViewModel
             new SortOption("UpdateTimeDESC", "SortOrderUpdateTimeDESC")
         ];
         public string MusicInfo { get; set => SetProperty(ref field, value); }
-        public bool IsMuted { get; set => SetProperty(ref field, value); } = false;
-        public double TempVolume { get; set => SetProperty(ref field, value); } = 50;
+        public bool IsMuted { get; set; } = false;
+        public double TempVolume { get; set; } = 50;
         public string PlayTimeText { get; set => SetProperty(ref field, value); } = "00:00/00:00";
         public double ProgressSliderMax { get; set => SetProperty(ref field, value); } = 100;
         public List<LyricLine> UILyrics
@@ -175,9 +175,9 @@ namespace WinUIMusicPlayer.ViewModel
                     WeakReferenceMessenger.Default.Send(new UILyricsMessage(value));
             }
         } = [];
-        public int LastLyricIndex { get; set => SetProperty(ref field, value); } = -1;
+        public int LastLyricIndex { get; set; } = -1;
         public byte[] LyricPageBackgroundData { get; set => SetProperty(ref field, value); } = [];
-        public bool IsInitialized { get; set => SetProperty(ref field, value); } = false;
+        public bool IsInitialized { get; set; } = false;
         public Visibility UsbDeviceVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
         public ObservableCollection<UsbStorageDevice> UsbStorageDevices { get; set => SetProperty(ref field, value); }
         public int UsbSelectedIndex { get; set => SetProperty(ref field, value); } = 0;
@@ -186,8 +186,7 @@ namespace WinUIMusicPlayer.ViewModel
         public string InfoBarTitle { get; set => SetProperty(ref field, value); } = string.Empty;
         public bool InfoBarIsOpen { get; set => SetProperty(ref field, value); } = false;
         public string InfoBarMessage { get; set => SetProperty(ref field, value); } = string.Empty;
-        public string PageType { get; set => SetProperty(ref field, value); } = string.Empty;
-        public float DpiValue { get; set => SetProperty(ref field, value); } = 1.0f;
+        public string PageType { get; set; } = string.Empty;
         public float TopControlsOpacity { get; set => SetProperty(ref field, value); } = 1.0f;
         public bool IsBackBtnEnable { get; set => SetProperty(ref field, value); } = false;
         public TimeSpan LyricsDurationTime { get; set; } = TimeSpan.Zero;

@@ -76,7 +76,6 @@ namespace WinUIMusicPlayer.View
         {
             var windowSize = App.MainWindow.AppWindow.Size;
             _dpiScale = WindowSizeHelper.GetScaleFactor(AppData.HWnd);
-            ViewModel.AppViewModel.DpiValue = 96f * _dpiScale;
             double width = windowSize.Width / _dpiScale;
             double height = windowSize.Height / _dpiScale;
             double effectiveSize = width * height;
