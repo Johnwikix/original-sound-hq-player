@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.UI;
@@ -1411,18 +1412,36 @@ namespace WinUIMusicPlayer.Services
         public async Task AddMusicList(IEnumerable<Music> _toAdd)
         {
             var toAddList = _toAdd is ICollection<Music> c ? new List<Music>(c) : _toAdd.ToList();
-            // 优化21: 预分配数组
-            var addTasks = new Task<Music>[toAddList.Count];
-            for (int i = 0; i < toAddList.Count; i++)
-            {
-                var m = toAddList[i];
-                addTasks[i] = AddMusicFromPathAsync(m.Path);
-            }
-            var addResults = await Task.WhenAll(addTasks);
-            var validMusic = addResults.AsValueEnumerable().Where(m => m is not null).ToList();
+            if (toAddList.Count == 0) return;
+
+            var validMusic = new List<Music>();
+            var channel = Channel.CreateUnbounded<Music>();
+            int workerCount = Math.Min(4, toAddList.Count);
+            var workers = new Task[workerCount];
+
+            for (int i = 0; i < workerCount; i++)
+                workers[i] = WorkerLoop(channel.Reader);
+
+            foreach (var m in toAddList)
+                channel.Writer.TryWrite(m);
+            channel.Writer.Complete();
+
+            await Task.WhenAll(workers);
+
             if (validMusic.Count != 0)
-            {
                 await _dbConnection.InsertAllAsync(validMusic);
+
+            async Task WorkerLoop(ChannelReader<Music> reader)
+            {
+                while (await reader.WaitToReadAsync().ConfigureAwait(false))
+                {
+                    while (reader.TryRead(out var m))
+                    {
+                        var music = await AddMusicFromPathAsync(m.Path);
+                        if (music is not null)
+                            lock (validMusic) validMusic.Add(music);
+                    }
+                }
             }
         }
 
@@ -1448,32 +1467,67 @@ namespace WinUIMusicPlayer.Services
         public async Task UpdateMusicList(IEnumerable<Music> _toUpdate)
         {
             var toUpdateList = _toUpdate is ICollection<Music> c ? new List<Music>(c) : _toUpdate.ToList();
-            // 优化22: 预分配数组
-            var updateTasks = new Task<Music>[toUpdateList.Count];
-            for (int i = 0; i < toUpdateList.Count; i++)
-            {
-                var music = toUpdateList[i];
-                updateTasks[i] = UpdateMusicWithSemaphoreAsync(music);
-            }
-            var results = await Task.WhenAll(updateTasks);
-            var validResults = results.AsValueEnumerable().Where(r => r is not null).ToList();
+            if (toUpdateList.Count == 0) return;
+
+            var validResults = new List<Music>();
+            var channel = Channel.CreateUnbounded<Music>();
+            int workerCount = Math.Min(4, toUpdateList.Count);
+            var workers = new Task[workerCount];
+
+            for (int i = 0; i < workerCount; i++)
+                workers[i] = WorkerLoop(channel.Reader);
+
+            foreach (var music in toUpdateList)
+                channel.Writer.TryWrite(music);
+            channel.Writer.Complete();
+
+            await Task.WhenAll(workers);
+
             if (validResults.Count != 0)
-            {
                 await _dbConnection.UpdateAllAsync(validResults);
+
+            async Task WorkerLoop(ChannelReader<Music> reader)
+            {
+                while (await reader.WaitToReadAsync().ConfigureAwait(false))
+                {
+                    while (reader.TryRead(out var music))
+                    {
+                        var result = await UpdateMusicWithSemaphoreAsync(music);
+                        if (result is not null)
+                            lock (validResults) validResults.Add(result);
+                    }
+                }
             }
         }
 
         public async Task DeletedMusicList(IEnumerable<Music> toDelete)
         {
             var toDeleteList = toDelete is ICollection<Music> c ? new List<Music>(c) : toDelete.ToList();
-            // 优化23: 预分配数组
-            var deleteTasks = new Task[toDeleteList.Count];
-            for (int i = 0; i < toDeleteList.Count; i++)
+            if (toDeleteList.Count == 0) return;
+
+            var channel = Channel.CreateUnbounded<Music>();
+            int workerCount = Math.Min(4, toDeleteList.Count);
+            var workers = new Task[workerCount];
+
+            for (int i = 0; i < workerCount; i++)
+                workers[i] = WorkerLoop(channel.Reader);
+
+            foreach (var music in toDeleteList)
+                channel.Writer.TryWrite(music);
+            channel.Writer.Complete();
+
+            await Task.WhenAll(workers);
+
+            async Task WorkerLoop(ChannelReader<Music> reader)
             {
-                var music = toDeleteList[i];
-                deleteTasks[i] = DeleteMusicAsync(music);
+                while (await reader.WaitToReadAsync().ConfigureAwait(false))
+                {
+                    while (reader.TryRead(out var music))
+                    {
+                        await DeleteMusicAsync(music);
+                    }
+                }
             }
-            await Task.WhenAll(deleteTasks);
         }
 
         public async Task<List<UsbDeviceMusic>> GetUsbDeviceMusics(string uniqueDeviceId)
