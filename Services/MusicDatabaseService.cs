@@ -271,6 +271,12 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.UpdateAsync(music);
         }
 
+        // 定义接收 pragma_table_info 结果的类
+        private class TableColumnInfo
+        {
+            public string Name { get; set; }
+        }
+
         private async Task MigrateLyricsAsync()
         {
             var settings = await GetSettings();
@@ -286,11 +292,25 @@ namespace WinUIMusicPlayer.Services
                 return;
             }
 
-            await _dbConnection.ExecuteAsync(
-                "INSERT INTO MusicLyrics (MusicId, Lyrics, TranslatedLyrics, Krc, TKrc) SELECT Id, Lyrics, TranslatedLyrics, Krc, TKrc FROM Music WHERE Lyrics IS NOT NULL OR TranslatedLyrics IS NOT NULL OR Krc IS NOT NULL OR TKrc IS NOT NULL");
+            try
+            {
+                var lyricsColumnCount = await _dbConnection.ExecuteScalarAsync<int>(
+                    "SELECT COUNT(*) FROM pragma_table_info('Music') WHERE name IN ('Lyrics', 'TranslatedLyrics', 'Krc', 'TKrc')");
 
-            settings.IsLyricsMigrated = true;
-            await UpdateSettings(settings);
+                if (lyricsColumnCount > 0)
+                {
+                    await _dbConnection.ExecuteAsync(
+                        "INSERT INTO MusicLyrics (MusicId, Lyrics, TranslatedLyrics, Krc, TKrc) " +
+                        "SELECT Id, Lyrics, TranslatedLyrics, Krc, TKrc FROM Music " +
+                        "WHERE Lyrics IS NOT NULL OR TranslatedLyrics IS NOT NULL " +
+                        "OR Krc IS NOT NULL OR TKrc IS NOT NULL");
+                }
+            }
+            finally
+            {
+                settings.IsLyricsMigrated = true;
+                await UpdateSettings(settings);
+            }
         }
 
         public async Task<(string? lyrics, string? transLrc, string? krc, string? tKrc)> GetLyricsAsync(int musicId)
