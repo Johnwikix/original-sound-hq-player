@@ -95,7 +95,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
         private CancellationTokenSource? SearchCts { get; set; }
-        public BulkObservableCollection<Music> SongsSource { get; set; } = [];
+        public List<Music> SongsSource { get; set; } = [];
         public BulkObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<PlayListMusicItem> PlayListSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<PlayList> AllPlayList { get; set => SetProperty(ref field, value); } = [];
@@ -328,7 +328,6 @@ namespace WinUIMusicPlayer.ViewModel
             SystemMediaControlsService = systemMediaControlsService;
             _logger = logger;
             AllPlayList.CollectionChanged += AllPlayList_CollectionChanged;
-            SongsSource.CollectionChanged += SongsSource_CollectionChanged;
             ProgressTimer = new System.Timers.Timer(200);
             ProgressTimer.Elapsed += ProgressTimer_Elapsed;
             WeakReferenceMessenger.Default.Register<RequestLyricsSettingsMessage>(this, (r, m) => SendFullLyricsSync());
@@ -481,7 +480,7 @@ namespace WinUIMusicPlayer.ViewModel
             Volume = newVolume;
         }
 
-        private void SongsSource_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        public void NotifySongsSourceChanged()
         {
             if (IsInitialized)
             {
@@ -833,15 +832,15 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void RefreshSongsSource()
         {
-            App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
-            {
-                _ = SongsSource.ReplaceAllAsync(await _musicDatabaseService.GetMusicListAsync());
-            });
+            SongsSource.Clear();
+            SongsSource.AddRange(_musicDatabaseService.GetMusicListAsync().Result);
+            NotifySongsSourceChanged();
         }
 
         public void RemoveFromSongsSource(Music music)
         {
             SongsSource.Remove(music);
+            NotifySongsSourceChanged();
         }
 
         public void RemoveFromPlayListSongs(Music music)

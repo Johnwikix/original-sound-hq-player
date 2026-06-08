@@ -1,4 +1,5 @@
-﻿using Microsoft.UI.Dispatching;
+﻿using DevWinUI;
+using Microsoft.UI.Dispatching;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -50,11 +51,7 @@ namespace WinUIMusicPlayer.Model
 
             // 2. 悄悄修改内部原始列表
             this.Items.Clear();
-            foreach (var item in newList)
-            {
-                this.Items.Add(item);
-            }
-
+            Items.AddRange(items);  
             // 3. 统一触发 UI 通知
             // 这里使用 Reset 动作，因为 Items 已经完全变了
             RaiseChangeNotifications();
@@ -92,10 +89,7 @@ namespace WinUIMusicPlayer.Model
 
         private void ExecuteAddRange(IEnumerable<T> items)
         {
-            foreach (var item in items)
-            {
-                this.Items.Add(item);
-            }
+            Items.AddRange(items);
             RaiseChangeNotifications();
         }
 

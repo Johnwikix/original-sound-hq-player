@@ -596,10 +596,12 @@ namespace WinUIMusicPlayer.Services
 
         public async Task LoadMusicList()
         {
-            await AppViewModel.SongsSource.AddRangeAsync(await GetMusicListAsync());
+            AppViewModel.SongsSource.Clear();
+            AppViewModel.SongsSource.AddRange(await GetMusicListAsync());
             await InitalPlayListAsync();
             await GetPlayListMusic();
             AppViewModel.SequentialPlayingList = new(await LoadPlayList(AppViewModel.SongsSource));
+            AppViewModel.NotifySongsSourceChanged();
         }
 
         public async Task<IReadOnlyCollection<Music>> GetMusicListAsync()
@@ -890,7 +892,9 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 await _dbConnection.DeleteAsync<Music>(musicId);
-                await AppViewModel.SongsSource.ReplaceAllAsync(await _dbConnection.Table<Music>().ToListAsync());
+                AppViewModel.SongsSource.Clear();
+                AppViewModel.SongsSource.AddRange(await _dbConnection.Table<Music>().ToListAsync());
+                AppViewModel.NotifySongsSourceChanged();
                 var usbMusicGroups = AppData.MusicOnUsbDevice.AsValueEnumerable()
                     .GroupBy(u => u.Title)
                     .ToDictionary(g => g.Key, g => g.AsValueEnumerable().ToList());
