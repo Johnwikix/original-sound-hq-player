@@ -30,7 +30,7 @@ namespace WinUIMusicPlayer.Services
             {
                 if (!string.IsNullOrEmpty(folder.Path))
                 {
-                    await ScanSingleFolder(folder.Path, allScannedFilePaths, MusicsToUpdate, MusicsToAdd, allSongsCache);
+                    ScanSingleFolder(folder.Path, allScannedFilePaths, MusicsToUpdate, MusicsToAdd, allSongsCache);
                 }
             }
 
@@ -59,8 +59,7 @@ namespace WinUIMusicPlayer.Services
             await App.Services.GetRequiredService<MusicDatabaseService>().DeletedMusicList(songsToDelete);
         }
 
-        // 将原 GetFileModificationDates 重命名，并接收 allScannedFilePaths
-        public static async Task ScanSingleFolder(string rootDirectory, HashSet<string> allScannedFilePaths, List<Music> MusicsToUpdate, List<Music> MusicsToAdd, IEnumerable<Music> allSongsCache)
+        public static void ScanSingleFolder(string rootDirectory, HashSet<string> allScannedFilePaths, List<Music> MusicsToUpdate, List<Music> MusicsToAdd, IEnumerable<Music> allSongsCache)
         {
             if (!Directory.Exists(rootDirectory))
             {
@@ -69,69 +68,49 @@ namespace WinUIMusicPlayer.Services
 
             try
             {
-                // 在 Task.Run 内部处理文件 I/O
-                await Task.Run(() =>
+                IEnumerable<string> filePaths = Directory.EnumerateFiles(
+                    rootDirectory,
+                    "*.*",
+                    SearchOption.AllDirectories
+                );
+
+                foreach (string filePath in filePaths)
                 {
-                    Stopwatch sw = Stopwatch.StartNew();
-
-                    IEnumerable<string> filePaths = Directory.EnumerateFiles(
-                        rootDirectory,
-                        "*.*",
-                        SearchOption.AllDirectories
-                    );
-
-                    // 遍历文件系统
-                    foreach (string filePath in filePaths)
+                    try
                     {
-                        try
+                        if (!ToolUtils.IsMusicFile(Path.GetExtension(filePath)))
                         {
-                            if (!ToolUtils.IsMusicFile(System.IO.Path.GetExtension(filePath)))
-                            {
-                                continue;
-                            }
+                            continue;
+                        }
 
-                            // **关键：将路径添加到全局 HashSet 中**
-                            lock (allScannedFilePaths) // 保护对 HashSet 的写入，因为 Task.Run 可能并行执行
-                            {
-                                allScannedFilePaths.Add(filePath);
-                            }
+                        allScannedFilePaths.Add(filePath);
 
-                            FileInfo fileInfo = new FileInfo(filePath);
-                            DateTime lastModifiedDate = fileInfo.LastWriteTime;
+                        FileInfo fileInfo = new FileInfo(filePath);
+                        DateTime lastModifiedDate = fileInfo.LastWriteTime;
 
-                            Music music = allSongsCache.AsValueEnumerable().FirstOrDefault(m => m.Path.Equals(filePath, StringComparison.OrdinalIgnoreCase));
+                        Music music = allSongsCache.AsValueEnumerable().FirstOrDefault(m => m.Path.Equals(filePath, StringComparison.OrdinalIgnoreCase));
 
-                            if (music != null)
+                        if (music != null)
+                        {
+                            if (music.UpdateTime != lastModifiedDate)
                             {
-                                if (music.UpdateTime != lastModifiedDate)
-                                {
-                                    lock (MusicsToUpdate) // 保护对结果列表的写入
-                                    {
-                                        MusicsToUpdate.Add(music);
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                lock (MusicsToAdd) // 保护对结果列表的写入
-                                {
-                                    MusicsToAdd.Add(new Music { Path = filePath, UpdateTime = lastModifiedDate });
-                                }
+                                MusicsToUpdate.Add(music);
                             }
                         }
-                        catch (UnauthorizedAccessException ex)
+                        else
                         {
-                            _logger.LogWarning(ex, $"ScanSingleFolder 访问被拒绝: {filePath}");
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, $"ScanSingleFolder 处理文件错误: {filePath}");
+                            MusicsToAdd.Add(new Music { Path = filePath, UpdateTime = lastModifiedDate });
                         }
                     }
-
-                    sw.Stop();
-
-                });
+                    catch (UnauthorizedAccessException ex)
+                    {
+                        _logger.LogWarning(ex, $"ScanSingleFolder 访问被拒绝: {filePath}");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"ScanSingleFolder 处理文件错误: {filePath}");
+                    }
+                }
             }
             catch (Exception ex)
             {
