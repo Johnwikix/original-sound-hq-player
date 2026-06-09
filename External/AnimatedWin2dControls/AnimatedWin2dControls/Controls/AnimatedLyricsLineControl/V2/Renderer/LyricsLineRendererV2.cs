@@ -195,13 +195,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
             renderRegion.FillStops[3].Position = 1 + fadeInRegion;
             renderRegion.FillStops[3].Color = UnplayedFillColor.WithAlpha((byte)(255 * unplayedOpacity));
 
-            using var fillGradientBrush = new CanvasLinearGradientBrush(resourceCreator, renderRegion.FillStops)
+            renderRegion.CachedFillGradientBrush?.Dispose();
+            renderRegion.CachedFillGradientBrush = new CanvasLinearGradientBrush(resourceCreator, renderRegion.FillStops)
             {
                 StartPoint = new Vector2((float)subLineRect.X, (float)subLineRect.Y),
                 EndPoint = new Vector2((float)(subLineRect.X + subLineRect.Width), (float)subLineRect.Y)
             };
 
-            gds.FillRectangle(subLineRect, fillGradientBrush);
+            gds.FillRectangle(subLineRect, renderRegion.CachedFillGradientBrush);
         }
 
         private double ComputeRegionPlayedWidth(CanvasTextLayoutRegion subLineRegion)
