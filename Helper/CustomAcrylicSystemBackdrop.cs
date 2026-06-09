@@ -6,7 +6,7 @@ using Windows.UI;
 
 namespace WinUIMusicPlayer.Helper
 {
-    public class CustomAcrylicSystemBackdrop : SystemBackdrop
+    public partial class CustomAcrylicSystemBackdrop : SystemBackdrop
     {
         private DesktopAcrylicController _acrylicController;
         private SystemBackdropConfiguration _backdropConfiguration;

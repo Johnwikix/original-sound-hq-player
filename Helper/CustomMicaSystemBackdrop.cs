@@ -6,7 +6,7 @@ using Windows.UI;
 
 namespace WinUIMusicPlayer.Helper
 {
-    public class CustomMicaSystemBackdrop : SystemBackdrop
+    public partial class CustomMicaSystemBackdrop : SystemBackdrop
     {
         private MicaController _micaController;
         private SystemBackdropConfiguration _backdropConfiguration;
