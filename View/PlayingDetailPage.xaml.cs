@@ -32,6 +32,7 @@ namespace WinUIMusicPlayer.View
         public PlayingDetailViewModel ViewModel { get; }
         private ILogger<PlayingDetailPage> _logger;
         private float _dpiScale = 1.0f;
+        private ToolTip _progressToolTip = new();
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
         {
             this.InitializeComponent();
@@ -82,6 +83,7 @@ namespace WinUIMusicPlayer.View
             var lyrics = effectiveSize switch
             {
                 <= 1280 * 720 => 48,
+                <= 1600 * 900 => 60,
                 <= 1920 * 1080 => 72,
                 <= 2560 * 1440 => 84,
                 <= 2880 * 1920 => 96,
@@ -139,9 +141,7 @@ namespace WinUIMusicPlayer.View
         private void ProgressSlider_PointerExited(object sender, PointerRoutedEventArgs e)
         {
             ViewModel.AppViewModel.IsMouseOverProgressBar = false;
-        }
-
-        private ToolTip _progressToolTip;
+        }       
 
         private void ProgressSliderPlayingDetail_Loaded(object sender, RoutedEventArgs e)
         {
@@ -152,11 +152,9 @@ namespace WinUIMusicPlayer.View
                 thumb.DragCompleted += Thumb_DragCompleted;
                 thumb.DragDelta += (s, e) =>
                 {
-                    if (_progressToolTip is not null)
-                        _progressToolTip.Content = ViewModel.AppViewModel.ProgressSliderThumbTipText;
+                    _progressToolTip?.Content = ViewModel.AppViewModel.ProgressSliderThumbTipText;
                 };
 
-                _progressToolTip = new ToolTip();
                 ToolTipService.SetToolTip(thumb, _progressToolTip);
                 _progressToolTip.Opened += (s, e) =>
                     _progressToolTip.Content = ViewModel.AppViewModel.ProgressSliderThumbTipText;

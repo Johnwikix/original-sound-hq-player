@@ -34,6 +34,7 @@ namespace WinUIMusicPlayer.View
         public SettingsDialog SettingsDialog { get; set; }
         private readonly INavigationService _playingNavigation;
         private bool _isPageTransitioning = false;
+        private ToolTip _progressToolTip = new();
         public MainPage(MainViewModel viewModel)
         {
             InitializeComponent();
@@ -219,9 +220,7 @@ namespace WinUIMusicPlayer.View
         private void KeyboardAccelerator_Invoked(Microsoft.UI.Xaml.Input.KeyboardAccelerator sender, Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
         {
             App.Services.GetRequiredService<MusicBrowseViewModel>().BackButton();
-        }
-
-        private ToolTip _progressToolTip;
+        }        
 
         private void ProgressSlider_Loaded(object sender, RoutedEventArgs e)
         {
@@ -232,11 +231,8 @@ namespace WinUIMusicPlayer.View
                 thumb.DragCompleted += Thumb_DragCompleted;
                 thumb.DragDelta += (s, e) =>
                 {
-                    if (_progressToolTip is not null)
-                        _progressToolTip.Content = ViewModel.AppViewModel.ProgressSliderThumbTipText;
+                    _progressToolTip?.Content = ViewModel.AppViewModel.ProgressSliderThumbTipText;
                 };
-
-                _progressToolTip = new ToolTip();
                 ToolTipService.SetToolTip(thumb, _progressToolTip);
                 _progressToolTip.Opened += (s, e) =>
                     _progressToolTip.Content = ViewModel.AppViewModel.ProgressSliderThumbTipText;
