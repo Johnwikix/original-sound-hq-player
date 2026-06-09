@@ -344,9 +344,10 @@
     <DebugType>full</DebugType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IsPublishable>True</IsPublishable>
-    <Optimize>True</Optimize>
-    <DebugType>full</DebugType>
+	 <IsPublishable>True</IsPublishable>
+	 <Optimize>True</Optimize>
+	 <DebugType>none</DebugType>
+	 <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <IsPublishable>True</IsPublishable>
