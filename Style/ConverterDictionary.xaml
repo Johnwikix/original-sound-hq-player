@@ -29,7 +29,7 @@
     <!--<converters:BoolToThicknessConverter x:Key="BoolToThicknessConverter" />-->
     <converters:BoolToNegationVisibleConverter x:Key="BoolToNegationVisibleConverter" />
     <converters:HideNavigationViewIconConverter x:Key="HideNavigationViewIconConverter" />
-    <converters:AdvancedThumbToolTipValueConverter x:Key="AdvancedThumbToolTipValueConverter" />
+
     <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
     <!--<converters:AlbumArtConverter x:Key="AlbumArtConverter" />-->
     <converters:PlayDetailButtonVisibleConverter x:Key="PlayDetailButtonVisibleConverter" />

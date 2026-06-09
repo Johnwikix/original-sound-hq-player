@@ -380,7 +380,7 @@
                             Minimum="0"
                             PointerEntered="ProgressSlider_PointerEntered"
                             PointerExited="ProgressSlider_PointerExited"
-                            ThumbToolTipValueConverter="{StaticResource AdvancedThumbToolTipValueConverter}"
+                            ToolTipService.ToolTip="{x:Bind ViewModel.AppViewModel.ProgressSliderThumbTipText, Mode=OneWay}"
                             Value="{x:Bind ViewModel.AppViewModel.ProgressSlider, Mode=TwoWay}" />
                         <Grid
                             Grid.Row="1"

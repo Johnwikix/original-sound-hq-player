@@ -165,6 +165,7 @@ namespace WinUIMusicPlayer.ViewModel
         public bool IsMuted { get; set; } = false;
         public double TempVolume { get; set; } = 50;
         public string PlayTimeText { get; set => SetProperty(ref field, value); } = "00:00/00:00";
+        public string ProgressSliderThumbTipText { get; set => SetProperty(ref field, value); } = "00:00";
         public double ProgressSliderMax { get; set => SetProperty(ref field, value); } = 100;
         public List<LyricLine> UILyrics
         {
@@ -340,6 +341,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
         private async void HandleProgressSliderChange(double value)
         {
+            ProgressSliderThumbTipText = BindUtils.FormatThumbTipTime(value);
             if (IsMouseOverProgressBar)
             {
                 if (!IsUserDraggingProgressSlider)

@@ -141,6 +141,8 @@ namespace WinUIMusicPlayer.View
             ViewModel.AppViewModel.IsMouseOverProgressBar = false;
         }
 
+        private ToolTip _progressToolTip;
+
         private void ProgressSliderPlayingDetail_Loaded(object sender, RoutedEventArgs e)
         {
             var thumb = ToolUtils.FindVisualChild<Thumb>(ProgressSliderPlayingDetail);
@@ -148,6 +150,16 @@ namespace WinUIMusicPlayer.View
             {
                 thumb.DragStarted += Thumb_DragStarted;
                 thumb.DragCompleted += Thumb_DragCompleted;
+                thumb.DragDelta += (s, e) =>
+                {
+                    if (_progressToolTip is not null)
+                        _progressToolTip.Content = ViewModel.AppViewModel.ProgressSliderThumbTipText;
+                };
+
+                _progressToolTip = new ToolTip();
+                ToolTipService.SetToolTip(thumb, _progressToolTip);
+                _progressToolTip.Opened += (s, e) =>
+                    _progressToolTip.Content = ViewModel.AppViewModel.ProgressSliderThumbTipText;
             }
         }
 

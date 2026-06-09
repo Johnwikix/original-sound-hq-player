@@ -221,6 +221,8 @@ namespace WinUIMusicPlayer.View
             App.Services.GetRequiredService<MusicBrowseViewModel>().BackButton();
         }
 
+        private ToolTip _progressToolTip;
+
         private void ProgressSlider_Loaded(object sender, RoutedEventArgs e)
         {
             var thumb = FindVisualChild<Thumb>(ProgressSlider);
@@ -228,6 +230,16 @@ namespace WinUIMusicPlayer.View
             {
                 thumb.DragStarted += Thumb_DragStarted;
                 thumb.DragCompleted += Thumb_DragCompleted;
+                thumb.DragDelta += (s, e) =>
+                {
+                    if (_progressToolTip is not null)
+                        _progressToolTip.Content = ViewModel.AppViewModel.ProgressSliderThumbTipText;
+                };
+
+                _progressToolTip = new ToolTip();
+                ToolTipService.SetToolTip(thumb, _progressToolTip);
+                _progressToolTip.Opened += (s, e) =>
+                    _progressToolTip.Content = ViewModel.AppViewModel.ProgressSliderThumbTipText;
             }
         }
 

@@ -124,5 +124,13 @@ namespace WinUIMusicPlayer.Utils
         public static string FormatF0(double value) => $"{value:F0}";
         public static string FormatMs(double value) => $"{value:F0} ms";
         public static string FormatPercent(double value) => $"{value:F0}%";
+
+        public static string FormatThumbTipTime(double totalSeconds)
+        {
+            var timeSpan = TimeSpan.FromSeconds(totalSeconds);
+            if (timeSpan.TotalHours >= 1)
+                return $"{(int)timeSpan.TotalHours:D2}:{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
+            return $"{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
+        }
     }
 }
