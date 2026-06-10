@@ -363,7 +363,7 @@
                             FontSize="{x:Bind ViewModel.InfoFontSize, Mode=OneWay}"
                             Text="{x:Bind ViewModel.AppViewModel.PlayTimeText, Mode=OneWay}" />
                     </Grid>
-                    <!--  控制面板  -->
+                    <!--  控制面板 ThumbToolTipValueConverter 在aot下报错  -->
                     <Grid x:Name="PlayingDetailControlBar">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -380,7 +380,7 @@
                             Minimum="0"
                             PointerEntered="ProgressSlider_PointerEntered"
                             PointerExited="ProgressSlider_PointerExited"
-                            ToolTipService.ToolTip="{x:Bind ViewModel.AppViewModel.ProgressSliderThumbTipText, Mode=OneWay}"
+                            ThumbToolTipValueConverter="{StaticResource AdvancedThumbToolTipValueConverter}"
                             Value="{x:Bind ViewModel.AppViewModel.ProgressSlider, Mode=TwoWay}" />
                         <Grid
                             Grid.Row="1"

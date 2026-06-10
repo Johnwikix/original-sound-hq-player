@@ -78,7 +78,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-
+                <!--  ThumbToolTipValueConverter 在aot下报错  -->
                 <Grid Grid.Row="0" Margin="0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -94,7 +94,7 @@
                         Minimum="0"
                         PointerEntered="ProgressSlider_PointerEntered"
                         PointerExited="ProgressSlider_PointerExited"
-                        ToolTipService.ToolTip="{x:Bind ViewModel.AppViewModel.ProgressSliderThumbTipText, Mode=OneWay}"
+                        ThumbToolTipValueConverter="{StaticResource AdvancedThumbToolTipValueConverter}"
                         Value="{x:Bind ViewModel.AppViewModel.ProgressSlider, Mode=TwoWay}" />
                     <TextBlock
                         x:Name="PlayTimeTextBlock"

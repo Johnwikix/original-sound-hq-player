@@ -32,7 +32,7 @@ namespace WinUIMusicPlayer.View
         public PlayingDetailViewModel ViewModel { get; }
         private ILogger<PlayingDetailPage> _logger;
         private float _dpiScale = 1.0f;
-        private ToolTip _progressToolTip = new();
+        //private ToolTip _progressToolTip = new();
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
         {
             this.InitializeComponent();
@@ -150,14 +150,14 @@ namespace WinUIMusicPlayer.View
             {
                 thumb.DragStarted += Thumb_DragStarted;
                 thumb.DragCompleted += Thumb_DragCompleted;
-                thumb.DragDelta += (s, e) =>
-                {
-                    _progressToolTip?.Content = ViewModel.AppViewModel.ProgressSliderThumbTipText;
-                };
+                //thumb.DragDelta += (s, e) =>
+                //{
+                //    _progressToolTip?.Content = ViewModel.AppViewModel.ProgressSliderThumbTipText;
+                //};
 
-                ToolTipService.SetToolTip(thumb, _progressToolTip);
-                _progressToolTip.Opened += (s, e) =>
-                    _progressToolTip.Content = ViewModel.AppViewModel.ProgressSliderThumbTipText;
+                //ToolTipService.SetToolTip(thumb, _progressToolTip);
+                //_progressToolTip.Opened += (s, e) =>
+                //    _progressToolTip.Content = ViewModel.AppViewModel.ProgressSliderThumbTipText;
             }
         }
 
