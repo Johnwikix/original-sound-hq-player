@@ -61,6 +61,10 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             LyricsCanvas?.PrepareForShutdown();
         }
 
+        public void PauseRendering() => LyricsCanvas?.PauseRendering();
+        public void ResumeRendering() => LyricsCanvas?.ResumeRendering();
+        public void SetWindowPaused(bool paused) => LyricsCanvas?.SetWindowPaused(paused);
+
         private void LyricsCanvas_RenderError(object sender, Exception e)
         {
             ExceptionInteracted?.Invoke(this, e);

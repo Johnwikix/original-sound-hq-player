@@ -73,7 +73,11 @@ namespace WinUIMusicPlayer.View
         private void AppWindow_Changed(AppWindow sender, AppWindowChangedEventArgs args)
         {
             if (args.DidVisibilityChange)
-                BackGround?.SetWindowPaused(!sender.IsVisible);
+            {
+                bool visible = sender.IsVisible;
+                BackGround?.SetWindowPaused(!visible);
+                LyricsView?.SetWindowPaused(!visible);
+            }
         }
 
         private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
@@ -295,8 +299,17 @@ namespace WinUIMusicPlayer.View
             GC.SuppressFinalize(this);
         }
 
-    public void PauseBackgroundRendering() => BackGround?.PauseRendering();
-    public void ResumeBackgroundRendering() => BackGround?.ResumeRendering();
+        public void PauseCanvasRendering()
+        {
+            BackGround?.PauseRendering();
+            LyricsView?.PauseRendering();
+        }
+
+        public void ResumeCanvasRendering()
+        {
+            BackGround?.ResumeRendering();
+            LyricsView?.ResumeRendering();
+        }
 
         private void Dispose(bool dispose)
         {

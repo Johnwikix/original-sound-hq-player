@@ -298,7 +298,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 ContentFrame.Content = pageInstance;
                 ContentFrame.Visibility = Visibility.Visible;
                 if (pageInstance is PlayingDetailPage playingPage)
-                    playingPage.ResumeBackgroundRendering();
+                    playingPage.ResumeCanvasRendering();
 
                 void StartAnimation()
                 {
@@ -394,7 +394,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
                     sb.Completed -= onAnimCompleted;
                     ContentFrame.Visibility = Visibility.Collapsed;
                     if (ContentFrame.Content is PlayingDetailPage playingPage)
-                        playingPage.PauseBackgroundRendering();
+                        playingPage.PauseCanvasRendering();
                     ContentFrame.Opacity = 1;
                     ContentFrame.RenderTransform = null;
                     ContentFrame.ClearValue(UIElement.RenderTransformProperty);

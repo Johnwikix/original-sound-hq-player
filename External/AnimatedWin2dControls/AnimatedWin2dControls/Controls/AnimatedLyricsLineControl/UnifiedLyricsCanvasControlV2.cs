@@ -33,6 +33,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private List<RenderLyricsLine>? _pendingDisposeLines;
         private bool _layoutDirty = true;
         private bool _shutdown;
+        private bool _pausedByVisibility;
+        private bool _pausedByParent;
+        private bool _pausedByWindow;
+        private long _visibilityCallbackToken;
         private int _currentLineIndex = -1;
         private int _lastCurrentLineIndex = -1;
 
@@ -118,6 +122,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (_shutdown) return;
             _shutdown = true;
 
+            UnregisterPropertyChangedCallback(VisibilityProperty, _visibilityCallbackToken);
+
             if (_canvas != null)
             {
                 _canvas.Paused = true;
@@ -143,6 +149,38 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _pendingDisposeLines = null;
             }
             _edgeFadeMask.Dispose();
+        }
+
+        public void PauseRendering()
+        {
+            _pausedByParent = true;
+            UpdateCanvasPaused();
+        }
+
+        public void ResumeRendering()
+        {
+            _pausedByParent = false;
+            _lastExternalTimeMs = 0;
+            UpdateCanvasPaused();
+        }
+
+        public void SetWindowPaused(bool paused)
+        {
+            _pausedByWindow = paused;
+            UpdateCanvasPaused();
+        }
+
+        private void UpdateCanvasPaused()
+        {
+            if (_canvas is not null)
+                _canvas.Paused = _pausedByVisibility || _pausedByParent || _pausedByWindow;
+        }
+
+        private static void OnVisibilityChanged(DependencyObject d, DependencyProperty dp)
+        {
+            var ctrl = (UnifiedLyricsCanvasControlV2)d;
+            ctrl._pausedByVisibility = ctrl.Visibility != Visibility.Visible;
+            ctrl.UpdateCanvasPaused();
         }
 
         private void OnControlLoaded(object sender, RoutedEventArgs e)
@@ -190,7 +228,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas.PointerEntered += OnCanvasPointerEntered;
                 _canvas.Tapped += OnCanvasTapped;
                 _canvas.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / _cachedTargetFrameRate);
+                UpdateCanvasPaused();
             }
+
+            _visibilityCallbackToken = RegisterPropertyChangedCallback(VisibilityProperty, OnVisibilityChanged);
 
             OnIsDarkChanged(false);
         }
