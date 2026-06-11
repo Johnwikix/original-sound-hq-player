@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
@@ -40,7 +41,7 @@ namespace WinUIMusicPlayer.View
 
         private void OnContentFrameNavigated(object sender, Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
         {
-            GC.Collect(2, GCCollectionMode.Optimized, false);
+            _ = WorkingSetCompressor.TrimSelfAsync();
         }
 
         private void OnPageLoaded(object sender, RoutedEventArgs e)

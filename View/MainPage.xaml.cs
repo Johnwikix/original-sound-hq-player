@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
@@ -60,7 +61,7 @@ namespace WinUIMusicPlayer.View
 
         private void MainFrame_Navigated(object sender, Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
         {
-            GC.Collect(2, GCCollectionMode.Optimized, false);
+            _ = WorkingSetCompressor.TrimSelfAsync();
         }
 
         private void NavigateTo(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)

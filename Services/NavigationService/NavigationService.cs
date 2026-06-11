@@ -8,6 +8,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using Windows.Foundation;
+using WinUIMusicPlayer.Helper;
 
 namespace WinUIMusicPlayer.Services.NavigationService
 {
@@ -354,7 +355,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 Interlocked.Exchange(ref _isAnimating, 0);
             }
             finally {
-                GC.Collect(2, GCCollectionMode.Optimized, false);
+                _ = WorkingSetCompressor.TrimSelfAsync();
             }
         }
 
@@ -404,7 +405,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 Interlocked.Exchange(ref _isAnimating, 0);
             }
             finally {
-                GC.Collect(2, GCCollectionMode.Optimized, false);
+                _ = WorkingSetCompressor.TrimSelfAsync();
             }
         }
 

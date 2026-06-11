@@ -146,6 +146,7 @@ namespace WinUIMusicPlayer
             if (AppSettings.IsRunningBackend)
             {
                 args.Cancel = true;
+                WorkingSetCompressor.TrimSelf();
                 this.Hide();
             }
             else
