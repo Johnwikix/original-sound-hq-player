@@ -31,19 +31,6 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
 
     // ── 依赖属性 ──────────────────────────────────────────────────────────
 
-    public static readonly DependencyProperty IsBackgroundEnableProperty =
-        DependencyProperty.Register(nameof(IsBackgroundEnable), typeof(bool),
-            typeof(ShaderBackgroundControl), new PropertyMetadata(true, OnIsBackgroundEnableChanged));
-
-    public bool IsBackgroundEnable
-    {
-        get => (bool)GetValue(IsBackgroundEnableProperty);
-        set => SetValue(IsBackgroundEnableProperty, value);
-    }
-
-    private static void OnIsBackgroundEnableChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-        => ((ShaderBackgroundControl)d)._isBackgroundEnable = (bool)e.NewValue;
-
     public static readonly DependencyProperty EnableLightWaveProperty =
         DependencyProperty.Register(nameof(EnableLightWave), typeof(bool),
             typeof(ShaderBackgroundControl), new PropertyMetadata(false, OnColorParamChanged));
@@ -146,7 +133,10 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
     private float _time;
     private float _rnd1, _rnd2, _rnd3;
     private static readonly Random _random = new();
-    private bool _isBackgroundEnable = true;
+    private bool _pausedByVisibility;
+    private bool _pausedByParent;
+    private bool _pausedByWindow;
+    private long _visibilityCallbackToken;
 
     private Vector3 _c1, _c2, _c3, _c4;
     private Vector3 _target1, _target2, _target3, _target4;
@@ -182,7 +172,11 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
             DetachCanvasEvents();
             _canvas = GetTemplateChild(PartCanvasName) as CanvasAnimatedControl;
             if (_canvas is not null)
+            {
                 AttachCanvasEvents(_canvas);
+                UpdateCanvasPaused();
+            }
+            _visibilityCallbackToken = RegisterPropertyChangedCallback(VisibilityProperty, OnVisibilityChanged);
         }
         catch (Exception ex) { RaiseException(ex); }
     }
@@ -202,6 +196,37 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
         _canvas.Update -= OnCanvasUpdate;
         _canvas.Draw -= OnCanvasDraw;
         _canvas.SizeChanged -= OnCanvasSizeChanged;
+    }
+
+    public void PauseRendering()
+    {
+        _pausedByParent = true;
+        UpdateCanvasPaused();
+    }
+
+    public void ResumeRendering()
+    {
+        _pausedByParent = false;
+        UpdateCanvasPaused();
+    }
+
+    public void SetWindowPaused(bool paused)
+    {
+        _pausedByWindow = paused;
+        UpdateCanvasPaused();
+    }
+
+    private void UpdateCanvasPaused()
+    {
+        if (_canvas is not null)
+            _canvas.Paused = _pausedByVisibility || _pausedByParent || _pausedByWindow;
+    }
+
+    private static void OnVisibilityChanged(DependencyObject d, DependencyProperty dp)
+    {
+        var ctrl = (ShaderBackgroundControl)d;
+        ctrl._pausedByVisibility = ctrl.Visibility != Visibility.Visible;
+        ctrl.UpdateCanvasPaused();
     }
 
     // ── Canvas 事件处理 ───────────────────────────────────────────────────
@@ -277,13 +302,8 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
 
     private void OnCanvasDraw(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs e)
     {
-        e.DrawingSession.Clear(Microsoft.UI.Colors.Transparent);
-        if (_effect == null) return;
-
-        if (_isBackgroundEnable)
+        if (_effect != null)
             e.DrawingSession.DrawImage(_effect);
-        else
-            e.DrawingSession.FillRectangle(0, 0, 1, 1, Microsoft.UI.Colors.Transparent);
     }
 
     // ── 尺寸 ──────────────────────────────────────────────────────────────
@@ -724,6 +744,9 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
     private void Dispose(bool dispose)
     {
         if (!dispose) return;
+        if (_canvas is not null)
+            _canvas.Paused = true;
+        UnregisterPropertyChangedCallback(VisibilityProperty, _visibilityCallbackToken);
         DetachCanvasEvents();
         _loadCts?.Cancel();
         _loadCts?.Dispose();

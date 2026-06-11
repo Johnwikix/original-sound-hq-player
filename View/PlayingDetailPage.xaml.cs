@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Windowing;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -64,8 +65,15 @@ namespace WinUIMusicPlayer.View
                 AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = effect;
             }
             App.MainWindow.SizeChanged += MainWindow_SizeChanged;
+            App.MainWindow.AppWindow.Changed += AppWindow_Changed;
             ChangeControlsFontSize();
             Loaded -= PlayingDetailPage_Loaded;
+        }
+
+        private void AppWindow_Changed(AppWindow sender, AppWindowChangedEventArgs args)
+        {
+            if (args.DidVisibilityChange)
+                BackGround?.SetWindowPaused(!sender.IsVisible);
         }
 
         private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
@@ -287,11 +295,15 @@ namespace WinUIMusicPlayer.View
             GC.SuppressFinalize(this);
         }
 
+    public void PauseBackgroundRendering() => BackGround?.PauseRendering();
+    public void ResumeBackgroundRendering() => BackGround?.ResumeRendering();
+
         private void Dispose(bool dispose)
         {
             if (dispose)
             {
                 App.MainWindow.SizeChanged -= MainWindow_SizeChanged;
+                App.MainWindow.AppWindow.Changed -= AppWindow_Changed;
                 LyricsView?.LyricInteracted -= LyricsView_LyricInteracted;
                 LyricsView?.ExceptionInteracted -= LyricsView_ExceptionInteracted;
                 LyricsView?.ShutdownLyricsCanvas();

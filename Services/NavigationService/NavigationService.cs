@@ -9,6 +9,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using Windows.Foundation;
 using WinUIMusicPlayer.Helper;
+using WinUIMusicPlayer.View;
 
 namespace WinUIMusicPlayer.Services.NavigationService
 {
@@ -296,6 +297,8 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 var pageInstance = _serviceProvider.GetRequiredService(resolvedType) as Page;
                 ContentFrame.Content = pageInstance;
                 ContentFrame.Visibility = Visibility.Visible;
+                if (pageInstance is PlayingDetailPage playingPage)
+                    playingPage.ResumeBackgroundRendering();
 
                 void StartAnimation()
                 {
@@ -390,6 +393,8 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 {
                     sb.Completed -= onAnimCompleted;
                     ContentFrame.Visibility = Visibility.Collapsed;
+                    if (ContentFrame.Content is PlayingDetailPage playingPage)
+                        playingPage.PauseBackgroundRendering();
                     ContentFrame.Opacity = 1;
                     ContentFrame.RenderTransform = null;
                     ContentFrame.ClearValue(UIElement.RenderTransformProperty);
