@@ -230,28 +230,48 @@ internal static class CoverLoadQueue
 
         SoftwareBitmap? softwareBitmap = null;
         InMemoryRandomAccessStream? outputStream = null;
+        BitmapDecoder? decoder = null;
         try
         {
             using var inputStream = new InMemoryRandomAccessStream();
             await inputStream.WriteAsync(picture.AsBuffer());
             inputStream.Seek(0);
 
-            var decoder = await BitmapDecoder.CreateAsync(inputStream);
+            try
+            {
+                decoder = await BitmapDecoder.CreateAsync(inputStream);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[DecodePictureAsync] BitmapDecoder.CreateAsync 失败\nStackTrace: {Trace}\n图片大小={Size}bytes, 前16字节={Hex}",
+                    ex.StackTrace, picture.Length, Convert.ToHexString(picture.AsSpan(0, Math.Min(16, picture.Length))));
+                return null;
+            }
+
             double aspect = (double)decoder.PixelWidth / decoder.PixelHeight;
             uint newW = (uint)coverSize;
             uint newH = (uint)Math.Max(1, (uint)(newW / aspect));
 
-            softwareBitmap = await decoder.GetSoftwareBitmapAsync(
-                BitmapPixelFormat.Bgra8,
-                BitmapAlphaMode.Premultiplied,
-                new BitmapTransform
-                {
-                    ScaledWidth = newW,
-                    ScaledHeight = newH,
-                    InterpolationMode = BitmapInterpolationMode.Fant
-                },
-                ExifOrientationMode.RespectExifOrientation,
-                ColorManagementMode.DoNotColorManage);
+            try
+            {
+                softwareBitmap = await decoder.GetSoftwareBitmapAsync(
+                    BitmapPixelFormat.Bgra8,
+                    BitmapAlphaMode.Premultiplied,
+                    new BitmapTransform
+                    {
+                        ScaledWidth = newW,
+                        ScaledHeight = newH,
+                        InterpolationMode = BitmapInterpolationMode.Fant
+                    },
+                    ExifOrientationMode.RespectExifOrientation,
+                    ColorManagementMode.DoNotColorManage);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "[DecodePictureAsync] GetSoftwareBitmapAsync 失败\nStackTrace: {Trace}\n原图={W}x{H}, OriginalPixelFormat={Fmt}, 目标={NewW}x{NewH}",
+                    ex.StackTrace, decoder.PixelWidth, decoder.PixelHeight, decoder.BitmapPixelFormat, newW, newH);
+                return null;
+            }
 
             outputStream = new InMemoryRandomAccessStream();
             var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.JpegEncoderId, outputStream);
@@ -263,7 +283,7 @@ internal static class CoverLoadQueue
             encoder.SetSoftwareBitmap(softwareBitmap);
             await encoder.FlushAsync();
 
-            if (!string.IsNullOrEmpty(AppSettings.MusicCoverCache))
+            if (music.ImageHash is { Length: > 0 } && coverSize > 0)
             {
                 try
                 {
@@ -289,6 +309,10 @@ internal static class CoverLoadQueue
                     await bitmap.SetSourceAsync(outputStream);
                     result = bitmap;
                 }
+                catch (Exception ex)
+                {
+                    _logger?.LogError(ex, "[DecodePictureAsync] SetSourceAsync 失败(UI线程)\nStackTrace: {Trace}", ex.StackTrace);
+                }
                 finally
                 {
                     outputStream?.Dispose();
@@ -300,7 +324,7 @@ internal static class CoverLoadQueue
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "DecodePictureAsync 操作失败");
+            _logger?.LogError(ex, "[DecodePictureAsync] 其他错误(非解码/非SetSource)\nStackTrace: {Trace}", ex.StackTrace);
             return null;
         }
         finally
