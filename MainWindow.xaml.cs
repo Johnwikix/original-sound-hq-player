@@ -36,9 +36,11 @@ namespace WinUIMusicPlayer
         private WindowHelper.WndProcDelegate newWndProcDelegate;
         private TaskbarHelper _taskbarHelper;
         private ILogger<MainWindow> _logger;
-        private Timer _trimTimer;
+        private Timer _trimTimer = new Timer(300000)
+        {
+            AutoReset = true
+        };
         private readonly object _trimLock = new();
-        private const int TrimIntervalMs = 300000;
         public MainWindow()
         {
             InitializeComponent();
@@ -64,6 +66,7 @@ namespace WinUIMusicPlayer
             SaveMainWindowHandle(AppData.HWnd);
             uiSettings = new UISettings();
             uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
+            _trimTimer.Elapsed += OnTrimTimerElapsed;
         }
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
@@ -242,6 +245,7 @@ namespace WinUIMusicPlayer
             if (dispose)
             {
                 StopPeriodicTrim();
+                _trimTimer.Dispose();
                 AppNotifyIconControl.Dispose();
                 _taskbarHelper.Dispose();
             }
@@ -250,47 +254,28 @@ namespace WinUIMusicPlayer
         public void StartPeriodicTrim()
         {
             lock (_trimLock)
-            {
-                if (_trimTimer != null)
-                    return;
-
-                _trimTimer = new Timer(TrimIntervalMs);
-                _trimTimer.AutoReset = true;
-                _trimTimer.Elapsed += OnTrimTimerElapsed;
+            {                
                 _trimTimer.Start();
             }
         }
 
         public void StopPeriodicTrim()
         {
-            Timer timer;
             lock (_trimLock)
             {
-                timer = _trimTimer;
-                _trimTimer = null;
-            }
-
-            if (timer != null)
-            {
-                timer.Stop();
-                timer.Elapsed -= OnTrimTimerElapsed;
-                timer.Dispose();
+                _trimTimer.Stop();
             }
         }
 
         private async void OnTrimTimerElapsed(object? sender, ElapsedEventArgs e)
         {
-            lock (_trimLock)
-            {
-                if (_trimTimer == null)
-                    return;
-            }
-
             try
             {
                 await WorkingSetCompressor.TrimSelfAsync();
             }
-            catch { }
+            catch(Exception ex) {
+                _logger.LogError($"内存清理失败: {ex.Message}");
+            }
         }
     }
 }
