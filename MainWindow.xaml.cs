@@ -278,7 +278,7 @@ namespace WinUIMusicPlayer
             }
         }
 
-        private async void OnTrimTimerElapsed(object sender, ElapsedEventArgs e)
+        private async void OnTrimTimerElapsed(object? sender, ElapsedEventArgs e)
         {
             lock (_trimLock)
             {
