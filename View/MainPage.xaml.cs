@@ -61,7 +61,7 @@ namespace WinUIMusicPlayer.View
 
         private void MainFrame_Navigated(object sender, Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
         {
-            _ = WorkingSetCompressor.TrimSelfAsync();
+            GC.Collect(GC.MaxGeneration, GCCollectionMode.Optimized, blocking: false);
         }
 
         private void NavigateTo(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)

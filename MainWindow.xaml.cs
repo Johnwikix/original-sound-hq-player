@@ -6,6 +6,7 @@ using Microsoft.UI;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using System;
+using System.Timers;
 using Windows.UI.ViewManagement;
 using Windows.UI.WindowManagement;
 using WinUIEx;
@@ -35,6 +36,9 @@ namespace WinUIMusicPlayer
         private WindowHelper.WndProcDelegate newWndProcDelegate;
         private TaskbarHelper _taskbarHelper;
         private ILogger<MainWindow> _logger;
+        private Timer _trimTimer;
+        private readonly object _trimLock = new();
+        private const int TrimIntervalMs = 300000;
         public MainWindow()
         {
             InitializeComponent();
@@ -125,6 +129,7 @@ namespace WinUIMusicPlayer
                         if (!this.Visible)
                         {
                             this.Show();
+                            StopPeriodicTrim();
                             InitializeTaskbarHelper();
                         }
                     });
@@ -148,6 +153,7 @@ namespace WinUIMusicPlayer
                 args.Cancel = true;                
                 this.Hide();
                 WorkingSetCompressor.TrimSelf();
+                StartPeriodicTrim();
             }
             else
             {
@@ -235,9 +241,56 @@ namespace WinUIMusicPlayer
         {
             if (dispose)
             {
+                StopPeriodicTrim();
                 AppNotifyIconControl.Dispose();
                 _taskbarHelper.Dispose();
             }
+        }
+
+        public void StartPeriodicTrim()
+        {
+            lock (_trimLock)
+            {
+                if (_trimTimer != null)
+                    return;
+
+                _trimTimer = new Timer(TrimIntervalMs);
+                _trimTimer.AutoReset = true;
+                _trimTimer.Elapsed += OnTrimTimerElapsed;
+                _trimTimer.Start();
+            }
+        }
+
+        public void StopPeriodicTrim()
+        {
+            Timer timer;
+            lock (_trimLock)
+            {
+                timer = _trimTimer;
+                _trimTimer = null;
+            }
+
+            if (timer != null)
+            {
+                timer.Stop();
+                timer.Elapsed -= OnTrimTimerElapsed;
+                timer.Dispose();
+            }
+        }
+
+        private async void OnTrimTimerElapsed(object sender, ElapsedEventArgs e)
+        {
+            lock (_trimLock)
+            {
+                if (_trimTimer == null)
+                    return;
+            }
+
+            try
+            {
+                await WorkingSetCompressor.TrimSelfAsync();
+            }
+            catch { }
         }
     }
 }

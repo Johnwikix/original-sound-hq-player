@@ -32,25 +32,20 @@ public static partial class WorkingSetCompressor
             SetProcessWorkingSetSizeEx(hProcess, minusOne, minusOne, 0);
     }
 
-    public static Task TrimSelfAsync(bool isEnableTrim = false)
+    public static Task TrimSelfAsync()
     {
-        if (isEnableTrim)
+        return Task.Run(() =>
         {
-            return Task.Run(() =>
-            {
-                GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true);
-                GC.WaitForPendingFinalizers();
-                GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true);
+            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true);
+            GC.WaitForPendingFinalizers();
+            GC.Collect(GC.MaxGeneration, GCCollectionMode.Forced, blocking: true);
 
-                var hProcess = Process.GetCurrentProcess().Handle;
-                var minusOne = new IntPtr(-1);
+            var hProcess = Process.GetCurrentProcess().Handle;
+            var minusOne = new IntPtr(-1);
 
-                if (!EmptyWorkingSet(hProcess))
-                    SetProcessWorkingSetSizeEx(hProcess, minusOne, minusOne, 0);
-            });
-        }
-        GC.Collect(GC.MaxGeneration, GCCollectionMode.Optimized, blocking: false);
-        return Task.CompletedTask;
+            if (!EmptyWorkingSet(hProcess))
+                SetProcessWorkingSetSizeEx(hProcess, minusOne, minusOne, 0);
+        });
     }
 
     public static bool TrimProcess(Process process)

@@ -281,10 +281,6 @@ namespace WinUIMusicPlayer.View.SubView
             var dbUpdate = App.Services.GetRequiredService<MusicDatabaseService>();
             await dbUpdate.SaveLyricsAsync(MusicDetail.Id, LyricsText, TranslatedLyricsText, KrcText, TKrcText);
             await dbUpdate.UpdateMusicInfo(MusicDetail);
-            if (AppData.albumCoverCache.ContainsKey(MusicDetail.Album) && AlbumCoverBitmap is not null)
-            {
-                AppData.albumCoverCache[MusicDetail.Album] = AlbumCoverBitmap;
-            }
         }
 
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)
@@ -295,7 +291,7 @@ namespace WinUIMusicPlayer.View.SubView
                 DateTime newModificationTime = DateTime.Now;
                 await UpdateFile(newModificationTime);
             }
-catch (Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, $"SaveToDataBaseButton_Click 保存数据库信息失败: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);

@@ -170,7 +170,6 @@ namespace WinUIMusicPlayer.View.SubView
         {
             LoadingGrid.Visibility = Visibility.Visible;
             AlbumDetail.Visibility = Visibility.Collapsed;
-            bool isResultAssigned = false;
             foreach (var music in AlbumMusics)
             {
                 Track theTrack = new(music.Path);
@@ -183,14 +182,6 @@ namespace WinUIMusicPlayer.View.SubView
                 }
                 await Task.Run(() => theTrack.Save());
                 await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
-                if (!isResultAssigned)
-                {
-                    if (AppData.albumCoverCache.ContainsKey(music.Album))
-                    {
-                        AppData.albumCoverCache[music.Album] = AlbumCoverBitmap;
-                    }
-                    isResultAssigned = true;
-                }
             }
         }
 

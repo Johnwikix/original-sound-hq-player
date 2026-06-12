@@ -358,7 +358,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 Interlocked.Exchange(ref _isAnimating, 0);
             }
             finally {
-                _ = WorkingSetCompressor.TrimSelfAsync();
+                GC.Collect(GC.MaxGeneration, GCCollectionMode.Optimized, blocking: false);
             }
         }
 
@@ -410,7 +410,7 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 Interlocked.Exchange(ref _isAnimating, 0);
             }
             finally {
-                _ = WorkingSetCompressor.TrimSelfAsync();
+                GC.Collect(GC.MaxGeneration, GCCollectionMode.Optimized, blocking: false);
             }
         }
 
