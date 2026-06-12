@@ -6,6 +6,8 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.Xaml.Interactivity;
 using System;
+using System.Buffers;
+using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
@@ -52,7 +54,6 @@ internal static class CoverLoadQueue
     private readonly record struct CoverLoadRequest(
         Music Music,
         string CacheKey,
-        BitmapImage Bitmap,
         int CoverSize,
         TaskCompletionSource<ImageSource?> Tcs,
         CancellationToken Token);
@@ -71,8 +72,7 @@ internal static class CoverLoadQueue
         }
 
         var tcs = new TaskCompletionSource<ImageSource?>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var bitmap = new BitmapImage { DecodePixelWidth = CoverSize };
-        var req = new CoverLoadRequest(music, cacheKey, bitmap, CoverSize, tcs, token);
+        var req = new CoverLoadRequest(music, cacheKey, CoverSize, tcs, token);
 
         if (_pendingTasks.TryAdd(cacheKey, tcs.Task))
         {
@@ -171,7 +171,7 @@ internal static class CoverLoadQueue
             {
                 if (File.GetLastWriteTime(cachePath) > File.GetLastWriteTime(req.Music.Path))
                 {
-                    var result = await LoadFromFilePathAsync(cachePath, req.Music, req.Bitmap, req.CoverSize, req.Token);
+                    var result = await LoadBgra8FromDiskAsync(cachePath, req.Token);
                     if (result != null) return result;
                 }
                 else
@@ -188,63 +188,84 @@ internal static class CoverLoadQueue
 
         req.Token.ThrowIfCancellationRequested();
 
-        return await DecodePictureAsync(picture, req.Music, req.Bitmap, req.CoverSize, req.Token);
+        return await DecodePictureAsync(picture, req.Music, req.CoverSize, req.Token);
     }
 
-    private static async Task<ImageSource?> LoadFromFilePathAsync(
-        string cachePath, Music music, BitmapImage bitmap, int coverSize, CancellationToken token)
+    private static async Task<ImageSource?> LoadBgra8FromDiskAsync(
+        string cachePath, CancellationToken token)
     {
+        byte[]? pixels = null;
         try
         {
-            var storageFile = await StorageFile.GetFileFromPathAsync(cachePath);
+            uint w, h;
+
+            await using (var fs = new FileStream(
+                cachePath, FileMode.Open, FileAccess.Read, FileShare.Read,
+                bufferSize: 4096, useAsync: true))
+            {
+                byte[] header = new byte[8];
+                await fs.ReadExactlyAsync(header, 0, 8, token);
+                w = BinaryPrimitives.ReadUInt32LittleEndian(header);
+                h = BinaryPrimitives.ReadUInt32LittleEndian(header.AsSpan(4));
+                if (w == 0 || h == 0) return null;
+
+                uint pixelBytes = w * h * 4;
+                if (pixelBytes > 32 * 1024 * 1024) return null; // 32MB sanity
+
+                pixels = ArrayPool<byte>.Shared.Rent((int)pixelBytes);
+                await fs.ReadExactlyAsync(pixels, 0, (int)pixelBytes, token);
+            }
+
+            var softwareBitmap = new SoftwareBitmap(
+                BitmapPixelFormat.Bgra8, (int)w, (int)h, BitmapAlphaMode.Premultiplied);
+            softwareBitmap.CopyFromBuffer(pixels.AsBuffer(0, (int)(w * h * 4)));
+
             ImageSource? result = null;
             await App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
             {
-                if (token.IsCancellationRequested) { result = null; return; }
-                IRandomAccessStream? stream = null;
+                if (token.IsCancellationRequested) return;
                 try
                 {
-                    stream = await storageFile.OpenReadAsync();
-                    await bitmap.SetSourceAsync(stream);
-                    result = bitmap;
+                    var source = new SoftwareBitmapSource();
+                    await source.SetBitmapAsync(softwareBitmap);
+                    result = source;
                 }
                 finally
                 {
-                    stream?.Dispose();
+                    softwareBitmap?.Dispose();
                 }
             });
-            if (result != null)
-            {
-                return result;
-            }
-            return null;
+            return result;
         }
-        catch (Exception ex) { _logger?.LogError(ex, "LoadFromFilePathAsync 操作失败"); return null; }
+        catch (Exception ex) { _logger?.LogError(ex, "LoadBgra8FromDiskAsync 失败"); return null; }
+        finally
+        {
+            if (pixels != null)
+                ArrayPool<byte>.Shared.Return(pixels);
+        }
     }
 
     private static async Task<ImageSource?> DecodePictureAsync(
-        byte[]? picture, Music music, BitmapImage bitmap, int coverSize, CancellationToken token)
+        byte[]? picture, Music music, int coverSize, CancellationToken token)
     {
         if (picture is not { Length: > 0 })
             return null;
 
-        SoftwareBitmap? softwareBitmap = null;
-        InMemoryRandomAccessStream? outputStream = null;
-        BitmapDecoder? decoder = null;
         try
         {
             using var inputStream = new InMemoryRandomAccessStream();
             await inputStream.WriteAsync(picture.AsBuffer());
             inputStream.Seek(0);
 
+            BitmapDecoder decoder;
             try
             {
                 decoder = await BitmapDecoder.CreateAsync(inputStream);
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "[DecodePictureAsync] BitmapDecoder.CreateAsync 失败\nStackTrace: {Trace}\n图片大小={Size}bytes, 前16字节={Hex}",
-                    ex.StackTrace, picture.Length, Convert.ToHexString(picture.AsSpan(0, Math.Min(16, picture.Length))));
+                _logger?.LogError(ex, "[DecodePictureAsync] BitmapDecoder.CreateAsync 失败, 大小={Size}bytes, 前16字节={Hex}",
+                    picture.Length, Convert.ToHexString(picture.AsSpan(0, Math.Min(16, picture.Length))));
                 return null;
             }
 
@@ -252,6 +273,7 @@ internal static class CoverLoadQueue
             uint newW = (uint)coverSize;
             uint newH = (uint)Math.Max(1, (uint)(newW / aspect));
 
+            SoftwareBitmap softwareBitmap;
             try
             {
                 softwareBitmap = await decoder.GetSoftwareBitmapAsync(
@@ -268,55 +290,54 @@ internal static class CoverLoadQueue
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "[DecodePictureAsync] GetSoftwareBitmapAsync 失败\nStackTrace: {Trace}\n原图={W}x{H}, OriginalPixelFormat={Fmt}, 目标={NewW}x{NewH}",
-                    ex.StackTrace, decoder.PixelWidth, decoder.PixelHeight, decoder.BitmapPixelFormat, newW, newH);
+                _logger?.LogError(ex, "[DecodePictureAsync] GetSoftwareBitmapAsync 失败, 原图={W}x{H}, PixelFormat={Fmt}, 目标={NewW}x{NewH}",
+                    decoder.PixelWidth, decoder.PixelHeight, decoder.BitmapPixelFormat, newW, newH);
                 return null;
             }
 
-            outputStream = new InMemoryRandomAccessStream();
-            var encoder = await BitmapEncoder.CreateAsync(BitmapEncoder.JpegEncoderId, outputStream);
-            var qualityProp = new BitmapPropertySet
-            {
-                { "ImageQuality", new BitmapTypedValue(0.85, PropertyType.Single) }
-            };
-            await encoder.BitmapProperties.SetPropertiesAsync(qualityProp);
-            encoder.SetSoftwareBitmap(softwareBitmap);
-            await encoder.FlushAsync();
-
-            if (music.ImageHash is { Length: > 0 } && coverSize > 0)
+            // 写 .bgra8 磁盘缓存
+            if (music.ImageHash is { Length: > 0 })
             {
                 try
                 {
+                    uint w = (uint)softwareBitmap.PixelWidth;
+                    uint h = (uint)softwareBitmap.PixelHeight;
+                    uint pixelBytes = w * h * 4;
+                    var pixelBuffer = new Windows.Storage.Streams.Buffer(pixelBytes);
+                    softwareBitmap.CopyToBuffer(pixelBuffer);
+
                     var cachePath = GetDiskCachePath(music.ImageHash, coverSize);
                     Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
-                    outputStream.Seek(0);
+                    Span<byte> header = stackalloc byte[8];
+                    BinaryPrimitives.WriteUInt32LittleEndian(header, w);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header[4..], h);
+
                     await using var fs = new FileStream(
                         cachePath, FileMode.Create, FileAccess.Write,
                         FileShare.None, bufferSize: 8192, useAsync: true);
-                    await outputStream.AsStream().CopyToAsync(fs, bufferSize: 8192);
+                    fs.Write(header);
+                    await pixelBuffer.AsStream().CopyToAsync(fs, token);
                 }
-                catch (Exception ex) { _logger?.LogError(ex, "写磁盘缓存失败"); }
+                catch (Exception ex) { _logger?.LogError(ex, "写.bgra8磁盘缓存失败"); }
             }
-
-            outputStream.Seek(0);
 
             ImageSource? result = null;
             await App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
             {
-                if (token.IsCancellationRequested) { result = null; return; }
+                if (token.IsCancellationRequested) return;
                 try
                 {
-                    await bitmap.SetSourceAsync(outputStream);
-                    result = bitmap;
+                    var source = new SoftwareBitmapSource();
+                    await source.SetBitmapAsync(softwareBitmap);
+                    result = source;
                 }
                 catch (Exception ex)
                 {
-                    _logger?.LogError(ex, "[DecodePictureAsync] SetSourceAsync 失败(UI线程)\nStackTrace: {Trace}", ex.StackTrace);
+                    _logger?.LogError(ex, "[DecodePictureAsync] SoftwareBitmapSource.SetBitmapAsync 失败");
                 }
                 finally
                 {
-                    outputStream?.Dispose();
-                    outputStream = null;
+                    softwareBitmap?.Dispose();
                 }
             });
 
@@ -324,13 +345,8 @@ internal static class CoverLoadQueue
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "[DecodePictureAsync] 其他错误(非解码/非SetSource)\nStackTrace: {Trace}", ex.StackTrace);
+            _logger?.LogError(ex, "[DecodePictureAsync] 解码/写入/显示失败");
             return null;
-        }
-        finally
-        {
-            softwareBitmap?.Dispose();
-            outputStream?.Dispose();
         }
     }
 
@@ -342,7 +358,7 @@ internal static class CoverLoadQueue
     private static string GetDiskCachePath(string imageHash, int coverSize)
     {
         var fileName = string.Create(
-            imageHash.Length + 1 + GetDigitCount(coverSize) + 4,
+            imageHash.Length + 1 + GetDigitCount(coverSize) + 6,
             (imageHash, coverSize),
             static (span, state) =>
             {
@@ -351,7 +367,7 @@ internal static class CoverLoadQueue
                 span[pos++] = '_';
                 state.coverSize.TryFormat(span[pos..], out int written);
                 pos += written;
-                ".jpg".AsSpan().CopyTo(span[pos..]);
+                ".bgra8".AsSpan().CopyTo(span[pos..]);
             });
         return Path.Combine(DiskCacheFolder, fileName);
     }
