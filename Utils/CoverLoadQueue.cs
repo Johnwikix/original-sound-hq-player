@@ -286,8 +286,9 @@ internal static class CoverLoadQueue
                         thumbPath, FileMode.Create, FileAccess.Write,
                         FileShare.None, bufferSize: 8192, useAsync: true);
                     fs.Write(header);
-                    await pixelBuffer.AsStream().CopyToAsync(fs, token);
+                    await pixelBuffer.AsStream().CopyToAsync(fs, CancellationToken.None);
                 }
+                catch (OperationCanceledException) { }
                 catch (Exception ex) { _logger?.LogError(ex, "写缩略图缓存失败"); }
             }
 
