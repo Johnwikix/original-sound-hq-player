@@ -171,8 +171,16 @@ internal static class CoverLoadQueue
                 }
                 else
                 {
-                    try { File.Delete(thumbPath); }
-                    catch (Exception ex) { _logger?.LogError(ex, "删除旧缩略图缓存失败"); }
+                    try
+                    {
+                        var dir = Path.GetDirectoryName(thumbPath)!;
+                        foreach (var file in Directory.GetFiles(dir, $"{req.Music.ImageHash}_*"))
+                        {
+                            try { File.Delete(file); }
+                            catch (Exception ex) { _logger?.LogError(ex, "清理旧缓存失败: {File}", file); }
+                        }
+                    }
+                    catch (Exception ex) { _logger?.LogError(ex, "清理旧缓存失败"); }
                 }
             }
         }

@@ -707,7 +707,7 @@ namespace WinUIMusicPlayer.Utils
                     string fileName = $"{music.Title}_{music.Album}_{music.Author}";
                     string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
                     fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
-                    string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".png");
+                    string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".bin");
                     if (System.IO.File.Exists(filePath))
                     {
                         picture = System.IO.File.ReadAllBytes(filePath);
