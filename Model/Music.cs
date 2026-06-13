@@ -1,7 +1,6 @@
 ﻿using AnimatedWin2dControls.Messages;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using SQLite;
@@ -45,7 +44,7 @@ namespace WinUIMusicPlayer.Model
                 {
                     if (App.Services.GetRequiredService<AppViewModel>().IsInitialized)
                     {
-                        WeakReferenceMessenger.Default.Send(new OffsetMsMessage(value));
+                        OffsetMsBus.Publish(value);
                         Save();
                     }
                 }

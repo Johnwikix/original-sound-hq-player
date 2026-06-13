@@ -1,6 +1,5 @@
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2;
 using AnimatedWin2dControls.Messages;
-using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Text;
@@ -17,13 +16,7 @@ using Windows.UI;
 
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 {
-    public sealed class UnifiedLyricsCanvasControlV2 : Control,
-        IRecipient<CurrentPlayingTimeMessage>,
-        IRecipient<IsPlayingMessage>,
-        IRecipient<OffsetMsMessage>,
-        IRecipient<LyricsFontSizeMessage>,
-        IRecipient<UILyricsMessage>,
-        IRecipient<LyricsSettingsSyncMessage>
+    public sealed class UnifiedLyricsCanvasControlV2 : Control
     {
         public event EventHandler<TimeSpan>? LyricLineClicked;
         public event EventHandler<Exception>? RenderError;
@@ -58,7 +51,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private double _internalTimeMs;
         private double _lastExternalTimeMs;
-        private const double SyncThresholdMs = 200.0;
+        private const double SyncThresholdMs = 250.0;
 
         public double AutoScrollSpeed = 4.0;
         public double UserScrollReturnSpeed = 12.0;
@@ -185,13 +178,23 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void OnControlLoaded(object sender, RoutedEventArgs e)
         {
-            WeakReferenceMessenger.Default.RegisterAll(this);
-            WeakReferenceMessenger.Default.Send(new RequestLyricsSettingsMessage());
+            TimeProgressBus.CurrentPlayingTimeChanged += OnCurrentPlayingTimeChanged;
+            IsPlayingBus.Changed += OnIsPlayingChanged;
+            OffsetMsBus.Changed += OnOffsetMsChanged;
+            LyricsFontSizeBus.Changed += OnLyricsFontSizeChanged;
+            UILyricsBus.Changed += OnUILyricsChangedBus;
+            LyricsSettingsBus.SyncRequested += OnLyricsSettingsChanged;
+            LyricsSyncRequestBus.Request();
         }
 
         private void OnControlUnloaded(object sender, RoutedEventArgs e)
         {
-            WeakReferenceMessenger.Default.UnregisterAll(this);
+            TimeProgressBus.CurrentPlayingTimeChanged -= OnCurrentPlayingTimeChanged;
+            IsPlayingBus.Changed -= OnIsPlayingChanged;
+            OffsetMsBus.Changed -= OnOffsetMsChanged;
+            LyricsFontSizeBus.Changed -= OnLyricsFontSizeChanged;
+            UILyricsBus.Changed -= OnUILyricsChangedBus;
+            LyricsSettingsBus.SyncRequested -= OnLyricsSettingsChanged;
             PrepareForShutdown();
         }
 
@@ -244,57 +247,57 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _cachedEdgeFadeHeight = -1;
         }
 
-        #region IRecipient Implementations
+        #region Bus Handlers
 
-        public void Receive(CurrentPlayingTimeMessage message)
+        private void OnCurrentPlayingTimeChanged(long totalMs)
         {
-            _cachedCurrentPlayingTimeMs = message.TotalMilliseconds;
+            _cachedCurrentPlayingTimeMs = totalMs;
         }
 
-        public void Receive(IsPlayingMessage message)
+        private void OnIsPlayingChanged(bool value)
         {
-            _cachedIsPlaying = message.Value;
+            _cachedIsPlaying = value;
         }
 
-        public void Receive(OffsetMsMessage message)
+        private void OnOffsetMsChanged(double value)
         {
-            _cachedOffsetMs = message.Value;
+            _cachedOffsetMs = value;
         }
 
-        public void Receive(LyricsFontSizeMessage message)
+        private void OnLyricsFontSizeChanged(double value)
         {
-            _cachedLyricsFontSize = message.Value;
+            _cachedLyricsFontSize = value;
             _layoutDirty = true;
             _canvas?.Invalidate();
         }
 
-        public void Receive(UILyricsMessage message)
+        private void OnUILyricsChangedBus(IList<LyricLine>? value)
         {
-            OnUILyricsChanged(message.Lines);
+            OnUILyricsChanged(value);
         }
 
-        public void Receive(LyricsSettingsSyncMessage message)
+        private void OnLyricsSettingsChanged(LyricsSettingsBus.Settings s)
         {
-            _cachedFontFamilyName = message.FontFamilyName;
-            _cachedLyricsTextAlignment = message.LyricsTextAlignment;
-            _cachedScrollSensitivity = message.ScrollSensitivity;
-            _cachedLyricsBlurAmount = message.LyricsBlurAmount;
-            _cachedGlowAmount = message.GlowAmount;
-            _cachedCharFloatAmount = message.CharFloatAmount;
-            _cachedCharScaleAmount = message.CharScaleAmount;
-            _cachedLongSyllableThreshold = message.LongSyllableThreshold;
-            _cachedIsFadeOutEnabled = message.IsFadeOutEnabled;
-            _cachedIsOutOfSightEnabled = message.IsOutOfSightEnabled;
-            _cachedUnplayedOpacity = message.UnplayedOpacity;
-            _cachedTranslatedOpacity = message.TranslatedOpacity;
-            _cachedStrokeWidth = message.StrokeWidth;
-            _cachedScrollEasingType = message.ScrollEasingType;
-            _cachedScrollEasingMode = message.ScrollEasingMode;
-            _cachedPlayingLineTopOffset = message.PlayingLineTopOffset;
-            _cachedTargetFrameRate = message.TargetFrameRate;
-            _canvas?.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / message.TargetFrameRate);
+            _cachedFontFamilyName = s.FontFamilyName;
+            _cachedLyricsTextAlignment = s.LyricsTextAlignment;
+            _cachedScrollSensitivity = s.ScrollSensitivity;
+            _cachedLyricsBlurAmount = s.LyricsBlurAmount;
+            _cachedGlowAmount = s.GlowAmount;
+            _cachedCharFloatAmount = s.CharFloatAmount;
+            _cachedCharScaleAmount = s.CharScaleAmount;
+            _cachedLongSyllableThreshold = s.LongSyllableThreshold;
+            _cachedIsFadeOutEnabled = s.IsFadeOutEnabled;
+            _cachedIsOutOfSightEnabled = s.IsOutOfSightEnabled;
+            _cachedUnplayedOpacity = s.UnplayedOpacity;
+            _cachedTranslatedOpacity = s.TranslatedOpacity;
+            _cachedStrokeWidth = s.StrokeWidth;
+            _cachedScrollEasingType = s.ScrollEasingType;
+            _cachedScrollEasingMode = s.ScrollEasingMode;
+            _cachedPlayingLineTopOffset = s.PlayingLineTopOffset;
+            _cachedTargetFrameRate = s.TargetFrameRate;
+            _canvas?.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / s.TargetFrameRate);
 
-            bool isDark = message.IsDark;
+            bool isDark = s.IsDark;
             if (isDark)
             {
                 _playedColor = Colors.White;

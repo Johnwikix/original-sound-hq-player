@@ -282,14 +282,16 @@ namespace WinUIMusicPlayer.View
             ViewModel.AppViewModel.IsUserDraggingProgressSlider = true;
         }
 
-        private async void Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
+        private void Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
         {
             ViewModel.AppViewModel.IsUserDraggingProgressSlider = false;
-            double newPosition = Math.Max(0, Math.Min(ViewModel.AppViewModel.ProgressSlider, (await ViewModel.PlayerCommandService.GetTimeProgress()).totalMs / 1000.0));
             _ = Task.Run(() =>
             {
+                var (_, totalMs) = ViewModel.AppViewModel.GetTimeProgressCache();
+                long newPosMs = Math.Max(0, Math.Min((long)(ViewModel.AppViewModel.ProgressSlider * 1000), totalMs));
                 ViewModel.AppViewModel.IsManualSelect = true;
-                ViewModel.PlayerCommandService.ChangeWaveChannelTime(TimeSpan.FromSeconds(newPosition));
+                ViewModel.PlayerCommandService.ChangeWaveChannelTime(newPosMs);
+                ViewModel.AppViewModel.SetTimeProgressCache(newPosMs, totalMs);
                 ViewModel.AppViewModel.IsManualSelect = false;
             });
         }

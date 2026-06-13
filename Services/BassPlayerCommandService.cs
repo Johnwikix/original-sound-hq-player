@@ -162,40 +162,14 @@ namespace WinUIMusicPlayer.Services
             });
         }
 
-        public void ChangeWaveChannelTime(System.TimeSpan timeSpan)
+        public void ChangeWaveChannelTime(long positionMs)
         {
-            IpcService.SetPosition(timeSpan.TotalSeconds);
+            IpcService.SetPosition(positionMs);
         }
 
         public void SetVolume(double volume)
         {
             IpcService.ChangeVolume(volume);
-        }
-
-        public async Task<double> GetCurrentPosition()
-        {
-            try
-            {
-                return await IpcService.GetCurrentPosition();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"GetCurrentPosition failed: {ex.Message}");
-                return 0;
-            }
-        }
-
-        public async Task<double> GetTotalPosition()
-        {
-            try
-            {
-                return await IpcService.GetDuration();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"GetTotalPosition failed: {ex.Message}");
-                return 0;
-            }
         }
 
         public async Task<(long currentMs, long totalMs)> GetTimeProgress()
@@ -211,11 +185,11 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public async Task<double> AdjustPlaybackPosition(int seconds)
+        public async Task<long> AdjustPlaybackPosition(long curMs, long totalMs, long deltaMs)
         {
             try
             {
-                return await IpcService.AdjustPlaybackPosition(seconds);
+                return await IpcService.AdjustPlaybackPosition(curMs, totalMs, deltaMs);
             }
             catch (Exception ex)
             {

@@ -10,11 +10,12 @@ using Microsoft.UI.Xaml.Data;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Timers;
 using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Helper;
@@ -115,7 +116,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value) && IsInitialized)
                 {
-                    WeakReferenceMessenger.Default.Send(new OffsetMsMessage(value?.LyricsOffsetMs ?? 0));
+                    AnimatedWin2dControls.Messages.OffsetMsBus.Publish(value?.LyricsOffsetMs ?? 0);
                 }
             }
         }
@@ -173,7 +174,7 @@ namespace WinUIMusicPlayer.ViewModel
             set
             {
                 if (SetProperty(ref field, value))
-                    WeakReferenceMessenger.Default.Send(new UILyricsMessage(value));
+                    AnimatedWin2dControls.Messages.UILyricsBus.Publish(value);
             }
         } = [];
         public int LastLyricIndex { get; set; } = -1;
@@ -194,12 +195,23 @@ namespace WinUIMusicPlayer.ViewModel
         public TimeSpan LyricsDurationTime { get; set; } = TimeSpan.Zero;
         public bool IsManualSelect { get; set; } = false;
         public bool IsMouseOverVolumeSlider { get; set; } = false;
-        private System.Timers.Timer ProgressTimer { get; set; }
         private TimeSpan TotalTime { get; set; }
         private TimeSpan CurrentTime { get; set; }
         public TimeSpan CurrentPlayingTime { get; set => SetProperty(ref field, value); } = TimeSpan.Zero;
-        private StringBuilder TimeStringBuilder { get; set; } = new StringBuilder(16);
+        private TimeProgressCache _cache;
+        private DispatcherQueueTimer? _progressTimer;
+        private CancellationTokenSource? _progressPollingCts;
+        private Task? _progressPollingTask;
+        public event Action<long>? CurrentPlayingTimeChanged;
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
+
+        private struct TimeProgressCache
+        {
+            private long _currentMs;
+            private long _totalMs;
+            public void Store(long c, long t) { Volatile.Write(ref _totalMs, t); Volatile.Write(ref _currentMs, c); }
+            public (long curMs, long totalMs) Load() => (Volatile.Read(ref _currentMs), Volatile.Read(ref _totalMs));
+        }
 
         // 带有复杂逻辑的属性重构
         public bool UseImageDominantTheme
@@ -310,7 +322,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     AppData.IsPlaying = value;
                     UpdatePlayPauseButtonIcon();
-                    WeakReferenceMessenger.Default.Send(new IsPlayingMessage(value));
+                    AnimatedWin2dControls.Messages.IsPlayingBus.Publish(value);
                 }
             }
         } = false;
@@ -330,9 +342,8 @@ namespace WinUIMusicPlayer.ViewModel
             SystemMediaControlsService = systemMediaControlsService;
             _logger = logger;
             AllPlayList.CollectionChanged += AllPlayList_CollectionChanged;
-            ProgressTimer = new System.Timers.Timer(200);
-            ProgressTimer.Elapsed += ProgressTimer_Elapsed;
-            WeakReferenceMessenger.Default.Register<RequestLyricsSettingsMessage>(this, (r, m) => SendFullLyricsSync());
+            _progressPollingCts = new CancellationTokenSource();
+            AnimatedWin2dControls.Messages.LyricsSyncRequestBus.Requested += SendFullLyricsSync;
         }
 
         public void UpdatePlayPauseButtonIcon()
@@ -340,119 +351,152 @@ namespace WinUIMusicPlayer.ViewModel
             App.MainWindow.UpdateTaskbarIcon();
             SystemMediaControlsService.UpdateSystemMediaControlsState();
         }
-        private async void HandleProgressSliderChange(double value)
+        private void HandleProgressSliderChange(double value)
         {
-            //ProgressSliderThumbTipText = BindUtils.FormatThumbTipTime(value);
-            if (IsMouseOverProgressBar)
+            if (IsMouseOverProgressBar && !IsUserDraggingProgressSlider)
             {
-                if (!IsUserDraggingProgressSlider)
+                var (curMs, totalMs) = GetTimeProgressCache();
+                long newPosMs = (long)(value * 1000);
+                if (Math.Abs(newPosMs - curMs) > 2000)
                 {
-                    var (curMs, _) = await App.Services.GetRequiredService<BassPlayerCommandService>().GetTimeProgress();
-                    double currentPlayPosition = curMs / 1000.0;
-                    if (Math.Abs(value - currentPlayPosition) > 2.0)
+                    _ = Task.Run(() =>
                     {
-                        _ = Task.Run(() =>
-                        {
-                            IsManualSelect = true;
-                            App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime(TimeSpan.FromSeconds(value));
-                            IsManualSelect = false;
-                        });
-                    }
+                        IsManualSelect = true;
+                        App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime(newPosMs);
+                        SetTimeProgressCache(newPosMs, totalMs);
+                        IsManualSelect = false;
+                    });
                 }
             }
         }
         public void StartProgressTimer()
         {
-            ProgressTimer?.Start();
+            if (_progressTimer is null)
+            {
+                _progressTimer = App.MainWindow.DispatcherQueue.CreateTimer();
+                _progressTimer.Interval = TimeSpan.FromMilliseconds(50);
+                _progressTimer.IsRepeating = true;
+                _progressTimer.Tick += OnProgressTick;
+            }
+            if (_progressPollingCts is null || _progressPollingCts.IsCancellationRequested)
+            {
+                _progressPollingCts?.Dispose();
+                _progressPollingCts = new CancellationTokenSource();
+            }
+            if (_progressPollingTask is null || _progressPollingTask.IsCompleted)
+            {
+                _progressPollingTask = Task.Run(() => PollProgressLoopAsync(_progressPollingCts!.Token));
+            }
+            _progressTimer.Start();
         }
+
         public void StopProgressTimer()
         {
-            ProgressTimer?.Stop();
+            _progressTimer?.Stop();
+            _progressPollingCts?.Cancel();
         }
 
-        private void ProgressTimer_Elapsed(object? sender, ElapsedEventArgs e)
+        public void UpdateProgressTimerUI()
         {
+            OnProgressTick(null, null!);
+        }
+
+        public (long curMs, long totalMs) GetTimeProgressCache() => _cache.Load();
+
+        public void SetTimeProgressCache(long curMs, long totalMs) => _cache.Store(curMs, totalMs);
+
+        public void SetTimeProgressCacheCurMs(long curMs)
+        {
+            var (_, oldTot) = _cache.Load();
+            _cache.Store(curMs, oldTot);
+        }
+
+        private async Task PollProgressLoopAsync(CancellationToken ct)
+        {
+            var svc = App.Services.GetRequiredService<BassPlayerCommandService>();
             try
             {
-                if (!IsUserDraggingProgressSlider)
+                using var pt = new PeriodicTimer(TimeSpan.FromMilliseconds(250));
+                while (await pt.WaitForNextTickAsync(ct))
                 {
-                    UpdateProgressTimerUI();
+                    try
+                    {
+                        var (cur, tot) = await svc.GetTimeProgress();
+                        _cache.Store(cur, tot);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "进度轮询失败");
+                    }
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, ex.Message);
-            }
+            catch (OperationCanceledException) { }
+            catch (ObjectDisposedException) { }
         }
 
-        public async void UpdateProgressTimerUI()
+        private void OnProgressTick(DispatcherQueueTimer? sender, object args)
         {
+            if (IsUserDraggingProgressSlider) return;
             try
             {
-                var (curMs, totalMs) = await App.Services.GetRequiredService<BassPlayerCommandService>().GetTimeProgress();
+                var (curMs, totalMs) = _cache.Load();
                 TotalTime = TimeSpan.FromMilliseconds(totalMs);
                 CurrentTime = TimeSpan.FromMilliseconds(curMs);
-                double currentTimeMs = curMs;
-                int currentSecond = (int)CurrentTime.TotalSeconds;
-                bool secondChanged = currentSecond != _lastDisplayedSecond;
-                if (secondChanged)
-                    _lastDisplayedSecond = currentSecond;
+                CurrentPlayingTime = CurrentTime;
+                CurrentPlayingTimeChanged?.Invoke(curMs);
+                AnimatedWin2dControls.Messages.TimeProgressBus.Publish(curMs);
 
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                {
-                    CurrentPlayingTime = CurrentTime;
-                    WeakReferenceMessenger.Default.Send(new CurrentPlayingTimeMessage(currentTimeMs));
-                    if (!IsManualSelect)
-                    {
-                        try
-                        {
-                            ProgressSlider = curMs / 1000.0;
-                            ProgressSliderMax = totalMs / 1000.0;
-                            if (secondChanged)
-                            {
-                                TimeStringBuilder.Clear();
-                                if (TotalTime.TotalHours >= 1)
-                                {
-                                    PlayTimeText = TimeStringBuilder
-                                        .Append(CurrentTime.Hours.ToString("D2"))
-                                        .Append(':')
-                                        .Append(CurrentTime.Minutes.ToString("D2"))
-                                        .Append(':')
-                                        .Append(CurrentTime.Seconds.ToString("D2"))
-                                        .Append('/')
-                                        .Append(TotalTime.Hours.ToString("D2"))
-                                        .Append(':')
-                                        .Append(TotalTime.Minutes.ToString("D2"))
-                                        .Append(':')
-                                        .Append(TotalTime.Seconds.ToString("D2"))
-                                        .ToString();
-                                }
-                                else
-                                {
-                                    PlayTimeText = TimeStringBuilder
-                                        .Append(CurrentTime.Minutes.ToString("D2"))
-                                        .Append(':')
-                                        .Append(CurrentTime.Seconds.ToString("D2"))
-                                        .Append('/')
-                                        .Append(TotalTime.Minutes.ToString("D2"))
-                                        .Append(':')
-                                        .Append(TotalTime.Seconds.ToString("D2"))
-                                        .ToString();
-                                }
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogError(ex, $"UpdateProgressTimerUI 更新进度条UI失败: {ex.Message}");
-                        }
-                    }
-                });
+                if (IsManualSelect) return;
+
+                ProgressSlider = curMs / 1000.0;
+                ProgressSliderMax = totalMs / 1000.0;
+
+                int currentSecond = (int)CurrentTime.TotalSeconds;
+                if (currentSecond == _lastDisplayedSecond) return;
+                _lastDisplayedSecond = currentSecond;
+
+                PlayTimeText = CurrentTime.Hours >= 1
+                    ? string.Create(17, (curMs, totalMs), WriteTimeWithHours)
+                    : string.Create(11, (curMs, totalMs), WriteTimeNoHours);
+
                 SystemMediaControlsService.UpdateTimelineProperties(CurrentTime, TotalTime);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message);
+                _logger.LogError(ex, "UpdateProgressTimerUI 更新进度条UI失败");
             }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void WriteTimeWithHours(Span<char> d, (long curMs, long totMs) s)
+        {
+            var cur = TimeSpan.FromMilliseconds(s.curMs);
+            var tot = TimeSpan.FromMilliseconds(s.totMs);
+            cur.Hours.TryFormat(d.Slice(0, 2),   out _, "D2", CultureInfo.InvariantCulture);
+            d[2] = ':';
+            cur.Minutes.TryFormat(d.Slice(3, 2), out _, "D2", CultureInfo.InvariantCulture);
+            d[5] = ':';
+            cur.Seconds.TryFormat(d.Slice(6, 2), out _, "D2", CultureInfo.InvariantCulture);
+            d[8] = '/';
+            tot.Hours.TryFormat(d.Slice(9, 2),   out _, "D2", CultureInfo.InvariantCulture);
+            d[11] = ':';
+            tot.Minutes.TryFormat(d.Slice(12, 2), out _, "D2", CultureInfo.InvariantCulture);
+            d[14] = ':';
+            tot.Seconds.TryFormat(d.Slice(15, 2), out _, "D2", CultureInfo.InvariantCulture);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static void WriteTimeNoHours(Span<char> d, (long curMs, long totMs) s)
+        {
+            var cur = TimeSpan.FromMilliseconds(s.curMs);
+            var tot = TimeSpan.FromMilliseconds(s.totMs);
+            cur.Minutes.TryFormat(d.Slice(0, 2), out _, "D2", CultureInfo.InvariantCulture);
+            d[2] = ':';
+            cur.Seconds.TryFormat(d.Slice(3, 2), out _, "D2", CultureInfo.InvariantCulture);
+            d[5] = '/';
+            tot.Minutes.TryFormat(d.Slice(6, 2), out _, "D2", CultureInfo.InvariantCulture);
+            d[8] = ':';
+            tot.Seconds.TryFormat(d.Slice(9, 2), out _, "D2", CultureInfo.InvariantCulture);
         }
 
         public void LoadLyricsToUI(Music music)
@@ -1034,31 +1078,31 @@ namespace WinUIMusicPlayer.ViewModel
                 "Right" => Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment.Right,
                 _ => Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment.Left,
             };
-            WeakReferenceMessenger.Default.Send(new LyricsSettingsSyncMessage(
-                FontFamilyName: fontFamilyName,
-                LyricsTextAlignment: alignment,
-                IsDark: IsDarkMode,
-                ScrollSensitivity: 1.0,
-                LyricsBlurAmount: LyricsBlurAmount,
-                GlowAmount: GlowAmount,
-                CharFloatAmount: CharFloatAmount,
-                CharScaleAmount: CharScaleAmount,
-                LongSyllableThreshold: LongSyllableThreshold,
-                IsFadeOutEnabled: true,
-                IsOutOfSightEnabled: true,
-                UnplayedOpacity: UnplayedOpacityPercent / 100.0,
-                TranslatedOpacity: TranslatedOpacityPercent / 100.0,
-                StrokeWidth: 0.0,
-                ScrollEasingType: AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2.EasingType.Sine,
-                ScrollEasingMode: AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2.EaseMode.Out,
-                PlayingLineTopOffset: PlayingLineTopOffsetPercent / 100.0,
-                TargetFrameRate: TargetFrameRate));
+            AnimatedWin2dControls.Messages.LyricsSettingsBus.Publish(new AnimatedWin2dControls.Messages.LyricsSettingsBus.Settings(
+                fontFamilyName: fontFamilyName,
+                lyricsTextAlignment: alignment,
+                isDark: IsDarkMode,
+                scrollSensitivity: 1.0,
+                lyricsBlurAmount: LyricsBlurAmount,
+                glowAmount: GlowAmount,
+                charFloatAmount: CharFloatAmount,
+                charScaleAmount: CharScaleAmount,
+                longSyllableThreshold: LongSyllableThreshold,
+                isFadeOutEnabled: true,
+                isOutOfSightEnabled: true,
+                unplayedOpacity: UnplayedOpacityPercent / 100.0,
+                translatedOpacity: TranslatedOpacityPercent / 100.0,
+                strokeWidth: 0.0,
+                scrollEasingType: AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2.EasingType.Sine,
+                scrollEasingMode: AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2.EaseMode.Out,
+                playingLineTopOffset: PlayingLineTopOffsetPercent / 100.0,
+                targetFrameRate: TargetFrameRate));
         }
 
         private void SendLyricsFontSize()
         {
             double fontSize = IsGlobalFontSizeEnabled ? GlobalFontSize : LyricsFontSize;
-            WeakReferenceMessenger.Default.Send(new LyricsFontSizeMessage(fontSize));
+            AnimatedWin2dControls.Messages.LyricsFontSizeBus.Publish(fontSize);
         }
 
         private void SendFullLyricsSync()
@@ -1066,21 +1110,22 @@ namespace WinUIMusicPlayer.ViewModel
             _settingsDebounceTimer?.Stop();
             SendLyricsSettings();
             SendLyricsFontSize();
-            WeakReferenceMessenger.Default.Send(new IsPlayingMessage(IsPlaying));
-            WeakReferenceMessenger.Default.Send(new CurrentPlayingTimeMessage(CurrentTime.TotalMilliseconds));
-            WeakReferenceMessenger.Default.Send(new OffsetMsMessage(CurrentPlayingMusic?.LyricsOffsetMs ?? 0));
+            AnimatedWin2dControls.Messages.IsPlayingBus.Publish(IsPlaying);
+            AnimatedWin2dControls.Messages.TimeProgressBus.Publish((long)CurrentTime.TotalMilliseconds);
+            AnimatedWin2dControls.Messages.OffsetMsBus.Publish(CurrentPlayingMusic?.LyricsOffsetMs ?? 0);
             if (UILyrics.Count > 0)
-                WeakReferenceMessenger.Default.Send(new UILyricsMessage(UILyrics));
+                AnimatedWin2dControls.Messages.UILyricsBus.Publish(UILyrics);
         }
 
         private void Dispose(bool dispose)
         {
             if (dispose)
             {
-                ProgressTimer?.Stop();
+                _progressTimer?.Stop();
+                _progressPollingCts?.Cancel();
+                _progressPollingCts?.Dispose();
                 SearchCts?.Cancel();
                 SearchCts?.Dispose();
-                ProgressTimer?.Dispose();
             }
         }
     }

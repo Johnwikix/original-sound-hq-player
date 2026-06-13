@@ -264,28 +264,6 @@ namespace WinUIMusicPlayer.Services
             finally { ArrayPool<byte>.Shared.Return(buf); }
         }
 
-        public async Task<double> GetCurrentPosition()
-        {
-            var (resType, _) = await SendWithResponseAsync(CommandId.GetProgress, ReadOnlyMemory<byte>.Empty, _posBuf);
-            if (resType == MessageTypeId.CurrentTime)
-            {
-                var r = BinarySerializer.ReadPositionResponse(_posBuf);
-                return r.PositionSeconds;
-            }
-            return 0;
-        }
-
-        public async Task<double> GetDuration()
-        {
-            var (resType, _) = await SendWithResponseAsync(CommandId.GetDuration, ReadOnlyMemory<byte>.Empty, _posBuf);
-            if (resType == MessageTypeId.TotalTime)
-            {
-                var r = BinarySerializer.ReadPositionResponse(_posBuf);
-                return r.PositionSeconds;
-            }
-            return 0;
-        }
-
         public async Task<(long currentMs, long totalMs)> GetTimeProgress()
         {
             var (resType, _) = await SendWithResponseAsync(CommandId.GetTimeProgress, ReadOnlyMemory<byte>.Empty, _timeProgressBuf);
@@ -297,9 +275,9 @@ namespace WinUIMusicPlayer.Services
             return (0, 0);
         }
 
-        public void SetPosition(double position)
+        public void SetPosition(long positionMs)
         {
-            var req = new ChangePositionRequest { PositionSeconds = position };
+            var req = new ChangePositionRequest { PositionMs = positionMs };
             var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.ChangePositionRequestSize);
             BinarySerializer.WriteChangePositionRequest(buf, req);
             FireCommand(CommandId.ChangePosition, buf, BinarySerializer.ChangePositionRequestSize);
@@ -313,9 +291,9 @@ namespace WinUIMusicPlayer.Services
             FireCommand(CommandId.ChangeVolume, buf, BinarySerializer.ChangeVolumeRequestSize);
         }
 
-        public async Task<double> AdjustPlaybackPosition(int seconds)
+        public async Task<long> AdjustPlaybackPosition(long curMs, long totalMs, long deltaMs)
         {
-            var req = new AdjustPlaybackPositionRequest { Seconds = seconds };
+            var req = new AdjustPlaybackPositionRequest { CurMs = curMs, TotalMs = totalMs, DeltaMs = deltaMs };
             var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.AdjustPlaybackPositionRequestSize);
             try
             {
@@ -326,7 +304,7 @@ namespace WinUIMusicPlayer.Services
                 if (resType == MessageTypeId.PositionAdjusted)
                 {
                     var r = BinarySerializer.ReadPositionResponse(_posBuf);
-                    return r.PositionSeconds;
+                    return r.PositionMs;
                 }
                 return 0;
             }

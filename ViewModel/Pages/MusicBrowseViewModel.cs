@@ -594,16 +594,19 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void OnFastForwardButton()
         {
-            AdjustPlaybackPosition(30);
+            AdjustPlaybackPosition(30_000);
         }
         [RelayCommand]
         private void OnFastBackwardButton()
         {
-            AdjustPlaybackPosition(-10);
+            AdjustPlaybackPosition(-10_000);
         }
-        public async void AdjustPlaybackPosition(int seconds)
+        public async void AdjustPlaybackPosition(long deltaMs)
         {
-            AppViewModel.ProgressSlider = await MusicPlaybackService.AdjustPlaybackPosition(seconds);
+            var (curMs, totalMs) = AppViewModel.GetTimeProgressCache();
+            long newPosMs = await MusicPlaybackService.AdjustPlaybackPosition(curMs, totalMs, deltaMs);
+            AppViewModel.ProgressSlider = newPosMs / 1000.0;
+            AppViewModel.SetTimeProgressCache(newPosMs, totalMs);
         }
         [RelayCommand]
         private void OnVolumeSliderIconButtonChanged()

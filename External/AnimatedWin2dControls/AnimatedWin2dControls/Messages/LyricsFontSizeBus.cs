@@ -1,0 +1,9 @@
+using System;
+
+namespace AnimatedWin2dControls.Messages;
+
+public static class LyricsFontSizeBus
+{
+    public static event Action<double>? Changed;
+    public static void Publish(double value) => Changed?.Invoke(value);
+}

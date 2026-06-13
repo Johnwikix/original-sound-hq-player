@@ -12,7 +12,7 @@ public struct SetMusicUrlRequest
 
 public struct ChangePositionRequest
 {
-    public double PositionSeconds;
+    public long PositionMs;
 }
 
 public struct ChangeVolumeRequest
@@ -22,7 +22,9 @@ public struct ChangeVolumeRequest
 
 public struct AdjustPlaybackPositionRequest
 {
-    public int Seconds;
+    public long CurMs;
+    public long TotalMs;
+    public long DeltaMs;
 }
 
 public struct IpcSetting
@@ -74,7 +76,7 @@ public struct PlayStateResponse
 
 public struct PositionResponse
 {
-    public double PositionSeconds;
+    public long PositionMs;
 }
 
 public struct VolumeResponse
