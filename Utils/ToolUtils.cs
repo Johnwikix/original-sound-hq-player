@@ -1074,16 +1074,30 @@ namespace WinUIMusicPlayer.Utils
                 var cacheFolder = Path.Combine(AppSettings.MusicCoverCache, "Cache");
                 if (!Directory.Exists(cacheFolder)) return;
 
-                var pattern = $"*_{CoverLoadQueue.CoverSize}.png";
-                var validFiles = Directory.EnumerateFiles(cacheFolder, pattern).AsValueEnumerable().ToHashSet();
+                // 收集应保留的文件
+                var keepFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-                foreach (var file in Directory.EnumerateFiles(cacheFolder, "*.png"))
+                // 当前尺寸的 .bmp 缩略图
+                var thumbPattern = $"*_{CoverLoadQueue.CoverSize}.bmp";
+                foreach (var f in Directory.EnumerateFiles(cacheFolder, thumbPattern))
+                    keepFiles.Add(f);
+
+                // _raw.bin 全尺寸缓存（与 coverSize 无关）
+                foreach (var f in Directory.EnumerateFiles(cacheFolder, "*_raw.bin"))
+                    keepFiles.Add(f);
+
+                // 删除旧格式/旧尺寸缓存
+                var cacheExts = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+                    { ".bmp", ".raw", ".bgra8", ".png", ".jpg" };
+
+                foreach (var file in Directory.EnumerateFiles(cacheFolder))
                 {
-                    if (!validFiles.Contains(file))
-                        try { System.IO.File.Delete(file); } catch (Exception ex) { _logger.LogError(ex, $"CleanupStaleCacheFiles 清理缓存文件失败: {ex.Message}"); }
+                    if (keepFiles.Contains(file)) continue;
+                    if (cacheExts.Contains(Path.GetExtension(file)))
+                        try { System.IO.File.Delete(file); } catch (Exception ex) { _logger.LogError(ex, $"CleanupStaleCacheFiles: {ex.Message}"); }
                 }
             }
-            catch (Exception ex) { _logger.LogError(ex, $"CleanupStaleCacheFiles 清理过期缓存失败: {ex.Message}"); }
+            catch (Exception ex) { _logger.LogError(ex, "CleanupStaleCacheFiles 失败"); }
         }
 
         public static string PlayModeToString(PlayMode playMode)
