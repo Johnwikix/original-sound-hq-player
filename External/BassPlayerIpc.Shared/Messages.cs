@@ -20,13 +20,6 @@ public struct ChangeVolumeRequest
     public double Volume;
 }
 
-public struct AdjustPlaybackPositionRequest
-{
-    public long CurMs;
-    public long TotalMs;
-    public long DeltaMs;
-}
-
 public struct IpcSetting
 {
     public string? OutputMode;
@@ -72,11 +65,6 @@ public struct FailedResponse
 public struct PlayStateResponse
 {
     public bool IsPlaying;
-}
-
-public struct PositionResponse
-{
-    public long PositionMs;
 }
 
 public struct VolumeResponse

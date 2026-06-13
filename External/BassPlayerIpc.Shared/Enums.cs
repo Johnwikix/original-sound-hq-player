@@ -17,21 +17,20 @@ public enum CommandId : short
 
     // Settings
     UpdateSettings = 10,
-    AdjustPlaybackPosition = 11,
 
     // Equalizer
-    ToggleEqualizer = 12,
-    SetEqualizer = 13,
-    ClearEqualizer = 14,
-    SetEqualizerGain = 15,
-    UpdateEq = 16,
+    ToggleEqualizer = 11,
+    SetEqualizer = 12,
+    ClearEqualizer = 13,
+    SetEqualizerGain = 14,
+    UpdateEq = 15,
 
     // Devices
-    GetWasapiDevices = 17,
-    GetAsioDevices = 18,
+    GetWasapiDevices = 16,
+    GetAsioDevices = 17,
 
     // Time
-    GetTimeProgress = 19,
+    GetTimeProgress = 18,
 }
 
 public enum MessageTypeId : short
@@ -43,13 +42,12 @@ public enum MessageTypeId : short
     PlayEnded = 4,
     CurrentTime = 5,
     TotalTime = 6,
-    PositionAdjusted = 7,
-    VolumeWriteBack = 8,
-    Exit = 9,
-    NotificationDropped = 10,
-    WasapiDevices = 11,
-    AsioDevices = 12,
-    TimeProgress = 13,
+    VolumeWriteBack = 7,
+    Exit = 8,
+    NotificationDropped = 9,
+    WasapiDevices = 10,
+    AsioDevices = 11,
+    TimeProgress = 12,
 }
 
 public enum ErrorCode : short

@@ -15,13 +15,11 @@ public static class BinarySerializer
     public const int SetMusicUrlRequestSize = StringHeaderSize + MaxStringBytes;
     public const int ChangePositionRequestSize = 8;
     public const int ChangeVolumeRequestSize = 8;
-    public const int AdjustPlaybackPositionRequestSize = 24;
     public const int IpcSettingSize = StringHeaderSize + MaxStringBytes + 4 + 4 + 4 + 1 + 4 + 4 + 1 + 4 + 1 + 1;
     public const int SetEqualizerGainRequestSize = 1 + 4;
     public const int UpdateEqRequestSize = 40;
     public const int FailedResponseSize = 2;
     public const int PlayStateResponseSize = 1;
-    public const int PositionResponseSize = 8;
     public const int VolumeResponseSize = 4;
     public const int TimeProgressSize = 16;
 
@@ -82,24 +80,6 @@ public static class BinarySerializer
     public static ChangeVolumeRequest ReadChangeVolumeRequest(ReadOnlySpan<byte> src)
     {
         return new() { Volume = BinaryPrimitives.ReadDoubleLittleEndian(src) };
-    }
-
-    public static int WriteAdjustPlaybackPositionRequest(Span<byte> dest, AdjustPlaybackPositionRequest req)
-    {
-        BinaryPrimitives.WriteInt64LittleEndian(dest, req.CurMs);
-        BinaryPrimitives.WriteInt64LittleEndian(dest[8..], req.TotalMs);
-        BinaryPrimitives.WriteInt64LittleEndian(dest[16..], req.DeltaMs);
-        return 24;
-    }
-
-    public static AdjustPlaybackPositionRequest ReadAdjustPlaybackPositionRequest(ReadOnlySpan<byte> src)
-    {
-        return new()
-        {
-            CurMs = BinaryPrimitives.ReadInt64LittleEndian(src),
-            TotalMs = BinaryPrimitives.ReadInt64LittleEndian(src[8..]),
-            DeltaMs = BinaryPrimitives.ReadInt64LittleEndian(src[16..]),
-        };
     }
 
     // ──────────────────────── IpcSetting ────────────────────────
@@ -213,17 +193,6 @@ public static class BinarySerializer
     public static PlayStateResponse ReadPlayStateResponse(ReadOnlySpan<byte> src)
     {
         return new() { IsPlaying = src[0] != 0 };
-    }
-
-    public static int WritePositionResponse(Span<byte> dest, PositionResponse resp)
-    {
-        BinaryPrimitives.WriteInt64LittleEndian(dest, resp.PositionMs);
-        return 8;
-    }
-
-    public static PositionResponse ReadPositionResponse(ReadOnlySpan<byte> src)
-    {
-        return new() { PositionMs = BinaryPrimitives.ReadInt64LittleEndian(src) };
     }
 
     public static int WriteVolumeResponse(Span<byte> dest, VolumeResponse resp)

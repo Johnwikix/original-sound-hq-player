@@ -185,19 +185,6 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public async Task<long> AdjustPlaybackPosition(long curMs, long totalMs, long deltaMs)
-        {
-            try
-            {
-                return await IpcService.AdjustPlaybackPosition(curMs, totalMs, deltaMs);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"AdjustPlaybackPosition failed: {ex.Message}");
-                return 0;
-            }
-        }
-
         public void ChangingSetting()
         {
             IpcService.UpdateSettings(true);

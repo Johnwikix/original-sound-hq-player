@@ -35,7 +35,6 @@ namespace WinUIMusicPlayer.Services
         private AppViewModel AppViewModel { get; }
 
         private readonly byte[] _responseBuffer = new byte[IpcConstants.MaxResponseSize];
-        private readonly byte[] _posBuf = new byte[BinarySerializer.PositionResponseSize];
         private readonly byte[] _timeProgressBuf = new byte[BinarySerializer.TimeProgressSize];
         private readonly byte[] _notificationBuffer = new byte[IpcConstants.MaxNotificationSize];
 
@@ -289,26 +288,6 @@ namespace WinUIMusicPlayer.Services
             var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.ChangeVolumeRequestSize);
             BinarySerializer.WriteChangeVolumeRequest(buf, req);
             FireCommand(CommandId.ChangeVolume, buf, BinarySerializer.ChangeVolumeRequestSize);
-        }
-
-        public async Task<long> AdjustPlaybackPosition(long curMs, long totalMs, long deltaMs)
-        {
-            var req = new AdjustPlaybackPositionRequest { CurMs = curMs, TotalMs = totalMs, DeltaMs = deltaMs };
-            var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.AdjustPlaybackPositionRequestSize);
-            try
-            {
-                BinarySerializer.WriteAdjustPlaybackPositionRequest(buf, req);
-                var (resType, _) = await SendWithResponseAsync(CommandId.AdjustPlaybackPosition,
-                    new ReadOnlyMemory<byte>(buf, 0, BinarySerializer.AdjustPlaybackPositionRequestSize),
-                    _posBuf);
-                if (resType == MessageTypeId.PositionAdjusted)
-                {
-                    var r = BinarySerializer.ReadPositionResponse(_posBuf);
-                    return r.PositionMs;
-                }
-                return 0;
-            }
-            finally { ArrayPool<byte>.Shared.Return(buf); }
         }
 
         public void MusicEnd()
