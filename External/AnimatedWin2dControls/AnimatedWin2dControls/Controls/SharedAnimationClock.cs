@@ -1,6 +1,7 @@
 ﻿using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace AnimatedWin2dControls.Controls
 {
@@ -8,7 +9,7 @@ namespace AnimatedWin2dControls.Controls
     {
         private static readonly List<WeakReference<ISharedTickable>> _activeInstances = new();
         private static bool _isRunning = false;
-        private static TimeSpan _lastTick = TimeSpan.Zero;
+        private static long _lastTimestamp;
 
         public static void Register(ISharedTickable instance)
         {
@@ -24,7 +25,7 @@ namespace AnimatedWin2dControls.Controls
 
             if (!_isRunning)
             {
-                _lastTick = TimeSpan.Zero;
+                _lastTimestamp = Stopwatch.GetTimestamp();
                 CompositionTarget.Rendering += OnRendering;
                 _isRunning = true;
             }
@@ -44,16 +45,9 @@ namespace AnimatedWin2dControls.Controls
 
         private static void OnRendering(object sender, object e)
         {
-            // 使用系统渲染时间戳，比 DateTimeOffset.Now 更准确且避免系统调用
-            var renderingTime = ((RenderingEventArgs)e).RenderingTime;
-
-            TimeSpan elapsed;
-            if (_lastTick == TimeSpan.Zero)
-                elapsed = TimeSpan.Zero;
-            else
-                elapsed = renderingTime - _lastTick;
-
-            _lastTick = renderingTime;
+            var now = Stopwatch.GetTimestamp();
+            var elapsed = Stopwatch.GetElapsedTime(_lastTimestamp, now);
+            _lastTimestamp = now;
 
             // 防止暂停/首帧后超大 delta 造成动画跳变
             if (elapsed.TotalSeconds > 0.1)
