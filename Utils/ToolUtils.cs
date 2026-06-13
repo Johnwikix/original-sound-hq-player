@@ -256,6 +256,21 @@ namespace WinUIMusicPlayer.Utils
         {
             try
             {
+                // 磁盘缓存查找（raw bytes，避免重复从音频文件读取内嵌封面）
+                if (!string.IsNullOrEmpty(AppSettings.MusicCoverCache)
+                    && !string.IsNullOrEmpty(music.ImageHash))
+                {
+                    var cachePath = GetRawCachePath(music.ImageHash);
+                    if (File.Exists(cachePath))
+                    {
+                        if (File.GetLastWriteTime(cachePath) > File.GetLastWriteTime(music.Path))
+                            return File.ReadAllBytes(cachePath);
+
+                        // 缓存过期：清理该 hash 的所有旧格式缓存 (_raw.bin / .bmp / .bgra8 / .jpg)
+                        DeleteRawCaches(music.ImageHash);
+                    }
+                }
+
                 byte[]? picture = [];
                 if (FastReadExtensions.Contains(music.Extension))
                 {
@@ -289,6 +304,19 @@ namespace WinUIMusicPlayer.Utils
                         music.ImageHash = imageHash;
                         _ = App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
                     }
+
+                    // 写入 raw bytes 磁盘缓存
+                    if (!string.IsNullOrEmpty(AppSettings.MusicCoverCache)
+                        && !string.IsNullOrEmpty(music.ImageHash))
+                    {
+                        try
+                        {
+                            var cachePath = GetRawCachePath(music.ImageHash);
+                            Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
+                            await File.WriteAllBytesAsync(cachePath, picture);
+                        }
+                        catch (Exception ex) { _logger.LogError(ex, "写_raw.bin缓存失败"); }
+                    }
                 }
                 else
                 {
@@ -313,6 +341,25 @@ namespace WinUIMusicPlayer.Utils
                     return [];
                 }
             }
+        }
+
+        private static string GetRawCachePath(string imageHash)
+            => Path.Combine(AppSettings.MusicCoverCache, "Cache", $"{imageHash}_raw.bin");
+
+        private static void DeleteRawCaches(string imageHash)
+        {
+            try
+            {
+                var dir = Path.Combine(AppSettings.MusicCoverCache, "Cache");
+                if (!Directory.Exists(dir)) return;
+
+                foreach (var file in Directory.GetFiles(dir, $"{imageHash}_*"))
+                {
+                    try { File.Delete(file); }
+                    catch (Exception ex) { _logger.LogError(ex, "DeleteRawCaches 清理失败: {File}", file); }
+                }
+            }
+            catch (Exception ex) { _logger.LogError(ex, "DeleteRawCaches 失败"); }
         }
 
         public static async Task<AudioFileInfo> GetAudioInfo(StorageFile file)

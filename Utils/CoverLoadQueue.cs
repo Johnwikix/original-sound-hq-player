@@ -6,7 +6,6 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.Xaml.Interactivity;
 using System;
-using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -15,7 +14,6 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
-using Windows.Foundation;
 using Windows.Graphics.Imaging;
 using Windows.Storage;
 using Windows.Storage.Streams;
@@ -46,10 +44,6 @@ internal static class CoverLoadQueue
     private static int _initialized;
 
     private static readonly ConcurrentDictionary<string, Task<ImageSource?>> _pendingTasks = new();
-
-    private static string? _diskCacheFolder;
-    private static string DiskCacheFolder =>
-        _diskCacheFolder ??= Path.Combine(AppSettings.MusicCoverCache, "Cache");
 
     private readonly record struct CoverLoadRequest(
         Music Music,
@@ -163,139 +157,93 @@ internal static class CoverLoadQueue
     {
         req.Token.ThrowIfCancellationRequested();
 
+        // ① 缩略图像素缓存查找
         if (!string.IsNullOrEmpty(AppSettings.MusicCoverCache)
             && !string.IsNullOrEmpty(req.Music.ImageHash))
         {
-            var cachePath = GetDiskCachePath(req.Music.ImageHash, req.CoverSize);
-            if (File.Exists(cachePath))
+            var thumbPath = GetThumbCachePath(req.Music.ImageHash, req.CoverSize);
+            if (File.Exists(thumbPath))
             {
-                if (File.GetLastWriteTime(cachePath) > File.GetLastWriteTime(req.Music.Path))
+                if (File.GetLastWriteTime(thumbPath) > File.GetLastWriteTime(req.Music.Path))
                 {
-                    var result = await LoadBgra8FromDiskAsync(cachePath, req.Token);
+                    var result = await LoadThumbFromCacheAsync(thumbPath, req.Token);
                     if (result != null) return result;
                 }
                 else
                 {
-                    try { File.Delete(cachePath); }
-                    catch (Exception ex) { _logger?.LogError(ex, "删除旧磁盘缓存失败"); }
+                    try { File.Delete(thumbPath); }
+                    catch (Exception ex) { _logger?.LogError(ex, "删除旧缩略图缓存失败"); }
                 }
             }
         }
 
         req.Token.ThrowIfCancellationRequested();
 
+        // ② 缓存未命中：获取原始图片 → WIC 解码到缩略图尺寸 → 缓存 → 显示
         byte[]? picture = await ToolUtils.GetRawImage(req.Music);
+        if (picture is not { Length: > 0 }) return null;
 
         req.Token.ThrowIfCancellationRequested();
 
-        return await DecodePictureAsync(picture, req.Music, req.CoverSize, req.Token);
+        return await DecodeAndCacheThumbAsync(picture, req.Music, req.CoverSize, req.Token);
     }
 
-    private static async Task<ImageSource?> LoadBgra8FromDiskAsync(
+    private static async Task<ImageSource?> LoadThumbFromCacheAsync(
         string cachePath, CancellationToken token)
     {
-        byte[]? pixels = null;
         try
         {
-            uint w, h;
-
-            await using (var fs = new FileStream(
-                cachePath, FileMode.Open, FileAccess.Read, FileShare.Read,
-                bufferSize: 4096, useAsync: true))
-            {
-                byte[] header = new byte[8];
-                await fs.ReadExactlyAsync(header, 0, 8, token);
-                w = BinaryPrimitives.ReadUInt32LittleEndian(header);
-                h = BinaryPrimitives.ReadUInt32LittleEndian(header.AsSpan(4));
-                if (w == 0 || h == 0) return null;
-
-                uint pixelBytes = w * h * 4;
-                if (pixelBytes > 32 * 1024 * 1024) return null; // 32MB sanity
-
-                pixels = ArrayPool<byte>.Shared.Rent((int)pixelBytes);
-                await fs.ReadExactlyAsync(pixels, 0, (int)pixelBytes, token);
-            }
-
-            var softwareBitmap = new SoftwareBitmap(
-                BitmapPixelFormat.Bgra8, (int)w, (int)h, BitmapAlphaMode.Premultiplied);
-            softwareBitmap.CopyFromBuffer(pixels.AsBuffer(0, (int)(w * h * 4)));
-
+            var storageFile = await StorageFile.GetFileFromPathAsync(cachePath);
             ImageSource? result = null;
             await App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
             {
                 if (token.IsCancellationRequested) return;
+                IRandomAccessStream? stream = null;
                 try
                 {
-                    var source = new SoftwareBitmapSource();
-                    await source.SetBitmapAsync(softwareBitmap);
-                    result = source;
+                    stream = await storageFile.OpenReadAsync();
+                    var bitmap = new BitmapImage();
+                    await bitmap.SetSourceAsync(stream);
+                    result = bitmap;
                 }
                 finally
                 {
-                    softwareBitmap?.Dispose();
+                    stream?.Dispose();
                 }
             });
             return result;
         }
-        catch (Exception ex) { _logger?.LogError(ex, "LoadBgra8FromDiskAsync 失败"); return null; }
-        finally
-        {
-            if (pixels != null)
-                ArrayPool<byte>.Shared.Return(pixels);
-        }
+        catch (Exception ex) { _logger?.LogError(ex, "LoadThumbFromCacheAsync 失败"); return null; }
     }
 
-    private static async Task<ImageSource?> DecodePictureAsync(
-        byte[]? picture, Music music, int coverSize, CancellationToken token)
+    private static async Task<ImageSource?> DecodeAndCacheThumbAsync(
+        byte[] picture, Music music, int coverSize, CancellationToken token)
     {
-        if (picture is not { Length: > 0 })
-            return null;
-
+        SoftwareBitmap? softwareBitmap = null;
         try
         {
             using var inputStream = new InMemoryRandomAccessStream();
             await inputStream.WriteAsync(picture.AsBuffer());
             inputStream.Seek(0);
 
-            BitmapDecoder decoder;
-            try
-            {
-                decoder = await BitmapDecoder.CreateAsync(inputStream);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "[DecodePictureAsync] BitmapDecoder.CreateAsync 失败, 大小={Size}bytes, 前16字节={Hex}",
-                    picture.Length, Convert.ToHexString(picture.AsSpan(0, Math.Min(16, picture.Length))));
-                return null;
-            }
-
+            var decoder = await BitmapDecoder.CreateAsync(inputStream);
             double aspect = (double)decoder.PixelWidth / decoder.PixelHeight;
             uint newW = (uint)coverSize;
             uint newH = (uint)Math.Max(1, (uint)(newW / aspect));
 
-            SoftwareBitmap softwareBitmap;
-            try
-            {
-                softwareBitmap = await decoder.GetSoftwareBitmapAsync(
-                    BitmapPixelFormat.Bgra8,
-                    BitmapAlphaMode.Premultiplied,
-                    new BitmapTransform
-                    {
-                        ScaledWidth = newW,
-                        ScaledHeight = newH,
-                        InterpolationMode = BitmapInterpolationMode.Fant
-                    },
-                    ExifOrientationMode.RespectExifOrientation,
-                    ColorManagementMode.DoNotColorManage);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "[DecodePictureAsync] GetSoftwareBitmapAsync 失败, 原图={W}x{H}, PixelFormat={Fmt}, 目标={NewW}x{NewH}",
-                    decoder.PixelWidth, decoder.PixelHeight, decoder.BitmapPixelFormat, newW, newH);
-                return null;
-            }
+            softwareBitmap = await decoder.GetSoftwareBitmapAsync(
+                BitmapPixelFormat.Bgra8,
+                BitmapAlphaMode.Premultiplied,
+                new BitmapTransform
+                {
+                    ScaledWidth = newW,
+                    ScaledHeight = newH,
+                    InterpolationMode = BitmapInterpolationMode.Fant
+                },
+                ExifOrientationMode.RespectExifOrientation,
+                ColorManagementMode.DoNotColorManage);
 
-            // 写 .bgra8 磁盘缓存
+            // 写缩略图像素缓存（8B 头 + Bgra8 裸像素，90KB）
             if (music.ImageHash is { Length: > 0 })
             {
                 try
@@ -306,19 +254,33 @@ internal static class CoverLoadQueue
                     var pixelBuffer = new Windows.Storage.Streams.Buffer(pixelBytes);
                     softwareBitmap.CopyToBuffer(pixelBuffer);
 
-                    var cachePath = GetDiskCachePath(music.ImageHash, coverSize);
-                    Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
-                    Span<byte> header = stackalloc byte[8];
-                    BinaryPrimitives.WriteUInt32LittleEndian(header, w);
-                    BinaryPrimitives.WriteUInt32LittleEndian(header[4..], h);
+                    var thumbPath = GetThumbCachePath(music.ImageHash, coverSize);
+                    Directory.CreateDirectory(Path.GetDirectoryName(thumbPath)!);
+
+                    Span<byte> header = stackalloc byte[54];
+                    header[0] = (byte)'B'; header[1] = (byte)'M';
+                    BinaryPrimitives.WriteUInt32LittleEndian(header[2..], 14 + 40 + pixelBytes);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header[6..], 0);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header[10..], 54);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header[14..], 40);
+                    BinaryPrimitives.WriteInt32LittleEndian(header[18..], (int)w);
+                    BinaryPrimitives.WriteInt32LittleEndian(header[22..], -(int)h);
+                    BinaryPrimitives.WriteUInt16LittleEndian(header[26..], 1);
+                    BinaryPrimitives.WriteUInt16LittleEndian(header[28..], 32);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header[30..], 0);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header[34..], pixelBytes);
+                    BinaryPrimitives.WriteInt32LittleEndian(header[38..], 0);
+                    BinaryPrimitives.WriteInt32LittleEndian(header[42..], 0);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header[46..], 0);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header[50..], 0);
 
                     await using var fs = new FileStream(
-                        cachePath, FileMode.Create, FileAccess.Write,
+                        thumbPath, FileMode.Create, FileAccess.Write,
                         FileShare.None, bufferSize: 8192, useAsync: true);
                     fs.Write(header);
                     await pixelBuffer.AsStream().CopyToAsync(fs, token);
                 }
-                catch (Exception ex) { _logger?.LogError(ex, "写.bgra8磁盘缓存失败"); }
+                catch (Exception ex) { _logger?.LogError(ex, "写缩略图缓存失败"); }
             }
 
             ImageSource? result = null;
@@ -333,19 +295,20 @@ internal static class CoverLoadQueue
                 }
                 catch (Exception ex)
                 {
-                    _logger?.LogError(ex, "[DecodePictureAsync] SoftwareBitmapSource.SetBitmapAsync 失败");
+                    _logger?.LogError(ex, "SoftwareBitmapSource.SetBitmapAsync 失败");
                 }
                 finally
                 {
                     softwareBitmap?.Dispose();
+                    softwareBitmap = null;
                 }
             });
-
             return result;
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "[DecodePictureAsync] 解码/写入/显示失败");
+            _logger?.LogError(ex, "DecodeAndCacheThumbAsync 失败");
+            softwareBitmap?.Dispose();
             return null;
         }
     }
@@ -355,30 +318,8 @@ internal static class CoverLoadQueue
             ? string.Intern($"id:{music.Id}")
             : music.ImageHash;
 
-    private static string GetDiskCachePath(string imageHash, int coverSize)
-    {
-        var fileName = string.Create(
-            imageHash.Length + 1 + GetDigitCount(coverSize) + 6,
-            (imageHash, coverSize),
-            static (span, state) =>
-            {
-                state.imageHash.AsSpan().CopyTo(span);
-                int pos = state.imageHash.Length;
-                span[pos++] = '_';
-                state.coverSize.TryFormat(span[pos..], out int written);
-                pos += written;
-                ".bgra8".AsSpan().CopyTo(span[pos..]);
-            });
-        return Path.Combine(DiskCacheFolder, fileName);
-    }
-
-    private static int GetDigitCount(int n)
-    {
-        if (n < 10) return 1;
-        if (n < 100) return 2;
-        if (n < 1000) return 3;
-        return 4;
-    }
+    private static string GetThumbCachePath(string imageHash, int coverSize)
+        => Path.Combine(AppSettings.MusicCoverCache, "Cache", $"{imageHash}_{coverSize}.bmp");
 
     public static void ClearImagesInContainer(DependencyObject parent)
     {

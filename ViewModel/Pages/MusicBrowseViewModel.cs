@@ -452,6 +452,7 @@ namespace WinUIMusicPlayer.ViewModel
                     // 双重检查：确保此时用户没有又点了一次切歌
                     if (!token.IsCancellationRequested)
                     {
+                        AppViewModel.LyricPageBackgroundHash = music.ImageHash ?? "";
                         AppViewModel.LyricPageBackgroundData = picData;
                         AppViewModel.MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
                     }

@@ -82,9 +82,22 @@ namespace WinUIMusicPlayer.Controls
             DependencyProperty.Register(nameof(ImageBytes), typeof(byte[]), typeof(ImageSwitcher),
                 new PropertyMetadata(null, OnDependencyPropertyChanged));
 
+        /// <summary>
+        /// 封面图片的 XXHash64 十六进制哈希值，用于去重。
+        /// 与 ImageBytes 配合使用，避免对相同图片重复解码。
+        /// </summary>
+        public string? ImageHash
+        {
+            get => (string?)GetValue(ImageHashProperty);
+            set => SetValue(ImageHashProperty, value);
+        }
+        public static readonly DependencyProperty ImageHashProperty =
+            DependencyProperty.Register(nameof(ImageHash), typeof(string), typeof(ImageSwitcher),
+                new PropertyMetadata(null, OnDependencyPropertyChanged));
+
         // ── 私有状态 ──────────────────────────────────────────────────────
 
-        private int _lastHash = 0;                      // 上一次成功显示的 hash
+        private string? _lastImageHash;                 // 上一次成功显示图时的 hash
         private CancellationTokenSource? _cts;          // 用于取消正在进行的解码
 
         // ── 构造 ──────────────────────────────────────────────────────────
@@ -110,22 +123,21 @@ namespace WinUIMusicPlayer.Controls
         {
             if (d is not ImageSwitcher switcher) return;
 
-            if (e.Property == ImageBytesProperty)
+            if (e.Property == ImageBytesProperty || e.Property == ImageHashProperty)
             {
-                // 启动异步解码流程（不 await，fire-and-forget via _ = ...）
-                _ = switcher.UpdateSourceAsync((byte[]?)e.NewValue);
+                _ = switcher.UpdateSourceAsync();
             }
             else if (e.Property == IsDarkProperty)
             {
                 // 主题切换：仅当当前没有有效封面时刷新默认图
-                if (switcher._lastHash == 0)
-                    _ = switcher.UpdateSourceAsync(switcher.ImageBytes);
+                if (switcher._lastImageHash is null)
+                    _ = switcher.UpdateSourceAsync();
             }
         }
 
         // ── 核心：异步解码 + hash 去重 ────────────────────────────────────
 
-        private async Task UpdateSourceAsync(byte[]? newBytes)
+        private async Task UpdateSourceAsync()
         {
             // 取消上一次尚未完成的解码
             _cts?.Cancel();
@@ -134,9 +146,13 @@ namespace WinUIMusicPlayer.Controls
             _cts = cts;
             var token = cts.Token;
 
-            // ① 判断是否需要更新（hash 去重）
-            int newHash = (newBytes is { Length: > 0 }) ? ToolUtils.ComputeFastHash(newBytes) : 0;
-            if (newHash != 0 && newHash == _lastHash) return;   // 与上次相同，跳过
+            var newBytes = ImageBytes;
+            string? newHash = ImageHash;
+
+            // ① 判断是否需要更新（ImageHash 去重）
+            bool hasData = newBytes is { Length: > 0 };
+            if (hasData && newHash is { Length: > 0 } && newHash == _lastImageHash) return;
+            if (!hasData && _lastImageHash is null) return;
 
             // ② 解码
             ImageSource? imageSource = await DecodeToBitmapAsync(newBytes, token);
@@ -147,13 +163,13 @@ namespace WinUIMusicPlayer.Controls
             if (imageSource == null)
             {
                 imageSource = await LoadDefaultCoverAsync(token);
-                newHash = 0;    // 默认封面不写入 hash，下次仍尝试解码真实数据
+                newHash = null;    // 默认封面不写入 hash，下次仍尝试解码真实数据
             }
 
             if (token.IsCancellationRequested) return;
 
-            // ④ 更新 hash 并切换图片（必须在 UI 线程）
-            _lastHash = newHash;
+            // ④ 更新 hash 并切换图片
+            _lastImageHash = newHash;
             UpdateImageSource(imageSource);
         }
 

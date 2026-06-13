@@ -178,6 +178,7 @@ namespace WinUIMusicPlayer.ViewModel
         } = [];
         public int LastLyricIndex { get; set; } = -1;
         public byte[] LyricPageBackgroundData { get; set => SetProperty(ref field, value); } = [];
+        public string LyricPageBackgroundHash { get; set => SetProperty(ref field, value); } = "";
         public bool IsInitialized { get; set; } = false;
         public Visibility UsbDeviceVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
         public ObservableCollection<UsbStorageDevice> UsbStorageDevices { get; set => SetProperty(ref field, value); }

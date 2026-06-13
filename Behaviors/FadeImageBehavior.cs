@@ -23,7 +23,7 @@ namespace WinUIMusicPlayer.Behaviors
         private CancellationTokenSource _cts;
 
         private long _lastLength = -1;
-        private int _lastHash;
+        private string? _lastImageHash;
 
         private bool IsDuplicateAndUpdate(byte[]? newBytes)
         {
@@ -31,23 +31,23 @@ namespace WinUIMusicPlayer.Behaviors
             {
                 bool wasEmpty = _lastLength == 0;
                 _lastLength = 0;
-                _lastHash = 0;
+                _lastImageHash = null;
                 return wasEmpty;
             }
 
-            int hash = ToolUtils.ComputeFastHash(newBytes);
-            if (newBytes.Length == _lastLength && hash == _lastHash)
+            string? imageHash = ImageHash;
+            if (imageHash is { Length: > 0 } && imageHash == _lastImageHash)
                 return true;
 
             _lastLength = newBytes.Length;
-            _lastHash = hash;
+            _lastImageHash = imageHash;
             return false;
         }
 
         public void Invalidate()
         {
             _lastLength = -1;
-            _lastHash = 0;
+            _lastImageHash = null;
         }
 
         // ── ImageVisibility 依赖属性 ───────────────────────────────────
@@ -110,6 +110,17 @@ namespace WinUIMusicPlayer.Behaviors
         public static readonly DependencyProperty ImageBytesProperty =
             DependencyProperty.Register(nameof(ImageBytes), typeof(byte[]), typeof(FadeImageBehavior),
                 new PropertyMetadata(null, OnImageBytesChanged));
+
+        // ── ImageHash 依赖属性 ──────────────────────────────────────────
+        public string? ImageHash
+        {
+            get => (string?)GetValue(ImageHashProperty);
+            set => SetValue(ImageHashProperty, value);
+        }
+
+        public static readonly DependencyProperty ImageHashProperty =
+            DependencyProperty.Register(nameof(ImageHash), typeof(string), typeof(FadeImageBehavior),
+                new PropertyMetadata(null));
 
         private static async void OnImageBytesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
