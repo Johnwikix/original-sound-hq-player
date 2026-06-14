@@ -99,7 +99,7 @@ namespace WinUIMusicPlayer.View
         public void SelectBarAlbum(string Album)
         {
             ViewModel.AppViewModel.PageType = "album";
-            ViewModel.AppViewModel.CurrentAlbumObj = ViewModel.AppViewModel.SongsSource.AsValueEnumerable().Where(m => m.Album == Album).OrderBy(music => music.TrackNumber).FirstOrDefault();
+            ViewModel.AppViewModel.CurrentAlbumObj = ViewModel.AppViewModel.FindFirstByAlbum(Album);
             if (ContentFrame?.Content is not null)
             {
                 if (ContentFrame.Content is AlbumPage)
@@ -116,7 +116,7 @@ namespace WinUIMusicPlayer.View
         public void SelectBarArtist(string artist)
         {
             ViewModel.AppViewModel.PageType = "artist";
-            ViewModel.AppViewModel.CurrentArtistObj = ViewModel.AppViewModel.SongsSource.AsValueEnumerable().FirstOrDefault(m => m.Author == artist);
+            ViewModel.AppViewModel.CurrentArtistObj = ViewModel.AppViewModel.FindFirstByArtist(artist);
             if (ContentFrame is not null && ContentFrame.Content is not null)
             {
                 if (ContentFrame.Content is ArtistPage)

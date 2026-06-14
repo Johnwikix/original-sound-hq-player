@@ -100,7 +100,22 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
         private DispatcherQueueTimer? _searchDebounceTimer;
-        public List<Music> SongsSource { get; set; } = [];
+        private List<Music> _songsSource = [];
+        public List<Music> SongsSource
+        {
+            get => _songsSource;
+            set
+            {
+                if (ReferenceEquals(_songsSource, value)) return;
+                _songsSource = value;
+                RebuildIdIndex();
+            }
+        }
+        private readonly Dictionary<int, Music> _idIndex = new(capacity: 16384);
+        private readonly Dictionary<string, Music> _firstAlbumIndex = new(capacity: 4096, StringComparer.Ordinal);
+        private readonly Dictionary<string, Music> _firstArtistIndex = new(capacity: 4096, StringComparer.Ordinal);
+        private readonly Dictionary<string, Music> _firstFolderIndex = new(capacity: 4096, StringComparer.Ordinal);
+        private bool _indexDirty = true;
         public BulkObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<PlayListMusicItem> PlayListSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<PlayList> AllPlayList { get; set => SetProperty(ref field, value); } = [];
@@ -531,8 +546,66 @@ namespace WinUIMusicPlayer.ViewModel
             Volume = newVolume;
         }
 
+        public Music? FindById(int id)
+        {
+            if (_indexDirty) RebuildIdIndex();
+            return _idIndex.TryGetValue(id, out var m) ? m : null;
+        }
+
+        public bool TryFindById(int id, out Music? music)
+        {
+            if (_indexDirty) RebuildIdIndex();
+            return _idIndex.TryGetValue(id, out music);
+        }
+
+        public Music? FindFirstByAlbum(string? album)
+        {
+            if (string.IsNullOrEmpty(album)) return null;
+            if (_indexDirty) RebuildIdIndex();
+            return _firstAlbumIndex.TryGetValue(album, out var m) ? m : null;
+        }
+
+        public Music? FindFirstByArtist(string? artist)
+        {
+            if (string.IsNullOrEmpty(artist)) return null;
+            if (_indexDirty) RebuildIdIndex();
+            return _firstArtistIndex.TryGetValue(artist, out var m) ? m : null;
+        }
+
+        public Music? FindFirstByFolder(string? folder)
+        {
+            if (string.IsNullOrEmpty(folder)) return null;
+            if (_indexDirty) RebuildIdIndex();
+            return _firstFolderIndex.TryGetValue(folder, out var m) ? m : null;
+        }
+
+        public void NotifyIdIndexChanged() => _indexDirty = true;
+
+        private void RebuildIdIndex()
+        {
+            _idIndex.Clear();
+            _firstAlbumIndex.Clear();
+            _firstArtistIndex.Clear();
+            _firstFolderIndex.Clear();
+            var src = _songsSource;
+            for (int i = 0; i < src.Count; i++)
+            {
+                var m = src[i];
+                if (m is null) continue;
+                _idIndex[m.Id] = m;
+                if (!string.IsNullOrEmpty(m.Album) && !_firstAlbumIndex.ContainsKey(m.Album))
+                    _firstAlbumIndex[m.Album] = m;
+                if (!string.IsNullOrEmpty(m.Author) && !_firstArtistIndex.ContainsKey(m.Author))
+                    _firstArtistIndex[m.Author] = m;
+                if (!string.IsNullOrEmpty(m.LastLevelFolderPath) && !_firstFolderIndex.ContainsKey(m.LastLevelFolderPath))
+                    _firstFolderIndex[m.LastLevelFolderPath] = m;
+            }
+            _indexDirty = false;
+        }
+
         public void NotifySongsSourceChanged()
         {
+            _indexDirty = true;
             if (IsInitialized)
             {
                 RefreshAllViews();
@@ -771,47 +844,89 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void RefreshPlayListSongMapping()
         {
-            IEnumerable<PlayListMusicItem> query;
-            if (!string.IsNullOrWhiteSpace(SearchText))
+            var plmSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(AppData.AllPlayListMusics);
+            int plmCount = plmSpan.Length;
+            int curListId = CurrentPlayListId;
+            var search = SearchText;
+            bool hasSearch = !string.IsNullOrWhiteSpace(search);
+
+            int upper = plmCount;
+            var pool = System.Buffers.ArrayPool<PlayListMusicItem>.Shared;
+            var buf = pool.Rent(upper);
+            int written = 0;
+            try
             {
-                query = AppData.AllPlayListMusics.AsValueEnumerable()
-                    .Where(plm => plm.PlayListId == CurrentPlayListId)
-                    .Join(SongsSource, plm => plm.MusicId, m => m.Id,
-                        (plm, m) => new PlayListMusicItem { Music = m, PlayListOrder = plm.Order })
-                    .Where(item =>
-                        (item.Music.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                        (item.Music.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                        (item.Music.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false))
-                    .ToList();
+                for (int i = 0; i < plmCount; i++)
+                {
+                    ref readonly var plm = ref plmSpan[i];
+                    if (plm.PlayListId != curListId) continue;
+                    if (!TryFindById(plm.MusicId, out var m) || m is null) continue;
+                    if (hasSearch && !MusicMatchesSearch(m, search)) continue;
+                    buf[written++] = new PlayListMusicItem { Music = m, PlayListOrder = plm.Order };
+                }
+
+                var slice = buf.AsSpan(0, written);
+                var tag = SelectedSortOption?.Tag as string ?? "DefaultOrder";
+                switch (tag)
+                {
+                    case "A-Z":
+                        slice.Sort(_byMusicTitleAsc);
+                        break;
+                    case "Artist":
+                        slice.Sort(_byMusicAuthorAsc);
+                        break;
+                    case "Album":
+                        slice.Sort(_byMusicAlbumAsc);
+                        break;
+                    case "CreateTimeASC":
+                        slice.Sort(_byMusicCreateTimeAsc);
+                        break;
+                    case "CreateTimeDESC":
+                        slice.Sort(_byMusicCreateTimeDesc);
+                        break;
+                    case "UpdateTimeDESC":
+                        slice.Sort(_byMusicUpdateTimeDesc);
+                        break;
+                    default:
+                        slice.Sort(_byPlayListOrderDesc);
+                        break;
+                }
+
+                var results = slice.ToArray();
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    _ = PlayListSongs.ReplaceAllAsync(results);
+                });
             }
-            else
+            finally
             {
-                query = AppData.AllPlayListMusics.AsValueEnumerable()
-                    .Where(plm => plm.PlayListId == CurrentPlayListId)
-                    .Join(SongsSource, plm => plm.MusicId, m => m.Id,
-                        (plm, m) => new PlayListMusicItem { Music = m, PlayListOrder = plm.Order })
-                    .ToList();
+                pool.Return(buf, clearArray: false);
             }
-
-            IEnumerable<PlayListMusicItem> sortedQuery = SelectedSortOption?.Tag switch
-            {
-                "A-Z" => query.OrderBy(m => m.Music.Title),
-                "Artist" => query.OrderBy(m => m.Music.Author),
-                "Album" => query.OrderBy(m => m.Music.Album),
-                "CreateTimeASC" => query.OrderBy(m => m.Music.CreateTime),
-                "CreateTimeDESC" => query.OrderByDescending(m => m.Music.CreateTime),
-                "UpdateTimeDESC" => query.OrderByDescending(m => m.Music.UpdateTime),
-                "DefaultOrder" => query.OrderByDescending(m => m.PlayListOrder),
-                _ => query.OrderByDescending(m => m.PlayListOrder)
-            };
-
-            var results = sortedQuery.ToList();
-
-            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-            {
-                _ = PlayListSongs.ReplaceAllAsync(results);
-            });
         }
+
+        private static readonly System.Buffers.MemoryPool<char> _charPool = System.Buffers.MemoryPool<char>.Shared;
+
+        private static bool MusicMatchesSearch(Music m, string search)
+        {
+            return (m.Title is not null && m.Title.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                   (m.Album is not null && m.Album.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                   (m.Author is not null && m.Author.Contains(search, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byPlayListOrderDesc =
+            Comparer<PlayListMusicItem>.Create((a, b) => b.PlayListOrder.CompareTo(a.PlayListOrder));
+        private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicTitleAsc =
+            Comparer<PlayListMusicItem>.Create((a, b) => string.Compare(a.Music?.Title, b.Music?.Title, StringComparison.Ordinal));
+        private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicAuthorAsc =
+            Comparer<PlayListMusicItem>.Create((a, b) => string.Compare(a.Music?.Author, b.Music?.Author, StringComparison.Ordinal));
+        private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicAlbumAsc =
+            Comparer<PlayListMusicItem>.Create((a, b) => string.Compare(a.Music?.Album, b.Music?.Album, StringComparison.Ordinal));
+        private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicCreateTimeAsc =
+            Comparer<PlayListMusicItem>.Create((a, b) => a.Music?.CreateTime.CompareTo(b.Music?.CreateTime) ?? 0);
+        private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicCreateTimeDesc =
+            Comparer<PlayListMusicItem>.Create((a, b) => b.Music?.CreateTime.CompareTo(a.Music?.CreateTime) ?? 0);
+        private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicUpdateTimeDesc =
+            Comparer<PlayListMusicItem>.Create((a, b) => b.Music?.UpdateTime.CompareTo(a.Music?.UpdateTime) ?? 0);
 
         public void OnSelectSortChanged()
         {
@@ -871,12 +986,15 @@ namespace WinUIMusicPlayer.ViewModel
         {
             SongsSource.Clear();
             SongsSource.AddRange(_musicDatabaseService.GetMusicListAsync().Result);
+            _indexDirty = true;
             NotifySongsSourceChanged();
         }
 
         public void RemoveFromSongsSource(Music music)
         {
             SongsSource.Remove(music);
+            _idIndex.Remove(music.Id);
+            _indexDirty = true;
             NotifySongsSourceChanged();
         }
 

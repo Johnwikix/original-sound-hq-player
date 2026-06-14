@@ -105,11 +105,23 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (AppViewModel.CurrentAlbumObj is not null)
             {
-                SecondTitle = string.Join(" · ", AppViewModel.SongsSource.AsValueEnumerable()
-                    .Where(music => music.Album == AppViewModel.CurrentAlbumObj.Album)
-                    .Select(music => music.Author)
-                    .Distinct().ToArray());
-                ThirdTitle = $"{(AppViewModel.CurrentAlbumObj.Year != 0 ? $"{AppViewModel.CurrentAlbumObj.Year} · ".ToString() : "")}{AppViewModel.SongsSource.AsValueEnumerable().Count(music => music.Album == AppViewModel.CurrentAlbumObj.Album)} {ToolUtils.GetString("NumberOfSongs")}";
+                var currentAlbum = AppViewModel.CurrentAlbumObj.Album;
+                int count = 0;
+                var seenAuthors = new System.Collections.Generic.HashSet<string>(System.StringComparer.Ordinal);
+                var authorsList = new System.Collections.Generic.List<string>(8);
+                var srcSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(AppViewModel.SongsSource);
+                for (int i = 0; i < srcSpan.Length; i++)
+                {
+                    var music = srcSpan[i];
+                    if (music.Album != currentAlbum) continue;
+                    count++;
+                    if (!string.IsNullOrEmpty(music.Author) && seenAuthors.Add(music.Author))
+                    {
+                        authorsList.Add(music.Author);
+                    }
+                }
+                SecondTitle = string.Join(" · ", authorsList);
+                ThirdTitle = $"{(AppViewModel.CurrentAlbumObj.Year != 0 ? $"{AppViewModel.CurrentAlbumObj.Year} · " : "")}{count} {ToolUtils.GetString("NumberOfSongs")}";
             }
         }
 
@@ -126,16 +138,11 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                if (AppViewModel.CurrentPlayingList is not null)
+                if (AppViewModel.CurrentPlayingList is not null && AppViewModel.CurrentPlayingMusic is not null &&
+                    AppViewModel.TryFindById(AppViewModel.CurrentPlayingMusic.Id, out var m) && m is not null)
                 {
-                    var selectedMusic = AppViewModel.SongsSource.AsValueEnumerable().FirstOrDefault(music =>
-                        music.Id == AppViewModel.CurrentPlayingMusic.Id);
-
-                    if (selectedMusic is not null)
-                    {
-                        SelectedMusic = selectedMusic;
-                        _currentPage?.OnScrollToMusic(selectedMusic);
-                    }
+                    SelectedMusic = m;
+                    _currentPage?.OnScrollToMusic(m);
                 }
             }
             catch (Exception ex)
@@ -144,14 +151,16 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public void MusicListView_DoubleTapped()
+        public async Task MusicListView_DoubleTappedAsync()
         {
             if (SelectedMusic is not null && MusicBrowseViewModel is not null)
             {
-                AppViewModel.SequentialPlayingList = new(AppViewModel.AlbumSongs);
-                MusicBrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true).Wait();
+                AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(AppViewModel.AlbumSongs);
+                await MusicBrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true);
             }
         }
+
+        public void MusicListView_DoubleTapped() => _ = MusicListView_DoubleTappedAsync();
 
         public void AuthorTextBlock_Tapped(string artist)
         {
@@ -173,13 +182,13 @@ namespace WinUIMusicPlayer.ViewModel
         public async Task DeleteMenuItem()
         {
             if (!await IsDeleteFromDisk()) return;
-            if (SelectedMusics is not null && SelectedMusics.AsValueEnumerable().Count() > 1)
+            if (SelectedMusics is not null && SelectedMusics.Count > 1)
             {
                 foreach (var item in SelectedMusics)
                 {
                     if (ToolUtils.DeleteFileFromDisk(item.Path))
                     {
-                        AppViewModel.SongsSource.FirstOrDefault(m => m.Id == SelectedMusic.Id)?.Remove();
+                        AppViewModel.RemoveFromSongsSource(item);
                     }
                 }
             }
@@ -187,7 +196,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (ToolUtils.DeleteFileFromDisk(SelectedMusic.Path))
                 {
-                    AppViewModel.SongsSource.FirstOrDefault(m => m.Id == SelectedMusic.Id)?.Remove();
+                    AppViewModel.RemoveFromSongsSource(SelectedMusic);
                 }
             }
         }
@@ -234,7 +243,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (MusicBrowseViewModel is not null)
                 {
-                    AppViewModel.SequentialPlayingList = new(AppViewModel.AlbumSongs);
+                    AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(AppViewModel.AlbumSongs);
                     await MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
                 }
             }
@@ -242,7 +251,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (MusicBrowseViewModel is not null)
                 {
-                    AppViewModel.SequentialPlayingList = new(SelectedMusics);
+                    AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(SelectedMusics);
                     await MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
                 }
             }
@@ -285,7 +294,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (MusicBrowseViewModel is not null)
             {
-                AppViewModel.SequentialPlayingList = new(AppViewModel.AlbumSongs);
+                AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(AppViewModel.AlbumSongs);
                 if (AppViewModel.SequentialPlayingList.Count > 0)
                 {
                     await MusicBrowseViewModel.PlayMusic(music: AppViewModel.SequentialPlayingList[0], IsChangeList: true);

@@ -4,7 +4,9 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
+using System;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.NavigationService;
@@ -22,6 +24,9 @@ namespace WinUIMusicPlayer.View
     {
         public SongArtistViewModel ViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
+        private readonly ScrollerHelper _scrollHelper;
+        private readonly Music?[] _selectedBuffer = new Music?[256];
+        private Music? _pendingScroll;
         public SongArtistListPage()
         {
             this.InitializeComponent();
@@ -31,6 +36,8 @@ namespace WinUIMusicPlayer.View
             _musicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>(); ;
             MusicListView.ContainerContentChanging += MusicListView_ContainerContentChanging;
             this.NavigationCacheMode = NavigationCacheMode.Enabled;
+            _scrollHelper = new ScrollerHelper(DispatcherQueue);
+            _scrollHelper.Tick += OnScrollTick;
         }
 
         private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
@@ -52,13 +59,17 @@ namespace WinUIMusicPlayer.View
 
         public void OnScrollToMusic(Music selectedMusic)
         {
-            _ = Task.Delay(100).ContinueWith(_ =>
+            _pendingScroll = selectedMusic;
+            _scrollHelper.Trigger();
+        }
+
+        private void OnScrollTick(Microsoft.UI.Dispatching.DispatcherQueueTimer sender, object args)
+        {
+            if (_pendingScroll is { } m)
             {
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    MusicListView.ScrollIntoView(selectedMusic);
-                });
-            });
+                MusicListView.ScrollIntoView(m);
+                _pendingScroll = null;
+            }
         }
 
         public void UpdateMusicListView()
@@ -89,31 +100,42 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private async void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
+        private void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
             var frameworkElement = e.OriginalSource as FrameworkElement;
-            bool isCurrentItemSelected = false;
             ViewModel.SelectedMusics.Clear();
-            if (frameworkElement?.DataContext is Music clickedItem)
+            if (frameworkElement?.DataContext is not Music clickedItem)
             {
-                if (clickedItem is null) return;
-                foreach (var item in MusicListView.SelectedItems)
+                e.Handled = true;
+                return;
+            }
+
+            var selectedItems = MusicListView.SelectedItems;
+            int n = selectedItems.Count;
+            var buffer = _selectedBuffer.AsSpan();
+            int written = 0;
+            int clickedId = clickedItem.Id;
+            bool isCurrentItemSelected = false;
+            for (int i = 0; i < n && written < buffer.Length; i++)
+            {
+                if (selectedItems[i] is Music m)
                 {
-                    if (item is Music selectedMusic)
-                    {
-                        ViewModel.SelectedMusics.Add(selectedMusic);
-                        if (selectedMusic.Id == clickedItem.Id)
-                        {
-                            isCurrentItemSelected = true;
-                        }
-                    }
+                    buffer[written++] = m;
+                    if (m.Id == clickedId) isCurrentItemSelected = true;
                 }
-                if (!isCurrentItemSelected)
+            }
+
+            if (!isCurrentItemSelected)
+            {
+                selectedItems.Clear();
+                ViewModel.SelectedMusic = clickedItem;
+                ViewModel.SelectedMusics.Add(clickedItem);
+            }
+            else
+            {
+                for (int i = 0; i < written; i++)
                 {
-                    MusicListView.SelectedItems.Clear();
-                    ViewModel.SelectedMusics.Clear();
-                    ViewModel.SelectedMusic = clickedItem;
-                    ViewModel.SelectedMusics.Add(clickedItem);
+                    if (buffer[i] is { } sel) ViewModel.SelectedMusics.Add(sel);
                 }
             }
             e.Handled = true;

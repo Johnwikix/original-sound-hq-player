@@ -6,6 +6,8 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Behaviors;
+using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
@@ -22,6 +24,9 @@ namespace WinUIMusicPlayer.View
     public sealed partial class PlayListSongPage : Page, INavigatable
     {
         public PlayListSongViewModel ViewModel { get; }
+        private readonly ScrollerHelper _scrollHelper;
+        private readonly PlayListMusicItem?[] _selectedBuffer = new PlayListMusicItem?[256];
+        private PlayListMusicItem? _pendingScroll;
         public PlayListSongPage()
         {
             this.InitializeComponent();
@@ -31,6 +36,8 @@ namespace WinUIMusicPlayer.View
             MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
             MusicListView.ContainerContentChanging += MusicListView_ContainerContentChanging;
             this.NavigationCacheMode = NavigationCacheMode.Enabled;
+            _scrollHelper = new ScrollerHelper(DispatcherQueue);
+            _scrollHelper.Tick += OnScrollTick;
         }
 
         private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
@@ -52,13 +59,17 @@ namespace WinUIMusicPlayer.View
 
         public void OnScrollToMusic(PlayListMusicItem selectedMusic)
         {
-            _ = Task.Delay(100).ContinueWith(_ =>
+            _pendingScroll = selectedMusic;
+            _scrollHelper.Trigger();
+        }
+
+        private void OnScrollTick(Microsoft.UI.Dispatching.DispatcherQueueTimer sender, object args)
+        {
+            if (_pendingScroll is { } m)
             {
-                DispatcherQueue.TryEnqueue(() =>
-                {
-                    MusicListView.ScrollIntoView(selectedMusic);
-                });
-            });
+                MusicListView.ScrollIntoView(m);
+                _pendingScroll = null;
+            }
         }
 
 
@@ -80,28 +91,39 @@ namespace WinUIMusicPlayer.View
         private void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
             var frameworkElement = e.OriginalSource as FrameworkElement;
-            bool isCurrentItemSelected = false;
             ViewModel.SelectedMusics.Clear();
-            if (frameworkElement?.DataContext is PlayListMusicItem clickedItem)
+            if (frameworkElement?.DataContext is not PlayListMusicItem clickedItem)
             {
-                if (clickedItem is null) return;
-                foreach (var item in MusicListView.SelectedItems)
+                e.Handled = true;
+                return;
+            }
+
+            var selectedItems = MusicListView.SelectedItems;
+            int n = selectedItems.Count;
+            var buffer = _selectedBuffer.AsSpan();
+            int written = 0;
+            int clickedMusicId = clickedItem.Music.Id;
+            bool isCurrentItemSelected = false;
+            for (int i = 0; i < n && written < buffer.Length; i++)
+            {
+                if (selectedItems[i] is PlayListMusicItem plm)
                 {
-                    if (item is PlayListMusicItem selectedMusic)
-                    {
-                        ViewModel.SelectedMusics.Add(selectedMusic);
-                        if (selectedMusic.Music.Id == clickedItem.Music.Id)
-                        {
-                            isCurrentItemSelected = true;
-                        }
-                    }
+                    buffer[written++] = plm;
+                    if (plm.Music.Id == clickedMusicId) isCurrentItemSelected = true;
                 }
-                if (!isCurrentItemSelected)
+            }
+
+            if (!isCurrentItemSelected)
+            {
+                selectedItems.Clear();
+                ViewModel.SelectedMusic = clickedItem;
+                ViewModel.SelectedMusics.Add(clickedItem);
+            }
+            else
+            {
+                for (int i = 0; i < written; i++)
                 {
-                    MusicListView.SelectedItems.Clear();
-                    ViewModel.SelectedMusics.Clear();
-                    ViewModel.SelectedMusic = clickedItem;
-                    ViewModel.SelectedMusics.Add(clickedItem);
+                    if (buffer[i] is { } sel) ViewModel.SelectedMusics.Add(sel);
                 }
             }
             e.Handled = true;
@@ -132,7 +154,7 @@ namespace WinUIMusicPlayer.View
                 ContentDialog contentDialog = new ContentDialog
                 {
                     Title = ToolUtils.GetString("ModifyPlaylist"),
-                    Content = new Microsoft.UI.Xaml.Controls.TextBox { Text = $"{ViewModel.AppViewModel.CurrentPlayList.Name}" },
+                    Content = new Microsoft.UI.Xaml.Controls.TextBox { Text = ViewModel.AppViewModel.CurrentPlayList.Name },
                     PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
                     CloseButtonText = ToolUtils.GetString("CloseButton"),
                     XamlRoot = this.XamlRoot

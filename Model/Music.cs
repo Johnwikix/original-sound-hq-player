@@ -96,17 +96,15 @@ namespace WinUIMusicPlayer.Model
         public void UpdateFavourite()
         {
             IsFavorite = !IsFavorite;
+            var app = App.Services.GetRequiredService<AppViewModel>();
             if (IsFavorite)
             {
-                Order = App.Services.GetRequiredService<AppViewModel>().SongsSource.AsValueEnumerable()
-                                         .Where(m => m.IsFavorite)
-                                         .OrderByDescending(m => m.Order)
-                                         .FirstOrDefault()?.Order + 1 ?? 1;
-                App.Services.GetRequiredService<AppViewModel>().AddToFavoriteSongs(this);
+                Order = ComputeNextFavoriteOrder(app);
+                app.AddToFavoriteSongs(this);
             }
             else
             {
-                App.Services.GetRequiredService<AppViewModel>().RemoveFromFavoriteSongs(this);
+                app.RemoveFromFavoriteSongs(this);
                 Order = 0;
             }
             _ = App.Services.GetRequiredService<MusicDatabaseService>().AddToFavourite(this);
@@ -118,13 +116,23 @@ namespace WinUIMusicPlayer.Model
             if (!IsFavorite)
             {
                 IsFavorite = true;
-                Order = App.Services.GetRequiredService<AppViewModel>().SongsSource.AsValueEnumerable()
-                                         .Where(m => m.IsFavorite)
-                                         .OrderByDescending(m => m.Order)
-                                         .FirstOrDefault()?.Order + 1 ?? 1;
-                App.Services.GetRequiredService<AppViewModel>().AddToFavoriteSongs(this);
+                var app = App.Services.GetRequiredService<AppViewModel>();
+                Order = ComputeNextFavoriteOrder(app);
+                app.AddToFavoriteSongs(this);
             }
             _ = App.Services.GetRequiredService<MusicDatabaseService>().AddToFavourite(this);
+        }
+
+        private static int ComputeNextFavoriteOrder(AppViewModel app)
+        {
+            var span = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(app.SongsSource);
+            int max = 0;
+            for (int i = 0; i < span.Length; i++)
+            {
+                var m = span[i];
+                if (m.IsFavorite && m.Order > max) max = m.Order;
+            }
+            return max + 1;
         }
 
         public async void Remove()

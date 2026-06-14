@@ -333,55 +333,60 @@ namespace WinUIMusicPlayer.Services
 
         public IEnumerable<PlayListMusicItem> GetMusicByPlayListIdFromMem(int playListId, string search = null)
         {
-            var query = AppData.AllPlayListMusics
-                .Where(plm => plm.PlayListId == playListId)
-                .Join(
-                    AppViewModel.SongsSource,
-                    plm => plm.MusicId,
-                    m => m.Id,
-                    (plm, m) => new PlayListMusicItem
-                    {
-                        Music = m,
-                        PlayListOrder = plm.Order
-                    }
-                )
-                .OrderByDescending(vm => vm.PlayListOrder);
+            var plmSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(AppData.AllPlayListMusics);
+            int plmCount = plmSpan.Length;
+            bool hasSearch = !string.IsNullOrEmpty(search);
 
-            if (!string.IsNullOrEmpty(search))
+            var pool = System.Buffers.ArrayPool<PlayListMusicItem>.Shared;
+            var buf = pool.Rent(plmCount);
+            int written = 0;
+            try
             {
-                return query.Where(vm =>
-                    (vm.Music.Title?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (vm.Music.Album?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (vm.Music.Author?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false)
-                );
-            }
+                for (int i = 0; i < plmCount; i++)
+                {
+                    ref readonly var plm = ref plmSpan[i];
+                    if (plm.PlayListId != playListId) continue;
+                    if (!AppViewModel.TryFindById(plm.MusicId, out var m) || m is null) continue;
+                    if (hasSearch)
+                    {
+                        bool match = (m.Title is not null && m.Title.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                                     (m.Album is not null && m.Album.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+                                     (m.Author is not null && m.Author.Contains(search, StringComparison.OrdinalIgnoreCase));
+                        if (!match) continue;
+                    }
+                    buf[written++] = new PlayListMusicItem { Music = m, PlayListOrder = plm.Order };
+                }
 
-            return query;
+                var slice = buf.AsSpan(0, written);
+                slice.Sort(_plmOrderDesc);
+                return slice.ToArray();
+            }
+            finally
+            {
+                pool.Return(buf, clearArray: false);
+            }
         }
+
+        private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _plmOrderDesc =
+            System.Collections.Generic.Comparer<PlayListMusicItem>.Create((a, b) => b.PlayListOrder.CompareTo(a.PlayListOrder));
 
         public async Task UpdatePlayListMusicOrderBatch(int playListId, IEnumerable<PlayListMusicItem> musicList)
         {
             try
             {
-                var musicIds = musicList.AsValueEnumerable().Select(m => m.Music.Id).ToList();
-                var playListMusics = await _dbConnection.Table<PlayListMusic>()
-                    .Where(plm => plm.PlayListId == playListId && musicIds.Contains(plm.MusicId))
-                    .ToListAsync();
+                var items = musicList.AsValueEnumerable().ToArray();
+                if (items.Length == 0) return;
 
-                var musicOrderDict = musicList.AsValueEnumerable().ToDictionary(m => m.Music.Id, m => m.PlayListOrder);
-
-                foreach (var plm in playListMusics)
+                await _dbConnection.RunInTransactionAsync(conn =>
                 {
-                    if (musicOrderDict.TryGetValue(plm.MusicId, out var newOrder))
+                    for (int i = 0; i < items.Length; i++)
                     {
-                        plm.Order = newOrder;
+                        var m = items[i];
+                        conn.Execute(
+                            "UPDATE PlayListMusic SET [Order]=? WHERE PlayListId=? AND MusicId=?",
+                            m.PlayListOrder, playListId, m.Music.Id);
                     }
-                }
-
-                if (playListMusics.Count != 0)
-                {
-                    await _dbConnection.UpdateAllAsync(playListMusics);
-                }
+                });
             }
             catch (Exception ex)
             {
