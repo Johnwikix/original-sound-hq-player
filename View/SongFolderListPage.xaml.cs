@@ -35,7 +35,7 @@ namespace WinUIMusicPlayer.View
             DataContext = this;
             _musicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>(); ;
             MusicListView.ContainerContentChanging += MusicListView_ContainerContentChanging;
-            this.NavigationCacheMode = NavigationCacheMode.Enabled;
+            this.NavigationCacheMode = NavigationCacheMode.Disabled;
             _scrollHelper = new ScrollerHelper(DispatcherQueue);
             _scrollHelper.Tick += OnScrollTick;
         }
