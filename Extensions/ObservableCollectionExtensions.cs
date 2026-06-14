@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using ZLinq;
 
 namespace WinUIMusicPlayer.Extensions
 {
@@ -8,7 +8,8 @@ namespace WinUIMusicPlayer.Extensions
     {
         public static void Shuffle<T>(this ObservableCollection<T> collection)
         {
-            Random rng = new();
+            if (collection is null || collection.Count == 0) return;
+            var rng = Random.Shared;
             int n = collection.Count;
             while (n > 1)
             {
@@ -25,9 +26,10 @@ namespace WinUIMusicPlayer.Extensions
                 return [];
             }
 
-            var list = originalCollection.AsValueEnumerable().ToList();
+            // ObservableCollection<T> 实现 IList<T>,走 ctor (IList<T>) 最优路径(避免 enumerator)
+            var list = new List<T>(originalCollection);
 
-            Random rng = new();
+            var rng = Random.Shared;
             int n = list.Count;
             while (n > 1)
             {

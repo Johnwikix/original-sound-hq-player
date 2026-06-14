@@ -88,11 +88,18 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    _ = OnSearchTextChangedAsync();
+                    if (_searchDebounceTimer == null)
+                    {
+                        _searchDebounceTimer = App.MainWindow.DispatcherQueue.CreateTimer();
+                        _searchDebounceTimer.Interval = TimeSpan.FromMilliseconds(300);
+                        _searchDebounceTimer.IsRepeating = false;
+                        _searchDebounceTimer.Tick += OnSearchDebounceElapsed;
+                    }
+                    _searchDebounceTimer.Start();
                 }
             }
         }
-        private CancellationTokenSource? SearchCts { get; set; }
+        private DispatcherQueueTimer? _searchDebounceTimer;
         public List<Music> SongsSource { get; set; } = [];
         public BulkObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<PlayListMusicItem> PlayListSongs { get; set => SetProperty(ref field, value); } = [];
@@ -668,15 +675,16 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void AddMusicToCurrentPlayList(Music music)
         {
+            if (music is null) return;
             int index = GetCurrentIndex();
-            if (index != -1 && music is not null)
+            if (index == -1) return;
+
+            int newId = music.Id;
+            foreach (var m in CurrentPlayingList)
             {
-                var existingIds = new HashSet<int>(CurrentPlayingList.AsValueEnumerable().Select(m => m.Id).ToArray());
-                if (!existingIds.Contains(music.Id))
-                {
-                    CurrentPlayingList.Insert(index + 1, music);
-                }
+                if (m.Id == newId) return;
             }
+            CurrentPlayingList.Insert(index + 1, music);
         }
 
         public int GetCurrentIndex()
@@ -689,24 +697,9 @@ namespace WinUIMusicPlayer.ViewModel
             return -1;
         }
 
-        private async Task OnSearchTextChangedAsync()
+        private void OnSearchDebounceElapsed(DispatcherQueueTimer sender, object args)
         {
-            SearchCts?.Cancel();
-            SearchCts?.Dispose();
-            SearchCts = null;
-            SearchCts = new CancellationTokenSource();
-            var token = SearchCts.Token;
-            try
-            {
-                await Task.Delay(300, token);
-                if (!token.IsCancellationRequested)
-                {
-                    RefreshDataSource();
-                }
-            }
-            catch (TaskCanceledException)
-            {
-            }
+            RefreshDataSource();
         }
 
         public void RefreshDataSource()
@@ -1121,8 +1114,7 @@ namespace WinUIMusicPlayer.ViewModel
                 _progressTimer?.Stop();
                 _progressPollingCts?.Cancel();
                 _progressPollingCts?.Dispose();
-                SearchCts?.Cancel();
-                SearchCts?.Dispose();
+                _searchDebounceTimer?.Stop();
             }
         }
     }
