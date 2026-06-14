@@ -27,7 +27,7 @@ internal static class CoverLoadQueue
     private sealed class _LoggerMarker { }
     private static readonly ILogger _logger = App.GetLogger<_LoggerMarker>();
 
-    public static int WorkerCount { get; set; } = 2;
+    public static int WorkerCount { get; set; } = 4;
 
     public static int CoverSize { get; set; } = 150;
 
