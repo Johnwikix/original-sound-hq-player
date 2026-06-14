@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using Windows.Foundation;
-using ZLinq;
 
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
 {
@@ -108,7 +107,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
         public static double? CalculateTargetScrollOffset(IList<RenderLyricsLine>? lines, int playingLineIndex)
         {
             if (lines == null || lines.Count == 0) return null;
-            var currentLine = lines.AsValueEnumerable().ElementAtOrDefault(playingLineIndex);
+            if (playingLineIndex < 0 || playingLineIndex >= lines.Count) return null;
+            var currentLine = lines[playingLineIndex];
             if (currentLine?.PrimaryTextLayout == null) return null;
             return -currentLine.CenterPosition.Y;
         }

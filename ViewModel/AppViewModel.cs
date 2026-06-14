@@ -444,7 +444,7 @@ namespace WinUIMusicPlayer.ViewModel
                 CurrentTime = TimeSpan.FromMilliseconds(curMs);
                 CurrentPlayingTime = CurrentTime;
                 CurrentPlayingTimeChanged?.Invoke(curMs);
-                AnimatedWin2dControls.Messages.TimeProgressBus.Publish(curMs);
+                TimeProgressBus.Publish(curMs);
 
                 if (IsManualSelect) return;
 

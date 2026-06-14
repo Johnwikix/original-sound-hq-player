@@ -5,6 +5,7 @@ using Microsoft.Graphics.Canvas.Text;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
@@ -79,10 +80,21 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
         {
             PrimaryRenderSyllables.Clear();
 
-            var sb = new StringBuilder();
-            foreach (var w in lyricLine.Words)
-                sb.Append(w.Word);
-            PrimaryText = sb.ToString();
+            var words = CollectionsMarshal.AsSpan(lyricLine.Words);
+            int totalLen = 0;
+            for (int i = 0; i < words.Length; i++)
+                totalLen += (words[i].Word ?? "null").Length;
+
+            PrimaryText = string.Create(totalLen, lyricLine.Words, static (span, ws) =>
+            {
+                int pos = 0;
+                foreach (var w in ws)
+                {
+                    var s = w.Word ?? "null";
+                    s.AsSpan().CopyTo(span[pos..]);
+                    pos += s.Length;
+                }
+            });
             SecondaryText = lyricLine.TransLateText ?? "";
 
             StartMs = lyricLine.StartMs;

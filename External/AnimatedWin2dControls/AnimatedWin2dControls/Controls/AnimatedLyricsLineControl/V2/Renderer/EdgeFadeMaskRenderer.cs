@@ -65,7 +65,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
 
             _lastBounds = targetRect;
             _lastIsVertical = isVertical;
-            _lastStops = stops.ToArray();
+            _lastStops = stops;
         }
 
         private static bool AreStopsEqual(CanvasGradientStop[]? a, CanvasGradientStop[]? b)
