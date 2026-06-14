@@ -1,7 +1,6 @@
 ﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Messages;
 using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
@@ -13,10 +12,8 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
@@ -322,7 +319,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     AppData.IsPlaying = value;
                     UpdatePlayPauseButtonIcon();
-                    AnimatedWin2dControls.Messages.IsPlayingBus.Publish(value);
+                    IsPlayingBus.Publish(value);
                 }
             }
         } = false;
@@ -343,7 +340,7 @@ namespace WinUIMusicPlayer.ViewModel
             _logger = logger;
             AllPlayList.CollectionChanged += AllPlayList_CollectionChanged;
             _progressPollingCts = new CancellationTokenSource();
-            AnimatedWin2dControls.Messages.LyricsSyncRequestBus.Requested += SendFullLyricsSync;
+            LyricsSyncRequestBus.Requested += SendFullLyricsSync;
         }
 
         public void UpdatePlayPauseButtonIcon()

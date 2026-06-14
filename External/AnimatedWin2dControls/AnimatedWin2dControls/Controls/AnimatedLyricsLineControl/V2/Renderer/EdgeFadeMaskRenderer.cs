@@ -14,6 +14,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
         private CanvasImageBrush? _maskBrush;
 
         private Rect _lastBounds;
+        /// <summary>
+        /// 缓存上一次 <see cref="Update"/> 调用传入的 stops 数组引用(非副本)。
+        /// </summary>
+        /// <remarks>
+        /// <para>调用方约束:stops 数组在传递给 <see cref="Update"/> 之后不得修改其元素,否则 <see cref="AreStopsEqual"/>
+        /// 的逐项比较会因元素变化误判为"已变更",触发不必要的 mask 重建。</para>
+        /// <para>推荐做法:传入 <c>static readonly</c> 数组或生命周期不短于本实例的长期引用。当前唯一调用方
+        /// (<c>UnifiedLyricsCanvasControlV2.s_edgeFadeStops</c>) 满足此约束。</para>
+        /// </remarks>
         private CanvasGradientStop[]? _lastStops;
         private bool _lastIsVertical;
 

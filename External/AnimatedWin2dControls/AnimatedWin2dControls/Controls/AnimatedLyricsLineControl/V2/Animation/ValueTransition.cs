@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
 {
@@ -9,7 +8,17 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
         private T _startValue;
         private T _targetValue;
 
-        private readonly Queue<Keyframe<T>> _keyframeQueue = new();
+        private Keyframe<T> _k1;
+        private Keyframe<T> _k2;
+        private Keyframe<T> _kDelay;
+        private bool _hasK2;
+        private bool _hasDelay;
+
+        private Keyframe<T>[]? _extraKeyframes;
+        private int _extraCount;
+
+        private int _segmentCount;
+        private int _currentSegment;
 
         private double _stepDuration;
         private double _totalDurationForAutoSplit;
@@ -56,7 +65,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
 
         public void JumpTo(T value)
         {
-            _keyframeQueue.Clear();
+            _segmentCount = 0;
+            _currentSegment = 0;
+            _hasK2 = false;
+            _hasDelay = false;
+            _extraCount = 0;
             _currentValue = value;
             _startValue = value;
             _targetValue = value;
@@ -67,22 +80,32 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
         public void Start(T value)
         {
             if (value.Equals(_currentValue) && _configuredDelaySeconds <= 0) return;
-            PrepareStart();
+            ResetSegments();
             if (_configuredDelaySeconds > 0)
-                _keyframeQueue.Enqueue(new Keyframe<T>(_currentValue, _configuredDelaySeconds));
-            _keyframeQueue.Enqueue(new Keyframe<T>(value, _totalDurationForAutoSplit));
-            MoveToNextSegment(true);
+            {
+                _kDelay = new Keyframe<T>(_currentValue, _configuredDelaySeconds);
+                _hasDelay = true;
+            }
+            _k1 = new Keyframe<T>(value, _totalDurationForAutoSplit);
+            _hasK2 = false;
+            _segmentCount = _hasDelay ? 2 : 1;
+            BeginFirstSegment();
         }
 
         public void Start(T v1, T v2)
         {
-            PrepareStart();
+            ResetSegments();
             if (_configuredDelaySeconds > 0)
-                _keyframeQueue.Enqueue(new Keyframe<T>(_currentValue, _configuredDelaySeconds));
+            {
+                _kDelay = new Keyframe<T>(_currentValue, _configuredDelaySeconds);
+                _hasDelay = true;
+            }
             double autoStepDuration = _totalDurationForAutoSplit / 2;
-            _keyframeQueue.Enqueue(new Keyframe<T>(v1, autoStepDuration));
-            _keyframeQueue.Enqueue(new Keyframe<T>(v2, autoStepDuration));
-            MoveToNextSegment(true);
+            _k1 = new Keyframe<T>(v1, autoStepDuration);
+            _k2 = new Keyframe<T>(v2, autoStepDuration);
+            _hasK2 = true;
+            _segmentCount = _hasDelay ? 3 : 2;
+            BeginFirstSegment();
         }
 
         public void Start(params T[] values)
@@ -91,32 +114,48 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
             if (values.Length == 1) { Start(values[0]); return; }
             if (values.Length == 2) { Start(values[0], values[1]); return; }
 
-            PrepareStart();
+            ResetSegments();
             if (_configuredDelaySeconds > 0)
-                _keyframeQueue.Enqueue(new Keyframe<T>(_currentValue, _configuredDelaySeconds));
+            {
+                _kDelay = new Keyframe<T>(_currentValue, _configuredDelaySeconds);
+                _hasDelay = true;
+            }
             double autoStepDuration = _totalDurationForAutoSplit / values.Length;
-            foreach (var val in values)
-                _keyframeQueue.Enqueue(new Keyframe<T>(val, autoStepDuration));
-            MoveToNextSegment(true);
+            EnsureExtraCapacity(values.Length);
+            for (int i = 0; i < values.Length; i++)
+                _extraKeyframes![i] = new Keyframe<T>(values[i], autoStepDuration);
+            _extraCount = values.Length;
+            _segmentCount = _hasDelay ? values.Length + 1 : values.Length;
+            BeginFirstSegment();
         }
 
         public void Start(Keyframe<T> kf)
         {
-            PrepareStart();
+            ResetSegments();
             if (_configuredDelaySeconds > 0)
-                _keyframeQueue.Enqueue(new Keyframe<T>(_currentValue, _configuredDelaySeconds));
-            _keyframeQueue.Enqueue(kf);
-            MoveToNextSegment(true);
+            {
+                _kDelay = new Keyframe<T>(_currentValue, _configuredDelaySeconds);
+                _hasDelay = true;
+            }
+            _k1 = kf;
+            _hasK2 = false;
+            _segmentCount = _hasDelay ? 2 : 1;
+            BeginFirstSegment();
         }
 
         public void Start(Keyframe<T> kf1, Keyframe<T> kf2)
         {
-            PrepareStart();
+            ResetSegments();
             if (_configuredDelaySeconds > 0)
-                _keyframeQueue.Enqueue(new Keyframe<T>(_currentValue, _configuredDelaySeconds));
-            _keyframeQueue.Enqueue(kf1);
-            _keyframeQueue.Enqueue(kf2);
-            MoveToNextSegment(true);
+            {
+                _kDelay = new Keyframe<T>(_currentValue, _configuredDelaySeconds);
+                _hasDelay = true;
+            }
+            _k1 = kf1;
+            _k2 = kf2;
+            _hasK2 = true;
+            _segmentCount = _hasDelay ? 3 : 2;
+            BeginFirstSegment();
         }
 
         public void Start(params Keyframe<T>[] keyframes)
@@ -125,37 +164,60 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
             if (keyframes.Length == 1) { Start(keyframes[0]); return; }
             if (keyframes.Length == 2) { Start(keyframes[0], keyframes[1]); return; }
 
-            PrepareStart();
+            ResetSegments();
             if (_configuredDelaySeconds > 0)
-                _keyframeQueue.Enqueue(new Keyframe<T>(_currentValue, _configuredDelaySeconds));
-            foreach (var kf in keyframes)
-                _keyframeQueue.Enqueue(kf);
-            MoveToNextSegment(true);
+            {
+                _kDelay = new Keyframe<T>(_currentValue, _configuredDelaySeconds);
+                _hasDelay = true;
+            }
+            EnsureExtraCapacity(keyframes.Length);
+            for (int i = 0; i < keyframes.Length; i++)
+                _extraKeyframes![i] = keyframes[i];
+            _extraCount = keyframes.Length;
+            _segmentCount = _hasDelay ? keyframes.Length + 1 : keyframes.Length;
+            BeginFirstSegment();
         }
 
-        private void PrepareStart()
+        private void ResetSegments()
         {
-            _keyframeQueue.Clear();
             _isTransitioning = true;
+            _currentSegment = 0;
+            _hasK2 = false;
+            _hasDelay = false;
+            _extraCount = 0;
         }
 
-        private void MoveToNextSegment(bool firstStart = false)
+        private void EnsureExtraCapacity(int n)
         {
-            if (_keyframeQueue.Count > 0)
-            {
-                var kf = _keyframeQueue.Dequeue();
-                _startValue = firstStart ? _currentValue : _targetValue;
-                _targetValue = kf.Value;
-                _stepDuration = kf.Duration;
+            if (_extraKeyframes == null || _extraKeyframes.Length < n)
+                _extraKeyframes = new Keyframe<T>[Math.Max(n, 4)];
+        }
 
-                if (firstStart) _progress = 0f;
-            }
-            else
-            {
-                _currentValue = _targetValue;
-                _isTransitioning = false;
-                _progress = 1f;
-            }
+        private void BeginFirstSegment()
+        {
+            if (_segmentCount == 0) { _isTransitioning = false; return; }
+            AdvanceToSegment(0);
+            _progress = 0f;
+        }
+
+        private ref readonly Keyframe<T> CurrentKeyframe()
+        {
+            if (_hasDelay && _currentSegment == _segmentCount - 1)
+                return ref _kDelay;
+            if (!_hasK2 || _currentSegment == 0)
+                return ref _k1;
+            if (_currentSegment == 1)
+                return ref _k2;
+            return ref _extraKeyframes![_currentSegment - 2];
+        }
+
+        private void AdvanceToSegment(int seg)
+        {
+            _currentSegment = seg;
+            var kf = CurrentKeyframe();
+            _startValue = _currentValue;
+            _targetValue = kf.Value;
+            _stepDuration = kf.Duration;
         }
 
         public void Update(TimeSpan elapsedTime)
@@ -174,8 +236,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
                     timeStep -= timeConsumed;
                     _progress = 1.0;
                     _currentValue = _targetValue;
-                    MoveToNextSegment();
-                    if (_isTransitioning) _progress = 0f;
+                    if (_currentSegment + 1 < _segmentCount)
+                    {
+                        AdvanceToSegment(_currentSegment + 1);
+                        _progress = 0f;
+                    }
+                    else
+                    {
+                        _isTransitioning = false;
+                        _progress = 1f;
+                    }
                 }
                 else
                 {
