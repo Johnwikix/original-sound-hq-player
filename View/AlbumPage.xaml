@@ -20,7 +20,7 @@
             IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BooleanNegationConverter}}"
             Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}, ConverterParameter=invert}">
             <SemanticZoom.OpacityTransition>
-                <ScalarTransition Duration="0:0:0.5" />
+                <ScalarTransition Duration="0:0:0.3" />
             </SemanticZoom.OpacityTransition>
             <SemanticZoom.ZoomedInView>
                 <GridView
@@ -182,9 +182,9 @@
         </SemanticZoom>
         <controls:MusicGroupDetailControl
             x:Name="DetailView"
-            PlaySourceTag="AlbumSongsView"
+            x:FieldModifier="public"
             IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay}"
             Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
-            x:FieldModifier="public" />
+            PlaySourceTag="AlbumSongsView" />
     </Grid>
 </Page>

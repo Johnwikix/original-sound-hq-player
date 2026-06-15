@@ -14,7 +14,7 @@
     x:Name="DetailRoot"
     mc:Ignorable="d">
     <UserControl.OpacityTransition>
-        <ScalarTransition Duration="0:0:0.5" />
+        <ScalarTransition Duration="0:0:0.3" />
     </UserControl.OpacityTransition>
     <UserControl.Resources>
         <Style
