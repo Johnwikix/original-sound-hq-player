@@ -658,10 +658,30 @@ namespace WinUIMusicPlayer.ViewModel
         {
             int currentSelectedIndex = GetSelectorBarItemIndex(SelectedPage);
 
-            // 任何切 tab 都清空所有 detail 状态,等价于"后退离开 detail"
-            AppViewModel.CurrentAlbumObj = null;
-            AppViewModel.CurrentArtistObj = null;
-            AppViewModel.CurrentFolderObj = null;
+            // 清空非本 tab 的 detail 状态(SelectBarAlbum/Artist 等跨链已把
+            // 对应的 CurrentXxxObj 设好,这里不清本 tab,跨链才不会失效)
+            switch (SelectedPage.Name)
+            {
+                case "Song":
+                case "Favourite":
+                case "PlayList":
+                    AppViewModel.CurrentAlbumObj = null;
+                    AppViewModel.CurrentArtistObj = null;
+                    AppViewModel.CurrentFolderObj = null;
+                    break;
+                case "Album":
+                    AppViewModel.CurrentArtistObj = null;
+                    AppViewModel.CurrentFolderObj = null;
+                    break;
+                case "Artist":
+                    AppViewModel.CurrentAlbumObj = null;
+                    AppViewModel.CurrentFolderObj = null;
+                    break;
+                case "Folder":
+                    AppViewModel.CurrentAlbumObj = null;
+                    AppViewModel.CurrentArtistObj = null;
+                    break;
+            }
 
             AppData.CurrentPage = typeof(SongListPage);
             switch (SelectedPage.Name)
@@ -672,15 +692,18 @@ namespace WinUIMusicPlayer.ViewModel
                     break;
                 case "Album":
                     AppData.CurrentPage = typeof(AlbumPage);
-                    AppViewModel.PageType = "albumBrowse";
+                    AppViewModel.PageType = AppViewModel.CurrentAlbumObj is { } a && !string.IsNullOrEmpty(a.Album)
+                        ? "album" : "albumBrowse";
                     break;
                 case "Artist":
                     AppData.CurrentPage = typeof(ArtistPage);
-                    AppViewModel.PageType = "artistBrowse";
+                    AppViewModel.PageType = AppViewModel.CurrentArtistObj is { } ar && !string.IsNullOrEmpty(ar.Author)
+                        ? "artist" : "artistBrowse";
                     break;
                 case "Folder":
                     AppData.CurrentPage = typeof(FolderBrowsePage);
-                    AppViewModel.PageType = "folderBrowse";
+                    AppViewModel.PageType = AppViewModel.CurrentFolderObj is { } f && !string.IsNullOrEmpty(f.LastLevelFolderPath)
+                        ? "folder" : "folderBrowse";
                     break;
                 case "Favourite":
                     AppViewModel.PageType = "favourite";
