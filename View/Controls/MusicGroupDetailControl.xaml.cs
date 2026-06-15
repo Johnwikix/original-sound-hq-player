@@ -3,58 +3,60 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Navigation;
 using System;
-using System.Threading.Tasks;
 using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.Services.NavigationService;
-using WinUIMusicPlayer.ViewModel;
+using WinUIMusicPlayer.ViewModel.Controls;
 
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
-
-namespace WinUIMusicPlayer.View
+namespace WinUIMusicPlayer.View.Controls
 {
-    /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
-    /// </summary>
-    public sealed partial class SongCollectionPage : Page, INavigatable
+    public sealed partial class MusicGroupDetailControl : UserControl
     {
-        public SongCollectionViewModel ViewModel { get; }
-        private MusicDatabaseService _musicDatabaseService { get; }
+        public MusicGroupDetailViewModel ViewModel { get; }
         private readonly ScrollerHelper _scrollHelper;
         private readonly Music?[] _selectedBuffer = new Music?[256];
         private Music? _pendingScroll;
-        public SongCollectionPage()
+
+        public static readonly DependencyProperty PlaySourceTagProperty =
+            DependencyProperty.Register(
+                nameof(PlaySourceTag),
+                typeof(string),
+                typeof(MusicGroupDetailControl),
+                new PropertyMetadata("SongsSourceView"));
+
+        public string PlaySourceTag
         {
+            get => (string)GetValue(PlaySourceTagProperty);
+            set => SetValue(PlaySourceTagProperty, value);
+        }
+
+        public MusicGroupDetailControl()
+        {
+            ViewModel = App.Services.GetRequiredService<MusicGroupDetailViewModel>();
             this.InitializeComponent();
-            ViewModel = App.Services.GetRequiredService<SongCollectionViewModel>(); ;
-            ViewModel.SetCurrentPage(this);
-            DataContext = this;
-            _musicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>(); ;
             MusicListView.ContainerContentChanging += MusicListView_ContainerContentChanging;
-            this.NavigationCacheMode = NavigationCacheMode.Disabled;
             _scrollHelper = new ScrollerHelper(DispatcherQueue);
             _scrollHelper.Tick += OnScrollTick;
+            this.Loaded += OnLoaded;
+            this.Unloaded += OnUnloaded;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            ViewModel.SetView(this);
+            ViewModel.RefreshFromAppState();
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            ViewModel.SetView(null);
         }
 
         private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
         {
             if (args.InRecycleQueue)
-                WinUIMusicPlayer.Behaviors.AlbumCoverBehavior.ClearImagesInContainer(args.ItemContainer);
-        }
-
-        public void ReceiveNavigationParameter(object parameter)
-        {
-            ViewModel.ReceiveNavigation();
-        }
-
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-            ViewModel.ReceiveNavigation();
+                AlbumCoverBehavior.ClearImagesInContainer(args.ItemContainer);
         }
 
         public void OnScrollToMusic(Music selectedMusic)
@@ -77,26 +79,24 @@ namespace WinUIMusicPlayer.View
             ViewModel.UpdateMusicListView();
         }
 
-        private void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+        private void MusicListView_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             ViewModel.MusicListView_DoubleTapped();
         }
 
-        private void AuthorTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        private void AuthorButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is TextBlock textBlock)
+            if (sender is FrameworkElement fe && fe.DataContext is Music music)
             {
-                string artist = textBlock.Text;
-                ViewModel.AuthorTextBlock_Tapped(artist);
+                ViewModel.AuthorTextBlock_Tapped(music.Author ?? string.Empty);
             }
         }
 
-        private void AlbumTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        private void AlbumButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is TextBlock textBlock)
+            if (sender is FrameworkElement fe && fe.DataContext is Music music)
             {
-                string albumName = textBlock.Text;
-                ViewModel.AlbumTextBlock_Tapped(albumName);
+                ViewModel.AlbumTextBlock_Tapped(music.Album ?? string.Empty);
             }
         }
 
@@ -144,6 +144,8 @@ namespace WinUIMusicPlayer.View
         private async void AddToPlayListBtn_Click(object sender, RoutedEventArgs e)
         {
             PlayList.Items.Clear();
+            var db = App.Services.GetRequiredService<MusicDatabaseService>();
+            var list = ViewModel.Songs;
             foreach (var playlist in ViewModel.AppViewModel.AllPlayList)
             {
                 var menuItem = new MenuFlyoutItem
@@ -152,12 +154,12 @@ namespace WinUIMusicPlayer.View
                 };
                 menuItem.Click += async (s, args) =>
                 {
-                    var musicList = ViewModel.AppViewModel.AlbumSongs;
-                    await _musicDatabaseService.AddMusicListToPlayList(musicList, playlist.Id);
+                    await db.AddMusicListToPlayList(list, playlist.Id);
                 };
                 PlayList.Items.Add(menuItem);
             }
         }
+
         private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
             if (sender is AutoScrollView autoScrollView)

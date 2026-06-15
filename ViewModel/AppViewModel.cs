@@ -20,6 +20,7 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
+using WinUIMusicPlayer.ViewModel.Controls;
 using ZLinq;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
@@ -624,9 +625,7 @@ namespace WinUIMusicPlayer.ViewModel
             App.Services.GetRequiredService<FolderViewModel>().UpdateAlbumMenuOptionsPlayList();
             App.Services.GetRequiredService<SongListViewModel>().UpdateAlbumMenuOptionsPlayList();
             App.Services.GetRequiredService<FavouritePlayListViewModel>().UpdateAlbumMenuOptionsPlayList();
-            App.Services.GetRequiredService<SongArtistViewModel>().UpdateAlbumMenuOptionsPlayList();
-            App.Services.GetRequiredService<SongCollectionViewModel>().UpdateAlbumMenuOptionsPlayList();
-            App.Services.GetRequiredService<SongFolderListViewModel>().UpdateAlbumMenuOptionsPlayList();
+            App.Services.GetRequiredService<MusicGroupDetailViewModel>().UpdateAlbumMenuOptionsPlayList();
         }
 
         public async Task UpdateSongCollectionsAsync(
@@ -800,27 +799,15 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 _ = UpdateSongCollectionsAsync(ListSongs, SongViewType.All);
             }
-            else if (pageType == typeof(SongCollectionPage))
-            {
-                _ = UpdateSongCollectionsAsync(AlbumSongs, SongViewType.Album, m => m.Album == CurrentAlbumObj?.Album);
-            }
             else if (pageType == typeof(AlbumPage))
             {
                 _ = UpdateSongCollectionsAsync(AlbumSongs, SongViewType.Album, m => m.Album == CurrentAlbumObj?.Album);
                 UpdateGroupedByFirstLetter(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumPageSource);
             }
-            else if (pageType == typeof(SongArtistListPage))
-            {
-                _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => m.Author == CurrentArtistObj?.Author);
-            }
             else if (pageType == typeof(ArtistPage))
             {
                 _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => m.Author == CurrentArtistObj?.Author);
                 UpdateGroupedByFirstLetter(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistPageSource);
-            }
-            else if (pageType == typeof(SongFolderListPage))
-            {
-                _ = UpdateSongCollectionsAsync(FolderSongs, SongViewType.Folder, m => m.LastLevelFolderPath == CurrentFolderObj?.LastLevelFolderPath);
             }
             else if (pageType == typeof(FolderBrowsePage))
             {
@@ -1011,10 +998,8 @@ namespace WinUIMusicPlayer.ViewModel
         public void UpDateUsbDeviceMenuflyout()
         {
             App.Services.GetRequiredService<FavouritePlayListViewModel>().UpDateUsbDeviceMenuflyout();
-            App.Services.GetRequiredService<SongArtistViewModel>().UpDateUsbDeviceMenuflyout();
+            App.Services.GetRequiredService<MusicGroupDetailViewModel>().UpDateUsbDeviceMenuflyout();
             App.Services.GetRequiredService<SongListViewModel>().UpDateUsbDeviceMenuflyout();
-            App.Services.GetRequiredService<SongCollectionViewModel>().UpDateUsbDeviceMenuflyout();
-            App.Services.GetRequiredService<SongFolderListViewModel>().UpDateUsbDeviceMenuflyout();
             App.Services.GetRequiredService<PlayListSongViewModel>().UpDateUsbDeviceMenuflyout();
             App.Services.GetRequiredService<AlbumViewModel>().UpDateUsbDeviceMenuflyout();
             App.Services.GetRequiredService<ArtistViewModel>().UpDateUsbDeviceMenuflyout();

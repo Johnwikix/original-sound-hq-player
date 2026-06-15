@@ -4,6 +4,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:behaviors="using:WinUIMusicPlayer.Behaviors"
+    xmlns:controls="using:WinUIMusicPlayer.View.Controls"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:extensions="using:WinUIMusicPlayer.Extensions"
@@ -13,8 +14,13 @@
     xmlns:model="using:WinUIMusicPlayer.Model"
     mc:Ignorable="d">
     <Grid Margin="0">
-        <SemanticZoom>
-            <!--  详细视图 (ZoomedInView)  -->
+        <SemanticZoom
+            x:Name="BrowseZoom"
+            IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BooleanNegationConverter}}"
+            Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}, ConverterParameter=invert}">
+            <SemanticZoom.OpacityTransition>
+                <ScalarTransition Duration="0:0:0.5" />
+            </SemanticZoom.OpacityTransition>
             <SemanticZoom.ZoomedInView>
                 <GridView
                     x:Name="ArtistsGridView"
@@ -58,6 +64,7 @@
                                 VerticalAlignment="Center">
                                 <Grid Width="150" Height="150">
                                     <Border
+                                        x:Name="CoverBorder"
                                         Grid.Row="0"
                                         Width="150"
                                         Height="150"
@@ -110,8 +117,6 @@
                     </GridView.ItemTemplate>
                 </GridView>
             </SemanticZoom.ZoomedInView>
-
-            <!--  概览视图 (ZoomedOutView)  -->
             <SemanticZoom.ZoomedOutView>
                 <GridView
                     x:Name="ZoomedOutGridView"
@@ -135,5 +140,11 @@
                 </GridView>
             </SemanticZoom.ZoomedOutView>
         </SemanticZoom>
+        <controls:MusicGroupDetailControl
+            x:Name="DetailView"
+            PlaySourceTag="ArtistSongsView"
+            IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay}"
+            Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
+            x:FieldModifier="public" />
     </Grid>
 </Page>

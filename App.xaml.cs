@@ -19,6 +19,7 @@ using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.ViewModel;
+using WinUIMusicPlayer.ViewModel.Controls;
 using WinUIMusicPlayer.ViewModel.Pages;
 using WinUIMusicPlayer.WebService;
 
@@ -79,15 +80,13 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<SettingsViewModel>();
                  services.AddSingleton<AlbumViewModel>();
                  services.AddSingleton<FavouritePlayListViewModel>();
-                 services.AddSingleton<SongFolderListViewModel>();
-                 services.AddSingleton<SongArtistViewModel>();
                  services.AddSingleton<ArtistViewModel>();
                  services.AddSingleton<FolderViewModel>();
                  services.AddSingleton<PlayListViewModel>();
                  services.AddSingleton<SongListViewModel>();
-                 services.AddSingleton<SongCollectionViewModel>();
                  services.AddSingleton<PlayListSongViewModel>();
                  services.AddSingleton<PlayingDetailViewModel>();
+                 services.AddSingleton<MusicGroupDetailViewModel>();
                  services.AddSingleton<SystemMediaControlsService>();
                  services.AddSingleton<AudioConverterService>();
                  services.AddSingleton<NotificationService>();

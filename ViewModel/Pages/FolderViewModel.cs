@@ -20,6 +20,7 @@ namespace WinUIMusicPlayer.ViewModel
     {
         public Music SelectedItem { get; set => SetProperty(ref field, value); }
         public ObservableCollection<MenuModel> FolderMenuOptions { get; set => SetProperty(ref field, value); } = [];
+        public bool IsInDetailMode { get; set => SetProperty(ref field, value); }
         private MusicBrowseViewModel? MusicBrowseViewModel { get; set; }
         public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
@@ -36,8 +37,19 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ReceiveNavigation()
         {
-            AppViewModel.CurrentFolderObj = null;
-            AppViewModel.PageType = "folderBrowse";
+            if (AppViewModel.CurrentFolderObj is not null && !string.IsNullOrEmpty(AppViewModel.CurrentFolderObj.LastLevelFolderPath))
+            {
+                IsInDetailMode = true;
+                AppViewModel.PageType = "folder";
+                AppViewModel.IsBackBtnEnable = true;
+            }
+            else
+            {
+                AppViewModel.CurrentFolderObj = null;
+                IsInDetailMode = false;
+                AppViewModel.PageType = "folderBrowse";
+                AppViewModel.IsBackBtnEnable = false;
+            }
         }
 
         private void InitalizeOption()
@@ -92,7 +104,8 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         AppViewModel.PageType = "folder";
                         AppViewModel.CurrentFolderObj = folder;
-                        MusicBrowseViewModel.NavigatePage(typeof(SongFolderListPage), null, new DrillInNavigationTransitionInfo());
+                        IsInDetailMode = true;
+                        AppViewModel.IsBackBtnEnable = true;
                     }
                     catch (Exception ex)
                     {
@@ -101,6 +114,24 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
+
+        public void EnterDetailFromCrossLink()
+        {
+            if (AppViewModel.CurrentFolderObj is null) return;
+            IsInDetailMode = true;
+            AppViewModel.IsBackBtnEnable = true;
+        }
+
+        public void CollapseDetail()
+        {
+            if (!IsInDetailMode) return;
+            IsInDetailMode = false;
+            AppViewModel.CurrentFolderObj = null;
+            AppViewModel.PageType = "folderBrowse";
+            AppViewModel.IsBackBtnEnable = false;
+        }
+
+        public void RefreshDetailView() { }
 
         [RelayCommand]
         private async Task RescanFolder()

@@ -100,16 +100,13 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel.AppViewModel.PageType = "album";
             ViewModel.AppViewModel.CurrentAlbumObj = ViewModel.AppViewModel.FindFirstByAlbum(Album);
-            if (ContentFrame?.Content is not null)
+            if (ContentFrame?.Content is AlbumPage albumPage)
             {
-                if (ContentFrame.Content is AlbumPage)
-                {
-                    NavigatePage(typeof(SongCollectionPage), null, new DrillInNavigationTransitionInfo());
-                }
-                else
-                {
-                    SelectBarItem("album");
-                }
+                albumPage.EnterDetailFromCrossLink();
+            }
+            else
+            {
+                SelectBarItem("album");
             }
         }
 
@@ -119,13 +116,9 @@ namespace WinUIMusicPlayer.View
             ViewModel.AppViewModel.CurrentArtistObj = ViewModel.AppViewModel.FindFirstByArtist(artist);
             if (ContentFrame is not null && ContentFrame.Content is not null)
             {
-                if (ContentFrame.Content is ArtistPage)
+                if (ContentFrame.Content is ArtistPage artistPage)
                 {
-                    NavigatePage(typeof(SongArtistListPage), null, new DrillInNavigationTransitionInfo());
-                }
-                else if (ContentFrame.Content is SongArtistListPage)
-                {
-                    App.Services.GetRequiredService<AppViewModel>().RefreshSongsSource();
+                    artistPage.EnterDetailFromCrossLink();
                 }
                 else
                 {
@@ -136,20 +129,20 @@ namespace WinUIMusicPlayer.View
 
         public void BackButton()
         {
-            if (ContentFrame.Content is SongCollectionPage)
+            if (ContentFrame.Content is AlbumPage albumPage && albumPage.ViewModel.IsInDetailMode)
             {
-                AppData.CurrentPage = typeof(AlbumPage);
-                NavigatePage(typeof(AlbumPage), null, new DrillInNavigationTransitionInfo());
+                albumPage.CollapseDetail();
+                return;
             }
-            if (ContentFrame.Content is SongArtistListPage)
+            if (ContentFrame.Content is ArtistPage artistPage && artistPage.ViewModel.IsInDetailMode)
             {
-                AppData.CurrentPage = typeof(ArtistPage);
-                NavigatePage(typeof(ArtistPage), null, new DrillInNavigationTransitionInfo());
+                artistPage.CollapseDetail();
+                return;
             }
-            if (ContentFrame.Content is SongFolderListPage)
+            if (ContentFrame.Content is FolderBrowsePage folderPage && folderPage.ViewModel.IsInDetailMode)
             {
-                AppData.CurrentPage = typeof(FolderBrowsePage);
-                NavigatePage(typeof(FolderBrowsePage), null, new DrillInNavigationTransitionInfo());
+                folderPage.CollapseDetail();
+                return;
             }
             if (ContentFrame.Content is PlayListSongPage)
             {
@@ -227,17 +220,20 @@ namespace WinUIMusicPlayer.View
             {
                 songListPage?.UpdateMusicListView();
             }
-            if (ContentFrame.Content is SongCollectionPage songCollectionPage)
+            if (ContentFrame.Content is AlbumPage albumPage && albumPage.ViewModel.IsInDetailMode)
             {
-                songCollectionPage?.UpdateMusicListView();
+                albumPage.RefreshDetailView();
+                albumPage.DetailView?.UpdateMusicListView();
             }
-            if (ContentFrame.Content is SongArtistListPage artistListPage)
+            if (ContentFrame.Content is ArtistPage artistPage && artistPage.ViewModel.IsInDetailMode)
             {
-                artistListPage?.UpdateMusicListView();
+                artistPage.RefreshDetailView();
+                artistPage.DetailView?.UpdateMusicListView();
             }
-            if (ContentFrame.Content is SongFolderListPage folderListPage)
+            if (ContentFrame.Content is FolderBrowsePage folderPage && folderPage.ViewModel.IsInDetailMode)
             {
-                folderListPage?.UpdateMusicListView();
+                folderPage.RefreshDetailView();
+                folderPage.DetailView?.UpdateMusicListView();
             }
             if (ContentFrame.Content is FavouritePlayListPage favouritePlayListPage)
             {

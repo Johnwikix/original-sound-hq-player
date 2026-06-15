@@ -20,9 +20,6 @@
     <converters:TimeSpanToStringConverter x:Key="TimeSpanToStringConverter" />
     <converters:VolumeToIconConverter x:Key="VolumeToIconConverter" />
     <converters:FullScreenIconConverter x:Key="FullScreenIconConverter" />
-    <converters:SongCollectionPageTypeToIconConverter x:Key="SongCollectionPageTypeToIconConverter" />
-    <converters:SongCollectionPageTypeToEditVisibleConverter x:Key="SongCollectionPageTypeToEditVisibleConverter" />
-    <converters:SongCollectionPageTypeToRadiusConverter x:Key="SongCollectionPageTypeToRadiusConverter" />
     <converters:IsCoverExistToVisibleConverter x:Key="IsCoverExistToVisibleConverter" />
     <converters:PageTypeStringToVisibleConverter x:Key="PageTypeStringToVisibleConverter" />
     <converters:BoolToBackGroundOpacityConverter x:Key="BoolToBackGroundOpacityConverter" />

@@ -4,6 +4,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:behaviors="using:WinUIMusicPlayer.Behaviors"
+    xmlns:controls="using:WinUIMusicPlayer.View.Controls"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:extensions="using:WinUIMusicPlayer.Extensions"
@@ -13,8 +14,13 @@
     xmlns:model="using:WinUIMusicPlayer.Model"
     mc:Ignorable="d">
     <Grid Margin="0">
-        <SemanticZoom>
-            <!--  详细视图 (ZoomedInView)  -->
+        <SemanticZoom
+            x:Name="BrowseZoom"
+            IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BooleanNegationConverter}}"
+            Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}, ConverterParameter=invert}">
+            <SemanticZoom.OpacityTransition>
+                <ScalarTransition Duration="0:0:0.5" />
+            </SemanticZoom.OpacityTransition>
             <SemanticZoom.ZoomedInView>
                 <GridView
                     x:Name="FolderGridView"
@@ -70,8 +76,8 @@
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Center">
                                     <Grid Width="150" Height="150">
-                                        <!--  图片在下层  -->
                                         <Border
+                                            x:Name="CoverBorder"
                                             Grid.Row="0"
                                             Width="150"
                                             Height="150"
@@ -101,7 +107,6 @@
                                                 </Grid>
                                             </Grid>
                                         </Border>
-                                        <!--  图标位于右下角  -->
                                         <FontIcon
                                             x:Name="IsExistOnDeviceIcon"
                                             Margin="0,0,5,5"
@@ -110,7 +115,6 @@
                                             FontSize="16"
                                             Glyph="{x:Bind IsExistOnDevice, Mode=OneWay, Converter={StaticResource IsExistOnDeviceConverter}}" />
                                     </Grid>
-
                                     <TextBlock
                                         Width="150"
                                         Height="60"
@@ -127,8 +131,6 @@
                     </GridView.ItemTemplate>
                 </GridView>
             </SemanticZoom.ZoomedInView>
-
-            <!--  概览视图 (ZoomedOutView)  -->
             <SemanticZoom.ZoomedOutView>
                 <GridView
                     x:Name="ZoomedOutGridView"
@@ -152,5 +154,11 @@
                 </GridView>
             </SemanticZoom.ZoomedOutView>
         </SemanticZoom>
+        <controls:MusicGroupDetailControl
+            x:Name="DetailView"
+            PlaySourceTag="FolderSongsView"
+            IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay}"
+            Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
+            x:FieldModifier="public" />
     </Grid>
 </Page>

@@ -665,39 +665,36 @@ namespace WinUIMusicPlayer.ViewModel
                     AppData.CurrentPage = typeof(SongListPage);
                     break;
                 case "Album":
+                    AppData.CurrentPage = typeof(AlbumPage);
                     if (AppViewModel.CurrentAlbumObj is not null && !string.IsNullOrEmpty(AppViewModel.CurrentAlbumObj.Album))
                     {
                         AppViewModel.PageType = "album";
-                        AppData.CurrentPage = typeof(SongCollectionPage);
                     }
                     else
                     {
                         AppViewModel.PageType = "albumBrowse";
-                        AppData.CurrentPage = typeof(AlbumPage);
                     }
                     break;
                 case "Artist":
+                    AppData.CurrentPage = typeof(ArtistPage);
                     if (AppViewModel.CurrentArtistObj is not null && !string.IsNullOrEmpty(AppViewModel.CurrentArtistObj.Author))
                     {
                         AppViewModel.PageType = "artist";
-                        AppData.CurrentPage = typeof(SongArtistListPage);
                     }
                     else
                     {
                         AppViewModel.PageType = "artistBrowse";
-                        AppData.CurrentPage = typeof(ArtistPage);
                     }
                     break;
                 case "Folder":
+                    AppData.CurrentPage = typeof(FolderBrowsePage);
                     if (AppViewModel.CurrentFolderObj is not null && !string.IsNullOrEmpty(AppViewModel.CurrentFolderObj.LastLevelFolderPath))
                     {
                         AppViewModel.PageType = "folder";
-                        AppData.CurrentPage = typeof(SongFolderListPage);
                     }
                     else
                     {
                         AppViewModel.PageType = "folderBrowse";
-                        AppData.CurrentPage = typeof(FolderBrowsePage);
                     }
                     break;
                 case "Favourite":

@@ -10,6 +10,7 @@ using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
+using WinUIMusicPlayer.View.Controls;
 using WinUIMusicPlayer.View.SubView;
 using ZLinq;
 
@@ -19,6 +20,7 @@ namespace WinUIMusicPlayer.ViewModel
     {
         public Music SelectedItem { get; set => SetProperty(ref field, value); }
         public ObservableCollection<MenuModel> AlbumMenuOptions { get; set => SetProperty(ref field, value); } = [];
+        public bool IsInDetailMode { get; set => SetProperty(ref field, value); }
         private MusicDatabaseService _musicDatabaseService;
         private MusicBrowseViewModel MusicBrowseViewModel { get; set; }
         public AppViewModel AppViewModel { get; }
@@ -72,9 +74,19 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ReceiveNavigation()
         {
-            AppViewModel.CurrentAlbumObj = null;
-            AppViewModel.PageType = "albumBrowse";
-            AppViewModel.IsBackBtnEnable = false;
+            if (AppViewModel.CurrentAlbumObj is not null && !string.IsNullOrEmpty(AppViewModel.CurrentAlbumObj.Album))
+            {
+                IsInDetailMode = true;
+                AppViewModel.PageType = "album";
+                AppViewModel.IsBackBtnEnable = true;
+            }
+            else
+            {
+                AppViewModel.CurrentAlbumObj = null;
+                IsInDetailMode = false;
+                AppViewModel.PageType = "albumBrowse";
+                AppViewModel.IsBackBtnEnable = false;
+            }
         }
 
 
@@ -89,10 +101,32 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     AppViewModel.PageType = "album";
                     AppViewModel.CurrentAlbumObj = album;
-                    MusicBrowseViewModel.NavigatePage(typeof(SongCollectionPage), null, new DrillInNavigationTransitionInfo());
-
+                    IsInDetailMode = true;
+                    AppViewModel.IsBackBtnEnable = true;
                 }
             }
+        }
+
+        public void EnterDetailFromCrossLink()
+        {
+            if (AppViewModel.CurrentAlbumObj is null) return;
+            IsInDetailMode = true;
+            AppViewModel.IsBackBtnEnable = true;
+        }
+
+        public void CollapseDetail()
+        {
+            if (!IsInDetailMode) return;
+            IsInDetailMode = false;
+            AppViewModel.CurrentAlbumObj = null;
+            AppViewModel.PageType = "albumBrowse";
+            AppViewModel.IsBackBtnEnable = false;
+        }
+
+        public void RefreshDetailView()
+        {
+            // no-op now: MusicGroupDetailViewModel listens to AppViewModel directly.
+            // This method is kept for future use (e.g. forced refresh).
         }
 
         [RelayCommand]
