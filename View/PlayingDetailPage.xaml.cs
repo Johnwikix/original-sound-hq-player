@@ -349,7 +349,7 @@ namespace WinUIMusicPlayer.View
         {
             Task.Run(() =>
             {
-                LyricLine? lyricLine = ViewModel.AppViewModel.UILyrics.AsValueEnumerable().FirstOrDefault(line => line.StartMs >= e.TotalMilliseconds);
+                AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.LyricLine? lyricLine = ViewModel.AppViewModel.UILyrics.AsValueEnumerable().FirstOrDefault(line => line.StartMs >= e.TotalMilliseconds);
                 ViewModel.AppViewModel.IsManualSelect = true;
                 if (lyricLine is not null)
                 {

@@ -15,7 +15,6 @@
                 <ResourceDictionary Source="/Style/SilderDictionary.xaml" />
                 <ResourceDictionary Source="/Style/ComboBoxNMenuFlyoutStyle.xaml" />
                 <ResourceDictionary Source="/Style/ColorStyle.xaml" />
-                <ResourceDictionary Source="ms-appx:///DevWinUI.Controls/Themes/Generic.xaml" />
                 <!--  Other merged dictionaries here  -->
             </ResourceDictionary.MergedDictionaries>
             <x:Double x:Key="ContentDialogMaxWidth">1024</x:Double>
