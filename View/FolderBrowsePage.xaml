@@ -18,9 +18,6 @@
             x:Name="BrowseZoom"
             IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BooleanNegationConverter}}"
             Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}, ConverterParameter=invert}">
-            <SemanticZoom.OpacityTransition>
-                <ScalarTransition Duration="0:0:0.5" />
-            </SemanticZoom.OpacityTransition>
             <SemanticZoom.ZoomedInView>
                 <GridView
                     x:Name="FolderGridView"

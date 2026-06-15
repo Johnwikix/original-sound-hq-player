@@ -51,6 +51,7 @@ namespace WinUIMusicPlayer.View
                 ConnectedAnimationService.GetForCurrentView()
                     .PrepareToAnimate("ArtistCover", coverBorder);
             }
+            SetEntryTransitions();
             ViewModel.ArtistGridView_ItemClick(sender, e);
             if (coverBorder is not null)
             {
@@ -67,24 +68,30 @@ namespace WinUIMusicPlayer.View
             if (!ViewModel.IsInDetailMode) return;
             var artist = ViewModel.AppViewModel.CurrentArtistObj;
             var detailBorder = DetailView.DetailCoverBorder;
-            if (detailBorder is not null && artist is not null)
+
+            // 跨链进入(SongsList 行点 Artist/Album,主界面 bottom bar 跳转)时
+            // 对应的 GridViewItem 可能不在视觉树里，此时不能触发 ConnectedAnimation。
+            Border? sourceBorder = null;
+            if (artist is not null)
+            {
+                var item = ArtistsGridView.ContainerFromItem(artist) as GridViewItem;
+                sourceBorder = FindCoverBorderInItem(item);
+            }
+            bool canAnimate = detailBorder is not null && sourceBorder is not null;
+
+            if (canAnimate)
             {
                 ConnectedAnimationService.GetForCurrentView()
                     .PrepareToAnimate("ArtistCover", detailBorder);
             }
+            SetExitTransitions();
             ViewModel.CollapseDetail();
-            if (detailBorder is not null && artist is not null)
+            if (canAnimate)
             {
                 DispatcherQueue.TryEnqueue(() =>
                 {
                     var anim = ConnectedAnimationService.GetForCurrentView().GetAnimation("ArtistCover");
-                    if (anim is null) return;
-                    var item = ArtistsGridView.ContainerFromItem(artist) as GridViewItem;
-                    var sourceBorder = FindCoverBorderInItem(item);
-                    if (sourceBorder is not null)
-                    {
-                        anim.TryStart(sourceBorder);
-                    }
+                    anim?.TryStart(sourceBorder);
                 });
             }
         }
@@ -119,7 +126,23 @@ namespace WinUIMusicPlayer.View
             e.Handled = true;
         }
 
-        public void EnterDetailFromCrossLink() => ViewModel.EnterDetailFromCrossLink();
+        public void EnterDetailFromCrossLink()
+        {
+            SetEntryTransitions();
+            ViewModel.EnterDetailFromCrossLink();
+        }
         public void RefreshDetailView() => ViewModel.RefreshDetailView();
+
+        private void SetEntryTransitions()
+        {
+            DetailView.OpacityTransition = new ScalarTransition { Duration = TimeSpan.FromMilliseconds(300) };
+            BrowseZoom.OpacityTransition = new ScalarTransition { Duration = TimeSpan.FromMilliseconds(100) };
+        }
+
+        private void SetExitTransitions()
+        {
+            DetailView.OpacityTransition = new ScalarTransition { Duration = TimeSpan.FromMilliseconds(100) };
+            BrowseZoom.OpacityTransition = new ScalarTransition { Duration = TimeSpan.FromMilliseconds(300) };
+        }
     }
 }
