@@ -682,6 +682,9 @@
   <data name="Folder" xml:space="preserve">
     <value>Carpeta</value>
   </data>
+  <data name="Playlist" xml:space="preserve">
+    <value>Lista de reproducción</value>
+  </data>
   <data name="SaveLyricsTextBox.Content" xml:space="preserve">
     <value>Guardar la letra lrc en el dispositivo local</value>
   </data>

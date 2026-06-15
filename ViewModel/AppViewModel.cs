@@ -626,6 +626,7 @@ namespace WinUIMusicPlayer.ViewModel
             App.Services.GetRequiredService<SongListViewModel>().UpdateAlbumMenuOptionsPlayList();
             App.Services.GetRequiredService<FavouritePlayListViewModel>().UpdateAlbumMenuOptionsPlayList();
             App.Services.GetRequiredService<MusicGroupDetailViewModel>().UpdateAlbumMenuOptionsPlayList();
+            App.Services.GetRequiredService<PlaylistDetailViewModel>().UpdateAlbumMenuOptionsPlayList();
         }
 
         public async Task UpdateSongCollectionsAsync(
@@ -818,7 +819,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 _ = UpdateSongCollectionsAsync(FavoriteSongs, SongViewType.Favorite, m => m.IsFavorite == true);
             }
-            else if (pageType == typeof(PlayListSongPage) || pageType == typeof(PlayListPage))
+            else if (pageType == typeof(PlayListPage))
             {
                 RefreshPlayListSongMapping();
             }
@@ -1000,7 +1001,7 @@ namespace WinUIMusicPlayer.ViewModel
             App.Services.GetRequiredService<FavouritePlayListViewModel>().UpDateUsbDeviceMenuflyout();
             App.Services.GetRequiredService<MusicGroupDetailViewModel>().UpDateUsbDeviceMenuflyout();
             App.Services.GetRequiredService<SongListViewModel>().UpDateUsbDeviceMenuflyout();
-            App.Services.GetRequiredService<PlayListSongViewModel>().UpDateUsbDeviceMenuflyout();
+            App.Services.GetRequiredService<PlaylistDetailViewModel>().UpDateUsbDeviceMenuflyout();
             App.Services.GetRequiredService<AlbumViewModel>().UpDateUsbDeviceMenuflyout();
             App.Services.GetRequiredService<ArtistViewModel>().UpDateUsbDeviceMenuflyout();
             App.Services.GetRequiredService<FolderViewModel>().UpDateUsbDeviceMenuflyout();

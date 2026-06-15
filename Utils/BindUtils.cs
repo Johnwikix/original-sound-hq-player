@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using WinRT.OriginalSound_HIFI_PlayerGenericHelpers;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.ViewModel;
 using ZLinq;
 using static WinUIMusicPlayer.Utils.ToolUtils;
@@ -35,6 +36,16 @@ namespace WinUIMusicPlayer.Utils
                 return "0";
             }
             return App.Services.GetRequiredService<AppViewModel>().SongsSource.AsValueEnumerable().Where(m => m.Album == album).Count().ToString();
+        }
+
+        public static Music? PlayListCoverMusicConverter(int playListId)
+        {
+            var items = App.Services.GetRequiredService<MusicDatabaseService>().GetMusicByPlayListIdFromMem(playListId);
+            foreach (var item in items)
+            {
+                if (item.Music is not null) return item.Music;
+            }
+            return null;
         }
         public static double BoolToOpacityRe08Converter(bool isInPlayingDetailMode)
         {

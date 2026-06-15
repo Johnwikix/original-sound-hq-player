@@ -682,6 +682,9 @@
   <data name="Folder" xml:space="preserve">
     <value>Папки</value>
   </data>
+  <data name="Playlist" xml:space="preserve">
+    <value>Плейлист</value>
+  </data>
   <data name="SaveLyricsTextBox.Content" xml:space="preserve">
     <value>Сохранить текст песни lrc на локальное устройство</value>
   </data>

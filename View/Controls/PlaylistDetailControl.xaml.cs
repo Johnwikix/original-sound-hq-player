@@ -3,58 +3,61 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Navigation;
 using System;
-using System.Threading.Tasks;
 using WinUIMusicPlayer.Behaviors;
-using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Services.NavigationService;
+using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.ViewModel;
+using WinUIMusicPlayer.ViewModel.Controls;
 
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
-
-namespace WinUIMusicPlayer.View
+namespace WinUIMusicPlayer.View.Controls
 {
-    /// <summary>
-    /// An empty page that can be used on its own or navigated to within a Frame.
-    /// </summary>
-    public sealed partial class PlayListSongPage : Page, INavigatable
+    public sealed partial class PlaylistDetailControl : UserControl
     {
-        public PlayListSongViewModel ViewModel { get; }
+        public PlaylistDetailViewModel ViewModel { get; }
         private readonly ScrollerHelper _scrollHelper;
         private readonly PlayListMusicItem?[] _selectedBuffer = new PlayListMusicItem?[256];
         private PlayListMusicItem? _pendingScroll;
-        public PlayListSongPage()
+
+        public static readonly DependencyProperty PlaySourceTagProperty =
+            DependencyProperty.Register(
+                nameof(PlaySourceTag),
+                typeof(string),
+                typeof(PlaylistDetailControl),
+                new PropertyMetadata("PlayListSongsView"));
+
+        public string PlaySourceTag
         {
+            get => (string)GetValue(PlaySourceTagProperty);
+            set => SetValue(PlaySourceTagProperty, value);
+        }
+
+        public PlaylistDetailControl()
+        {
+            ViewModel = App.Services.GetRequiredService<PlaylistDetailViewModel>();
             this.InitializeComponent();
-            ViewModel = App.Services.GetRequiredService<PlayListSongViewModel>();
-            ViewModel.SetCurrentPage(this);
-            DataContext = this;
-            MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
             MusicListView.ContainerContentChanging += MusicListView_ContainerContentChanging;
-            this.NavigationCacheMode = NavigationCacheMode.Enabled;
             _scrollHelper = new ScrollerHelper(DispatcherQueue);
             _scrollHelper.Tick += OnScrollTick;
+            this.Loaded += OnLoaded;
+            this.Unloaded += OnUnloaded;
+        }
+
+        private void OnLoaded(object sender, RoutedEventArgs e)
+        {
+            ViewModel.SetView(this);
+            ViewModel.RefreshFromAppState();
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            ViewModel.SetView(null);
         }
 
         private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
         {
             if (args.InRecycleQueue)
-                WinUIMusicPlayer.Behaviors.AlbumCoverBehavior.ClearImagesInContainer(args.ItemContainer);
-        }
-
-        public void ReceiveNavigationParameter(object parameter)
-        {
-            ViewModel.ReceiveNavigation();
-        }
-
-        protected override void OnNavigatedTo(NavigationEventArgs e)
-        {
-            base.OnNavigatedTo(e);
-            ViewModel.ReceiveNavigation();
+                AlbumCoverBehavior.ClearImagesInContainer(args.ItemContainer);
         }
 
         public void OnScrollToMusic(PlayListMusicItem selectedMusic)
@@ -72,20 +75,35 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        public void UpdateMusicListView()
+        {
+            ViewModel.UpdateMusicListView();
+        }
+
+        private void MusicListView_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+        {
+            ViewModel.MusicListView_DoubleTapped();
+        }
 
         private void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
         {
             ViewModel.MusicListView_DragItemsCompleted();
         }
 
-        public void UpdateMusicListView()
+        private void AuthorButton_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.UpdateMusicListView();
+            if (sender is FrameworkElement fe && fe.DataContext is PlayListMusicItem plm)
+            {
+                ViewModel.AuthorTextBlock_Tapped(plm.Music.Author ?? string.Empty);
+            }
         }
 
-        private void MusicListView_DoubleTapped(object sender, Microsoft.UI.Xaml.Input.DoubleTappedRoutedEventArgs e)
+        private void AlbumButton_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.MusicListView_DoubleTapped();
+            if (sender is FrameworkElement fe && fe.DataContext is PlayListMusicItem plm)
+            {
+                ViewModel.AlbumTextBlock_Tapped(plm.Music.Album ?? string.Empty);
+            }
         }
 
         private void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
@@ -129,26 +147,9 @@ namespace WinUIMusicPlayer.View
             e.Handled = true;
         }
 
-        private void AlbumTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+        private void EditPlaylistNameBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is TextBlock textBlock)
-            {
-                string albumName = textBlock.Text;
-                ViewModel.AlbumTextBlock_Tapped(albumName);
-            }
-        }
-
-        private void AuthorTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
-        {
-            if (sender is TextBlock textBlock)
-            {
-                string artist = textBlock.Text;
-                ViewModel.AuthorTextBlock_Tapped(artist);
-            }
-        }
-
-        private void EditPlaylistName_Click(object sender, RoutedEventArgs e)
-        {
+            if (ViewModel.AppViewModel.CurrentPlayList is null) return;
             ViewModel.AppViewModel.EditPlayListName(ViewModel.AppViewModel.CurrentPlayList, async () =>
             {
                 ContentDialog contentDialog = new ContentDialog
@@ -193,6 +194,5 @@ namespace WinUIMusicPlayer.View
                 autoScrollView.IsPlaying = false;
             }
         }
-
     }
 }

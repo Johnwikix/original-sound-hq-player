@@ -144,10 +144,10 @@ namespace WinUIMusicPlayer.View
                 folderPage.CollapseDetail();
                 return;
             }
-            if (ContentFrame.Content is PlayListSongPage)
+            if (ContentFrame.Content is PlayListPage playListPage && playListPage.ViewModel.IsInDetailMode)
             {
-                AppData.CurrentPage = typeof(PlayListPage);
-                NavigatePage(typeof(PlayListPage), null, new DrillInNavigationTransitionInfo());
+                playListPage.CollapseDetail();
+                return;
             }
         }
         private async void AddPlayList_Click(object sender, RoutedEventArgs e)
@@ -239,9 +239,10 @@ namespace WinUIMusicPlayer.View
             {
                 favouritePlayListPage?.UpdateMusicListView();
             }
-            if (ContentFrame.Content is PlayListSongPage playListSongPage)
+            if (ContentFrame.Content is PlayListPage playListPage && playListPage.ViewModel.IsInDetailMode)
             {
-                playListSongPage?.UpdateMusicListView();
+                playListPage.RefreshDetailView();
+                playListPage.DetailView?.UpdateMusicListView();
             }
         }
     }

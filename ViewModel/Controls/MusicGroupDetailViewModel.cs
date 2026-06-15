@@ -116,7 +116,11 @@ namespace WinUIMusicPlayer.ViewModel.Controls
 
         public void RefreshFromAppState()
         {
-            if (AppViewModel.CurrentAlbumObj is { } album && !string.IsNullOrEmpty(album.Album))
+            string pageType = AppViewModel.PageType;
+
+            if (pageType == "album"
+                && AppViewModel.CurrentAlbumObj is { } album
+                && !string.IsNullOrEmpty(album.Album))
             {
                 ApplyKind(GroupKind.Album, album, album.Album);
                 CoverGlyph = "\uE93C";
@@ -124,8 +128,11 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                 IsAlbumDetail = true;
                 BindSongs(AppViewModel.AlbumSongs);
                 RefreshAlbumTitles(album);
+                return;
             }
-            else if (AppViewModel.CurrentArtistObj is { } artist && !string.IsNullOrEmpty(artist.Author))
+            if (pageType == "artist"
+                && AppViewModel.CurrentArtistObj is { } artist
+                && !string.IsNullOrEmpty(artist.Author))
             {
                 ApplyKind(GroupKind.Artist, artist, artist.Author);
                 CoverGlyph = "\uE77B";
@@ -133,8 +140,11 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                 IsAlbumDetail = false;
                 BindSongs(AppViewModel.ArtistSongs);
                 RefreshArtistTitles(artist);
+                return;
             }
-            else if (AppViewModel.CurrentFolderObj is { } folder && !string.IsNullOrEmpty(folder.LastLevelFolderPath))
+            if (pageType == "folder"
+                && AppViewModel.CurrentFolderObj is { } folder
+                && !string.IsNullOrEmpty(folder.LastLevelFolderPath))
             {
                 ApplyKind(GroupKind.Folder, folder, folder.LastLevelFolderPath);
                 CoverGlyph = "\uE8B7";
@@ -142,17 +152,16 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                 IsAlbumDetail = false;
                 BindSongs(AppViewModel.FolderSongs);
                 RefreshFolderTitles(folder);
+                return;
             }
-            else
-            {
-                _kind = GroupKind.None;
-                _songsBound = false;
-                Songs = [];
-                CoverSource = null;
-                Title = string.Empty;
-                SecondTitle = string.Empty;
-                ThirdTitle = string.Empty;
-            }
+
+            _kind = GroupKind.None;
+            _songsBound = false;
+            Songs = [];
+            CoverSource = null;
+            Title = string.Empty;
+            SecondTitle = string.Empty;
+            ThirdTitle = string.Empty;
         }
 
         private void ApplyKind(GroupKind kind, Music cover, string title)

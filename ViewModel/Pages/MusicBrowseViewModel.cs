@@ -657,6 +657,12 @@ namespace WinUIMusicPlayer.ViewModel
         private void OnSelectionChanged()
         {
             int currentSelectedIndex = GetSelectorBarItemIndex(SelectedPage);
+
+            // 任何切 tab 都清空所有 detail 状态,等价于"后退离开 detail"
+            AppViewModel.CurrentAlbumObj = null;
+            AppViewModel.CurrentArtistObj = null;
+            AppViewModel.CurrentFolderObj = null;
+
             AppData.CurrentPage = typeof(SongListPage);
             switch (SelectedPage.Name)
             {
@@ -666,53 +672,23 @@ namespace WinUIMusicPlayer.ViewModel
                     break;
                 case "Album":
                     AppData.CurrentPage = typeof(AlbumPage);
-                    if (AppViewModel.CurrentAlbumObj is not null && !string.IsNullOrEmpty(AppViewModel.CurrentAlbumObj.Album))
-                    {
-                        AppViewModel.PageType = "album";
-                    }
-                    else
-                    {
-                        AppViewModel.PageType = "albumBrowse";
-                    }
+                    AppViewModel.PageType = "albumBrowse";
                     break;
                 case "Artist":
                     AppData.CurrentPage = typeof(ArtistPage);
-                    if (AppViewModel.CurrentArtistObj is not null && !string.IsNullOrEmpty(AppViewModel.CurrentArtistObj.Author))
-                    {
-                        AppViewModel.PageType = "artist";
-                    }
-                    else
-                    {
-                        AppViewModel.PageType = "artistBrowse";
-                    }
+                    AppViewModel.PageType = "artistBrowse";
                     break;
                 case "Folder":
                     AppData.CurrentPage = typeof(FolderBrowsePage);
-                    if (AppViewModel.CurrentFolderObj is not null && !string.IsNullOrEmpty(AppViewModel.CurrentFolderObj.LastLevelFolderPath))
-                    {
-                        AppViewModel.PageType = "folder";
-                    }
-                    else
-                    {
-                        AppViewModel.PageType = "folderBrowse";
-                    }
+                    AppViewModel.PageType = "folderBrowse";
                     break;
                 case "Favourite":
                     AppViewModel.PageType = "favourite";
                     AppData.CurrentPage = typeof(FavouritePlayListPage);
                     break;
                 case "PlayList":
-                    if (AppViewModel.CurrentPlayList is not null)
-                    {
-                        AppViewModel.PageType = "playlist";
-                        AppViewModel.CurrentPlayListId = AppViewModel.CurrentPlayList.Id;
-                        AppData.CurrentPage = typeof(PlayListSongPage);
-                    }
-                    else
-                    {
-                        AppViewModel.PageType = "playlistBrowse";
-                        AppData.CurrentPage = typeof(PlayListPage);
-                    }
+                    AppData.CurrentPage = typeof(PlayListPage);
+                    AppViewModel.PageType = "playlistBrowse";
                     break;
             }
             AppViewModel.RefreshDataSource();

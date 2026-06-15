@@ -448,6 +448,7 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.InsertAllAsync(toInsert);
             }
             AppData.AllPlayListMusics = await _dbConnection.Table<PlayListMusic>().ToListAsync();
+            RefreshPlayListSongCount(playListId);
         }
 
         public async Task AddMusicToPlayList(int playListId, int musicId)
@@ -495,6 +496,7 @@ namespace WinUIMusicPlayer.Services
             var musicIdsString = string.Join(",", musicIds);
             var sql = $"DELETE FROM PlayListMusic WHERE PlayListId = ? AND MusicId IN ({musicIdsString})";
             await _dbConnection.ExecuteAsync(sql, playListId);
+            RefreshPlayListSongCount(playListId);
         }
 
         public async Task RemoveMusicFromPlayList(int playListId, int musicId)
@@ -507,6 +509,7 @@ namespace WinUIMusicPlayer.Services
             {
                 await _dbConnection.DeleteAsync(playListMusic);
             }
+            RefreshPlayListSongCount(playListId);
         }
 
         public async Task<int> InsertPlayList(PlayList playList)
@@ -618,6 +621,46 @@ namespace WinUIMusicPlayer.Services
         {
             AppData.AllPlayListMusics.Clear();
             AppData.AllPlayListMusics = await _dbConnection.Table<PlayListMusic>().ToListAsync();
+            RefreshAllPlayListSongCounts();
+        }
+
+        private void RefreshAllPlayListSongCounts()
+        {
+            var appVm = AppViewModel;
+            var counts = new Dictionary<int, int>();
+            for (int i = 0; i < AppData.AllPlayListMusics.Count; i++)
+            {
+                var plm = AppData.AllPlayListMusics[i];
+                if (!appVm.TryFindById(plm.MusicId, out var m) || m is null) continue;
+                if (!counts.ContainsKey(plm.PlayListId)) counts[plm.PlayListId] = 0;
+                counts[plm.PlayListId]++;
+            }
+            for (int i = 0; i < appVm.AllPlayList.Count; i++)
+            {
+                var pl = appVm.AllPlayList[i];
+                pl.SongCount = counts.GetValueOrDefault(pl.Id, 0);
+            }
+        }
+
+        private void RefreshPlayListSongCount(int playListId)
+        {
+            var appVm = AppViewModel;
+            int count = 0;
+            for (int i = 0; i < AppData.AllPlayListMusics.Count; i++)
+            {
+                var plm = AppData.AllPlayListMusics[i];
+                if (plm.PlayListId != playListId) continue;
+                if (!appVm.TryFindById(plm.MusicId, out var m) || m is null) continue;
+                count++;
+            }
+            for (int i = 0; i < appVm.AllPlayList.Count; i++)
+            {
+                if (appVm.AllPlayList[i].Id == playListId)
+                {
+                    appVm.AllPlayList[i].SongCount = count;
+                    return;
+                }
+            }
         }
 
         public async Task LoadMusicList()
