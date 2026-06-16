@@ -21,6 +21,9 @@ namespace WinUIMusicPlayer.Utils
                 ? Visibility.Visible
                 : Visibility.Collapsed;
 
+        public static double GetHrMusicFontSize(double baseFontSize)
+            => baseFontSize * 0.8;
+
         public static bool PlayModeCheckerConverter(PlayMode currentPlayMode, string targetPlayMode)
         {
             if (currentPlayMode.ToString() is null || targetPlayMode is null)

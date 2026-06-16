@@ -157,19 +157,15 @@
                         </Button>
                         <Border
                             Grid.Column="5"
-                            Height="14"
-                            MinWidth="26"
-                            Padding="0,0,0,2"
-                            Margin="5"
-                            VerticalAlignment="Center"
+                            Padding="4,0,4,1"
                             HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
                             Background="#F7C8AC"
                             CornerRadius="2"
                             Visibility="{x:Bind tool:BindUtils.GetHrMusicVisibility(SampleRate, BitDepth), Mode=OneWay}">
                             <TextBlock
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
-                                TextAlignment="Center"
                                 FontSize="9"
                                 FontWeight="Bold"
                                 Foreground="#F98555"

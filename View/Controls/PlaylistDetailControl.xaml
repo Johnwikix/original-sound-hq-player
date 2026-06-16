@@ -185,12 +185,12 @@
             CanDragItems="True"
             CanReorderItems="True"
             DoubleTapped="MusicListView_DoubleTapped"
+            DragItemsCompleted="MusicListView_DragItemsCompleted"
             ItemContainerStyle="{StaticResource ListViewItemStyle}"
             ItemsSource="{x:Bind ViewModel.Songs, Mode=OneWay}"
             RightTapped="MusicListView_RightTapped"
             SelectedItem="{x:Bind ViewModel.SelectedMusic, Mode=TwoWay}"
-            SelectionMode="Extended"
-            DragItemsCompleted="MusicListView_DragItemsCompleted">
+            SelectionMode="Extended">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="model:PlayListMusicItem">
                     <Grid>
@@ -311,23 +311,19 @@
                         </Button>
                         <Border
                             Grid.Column="5"
-                            Height="14"
-                            MinWidth="26"
-                            Padding="0,0,0,2"
-                            Margin="5"
-                            VerticalAlignment="Center"
+                            Padding="4,0,4,1"
                             HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
                             Background="#F7C8AC"
                             CornerRadius="2"
                             Visibility="{x:Bind tool:BindUtils.GetHrMusicVisibility(Music.SampleRate, Music.BitDepth), Mode=OneWay}">
                             <TextBlock
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
-                                TextAlignment="Center"
                                 FontSize="9"
                                 FontWeight="Bold"
                                 Foreground="#F98555"
-                                Text="HQ" />
+                                Text="HQ"/>
                         </Border>
                         <TextBlock
                             Grid.Column="6"
