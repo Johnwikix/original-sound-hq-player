@@ -57,7 +57,6 @@ namespace WinUIMusicPlayer
             themeStyleHelper.StyleChanged += (s, e) => styleChanged?.Invoke(this, EventArgs.Empty);
             themeStyleHelper.CustomStyleChanged += (s, e) => customStyleChanged?.Invoke(this, EventArgs.Empty);
             InitializeApp();
-            EfficiencyModeUtilities.SetEfficiencyMode(false);
             this.AppWindow.Closing += AppWindow_Closing;
             //重复启动显示窗口
             newWndProcDelegate = new WindowHelper.WndProcDelegate(NewWindowProc);
