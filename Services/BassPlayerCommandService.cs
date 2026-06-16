@@ -1,6 +1,7 @@
 ﻿using BassPlayerIpc.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.UI.Dispatching;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -20,6 +21,7 @@ namespace WinUIMusicPlayer.Services
         private IpcService IpcService { get; set; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private ILogger<BassPlayerCommandService> _logger;
+        private readonly DispatcherQueueHandler _handlePlayEndedOnUi;
 
         public BassPlayerCommandService(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<BassPlayerCommandService> logger)
         {
@@ -28,6 +30,13 @@ namespace WinUIMusicPlayer.Services
             _musicDatabaseService = musicDatabaseService;
             _logger = logger;
             IpcService.NotificationReceived += IpcService_NotificationReceived;
+            _handlePlayEndedOnUi = OnPlayEndedOnUi;
+        }
+
+        private void OnPlayEndedOnUi()
+        {
+            AppViewModel.IsPlaying = false;
+            _ = AutoPlayNextTrack();
         }
 
         private void IpcService_NotificationReceived(MessageTypeId typeId, ReadOnlyMemory<byte> payload)
@@ -46,11 +55,7 @@ namespace WinUIMusicPlayer.Services
             }
             else if (typeId == MessageTypeId.PlayEnded)
             {
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                {
-                    AppViewModel.IsPlaying = false;
-                });
-                AutoPlayNextTrack().Wait();
+                App.MainWindow.DispatcherQueue.TryEnqueue(_handlePlayEndedOnUi);
             }
             else if (typeId == MessageTypeId.VolumeWriteBack)
             {

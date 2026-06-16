@@ -1,5 +1,6 @@
 using DevWinUI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -35,6 +36,7 @@ namespace WinUIMusicPlayer.View
         public SettingsDialog SettingsDialog { get; set; }
         private readonly INavigationService _playingNavigation;
         private bool _isPageTransitioning = false;
+        private static readonly ILogger<MainPage> _logger = App.GetLogger<MainPage>();
         //private ToolTip _progressToolTip = new();
         public MainPage(MainViewModel viewModel)
         {
@@ -44,9 +46,23 @@ namespace WinUIMusicPlayer.View
             MainFrame.Navigated += MainFrame_Navigated;
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
             _playingNavigation = navigationServiceFactory.CreateNavigationService(PlayingFrame);
-            _playingNavigation.RegisterPage<PlayingDetailPage>();             
+            _playingNavigation.RegisterPage<PlayingDetailPage>();
             ViewModel.MusicBrowseVM.SetMainPage(this);
             Loaded += MainPage_Loaded;
+            Unloaded += OnMainPageUnloaded;
+        }
+
+        private void OnMainPageUnloaded(object sender, RoutedEventArgs e)
+        {
+            Unloaded -= OnMainPageUnloaded;
+            try
+            {
+                App.Services.GetRequiredService<AppViewModel>().StopProgressTimer();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "MainPage 卸载时停止进度定时器失败");
+            }
         }
 
         private void MainPage_Loaded(object sender, RoutedEventArgs e)

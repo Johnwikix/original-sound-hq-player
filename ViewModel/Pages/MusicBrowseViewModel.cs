@@ -23,6 +23,7 @@ using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.View.SubView;
 using ZLinq;
 using static WinUIMusicPlayer.Utils.ToolUtils;
+using WinUIMusicPlayer.Extensions;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -722,6 +723,12 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false)
         {
+            if (!App.MainWindow.DispatcherQueue.HasThreadAccess)
+            {
+                await App.MainWindow.DispatcherQueue.EnqueueAsync(
+                    () => PlayMusic(music, currentPos, isSettingChanged, IsChangeList));
+                return;
+            }
             try
             {
                 // 1. 立即取消上一次正在进行的 UI 更新任务（图片读取、网络请求等）

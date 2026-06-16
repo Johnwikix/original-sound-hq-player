@@ -222,6 +222,8 @@ namespace WinUIMusicPlayer.ViewModel
         private DispatcherQueueTimer? _progressTimer;
         private CancellationTokenSource? _progressPollingCts;
         private Task? _progressPollingTask;
+        private int _tickInflight;
+        private readonly DispatcherQueueHandler _tickMarshallerCore;
         public event Action<long>? CurrentPlayingTimeChanged;
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
 
@@ -364,6 +366,7 @@ namespace WinUIMusicPlayer.ViewModel
             AllPlayList.CollectionChanged += AllPlayList_CollectionChanged;
             _progressPollingCts = new CancellationTokenSource();
             LyricsSyncRequestBus.Requested += SendFullLyricsSync;
+            _tickMarshallerCore = OnProgressTickMarshaled;
         }
 
         public void UpdatePlayPauseButtonIcon()
@@ -391,6 +394,11 @@ namespace WinUIMusicPlayer.ViewModel
         }
         public void StartProgressTimer()
         {
+            if (!App.MainWindow.DispatcherQueue.HasThreadAccess)
+            {
+                App.MainWindow.DispatcherQueue.TryEnqueue(StartProgressTimer);
+                return;
+            }
             if (_progressTimer is null)
             {
                 _progressTimer = App.MainWindow.DispatcherQueue.CreateTimer();
@@ -412,13 +420,31 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void StopProgressTimer()
         {
-            _progressTimer?.Stop();
+            if (!App.MainWindow.DispatcherQueue.HasThreadAccess)
+            {
+                App.MainWindow.DispatcherQueue.TryEnqueue(StopProgressTimer);
+                return;
+            }
+            if (_progressTimer is null) return;
+            _progressTimer.Stop();
+            _progressTimer.Tick -= OnProgressTick;
+            _progressTimer = null;
             _progressPollingCts?.Cancel();
+            _progressPollingCts = null;
+            _progressPollingTask = null;
         }
 
         public void UpdateProgressTimerUI()
         {
-            OnProgressTick(null, null!);
+            if (!App.MainWindow.DispatcherQueue.HasThreadAccess)
+            {
+                if (Interlocked.CompareExchange(ref _tickInflight, 1, 0) != 0) return;
+                if (!App.MainWindow.DispatcherQueue.TryEnqueue(_tickMarshallerCore))
+                    Interlocked.Exchange(ref _tickInflight, 0);
+                return;
+            }
+            if (IsUserDraggingProgressSlider) return;
+            OnProgressTickCore();
         }
 
         public (long curMs, long totalMs) GetTimeProgressCache() => _cache.Load();
@@ -456,7 +482,30 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void OnProgressTick(DispatcherQueueTimer? sender, object args)
         {
+            if (!App.MainWindow.DispatcherQueue.HasThreadAccess)
+            {
+                if (Interlocked.CompareExchange(ref _tickInflight, 1, 0) != 0) return;
+                if (!App.MainWindow.DispatcherQueue.TryEnqueue(_tickMarshallerCore))
+                    Interlocked.Exchange(ref _tickInflight, 0);
+                return;
+            }
             if (IsUserDraggingProgressSlider) return;
+            OnProgressTickCore();
+        }
+
+        private void OnProgressTickMarshaled()
+        {
+            if (IsUserDraggingProgressSlider)
+            {
+                Interlocked.Exchange(ref _tickInflight, 0);
+                return;
+            }
+            try { OnProgressTickCore(); }
+            finally { Interlocked.Exchange(ref _tickInflight, 0); }
+        }
+
+        private void OnProgressTickCore()
+        {
             try
             {
                 var (curMs, totalMs) = _cache.Load();
@@ -1215,9 +1264,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (dispose)
             {
-                _progressTimer?.Stop();
-                _progressPollingCts?.Cancel();
-                _progressPollingCts?.Dispose();
+                StopProgressTimer();
                 _searchDebounceTimer?.Stop();
             }
         }
