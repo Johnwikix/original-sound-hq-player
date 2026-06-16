@@ -258,11 +258,27 @@
                                     Margin="10,0,10,0"
                                     FontSize="12"
                                     Text="{x:Bind ViewModel.AppViewModel.MusicInfo, Mode=OneWay}" />
-                                <Image
+                                <Border
                                     x:Name="HRImage"
                                     Grid.Column="1"
                                     Height="12"
-                                    Source="{x:Bind tools:BindUtils.GetHrImage(ViewModel.AppViewModel.CurrentPlayingMusic.SampleRate, ViewModel.AppViewModel.CurrentPlayingMusic.BitDepth), Mode=OneWay}" />
+                                    MinWidth="26"
+                                    Padding="0,0,0,1"
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    HorizontalAlignment="Center"
+                                    Background="#F7C8AC"
+                                    CornerRadius="2"
+                                    Visibility="{x:Bind tools:BindUtils.GetHrMusicVisibility(ViewModel.AppViewModel.CurrentPlayingMusic.SampleRate, ViewModel.AppViewModel.CurrentPlayingMusic.BitDepth), Mode=OneWay}">
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        TextAlignment="Center"
+                                        FontSize="8"
+                                        FontWeight="Bold"
+                                        Foreground="#F98555"
+                                        Text="HQ" />
+                                </Border>
                             </Grid>
                         </Grid>
                     </StackPanel>

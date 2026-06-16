@@ -349,11 +349,27 @@
                                 Margin="0,0,10,0"
                                 FontSize="{x:Bind ViewModel.InfoFontSize, Mode=OneWay}"
                                 Text="{x:Bind ViewModel.AppViewModel.MusicInfo, Mode=OneWay}" />
-                            <Image
+                            <Border
                                 x:Name="PlayingDetailHRImage"
                                 Grid.Column="1"
                                 Height="{x:Bind ViewModel.InfoFontSize, Mode=OneWay}"
-                                Source="{x:Bind tool:BindUtils.GetHrImage(ViewModel.AppViewModel.CurrentPlayingMusic.SampleRate, ViewModel.AppViewModel.CurrentPlayingMusic.BitDepth), Mode=OneWay}" />
+                                MinWidth="26"
+                                Padding="0,0,0,2"
+                                Margin="5,0"
+                                VerticalAlignment="Center"
+                                HorizontalAlignment="Center"
+                                Background="#F7C8AC"
+                                CornerRadius="2"
+                                Visibility="{x:Bind tool:BindUtils.GetHrMusicVisibility(ViewModel.AppViewModel.CurrentPlayingMusic.SampleRate, ViewModel.AppViewModel.CurrentPlayingMusic.BitDepth), Mode=OneWay}">
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    TextAlignment="Center"
+                                    FontSize="{x:Bind ViewModel.InfoFontSize, Mode=OneWay}"
+                                    FontWeight="Bold"
+                                    Foreground="#F98555"
+                                    Text="HQ" />
+                            </Border>
                         </Grid>
                         <TextBlock
                             x:Name="PlayTimeTextBlockPlayingDetail"
