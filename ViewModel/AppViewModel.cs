@@ -225,6 +225,7 @@ namespace WinUIMusicPlayer.ViewModel
         private volatile bool _isDisposed;
         private DispatcherQueueHandler? _startTimerHandler;
         private DispatcherQueueHandler? _stopTimerHandler;
+        private DispatcherQueueHandler? _updateProgressTimerHandler;
         public event Action<long>? CurrentPlayingTimeChanged;
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
 
@@ -440,7 +441,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void UpdateProgressTimerUI()
         {
-            OnProgressTick(null, null!);
+            EnqueueUnlessUIThread(ref _updateProgressTimerHandler, () => OnProgressTick(null, null!));
         }
 
         public (long curMs, long totalMs) GetTimeProgressCache() => _cache.Load();
