@@ -12,6 +12,7 @@
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
+    xmlns:tool="using:WinUIMusicPlayer.Utils"
     mc:Ignorable="d">
 
     <Page.Resources>
@@ -159,7 +160,7 @@
                         Height="14"
                         Margin="5"
                         VerticalAlignment="Center"
-                        Source="{x:Bind Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
+                        Source="{x:Bind tool:BindUtils.GetHrImage(SampleRate, BitDepth), Mode=OneWay}" />
                     <TextBlock
                         Grid.Column="6"
                         Margin="5"

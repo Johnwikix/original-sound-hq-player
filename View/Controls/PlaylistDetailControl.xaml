@@ -11,6 +11,7 @@
     xmlns:local="using:WinUIMusicPlayer.View.Controls"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
+    xmlns:tool="using:WinUIMusicPlayer.Utils"
     x:Name="DetailRoot"
     mc:Ignorable="d">
     <UserControl.OpacityTransition>
@@ -313,7 +314,7 @@
                             Height="14"
                             Margin="5"
                             VerticalAlignment="Center"
-                            Source="{x:Bind Music, Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
+                            Source="{x:Bind tool:BindUtils.GetHrImage(Music.SampleRate, Music.BitDepth), Mode=OneWay}" />
                         <TextBlock
                             Grid.Column="6"
                             Margin="5"

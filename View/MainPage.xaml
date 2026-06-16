@@ -262,7 +262,7 @@
                                     x:Name="HRImage"
                                     Grid.Column="1"
                                     Height="12"
-                                    Source="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic, Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
+                                    Source="{x:Bind tools:BindUtils.GetHrImage(ViewModel.AppViewModel.CurrentPlayingMusic.SampleRate, ViewModel.AppViewModel.CurrentPlayingMusic.BitDepth), Mode=OneWay}" />
                             </Grid>
                         </Grid>
                     </StackPanel>

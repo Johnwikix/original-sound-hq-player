@@ -353,7 +353,7 @@
                                 x:Name="PlayingDetailHRImage"
                                 Grid.Column="1"
                                 Height="{x:Bind ViewModel.InfoFontSize, Mode=OneWay}"
-                                Source="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic, Converter={StaticResource MusicStatusToHRimgConverter}, Mode=OneWay}" />
+                                Source="{x:Bind tool:BindUtils.GetHrImage(ViewModel.AppViewModel.CurrentPlayingMusic.SampleRate, ViewModel.AppViewModel.CurrentPlayingMusic.BitDepth), Mode=OneWay}" />
                         </Grid>
                         <TextBlock
                             x:Name="PlayTimeTextBlockPlayingDetail"

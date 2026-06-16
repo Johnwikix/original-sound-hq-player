@@ -11,7 +11,6 @@
     <converters:FavouriteIconConverter x:Key="FavouriteIconConverter" />
     <converters:FavouriteTextConverter x:Key="FavouriteTextConverter" />
     <converters:IsExistOnDeviceConverter x:Key="IsExistOnDeviceConverter" />
-    <converters:MusicStatusToHRimgConverter x:Key="MusicStatusToHRimgConverter" />
     <converters:MusicToTitleConverter x:Key="MusicToTitleConverter" />
     <converters:PlayModeToIconConverter x:Key="PlayModeToIconConverter" />
     <converters:PlayStatusToIconConverter x:Key="PlayStatusToIconConverter" />

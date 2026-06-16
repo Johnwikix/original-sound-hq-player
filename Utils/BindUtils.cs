@@ -2,6 +2,7 @@
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -16,6 +17,23 @@ namespace WinUIMusicPlayer.Utils
 {
     public static class BindUtils
     {
+        private static readonly BitmapImage _hrImage = CreateHrImage();
+
+        private static BitmapImage CreateHrImage()
+        {
+            var bmp = new BitmapImage
+            {
+                CreateOptions = BitmapCreateOptions.None
+            };
+            bmp.UriSource = new Uri("ms-appx:///Assets/hr.png");
+            return bmp;
+        }
+
+        public static ImageSource? GetHrImage(int sampleRate, int bitDepth)
+            => (sampleRate >= 48000 && bitDepth >= 24) || (sampleRate >= 2822400 && bitDepth == 1)
+                ? _hrImage
+                : null;
+
         public static bool PlayModeCheckerConverter(PlayMode currentPlayMode, string targetPlayMode)
         {
             if (currentPlayMode.ToString() is null || targetPlayMode is null)
