@@ -38,11 +38,11 @@ namespace WinUIMusicPlayer.Services
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
                     AppViewModel.IsPlaying = state.IsPlaying;
+                    if (state.IsPlaying)
+                        AppViewModel.StartProgressTimer();
+                    else
+                        AppViewModel.StopProgressTimer();
                 });
-                if (state.IsPlaying)
-                    AppViewModel.StartProgressTimer();
-                else
-                    AppViewModel.StopProgressTimer();
             }
             else if (typeId == MessageTypeId.PlayEnded)
             {
@@ -104,9 +104,9 @@ namespace WinUIMusicPlayer.Services
         public void MusicEnd()
         {
             IpcService.MusicEnd();
-            AppViewModel.StopProgressTimer();
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
+                AppViewModel.StopProgressTimer();
                 AppViewModel.ProgressSlider = 0;
                 AppViewModel.IsPlaying = false;
             });

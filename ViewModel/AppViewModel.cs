@@ -222,6 +222,9 @@ namespace WinUIMusicPlayer.ViewModel
         private DispatcherQueueTimer? _progressTimer;
         private CancellationTokenSource? _progressPollingCts;
         private Task? _progressPollingTask;
+        private volatile bool _isDisposed;
+        private DispatcherQueueHandler? _startTimerHandler;
+        private DispatcherQueueHandler? _stopTimerHandler;
         public event Action<long>? CurrentPlayingTimeChanged;
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
 
@@ -389,7 +392,21 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
+        private void EnqueueUnlessUIThread(ref DispatcherQueueHandler? cache, DispatcherQueueHandler work)
+        {
+            var window = App.MainWindow;
+            if (window is null) return;
+            var dq = window.DispatcherQueue;
+            if (dq.HasThreadAccess) work();
+            else dq.TryEnqueue(cache ??= work);
+        }
+
         public void StartProgressTimer()
+        {
+            EnqueueUnlessUIThread(ref _startTimerHandler, StartProgressTimerCore);
+        }
+
+        private void StartProgressTimerCore()
         {
             if (_progressTimer is null)
             {
@@ -411,6 +428,11 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         public void StopProgressTimer()
+        {
+            EnqueueUnlessUIThread(ref _stopTimerHandler, StopProgressTimerCore);
+        }
+
+        private void StopProgressTimerCore()
         {
             _progressTimer?.Stop();
             _progressPollingCts?.Cancel();
@@ -456,7 +478,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void OnProgressTick(DispatcherQueueTimer? sender, object args)
         {
-            if (IsUserDraggingProgressSlider) return;
+            if (_isDisposed || IsUserDraggingProgressSlider) return;
             try
             {
                 var (curMs, totalMs) = _cache.Load();
@@ -1145,6 +1167,18 @@ namespace WinUIMusicPlayer.ViewModel
             GC.SuppressFinalize(this);
         }
 
+        private void Dispose(bool dispose)
+        {
+            if (dispose)
+            {
+                _isDisposed = true;
+                EnqueueUnlessUIThread(ref _stopTimerHandler, StopProgressTimerCore);
+                _progressPollingCts?.Cancel();
+                _progressPollingCts?.Dispose();
+                _searchDebounceTimer?.Stop();
+            }
+        }
+
         private DispatcherQueueTimer? _settingsDebounceTimer;
 
         private void ScheduleSettingsBroadcast()
@@ -1211,15 +1245,6 @@ namespace WinUIMusicPlayer.ViewModel
                 AnimatedWin2dControls.Messages.UILyricsBus.Publish(UILyrics);
         }
 
-        private void Dispose(bool dispose)
-        {
-            if (dispose)
-            {
-                _progressTimer?.Stop();
-                _progressPollingCts?.Cancel();
-                _progressPollingCts?.Dispose();
-                _searchDebounceTimer?.Stop();
-            }
-        }
+
     }
 }
