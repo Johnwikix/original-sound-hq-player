@@ -88,11 +88,12 @@ namespace WinUIMusicPlayer.Utils
         {
             "mp3", "flac", "m4a", "wav","ogg","opus","oga"
         };
+        private static readonly ResourceLoader _resourceLoader = new();
         public static string GetString(string key)
         {
             try
             {
-                return new ResourceLoader().GetString(key);
+                return _resourceLoader.GetString(key);
             }
             catch (Exception ex)
             {

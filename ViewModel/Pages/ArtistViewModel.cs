@@ -81,9 +81,11 @@ namespace WinUIMusicPlayer.ViewModel
                 ArtistMenuOptions.Add(usbFlyout);
             }
             usbFlyout.Children.Clear();
+            var pathLabel = ToolUtils.GetString("Path");
+            var freeSpaceLabel = ToolUtils.GetString("FreeSpace");
             foreach (var usb in AppData.UsbStorageDevices)
             {
-                var title = $"{usb.Name} , {ToolUtils.GetString("Path")}：{usb.Path} , {ToolUtils.GetString("FreeSpace")}：{usb.FreeSpaceInGB}GB";
+                var title = $"{usb.Name} , {pathLabel}：{usb.Path} , {freeSpaceLabel}：{usb.FreeSpaceInGB}GB";
                 usbFlyout.Children.Add(new() { Title = title, Tag = usb, Command = TransmitFileToUsbCommand });
             }
         }
@@ -129,13 +131,10 @@ namespace WinUIMusicPlayer.ViewModel
             var artists = AppViewModel.SongsSource.AsValueEnumerable()
                 .Where(m => m.Author is not null && m.Author.Equals(SelectedItem.Author, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(m => m.Album).ToList();
-            if (artists is not null && artists.Count > 0)
+            if (artists.Count > 0 && _musicBrowseViewModel is not null)
             {
-                if (_musicBrowseViewModel is not null)
-                {
-                    AppViewModel.SequentialPlayingList = new(artists);
-                    await _musicBrowseViewModel.PlayMusic(music: artists[0], IsChangeList: true);
-                }
+                AppViewModel.SequentialPlayingList = new(artists);
+                await _musicBrowseViewModel.PlayMusic(music: artists[0], IsChangeList: true);
             }
         }
         [RelayCommand]

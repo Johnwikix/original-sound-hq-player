@@ -141,7 +141,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
         public string PlayModeFlyoutText { get; set => SetProperty(ref field, value); }
-        public ObservableCollection<Music> SequentialPlayingList
+        public BulkObservableCollection<Music> SequentialPlayingList
         {
             get => field;
             set
@@ -159,7 +159,7 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        public ObservableCollection<Music> CurrentPlayingList { get; set => SetProperty(ref field, value); }
+        public BulkObservableCollection<Music> CurrentPlayingList { get; set => SetProperty(ref field, value); } = new();
         public SortOption SelectedSortOption
         {
             get => field;
@@ -1070,7 +1070,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task ReGetLyrics(IEnumerable<Music> uniqueSelectedMusics, Music? selectedMusic = null)
         {
-            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 0)
+            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Any())
             {
                 foreach (Music item in uniqueSelectedMusics)
                 {

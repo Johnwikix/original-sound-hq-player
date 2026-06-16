@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
 using System;
+using WinUIMusicPlayer.Helpers;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.ViewModel;
@@ -136,14 +137,14 @@ namespace WinUIMusicPlayer.View
 
         private void SetEntryTransitions()
         {
-            DetailView.OpacityTransition = new ScalarTransition { Duration = TimeSpan.FromMilliseconds(300) };
-            BrowseZoom.OpacityTransition = new ScalarTransition { Duration = TimeSpan.FromMilliseconds(100) };
+            DetailView.OpacityTransition = TransitionCache.Slow;
+            BrowseZoom.OpacityTransition = TransitionCache.Fast;
         }
 
         private void SetExitTransitions()
         {
-            DetailView.OpacityTransition = new ScalarTransition { Duration = TimeSpan.FromMilliseconds(100) };
-            BrowseZoom.OpacityTransition = new ScalarTransition { Duration = TimeSpan.FromMilliseconds(300) };
+            DetailView.OpacityTransition = TransitionCache.Fast;
+            BrowseZoom.OpacityTransition = TransitionCache.Slow;
         }
     }
 }

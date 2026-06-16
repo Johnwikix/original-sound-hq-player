@@ -74,9 +74,11 @@ namespace WinUIMusicPlayer.ViewModel
                 MenuOptions.Add(usbFlyout);
             }
             usbFlyout.Children.Clear();
+            var pathLabel = ToolUtils.GetString("Path");
+            var freeSpaceLabel = ToolUtils.GetString("FreeSpace");
             foreach (var usb in AppData.UsbStorageDevices)
             {
-                var title = $"{usb.Name} , {ToolUtils.GetString("Path")}：{usb.Path} , {ToolUtils.GetString("FreeSpace")}：{usb.FreeSpaceInGB}GB";
+                var title = $"{usb.Name} , {pathLabel}：{usb.Path} , {freeSpaceLabel}：{usb.FreeSpaceInGB}GB";
                 usbFlyout.Children.Add(new() { Title = title, Tag = usb, Command = TransmitFileToUsbCommand });
             }
         }
@@ -127,7 +129,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     AppViewModel.FavoriteSongs[i].Order = AppViewModel.FavoriteSongs.Count - i;
                 }
-                await _musicDatabaseService.UpdateAllAsync([.. AppViewModel.FavoriteSongs]);
+                await _musicDatabaseService.UpdateAllAsync(AppViewModel.FavoriteSongs);
             }
         }
 
@@ -144,7 +146,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (selectedMusic is not null && BrowseViewModel is not null)
             {
-                AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(AppViewModel.FavoriteSongs);
+                AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(AppViewModel.FavoriteSongs);
                 await BrowseViewModel.PlayMusic(music: selectedMusic, IsChangeList: true);
             }
         }
@@ -153,7 +155,13 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void PlayMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
-            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
+            if (uniqueSelectedMusics is ICollection<Music> col && col.Count > 1)
+            {
+                AppViewModel.SequentialPlayingList = new(col);
+                var first = col.AsValueEnumerable().First();
+                BrowseViewModel.PlayMusic(music: first, IsChangeList: true).Wait();
+            }
+            else if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Any())
             {
                 AppViewModel.SequentialPlayingList = new(uniqueSelectedMusics);
                 BrowseViewModel.PlayMusic(music: uniqueSelectedMusics.AsValueEnumerable().First(), IsChangeList: true).Wait();
@@ -236,7 +244,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (BrowseViewModel is not null)
                 {
-                    AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(AppViewModel.FavoriteSongs);
+                    AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(AppViewModel.FavoriteSongs);
                     await BrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
                 }
             }
@@ -244,7 +252,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (BrowseViewModel is not null)
                 {
-                    AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(SelectedMusics);
+                    AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(SelectedMusics);
                     await BrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
                 }
             }

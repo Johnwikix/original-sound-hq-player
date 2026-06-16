@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace WinUIMusicPlayer.Model
@@ -12,6 +13,12 @@ namespace WinUIMusicPlayer.Model
     public class BulkObservableCollection<T> : ObservableCollection<T>
     {
         private readonly DispatcherQueue _dispatcher = DispatcherQueue.GetForCurrentThread();
+
+        public BulkObservableCollection() { }
+
+        public BulkObservableCollection(IEnumerable<T> collection) : base(collection) { }
+
+        public BulkObservableCollection(List<T> list) : base(list) { }
 
         /// <summary>
         /// 异步将集合内容更新为新集合（并集/替换），仅触发一次通知
@@ -92,6 +99,34 @@ namespace WinUIMusicPlayer.Model
             Items.AddRange(items);
             RaiseChangeNotifications();
         }
+
+        public void AddRange(IEnumerable<T> items)
+        {
+            if (items == null) return;
+            Items.AddRange(items);
+            RaiseChangeNotifications();
+        }
+
+        public void FillFrom(ReadOnlySpan<T> source)
+        {
+            Items.Clear();
+            var arr = new T[source.Length];
+            source.CopyTo(arr);
+            Items.AddRange(arr);
+            RaiseChangeNotifications();
+        }
+
+        public void RemoveRange(IEnumerable<T> items)
+        {
+            if (items == null) return;
+            foreach (var item in items)
+            {
+                Items.Remove(item);
+            }
+            RaiseChangeNotifications();
+        }
+
+        public ReadOnlySpan<T> AsSpan() => CollectionsMarshal.AsSpan((List<T>)Items);
 
         /// <summary>
         /// 统一触发 Count 和 Reset 通知

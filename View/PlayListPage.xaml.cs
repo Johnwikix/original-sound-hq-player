@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
 using System;
+using WinUIMusicPlayer.Helpers;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.NavigationService;
 using WinUIMusicPlayer.Utils;
@@ -142,14 +143,14 @@ namespace WinUIMusicPlayer.View
 
         private void SetEntryTransitions()
         {
-            DetailView.OpacityTransition = new ScalarTransition { Duration = TimeSpan.FromMilliseconds(300) };
-            PlayListGridView.OpacityTransition = new ScalarTransition { Duration = TimeSpan.FromMilliseconds(100) };
+            DetailView.OpacityTransition = TransitionCache.Slow;
+            PlayListGridView.OpacityTransition = TransitionCache.Fast;
         }
 
         private void SetExitTransitions()
         {
-            DetailView.OpacityTransition = new ScalarTransition { Duration = TimeSpan.FromMilliseconds(100) };
-            PlayListGridView.OpacityTransition = new ScalarTransition { Duration = TimeSpan.FromMilliseconds(300) };
+            DetailView.OpacityTransition = TransitionCache.Fast;
+            PlayListGridView.OpacityTransition = TransitionCache.Slow;
         }
 
         private void RemovePlayListButton_Click(object sender, RoutedEventArgs e)

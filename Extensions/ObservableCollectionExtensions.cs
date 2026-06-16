@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.Extensions
 {
@@ -19,7 +20,7 @@ namespace WinUIMusicPlayer.Extensions
             }
         }
 
-        public static ObservableCollection<T> CreateShuffled<T>(this ObservableCollection<T> originalCollection)
+        public static BulkObservableCollection<T> CreateShuffled<T>(this ObservableCollection<T> originalCollection)
         {
             if (originalCollection is null || originalCollection.Count == 0)
             {
@@ -37,7 +38,7 @@ namespace WinUIMusicPlayer.Extensions
                 int k = rng.Next(n + 1);
                 (list[n], list[k]) = (list[k], list[n]);
             }
-            return new ObservableCollection<T>(list);
+            return new BulkObservableCollection<T>(list);
         }
     }
 }

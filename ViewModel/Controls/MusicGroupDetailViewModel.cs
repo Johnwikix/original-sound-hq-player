@@ -35,6 +35,10 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         private MusicGroupDetailControl? _view;
         private bool _songsBound;
 
+        private readonly HashSet<string> _seenAlbums = new(StringComparer.Ordinal);
+        private readonly HashSet<string> _seenAuthors = new(StringComparer.Ordinal);
+        private readonly List<string> _authorsList = new(8);
+
         public Music? CoverSource { get; set => SetProperty(ref field, value); }
         public string Title { get; set => SetProperty(ref field, value); } = string.Empty;
         public string SecondTitle { get; set => SetProperty(ref field, value); } = string.Empty;
@@ -194,20 +198,20 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         private void RefreshAlbumTitles(Music album)
         {
             int count = 0;
-            var seenAuthors = new HashSet<string>(StringComparer.Ordinal);
-            var authorsList = new List<string>(8);
+            _seenAuthors.Clear();
+            _authorsList.Clear();
             var srcSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(AppViewModel.SongsSource);
             for (int i = 0; i < srcSpan.Length; i++)
             {
                 var music = srcSpan[i];
                 if (music.Album != album.Album) continue;
                 count++;
-                if (!string.IsNullOrEmpty(music.Author) && seenAuthors.Add(music.Author))
+                if (!string.IsNullOrEmpty(music.Author) && _seenAuthors.Add(music.Author))
                 {
-                    authorsList.Add(music.Author);
+                    _authorsList.Add(music.Author);
                 }
             }
-            SecondTitle = string.Join(" · ", authorsList);
+            SecondTitle = string.Join(" · ", _authorsList);
             ThirdTitle = $"{(album.Year != 0 ? $"{album.Year} · " : "")}{count} {ToolUtils.GetString("NumberOfSongs")}";
         }
 
@@ -215,14 +219,14 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         {
             int count = 0;
             int albums = 0;
-            var seenAlbums = new HashSet<string>(StringComparer.Ordinal);
+            _seenAlbums.Clear();
             var srcSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(AppViewModel.SongsSource);
             for (int i = 0; i < srcSpan.Length; i++)
             {
                 var music = srcSpan[i];
                 if (music.Author != artist.Author) continue;
                 count++;
-                if (!string.IsNullOrEmpty(music.Album) && seenAlbums.Add(music.Album))
+                if (!string.IsNullOrEmpty(music.Album) && _seenAlbums.Add(music.Album))
                 {
                     albums++;
                 }
@@ -236,8 +240,8 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             int count = 0;
             int albums = 0;
             int authors = 0;
-            var seenAlbums = new HashSet<string>(StringComparer.Ordinal);
-            var seenAuthors = new HashSet<string>(StringComparer.Ordinal);
+            _seenAlbums.Clear();
+            _seenAuthors.Clear();
             var currentFolder = folder.LastLevelFolderPath;
             var srcSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(AppViewModel.SongsSource);
             for (int i = 0; i < srcSpan.Length; i++)
@@ -245,8 +249,8 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                 var music = srcSpan[i];
                 if (music.LastLevelFolderPath != currentFolder) continue;
                 count++;
-                if (!string.IsNullOrEmpty(music.Album) && seenAlbums.Add(music.Album)) albums++;
-                if (!string.IsNullOrEmpty(music.Author) && seenAuthors.Add(music.Author)) authors++;
+                if (!string.IsNullOrEmpty(music.Album) && _seenAlbums.Add(music.Album)) albums++;
+                if (!string.IsNullOrEmpty(music.Author) && _seenAuthors.Add(music.Author)) authors++;
             }
             SecondTitle = $"{count} {ToolUtils.GetString("NumberOfSongs")} · {albums} {ToolUtils.GetString("NumberOfAlbums")} · {authors} {ToolUtils.GetString("NumberOfArtists")}";
             ThirdTitle = ToolUtils.GetString("Folder");
@@ -293,7 +297,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                     _ => null
                 };
                 if (list is null) return;
-                AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(list);
+                AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(list);
                 await MusicBrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true);
             }
         }
@@ -309,7 +313,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                 _ => null
             };
             if (list is null || list.Count == 0) return;
-            AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(list);
+            AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(list);
             await MusicBrowseViewModel.PlayMusic(music: list[0], IsChangeList: true);
         }
 
@@ -334,12 +338,12 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                     GroupKind.Folder => AppViewModel.FolderSongs,
                     _ => (System.Collections.Generic.IEnumerable<Music>)(SelectedMusic is null ? [] : [SelectedMusic])
                 };
-                AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(groupList);
+                AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(groupList);
                 await MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
             }
             else if (SelectedMusics.Count > 1)
             {
-                AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(SelectedMusics);
+                AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(SelectedMusics);
                 await MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
             }
             else if (SelectedMusic is not null)
@@ -351,7 +355,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                     GroupKind.Folder => AppViewModel.FolderSongs,
                     _ => (System.Collections.Generic.IEnumerable<Music>)([SelectedMusic])
                 };
-                AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(groupList);
+                AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(groupList);
                 await MusicBrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true);
             }
         }
@@ -502,9 +506,11 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                 MenuOptions.Add(usbFlyout);
             }
             usbFlyout.Children.Clear();
+            var pathLabel = ToolUtils.GetString("Path");
+            var freeSpaceLabel = ToolUtils.GetString("FreeSpace");
             foreach (var usb in AppData.UsbStorageDevices)
             {
-                var title = $"{usb.Name} , {ToolUtils.GetString("Path")}：{usb.Path} , {ToolUtils.GetString("FreeSpace")}：{usb.FreeSpaceInGB}GB";
+                var title = $"{usb.Name} , {pathLabel}：{usb.Path} , {freeSpaceLabel}：{usb.FreeSpaceInGB}GB";
                 usbFlyout.Children.Add(new() { Title = title, Tag = usb, Command = TransmitFileToUsbCommand });
             }
         }

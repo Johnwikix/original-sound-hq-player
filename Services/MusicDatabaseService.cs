@@ -542,7 +542,7 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.DeleteAsync(playList);
         }
 
-        public async Task UpdateAllAsync(List<Music> musicList)
+        public async Task UpdateAllAsync(IEnumerable<Music> musicList)
         {
             await _dbConnection.UpdateAllAsync(musicList);
         }
@@ -1002,7 +1002,7 @@ namespace WinUIMusicPlayer.Services
             return AppViewModel.SongsSource.FirstOrDefault(m => m.Id == lastPlayedMusicId);
         }
 
-        public async Task SavePlayState(List<Music> currentPlayingList, PlayMode currentPlayMode, int? currentPlayingMusicId, double volume, string sortOrder)
+        public async Task SavePlayState(IEnumerable<Music> currentPlayingList, PlayMode currentPlayMode, int? currentPlayingMusicId, double volume, string sortOrder)
         {
             try
             {

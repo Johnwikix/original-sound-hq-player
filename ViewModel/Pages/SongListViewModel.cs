@@ -134,7 +134,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (SelectedMusic is not null && MusicBrowseViewModel is not null)
             {
-                AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(AppViewModel.ListSongs);
+                AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(AppViewModel.ListSongs);
                 await MusicBrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true);
             }
         }
@@ -143,7 +143,13 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void PlayMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
-            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Count() > 1)
+            if (uniqueSelectedMusics is ICollection<Music> col && col.Count > 1)
+            {
+                AppViewModel.SequentialPlayingList = new(col);
+                var first = col.AsValueEnumerable().First();
+                MusicBrowseViewModel.PlayMusic(music: first, IsChangeList: true).Wait();
+            }
+            else if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Any())
             {
                 AppViewModel.SequentialPlayingList = new(uniqueSelectedMusics);
                 MusicBrowseViewModel.PlayMusic(music: uniqueSelectedMusics.AsValueEnumerable().First(), IsChangeList: true).Wait();
@@ -234,7 +240,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (MusicBrowseViewModel is not null)
                 {
-                    AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(AppViewModel.ListSongs);
+                    AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(AppViewModel.ListSongs);
                     await MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
                 }
             }
@@ -242,7 +248,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (MusicBrowseViewModel is not null)
                 {
-                    AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(SelectedMusics);
+                    AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(SelectedMusics);
                     await MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0], IsChangeList: true);
                 }
             }
@@ -285,7 +291,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (music is not null && MusicBrowseViewModel is not null)
             {
-                AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(AppViewModel.ListSongs);
+                AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(AppViewModel.ListSongs);
                 await MusicBrowseViewModel.PlayMusic(music: music, IsChangeList: true);
             }
         }

@@ -740,7 +740,7 @@ namespace WinUIMusicPlayer.ViewModel
                 AppViewModel.LoadLyricsToUI(music);
                 MainPage?.UpdateCurrentPlayList();
                 AppViewModel.UpdateProgressTimerUI();
-                _ = _musicDatabaseService.SavePlayState([.. AppViewModel.SequentialPlayingList],
+                _ = _musicDatabaseService.SavePlayState(AppViewModel.SequentialPlayingList,
                         AppViewModel.CurrentPlayMode,
                         AppViewModel.CurrentPlayingMusic?.Id,
                         (float)(AppViewModel.Volume),

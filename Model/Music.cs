@@ -62,25 +62,32 @@ namespace WinUIMusicPlayer.Model
         [RelayCommand]
         public async Task Play(string page)
         {
+            var app = App.Services.GetRequiredService<AppViewModel>();
             switch (page)
             {
                 case "FavoriteSongsView":
-                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().FavoriteSongs);
+                    app.SequentialPlayingList = new(app.FavoriteSongs);
                     break;
                 case "PlayListSongs":
-                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().PlayListSongs.Select(x => x.Music));
+                    {
+                        var src = app.PlayListSongs;
+                        var span = src.AsSpan();
+                        var arr = new Music[span.Length];
+                        for (int i = 0; i < span.Length; i++) arr[i] = span[i].Music;
+                        app.SequentialPlayingList = new(arr);
+                    }
                     break;
                 case "SongsSourceView":
-                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().ListSongs);
+                    app.SequentialPlayingList = new(app.ListSongs);
                     break;
                 case "AlbumSongsView":
-                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().AlbumSongs);
+                    app.SequentialPlayingList = new(app.AlbumSongs);
                     break;
                 case "ArtistSongsView":
-                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().ArtistSongs);
+                    app.SequentialPlayingList = new(app.ArtistSongs);
                     break;
                 case "FolderSongsView":
-                    App.Services.GetRequiredService<AppViewModel>().SequentialPlayingList = new(App.Services.GetRequiredService<AppViewModel>().FolderSongs);
+                    app.SequentialPlayingList = new(app.FolderSongs);
                     break;
             }
             await App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(music: this, IsChangeList: true);

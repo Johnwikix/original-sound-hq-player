@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -30,6 +31,9 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         private readonly ILogger<PlaylistDetailViewModel> _logger;
 
         private PlaylistDetailControl? _view;
+
+        private readonly HashSet<string> _seenAlbums = new(StringComparer.Ordinal);
+        private readonly HashSet<string> _seenAuthors = new(StringComparer.Ordinal);
 
         public Music? CoverSource { get; set => SetProperty(ref field, value); }
         public string Title { get; set => SetProperty(ref field, value); } = string.Empty;
@@ -138,13 +142,13 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             int count = plm.Count;
             int albums = 0;
             int authors = 0;
-            var seenAlbums = new HashSet<string>(StringComparer.Ordinal);
-            var seenAuthors = new HashSet<string>(StringComparer.Ordinal);
+            _seenAlbums.Clear();
+            _seenAuthors.Clear();
             for (int i = 0; i < plm.Count; i++)
             {
                 var m = plm[i].Music;
-                if (!string.IsNullOrEmpty(m.Album) && seenAlbums.Add(m.Album)) albums++;
-                if (!string.IsNullOrEmpty(m.Author) && seenAuthors.Add(m.Author)) authors++;
+                if (!string.IsNullOrEmpty(m.Album) && _seenAlbums.Add(m.Album)) albums++;
+                if (!string.IsNullOrEmpty(m.Author) && _seenAuthors.Add(m.Author)) authors++;
             }
             SecondTitle = $"{count} {ToolUtils.GetString("NumberOfSongs")} · {albums} {ToolUtils.GetString("NumberOfAlbums")} · {authors} {ToolUtils.GetString("NumberOfArtists")}";
             if (AppViewModel.PlayListSongs.Count > 0)
@@ -194,13 +198,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         {
             if (SelectedMusic is not null && MusicBrowseViewModel is not null)
             {
-                var plm = AppViewModel.PlayListSongs;
-                var seqList = new List<Music>(plm.Count);
-                for (int i = 0; i < plm.Count; i++)
-                {
-                    seqList.Add(plm[i].Music);
-                }
-                AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(seqList);
+                AppViewModel.SequentialPlayingList = ToMusicCollection(AppViewModel.PlayListSongs);
                 await MusicBrowseViewModel.PlayMusic(music: SelectedMusic.Music, IsChangeList: true);
             }
         }
@@ -226,12 +224,8 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             if (MusicBrowseViewModel is null) return;
             var plm = AppViewModel.PlayListSongs;
             if (plm.Count == 0) return;
-            var seqList = new List<Music>(plm.Count);
-            for (int i = 0; i < plm.Count; i++)
-            {
-                seqList.Add(plm[i].Music);
-            }
-            AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(seqList);
+            var seqList = ToMusicCollection(plm);
+            AppViewModel.SequentialPlayingList = seqList;
             await MusicBrowseViewModel.PlayMusic(music: seqList[0], IsChangeList: true);
         }
 
@@ -239,6 +233,33 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         {
             if (AppViewModel.CurrentPlayList is null) return;
             ToolUtils.ExportPlayList(AppViewModel.CurrentPlayList);
+        }
+
+        private static BulkObservableCollection<Music> ToMusicCollection(BulkObservableCollection<PlayListMusicItem> src)
+        {
+            var result = new BulkObservableCollection<Music>();
+            var span = src.AsSpan();
+            if (span.Length == 0) return result;
+            var arr = new Music[span.Length];
+            for (int i = 0; i < span.Length; i++)
+            {
+                arr[i] = span[i].Music;
+            }
+            result.AddRange(arr);
+            return result;
+        }
+
+        private static BulkObservableCollection<Music> ToMusicCollection(List<PlayListMusicItem> src)
+        {
+            var result = new BulkObservableCollection<Music>();
+            if (src.Count == 0) return result;
+            var arr = new Music[src.Count];
+            for (int i = 0; i < src.Count; i++)
+            {
+                arr[i] = src[i].Music;
+            }
+            result.AddRange(arr);
+            return result;
         }
 
         private void OnEditName()
@@ -252,34 +273,20 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             if (MusicBrowseViewModel is null) return;
             if (SelectedMusics.Count == 1)
             {
-                var plm = AppViewModel.PlayListSongs;
-                var seqList = new List<Music>(plm.Count);
-                for (int i = 0; i < plm.Count; i++)
-                {
-                    seqList.Add(plm[i].Music);
-                }
-                AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(seqList);
+                var seqList = ToMusicCollection(AppViewModel.PlayListSongs);
+                AppViewModel.SequentialPlayingList = seqList;
                 await MusicBrowseViewModel.PlayMusic(music: SelectedMusics[0].Music, IsChangeList: true);
             }
             else if (SelectedMusics.Count > 1)
             {
-                var seqList = new List<Music>(SelectedMusics.Count);
-                for (int i = 0; i < SelectedMusics.Count; i++)
-                {
-                    seqList.Add(SelectedMusics[i].Music);
-                }
-                AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(seqList);
+                var seqList = ToMusicCollection(SelectedMusics);
+                AppViewModel.SequentialPlayingList = seqList;
                 await MusicBrowseViewModel.PlayMusic(music: seqList[0], IsChangeList: true);
             }
             else if (SelectedMusic is not null)
             {
-                var plm = AppViewModel.PlayListSongs;
-                var seqList = new List<Music>(plm.Count);
-                for (int i = 0; i < plm.Count; i++)
-                {
-                    seqList.Add(plm[i].Music);
-                }
-                AppViewModel.SequentialPlayingList = new ObservableCollection<Music>(seqList);
+                var seqList = ToMusicCollection(AppViewModel.PlayListSongs);
+                AppViewModel.SequentialPlayingList = seqList;
                 await MusicBrowseViewModel.PlayMusic(music: SelectedMusic.Music, IsChangeList: true);
             }
         }
@@ -337,12 +344,11 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             int playListId = AppViewModel.CurrentPlayList.Id;
             if (SelectedMusics.Count > 1)
             {
-                var ids = SelectedMusics.Select(x => x.Music.Id).ToList();
+                var ids = new List<int>(SelectedMusics.Count);
+                for (int i = 0; i < SelectedMusics.Count; i++)
+                    ids.Add(SelectedMusics[i].Music.Id);
                 await _db.DeleteAllMusicFromPlayList(playListId, ids);
-                foreach (var item in SelectedMusics.ToList())
-                {
-                    AppViewModel.PlayListSongs.Remove(item);
-                }
+                AppViewModel.PlayListSongs.RemoveRange(SelectedMusics);
             }
             else if (SelectedMusic is not null)
             {
@@ -454,9 +460,11 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                 MenuOptions.Add(usbFlyout);
             }
             usbFlyout.Children.Clear();
+            var pathLabel = ToolUtils.GetString("Path");
+            var freeSpaceLabel = ToolUtils.GetString("FreeSpace");
             foreach (var usb in AppData.UsbStorageDevices)
             {
-                var title = $"{usb.Name} , {ToolUtils.GetString("Path")}：{usb.Path} , {ToolUtils.GetString("FreeSpace")}：{usb.FreeSpaceInGB}GB";
+                var title = $"{usb.Name} , {pathLabel}：{usb.Path} , {freeSpaceLabel}：{usb.FreeSpaceInGB}GB";
                 usbFlyout.Children.Add(new() { Title = title, Tag = usb, Command = TransmitFileToUsbCommand });
             }
         }

@@ -9,6 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Storage.Streams;
+using WinUIMusicPlayer.Helpers;
 using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Controls
@@ -261,13 +262,13 @@ namespace WinUIMusicPlayer.Controls
             LastAlbumArtImage.OpacityTransition = null;
             LastAlbumArtImage.Translation = new();
             LastAlbumArtImage.Opacity = 1;
-            LastAlbumArtImage.OpacityTransition = new ScalarTransition { Duration = Constants.Time.AnimationDuration };
+            LastAlbumArtImage.OpacityTransition = TransitionCache.Default;
 
             AlbumArtImage.TranslationTransition = null;
             AlbumArtImage.OpacityTransition = null;
             AlbumArtImage.Translation = new();
             AlbumArtImage.Opacity = 0;
-            AlbumArtImage.OpacityTransition = new ScalarTransition { Duration = Constants.Time.AnimationDuration };
+            AlbumArtImage.OpacityTransition = TransitionCache.Default;
             AlbumArtImage.Source = source;
 
             LastAlbumArtImage.Opacity = 0;
@@ -283,14 +284,14 @@ namespace WinUIMusicPlayer.Controls
             LastAlbumArtImage.Translation = new();
             LastAlbumArtImage.Opacity = 1;
             LastAlbumArtImage.TranslationTransition = new Vector3Transition { Duration = Constants.Time.AnimationDuration };
-            LastAlbumArtImage.OpacityTransition = new ScalarTransition { Duration = Constants.Time.AnimationDuration };
+            LastAlbumArtImage.OpacityTransition = TransitionCache.Default;
 
             AlbumArtImage.TranslationTransition = null;
             AlbumArtImage.OpacityTransition = null;
             AlbumArtImage.Translation = new(-(float)ActualWidth, 0, 0);
             AlbumArtImage.Opacity = 0;
             AlbumArtImage.TranslationTransition = new Vector3Transition { Duration = Constants.Time.AnimationDuration };
-            AlbumArtImage.OpacityTransition = new ScalarTransition { Duration = Constants.Time.AnimationDuration };
+            AlbumArtImage.OpacityTransition = TransitionCache.Default;
             AlbumArtImage.Source = source;
 
             LastAlbumArtImage.Opacity = 0;
@@ -325,18 +326,12 @@ namespace WinUIMusicPlayer.Controls
             {
                 Duration = duration
             };
-            LastAlbumArtImage.OpacityTransition = new ScalarTransition
-            {
-                Duration = duration
-            };
+            LastAlbumArtImage.OpacityTransition = TransitionCache.Default;
             AlbumArtImage.ScaleTransition = new Vector3Transition
             {
                 Duration = duration
             };
-            AlbumArtImage.OpacityTransition = new ScalarTransition
-            {
-                Duration = duration
-            };
+            AlbumArtImage.OpacityTransition = TransitionCache.Default;
             LastAlbumArtImage.Scale = new(0.8f, 0.8f, 1f);
             LastAlbumArtImage.Opacity = 0f;
 
