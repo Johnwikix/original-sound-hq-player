@@ -6,10 +6,9 @@ using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.Xaml.Interactivity;
 using System;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Storage.Streams;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Behaviors
@@ -183,33 +182,8 @@ namespace WinUIMusicPlayer.Behaviors
             DependencyProperty.Register(nameof(DecodePixelWidth), typeof(int), typeof(FadeImageBehavior),
                 new PropertyMetadata(0));
 
-        // ── 解码 ───────────────────────────────────────────────────────
-        private async Task<BitmapImage?> DecodeToBitmapAsync(byte[]? bytes, CancellationToken token)
-        {
-            if (bytes == null || bytes.Length == 0) return null;
-
-            try
-            {
-                using var stream = new InMemoryRandomAccessStream();
-                await stream.WriteAsync(bytes.AsBuffer());
-                stream.Seek(0);
-
-                if (token.IsCancellationRequested) return null;
-
-                var bitmap = new BitmapImage
-                {
-                    DecodePixelType = DecodePixelType.Logical
-                };
-
-                int decodeWidth = DecodePixelWidth;
-                if (decodeWidth > 0)
-                    bitmap.DecodePixelWidth = decodeWidth;
-
-                await bitmap.SetSourceAsync(stream);
-                return bitmap;
-            }
-            catch (Exception ex) { _logger.LogError(ex, $"DecodeToBitmapAsync 操作失败: {ex.Message}"); return null; }
-        }
+        private Task<BitmapImage?> DecodeToBitmapAsync(byte[]? bytes, CancellationToken token)
+            => ImageHelper.DecodeToBitmapAsync(bytes, DecodePixelWidth, token);
 
         // ── 生命周期 ───────────────────────────────────────────────────
         protected override void OnAttached()

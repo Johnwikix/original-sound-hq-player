@@ -9,16 +9,14 @@ namespace WinUIMusicPlayer.Converters
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
-            if (value is byte[] byteArray && byteArray.Length > 0)
+            if (value is byte[] { Length: > 0 } byteArray)
             {
                 try
                 {
-                    using (var ms = new MemoryStream(byteArray))
-                    {
-                        var bitmapImage = new BitmapImage();
-                        bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
-                        return bitmapImage;
-                    }
+                    var ms = new MemoryStream(byteArray, writable: false);
+                    var bitmapImage = new BitmapImage();
+                    _ = bitmapImage.SetSourceAsync(ms.AsRandomAccessStream());
+                    return bitmapImage;
                 }
                 catch (Exception)
                 {

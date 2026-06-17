@@ -219,17 +219,11 @@ namespace WinUIMusicPlayer.Utils
             {
                 if (imageData is null || imageData.Length == 0)
                     return null;
-                using (var stream = new InMemoryRandomAccessStream())
-                {
-                    using (var dataWriter = new DataWriter(stream.GetOutputStreamAt(0)))
-                    {
-                        dataWriter.WriteBytes(imageData);
-                        await dataWriter.StoreAsync();
-                    }
-                    var bitmapImage = maxSize == 0 ? new BitmapImage() : new BitmapImage { DecodePixelWidth = maxSize };
-                    await bitmapImage.SetSourceAsync(stream);
-                    return bitmapImage;
-                }
+                using var memStream = new MemoryStream(imageData, writable: false);
+                using var stream = memStream.AsRandomAccessStream();
+                var bitmapImage = maxSize == 0 ? new BitmapImage() : new BitmapImage { DecodePixelWidth = maxSize };
+                await bitmapImage.SetSourceAsync(stream);
+                return bitmapImage;
             }
             catch (Exception ex)
             {
@@ -700,7 +694,7 @@ namespace WinUIMusicPlayer.Utils
                 byte[] picture = null;
                 if (AppSettings.IsAutoCoverEnabled && !isManual)
                 {
-                    var cancellationToken = new CancellationTokenSource();
+                    using var cancellationToken = new CancellationTokenSource();
                     if (!Directory.Exists(AppSettings.MusicCoverCache))
                     {
                         Directory.CreateDirectory(AppSettings.MusicCoverCache);

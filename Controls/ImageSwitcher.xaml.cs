@@ -4,11 +4,11 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
-using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Storage.Streams;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Helpers;
 using WinUIMusicPlayer.Utils;
 
@@ -174,33 +174,8 @@ namespace WinUIMusicPlayer.Controls
             UpdateImageSource(imageSource);
         }
 
-        // ── 解码 byte[] → BitmapImage ────────────────────────────────────
-
-        private static async Task<BitmapImage?> DecodeToBitmapAsync(byte[]? bytes, CancellationToken token = default)
-        {
-            if (bytes == null || bytes.Length == 0) return null;
-
-            try
-            {
-                using var stream = new InMemoryRandomAccessStream();
-                await stream.WriteAsync(bytes.AsBuffer());
-                stream.Seek(0);
-
-                if (token.IsCancellationRequested) return null;
-
-                var bitmap = new BitmapImage
-                {
-                    DecodePixelType = DecodePixelType.Logical
-                };
-                await bitmap.SetSourceAsync(stream);
-                return bitmap;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"DecodeToBitmapAsync 操作失败: {ex.Message}");
-                return null;
-            }
-        }
+        private static Task<BitmapImage?> DecodeToBitmapAsync(byte[]? bytes, CancellationToken token = default)
+            => ImageHelper.DecodeToBitmapAsync(bytes, 0, token);
 
         // ── 读取 Assets 中的默认封面 ──────────────────────────────────────
 

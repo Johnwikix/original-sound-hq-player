@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.Xaml.Interactivity;
 using System;
+using System.Buffers;
 using System.Buffers.Binary;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -201,27 +202,83 @@ internal static class CoverLoadQueue
     {
         try
         {
-            var storageFile = await StorageFile.GetFileFromPathAsync(cachePath);
-            ImageSource? result = null;
-            await App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
+            var header = new byte[54];
+            byte[]? pixelRented = null;
+            int w, h;
+            int pixelBytes;
+
+            await using (var fs = new FileStream(
+                cachePath, FileMode.Open, FileAccess.Read, FileShare.Read,
+                bufferSize: 4096, useAsync: true))
             {
-                if (token.IsCancellationRequested) return;
-                IRandomAccessStream? stream = null;
-                try
+                if (fs.Length < 58)
                 {
-                    stream = await storageFile.OpenReadAsync();
-                    var bitmap = new BitmapImage();
-                    await bitmap.SetSourceAsync(stream);
-                    result = bitmap;
+                    _logger?.LogWarning("缩略图缓存文件过小，删除: {Path}", cachePath);
+                    fs.Close();
+                    try { File.Delete(cachePath); } catch { }
+                    return null;
                 }
-                finally
+
+                await fs.ReadExactlyAsync(header, token);
+
+                if (header[0] != (byte)'B' || header[1] != (byte)'M')
                 {
-                    stream?.Dispose();
+                    _logger?.LogWarning("缩略图缓存 BMP magic 无效，删除: {Path}", cachePath);
+                    fs.Close();
+                    try { File.Delete(cachePath); } catch { }
+                    return null;
                 }
-            });
+
+                w = BinaryPrimitives.ReadInt32LittleEndian(header.AsSpan(18));
+                h = Math.Abs(BinaryPrimitives.ReadInt32LittleEndian(header.AsSpan(22)));
+                if (w <= 0 || h <= 0 || w > 4096 || h > 4096)
+                {
+                    _logger?.LogWarning("缩略图缓存尺寸异常 ({W}x{H})，删除: {Path}", w, h, cachePath);
+                    fs.Close();
+                    try { File.Delete(cachePath); } catch { }
+                    return null;
+                }
+
+                pixelBytes = w * h * 4;
+                if (fs.Length < 54 + pixelBytes)
+                {
+                    _logger?.LogWarning("缩略图缓存像素数据不完整，删除: {Path}", cachePath);
+                    fs.Close();
+                    try { File.Delete(cachePath); } catch { }
+                    return null;
+                }
+
+                pixelRented = ArrayPool<byte>.Shared.Rent(pixelBytes);
+                await fs.ReadExactlyAsync(pixelRented.AsMemory(0, pixelBytes), token);
+            }
+
+            ImageSource? result = null;
+            try
+            {
+                await App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
+                {
+                    if (token.IsCancellationRequested) return;
+                    using var softwareBitmap = new SoftwareBitmap(
+                        BitmapPixelFormat.Bgra8, w, h, BitmapAlphaMode.Premultiplied);
+                    softwareBitmap.CopyFromBuffer(pixelRented.AsBuffer(0, pixelBytes));
+                    var source = new SoftwareBitmapSource();
+                    await source.SetBitmapAsync(softwareBitmap);
+                    result = source;
+                });
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(pixelRented, clearArray: false);
+            }
             return result;
         }
-        catch (Exception ex) { _logger?.LogError(ex, "LoadThumbFromCacheAsync 失败"); return null; }
+        catch (OperationCanceledException) { return null; }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "LoadThumbFromCacheAsync 失败，删除损坏缓存: {Path}", cachePath);
+            try { File.Delete(cachePath); } catch { }
+            return null;
+        }
     }
 
     private static async Task<ImageSource?> DecodeAndCacheThumbAsync(
@@ -230,9 +287,8 @@ internal static class CoverLoadQueue
         SoftwareBitmap? softwareBitmap = null;
         try
         {
-            using var inputStream = new InMemoryRandomAccessStream();
-            await inputStream.WriteAsync(picture.AsBuffer());
-            inputStream.Seek(0);
+            using var memStream = new MemoryStream(picture, writable: false);
+            using var inputStream = memStream.AsRandomAccessStream();
 
             var decoder = await BitmapDecoder.CreateAsync(inputStream);
             double aspect = (double)decoder.PixelWidth / decoder.PixelHeight;
@@ -258,35 +314,42 @@ internal static class CoverLoadQueue
                 {
                     uint w = (uint)softwareBitmap.PixelWidth;
                     uint h = (uint)softwareBitmap.PixelHeight;
-                    uint pixelBytes = w * h * 4;
-                    var pixelBuffer = new Windows.Storage.Streams.Buffer(pixelBytes);
-                    softwareBitmap.CopyToBuffer(pixelBuffer);
+                    int pixelBytes = (int)(w * h * 4);
+                    var pixelRented = ArrayPool<byte>.Shared.Rent(pixelBytes);
+                    try
+                    {
+                        softwareBitmap.CopyToBuffer(pixelRented.AsBuffer(0, pixelBytes));
 
-                    var thumbPath = GetThumbCachePath(music.ImageHash, coverSize);
-                    Directory.CreateDirectory(Path.GetDirectoryName(thumbPath)!);
+                        var thumbPath = GetThumbCachePath(music.ImageHash, coverSize);
+                        Directory.CreateDirectory(Path.GetDirectoryName(thumbPath)!);
 
-                    Span<byte> header = stackalloc byte[54];
-                    header[0] = (byte)'B'; header[1] = (byte)'M';
-                    BinaryPrimitives.WriteUInt32LittleEndian(header[2..], 14 + 40 + pixelBytes);
-                    BinaryPrimitives.WriteUInt32LittleEndian(header[6..], 0);
-                    BinaryPrimitives.WriteUInt32LittleEndian(header[10..], 54);
-                    BinaryPrimitives.WriteUInt32LittleEndian(header[14..], 40);
-                    BinaryPrimitives.WriteInt32LittleEndian(header[18..], (int)w);
-                    BinaryPrimitives.WriteInt32LittleEndian(header[22..], -(int)h);
-                    BinaryPrimitives.WriteUInt16LittleEndian(header[26..], 1);
-                    BinaryPrimitives.WriteUInt16LittleEndian(header[28..], 32);
-                    BinaryPrimitives.WriteUInt32LittleEndian(header[30..], 0);
-                    BinaryPrimitives.WriteUInt32LittleEndian(header[34..], pixelBytes);
-                    BinaryPrimitives.WriteInt32LittleEndian(header[38..], 0);
-                    BinaryPrimitives.WriteInt32LittleEndian(header[42..], 0);
-                    BinaryPrimitives.WriteUInt32LittleEndian(header[46..], 0);
-                    BinaryPrimitives.WriteUInt32LittleEndian(header[50..], 0);
+                        Span<byte> header = stackalloc byte[54];
+                        header[0] = (byte)'B'; header[1] = (byte)'M';
+                        BinaryPrimitives.WriteUInt32LittleEndian(header[2..], (uint)(14 + 40 + pixelBytes));
+                        BinaryPrimitives.WriteUInt32LittleEndian(header[6..], 0);
+                        BinaryPrimitives.WriteUInt32LittleEndian(header[10..], 54);
+                        BinaryPrimitives.WriteUInt32LittleEndian(header[14..], 40);
+                        BinaryPrimitives.WriteInt32LittleEndian(header[18..], (int)w);
+                        BinaryPrimitives.WriteInt32LittleEndian(header[22..], -(int)h);
+                        BinaryPrimitives.WriteUInt16LittleEndian(header[26..], 1);
+                        BinaryPrimitives.WriteUInt16LittleEndian(header[28..], 32);
+                        BinaryPrimitives.WriteUInt32LittleEndian(header[30..], 0);
+                        BinaryPrimitives.WriteUInt32LittleEndian(header[34..], (uint)pixelBytes);
+                        BinaryPrimitives.WriteInt32LittleEndian(header[38..], 0);
+                        BinaryPrimitives.WriteInt32LittleEndian(header[42..], 0);
+                        BinaryPrimitives.WriteUInt32LittleEndian(header[46..], 0);
+                        BinaryPrimitives.WriteUInt32LittleEndian(header[50..], 0);
 
-                    await using var fs = new FileStream(
-                        thumbPath, FileMode.Create, FileAccess.Write,
-                        FileShare.None, bufferSize: 8192, useAsync: true);
-                    fs.Write(header);
-                    await pixelBuffer.AsStream().CopyToAsync(fs, CancellationToken.None);
+                        await using var fs = new FileStream(
+                            thumbPath, FileMode.Create, FileAccess.Write,
+                            FileShare.None, bufferSize: 8192, useAsync: true);
+                        fs.Write(header);
+                        await fs.WriteAsync(pixelRented.AsMemory(0, pixelBytes));
+                    }
+                    finally
+                    {
+                        ArrayPool<byte>.Shared.Return(pixelRented, clearArray: false);
+                    }
                 }
                 catch (OperationCanceledException) { }
                 catch (Exception ex) { _logger?.LogError(ex, "写缩略图缓存失败"); }

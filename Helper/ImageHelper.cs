@@ -1,11 +1,14 @@
-﻿using Microsoft.Graphics.Canvas;
+﻿using Microsoft.Extensions.Logging;
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.UI;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
+using System.IO;
 using System.Numerics;
 using System.Runtime.InteropServices.WindowsRuntime;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
 using Windows.Storage.Streams;
@@ -14,6 +17,39 @@ namespace WinUIMusicPlayer.Helper
 {
     public static class ImageHelper
     {
+        private static readonly ILogger _logger = App.GetLogger<ImageHelperLogMarker>();
+        private sealed class ImageHelperLogMarker { }
+
+        internal static async Task<BitmapImage?> DecodeToBitmapAsync(
+            byte[]? bytes, int decodePixelWidth = 0, CancellationToken token = default)
+        {
+            if (bytes is not { Length: > 0 }) return null;
+
+            try
+            {
+                using var memStream = new MemoryStream(bytes, writable: false);
+                using var stream = memStream.AsRandomAccessStream();
+
+                if (token.IsCancellationRequested) return null;
+
+                var bitmap = new BitmapImage
+                {
+                    DecodePixelType = DecodePixelType.Logical
+                };
+
+                if (decodePixelWidth > 0)
+                    bitmap.DecodePixelWidth = decodePixelWidth;
+
+                await bitmap.SetSourceAsync(stream);
+                return bitmap;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DecodeToBitmapAsync 失败");
+                return null;
+            }
+        }
+
         private static float blurAmount = 10.0f;
         private static int TargetWidth = 200;
         private static CanvasDevice device = CanvasDevice.GetSharedDevice();
