@@ -1171,13 +1171,15 @@
                                             VerticalAlignment="Center" />
                                         <Slider
                                             Grid.Column="1"
-                                            HorizontalAlignment="Stretch"
+                                            Width="245"
+                                            HorizontalAlignment="Left"
                                             VerticalAlignment="Center"
                                             Maximum="100"
                                             Minimum="0"
                                             Value="{x:Bind ViewModel.AppViewModel.CustomOpacity, Mode=TwoWay}" />
                                     </Grid>
                                     <ColorPicker
+                                        HorizontalAlignment="Left"
                                         ColorSpectrumShape="Ring"
                                         IsAlphaEnabled="True"
                                         IsAlphaSliderVisible="True"
@@ -1320,6 +1322,7 @@
                                     Width="300"
                                     VerticalAlignment="Center"
                                     LargeChange="100"
+                                    Maximum="3840"
                                     Minimum="1280"
                                     SmallChange="10"
                                     SpinButtonPlacementMode="Inline"
@@ -1345,6 +1348,7 @@
                                     Width="300"
                                     VerticalAlignment="Center"
                                     LargeChange="100"
+                                    Maximum="2160"
                                     Minimum="720"
                                     SmallChange="10"
                                     SpinButtonPlacementMode="Inline"
