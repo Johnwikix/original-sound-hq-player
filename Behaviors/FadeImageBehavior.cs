@@ -189,12 +189,16 @@ namespace WinUIMusicPlayer.Behaviors
         protected override void OnAttached()
         {
             base.OnAttached();
-            if (AssociatedObject != null && Enable)
+            if (AssociatedObject != null)
             {
-                if (ImageBytes is { Length: > 0 })
-                    _ = InitAsync();
-                else
-                    SetSource(null);
+                AssociatedObject.Unloaded += OnUnloaded;
+                if (Enable)
+                {
+                    if (ImageBytes is { Length: > 0 })
+                        _ = InitAsync();
+                    else
+                        SetSource(null);
+                }
             }
         }
 
@@ -210,11 +214,21 @@ namespace WinUIMusicPlayer.Behaviors
 
         protected override void OnDetaching()
         {
+            if (AssociatedObject != null)
+                AssociatedObject.Unloaded -= OnUnloaded;
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = null;
             StopAndCleanup();
             base.OnDetaching();
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
+            StopAndCleanup();
         }
 
         // ── Source 统一设置入口 ────────────────────────────────────────
@@ -270,7 +284,7 @@ namespace WinUIMusicPlayer.Behaviors
                 _currentTransitionStoryboard.Children.Add(ani);
                 Storyboard.SetTarget(ani, _tempOverlayImage);
                 Storyboard.SetTargetProperty(ani, "Opacity");
-                _currentTransitionStoryboard.Completed += (s, e) => StopAndCleanup();
+                _currentTransitionStoryboard.Completed += OnTransitionCompleted;
 
                 SetSource(newSource);
                 _currentTransitionStoryboard.Begin();
@@ -282,9 +296,15 @@ namespace WinUIMusicPlayer.Behaviors
             }
         }
 
+        private void OnTransitionCompleted(object? sender, object e) => StopAndCleanup();
+
         private void StopAndCleanup()
         {
-            _currentTransitionStoryboard?.Stop();
+            if (_currentTransitionStoryboard != null)
+            {
+                _currentTransitionStoryboard.Completed -= OnTransitionCompleted;
+                _currentTransitionStoryboard.Stop();
+            }
             _currentTransitionStoryboard = null;
 
             if (_tempOverlayImage != null)

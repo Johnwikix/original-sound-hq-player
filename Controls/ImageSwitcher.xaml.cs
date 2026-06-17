@@ -94,7 +94,7 @@ namespace WinUIMusicPlayer.Controls
         }
         public static readonly DependencyProperty ImageHashProperty =
             DependencyProperty.Register(nameof(ImageHash), typeof(string), typeof(ImageSwitcher),
-                new PropertyMetadata(null, OnDependencyPropertyChanged));
+                new PropertyMetadata(null));
 
         // ── 私有状态 ──────────────────────────────────────────────────────
 
@@ -114,6 +114,7 @@ namespace WinUIMusicPlayer.Controls
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = null;
+            _lastImageHash = null;
             AlbumArtImage.Source = null;
             LastAlbumArtImage.Source = null;
         }
@@ -124,13 +125,12 @@ namespace WinUIMusicPlayer.Controls
         {
             if (d is not ImageSwitcher switcher) return;
 
-            if (e.Property == ImageBytesProperty || e.Property == ImageHashProperty)
+            if (e.Property == ImageBytesProperty)
             {
                 _ = switcher.UpdateSourceAsync();
             }
             else if (e.Property == IsDarkProperty)
             {
-                // 主题切换：仅当当前没有有效封面时刷新默认图
                 if (switcher._lastImageHash is null)
                     _ = switcher.UpdateSourceAsync();
             }
@@ -140,38 +140,45 @@ namespace WinUIMusicPlayer.Controls
 
         private async Task UpdateSourceAsync()
         {
-            // 取消上一次尚未完成的解码
+            var newBytes = ImageBytes;
+            string? newHash = ImageHash;
+
+            bool hasData = newBytes is { Length: > 0 };
+            if (hasData && newHash is { Length: > 0 } && newHash == _lastImageHash) return;
+            if (!hasData && _lastImageHash is null) return;
+
             _cts?.Cancel();
             _cts?.Dispose();
             var cts = new CancellationTokenSource();
             _cts = cts;
             var token = cts.Token;
 
-            var newBytes = ImageBytes;
-            string? newHash = ImageHash;
-
-            // ① 判断是否需要更新（ImageHash 去重）
-            bool hasData = newBytes is { Length: > 0 };
-            if (hasData && newHash is { Length: > 0 } && newHash == _lastImageHash) return;
-            if (!hasData && _lastImageHash is null) return;
-
-            // ② 解码
             ImageSource? imageSource = await DecodeToBitmapAsync(newBytes, token);
 
             if (token.IsCancellationRequested) return;
 
-            // ③ 解码失败或数据为空 → 读取默认封面
             if (imageSource == null)
             {
                 imageSource = await LoadDefaultCoverAsync(token);
-                newHash = null;    // 默认封面不写入 hash，下次仍尝试解码真实数据
+                newHash = null;
             }
 
             if (token.IsCancellationRequested) return;
 
-            // ④ 更新 hash 并切换图片
             _lastImageHash = newHash;
-            UpdateImageSource(imageSource);
+
+            switch (SwitchType)
+            {
+                case ImageSwitchType.Crossfade:
+                    UpdateSourceCrossfade(imageSource);
+                    break;
+                case ImageSwitchType.Slide:
+                    UpdateSourceSlide(imageSource);
+                    break;
+                case ImageSwitchType.ScaleInOut:
+                    UpdateSourceScaleInOut(imageSource);
+                    break;
+            }
         }
 
         private static Task<BitmapImage?> DecodeToBitmapAsync(byte[]? bytes, CancellationToken token = default)
@@ -202,29 +209,6 @@ namespace WinUIMusicPlayer.Controls
                 _logger.LogError(ex, $"LoadDefaultCoverAsync 操作失败: {ex.Message}");
                 return null;
             }
-        }
-
-        // ── 切换图片（调度到 UI 线程后执行动画）────────────────────────────
-
-        private void UpdateImageSource(ImageSource? source)
-        {
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                switch (SwitchType)
-                {
-                    case ImageSwitchType.Crossfade:
-                        UpdateSourceCrossfade(source);
-                        break;
-
-                    case ImageSwitchType.Slide:
-                        UpdateSourceSlide(source);
-                        break;
-
-                    case ImageSwitchType.ScaleInOut:
-                        UpdateSourceScaleInOut(source);
-                        break;
-                }
-            });
         }
 
         // ── 原有动画逻辑，参数改为传入 ImageSource ────────────────────────
@@ -258,14 +242,14 @@ namespace WinUIMusicPlayer.Controls
             LastAlbumArtImage.OpacityTransition = null;
             LastAlbumArtImage.Translation = new();
             LastAlbumArtImage.Opacity = 1;
-            LastAlbumArtImage.TranslationTransition = new Vector3Transition { Duration = Constants.Time.AnimationDuration };
+            LastAlbumArtImage.TranslationTransition = TransitionCache.DefaultVector3;
             LastAlbumArtImage.OpacityTransition = TransitionCache.Default;
 
             AlbumArtImage.TranslationTransition = null;
             AlbumArtImage.OpacityTransition = null;
             AlbumArtImage.Translation = new(-(float)ActualWidth, 0, 0);
             AlbumArtImage.Opacity = 0;
-            AlbumArtImage.TranslationTransition = new Vector3Transition { Duration = Constants.Time.AnimationDuration };
+            AlbumArtImage.TranslationTransition = TransitionCache.DefaultVector3;
             AlbumArtImage.OpacityTransition = TransitionCache.Default;
             AlbumArtImage.Source = source;
 
@@ -296,16 +280,9 @@ namespace WinUIMusicPlayer.Controls
             AlbumArtImage.Source = source;
             AlbumArtImage.Scale = new(0.85f, 0.85f, 1f);
             AlbumArtImage.Opacity = 0f;
-            var duration = Constants.Time.AnimationDuration;
-            LastAlbumArtImage.ScaleTransition = new Vector3Transition
-            {
-                Duration = duration
-            };
+            LastAlbumArtImage.ScaleTransition = TransitionCache.DefaultVector3;
             LastAlbumArtImage.OpacityTransition = TransitionCache.Default;
-            AlbumArtImage.ScaleTransition = new Vector3Transition
-            {
-                Duration = duration
-            };
+            AlbumArtImage.ScaleTransition = TransitionCache.DefaultVector3;
             AlbumArtImage.OpacityTransition = TransitionCache.Default;
             LastAlbumArtImage.Scale = new(0.8f, 0.8f, 1f);
             LastAlbumArtImage.Opacity = 0f;
