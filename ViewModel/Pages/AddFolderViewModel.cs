@@ -80,9 +80,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (folder is not null)
             {
                 await Task.Run(() => _musicDatabaseService.CheckFolderBeforeAdd(folder));
-                AppViewModel.SongsSource.Clear();
-                AppViewModel.SongsSource.AddRange(await _musicDatabaseService.GetMusicListAsync());
-                AppViewModel.NotifySongsSourceChanged();
+                await AppViewModel.RefreshSongsSourceAsync();
                 await LoadFoldersAsync();
             }
         }
@@ -90,9 +88,7 @@ namespace WinUIMusicPlayer.ViewModel
         public async Task RemoveFolderButton_Click(int folderId)
         {
             await Task.Run(() => _musicDatabaseService.RemoveFolder(folderId));
-            AppViewModel.SongsSource.Clear();
-            AppViewModel.SongsSource.AddRange(await _musicDatabaseService.GetMusicListAsync());
-            AppViewModel.NotifySongsSourceChanged();
+            await AppViewModel.RefreshSongsSourceAsync();
             await LoadFoldersAsync();
         }
 

@@ -1,6 +1,7 @@
 ﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Messages;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
@@ -993,12 +994,28 @@ namespace WinUIMusicPlayer.ViewModel
             FavoriteSongs.Remove(music);
         }
 
-        public void RefreshSongsSource()
+        public async Task RefreshSongsSourceAsync()
         {
-            SongsSource.Clear();
-            SongsSource.AddRange(_musicDatabaseService.GetMusicListAsync().Result);
-            _indexDirty = true;
-            NotifySongsSourceChanged();
+            var musicList = await _musicDatabaseService.GetMusicListAsync().ConfigureAwait(false);
+
+            var dq = App.MainWindow.DispatcherQueue;
+            if (dq.HasThreadAccess)
+            {
+                SongsSource.Clear();
+                SongsSource.AddRange(musicList);
+                _indexDirty = true;
+                NotifySongsSourceChanged();
+            }
+            else
+            {
+                await dq.EnqueueAsync(() =>
+                {
+                    SongsSource.Clear();
+                    SongsSource.AddRange(musicList);
+                    _indexDirty = true;
+                    NotifySongsSourceChanged();
+                });
+            }
         }
 
         public void RemoveFromSongsSource(Music music)

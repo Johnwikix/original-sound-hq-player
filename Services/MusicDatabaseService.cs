@@ -1289,7 +1289,7 @@ namespace WinUIMusicPlayer.Services
 
             if (isUpdate)
             {
-                App.Services.GetRequiredService<AppViewModel>().RefreshSongsSource();
+                await App.Services.GetRequiredService<AppViewModel>().RefreshSongsSourceAsync();
             }
         }
 

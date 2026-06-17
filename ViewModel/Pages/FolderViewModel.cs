@@ -137,7 +137,7 @@ namespace WinUIMusicPlayer.ViewModel
         private async Task RescanFolder()
         {
             await AppViewModel.RescanFolder(SelectedItem);
-            App.Services.GetRequiredService<AppViewModel>().RefreshSongsSource();
+            await App.Services.GetRequiredService<AppViewModel>().RefreshSongsSourceAsync();
         }
 
         [RelayCommand]

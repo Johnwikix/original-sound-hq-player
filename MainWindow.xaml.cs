@@ -10,7 +10,7 @@ using System.Timers;
 using Windows.UI.ViewManagement;
 using Windows.UI.WindowManagement;
 using WinUIEx;
-using WinUIMusicPlayer.Extensions;
+using CommunityToolkit.WinUI;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Taskbar;

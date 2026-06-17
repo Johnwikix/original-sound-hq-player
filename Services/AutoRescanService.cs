@@ -128,7 +128,7 @@ namespace WinUIMusicPlayer.Services
                 }
 
                 if (changeCount > 0)
-                    App.Services.GetRequiredService<AppViewModel>().RefreshSongsSource();
+                    await App.Services.GetRequiredService<AppViewModel>().RefreshSongsSourceAsync();
             }
             catch (OperationCanceledException)
             {
