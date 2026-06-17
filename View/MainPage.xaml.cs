@@ -33,6 +33,7 @@ namespace WinUIMusicPlayer.View
         public MainViewModel ViewModel { get; }
         public EqualizerDialog EqualizerDialog { get; set; }
         public SettingsDialog SettingsDialog { get; set; }
+        public AddPlayListDialog AddPlayListDialog { get; set; }
         private readonly INavigationService _playingNavigation;
         private bool _isPageTransitioning = false;
         //private ToolTip _progressToolTip = new();
@@ -55,6 +56,7 @@ namespace WinUIMusicPlayer.View
             NavigateToDefaultPage();
             InitiaizeEqualizerDialog();
             SetSettingsDialog();
+            AddPlayListDialog ??= new AddPlayListDialog(ViewModel.AppViewModel);
             NavigationViewControl.Visibility = Visibility.Visible;
             Loaded -= MainPage_Loaded;
         }

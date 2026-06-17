@@ -64,7 +64,14 @@ public class AlbumCoverBehavior : Behavior<Image>
     {
         CancelLoad();
 
-        if (music == null || AssociatedObject == null) return;
+        if (AssociatedObject == null) return;
+
+        if (music == null)
+        {
+            AssociatedObject.Source = null;
+            AssociatedObject.Opacity = 0;
+            return;
+        }
 
         AssociatedObject.Opacity = 0;
         _cts = new CancellationTokenSource();

@@ -115,7 +115,13 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             {
                 var musics = _db.GetMusicByPlayListIdFromMem(pl.Id, AppViewModel.SearchText);
                 _ = AppViewModel.PlayListSongs.ReplaceAllAsync(musics);
-                CoverSource = AppViewModel.PlayListSongs.Count > 0 ? AppViewModel.PlayListSongs[0].Music : null;
+                Music? cover = null;
+                foreach (var item in musics)
+                {
+                    cover = item.Music;
+                    break;
+                }
+                CoverSource = cover;
                 Title = pl.Name ?? string.Empty;
                 ThirdTitle = ToolUtils.GetString("Playlist");
                 RefreshTitlesOnly();

@@ -952,8 +952,15 @@ namespace WinUIMusicPlayer.Utils
                         string fileContent = await FileIO.ReadTextAsync(file);
                         if (!string.IsNullOrEmpty(fileContent))
                         {
-                            ParseM3u8Content(fileContent, playListId);
+                            await ParseM3u8Content(fileContent, playListId);
                         }
+                        int songCount = 0;
+                        for (int k = 0; k < AppData.AllPlayListMusics.Count; k++)
+                        {
+                            if (AppData.AllPlayListMusics[k].PlayListId == playListId)
+                                songCount++;
+                        }
+                        playList.SongCount = songCount;
                         playLists.Add(playList);
                     }
                     catch (Exception ex)
@@ -965,7 +972,7 @@ namespace WinUIMusicPlayer.Utils
             return playLists;
         }
 
-        public async static void ParseM3u8Content(string fileContent, int playListId)
+        public async static Task ParseM3u8Content(string fileContent, int playListId)
         {
             if (string.IsNullOrEmpty(fileContent))
                 return;

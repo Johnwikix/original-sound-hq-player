@@ -140,66 +140,14 @@ namespace WinUIMusicPlayer.View
         }
         private async void AddPlayList_Click(object sender, RoutedEventArgs e)
         {
-            var titlePanel = new StackPanel
+            var mainPage = App.Services.GetRequiredService<MainPage>();
+            var playlistName = await mainPage.AddPlayListDialog.ShowAndGetNameAsync(this.XamlRoot);
+            if (playlistName is not null)
             {
-                Orientation = Orientation.Horizontal,
-                VerticalAlignment = VerticalAlignment.Center,
-                Spacing = 8
-            };
-            titlePanel.Children.Add(new TextBlock
-            {
-                Text = ToolUtils.GetString("FlyoutAddToPlaylist"),
-                FontSize = 18,
-                VerticalAlignment = VerticalAlignment.Center
-            });
-            var customButton = new Button
-            {
-                Content = new FontIcon { Glyph = "\uE8B5", FontSize = 16 },
-                Style = Application.Current.Resources["AccentButtonStyle"] as Style,
-                Margin = new Thickness(4, 2, 4, 0),
-                Padding = new Thickness(6, 3, 6, 2),
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            ToolTipService.SetToolTip(customButton, GetString("ImportM3u8"));
-            titlePanel.Children.Add(customButton);
-
-            ContentDialog contentDialog = new ContentDialog
-            {
-                Title = titlePanel,
-                Content = new Microsoft.UI.Xaml.Controls.TextBox { PlaceholderText = ToolUtils.GetString("EnterPlaylistName") },
-                PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
-                CloseButtonText = ToolUtils.GetString("CloseButton"),
-                XamlRoot = this.XamlRoot
-            };
-            contentDialog.RequestedTheme = AppSettings.ElementTheme;
-
-            async void buttonClickHandler(object s, RoutedEventArgs e)
-            {
-                List<PlayList> newPlaylists = await OpenM3u8File();
-                if (newPlaylists is not null && newPlaylists.Count > 0)
-                {
-                    await ViewModel.AppViewModel.AllPlayList.AddRangeAsync(newPlaylists);
-                }
-                contentDialog.Hide();
-                customButton.Click -= buttonClickHandler;
+                PlayList newPlaylist = new() { Name = playlistName };
+                await ViewModel.InsertPlayList(newPlaylist);
+                ViewModel.AppViewModel.AllPlayList.Add(newPlaylist);
             }
-
-            customButton.Click += buttonClickHandler;
-
-            ContentDialogResult result = await contentDialog.ShowAsync();
-
-            if (result == ContentDialogResult.Primary)
-            {
-                Microsoft.UI.Xaml.Controls.TextBox textBox = (Microsoft.UI.Xaml.Controls.TextBox)contentDialog.Content;
-                string playlistName = textBox.Text;
-                if (!string.IsNullOrEmpty(playlistName))
-                {
-                    PlayList newPlaylist = new() { Name = playlistName };
-                    await ViewModel.InsertPlayList(newPlaylist);
-                    ViewModel.AppViewModel.AllPlayList.Add(newPlaylist);
-                }
-            }
-            customButton.Click -= buttonClickHandler;
         }
 
         public void UpdateViewList()
