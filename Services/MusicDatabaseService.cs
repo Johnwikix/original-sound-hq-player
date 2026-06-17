@@ -1211,8 +1211,9 @@ namespace WinUIMusicPlayer.Services
             {
                 var currentFiles = await folder.GetFilesAsync();
                 files.AddRange(currentFiles);
-                musicFilesInFolder = AppViewModel.SongsSource.AsValueEnumerable()
-                    .Where(m => Path.GetDirectoryName(m.Path) == folderPath).ToList();
+                musicFilesInFolder = await _dbConnection.Table<Music>()
+                    .Where(m => m.FolderPath == folderPath)
+                    .ToListAsync();
             }
             else
             {
@@ -1403,8 +1404,9 @@ namespace WinUIMusicPlayer.Services
             {
                 var currentFiles = await folder.GetFilesAsync();
                 files.AddRange(currentFiles);
-                musicFilesInFolder = AppViewModel.SongsSource.AsValueEnumerable()
-                    .Where(m => Path.GetDirectoryName(m.Path) == folderPath).ToList();
+                musicFilesInFolder = await _dbConnection.Table<Music>()
+                    .Where(m => m.FolderPath == folderPath)
+                    .ToListAsync();
             }
             else
             {
