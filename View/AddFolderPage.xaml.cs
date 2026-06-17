@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
+using WinUIMusicPlayer.Helpers;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -68,16 +69,7 @@ namespace WinUIMusicPlayer.View
 
         private async void RemoveFolderButton_Click(object sender, RoutedEventArgs e)
         {
-            ContentDialog contentDialog = new ContentDialog
-            {
-                Title = ToolUtils.GetString("RemoveFolderTitle"),
-                PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
-                CloseButtonText = ToolUtils.GetString("CloseButton"),
-                XamlRoot = this.XamlRoot
-            };
-            contentDialog.RequestedTheme = AppSettings.ElementTheme;
-            ContentDialogResult result = await contentDialog.ShowAsync();
-            if (result == ContentDialogResult.Primary)
+            if (await DialogHelper.ShowConfirmAsync(this.XamlRoot, "RemoveFolderTitle"))
             {
                 var button = sender as Button;
                 if (button is not null && button.Tag is int folderId)

@@ -820,6 +820,9 @@
   <data name="AreUSureDeleteFromDisk" xml:space="preserve">
     <value>确定从磁盘删除音乐？</value>
   </data>
+  <data name="AreUSureDeletePlayList" xml:space="preserve">
+    <value>确定删除此播放列表吗？</value>
+  </data>
   <data name="SongListCoverEnable.Header" xml:space="preserve">
     <value>歌曲列表封面</value>
   </data>

@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
+using WinUIMusicPlayer.Helpers;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
@@ -55,22 +56,9 @@ namespace WinUIMusicPlayer.View
             ContentFrame.Navigate(pageType, parameter, navigationTransitionInfo);
         }
 
-        public async Task<bool> AreUSureDeleteFromDisk()
+        public Task<bool> AreUSureDeleteFromDisk()
         {
-            ContentDialog contentDialog = new ContentDialog
-            {
-                Title = ToolUtils.GetString("AreUSureDeleteFromDisk"),
-                PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
-                CloseButtonText = ToolUtils.GetString("CloseButton"),
-                XamlRoot = this.XamlRoot
-            };
-            contentDialog.RequestedTheme = AppSettings.ElementTheme;
-            ContentDialogResult result = await contentDialog.ShowAsync();
-            if (result == ContentDialogResult.Primary)
-            {
-                return true;
-            }
-            return false;
+            return DialogHelper.ShowConfirmAsync(this.XamlRoot, "AreUSureDeleteFromDisk");
         }
 
         private void SelectBarItem(string name)

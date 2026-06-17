@@ -820,6 +820,9 @@
   <data name="AreUSureDeleteFromDisk" xml:space="preserve">
     <value>Are you sure to delete music from the disk?</value>
   </data>
+  <data name="AreUSureDeletePlayList" xml:space="preserve">
+    <value>Are you sure to delete this playlist?</value>
+  </data>
   <data name="SongListCoverEnable.Header" xml:space="preserve">
     <value>Song List Cover</value>
   </data>

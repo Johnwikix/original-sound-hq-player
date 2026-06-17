@@ -153,9 +153,10 @@ namespace WinUIMusicPlayer.View
             PlayListGridView.OpacityTransition = TransitionCache.Slow;
         }
 
-        private void RemovePlayListButton_Click(object sender, RoutedEventArgs e)
+        private async void RemovePlayListButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.Tag is PlayList playList)
+            if (sender is not Button button || button.Tag is not PlayList playList) return;
+            if (await DialogHelper.ShowConfirmAsync(this.XamlRoot, "AreUSureDeletePlayList"))
             {
                 ViewModel.RemovePlayList(playList);
             }
@@ -163,30 +164,9 @@ namespace WinUIMusicPlayer.View
 
         private void EditPlayListNameButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.Tag is PlayList playList)
-            {
-                ViewModel.AppViewModel.EditPlayListName(playList, async () =>
-                {
-                    ContentDialog contentDialog = new ContentDialog
-                    {
-                        Title = ToolUtils.GetString("ModifyPlaylist"),
-                        Content = new Microsoft.UI.Xaml.Controls.TextBox { Text = $"{playList.Name}" },
-                        PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
-                        CloseButtonText = ToolUtils.GetString("CloseButton"),
-                        XamlRoot = this.XamlRoot
-                    };
-                    contentDialog.RequestedTheme = AppSettings.ElementTheme;
-                    ContentDialogResult result = await contentDialog.ShowAsync();
-
-                    if (result == ContentDialogResult.Primary)
-                    {
-                        Microsoft.UI.Xaml.Controls.TextBox textBox = (Microsoft.UI.Xaml.Controls.TextBox)contentDialog.Content;
-                        return textBox.Text;
-                    }
-
-                    return string.Empty;
-                });
-            }
+            if (sender is not Button button || button.Tag is not PlayList playList) return;
+            ViewModel.AppViewModel.EditPlayListName(playList, () =>
+                DialogHelper.ShowInputAsync(this.XamlRoot, "ModifyPlaylist", playList.Name));
         }
 
         private void ExportPlayList_Click(object sender, RoutedEventArgs e)

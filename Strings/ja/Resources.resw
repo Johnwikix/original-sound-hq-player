@@ -820,6 +820,9 @@
   <data name="AreUSureDeleteFromDisk" xml:space="preserve">
     <value>音楽をディスクから削除してよろしいですか？</value>
   </data>
+  <data name="AreUSureDeletePlayList" xml:space="preserve">
+    <value>このプレイリストを削除してもよろしいですか？</value>
+  </data>
   <data name="SongListCoverEnable.Header" xml:space="preserve">
     <value>歌曲リストカバー</value>
   </data>

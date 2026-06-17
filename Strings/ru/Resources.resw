@@ -820,6 +820,9 @@
   <data name="AreUSureDeleteFromDisk" xml:space="preserve">
     <value>Удалить музыку с диска?</value>
   </data>
+  <data name="AreUSureDeletePlayList" xml:space="preserve">
+    <value>Вы уверены, что хотите удалить этот плейлист?</value>
+  </data>
   <data name="SongListCoverEnable.Header" xml:space="preserve">
     <value>Обложка списка песен</value>
   </data>

@@ -7,6 +7,7 @@ using System;
 using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Helpers;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel.Controls;
 
@@ -150,25 +151,8 @@ namespace WinUIMusicPlayer.View.Controls
         private void EditPlaylistNameBtn_Click(object sender, RoutedEventArgs e)
         {
             if (ViewModel.AppViewModel.CurrentPlayList is null) return;
-            ViewModel.AppViewModel.EditPlayListName(ViewModel.AppViewModel.CurrentPlayList, async () =>
-            {
-                ContentDialog contentDialog = new ContentDialog
-                {
-                    Title = ToolUtils.GetString("ModifyPlaylist"),
-                    Content = new Microsoft.UI.Xaml.Controls.TextBox { Text = ViewModel.AppViewModel.CurrentPlayList.Name },
-                    PrimaryButtonText = ToolUtils.GetString("PrimaryButton"),
-                    CloseButtonText = ToolUtils.GetString("CloseButton"),
-                    XamlRoot = this.XamlRoot
-                };
-                contentDialog.RequestedTheme = AppSettings.ElementTheme;
-                ContentDialogResult result = await contentDialog.ShowAsync();
-                if (result == ContentDialogResult.Primary)
-                {
-                    Microsoft.UI.Xaml.Controls.TextBox textBox = (Microsoft.UI.Xaml.Controls.TextBox)contentDialog.Content;
-                    return textBox.Text;
-                }
-                return string.Empty;
-            });
+            ViewModel.AppViewModel.EditPlayListName(ViewModel.AppViewModel.CurrentPlayList, () =>
+                DialogHelper.ShowInputAsync(this.XamlRoot, "ModifyPlaylist", ViewModel.AppViewModel.CurrentPlayList.Name));
         }
 
         private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)

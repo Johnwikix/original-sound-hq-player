@@ -820,6 +820,9 @@
   <data name="AreUSureDeleteFromDisk" xml:space="preserve">
     <value>Musik wirklich von der Festplatte löschen?</value>
   </data>
+  <data name="AreUSureDeletePlayList" xml:space="preserve">
+    <value>Möchten Sie diese Wiedergabeliste wirklich löschen?</value>
+  </data>
   <data name="SongListCoverEnable.Header" xml:space="preserve">
     <value>Cover in Titelliste</value>
   </data>
