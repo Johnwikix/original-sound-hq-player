@@ -18,6 +18,7 @@ using Windows.Devices.Portable;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Helpers;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.View.SubView;
@@ -108,7 +109,6 @@ namespace WinUIMusicPlayer.ViewModel
                 return;
 
             ProgressBarValue = 0;
-            ProgressDialog.RequestedTheme = AppSettings.ElementTheme;
             var musicList = uniqueSelectedMusics.AsValueEnumerable().ToList();
             IsMutiFile = musicList.Count > 1;
             if (IsMutiFile)
@@ -124,8 +124,7 @@ namespace WinUIMusicPlayer.ViewModel
         private async Task ConvertMultipleFiles(List<Music> musics, string targetFormat)
         {
             await ProgressDialog.UpdateProgress(ProgressBarValue);
-            ProgressDialog.XamlRoot = MusicBrowsePage.XamlRoot;
-            _ = ProgressDialog.ShowAsync();
+            _ = ProgressDialog.ShowThemedAsync(MusicBrowsePage.XamlRoot);
 
             foreach (Music music in musics)
             {
@@ -150,8 +149,7 @@ namespace WinUIMusicPlayer.ViewModel
 
             if (ProgressBarValue < 100)
             {
-                ProgressDialog.XamlRoot = MusicBrowsePage.XamlRoot;
-                _ = ProgressDialog.ShowAsync();
+                _ = ProgressDialog.ShowThemedAsync(MusicBrowsePage.XamlRoot);
             }
         }
 
@@ -587,9 +585,7 @@ namespace WinUIMusicPlayer.ViewModel
         private void OnEqualizerButton()
         {
             var mainPage = MainPage ?? App.Services.GetRequiredService<MainPage>();
-            mainPage.EqualizerDialog.RequestedTheme = AppSettings.ElementTheme;
-            mainPage.EqualizerDialog.XamlRoot = mainPage.XamlRoot;
-            _ = mainPage.EqualizerDialog.ShowAsync();
+            _ = mainPage.EqualizerDialog.ShowThemedAsync(mainPage.XamlRoot);
         }
         [RelayCommand]
         private void OnFastForwardButton()

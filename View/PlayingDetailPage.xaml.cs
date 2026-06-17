@@ -13,6 +13,7 @@ using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
+using WinUIMusicPlayer.Helpers;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -194,9 +195,7 @@ namespace WinUIMusicPlayer.View
 
         private void EqualizerButton_Click(object sender, RoutedEventArgs e)
         {
-            App.Services.GetRequiredService<MainPage>().EqualizerDialog.RequestedTheme = AppSettings.ElementTheme;
-            App.Services.GetRequiredService<MainPage>().EqualizerDialog.XamlRoot = this.XamlRoot;
-            _ = App.Services.GetRequiredService<MainPage>().EqualizerDialog.ShowAsync();
+            _ = App.Services.GetRequiredService<MainPage>().EqualizerDialog.ShowThemedAsync(this.XamlRoot);
         }
 
         private void CurrentPlayListButtonPlayingDetail_Click(object sender, RoutedEventArgs e)
@@ -374,9 +373,7 @@ namespace WinUIMusicPlayer.View
 
         private void SettingsButton_Click(object sender, RoutedEventArgs e)
         {
-            App.Services.GetRequiredService<MainPage>().SettingsDialog.RequestedTheme = AppSettings.ElementTheme;
-            App.Services.GetRequiredService<MainPage>().SettingsDialog.XamlRoot = this.XamlRoot;
-            _ = App.Services.GetRequiredService<MainPage>().SettingsDialog.ShowAsync();
+            _ = App.Services.GetRequiredService<MainPage>().SettingsDialog.ShowThemedAsync(this.XamlRoot);
         }
     }
 }

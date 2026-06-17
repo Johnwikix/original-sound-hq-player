@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Windows.Foundation;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 
@@ -34,7 +35,6 @@ namespace WinUIMusicPlayer.Helpers
             dialog.CloseButtonText = ToolUtils.GetString("CloseButton");
             dialog.RequestedTheme = AppSettings.ElementTheme;
 
-            // 复用 TextBox：首次创建后缓存在 Content 中
             if (dialog.Content is not TextBox textBox)
             {
                 textBox = new TextBox();
@@ -46,6 +46,16 @@ namespace WinUIMusicPlayer.Helpers
                 return textBox.Text;
 
             return string.Empty;
+        }
+
+        // 单例 Dialog（Equalizer/Settings/Progress）统一 show 样板：
+        // 设置主题 + XamlRoot 后直接 ShowAsync，零分配（静态扩展方法，无闭包）
+        public static IAsyncOperation<ContentDialogResult> ShowThemedAsync(
+            this ContentDialog dialog, XamlRoot xamlRoot)
+        {
+            dialog.RequestedTheme = AppSettings.ElementTheme;
+            dialog.XamlRoot = xamlRoot;
+            return dialog.ShowAsync();
         }
     }
 }
