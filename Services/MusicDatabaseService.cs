@@ -1391,7 +1391,7 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public async Task RescanFolderWithOutUpdateAll(string folderPath, bool isSingleFolder = false)
+        public async Task<int> RescanFolderWithOutUpdateAll(string folderPath, bool isSingleFolder = false)
         {
             // 优化19: 同样改为方法局部变量，消除原版潜在的字段复用问题
             var toDelete = new ConcurrentBag<Music>();
@@ -1457,6 +1457,8 @@ namespace WinUIMusicPlayer.Services
             {
                 await _dbConnection.InsertAllAsync(validMusic);
             }
+
+            return validMusic.Count;
         }
 
         private async Task CheckMusicExistsForRescanAsync(Music music, ConcurrentDictionary<string, bool> filePaths, ConcurrentBag<Music> toDelete)

@@ -54,7 +54,7 @@ namespace WinUIMusicPlayer.Services
             {
                 var dbService = App.Services.GetRequiredService<MusicDatabaseService>();
                 var folders = await dbService.GetFolders();
-                int changeCount = 0;
+                bool needRefresh = false;
 
                 foreach (var folder in folders)
                 {
@@ -88,8 +88,8 @@ namespace WinUIMusicPlayer.Services
                             if (!dbPaths.Contains(path))
                             {
                                 await dbService.AddSubFolder(subFolder);
-                                await dbService.RescanFolderWithOutUpdateAll(path, true);
-                                changeCount++;
+                                int added = await dbService.RescanFolderWithOutUpdateAll(path, true);
+                                if (added > 0) needRefresh = true;
                             }
                             else
                             {
@@ -100,8 +100,8 @@ namespace WinUIMusicPlayer.Services
                                 {
                                     dbSubFolder.LastModifiedTime = subFolder.LastModifiedTime;
                                     await dbService.UpdateSubFolder(dbSubFolder);
-                                    await dbService.RescanFolderWithOutUpdateAll(subFolder.Path, true);
-                                    changeCount++;
+                                    int added = await dbService.RescanFolderWithOutUpdateAll(subFolder.Path, true);
+                                    if (added > 0) needRefresh = true;
                                 }
                             }
                         }
@@ -116,18 +116,18 @@ namespace WinUIMusicPlayer.Services
                             {
                                 await dbService.DeleteSubFolder(dbSubFolder);
                                 await dbService.DeleteSubFolderByPath(dbSubFolder.Path);
-                                changeCount++;
+                                needRefresh = true;
                             }
                         }
                     }
                     else
                     {
                         await dbService.InsertSubFolders(subFolders);
-                        changeCount++;
+                        needRefresh = true;
                     }
                 }
 
-                if (changeCount > 0)
+                if (needRefresh)
                     await App.Services.GetRequiredService<AppViewModel>().RefreshSongsSourceAsync();
             }
             catch (OperationCanceledException)
