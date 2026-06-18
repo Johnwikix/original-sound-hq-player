@@ -13,7 +13,7 @@ namespace WinUIMusicPlayer.Services
 {
     public class AutoRescanService
     {
-        private static Dictionary<string, SubFolder> _subFoldersDict = new Dictionary<string, SubFolder>(1024);
+        private static Dictionary<string, SubFolder> _subFoldersDict = new Dictionary<string, SubFolder>(512);
         private static ILogger<AutoRescanService> _logger = App.GetLogger<AutoRescanService>();
 
         public static List<SubFolder> RecordInitialFolderTimes(string folder, int folderId)
