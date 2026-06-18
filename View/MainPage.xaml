@@ -49,9 +49,9 @@
                     IsPaneToggleButtonVisible="True"
                     ItemInvoked="NavigationView_ItemInvoked"
                     PaneDisplayMode="Left">
-                    <NavigationView.KeyboardAccelerators>
+                    <!--<NavigationView.KeyboardAccelerators>
                         <KeyboardAccelerator Key="Escape" Invoked="KeyboardAccelerator_Invoked" />
-                    </NavigationView.KeyboardAccelerators>
+                    </NavigationView.KeyboardAccelerators>-->
                     <NavigationView.AutoSuggestBox>
                         <AutoSuggestBox
                             x:Name="SearchAutoSuggestBox"

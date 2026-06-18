@@ -233,12 +233,12 @@ namespace WinUIMusicPlayer.View
 
         private void KeyboardAccelerator_Invoked(Microsoft.UI.Xaml.Input.KeyboardAccelerator sender, Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
         {
-            if (MainFrame.Content is PlayListPage playListPage && playListPage.ViewModel.IsInDetailMode)
-            {
-                playListPage.CollapseDetail();
-                return;
-            }
-            App.Services.GetRequiredService<MusicBrowseViewModel>().BackButton();
+            //if (MainFrame.Content is PlayListPage playListPage && playListPage.ViewModel.IsInDetailMode)
+            //{
+            //    playListPage.CollapseDetail();
+            //    return;
+            //}
+            //App.Services.GetRequiredService<MusicBrowseViewModel>().BackButton();
         }
 
         private void ProgressSlider_Loaded(object sender, RoutedEventArgs e)
