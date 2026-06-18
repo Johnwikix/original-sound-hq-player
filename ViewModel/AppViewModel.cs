@@ -937,31 +937,7 @@ namespace WinUIMusicPlayer.ViewModel
                 }
 
                 var slice = buf.AsSpan(0, written);
-                var tag = SelectedSortOption?.Tag as string ?? "DefaultOrder";
-                switch (tag)
-                {
-                    case "A-Z":
-                        slice.Sort(_byMusicTitleAsc);
-                        break;
-                    case "Artist":
-                        slice.Sort(_byMusicAuthorAsc);
-                        break;
-                    case "Album":
-                        slice.Sort(_byMusicAlbumAsc);
-                        break;
-                    case "CreateTimeASC":
-                        slice.Sort(_byMusicCreateTimeAsc);
-                        break;
-                    case "CreateTimeDESC":
-                        slice.Sort(_byMusicCreateTimeDesc);
-                        break;
-                    case "UpdateTimeDESC":
-                        slice.Sort(_byMusicUpdateTimeDesc);
-                        break;
-                    default:
-                        slice.Sort(_byPlayListOrderDesc);
-                        break;
-                }
+                slice.Sort(_byPlayListOrderDesc);
 
                 var results = slice.ToArray();
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
@@ -1047,24 +1023,6 @@ namespace WinUIMusicPlayer.ViewModel
             Artist,
             Folder,
             Favorite
-        }
-        private void UpdatePlayListCollectionSort(ObservableCollection<PlayListMusicItem> collection)
-        {
-            if (collection is not BulkObservableCollection<PlayListMusicItem> bulk || bulk.Count == 0) return;
-
-            var comparer = (SelectedSortOption.Tag as string) switch
-            {
-                "A-Z" => _byMusicTitleAsc,
-                "Artist" => _byMusicAuthorAsc,
-                "Album" => _byMusicAlbumAsc,
-                "CreateTimeASC" => _byMusicCreateTimeAsc,
-                "CreateTimeDESC" => _byMusicCreateTimeDesc,
-                "UpdateTimeASC" => _byMusicUpdateTimeAsc,
-                "UpdateTimeDESC" => _byMusicUpdateTimeDesc,
-                "DefaultOrder" => _byPlayListOrderDesc,
-                _ => _byPlayListOrderDesc,
-            };
-            bulk.SortInPlace(comparer);
         }
 
         /// <summary>
