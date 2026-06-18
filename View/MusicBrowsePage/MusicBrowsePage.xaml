@@ -55,25 +55,7 @@
                         x:Uid="FavouriteTab"
                         FontSize="20"
                         Tag="favourite" />
-                    <SelectorBarItem
-                        x:Name="PlayList"
-                        x:Uid="PlaylistTab"
-                        FontSize="20"
-                        Tag="playList" />
                 </SelectorBar>
-                <Button
-                    x:Name="PlayListAddButton"
-                    Background="Transparent"
-                    BorderBrush="Transparent"
-                    BorderThickness="0"
-                    Click="AddPlayList_Click"
-                    FontSize="20"
-                    Tag="PlayListAdd">
-                    <FontIcon
-                        Margin="0,2,0,0"
-                        VerticalAlignment="Bottom"
-                        Glyph="&#xe948;" />
-                </Button>
             </StackPanel>
 
 

@@ -122,6 +122,9 @@ namespace WinUIMusicPlayer.View
                 case "MusicBrowse":
                     NavigateTo(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
                     break;
+                case "PlayLists":
+                    NavigateTo(typeof(PlayListPage), null, new EntranceNavigationTransitionInfo());
+                    break;
                 default:
                     NavigateTo(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
                     break;
@@ -157,6 +160,9 @@ namespace WinUIMusicPlayer.View
                         break;
                     case "MusicBrowse":
                         NavigateTo(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
+                        break;
+                    case "PlayLists":
+                        NavigateTo(typeof(PlayListPage), null, new EntranceNavigationTransitionInfo());
                         break;
                 }
             }
@@ -217,13 +223,23 @@ namespace WinUIMusicPlayer.View
 
         private void NavigationViewControl_BackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
         {
+            if (MainFrame.Content is PlayListPage playListPage && playListPage.ViewModel.IsInDetailMode)
+            {
+                playListPage.CollapseDetail();
+                return;
+            }
             App.Services.GetRequiredService<MusicBrowseViewModel>().BackButton();
         }
 
         private void KeyboardAccelerator_Invoked(Microsoft.UI.Xaml.Input.KeyboardAccelerator sender, Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
         {
+            if (MainFrame.Content is PlayListPage playListPage && playListPage.ViewModel.IsInDetailMode)
+            {
+                playListPage.CollapseDetail();
+                return;
+            }
             App.Services.GetRequiredService<MusicBrowseViewModel>().BackButton();
-        }        
+        }
 
         private void ProgressSlider_Loaded(object sender, RoutedEventArgs e)
         {

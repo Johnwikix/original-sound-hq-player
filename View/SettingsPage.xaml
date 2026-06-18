@@ -267,6 +267,7 @@
                                     SelectedValuePath="Tag">
                                     <ComboBoxItem x:Uid="AddFolderCombox" Tag="AddFolder" />
                                     <ComboBoxItem x:Uid="MusicBrowseCombox" Tag="MusicBrowse" />
+                                    <ComboBoxItem x:Uid="PlayListsCombox" Tag="PlayLists" />
                                 </ComboBox>
                             </Grid>
 
@@ -294,7 +295,6 @@
                                     <ComboBoxItem x:Uid="ArtistCombox" Tag="artist" />
                                     <ComboBoxItem x:Uid="FolderCombox" Tag="folder" />
                                     <ComboBoxItem x:Uid="FavouriteCombox" Tag="favourite" />
-                                    <ComboBoxItem x:Uid="PlaylistCombox" Tag="playList" />
                                 </ComboBox>
                             </Grid>
                         </StackPanel>

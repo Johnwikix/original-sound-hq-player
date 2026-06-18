@@ -135,6 +135,9 @@
   <data name="MusicBrowse.Text" xml:space="preserve">
     <value>Navegar por música</value>
   </data>
+  <data name="PlayLists.Text" xml:space="preserve">
+    <value>Playlist</value>
+  </data>
   <data name="AppMainTitle" xml:space="preserve">
     <value>Reproductor HQ Sonido Original</value>
   </data>
@@ -148,6 +151,9 @@
     <value>Favoritos</value>
   </data>
   <data name="PlaylistTab.Text" xml:space="preserve">
+    <value>Playlist</value>
+  </data>
+  <data name="PlaylistTitle.Text" xml:space="preserve">
     <value>Playlist</value>
   </data>
   <data name="Transmitting.Text" xml:space="preserve">
@@ -218,6 +224,9 @@
   </data>
   <data name="MusicBrowseCombox.Content" xml:space="preserve">
     <value>Navegar por música</value>
+  </data>
+  <data name="PlayListsCombox.Content" xml:space="preserve">
+    <value>Playlist</value>
   </data>
   <data name="AlbumCombox.Content" xml:space="preserve">
     <value>Álbumes</value>

@@ -1,6 +1,7 @@
 ﻿using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using System.ComponentModel;
+using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -75,6 +76,11 @@ namespace WinUIMusicPlayer.ViewModel
             if (playList is null) return;
             AppViewModel.CurrentPlayList = playList;
             AppViewModel.CurrentPlayListId = playList.Id;
+        }
+
+        public async Task InsertPlayList(PlayList newPlaylist)
+        {
+            await MusicDatabaseService.InsertPlayList(newPlaylist);
         }
     }
 }

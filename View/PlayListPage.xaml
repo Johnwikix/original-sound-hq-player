@@ -13,10 +13,36 @@
     xmlns:model="using:WinUIMusicPlayer.Model"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
     mc:Ignorable="d">
-    <Grid Margin="0">
-        <GridView
-            x:Name="PlayListGridView"
-            Margin="10,0,0,0"
+    <Grid Margin="0,32,0,0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0" Margin="10,10,10,0">
+            <TextBlock
+                x:Uid="PlaylistTitle"
+                VerticalAlignment="Center"
+                FontSize="20"
+                FontWeight="SemiBold" />
+            <Button
+                x:Name="AddPlayListButton"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Center"
+                Background="Transparent"
+                BorderBrush="Transparent"
+                BorderThickness="0"
+                Click="AddPlayList_Click"
+                FontSize="20">
+                <FontIcon
+                    Margin="0,2,0,0"
+                    VerticalAlignment="Bottom"
+                    Glyph="&#xe948;" />
+            </Button>
+        </Grid>
+        <Grid Grid.Row="1">
+            <GridView
+                x:Name="PlayListGridView"
+                Margin="10,0,0,0"
             IsItemClickEnabled="True"
             ItemClick="PlayListGridView_ItemClick"
             ItemsSource="{x:Bind ViewModel.AppViewModel.AllPlayList, Mode=OneWay}"
@@ -163,5 +189,6 @@
             PlaySourceTag="PlayListSongsView"
             IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay}"
             Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}" />
+        </Grid>
     </Grid>
 </Page>

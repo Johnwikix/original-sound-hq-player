@@ -176,5 +176,17 @@ namespace WinUIMusicPlayer.View
                 ViewModel.ExportPlayList(playList);
             }
         }
+
+        private async void AddPlayList_Click(object sender, RoutedEventArgs e)
+        {
+            var mainPage = App.Services.GetRequiredService<MainPage>();
+            var playlistName = await mainPage.AddPlayListDialog.ShowAndGetNameAsync(this.XamlRoot);
+            if (playlistName is not null)
+            {
+                PlayList newPlaylist = new() { Name = playlistName };
+                await ViewModel.InsertPlayList(newPlaylist);
+                ViewModel.AppViewModel.AllPlayList.Add(newPlaylist);
+            }
+        }
     }
 }

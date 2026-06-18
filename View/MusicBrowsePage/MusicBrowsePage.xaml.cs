@@ -47,6 +47,12 @@ namespace WinUIMusicPlayer.View
 
         private void OnPageLoaded(object sender, RoutedEventArgs e)
         {
+            var valid = new[] { "song", "album", "artist", "folder", "favourite" };
+            var saved = ViewModel.AppViewModel.DefaultPlayListComboBoxTag;
+            if (!valid.Contains(saved))
+            {
+                ViewModel.AppViewModel.DefaultPlayListComboBoxTag = "song";
+            }
             SelectBarItem(ViewModel.AppViewModel.DefaultPlayListComboBoxTag);
             Loaded -= OnPageLoaded;
         }
@@ -131,22 +137,6 @@ namespace WinUIMusicPlayer.View
             {
                 folderPage.CollapseDetail();
                 return;
-            }
-            if (ContentFrame.Content is PlayListPage playListPage && playListPage.ViewModel.IsInDetailMode)
-            {
-                playListPage.CollapseDetail();
-                return;
-            }
-        }
-        private async void AddPlayList_Click(object sender, RoutedEventArgs e)
-        {
-            var mainPage = App.Services.GetRequiredService<MainPage>();
-            var playlistName = await mainPage.AddPlayListDialog.ShowAndGetNameAsync(this.XamlRoot);
-            if (playlistName is not null)
-            {
-                PlayList newPlaylist = new() { Name = playlistName };
-                await ViewModel.InsertPlayList(newPlaylist);
-                ViewModel.AppViewModel.AllPlayList.Add(newPlaylist);
             }
         }
 

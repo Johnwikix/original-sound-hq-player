@@ -370,11 +370,6 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async Task InsertPlayList(PlayList newPlaylist)
-        {
-            await _musicDatabaseService.InsertPlayList(newPlaylist);
-        }
-
         private void InitializeSystemMediaControls()
         {
 
@@ -660,7 +655,6 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 case "Song":
                 case "Favourite":
-                case "PlayList":
                     AppViewModel.CurrentAlbumObj = null;
                     AppViewModel.CurrentArtistObj = null;
                     AppViewModel.CurrentFolderObj = null;
@@ -704,10 +698,6 @@ namespace WinUIMusicPlayer.ViewModel
                 case "Favourite":
                     AppViewModel.PageType = "favourite";
                     AppData.CurrentPage = typeof(FavouritePlayListPage);
-                    break;
-                case "PlayList":
-                    AppData.CurrentPage = typeof(PlayListPage);
-                    AppViewModel.PageType = "playlistBrowse";
                     break;
             }
             AppViewModel.RefreshDataSource();
@@ -770,7 +760,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void BackButton()
         {
-            MusicBrowsePage.BackButton();
+            MusicBrowsePage?.BackButton();
         }
 
         public void UpdateViewList()
@@ -798,7 +788,6 @@ namespace WinUIMusicPlayer.ViewModel
                 "Artist" => 2,
                 "Folder" => 3,
                 "Favourite" => 4,
-                "PlayList" => 5,
                 _ => -1
             };
         }
