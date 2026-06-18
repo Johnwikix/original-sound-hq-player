@@ -38,7 +38,7 @@ using Path = System.IO.Path;
 
 namespace WinUIMusicPlayer.Utils
 {
-    public class ToolUtils
+    public partial class ToolUtils
     {
         private static ILogger<ToolUtils> _logger = App.GetLogger<ToolUtils>();
 
@@ -419,12 +419,12 @@ namespace WinUIMusicPlayer.Utils
 
         private static string ParseLyrics(IList<LyricsInfo.LyricsPhrase> SynchronizedLyrics)
         {
-            string lyrics = string.Empty;
+            var sb = new StringBuilder();
             foreach (LyricsInfo.LyricsPhrase phrase in SynchronizedLyrics)
             {
-                lyrics += "[" + EncodeTimecode_ms(phrase.TimestampStart) + "] " + phrase.Text + "\n";
+                sb.Append('[').Append(EncodeTimecode_ms(phrase.TimestampStart)).Append("] ").Append(phrase.Text).Append('\n');
             }
-            return lyrics;
+            return sb.ToString();
         }
 
         private static string EncodeTimecode_ms(int timestampMs)
@@ -443,10 +443,14 @@ namespace WinUIMusicPlayer.Utils
             return $"{minutes:D2}:{seconds:D2}.{milliseconds:D3}";
         }
 
+        private static readonly HashSet<string> MusicExtensions = new(StringComparer.OrdinalIgnoreCase)
+        {
+            ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".oga", ".aiff", ".aif", ".m4a", ".dsf", ".dff", ".ape", ".opus", ".wv"
+        };
+
         public static bool IsMusicFile(string fileType)
         {
-            var musicExtensions = new[] { ".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".oga", ".aiff", ".aif", ".m4a", ".dsf", ".dff", ".ape", ".opus", ".wv" };
-            return musicExtensions.AsValueEnumerable().Contains(fileType.ToLower());
+            return MusicExtensions.Contains(fileType);
         }
 
         // 将字典转换为JSON字符串的方法
@@ -622,9 +626,12 @@ namespace WinUIMusicPlayer.Utils
             return CharStringCache.GetHashTag();
         }
 
+        [GeneratedRegex(@"\[(\d{2}):(\d{2})\.(\d{2,3})\]")]
+        private static partial Regex TimeCodeRegex();
+
         public static string ConvertLyrics(string lyrics)
         {
-            Regex timeRegex = new Regex(@"\[(\d{2}):(\d{2})\.(\d{2,3})\]");
+            Regex timeRegex = TimeCodeRegex();
             string[] lines = lyrics.Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
             for (int i = 0; i < lines.Length; i++)
             {

@@ -3,6 +3,7 @@ using ManagedBass.Enc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Buffers;
 using System.IO;
 using WinUIMusicPlayer.Manager;
 using WinUIMusicPlayer.Model;
@@ -48,17 +49,23 @@ namespace WinUIMusicPlayer.AudioConverters
                 var encoder = BassEnc.EncodeStart(stream, outputPath, flags, null);
                 long length = Bass.ChannelGetLength(stream);
                 long current = 0;
-                //16g限制
-                for (int i = 0; i <= 1024 * 1024; i++)
+                var buffer = ArrayPool<byte>.Shared.Rent(16384);
+                try
                 {
-                    var buffer = new byte[16384];
-                    current += 16384;
-                    var c = Bass.ChannelGetData(stream, buffer, buffer.Length);
-                    if (current % 1048576 == 0)
+                    for (int i = 0; i <= 1024 * 1024; i++)
                     {
-                        progressEvent?.Invoke(this, (double)(current * 100) / length);
+                        current += 16384;
+                        var c = Bass.ChannelGetData(stream, buffer, 16384);
+                        if (current % 1048576 == 0)
+                        {
+                            progressEvent?.Invoke(this, (double)(current * 100) / length);
+                        }
+                        if (c <= 0) break;
                     }
-                    if (c <= 0) break;
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
                 }
                 BassEnc.EncodeStop(stream);
             }
@@ -84,17 +91,23 @@ namespace WinUIMusicPlayer.AudioConverters
                 var encoder = BassEnc_Mp3.Start(stream, " -b 320", EncodeFlags.Default, outputPath);
                 long length = Bass.ChannelGetLength(stream);
                 long current = 0;
-                //16g限制
-                for (int i = 0; i <= 1024 * 1024; i++)
+                var buffer = ArrayPool<byte>.Shared.Rent(16384);
+                try
                 {
-                    var buffer = new byte[16384];
-                    current += 16384;
-                    var c = Bass.ChannelGetData(stream, buffer, buffer.Length);
-                    if (current % 1048576 == 0)
+                    for (int i = 0; i <= 1024 * 1024; i++)
                     {
-                        progressEvent?.Invoke(this, (double)(current * 100) / length);
+                        current += 16384;
+                        var c = Bass.ChannelGetData(stream, buffer, 16384);
+                        if (current % 1048576 == 0)
+                        {
+                            progressEvent?.Invoke(this, (double)(current * 100) / length);
+                        }
+                        if (c <= 0) break;
                     }
-                    if (c <= 0) break;
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
                 }
                 BassEnc.EncodeStop(stream);
             }
@@ -133,17 +146,23 @@ namespace WinUIMusicPlayer.AudioConverters
                 var encoder = BassEnc_Flac.Start(stream, " --best", flags, outputPath);
                 long length = Bass.ChannelGetLength(stream);
                 long current = 0;
-                //16g限制
-                for (int i = 0; i <= 1024 * 1024; i++)
+                var buffer = ArrayPool<byte>.Shared.Rent(16384);
+                try
                 {
-                    var buffer = new byte[16384];
-                    current += 16384;
-                    var c = Bass.ChannelGetData(stream, buffer, buffer.Length);
-                    if (current % 1048576 == 0)
+                    for (int i = 0; i <= 1024 * 1024; i++)
                     {
-                        progressEvent?.Invoke(this, (double)(current * 100) / length);
+                        current += 16384;
+                        var c = Bass.ChannelGetData(stream, buffer, 16384);
+                        if (current % 1048576 == 0)
+                        {
+                            progressEvent?.Invoke(this, (double)(current * 100) / length);
+                        }
+                        if (c <= 0) break;
                     }
-                    if (c <= 0) break;
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
                 }
                 BassEnc.EncodeStop(stream);
             }
@@ -176,17 +195,23 @@ namespace WinUIMusicPlayer.AudioConverters
                 var encoder = BassEnc_Ogg.Start(stream, " -b 320", EncodeFlags.Default, outputPath);
                 long length = Bass.ChannelGetLength(stream);
                 long current = 0;
-                //16g限制
-                for (int i = 0; i <= 1024 * 1024; i++)
+                var buffer = ArrayPool<byte>.Shared.Rent(16384);
+                try
                 {
-                    var buffer = new byte[16384];
-                    current += 16384;
-                    var c = Bass.ChannelGetData(stream, buffer, buffer.Length);
-                    if (current % 1048576 == 0)
+                    for (int i = 0; i <= 1024 * 1024; i++)
                     {
-                        progressEvent?.Invoke(this, (double)(current * 100) / length);
+                        current += 16384;
+                        var c = Bass.ChannelGetData(stream, buffer, 16384);
+                        if (current % 1048576 == 0)
+                        {
+                            progressEvent?.Invoke(this, (double)(current * 100) / length);
+                        }
+                        if (c <= 0) break;
                     }
-                    if (c <= 0) break;
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
                 }
                 BassEnc.EncodeStop(stream);
             }
@@ -219,17 +244,23 @@ namespace WinUIMusicPlayer.AudioConverters
                 var encoder = BassEnc_Opus.Start(stream, " --bitrate 320", EncodeFlags.Default, outputPath);
                 long length = Bass.ChannelGetLength(stream);
                 long current = 0;
-                //16g限制
-                for (int i = 0; i <= 1024 * 1024; i++)
+                var buffer = ArrayPool<byte>.Shared.Rent(16384);
+                try
                 {
-                    var buffer = new byte[16384];
-                    current += 16384;
-                    var c = Bass.ChannelGetData(stream, buffer, buffer.Length);
-                    if (current % 1048576 == 0)
+                    for (int i = 0; i <= 1024 * 1024; i++)
                     {
-                        progressEvent?.Invoke(this, (double)(current * 100) / length);
+                        current += 16384;
+                        var c = Bass.ChannelGetData(stream, buffer, 16384);
+                        if (current % 1048576 == 0)
+                        {
+                            progressEvent?.Invoke(this, (double)(current * 100) / length);
+                        }
+                        if (c <= 0) break;
                     }
-                    if (c <= 0) break;
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(buffer);
                 }
                 BassEnc.EncodeStop(stream);
             }

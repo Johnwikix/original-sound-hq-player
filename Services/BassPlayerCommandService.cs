@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.ViewModel;
-using ZLinq;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Services
@@ -86,7 +85,7 @@ namespace WinUIMusicPlayer.Services
                     break;
                 case PlayMode.ListLoop:
                 case PlayMode.RandomLoop:
-                    int currentIndex = AppViewModel.CurrentPlayingList.AsValueEnumerable().ToList().FindIndex(m => m.Id == AppViewModel.CurrentPlayingMusic.Id);
+                    int currentIndex = AppViewModel.GetCurrentIndex();
                     int nextIndex = (currentIndex + 1) % AppViewModel.CurrentPlayingList.Count;
                     await MusicBrowsePlayMusic(AppViewModel.CurrentPlayingList[nextIndex]);
                     break;
@@ -116,7 +115,7 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                int currentIndex = AppViewModel.CurrentPlayingList.AsValueEnumerable().ToList().FindIndex(m => m.Id == AppViewModel.CurrentPlayingMusic.Id);
+                int currentIndex = AppViewModel.GetCurrentIndex();
                 int nextIndex = (currentIndex + 1) % AppViewModel.CurrentPlayingList.Count;
                 MusicBrowsePlayMusic(AppViewModel.CurrentPlayingList[nextIndex]);
             }
