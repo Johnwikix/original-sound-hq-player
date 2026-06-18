@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
+using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -36,10 +37,54 @@ namespace WinUIMusicPlayer.View
             DataContext = this;
             Focus(FocusState.Programmatic);
             Loaded += OnPageLoaded;
-            NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Required;
+            NavigationCacheMode = NavigationCacheMode.Required;
         }
 
-        private void OnContentFrameNavigated(object sender, Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+        protected override void OnNavigatedTo(NavigationEventArgs e)
+        {
+            base.OnNavigatedTo(e);
+            RestoreSubPageState();
+        }
+
+        private void RestoreSubPageState()
+        {
+            switch (ContentFrame.Content)
+            {
+                case AlbumPage page:
+                    AppData.CurrentPage = typeof(AlbumPage);
+                    if (page.ViewModel.IsInDetailMode)
+                    {
+                        ViewModel.AppViewModel.PageType = "album";
+                        ViewModel.AppViewModel.IsBackBtnEnable = true;
+                    }
+                    break;
+                case ArtistPage page:
+                    AppData.CurrentPage = typeof(ArtistPage);
+                    if (page.ViewModel.IsInDetailMode)
+                    {
+                        ViewModel.AppViewModel.PageType = "artist";
+                        ViewModel.AppViewModel.IsBackBtnEnable = true;
+                    }
+                    break;
+                case FolderBrowsePage page:
+                    AppData.CurrentPage = typeof(FolderBrowsePage);
+                    if (page.ViewModel.IsInDetailMode)
+                    {
+                        ViewModel.AppViewModel.PageType = "folder";
+                        ViewModel.AppViewModel.IsBackBtnEnable = true;
+                    }
+                    break;
+                case SongListPage:
+                    AppData.CurrentPage = typeof(SongListPage);
+                    break;
+                case FavouritePlayListPage:
+                    AppData.CurrentPage = typeof(FavouritePlayListPage);
+                    break;
+            }
+            ViewModel.AppViewModel.RefreshDataSource();
+        }
+
+        private void OnContentFrameNavigated(object sender, NavigationEventArgs e)
         {
             GC.Collect(GC.MaxGeneration, GCCollectionMode.Optimized, blocking: false);
         }
