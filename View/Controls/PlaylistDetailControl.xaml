@@ -14,9 +14,6 @@
     xmlns:tool="using:WinUIMusicPlayer.Utils"
     x:Name="DetailRoot"
     mc:Ignorable="d">
-    <UserControl.OpacityTransition>
-        <ScalarTransition Duration="0:0:0" />
-    </UserControl.OpacityTransition>
     <UserControl.Resources>
         <Style
             x:Key="ListViewItemStyle"
