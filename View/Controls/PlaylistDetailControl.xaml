@@ -206,7 +206,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind Music.PlayCommand, Mode=OneWay}"
-                            CommandParameter="PlayListSongs"
+                            CommandParameter="{x:Bind Music}"
                             CornerRadius="5"
                             Style="{StaticResource PlayHoverButtonStyle}">
                             <Grid Width="40" Height="40">
@@ -242,7 +242,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind Music.UpdateFavouriteCommand, Mode=OneWay}"
-                            CommandParameter="{x:Bind}">
+                            CommandParameter="{x:Bind Music}">
                             <FontIcon
                                 x:Name="IsFavouriteIcon"
                                 Foreground="Red"
@@ -329,7 +329,8 @@
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
-                            Command="{x:Bind Music.AddMusicToCurrentPlayListCommand, Mode=OneWay}">
+                            Command="{x:Bind Music.AddMusicToCurrentPlayListCommand, Mode=OneWay}"
+                            CommandParameter="{x:Bind Music}">
                             <FontIcon
                                 Margin="0,2,0,0"
                                 VerticalAlignment="Center"

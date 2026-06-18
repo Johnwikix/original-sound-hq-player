@@ -49,7 +49,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     AppViewModel.IsPlaying = false;
                 });
-                AutoPlayNextTrack().Wait();
+                _ = AutoPlayNextTrack();
             }
             else if (typeId == MessageTypeId.VolumeWriteBack)
             {

@@ -260,7 +260,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 foreach (var music in SelectedMusics)
                 {
-                    music.UpdateFavourite();
+                    MusicCommands.UpdateFavouriteCommand.Execute(music);
                 }
             }
         }

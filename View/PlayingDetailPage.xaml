@@ -258,7 +258,8 @@
                         Background="Transparent"
                         BorderBrush="Transparent"
                         BorderThickness="0"
-                        Command="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}"
+                         Command="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}"
+                         CommandParameter="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic, Mode=OneWay}"
                         Style="{StaticResource MenuButtonStyle}">
                         <Button.KeyboardAccelerators>
                             <KeyboardAccelerator Key="L" />

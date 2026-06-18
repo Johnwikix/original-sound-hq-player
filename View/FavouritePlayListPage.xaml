@@ -61,7 +61,7 @@
                         BorderBrush="Transparent"
                         BorderThickness="0"
                         Command="{x:Bind PlayCommand, Mode=OneWay}"
-                        CommandParameter="FavoriteSongsView"
+                        CommandParameter="{x:Bind}"
                         CornerRadius="5"
                         Style="{StaticResource PlayHoverButtonStyle}">
                         <Grid Width="40" Height="40">
@@ -96,7 +96,8 @@
                         Background="Transparent"
                         BorderBrush="Transparent"
                         BorderThickness="0"
-                        Command="{x:Bind UpdateFavouriteCommand, Mode=OneWay}">
+                        Command="{x:Bind UpdateFavouriteCommand, Mode=OneWay}"
+                        CommandParameter="{x:Bind}">
                         <FontIcon
                             x:Name="IsFavouriteIcon"
                             Foreground="Red"
@@ -183,7 +184,8 @@
                         Background="Transparent"
                         BorderBrush="Transparent"
                         BorderThickness="0"
-                        Command="{x:Bind AddMusicToCurrentPlayListCommand, Mode=OneWay}">
+                        Command="{x:Bind AddMusicToCurrentPlayListCommand, Mode=OneWay}"
+                        CommandParameter="{x:Bind}">
                         <FontIcon
                             Margin="0,2,0,0"
                             VerticalAlignment="Center"

@@ -1,15 +1,10 @@
 ﻿using AnimatedWin2dControls.Messages;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.UI.Xaml.Controls;
 using SQLite;
 using System;
-using System.Linq;
-using System.Threading.Tasks;
+using System.Windows.Input;
 using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.ViewModel;
-using ZLinq;
 
 namespace WinUIMusicPlayer.Model
 {
@@ -42,11 +37,7 @@ namespace WinUIMusicPlayer.Model
             {
                 if (SetProperty(ref field, value))
                 {
-                    if (App.Services.GetRequiredService<AppViewModel>().IsInitialized)
-                    {
-                        OffsetMsBus.Publish(value);
-                        Save();
-                    }
+                    MusicCommands.OnLyricsOffsetChanged(this, value);
                 }
             }
         } = 0;
@@ -59,105 +50,8 @@ namespace WinUIMusicPlayer.Model
         public DateTime CreateTime { get; set => SetProperty(ref field, value); }
         public DateTime UpdateTime { get; set => SetProperty(ref field, value); }
 
-        [RelayCommand]
-        public async Task Play(string page)
-        {
-            var app = App.Services.GetRequiredService<AppViewModel>();
-            switch (page)
-            {
-                case "FavoriteSongsView":
-                    app.SequentialPlayingList = new(app.FavoriteSongs);
-                    break;
-                case "PlayListSongs":
-                    {
-                        var src = app.PlayListSongs;
-                        var span = src.AsSpan();
-                        var arr = new Music[span.Length];
-                        for (int i = 0; i < span.Length; i++) arr[i] = span[i].Music;
-                        app.SequentialPlayingList = new(arr);
-                    }
-                    break;
-                case "SongsSourceView":
-                    app.SequentialPlayingList = new(app.ListSongs);
-                    break;
-                case "AlbumSongsView":
-                    app.SequentialPlayingList = new(app.AlbumSongs);
-                    break;
-                case "ArtistSongsView":
-                    app.SequentialPlayingList = new(app.ArtistSongs);
-                    break;
-                case "FolderSongsView":
-                    app.SequentialPlayingList = new(app.FolderSongs);
-                    break;
-            }
-            await App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(music: this, IsChangeList: true);
-        }
-
-        [RelayCommand]
-        public void AddMusicToCurrentPlayList()
-        {
-            App.Services.GetRequiredService<AppViewModel>().AddMusicToCurrentPlayList(this);
-        }
-
-        [RelayCommand]
-        public void UpdateFavourite()
-        {
-            IsFavorite = !IsFavorite;
-            var app = App.Services.GetRequiredService<AppViewModel>();
-            if (IsFavorite)
-            {
-                Order = ComputeNextFavoriteOrder(app);
-                app.AddToFavoriteSongs(this);
-            }
-            else
-            {
-                app.RemoveFromFavoriteSongs(this);
-                Order = 0;
-            }
-            _ = App.Services.GetRequiredService<MusicDatabaseService>().AddToFavourite(this);
-        }
-
-        [RelayCommand]
-        public void AddToFavourite()
-        {
-            if (!IsFavorite)
-            {
-                IsFavorite = true;
-                var app = App.Services.GetRequiredService<AppViewModel>();
-                Order = ComputeNextFavoriteOrder(app);
-                app.AddToFavoriteSongs(this);
-            }
-            _ = App.Services.GetRequiredService<MusicDatabaseService>().AddToFavourite(this);
-        }
-
-        private static int ComputeNextFavoriteOrder(AppViewModel app)
-        {
-            var span = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(app.SongsSource);
-            int max = 0;
-            for (int i = 0; i < span.Length; i++)
-            {
-                var m = span[i];
-                if (m.IsFavorite && m.Order > max) max = m.Order;
-            }
-            return max + 1;
-        }
-
-        public async void Remove()
-        {
-            await App.Services.GetRequiredService<MusicDatabaseService>().RemoveMusic(Id);
-            App.Services.GetRequiredService<AppViewModel>().RemoveFromSongsSource(this);
-            App.Services.GetRequiredService<AppViewModel>().RemoveFromFavoriteSongs(this);
-            App.Services.GetRequiredService<AppViewModel>().RemoveFromPlayListSongs(this);
-        }
-
-        private async void Save()
-        {
-            await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(this);
-        }
-
-        public static implicit operator RelativePanel(Music v)
-        {
-            throw new NotImplementedException();
-        }
+        [Ignore] public ICommand PlayCommand => MusicCommands.PlayCommand;
+        [Ignore] public ICommand UpdateFavouriteCommand => MusicCommands.UpdateFavouriteCommand;
+        [Ignore] public ICommand AddMusicToCurrentPlayListCommand => MusicCommands.AddToPlayListCommand;
     }
 }

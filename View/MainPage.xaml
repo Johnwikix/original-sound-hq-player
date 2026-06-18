@@ -318,6 +318,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}"
+                            CommandParameter="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic, Mode=OneWay}"
                             IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <Button.KeyboardAccelerators>

@@ -151,7 +151,7 @@ namespace WinUIMusicPlayer.ViewModel
                .OrderByDescending(m => m.TrackNumber);
             foreach (var album in albums)
             {
-                album.AddToFavourite();
+                MusicCommands.AddToFavouriteCommand.Execute(album);
             }
         }
         [RelayCommand]

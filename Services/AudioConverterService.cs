@@ -40,46 +40,31 @@ namespace WinUIMusicPlayer.Services
                     case "wav":
                         if (!music.Extension.Equals("wav", StringComparison.OrdinalIgnoreCase))
                         {
-                            await Task.Run(() =>
-                            {
-                                bassAudioConverter.ConvertToWav(music, outputPath);
-                            });
+                            await Task.Run(() => bassAudioConverter.ConvertToWav(music, outputPath));
                         }
                         break;
                     case "flac":
                         if (!music.Extension.Equals("flac", StringComparison.OrdinalIgnoreCase))
                         {
-                            await Task.Run(() =>
-                            {
-                                bassAudioConverter.ConvertToFlac(music, outputPath);
-                            });
+                            await Task.Run(() => bassAudioConverter.ConvertToFlac(music, outputPath));
                         }
                         break;
                     case "mp3":
                         if (!music.Extension.Equals("mp3", StringComparison.OrdinalIgnoreCase))
                         {
-                            await Task.Run(() =>
-                            {
-                                bassAudioConverter.ConvertToMp3(music, outputPath);
-                            });
+                            await Task.Run(() => bassAudioConverter.ConvertToMp3(music, outputPath));
                         }
                         break;
                     case "ogg":
                         if (!music.Extension.Equals("ogg", StringComparison.OrdinalIgnoreCase))
                         {
-                            await Task.Run(() =>
-                            {
-                                bassAudioConverter.ConvertToOgg(music, outputPath);
-                            });
+                            await Task.Run(() => bassAudioConverter.ConvertToOgg(music, outputPath));
                         }
                         break;
                     case "opus":
                         if (!music.Extension.Equals("opus", StringComparison.OrdinalIgnoreCase))
                         {
-                            await Task.Run(() =>
-                            {
-                                bassAudioConverter.ConvertToOpus(music, outputPath);
-                            });
+                            await Task.Run(() => bassAudioConverter.ConvertToOpus(music, outputPath));
                         }
                         break;
                 }

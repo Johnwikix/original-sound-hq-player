@@ -365,14 +365,14 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             var targets = SelectedMusics.Count > 0 ? SelectedMusics : (SelectedMusic is null ? [] : [SelectedMusic]);
             foreach (var m in targets)
             {
-                m.AddMusicToCurrentPlayList();
+                MusicCommands.AddToPlayListCommand.Execute(m);
             }
         }
 
         private void OnUpdateFavourite(Music? m)
         {
             if (m is null) return;
-            m.UpdateFavourite();
+            MusicCommands.UpdateFavouriteCommand.Execute(m);
         }
 
         private void OnAddToFavourFromSelection()
@@ -381,12 +381,12 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             if (targets.Count == 0) return;
             if (targets.Count == 1)
             {
-                targets[0].AddToFavourite();
+                MusicCommands.AddToFavouriteCommand.Execute(targets[0]);
                 return;
             }
             foreach (var m in targets)
             {
-                if (!m.IsFavorite) m.AddToFavourite();
+                if (!m.IsFavorite) MusicCommands.AddToFavouriteCommand.Execute(m);
             }
         }
 

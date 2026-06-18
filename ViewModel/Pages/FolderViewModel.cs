@@ -163,7 +163,7 @@ namespace WinUIMusicPlayer.ViewModel
                 .OrderBy(m => m.LastLevelFolderPath);
             foreach (var folder in folders)
             {
-                folder.AddToFavourite();
+                MusicCommands.AddToFavouriteCommand.Execute(folder);
             }
         }
 

@@ -315,7 +315,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         private void OnUpdateFavourite(PlayListMusicItem? item)
         {
             if (item is null) return;
-            item.Music.UpdateFavourite();
+            MusicCommands.UpdateFavouriteCommand.Execute(item.Music);
         }
 
         private void OnAddToFavourFromSelection()
@@ -323,12 +323,12 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             if (SelectedMusics.Count == 0 && SelectedMusic is null) return;
             if (SelectedMusics.Count == 0)
             {
-                SelectedMusic!.Music.UpdateFavourite();
+                MusicCommands.UpdateFavouriteCommand.Execute(SelectedMusic!.Music);
                 return;
             }
             foreach (var m in SelectedMusics)
             {
-                if (!m.Music.IsFavorite) m.Music.UpdateFavourite();
+                if (!m.Music.IsFavorite) MusicCommands.AddToFavouriteCommand.Execute(m.Music);
             }
         }
 

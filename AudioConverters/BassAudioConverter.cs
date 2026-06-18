@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Buffers;
 using System.IO;
+using System.Threading.Tasks;
 using WinUIMusicPlayer.Manager;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -22,269 +23,113 @@ namespace WinUIMusicPlayer.AudioConverters
             BassManager.Initialize();
         }
 
-        /// <summary>
-        /// 将任意音频文件转换为WAV格式
-        /// </summary>
-        public void ConvertToWav(Music music, string outputPath)
+        public Task ConvertToWav(Music music, string outputPath)
         {
-            int stream = 0;
-            try
+            return ConvertCore(music, outputPath, BassFlags.Decode | BassFlags.Float | BassFlags.AsyncFile, (stream, outPath) =>
             {
-                // 创建音频流
-                stream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Decode | BassFlags.Float | BassFlags.AsyncFile);
-                if (stream == 0)
-                {
-                    throw new Exception($"无法打开音频文件: {Bass.LastError}");
-                }
                 EncodeFlags flags = EncodeFlags.PCM;
                 var originalResolution = Bass.ChannelGetInfo(stream).OriginalResolution;
                 if (originalResolution == 24)
                 {
                     flags = EncodeFlags.ConvertFloatTo24Bit | EncodeFlags.PCM;
                 }
-                else if ((originalResolution == 0 || originalResolution == 16) && !(Path.GetExtension(music.Path) == ".dsf" || Path.GetExtension(music.Path) == ".dff"))
+                else if ((originalResolution == 0 || originalResolution == 16) &&
+                         !(Path.GetExtension(music.Path) == ".dsf" || Path.GetExtension(music.Path) == ".dff"))
                 {
                     flags = EncodeFlags.ConvertFloatTo16BitInt | EncodeFlags.PCM;
                 }
-                var encoder = BassEnc.EncodeStart(stream, outputPath, flags, null);
-                long length = Bass.ChannelGetLength(stream);
-                long current = 0;
-                var buffer = ArrayPool<byte>.Shared.Rent(16384);
-                try
+                return BassEnc.EncodeStart(stream, outPath, flags, null);
+            });
+        }
+
+        public Task ConvertToMp3(Music music, string outputPath)
+        {
+            return ConvertCore(music, outputPath, BassFlags.Decode | BassFlags.AsyncFile,
+                (stream, outPath) => BassEnc_Mp3.Start(stream, " -b 320", EncodeFlags.Default, outPath));
+        }
+
+        public Task ConvertToFlac(Music music, string outputPath)
+        {
+            return ConvertCore(music, outputPath, BassFlags.Decode | BassFlags.Float | BassFlags.AsyncFile, (stream, outPath) =>
+            {
+                EncodeFlags flags = EncodeFlags.Default;
+                var originalResolution = Bass.ChannelGetInfo(stream).OriginalResolution;
+                if (originalResolution >= 24 ||
+                    Path.GetExtension(music.Path) == ".dsf" || Path.GetExtension(music.Path) == ".dff")
                 {
-                    for (int i = 0; i <= 1024 * 1024; i++)
-                    {
-                        current += 16384;
-                        var c = Bass.ChannelGetData(stream, buffer, 16384);
-                        if (current % 1048576 == 0)
-                        {
-                            progressEvent?.Invoke(this, (double)(current * 100) / length);
-                        }
-                        if (c <= 0) break;
-                    }
+                    flags = EncodeFlags.ConvertFloatTo24Bit;
                 }
-                finally
-                {
-                    ArrayPool<byte>.Shared.Return(buffer);
-                }
+                return BassEnc_Flac.Start(stream, " --best", flags, outPath);
+            });
+        }
+
+        public Task ConvertToOgg(Music music, string outputPath)
+        {
+            return ConvertCore(music, outputPath, BassFlags.Decode | BassFlags.AsyncFile,
+                (stream, outPath) => BassEnc_Ogg.Start(stream, " -b 320", EncodeFlags.Default, outPath));
+        }
+
+        public Task ConvertToOpus(Music music, string outputPath)
+        {
+            return ConvertCore(music, outputPath, BassFlags.Decode | BassFlags.AsyncFile,
+                (stream, outPath) => BassEnc_Opus.Start(stream, " --bitrate 320", EncodeFlags.Default, outPath));
+        }
+
+        private async Task ConvertCore(Music music, string outputPath, BassFlags streamFlags, Func<int, string, int> startEncoder)
+        {
+            int stream = 0;
+            try
+            {
+                stream = Bass.CreateStream(music.Path, 0, 0, streamFlags);
+                if (stream == 0)
+                    throw new Exception($"无法打开音频文件: {Bass.LastError}");
+
+                startEncoder(stream, outputPath);
+                PumpStream(stream);
                 BassEnc.EncodeStop(stream);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"转换失败: {ex.Message}");
             }
             finally
             {
                 if (stream != 0) Bass.StreamFree(stream);
-                SaveMetaData(music, outputPath);
+                await SaveMetaDataAsync(music, outputPath);
                 progressEvent?.Invoke(this, 100);
             }
         }
 
-        public void ConvertToMp3(Music music, string outputPath)
+        private void PumpStream(int stream)
         {
-            int stream = 0;
+            long length = Bass.ChannelGetLength(stream);
+            long current = 0;
+            var buffer = ArrayPool<byte>.Shared.Rent(16384);
             try
             {
-                // 创建音频流
-                stream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Decode | BassFlags.AsyncFile);
-                if (stream == 0)
+                for (int i = 0; i <= 1024 * 1024; i++)
                 {
-                    throw new Exception($"无法打开音频文件: {Bass.LastError}");
-                }
-                var encoder = BassEnc_Mp3.Start(stream, " -b 320", EncodeFlags.Default, outputPath);
-                long length = Bass.ChannelGetLength(stream);
-                long current = 0;
-                var buffer = ArrayPool<byte>.Shared.Rent(16384);
-                try
-                {
-                    for (int i = 0; i <= 1024 * 1024; i++)
+                    current += 16384;
+                    var c = Bass.ChannelGetData(stream, buffer, 16384);
+                    if (current % 1048576 == 0)
                     {
-                        current += 16384;
-                        var c = Bass.ChannelGetData(stream, buffer, 16384);
-                        if (current % 1048576 == 0)
-                        {
-                            progressEvent?.Invoke(this, (double)(current * 100) / length);
-                        }
-                        if (c <= 0) break;
+                        progressEvent?.Invoke(this, (double)(current * 100) / length);
                     }
+                    if (c <= 0) break;
                 }
-                finally
-                {
-                    ArrayPool<byte>.Shared.Return(buffer);
-                }
-                BassEnc.EncodeStop(stream);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"ConvertToMp3 转换失败: {ex.Message}");
             }
             finally
             {
-                if (stream != 0)
-                {
-                    Bass.StreamFree(stream);
-                }
-                SaveMetaData(music, outputPath);
-                progressEvent?.Invoke(this, 100);
+                ArrayPool<byte>.Shared.Return(buffer);
             }
         }
 
-        public void ConvertToFlac(Music music, string outputPath)
-        {
-            int stream = 0;
-            try
-            {
-                // 创建音频流
-                stream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Decode | BassFlags.Float | BassFlags.AsyncFile);
-                if (stream == 0)
-                {
-                    throw new Exception($"无法打开音频文件: {Bass.LastError}");
-                }
-                EncodeFlags flags = EncodeFlags.Default;
-                var originalResolution = Bass.ChannelGetInfo(stream).OriginalResolution;
-                if (originalResolution >= 24 || Path.GetExtension(music.Path) == ".dsf" || Path.GetExtension(music.Path) == ".dff")
-                {
-                    flags = EncodeFlags.ConvertFloatTo24Bit;
-                }
-                var encoder = BassEnc_Flac.Start(stream, " --best", flags, outputPath);
-                long length = Bass.ChannelGetLength(stream);
-                long current = 0;
-                var buffer = ArrayPool<byte>.Shared.Rent(16384);
-                try
-                {
-                    for (int i = 0; i <= 1024 * 1024; i++)
-                    {
-                        current += 16384;
-                        var c = Bass.ChannelGetData(stream, buffer, 16384);
-                        if (current % 1048576 == 0)
-                        {
-                            progressEvent?.Invoke(this, (double)(current * 100) / length);
-                        }
-                        if (c <= 0) break;
-                    }
-                }
-                finally
-                {
-                    ArrayPool<byte>.Shared.Return(buffer);
-                }
-                BassEnc.EncodeStop(stream);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"ConvertToFlac 转换失败: {ex.Message}");
-            }
-            finally
-            {
-                if (stream != 0)
-                {
-                    Bass.StreamFree(stream);
-                }
-                SaveMetaData(music, outputPath);
-                progressEvent?.Invoke(this, 100);
-            }
-        }
-
-        public void ConvertToOgg(Music music, string outputPath)
-        {
-            int stream = 0;
-            try
-            {
-                // 创建音频流
-                stream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Decode | BassFlags.AsyncFile);
-                if (stream == 0)
-                {
-                    throw new Exception($"无法打开音频文件: {Bass.LastError}");
-                }
-                var encoder = BassEnc_Ogg.Start(stream, " -b 320", EncodeFlags.Default, outputPath);
-                long length = Bass.ChannelGetLength(stream);
-                long current = 0;
-                var buffer = ArrayPool<byte>.Shared.Rent(16384);
-                try
-                {
-                    for (int i = 0; i <= 1024 * 1024; i++)
-                    {
-                        current += 16384;
-                        var c = Bass.ChannelGetData(stream, buffer, 16384);
-                        if (current % 1048576 == 0)
-                        {
-                            progressEvent?.Invoke(this, (double)(current * 100) / length);
-                        }
-                        if (c <= 0) break;
-                    }
-                }
-                finally
-                {
-                    ArrayPool<byte>.Shared.Return(buffer);
-                }
-                BassEnc.EncodeStop(stream);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"ConvertToOgg 转换失败: {ex.Message}");
-            }
-            finally
-            {
-                if (stream != 0)
-                {
-                    Bass.StreamFree(stream);
-                }
-                SaveMetaData(music, outputPath);
-                progressEvent?.Invoke(this, 100);
-            }
-        }
-
-        public void ConvertToOpus(Music music, string outputPath)
-        {
-            int stream = 0;
-            try
-            {
-                // 创建音频流
-                stream = Bass.CreateStream(music.Path, 0, 0, BassFlags.Decode | BassFlags.AsyncFile);
-                if (stream == 0)
-                {
-                    throw new Exception($"无法打开音频文件: {Bass.LastError}");
-                }
-                var encoder = BassEnc_Opus.Start(stream, " --bitrate 320", EncodeFlags.Default, outputPath);
-                long length = Bass.ChannelGetLength(stream);
-                long current = 0;
-                var buffer = ArrayPool<byte>.Shared.Rent(16384);
-                try
-                {
-                    for (int i = 0; i <= 1024 * 1024; i++)
-                    {
-                        current += 16384;
-                        var c = Bass.ChannelGetData(stream, buffer, 16384);
-                        if (current % 1048576 == 0)
-                        {
-                            progressEvent?.Invoke(this, (double)(current * 100) / length);
-                        }
-                        if (c <= 0) break;
-                    }
-                }
-                finally
-                {
-                    ArrayPool<byte>.Shared.Return(buffer);
-                }
-                BassEnc.EncodeStop(stream);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"ConvertToOpus 转换失败: {ex.Message}");
-            }
-            finally
-            {
-                if (stream != 0)
-                {
-                    Bass.StreamFree(stream);
-                }
-                SaveMetaData(music, outputPath);
-                progressEvent?.Invoke(this, 100);
-            }
-        }
-
-        private void SaveMetaData(Music music, string outputPath)
+        private async Task SaveMetaDataAsync(Music music, string outputPath)
         {
             try
             {
-                var (lyricsText, _, krcText, _) = App.Services.GetRequiredService<MusicDatabaseService>().GetLyricsAsync(music.Id).GetAwaiter().GetResult();
-                byte[] pic = ToolUtils.GetRawImage(music).Result;
+                var (lyricsText, _, krcText, _) = await App.Services.GetRequiredService<MusicDatabaseService>().GetLyricsAsync(music.Id);
+                byte[] pic = await ToolUtils.GetRawImage(music);
                 ToolUtils.SaveMetaData(music, outputPath, pic, lyricsText, krcText);
             }
             catch (Exception ex)
