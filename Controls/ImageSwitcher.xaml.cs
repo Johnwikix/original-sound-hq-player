@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Helper;
-using WinUIMusicPlayer.Helpers;
 using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Controls

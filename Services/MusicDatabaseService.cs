@@ -770,7 +770,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.CurrentPlayingMusic = LoadCurrentPlayingMusic(playState.LastPlayedMusicId);
                 AppViewModel.Volume = playState.Volume;
                 AppViewModel.TempVolume = playState.Volume;
-                AppViewModel.SelectedSortOption = AppViewModel.SortOptions.AsValueEnumerable().FirstOrDefault(item => item.Tag == playState.sortOrder)
+                AppViewModel.SelectedSortOption = AppViewModel.SortOptions.AsValueEnumerable().FirstOrDefault(item => item.Tag == playState.SortOrder)
                     ?? AppViewModel.SortOptions.AsValueEnumerable().FirstOrDefault() ?? new SortOption("DefaultOrder", "SortOrderDefault");
             });
         }
@@ -808,8 +808,8 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.OutputMode = settings.OutputMode;
                 AppSettings.DeviceName = settings.DeviceFriendlyName;
                 AppSettings.BassOutputDeviceId = settings.BassOutputDeviceId;
-                AppViewModel.DefaultEntryComboBoxTag = settings.DefualtEntry;
-                AppViewModel.DefaultPlayListComboBoxTag = settings.DefualtPlayList;
+                AppViewModel.DefaultEntryComboBoxTag = settings.DefaultEntry;
+                AppViewModel.DefaultPlayListComboBoxTag = settings.DefaultPlayList;
                 AppViewModel.Latency = settings.Latency;
                 AppViewModel.BackdropType = settings.AppStyle;
                 AppViewModel.ThemeType = settings.AppTheme;
@@ -908,8 +908,8 @@ namespace WinUIMusicPlayer.Services
             newSettings.DeviceFriendlyName = AppSettings.DeviceName;
             newSettings.BassOutputDeviceId = AppSettings.BassOutputDeviceId;
             newSettings.Latency = AppViewModel.Latency;
-            newSettings.DefualtEntry = AppViewModel.DefaultEntryComboBoxTag;
-            newSettings.DefualtPlayList = AppViewModel.DefaultPlayListComboBoxTag;
+            newSettings.DefaultEntry = AppViewModel.DefaultEntryComboBoxTag;
+            newSettings.DefaultPlayList = AppViewModel.DefaultPlayListComboBoxTag;
             newSettings.AppStyle = AppViewModel.BackdropType;
             newSettings.AppTheme = AppViewModel.ThemeType;
             newSettings.IsRunningBackend = AppViewModel.IsRunningBackend;
@@ -1019,7 +1019,7 @@ namespace WinUIMusicPlayer.Services
                 playState.PlayMode = currentPlayMode;
                 playState.LastPlayedMusicId = currentPlayingMusicId;
                 playState.Volume = volume;
-                playState.sortOrder = sortOrder;
+                playState.SortOrder = sortOrder;
                 if (playState.Id == 0)
                 {
                     _ = _dbConnection.InsertAsync(playState);

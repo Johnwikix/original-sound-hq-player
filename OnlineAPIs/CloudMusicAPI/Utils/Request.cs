@@ -295,33 +295,9 @@ internal static partial class Request
 
         byte[] ReadStream(Stream _stream)
         {
-            byte[] _buffer;
-            List<byte> _byteList;
-
-            _buffer = new byte[0x1000];
-            _byteList = [];
-            for (var i = 0; i < int.MaxValue; i++)
-            {
-                int count;
-
-                count = _stream.Read(_buffer, 0, _buffer.Length);
-                if (count == 0x1000)
-                {
-                    _byteList.AddRange(_buffer);
-                }
-                else if (count == 0)
-                {
-                    return [.. _byteList];
-                }
-                else
-                {
-                    for (var j = 0; j < count; j++)
-                    {
-                        _byteList.Add(_buffer[j]);
-                    }
-                }
-            }
-            throw new OutOfMemoryException();
+            using var ms = new MemoryStream();
+            _stream.CopyTo(ms);
+            return ms.ToArray();
         }
     }
 

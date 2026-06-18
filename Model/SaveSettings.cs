@@ -1,4 +1,5 @@
 ﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+using System.Text.Json.Serialization;
 using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Model
@@ -11,8 +12,10 @@ namespace WinUIMusicPlayer.Model
         public int BassASIODeviceId { get; set; } = 0;
         public bool IsFadeEnabled { get; set; } = false;
         public string DeviceFriendlyName { get; set; } = ToolUtils.GetString("DefaultDevice");
-        public string DefualtEntry { get; set; } = "AddFolder";
-        public string DefualtPlayList { get; set; } = "song";
+        [JsonPropertyName("DefualtEntry")]
+        public string DefaultEntry { get; set; } = "AddFolder";
+        [JsonPropertyName("DefualtPlayList")]
+        public string DefaultPlayList { get; set; } = "song";
         public string AppStyle { get; set; } = "TransparentAcrylic";
         public float CustomAcrylicOpacity { get; set; } = 0.5f;
         public byte CustomColorAlpha { get; set; } = 255;

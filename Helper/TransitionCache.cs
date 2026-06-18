@@ -1,7 +1,7 @@
 using Microsoft.UI.Xaml;
 using System;
 
-namespace WinUIMusicPlayer.Helpers
+namespace WinUIMusicPlayer.Helper
 {
     public static class TransitionCache
     {

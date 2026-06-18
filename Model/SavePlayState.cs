@@ -10,6 +10,7 @@ namespace WinUIMusicPlayer.Model
         public PlayMode PlayMode { get; set; }
         public int? LastPlayedMusicId { get; set; }
         public double Volume { get; set; } = 50;
-        public string sortOrder { get; set; } = "DefaultOrder";
+        [Column("sortOrder")]
+        public string SortOrder { get; set; } = "DefaultOrder";
     }
 }

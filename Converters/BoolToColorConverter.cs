@@ -6,13 +6,22 @@ using Windows.UI;
 
 namespace WinUIMusicPlayer.Converters
 {
-    // 转换器：当前行高亮颜色
     public class BoolToColorConverter : IValueConverter
     {
+        private static SolidColorBrush? s_whiteBrush;
+        private static SolidColorBrush? s_accentBrush;
+        private static Color s_lastAccentColor;
+
         public object Convert(object value, Type targetType, object parameter, string language)
         {
+            s_whiteBrush ??= new SolidColorBrush(Colors.White);
             Color accentColor = GetAccentColor();
-            return (bool)value ? new SolidColorBrush(accentColor) : new SolidColorBrush(Colors.White);
+            if (s_accentBrush is null || s_lastAccentColor != accentColor)
+            {
+                s_lastAccentColor = accentColor;
+                s_accentBrush = new SolidColorBrush(accentColor);
+            }
+            return (bool)value ? s_accentBrush : s_whiteBrush;
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, string language)

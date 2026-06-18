@@ -7,7 +7,7 @@ using System;
 using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.Helpers;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel.Controls;
 

@@ -18,7 +18,7 @@ using Windows.Devices.Portable;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.Helpers;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.View.SubView;

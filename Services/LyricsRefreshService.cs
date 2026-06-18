@@ -3,6 +3,7 @@ using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -34,6 +35,53 @@ namespace WinUIMusicPlayer.Services
         // 行级时间偏移（ms）：每行动画在 EndMs 前提前结束，确保过渡平滑
         internal static double LineEndOffsetMs = 400;
 
+        private static readonly ConcurrentBag<LyricLine> s_linePool = new();
+        private static readonly ConcurrentBag<LyricWord> s_wordPool = new();
+        private const int MaxPoolSize = 500;
+        private List<LyricLine>? _previousLyrics;
+
+        private static LyricLine RentLine()
+        {
+            if (s_linePool.TryTake(out var line))
+            {
+                line.Words.Clear();
+                line.TransLateText = string.Empty;
+                line.IsCurrent = false;
+                line.StartMs = 0;
+                line.EndMs = 0;
+                return line;
+            }
+            return new LyricLine();
+        }
+
+        private static LyricWord RentWord()
+        {
+            if (s_wordPool.TryTake(out var word))
+            {
+                word.Word = string.Empty;
+                word.StartMs = 0;
+                word.DurationMs = 0;
+                return word;
+            }
+            return new LyricWord();
+        }
+
+        public static void ReturnLyrics(List<LyricLine>? lyrics)
+        {
+            if (lyrics is null) return;
+            foreach (var line in lyrics)
+            {
+                if (s_wordPool.Count < MaxPoolSize)
+                {
+                    foreach (var word in line.Words)
+                        s_wordPool.Add(word);
+                }
+                line.Words.Clear();
+                if (s_linePool.Count < MaxPoolSize)
+                    s_linePool.Add(line);
+            }
+        }
+
         // ──────────────────────────────────────────────────────────────
 
         private CancellationTokenSource? _lyricsCancellationTokenSource;
@@ -56,6 +104,8 @@ namespace WinUIMusicPlayer.Services
             _lyricsCancellationTokenSource = new CancellationTokenSource();
             var ct = _lyricsCancellationTokenSource.Token;
 
+            ReturnLyrics(Interlocked.Exchange(ref _previousLyrics, null));
+
             try
             {
                 await Task.Delay(500, ct);
@@ -68,6 +118,7 @@ namespace WinUIMusicPlayer.Services
                     music.PlayCount++;
                     await _musicDatabaseService.UpdateMusicInfo(music);
                     FixEndMs(localLyrics, music.Duration.TotalMilliseconds);
+                    _previousLyrics = localLyrics;
                     return localLyrics;
                 }
 
@@ -79,6 +130,7 @@ namespace WinUIMusicPlayer.Services
                     await _musicDatabaseService.SaveLyricsAsync(music.Id, lyricsText, transLrc, krcOut, tKrcOut);
                     await _musicDatabaseService.UpdateMusicInfo(music);
                     FixEndMs(krcLyrics, music.Duration.TotalMilliseconds);
+                    _previousLyrics = krcLyrics;
                     return krcLyrics;
                 }
 
@@ -91,6 +143,7 @@ namespace WinUIMusicPlayer.Services
                 await _musicDatabaseService.SaveLyricsAsync(music.Id, lrcOut, transOut, krcOut, tKrcOut);
                 await _musicDatabaseService.UpdateMusicInfo(music);
                 FixEndMs(lrcLyrics, music.Duration.TotalMilliseconds);
+                _previousLyrics = lrcLyrics;
                 return lrcLyrics;
             }
             catch (OperationCanceledException)
@@ -291,7 +344,8 @@ namespace WinUIMusicPlayer.Services
                 var content = trimmed.Slice(bracketClose + 1);
                 if (content.IsEmpty || content.IsWhiteSpace()) continue;
 
-                var lyricLine = new LyricLine { StartMs = lineStartMs, IsCurrent = false };
+                var lyricLine = RentLine();
+                lyricLine.StartMs = lineStartMs;
                 ParseKrcWords(content, lineStartMs, lyricLine);
 
                 if (lyricLine.Words.Count > 0)
@@ -319,12 +373,10 @@ namespace WinUIMusicPlayer.Services
                     {
                         foreach (var ch in SplitSpan(remaining))
                         {
-                            lyricLine.Words.Add(new LyricWord
-                            {
-                                Word = ch,
-                                StartMs = lineStartMs,
-                                DurationMs = 0
-                            });
+                            var w = RentWord();
+                            w.Word = ch;
+                            w.StartMs = lineStartMs;
+                            lyricLine.Words.Add(w);
                         }
                     }
                     break;
@@ -366,12 +418,11 @@ namespace WinUIMusicPlayer.Services
                         double perMs = wCount > 0 ? (double)durationMs / wCount : durationMs;
                         for (int k = 0; k < wCount; k++)
                         {
-                            lyricLine.Words.Add(new LyricWord
-                            {
-                                Word = subWords[k],
-                                StartMs = offsetMs + perMs * k,
-                                DurationMs = perMs
-                            });
+                            var w = RentWord();
+                            w.Word = subWords[k];
+                            w.StartMs = offsetMs + perMs * k;
+                            w.DurationMs = perMs;
+                            lyricLine.Words.Add(w);
                         }
                     }
                 }
@@ -428,7 +479,8 @@ namespace WinUIMusicPlayer.Services
                 var content = trimmed.Slice(bracketClose + 1);
                 if (content.IsEmpty || content.IsWhiteSpace()) continue;
 
-                var lyricLine = new LyricLine { StartMs = lineStartMs, IsCurrent = false };
+                var lyricLine = RentLine();
+                lyricLine.StartMs = lineStartMs;
                 ParseQrcWords(content, lineStartMs, lyricLine);
 
                 if (lyricLine.Words.Count > 0)
@@ -454,12 +506,10 @@ namespace WinUIMusicPlayer.Services
                     {
                         foreach (var ch in SplitSpan(remaining))
                         {
-                            lyricLine.Words.Add(new LyricWord
-                            {
-                                Word = ch,
-                                StartMs = lineStartMs,
-                                DurationMs = 0
-                            });
+                            var w = RentWord();
+                            w.Word = ch;
+                            w.StartMs = lineStartMs;
+                            lyricLine.Words.Add(w);
                         }
                     }
                     break;
@@ -505,12 +555,11 @@ namespace WinUIMusicPlayer.Services
                         double perMs = segDurationMs > 0 ? (double)segDurationMs / wordCount : 0;
                         for (int k = 0; k < wordCount; k++)
                         {
-                            lyricLine.Words.Add(new LyricWord
-                            {
-                                Word = subWords[k],
-                                StartMs = segStartMs + perMs * k,
-                                DurationMs = perMs
-                            });
+                            var w = RentWord();
+                            w.Word = subWords[k];
+                            w.StartMs = segStartMs + perMs * k;
+                            w.DurationMs = perMs;
+                            lyricLine.Words.Add(w);
                         }
                     }
                 }
@@ -614,7 +663,9 @@ namespace WinUIMusicPlayer.Services
                     return (parsed, lrcContent, transLrcStr);
             }
 
-            return ([new LyricLine { StartMs = 0, IsCurrent = true }], lrcContent, transLrcStr);
+            var emptyLine = RentLine();
+            emptyLine.IsCurrent = true;
+            return ([emptyLine], lrcContent, transLrcStr);
         }
 
         // ──────────────────────────────────────────────────────────────
@@ -701,9 +752,14 @@ namespace WinUIMusicPlayer.Services
             // 1. 解析原文
             ParseLrcToLines(lrcContent, (timeMs, text) =>
             {
-                var line = new LyricLine { StartMs = timeMs, IsCurrent = false };
+                var line = RentLine();
+                line.StartMs = timeMs;
                 foreach (var w in SplitEverything(text))
-                    line.Words.Add(new LyricWord { Word = w });
+                {
+                    var word = RentWord();
+                    word.Word = w;
+                    line.Words.Add(word);
+                }
                 lyrics.Add(line);
             });
 

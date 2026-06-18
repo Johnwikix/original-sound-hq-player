@@ -128,6 +128,12 @@ namespace WinUIMusicPlayer.Model
 
         public ReadOnlySpan<T> AsSpan() => CollectionsMarshal.AsSpan((List<T>)Items);
 
+        public void SortInPlace(IComparer<T> comparer)
+        {
+            CollectionsMarshal.AsSpan((List<T>)Items).Sort(comparer);
+            RaiseChangeNotifications();
+        }
+
         /// <summary>
         /// 统一触发 Count 和 Reset 通知
         /// </summary>

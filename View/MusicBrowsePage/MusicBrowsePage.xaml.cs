@@ -10,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
-using WinUIMusicPlayer.Helpers;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;

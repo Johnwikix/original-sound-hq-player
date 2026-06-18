@@ -13,7 +13,6 @@ using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
-using WinUIMusicPlayer.Helpers;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;

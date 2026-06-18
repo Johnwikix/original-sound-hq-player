@@ -7,7 +7,7 @@ using Windows.Foundation;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 
-namespace WinUIMusicPlayer.Helpers
+namespace WinUIMusicPlayer.Helper
 {
     // 零分配 ContentDialog 辅助：ConditionalWeakTable 按 XamlRoot 缓存实例，
     // 避免每次 new ContentDialog 的堆分配；static lambda 无闭包捕获

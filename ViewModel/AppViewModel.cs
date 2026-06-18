@@ -8,11 +8,13 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Extensions;
@@ -685,84 +687,141 @@ namespace WinUIMusicPlayer.ViewModel
                 ? m => filterPredicate(m) && searchPredicate(m)
                 : filterPredicate ?? searchPredicate;
 
-            IEnumerable<Music> query = combinedPredicate != null
-                ? SongsSource.AsValueEnumerable().Where(combinedPredicate).ToList()
-                : SongsSource;
+            var srcSpan = CollectionsMarshal.AsSpan(SongsSource);
+            var pool = ArrayPool<Music>.Shared;
+            var buf = pool.Rent(Math.Max(srcSpan.Length, 1));
+            int count = 0;
+            try
+            {
+                if (combinedPredicate != null)
+                {
+                    for (int i = 0; i < srcSpan.Length; i++)
+                    {
+                        if (combinedPredicate(srcSpan[i]))
+                            buf[count++] = srcSpan[i];
+                    }
+                }
+                else
+                {
+                    srcSpan.CopyTo(buf);
+                    count = srcSpan.Length;
+                }
 
-            var tag = SelectedSortOption?.Tag?.ToString() ?? "DefaultOrder";
-            if (tag == "DefaultOrder")
-            {
-                query = viewType switch
+                var slice = buf.AsSpan(0, count);
+                var tag = SelectedSortOption?.Tag?.ToString() ?? "DefaultOrder";
+                IComparer<Music> comparer;
+                if (tag == "DefaultOrder")
                 {
-                    SongViewType.Album => query.OrderBy(m => m.DiskNumber).ThenBy(m => m.TrackNumber),
-                    SongViewType.Artist or SongViewType.Folder =>
-                        query.OrderBy(m => m.Album).ThenBy(m => m.DiskNumber).ThenBy(m => m.TrackNumber),
-                    SongViewType.Favorite => query.OrderByDescending(m => m.Order),
-                    _ => query.OrderBy(m => m.Title)
-                };
-            }
-            else
-            {
-                query = tag switch
+                    comparer = viewType switch
+                    {
+                        SongViewType.Album => _songByDiskTrack,
+                        SongViewType.Artist or SongViewType.Folder => _songByAlbumDiskTrack,
+                        SongViewType.Favorite => _songByOrderDesc,
+                        _ => _songByTitle
+                    };
+                }
+                else
                 {
-                    "A-Z" => query.OrderBy(m => m.Title),
-                    "Artist" => query.OrderBy(m => m.Author),
-                    "Album" => query.OrderBy(m => m.Album).ThenBy(m => m.TrackNumber),
-                    "CreateTimeASC" => query.OrderBy(m => m.CreateTime),
-                    "CreateTimeDESC" => query.OrderByDescending(m => m.CreateTime),
-                    "UpdateTimeASC" => query.OrderBy(m => m.UpdateTime),
-                    "UpdateTimeDESC" => query.OrderByDescending(m => m.UpdateTime),
-                    _ => query.OrderBy(m => m.Title)
-                };
+                    comparer = tag switch
+                    {
+                        "A-Z" => _songByTitle,
+                        "Artist" => _songByAuthor,
+                        "Album" => _songByAlbumTrack,
+                        "CreateTimeASC" => _songByCreateTimeAsc,
+                        "CreateTimeDESC" => _songByCreateTimeDesc,
+                        "UpdateTimeASC" => _songByUpdateTimeAsc,
+                        "UpdateTimeDESC" => _songByUpdateTimeDesc,
+                        _ => _songByTitle
+                    };
+                }
+                slice.Sort(comparer);
+
+                var results = slice.ToArray();
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    _ = targetCollection.ReplaceAllAsync(results);
+                });
             }
-            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            finally
             {
-                _ = targetCollection.ReplaceAllAsync(query);
-            });
+                pool.Return(buf, clearArray: false);
+            }
         }
 
         public void UpdateGroupedByFirstLetter(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, CollectionViewSource source)
         {
             try
             {
-                IEnumerable<Music> filteredSource = string.IsNullOrWhiteSpace(SearchText)
-                    ? SongsSource
-                    : SongsSource.AsValueEnumerable().Where(m =>
-                        (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                        (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                        (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                        (m.LastLevelFolderPath?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false)).ToList();
+                var srcSpan = CollectionsMarshal.AsSpan(SongsSource);
+                bool hasSearch = !string.IsNullOrWhiteSpace(SearchText);
+                var search = SearchText;
 
-                var distinctItems = filteredSource
-                    .AsValueEnumerable()
-                    .GroupBy(distinctSelector)
-                    .Select(g => g.First())
-                    .ToList();
-
-                var sortedItems = SelectedSortOption.Tag switch
+                var distinctMap = new Dictionary<string, Music>(srcSpan.Length / 4 + 1);
+                for (int i = 0; i < srcSpan.Length; i++)
                 {
-                    "A-Z" => distinctItems.OrderBy(m => m.Title),
-                    "Artist" => distinctItems.OrderBy(m => m.Author),
-                    "Album" => distinctItems.OrderBy(m => m.Album),
-                    "CreateTimeASC" => distinctItems.OrderBy(m => m.CreateTime),
-                    "CreateTimeDESC" => distinctItems.OrderByDescending(m => m.CreateTime),
-                    "UpdateTimeASC" => distinctItems.OrderBy(m => m.UpdateTime),
-                    "UpdateTimeDESC" => distinctItems.OrderByDescending(m => m.UpdateTime),
-                    "DefaultOrder" => distinctItems.OrderBy(distinctSelector),
-                    _ => distinctItems.OrderBy(distinctSelector)
-                };
+                    ref readonly var m = ref srcSpan[i];
+                    if (hasSearch &&
+                        !(m.Title?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) &&
+                        !(m.Album?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) &&
+                        !(m.Author?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) &&
+                        !(m.LastLevelFolderPath?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false))
+                        continue;
 
-                var groups = sortedItems
-                    .AsValueEnumerable()
-                    .GroupBy(groupSelector)
-                    .Select(g => new MusicGroup(g.Key, g))
-                    .OrderBy(g => g.Key == "ZZZ" ? "#" : g.Key)
-                    .ToList();
+                    var key = distinctSelector(m);
+                    distinctMap.TryAdd(key, m);
+                }
 
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                var pool = ArrayPool<Music>.Shared;
+                var buf = pool.Rent(Math.Max(distinctMap.Count, 1));
+                int count = 0;
+                try
                 {
-                    source.Source = groups;
-                });
+                    foreach (var kvp in distinctMap)
+                        buf[count++] = kvp.Value;
+
+                    var slice = buf.AsSpan(0, count);
+                    IComparer<Music> comparer = (SelectedSortOption.Tag as string) switch
+                    {
+                        "A-Z" => _songByTitle,
+                        "Artist" => _songByAuthor,
+                        "Album" => Comparer<Music>.Create((a, b) => string.Compare(a.Album, b.Album, StringComparison.Ordinal)),
+                        "CreateTimeASC" => _songByCreateTimeAsc,
+                        "CreateTimeDESC" => _songByCreateTimeDesc,
+                        "UpdateTimeASC" => _songByUpdateTimeAsc,
+                        "UpdateTimeDESC" => _songByUpdateTimeDesc,
+                        _ => Comparer<Music>.Create((a, b) => string.Compare(distinctSelector(a), distinctSelector(b), StringComparison.Ordinal)),
+                    };
+                    slice.Sort(comparer);
+
+                    var groupDict = new Dictionary<string, List<Music>>(count / 4 + 1);
+                    for (int i = 0; i < count; i++)
+                    {
+                        var gKey = groupSelector(buf[i]);
+                        if (!groupDict.TryGetValue(gKey, out var list))
+                        {
+                            list = new List<Music>();
+                            groupDict[gKey] = list;
+                        }
+                        list.Add(buf[i]);
+                    }
+
+                    var groups = new List<MusicGroup>(groupDict.Count);
+                    foreach (var kvp in groupDict)
+                        groups.Add(new MusicGroup(kvp.Key, kvp.Value));
+                    groups.Sort((a, b) => string.Compare(
+                        a.Key == "ZZZ" ? "#" : a.Key,
+                        b.Key == "ZZZ" ? "#" : b.Key,
+                        StringComparison.Ordinal));
+
+                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        source.Source = groups;
+                    });
+                }
+                finally
+                {
+                    pool.Return(buf, clearArray: false);
+                }
             }
             catch (Exception ex)
             {
@@ -916,7 +975,6 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        private static readonly System.Buffers.MemoryPool<char> _charPool = System.Buffers.MemoryPool<char>.Shared;
 
         private static bool MusicMatchesSearch(Music m, string search)
         {
@@ -939,6 +997,43 @@ namespace WinUIMusicPlayer.ViewModel
             Comparer<PlayListMusicItem>.Create((a, b) => b.Music?.CreateTime.CompareTo(a.Music?.CreateTime) ?? 0);
         private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicUpdateTimeDesc =
             Comparer<PlayListMusicItem>.Create((a, b) => b.Music?.UpdateTime.CompareTo(a.Music?.UpdateTime) ?? 0);
+        private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicUpdateTimeAsc =
+            Comparer<PlayListMusicItem>.Create((a, b) => a.Music?.UpdateTime.CompareTo(b.Music?.UpdateTime) ?? 0);
+
+        private static readonly IComparer<Music> _songByTitle =
+            Comparer<Music>.Create((a, b) => string.Compare(a.Title, b.Title, StringComparison.Ordinal));
+        private static readonly IComparer<Music> _songByAuthor =
+            Comparer<Music>.Create((a, b) => string.Compare(a.Author, b.Author, StringComparison.Ordinal));
+        private static readonly IComparer<Music> _songByAlbumTrack =
+            Comparer<Music>.Create((a, b) =>
+            {
+                int c = string.Compare(a.Album, b.Album, StringComparison.Ordinal);
+                return c != 0 ? c : a.TrackNumber.CompareTo(b.TrackNumber);
+            });
+        private static readonly IComparer<Music> _songByDiskTrack =
+            Comparer<Music>.Create((a, b) =>
+            {
+                int c = a.DiskNumber.CompareTo(b.DiskNumber);
+                return c != 0 ? c : a.TrackNumber.CompareTo(b.TrackNumber);
+            });
+        private static readonly IComparer<Music> _songByAlbumDiskTrack =
+            Comparer<Music>.Create((a, b) =>
+            {
+                int c = string.Compare(a.Album, b.Album, StringComparison.Ordinal);
+                if (c != 0) return c;
+                c = a.DiskNumber.CompareTo(b.DiskNumber);
+                return c != 0 ? c : a.TrackNumber.CompareTo(b.TrackNumber);
+            });
+        private static readonly IComparer<Music> _songByOrderDesc =
+            Comparer<Music>.Create((a, b) => b.Order.CompareTo(a.Order));
+        private static readonly IComparer<Music> _songByCreateTimeAsc =
+            Comparer<Music>.Create((a, b) => a.CreateTime.CompareTo(b.CreateTime));
+        private static readonly IComparer<Music> _songByCreateTimeDesc =
+            Comparer<Music>.Create((a, b) => b.CreateTime.CompareTo(a.CreateTime));
+        private static readonly IComparer<Music> _songByUpdateTimeAsc =
+            Comparer<Music>.Create((a, b) => a.UpdateTime.CompareTo(b.UpdateTime));
+        private static readonly IComparer<Music> _songByUpdateTimeDesc =
+            Comparer<Music>.Create((a, b) => b.UpdateTime.CompareTo(a.UpdateTime));
 
         public void OnSelectSortChanged()
         {
@@ -955,27 +1050,21 @@ namespace WinUIMusicPlayer.ViewModel
         }
         private void UpdatePlayListCollectionSort(ObservableCollection<PlayListMusicItem> collection)
         {
-            if (collection == null || !collection.AsValueEnumerable().Any()) return;
+            if (collection is not BulkObservableCollection<PlayListMusicItem> bulk || bulk.Count == 0) return;
 
-            var tag = SelectedSortOption.Tag;
-            var sortedList = tag switch
+            var comparer = (SelectedSortOption.Tag as string) switch
             {
-                "A-Z" => collection.AsValueEnumerable().OrderBy(item => item.Music?.Title).ToList(),
-                "Artist" => collection.AsValueEnumerable().OrderBy(item => item.Music?.Author).ToList(),
-                "Album" => collection.AsValueEnumerable().OrderBy(item => item.Music?.Album).ToList(),
-                "CreateTimeASC" => collection.AsValueEnumerable().OrderBy(item => item.Music?.CreateTime).ToList(),
-                "CreateTimeDESC" => collection.AsValueEnumerable().OrderByDescending(item => item.Music?.CreateTime).ToList(),
-                "UpdateTimeASC" => collection.AsValueEnumerable().OrderBy(item => item.Music?.UpdateTime).ToList(),
-                "UpdateTimeDESC" => collection.AsValueEnumerable().OrderByDescending(item => item.Music?.UpdateTime).ToList(),
-                "DefaultOrder" => collection.AsValueEnumerable().OrderByDescending(item => item.PlayListOrder).ToList(),
-                _ => collection.AsValueEnumerable().OrderByDescending(item => item.PlayListOrder).ToList()
+                "A-Z" => _byMusicTitleAsc,
+                "Artist" => _byMusicAuthorAsc,
+                "Album" => _byMusicAlbumAsc,
+                "CreateTimeASC" => _byMusicCreateTimeAsc,
+                "CreateTimeDESC" => _byMusicCreateTimeDesc,
+                "UpdateTimeASC" => _byMusicUpdateTimeAsc,
+                "UpdateTimeDESC" => _byMusicUpdateTimeDesc,
+                "DefaultOrder" => _byPlayListOrderDesc,
+                _ => _byPlayListOrderDesc,
             };
-
-            collection.Clear();
-            foreach (var item in sortedList)
-            {
-                collection.Add(item);
-            }
+            bulk.SortInPlace(comparer);
         }
 
         /// <summary>

@@ -88,6 +88,9 @@ namespace WinUIMusicPlayer.Utils
         {
             "mp3", "flac", "m4a", "wav","ogg","opus","oga"
         };
+        private static readonly Regex InvalidFileNameCharsRegex = new(
+            "[" + Regex.Escape(new string(Path.GetInvalidFileNameChars()) + new string(Path.GetInvalidPathChars())) + "]",
+            RegexOptions.Compiled);
         private static readonly ResourceLoader _resourceLoader = new();
         public static string GetString(string key)
         {
@@ -121,31 +124,17 @@ namespace WinUIMusicPlayer.Utils
 
         public static void RefreshIcon(ObservableCollection<Music> musicList, string type = "album")
         {
-            foreach (var item in musicList)
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                foreach (var item in musicList)
                 {
                     if (type == "album")
                     {
-                        if (AppData.MusicOnUsbDevice.AsValueEnumerable().Any(usbMusic => usbMusic.Album == item.Album))
-                        {
-                            item.IsExistOnDevice = 1;
-                        }
-                        else
-                        {
-                            item.IsExistOnDevice = 0;
-                        }
+                        item.IsExistOnDevice = AppData.MusicOnUsbDevice.AsValueEnumerable().Any(usbMusic => usbMusic.Album == item.Album) ? 1 : 0;
                     }
                     else if (type == "artist")
                     {
-                        if (AppData.MusicOnUsbDevice.AsValueEnumerable().Any(usbMusic => usbMusic.Author == item.Author))
-                        {
-                            item.IsExistOnDevice = 1;
-                        }
-                        else
-                        {
-                            item.IsExistOnDevice = 0;
-                        }
+                        item.IsExistOnDevice = AppData.MusicOnUsbDevice.AsValueEnumerable().Any(usbMusic => usbMusic.Author == item.Author) ? 1 : 0;
                     }
                     else if (type == "folder")
                     {
@@ -160,8 +149,8 @@ namespace WinUIMusicPlayer.Utils
                             }
                         }
                     }
-                });
-            }
+                }
+            });
         }
 
         public static void SaveMetaData(Music music, string filePath, byte[] pic, string? lyricsText = null, string? krcText = null)
@@ -284,7 +273,7 @@ namespace WinUIMusicPlayer.Utils
                     Track track = new(music.Path);
                     if (track?.EmbeddedPictures is not null && track?.EmbeddedPictures.Count > 0)
                     {
-                        picture = picture = track.EmbeddedPictures.AsValueEnumerable().FirstOrDefault()?.PictureData;
+                        picture = track.EmbeddedPictures.AsValueEnumerable().FirstOrDefault()?.PictureData;
                     }
                 }
                 if (picture is null || picture.Length == 0)
@@ -643,12 +632,9 @@ namespace WinUIMusicPlayer.Utils
                     string seconds = timeMatch.Groups[2].Value;
                     string milliseconds = timeMatch.Groups[3].Value;
 
-                    if (milliseconds.Length == 3)
-                    {
-                        milliseconds = milliseconds.Substring(0, 2);
-                    }
-
-                    string newTimePart = $"[{minutes}:{seconds}.{milliseconds}]";
+                    string newTimePart = milliseconds.Length == 3
+                        ? $"[{minutes}:{seconds}.{milliseconds[0]}{milliseconds[1]}]"
+                        : $"[{minutes}:{seconds}.{milliseconds}]";
                     lines[i] = lines[i].Replace(timePart, newTimePart);
                     timeMatch = timeMatch.NextMatch();
                 }
@@ -707,8 +693,7 @@ namespace WinUIMusicPlayer.Utils
                         Directory.CreateDirectory(AppSettings.MusicCoverCache);
                     }
                     string fileName = $"{music.Title}_{music.Album}_{music.Author}";
-                    string invalidChars = new string(System.IO.Path.GetInvalidFileNameChars()) + new string(System.IO.Path.GetInvalidPathChars());
-                    fileName = Regex.Replace(fileName, $"[{Regex.Escape(invalidChars)}]", "_");
+                    fileName = InvalidFileNameCharsRegex.Replace(fileName, "_");
                     string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".bin");
                     if (System.IO.File.Exists(filePath))
                     {
@@ -877,15 +862,15 @@ namespace WinUIMusicPlayer.Utils
             return null;
         }
 
+        private static readonly string[] SampleSizeProps = ["System.Audio.SampleSize"];
+        private static readonly string[] EncodingBitrateProps = ["System.Audio.EncodingBitrate"];
+
         private static async Task<int> GetBitDepth(StorageFile file)
         {
             var bitDepth = 16;
             try
             {
-                // 其余代码保持不变...
-                var audioProps = await file.Properties.RetrievePropertiesAsync(new string[] {
-                                "System.Audio.SampleSize"
-                             });
+                var audioProps = await file.Properties.RetrievePropertiesAsync(SampleSizeProps);
                 // 处理位深度
                 if (audioProps.ContainsKey("System.Audio.SampleSize") && audioProps["System.Audio.SampleSize"] is not null)
                 {
@@ -906,9 +891,7 @@ namespace WinUIMusicPlayer.Utils
             var bitRate = 0;
             try
             {
-                var audioProps = await file.Properties.RetrievePropertiesAsync(new string[] {
-                                "System.Audio.EncodingBitrate"
-                             });
+                var audioProps = await file.Properties.RetrievePropertiesAsync(EncodingBitrateProps);
                 if (audioProps.ContainsKey("System.Audio.EncodingBitrate") && audioProps["System.Audio.EncodingBitrate"] is not null)
                 {
                     int rawBitrate = Convert.ToInt32(audioProps["System.Audio.EncodingBitrate"]);
@@ -1020,13 +1003,21 @@ namespace WinUIMusicPlayer.Utils
             var index = fontSource.IndexOf(',');
             return index > 0 ? fontSource.Substring(0, index).Trim() : fontSource.Trim();
         }
+        private static string? _cachedCultureName;
+        private static string[]? _cachedCultureArray;
+
         public static List<FontInfo> GetSystemFontsInternal()
         {
             try
             {
-                var language = new string[] { CultureInfo.CurrentUICulture.Name.ToLowerInvariant() };
+                var cultureName = CultureInfo.CurrentUICulture.Name.ToLowerInvariant();
+                if (_cachedCultureArray is null || _cachedCultureName != cultureName)
+                {
+                    _cachedCultureName = cultureName;
+                    _cachedCultureArray = [cultureName];
+                }
                 var names = CanvasTextFormat.GetSystemFontFamilies();
-                var displayNames = CanvasTextFormat.GetSystemFontFamilies(language);
+                var displayNames = CanvasTextFormat.GetSystemFontFamilies(_cachedCultureArray);
                 var list = new List<FontInfo>();
                 for (var i = 0; i < names.Length; i++)
                 {

@@ -1,10 +1,14 @@
 ﻿using System;
+using System.Buffers;
 using System.Text;
 
 namespace WinUIMusicPlayer.Utils
 {
     public static class GarbledTextFixer
     {
+        private static readonly SearchValues<char> s_garbledChars =
+            SearchValues.Create("ÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ");
+
         static GarbledTextFixer()
         {
             // 注册编码提供程序以支持GBK等编码
@@ -89,7 +93,7 @@ namespace WinUIMusicPlayer.Utils
                     suspiciousCharCount++;
                 }
                 // 一些特定的常见乱码字符
-                else if ("ÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ".Contains(c))
+                else if (s_garbledChars.Contains(c))
                 {
                     suspiciousCharCount++;
                 }

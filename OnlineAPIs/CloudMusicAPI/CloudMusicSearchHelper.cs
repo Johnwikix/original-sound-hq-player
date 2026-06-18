@@ -169,8 +169,7 @@ public class CloudMusicSearchHelper
     {
         if (songId is not null)
         {
-            var api = new NeteaseCloudMusicApi();
-            var (_, lyricResult) = await api.RequestAsync(
+            var (_, lyricResult) = await _api.RequestAsync(
                  CloudMusicApiProviders.Lyric,
                  new Dictionary<string, string> { { "id", $"{songId}" } }
              );
@@ -199,8 +198,7 @@ public class CloudMusicSearchHelper
     {
         if (songId is not null)
         {
-            var api = new NeteaseCloudMusicApi();
-            var (_, lyricResult) = await api.RequestAsync(
+            var (_, lyricResult) = await _api.RequestAsync(
                  CloudMusicApiProviders.Lyric,
                  new Dictionary<string, string> { { "id", $"{songId}" } }
              );
@@ -222,8 +220,7 @@ public class CloudMusicSearchHelper
     {
         if (albumId is not null)
         {
-            var api = new NeteaseCloudMusicApi();
-            var (_, albumResult) = await api.RequestAsync(
+            var (_, albumResult) = await _api.RequestAsync(
                 CloudMusicApiProviders.Album,
                 new Dictionary<string, string> { { "id", $"{albumId}" } }
             );
