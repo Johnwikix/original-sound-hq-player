@@ -156,6 +156,9 @@
   <data name="PlaylistTitle.Text" xml:space="preserve">
     <value>播放列表</value>
   </data>
+  <data name="AddPlayList.Text" xml:space="preserve">
+    <value>新建播放列表</value>
+  </data>
   <data name="Transmitting.Text" xml:space="preserve">
     <value>正在传输</value>
   </data>

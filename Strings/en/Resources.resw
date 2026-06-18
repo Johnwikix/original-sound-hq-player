@@ -156,6 +156,9 @@
   <data name="PlaylistTitle.Text" xml:space="preserve">
     <value>Playlists</value>
   </data>
+  <data name="AddPlayList.Text" xml:space="preserve">
+    <value>New Playlist</value>
+  </data>
   <data name="Transmitting.Text" xml:space="preserve">
     <value>Transmitting</value>
   </data>

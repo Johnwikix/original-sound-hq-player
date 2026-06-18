@@ -144,13 +144,13 @@ namespace WinUIMusicPlayer.View
         private void SetEntryTransitions()
         {
             DetailView.OpacityTransition = TransitionCache.Slow;
-            PlayListGridView.OpacityTransition = TransitionCache.Fast;
+            PlayListGrid.OpacityTransition = TransitionCache.Fast;
         }
 
         private void SetExitTransitions()
         {
             DetailView.OpacityTransition = TransitionCache.Fast;
-            PlayListGridView.OpacityTransition = TransitionCache.Slow;
+            PlayListGrid.OpacityTransition = TransitionCache.Slow;
         }
 
         private async void RemovePlayListButton_Click(object sender, RoutedEventArgs e)

@@ -13,182 +13,186 @@
     xmlns:model="using:WinUIMusicPlayer.Model"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
     mc:Ignorable="d">
-    <Grid Margin="0,32,0,0">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <Grid Grid.Row="0" Margin="10,10,10,0">
-            <TextBlock
-                x:Uid="PlaylistTitle"
-                VerticalAlignment="Center"
-                FontSize="20"
-                FontWeight="SemiBold" />
-            <Button
-                x:Name="AddPlayListButton"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Center"
-                Background="Transparent"
-                BorderBrush="Transparent"
-                BorderThickness="0"
-                Click="AddPlayList_Click"
-                FontSize="20">
-                <FontIcon
-                    Margin="0,2,0,0"
-                    VerticalAlignment="Bottom"
-                    Glyph="&#xe948;" />
-            </Button>
-        </Grid>
-        <Grid Grid.Row="1">
-            <GridView
-                x:Name="PlayListGridView"
-                Margin="10,0,0,0"
-            IsItemClickEnabled="True"
-            ItemClick="PlayListGridView_ItemClick"
-            ItemsSource="{x:Bind ViewModel.AppViewModel.AllPlayList, Mode=OneWay}"
-            Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}, ConverterParameter=invert}"
+    <Grid Margin="10,32,10,0">
+        <Grid
+            x:Name="PlayListGrid"
             IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BooleanNegationConverter}}"
-            RightTapped="PlayListGridView_RightTapped"
-            SelectionMode="None">
-            <GridView.ItemTemplate>
-                <DataTemplate x:DataType="model:PlayList">
-                    <Grid
-                        Width="170"
-                        Height="200"
-                        HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        PointerEntered="OnCoverPointerEntered"
-                        PointerExited="OnCoverPointerExited">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Border
-                            x:Name="CoverBorder"
-                            Grid.Row="0"
-                            Width="158"
-                            Height="158"
-                            Margin="0,6,0,2"
-                            Padding="0"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Top"
-                            CornerRadius="10">
-                            <Grid Width="158" Height="158">
-                                <Image
-                                    HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Canvas.ZIndex="1"
-                                    Stretch="UniformToFill">
-                                    <interactivity:Interaction.Behaviors>
-                                        <behaviors:AlbumCoverBehavior Music="{x:Bind tool:BindUtils.PlayListCoverMusicConverter(Id), Mode=OneWay}" />
-                                    </interactivity:Interaction.Behaviors>
-                                </Image>
-                                <Grid
+            Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}, ConverterParameter=invert}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="0" Margin="10,20,10,10">
+                <TextBlock
+                    x:Uid="PlaylistTitle"
+                    VerticalAlignment="Center"
+                    FontSize="28" />
+                <Button
+                    x:Name="AddPlayListButton"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    Click="AddPlayList_Click"
+                    FontSize="16"
+                    Style="{StaticResource AccentButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon
+                            Margin="0,2,0,0"
+                            VerticalAlignment="Center"
+                            Glyph="&#xe948;" />
+                        <TextBlock x:Uid="AddPlayList" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+            <Grid Grid.Row="1">
+                <GridView
+                    x:Name="PlayListGridView"
+                    Margin="10,0,0,0"
+                    IsItemClickEnabled="True"
+                    ItemClick="PlayListGridView_ItemClick"
+                    ItemsSource="{x:Bind ViewModel.AppViewModel.AllPlayList, Mode=OneWay}"
+                    RightTapped="PlayListGridView_RightTapped"
+                    SelectionMode="None">
+                    <GridView.ItemTemplate>
+                        <DataTemplate x:DataType="model:PlayList">
+                            <Grid
+                                Width="170"
+                                Height="200"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                PointerEntered="OnCoverPointerEntered"
+                                PointerExited="OnCoverPointerExited">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Border
+                                    x:Name="CoverBorder"
+                                    Grid.Row="0"
                                     Width="158"
                                     Height="158"
-                                    Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                                    Canvas.ZIndex="0">
-                                    <FontIcon
-                                        Canvas.ZIndex="0"
-                                        FontSize="50"
+                                    Margin="0,6,0,2"
+                                    Padding="0"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Top"
+                                    CornerRadius="10">
+                                    <Grid Width="158" Height="158">
+                                        <Image
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Canvas.ZIndex="1"
+                                            Stretch="UniformToFill">
+                                            <interactivity:Interaction.Behaviors>
+                                                <behaviors:AlbumCoverBehavior Music="{x:Bind tool:BindUtils.PlayListCoverMusicConverter(Id), Mode=OneWay}" />
+                                            </interactivity:Interaction.Behaviors>
+                                        </Image>
+                                        <Grid
+                                            Width="158"
+                                            Height="158"
+                                            Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
+                                            Canvas.ZIndex="0">
+                                            <FontIcon
+                                                Canvas.ZIndex="0"
+                                                FontSize="50"
+                                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                Glyph="&#xE93C;" />
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+                                <Grid
+                                    x:Name="ActionOverlay"
+                                    Grid.Row="0"
+                                    Width="158"
+                                    Height="158"
+                                    Margin="0,6,0,2"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Top"
+                                    Canvas.ZIndex="2">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Button
+                                        x:Name="EditNameBtn"
+                                        Grid.Column="0"
+                                        Width="36"
+                                        Height="36"
+                                        Margin="4,0,4,4"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Bottom"
+                                        Click="EditPlayListNameButton_Click"
+                                        Style="{StaticResource CircularButtonStyle}"
+                                        Tag="{x:Bind}"
+                                        Visibility="Collapsed">
+                                        <FontIcon FontSize="14" Glyph="&#xE70F;" />
+                                    </Button>
+                                    <Button
+                                        x:Name="ExportBtn"
+                                        Grid.Column="1"
+                                        Width="36"
+                                        Height="36"
+                                        Margin="0,0,4,4"
+                                        HorizontalAlignment="Left"
+                                        VerticalAlignment="Bottom"
+                                        Click="ExportPlayList_Click"
+                                        Style="{StaticResource CircularButtonStyle}"
+                                        Tag="{x:Bind}"
+                                        Visibility="Collapsed">
+                                        <FontIcon FontSize="14" Glyph="&#xEDE1;" />
+                                    </Button>
+                                    <Button
+                                        x:Name="RemoveBtn"
+                                        Grid.Column="2"
+                                        Width="36"
+                                        Height="36"
+                                        Margin="4,0,4,4"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        Click="RemovePlayListButton_Click"
+                                        Style="{StaticResource CircularButtonStyle}"
+                                        Tag="{x:Bind}"
+                                        Visibility="Collapsed">
+                                        <FontIcon FontSize="14" Glyph="&#xecc9;" />
+                                    </Button>
+                                </Grid>
+                                <Grid
+                                    Grid.Row="1"
+                                    Width="160"
+                                    Margin="0,6,0,6"
+                                    HorizontalAlignment="Center">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Margin="0,0,6,0"
+                                        VerticalAlignment="Center"
+                                        FontWeight="SemiBold"
+                                        MaxLines="1"
+                                        Text="{x:Bind Name, Mode=OneWay}"
+                                        TextAlignment="Left"
+                                        TextTrimming="CharacterEllipsis" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        FontSize="12"
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Glyph="&#xE93C;" />
+                                        Text="{x:Bind SongCount, Mode=OneWay}"
+                                        TextAlignment="Right" />
                                 </Grid>
                             </Grid>
-                        </Border>
-                        <Grid
-                            x:Name="ActionOverlay"
-                            Grid.Row="0"
-                            Width="158"
-                            Height="158"
-                            Margin="0,6,0,2"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Top"
-                            Canvas.ZIndex="2">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <Button
-                                x:Name="EditNameBtn"
-                                Grid.Column="0"
-                                Width="36"
-                                Height="36"
-                                Margin="4,0,4,4"
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Bottom"
-                                Click="EditPlayListNameButton_Click"
-                                Style="{StaticResource CircularButtonStyle}"
-                                Tag="{x:Bind}"
-                                Visibility="Collapsed">
-                                <FontIcon FontSize="14" Glyph="&#xE70F;" />
-                            </Button>
-                            <Button
-                                x:Name="ExportBtn"
-                                Grid.Column="1"
-                                Width="36"
-                                Height="36"
-                                Margin="0,0,4,4"
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Bottom"
-                                Click="ExportPlayList_Click"
-                                Style="{StaticResource CircularButtonStyle}"
-                                Tag="{x:Bind}"
-                                Visibility="Collapsed">
-                                <FontIcon FontSize="14" Glyph="&#xEDE1;" />
-                            </Button>
-                            <Button
-                                x:Name="RemoveBtn"
-                                Grid.Column="2"
-                                Width="36"
-                                Height="36"
-                                Margin="4,0,4,4"
-                                HorizontalAlignment="Right"
-                                VerticalAlignment="Bottom"
-                                Click="RemovePlayListButton_Click"
-                                Style="{StaticResource CircularButtonStyle}"
-                                Tag="{x:Bind}"
-                                Visibility="Collapsed">
-                                <FontIcon FontSize="14" Glyph="&#xecc9;" />
-                            </Button>
-                        </Grid>
-                        <Grid
-                            Grid.Row="1"
-                            Width="160"
-                            Margin="0,6,0,6"
-                            HorizontalAlignment="Center">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <TextBlock
-                                Grid.Column="0"
-                                Margin="0,0,6,0"
-                                VerticalAlignment="Center"
-                                FontWeight="SemiBold"
-                                MaxLines="1"
-                                Text="{x:Bind Name, Mode=OneWay}"
-                                TextAlignment="Left"
-                                TextTrimming="CharacterEllipsis" />
-                            <TextBlock
-                                Grid.Column="1"
-                                VerticalAlignment="Center"
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="{x:Bind SongCount, Mode=OneWay}"
-                                TextAlignment="Right" />
-                        </Grid>
-                    </Grid>
-                </DataTemplate>
-            </GridView.ItemTemplate>
-        </GridView>
+                        </DataTemplate>
+                    </GridView.ItemTemplate>
+                </GridView>
+            </Grid>
+        </Grid>
         <controls:PlaylistDetailControl
             x:Name="DetailView"
+            Margin="0,20,0,10"
             x:FieldModifier="public"
-            PlaySourceTag="PlayListSongsView"
             IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay}"
-            Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}" />
-        </Grid>
+            Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
+            PlaySourceTag="PlayListSongsView" />
     </Grid>
 </Page>
