@@ -140,12 +140,6 @@
                         </ComboBox.ItemTemplate>
                     </ComboBox>
                 </StackPanel>
-                <TextBox
-                    x:Name="SearchTextBox"
-                    x:Uid="SearchMusic"
-                    Width="200"
-                    Margin="0,0,10,0"
-                    Text="{x:Bind ViewModel.AppViewModel.SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
             </StackPanel>
         </Grid>
         <InfoBar

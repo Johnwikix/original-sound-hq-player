@@ -48,11 +48,17 @@
                     IsBackEnabled="{x:Bind ViewModel.AppViewModel.IsBackBtnEnable, Mode=OneWay}"
                     IsPaneToggleButtonVisible="True"
                     ItemInvoked="NavigationView_ItemInvoked"
-                    OpenPaneLength="225"
                     PaneDisplayMode="Left">
                     <NavigationView.KeyboardAccelerators>
                         <KeyboardAccelerator Key="Escape" Invoked="KeyboardAccelerator_Invoked" />
                     </NavigationView.KeyboardAccelerators>
+                    <NavigationView.AutoSuggestBox>
+                        <AutoSuggestBox
+                            x:Name="SearchAutoSuggestBox"
+                            x:Uid="SearchMusic"
+                            QueryIcon="Find"
+                            Text="{x:Bind ViewModel.AppViewModel.SearchText, Mode=TwoWay}" />
+                    </NavigationView.AutoSuggestBox>
                     <NavigationView.MenuItems>
                         <NavigationViewItem Icon="NewFolder" Tag="AddFolder">
                             <NavigationViewItem.Content>
@@ -273,7 +279,7 @@
                                         FontSize="8"
                                         FontWeight="Bold"
                                         Foreground="#F98555"
-                                        Text="HQ"/>
+                                        Text="HQ" />
                                 </Border>
                             </Grid>
                         </Grid>
