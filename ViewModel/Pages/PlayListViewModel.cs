@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
+using WinUIMusicPlayer.View;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -46,6 +47,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void ReceiveNavigation()
         {
+            AppData.CurrentPage = typeof(PlayListPage);
             if (AppViewModel.CurrentPlayList is null)
             {
                 AppViewModel.IsBackBtnEnable = false;
