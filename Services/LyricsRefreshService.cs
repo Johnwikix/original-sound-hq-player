@@ -33,7 +33,7 @@ namespace WinUIMusicPlayer.Services
         private static readonly string[] s_lyricExtensions = [".krc", ".qrc", ".lrc"];
 
         // 行级时间偏移（ms）：每行动画在 EndMs 前提前结束，确保过渡平滑
-        internal static double LineEndOffsetMs = 400;
+        internal static double LineEndOffsetMs = 300;
 
         private static readonly ConcurrentBag<LyricLine> s_linePool = new();
         private static readonly ConcurrentBag<LyricWord> s_wordPool = new();
