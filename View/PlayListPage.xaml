@@ -22,19 +22,19 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <Grid Grid.Row="0" Margin="10,20,10,10">
+            <StackPanel Grid.Row="0" Margin="10,20,10,10">
                 <TextBlock
                     x:Uid="PlaylistTitle"
                     VerticalAlignment="Center"
                     FontSize="28" />
                 <Button
+                    Margin="0,20,0,0"
                     x:Name="AddPlayListButton"
-                    HorizontalAlignment="Right"
+                    HorizontalAlignment="Left"
                     VerticalAlignment="Center"
                     Click="AddPlayList_Click"
-                    FontSize="16"
                     Style="{StaticResource AccentButtonStyle}">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
+                    <StackPanel Orientation="Horizontal">
                         <FontIcon
                             Margin="0,2,0,0"
                             VerticalAlignment="Center"
@@ -42,11 +42,11 @@
                         <TextBlock x:Uid="AddPlayList" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
-            </Grid>
+            </StackPanel>
             <Grid Grid.Row="1">
                 <GridView
                     x:Name="PlayListGridView"
-                    Margin="10,0,0,0"
+                    Margin="3,5,0,0"
                     IsItemClickEnabled="True"
                     ItemClick="PlayListGridView_ItemClick"
                     ItemsSource="{x:Bind ViewModel.AppViewModel.AllPlayList, Mode=OneWay}"

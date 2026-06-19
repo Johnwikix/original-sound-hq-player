@@ -366,4 +366,9 @@
     <ProjectReference Include="External\BassPlayerIpc.Shared\BassPlayerIpc.Shared.csproj" />
     <ProjectReference Include="External\Lyricify.Lyrics.Helper\Lyricify.Lyrics.Helper.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Update="Assets\Fonts\UntamedFluentIcons.ttf">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

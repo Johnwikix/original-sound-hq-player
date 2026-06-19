@@ -15,6 +15,9 @@
                 <ResourceDictionary Source="/Style/SilderDictionary.xaml" />
                 <ResourceDictionary Source="/Style/ComboBoxNMenuFlyoutStyle.xaml" />
                 <ResourceDictionary Source="/Style/ColorStyle.xaml" />
+                <ResourceDictionary>
+                    <FontFamily x:Key="UntamedFontFamily">ms-appx:///Assets/Fonts/UntamedFluentIcons.ttf#Untamed Fluent Icons</FontFamily>
+                </ResourceDictionary>
                 <!--  Other merged dictionaries here  -->
             </ResourceDictionary.MergedDictionaries>
             <x:Double x:Key="ContentDialogMaxWidth">1024</x:Double>

@@ -70,7 +70,10 @@
                                 <TextBlock x:Uid="MusicBrowse" />
                             </NavigationViewItem.Content>
                         </NavigationViewItem>
-                        <NavigationViewItem Icon="List" Tag="PlayLists">
+                        <NavigationViewItem Tag="PlayLists">
+                            <NavigationViewItem.Icon>
+                                <FontIcon FontFamily="{StaticResource UntamedFontFamily}" Glyph="&#xED3B;" />
+                            </NavigationViewItem.Icon>
                             <NavigationViewItem.Content>
                                 <TextBlock x:Uid="PlayLists" />
                             </NavigationViewItem.Content>
@@ -157,9 +160,7 @@
                                             VerticalAlignment="Center"
                                             Stretch="UniformToFill">
                                             <interactivity:Interaction.Behaviors>
-                                                <behaviors:FadeImageBehavior
-                                                    ImageHash="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundHash, Mode=OneWay}"
-                                                    Duration="00:00:1" />
+                                                <behaviors:FadeImageBehavior ImageHash="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundHash, Mode=OneWay}" Duration="00:00:1" />
                                             </interactivity:Interaction.Behaviors>
                                         </Image>
                                     </Grid>
