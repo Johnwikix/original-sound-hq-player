@@ -2,7 +2,9 @@ using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using System;
+using System.Buffers;
 using System.IO;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
@@ -32,7 +34,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             Task.Run(() => DecodeLoopAsync(_pipelineCts.Token));
 
             if (!IsActive) return;
-            RequestLoad(ImageBytes);
+            RequestLoad(LoadImageBytesFromCache());
         }
 
         private void Canvas_SizeChanged(object sender, SizeChangedEventArgs e)
@@ -60,7 +62,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                     dq.TryEnqueue(DispatcherQueuePriority.Normal, () =>
                     {
                         if (_disposed || !IsActive) return;
-                        RequestLoad(ImageBytes, isResize: true);
+                        RequestLoad(LoadImageBytesFromCache(), isResize: true);
                     });
                 }
                 catch (OperationCanceledException) { }
@@ -138,7 +140,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
             ct.ThrowIfCancellationRequested();
 
-            var pd = await decoder.GetPixelDataAsync(
+            using var softwareBitmap = await decoder.GetSoftwareBitmapAsync(
                 BitmapPixelFormat.Rgba8, BitmapAlphaMode.Premultiplied,
                 new BitmapTransform
                 {
@@ -150,7 +152,19 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 ColorManagementMode.DoNotColorManage).AsTask(ct).ConfigureAwait(false);
 
             ct.ThrowIfCancellationRequested();
-            return new DecodedFrame(pd.DetachPixelData(), (int)dstW, (int)dstH);
+
+            int pixelBytes = (int)(dstW * dstH * 4);
+            var buffer = ArrayPool<byte>.Shared.Rent(pixelBytes);
+            try
+            {
+                softwareBitmap.CopyToBuffer(buffer.AsBuffer(0, pixelBytes));
+                return new DecodedFrame(buffer, (int)dstW, (int)dstH, IsPooled: true);
+            }
+            catch
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
+                throw;
+            }
         }
 
         // ── 默认封面缓存 ──────────────────────────────────────────────────────
@@ -184,8 +198,15 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 using (var rs = s.AsStream())
                     await rs.CopyToAsync(ms, ct).ConfigureAwait(false);
 
-                var frame = await DecodeImageAsync(ms.ToArray(), ct).ConfigureAwait(false);
-                if (frame == null) return null;
+                var pooledFrame = await DecodeImageAsync(ms.ToArray(), ct).ConfigureAwait(false);
+                if (pooledFrame == null) return null;
+
+                var pf = pooledFrame.Value;
+                int len = pf.W * pf.H * 4;
+                var cachedPixels = new byte[len];
+                Array.Copy(pf.Pixels, cachedPixels, len);
+                if (pf.IsPooled) ArrayPool<byte>.Shared.Return(pf.Pixels);
+                var frame = new DecodedFrame(cachedPixels, pf.W, pf.H, IsPooled: false);
 
                 if (isDark) _cachedDefaultDark = frame;
                 else _cachedDefaultLight = frame;

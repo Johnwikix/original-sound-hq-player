@@ -27,7 +27,6 @@
             x:Name="BackGround"
             EnableLightWave="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=OneWay}"
             ExceptionOccurred="BackGround_ExceptionOccurred"
-            ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
             IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
             ThemeResolved="BackGround_ThemeResolved"
             UseImageDominantTheme="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=OneWay}"
@@ -132,7 +131,6 @@
                         x:Load="{x:Bind tool:BindUtils.BoolToBoolReConverter(ViewModel.AppViewModel.IsWin2dCoverImageControlEnable), Mode=OneTime}">
                         <uc:ImageSwitcher
                             CornerRadiusAmount="12"
-                            ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
                             ImageHash="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundHash, Mode=OneWay}"
                             IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
                             ShadowAmount="16"
@@ -142,7 +140,7 @@
                         x:Name="AlbumArtControl"
                         Margin="0"
                         x:Load="{x:Bind ViewModel.AppViewModel.IsWin2dCoverImageControlEnable, Mode=OneTime}"
-                        ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
+                        ImageHash="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundHash, Mode=OneWay}"
                         IsActive="{x:Bind ViewModel.AppViewModel.IsWin2dCoverImageControlEnable, Mode=OneTime}"
                         IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
                         IsShadowEnabled="True" />

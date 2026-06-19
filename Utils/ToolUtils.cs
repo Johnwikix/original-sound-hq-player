@@ -282,7 +282,9 @@ namespace WinUIMusicPlayer.Utils
                 }
                 if (picture.Length > 0)
                 {
-                    var imageHash = Convert.ToHexString(XxHash64.Hash(picture));
+                    Span<byte> hashSpan = stackalloc byte[8];
+                    System.Buffers.Binary.BinaryPrimitives.WriteUInt64LittleEndian(hashSpan, XxHash64.HashToUInt64(picture));
+                    var imageHash = Convert.ToHexString(hashSpan);
                     if (music.ImageHash != imageHash)
                     {
                         music.ImageHash = imageHash;
@@ -327,7 +329,7 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        private static string GetRawCachePath(string imageHash)
+        internal static string GetRawCachePath(string imageHash)
             => Path.Combine(AppSettings.MusicCoverCache, "Cache", $"{imageHash}_raw.bin");
 
         private static void DeleteRawCaches(string imageHash)

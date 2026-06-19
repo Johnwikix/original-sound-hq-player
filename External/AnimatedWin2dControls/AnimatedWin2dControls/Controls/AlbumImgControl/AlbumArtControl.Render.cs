@@ -1,5 +1,6 @@
 
 
+using System.Buffers;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.Geometry;
@@ -38,34 +39,42 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             if (!_decodeChannel.Reader.TryRead(out var item)) return;
 
             var (frame, req) = item;
-            _aspectRatio = (float)frame.W / frame.H;
-            _desiredSize = new Size(frame.W, frame.H);
-            _canvas?.DispatcherQueue.TryEnqueue(() =>
+            try
             {
-                InvalidateMeasure();
-            });
-            float cw = req.ContentW, ch = req.ContentH;
-            if (cw <= 0 || ch <= 0)
-            {
-                ComputeContentRect((float)sender.Size.Width, (float)sender.Size.Height);
-                cw = (float)_contentRect.Width;
-                ch = (float)_contentRect.Height;
-            }
-            if (cw <= 0 || ch <= 0)
-            {
-                ReleaseAnimLockIfNeeded(req.IsResize);
-                return;
-            }
+                _aspectRatio = (float)frame.W / frame.H;
+                _desiredSize = new Size(frame.W, frame.H);
+                _canvas?.DispatcherQueue.TryEnqueue(() =>
+                {
+                    InvalidateMeasure();
+                });
+                float cw = req.ContentW, ch = req.ContentH;
+                if (cw <= 0 || ch <= 0)
+                {
+                    ComputeContentRect((float)sender.Size.Width, (float)sender.Size.Height);
+                    cw = (float)_contentRect.Width;
+                    ch = (float)_contentRect.Height;
+                }
+                if (cw <= 0 || ch <= 0)
+                {
+                    ReleaseAnimLockIfNeeded(req.IsResize);
+                    return;
+                }
 
-            var bmp = GpuBake(frame, cw, ch, req.Shadow, dpi, sender);
-            if (bmp == null)
-            {
-                ReleaseAnimLockIfNeeded(req.IsResize);
-                return;
-            }
+                var bmp = GpuBake(frame, cw, ch, req.Shadow, dpi, sender);
+                if (bmp == null)
+                {
+                    ReleaseAnimLockIfNeeded(req.IsResize);
+                    return;
+                }
 
-            float pad = req.Shadow ? ShadowPad : 0f;
-            ApplyNewBitmap(bmp, new FrameInfo(frame.W, frame.H, pad), req.IsResize);
+                float pad = req.Shadow ? ShadowPad : 0f;
+                ApplyNewBitmap(bmp, new FrameInfo(frame.W, frame.H, pad), req.IsResize);
+            }
+            finally
+            {
+                if (frame.IsPooled)
+                    ArrayPool<byte>.Shared.Return(frame.Pixels, clearArray: false);
+            }
         }
 
         private void ReleaseAnimLockIfNeeded(bool isResize)

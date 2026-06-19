@@ -1,21 +1,16 @@
-﻿using AnimatedWin2dControls.Utils;
-using ColorThief.ImageSharp.Shared;
+﻿using AnimatedWin2dControls.Impressionist;
+using AnimatedWin2dControls.Utils;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using System.Threading.Tasks;
-using Windows.Graphics.Imaging;
-using Image = SixLabors.ImageSharp.Image;
 
 namespace AnimatedWin2dControls.Controls;
 
@@ -51,16 +46,6 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
         set => SetValue(UseImageDominantThemeProperty, value);
     }
 
-    public static readonly DependencyProperty ImageBytesProperty =
-        DependencyProperty.Register(nameof(ImageBytes), typeof(byte[]),
-            typeof(ShaderBackgroundControl), new PropertyMetadata(null, OnImageBytesChanged));
-
-    public byte[] ImageBytes
-    {
-        get => (byte[])GetValue(ImageBytesProperty);
-        set => SetValue(ImageBytesProperty, value);
-    }
-
     public static readonly DependencyProperty IsDarkProperty =
         DependencyProperty.Register(nameof(IsDark), typeof(bool),
             typeof(ShaderBackgroundControl), new PropertyMetadata(true, OnColorParamChanged));
@@ -84,31 +69,6 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
 
     // ── 依赖属性回调 ──────────────────────────────────────────────────────
 
-    private static void OnImageBytesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
-    {
-        var ctrl = (ShaderBackgroundControl)d;
-        try
-        {
-            if (ctrl._effect == null) { ctrl.ApplyDefaultColors(); return; }
-
-            if (e.NewValue is byte[] bytes && bytes.Length > 0)
-            {
-                if (ctrl.IsDuplicateAndUpdate(bytes))
-                {
-                    ctrl.ShuffleCurrentColors();
-                    return;
-                }
-                _ = ctrl.LoadColorsFromBytesAsync(bytes);
-            }
-            else
-            {
-                ctrl.IsDuplicateAndUpdate(null);
-                ctrl.ApplyDefaultColors();
-            }
-        }
-        catch (Exception ex) { ctrl.RaiseException(ex); }
-    }
-
     private static void OnColorParamChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         var ctrl = (ShaderBackgroundControl)d;
@@ -116,8 +76,8 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
         {
             if (ctrl._effect == null) return;
             ctrl._effect.Properties["EnableLightWave"] = ctrl.EnableLightWave;
-            if (ctrl.ImageBytes is byte[] bytes && bytes.Length > 0)
-                _ = ctrl.LoadColorsFromBytesAsync(bytes);
+            if (ctrl._currentPalette is not null)
+                ctrl.ApplyPaletteColors(ctrl._currentPalette);
             else
                 ctrl.ApplyDefaultColors();
         }
@@ -143,16 +103,7 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
     private float _transitionProgress = 1f;
     private const float TransitionSpeed = 0.5f;
 
-    private CancellationTokenSource? _loadCts;
-    private static readonly ColorThief.ImageSharp.ColorThief ColorThiefInstance = new();
-
-    private long _lastLength = -1;
-    private int _lastHash;
-
-    // ── GC 优化：复用集合，避免换图时重复分配 ──────────────────────────────
-    // LoadColorsFromBytesAsync 通过 CTS 保证同一时间只有一个 Task 在跑，静态复用安全
-    private static readonly List<(Vector3 Color, int Population)> s_weightedBuffer = new(8);
-    private static readonly List<QuantizedColor> s_paletteSortBuffer = new(8);
+    private Impressionist.PaletteResult? _currentPalette;
 
     // ── 构造函数 ──────────────────────────────────────────────────────────
 
@@ -254,8 +205,8 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
 
             _effect = new PixelShaderEffect(shaderBytes);
 
-            if (ImageBytes is { Length: > 0 } bytes)
-                await LoadColorsFromBytesAsync(bytes);
+            if (_currentPalette is not null)
+                ApplyPaletteColors(_currentPalette);
             else
                 ApplyDefaultColors();
 
@@ -353,154 +304,32 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
 
     // ── 颜色提取 ──────────────────────────────────────────────────────────
 
-    public async Task LoadImageAsync(byte[] imageBytes)
+    public void SetPalette(Impressionist.PaletteResult? palette)
     {
-        if (imageBytes == null || imageBytes.Length == 0) return;
-        try
-        {
-            await LoadColorsFromBytesAsync(imageBytes);
-        }
-        catch (Exception ex) { RaiseException(ex); }
+        _currentPalette = palette;
+        if (palette?.Palette is not { Count: > 0 }) { ApplyDefaultColors(); return; }
+        if (_effect == null) return;
+        ApplyPaletteColors(palette);
     }
 
-    // 优化要点：
-    //   1. 复用 s_weightedBuffer / s_paletteSortBuffer，避免 new List 分配。
-    //   2. 用手动 foreach 替代 LINQ 链（Sum/Where/OrderByDescending/Concat/Take/Select），
-    //      消除多个闭包对象和 IEnumerator 分配。
-    //   3. palette.Sort() 在原列表上排序，不产生新集合。
-    private async Task LoadColorsFromBytesAsync(byte[] imageBytes)
+    private void ApplyPaletteColors(Impressionist.PaletteResult palette)
     {
-        if (imageBytes == null || imageBytes.Length == 0) return;
+        bool isDark = UseImageDominantTheme ? palette.PaletteIsDark : IsDark;
+        var weighted = new List<(Vector3 Color, int Population)>(palette.Palette.Count);
+        for (int i = 0; i < palette.Palette.Count; i++)
+            weighted.Add((palette.Palette[i] / 255f, Math.Max(1, palette.Palette.Count - i)));
 
-        _loadCts?.Cancel();
-        _loadCts?.Dispose();
-        _loadCts = null;
-        var cts = new CancellationTokenSource();
-        _loadCts = cts;
+        ScalePaletteLuminance(weighted, isDark, UseImageDominantTheme);
+        var slots = DistributeByPopulation(weighted);
+        _target1 = slots[0];
+        _target2 = slots[1];
+        _target3 = slots[2];
+        _target4 = slots[3];
+        _transitionProgress = 0f;
 
-        bool isDark = IsDark;
-        bool useImageDominantTheme = UseImageDominantTheme;
-
-        try
-        {
-            var (resolvedIsDark, weightedCount) = await Task.Run(async () =>
-            {
-                using var memStream = new MemoryStream(imageBytes, writable: false);
-                using var rasStream = memStream.AsRandomAccessStream();
-                var decoder = await BitmapDecoder.CreateAsync(rasStream);
-
-                bool effectiveIsDark;
-
-                // 复用静态缓冲区，避免 new List 分配
-                s_weightedBuffer.Clear();
-                s_paletteSortBuffer.Clear();
-
-                using (var image = await ConvertToImageSharpAsync(decoder))
-                {
-                    cts.Token.ThrowIfCancellationRequested();
-
-                    effectiveIsDark = useImageDominantTheme
-                        ? (ColorThiefInstance.GetColor(image, 10, false)?.IsDark ?? isDark)
-                        : isDark;
-
-                    var palette = ColorThiefInstance.GetPalette(image, 8, 10, false);
-
-                    // ── 手动遍历统计，替代 LINQ Sum/Where ──
-                    int totalPop = 0;
-                    int preferredPop = 0;
-                    foreach (var item in palette)
-                    {
-                        totalPop += item.Population;
-                        if (item.IsDark == effectiveIsDark)
-                            preferredPop += item.Population;
-
-                        // 顺便复制到可排序缓冲区（palette 类型可能不支持直接 Sort）
-                        s_paletteSortBuffer.Add(item);
-                    }
-
-                    bool usePreferred = totalPop > 0
-                        && (float)preferredPop / totalPop >= 0.5f;
-
-                    // 按 Population 降序排序（原地，不产生新集合）
-                    s_paletteSortBuffer.Sort(static (a, b) =>
-                        b.Population.CompareTo(a.Population));
-
-                    // ── 两遍填充：先取偏好色，再补足 ──
-                    // 最多取 4 个，总量很小，两遍线性扫描比 LINQ 链更高效且无分配
-                    int taken = 0;
-
-                    if (usePreferred)
-                    {
-                        foreach (var item in s_paletteSortBuffer)
-                        {
-                            if (taken == 4) break;
-                            if (item.IsDark == effectiveIsDark)
-                            {
-                                s_weightedBuffer.Add((
-                                    new Vector3(item.Color.R / 255f,
-                                                item.Color.G / 255f,
-                                                item.Color.B / 255f),
-                                    item.Population));
-                                taken++;
-                            }
-                        }
-                    }
-
-                    foreach (var item in s_paletteSortBuffer)
-                    {
-                        if (taken == 4) break;
-                        // usePreferred 时跳过已经加过的颜色
-                        if (usePreferred && item.IsDark == effectiveIsDark) continue;
-                        s_weightedBuffer.Add((
-                            new Vector3(item.Color.R / 255f,
-                                        item.Color.G / 255f,
-                                        item.Color.B / 255f),
-                            item.Population));
-                        taken++;
-                    }
-                }
-
-                return (effectiveIsDark, s_weightedBuffer.Count);
-            }, cts.Token);
-
-            cts.Token.ThrowIfCancellationRequested();
-
-            // s_weightedBuffer 此时持有结果，在 UI 线程侧读取（Task 已结束，安全）
-            if (weightedCount == 0)
-                s_weightedBuffer.Add((resolvedIsDark
-                    ? new Vector3(0.05f)
-                    : new Vector3(0.95f), 1));
-
-            ScalePaletteLuminance(s_weightedBuffer, resolvedIsDark, useImageDominantTheme);
-
-            var slots = DistributeByPopulation(s_weightedBuffer);
-            _target1 = slots[0];
-            _target2 = slots[1];
-            _target3 = slots[2];
-            _target4 = slots[3];
-            _transitionProgress = 0f;
-
-            _rnd1 = (float)(_random.NextDouble() * Math.PI * 2);
-            _rnd2 = (float)(_random.NextDouble() * Math.PI * 2);
-            _rnd3 = (float)(_random.NextDouble() * Math.PI * 2);
-
-            if (UseImageDominantTheme)
-                ThemeResolved?.Invoke(this, resolvedIsDark);
-        }
-        catch (OperationCanceledException) { }
-        catch (Exception ex)
-        {
-            ApplyDefaultColors();
-            RaiseException(ex);
-        }
-        finally
-        {
-            if (ReferenceEquals(_loadCts, cts))
-            {
-                cts.Dispose();
-                _loadCts = null;
-            }
-        }
+        _rnd1 = (float)(_random.NextDouble() * Math.PI * 2);
+        _rnd2 = (float)(_random.NextDouble() * Math.PI * 2);
+        _rnd3 = (float)(_random.NextDouble() * Math.PI * 2);
     }
 
     // ── 颜色算法 ──────────────────────────────────────────────────────────
@@ -666,73 +495,6 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
         return p;
     }
 
-    private static async Task<Image<Rgba32>> ConvertToImageSharpAsync(BitmapDecoder decoder)
-    {
-        const uint MaxSize = 150;
-        uint srcWidth = decoder.PixelWidth;
-        uint srcHeight = decoder.PixelHeight;
-        float scale = Math.Min(1f, Math.Min((float)MaxSize / srcWidth,
-                                               (float)MaxSize / srcHeight));
-        uint targetWidth = Math.Max(1, (uint)(srcWidth * scale));
-        uint targetHeight = Math.Max(1, (uint)(srcHeight * scale));
-
-        var transform = new BitmapTransform
-        {
-            ScaledWidth = targetWidth,
-            ScaledHeight = targetHeight,
-            InterpolationMode = BitmapInterpolationMode.Fant
-        };
-
-        var pixelData = await decoder.GetPixelDataAsync(
-            BitmapPixelFormat.Rgba8,
-            BitmapAlphaMode.Straight,
-            transform,
-            ExifOrientationMode.IgnoreExifOrientation,
-            ColorManagementMode.DoNotColorManage);
-
-        var pixels = pixelData.DetachPixelData();
-        var image = Image.LoadPixelData<Rgba32>(pixels, (int)targetWidth, (int)targetHeight);
-        pixels = null;
-        return image;
-    }
-
-    // ── 工具方法 ──────────────────────────────────────────────────────────
-
-    public bool IsDuplicateAndUpdate(byte[]? newBytes)
-    {
-        if (newBytes is not { Length: > 0 })
-        {
-            bool wasEmpty = _lastLength == 0;
-            _lastLength = 0;
-            _lastHash = 0;
-            return wasEmpty;
-        }
-
-        int hash = ToolUtils.ComputeFastHash(newBytes);
-        if (newBytes.Length == _lastLength && hash == _lastHash)
-            return true;
-
-        _lastLength = newBytes.Length;
-        _lastHash = hash;
-        return false;
-    }
-
-    private void ShuffleCurrentColors()
-    {
-        var slots = new[] { _target1, _target2, _target3, _target4 };
-        for (int i = slots.Length - 1; i > 0; i--)
-        {
-            int j = _random.Next(i + 1);
-            (slots[i], slots[j]) = (slots[j], slots[i]);
-        }
-        _target1 = slots[0]; _target2 = slots[1];
-        _target3 = slots[2]; _target4 = slots[3];
-        _rnd1 = (float)(_random.NextDouble() * Math.PI * 2);
-        _rnd2 = (float)(_random.NextDouble() * Math.PI * 2);
-        _rnd3 = (float)(_random.NextDouble() * Math.PI * 2);
-        _transitionProgress = 0f;
-    }
-
     // ── 释放 ──────────────────────────────────────────────────────────────
 
     public void Dispose()
@@ -748,9 +510,6 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
             _canvas.Paused = true;
         UnregisterPropertyChangedCallback(VisibilityProperty, _visibilityCallbackToken);
         DetachCanvasEvents();
-        _loadCts?.Cancel();
-        _loadCts?.Dispose();
-        _loadCts = null;
         _effect?.Dispose();
         _effect = null;
         ThemeResolved = null;

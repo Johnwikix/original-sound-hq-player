@@ -4,10 +4,10 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
-using Windows.Storage.Streams;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Utils;
 
@@ -16,8 +16,6 @@ namespace WinUIMusicPlayer.Controls
     public sealed partial class ImageSwitcher : UserControl
     {
         private static ILogger<ImageSwitcher> _logger = WinUIMusicPlayer.App.GetLogger<ImageSwitcher>();
-
-        // ── 现有依赖属性保持不变 ──────────────────────────────────────────
 
         public int CornerRadiusAmount
         {
@@ -51,13 +49,6 @@ namespace WinUIMusicPlayer.Controls
         public static readonly DependencyProperty SwitchTypeProperty =
             DependencyProperty.Register(nameof(SwitchType), typeof(ImageSwitchType), typeof(ImageSwitcher), new PropertyMetadata(ImageSwitchType.Crossfade));
 
-        // ── 新增：IsDark 依赖属性 ─────────────────────────────────────────
-
-        /// <summary>
-        /// 决定解码失败或数据为空时使用哪张默认封面。
-        /// true  → Assets/default_cover_black.png
-        /// false → Assets/default_cover_white.png
-        /// </summary>
         public bool IsDark
         {
             get => (bool)GetValue(IsDarkProperty);
@@ -65,27 +56,8 @@ namespace WinUIMusicPlayer.Controls
         }
         public static readonly DependencyProperty IsDarkProperty =
             DependencyProperty.Register(nameof(IsDark), typeof(bool), typeof(ImageSwitcher),
-                new PropertyMetadata(false, OnDependencyPropertyChanged));
+                new PropertyMetadata(false, OnIsDarkChanged));
 
-        // ── 新增：Source 改为 byte[]，原 ImageSource 版本移除 ─────────────
-
-        /// <summary>
-        /// 封面图片的原始字节数据。设置后控件自动在内部解码并切换图片。
-        /// 传入 null 或空数组时显示默认封面。
-        /// </summary>
-        public byte[]? ImageBytes
-        {
-            get => (byte[]?)GetValue(ImageBytesProperty);
-            set => SetValue(ImageBytesProperty, value);
-        }
-        public static readonly DependencyProperty ImageBytesProperty =
-            DependencyProperty.Register(nameof(ImageBytes), typeof(byte[]), typeof(ImageSwitcher),
-                new PropertyMetadata(null, OnDependencyPropertyChanged));
-
-        /// <summary>
-        /// 封面图片的 XXHash64 十六进制哈希值，用于去重。
-        /// 与 ImageBytes 配合使用，避免对相同图片重复解码。
-        /// </summary>
         public string? ImageHash
         {
             get => (string?)GetValue(ImageHashProperty);
@@ -93,14 +65,10 @@ namespace WinUIMusicPlayer.Controls
         }
         public static readonly DependencyProperty ImageHashProperty =
             DependencyProperty.Register(nameof(ImageHash), typeof(string), typeof(ImageSwitcher),
-                new PropertyMetadata(null));
+                new PropertyMetadata(null, OnImageHashChanged));
 
-        // ── 私有状态 ──────────────────────────────────────────────────────
-
-        private string? _lastImageHash;                 // 上一次成功显示图时的 hash
-        private CancellationTokenSource? _cts;          // 用于取消正在进行的解码
-
-        // ── 构造 ──────────────────────────────────────────────────────────
+        private string? _lastImageHash;
+        private CancellationTokenSource? _cts;
 
         public ImageSwitcher()
         {
@@ -118,32 +86,25 @@ namespace WinUIMusicPlayer.Controls
             LastAlbumArtImage.Source = null;
         }
 
-        // ── 依赖属性回调 ──────────────────────────────────────────────────
-
-        private static void OnDependencyPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        private static void OnImageHashChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not ImageSwitcher switcher) return;
-
-            if (e.Property == ImageBytesProperty)
-            {
-                _ = switcher.UpdateSourceAsync();
-            }
-            else if (e.Property == IsDarkProperty)
-            {
-                if (switcher._lastImageHash is null)
-                    _ = switcher.UpdateSourceAsync();
-            }
+            _ = switcher.UpdateSourceAsync();
         }
 
-        // ── 核心：异步解码 + hash 去重 ────────────────────────────────────
+        private static void OnIsDarkChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not ImageSwitcher switcher) return;
+            if (switcher._lastImageHash is null)
+                _ = switcher.UpdateSourceAsync();
+        }
 
         private async Task UpdateSourceAsync()
         {
-            var newBytes = ImageBytes;
             string? newHash = ImageHash;
+            bool hasData = newHash is { Length: > 0 };
 
-            bool hasData = newBytes is { Length: > 0 };
-            if (hasData && newHash is { Length: > 0 } && newHash == _lastImageHash) return;
+            if (hasData && newHash == _lastImageHash) return;
             if (!hasData && _lastImageHash is null) return;
 
             _cts?.Cancel();
@@ -152,7 +113,22 @@ namespace WinUIMusicPlayer.Controls
             _cts = cts;
             var token = cts.Token;
 
-            ImageSource? imageSource = await DecodeToBitmapAsync(newBytes, token);
+            ImageSource? imageSource = null;
+
+            if (hasData)
+            {
+                string rawPath = ToolUtils.GetRawCachePath(newHash!);
+                if (File.Exists(rawPath))
+                {
+                    try
+                    {
+                        byte[] rawBytes = await Task.Run(() => File.ReadAllBytes(rawPath), token);
+                        imageSource = await ImageHelper.DecodeToBitmapAsync(rawBytes, 0, token);
+                    }
+                    catch (OperationCanceledException) { return; }
+                    catch (Exception ex) { _logger.LogError(ex, "ImageSwitcher 从缓存加载失败"); }
+                }
+            }
 
             if (token.IsCancellationRequested) return;
 
@@ -180,11 +156,6 @@ namespace WinUIMusicPlayer.Controls
             }
         }
 
-        private static Task<BitmapImage?> DecodeToBitmapAsync(byte[]? bytes, CancellationToken token = default)
-            => ImageHelper.DecodeToBitmapAsync(bytes, 0, token);
-
-        // ── 读取 Assets 中的默认封面 ──────────────────────────────────────
-
         private async Task<ImageSource?> LoadDefaultCoverAsync(CancellationToken token = default)
         {
             try
@@ -209,8 +180,6 @@ namespace WinUIMusicPlayer.Controls
                 return null;
             }
         }
-
-        // ── 原有动画逻辑，参数改为传入 ImageSource ────────────────────────
 
         private void UpdateSourceCrossfade(ImageSource? source)
         {

@@ -41,14 +41,16 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
         /// <summary>动画锁持续时间（毫秒），与 FadeSpeed 联动。</summary>
         private static readonly int AnimLockMs = (int)(1000f * 2 / FadeSpeed);
 
-        public static readonly DependencyProperty ImageBytesProperty =
-            DependencyProperty.Register(nameof(ImageBytes), typeof(byte[]),
-                typeof(AlbumArtControl), new PropertyMetadata(null, OnImageBytesChanged));
+        public static string CoverCacheBasePath { get; set; } = "";
 
-        public byte[] ImageBytes
+        public static readonly DependencyProperty ImageHashProperty =
+            DependencyProperty.Register(nameof(ImageHash), typeof(string),
+                typeof(AlbumArtControl), new PropertyMetadata(null, OnImageHashChanged));
+
+        public string ImageHash
         {
-            get => (byte[])GetValue(ImageBytesProperty);
-            set => SetValue(ImageBytesProperty, value);
+            get => (string)GetValue(ImageHashProperty);
+            set => SetValue(ImageHashProperty, value);
         }
 
         public static readonly DependencyProperty IsDarkProperty =
@@ -83,11 +85,22 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
 
         // ── 依赖属性回调 ──────────────────────────────────────────────────────
 
-        private static void OnImageBytesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        private static void OnImageHashChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var c = (AlbumArtControl)d;
             if (!c._isResourcesCreated || !c.IsActive) return;
-            c.RequestLoad(e.NewValue as byte[]);
+            var hash = e.NewValue as string;
+            if (hash is { Length: > 0 })
+            {
+                string rawPath = System.IO.Path.Combine(CoverCacheBasePath, "Cache", $"{hash}_raw.bin");
+                if (System.IO.File.Exists(rawPath))
+                {
+                    byte[] bytes = System.IO.File.ReadAllBytes(rawPath);
+                    c.RequestLoad(bytes);
+                    return;
+                }
+            }
+            c.RequestLoad(null);
         }
 
         private static void OnIsDarkChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -95,14 +108,24 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             var c = (AlbumArtControl)d;
             if (!c._isResourcesCreated || !c.IsActive) return;
             c.InvalidateDedup();
-            c.RequestLoad(c.ImageBytes);
+            var hash = c.ImageHash;
+            if (hash is { Length: > 0 })
+            {
+                string rawPath = System.IO.Path.Combine(CoverCacheBasePath, "Cache", $"{hash}_raw.bin");
+                if (System.IO.File.Exists(rawPath))
+                {
+                    c.RequestLoad(System.IO.File.ReadAllBytes(rawPath));
+                    return;
+                }
+            }
+            c.RequestLoad(null);
         }
 
         private static void OnResizeTriggerChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var c = (AlbumArtControl)d;
             if (!c._isResourcesCreated) return;
-            c.RequestLoad(c.ImageBytes, isResize: true);
+            c.RequestLoad(c.LoadImageBytesFromCache(), isResize: true);
         }
 
         private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -111,7 +134,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             if (!c._isResourcesCreated) return;
             if ((bool)e.NewValue)
             {
-                c.RequestLoad(c.ImageBytes);
+                c.RequestLoad(c.LoadImageBytesFromCache());
             }
             else
             {
@@ -128,9 +151,17 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             }
         }
 
+        private byte[]? LoadImageBytesFromCache()
+        {
+            var hash = ImageHash;
+            if (hash is not { Length: > 0 } || string.IsNullOrEmpty(CoverCacheBasePath)) return null;
+            string rawPath = System.IO.Path.Combine(CoverCacheBasePath, "Cache", $"{hash}_raw.bin");
+            return System.IO.File.Exists(rawPath) ? System.IO.File.ReadAllBytes(rawPath) : null;
+        }
+
         // ── Pipeline 数据结构 ─────────────────────────────────────────────────
 
-        private readonly record struct DecodedFrame(byte[] Pixels, int W, int H);
+        private readonly record struct DecodedFrame(byte[] Pixels, int W, int H, bool IsPooled);
 
         private sealed record PendingRequest(
             byte[]? Bytes,

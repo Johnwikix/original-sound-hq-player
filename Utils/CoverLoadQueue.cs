@@ -390,7 +390,7 @@ internal static class CoverLoadQueue
             ? string.Intern($"id:{music.Id}")
             : music.ImageHash;
 
-    private static string GetThumbCachePath(string imageHash, int coverSize)
+    internal static string GetThumbCachePath(string imageHash, int coverSize)
         => Path.Combine(AppSettings.MusicCoverCache, "Cache", $"{imageHash}_{coverSize}.bmp");
 
     public static void ClearImagesInContainer(DependencyObject parent)

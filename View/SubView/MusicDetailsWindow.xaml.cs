@@ -195,12 +195,9 @@ namespace WinUIMusicPlayer.View.SubView
             TranslatedLyricsText = trans ?? "";
             KrcText = krc ?? "";
             TKrcText = tKrc ?? "";
-            AlbumCoverData = ToolUtils.GetRawImage(music, true).Result;
-            DispatcherQueue.TryEnqueue(async () =>
-            {
-                AlbumCoverBitmap = await ToolUtils.ConvertByteArrayToBitmapImage(AlbumCoverData);
-            });
-
+            AlbumCoverData = await Task.Run(() => ToolUtils.GetRawImage(music, true));
+            if (Content is null) return;
+            AlbumCoverBitmap = await ToolUtils.ConvertByteArrayToBitmapImage(AlbumCoverData);
         }
 
         private string ConvertDuration(TimeSpan duration)

@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
+using System.IO;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading.Tasks;
 using Windows.Media;
 using Windows.Media.Playback;
@@ -132,32 +134,21 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public static async Task<RandomAccessStreamReference> ByteArrayToRandomAccessStreamReferenceAsync(byte[] imageBytes)
+        public static async Task<RandomAccessStreamReference?> ByteArrayToRandomAccessStreamReferenceAsync(byte[] imageBytes)
         {
             try
             {
-                // 空值检查
                 if (imageBytes is null || imageBytes.Length == 0)
-                {
-                    App.GetLogger<SystemMediaControlsService>().LogWarning("ByteArrayToRandomAccessStreamReferenceAsync 输入的字节数组为空或null");
                     return null;
-                }
-                // 创建内存流
-                InMemoryRandomAccessStream memoryStream = new InMemoryRandomAccessStream();
-                // 将字节数组写入内存流
-                using (DataWriter writer = new DataWriter(memoryStream.GetOutputStreamAt(0)))
-                {
-                    writer.WriteBytes(imageBytes);
-                    await writer.StoreAsync().AsTask().ConfigureAwait(false);
-                    await writer.FlushAsync().AsTask().ConfigureAwait(false);
-                }
-                // 重置流位置到开始
+
+                var memoryStream = new InMemoryRandomAccessStream();
+                await memoryStream.WriteAsync(imageBytes.AsBuffer());
                 memoryStream.Seek(0);
                 return RandomAccessStreamReference.CreateFromStream(memoryStream);
             }
             catch (Exception ex)
             {
-                App.GetLogger<SystemMediaControlsService>().LogError(ex, "ByteArrayToRandomAccessStreamReferenceAsync 转换过程中出现错误: {ex.Message}");
+                App.GetLogger<SystemMediaControlsService>().LogError(ex, "ByteArrayToRandomAccessStreamReferenceAsync 转换过程中出现错误");
                 return null;
             }
         }

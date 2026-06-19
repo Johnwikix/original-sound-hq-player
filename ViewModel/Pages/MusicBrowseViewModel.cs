@@ -429,31 +429,42 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                // --- 阶段 A: 耗时的数据读取 ---
-                // 使用 Task.Run 彻底解决 Track 初始化阻塞 UI 的问题
                 byte[] picData = await Task.Run(async () =>
                 {
-                    // 如果在启动前就已经切歌了，直接退出
                     token.ThrowIfCancellationRequested();
                     return await GetRawImage(music);
                 }, token);
-                // --- 阶段 B: 检查有效性 ---
                 if (token.IsCancellationRequested) return;
-                // --- 阶段 C: 回到 UI 线程更新界面 ---
+
+                AnimatedWin2dControls.Impressionist.PaletteResult? palette = null;
+                if (!string.IsNullOrEmpty(music.ImageHash))
+                {
+                    string thumbPath = CoverLoadQueue.GetThumbCachePath(music.ImageHash, CoverLoadQueue.CoverSize);
+                    palette = await AnimatedWin2dControls.Impressionist.PaletteExtractor
+                        .ExtractFromBmpCacheAsync(thumbPath, ct: token);
+                }
+                if (palette is null && picData.Length > 0)
+                {
+                    palette = await Task.Run(() =>
+                        AnimatedWin2dControls.Impressionist.PaletteExtractor
+                            .ExtractFromImageBytesAsync(picData, ct: token), token);
+                }
+
+                if (token.IsCancellationRequested) return;
+
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    // 双重检查：确保此时用户没有又点了一次切歌
                     if (!token.IsCancellationRequested)
                     {
                         AppViewModel.LyricPageBackgroundHash = music.ImageHash ?? "";
-                        AppViewModel.LyricPageBackgroundData = picData;
+                        AppViewModel.LyricPagePalette = palette;
                         AppViewModel.MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
                     }
                 });
 
                 // --- 阶段 D: 更新系统媒体控制 (SMTC) ---
                 // 同样在后台运行，避免 SMTC 的 COM 组件调用阻塞 UI
-                await Task.Run(() =>
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
                     if (token.IsCancellationRequested) return;
 
@@ -464,7 +475,7 @@ namespace WinUIMusicPlayer.ViewModel
                         music.Author,
                         music.Album,
                         picData);
-                }, token);
+                });
             }
             catch (OperationCanceledException)
             {

@@ -6,8 +6,13 @@ using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.Xaml.Interactivity;
 using System;
+using System.Buffers;
+using System.Buffers.Binary;
+using System.IO;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Graphics.Imaging;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Utils;
 
@@ -20,36 +25,13 @@ namespace WinUIMusicPlayer.Behaviors
         private Storyboard _currentTransitionStoryboard;
         private Image _tempOverlayImage;
         private CancellationTokenSource _cts;
-
-        private long _lastLength = -1;
         private string? _lastImageHash;
-
-        private bool IsDuplicateAndUpdate(byte[]? newBytes)
-        {
-            if (newBytes is not { Length: > 0 })
-            {
-                bool wasEmpty = _lastLength == 0;
-                _lastLength = 0;
-                _lastImageHash = null;
-                return wasEmpty;
-            }
-
-            string? imageHash = ImageHash;
-            if (imageHash is { Length: > 0 } && imageHash == _lastImageHash)
-                return true;
-
-            _lastLength = newBytes.Length;
-            _lastImageHash = imageHash;
-            return false;
-        }
 
         public void Invalidate()
         {
-            _lastLength = -1;
             _lastImageHash = null;
         }
 
-        // ── ImageVisibility 依赖属性 ───────────────────────────────────
         public Visibility ImageVisibility
         {
             get => (Visibility)GetValue(ImageVisibilityProperty);
@@ -60,7 +42,6 @@ namespace WinUIMusicPlayer.Behaviors
             DependencyProperty.Register(nameof(ImageVisibility), typeof(Visibility), typeof(FadeImageBehavior),
                 new PropertyMetadata(Visibility.Collapsed));
 
-        // ── Enable 依赖属性 ────────────────────────────────────────────
         public bool Enable
         {
             get => (bool)GetValue(EnableProperty);
@@ -87,30 +68,17 @@ namespace WinUIMusicPlayer.Behaviors
             else
             {
                 behavior.Invalidate();
-                var bytes = behavior.ImageBytes;
-                if (behavior.AssociatedObject != null && bytes != null)
+                string? hash = behavior.ImageHash;
+                if (behavior.AssociatedObject != null && hash is { Length: > 0 })
                 {
                     behavior._cts?.Cancel();
                     behavior._cts?.Dispose();
                     behavior._cts = new CancellationTokenSource();
-                    var token = behavior._cts.Token;
-                    _ = behavior.LoadAndTransitionAsync(bytes, token);
+                    _ = behavior.LoadFromCacheAndTransitionAsync(hash, behavior._cts.Token);
                 }
             }
         }
 
-        // ── ImageBytes 依赖属性 ────────────────────────────────────────
-        public byte[] ImageBytes
-        {
-            get => (byte[])GetValue(ImageBytesProperty);
-            set => SetValue(ImageBytesProperty, value);
-        }
-
-        public static readonly DependencyProperty ImageBytesProperty =
-            DependencyProperty.Register(nameof(ImageBytes), typeof(byte[]), typeof(FadeImageBehavior),
-                new PropertyMetadata(null, OnImageBytesChanged));
-
-        // ── ImageHash 依赖属性 ──────────────────────────────────────────
         public string? ImageHash
         {
             get => (string?)GetValue(ImageHashProperty);
@@ -119,9 +87,9 @@ namespace WinUIMusicPlayer.Behaviors
 
         public static readonly DependencyProperty ImageHashProperty =
             DependencyProperty.Register(nameof(ImageHash), typeof(string), typeof(FadeImageBehavior),
-                new PropertyMetadata(null));
+                new PropertyMetadata(null, OnImageHashChanged));
 
-        private static async void OnImageBytesChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        private static async void OnImageHashChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not FadeImageBehavior behavior) return;
 
@@ -133,8 +101,17 @@ namespace WinUIMusicPlayer.Behaviors
                 return;
             }
 
-            var newBytes = e.NewValue as byte[];
-            if (behavior.IsDuplicateAndUpdate(newBytes)) return;
+            string? newHash = e.NewValue as string;
+            if (newHash is { Length: > 0 } && newHash == behavior._lastImageHash)
+                return;
+
+            if (newHash is not { Length: > 0 })
+            {
+                behavior._lastImageHash = null;
+                return;
+            }
+
+            behavior._lastImageHash = newHash;
 
             behavior._cts?.Cancel();
             behavior._cts?.Dispose();
@@ -143,24 +120,11 @@ namespace WinUIMusicPlayer.Behaviors
 
             try
             {
-                await behavior.LoadAndTransitionAsync(newBytes, token);
+                await behavior.LoadFromCacheAndTransitionAsync(newHash, token);
             }
             catch (OperationCanceledException) { }
         }
 
-        // ── 公共加载+过渡逻辑 ─────────────────────────────────────────
-        private async Task LoadAndTransitionAsync(byte[]? bytes, CancellationToken token)
-        {
-            try
-            {
-                var bitmapImage = await DecodeToBitmapAsync(bytes, token);
-                if (!token.IsCancellationRequested)
-                    TransitionToNewSource(bitmapImage); // null 也传下去
-            }
-            catch (OperationCanceledException) { }
-        }
-
-        // ── Duration 依赖属性 ──────────────────────────────────────────
         public Duration Duration
         {
             get => (Duration)GetValue(DurationProperty);
@@ -171,45 +135,98 @@ namespace WinUIMusicPlayer.Behaviors
             DependencyProperty.Register(nameof(Duration), typeof(Duration), typeof(FadeImageBehavior),
                 new PropertyMetadata(new Duration(TimeSpan.FromMilliseconds(500))));
 
-        // ── DecodePixelWidth 依赖属性：0 = 按原图解码 ──────────────────
-        public int DecodePixelWidth
+        private async Task LoadFromCacheAndTransitionAsync(string hash, CancellationToken token)
         {
-            get => (int)GetValue(DecodePixelWidthProperty);
-            set => SetValue(DecodePixelWidthProperty, value);
+            try
+            {
+                ImageSource? source = null;
+
+                string thumbPath = CoverLoadQueue.GetThumbCachePath(hash, CoverLoadQueue.CoverSize);
+                if (File.Exists(thumbPath))
+                {
+                    source = await LoadThumbFromCacheAsync(thumbPath, token);
+                }
+
+                if (source is null)
+                {
+                    string rawPath = ToolUtils.GetRawCachePath(hash);
+                    if (File.Exists(rawPath))
+                    {
+                        byte[] rawBytes = await File.ReadAllBytesAsync(rawPath, token);
+                        source = await ImageHelper.DecodeToBitmapAsync(rawBytes, 150, token);
+                    }
+                }
+
+                if (!token.IsCancellationRequested)
+                    TransitionToNewSource(source);
+            }
+            catch (OperationCanceledException) { }
         }
 
-        public static readonly DependencyProperty DecodePixelWidthProperty =
-            DependencyProperty.Register(nameof(DecodePixelWidth), typeof(int), typeof(FadeImageBehavior),
-                new PropertyMetadata(0));
+        private static async Task<ImageSource?> LoadThumbFromCacheAsync(string cachePath, CancellationToken token)
+        {
+            byte[]? pixelRented = null;
+            try
+            {
+                int w, h, pixelBytes;
 
-        private Task<BitmapImage?> DecodeToBitmapAsync(byte[]? bytes, CancellationToken token)
-            => ImageHelper.DecodeToBitmapAsync(bytes, DecodePixelWidth, token);
+                await using (var fs = new FileStream(
+                    cachePath, FileMode.Open, FileAccess.Read, FileShare.Read,
+                    bufferSize: 4096, useAsync: true))
+                {
+                    if (fs.Length < 58) return null;
 
-        // ── 生命周期 ───────────────────────────────────────────────────
+                    var header = new byte[54];
+                    await fs.ReadExactlyAsync(header, token);
+
+                    if (header[0] != (byte)'B' || header[1] != (byte)'M') return null;
+
+                    w = BinaryPrimitives.ReadInt32LittleEndian(header.AsSpan(18));
+                    h = Math.Abs(BinaryPrimitives.ReadInt32LittleEndian(header.AsSpan(22)));
+                    if (w <= 0 || h <= 0 || w > 4096 || h > 4096) return null;
+
+                    pixelBytes = w * h * 4;
+                    if (fs.Length < 54 + pixelBytes) return null;
+
+                    pixelRented = ArrayPool<byte>.Shared.Rent(pixelBytes);
+                    await fs.ReadExactlyAsync(pixelRented.AsMemory(0, pixelBytes), token);
+                }
+
+                using var softwareBitmap = new SoftwareBitmap(
+                    BitmapPixelFormat.Bgra8, w, h, BitmapAlphaMode.Premultiplied);
+                softwareBitmap.CopyFromBuffer(pixelRented.AsBuffer(0, pixelBytes));
+                var source = new SoftwareBitmapSource();
+                await source.SetBitmapAsync(softwareBitmap);
+                return source;
+            }
+            catch (OperationCanceledException) { return null; }
+            catch { return null; }
+            finally
+            {
+                if (pixelRented is not null)
+                    ArrayPool<byte>.Shared.Return(pixelRented, clearArray: false);
+            }
+        }
+
         protected override void OnAttached()
         {
             base.OnAttached();
             if (AssociatedObject != null)
             {
                 AssociatedObject.Unloaded += OnUnloaded;
-                if (Enable)
-                {
-                    if (ImageBytes is { Length: > 0 })
-                        _ = InitAsync();
-                    else
-                        SetSource(null);
-                }
+                if (Enable && ImageHash is { Length: > 0 } hash)
+                    _ = InitAsync(hash);
+                else
+                    SetSource(null);
             }
         }
 
-        private async Task InitAsync()
+        private async Task InitAsync(string hash)
         {
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = new CancellationTokenSource();
-            var bitmap = await DecodeToBitmapAsync(ImageBytes, _cts.Token);
-            if (AssociatedObject != null)
-                SetSource(bitmap);
+            await LoadFromCacheAndTransitionAsync(hash, _cts.Token);
         }
 
         protected override void OnDetaching()
@@ -231,7 +248,6 @@ namespace WinUIMusicPlayer.Behaviors
             StopAndCleanup();
         }
 
-        // ── Source 统一设置入口 ────────────────────────────────────────
         private void SetSource(ImageSource? source)
         {
             if (AssociatedObject == null) return;
@@ -240,7 +256,6 @@ namespace WinUIMusicPlayer.Behaviors
             ImageVisibility = source != null ? Visibility.Collapsed : Visibility.Visible;
         }
 
-        // ── 淡入淡出过渡 ───────────────────────────────────────────────
         private void TransitionToNewSource(ImageSource? newSource)
         {
             if (AssociatedObject == null) return;
@@ -257,7 +272,6 @@ namespace WinUIMusicPlayer.Behaviors
 
             if (AssociatedObject.Source != null)
             {
-                // 旧图 → 新图：叠一层旧图做淡出
                 _tempOverlayImage = new Image
                 {
                     Source = AssociatedObject.Source,
@@ -291,7 +305,6 @@ namespace WinUIMusicPlayer.Behaviors
             }
             else
             {
-                // newSource 为 null（清空）或旧图为 null（首次加载）：直接赋值
                 SetSource(newSource);
             }
         }

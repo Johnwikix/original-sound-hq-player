@@ -36,6 +36,7 @@ namespace WinUIMusicPlayer.View
         //private ToolTip _progressToolTip = new();
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
         {
+            AnimatedWin2dControls.Controls.AlbumImgControl.AlbumArtControl.CoverCacheBasePath = AppSettings.MusicCoverCache;
             this.InitializeComponent();
             ViewModel = viewModel;
             DataContext = this;
@@ -66,8 +67,24 @@ namespace WinUIMusicPlayer.View
             }
             App.MainWindow.SizeChanged += MainWindow_SizeChanged;
             App.MainWindow.AppWindow.Changed += AppWindow_Changed;
+            ViewModel.AppViewModel.PropertyChanged += AppViewModel_PropertyChanged;
             ChangeControlsFontSize();
+            if (ViewModel.AppViewModel.LyricPagePalette is { } palette)
+                BackGround?.SetPalette(palette);
             Loaded -= PlayingDetailPage_Loaded;
+        }
+
+        private void AppViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(AppViewModel.LyricPagePalette))
+            {
+                if (ViewModel.AppViewModel.LyricPagePalette is { } palette)
+                {
+                    BackGround?.SetPalette(palette);
+                    if (ViewModel.AppViewModel.UseImageDominantTheme)
+                        BackGround_ThemeResolved(this, palette.PaletteIsDark);
+                }
+            }
         }
 
         private void AppWindow_Changed(AppWindow sender, AppWindowChangedEventArgs args)
@@ -317,6 +334,7 @@ namespace WinUIMusicPlayer.View
             {
                 App.MainWindow.SizeChanged -= MainWindow_SizeChanged;
                 App.MainWindow.AppWindow.Changed -= AppWindow_Changed;
+                ViewModel.AppViewModel.PropertyChanged -= AppViewModel_PropertyChanged;
                 LyricsView?.LyricInteracted -= LyricsView_LyricInteracted;
                 LyricsView?.ExceptionInteracted -= LyricsView_ExceptionInteracted;
                 LyricsView?.ShutdownLyricsCanvas();

@@ -158,8 +158,6 @@
                                             Stretch="UniformToFill">
                                             <interactivity:Interaction.Behaviors>
                                                 <behaviors:FadeImageBehavior
-                                                    DecodePixelWidth="150"
-                                                    ImageBytes="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundData, Mode=OneWay}"
                                                     ImageHash="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundHash, Mode=OneWay}"
                                                     Duration="00:00:1" />
                                             </interactivity:Interaction.Behaviors>
