@@ -949,6 +949,9 @@
   <data name="EnableLightWave.Text" xml:space="preserve">
     <value>Activar onda de luz de fondo</value>
   </data>
+  <data name="PaletteAlgorithm.Text" xml:space="preserve">
+    <value>Algoritmo de paleta</value>
+  </data>
   <data name="RebootToApply" xml:space="preserve">
     <value>Reinicia la aplicación para que los cambios surtan efecto.</value>
   </data>

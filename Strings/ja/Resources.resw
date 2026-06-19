@@ -949,6 +949,9 @@
   <data name="EnableLightWave.Text" xml:space="preserve">
     <value>背景光波を有効にする</value>
   </data>
+  <data name="PaletteAlgorithm.Text" xml:space="preserve">
+    <value>パレットアルゴリズム</value>
+  </data>
   <data name="RebootToApply" xml:space="preserve">
     <value>変更を適用するにはアプリを再起動してください。</value>
   </data>

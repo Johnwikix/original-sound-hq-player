@@ -205,6 +205,9 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
 
             _effect = new PixelShaderEffect(shaderBytes);
 
+            sender.IsFixedTimeStep = true;
+            sender.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / 40.0);
+
             if (_currentPalette is not null)
                 ApplyPaletteColors(_currentPalette);
             else
@@ -418,15 +421,13 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
         return result;
     }
 
-    // 优化要点：Span<float> 替代 float[]（堆分配），其余逻辑不变。
     private static void ScalePaletteLuminance(
         List<(Vector3 Color, int Population)> weighted,
         bool isDark, bool useImageDominantTheme)
     {
-        float targetAvg = isDark ? 0.45f : 0.55f;
+        float targetAvg = isDark ? 0.50f : 0.55f;
         int count = weighted.Count;
 
-        // stackalloc 替代隐式 float[]，count 最大 5（含 nudge 补充的 1 个）
         Span<float> hs = stackalloc float[count <= 8 ? count : 8];
         Span<float> ss = stackalloc float[count <= 8 ? count : 8];
         Span<float> ls = stackalloc float[count <= 8 ? count : 8];

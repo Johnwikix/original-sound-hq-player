@@ -39,6 +39,26 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         } = true;
+        public AnimatedWin2dControls.Impressionist.PaletteAlgorithm PaletteAlgorithm
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    OnPropertyChanged(nameof(PaletteAlgorithmIndex));
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = AnimatedWin2dControls.Impressionist.PaletteAlgorithm.KMeansPP;
+        public int PaletteAlgorithmIndex
+        {
+            get => (int)PaletteAlgorithm;
+            set => PaletteAlgorithm = (AnimatedWin2dControls.Impressionist.PaletteAlgorithm)value;
+        }
         public int CoverSize
         {
             get => field;

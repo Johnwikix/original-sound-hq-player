@@ -47,6 +47,7 @@ namespace WinUIMusicPlayer.Model
         public string MusicCoverCache { get; set; } = string.Empty;
         public bool UseImageDominantTheme { get; set; } = false;
         public bool EnableLightWave { get; set; } = true;
+        public int PaletteAlgorithm { get; set; } = 0;
         public bool IsWin2dCoverImageControlEnable { get; set; } = false;
         public bool IsWin2dAnimatedText { get; set; } = false;
         public double CharFloatAmount { get; set; } = 5.0;

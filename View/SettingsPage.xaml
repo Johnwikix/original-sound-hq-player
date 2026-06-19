@@ -464,6 +464,29 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="PaletteAlgorithm"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ComboBox
+                                    Grid.Column="1"
+                                    MinWidth="140"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
+                                    SelectedIndex="{x:Bind ViewModel.AppViewModel.PaletteAlgorithmIndex, Mode=TwoWay}">
+                                    <ComboBoxItem Content="K-Means++" />
+                                    <ComboBoxItem Content="OctTree" />
+                                </ComboBox>
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                     <TextBlock x:Uid="Win2dCover" FontSize="14" />
                                     <TextBlock

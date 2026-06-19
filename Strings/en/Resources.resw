@@ -949,6 +949,9 @@
   <data name="EnableLightWave.Text" xml:space="preserve">
     <value>Enable Background Light Wave</value>
   </data>
+  <data name="PaletteAlgorithm.Text" xml:space="preserve">
+    <value>Palette Algorithm</value>
+  </data>
   <data name="RebootToApply" xml:space="preserve">
     <value>Restart the application for changes to take effect.</value>
   </data>

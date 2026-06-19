@@ -949,6 +949,9 @@
   <data name="EnableLightWave.Text" xml:space="preserve">
     <value>Включить фоновую световую волну</value>
   </data>
+  <data name="PaletteAlgorithm.Text" xml:space="preserve">
+    <value>Алгоритм палитры</value>
+  </data>
   <data name="RebootToApply" xml:space="preserve">
     <value>Перезапустите приложение, чтобы изменения вступили в силу.</value>
   </data>

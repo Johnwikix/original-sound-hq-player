@@ -441,13 +441,13 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     string thumbPath = CoverLoadQueue.GetThumbCachePath(music.ImageHash, CoverLoadQueue.CoverSize);
                     palette = await AnimatedWin2dControls.Impressionist.PaletteExtractor
-                        .ExtractFromBmpCacheAsync(thumbPath, ct: token);
+                        .ExtractFromBmpCacheAsync(thumbPath, AppViewModel.PaletteAlgorithm, ct: token);
                 }
                 if (palette is null && picData.Length > 0)
                 {
                     palette = await Task.Run(() =>
                         AnimatedWin2dControls.Impressionist.PaletteExtractor
-                            .ExtractFromImageBytesAsync(picData, ct: token), token);
+                            .ExtractFromImageBytesAsync(picData, AppViewModel.PaletteAlgorithm, ct: token), token);
                 }
 
                 if (token.IsCancellationRequested) return;

@@ -949,6 +949,9 @@
   <data name="EnableLightWave.Text" xml:space="preserve">
     <value>Hintergrund-Lichtwelle aktivieren</value>
   </data>
+  <data name="PaletteAlgorithm.Text" xml:space="preserve">
+    <value>Palettenalgorithmus</value>
+  </data>
   <data name="RebootToApply" xml:space="preserve">
     <value>Starten Sie die Anwendung neu, damit die Änderungen wirksam werden.</value>
   </data>

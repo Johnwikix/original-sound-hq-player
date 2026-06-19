@@ -843,6 +843,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.LyricsBlurAmount = settings.LyricsBlurAmount;
                 AppViewModel.UseImageDominantTheme = settings.UseImageDominantTheme;
                 AppViewModel.EnableLightWave = settings.EnableLightWave;
+                AppViewModel.PaletteAlgorithm = (AnimatedWin2dControls.Impressionist.PaletteAlgorithm)settings.PaletteAlgorithm;
                 AppViewModel.IsWin2dCoverImageControlEnable = settings.IsWin2dCoverImageControlEnable;
                 AppViewModel.IsWin2dAnimatedText = settings.IsWin2dAnimatedText;
                 AppViewModel.Win2dTextEffectType = AppViewModel.TextEffectItems.AsValueEnumerable().FirstOrDefault(t => t.Value == settings.Win2dTextEffectType) ?? AppViewModel.TextEffectItems[0];
@@ -942,6 +943,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.LyricsBlurAmount = AppViewModel.LyricsBlurAmount;
             newSettings.UseImageDominantTheme = AppViewModel.UseImageDominantTheme;
             newSettings.EnableLightWave = AppViewModel.EnableLightWave;
+            newSettings.PaletteAlgorithm = (int)AppViewModel.PaletteAlgorithm;
             newSettings.IsWin2dAnimatedText = AppViewModel.IsWin2dAnimatedText;
             newSettings.IsWin2dCoverImageControlEnable = AppViewModel.IsWin2dCoverImageControlEnable;
             newSettings.CharFloatAmount = AppViewModel.CharFloatAmount;
