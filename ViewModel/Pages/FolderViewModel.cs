@@ -143,16 +143,31 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void Play()
         {
-            var folders = AppViewModel.SongsSource.AsValueEnumerable()
-                .Where(m => m.LastLevelFolderPath is not null && m.LastLevelFolderPath.Equals(SelectedItem.LastLevelFolderPath, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(m => m.LastLevelFolderPath).ToList();
-            if (folders is not null && folders.Count > 0)
+            var srcSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(AppViewModel.SongsSource);
+            var pool = System.Buffers.ArrayPool<Music>.Shared;
+            var buf = pool.Rent(Math.Max(srcSpan.Length, 1));
+            int count = 0;
+            try
             {
-                if (MusicBrowseViewModel is not null)
+                for (int i = 0; i < srcSpan.Length; i++)
                 {
-                    AppViewModel.SequentialPlayingList = new(folders);
-                    MusicBrowseViewModel.PlayMusic(music: folders[0], IsChangeList: true).Wait();
+                    var m = srcSpan[i];
+                    if (m.LastLevelFolderPath is not null && m.LastLevelFolderPath.Equals(SelectedItem.LastLevelFolderPath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        buf[count++] = m;
+                    }
                 }
+                if (count == 0 || MusicBrowseViewModel is null) return;
+
+                var slice = buf.AsSpan(0, count);
+                slice.Sort((a, b) => string.CompareOrdinal(a.LastLevelFolderPath, b.LastLevelFolderPath));
+
+                AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(slice.ToArray());
+                MusicBrowseViewModel.PlayMusic(music: slice[0], IsChangeList: true).Wait();
+            }
+            finally
+            {
+                pool.Return(buf, clearArray: false);
             }
         }
         [RelayCommand]

@@ -133,6 +133,8 @@ namespace WinUIMusicPlayer.Services
         {
             await _dbConnection.DeleteAllAsync<LastPlayListState>();
             // 优化2: 去掉多余的 ToArray()，string.Join 直接接受 IEnumerable<int>
+            // 注意: ZLinq.ValueEnumerable 是 struct，未实现 IEnumerable<T>，
+            //       .AsEnumerable() 会分配 enumerator，所以保留 .ToArray()。
             var musicIds = string.Join(',', currentPlayingList.AsValueEnumerable().Select(m => m.Id).ToArray());
             var playListState = new LastPlayListState
             {
@@ -1010,6 +1012,8 @@ namespace WinUIMusicPlayer.Services
             {
                 await _dbConnection.DeleteAllAsync<LastPlayListState>();
                 // 优化8: 去掉多余的 ToArray()
+                // 注意: ZLinq.ValueEnumerable 是 struct，未实现 IEnumerable<T>，
+                //       .AsEnumerable() 会分配 enumerator，所以保留 .ToArray()。
                 var musicIds = string.Join(',', currentPlayingList.AsValueEnumerable().Select(m => m.Id).ToArray());
                 var playListState = new LastPlayListState
                 {

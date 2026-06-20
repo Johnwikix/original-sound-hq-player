@@ -197,6 +197,12 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                 RefreshFolderTitles(folder);
         }
 
+        private static readonly string NumberOfSongsText = ToolUtils.GetString("NumberOfSongs");
+        private static readonly string NumberOfAlbumsText = ToolUtils.GetString("NumberOfAlbums");
+        private static readonly string NumberOfArtistsText = ToolUtils.GetString("NumberOfArtists");
+        private static readonly string ArtistText = ToolUtils.GetString("Artist");
+        private static readonly string FolderText = ToolUtils.GetString("Folder");
+
         private void RefreshAlbumTitles(Music album)
         {
             int count = 0;
@@ -214,7 +220,9 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                 }
             }
             SecondTitle = string.Join(" · ", _authorsList);
-            ThirdTitle = $"{(album.Year != 0 ? $"{album.Year} · " : "")}{count} {ToolUtils.GetString("NumberOfSongs")}";
+            ThirdTitle = album.Year != 0
+                ? $"{album.Year} · {count} {NumberOfSongsText}"
+                : $"{count} {NumberOfSongsText}";
         }
 
         private void RefreshArtistTitles(Music artist)
@@ -233,8 +241,8 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                     albums++;
                 }
             }
-            SecondTitle = $"{count} {ToolUtils.GetString("NumberOfSongs")} · {albums} {ToolUtils.GetString("NumberOfAlbums")}";
-            ThirdTitle = ToolUtils.GetString("Artist");
+            SecondTitle = $"{count} {NumberOfSongsText} · {albums} {NumberOfAlbumsText}";
+            ThirdTitle = ArtistText;
         }
 
         private void RefreshFolderTitles(Music folder)
@@ -254,8 +262,8 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                 if (!string.IsNullOrEmpty(music.Album) && _seenAlbums.Add(music.Album)) albums++;
                 if (!string.IsNullOrEmpty(music.Author) && _seenAuthors.Add(music.Author)) authors++;
             }
-            SecondTitle = $"{count} {ToolUtils.GetString("NumberOfSongs")} · {albums} {ToolUtils.GetString("NumberOfAlbums")} · {authors} {ToolUtils.GetString("NumberOfArtists")}";
-            ThirdTitle = ToolUtils.GetString("Folder");
+            SecondTitle = $"{count} {NumberOfSongsText} · {albums} {NumberOfAlbumsText} · {authors} {NumberOfArtistsText}";
+            ThirdTitle = FolderText;
         }
 
         public void UpdateMusicListView()

@@ -7,18 +7,14 @@ namespace WinUIMusicPlayer.Converters
 {
     public partial class PlayStatusToStringConverter : IValueConverter
     {
+        private static readonly string IconPlayText = ToolUtils.GetString("IconPlay");
+        private static readonly string IconPauseText = ToolUtils.GetString("IconPause");
+
         public object Convert(object value, Type targetType, object parameter, string language)
         {
             if (value is bool IsPlaying)
             {
-                if (IsPlaying)
-                {
-                    return ToolUtils.GetString("IconPause");
-                }
-                else
-                {
-                    return ToolUtils.GetString("IconPlay");
-                }
+                return IsPlaying ? IconPauseText : IconPlayText;
             }
             return DependencyProperty.UnsetValue;
         }

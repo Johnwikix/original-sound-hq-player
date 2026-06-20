@@ -202,54 +202,62 @@ internal static class CoverLoadQueue
     {
         try
         {
-            var header = new byte[54];
+            var header = ArrayPool<byte>.Shared.Rent(54);
             byte[]? pixelRented = null;
             int w, h;
             int pixelBytes;
 
-            await using (var fs = new FileStream(
-                cachePath, FileMode.Open, FileAccess.Read, FileShare.Read,
-                bufferSize: 4096, useAsync: true))
+            try
             {
-                if (fs.Length < 58)
+                await using (var fs = new FileStream(
+                    cachePath, FileMode.Open, FileAccess.Read, FileShare.Read,
+                    bufferSize: 4096, useAsync: true))
                 {
-                    _logger?.LogWarning("缩略图缓存文件过小，删除: {Path}", cachePath);
-                    fs.Close();
-                    try { File.Delete(cachePath); } catch { }
-                    return null;
+                    if (fs.Length < 58)
+                    {
+                        _logger?.LogWarning("缩略图缓存文件过小，删除: {Path}", cachePath);
+                        fs.Close();
+                        try { File.Delete(cachePath); } catch { }
+                        return null;
+                    }
+
+                    await fs.ReadExactlyAsync(header.AsMemory(0, 54), token);
+
+                    var h0 = header.AsSpan(0, 54);
+                    if (h0[0] != (byte)'B' || h0[1] != (byte)'M')
+                    {
+                        _logger?.LogWarning("缩略图缓存 BMP magic 无效，删除: {Path}", cachePath);
+                        fs.Close();
+                        try { File.Delete(cachePath); } catch { }
+                        return null;
+                    }
+
+                    w = BinaryPrimitives.ReadInt32LittleEndian(h0[18..]);
+                    h = Math.Abs(BinaryPrimitives.ReadInt32LittleEndian(h0[22..]));
+                    if (w <= 0 || h <= 0 || w > 4096 || h > 4096)
+                    {
+                        _logger?.LogWarning("缩略图缓存尺寸异常 ({W}x{H})，删除: {Path}", w, h, cachePath);
+                        fs.Close();
+                        try { File.Delete(cachePath); } catch { }
+                        return null;
+                    }
+
+                    pixelBytes = w * h * 4;
+                    if (fs.Length < 54 + pixelBytes)
+                    {
+                        _logger?.LogWarning("缩略图缓存像素数据不完整，删除: {Path}", cachePath);
+                        fs.Close();
+                        try { File.Delete(cachePath); } catch { }
+                        return null;
+                    }
+
+                    pixelRented = ArrayPool<byte>.Shared.Rent(pixelBytes);
+                    await fs.ReadExactlyAsync(pixelRented.AsMemory(0, pixelBytes), token);
                 }
-
-                await fs.ReadExactlyAsync(header, token);
-
-                if (header[0] != (byte)'B' || header[1] != (byte)'M')
-                {
-                    _logger?.LogWarning("缩略图缓存 BMP magic 无效，删除: {Path}", cachePath);
-                    fs.Close();
-                    try { File.Delete(cachePath); } catch { }
-                    return null;
-                }
-
-                w = BinaryPrimitives.ReadInt32LittleEndian(header.AsSpan(18));
-                h = Math.Abs(BinaryPrimitives.ReadInt32LittleEndian(header.AsSpan(22)));
-                if (w <= 0 || h <= 0 || w > 4096 || h > 4096)
-                {
-                    _logger?.LogWarning("缩略图缓存尺寸异常 ({W}x{H})，删除: {Path}", w, h, cachePath);
-                    fs.Close();
-                    try { File.Delete(cachePath); } catch { }
-                    return null;
-                }
-
-                pixelBytes = w * h * 4;
-                if (fs.Length < 54 + pixelBytes)
-                {
-                    _logger?.LogWarning("缩略图缓存像素数据不完整，删除: {Path}", cachePath);
-                    fs.Close();
-                    try { File.Delete(cachePath); } catch { }
-                    return null;
-                }
-
-                pixelRented = ArrayPool<byte>.Shared.Rent(pixelBytes);
-                await fs.ReadExactlyAsync(pixelRented.AsMemory(0, pixelBytes), token);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(header, clearArray: false);
             }
 
             ImageSource? result = null;

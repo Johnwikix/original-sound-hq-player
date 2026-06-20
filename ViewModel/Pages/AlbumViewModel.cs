@@ -134,13 +134,31 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private async Task Play()
         {
-            var albums = AppViewModel.SongsSource.AsValueEnumerable()
-                .Where(m => m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(m => m.TrackNumber).ToList();
-            if (albums.Count > 0 && MusicBrowseViewModel is not null)
+            var srcSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(AppViewModel.SongsSource);
+            var pool = System.Buffers.ArrayPool<Music>.Shared;
+            var buf = pool.Rent(Math.Max(srcSpan.Length, 1));
+            int count = 0;
+            try
             {
-                AppViewModel.SequentialPlayingList = new(albums);
-                await MusicBrowseViewModel.PlayMusic(music: albums[0], IsChangeList: true);
+                for (int i = 0; i < srcSpan.Length; i++)
+                {
+                    var m = srcSpan[i];
+                    if (m.Album is not null && m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase))
+                    {
+                        buf[count++] = m;
+                    }
+                }
+                if (count == 0 || MusicBrowseViewModel is null) return;
+
+                var slice = buf.AsSpan(0, count);
+                slice.Sort((a, b) => a.TrackNumber.CompareTo(b.TrackNumber));
+
+                AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(slice.ToArray());
+                await MusicBrowseViewModel.PlayMusic(music: slice[0], IsChangeList: true);
+            }
+            finally
+            {
+                pool.Return(buf, clearArray: false);
             }
         }
         [RelayCommand]

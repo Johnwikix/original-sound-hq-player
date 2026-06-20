@@ -126,15 +126,34 @@ namespace WinUIMusicPlayer.Utils
         {
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
+                HashSet<string>? usbAlbums = null;
+                HashSet<string>? usbAuthors = null;
+                if (type == "album")
+                {
+                    usbAlbums = new HashSet<string>(StringComparer.Ordinal);
+                    foreach (var usbMusic in AppData.MusicOnUsbDevice)
+                    {
+                        if (usbMusic.Album is { } a) usbAlbums.Add(a);
+                    }
+                }
+                else if (type == "artist")
+                {
+                    usbAuthors = new HashSet<string>(StringComparer.Ordinal);
+                    foreach (var usbMusic in AppData.MusicOnUsbDevice)
+                    {
+                        if (usbMusic.Author is { } a) usbAuthors.Add(a);
+                    }
+                }
+
                 foreach (var item in musicList)
                 {
                     if (type == "album")
                     {
-                        item.IsExistOnDevice = AppData.MusicOnUsbDevice.AsValueEnumerable().Any(usbMusic => usbMusic.Album == item.Album) ? 1 : 0;
+                        item.IsExistOnDevice = (usbAlbums?.Contains(item.Album) ?? false) ? 1 : 0;
                     }
                     else if (type == "artist")
                     {
-                        item.IsExistOnDevice = AppData.MusicOnUsbDevice.AsValueEnumerable().Any(usbMusic => usbMusic.Author == item.Author) ? 1 : 0;
+                        item.IsExistOnDevice = (usbAuthors?.Contains(item.Author) ?? false) ? 1 : 0;
                     }
                     else if (type == "folder")
                     {

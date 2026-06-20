@@ -166,30 +166,38 @@ namespace WinUIMusicPlayer.Behaviors
         private static async Task<ImageSource?> LoadThumbFromCacheAsync(string cachePath, CancellationToken token)
         {
             byte[]? pixelRented = null;
+            var header = ArrayPool<byte>.Shared.Rent(54);
             try
             {
                 int w, h, pixelBytes;
 
-                await using (var fs = new FileStream(
-                    cachePath, FileMode.Open, FileAccess.Read, FileShare.Read,
-                    bufferSize: 4096, useAsync: true))
+                try
                 {
-                    if (fs.Length < 58) return null;
+                    await using (var fs = new FileStream(
+                        cachePath, FileMode.Open, FileAccess.Read, FileShare.Read,
+                        bufferSize: 4096, useAsync: true))
+                    {
+                        if (fs.Length < 58) return null;
 
-                    var header = new byte[54];
-                    await fs.ReadExactlyAsync(header, token);
+                        await fs.ReadExactlyAsync(header.AsMemory(0, 54), token);
 
-                    if (header[0] != (byte)'B' || header[1] != (byte)'M') return null;
+                        var h0 = header.AsSpan(0, 54);
+                        if (h0[0] != (byte)'B' || h0[1] != (byte)'M') return null;
 
-                    w = BinaryPrimitives.ReadInt32LittleEndian(header.AsSpan(18));
-                    h = Math.Abs(BinaryPrimitives.ReadInt32LittleEndian(header.AsSpan(22)));
-                    if (w <= 0 || h <= 0 || w > 4096 || h > 4096) return null;
+                        w = BinaryPrimitives.ReadInt32LittleEndian(h0[18..]);
+                        h = Math.Abs(BinaryPrimitives.ReadInt32LittleEndian(h0[22..]));
+                        if (w <= 0 || h <= 0 || w > 4096 || h > 4096) return null;
 
-                    pixelBytes = w * h * 4;
-                    if (fs.Length < 54 + pixelBytes) return null;
+                        pixelBytes = w * h * 4;
+                        if (fs.Length < 54 + pixelBytes) return null;
 
-                    pixelRented = ArrayPool<byte>.Shared.Rent(pixelBytes);
-                    await fs.ReadExactlyAsync(pixelRented.AsMemory(0, pixelBytes), token);
+                        pixelRented = ArrayPool<byte>.Shared.Rent(pixelBytes);
+                        await fs.ReadExactlyAsync(pixelRented.AsMemory(0, pixelBytes), token);
+                    }
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(header, clearArray: false);
                 }
 
                 using var softwareBitmap = new SoftwareBitmap(

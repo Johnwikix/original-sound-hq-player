@@ -39,11 +39,8 @@ namespace WinUIMusicPlayer.Utils
 
         public static string AlbumSongsConverter(string album)
         {
-            if (string.IsNullOrEmpty(album))
-            {
-                return "0";
-            }
-            return App.Services.GetRequiredService<AppViewModel>().SongsSource.AsValueEnumerable().Where(m => m.Album == album).Count().ToString();
+            if (string.IsNullOrEmpty(album)) return "0";
+            return App.Services.GetRequiredService<AppViewModel>().GetAlbumSongCount(album).ToString();
         }
 
         public static Music? PlayListCoverMusicConverter(int playListId)
@@ -138,11 +135,11 @@ namespace WinUIMusicPlayer.Utils
 
         public static double PercentToDouble(double percent) => percent / 100.0;
 
-        public static string FormatF1(double value) => $"{value:F1}";
-        public static string FormatF1(float value) => $"{value:F1}";
-        public static string FormatF0(double value) => $"{value:F0}";
-        public static string FormatMs(double value) => $"{value:F0} ms";
-        public static string FormatPercent(double value) => $"{value:F0}%";
+        public static string FormatF1(double value) => value.ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
+        public static string FormatF1(float value) => value.ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
+        public static string FormatF0(double value) => value.ToString("F0", System.Globalization.CultureInfo.InvariantCulture);
+        public static string FormatMs(double value) => value.ToString("F0", System.Globalization.CultureInfo.InvariantCulture) + " ms";
+        public static string FormatPercent(double value) => value.ToString("F0", System.Globalization.CultureInfo.InvariantCulture) + "%";
 
         public static string FormatThumbTipTime(double totalSeconds)
         {

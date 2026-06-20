@@ -119,6 +119,7 @@ namespace WinUIMusicPlayer.ViewModel
         private readonly Dictionary<string, Music> _firstAlbumIndex = new(capacity: 4096, StringComparer.Ordinal);
         private readonly Dictionary<string, Music> _firstArtistIndex = new(capacity: 4096, StringComparer.Ordinal);
         private readonly Dictionary<string, Music> _firstFolderIndex = new(capacity: 4096, StringComparer.Ordinal);
+        private readonly Dictionary<string, int> _albumSongCounts = new(capacity: 4096, StringComparer.Ordinal);
         private bool _indexDirty = true;
         public BulkObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<PlayListMusicItem> PlayListSongs { get; set => SetProperty(ref field, value); } = [];
@@ -614,20 +615,32 @@ namespace WinUIMusicPlayer.ViewModel
             _firstAlbumIndex.Clear();
             _firstArtistIndex.Clear();
             _firstFolderIndex.Clear();
+            _albumSongCounts.Clear();
             var src = _songsSource;
             for (int i = 0; i < src.Count; i++)
             {
                 var m = src[i];
                 if (m is null) continue;
                 _idIndex[m.Id] = m;
-                if (!string.IsNullOrEmpty(m.Album) && !_firstAlbumIndex.ContainsKey(m.Album))
-                    _firstAlbumIndex[m.Album] = m;
+                if (!string.IsNullOrEmpty(m.Album))
+                {
+                    if (!_firstAlbumIndex.ContainsKey(m.Album))
+                        _firstAlbumIndex[m.Album] = m;
+                    _albumSongCounts[m.Album] = _albumSongCounts.GetValueOrDefault(m.Album) + 1;
+                }
                 if (!string.IsNullOrEmpty(m.Author) && !_firstArtistIndex.ContainsKey(m.Author))
                     _firstArtistIndex[m.Author] = m;
                 if (!string.IsNullOrEmpty(m.LastLevelFolderPath) && !_firstFolderIndex.ContainsKey(m.LastLevelFolderPath))
                     _firstFolderIndex[m.LastLevelFolderPath] = m;
             }
             _indexDirty = false;
+        }
+
+        public int GetAlbumSongCount(string? album)
+        {
+            if (string.IsNullOrEmpty(album)) return 0;
+            if (_indexDirty) RebuildIdIndex();
+            return _albumSongCounts.TryGetValue(album, out var c) ? c : 0;
         }
 
         public void NotifySongsSourceChanged()
