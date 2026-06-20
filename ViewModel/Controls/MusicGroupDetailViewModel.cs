@@ -46,6 +46,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         public string CoverGlyph { get; set => SetProperty(ref field, value); } = "\uE93C";
         public CornerRadius CoverCornerRadius { get; set => SetProperty(ref field, value); } = new CornerRadius(5);
         public bool IsAlbumDetail { get; set => SetProperty(ref field, value); }
+        public bool IsClosingForTransition { get; set; }
 
         public BulkObservableCollection<Music> Songs { get; set => SetProperty(ref field, value); } = [];
         public ObservableCollection<MenuModel> MenuOptions { get; set => SetProperty(ref field, value); } = [];
@@ -107,6 +108,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         {
             if (e.PropertyName is "CurrentAlbumObj" or "CurrentArtistObj" or "CurrentFolderObj")
             {
+                if (IsClosingForTransition) return;
                 RefreshFromAppState();
             }
         }

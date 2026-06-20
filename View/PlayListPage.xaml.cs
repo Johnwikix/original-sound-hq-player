@@ -33,6 +33,7 @@ namespace WinUIMusicPlayer.View
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
+            DetailView.ViewModel.IsClosingForTransition = false;
             ViewModel.ReceiveNavigation();
         }
 
@@ -57,6 +58,7 @@ namespace WinUIMusicPlayer.View
 
         private void PlayListGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
+            if (DetailView.ViewModel.IsClosingForTransition) return;
             var gridView = sender as GridView;
             var item = gridView?.ContainerFromItem(e.ClickedItem) as GridViewItem;
             var coverBorder = FindCoverBorderInItem(item);
@@ -105,17 +107,45 @@ namespace WinUIMusicPlayer.View
                     .PrepareToAnimate("PlaylistCover", detailBorder);
             }
             SetExitTransitions();
-            if (ViewModel.AppViewModel.CurrentPlayList is not null)
-            {
-                ViewModel.AppViewModel.CurrentPlayList = null;
-            }
+
             if (canAnimate)
             {
+                DetailView.ViewModel.IsClosingForTransition = true;
+                if (ViewModel.AppViewModel.CurrentPlayList is not null)
+                {
+                    ViewModel.AppViewModel.CurrentPlayList = null;
+                }
+                ViewModel.IsInDetailMode = false;
                 DispatcherQueue.TryEnqueue(() =>
                 {
                     var anim = ConnectedAnimationService.GetForCurrentView().GetAnimation("PlaylistCover");
-                    anim?.TryStart(sourceBorder);
+                    if (anim != null)
+                    {
+                        anim.Completed += (s, e) =>
+                        {
+                            DetailView.ViewModel.IsClosingForTransition = false;
+                            DetailView.ViewModel.RefreshFromAppState();
+                        };
+                        if (!anim.TryStart(sourceBorder))
+                        {
+                            DetailView.ViewModel.IsClosingForTransition = false;
+                            DetailView.ViewModel.RefreshFromAppState();
+                        }
+                    }
+                    else
+                    {
+                        DetailView.ViewModel.IsClosingForTransition = false;
+                        DetailView.ViewModel.RefreshFromAppState();
+                    }
                 });
+            }
+            else
+            {
+                if (ViewModel.AppViewModel.CurrentPlayList is not null)
+                {
+                    ViewModel.AppViewModel.CurrentPlayList = null;
+                }
+                ViewModel.IsInDetailMode = false;
             }
         }
 

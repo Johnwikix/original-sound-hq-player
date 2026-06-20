@@ -39,11 +39,13 @@ namespace WinUIMusicPlayer.View
         protected override void OnNavigatedTo(NavigationEventArgs e)
         {
             base.OnNavigatedTo(e);
+            DetailView.ViewModel.IsClosingForTransition = false;
             ViewModel.ReceiveNavigation();
         }
 
         private void FolderGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
+            if (DetailView.ViewModel.IsClosingForTransition) return;
             var gridView = sender as GridView;
             var item = gridView?.ContainerFromItem(e.ClickedItem) as GridViewItem;
             var coverBorder = FindCoverBorderInItem(item);
@@ -86,14 +88,37 @@ namespace WinUIMusicPlayer.View
                     .PrepareToAnimate("FolderCover", detailBorder);
             }
             SetExitTransitions();
-            ViewModel.CollapseDetail();
+
             if (canAnimate)
             {
+                DetailView.ViewModel.IsClosingForTransition = true;
+                ViewModel.CollapseDetail();
                 DispatcherQueue.TryEnqueue(() =>
                 {
                     var anim = ConnectedAnimationService.GetForCurrentView().GetAnimation("FolderCover");
-                    anim?.TryStart(sourceBorder);
+                    if (anim != null)
+                    {
+                        anim.Completed += (s, e) =>
+                        {
+                            DetailView.ViewModel.IsClosingForTransition = false;
+                            DetailView.ViewModel.RefreshFromAppState();
+                        };
+                        if (!anim.TryStart(sourceBorder))
+                        {
+                            DetailView.ViewModel.IsClosingForTransition = false;
+                            DetailView.ViewModel.RefreshFromAppState();
+                        }
+                    }
+                    else
+                    {
+                        DetailView.ViewModel.IsClosingForTransition = false;
+                        DetailView.ViewModel.RefreshFromAppState();
+                    }
                 });
+            }
+            else
+            {
+                ViewModel.CollapseDetail();
             }
         }
 

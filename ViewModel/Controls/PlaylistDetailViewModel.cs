@@ -41,6 +41,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         public string ThirdTitle { get; set => SetProperty(ref field, value); } = string.Empty;
         public string CoverGlyph { get; set => SetProperty(ref field, value); } = "\uE93C";
         public CornerRadius CoverCornerRadius { get; set => SetProperty(ref field, value); } = new CornerRadius(5);
+        public bool IsClosingForTransition { get; set; }
 
         public BulkObservableCollection<PlayListMusicItem> Songs { get; set => SetProperty(ref field, value); } = [];
         public ObservableCollection<MenuModel> MenuOptions { get; set => SetProperty(ref field, value); } = [];
@@ -100,6 +101,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         {
             if (e.PropertyName is "CurrentPlayList" or "CurrentPlayListId")
             {
+                if (IsClosingForTransition) return;
                 RefreshFromAppState();
             }
         }
