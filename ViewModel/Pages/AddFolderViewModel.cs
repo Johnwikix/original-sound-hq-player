@@ -5,6 +5,7 @@ using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.System;
@@ -41,7 +42,15 @@ namespace WinUIMusicPlayer.ViewModel
                 FolderList.Clear();
                 foreach (var folder in folderList)
                 {
-                    folder.SongCount = AppViewModel.SongsSource.AsValueEnumerable().Where(m => m.Path.StartsWith(folder.Path)).Count();
+                    var span = CollectionsMarshal.AsSpan(AppViewModel.SongsSource);
+                    int count = 0;
+                    string folderPath = folder.Path;
+                    for (int i = 0; i < span.Length; i++)
+                    {
+                        if (span[i].Path.StartsWith(folderPath, StringComparison.OrdinalIgnoreCase))
+                            count++;
+                    }
+                    folder.SongCount = count;
                     FolderList.Add(folder);
                 }
             }

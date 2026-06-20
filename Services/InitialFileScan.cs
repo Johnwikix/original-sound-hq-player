@@ -78,7 +78,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     try
                     {
-                        if (!ToolUtils.IsMusicFile(Path.GetExtension(filePath)))
+                        if (!IsMusicExtension(filePath))
                         {
                             continue;
                         }
@@ -116,6 +116,29 @@ namespace WinUIMusicPlayer.Services
             {
                 _logger.LogError(ex, $"ScanSingleFolder 意外错误: {ex.Message}");
             }
+        }
+
+        private static bool IsMusicExtension(string filePath)
+        {
+            ReadOnlySpan<char> span = filePath;
+            int dot = span.LastIndexOf('.');
+            if (dot < 0) return false;
+            ReadOnlySpan<char> ext = span[dot..];
+            return MemoryExtensions.Equals(ext, ".mp3".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                   MemoryExtensions.Equals(ext, ".wav".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                   MemoryExtensions.Equals(ext, ".flac".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                   MemoryExtensions.Equals(ext, ".wma".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                   MemoryExtensions.Equals(ext, ".aac".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                   MemoryExtensions.Equals(ext, ".ogg".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                   MemoryExtensions.Equals(ext, ".oga".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                   MemoryExtensions.Equals(ext, ".aiff".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                   MemoryExtensions.Equals(ext, ".aif".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                   MemoryExtensions.Equals(ext, ".m4a".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                   MemoryExtensions.Equals(ext, ".dsf".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                   MemoryExtensions.Equals(ext, ".dff".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                   MemoryExtensions.Equals(ext, ".ape".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                   MemoryExtensions.Equals(ext, ".opus".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
+                   MemoryExtensions.Equals(ext, ".wv".AsSpan(), StringComparison.OrdinalIgnoreCase);
         }
     }
 }

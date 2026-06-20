@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Buffers.Binary;
 using System.IO;
 using System.Text;
@@ -294,9 +295,17 @@ public static class AudioCoverReader
                 continue;
             }
 
-            var pageData = new byte[pageDataLen];
-            if (!ReadExact(s, pageData)) return null;
-            ms.Write(pageData);
+            var pageData = ArrayPool<byte>.Shared.Rent(pageDataLen);
+            try
+            {
+                var span = pageData.AsSpan(0, pageDataLen);
+                if (!ReadExact(s, span)) return null;
+                ms.Write(span);
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(pageData, clearArray: true);
+            }
 
             if (!foundComment)
             {

@@ -196,8 +196,7 @@ namespace WinUIMusicPlayer.Services
             {
                 return [];
             }
-            var musicIds = playListState.PlayListMusicIds.Split(',', StringSplitOptions.RemoveEmptyEntries).AsValueEnumerable()
-                                                         .Select(int.Parse).ToList();
+            var musicIds = ParseCsvIntList(playListState.PlayListMusicIds);
             var musicList = new List<Music>(musicIds.Count);
             foreach (var musicId in musicIds)
             {
@@ -208,6 +207,22 @@ namespace WinUIMusicPlayer.Services
                 }
             }
             return musicList;
+        }
+
+        private static List<int> ParseCsvIntList(string csv)
+        {
+            var result = new List<int>();
+            if (string.IsNullOrEmpty(csv)) return result;
+            ReadOnlySpan<char> span = csv;
+            while (span.Length > 0)
+            {
+                int comma = span.IndexOf(',');
+                ReadOnlySpan<char> segment = comma >= 0 ? span[..comma] : span;
+                if (segment.Length > 0 && int.TryParse(segment, out int id))
+                    result.Add(id);
+                span = comma >= 0 ? span[(comma + 1)..] : [];
+            }
+            return result;
         }
 
         public async Task<List<Folder>> GetFoldersAsync()
@@ -1671,15 +1686,16 @@ namespace WinUIMusicPlayer.Services
         private static List<string> EnumerateAllMusicFiles(string rootPath)
         {
             var paths = new List<string>();
-            foreach (var ext in _musicPatterns)
+            try
             {
-                try
+                foreach (var file in Directory.EnumerateFiles(rootPath, "*", SearchOption.AllDirectories))
                 {
-                    paths.AddRange(Directory.GetFiles(rootPath, $"*{ext}", SearchOption.AllDirectories));
+                    if (HasMusicExtension(file))
+                        paths.Add(file);
                 }
-                catch (Exception ex) when (ex is DirectoryNotFoundException or UnauthorizedAccessException)
-                {
-                }
+            }
+            catch (Exception ex) when (ex is DirectoryNotFoundException or UnauthorizedAccessException)
+            {
             }
             return paths;
         }
@@ -1687,17 +1703,32 @@ namespace WinUIMusicPlayer.Services
         private static List<string> EnumerateMusicFilesInDirectory(string folderPath)
         {
             var paths = new List<string>();
-            foreach (var ext in _musicPatterns)
+            try
             {
-                try
+                foreach (var file in Directory.EnumerateFiles(folderPath, "*", SearchOption.TopDirectoryOnly))
                 {
-                    paths.AddRange(Directory.GetFiles(folderPath, $"*{ext}", SearchOption.TopDirectoryOnly));
-                }
-                catch (Exception ex) when (ex is DirectoryNotFoundException or UnauthorizedAccessException)
-                {
+                    if (HasMusicExtension(file))
+                        paths.Add(file);
                 }
             }
+            catch (Exception ex) when (ex is DirectoryNotFoundException or UnauthorizedAccessException)
+            {
+            }
             return paths;
+        }
+
+        private static bool HasMusicExtension(string filePath)
+        {
+            ReadOnlySpan<char> span = filePath;
+            int dot = span.LastIndexOf('.');
+            if (dot < 0) return false;
+            ReadOnlySpan<char> ext = span[dot..];
+            foreach (var pattern in _musicPatterns)
+            {
+                if (MemoryExtensions.Equals(ext, pattern, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            return false;
         }
     }
 }

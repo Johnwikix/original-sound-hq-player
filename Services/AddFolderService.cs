@@ -83,7 +83,7 @@ namespace WinUIMusicPlayer.Services
                     ? track.Title : Path.GetFileNameWithoutExtension(filePath);
                 string artist = !string.IsNullOrWhiteSpace(track.Artist) ? track.Artist : "未知艺术家";
                 string album = !string.IsNullOrWhiteSpace(track.Album) ? track.Album : "未知专辑";
-                string extension = Path.GetExtension(filePath).TrimStart('.').ToUpper();
+                string extension = GetExtensionUpper(filePath);
 
                 return new UsbDeviceMusic
                 {
@@ -106,7 +106,7 @@ namespace WinUIMusicPlayer.Services
                         Title = Path.GetFileNameWithoutExtension(filePath),
                         Author = "未知艺术家",
                         Album = "未知专辑",
-                        Extension = Path.GetExtension(filePath).TrimStart('.').ToUpper(),
+                        Extension = GetExtensionUpper(filePath),
                         UniqueDeviceId = uniqueDeviceId
                     };
                 }
@@ -116,6 +116,13 @@ namespace WinUIMusicPlayer.Services
                 }
             }
             return null;
+        }
+
+        private static string GetExtensionUpper(string filePath)
+        {
+            ReadOnlySpan<char> s = filePath;
+            int dot = s.LastIndexOf('.');
+            return dot >= 0 ? new string(s[(dot + 1)..]).ToUpperInvariant() : "";
         }
 
 
