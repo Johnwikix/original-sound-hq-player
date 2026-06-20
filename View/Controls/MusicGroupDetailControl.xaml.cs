@@ -35,7 +35,6 @@ namespace WinUIMusicPlayer.View.Controls
         {
             ViewModel = App.Services.GetRequiredService<MusicGroupDetailViewModel>();
             this.InitializeComponent();
-            MusicListView.ContainerContentChanging += MusicListView_ContainerContentChanging;
             _scrollHelper = new ScrollerHelper(DispatcherQueue);
             _scrollHelper.Tick += OnScrollTick;
             this.Loaded += OnLoaded;
@@ -51,12 +50,6 @@ namespace WinUIMusicPlayer.View.Controls
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
             ViewModel.SetView(null);
-        }
-
-        private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
-        {
-            if (args.InRecycleQueue)
-                AlbumCoverBehavior.ClearImagesInContainer(args.ItemContainer);
         }
 
         public void OnScrollToMusic(Music selectedMusic)

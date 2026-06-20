@@ -33,16 +33,9 @@ namespace WinUIMusicPlayer.View
             ViewModel.SetCurrentPage(this);
             DataContext = this;
             MusicListView.DragItemsCompleted += MusicListView_DragItemsCompleted;
-            MusicListView.ContainerContentChanging += MusicListView_ContainerContentChanging;
             this.NavigationCacheMode = NavigationCacheMode.Enabled;
             _scrollHelper = new ScrollerHelper(DispatcherQueue);
             _scrollHelper.Tick += OnScrollTick;
-        }
-
-        private void MusicListView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
-        {
-            if (args.InRecycleQueue)
-                WinUIMusicPlayer.Behaviors.AlbumCoverBehavior.ClearImagesInContainer(args.ItemContainer);
         }
 
         private async void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)

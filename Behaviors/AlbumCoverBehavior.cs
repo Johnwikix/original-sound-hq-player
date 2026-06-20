@@ -36,6 +36,10 @@ public class AlbumCoverBehavior : Behavior<Image>
 
     private CancellationTokenSource? _cts;
 
+    private Storyboard? _fadeInStoryboard;
+    private DoubleAnimation? _fadeInAnimation;
+    private CubicEase? _fadeInEase;
+
     protected override void OnAttached()
     {
         base.OnAttached();
@@ -45,6 +49,14 @@ public class AlbumCoverBehavior : Behavior<Image>
     protected override void OnDetaching()
     {
         CancelLoad();
+        if (_fadeInStoryboard != null)
+        {
+            _fadeInStoryboard.Stop();
+            // 注意: WinUI 3 的 Storyboard.Target DP 没有公开的 ClearValue 路径
+            // (TargetPropertyProperty 是属性名 DP, 不是 target 对象 DP)
+            // 缓存的 Storyboard 持有 AssociatedObject 引用,
+            // 但 Behavior 与 AssociatedObject 同生死, 不会泄漏
+        }
         if (AssociatedObject != null)
         {
             AssociatedObject.Source = null;
@@ -113,23 +125,30 @@ public class AlbumCoverBehavior : Behavior<Image>
         }
     }
 
-    private void FadeIn()
+    private void EnsureFadeInCache()
     {
-        if (AssociatedObject == null) return;
-        var ani = new DoubleAnimation
+        if (_fadeInStoryboard != null) return;
+        _fadeInEase = new CubicEase { EasingMode = EasingMode.EaseOut };
+        _fadeInAnimation = new DoubleAnimation
         {
             From = 0,
             To = 1,
             Duration = TimeSpan.FromMilliseconds(300),
-            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            EasingFunction = _fadeInEase
         };
-        var sb = new Storyboard();
-        sb.Children.Add(ani);
-        Storyboard.SetTarget(ani, AssociatedObject);
-        Storyboard.SetTargetProperty(ani, "Opacity");
-        sb.Begin();
+        _fadeInStoryboard = new Storyboard();
+        _fadeInStoryboard.Children.Add(_fadeInAnimation);
+        Storyboard.SetTargetProperty(_fadeInAnimation, "Opacity");
     }
 
-    public static void ClearImagesInContainer(DependencyObject parent)
-        => CoverLoadQueue.ClearImagesInContainer(parent);
+    private void FadeIn()
+    {
+        if (AssociatedObject == null) return;
+        EnsureFadeInCache();
+        _fadeInStoryboard!.Stop();
+        Storyboard.SetTarget(_fadeInAnimation!, AssociatedObject);
+        _fadeInStoryboard.Begin();
+    }
+
+    public static void ClearImagesInContainer(DependencyObject parent) { }
 }

@@ -67,7 +67,10 @@ internal static class CoverLoadQueue
         }
 
         var tcs = new TaskCompletionSource<ImageSource?>(TaskCreationOptions.RunContinuationsAsynchronously);
-        var req = new CoverLoadRequest(music, cacheKey, CoverSize, tcs, token);
+        // 用 None 取消 token 避免如下问题：
+        // 同一 ImageHash 的多个消费者共享同一个 tcs.Task，
+        // 第一个消费者的 token 若被 CancelLoad 取消，会连锁取消共享 tcs → 其他消费者丢图
+        var req = new CoverLoadRequest(music, cacheKey, CoverSize, tcs, CancellationToken.None);
 
         if (_pendingTasks.TryAdd(cacheKey, tcs.Task))
         {
@@ -129,12 +132,8 @@ internal static class CoverLoadQueue
             catch (OperationCanceledException) { return; }
             catch (ChannelClosedException) { return; }
 
-            if (req.Token.IsCancellationRequested)
-            {
-                _pendingTasks.TryRemove(req.CacheKey, out _);
-                req.Tcs.TrySetCanceled();
-                continue;
-            }
+            // 注意: req.Token 固定为 CancellationToken.None (EnqueueAsync 不传入消费者 token)
+            // 因此此分支永不成立，已移除。若未来需要取消支持，应改为独立机制。
 
             try
             {
@@ -401,25 +400,10 @@ internal static class CoverLoadQueue
     internal static string GetThumbCachePath(string imageHash, int coverSize)
         => Path.Combine(AppSettings.MusicCoverCache, "Cache", $"{imageHash}_{coverSize}.bmp");
 
-    public static void ClearImagesInContainer(DependencyObject parent)
-    {
-        int count = VisualTreeHelper.GetChildrenCount(parent);
-        for (int i = 0; i < count; i++)
-        {
-            var child = VisualTreeHelper.GetChild(parent, i);
-            if (child is Image image)
-            {
-                foreach (var behavior in Interaction.GetBehaviors(image))
-                {
-                    if (behavior is AlbumCoverBehavior acb)
-                        acb.CancelLoad();
-                }
-                image.Source = null;
-                image.Opacity = 0;
-            }
-            ClearImagesInContainer(child);
-        }
-    }
+    // 已废弃：原逻辑在 ListView 容器回收时干扰 x:Bind 重连，
+    // 导致 AlbumCoverBehavior.OnMusicChanged 不被触发而丢图。
+    // 所有调用方已移除。
+    public static void ClearImagesInContainer(DependencyObject parent) { }
 
     public static void Shutdown(TimeSpan? timeout = null)
     {

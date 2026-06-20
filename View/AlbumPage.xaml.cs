@@ -20,15 +20,8 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel = App.Services.GetRequiredService<AlbumViewModel>();
             this.InitializeComponent();
-            AlbumGridView.ContainerContentChanging += AlbumGridView_ContainerContentChanging;
             DataContext = this;
             this.NavigationCacheMode = NavigationCacheMode.Enabled;
-        }
-
-        private void AlbumGridView_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
-        {
-            if (args.InRecycleQueue)
-                WinUIMusicPlayer.Behaviors.AlbumCoverBehavior.ClearImagesInContainer(args.ItemContainer);
         }
 
         public void ReceiveNavigationParameter(object parameter)
