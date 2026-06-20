@@ -46,6 +46,7 @@ namespace WinUIMusicPlayer.ViewModel
         private bool IsMutiFile { get; set; } = false;
         private AudioConverterService ConverterService { get; set; }
         public int PreviousSelectedIndex { get; set; } = 0;
+        private CancellationTokenSource _usbScanCts;
         public BassPlayerCommandService MusicPlaybackService { get; set; }
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
         private MusicBrowsePage MusicBrowsePage { get; set; }
@@ -202,7 +203,7 @@ namespace WinUIMusicPlayer.ViewModel
         private async void DeviceWatcher_Added(DeviceWatcher sender, DeviceInformation args)
         {
             // 当 USB 存储设备插入时触发            
-            Task.Delay(1500).Wait(); // 等待设备稳定
+            await Task.Delay(1500); // 等待设备稳定
             await ReadUsbDevice();
         }
 
@@ -232,9 +233,9 @@ namespace WinUIMusicPlayer.ViewModel
             try
             {
                 AppData.UsbStorageDevices = new ObservableCollection<UsbStorageDevice>(await UsbStorageDeviceReader.GetUsbStorageDevicesAsync());
-                AppViewModel.UpDateUsbDeviceMenuflyout();
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
+                    AppViewModel.UpDateUsbDeviceMenuflyout();
                     if (AppData.UsbStorageDevices.Count > 0)
                     {
                         AppViewModel.UsbDeviceVisibility = Visibility.Visible;
@@ -266,29 +267,32 @@ namespace WinUIMusicPlayer.ViewModel
         public async void UsbDeviceComboxSelectionChanged(UsbStorageDevice usbStorageDevice)
         {
             AppData.UsbStorageDevice = usbStorageDevice;
-            List<UsbDeviceMusic> usbDeviceMusics = await _musicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
-            if (usbDeviceMusics is not null && usbDeviceMusics.Count > 0)
-            {
-                // 检查是否需要重新扫描
-                DateTime startTime = DateTime.Now;
-                UsbDeviceSubFolderRescan usbDeviceSubFolderRescan = new UsbDeviceSubFolderRescan();
-                await usbDeviceSubFolderRescan.UsbDeviceSubFolderAutoScan(usbDeviceMusics, usbStorageDevice.Path, usbStorageDevice.UniqueId);
-                AppData.MusicOnUsbDevice = await _musicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId);
-            }
-            else
-            {
-                // 读取USB设备中的音乐文件
-                string folderPath = Path.Combine(usbStorageDevice.Path, "MUSIC");
-                if (Directory.Exists(folderPath))
-                {
-                    AppData.MusicOnUsbDevice = await _musicDatabaseService.RescanUsbDeviceFolderByPath(usbDeviceMusics, usbStorageDevice.UniqueId, folderPath, false);
-                }
-                else
-                {
-                    App.Services.GetRequiredService<NotificationService>().SendNotification(ToolUtils.GetString("Error"), ToolUtils.GetString("NoMusicInUSBDevice"));
-                }
-            }
+
+            _usbScanCts?.Cancel();
+            _usbScanCts = new CancellationTokenSource();
+            var ct = _usbScanCts.Token;
+
+            AppData.MusicOnUsbDevice = await _musicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId) ?? [];
             ToolUtils.RefreshAllUsbStatus();
+
+            try
+            {
+                await Task.Run(() => _musicDatabaseService.ScanUsbDeviceAsync(usbStorageDevice.Path, usbStorageDevice.UniqueId), ct);
+
+                if (!ct.IsCancellationRequested)
+                {
+                    var updated = await _musicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId) ?? [];
+                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        if (AppData.UsbStorageDevice?.UniqueId == usbStorageDevice.UniqueId)
+                        {
+                            AppData.MusicOnUsbDevice = updated;
+                            ToolUtils.RefreshAllUsbStatus();
+                        }
+                    });
+                }
+            }
+            catch (OperationCanceledException) { }
         }
 
         private async void StartWatchingFileFolder()

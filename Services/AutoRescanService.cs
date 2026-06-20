@@ -26,7 +26,8 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                // 添加当前文件夹
+                string[] subFolders = Directory.GetDirectories(folder);
+
                 SubFolder folderItem = new SubFolder
                 {
                     Path = folder,
@@ -35,8 +36,6 @@ namespace WinUIMusicPlayer.Services
                 };
                 folderList.Add(folderItem);
 
-                // 递归获取子文件夹
-                string[] subFolders = Directory.GetDirectories(folder);
                 foreach (string subFolderItem in subFolders)
                 {
                     CollectFolderInfo(subFolderItem, folderId, folderList);

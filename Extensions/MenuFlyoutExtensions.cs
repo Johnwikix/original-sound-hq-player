@@ -48,12 +48,16 @@ namespace WinUIMusicPlayer.Extensions
             flyout.Items.Clear();
             foreach (var item in items)
             {
-                flyout.Items.Add(CreateMenuItem(item));
+                var menuItem = CreateMenuItem(item);
+                if (menuItem != null)
+                    flyout.Items.Add(menuItem);
             }
         }
 
         private static MenuFlyoutItemBase CreateMenuItem(MenuModel model)
         {
+            if (model == null) return null;
+
             // 处理子菜单 (Children)
             if (model.Children != null && model.Children.AsValueEnumerable().Any())
             {
@@ -62,7 +66,9 @@ namespace WinUIMusicPlayer.Extensions
                 // 递归创建子项
                 foreach (var child in model.Children)
                 {
-                    subItem.Items.Add(CreateMenuItem(child));
+                    var childItem = CreateMenuItem(child);
+                    if (childItem != null)
+                        subItem.Items.Add(childItem);
                 }
                 return subItem;
             }

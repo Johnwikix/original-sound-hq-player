@@ -10,7 +10,6 @@
 		<type fullname="WinUIMusicPlayer.Model.LastPlayListState" preserve="all"/>
 		<type fullname="WinUIMusicPlayer.Model.SubFolder" preserve="all"/>
 		<type fullname="WinUIMusicPlayer.Model.UsbDeviceMusic" preserve="all"/>
-		<type fullname="WinUIMusicPlayer.Model.UsbDeviceSubFolder" preserve="all"/>
 		<type fullname="WinUIMusicPlayer.Model.MusicLyrics" preserve="all"/>
 	</assembly>
 </linker>

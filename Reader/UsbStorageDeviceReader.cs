@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Management;
+
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Storage;
@@ -57,112 +57,55 @@ namespace WinUIMusicPlayer.Reader
 
         private static async Task<string> GetDeviceUniqueIdAsync(string drivePath)
         {
-            string uniqueId = string.Empty;
             try
             {
-                // 方法1: 使用 WMI 获取设备的序列号和硬件ID
-                string volumeLabel = drivePath.TrimEnd('\\');
-                using (var searcher = new ManagementObjectSearcher(@"SELECT * FROM Win32_DiskDrive WHERE InterfaceType='USB'"))
+                StorageFolder folder = await StorageFolder.GetFolderFromPathAsync(drivePath);
+                IDictionary<string, object> properties = await folder.Properties.RetrievePropertiesAsync(
+                    new List<string> { "System.Devices.DeviceInstanceId" });
+
+                if (properties.TryGetValue("System.Devices.DeviceInstanceId", out object instanceIdObj) &&
+                    instanceIdObj is string deviceInstanceId &&
+                    !string.IsNullOrEmpty(deviceInstanceId))
                 {
-                    foreach (var diskDrive in searcher.Get())
+                    string serialNumber = deviceInstanceId.Contains("\\")
+                        ? deviceInstanceId.Split('\\').AsValueEnumerable().Last()
+                        : string.Empty;
+
+                    if (!string.IsNullOrEmpty(serialNumber))
                     {
-                        string deviceId = diskDrive["PNPDeviceID"]?.ToString() ?? string.Empty;
-                        string serialNumber = deviceId.Contains("\\") ? deviceId.Split('\\').AsValueEnumerable().Last() : string.Empty;
+                        return serialNumber;
+                    }
 
-                        // 查找对应的分区和逻辑磁盘
-                        using (var partitionSearcher = new ManagementObjectSearcher(
-                            $"ASSOCIATORS OF {{Win32_DiskDrive.DeviceID='{diskDrive["DeviceID"]}'}} WHERE AssocClass=Win32_DiskDriveToDiskPartition"))
+                    if (deviceInstanceId.Contains("VID_") && deviceInstanceId.Contains("PID_"))
+                    {
+                        int vidIndex = deviceInstanceId.IndexOf("VID_");
+                        int pidIndex = deviceInstanceId.IndexOf("PID_");
+                        if (vidIndex >= 0 && pidIndex >= 0)
                         {
-                            foreach (var partition in partitionSearcher.Get())
-                            {
-                                using (var logicalDiskSearcher = new ManagementObjectSearcher(
-                                    $"ASSOCIATORS OF {{Win32_DiskPartition.DeviceID='{partition["DeviceID"]}'}} WHERE AssocClass=Win32_LogicalDiskToPartition"))
-                                {
-                                    foreach (var logicalDisk in logicalDiskSearcher.Get())
-                                    {
-                                        string driveLetter = logicalDisk["DeviceID"].ToString();
-                                        if (driveLetter.Equals(volumeLabel, StringComparison.OrdinalIgnoreCase))
-                                        {
-                                            // 找到匹配的驱动器，使用序列号作为唯一ID
-                                            uniqueId = serialNumber;
-
-                                            // 如果序列号为空，使用完整设备ID作为备用
-                                            if (string.IsNullOrEmpty(uniqueId))
-                                            {
-                                                uniqueId = deviceId;
-                                            }
-
-                                            // 还可以添加更多标识信息，如制造商ID、产品ID等
-                                            string vendorId = string.Empty;
-                                            string productId = string.Empty;
-
-                                            if (deviceId.Contains("VID_") && deviceId.Contains("PID_"))
-                                            {
-                                                int vidIndex = deviceId.IndexOf("VID_");
-                                                int pidIndex = deviceId.IndexOf("PID_");
-
-                                                if (vidIndex >= 0 && pidIndex >= 0)
-                                                {
-                                                    vendorId = deviceId.Substring(vidIndex + 4, 4);
-                                                    productId = deviceId.Substring(pidIndex + 4, 4);
-
-                                                    // 如果序列号为空，可以使用VID_PID作为替代
-                                                    if (string.IsNullOrEmpty(uniqueId))
-                                                    {
-                                                        uniqueId = $"VID_{vendorId}_PID_{productId}";
-                                                    }
-                                                }
-                                            }
-
-                                            return uniqueId;
-                                        }
-                                    }
-                                }
-                            }
+                            string vendorId = deviceInstanceId.Substring(vidIndex + 4, 4);
+                            string productId = deviceInstanceId.Substring(pidIndex + 4, 4);
+                            return $"VID_{vendorId}_PID_{productId}";
                         }
                     }
-                }
 
-                if (string.IsNullOrEmpty(uniqueId))
-                {
-                    try
-                    {
-                        StorageFolder folder = await StorageFolder.GetFolderFromPathAsync(drivePath);
-                        IDictionary<string, object> properties = await folder.Properties.RetrievePropertiesAsync(
-                            new List<string> { "System.Devices.DeviceInstanceId" });
-
-                        if (properties.ContainsKey("System.Devices.DeviceInstanceId") &&
-                            properties["System.Devices.DeviceInstanceId"] is not null)
-                        {
-                            uniqueId = properties["System.Devices.DeviceInstanceId"].ToString();
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, $"GetDeviceUniqueIdAsync Windows.Storage API获取设备ID失败: {ex.Message}");
-                    }
+                    return deviceInstanceId;
                 }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"GetDeviceUniqueIdAsync 获取设备唯一ID失败: {ex.Message}");
+                _logger.LogError(ex, $"GetDeviceUniqueIdAsync Windows.Storage API获取设备ID失败: {ex.Message}");
             }
 
-            // 如果所有方法都失败，使用驱动器路径和卷标签作为最后的备选
-            if (string.IsNullOrEmpty(uniqueId))
+            try
             {
-                try
-                {
-                    DriveInfo drive = new DriveInfo(drivePath);
-                    uniqueId = $"{drive.Name}_{drive.VolumeLabel}_{drive.TotalSize}";
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"GetDeviceUniqueIdAsync 备用方法获取设备ID失败: {ex.Message}");
-                    uniqueId = Guid.NewGuid().ToString();
-                }
+                DriveInfo drive = new DriveInfo(drivePath);
+                return $"{drive.Name}_{drive.VolumeLabel}_{drive.TotalSize}";
             }
-            return uniqueId;
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"GetDeviceUniqueIdAsync 备用方法获取设备ID失败: {ex.Message}");
+                return Guid.NewGuid().ToString();
+            }
         }
     }
 }

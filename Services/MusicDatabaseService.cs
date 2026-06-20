@@ -57,7 +57,6 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.CreateTableAsync<LastPlayListState>();
                 await _dbConnection.CreateTableAsync<SubFolder>();
                 await _dbConnection.CreateTableAsync<UsbDeviceMusic>();
-                await _dbConnection.CreateTableAsync<UsbDeviceSubFolder>();
             }
             AppViewModel = App.Services.GetRequiredService<AppViewModel>();
             await MigrateLyricsAsync();
@@ -148,17 +147,7 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.InsertAllAsync(subFolder);
         }
 
-        public async Task InsertUsbDeviceSubFolders(List<UsbDeviceSubFolder> usbDeviceSubFolders)
-        {
-            await _dbConnection.InsertAllAsync(usbDeviceSubFolders);
-        }
-
         public async Task AddSubFolder(SubFolder subFolder)
-        {
-            await _dbConnection.InsertAsync(subFolder);
-        }
-
-        public async Task AddUsbDeviceSubFolder(UsbDeviceSubFolder subFolder)
         {
             await _dbConnection.InsertAsync(subFolder);
         }
@@ -168,17 +157,7 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.UpdateAsync(subFolder);
         }
 
-        public async Task UpdateUsbDeviceSubFolder(UsbDeviceSubFolder subFolder)
-        {
-            await _dbConnection.UpdateAsync(subFolder);
-        }
-
         public async Task DeleteSubFolder(SubFolder subFolder)
-        {
-            await _dbConnection.DeleteAsync(subFolder);
-        }
-
-        public async Task DeleteUsbDeviceSubFolder(UsbDeviceSubFolder subFolder)
         {
             await _dbConnection.DeleteAsync(subFolder);
         }
@@ -187,17 +166,6 @@ namespace WinUIMusicPlayer.Services
         {
             var musicToDelete = await _dbConnection.Table<Music>()
                                               .Where(m => m.Path.Contains(subFolderPath))
-                                              .ToListAsync();
-            foreach (var music in musicToDelete)
-            {
-                await _dbConnection.DeleteAsync(music);
-            }
-        }
-
-        public async Task DeleteUsbDeviceSubFolderByPath(string subFolderPath, string uniqueDeviceId)
-        {
-            List<UsbDeviceMusic> musicToDelete = await _dbConnection.Table<UsbDeviceMusic>()
-                                              .Where(m => m.Path.Contains(subFolderPath) && m.UniqueDeviceId == uniqueDeviceId)
                                               .ToListAsync();
             foreach (var music in musicToDelete)
             {
@@ -215,10 +183,6 @@ namespace WinUIMusicPlayer.Services
             return await _dbConnection.Table<SubFolder>().Where(f => f.FolderId == folderId).ToListAsync();
         }
 
-        public async Task<List<UsbDeviceSubFolder>> GetUsbDeviceSubFolders(string uniqueDeviceId)
-        {
-            return await _dbConnection.Table<UsbDeviceSubFolder>().Where(f => f.UniqueDeviceId == uniqueDeviceId).ToListAsync();
-        }
 
         public async Task<List<Folder>> GetFolders()
         {
@@ -1204,43 +1168,26 @@ namespace WinUIMusicPlayer.Services
 
         public async Task RescanFolderByPath(string folderPath, bool isUpdate = true, bool isSingleFolder = false)
         {
-            // 优化10: _toDelete/_toUpdate/_files 全部改为方法局部变量
-            // 原字段版本存在：多次调用共享状态、ConcurrentBag.Clear()不回收内存、线程安全隐患
-            var toDelete = new List<Music>();
-            var toUpdate = new List<Music>();
-            var files = new List<StorageFile>();
+            var musicPaths = await Task.Run(() =>
+                isSingleFolder ? EnumerateMusicFilesInDirectory(folderPath) : EnumerateAllMusicFiles(folderPath));
 
-            var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
+            var filePaths = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            foreach (var path in musicPaths)
+                filePaths.TryAdd(path, true);
+
             List<Music> musicFilesInFolder;
-
             if (isSingleFolder)
             {
-                var currentFiles = await folder.GetFilesAsync();
-                files.AddRange(currentFiles);
                 musicFilesInFolder = await _dbConnection.Table<Music>()
                     .Where(m => m.FolderPath == folderPath)
                     .ToListAsync();
             }
             else
             {
-                files = await GetAllFilesInFolderAndSubfolders(folder);
                 musicFilesInFolder = await _dbConnection.Table<Music>()
                    .Where(m => m.FolderPath.Contains(folderPath))
                    .ToListAsync();
             }
-
-            // 优化11: ConcurrentDictionary 改为普通 HashSet（此处已用 SemaphoreSlim 控制并发，不需要 ConcurrentDictionary）
-            // 但因为仍有并行 Task，保留 ConcurrentDictionary 确保安全
-            var filePaths = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
-
-            // 优化12: 预分配 Task 数组，避免 Select+ToList 的中间 List 分配
-            var filePathTasks = new Task[files.Count];
-            for (int i = 0; i < files.Count; i++)
-            {
-                var file = files[i];
-                filePathTasks[i] = AddFilePathAsync(file, filePaths);
-            }
-            await Task.WhenAll(filePathTasks);
 
             // 优化13: 并行检查改预分配数组
             var checkTasks = new Task[musicFilesInFolder.Count];
@@ -1399,39 +1346,28 @@ namespace WinUIMusicPlayer.Services
 
         public async Task<int> RescanFolderWithOutUpdateAll(string folderPath, bool isSingleFolder = false)
         {
-            // 优化19: 同样改为方法局部变量，消除原版潜在的字段复用问题
             var toDelete = new ConcurrentBag<Music>();
-            var files = new List<StorageFile>();
 
-            var folder = await StorageFolder.GetFolderFromPathAsync(folderPath);
+            var musicPaths = await Task.Run(() =>
+                isSingleFolder ? EnumerateMusicFilesInDirectory(folderPath) : EnumerateAllMusicFiles(folderPath));
+
+            var filePaths = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+            foreach (var path in musicPaths)
+                filePaths.TryAdd(path, true);
+
             List<Music> musicFilesInFolder;
-
             if (isSingleFolder)
             {
-                var currentFiles = await folder.GetFilesAsync();
-                files.AddRange(currentFiles);
                 musicFilesInFolder = await _dbConnection.Table<Music>()
                     .Where(m => m.FolderPath == folderPath)
                     .ToListAsync();
             }
             else
             {
-                files = await GetAllFilesInFolderAndSubfolders(folder);
                 musicFilesInFolder = await _dbConnection.Table<Music>()
                    .Where(m => m.FolderPath.Contains(folderPath))
                    .ToListAsync();
             }
-
-            var filePaths = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
-
-            // 优化20: 预分配数组
-            var filePathTasks = new Task[files.Count];
-            for (int i = 0; i < files.Count; i++)
-            {
-                var file = files[i];
-                filePathTasks[i] = AddFilePathAsync(file, filePaths);
-            }
-            await Task.WhenAll(filePathTasks);
 
             var checkTasks = new Task[musicFilesInFolder.Count];
             for (int i = 0; i < musicFilesInFolder.Count; i++)
@@ -1690,6 +1626,78 @@ namespace WinUIMusicPlayer.Services
             }
 
             return usbDeviceMusicsInsertList;
+        }
+
+        public async Task ScanUsbDeviceAsync(string drivePath, string uniqueDeviceId)
+        {
+            try
+            {
+                var usbDeviceMusics = await GetUsbDeviceMusics(uniqueDeviceId) ?? [];
+                var diskPaths = await Task.Run(() =>
+                {
+                    var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    foreach (var path in EnumerateAllMusicFiles(drivePath))
+                        paths.Add(path);
+                    return paths;
+                });
+
+                var toRemove = usbDeviceMusics.Where(m => !diskPaths.Contains(m.Path)).ToList();
+                foreach (var music in toRemove)
+                    await _dbConnection.DeleteAsync(music);
+
+                var existingPaths = new HashSet<string>(
+                    usbDeviceMusics.Select(m => m.Path), StringComparer.OrdinalIgnoreCase);
+                var newPaths = diskPaths.Where(p => !existingPaths.Contains(p)).ToList();
+
+                if (newPaths.Count > 0)
+                {
+                    var fetchTasks = newPaths.Select(path =>
+                        Task.Run(() => addFolderService.GetUsbDeviceMusicInfoByPath(path, drivePath, uniqueDeviceId)));
+                    var fetchResults = await Task.WhenAll(fetchTasks);
+                    var newMusic = fetchResults.Where(r => r is not null).ToList();
+                    if (newMusic.Count > 0)
+                        await _dbConnection.InsertAllAsync(newMusic);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"ScanUsbDeviceAsync 扫描USB设备失败: {ex.Message}");
+            }
+        }
+
+        private static readonly string[] _musicPatterns =
+            [".mp3", ".wav", ".flac", ".wma", ".aac", ".ogg", ".oga", ".aiff", ".aif", ".m4a", ".dsf", ".dff", ".ape", ".opus", ".wv"];
+
+        private static List<string> EnumerateAllMusicFiles(string rootPath)
+        {
+            var paths = new List<string>();
+            foreach (var ext in _musicPatterns)
+            {
+                try
+                {
+                    paths.AddRange(Directory.GetFiles(rootPath, $"*{ext}", SearchOption.AllDirectories));
+                }
+                catch (Exception ex) when (ex is DirectoryNotFoundException or UnauthorizedAccessException)
+                {
+                }
+            }
+            return paths;
+        }
+
+        private static List<string> EnumerateMusicFilesInDirectory(string folderPath)
+        {
+            var paths = new List<string>();
+            foreach (var ext in _musicPatterns)
+            {
+                try
+                {
+                    paths.AddRange(Directory.GetFiles(folderPath, $"*{ext}", SearchOption.TopDirectoryOnly));
+                }
+                catch (Exception ex) when (ex is DirectoryNotFoundException or UnauthorizedAccessException)
+                {
+                }
+            }
+            return paths;
         }
     }
 }

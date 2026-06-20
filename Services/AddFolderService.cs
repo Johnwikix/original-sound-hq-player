@@ -74,6 +74,49 @@ namespace WinUIMusicPlayer.Services
             return null;
         }
 
+        public UsbDeviceMusic GetUsbDeviceMusicInfoByPath(string filePath, string folderPath, string uniqueDeviceId)
+        {
+            try
+            {
+                Track track = new(filePath);
+                string title = !string.IsNullOrWhiteSpace(track.Title)
+                    ? track.Title : Path.GetFileNameWithoutExtension(filePath);
+                string artist = !string.IsNullOrWhiteSpace(track.Artist) ? track.Artist : "未知艺术家";
+                string album = !string.IsNullOrWhiteSpace(track.Album) ? track.Album : "未知专辑";
+                string extension = Path.GetExtension(filePath).TrimStart('.').ToUpper();
+
+                return new UsbDeviceMusic
+                {
+                    Path = filePath,
+                    Title = title,
+                    Author = artist,
+                    Album = album,
+                    Extension = extension,
+                    UniqueDeviceId = uniqueDeviceId
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"GetUsbDeviceMusicInfoByPath 读取元数据失败: {filePath}");
+                try
+                {
+                    return new UsbDeviceMusic
+                    {
+                        Path = filePath,
+                        Title = Path.GetFileNameWithoutExtension(filePath),
+                        Author = "未知艺术家",
+                        Album = "未知专辑",
+                        Extension = Path.GetExtension(filePath).TrimStart('.').ToUpper(),
+                        UniqueDeviceId = uniqueDeviceId
+                    };
+                }
+                catch (Exception innerEx)
+                {
+                    _logger.LogError(innerEx, $"GetUsbDeviceMusicInfoByPath 创建基本音乐条目时出错: {filePath}");
+                }
+            }
+            return null;
+        }
 
 
         public async Task GetMusicFilesRecursive(StorageFolder folder, List<Music> musicFiles)
