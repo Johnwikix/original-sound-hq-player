@@ -3,7 +3,7 @@ using System;
 
 namespace WinUIMusicPlayer.Converters
 {
-    public class AdvancedThumbToolTipValueConverter : IValueConverter
+    public partial class AdvancedThumbToolTipValueConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

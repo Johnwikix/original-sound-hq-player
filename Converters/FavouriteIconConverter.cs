@@ -3,7 +3,7 @@ using System;
 
 namespace WinUIMusicPlayer.Converters
 {
-    public class FavouriteIconConverter : IValueConverter
+    public partial class FavouriteIconConverter : IValueConverter
     {
         private const string FAVOURITE_ICON = "\ueb52"; // 填充的星星
         private const string NOT_FAVOURITE_ICON = "\ueb51"; // 空心的星星

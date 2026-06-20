@@ -5,7 +5,7 @@ using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Converters
 {
-    public class PlayStatusToStringConverter : IValueConverter
+    public partial class PlayStatusToStringConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

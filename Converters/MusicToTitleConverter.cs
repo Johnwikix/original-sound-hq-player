@@ -5,7 +5,7 @@ using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Converters
 {
-    public class MusicToTitleConverter : IValueConverter
+    public partial class MusicToTitleConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

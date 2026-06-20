@@ -4,7 +4,7 @@ using System;
 
 namespace WinUIMusicPlayer.Converters
 {
-    public class VolumeToIconConverter : IValueConverter
+    public partial class VolumeToIconConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

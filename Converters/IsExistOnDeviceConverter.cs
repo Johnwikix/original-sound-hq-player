@@ -3,7 +3,7 @@ using System;
 
 namespace WinUIMusicPlayer.Converters
 {
-    public class IsExistOnDeviceConverter : IValueConverter
+    public partial class IsExistOnDeviceConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

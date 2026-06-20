@@ -3,7 +3,7 @@ using System;
 
 namespace WinUIMusicPlayer.Converters
 {
-    public class FullScreenIconConverter : IValueConverter
+    public partial class FullScreenIconConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

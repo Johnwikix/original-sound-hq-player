@@ -4,7 +4,7 @@ using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Converters
 {
-    public class PlayModeToIconConverter : IValueConverter
+    public partial class PlayModeToIconConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {

@@ -5,7 +5,7 @@ using System.Globalization;
 
 namespace WinUIMusicPlayer.Converters
 {
-    public class TimeSpanToStringConverter : IValueConverter
+    public partial class TimeSpanToStringConverter : IValueConverter
     {
         private readonly ConcurrentDictionary<long, string> _cache = new();
 

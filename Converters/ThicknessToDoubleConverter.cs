@@ -3,7 +3,7 @@ using System;
 
 namespace WinUIMusicPlayer.Converters
 {
-    public class ThicknessToDoubleConverter : IValueConverter
+    public partial class ThicknessToDoubleConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, string language)
         {
