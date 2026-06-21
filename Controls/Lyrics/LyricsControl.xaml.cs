@@ -40,14 +40,14 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             Loaded += OnControlLoaded;
             Unloaded += (_, _) =>
             {
-                LyricsCanvasV1?.LyricLineClicked -= OnCanvasLyricLineClicked;
+                SimpleLyrics?.LyricLineClicked -= OnCanvasLyricLineClicked;
                 LyricsCanvas?.LyricLineClicked -= OnCanvasLyricLineClicked;
             };
         }
 
         private void OnControlLoaded(object sender, RoutedEventArgs e)
         {
-            LyricsCanvasV1?.LyricLineClicked += OnCanvasLyricLineClicked;
+            SimpleLyrics?.LyricLineClicked += OnCanvasLyricLineClicked;
             LyricsCanvas?.LyricLineClicked += OnCanvasLyricLineClicked;
             Loaded -= OnControlLoaded;
         }
@@ -57,7 +57,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         public void ShutdownLyricsCanvas()
         {
-            LyricsCanvasV1?.PrepareForShutdown();
+            SimpleLyrics?.PrepareForShutdown();
             LyricsCanvas?.PrepareForShutdown();
         }
 

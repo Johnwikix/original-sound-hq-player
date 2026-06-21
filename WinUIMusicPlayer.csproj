@@ -186,6 +186,9 @@
     <Page Update="Controls\Lyrics\LyricsControl.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Update="Controls\Lyrics\SimpleLyricsControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="Style\ComboBoxNMenuFlyoutStyle.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

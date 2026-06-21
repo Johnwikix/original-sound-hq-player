@@ -41,17 +41,17 @@
                     </Rectangle.Fill>
                 </Rectangle>
             </controls:OpacityMaskView.OpacityMask>
-            <alc:UnifiedLyricsCanvasControlV1
-                x:Name="LyricsCanvasV1"
+            <local:SimpleLyricsControl
+                x:Name="SimpleLyrics"
                 Margin="{x:Bind LyricsMargin, Mode=OneWay}"
                 HorizontalAlignment="Stretch" />
         </controls:OpacityMaskView>
 
         <alc:UnifiedLyricsCanvasControlV2
             x:Name="LyricsCanvas"
-            RenderError="LyricsCanvas_RenderError"
             Margin="{x:Bind LyricsMargin, Mode=OneWay}"
             HorizontalAlignment="Stretch"
-            x:Load="{x:Bind EnableAdvancedLyrics, Mode=OneTime}" />
+            x:Load="{x:Bind EnableAdvancedLyrics, Mode=OneTime}"
+            RenderError="LyricsCanvas_RenderError" />
     </Grid>
 </UserControl>
