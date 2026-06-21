@@ -23,14 +23,14 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         private List<LyricLine>? _lyrics;
         private List<LyricDisplayItem> _displayItems = new();
-        private readonly Dictionary<LyricDisplayItem, (TextBlock LyricTb, TextBlock TransTb)> _itemMap = new();
+        private readonly Dictionary<LyricDisplayItem, (Border Border, TextBlock LyricTb, TextBlock TransTb)> _itemMap = new();
 
         private int _currentLineIndex = -1;
         private CompositionPropertySet? _ps;
         private const string CurrentIndexKey = "CurrentIndex";
         private const float CurrentLineScale = 1.1f;
         private const float OtherLineScale = 1.0f;
-        private const float ScaleTransitionDurationMs = 250f;
+        private const float ScaleTransitionDurationMs = 400f;
         private const double UserScrollCooldownSec = 3.0;
         private const int ScrollRetryMaxCount = 30;
         private const int ScrollRetryIntervalMs = 100;
@@ -50,11 +50,33 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         private DispatcherQueueTimer? _scrollRetryTimer;
         private int _scrollRetryCount;
 
+        private FontFamily? _fontFamilyCache;
+        private string? _fontFamilyCacheName;
+
+        private readonly PropertyChangedEventHandler _onItemPropertyChanged;
+        private readonly TypedEventHandler<DispatcherQueueTimer, object> _onScrollRetryTick;
+        private readonly TypedEventHandler<DispatcherQueueTimer, object> _onAutoScrollReturnTick;
+        private readonly DispatcherQueueHandler _scheduleScrollAction;
+
         public SimpleLyricsControl()
         {
             InitializeComponent();
+            _onItemPropertyChanged = OnItemPropertyChanged;
+            _onScrollRetryTick = OnScrollRetryTick;
+            _onAutoScrollReturnTick = OnAutoScrollReturnTick;
+            _scheduleScrollAction = ScheduleScrollToCurrent;
             Loaded += OnControlLoaded;
             Unloaded += OnControlUnloaded;
+        }
+
+        private FontFamily GetFontFamily(string name)
+        {
+            if (_fontFamilyCache is null || _fontFamilyCacheName != name)
+            {
+                _fontFamilyCache = new FontFamily(name);
+                _fontFamilyCacheName = name;
+            }
+            return _fontFamilyCache;
         }
 
         public void PrepareForShutdown()
@@ -74,7 +96,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             ScrollHost.SizeChanged -= ScrollHost_SizeChanged;
 
             foreach (var item in _displayItems)
-                item.PropertyChanged -= OnItemPropertyChanged;
+                item.PropertyChanged -= _onItemPropertyChanged;
             _itemMap.Clear();
             _displayItems.Clear();
 
@@ -139,17 +161,18 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         private void OnLyricsFontSizeChanged(double value)
         {
+            value *= 0.8;
             if (Math.Abs(_cachedFontSize - value) < 0.5) return;
             _cachedFontSize = value;
             foreach (var item in _displayItems)
                 item.DisplayFontSize = value;
-            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, ScheduleScrollToCurrent);
+            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, _scheduleScrollAction);
         }
 
         private void OnUILyricsChanged(IList<LyricLine>? value)
         {
             foreach (var item in _displayItems)
-                item.PropertyChanged -= OnItemPropertyChanged;
+                item.PropertyChanged -= _onItemPropertyChanged;
             _itemMap.Clear();
 
             _displayItems = new List<LyricDisplayItem>();
@@ -176,10 +199,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                 LyricList.Width = ScrollHost.ActualWidth;
             _ps?.InsertScalar(CurrentIndexKey, -1f);
 
-            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
-            {
-                ScheduleScrollToCurrent();
-            });
+            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, _scheduleScrollAction);
         }
 
         private void OnLyricsSettingsSync(LyricsSettingsBus.Settings s)
@@ -210,7 +230,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                     _displayItems[i].IsCurrent = _displayItems[i].IsCurrent;
             }
 
-            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, ScheduleScrollToCurrent);
+            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, _scheduleScrollAction);
         }
 
         private static TextAlignment CanvasToTextAlignment(CanvasHorizontalAlignment a) => a switch
@@ -278,7 +298,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                     DisplayOpacity = _cachedUnplayedOpacity,
                     DisplayTranslationOpacity = _cachedTranslatedOpacity,
                 };
-                item.PropertyChanged += OnItemPropertyChanged;
+                item.PropertyChanged += _onItemPropertyChanged;
                 _displayItems.Add(item);
             }
         }
@@ -307,7 +327,12 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             }
             else if (e.PropertyName == nameof(LyricDisplayItem.DisplayTextAlignment))
             {
+                ApplyBorderSpacing(pair.Border, item.DisplayTextAlignment);
                 AnimateContainerScale(item.LineIndex, item.IsCurrent ? CurrentLineScale : OtherLineScale, instant: true);
+            }
+            else if (e.PropertyName == nameof(LyricDisplayItem.DisplayFontSize))
+            {
+                ApplyBorderSpacing(pair.Border, item.DisplayTextAlignment);
             }
         }
 
@@ -317,7 +342,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             lyricTb.FontSize = item.DisplayFontSize;
             lyricTb.TextAlignment = item.DisplayTextAlignment;
             if (!string.IsNullOrEmpty(item.DisplayFontFamily))
-                lyricTb.FontFamily = new FontFamily(item.DisplayFontFamily);
+                lyricTb.FontFamily = GetFontFamily(item.DisplayFontFamily);
             lyricTb.Opacity = item.IsCurrent ? 1.0 : _cachedUnplayedOpacity;
 
             transTb.Text = item.TranslationText;
@@ -325,8 +350,35 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             transTb.FontSize = item.DisplayFontSize * 0.75;
             transTb.TextAlignment = item.DisplayTextAlignment;
             if (!string.IsNullOrEmpty(item.DisplayFontFamily))
-                transTb.FontFamily = new FontFamily(item.DisplayFontFamily);
+                transTb.FontFamily = GetFontFamily(item.DisplayFontFamily);
             transTb.Opacity = item.DisplayTranslationOpacity;
+        }
+
+        private void ApplyBorderSpacing(Border border, TextAlignment alignment)
+        {
+            double v = _cachedFontSize * 0.6;
+            double full = _cachedFontSize * 1.5;
+            double mid = _cachedFontSize * 0.75;
+            double left, right;
+            switch (alignment)
+            {
+                case TextAlignment.Center:
+                    left = mid;
+                    right = mid;
+                    break;
+                case TextAlignment.Right:
+                    left = full;
+                    right = 0;
+                    break;
+                default:
+                    left = 0;
+                    right = full;
+                    break;
+            }
+            var margin = new Thickness(0, v, 0, v);
+            if (!border.Margin.Equals(margin)) border.Margin = margin;
+            var padding = new Thickness(left, v, right, v);
+            if (!border.Padding.Equals(padding)) border.Padding = padding;
         }
 
         private void LyricList_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
@@ -338,15 +390,16 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
             var border = args.ItemContainer?.ContentTemplateRoot as Border;
             if (border is null) return;
+            ApplyBorderSpacing(border, item.DisplayTextAlignment);
             var panel = border.Child as StackPanel;
             if (panel is null || panel.Children.Count < 2) return;
             var lyricTb = panel.Children[0] as TextBlock;
             var transTb = panel.Children[1] as TextBlock;
             if (lyricTb is null || transTb is null) return;
 
-            _itemMap[item] = (lyricTb, transTb);
-            item.PropertyChanged -= OnItemPropertyChanged;
-            item.PropertyChanged += OnItemPropertyChanged;
+            _itemMap[item] = (border, lyricTb, transTb);
+            item.PropertyChanged -= _onItemPropertyChanged;
+            item.PropertyChanged += _onItemPropertyChanged;
 
             ApplyItemToBlocks(item, lyricTb, transTb);
 
@@ -403,8 +456,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             _scrollRetryCount = 0;
             _scrollRetryTimer ??= DispatcherQueue.CreateTimer();
             _scrollRetryTimer.Interval = TimeSpan.FromMilliseconds(ScrollRetryIntervalMs);
-            _scrollRetryTimer.Tick -= OnScrollRetryTick;
-            _scrollRetryTimer.Tick += OnScrollRetryTick;
+            _scrollRetryTimer.Tick -= _onScrollRetryTick;
+            _scrollRetryTimer.Tick += _onScrollRetryTick;
             _scrollRetryTimer.Start();
         }
 
@@ -463,8 +516,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             {
                 _autoScrollReturnTimer ??= DispatcherQueue.CreateTimer();
                 _autoScrollReturnTimer.Interval = TimeSpan.FromSeconds(UserScrollCooldownSec);
-                _autoScrollReturnTimer.Tick -= OnAutoScrollReturnTick;
-                _autoScrollReturnTimer.Tick += OnAutoScrollReturnTick;
+                _autoScrollReturnTimer.Tick -= _onAutoScrollReturnTick;
+                _autoScrollReturnTimer.Tick += _onAutoScrollReturnTick;
                 _autoScrollReturnTimer.Start();
             }
         }

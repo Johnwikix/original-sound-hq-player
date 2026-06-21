@@ -11,8 +11,6 @@
         <DataTemplate x:Key="LyricLineTemplate">
             <Border
                 x:Name="LineBorder"
-                Margin="0,20"
-                Padding="20,40"
                 HorizontalAlignment="Stretch"
                 Background="Transparent">
                 <StackPanel HorizontalAlignment="Stretch" Orientation="Vertical">
