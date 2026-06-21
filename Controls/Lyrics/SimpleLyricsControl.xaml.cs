@@ -356,7 +356,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         private void ApplyBorderSpacing(Border border, TextAlignment alignment)
         {
-            double v = _cachedFontSize * 0.6;
+            double v = _cachedFontSize * 0.5;
             double full = _cachedFontSize * 1.5;
             double mid = _cachedFontSize * 0.75;
             double left, right;
@@ -375,7 +375,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                     right = full;
                     break;
             }
-            var margin = new Thickness(0, v, 0, v);
+            var margin = new Thickness(0, 0.5 * v, 0, 0.5 * v);
             if (!border.Margin.Equals(margin)) border.Margin = margin;
             var padding = new Thickness(left, v, right, v);
             if (!border.Padding.Equals(padding)) border.Padding = padding;
@@ -388,14 +388,10 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             int idx = args.ItemIndex;
             if (idx < 0 || idx >= _displayItems.Count) return;
 
-            var border = args.ItemContainer?.ContentTemplateRoot as Border;
-            if (border is null) return;
+            if (args.ItemContainer?.ContentTemplateRoot is not Border border) return;
             ApplyBorderSpacing(border, item.DisplayTextAlignment);
-            var panel = border.Child as StackPanel;
-            if (panel is null || panel.Children.Count < 2) return;
-            var lyricTb = panel.Children[0] as TextBlock;
-            var transTb = panel.Children[1] as TextBlock;
-            if (lyricTb is null || transTb is null) return;
+            if (border.Child is not StackPanel panel || panel.Children.Count < 2) return;
+            if (panel.Children[0] is not TextBlock lyricTb || panel.Children[1] is not TextBlock transTb) return;
 
             _itemMap[item] = (border, lyricTb, transTb);
             item.PropertyChanged -= _onItemPropertyChanged;
