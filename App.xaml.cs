@@ -225,7 +225,6 @@ namespace WinUIMusicPlayer
             {
                 Services.GetRequiredService<BassPlayerCommandService>().MusicEnd();
                 MainWindow.Hide();
-                MainWindow.StopPeriodicTrim();
                 await _host.StopAsync();
                 Services.GetRequiredService<LrcService>().Dispose();
                 Services.GetRequiredService<PlayingDetailPage>().Dispose();

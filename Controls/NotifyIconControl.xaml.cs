@@ -120,7 +120,6 @@ namespace WinUIMusicPlayer.Controls
                 if (!window.Visible)
                 {
                     window.Show();
-                    window.StopPeriodicTrim();
                     window.InitializeTaskbarHelper();
                 }
             }

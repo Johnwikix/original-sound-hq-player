@@ -10,15 +10,16 @@ using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Portable;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using WinUIMusicPlayer.View.SubView;
@@ -58,6 +59,7 @@ namespace WinUIMusicPlayer.ViewModel
         private CancellationTokenSource _scanCts;
         private readonly Lock _scanCtsLock = new();
         private ILogger<MusicBrowseViewModel> _logger;
+        private const long MemoryTrimThreshold = 400L * 1024 * 1024;
         public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         public MusicBrowseViewModel(BassPlayerCommandService bassPlayerCommand, SystemMediaControlsService systemMediaControlsService, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, AudioConverterService converterService, ILogger<MusicBrowseViewModel> logger)
@@ -746,10 +748,25 @@ namespace WinUIMusicPlayer.ViewModel
                         AppViewModel.CurrentPlayingMusic?.Id,
                         (float)(AppViewModel.Volume),
                         AppViewModel.SelectedSortOption.Tag.ToString());
+                TrimMemory();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"播放音乐失败: {ex.Message}");
+            }
+        }
+
+        private void TrimMemory() {
+            try
+            {
+                if (WorkingSetCompressor.GetPrivateWorkingSet() > MemoryTrimThreshold)
+                {
+                    _ = WorkingSetCompressor.TrimSelfAsync();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"内存清理失败: {ex.Message}");
             }
         }
 
