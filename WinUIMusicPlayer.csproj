@@ -318,7 +318,6 @@
     <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
     <UserSecretsId>4aeb06b5-7bbb-4348-aff3-50338e7e8ffd</UserSecretsId>
 	<CETCompat>false</CETCompat>
-	<PackageCertificateThumbprint>0002A085EDBAA55E2DD16A09CF752756DA371596</PackageCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <IsPublishable>True</IsPublishable>

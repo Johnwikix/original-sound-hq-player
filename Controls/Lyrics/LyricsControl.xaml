@@ -27,16 +27,10 @@
                 <Rectangle Stretch="UniformToFill">
                     <Rectangle.Fill>
                         <LinearGradientBrush MappingMode="RelativeToBoundingBox" StartPoint="0,0" EndPoint="0,1">
-                            <GradientStop Offset="0" Color="#0000FFFF" />
-                            <GradientStop Offset="0.05" Color="#00FFFFFF" />
-                            <GradientStop Offset="0.10" Color="#0FFFFFFF" />
-                            <GradientStop Offset="0.15" Color="#5FFFFFFF" />
-                            <GradientStop Offset="0.2" Color="#FFFFFFFF" />
-                            <GradientStop Offset="0.8" Color="#FFFFFFFF" />
-                            <GradientStop Offset="0.85" Color="#5FFFFFFF" />
-                            <GradientStop Offset="0.9" Color="#0FFFFFFF" />
-                            <GradientStop Offset="0.95" Color="#00FFFFFF" />
-                            <GradientStop Offset="1" Color="#0000FFFF" />
+                            <GradientStop Offset="0" Color="#00FFFFFF" />
+                            <GradientStop Offset="0.15" Color="#FFFFFFFF" />
+                            <GradientStop Offset="0.85" Color="#FFFFFFFF" />
+                            <GradientStop Offset="1" Color="#00FFFFFF" />
                         </LinearGradientBrush>
                     </Rectangle.Fill>
                 </Rectangle>
