@@ -265,18 +265,10 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                 item.DisplayTranslationOpacity = _cachedTranslatedOpacity;
             }
 
-            // 触发当前行的 IsCurrent 翻转（false→true），让订阅回调统一刷新所有 item 的主歌词 Opacity
-            if (_currentLineIndex >= 0 && _currentLineIndex < _displayItems.Count)
-            {
-                var current = _displayItems[_currentLineIndex];
-                current.IsCurrent = false;
-                current.IsCurrent = true;
-            }
-            else
-            {
-                for (int i = 0; i < _displayItems.Count; i++)
-                    _displayItems[i].IsCurrent = _displayItems[i].IsCurrent;
-            }
+            // 直接刷新所有已实现行（主歌词 Opacity 取最新 _cachedUnplayedOpacity），
+            // 不再依赖 IsCurrent 翻转副作用（仅改 UnplayedOpacity 时不会触发 PropertyChanged）。
+            foreach (var kv in _itemMap)
+                ApplyItemToBlocks(kv.Key, kv.Value.LyricTb, kv.Value.TransTb);
 
             if (blurChanged) RefreshAllBlur();
 
