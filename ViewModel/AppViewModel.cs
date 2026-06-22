@@ -1,4 +1,4 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Messages;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.WinUI;
@@ -1299,8 +1299,8 @@ namespace WinUIMusicPlayer.ViewModel
                 unplayedOpacity: UnplayedOpacityPercent / 100.0,
                 translatedOpacity: TranslatedOpacityPercent / 100.0,
                 strokeWidth: 0.0,
-                scrollEasingType: AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2.EasingType.Sine,
-                scrollEasingMode: AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2.EaseMode.Out,
+                scrollEasingType: AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance.EasingType.Sine,
+                scrollEasingMode: AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance.EaseMode.Out,
                 playingLineTopOffset: PlayingLineTopOffsetPercent / 100.0,
                 targetFrameRate: TargetFrameRate));
         }

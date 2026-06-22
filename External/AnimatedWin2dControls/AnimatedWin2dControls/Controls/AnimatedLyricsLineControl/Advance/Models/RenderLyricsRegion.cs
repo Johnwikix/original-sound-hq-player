@@ -3,7 +3,7 @@ using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Effects;
 using System;
 
-namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
+namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 {
     public class RenderLyricsRegion : IDisposable
     {

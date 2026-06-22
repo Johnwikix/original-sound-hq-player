@@ -4,7 +4,7 @@ using System;
 using Windows.Graphics.Effects;
 using Windows.UI;
 
-namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
+namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 {
     public static class CanvasHelper
     {

@@ -1,7 +1,7 @@
 using System;
 using System.Numerics;
 
-namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
+namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 {
     public static class EasingHelper
     {

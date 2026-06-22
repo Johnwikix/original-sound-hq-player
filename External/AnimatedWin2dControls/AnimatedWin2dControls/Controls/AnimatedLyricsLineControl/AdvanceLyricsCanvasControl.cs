@@ -1,4 +1,4 @@
-using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2;
+using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
 using AnimatedWin2dControls.Messages;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
@@ -16,7 +16,7 @@ using Windows.UI;
 
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 {
-    public sealed class UnifiedLyricsCanvasControlV2 : Control
+    public sealed class AdvanceLyricsCanvasControl : Control
     {
         public event EventHandler<TimeSpan>? LyricLineClicked;
         public event EventHandler<Exception>? RenderError;
@@ -35,7 +35,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private LyricsSynchronizer _synchronizer = new();
         private LyricsAnimator _animator = new();
-        private LyricsLineRendererV2 _lineRenderer = new();
+        private LyricsLineRenderer _lineRenderer = new();
         private EdgeFadeMaskRenderer _edgeFadeMask = new();
 
         private ValueTransition<double> _canvasYScrollTransition;
@@ -99,9 +99,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private double _cachedPlayingLineTopOffset = 0.35;
         private double _cachedTargetFrameRate = 60.0;
 
-        public UnifiedLyricsCanvasControlV2()
+        public AdvanceLyricsCanvasControl()
         {
-            DefaultStyleKey = typeof(UnifiedLyricsCanvasControlV2);
+            DefaultStyleKey = typeof(AdvanceLyricsCanvasControl);
             SizeChanged += OnControlSizeChanged;
             Loaded += OnControlLoaded;
             Unloaded += OnControlUnloaded;
@@ -171,7 +171,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private static void OnVisibilityChanged(DependencyObject d, DependencyProperty dp)
         {
-            var ctrl = (UnifiedLyricsCanvasControlV2)d;
+            var ctrl = (AdvanceLyricsCanvasControl)d;
             ctrl._pausedByVisibility = ctrl.Visibility != Visibility.Visible;
             ctrl.UpdateCanvasPaused();
         }

@@ -8,7 +8,7 @@ using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
+namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 {
     public class RenderLyricsLine : BaseRenderLyrics
     {

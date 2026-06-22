@@ -88,13 +88,13 @@
         </Setter>
     </Style>
 
-    <Style TargetType="lyrics:UnifiedLyricsCanvasControlV2">
+    <Style TargetType="lyrics:AdvanceLyricsCanvasControl">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="IsHitTestVisible" Value="True" />
         <Setter Property="UseSystemFocusVisuals" Value="False" />
         <Setter Property="Template">
             <Setter.Value>
-                <ControlTemplate TargetType="lyrics:UnifiedLyricsCanvasControlV2">
+                <ControlTemplate TargetType="lyrics:AdvanceLyricsCanvasControl">
                     <canvas:CanvasAnimatedControl
                         x:Name="PART_Canvas"
                         ClearColor="Transparent"

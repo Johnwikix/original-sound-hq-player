@@ -41,7 +41,7 @@
                 HorizontalAlignment="Stretch" />
         </controls:OpacityMaskView>
 
-        <alc:UnifiedLyricsCanvasControlV2
+        <alc:AdvanceLyricsCanvasControl
             x:Name="LyricsCanvas"
             Margin="{x:Bind LyricsMargin, Mode=OneWay}"
             HorizontalAlignment="Stretch"

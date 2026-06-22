@@ -8,9 +8,9 @@ using System.Numerics;
 using Windows.Foundation;
 using Windows.UI;
 
-namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
+namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 {
-    public class LyricsLineRendererV2
+    public class LyricsLineRenderer
     {
         public bool IsPlaying { get; set; }
         public double CurrentProgressMs { get; set; }

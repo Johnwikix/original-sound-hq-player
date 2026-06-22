@@ -1,6 +1,6 @@
 using System;
 
-namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.V2
+namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 {
     public class ValueTransition<T> where T : struct
     {
