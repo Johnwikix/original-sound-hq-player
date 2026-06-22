@@ -80,9 +80,9 @@ public static class PaletteExtractor
         return algorithm switch
         {
             PaletteAlgorithm.OctTree => OctTreePaletteGenerator.CreatePalette(
-                colorDict, clusterCount, ignoreWhite: true),
+                colorDict, clusterCount, ignoreWhite: false),
             _ => KMeansPaletteGenerator.CreatePalette(
-                colorDict, clusterCount, ignoreWhite: true, toLab: true, useKMeansPP: true),
+                colorDict, clusterCount, ignoreWhite: false, toLab: true, useKMeansPP: true),
         };
     }
 }
