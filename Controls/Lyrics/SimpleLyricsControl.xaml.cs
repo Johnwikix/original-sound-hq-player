@@ -60,6 +60,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         private bool _shutdown;
         private bool _isProgrammaticScrolling;
         private double _lastProgrammaticOffset = double.NaN;
+        private bool _manualBrowsing;
 
         private DispatcherQueueTimer? _autoScrollReturnTimer;
         private DispatcherQueueTimer? _scrollRetryTimer;
@@ -232,6 +233,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
             _currentLineIndex = -1;
             _hoveredIndex = -1;
+            _manualBrowsing = false;
 
             BuildDisplayItems();
             MatchCurrentLineFromTime(_cachedOffsetMs, preferLatest: true);
@@ -514,6 +516,11 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         private void ScheduleScrollToCurrent()
         {
+            if (_manualBrowsing)
+            {
+                StopScrollRetry();
+                return;
+            }
             if (_currentLineIndex < 0)
             {
                 StopScrollRetry();
@@ -566,6 +573,9 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             targetOffset = Math.Max(0, targetOffset);
             _lastProgrammaticOffset = targetOffset;
 
+            // 自动滚动（换行的程序化滚动 / 冷却回正）发生时恢复模糊
+            ExitManualBrowsing();
+
             if (Math.Abs(ScrollHost.VerticalOffset - targetOffset) < ScrollAlignTolerancePx)
                 return true;
 
@@ -582,12 +592,16 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                 return;
             }
 
+            // 程序化滚动后的 settling 余波（落点贴近上次程序化目标）：忽略，不算用户滚动
+            if (!double.IsNaN(_lastProgrammaticOffset) &&
+                Math.Abs(ScrollHost.VerticalOffset - _lastProgrammaticOffset) < ScrollAlignTolerancePx)
+                return;
+
+            // 真·用户滚动：一开始拖动（含 intermediate）就取消所有行模糊
+            EnterManualBrowsing();
+
             if (!e.IsIntermediate)
             {
-                if (!double.IsNaN(_lastProgrammaticOffset) &&
-                    Math.Abs(ScrollHost.VerticalOffset - _lastProgrammaticOffset) < ScrollAlignTolerancePx)
-                    return;
-
                 _autoScrollReturnTimer ??= DispatcherQueue.CreateTimer();
                 _autoScrollReturnTimer.Interval = TimeSpan.FromSeconds(UserScrollCooldownSec);
                 _autoScrollReturnTimer.Tick -= _onAutoScrollReturnTick;
@@ -630,9 +644,37 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
             if (container?.ContentTemplateRoot is Border border && _blurMap.TryGetValue(border, out var res))
             {
-                float target = (isCurrent || isHovered) ? 0f : (float)_cachedLyricsBlurAmount;
+                float target = (_manualBrowsing || isCurrent || isHovered) ? 0f : (float)_cachedLyricsBlurAmount;
                 if (animate) AnimateBlurAmount(res, target);
                 else SetBlurAmountInstant(res, target);
+            }
+        }
+
+        private void EnterManualBrowsing()
+        {
+            if (_manualBrowsing) return;
+            _manualBrowsing = true;
+            StopScrollRetry();
+            RefreshAllLinesBlur();
+        }
+
+        private void ExitManualBrowsing()
+        {
+            if (!_manualBrowsing) return;
+            _manualBrowsing = false;
+            RefreshAllLinesBlur();
+        }
+
+        private void RefreshAllLinesBlur()
+        {
+            foreach (var kv in _blurMap)
+            {
+                var res = kv.Value;
+                if (res.Disposed) continue;
+                int idx = (kv.Key.Tag as LyricDisplayItem)?.LineIndex ?? -1;
+                float target = (_manualBrowsing || idx == _currentLineIndex || idx == _hoveredIndex)
+                    ? 0f : (float)_cachedLyricsBlurAmount;
+                AnimateBlurAmount(res, target);
             }
         }
 
