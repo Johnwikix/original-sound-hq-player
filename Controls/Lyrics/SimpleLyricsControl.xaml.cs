@@ -1,17 +1,20 @@
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Messages;
+using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Composition;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Hosting;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Numerics;
 using System.Text;
 using Windows.Foundation;
 
@@ -26,25 +29,35 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         private readonly Dictionary<LyricDisplayItem, (Border Border, TextBlock LyricTb, TextBlock TransTb)> _itemMap = new();
 
         private int _currentLineIndex = -1;
+        private int _hoveredIndex = -1;
         private CompositionPropertySet? _ps;
         private const string CurrentIndexKey = "CurrentIndex";
         private const float CurrentLineScale = 1.1f;
         private const float OtherLineScale = 1.0f;
         private const float ScaleTransitionDurationMs = 400f;
         private const double UserScrollCooldownSec = 3.0;
+        private const double ScrollAlignTolerancePx = 8.0;
         private const int ScrollRetryMaxCount = 30;
         private const int ScrollRetryIntervalMs = 100;
+
+        private const float BlurOffscreenX = -100000f;
+        private const float BlurTransitionDurationMs = ScaleTransitionDurationMs;
+        private CompositionEffectFactory? _blurFactory;
+        private double _cachedLyricsBlurAmount;
+        private readonly Dictionary<Border, BlurResources> _blurMap = new();
+        private readonly Dictionary<ListViewItem, float> _containerScaleTarget = new();
 
         private double _cachedFontSize = 36.0;
         private string _cachedFontFamilyName = "Segoe UI";
         private TextAlignment _cachedTextAlignment = TextAlignment.Left;
-        private double _cachedPlayingLineTopOffset = 0.35;
+        private double _cachedPlayingLineTopOffset = 0.4;
         private double _cachedUnplayedOpacity = 0.5;
         private double _cachedTranslatedOpacity = 0.6;
         private double _cachedOffsetMs;
 
         private bool _shutdown;
         private bool _isProgrammaticScrolling;
+        private double _lastProgrammaticOffset = double.NaN;
 
         private DispatcherQueueTimer? _autoScrollReturnTimer;
         private DispatcherQueueTimer? _scrollRetryTimer;
@@ -57,6 +70,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         private readonly TypedEventHandler<DispatcherQueueTimer, object> _onScrollRetryTick;
         private readonly TypedEventHandler<DispatcherQueueTimer, object> _onAutoScrollReturnTick;
         private readonly DispatcherQueueHandler _scheduleScrollAction;
+        private readonly PointerEventHandler _onScrollPointerMoved;
+        private readonly PointerEventHandler _onScrollPointerExited;
 
         public SimpleLyricsControl()
         {
@@ -65,6 +80,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             _onScrollRetryTick = OnScrollRetryTick;
             _onAutoScrollReturnTick = OnAutoScrollReturnTick;
             _scheduleScrollAction = ScheduleScrollToCurrent;
+            _onScrollPointerMoved = OnScrollPointerMoved;
+            _onScrollPointerExited = OnScrollPointerExited;
             Loaded += OnControlLoaded;
             Unloaded += OnControlUnloaded;
         }
@@ -94,11 +111,19 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             LyricList.ContainerContentChanging -= LyricList_ContainerContentChanging;
             ScrollHost.ViewChanged -= ScrollHost_ViewChanged;
             ScrollHost.SizeChanged -= ScrollHost_SizeChanged;
+            ScrollHost.RemoveHandler(UIElement.PointerMovedEvent, _onScrollPointerMoved);
+            ScrollHost.RemoveHandler(UIElement.PointerExitedEvent, _onScrollPointerExited);
 
             foreach (var item in _displayItems)
                 item.PropertyChanged -= _onItemPropertyChanged;
             _itemMap.Clear();
             _displayItems.Clear();
+            _hoveredIndex = -1;
+            _containerScaleTarget.Clear();
+
+            TeardownAllBlur();
+            _blurFactory?.Dispose();
+            _blurFactory = null;
 
             _autoScrollReturnTimer?.Stop();
             _autoScrollReturnTimer = null;
@@ -120,9 +145,13 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             LyricList.ContainerContentChanging += LyricList_ContainerContentChanging;
             ScrollHost.ViewChanged += ScrollHost_ViewChanged;
             ScrollHost.SizeChanged += ScrollHost_SizeChanged;
+            ScrollHost.AddHandler(UIElement.PointerMovedEvent, _onScrollPointerMoved, true);
+            ScrollHost.AddHandler(UIElement.PointerExitedEvent, _onScrollPointerExited, true);
 
             _ps = ElementCompositionPreview.GetElementVisual(this)?.Compositor?.CreatePropertySet();
             _ps?.InsertScalar(CurrentIndexKey, -1f);
+
+            EnsureBlurFactory();
 
             LyricsSyncRequestBus.Request();
         }
@@ -191,6 +220,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             }
 
             _currentLineIndex = -1;
+            _hoveredIndex = -1;
 
             BuildDisplayItems();
             MatchCurrentLineFromTime(_cachedOffsetMs, preferLatest: true);
@@ -209,6 +239,11 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             _cachedUnplayedOpacity = s.UnplayedOpacity;
             _cachedTranslatedOpacity = s.TranslatedOpacity;
             _cachedPlayingLineTopOffset = s.PlayingLineTopOffset;
+
+            double newBlur = Math.Max(0, s.LyricsBlurAmount);
+            newBlur *= 0.33;
+            bool blurChanged = Math.Abs(newBlur - _cachedLyricsBlurAmount) > 0.01;
+            _cachedLyricsBlurAmount = newBlur;
 
             foreach (var item in _displayItems)
             {
@@ -229,6 +264,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                 for (int i = 0; i < _displayItems.Count; i++)
                     _displayItems[i].IsCurrent = _displayItems[i].IsCurrent;
             }
+
+            if (blurChanged) RefreshAllBlur();
 
             DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, _scheduleScrollAction);
         }
@@ -275,6 +312,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         private void UpdateIsCurrent(int oldIndex, int newIndex)
         {
+            if (_hoveredIndex == newIndex) _hoveredIndex = -1;
             if (oldIndex >= 0 && oldIndex < _displayItems.Count)
                 _displayItems[oldIndex].IsCurrent = false;
             if (newIndex >= 0 && newIndex < _displayItems.Count)
@@ -323,16 +361,20 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             ApplyItemToBlocks(item, pair.LyricTb, pair.TransTb);
             if (e.PropertyName == nameof(LyricDisplayItem.IsCurrent))
             {
-                AnimateContainerScale(item.LineIndex, item.IsCurrent ? CurrentLineScale : OtherLineScale);
+                ApplyEmphasis(item.LineIndex, animate: true);
             }
             else if (e.PropertyName == nameof(LyricDisplayItem.DisplayTextAlignment))
             {
                 ApplyBorderSpacing(pair.Border, item.DisplayTextAlignment);
                 AnimateContainerScale(item.LineIndex, item.IsCurrent ? CurrentLineScale : OtherLineScale, instant: true);
+                if (_blurMap.TryGetValue(pair.Border, out var res))
+                    UpdateBlurGeometry(res);
             }
             else if (e.PropertyName == nameof(LyricDisplayItem.DisplayFontSize))
             {
                 ApplyBorderSpacing(pair.Border, item.DisplayTextAlignment);
+                if (_blurMap.TryGetValue(pair.Border, out var res))
+                    UpdateBlurGeometry(res);
             }
         }
 
@@ -368,10 +410,10 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                     break;
                 case TextAlignment.Right:
                     left = full;
-                    right = 0;
+                    right = 10;
                     break;
                 default:
-                    left = 0;
+                    left = 10;
                     right = full;
                     break;
             }
@@ -383,7 +425,18 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         private void LyricList_ContainerContentChanging(ListViewBase sender, ContainerContentChangingEventArgs args)
         {
-            if (args.InRecycleQueue) return;
+            if (args.InRecycleQueue)
+            {
+                if (args.ItemContainer is ListViewItem recycledContainer)
+                    _containerScaleTarget.Remove(recycledContainer);
+                if (args.ItemContainer?.ContentTemplateRoot is Border recycled)
+                {
+                    if (recycled.Tag is LyricDisplayItem oldItem && oldItem.LineIndex == _hoveredIndex)
+                        _hoveredIndex = -1;
+                    TeardownBlurForBorder(recycled);
+                }
+                return;
+            }
             if (args.Item is not LyricDisplayItem item) return;
             int idx = args.ItemIndex;
             if (idx < 0 || idx >= _displayItems.Count) return;
@@ -400,8 +453,14 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             ApplyItemToBlocks(item, lyricTb, transTb);
 
             var itemContainer = args.ItemContainer as ListViewItem;
-            if (item.IsCurrent)
-                AnimateContainerScale(idx, CurrentLineScale, instant: true, container: itemContainer);
+
+            if (_cachedLyricsBlurAmount > 0)
+                BuildBlurForContainer(border, panel, item.IsCurrent);
+            else
+                TeardownBlurForBorder(border);
+
+            border.Tag = item;
+            ApplyEmphasis(idx, animate: false, container: itemContainer);
         }
 
         private void AnimateContainerScale(int index, float targetScale, bool instant = false, ListViewItem? container = null)
@@ -415,8 +474,9 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             var compositor = visual.Compositor;
             if (compositor is null) return;
 
-            float currentScale = visual.Scale.X;
-            if (Math.Abs(currentScale - targetScale) < 0.005f) return;
+            float lastTarget = _containerScaleTarget.TryGetValue(container, out var t) ? t : visual.Scale.X;
+            if (Math.Abs(lastTarget - targetScale) < 0.005f) return;
+            _containerScaleTarget[container] = targetScale;
 
             var alignment = _displayItems[index].DisplayTextAlignment;
             float containerW = (float)LyricList.ActualWidth;
@@ -435,7 +495,6 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             }
 
             var anim = compositor.CreateScalarKeyFrameAnimation();
-            anim.InsertKeyFrame(0f, currentScale);
             anim.InsertKeyFrame(1f, targetScale);
             anim.Duration = TimeSpan.FromMilliseconds(ScaleTransitionDurationMs);
             visual.StartAnimation("Scale.X", anim);
@@ -494,6 +553,10 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                 - ScrollHost.ActualHeight * _cachedPlayingLineTopOffset;
             if (double.IsNaN(targetOffset) || double.IsInfinity(targetOffset)) return false;
             targetOffset = Math.Max(0, targetOffset);
+            _lastProgrammaticOffset = targetOffset;
+
+            if (Math.Abs(ScrollHost.VerticalOffset - targetOffset) < ScrollAlignTolerancePx)
+                return true;
 
             _isProgrammaticScrolling = true;
             ScrollHost.ChangeView(null, targetOffset, null, disableAnimation: false);
@@ -510,6 +573,10 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
             if (!e.IsIntermediate)
             {
+                if (!double.IsNaN(_lastProgrammaticOffset) &&
+                    Math.Abs(ScrollHost.VerticalOffset - _lastProgrammaticOffset) < ScrollAlignTolerancePx)
+                    return;
+
                 _autoScrollReturnTimer ??= DispatcherQueue.CreateTimer();
                 _autoScrollReturnTimer.Interval = TimeSpan.FromSeconds(UserScrollCooldownSec);
                 _autoScrollReturnTimer.Tick -= _onAutoScrollReturnTick;
@@ -538,6 +605,230 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
             _autoScrollReturnTimer?.Stop();
             LyricLineClicked?.Invoke(this, TimeSpan.FromMilliseconds(item.Source.StartMs));
+        }
+
+        private void ApplyEmphasis(int index, bool animate, ListViewItem? container = null)
+        {
+            if (index < 0 || index >= _displayItems.Count) return;
+            bool isCurrent = index == _currentLineIndex;
+            bool isHovered = index == _hoveredIndex;
+            float scale = isCurrent ? CurrentLineScale : OtherLineScale;
+
+            container ??= LyricList.ContainerFromIndex(index) as ListViewItem;
+            AnimateContainerScale(index, scale, instant: !animate, container: container);
+
+            if (container?.ContentTemplateRoot is Border border && _blurMap.TryGetValue(border, out var res))
+            {
+                float target = (isCurrent || isHovered) ? 0f : (float)_cachedLyricsBlurAmount;
+                if (animate) AnimateBlurAmount(res, target);
+                else SetBlurAmountInstant(res, target);
+            }
+        }
+
+        private void OnScrollPointerMoved(object sender, PointerRoutedEventArgs e)
+        {
+            SetHoveredLine(HitTestLineIndex(e));
+        }
+
+        private void OnScrollPointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            SetHoveredLine(-1);
+        }
+
+        private void SetHoveredLine(int idx)
+        {
+            if (idx == _currentLineIndex) idx = -1;
+            if (idx == _hoveredIndex) return;
+
+            int prev = _hoveredIndex;
+            _hoveredIndex = idx;
+            if (prev >= 0) ApplyEmphasis(prev, animate: true);
+            if (idx >= 0) ApplyEmphasis(idx, animate: true);
+        }
+
+        private int HitTestLineIndex(PointerRoutedEventArgs e)
+        {
+            var pt = e.GetCurrentPoint(null).Position;
+            foreach (var el in VisualTreeHelper.FindElementsInHostCoordinates(pt, LyricList))
+            {
+                if (el is Border b && b.Tag is LyricDisplayItem item)
+                    return item.LineIndex;
+            }
+            return -1;
+        }
+
+        private void EnsureBlurFactory()
+        {
+            if (_blurFactory != null) return;
+            var compositor = ElementCompositionPreview.GetElementVisual(this)?.Compositor;
+            if (compositor == null) return;
+
+            using var effect = new GaussianBlurEffect
+            {
+                Name = "blur",
+                BlurAmount = 0f,
+                BorderMode = EffectBorderMode.Soft,
+                Optimization = EffectOptimization.Speed,
+                Source = new CompositionEffectSourceParameter("src"),
+            };
+            _blurFactory = compositor.CreateEffectFactory(effect, new[] { "blur.BlurAmount" });
+        }
+
+        private void BuildBlurForContainer(Border border, StackPanel panel, bool isCurrent)
+        {
+            EnsureBlurFactory();
+            if (_blurFactory == null) return;
+
+            TeardownBlurForBorder(border);
+
+            var compositor = ElementCompositionPreview.GetElementVisual(border).Compositor;
+            var panelVisual = ElementCompositionPreview.GetElementVisual(panel);
+            ElementCompositionPreview.SetIsTranslationEnabled(panel, true);
+
+            var surface = compositor.CreateVisualSurface();
+            surface.SourceVisual = panelVisual;
+
+            var surfaceBrush = compositor.CreateSurfaceBrush(surface);
+            surfaceBrush.Stretch = CompositionStretch.None;
+            surfaceBrush.HorizontalAlignmentRatio = 0f;
+            surfaceBrush.VerticalAlignmentRatio = 0f;
+
+            var effectBrush = _blurFactory.CreateBrush();
+            effectBrush.SetSourceParameter("src", surfaceBrush);
+
+            var sprite = compositor.CreateSpriteVisual();
+            sprite.Brush = effectBrush;
+
+            var res = new BlurResources
+            {
+                Border = border,
+                Panel = panel,
+                PanelVisual = panelVisual,
+                Surface = surface,
+                SurfaceBrush = surfaceBrush,
+                EffectBrush = effectBrush,
+                Sprite = sprite,
+            };
+            res.SizeHandler = (s, e) => UpdateBlurGeometry(res);
+            panel.SizeChanged += res.SizeHandler;
+            _blurMap[border] = res;
+
+            UpdateBlurGeometry(res);
+            ApplyBlurState(res, isCurrent, animate: false);
+
+            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
+            {
+                if (!res.Disposed) UpdateBlurGeometry(res);
+            });
+        }
+
+        private void UpdateBlurGeometry(BlurResources res)
+        {
+            var sz = res.Panel.ActualSize;
+            float m = (float)Math.Min(Math.Ceiling(_cachedLyricsBlurAmount * 3.0), 10.0);
+            res.Surface.SourceOffset = new Vector2(-m, -m);
+            res.Surface.SourceSize = new Vector2(sz.X + 2f * m, sz.Y + 2f * m);
+            res.Sprite.Size = res.Surface.SourceSize;
+            res.Sprite.Offset = new Vector3((float)res.Border.Padding.Left - m, (float)res.Border.Padding.Top - m, 0f);
+        }
+
+        private void ApplyBlurState(BlurResources res, bool isCurrent, bool animate)
+        {
+            if (res.Disposed) return;
+
+            // Option A: the sprite is the permanent renderer and the real panel stays
+            // off-screen for every line. Switching current/non-current only animates the
+            // blur amount (current = 0, non-current = N), so there is never a swap between
+            // the XAML panel and the composition sprite -> no 1-frame seam / translation flash.
+            if (!res.Attached)
+            {
+                ElementCompositionPreview.SetElementChildVisual(res.Border, res.Sprite);
+                res.Attached = true;
+            }
+            res.PanelVisual.Properties.InsertVector3("Translation", new Vector3(BlurOffscreenX, 0f, 0f));
+
+            float target = isCurrent ? 0f : (float)_cachedLyricsBlurAmount;
+            if (animate)
+                AnimateBlurAmount(res, target);
+            else
+                SetBlurAmountInstant(res, target);
+        }
+
+        private static void SetBlurAmountInstant(BlurResources res, float v)
+        {
+            res.EffectBrush.Properties.InsertScalar("blur.BlurAmount", v);
+        }
+
+        private void AnimateBlurAmount(BlurResources res, float to)
+        {
+            var compositor = res.Sprite.Compositor;
+            var anim = compositor.CreateScalarKeyFrameAnimation();
+            anim.InsertKeyFrame(1f, to);
+            anim.Duration = TimeSpan.FromMilliseconds(BlurTransitionDurationMs);
+            res.EffectBrush.StartAnimation("blur.BlurAmount", anim);
+        }
+
+        private void RefreshAllBlur()
+        {
+            if (_cachedLyricsBlurAmount > 0)
+            {
+                foreach (var kv in _itemMap)
+                {
+                    var border = kv.Value.Border;
+                    if (border.Child is StackPanel panel)
+                        BuildBlurForContainer(border, panel, kv.Key.IsCurrent);
+                }
+                if (_hoveredIndex >= 0)
+                    ApplyEmphasis(_hoveredIndex, animate: false);
+            }
+            else
+            {
+                TeardownAllBlur();
+            }
+        }
+
+        private void TeardownBlurForBorder(Border border)
+        {
+            if (!_blurMap.TryGetValue(border, out var res)) return;
+            _blurMap.Remove(border);
+            DisposeBlur(res);
+        }
+
+        private void TeardownAllBlur()
+        {
+            foreach (var res in _blurMap.Values)
+                DisposeBlur(res);
+            _blurMap.Clear();
+        }
+
+        private static void DisposeBlur(BlurResources res)
+        {
+            res.Disposed = true;
+            if (res.SizeHandler != null)
+            {
+                res.Panel.SizeChanged -= res.SizeHandler;
+                res.SizeHandler = null;
+            }
+            ElementCompositionPreview.SetElementChildVisual(res.Border, null);
+            res.PanelVisual.Properties.InsertVector3("Translation", Vector3.Zero);
+            res.Sprite.Dispose();
+            res.EffectBrush.Dispose();
+            res.SurfaceBrush.Dispose();
+            res.Surface.Dispose();
+        }
+
+        private sealed class BlurResources
+        {
+            public Border Border = null!;
+            public StackPanel Panel = null!;
+            public Visual PanelVisual = null!;
+            public CompositionVisualSurface Surface = null!;
+            public CompositionSurfaceBrush SurfaceBrush = null!;
+            public CompositionEffectBrush EffectBrush = null!;
+            public SpriteVisual Sprite = null!;
+            public SizeChangedEventHandler? SizeHandler;
+            public bool Attached;
+            public bool Disposed;
         }
     }
 }
