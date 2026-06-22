@@ -46,6 +46,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         private double _cachedLyricsBlurAmount;
         private readonly Dictionary<Border, BlurResources> _blurMap = new();
         private readonly Dictionary<ListViewItem, float> _containerScaleTarget = new();
+        private ScalarKeyFrameAnimation? _reusableScaleAnim;
+        private ScalarKeyFrameAnimation? _reusableBlurAnim;
 
         private double _cachedFontSize = 36.0;
         private string _cachedFontFamilyName = "Segoe UI";
@@ -72,6 +74,9 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         private readonly DispatcherQueueHandler _scheduleScrollAction;
         private readonly PointerEventHandler _onScrollPointerMoved;
         private readonly PointerEventHandler _onScrollPointerExited;
+        private readonly SizeChangedEventHandler _onBlurPanelSizeChanged;
+        private readonly DispatcherQueueHandler _refreshBlurGeometryAction;
+        private bool _blurGeometryRefreshQueued;
 
         public SimpleLyricsControl()
         {
@@ -82,6 +87,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             _scheduleScrollAction = ScheduleScrollToCurrent;
             _onScrollPointerMoved = OnScrollPointerMoved;
             _onScrollPointerExited = OnScrollPointerExited;
+            _onBlurPanelSizeChanged = OnBlurPanelSizeChanged;
+            _refreshBlurGeometryAction = RefreshBlurGeometryAll;
             Loaded += OnControlLoaded;
             Unloaded += OnControlUnloaded;
         }
@@ -124,6 +131,10 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             TeardownAllBlur();
             _blurFactory?.Dispose();
             _blurFactory = null;
+            _reusableScaleAnim?.Dispose();
+            _reusableScaleAnim = null;
+            _reusableBlurAnim?.Dispose();
+            _reusableBlurAnim = null;
 
             _autoScrollReturnTimer?.Stop();
             _autoScrollReturnTimer = null;
@@ -494,11 +505,11 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                 return;
             }
 
-            var anim = compositor.CreateScalarKeyFrameAnimation();
-            anim.InsertKeyFrame(1f, targetScale);
-            anim.Duration = TimeSpan.FromMilliseconds(ScaleTransitionDurationMs);
-            visual.StartAnimation("Scale.X", anim);
-            visual.StartAnimation("Scale.Y", anim);
+            _reusableScaleAnim ??= compositor.CreateScalarKeyFrameAnimation();
+            _reusableScaleAnim.InsertKeyFrame(1f, targetScale);
+            _reusableScaleAnim.Duration = TimeSpan.FromMilliseconds(ScaleTransitionDurationMs);
+            visual.StartAnimation("Scale.X", _reusableScaleAnim);
+            visual.StartAnimation("Scale.Y", _reusableScaleAnim);
         }
 
         private void ScheduleScrollToCurrent()
@@ -648,11 +659,14 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         private int HitTestLineIndex(PointerRoutedEventArgs e)
         {
-            var pt = e.GetCurrentPoint(null).Position;
-            foreach (var el in VisualTreeHelper.FindElementsInHostCoordinates(pt, LyricList))
+            // 零分配：从 OriginalSource 沿视觉树上溯到带 Tag 的 Border，
+            // 避免 GetCurrentPoint 的 PointerPoint 分配与 FindElementsInHostCoordinates 的枚举分配。
+            DependencyObject? node = e.OriginalSource as DependencyObject;
+            while (node is not null)
             {
-                if (el is Border b && b.Tag is LyricDisplayItem item)
+                if (node is Border b && b.Tag is LyricDisplayItem item)
                     return item.LineIndex;
+                node = VisualTreeHelper.GetParent(node);
             }
             return -1;
         }
@@ -709,17 +723,34 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                 EffectBrush = effectBrush,
                 Sprite = sprite,
             };
-            res.SizeHandler = (s, e) => UpdateBlurGeometry(res);
-            panel.SizeChanged += res.SizeHandler;
+            panel.Tag = res;
+            panel.SizeChanged -= _onBlurPanelSizeChanged;
+            panel.SizeChanged += _onBlurPanelSizeChanged;
             _blurMap[border] = res;
 
             UpdateBlurGeometry(res);
             ApplyBlurState(res, isCurrent, animate: false);
 
-            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
+            if (!_blurGeometryRefreshQueued)
+            {
+                _blurGeometryRefreshQueued = true;
+                DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, _refreshBlurGeometryAction);
+            }
+        }
+
+        private void OnBlurPanelSizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            if (sender is FrameworkElement fe && fe.Tag is BlurResources res && !res.Disposed)
+                UpdateBlurGeometry(res);
+        }
+
+        private void RefreshBlurGeometryAll()
+        {
+            _blurGeometryRefreshQueued = false;
+            foreach (var res in _blurMap.Values)
             {
                 if (!res.Disposed) UpdateBlurGeometry(res);
-            });
+            }
         }
 
         private void UpdateBlurGeometry(BlurResources res)
@@ -762,10 +793,10 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         private void AnimateBlurAmount(BlurResources res, float to)
         {
             var compositor = res.Sprite.Compositor;
-            var anim = compositor.CreateScalarKeyFrameAnimation();
-            anim.InsertKeyFrame(1f, to);
-            anim.Duration = TimeSpan.FromMilliseconds(BlurTransitionDurationMs);
-            res.EffectBrush.StartAnimation("blur.BlurAmount", anim);
+            _reusableBlurAnim ??= compositor.CreateScalarKeyFrameAnimation();
+            _reusableBlurAnim.InsertKeyFrame(1f, to);
+            _reusableBlurAnim.Duration = TimeSpan.FromMilliseconds(BlurTransitionDurationMs);
+            res.EffectBrush.StartAnimation("blur.BlurAmount", _reusableBlurAnim);
         }
 
         private void RefreshAllBlur()
@@ -801,14 +832,11 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             _blurMap.Clear();
         }
 
-        private static void DisposeBlur(BlurResources res)
+        private void DisposeBlur(BlurResources res)
         {
             res.Disposed = true;
-            if (res.SizeHandler != null)
-            {
-                res.Panel.SizeChanged -= res.SizeHandler;
-                res.SizeHandler = null;
-            }
+            res.Panel.SizeChanged -= _onBlurPanelSizeChanged;
+            res.Panel.Tag = null;
             ElementCompositionPreview.SetElementChildVisual(res.Border, null);
             res.PanelVisual.Properties.InsertVector3("Translation", Vector3.Zero);
             res.Sprite.Dispose();
@@ -826,7 +854,6 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             public CompositionSurfaceBrush SurfaceBrush = null!;
             public CompositionEffectBrush EffectBrush = null!;
             public SpriteVisual Sprite = null!;
-            public SizeChangedEventHandler? SizeHandler;
             public bool Attached;
             public bool Disposed;
         }
