@@ -30,7 +30,6 @@
             EnableLightWave="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=OneWay}"
             ExceptionOccurred="BackGround_ExceptionOccurred"
             IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
-            IsFluidBackgroundEnabled="True"
             IsFogEnabled="{x:Bind ViewModel.AppViewModel.IsFogEffectEnabled, Mode=OneWay}"
             IsRaindropEnabled="{x:Bind ViewModel.AppViewModel.IsRaindropEffectEnabled, Mode=OneWay}"
             IsSnowEnabled="{x:Bind ViewModel.AppViewModel.IsSnowEffectEnabled, Mode=OneWay}"

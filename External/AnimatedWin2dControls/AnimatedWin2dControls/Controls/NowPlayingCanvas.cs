@@ -1,5 +1,6 @@
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Renderer;
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.UI;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
@@ -22,15 +23,6 @@ namespace AnimatedWin2dControls.Controls
         private const string PartCanvasName = "PART_Canvas";
 
         // ── 背景侧依赖属性 ────────────────────────────────────────────────────
-
-        public static readonly DependencyProperty IsFluidBackgroundEnabledProperty =
-            DependencyProperty.Register(nameof(IsFluidBackgroundEnabled), typeof(bool),
-                typeof(NowPlayingCanvas), new PropertyMetadata(true, OnEnableFlagChanged));
-        public bool IsFluidBackgroundEnabled
-        {
-            get => (bool)GetValue(IsFluidBackgroundEnabledProperty);
-            set => SetValue(IsFluidBackgroundEnabledProperty, value);
-        }
 
         public static readonly DependencyProperty EnableLightWaveProperty =
             DependencyProperty.Register(nameof(EnableLightWave), typeof(bool),
@@ -125,8 +117,14 @@ namespace AnimatedWin2dControls.Controls
         private bool _advanced = true;
         private bool _pausedByVisibility;
 
+        // 背景半帧率：每 (skip+1) 帧才重绘一次不透明合成缓存，其余帧复用。0=全帧率，1=半帧率。
+        private int _backgroundFrameSkip = 1;
+        private long _frameCounter;
+        private CanvasRenderTarget? _bgCache;
+        private float _bgCacheWidthDip;
+        private float _bgCacheHeightDip;
+
         // 渲染线程热路径只读这些缓存字段（DP 仅能在 UI 线程访问，跨线程读会抛 COMException）
-        private bool _isFluidEnabled = true;
         private bool _isFogEnabled;
         private bool _isSnowEnabled;
         private bool _isRaindropEnabled;
@@ -165,7 +163,6 @@ namespace AnimatedWin2dControls.Controls
         /// <summary>仅在 UI 线程调用：把依赖属性读入普通字段并下推到各渲染模块。</summary>
         private void SyncStateFromProperties()
         {
-            _isFluidEnabled = IsFluidBackgroundEnabled;
             _isFogEnabled = IsFogEnabled;
             _isSnowEnabled = IsSnowEnabled;
             _isRaindropEnabled = IsRaindropEnabled;
@@ -173,7 +170,6 @@ namespace AnimatedWin2dControls.Controls
             _isDark = IsDark;
             _useImageDominantTheme = UseImageDominantTheme;
 
-            _fluid.IsEnabled = _isFluidEnabled;
             _fluid.EnableLightWave = _enableLightWave;
             _fluid.IsDark = _isDark;
             _fluid.UseImageDominantTheme = _useImageDominantTheme;
@@ -204,9 +200,6 @@ namespace AnimatedWin2dControls.Controls
             {
                 _coordinator.Canvas = _canvas;
                 _coordinator.LyricsRegion = LyricsRegion;
-
-                // 显式确保透明（不依赖模板 XAML，且设备重建后亦由 CreateResources 重申）
-                _canvas.ClearColor = Colors.Transparent;
 
                 _canvas.CreateResources += OnCanvasCreateResources;
                 _canvas.Update += OnCanvasUpdate;
@@ -296,8 +289,9 @@ namespace AnimatedWin2dControls.Controls
         {
             try
             {
-                // 设备重建（含设备丢失/恢复）时重申透明，保证交换链以透明 alpha 模式重配
-                sender.ClearColor = Colors.Transparent;
+                // 设备重建（含设备丢失/恢复）：丢弃合成缓存，由下一帧按当前设备/尺寸重建
+                _bgCache?.Dispose();
+                _bgCache = null;
 
                 _fluid.EnableLightWave = _enableLightWave;
                 _fluid.IsDark = _isDark;
@@ -332,15 +326,52 @@ namespace AnimatedWin2dControls.Controls
         {
             var ds = args.DrawingSession;
 
-            // 不手动清屏：依赖 ClearColor=Transparent 由 Win2D 在每帧前清屏并维护透明交换链。
-            // 流体开启时由满屏不透明着色器覆盖；关闭时透出页面/窗口背景。
-            _fluid.Draw(sender, ds);
-            _snow.Draw(sender, ds);
-            _fog.Draw(sender, ds);
-            _raindrop.Draw(sender, ds);
+            DrawBackground(sender, ds);
 
             if (_advanced)
                 _coordinator.OnDraw(sender, ds);
+        }
+
+        // 背景以 (skip+1) 帧为周期重绘到不透明合成缓存，其余帧复用缓存 blit。
+        // 流体恒为满屏不透明，缓存整面覆盖交换链，故无需清屏；歌词层每帧叠加其上。
+        private void DrawBackground(ICanvasAnimatedControl sender, CanvasDrawingSession ds)
+        {
+            _frameCounter++;
+
+            if (_backgroundFrameSkip <= 0)
+            {
+                _fluid.Draw(sender, ds);
+                _snow.Draw(sender, ds);
+                _fog.Draw(sender, ds);
+                _raindrop.Draw(sender, ds);
+                return;
+            }
+
+            float widthDip = (float)sender.Size.Width;
+            float heightDip = (float)sender.Size.Height;
+            if (widthDip <= 0f || heightDip <= 0f) return;
+
+            bool renderBg = _frameCounter % (_backgroundFrameSkip + 1) == 0;
+
+            if (_bgCache is null || _bgCacheWidthDip != widthDip || _bgCacheHeightDip != heightDip)
+            {
+                _bgCache?.Dispose();
+                _bgCache = new CanvasRenderTarget(sender, widthDip, heightDip);
+                _bgCacheWidthDip = widthDip;
+                _bgCacheHeightDip = heightDip;
+                renderBg = true; // 尺寸变化后必须立即重绘缓存
+            }
+
+            if (renderBg)
+            {
+                using var cds = _bgCache.CreateDrawingSession();
+                _fluid.Draw(sender, cds);
+                _snow.Draw(sender, cds);
+                _fog.Draw(sender, cds);
+                _raindrop.Draw(sender, cds);
+            }
+
+            ds.DrawImage(_bgCache);
         }
 
         // ── 输入转发 ──────────────────────────────────────────────────────────
@@ -382,6 +413,9 @@ namespace AnimatedWin2dControls.Controls
             _fog.Dispose();
             _snow.Dispose();
             _raindrop.Dispose();
+
+            _bgCache?.Dispose();
+            _bgCache = null;
         }
 
         public void Dispose()

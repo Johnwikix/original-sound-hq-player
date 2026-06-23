@@ -32,7 +32,6 @@ namespace AnimatedWin2dControls.Renderer
 
         private AnimatedWin2dControls.Impressionist.PaletteResult? _currentPalette;
 
-        public bool IsEnabled { get; set; } = true;
         public bool EnableLightWave { get; set; } = false;
         public bool IsDark { get; set; } = true;
         public bool UseImageDominantTheme { get; set; } = false;
@@ -55,7 +54,7 @@ namespace AnimatedWin2dControls.Renderer
 
         public void Update(TimeSpan deltaTime)
         {
-            if (_effect == null || !IsEnabled) return;
+            if (_effect == null) return;
 
             // bass 恒为 0，呼吸退化为恒等
             base.UpdateBreathing(0f, 0);
@@ -76,7 +75,7 @@ namespace AnimatedWin2dControls.Renderer
 
         public void Draw(ICanvasAnimatedControl control, CanvasDrawingSession ds)
         {
-            if (_effect == null || !IsEnabled || Opacity <= 0) return;
+            if (_effect == null || Opacity <= 0) return;
 
             float width = control.ConvertDipsToPixels((float)control.Size.Width, CanvasDpiRounding.Round);
             float height = control.ConvertDipsToPixels((float)control.Size.Height, CanvasDpiRounding.Round);
