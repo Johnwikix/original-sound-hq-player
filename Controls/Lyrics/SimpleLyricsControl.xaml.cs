@@ -169,6 +169,11 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             if (_scrollPresenter is not null)
                 _scrollPresenter.ViewChanged += ScrollPresenter_ViewChanged;
 
+#if DEBUG
+            System.Diagnostics.Debug.WriteLine(
+                $"[Lyrics][OnControlLoaded] _scrollPresenter={_scrollPresenter?.GetType().Name ?? "null"}");
+#endif
+
             _ps = ElementCompositionPreview.GetElementVisual(this)?.Compositor?.CreatePropertySet();
             _ps?.InsertScalar(CurrentIndexKey, -1f);
 
@@ -592,9 +597,34 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             // 用 ScrollPresenter.State != Idle 替代原 ScrollViewerViewChangedEventArgs.IsIntermediate。
             bool isIntermediate = sender.State != ScrollingInteractionState.Idle;
 
+#if DEBUG
+            System.Diagnostics.Debug.WriteLine(
+                $"[Lyrics][ViewChanged] state={sender.State} vOffset={sender.VerticalOffset:F2} " +
+                $"isProg={_isProgrammaticScrolling} lastProg={_lastProgrammaticOffset:F2} " +
+                $"tol={ScrollAlignTolerancePx}");
+#endif
+
             if (_isProgrammaticScrolling)
             {
-                if (!isIntermediate) _isProgrammaticScrolling = false;
+#if DEBUG
+                double delta = !double.IsNaN(_lastProgrammaticOffset) && _scrollPresenter is not null
+                    ? Math.Abs(_scrollPresenter.VerticalOffset - _lastProgrammaticOffset)
+                    : -1.0;
+                System.Diagnostics.Debug.WriteLine(
+                    $"[Lyrics][ViewChanged] programmatic branch, " +
+                    $"state={sender.State} vOffset={sender.VerticalOffset:F2} " +
+                    $"lastProg={_lastProgrammaticOffset:F2} delta={delta:F2} tol={ScrollAlignTolerancePx}");
+#endif
+                if (_scrollPresenter is not null &&
+                    !double.IsNaN(_lastProgrammaticOffset) &&
+                    Math.Abs(_scrollPresenter.VerticalOffset - _lastProgrammaticOffset) < ScrollAlignTolerancePx)
+                {
+                    // offset 已接近程序化目标 → 程序化滚动视为完成，清零标志位
+                    _isProgrammaticScrolling = false;
+#if DEBUG
+                    System.Diagnostics.Debug.WriteLine("[Lyrics][ViewChanged] -> _isProgrammaticScrolling=false (offset reached)");
+#endif
+                }
                 return;
             }
 
@@ -602,19 +632,22 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             if (_scrollPresenter is not null &&
                 !double.IsNaN(_lastProgrammaticOffset) &&
                 Math.Abs(_scrollPresenter.VerticalOffset - _lastProgrammaticOffset) < ScrollAlignTolerancePx)
-                return;
-
-            // 真·用户滚动：一开始拖动（含 intermediate）就取消所有行模糊
-            EnterManualBrowsing();
-
-            if (!isIntermediate)
             {
-                _autoScrollReturnTimer ??= DispatcherQueue.CreateTimer();
-                _autoScrollReturnTimer.Interval = TimeSpan.FromSeconds(UserScrollCooldownSec);
-                _autoScrollReturnTimer.Tick -= _onAutoScrollReturnTick;
-                _autoScrollReturnTimer.Tick += _onAutoScrollReturnTick;
-                _autoScrollReturnTimer.Start();
+#if DEBUG
+                System.Diagnostics.Debug.WriteLine(
+                    $"[Lyrics][ViewChanged] return: settling, " +
+                    $"delta={Math.Abs(_scrollPresenter.VerticalOffset - _lastProgrammaticOffset):F2}");
+#endif
+                return;
             }
+
+#if DEBUG
+            System.Diagnostics.Debug.WriteLine("[Lyrics][ViewChanged] -> EnterManualBrowsing");
+#endif
+
+            // 真·用户滚动：一开始拖动就取消所有行模糊
+            // 3 秒冷却回正定时器已在 EnterManualBrowsing 内部启动（与 isIntermediate 状态解耦）
+            EnterManualBrowsing();
         }
 
         private void ScrollHost_SizeChanged(object? sender, SizeChangedEventArgs e)
@@ -663,6 +696,24 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             _manualBrowsing = true;
             StopScrollRetry();
             RefreshAllLinesBlur();
+
+            // 启动 3 秒冷却回正定时器。
+            // 注意：放在 EnterManualBrowsing 内部（而非 ScrollPresenter_ViewChanged 中
+            // 检查 !isIntermediate），因为 ScrollPresenter 拖动后 state 经常停在 Inertia
+            // 不回 Idle，isIntermediate 永远为 true，3 秒冷却定时器永远不启动，
+            // 导致"一旦手动滚动后就不会再恢复自动滚动"。
+            // 利用本方法早返回 `if (_manualBrowsing) return;` 特性，惯性滑动期间不会重复启动。
+            _autoScrollReturnTimer ??= DispatcherQueue.CreateTimer();
+            _autoScrollReturnTimer.Interval = TimeSpan.FromSeconds(UserScrollCooldownSec);
+            _autoScrollReturnTimer.Tick -= _onAutoScrollReturnTick;
+            _autoScrollReturnTimer.Tick += _onAutoScrollReturnTick;
+            _autoScrollReturnTimer.Start();
+
+#if DEBUG
+            System.Diagnostics.Debug.WriteLine(
+                $"[Lyrics][EnterManualBrowsing] _manualBrowsing=true, blur count={_blurMap.Count}, " +
+                $"autoReturnTimer started ({UserScrollCooldownSec}s)");
+#endif
         }
 
         private void ExitManualBrowsing()
