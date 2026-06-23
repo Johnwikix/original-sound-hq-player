@@ -14,7 +14,7 @@ namespace AnimatedWin2dControls.Renderer
         private float _timeAccumulator = 0f;
 
         public bool IsEnabled { get; set; } = false;
-        public float Amount { get; set; } = 0.5f;
+        public float Amount { get; set; } = 0.05f;
         public float Speed { get; set; } = 1.0f;
 
         public void LoadResources()
