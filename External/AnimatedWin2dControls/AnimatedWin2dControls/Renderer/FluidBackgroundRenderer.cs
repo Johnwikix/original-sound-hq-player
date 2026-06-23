@@ -20,8 +20,10 @@ namespace AnimatedWin2dControls.Renderer
         private PixelShaderEffect<FluidBackgroundEffect>? _effect;
 
         private float _time;
-        private float _rnd1, _rnd2, _rnd3;
         private static readonly Random _random = new();
+        private float _rnd1 = (float) (_random.NextDouble()* Math.PI * 2);
+        private float _rnd2 = (float) (_random.NextDouble()* Math.PI * 2);
+        private float _rnd3 = (float) (_random.NextDouble()* Math.PI * 2);        
 
         private Vector3 _c1, _c2, _c3, _c4;
         private Vector3 _target1, _target2, _target3, _target4;
@@ -146,11 +148,7 @@ namespace AnimatedWin2dControls.Renderer
             _target2 = slots[1];
             _target3 = slots[2];
             _target4 = slots[3];
-            _transitionProgress = 0f;
-
-            _rnd1 = (float)(_random.NextDouble() * Math.PI * 2);
-            _rnd2 = (float)(_random.NextDouble() * Math.PI * 2);
-            _rnd3 = (float)(_random.NextDouble() * Math.PI * 2);
+            _transitionProgress = 0f;           
         }
 
         private static Vector3[] DistributeByPopulation(
