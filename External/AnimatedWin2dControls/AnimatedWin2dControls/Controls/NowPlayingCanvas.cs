@@ -3,7 +3,6 @@ using AnimatedWin2dControls.Renderer;
 using Microsoft.Graphics.Canvas.UI;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
-using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -135,10 +134,6 @@ namespace AnimatedWin2dControls.Controls
         private bool _isDark = true;
         private bool _useImageDominantTheme;
 
-        // Win2D 交换链在尺寸变更/从隐藏恢复时重建会闪出不透明旧缓冲（黑/纯色）。
-        // 方案：变更时先 Opacity=0，待下一帧正确绘制后在 UI 线程恢复 Opacity=1。
-        private bool _opacityFixPending;
-        private DispatcherQueue? _dispatcherQueue;
         private bool _pausedByParent;
         private bool _pausedByWindow;
         private long _visibilityCallbackToken;
@@ -209,12 +204,13 @@ namespace AnimatedWin2dControls.Controls
             {
                 _coordinator.Canvas = _canvas;
                 _coordinator.LyricsRegion = LyricsRegion;
-                _dispatcherQueue = _canvas.DispatcherQueue;
+
+                // 显式确保透明（不依赖模板 XAML，且设备重建后亦由 CreateResources 重申）
+                _canvas.ClearColor = Colors.Transparent;
 
                 _canvas.CreateResources += OnCanvasCreateResources;
                 _canvas.Update += OnCanvasUpdate;
                 _canvas.Draw += OnCanvasDraw;
-                _canvas.SizeChanged += OnCanvasSizeChanged;
 
                 if (_advanced)
                 {
@@ -245,7 +241,6 @@ namespace AnimatedWin2dControls.Controls
             _canvas.CreateResources -= OnCanvasCreateResources;
             _canvas.Update -= OnCanvasUpdate;
             _canvas.Draw -= OnCanvasDraw;
-            _canvas.SizeChanged -= OnCanvasSizeChanged;
             _canvas.PointerWheelChanged -= OnCanvasPointerWheelChanged;
             _canvas.PointerPressed -= OnCanvasPointerPressed;
             _canvas.PointerMoved -= OnCanvasPointerMoved;
@@ -279,26 +274,7 @@ namespace AnimatedWin2dControls.Controls
         public void SetWindowPaused(bool paused)
         {
             _pausedByWindow = paused;
-            if (!paused) TriggerOpacityFix();
             UpdateCanvasPaused();
-        }
-
-        /// <summary>
-        /// 触发透明度修复：先隐藏画布，待下一帧正确绘制后恢复，避免交换链重建首帧闪出纯色。
-        /// 仅在 UI 线程调用。
-        /// </summary>
-        private void TriggerOpacityFix()
-        {
-            if (_canvas == null) return;
-            _canvas.Opacity = 0;
-            _opacityFixPending = true;
-        }
-
-        private void OnCanvasSizeChanged(object sender, SizeChangedEventArgs e)
-        {
-            TriggerOpacityFix();
-            if (_advanced)
-                _coordinator.OnSizeChanged();
         }
 
         private void UpdateCanvasPaused()
@@ -320,6 +296,9 @@ namespace AnimatedWin2dControls.Controls
         {
             try
             {
+                // 设备重建（含设备丢失/恢复）时重申透明，保证交换链以透明 alpha 模式重配
+                sender.ClearColor = Colors.Transparent;
+
                 _fluid.EnableLightWave = _enableLightWave;
                 _fluid.IsDark = _isDark;
                 _fluid.UseImageDominantTheme = _useImageDominantTheme;
@@ -353,9 +332,8 @@ namespace AnimatedWin2dControls.Controls
         {
             var ds = args.DrawingSession;
 
-            // 始终透明清屏：流体开启时由满屏不透明着色器覆盖；关闭时透出页面/窗口背景。
-            ds.Clear(Colors.Transparent);
-
+            // 不手动清屏：依赖 ClearColor=Transparent 由 Win2D 在每帧前清屏并维护透明交换链。
+            // 流体开启时由满屏不透明着色器覆盖；关闭时透出页面/窗口背景。
             _fluid.Draw(sender, ds);
             _snow.Draw(sender, ds);
             _fog.Draw(sender, ds);
@@ -363,16 +341,6 @@ namespace AnimatedWin2dControls.Controls
 
             if (_advanced)
                 _coordinator.OnDraw(sender, ds);
-
-            if (_opacityFixPending)
-            {
-                _opacityFixPending = false;
-                // Draw 回调在渲染线程，Opacity 必须回 UI 线程设置
-                _dispatcherQueue?.TryEnqueue(DispatcherQueuePriority.Low, () =>
-                {
-                    if (_canvas != null) _canvas.Opacity = 1;
-                });
-            }
         }
 
         // ── 输入转发 ──────────────────────────────────────────────────────────

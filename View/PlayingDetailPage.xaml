@@ -36,7 +36,8 @@
             LyricLineClicked="NowPlaying_LyricLineClicked"
             RenderError="LyricsView_ExceptionInteracted"
             ThemeResolved="BackGround_ThemeResolved"
-            UseImageDominantTheme="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=OneWay}" />
+            UseImageDominantTheme="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=OneWay}"
+            Visibility="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}" />
         <Grid
             x:Name="PlayingDetail"
             Grid.Row="2"
