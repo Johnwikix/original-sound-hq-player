@@ -34,6 +34,9 @@ namespace WinUIMusicPlayer.Model
         public int CoverSize { get; set; } = 150;
         public AnimatedTextEffect Win2dTextEffectType { get; set; } = AnimatedTextEffect.TextDefaultEffect;
         public bool IsFluidBackgroundEnabled { get; set; } = true;
+        public bool IsFogEffectEnabled { get; set; } = false;
+        public bool IsSnowEffectEnabled { get; set; } = false;
+        public bool IsRaindropEffectEnabled { get; set; } = false;
         public bool IsFolderWatchEnabled { get; set; } = true;
         public bool IsCustomAppSize { get; set; } = false;
         public int AppWidth { get; set; } = 1280;

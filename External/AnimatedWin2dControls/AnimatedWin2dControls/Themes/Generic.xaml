@@ -72,6 +72,21 @@
         </Setter>
     </Style>
 
+    <Style TargetType="local:NowPlayingCanvas">
+        <Setter Property="IsHitTestVisible" Value="True" />
+        <Setter Property="UseSystemFocusVisuals" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="local:NowPlayingCanvas">
+                    <canvas:CanvasAnimatedControl
+                        x:Name="PART_Canvas"
+                        ClearColor="Transparent"
+                        IsHitTestVisible="True" />
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
     <Style TargetType="lyrics:UnifiedLyricsCanvasControlV1">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="IsHitTestVisible" Value="True" />

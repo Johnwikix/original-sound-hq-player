@@ -23,14 +23,20 @@
     mc:Ignorable="d">
 
     <Grid>
-        <awc:ShaderBackgroundControl
-            x:Name="BackGround"
+        <awc:NowPlayingCanvas
+            x:Name="NowPlaying"
+            EnableAdvancedLyrics="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneTime}"
             EnableLightWave="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=OneWay}"
             ExceptionOccurred="BackGround_ExceptionOccurred"
             IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
+            IsFluidBackgroundEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
+            IsFogEnabled="{x:Bind ViewModel.AppViewModel.IsFogEffectEnabled, Mode=OneWay}"
+            IsRaindropEnabled="{x:Bind ViewModel.AppViewModel.IsRaindropEffectEnabled, Mode=OneWay}"
+            IsSnowEnabled="{x:Bind ViewModel.AppViewModel.IsSnowEffectEnabled, Mode=OneWay}"
+            LyricLineClicked="NowPlaying_LyricLineClicked"
+            RenderError="LyricsView_ExceptionInteracted"
             ThemeResolved="BackGround_ThemeResolved"
-            UseImageDominantTheme="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=OneWay}"
-            Visibility="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Converter={StaticResource BoolToVisibilityConverter}, Mode=OneWay}" />
+            UseImageDominantTheme="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=OneWay}" />
         <Grid
             x:Name="PlayingDetail"
             Grid.Row="2"
@@ -600,13 +606,16 @@
                 </StackPanel>
             </Grid>
             <Grid
+                x:Name="LyricsRegionHost"
                 Grid.Row="1"
                 Grid.Column="1"
-                Margin="0,40,0,40">
-                <!--  添加歌词显示列表  -->
+                Margin="0,40,0,40"
+                SizeChanged="LyricsRegionHost_SizeChanged">
+                <!--  简单歌词：仅在非高级模式下作为 XAML 覆层叠在宿主之上；高级歌词由 NowPlaying 宿主直接绘制  -->
                 <lyrics:LyricsControl
                     x:Name="LyricsView"
-                    EnableAdvancedLyrics="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneTime}"
+                    x:Load="{x:Bind tool:BindUtils.BoolToBoolReConverter(ViewModel.AppViewModel.EnableAdvancedLyricsEffect), Mode=OneTime}"
+                    EnableAdvancedLyrics="False"
                     ExceptionInteracted="LyricsView_ExceptionInteracted"
                     LyricInteracted="LyricsView_LyricInteracted"
                     LyricsMargin="{x:Bind ViewModel.AppViewModel.LyricsMargin, Mode=OneWay}" />

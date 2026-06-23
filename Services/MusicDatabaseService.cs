@@ -801,6 +801,9 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.DsdPcmFreq = settings.DsdPcmFreq;
                 AppViewModel.CoverSize = settings.CoverSize;
                 AppViewModel.IsFluidBackgroundEnabled = settings.IsFluidBackgroundEnabled;
+                AppViewModel.IsFogEffectEnabled = settings.IsFogEffectEnabled;
+                AppViewModel.IsSnowEffectEnabled = settings.IsSnowEffectEnabled;
+                AppViewModel.IsRaindropEffectEnabled = settings.IsRaindropEffectEnabled;
                 AppViewModel.IsFolderWatchEnabled = settings.IsFolderWatchEnabled;
                 AppViewModel.IsCustomAppSize = settings.IsCustomAppSize;
                 AppViewModel.AppWidth = settings.AppWidth;
@@ -901,6 +904,9 @@ namespace WinUIMusicPlayer.Services
             newSettings.CoverSize = AppViewModel.CoverSize;
             newSettings.Win2dTextEffectType = AppViewModel.Win2dTextEffectType.Value;
             newSettings.IsFluidBackgroundEnabled = AppViewModel.IsFluidBackgroundEnabled;
+            newSettings.IsFogEffectEnabled = AppViewModel.IsFogEffectEnabled;
+            newSettings.IsSnowEffectEnabled = AppViewModel.IsSnowEffectEnabled;
+            newSettings.IsRaindropEffectEnabled = AppViewModel.IsRaindropEffectEnabled;
             newSettings.IsFolderWatchEnabled = AppViewModel.IsFolderWatchEnabled;
             newSettings.IsCustomAppSize = AppViewModel.IsCustomAppSize;
             newSettings.AppHeight = AppViewModel.AppHeight;

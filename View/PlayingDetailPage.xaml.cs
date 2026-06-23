@@ -70,7 +70,8 @@ namespace WinUIMusicPlayer.View
             ViewModel.AppViewModel.PropertyChanged += AppViewModel_PropertyChanged;
             ChangeControlsFontSize();
             if (ViewModel.AppViewModel.LyricPagePalette is { } palette)
-                BackGround?.SetPalette(palette);
+                NowPlaying?.SetPalette(palette);
+            UpdateLyricsRegion();
             Loaded -= PlayingDetailPage_Loaded;
         }
 
@@ -80,9 +81,7 @@ namespace WinUIMusicPlayer.View
             {
                 if (ViewModel.AppViewModel.LyricPagePalette is { } palette)
                 {
-                    BackGround?.SetPalette(palette);
-                    if (ViewModel.AppViewModel.UseImageDominantTheme)
-                        BackGround_ThemeResolved(this, palette.PaletteIsDark);
+                    NowPlaying?.SetPalette(palette);
                 }
             }
         }
@@ -92,7 +91,7 @@ namespace WinUIMusicPlayer.View
             if (args.DidVisibilityChange)
             {
                 bool visible = sender.IsVisible;
-                BackGround?.SetWindowPaused(!visible);
+                NowPlaying?.SetWindowPaused(!visible);
                 LyricsView?.SetWindowPaused(!visible);
             }
         }
@@ -318,13 +317,13 @@ namespace WinUIMusicPlayer.View
 
         public void PauseCanvasRendering()
         {
-            BackGround?.PauseRendering();
+            NowPlaying?.PauseRendering();
             LyricsView?.PauseRendering();
         }
 
         public void ResumeCanvasRendering()
         {
-            BackGround?.ResumeRendering();
+            NowPlaying?.ResumeRendering();
             LyricsView?.ResumeRendering();
         }
 
@@ -339,8 +338,8 @@ namespace WinUIMusicPlayer.View
                 LyricsView?.ExceptionInteracted -= LyricsView_ExceptionInteracted;
                 LyricsView?.ShutdownLyricsCanvas();
                 AlbumArtControl?.Dispose();
-                BackGround?.ExceptionOccurred -= BackGround_ExceptionOccurred;
-                BackGround?.Dispose();
+                NowPlaying?.ExceptionOccurred -= BackGround_ExceptionOccurred;
+                NowPlaying?.Dispose();
             }
         }
 
@@ -386,6 +385,32 @@ namespace WinUIMusicPlayer.View
         private void BackGround_ExceptionOccurred(object? sender, Exception e)
         {
             _logger.LogError(e, "背景渲染错误");
+        }
+
+        private void NowPlaying_LyricLineClicked(object? sender, TimeSpan e)
+        {
+            LyricsView_LyricInteracted(sender, e);
+        }
+
+        private void LyricsRegionHost_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateLyricsRegion();
+        }
+
+        private void UpdateLyricsRegion()
+        {
+            if (NowPlaying is null || LyricsRegionHost is null) return;
+            if (LyricsRegionHost.ActualWidth <= 0 || LyricsRegionHost.ActualHeight <= 0) return;
+            try
+            {
+                var transform = LyricsRegionHost.TransformToVisual(NowPlaying);
+                var origin = transform.TransformPoint(new Windows.Foundation.Point(0, 0));
+                NowPlaying.LyricsRegion = new Windows.Foundation.Rect(
+                    origin.X, origin.Y, LyricsRegionHost.ActualWidth, LyricsRegionHost.ActualHeight);
+            }
+            catch
+            {
+            }
         }
 
         private void SettingsButton_Click(object sender, RoutedEventArgs e)
