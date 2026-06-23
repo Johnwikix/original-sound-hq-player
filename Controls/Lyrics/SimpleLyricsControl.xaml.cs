@@ -639,6 +639,9 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             if (item.Source is null) return;
 
             _autoScrollReturnTimer?.Stop();
+            // 退出手动浏览模式：恢复模糊 + 清零 _manualBrowsing，
+            // 让后续 OnCurrentPlayingTimeChanged → ScheduleScrollToCurrent 正常启动重试。
+            ExitManualBrowsing();
             LyricLineClicked?.Invoke(this, TimeSpan.FromMilliseconds(item.Source.StartMs));
         }
 
