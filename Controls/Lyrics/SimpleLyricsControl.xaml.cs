@@ -49,6 +49,9 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         private readonly Dictionary<ListViewItem, float> _containerScaleTarget = new();
         private ScalarKeyFrameAnimation? _reusableScaleAnim;
         private ScalarKeyFrameAnimation? _reusableBlurAnim;
+        // 缓存 ScrollingScrollOptions（immutable WinRT 引用类型），避免每次程序化滚动 new。
+        // ScrollTo 不会修改该对象，跨多次调用复用安全。
+        private ScrollingScrollOptions? _enabledScrollOptions;
 
         private double _cachedFontSize = 36.0;
         private string _cachedFontFamilyName = "Segoe UI";
@@ -168,11 +171,6 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             _scrollPresenter = ((ScrollView)ScrollHost).ScrollPresenter;
             if (_scrollPresenter is not null)
                 _scrollPresenter.ViewChanged += ScrollPresenter_ViewChanged;
-
-#if DEBUG
-            System.Diagnostics.Debug.WriteLine(
-                $"[Lyrics][OnControlLoaded] _scrollPresenter={_scrollPresenter?.GetType().Name ?? "null"}");
-#endif
 
             _ps = ElementCompositionPreview.GetElementVisual(this)?.Compositor?.CreatePropertySet();
             _ps?.InsertScalar(CurrentIndexKey, -1f);
@@ -587,7 +585,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                 return true;
 
             _isProgrammaticScrolling = true;
-            _scrollPresenter.ScrollTo(0, targetOffset, new ScrollingScrollOptions(ScrollingAnimationMode.Enabled));
+            _enabledScrollOptions ??= new ScrollingScrollOptions(ScrollingAnimationMode.Enabled);
+            _scrollPresenter.ScrollTo(0, targetOffset, _enabledScrollOptions);
             return true;
         }
 
@@ -597,33 +596,15 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             // 用 ScrollPresenter.State != Idle 替代原 ScrollViewerViewChangedEventArgs.IsIntermediate。
             bool isIntermediate = sender.State != ScrollingInteractionState.Idle;
 
-#if DEBUG
-            System.Diagnostics.Debug.WriteLine(
-                $"[Lyrics][ViewChanged] state={sender.State} vOffset={sender.VerticalOffset:F2} " +
-                $"isProg={_isProgrammaticScrolling} lastProg={_lastProgrammaticOffset:F2} " +
-                $"tol={ScrollAlignTolerancePx}");
-#endif
-
             if (_isProgrammaticScrolling)
             {
-#if DEBUG
-                double delta = !double.IsNaN(_lastProgrammaticOffset) && _scrollPresenter is not null
-                    ? Math.Abs(_scrollPresenter.VerticalOffset - _lastProgrammaticOffset)
-                    : -1.0;
-                System.Diagnostics.Debug.WriteLine(
-                    $"[Lyrics][ViewChanged] programmatic branch, " +
-                    $"state={sender.State} vOffset={sender.VerticalOffset:F2} " +
-                    $"lastProg={_lastProgrammaticOffset:F2} delta={delta:F2} tol={ScrollAlignTolerancePx}");
-#endif
                 if (_scrollPresenter is not null &&
                     !double.IsNaN(_lastProgrammaticOffset) &&
                     Math.Abs(_scrollPresenter.VerticalOffset - _lastProgrammaticOffset) < ScrollAlignTolerancePx)
                 {
                     // offset 已接近程序化目标 → 程序化滚动视为完成，清零标志位
+                    // （不要用 !isIntermediate 判定，state 经常停在 Inertia 不回 Idle）
                     _isProgrammaticScrolling = false;
-#if DEBUG
-                    System.Diagnostics.Debug.WriteLine("[Lyrics][ViewChanged] -> _isProgrammaticScrolling=false (offset reached)");
-#endif
                 }
                 return;
             }
@@ -632,18 +613,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             if (_scrollPresenter is not null &&
                 !double.IsNaN(_lastProgrammaticOffset) &&
                 Math.Abs(_scrollPresenter.VerticalOffset - _lastProgrammaticOffset) < ScrollAlignTolerancePx)
-            {
-#if DEBUG
-                System.Diagnostics.Debug.WriteLine(
-                    $"[Lyrics][ViewChanged] return: settling, " +
-                    $"delta={Math.Abs(_scrollPresenter.VerticalOffset - _lastProgrammaticOffset):F2}");
-#endif
                 return;
-            }
-
-#if DEBUG
-            System.Diagnostics.Debug.WriteLine("[Lyrics][ViewChanged] -> EnterManualBrowsing");
-#endif
 
             // 真·用户滚动：一开始拖动就取消所有行模糊
             // 3 秒冷却回正定时器已在 EnterManualBrowsing 内部启动（与 isIntermediate 状态解耦）
@@ -708,12 +678,6 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             _autoScrollReturnTimer.Tick -= _onAutoScrollReturnTick;
             _autoScrollReturnTimer.Tick += _onAutoScrollReturnTick;
             _autoScrollReturnTimer.Start();
-
-#if DEBUG
-            System.Diagnostics.Debug.WriteLine(
-                $"[Lyrics][EnterManualBrowsing] _manualBrowsing=true, blur count={_blurMap.Count}, " +
-                $"autoReturnTimer started ({UserScrollCooldownSec}s)");
-#endif
         }
 
         private void ExitManualBrowsing()
