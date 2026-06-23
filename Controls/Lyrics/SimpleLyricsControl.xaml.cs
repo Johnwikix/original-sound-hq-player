@@ -6,6 +6,7 @@ using Microsoft.UI.Composition;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
@@ -61,6 +62,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         private bool _isProgrammaticScrolling;
         private double _lastProgrammaticOffset = double.NaN;
         private bool _manualBrowsing;
+        private ScrollPresenter? _scrollPresenter;
 
         private DispatcherQueueTimer? _autoScrollReturnTimer;
         private DispatcherQueueTimer? _scrollRetryTimer;
@@ -117,7 +119,11 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             LyricsSyncRequestBus.Requested -= OnLyricsSyncRequested;
             LyricList.ItemClick -= LyricList_ItemClick;
             LyricList.ContainerContentChanging -= LyricList_ContainerContentChanging;
-            ScrollHost.ViewChanged -= ScrollHost_ViewChanged;
+            if (_scrollPresenter is not null)
+            {
+                _scrollPresenter.ViewChanged -= ScrollPresenter_ViewChanged;
+                _scrollPresenter = null;
+            }
             ScrollHost.SizeChanged -= ScrollHost_SizeChanged;
             ScrollHost.RemoveHandler(UIElement.PointerMovedEvent, _onScrollPointerMoved);
             ScrollHost.RemoveHandler(UIElement.PointerExitedEvent, _onScrollPointerExited);
@@ -155,10 +161,13 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             LyricsSyncRequestBus.Requested += OnLyricsSyncRequested;
             LyricList.ItemClick += LyricList_ItemClick;
             LyricList.ContainerContentChanging += LyricList_ContainerContentChanging;
-            ScrollHost.ViewChanged += ScrollHost_ViewChanged;
             ScrollHost.SizeChanged += ScrollHost_SizeChanged;
             ScrollHost.AddHandler(UIElement.PointerMovedEvent, _onScrollPointerMoved, true);
             ScrollHost.AddHandler(UIElement.PointerExitedEvent, _onScrollPointerExited, true);
+
+            _scrollPresenter = ((ScrollView)ScrollHost).ScrollPresenter;
+            if (_scrollPresenter is not null)
+                _scrollPresenter.ViewChanged += ScrollPresenter_ViewChanged;
 
             _ps = ElementCompositionPreview.GetElementVisual(this)?.Compositor?.CreatePropertySet();
             _ps?.InsertScalar(CurrentIndexKey, -1f);
@@ -549,6 +558,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         {
             if (_currentLineIndex < 0 || _currentLineIndex >= _displayItems.Count) return false;
             if (ScrollHost.ActualHeight <= 0) return false;
+            if (_scrollPresenter is null) return false;
 
             if (LyricList.ContainerFromIndex(_currentLineIndex) is not UIElement container) return false;
             if (container.RenderSize.Height <= 0) return false;
@@ -558,7 +568,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                 .TransformPoint(new Point(0, 0))
                 .Y;
             double centerInViewport = topInViewport + container.RenderSize.Height / 2.0;
-            double targetOffset = ScrollHost.VerticalOffset
+            double targetOffset = _scrollPresenter.VerticalOffset
                 + centerInViewport
                 - ScrollHost.ActualHeight * _cachedPlayingLineTopOffset;
             if (double.IsNaN(targetOffset) || double.IsInfinity(targetOffset)) return false;
@@ -568,31 +578,36 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             // 自动滚动（换行的程序化滚动 / 冷却回正）发生时恢复模糊
             ExitManualBrowsing();
 
-            if (Math.Abs(ScrollHost.VerticalOffset - targetOffset) < ScrollAlignTolerancePx)
+            if (Math.Abs(_scrollPresenter.VerticalOffset - targetOffset) < ScrollAlignTolerancePx)
                 return true;
 
             _isProgrammaticScrolling = true;
-            ScrollHost.ChangeView(null, targetOffset, null, disableAnimation: false);
+            _scrollPresenter.ScrollTo(0, targetOffset, new ScrollingScrollOptions(ScrollingAnimationMode.Enabled));
             return true;
         }
 
-        private void ScrollHost_ViewChanged(object? sender, ScrollViewerViewChangedEventArgs e)
+        private void ScrollPresenter_ViewChanged(ScrollPresenter sender, object args)
         {
+            // WinAppSDK 2.2 中 ScrollPresenter.ViewChanged 事件参数为 object/IInspectable，
+            // 用 ScrollPresenter.State != Idle 替代原 ScrollViewerViewChangedEventArgs.IsIntermediate。
+            bool isIntermediate = sender.State != ScrollingInteractionState.Idle;
+
             if (_isProgrammaticScrolling)
             {
-                if (!e.IsIntermediate) _isProgrammaticScrolling = false;
+                if (!isIntermediate) _isProgrammaticScrolling = false;
                 return;
             }
 
             // 程序化滚动后的 settling 余波（落点贴近上次程序化目标）：忽略，不算用户滚动
-            if (!double.IsNaN(_lastProgrammaticOffset) &&
-                Math.Abs(ScrollHost.VerticalOffset - _lastProgrammaticOffset) < ScrollAlignTolerancePx)
+            if (_scrollPresenter is not null &&
+                !double.IsNaN(_lastProgrammaticOffset) &&
+                Math.Abs(_scrollPresenter.VerticalOffset - _lastProgrammaticOffset) < ScrollAlignTolerancePx)
                 return;
 
             // 真·用户滚动：一开始拖动（含 intermediate）就取消所有行模糊
             EnterManualBrowsing();
 
-            if (!e.IsIntermediate)
+            if (!isIntermediate)
             {
                 _autoScrollReturnTimer ??= DispatcherQueue.CreateTimer();
                 _autoScrollReturnTimer.Interval = TimeSpan.FromSeconds(UserScrollCooldownSec);

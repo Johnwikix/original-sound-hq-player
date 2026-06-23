@@ -16,14 +16,14 @@
     mc:Ignorable="d">
 
     <Grid>
-        <controls:OpacityMaskView
+        <local:LyricsMaskView
             x:Name="MaskView"
             Margin="0"
             Padding="0"
             HorizontalAlignment="Stretch"
             VerticalAlignment="Stretch"
             x:Load="{x:Bind utils:BindUtils.BoolToBoolReConverter(EnableAdvancedLyrics), Mode=OneTime}">
-            <controls:OpacityMaskView.OpacityMask>
+            <local:LyricsMaskView.OpacityMask>
                 <Rectangle Stretch="UniformToFill">
                     <Rectangle.Fill>
                         <LinearGradientBrush MappingMode="RelativeToBoundingBox" StartPoint="0,0" EndPoint="0,1">
@@ -34,12 +34,12 @@
                         </LinearGradientBrush>
                     </Rectangle.Fill>
                 </Rectangle>
-            </controls:OpacityMaskView.OpacityMask>
+            </local:LyricsMaskView.OpacityMask>
             <local:SimpleLyricsControl
                 x:Name="SimpleLyrics"
                 Margin="{x:Bind LyricsMargin, Mode=OneWay}"
                 HorizontalAlignment="Stretch" />
-        </controls:OpacityMaskView>
+        </local:LyricsMaskView>
 
         <alc:AdvanceLyricsCanvasControl
             x:Name="LyricsCanvas"

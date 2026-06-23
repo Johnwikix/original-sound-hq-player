@@ -31,14 +31,13 @@
         </DataTemplate>
     </UserControl.Resources>
 
-    <ScrollViewer
+    <ScrollView
         x:Name="ScrollHost"
         HorizontalScrollBarVisibility="Hidden"
         HorizontalScrollMode="Disabled"
         SizeChanged="ScrollHost_SizeChanged"
         VerticalScrollBarVisibility="Hidden"
-        VerticalScrollMode="Enabled"
-        ViewChanged="ScrollHost_ViewChanged">
+        VerticalScrollMode="Enabled">
         <StackPanel x:Name="ContentPanel" HorizontalAlignment="Stretch">
             <StackPanel Height="600" Background="Transparent" />
             <ListView
@@ -51,5 +50,5 @@
                 SelectionMode="None" />
             <StackPanel Height="600" Background="Transparent" />
         </StackPanel>
-    </ScrollViewer>
+    </ScrollView>
 </UserControl>
