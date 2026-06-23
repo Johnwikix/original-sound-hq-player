@@ -106,25 +106,14 @@ namespace WinUIMusicPlayer.View
             var windowSize = App.MainWindow.AppWindow.Size;
             _dpiScale = WindowSizeHelper.GetScaleFactor(AppData.HWnd);
             double width = windowSize.Width / _dpiScale;
-            double height = windowSize.Height / _dpiScale;
-            double effectiveSize = width * height;
-            var lyrics = effectiveSize switch
+            var (lyrics, title, artist, firstSize, secondSize, shapeSize, info, margin) = width switch
             {
-                <= 1280 * 720 => 42,
-                <= 1600 * 900 => 56,
-                <= 1920 * 1080 => 64,
-                <= 2560 * 1440 => 80,
-                <= 2880 * 1920 => 96,
-                _ => 120
-            };
-
-            var (title, artist, firstSize, secondSize, shapeSize, info, margin) = width switch
-            {
-                < 1280 => (26, 22, 22, 16, 28, 12, new Thickness(2, 0, 2, 0)),
-                < 1920 => (32, 28, 28, 22, 40, 16, new Thickness(5, 0, 5, 0)),
-                < 2560 => (36, 32, 36, 26, 60, 18, new Thickness(10, 0, 10, 0)),
-                < 2880 => (38, 34, 40, 28, 66, 20, new Thickness(12, 0, 12, 0)),
-                _ => (42, 38, 46, 32, 72, 22, new Thickness(15, 0, 15, 0))
+                < 1280 => (42, 26, 22, 22, 16, 28, 12, new Thickness(2, 0, 2, 0)),
+                < 1600 => (52, 28, 24, 28, 22, 40, 16, new Thickness(5, 0, 5, 0)),
+                < 1920 => (64, 32, 28, 32, 26, 40, 16, new Thickness(5, 0, 5, 0)),
+                < 2560 => (80, 36, 32, 36, 26, 60, 18, new Thickness(10, 0, 10, 0)),
+                < 2880 => (96, 38, 34, 40, 28, 66, 20, new Thickness(12, 0, 12, 0)),
+                _ => (120, 42, 38, 46, 32, 72, 22, new Thickness(15, 0, 15, 0))
             };
 
             // 4. 应用变更

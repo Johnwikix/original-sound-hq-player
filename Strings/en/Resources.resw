@@ -995,9 +995,21 @@
     <value>Lyric time offset</value>
   </data>
   <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
-    <value>Enable Advanced Lyrics Effects (Higher CPU and GPU Overhead)</value>
+    <value>Enable Advanced Word-for-Word Lyrics Effects</value>
   </data>
   <data name="SettingsContent.Content" xml:space="preserve">
     <value>Settings</value>
+  </data>
+  <data name="FogEffect.Text" xml:space="preserve">
+    <value>Fog Effect</value>
+  </data>
+  <data name="SnowEffect.Text" xml:space="preserve">
+    <value>Snow Effect</value>
+  </data>
+  <data name="RaindropEffect.Text" xml:space="preserve">
+    <value>Raindrop Effect</value>
+  </data>
+  <data name="FluidBackgroundExpander.Text" xml:space="preserve">
+    <value>Fluid Background</value>
   </data>
 </root>

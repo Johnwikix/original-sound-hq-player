@@ -995,9 +995,21 @@
     <value>Смещение времени текста песни</value>
   </data>
   <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
-    <value>Включить расширенные эффекты текста песни (повышенная нагрузка на ЦП и ГП)</value>
+    <value>Включить расширенные эффекты по словесному тексту песни</value>
   </data>
   <data name="SettingsContent.Content" xml:space="preserve">
     <value>Настройки</value>
+  </data>
+  <data name="FogEffect.Text" xml:space="preserve">
+    <value>Эффект тумана</value>
+  </data>
+  <data name="SnowEffect.Text" xml:space="preserve">
+    <value>Эффект снега</value>
+  </data>
+  <data name="RaindropEffect.Text" xml:space="preserve">
+    <value>Эффект дождя</value>
+  </data>
+  <data name="FluidBackgroundExpander.Text" xml:space="preserve">
+    <value>Жидкий фон</value>
   </data>
 </root>

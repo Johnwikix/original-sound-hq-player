@@ -426,109 +426,6 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                    <TextBlock x:Uid="FluidBackground" FontSize="14" />
-                                    <TextBlock
-                                        FontSize="12"
-                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
-                                        TextWrapping="Wrap" />
-                                </StackPanel>
-
-                                <ToggleSwitch
-                                    Grid.Column="1"
-                                    MinWidth="0"
-                                    IsOn="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=TwoWay}" />
-                            </Grid>
-
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    x:Uid="EnableLightWave"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <ToggleSwitch
-                                    Grid.Column="1"
-                                    MinWidth="0"
-                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
-                                    IsOn="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=TwoWay}" />
-                            </Grid>
-
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14"
-                                    Text="雾化效果" />
-                                <ToggleSwitch
-                                    Grid.Column="1"
-                                    MinWidth="0"
-                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
-                                    IsOn="{x:Bind ViewModel.AppViewModel.IsFogEffectEnabled, Mode=TwoWay}" />
-                            </Grid>
-
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14"
-                                    Text="飘雪效果" />
-                                <ToggleSwitch
-                                    Grid.Column="1"
-                                    MinWidth="0"
-                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
-                                    IsOn="{x:Bind ViewModel.AppViewModel.IsSnowEffectEnabled, Mode=TwoWay}" />
-                            </Grid>
-
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14"
-                                    Text="雨滴效果" />
-                                <ToggleSwitch
-                                    Grid.Column="1"
-                                    MinWidth="0"
-                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
-                                    IsOn="{x:Bind ViewModel.AppViewModel.IsRaindropEffectEnabled, Mode=TwoWay}" />
-                            </Grid>
-
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                     <TextBlock x:Uid="Win2dCover" FontSize="14" />
                                     <TextBlock
                                         FontSize="12"
@@ -582,6 +479,129 @@
                                         </ComboBox.ItemTemplate>
                                     </ComboBox>
                                 </Grid>
+                            </Grid>
+                        </StackPanel>
+                    </Expander.Content>
+                </Expander>
+
+                <!--  流体背景  -->
+                <Expander
+                    MinHeight="69"
+                    Margin="10,0,10,0"
+                    Padding="0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    CornerRadius="{ThemeResource ControlCornerRadius}">
+                    <Expander.Header>
+                        <Grid Padding="16,16,4,16">
+                            <TextBlock
+                                x:Uid="FluidBackgroundExpander"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                        </Grid>
+                    </Expander.Header>
+                    <Expander.Content>
+                        <StackPanel>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock x:Uid="FluidBackground" FontSize="14" />
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=TwoWay}" />
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="EnableLightWave"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=TwoWay}" />
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="FogEffect"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.IsFogEffectEnabled, Mode=TwoWay}" />
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="SnowEffect"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.IsSnowEffectEnabled, Mode=TwoWay}" />
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="RaindropEffect"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.IsRaindropEffectEnabled, Mode=TwoWay}" />
                             </Grid>
 
                             <Grid

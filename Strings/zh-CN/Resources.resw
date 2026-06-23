@@ -995,9 +995,21 @@
     <value>歌词时间偏移</value>
   </data>
   <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
-    <value>启用高级歌词特效（更高的 CPU 和 GPU 开销）</value>
+    <value>启用高级逐字歌词特效</value>
   </data>
   <data name="SettingsContent.Content" xml:space="preserve">
     <value>设置</value>
+  </data>
+  <data name="FogEffect.Text" xml:space="preserve">
+    <value>雾化效果</value>
+  </data>
+  <data name="SnowEffect.Text" xml:space="preserve">
+    <value>飘雪效果</value>
+  </data>
+  <data name="RaindropEffect.Text" xml:space="preserve">
+    <value>雨滴效果</value>
+  </data>
+  <data name="FluidBackgroundExpander.Text" xml:space="preserve">
+    <value>流体背景</value>
   </data>
 </root>

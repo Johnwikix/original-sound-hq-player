@@ -995,9 +995,21 @@
     <value>Desfase de tiempo de la letra</value>
   </data>
   <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
-    <value>Habilitar efectos avanzados de letra (mayor consumo de CPU y GPU)</value>
+    <value>Habilitar efectos avanzados de letra palabra por palabra</value>
   </data>
   <data name="SettingsContent.Content" xml:space="preserve">
     <value>Configuración</value>
+  </data>
+  <data name="FogEffect.Text" xml:space="preserve">
+    <value>Efecto de niebla</value>
+  </data>
+  <data name="SnowEffect.Text" xml:space="preserve">
+    <value>Efecto de nieve</value>
+  </data>
+  <data name="RaindropEffect.Text" xml:space="preserve">
+    <value>Efecto de lluvia</value>
+  </data>
+  <data name="FluidBackgroundExpander.Text" xml:space="preserve">
+    <value>Fondo fluido</value>
   </data>
 </root>

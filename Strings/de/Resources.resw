@@ -995,9 +995,21 @@
     <value>Liedtext-Zeitverschiebung</value>
   </data>
   <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
-    <value>Erweiterte Liedtexteffekte aktivieren (höhere CPU‑ und GPU‑Auslastung)</value>
+    <value>Erweiterte Wort-für-Wort-Liedtexteffekte aktivieren</value>
   </data>
   <data name="SettingsContent.Content" xml:space="preserve">
     <value>Einstellungen</value>
+  </data>
+  <data name="FogEffect.Text" xml:space="preserve">
+    <value>Nebeneffekt</value>
+  </data>
+  <data name="SnowEffect.Text" xml:space="preserve">
+    <value>Schneeeffekt</value>
+  </data>
+  <data name="RaindropEffect.Text" xml:space="preserve">
+    <value>Regentropfeneffekt</value>
+  </data>
+  <data name="FluidBackgroundExpander.Text" xml:space="preserve">
+    <value>Flüssiger Hintergrund</value>
   </data>
 </root>
