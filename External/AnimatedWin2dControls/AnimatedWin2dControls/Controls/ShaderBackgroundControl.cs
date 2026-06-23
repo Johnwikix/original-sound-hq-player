@@ -425,7 +425,7 @@ public sealed class ShaderBackgroundControl : Control, IDisposable
         List<(Vector3 Color, int Population)> weighted,
         bool isDark, bool useImageDominantTheme)
     {
-        float targetAvg = isDark ? 0.50f : 0.55f;
+        float targetAvg = isDark ? 0.45f : 0.55f;
         int count = weighted.Count;
 
         Span<float> hs = stackalloc float[count <= 8 ? count : 8];
