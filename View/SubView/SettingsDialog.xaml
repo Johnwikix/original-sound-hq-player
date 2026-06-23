@@ -468,6 +468,11 @@
                         x:Uid="FluidBackground"
                         FontSize="14"
                         FontWeight="SemiBold" />
+                    <TextBlock
+                        FontSize="12"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Text="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}"
+                        TextWrapping="Wrap" />
                     <ToggleSwitch
                         Grid.Column="1"
                         MinWidth="0"

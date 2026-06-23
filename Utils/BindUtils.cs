@@ -112,6 +112,11 @@ namespace WinUIMusicPlayer.Utils
             return isVisible ? Visibility.Collapsed : Visibility.Visible;
         }
 
+        public static bool IsLyricsControlEnabled(bool isFluidBackgroundEnabled, bool isAdvancedLyricsEnabled)
+        {        
+            return !isFluidBackgroundEnabled || !isAdvancedLyricsEnabled;
+        }
+
         public static bool BoolToBoolReConverter(bool value)
         {
             return !value;

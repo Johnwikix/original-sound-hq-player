@@ -425,11 +425,15 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    x:Uid="FluidBackground"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock x:Uid="FluidBackground" FontSize="14" />
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+
                                 <ToggleSwitch
                                     Grid.Column="1"
                                     MinWidth="0"
@@ -472,6 +476,7 @@
                                 <ToggleSwitch
                                     Grid.Column="1"
                                     MinWidth="0"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
                                     IsOn="{x:Bind ViewModel.AppViewModel.IsFogEffectEnabled, Mode=TwoWay}" />
                             </Grid>
 
@@ -491,6 +496,7 @@
                                 <ToggleSwitch
                                     Grid.Column="1"
                                     MinWidth="0"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
                                     IsOn="{x:Bind ViewModel.AppViewModel.IsSnowEffectEnabled, Mode=TwoWay}" />
                             </Grid>
 
@@ -510,6 +516,7 @@
                                 <ToggleSwitch
                                     Grid.Column="1"
                                     MinWidth="0"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
                                     IsOn="{x:Bind ViewModel.AppViewModel.IsRaindropEffectEnabled, Mode=TwoWay}" />
                             </Grid>
 
