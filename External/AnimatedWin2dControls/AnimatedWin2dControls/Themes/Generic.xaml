@@ -10,7 +10,6 @@
 
     <Style BasedOn="{StaticResource DefaultAnimatedTextBlockStyle}" TargetType="animatedTextBlock:AnimatedTextBlock" />
     <Style BasedOn="{StaticResource DefaultAlbumArtControlStyle}" TargetType="albumImg:AlbumArtControl" />
-    <Style BasedOn="{StaticResource DefaultShaderBackgroundStyle}" TargetType="local:ShaderBackgroundControl" />
 
     <Style x:Key="DefaultAnimatedTextBlockStyle" TargetType="animatedTextBlock:AnimatedTextBlock">
         <Setter Property="FontFamily" Value="XamlAutoFontFamily" />
@@ -62,16 +61,6 @@
         </Setter>
     </Style>
 
-    <Style x:Key="DefaultShaderBackgroundStyle" TargetType="local:ShaderBackgroundControl">
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="local:ShaderBackgroundControl">
-                    <canvas:CanvasAnimatedControl x:Name="PART_Canvas" ClearColor="Transparent" />
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
     <Style TargetType="local:NowPlayingCanvas">
         <Setter Property="IsHitTestVisible" Value="True" />
         <Setter Property="UseSystemFocusVisuals" Value="False" />
@@ -79,22 +68,6 @@
             <Setter.Value>
                 <ControlTemplate TargetType="local:NowPlayingCanvas">
                     <canvas:CanvasAnimatedControl
-                        x:Name="PART_Canvas"
-                        ClearColor="Transparent"
-                        IsHitTestVisible="True" />
-                </ControlTemplate>
-            </Setter.Value>
-        </Setter>
-    </Style>
-
-    <Style TargetType="lyrics:UnifiedLyricsCanvasControlV1">
-        <Setter Property="Background" Value="Transparent" />
-        <Setter Property="IsHitTestVisible" Value="True" />
-        <Setter Property="UseSystemFocusVisuals" Value="False" />
-        <Setter Property="Template">
-            <Setter.Value>
-                <ControlTemplate TargetType="lyrics:UnifiedLyricsCanvasControlV1">
-                    <canvas:CanvasControl
                         x:Name="PART_Canvas"
                         ClearColor="Transparent"
                         IsHitTestVisible="True" />
