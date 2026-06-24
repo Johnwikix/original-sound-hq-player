@@ -118,7 +118,7 @@ namespace AnimatedWin2dControls.Shaders
 
         private float3 ScreenSpaceDither(float2 vScreenPos, float time)
         {
-            float colorDepth = 32.0f;
+            float colorDepth = 64.0f;
             float dotValue = Hlsl.Dot(new float2(131.0f, 312.0f), vScreenPos.XY + time);
             float3 vDither = new float3(dotValue, dotValue, dotValue);
             vDither.XYZ = Hlsl.Frac(vDither.XYZ / new float3(103.0f, 71.0f, 97.0f));

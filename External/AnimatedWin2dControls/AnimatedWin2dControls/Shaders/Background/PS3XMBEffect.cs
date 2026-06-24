@@ -18,7 +18,8 @@ namespace AnimatedWin2dControls.Shaders.Background
         float3 color1,
         float3 color2,
         float3 color3,
-        float3 color4) : ID2D1PixelShader
+        float3 color4,
+        bool enableDithering = true) : ID2D1PixelShader
     {
         private const float THRESHOLD = 0.99f;
         private const float MIN_DIST = 0.04f;
@@ -145,6 +146,25 @@ namespace AnimatedWin2dControls.Shaders.Background
             return Hlsl.Frac(52.9829189f * Hlsl.Frac(Hlsl.Dot(pos, new float2(0.06711056f, 0.00583715f))));
         }
 
+        private static float RemapTri(float v)
+        {
+            float orig = v * 2.0f - 1.0f;
+            v = orig / Hlsl.Sqrt(Hlsl.Abs(orig));
+            v = Hlsl.Max(-1.0f, v);
+            v = v - Hlsl.Sign(orig) + 0.5f;
+            return v;
+        }
+
+        private static float3 ScreenSpaceDither(float2 vScreenPos, float time)
+        {
+            float colorDepth = 64.0f;
+            float dotValue = Hlsl.Dot(new float2(131.0f, 312.0f), vScreenPos.XY + time);
+            float3 vDither = new float3(dotValue, dotValue, dotValue);
+            vDither.XYZ = Hlsl.Frac(vDither.XYZ / new float3(103.0f, 71.0f, 97.0f));
+            float3 remapped = new float3(RemapTri(vDither.X), RemapTri(vDither.Y), RemapTri(vDither.Z));
+            return remapped / colorDepth;
+        }
+
         public float4 Execute()
         {
             float2 U = D2D.GetScenePosition().XY;
@@ -168,7 +188,9 @@ namespace AnimatedWin2dControls.Shaders.Background
 
             c += GetDust(uv, new float2(2000f, 2000f), mg.Y, time, ires) * 0.3f;
 
-            return new float4(c, 1f);
+            float3 diter = enableDithering ? ScreenSpaceDither(U, time) : new float3(0.0f, 0.0f, 0.0f);
+
+            return new float4(Hlsl.Saturate(c + diter), 1f);
         }
     }
 }

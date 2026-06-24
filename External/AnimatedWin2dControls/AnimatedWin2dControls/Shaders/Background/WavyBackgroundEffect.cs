@@ -19,7 +19,8 @@ namespace AnimatedWin2dControls.Shaders.Background
         float3 color1,
         float3 color2,
         float3 color3,
-        float3 color4) : ID2D1PixelShader
+        float3 color4,
+        bool enableDithering = true) : ID2D1PixelShader
     {
         private static float Gradient(float p)
         {
@@ -102,9 +103,30 @@ namespace AnimatedWin2dControls.Shaders.Background
                 new float2(0.06f, 0.05f));
         }
 
+        private static float RemapTri(float v)
+        {
+            float orig = v * 2.0f - 1.0f;
+            v = orig / Hlsl.Sqrt(Hlsl.Abs(orig));
+            v = Hlsl.Max(-1.0f, v);
+            v = v - Hlsl.Sign(orig) + 0.5f;
+            return v;
+        }
+
+        private static float3 ScreenSpaceDither(float2 vScreenPos, float time)
+        {
+            float colorDepth = 64.0f;
+            float dotValue = Hlsl.Dot(new float2(131.0f, 312.0f), vScreenPos.XY + time);
+            float3 vDither = new float3(dotValue, dotValue, dotValue);
+            vDither.XYZ = Hlsl.Frac(vDither.XYZ / new float3(103.0f, 71.0f, 97.0f));
+            float3 remapped = new float3(RemapTri(vDither.X), RemapTri(vDither.Y), RemapTri(vDither.Z));
+            return remapped / colorDepth;
+        }
+
         public float4 Execute()
         {
             float2 uv = D2D.GetScenePosition().XY / dispatchSize;
+
+            float2 scene = D2D.GetScenePosition().XY;
 
             float waves =
                 Wave1(uv) +
@@ -121,7 +143,9 @@ namespace AnimatedWin2dControls.Shaders.Background
             // wave 叠色：用 color3 给波纹染色 (替代原硬编码白波纹)
             float3 color = bg + waves * color3;
 
-            return new float4(color, 1f);
+            float3 diter = enableDithering ? ScreenSpaceDither(scene, time) : new float3(0.0f, 0.0f, 0.0f);
+
+            return new float4(Hlsl.Saturate(color + diter), 1f);
         }
     }
 }
