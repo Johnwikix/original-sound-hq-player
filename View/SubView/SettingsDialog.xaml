@@ -66,9 +66,7 @@
                     Grid.Row="0"
                     Grid.Column="0"
                     Spacing="4">
-                    <TextBlock
-                        x:Uid="SettingOutputDevice"
-                        FontSize="14" />
+                    <TextBlock x:Uid="SettingOutputDevice" FontSize="14" />
                     <ComboBox
                         x:Name="OutputDeviceComboBox"
                         Width="250"
@@ -492,9 +490,29 @@
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                         Text="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}"
                         TextWrapping="Wrap" />
-                    <ToggleSwitch
-                        MinWidth="0"
-                        IsOn="{x:Bind VM.IsFluidBackgroundEnabled, Mode=TwoWay}" />
+                    <Grid Width="250" HorizontalAlignment="Left">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <ToggleSwitch
+                            Grid.Column="0"
+                            MinWidth="0"
+                            Margin="0,0,10,0"
+                            IsOn="{x:Bind VM.IsFluidBackgroundEnabled, Mode=TwoWay}" />
+                        <ComboBox
+                            Grid.Column="1"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Center"
+                            IsEnabled="{x:Bind VM.IsFluidBackgroundEnabled, Mode=OneWay}"
+                            SelectedIndex="{x:Bind VM.BackgroundShaderIndex, Mode=TwoWay}">
+                            <ComboBoxItem x:Uid="BackgroundShader_Fluid" />
+                            <ComboBoxItem x:Uid="BackgroundShader_PS3XMB" />
+                            <ComboBoxItem x:Uid="BackgroundShader_GradientFlow" />
+                            <ComboBoxItem x:Uid="BackgroundShader_WavyBackground" />
+                        </ComboBox>
+                    </Grid>
+
                 </StackPanel>
                 <StackPanel
                     Grid.Row="6"
@@ -511,25 +529,6 @@
                         Text="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}"
                         TextWrapping="Wrap" />
                     <ToggleSwitch IsOn="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=TwoWay}" />
-                </StackPanel>
-                <StackPanel
-                    Grid.Row="6"
-                    Grid.Column="2"
-                    Spacing="4">
-                    <TextBlock
-                        x:Uid="BackgroundShader"
-                        FontSize="14"
-                        FontWeight="SemiBold" />
-                    <ComboBox
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        IsEnabled="{x:Bind VM.IsFluidBackgroundEnabled, Mode=OneWay}"
-                        SelectedIndex="{x:Bind VM.BackgroundShaderIndex, Mode=TwoWay}">
-                        <ComboBoxItem x:Uid="BackgroundShader_Fluid" />
-                        <ComboBoxItem x:Uid="BackgroundShader_PS3XMB" />
-                        <ComboBoxItem x:Uid="BackgroundShader_GradientFlow" />
-                        <ComboBoxItem x:Uid="BackgroundShader_WavyBackground" />
-                    </ComboBox>
                 </StackPanel>
             </Grid>
         </ScrollViewer>
