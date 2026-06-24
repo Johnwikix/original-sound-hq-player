@@ -699,6 +699,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             var pos = e.GetCurrentPoint(Canvas).Position;
             _lastMousePos = pos;
             _hoverDirty = true;
+            // 持续追踪：_isMouseInLyricsArea 跟随当前指针位置更新，不依赖
+            // OnPointerEntered/Exited 的一次性信号（画布内的"背景↔歌词"互转不发 enter/exit）。
+            _isMouseInLyricsArea = IsPointerInLyricsRegion(pos);
 
             if (_pointerCaptured)
             {
@@ -732,7 +735,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         public void OnPointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            // 粗粒度：跨进画布时按当时位置判断；之后不再更新（区域内外移动不会触发 Entered/Exited）。
+            // 兜底：刚跨进画布时 _isMouseInLyricsArea 还没被 OnPointerMoved 刷新过
+            // （跨进画布后的第一帧 OnPointerMoved 在 Entered 之后才到）。真正的持续追踪
+            // 在 OnPointerMoved 里。
             _isMouseInLyricsArea = Canvas != null && IsPointerInLyricsRegion(e.GetCurrentPoint(Canvas).Position);
             _hoverDirty = true;
         }
