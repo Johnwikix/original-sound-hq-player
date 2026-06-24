@@ -39,7 +39,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             bool isMouseScrollingChanged,
             bool isLayoutChanged,
             bool isPrimaryPlayingLineChanged,
-            double currentPositionMs)
+            double currentPositionMs,
+            int animationVersion)
         {
             if (lines == null || lines.Count == 0) return;
             if (primaryPlayingLineIndex < 0 || primaryPlayingLineIndex >= lines.Count) return;
@@ -81,7 +82,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 var playProgress = line.GetPlayProgress(currentPositionMs);
 
                 if (isLayoutChanged || isPrimaryPlayingLineChanged || isMouseScrollingChanged || isSecondaryLinePlayingChanged
-                    || line.UnplayedPrimaryOpacityTransition.Value == 0)
+                    || line.UnplayedPrimaryOpacityTransition.Value == 0
+                    || line.LastProcessedVersion < animationVersion - 1)
                 {
                     int lineCountDelta = i - primaryPlayingLineIndex;
                     double distanceFromPlayingLine = Math.Abs(line.TopLeftPosition.Y - primaryPlayingLine.TopLeftPosition.Y);
@@ -224,6 +226,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     }
                 }
 
+                line.LastProcessedVersion = animationVersion;
                 line.Update(elapsedTime);
             }
         }

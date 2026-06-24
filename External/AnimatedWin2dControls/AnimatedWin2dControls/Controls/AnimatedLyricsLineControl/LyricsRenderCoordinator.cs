@@ -85,6 +85,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private double _cachedEdgeFadeWidth;
         private double _cachedEdgeFadeHeight;
 
+        /// <summary>
+        /// 单调递增的帧版本号。每帧 <see cref="OnUpdate"/> 自增后传入
+        /// <see cref="LyricsAnimator.UpdateLines"/>；动画器用它识别"上一帧不在动画范围内"的行，
+        /// 在重新进入时强制重算 Blur/Scale/Opacity 等距离效果（不依赖
+        /// <c>UnplayedPrimaryOpacityTransition.Value == 0</c> 这类脆弱的浮点嗅探）。
+        /// </summary>
+        private int _animationVersion;
+
         private Color _playedColor = Colors.White;
         private Color _unplayedColor = Color.FromArgb(80, 255, 255, 255);
 
@@ -337,6 +345,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             var lines = _renderLines;
             if (lines.Count == 0) return;
 
+            // 单调自增，每帧一格。LyricsAnimator 内部用 animationVersion - 1
+            // 来识别"上一帧不在动画范围内"的行，强制重算距离效果。
+            _animationVersion++;
+
             double externalTimeMs = _cachedCurrentPlayingTimeMs;
 
             bool isPrimaryPlayingLineChanged = false;
@@ -438,8 +450,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _cachedVisibleStart = visibleRange.Start;
             _cachedVisibleEnd = visibleRange.End;
 
-            int animStart = _userScrolling ? 0 : visibleRange.Start;
-            int animEnd = _userScrolling ? lines.Count - 1 : visibleRange.End;
+            // 动画范围需与 DrawLyricsContent 的绘制范围一致（[visibleStart-3, visibleEnd+3]），
+            // 否则处于缓冲区、但仍被绘制出来的行会脱离动画器：它们携带的 transition 残留值
+            // （如 Blur=0）在重新滑回动画区时不会被刷新，表现为"露半行却无模糊/淡出"。
+            // 此处 endIndex 传 visibleEnd+2：UpdateLines 内部会再 +1（safeEnd），恰好对齐 visibleEnd+3。
+            int animStart = _userScrolling ? 0 : visibleRange.Start - 3;
+            int animEnd = _userScrolling ? lines.Count - 1 : visibleRange.End + 2;
 
             _animator.UpdateLines(
                 lines,
@@ -472,7 +488,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _isUserScrollingChanged,
                 _layoutDirty,
                 isPrimaryPlayingLineChanged,
-                currentTimeMs);
+                currentTimeMs,
+                _animationVersion);
 
             _layoutDirty = false;
             _isUserScrollingChanged = false;

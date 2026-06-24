@@ -62,6 +62,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public GaussianBlurEffect? CachedBlurEffect { get; private set; }
         public OpacityEffect? CachedOpacityEffect { get; private set; }
 
+        /// <summary>
+        /// 上一次被 <see cref="LyricsAnimator.UpdateLines"/> 处理的 animationVersion。
+        /// 初始为 <see cref="int.MinValue"/> 作为"从未处理"哨兵，保证首次进入动画器时
+        /// <c>LastProcessedVersion &lt; animationVersion - 1</c> 必成立，触发距离效果重算。
+        /// </summary>
+        public int LastProcessedVersion { get; set; } = int.MinValue;
+
         public RenderLyricsLine()
         {
             var interpolator = EasingHelper.GetInterpolatorByEasingType<double>(EasingType.Sine);
