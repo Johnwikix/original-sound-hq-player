@@ -739,17 +739,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 var line = _renderLines[hovered];
 
-                var targetScroll = LyricsLayoutManager.CalculateTargetScrollOffset(_renderLines, hovered);
-                if (targetScroll.HasValue)
-                {
-                    _canvasYScrollTransition.JumpTo(targetScroll.Value);
-                    _smoothedScrollY = targetScroll.Value;
-                    _mouseYScrollTransition.Start(0);
-                    _pendingMouseScrollY = 0;
-                    _userScrolling = false;
-                    _userScrollCooldownSec = 0;
-                    _flingY = 0;
-                }
+                // 不再主动 JumpTo：让 host 收到事件后 seek，由 OnUpdate 里的
+                // auto-scroll 把新播放行平滑拉到中央，避免双 source of truth。
+                // 但仍要清掉用户滚动态：否则 OnUpdate 的 auto-scroll 守卫
+                // (if (!_userScrolling && ...)) 会卡住直到 cooldown 过期。
+                _mouseYScrollTransition.Start(0);
+                _pendingMouseScrollY = 0;
+                _userScrolling = false;
+                _userScrollCooldownSec = 0;
+                _flingY = 0;
+
                 var time = line.StartMs + _cachedOffsetMs;
                 if (time < 0) time = 0;
                 LyricLineClicked?.Invoke(this, TimeSpan.FromMilliseconds(time));
