@@ -10,7 +10,7 @@ namespace AnimatedWin2dControls.Renderer.Background
 {
     /// <summary>
     /// 背景着色器渲染器抽象基类。统一 4 色来源、调色板提取、暗亮缩放、4 色平滑过渡，
-    /// 供 Fluid / SeventiesMelt / Cosmic / PS3XMB / GradientFlow / WavyBackground 共用。
+    /// 供 Fluid / PS3XMB / GradientFlow / WavyBackground 共用。
     /// 子类只负责装配自己的 <see cref="ComputeSharp.D2D1.WinUI.PixelShaderEffect{T}"/>
     /// 并在 <see cref="Draw"/> 中把 4 色塞进常量缓冲。
     /// </summary>

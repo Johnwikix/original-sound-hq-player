@@ -191,10 +191,9 @@ namespace AnimatedWin2dControls.Controls
 
         private static BaseBackgroundRenderer CreateBackgroundRenderer(int index) => index switch
         {
-            // 1 / 2 原为 SeventiesMelt / Cosmic，效果不佳已废弃；落到默认 Fluid 即可。
-            3 => new PS3XMBBackgroundRenderer(),
-            4 => new GradientFlowBackgroundRenderer(),
-            5 => new WavyBackgroundRenderer(),
+            1 => new PS3XMBBackgroundRenderer(),
+            2 => new GradientFlowBackgroundRenderer(),
+            3 => new WavyBackgroundRenderer(),
             _ => new FluidBackgroundRenderer(),
         };
 
