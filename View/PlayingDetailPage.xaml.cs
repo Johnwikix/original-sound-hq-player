@@ -84,6 +84,10 @@ namespace WinUIMusicPlayer.View
                     NowPlaying?.SetPalette(palette);
                 }
             }
+            else if (e.PropertyName == nameof(AppViewModel.LyricsMargin))
+            {
+                UpdateLyricsRegion();
+            }
         }
 
         private void AppWindow_Changed(AppWindow sender, AppWindowChangedEventArgs args)
@@ -394,11 +398,16 @@ namespace WinUIMusicPlayer.View
             {
                 var transform = LyricsRegionHost.TransformToVisual(NowPlaying);
                 var origin = transform.TransformPoint(new Windows.Foundation.Point(0, 0));
+                var margin = ViewModel.AppViewModel.LyricsMargin;
                 NowPlaying.LyricsRegion = new Windows.Foundation.Rect(
-                    origin.X, origin.Y, LyricsRegionHost.ActualWidth, LyricsRegionHost.ActualHeight);
+                    origin.X + margin.Left,
+                    origin.Y + 32,
+                    LyricsRegionHost.ActualWidth - margin.Left - margin.Right,
+                    LyricsRegionHost.ActualHeight - 32);
             }
-            catch
+            catch(Exception ex)
             {
+                _logger.LogError(ex, "更新歌词区域时发生错误:{StackTrace}",ex.StackTrace);
             }
         }
 
