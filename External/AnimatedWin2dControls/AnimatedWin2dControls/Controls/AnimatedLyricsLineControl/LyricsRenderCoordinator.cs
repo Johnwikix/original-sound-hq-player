@@ -38,6 +38,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private double RegionW => LyricsRegion.Width > 0 ? LyricsRegion.Width : (Canvas?.Size.Width ?? 0);
         private double RegionH => LyricsRegion.Height > 0 ? LyricsRegion.Height : (Canvas?.Size.Height ?? 0);
 
+        /// <summary>判断画布坐标系的点是否落在歌词绘制区域内。
+        /// 独立控件（LyricsRegion 留空时 RegionW/H 退化为整个画布）下必返回 true，零行为变化。</summary>
+        private bool IsPointerInLyricsRegion(Point canvasPos)
+        {
+            return canvasPos.X >= RegionX
+                && canvasPos.X < RegionX + RegionW
+                && canvasPos.Y >= RegionY
+                && canvasPos.Y < RegionY + RegionH;
+        }
+
         private List<RenderLyricsLine> _renderLines = [];
         private List<RenderLyricsLine>? _pendingDisposeLines;
         private bool _layoutDirty = true;
@@ -656,6 +666,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         public void OnPointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
             if (_renderLines.Count == 0) return;
+            if (!IsPointerInLyricsRegion(e.GetCurrentPoint(Canvas).Position)) return;
             var props = e.GetCurrentPoint(Canvas).Properties;
             double delta = props.MouseWheelDelta * WheelScrollPixels * _cachedScrollSensitivity / 120.0;
             _pendingMouseScrollY += delta;
@@ -671,6 +682,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         public void OnPointerPressed(object sender, PointerRoutedEventArgs e)
         {
             if (Canvas == null) return;
+            if (!IsPointerInLyricsRegion(e.GetCurrentPoint(Canvas).Position)) return;
             Canvas.CapturePointer(e.Pointer);
             _pointerCaptured = true;
             _pointerLastY = e.GetCurrentPoint(Canvas).Position.Y;
@@ -720,7 +732,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         public void OnPointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            _isMouseInLyricsArea = true;
+            // 粗粒度：跨进画布时按当时位置判断；之后不再更新（区域内外移动不会触发 Entered/Exited）。
+            _isMouseInLyricsArea = Canvas != null && IsPointerInLyricsRegion(e.GetCurrentPoint(Canvas).Position);
             _hoverDirty = true;
         }
 
