@@ -22,14 +22,6 @@
     <PackageReference Include="ZLinq" Version="1.5.6" />
   </ItemGroup>
   <ItemGroup>
-    <None Update="Shaders\effect.bin">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Update="Shaders\effect.fxlib">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
     <Page Update="Themes\Generic.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
