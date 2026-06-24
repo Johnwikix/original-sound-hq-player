@@ -475,6 +475,22 @@
                         IsEnabled="{x:Bind VM.IsFluidBackgroundEnabled, Mode=OneWay}"
                         IsOn="{x:Bind VM.IsRaindropEffectEnabled, Mode=TwoWay}" />
                 </StackPanel>
+                
+                <StackPanel
+                    Grid.Row="5"
+                    Grid.Column="2"
+                    Spacing="4">
+                    <TextBlock
+                        x:Uid="EnableLightWave"
+                        Grid.Column="0"
+                        VerticalAlignment="Center"
+                        FontSize="14" />
+                    <ToggleSwitch
+                        Grid.Column="1"
+                        MinWidth="0"
+                        IsEnabled="{x:Bind tool:BindUtils.IsLightWaveEnabled(VM.IsFluidBackgroundEnabled, VM.BackgroundShaderIndex), Mode=OneWay}"
+                        IsOn="{x:Bind VM.EnableLightWave, Mode=TwoWay}" />
+                </StackPanel>
 
                 <!--  Row 6: 流体背景 | 启用高级逐字歌词特效 | 背景着色器  -->
                 <StackPanel
