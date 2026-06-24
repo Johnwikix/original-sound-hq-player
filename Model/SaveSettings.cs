@@ -34,6 +34,7 @@ namespace WinUIMusicPlayer.Model
         public int CoverSize { get; set; } = 150;
         public AnimatedTextEffect Win2dTextEffectType { get; set; } = AnimatedTextEffect.TextDefaultEffect;
         public bool IsFluidBackgroundEnabled { get; set; } = true;
+        public int BackgroundShader { get; set; } = 0;   // 0=Fluid, 1=SeventiesMelt(废弃), 2=Cosmic(废弃), 3=PS3XMB, 4=GradientFlow, 5=WavyBackground
         public bool IsFogEffectEnabled { get; set; } = false;
         public bool IsSnowEffectEnabled { get; set; } = false;
         public bool IsRaindropEffectEnabled { get; set; } = false;

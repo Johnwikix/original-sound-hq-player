@@ -1,5 +1,5 @@
 using AnimatedWin2dControls.Renderer.Background;
-using AnimatedWin2dControls.Shaders;
+using AnimatedWin2dControls.Shaders.Background;
 using ComputeSharp;
 using ComputeSharp.D2D1.WinUI;
 using Microsoft.Graphics.Canvas;
@@ -7,36 +7,26 @@ using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
 
-namespace AnimatedWin2dControls.Renderer
+namespace AnimatedWin2dControls.Renderer.Background
 {
     /// <summary>
-    /// 流体背景渲染器。基类 <see cref="BaseBackgroundRenderer"/> 管 4 色 + 调色板 + 过渡，
-    /// 本类负责装配 <see cref="FluidBackgroundEffect"/> 并处理 LightWave 子特效。
+    /// 波浪背景。color1/color2 控制背景梯度，color3 控制 wave 叠色，color4 接口存在但不使用。
     /// </summary>
-    public sealed class FluidBackgroundRenderer : BaseBackgroundRenderer
+    public sealed class WavyBackgroundRenderer : BaseBackgroundRenderer
     {
-        private PixelShaderEffect<FluidBackgroundEffect>? _effect;
-
-        private float _rnd1 = (float)(Rng.NextDouble() * Math.PI * 2);
-        private float _rnd2 = (float)(Rng.NextDouble() * Math.PI * 2);
-        private float _rnd3 = (float)(Rng.NextDouble() * Math.PI * 2);
+        private PixelShaderEffect<WavyBackgroundEffect>? _effect;
 
         public override void LoadResources()
         {
             Dispose();
-            _effect = new PixelShaderEffect<FluidBackgroundEffect>();
-
-            if (CurrentPalette is not null)
-                SetPalette(CurrentPalette);
-            else
-                ApplyDefaultColors();
-
+            _effect = new PixelShaderEffect<WavyBackgroundEffect>();
+            if (CurrentPalette is not null) SetPalette(CurrentPalette);
+            else ApplyDefaultColors();
             SnapToTarget();
         }
 
         public override void Update(TimeSpan deltaTime)
         {
-            // bass 恒为 0，呼吸退化为恒等
             UpdateBreathing(0f, 0);
             Advance(deltaTime);
         }
@@ -48,22 +38,15 @@ namespace AnimatedWin2dControls.Renderer
             float width = control.ConvertDipsToPixels((float)control.Size.Width, CanvasDpiRounding.Round);
             float height = control.ConvertDipsToPixels((float)control.Size.Height, CanvasDpiRounding.Round);
 
-            _effect.ConstantBuffer = new FluidBackgroundEffect(
-                new float2(width, height),
+            _effect.ConstantBuffer = new WavyBackgroundEffect(
                 Time,
+                new float2(width, height),
                 new float3(C1.X, C1.Y, C1.Z),
                 new float3(C2.X, C2.Y, C2.Z),
                 new float3(C3.X, C3.Y, C3.Z),
-                new float3(C4.X, C4.Y, C4.Z),
-                _rnd1, _rnd2, _rnd3,
-                useHSVBlending: false,
-                enableLightWave: EnableLightWave,
-                enableDithering: true);
+                new float3(C4.X, C4.Y, C4.Z));
 
-            if (Opacity >= 1.0)
-            {
-                ds.DrawImage(_effect);
-            }
+            if (Opacity >= 1.0) ds.DrawImage(_effect);
             else
             {
                 using var opacityEffect = new OpacityEffect

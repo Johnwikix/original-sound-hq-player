@@ -59,6 +59,26 @@ namespace WinUIMusicPlayer.ViewModel
             get => (int)PaletteAlgorithm;
             set => PaletteAlgorithm = (AnimatedWin2dControls.Impressionist.PaletteAlgorithm)value;
         }
+        public AnimatedWin2dControls.BackgroundShaderMode BackgroundShader
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    OnPropertyChanged(nameof(BackgroundShaderIndex));
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = AnimatedWin2dControls.BackgroundShaderMode.FluidBackground;
+        public int BackgroundShaderIndex
+        {
+            get => (int)BackgroundShader;
+            set => BackgroundShader = (AnimatedWin2dControls.BackgroundShaderMode)value;
+        }
         public int CoverSize
         {
             get => field;

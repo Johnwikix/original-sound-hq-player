@@ -703,8 +703,23 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>是否要移除文件夹</value>
   </data>
-  <data name="FluidBackground.Text" xml:space="preserve">
-    <value>流体背景</value>
+  <data name="ShaderBackground.Text" xml:space="preserve">
+    <value>着色器背景</value>
+  </data>
+  <data name="BackgroundShader.Text" xml:space="preserve">
+    <value>背景着色器</value>
+  </data>
+  <data name="BackgroundShader_Fluid.Content" xml:space="preserve">
+    <value>流体</value>
+  </data>
+  <data name="BackgroundShader_PS3XMB.Content" xml:space="preserve">
+    <value>PS3 XMB</value>
+  </data>
+  <data name="BackgroundShader_GradientFlow.Content" xml:space="preserve">
+    <value>渐变流动</value>
+  </data>
+  <data name="BackgroundShader_WavyBackground.Content" xml:space="preserve">
+    <value>波浪背景</value>
   </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>重新获取歌词</value>
@@ -1009,7 +1024,7 @@
   <data name="RaindropEffect.Text" xml:space="preserve">
     <value>雨滴效果</value>
   </data>
-  <data name="FluidBackgroundExpander.Text" xml:space="preserve">
-    <value>流体背景</value>
+  <data name="ShaderBackgroundExpander.Text" xml:space="preserve">
+    <value>着色器背景</value>
   </data>
 </root>

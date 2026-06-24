@@ -495,7 +495,7 @@
                     <Expander.Header>
                         <Grid Padding="16,16,4,16">
                             <TextBlock
-                                x:Uid="FluidBackgroundExpander"
+                                x:Uid="ShaderBackgroundExpander"
                                 VerticalAlignment="Center"
                                 FontSize="14" />
                         </Grid>
@@ -511,7 +511,7 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                    <TextBlock x:Uid="FluidBackground" FontSize="14" />
+                                    <TextBlock x:Uid="ShaderBackground" FontSize="14" />
                                     <TextBlock
                                         FontSize="12"
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -533,6 +533,31 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
+                                    x:Uid="BackgroundShader"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ComboBox
+                                    Grid.Column="1"
+                                    Width="300"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
+                                    SelectedIndex="{x:Bind ViewModel.AppViewModel.BackgroundShaderIndex, Mode=TwoWay}">
+                                    <ComboBoxItem x:Uid="BackgroundShader_Fluid" />
+                                    <ComboBoxItem x:Uid="BackgroundShader_PS3XMB" />
+                                    <ComboBoxItem x:Uid="BackgroundShader_GradientFlow" />
+                                    <ComboBoxItem x:Uid="BackgroundShader_WavyBackground" />
+                                </ComboBox>
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
                                     x:Uid="EnableLightWave"
                                     Grid.Column="0"
                                     VerticalAlignment="Center"
@@ -540,7 +565,7 @@
                                 <ToggleSwitch
                                     Grid.Column="1"
                                     MinWidth="0"
-                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
+                                    IsEnabled="{x:Bind tool:BindUtils.IsLightWaveEnabled(ViewModel.AppViewModel.IsFluidBackgroundEnabled, ViewModel.AppViewModel.BackgroundShaderIndex), Mode=OneWay}"
                                     IsOn="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=TwoWay}" />
                             </Grid>
 

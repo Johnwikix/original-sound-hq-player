@@ -801,6 +801,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.DsdPcmFreq = settings.DsdPcmFreq;
                 AppViewModel.CoverSize = settings.CoverSize;
                 AppViewModel.IsFluidBackgroundEnabled = settings.IsFluidBackgroundEnabled;
+                AppViewModel.BackgroundShader = (AnimatedWin2dControls.BackgroundShaderMode)settings.BackgroundShader;
                 AppViewModel.IsFogEffectEnabled = settings.IsFogEffectEnabled;
                 AppViewModel.IsSnowEffectEnabled = settings.IsSnowEffectEnabled;
                 AppViewModel.IsRaindropEffectEnabled = settings.IsRaindropEffectEnabled;
@@ -904,6 +905,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.CoverSize = AppViewModel.CoverSize;
             newSettings.Win2dTextEffectType = AppViewModel.Win2dTextEffectType.Value;
             newSettings.IsFluidBackgroundEnabled = AppViewModel.IsFluidBackgroundEnabled;
+            newSettings.BackgroundShader = (int)AppViewModel.BackgroundShader;
             newSettings.IsFogEffectEnabled = AppViewModel.IsFogEffectEnabled;
             newSettings.IsSnowEffectEnabled = AppViewModel.IsSnowEffectEnabled;
             newSettings.IsRaindropEffectEnabled = AppViewModel.IsRaindropEffectEnabled;

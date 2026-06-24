@@ -113,8 +113,18 @@ namespace WinUIMusicPlayer.Utils
         }
 
         public static bool IsLyricsControlEnabled(bool isFluidBackgroundEnabled, bool isAdvancedLyricsEnabled)
-        {        
+        {
             return !isFluidBackgroundEnabled || !isAdvancedLyricsEnabled;
+        }
+
+        public static bool IsFluidShaderSelected(int backgroundShaderIndex)
+        {
+            return backgroundShaderIndex == 0;
+        }
+
+        public static bool IsLightWaveEnabled(bool isFluidBackgroundEnabled, int backgroundShaderIndex)
+        {
+            return isFluidBackgroundEnabled && backgroundShaderIndex == 0;
         }
 
         public static bool BoolToBoolReConverter(bool value)

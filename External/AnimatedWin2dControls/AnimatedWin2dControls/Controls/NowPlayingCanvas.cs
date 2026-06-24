@@ -1,5 +1,6 @@
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Renderer;
+using AnimatedWin2dControls.Renderer.Background;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.UI;
 using Microsoft.Graphics.Canvas.UI.Xaml;
@@ -78,6 +79,15 @@ namespace AnimatedWin2dControls.Controls
             set => SetValue(IsRaindropEnabledProperty, value);
         }
 
+        public static readonly DependencyProperty BackgroundShaderIndexProperty =
+            DependencyProperty.Register(nameof(BackgroundShaderIndex), typeof(int),
+                typeof(NowPlayingCanvas), new PropertyMetadata(0, OnBackgroundShaderIndexChanged));
+        public int BackgroundShaderIndex
+        {
+            get => (int)GetValue(BackgroundShaderIndexProperty);
+            set => SetValue(BackgroundShaderIndexProperty, value);
+        }
+
         // ── 歌词侧依赖属性 ────────────────────────────────────────────────────
 
         public static readonly DependencyProperty EnableAdvancedLyricsProperty =
@@ -108,7 +118,10 @@ namespace AnimatedWin2dControls.Controls
         // ── 私有字段 ──────────────────────────────────────────────────────────
 
         private CanvasAnimatedControl? _canvas;
-        private readonly FluidBackgroundRenderer _fluid = new();
+        // 急实例化以保证 SetPalette 在 LoadResources 之前被调用时也能落到实例上 (与原 FluidBackgroundRenderer 行为一致)。
+        private BaseBackgroundRenderer _background = CreateBackgroundRenderer(0);
+        // 缓存最近一次调色板，shader 切换 / 设备重建后用于把新 renderer 重新染上当前调色板。
+        private AnimatedWin2dControls.Impressionist.PaletteResult? _lastPalette;
         private readonly FogRenderer _fog = new();
         private readonly SnowRenderer _snow = new();
         private readonly RaindropRenderer _raindrop = new();
@@ -152,13 +165,38 @@ namespace AnimatedWin2dControls.Controls
         {
             var ctrl = (NowPlayingCanvas)d;
             ctrl.SyncStateFromProperties();
-            ctrl._fluid.RefreshColors();
+            ctrl._background?.RefreshColors();
         }
 
         private static void OnEnableFlagChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             ((NowPlayingCanvas)d).SyncStateFromProperties();
         }
+
+        private static void OnBackgroundShaderIndexChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var ctrl = (NowPlayingCanvas)d;
+            ctrl.SwapBackgroundRenderer();
+        }
+
+        private void SwapBackgroundRenderer()
+        {
+            _background.Dispose();
+            _background = CreateBackgroundRenderer(BackgroundShaderIndex);
+            SyncStateFromProperties();
+            if (_lastPalette is not null) _background.SetPalette(_lastPalette);
+            else _background.RefreshColors();
+            _background.LoadResources();
+        }
+
+        private static BaseBackgroundRenderer CreateBackgroundRenderer(int index) => index switch
+        {
+            // 1 / 2 原为 SeventiesMelt / Cosmic，效果不佳已废弃；落到默认 Fluid 即可。
+            3 => new PS3XMBBackgroundRenderer(),
+            4 => new GradientFlowBackgroundRenderer(),
+            5 => new WavyBackgroundRenderer(),
+            _ => new FluidBackgroundRenderer(),
+        };
 
         /// <summary>仅在 UI 线程调用：把依赖属性读入普通字段并下推到各渲染模块。</summary>
         private void SyncStateFromProperties()
@@ -170,9 +208,12 @@ namespace AnimatedWin2dControls.Controls
             _isDark = IsDark;
             _useImageDominantTheme = UseImageDominantTheme;
 
-            _fluid.EnableLightWave = _enableLightWave;
-            _fluid.IsDark = _isDark;
-            _fluid.UseImageDominantTheme = _useImageDominantTheme;
+            if (_background != null)
+            {
+                _background.EnableLightWave = _enableLightWave;
+                _background.IsDark = _isDark;
+                _background.UseImageDominantTheme = _useImageDominantTheme;
+            }
             _fog.IsEnabled = _isFogEnabled;
             _snow.IsEnabled = _isSnowEnabled;
             _raindrop.IsEnabled = _isRaindropEnabled;
@@ -293,11 +334,12 @@ namespace AnimatedWin2dControls.Controls
                 _bgCache?.Dispose();
                 _bgCache = null;
 
-                _fluid.EnableLightWave = _enableLightWave;
-                _fluid.IsDark = _isDark;
-                _fluid.UseImageDominantTheme = _useImageDominantTheme;
+                if (_background == null) _background = CreateBackgroundRenderer(BackgroundShaderIndex);
+                _background.EnableLightWave = _enableLightWave;
+                _background.IsDark = _isDark;
+                _background.UseImageDominantTheme = _useImageDominantTheme;
 
-                _fluid.LoadResources();
+                _background.LoadResources();
                 _fog.LoadResources();
                 _snow.LoadResources();
                 _raindrop.LoadResources();
@@ -313,7 +355,7 @@ namespace AnimatedWin2dControls.Controls
             var elapsed = args.Timing.ElapsedTime;
 
             // 渲染线程：只读已缓存到渲染模块的状态，绝不访问依赖属性
-            _fluid.Update(elapsed);
+            _background?.Update(elapsed);
             _fog.Update(elapsed.TotalSeconds);
             _snow.Update(elapsed.TotalSeconds);
             _raindrop.Update(elapsed.TotalSeconds);
@@ -340,7 +382,7 @@ namespace AnimatedWin2dControls.Controls
 
             if (_backgroundFrameSkip <= 0)
             {
-                _fluid.Draw(sender, ds);
+                _background?.Draw(sender, ds);
                 _snow.Draw(sender, ds);
                 _fog.Draw(sender, ds);
                 _raindrop.Draw(sender, ds);
@@ -365,7 +407,7 @@ namespace AnimatedWin2dControls.Controls
             if (renderBg)
             {
                 using var cds = _bgCache.CreateDrawingSession();
-                _fluid.Draw(sender, cds);
+                _background?.Draw(sender, cds);
                 _snow.Draw(sender, cds);
                 _fog.Draw(sender, cds);
                 _raindrop.Draw(sender, cds);
@@ -391,7 +433,8 @@ namespace AnimatedWin2dControls.Controls
         {
             try
             {
-                _fluid.SetPalette(palette);
+                _lastPalette = palette;
+                _background.SetPalette(palette);
                 if (UseImageDominantTheme && palette is not null)
                     ThemeResolved?.Invoke(this, palette.PaletteIsDark);
             }
@@ -409,7 +452,8 @@ namespace AnimatedWin2dControls.Controls
             _canvas = null;
 
             _coordinator.PrepareForShutdown();
-            _fluid.Dispose();
+            _background.Dispose();
+            _lastPalette = null;
             _fog.Dispose();
             _snow.Dispose();
             _raindrop.Dispose();

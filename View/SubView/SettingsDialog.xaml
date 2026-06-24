@@ -478,13 +478,13 @@
                         IsOn="{x:Bind VM.IsRaindropEffectEnabled, Mode=TwoWay}" />
                 </StackPanel>
 
-                <!--  Row 6: 流体背景 | 启用高级逐字歌词特效  -->
+                <!--  Row 6: 流体背景 | 启用高级逐字歌词特效 | 背景着色器  -->
                 <StackPanel
                     Grid.Row="6"
                     Grid.Column="0"
                     Spacing="4">
                     <TextBlock
-                        x:Uid="FluidBackground"
+                        x:Uid="ShaderBackground"
                         FontSize="14"
                         FontWeight="SemiBold" />
                     <TextBlock
@@ -511,6 +511,25 @@
                         Text="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}"
                         TextWrapping="Wrap" />
                     <ToggleSwitch IsOn="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=TwoWay}" />
+                </StackPanel>
+                <StackPanel
+                    Grid.Row="6"
+                    Grid.Column="2"
+                    Spacing="4">
+                    <TextBlock
+                        x:Uid="BackgroundShader"
+                        FontSize="14"
+                        FontWeight="SemiBold" />
+                    <ComboBox
+                        Width="250"
+                        HorizontalAlignment="Left"
+                        IsEnabled="{x:Bind VM.IsFluidBackgroundEnabled, Mode=OneWay}"
+                        SelectedIndex="{x:Bind VM.BackgroundShaderIndex, Mode=TwoWay}">
+                        <ComboBoxItem x:Uid="BackgroundShader_Fluid" />
+                        <ComboBoxItem x:Uid="BackgroundShader_PS3XMB" />
+                        <ComboBoxItem x:Uid="BackgroundShader_GradientFlow" />
+                        <ComboBoxItem x:Uid="BackgroundShader_WavyBackground" />
+                    </ComboBox>
                 </StackPanel>
             </Grid>
         </ScrollViewer>

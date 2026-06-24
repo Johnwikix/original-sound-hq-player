@@ -703,8 +703,23 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>¿Eliminar la carpeta?</value>
   </data>
-  <data name="FluidBackground.Text" xml:space="preserve">
-    <value>Fondo fluido</value>
+  <data name="ShaderBackground.Text" xml:space="preserve">
+    <value>Fondo de Sombreado</value>
+  </data>
+  <data name="BackgroundShader.Text" xml:space="preserve">
+    <value>Sombreador de Fondo</value>
+  </data>
+  <data name="BackgroundShader_Fluid.Content" xml:space="preserve">
+    <value>Fluido</value>
+  </data>
+  <data name="BackgroundShader_PS3XMB.Content" xml:space="preserve">
+    <value>PS3 XMB</value>
+  </data>
+  <data name="BackgroundShader_GradientFlow.Content" xml:space="preserve">
+    <value>Flujo de Gradiente</value>
+  </data>
+  <data name="BackgroundShader_WavyBackground.Content" xml:space="preserve">
+    <value>Fondo Ondulado</value>
   </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>Obtener nuevamente la letra de la canción</value>
@@ -1009,7 +1024,7 @@
   <data name="RaindropEffect.Text" xml:space="preserve">
     <value>Efecto de lluvia</value>
   </data>
-  <data name="FluidBackgroundExpander.Text" xml:space="preserve">
-    <value>Fondo fluido</value>
+  <data name="ShaderBackgroundExpander.Text" xml:space="preserve">
+    <value>Fondo de Sombreado</value>
   </data>
 </root>

@@ -703,8 +703,23 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>Ordner wirklich entfernen?</value>
   </data>
-  <data name="FluidBackground.Text" xml:space="preserve">
-    <value>Flüssiger Hintergrund</value>
+  <data name="ShaderBackground.Text" xml:space="preserve">
+    <value>Shader-Hintergrund</value>
+  </data>
+  <data name="BackgroundShader.Text" xml:space="preserve">
+    <value>Hintergrund-Shader</value>
+  </data>
+  <data name="BackgroundShader_Fluid.Content" xml:space="preserve">
+    <value>Fluid</value>
+  </data>
+  <data name="BackgroundShader_PS3XMB.Content" xml:space="preserve">
+    <value>PS3 XMB</value>
+  </data>
+  <data name="BackgroundShader_GradientFlow.Content" xml:space="preserve">
+    <value>Farbverlauf</value>
+  </data>
+  <data name="BackgroundShader_WavyBackground.Content" xml:space="preserve">
+    <value>Welliger Hintergrund</value>
   </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>Songtext erneut abrufen</value>
@@ -1009,7 +1024,7 @@
   <data name="RaindropEffect.Text" xml:space="preserve">
     <value>Regentropfeneffekt</value>
   </data>
-  <data name="FluidBackgroundExpander.Text" xml:space="preserve">
-    <value>Flüssiger Hintergrund</value>
+  <data name="ShaderBackgroundExpander.Text" xml:space="preserve">
+    <value>Shader-Hintergrund</value>
   </data>
 </root>

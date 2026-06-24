@@ -703,8 +703,23 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>Do you want to remove the folder</value>
   </data>
-  <data name="FluidBackground.Text" xml:space="preserve">
-    <value>Fluid Background</value>
+  <data name="ShaderBackground.Text" xml:space="preserve">
+    <value>Shader Background</value>
+  </data>
+  <data name="BackgroundShader.Text" xml:space="preserve">
+    <value>Background Shader</value>
+  </data>
+  <data name="BackgroundShader_Fluid.Content" xml:space="preserve">
+    <value>Fluid</value>
+  </data>
+  <data name="BackgroundShader_PS3XMB.Content" xml:space="preserve">
+    <value>PS3 XMB</value>
+  </data>
+  <data name="BackgroundShader_GradientFlow.Content" xml:space="preserve">
+    <value>Gradient Flow</value>
+  </data>
+  <data name="BackgroundShader_WavyBackground.Content" xml:space="preserve">
+    <value>Wavy Background</value>
   </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>Retrieve lyrics</value>
@@ -1009,7 +1024,7 @@
   <data name="RaindropEffect.Text" xml:space="preserve">
     <value>Raindrop Effect</value>
   </data>
-  <data name="FluidBackgroundExpander.Text" xml:space="preserve">
-    <value>Fluid Background</value>
+  <data name="ShaderBackgroundExpander.Text" xml:space="preserve">
+    <value>Shader Background</value>
   </data>
 </root>

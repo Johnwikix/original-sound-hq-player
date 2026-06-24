@@ -26,6 +26,7 @@
         <awc:NowPlayingCanvas
             x:Name="NowPlaying"
             x:Load="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneTime}"
+            BackgroundShaderIndex="{x:Bind ViewModel.AppViewModel.BackgroundShaderIndex, Mode=OneWay}"
             EnableAdvancedLyrics="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneTime}"
             EnableLightWave="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=OneWay}"
             ExceptionOccurred="BackGround_ExceptionOccurred"

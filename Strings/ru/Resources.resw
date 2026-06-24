@@ -703,8 +703,23 @@
   <data name="RemoveFolderTitle" xml:space="preserve">
     <value>Удалить папку?</value>
   </data>
-  <data name="FluidBackground.Text" xml:space="preserve">
-    <value>Жидкий фон</value>
+  <data name="ShaderBackground.Text" xml:space="preserve">
+    <value>Фон шейдера</value>
+  </data>
+  <data name="BackgroundShader.Text" xml:space="preserve">
+    <value>Шейдер фона</value>
+  </data>
+  <data name="BackgroundShader_Fluid.Content" xml:space="preserve">
+    <value>Жидкость</value>
+  </data>
+  <data name="BackgroundShader_PS3XMB.Content" xml:space="preserve">
+    <value>PS3 XMB</value>
+  </data>
+  <data name="BackgroundShader_GradientFlow.Content" xml:space="preserve">
+    <value>Поток градиента</value>
+  </data>
+  <data name="BackgroundShader_WavyBackground.Content" xml:space="preserve">
+    <value>Волновой фон</value>
   </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>Повторно получить текст песни</value>
@@ -1009,7 +1024,7 @@
   <data name="RaindropEffect.Text" xml:space="preserve">
     <value>Эффект дождя</value>
   </data>
-  <data name="FluidBackgroundExpander.Text" xml:space="preserve">
-    <value>Жидкий фон</value>
+  <data name="ShaderBackgroundExpander.Text" xml:space="preserve">
+    <value>Фон шейдера</value>
   </data>
 </root>
