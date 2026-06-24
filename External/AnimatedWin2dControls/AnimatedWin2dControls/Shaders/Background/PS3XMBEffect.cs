@@ -27,7 +27,7 @@ namespace AnimatedWin2dControls.Shaders.Background
 
         private static float Hash12(float2 p)
         {
-            UInt2 q = new UInt2((uint)p.X, (uint)p.Y) * new UInt2(1597334673u, 3812015801u);
+            UInt2 q = new UInt2((uint)(int)p.X, (uint)(int)p.Y) * new UInt2(1597334673u, 3812015801u);
             uint n = (q.X ^ q.Y) * 1597334673u;
             return (float)n * 2.328306437080797e-10f;
         }
@@ -71,7 +71,7 @@ namespace AnimatedWin2dControls.Shaders.Background
                 pc.Y
             );
 
-            float anim = Value2D(p * 0.1f + time * new float2(20f, -10.1f));
+            float anim = Value2D(p * 0.1f + new float2(time, time));
             anim = Hlsl.Clamp(anim, 0f, 1f);
             anim = anim * 0.5f + 0.5f;
 
@@ -84,12 +84,11 @@ namespace AnimatedWin2dControls.Shaders.Background
 
             float2 pp = p * size * ar;
 
-            float w = 0.64f + 0.46f * Hlsl.Cos(p.X * 6.2831f);
-            w = Hlsl.Max(w, 0f);
+            float w = Hlsl.Pow(0.64f + 0.46f * Hlsl.Cos(p.X * 6.2831f), 1.7f);
 
-            float s1 = GetStars(pp + time * new float2(20f, -10.1f), 0.11f, 0.71f, time);
-            float s2 = GetStars(pp + time * new float2(30f, -10.1f), 0.1f, 0.31f, time);
-            float s3 = GetStars(pp + time * new float2(40f, -10.1f), 0.1f, 0.91f, time);
+            float s1 = GetStars(0.1f * pp + time * new float2(20f, -10.1f), 0.11f, 0.71f, time);
+            float s2 = GetStars(0.2f * pp + time * new float2(30f, -10.1f), 0.1f, 0.31f, time);
+            float s3 = GetStars(0.32f * pp + time * new float2(40f, -10.1f), 0.1f, 0.91f, time);
 
             return w * f * (s1 * 4f + s2 * 5f + s3 * 2f);
         }
@@ -120,6 +119,8 @@ namespace AnimatedWin2dControls.Shaders.Background
                 float3 p = o + d * t;
                 float ndt = Sdf(p, time);
 
+                g = t > 10f ? Hlsl.Min(g, Hlsl.Abs(ndt)) : MAX_DIST;
+
                 if (t >= MAX_DIST) break;
 
                 if (Hlsl.Abs(ndt) < MIN_DIST)
@@ -146,25 +147,6 @@ namespace AnimatedWin2dControls.Shaders.Background
             return Hlsl.Frac(52.9829189f * Hlsl.Frac(Hlsl.Dot(pos, new float2(0.06711056f, 0.00583715f))));
         }
 
-        private static float RemapTri(float v)
-        {
-            float orig = v * 2.0f - 1.0f;
-            v = orig / Hlsl.Sqrt(Hlsl.Abs(orig));
-            v = Hlsl.Max(-1.0f, v);
-            v = v - Hlsl.Sign(orig) + 0.5f;
-            return v;
-        }
-
-        private static float3 ScreenSpaceDither(float2 vScreenPos, float time)
-        {
-            float colorDepth = 64.0f;
-            float dotValue = Hlsl.Dot(new float2(131.0f, 312.0f), vScreenPos.XY + time);
-            float3 vDither = new float3(dotValue, dotValue, dotValue);
-            vDither.XYZ = Hlsl.Frac(vDither.XYZ / new float3(103.0f, 71.0f, 97.0f));
-            float3 remapped = new float3(RemapTri(vDither.X), RemapTri(vDither.Y), RemapTri(vDither.Z));
-            return remapped / colorDepth;
-        }
-
         public float4 Execute()
         {
             float2 U = D2D.GetScenePosition().XY;
@@ -188,9 +170,9 @@ namespace AnimatedWin2dControls.Shaders.Background
 
             c += GetDust(uv, new float2(2000f, 2000f), mg.Y, time, ires) * 0.3f;
 
-            float3 diter = enableDithering ? ScreenSpaceDither(U, time) : new float3(0.0f, 0.0f, 0.0f);
+            float ditherOffset = enableDithering ? (Dither(U) - 0.5f) / 255f : 0f;
 
-            return new float4(Hlsl.Saturate(c + diter), 1f);
+            return new float4(Hlsl.Saturate(c + ditherOffset), 1f);
         }
     }
 }
