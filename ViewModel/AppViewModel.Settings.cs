@@ -804,7 +804,7 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         } = false;
-        public List<double> TargetFrameRateOptions { get; } = [60, 72, 80, 90, 120, 144, 160, 165, 180, 240];
+        public List<double> TargetFrameRateOptions { get; } = [60, 72, 80, 90, 120, 144, 160, 165, 180, 240, 280, 320, 360, 480];
 
         public ObservableCollection<EffectComboBoxItem> TextEffectItems =
         [
