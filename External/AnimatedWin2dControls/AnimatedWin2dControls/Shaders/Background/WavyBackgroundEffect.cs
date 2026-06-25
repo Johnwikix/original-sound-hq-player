@@ -6,8 +6,9 @@ namespace AnimatedWin2dControls.Shaders.Background
     /// <summary>
     /// 移植自 <see href="https://github.com/ghost1372/DevWinUI/blob/main/dev/DevWinUI.Shader/Shaders/WavyBackgroundShader.cs"/>
     /// (原作出处 <see href="https://www.shadertoy.com/view/ltGSWD"/>)。
-    /// 原版硬编码 2 色 (深蓝 → 浅蓝) 背景 + 1 个 wave 加成，重写为 color1/color2 控制背景 lerp、
-    /// color3 控制 wave 叠色。color4 在接口上存在 (uniform 4-color API) 但 HLSL 内不引用。
+    /// 原版硬编码 2 色 (深蓝 → 浅蓝) 背景 + 1 个 wave 加成。背景重写为 color1/color2/color4 三色双线性渐变，
+    /// 并叠加 PS3 风格"呼吸"复合 warp（宽高比校正后的 ±60° 双向 sin 旋转，sin(time*0.3)，周期≈21s；
+    /// 再叠加低速 sin 漂移，速度 time*1.5，振幅 1/30 与 1/60）。color3 仍只用于 wave 叠色。
     /// </summary>
     [D2DInputCount(0)]
     [D2DShaderProfile(D2D1ShaderProfile.PixelShader50)]
@@ -134,11 +135,24 @@ namespace AnimatedWin2dControls.Shaders.Background
                 Wave3(uv) +
                 Wave4(uv);
 
-            float x = uv.X;
-            float y = 1.0f - uv.Y;
+            // 背景：color1/color2/color4 双线性 + PS3 风格"呼吸"复合 warp（强烈档）
+            float ratio = dispatchSize.X / dispatchSize.Y;
+            float2 tuv = uv - 0.5f;
+            tuv.Y *= 1.0f / ratio;
+            float angle = Hlsl.Sin(time * 0.3f) * 1.0472f;  // 1.0472 rad = π/3 = 60°
+            float cR = Hlsl.Cos(angle);
+            float sR = Hlsl.Sin(angle);
+            tuv = new float2(cR * tuv.X - sR * tuv.Y, sR * tuv.X + cR * tuv.Y);
+            tuv.Y *= ratio;
+            float slowSpeed = time * 1.5f;
+            tuv.X += Hlsl.Sin(tuv.Y * 5.0f + slowSpeed) / 30.0f;
+            tuv.Y += Hlsl.Sin(tuv.X * 7.5f + slowSpeed) / 60.0f;
+            tuv += 0.5f;
 
-            // 背景：color1 → color2 沿 (x+y) 方向 lerp (替代原硬编码深蓝→浅蓝)
-            float3 bg = Hlsl.Lerp(color1, color2, (x + y) * 0.55f);
+            float3 bg = Hlsl.Lerp(
+                Hlsl.Lerp(color1, color2, tuv.X),
+                Hlsl.Lerp(color4, color1, tuv.X),
+                tuv.Y);
 
             // wave 叠色：用 color3 给波纹染色 (替代原硬编码白波纹)
             float3 color = bg + waves * color3;

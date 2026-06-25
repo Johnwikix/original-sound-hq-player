@@ -10,7 +10,7 @@ using System;
 namespace AnimatedWin2dControls.Renderer.Background
 {
     /// <summary>
-    /// 波浪背景。color1/color2 控制背景梯度，color3 控制 wave 叠色，color4 接口存在但不使用。
+    /// 波浪背景。color1/color2/color4 控制呼吸背景渐变，color3 控制 wave 叠色。
     /// </summary>
     public sealed class WavyBackgroundRenderer : BaseBackgroundRenderer
     {
