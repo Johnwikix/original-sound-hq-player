@@ -7,6 +7,9 @@ namespace AnimatedWin2dControls.Shaders.Background
     /// 移植自 <see href="https://github.com/ghost1372/DevWinUI/blob/main/dev/DevWinUI.Shader/Shaders/PS3XMBBackgroundShader.cs"/>
     /// (原作出处 <see href="https://www.shadertoy.com/view/fcf3Dn"/>)。
     /// 原版硬编码 4 个 lerp 端点 (l1..l4) 拉成 color1..4 颜色参数，raymarch 主体逻辑保持不变。
+    /// 本地另对 4 色梯度 lerp 加了"慢呼吸"复合 warp：先按宽高比校正后的 ±45° 双向 sin 旋转（k=0.1，~63s 周期），
+    /// 再叠加低速小幅正弦漂移（速度 time*0.5f，振幅 1/80 与 1/150）。
+    /// raymarch 主体与灰尘层（GetDust）保持原状，签名未变。
     /// </summary>
     [D2DInputCount(0)]
     [D2DShaderProfile(D2D1ShaderProfile.PixelShader50)]
@@ -160,10 +163,24 @@ namespace AnimatedWin2dControls.Shaders.Background
 
             float2 uv = U / ires;
 
+            // 梯度"慢呼吸"：ratio 校正仅包裹旋转，drift 保持在原屏幕坐标
+            float ratio = dispatchSize.X / dispatchSize.Y;
+            float2 tuv = uv - 0.5f;
+            tuv.Y *= 1.0f / ratio;
+            float angle = Hlsl.Sin(time * 0.1f) * 0.7854f;  // 0.7854 rad = π/4 = 45°
+            float cR = Hlsl.Cos(angle);
+            float sR = Hlsl.Sin(angle);
+            tuv = new float2(cR * tuv.X - sR * tuv.Y, sR * tuv.X + cR * tuv.Y);
+            tuv.Y *= ratio;
+            float slowSpeed = time * 0.5f;
+            tuv.X += Hlsl.Sin(tuv.Y * 5.0f + slowSpeed) / 80.0f;
+            tuv.Y += Hlsl.Sin(tuv.X * 7.5f + slowSpeed) / 150.0f;
+            tuv += 0.5f;
+
             float3 c = Hlsl.Lerp(
-                Hlsl.Lerp(color1, color2, uv.X),
-                Hlsl.Lerp(color3, color4, uv.X),
-                uv.Y
+                Hlsl.Lerp(color1, color2, tuv.X),
+                Hlsl.Lerp(color3, color4, tuv.X),
+                tuv.Y
             );
 
             c = Hlsl.Lerp(c, 1f, Hlsl.Clamp(m, 0f, 1f));
