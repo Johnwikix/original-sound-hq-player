@@ -21,6 +21,7 @@
     <None Remove="Assets\play.ico" />
     <None Remove="Assets\stop.ico" />
     <None Remove="Controls\ImageSwitcher.xaml" />
+    <None Remove="Controls\ShortcutTextBox.xaml" />
     <None Remove="Controls\LyricsLineControl.xaml" />
     <None Remove="Controls\Lyrics\LyricsControl.xaml" />
     <None Remove="Controls\NotifyIconControl.xaml" />
@@ -204,6 +205,9 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Update="Controls\LyricsLineControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Update="Controls\ShortcutTextBox.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Update="Style\SilderDictionary.xaml">

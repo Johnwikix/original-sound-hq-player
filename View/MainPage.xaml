@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="WinUIMusicPlayer.View.MainPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -49,9 +49,6 @@
                     IsPaneToggleButtonVisible="True"
                     ItemInvoked="NavigationView_ItemInvoked"
                     PaneDisplayMode="Left">
-                    <!--<NavigationView.KeyboardAccelerators>
-                        <KeyboardAccelerator Key="Escape" Invoked="KeyboardAccelerator_Invoked" />
-                    </NavigationView.KeyboardAccelerators>-->
                     <NavigationView.AutoSuggestBox>
                         <AutoSuggestBox
                             x:Name="SearchAutoSuggestBox"
@@ -92,7 +89,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <!--  ThumbToolTipValueConverter 在aot下报错  -->
+                <!--  ThumbToolTipValueConverter 鍦╝ot涓嬫姤閿? -->
                 <Grid Grid.Row="0" Margin="0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -142,9 +139,6 @@
                             CornerRadius="5"
                             IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource SimpleHoverButtonStyle}">
-                            <Button.KeyboardAccelerators>
-                                <KeyboardAccelerator Key="Q" />
-                            </Button.KeyboardAccelerators>
                             <Grid>
                                 <Grid.RowDefinitions>
                                     <RowDefinition Height="auto" />
@@ -320,9 +314,6 @@
                             CommandParameter="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic, Mode=OneWay}"
                             IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
-                            <Button.KeyboardAccelerators>
-                                <KeyboardAccelerator Key="L" />
-                            </Button.KeyboardAccelerators>
                             <FontIcon Foreground="Red" Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
                         </Button>
 
@@ -338,9 +329,6 @@
                             Command="{x:Bind ViewModel.MusicBrowseVM.FastBackwardButtonCommand, Mode=OneWay}"
                             IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
-                            <Button.KeyboardAccelerators>
-                                <KeyboardAccelerator Key="Left" />
-                            </Button.KeyboardAccelerators>
                             <FontIcon FontSize="18" Glyph="&#xED3C;" />
                         </Button>
 
@@ -356,9 +344,6 @@
                             Command="{x:Bind ViewModel.MusicBrowseVM.LastMusicButtonChangedCommand, Mode=OneWay}"
                             IsEnabled="{x:Bind tools:BindUtils.IsCurrentPlayListExist(ViewModel.AppViewModel.CurrentPlayingList), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
-                            <Button.KeyboardAccelerators>
-                                <KeyboardAccelerator Key="Up" />
-                            </Button.KeyboardAccelerators>
                             <FontIcon FontSize="22" Glyph="&#xF8AC;" />
                         </Button>
 
@@ -374,9 +359,6 @@
                             Command="{x:Bind ViewModel.MusicBrowseVM.PlayButtonChangedCommand, Mode=OneWay}"
                             IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource PlayButtonStyle}">
-                            <Button.KeyboardAccelerators>
-                                <KeyboardAccelerator Key="Space" />
-                            </Button.KeyboardAccelerators>
                             <FontIcon
                                 Width="45"
                                 Height="45"
@@ -396,9 +378,6 @@
                             Command="{x:Bind ViewModel.MusicBrowseVM.NextMusicButtonChangedCommand, Mode=OneWay}"
                             IsEnabled="{x:Bind tools:BindUtils.IsCurrentPlayListExist(ViewModel.AppViewModel.CurrentPlayingList), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
-                            <Button.KeyboardAccelerators>
-                                <KeyboardAccelerator Key="Down" />
-                            </Button.KeyboardAccelerators>
                             <FontIcon FontSize="22" Glyph="&#xF8AD;" />
                         </Button>
 
@@ -414,9 +393,6 @@
                             Command="{x:Bind ViewModel.MusicBrowseVM.FastForwardButtonCommand, Mode=OneWay}"
                             IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
-                            <Button.KeyboardAccelerators>
-                                <KeyboardAccelerator Key="Right" />
-                            </Button.KeyboardAccelerators>
                             <FontIcon FontSize="18" Glyph="&#xED3D;" />
                         </Button>
 
@@ -432,9 +408,6 @@
                             Command="{x:Bind ViewModel.MusicBrowseVM.StopButtonChangedCommand, Mode=OneWay}"
                             IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
-                            <Button.KeyboardAccelerators>
-                                <KeyboardAccelerator Key="End" />
-                            </Button.KeyboardAccelerators>
                             <FontIcon FontSize="18" Glyph="&#xEE95;" />
                         </Button>
                     </Grid>
@@ -452,9 +425,6 @@
                             Command="{x:Bind ViewModel.MusicBrowseVM.VolumeUpChangedCommand, Mode=OneWay}"
                             IsHitTestVisible="False"
                             Opacity="0">
-                            <Button.KeyboardAccelerators>
-                                <KeyboardAccelerator Key="Add" />
-                            </Button.KeyboardAccelerators>
                             <FontIcon Glyph="&#xE9E9;" />
                         </Button>
                         <Button
@@ -465,9 +435,6 @@
                             Command="{x:Bind ViewModel.MusicBrowseVM.VolumeDownChangedCommand, Mode=OneWay}"
                             IsHitTestVisible="False"
                             Opacity="0">
-                            <Button.KeyboardAccelerators>
-                                <KeyboardAccelerator Key="Subtract" />
-                            </Button.KeyboardAccelerators>
                             <FontIcon Glyph="&#xE9E9;" />
                         </Button>
                         <Button

@@ -1027,4 +1027,49 @@
   <data name="ShaderBackgroundExpander.Text" xml:space="preserve">
     <value>Fondo de Sombreado</value>
   </data>
+  <data name="ShortcutTextBox.PlaceholderText" xml:space="preserve">
+    <value>Click to record shortcut</value>
+  </data>
+  <data name="ShortcutTextBoxClear.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Clear shortcut</value>
+  </data>
+  <data name="ShortcutTextBoxCheck.ToolTipService.ToolTip" xml:space="preserve">
+    <value>Check shortcut registration</value>
+  </data>
+  <data name="SettingsPageShortcuts.Text" xml:space="preserve">
+    <value>Shortcuts</value>
+  </data>
+  <data name="SettingsPagePlayPauseShortcut.Text" xml:space="preserve">
+    <value>Play / Pause</value>
+  </data>
+  <data name="SettingsPageNextSongShortcut.Text" xml:space="preserve">
+    <value>Next Song</value>
+  </data>
+  <data name="SettingsPagePreviousSongShortcut.Text" xml:space="preserve">
+    <value>Previous Song</value>
+  </data>
+  <data name="ShortcutCheckTitle" xml:space="preserve">
+    <value>Check</value>
+  </data>
+  <data name="ShortcutCheckNoKey" xml:space="preserve">
+    <value>No shortcut set.</value>
+  </data>
+  <data name="ShortcutCheckRegistered" xml:space="preserve">
+    <value>Shortcut is currently registered.</value>
+  </data>
+  <data name="ShortcutCheckConflict" xml:space="preserve">
+    <value>Shortcut registration may conflict with another application.</value>
+  </data>
+  <data name="SettingsPageVolumeUpShortcut.Text" xml:space="preserve">
+    <value>Volume Up</value>
+  </data>
+  <data name="SettingsPageVolumeDownShortcut.Text" xml:space="preserve">
+    <value>Volume Down</value>
+  </data>
+  <data name="SettingsPageTogglePlayingDetailShortcut.Text" xml:space="preserve">
+    <value>Toggle Playing Detail</value>
+  </data>
+  <data name="SettingsPageBackShortcut.Text" xml:space="preserve">
+    <value>Back</value>
+  </data>
 </root>

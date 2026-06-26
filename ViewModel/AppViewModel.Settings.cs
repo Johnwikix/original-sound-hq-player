@@ -14,9 +14,11 @@ using Windows.Storage;
 using Windows.System;
 using Windows.UI;
 using WinUIMusicPlayer.Behaviors;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
+using WinUIMusicPlayer.View;
 using ZLinq;
 
 namespace WinUIMusicPlayer.ViewModel
@@ -804,6 +806,189 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         } = false;
+
+        public List<string> PlayOrPauseShortcut
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.PlayOrPauseSong, value, () =>
+                        {
+                            App.Services.GetRequiredService<MusicBrowseViewModel>().PlayButton_Click();
+                        });
+                    }
+                }
+            }
+        } = new List<string> { "Ctrl", "P" };
+
+        public List<string> NextSongShortcut
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.NextSong, value, () =>
+                        {
+                            App.Services.GetRequiredService<MusicBrowseViewModel>().NextMusicButton_Click();
+                        });
+                    }
+                }
+            }
+        } = new List<string> { "Ctrl", "Right" };
+
+        public List<string> PreviousSongShortcut
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.PreviousSong, value, () =>
+                        {
+                            App.Services.GetRequiredService<MusicBrowseViewModel>().LastMusicButton_Click();
+                        });
+                    }
+                }
+            }
+        } = new List<string> { "Ctrl", "Left" };
+
+        public List<string> VolumeUpShortcut
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.VolumeUp, value, () =>
+                        {
+                            AdjustVolume(5);
+                        });
+                    }
+                }
+            }
+        } = new List<string> { "Ctrl", "Up" };
+
+        public List<string> VolumeDownShortcut
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.VolumeDown, value, () =>
+                        {
+                            AdjustVolume(-5);
+                        });
+                    }
+                }
+            }
+        } = new List<string> { "Ctrl", "Down" };
+
+        public List<string> TogglePlayingDetailShortcut
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.TogglePlayingDetail, value, () =>
+                        {
+                            var mainPage = App.Services.GetRequiredService<MainPage>();
+                            if (mainPage.IsPlayingDetailVisible)
+                                mainPage.NavigatebackToMusicBrowsePage();
+                            else
+                                mainPage.NavigateToPlayingDetailPage();
+                        });
+                    }
+                }
+            }
+        } = new List<string> { "Ctrl", "Q" };
+
+        public List<string> BackShortcut
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.Back, value, () =>
+                        {
+                            App.Services.GetRequiredService<MainPage>().HandleBackNavigation();
+                        });
+                    }
+                }
+            }
+        } = new List<string> { "Ctrl", "B" };
+
+        public void InitHotKeys()
+        {
+            var window = App.MainWindow;
+            if (window is null) return;
+
+            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.PlayOrPauseSong, PlayOrPauseShortcut, () =>
+            {
+                App.Services.GetRequiredService<MusicBrowseViewModel>().PlayButton_Click();
+            });
+
+            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.NextSong, NextSongShortcut, () =>
+            {
+                App.Services.GetRequiredService<MusicBrowseViewModel>().NextMusicButton_Click();
+            });
+
+            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.PreviousSong, PreviousSongShortcut, () =>
+            {
+                App.Services.GetRequiredService<MusicBrowseViewModel>().LastMusicButton_Click();
+            });
+
+            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.VolumeUp, VolumeUpShortcut, () =>
+            {
+                AdjustVolume(5);
+            });
+
+            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.VolumeDown, VolumeDownShortcut, () =>
+            {
+                AdjustVolume(-5);
+            });
+
+            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.TogglePlayingDetail, TogglePlayingDetailShortcut, () =>
+            {
+                var mainPage = App.Services.GetRequiredService<MainPage>();
+                if (mainPage.IsPlayingDetailVisible)
+                    mainPage.NavigatebackToMusicBrowsePage();
+                else
+                    mainPage.NavigateToPlayingDetailPage();
+            });
+
+            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.Back, BackShortcut, () =>
+            {
+                App.Services.GetRequiredService<MainPage>().HandleBackNavigation();
+            });
+        }
+
         public List<double> TargetFrameRateOptions { get; } = [60, 72, 80, 90, 120, 144, 160, 165, 180, 240, 280, 320, 360, 480];
 
         public ObservableCollection<EffectComboBoxItem> TextEffectItems =

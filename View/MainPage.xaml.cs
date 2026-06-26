@@ -36,6 +36,8 @@ namespace WinUIMusicPlayer.View
         public AddPlayListDialog AddPlayListDialog { get; set; }
         private readonly INavigationService _playingNavigation;
         private bool _isPageTransitioning = false;
+
+        public bool IsPlayingDetailVisible => PlayingFrame.Visibility == Visibility.Visible;
         //private ToolTip _progressToolTip = new();
         public MainPage(MainViewModel viewModel)
         {
@@ -146,25 +148,26 @@ namespace WinUIMusicPlayer.View
 
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
         {
+            Type? targetType = null;
+
             if (args.IsSettingsInvoked)
             {
-                NavigateTo(typeof(SettingsPage), null, new EntranceNavigationTransitionInfo());
+                targetType = typeof(SettingsPage);
             }
             else
             {
-                var tag = args.InvokedItemContainer.Tag.ToString();
-                switch (tag)
+                targetType = args.InvokedItemContainer.Tag.ToString() switch
                 {
-                    case "AddFolder":
-                        NavigateTo(typeof(AddFolderPage), null, new EntranceNavigationTransitionInfo());
-                        break;
-                    case "MusicBrowse":
-                        NavigateTo(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
-                        break;
-                    case "PlayLists":
-                        NavigateTo(typeof(PlayListPage), null, new EntranceNavigationTransitionInfo());
-                        break;
-                }
+                    "AddFolder" => typeof(AddFolderPage),
+                    "MusicBrowse" => typeof(MusicBrowsePage),
+                    "PlayLists" => typeof(PlayListPage),
+                    _ => null
+                };
+            }
+
+            if (targetType is not null && MainFrame.Content?.GetType() != targetType)
+            {
+                NavigateTo(targetType, null, new EntranceNavigationTransitionInfo());
             }
         }
 
@@ -221,7 +224,7 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void NavigationViewControl_BackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
+        public void HandleBackNavigation()
         {
             if (MainFrame.Content is PlayListPage playListPage && playListPage.ViewModel.IsInDetailMode)
             {
@@ -231,14 +234,9 @@ namespace WinUIMusicPlayer.View
             App.Services.GetRequiredService<MusicBrowseViewModel>().BackButton();
         }
 
-        private void KeyboardAccelerator_Invoked(Microsoft.UI.Xaml.Input.KeyboardAccelerator sender, Microsoft.UI.Xaml.Input.KeyboardAcceleratorInvokedEventArgs args)
+        private void NavigationViewControl_BackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)
         {
-            //if (MainFrame.Content is PlayListPage playListPage && playListPage.ViewModel.IsInDetailMode)
-            //{
-            //    playListPage.CollapseDetail();
-            //    return;
-            //}
-            //App.Services.GetRequiredService<MusicBrowseViewModel>().BackButton();
+            HandleBackNavigation();
         }
 
         private void ProgressSlider_Loaded(object sender, RoutedEventArgs e)

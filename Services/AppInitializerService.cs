@@ -42,6 +42,7 @@ namespace WinUIMusicPlayer.Services
             await App.Services.GetRequiredService<IpcService>().InitializeMusic(App.Services.GetRequiredService<AppViewModel>().CurrentPlayingMusic);
             App.MainWindow.ShowMainPage();
             App.Services.GetRequiredService<AppViewModel>().IsInitialized = true;
+            App.Services.GetRequiredService<AppViewModel>().InitHotKeys();
         }
 
         // 应用关闭时执行清理

@@ -1027,4 +1027,49 @@
   <data name="ShaderBackgroundExpander.Text" xml:space="preserve">
     <value>着色器背景</value>
   </data>
+  <data name="ShortcutTextBox.PlaceholderText" xml:space="preserve">
+    <value>点击录制快捷键</value>
+  </data>
+  <data name="ShortcutTextBoxClear.ToolTipService.ToolTip" xml:space="preserve">
+    <value>清除快捷键</value>
+  </data>
+  <data name="ShortcutTextBoxCheck.ToolTipService.ToolTip" xml:space="preserve">
+    <value>检测快捷键注册</value>
+  </data>
+  <data name="SettingsPageShortcuts.Text" xml:space="preserve">
+    <value>快捷键</value>
+  </data>
+  <data name="SettingsPagePlayPauseShortcut.Text" xml:space="preserve">
+    <value>播放 / 暂停</value>
+  </data>
+  <data name="SettingsPageNextSongShortcut.Text" xml:space="preserve">
+    <value>下一首</value>
+  </data>
+  <data name="SettingsPagePreviousSongShortcut.Text" xml:space="preserve">
+    <value>上一首</value>
+  </data>
+  <data name="ShortcutCheckTitle" xml:space="preserve">
+    <value>检测</value>
+  </data>
+  <data name="ShortcutCheckNoKey" xml:space="preserve">
+    <value>未设置快捷键。</value>
+  </data>
+  <data name="ShortcutCheckRegistered" xml:space="preserve">
+    <value>快捷键已注册。</value>
+  </data>
+  <data name="ShortcutCheckConflict" xml:space="preserve">
+    <value>快捷键注册可能与其他应用冲突。</value>
+  </data>
+  <data name="SettingsPageVolumeUpShortcut.Text" xml:space="preserve">
+    <value>音量增加</value>
+  </data>
+  <data name="SettingsPageVolumeDownShortcut.Text" xml:space="preserve">
+    <value>音量减小</value>
+  </data>
+  <data name="SettingsPageTogglePlayingDetailShortcut.Text" xml:space="preserve">
+    <value>切换播放详情</value>
+  </data>
+  <data name="SettingsPageBackShortcut.Text" xml:space="preserve">
+    <value>返回</value>
+  </data>
 </root>

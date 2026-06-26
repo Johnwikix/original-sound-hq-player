@@ -133,6 +133,12 @@ namespace WinUIMusicPlayer
                     });
                     return IntPtr.Zero;
                 }
+                if (msg == 0x0312) // WM_HOTKEY
+                {
+                    int id = (int)wParam;
+                    Helper.GlobalHotKeyHook.TryInvokeAction(id);
+                    return IntPtr.Zero;
+                }
                 // 调用默认窗口过程处理其他消息
                 return WindowHelper.CallWindowProc(defaultWndProc, hWnd, msg, wParam, lParam);
             }

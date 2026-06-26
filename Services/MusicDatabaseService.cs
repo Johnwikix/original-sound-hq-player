@@ -841,6 +841,13 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.UnplayedOpacityPercent = settings.UnplayedOpacityPercent;
                 AppViewModel.TargetFrameRate = settings.TargetFrameRate;
                 AppViewModel.EnableAdvancedLyricsEffect = settings.EnableAdvancedLyricsEffect;
+                AppViewModel.PlayOrPauseShortcut = settings.PlayOrPauseShortcut;
+                AppViewModel.NextSongShortcut = settings.NextSongShortcut;
+                AppViewModel.PreviousSongShortcut = settings.PreviousSongShortcut;
+                AppViewModel.VolumeUpShortcut = settings.VolumeUpShortcut;
+                AppViewModel.VolumeDownShortcut = settings.VolumeDownShortcut;
+                AppViewModel.TogglePlayingDetailShortcut = settings.TogglePlayingDetailShortcut;
+                AppViewModel.BackShortcut = settings.BackShortcut;
                 LoadSettingsToAppViewModel();
             }
         }
@@ -944,6 +951,13 @@ namespace WinUIMusicPlayer.Services
             newSettings.UnplayedOpacityPercent = AppViewModel.UnplayedOpacityPercent;
             newSettings.TargetFrameRate = AppViewModel.TargetFrameRate;
             newSettings.EnableAdvancedLyricsEffect = AppViewModel.EnableAdvancedLyricsEffect;
+            newSettings.PlayOrPauseShortcut = AppViewModel.PlayOrPauseShortcut;
+            newSettings.NextSongShortcut = AppViewModel.NextSongShortcut;
+            newSettings.PreviousSongShortcut = AppViewModel.PreviousSongShortcut;
+            newSettings.VolumeUpShortcut = AppViewModel.VolumeUpShortcut;
+            newSettings.VolumeDownShortcut = AppViewModel.VolumeDownShortcut;
+            newSettings.TogglePlayingDetailShortcut = AppViewModel.TogglePlayingDetailShortcut;
+            newSettings.BackShortcut = AppViewModel.BackShortcut;
             return newSettings;
         }
 
