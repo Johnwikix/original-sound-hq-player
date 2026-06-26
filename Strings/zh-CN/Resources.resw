@@ -1027,13 +1027,13 @@
   <data name="ShaderBackgroundExpander.Text" xml:space="preserve">
     <value>着色器背景</value>
   </data>
-  <data name="ShortcutTextBox.PlaceholderText" xml:space="preserve">
+  <data name="ShortcutTextBoxPlaceholder" xml:space="preserve">
     <value>点击录制快捷键</value>
   </data>
-  <data name="ShortcutTextBoxClear.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="ShortcutTextBoxClearToolTip.Content" xml:space="preserve">
     <value>清除快捷键</value>
   </data>
-  <data name="ShortcutTextBoxCheck.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="ShortcutTextBoxCheckToolTip.Content" xml:space="preserve">
     <value>检测快捷键注册</value>
   </data>
   <data name="SettingsPageShortcuts.Text" xml:space="preserve">
@@ -1071,5 +1071,8 @@
   </data>
   <data name="SettingsPageBackShortcut.Text" xml:space="preserve">
     <value>返回</value>
+  </data>
+  <data name="SettingsPageShowWindowShortcut.Text" xml:space="preserve">
+    <value>显示 / 隐藏主窗口</value>
   </data>
 </root>

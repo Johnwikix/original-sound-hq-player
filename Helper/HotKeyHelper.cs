@@ -16,6 +16,7 @@ namespace WinUIMusicPlayer.Helper
         VolumeDown,
         TogglePlayingDetail,
         Back,
+        ShowWindow,
     }
 
     public static class GlobalHotKeyHook

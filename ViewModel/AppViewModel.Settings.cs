@@ -824,7 +824,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = new List<string> { "Ctrl", "P" };
+        } = new List<string> { "Ctrl", "Alt", "P" };
 
         public List<string> NextSongShortcut
         {
@@ -843,7 +843,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = new List<string> { "Ctrl", "Right" };
+        } = new List<string> { "Ctrl", "Alt", "Right" };
 
         public List<string> PreviousSongShortcut
         {
@@ -862,7 +862,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = new List<string> { "Ctrl", "Left" };
+        } = new List<string> { "Ctrl", "Alt", "Left" };
 
         public List<string> VolumeUpShortcut
         {
@@ -881,7 +881,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = new List<string> { "Ctrl", "Up" };
+        } = new List<string> { "Ctrl", "Alt", "Up" };
 
         public List<string> VolumeDownShortcut
         {
@@ -900,7 +900,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = new List<string> { "Ctrl", "Down" };
+        } = new List<string> { "Ctrl", "Alt", "Down" };
 
         public List<string> TogglePlayingDetailShortcut
         {
@@ -914,6 +914,7 @@ namespace WinUIMusicPlayer.ViewModel
                         _ = _musicDatabaseService.SaveSettingAsync();
                         GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.TogglePlayingDetail, value, () =>
                         {
+                            if (App.MainWindow is not { Visible: true }) return;
                             var mainPage = App.Services.GetRequiredService<MainPage>();
                             if (mainPage.IsPlayingDetailVisible)
                                 mainPage.NavigatebackToMusicBrowsePage();
@@ -923,7 +924,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = new List<string> { "Ctrl", "Q" };
+        } = new List<string> { "Ctrl", "Alt", "Q" };
 
         public List<string> BackShortcut
         {
@@ -937,12 +938,32 @@ namespace WinUIMusicPlayer.ViewModel
                         _ = _musicDatabaseService.SaveSettingAsync();
                         GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.Back, value, () =>
                         {
+                            if (App.MainWindow is not { Visible: true }) return;
                             App.Services.GetRequiredService<MainPage>().HandleBackNavigation();
                         });
                     }
                 }
             }
-        } = new List<string> { "Ctrl", "B" };
+        } = new List<string> { "Ctrl", "Alt", "B" };
+
+        public List<string> ShowWindowShortcut
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.ShowWindow, value, () =>
+                        {
+                            App.MainWindow?.ToggleShowHide();
+                        });
+                    }
+                }
+            }
+        } = new List<string> { "Ctrl", "Alt", "W" };
 
         public void InitHotKeys()
         {
@@ -976,6 +997,7 @@ namespace WinUIMusicPlayer.ViewModel
 
             GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.TogglePlayingDetail, TogglePlayingDetailShortcut, () =>
             {
+                if (window is not { Visible: true }) return;
                 var mainPage = App.Services.GetRequiredService<MainPage>();
                 if (mainPage.IsPlayingDetailVisible)
                     mainPage.NavigatebackToMusicBrowsePage();
@@ -985,7 +1007,13 @@ namespace WinUIMusicPlayer.ViewModel
 
             GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.Back, BackShortcut, () =>
             {
+                if (window is not { Visible: true }) return;
                 App.Services.GetRequiredService<MainPage>().HandleBackNavigation();
+            });
+
+            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.ShowWindow, ShowWindowShortcut, () =>
+            {
+                window.ToggleShowHide();
             });
         }
 

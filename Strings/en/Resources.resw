@@ -1027,13 +1027,13 @@
   <data name="ShaderBackgroundExpander.Text" xml:space="preserve">
     <value>Shader Background</value>
   </data>
-  <data name="ShortcutTextBox.PlaceholderText" xml:space="preserve">
+  <data name="ShortcutTextBoxPlaceholder" xml:space="preserve">
     <value>Click to record shortcut</value>
   </data>
-  <data name="ShortcutTextBoxClear.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="ShortcutTextBoxClearToolTip.Content" xml:space="preserve">
     <value>Clear shortcut</value>
   </data>
-  <data name="ShortcutTextBoxCheck.ToolTipService.ToolTip" xml:space="preserve">
+  <data name="ShortcutTextBoxCheckToolTip.Content" xml:space="preserve">
     <value>Check shortcut registration</value>
   </data>
   <data name="SettingsPageShortcuts.Text" xml:space="preserve">
@@ -1071,5 +1071,8 @@
   </data>
   <data name="SettingsPageBackShortcut.Text" xml:space="preserve">
     <value>Back</value>
+  </data>
+  <data name="SettingsPageShowWindowShortcut.Text" xml:space="preserve">
+    <value>Toggle Hide / Show</value>
   </data>
 </root>

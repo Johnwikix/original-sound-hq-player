@@ -848,6 +848,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.VolumeDownShortcut = settings.VolumeDownShortcut;
                 AppViewModel.TogglePlayingDetailShortcut = settings.TogglePlayingDetailShortcut;
                 AppViewModel.BackShortcut = settings.BackShortcut;
+                AppViewModel.ShowWindowShortcut = settings.ShowWindowShortcut;
                 LoadSettingsToAppViewModel();
             }
         }
@@ -958,6 +959,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.VolumeDownShortcut = AppViewModel.VolumeDownShortcut;
             newSettings.TogglePlayingDetailShortcut = AppViewModel.TogglePlayingDetailShortcut;
             newSettings.BackShortcut = AppViewModel.BackShortcut;
+            newSettings.ShowWindowShortcut = AppViewModel.ShowWindowShortcut;
             return newSettings;
         }
 

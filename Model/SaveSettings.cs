@@ -65,12 +65,13 @@ namespace WinUIMusicPlayer.Model
         public double TargetFrameRate { get; set; } = 60.0;
         public bool EnableAdvancedLyricsEffect { get; set; } = false;
         public bool IsLyricsMigrated { get; set; } = false;
-        public List<string> PlayOrPauseShortcut { get; set; } = new List<string> { "Ctrl", "P" };
-        public List<string> NextSongShortcut { get; set; } = new List<string> { "Ctrl", "Right" };
-        public List<string> PreviousSongShortcut { get; set; } = new List<string> { "Ctrl", "Left" };
-        public List<string> VolumeUpShortcut { get; set; } = new List<string> { "Ctrl", "Up" };
-        public List<string> VolumeDownShortcut { get; set; } = new List<string> { "Ctrl", "Down" };
-        public List<string> TogglePlayingDetailShortcut { get; set; } = new List<string> { "Ctrl", "Q" };
-        public List<string> BackShortcut { get; set; } = new List<string> { "Ctrl", "B" };
+        public List<string> PlayOrPauseShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "P" };
+        public List<string> NextSongShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "Right" };
+        public List<string> PreviousSongShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "Left" };
+        public List<string> VolumeUpShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "Up" };
+        public List<string> VolumeDownShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "Down" };
+        public List<string> TogglePlayingDetailShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "Q" };
+        public List<string> BackShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "B" };
+        public List<string> ShowWindowShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "W" };
     }
 }

@@ -17,14 +17,12 @@
         </Grid.ColumnDefinitions>
         <TextBox
             x:Name="TextBox"
-            x:Uid="ShortcutTextBox"
             Grid.Column="0"
             VerticalAlignment="Center"
             IsReadOnly="True"
             KeyDown="TextBox_KeyDown"
             Loaded="TextBox_Loaded" />
         <Button
-            x:Uid="ShortcutTextBoxClear"
             Grid.Column="1"
             Width="32"
             Height="32"
@@ -32,9 +30,12 @@
             Padding="0"
             VerticalAlignment="Center"
             Click="ClearButton_Click"
-            Content="{ui:FontIcon FontSize=12, Glyph=&#xE894;}" />
+            Content="{ui:FontIcon FontSize=12, Glyph=&#xE894;}">
+            <ToolTipService.ToolTip>
+                <ToolTip x:Uid="ShortcutTextBoxClearToolTip" />
+            </ToolTipService.ToolTip>
+        </Button>
         <Button
-            x:Uid="ShortcutTextBoxCheck"
             Grid.Column="2"
             Width="32"
             Height="32"
@@ -42,6 +43,10 @@
             Padding="0"
             VerticalAlignment="Center"
             Click="CheckButton_Click"
-            Content="{ui:FontIcon FontSize=12, Glyph=&#xE721;}" />
+            Content="{ui:FontIcon FontSize=12, Glyph=&#xE721;}">
+            <ToolTipService.ToolTip>
+                <ToolTip x:Uid="ShortcutTextBoxCheckToolTip" />
+            </ToolTipService.ToolTip>
+        </Button>
     </Grid>
 </UserControl>

@@ -302,6 +302,164 @@
                     </Expander.Content>
                 </Expander>
 
+                <!--  快捷键设置  -->
+                <Expander
+                    MinHeight="69"
+                    Margin="10,0,10,0"
+                    Padding="0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    CornerRadius="{ThemeResource ControlCornerRadius}">
+                    <Expander.Header>
+                        <Grid Padding="16,16,4,16">
+                            <TextBlock
+                                x:Uid="SettingsPageShortcuts"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                        </Grid>
+                    </Expander.Header>
+                    <Expander.Content>
+                        <StackPanel>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="SettingsPagePlayPauseShortcut"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <controls2:ShortcutTextBox
+                                    Grid.Column="1"
+                                    Shortcut="{x:Bind ViewModel.AppViewModel.PlayOrPauseShortcut, Mode=TwoWay}" />
+                            </Grid>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="SettingsPageNextSongShortcut"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <controls2:ShortcutTextBox
+                                    Grid.Column="1"
+                                    Shortcut="{x:Bind ViewModel.AppViewModel.NextSongShortcut, Mode=TwoWay}" />
+                            </Grid>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="SettingsPagePreviousSongShortcut"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <controls2:ShortcutTextBox
+                                    Grid.Column="1"
+                                    Shortcut="{x:Bind ViewModel.AppViewModel.PreviousSongShortcut, Mode=TwoWay}" />
+                            </Grid>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="SettingsPageVolumeUpShortcut"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <controls2:ShortcutTextBox
+                                    Grid.Column="1"
+                                    Shortcut="{x:Bind ViewModel.AppViewModel.VolumeUpShortcut, Mode=TwoWay}" />
+                            </Grid>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="SettingsPageVolumeDownShortcut"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <controls2:ShortcutTextBox
+                                    Grid.Column="1"
+                                    Shortcut="{x:Bind ViewModel.AppViewModel.VolumeDownShortcut, Mode=TwoWay}" />
+                            </Grid>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="SettingsPageTogglePlayingDetailShortcut"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <controls2:ShortcutTextBox
+                                    Grid.Column="1"
+                                    Shortcut="{x:Bind ViewModel.AppViewModel.TogglePlayingDetailShortcut, Mode=TwoWay}" />
+                            </Grid>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="SettingsPageBackShortcut"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <controls2:ShortcutTextBox
+                                    Grid.Column="1"
+                                    Shortcut="{x:Bind ViewModel.AppViewModel.BackShortcut, Mode=TwoWay}" />
+                            </Grid>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="SettingsPageShowWindowShortcut"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <controls2:ShortcutTextBox
+                                    Grid.Column="1"
+                                    Shortcut="{x:Bind ViewModel.AppViewModel.ShowWindowShortcut, Mode=TwoWay}" />
+                            </Grid>
+                        </StackPanel>
+                    </Expander.Content>
+                </Expander>
+
                 <!--  封面设置  -->
                 <Expander
                     MinHeight="69"
@@ -1476,147 +1634,6 @@
                                     SmallChange="10"
                                     SpinButtonPlacementMode="Inline"
                                     Value="{x:Bind ViewModel.AppViewModel.AppHeight, Mode=TwoWay}" />
-                            </Grid>
-                        </StackPanel>
-                    </Expander.Content>
-                </Expander>
-
-                <!--  快捷键设置  -->
-                <Expander
-                    MinHeight="69"
-                    Margin="10,0,10,0"
-                    Padding="0"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Stretch"
-                    CornerRadius="{ThemeResource ControlCornerRadius}">
-                    <Expander.Header>
-                        <Grid Padding="16,16,4,16">
-                            <TextBlock
-                                x:Uid="SettingsPageShortcuts"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                        </Grid>
-                    </Expander.Header>
-                    <Expander.Content>
-                        <StackPanel>
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    x:Uid="SettingsPagePlayPauseShortcut"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <controls2:ShortcutTextBox
-                                    Grid.Column="1"
-                                    Shortcut="{x:Bind ViewModel.AppViewModel.PlayOrPauseShortcut, Mode=TwoWay}" />
-                            </Grid>
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    x:Uid="SettingsPageNextSongShortcut"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <controls2:ShortcutTextBox
-                                    Grid.Column="1"
-                                    Shortcut="{x:Bind ViewModel.AppViewModel.NextSongShortcut, Mode=TwoWay}" />
-                            </Grid>
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    x:Uid="SettingsPagePreviousSongShortcut"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <controls2:ShortcutTextBox
-                                    Grid.Column="1"
-                                    Shortcut="{x:Bind ViewModel.AppViewModel.PreviousSongShortcut, Mode=TwoWay}" />
-                            </Grid>
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    x:Uid="SettingsPageVolumeUpShortcut"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <controls2:ShortcutTextBox
-                                    Grid.Column="1"
-                                    Shortcut="{x:Bind ViewModel.AppViewModel.VolumeUpShortcut, Mode=TwoWay}" />
-                            </Grid>
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    x:Uid="SettingsPageVolumeDownShortcut"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <controls2:ShortcutTextBox
-                                    Grid.Column="1"
-                                    Shortcut="{x:Bind ViewModel.AppViewModel.VolumeDownShortcut, Mode=TwoWay}" />
-                            </Grid>
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    x:Uid="SettingsPageTogglePlayingDetailShortcut"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <controls2:ShortcutTextBox
-                                    Grid.Column="1"
-                                    Shortcut="{x:Bind ViewModel.AppViewModel.TogglePlayingDetailShortcut, Mode=TwoWay}" />
-                            </Grid>
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    x:Uid="SettingsPageBackShortcut"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <controls2:ShortcutTextBox
-                                    Grid.Column="1"
-                                    Shortcut="{x:Bind ViewModel.AppViewModel.BackShortcut, Mode=TwoWay}" />
                             </Grid>
                         </StackPanel>
                     </Expander.Content>

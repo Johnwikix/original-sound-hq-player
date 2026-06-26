@@ -234,6 +234,20 @@ namespace WinUIMusicPlayer
                 _logger.LogError(ex, "初始化任务栏助手失败");
             }
         }
+        public void ToggleShowHide()
+        {
+            if (this.Visible)
+            {
+                this.Hide();
+                WorkingSetCompressor.TrimSelf();
+            }
+            else
+            {
+                this.Show();
+                InitializeTaskbarHelper();
+                WindowHelper.SetForegroundWindow(AppData.HWnd);
+            }
+        }
         public void Dispose()
         {
             Dispose(true);

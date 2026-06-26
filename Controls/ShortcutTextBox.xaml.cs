@@ -73,6 +73,7 @@ namespace WinUIMusicPlayer.Controls
 
         private void TextBox_Loaded(object sender, RoutedEventArgs e)
         {
+            TextBox.PlaceholderText = ToolUtils.GetString("ShortcutTextBoxPlaceholder");
             UpdateTextBox();
         }
 
