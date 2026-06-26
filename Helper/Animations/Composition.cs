@@ -6,7 +6,7 @@ using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Shapes;
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Numerics;
 using Windows.UI;
 
@@ -19,24 +19,18 @@ public static class Composition
 {
     #region Fundamentals
 
-    private static readonly Dictionary<Compositor, Dictionary<string, object>> _objCache = [];
+    private static readonly ConcurrentDictionary<
+        Compositor,
+        ConcurrentDictionary<string, object>
+    > _objCache = [];
 
     extension(Compositor c)
     {
         public T GetCached<T>(string key, Func<T> create)
             where T : notnull
         {
-            if (!_objCache.TryGetValue(c, out var dic))
-            {
-                _objCache[c] = dic = [];
-            }
-
-            if (!dic.TryGetValue(key, out var value) || value is null)
-            {
-                dic[key] = value = create();
-            }
-
-            return (T)value;
+            var dic = _objCache.GetOrAdd(c, _ => new ConcurrentDictionary<string, object>());
+            return (T)dic.GetOrAdd(key, _ => create()!);
         }
     }
 
@@ -1110,6 +1104,37 @@ public static class Composition
                 group.Add(a);
             }
 
+            return group;
+        }
+
+        public CompositionAnimationGroup CreateAnimationGroup(CompositionAnimation a1)
+        {
+            var group = c.CreateAnimationGroup();
+            group.Add(a1);
+            return group;
+        }
+
+        public CompositionAnimationGroup CreateAnimationGroup(
+            CompositionAnimation a1,
+            CompositionAnimation a2
+        )
+        {
+            var group = c.CreateAnimationGroup();
+            group.Add(a1);
+            group.Add(a2);
+            return group;
+        }
+
+        public CompositionAnimationGroup CreateAnimationGroup(
+            CompositionAnimation a1,
+            CompositionAnimation a2,
+            CompositionAnimation a3
+        )
+        {
+            var group = c.CreateAnimationGroup();
+            group.Add(a1);
+            group.Add(a2);
+            group.Add(a3);
             return group;
         }
     }

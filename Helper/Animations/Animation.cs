@@ -799,25 +799,26 @@ public static class KeySplines
     /// to replicate the easing of the EntranceThemeTransition
     /// </summary>
     /// <returns></returns>
-    public static KeySpline EntranceTheme => Animation.CreateKeySpline(0.1, 0.9, 0.2, 1);
+    public static KeySpline EntranceTheme { get; } = Animation.CreateKeySpline(0.1, 0.9, 0.2, 1);
 
     /// <summary>
     /// A KeySpline that closely matches the default easing curve applied to
     /// Composition animations by Windows when the developer does not specify
     /// any easing function.
     /// </summary>
-    public static KeySpline CompositionDefault =>
+    public static KeySpline CompositionDefault { get; } =
         Animation.CreateKeySpline(0.395, 0.56, 0.06, 0.95);
 
     /// <summary>
     /// Intended for 500 millisecond opacity animation for depth animations
     /// </summary>
-    public static KeySpline DepthZoomOpacity => Animation.CreateKeySpline(0.2, 0.6, 0.3, 0.9);
+    public static KeySpline DepthZoomOpacity { get; } =
+        Animation.CreateKeySpline(0.2, 0.6, 0.3, 0.9);
 
     /// <summary>
     /// A more precise alternative to EntranceTheme KeySpline
     /// </summary>
-    public static KeySpline Popup =>
+    public static KeySpline Popup { get; } =
         Animation.CreateKeySpline(0.100000001490116, 0.899999976158142, 0.200000002980232, 1);
 
     //------------------------------------------------------
@@ -839,19 +840,19 @@ public static class KeySplines
     /// <summary>
     /// Analogous to Exponential EaseIn, Exponent 4.5
     /// </summary>
-    public static KeySpline FluentAccelerate => Create(CubicBezierPoints.FluentAccelerate);
+    public static KeySpline FluentAccelerate { get; } = Create(CubicBezierPoints.FluentAccelerate);
 
     /// <summary>
     /// Analogous to Exponential EaseOut, Exponent 7
     /// </summary>
-    public static KeySpline FluentDecelerate => Create(CubicBezierPoints.FluentDecelerate);
+    public static KeySpline FluentDecelerate { get; } = Create(CubicBezierPoints.FluentDecelerate);
 
     /// <summary>
     /// Analogous to Circle EaseInOut
     /// </summary>
-    public static KeySpline FluentStandard => Create(CubicBezierPoints.FluentStandard);
+    public static KeySpline FluentStandard { get; } = Create(CubicBezierPoints.FluentStandard);
 
-    public static KeySpline FluentEntrance => Create(CubicBezierPoints.FluentEntrance);
+    public static KeySpline FluentEntrance { get; } = Create(CubicBezierPoints.FluentEntrance);
 
     //------------------------------------------------------
     //
@@ -859,7 +860,7 @@ public static class KeySplines
     //
     //------------------------------------------------------
 
-    public static KeySpline CubicInOut => Animation.CreateKeySpline(0.645, 0.045, 0.355, 1);
+    public static KeySpline CubicInOut { get; } = Animation.CreateKeySpline(0.645, 0.045, 0.355, 1);
 
-    public static KeySpline QuinticInOut => Animation.CreateKeySpline(0.86, 0, 0.07, 1);
+    public static KeySpline QuinticInOut { get; } = Animation.CreateKeySpline(0.86, 0, 0.07, 1);
 }

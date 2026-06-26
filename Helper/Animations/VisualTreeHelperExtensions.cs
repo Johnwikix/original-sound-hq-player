@@ -108,6 +108,81 @@ public static class VisualTreeHelperExtensions
         }
     }
 
+    extension(DependencyObject start)
+    {
+        /// <summary>
+        /// BFS 查找首个 Name 与 <paramref name="name"/> 匹配的 FrameworkElement。
+        /// 零迭代器/闭包分配（仅 BFS Queue 一次性分配）。
+        /// 名字比较为 ordinal。
+        /// </summary>
+        public FrameworkElement? FindDescendantByName(ReadOnlySpan<char> name)
+        {
+            if (name.IsEmpty)
+            {
+                return null;
+            }
+
+            var queue = new Queue<DependencyObject>();
+            queue.Enqueue(start);
+
+            while (queue.Count > 0)
+            {
+                var node = queue.Dequeue();
+                int count = VisualTreeHelper.GetChildrenCount(node);
+
+                for (int i = 0; i < count; i++)
+                {
+                    var child = VisualTreeHelper.GetChild(node, i);
+
+                    if (child is FrameworkElement fe && fe.Name.AsSpan().SequenceEqual(name))
+                    {
+                        return fe;
+                    }
+
+                    queue.Enqueue(child);
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// BFS 查找首个 Name 与 <paramref name="name"/> 匹配且类型为 <typeparamref name="T"/> 的元素。
+        /// 零迭代器/闭包分配（仅 BFS Queue 一次性分配）。
+        /// </summary>
+        public T? FindDescendantByName<T>(ReadOnlySpan<char> name)
+            where T : DependencyObject
+        {
+            if (name.IsEmpty)
+            {
+                return null;
+            }
+
+            var queue = new Queue<DependencyObject>();
+            queue.Enqueue(start);
+
+            while (queue.Count > 0)
+            {
+                var node = queue.Dequeue();
+                int count = VisualTreeHelper.GetChildrenCount(node);
+
+                for (int i = 0; i < count; i++)
+                {
+                    var child = VisualTreeHelper.GetChild(node, i);
+
+                    if (child is T t && child is FrameworkElement fe && fe.Name.AsSpan().SequenceEqual(name))
+                    {
+                        return t;
+                    }
+
+                    queue.Enqueue(child);
+                }
+            }
+
+            return null;
+        }
+    }
+
     extension<T>(FrameworkElement start)
         where T : FrameworkElement
     {

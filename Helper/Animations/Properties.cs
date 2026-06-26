@@ -1,4 +1,3 @@
-using CommunityToolkit.WinUI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -6,7 +5,6 @@ using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections;
 using Windows.UI;
-using ZLinq;
 
 namespace WinUIMusicPlayer.Helper.Animations;
 
@@ -146,19 +144,16 @@ public sealed class Properties : DependencyObject
 
             static void RestoreAnimate(FrameworkElement source, string key)
             {
-                var parts = key.Split("|");
-                if (
-                    source
-                        .FindDescendants()
-                        .AsValueEnumerable()
-                        .OfType<FrameworkElement>()
-                        .FirstOrDefault(fe => fe.Name == parts[0])
-                    is FrameworkElement target
-                )
+                ReadOnlySpan<char> keySpan = key.AsSpan();
+                int sep = keySpan.IndexOf('|');
+                var nameSpan = sep >= 0 ? keySpan[..sep] : keySpan;
+                var modeSpan = sep >= 0 ? keySpan[(sep + 1)..] : ReadOnlySpan<char>.Empty;
+
+                if (source.FindDescendantByName(nameSpan) is FrameworkElement target)
                 {
                     var duration = 0.35;
 
-                    if (parts.Length > 1 && parts[1] == "Scale")
+                    if (modeSpan.SequenceEqual("Scale"))
                     {
                         var v = target.GetElementVisual()!;
                         v.StartAnimation(FluentAnimationHelper.CreatePointerUp(v));
@@ -184,16 +179,14 @@ public sealed class Properties : DependencyObject
 
             static void DoAnimate(FrameworkElement source, string key, double offset)
             {
-                var parts = key.Split("|");
-                if (
-                    source
-                        .FindDescendants().AsValueEnumerable()
-                        .OfType<FrameworkElement>()
-                        .FirstOrDefault(fe => fe.Name == parts[0])
-                    is FrameworkElement target
-                )
+                ReadOnlySpan<char> keySpan = key.AsSpan();
+                int sep = keySpan.IndexOf('|');
+                var nameSpan = sep >= 0 ? keySpan[..sep] : keySpan;
+                var modeSpan = sep >= 0 ? keySpan[(sep + 1)..] : ReadOnlySpan<char>.Empty;
+
+                if (source.FindDescendantByName(nameSpan) is FrameworkElement target)
                 {
-                    if (parts.Length > 1 && parts[1] == "Scale")
+                    if (modeSpan.SequenceEqual("Scale"))
                     {
                         var v = target.GetElementVisual()!;
                         v.StartAnimation(FluentAnimationHelper.CreatePointerDown(v, (float)offset));
@@ -289,20 +282,18 @@ public sealed class Properties : DependencyObject
         bool over = false
     )
     {
-        var parts = key.Split("|");
-        var targets = parts[0].Split(",");
+        ReadOnlySpan<char> keySpan = key.AsSpan();
+        int sep = keySpan.IndexOf('|');
+        var nameSpan = sep >= 0 ? keySpan[..sep] : keySpan;
+        var modeSpan = sep >= 0 ? keySpan[(sep + 1)..] : ReadOnlySpan<char>.Empty;
+        var isScale = modeSpan.SequenceEqual("Scale");
+        var isX = modeSpan.SequenceEqual("X");
 
-        foreach (var src in targets)
+        foreach (var range in nameSpan.Split(','))
         {
-            if (
-                source
-                    .FindDescendants().AsValueEnumerable()
-                    .OfType<FrameworkElement>()
-                    .FirstOrDefault(fe => fe.Name == src)
-                is FrameworkElement target
-            )
+            if (source.FindDescendantByName(nameSpan[range]) is FrameworkElement target)
             {
-                if (parts.Length > 1 && parts[1] == "Scale")
+                if (isScale)
                 {
                     var v = target.GetElementVisual()!;
                     v.StartAnimation(FluentAnimationHelper.CreatePointerUp(v));
@@ -323,7 +314,7 @@ public sealed class Properties : DependencyObject
 
                     // Create translate animation
                     var path =
-                        parts.Length > 1 && parts[1] == "X"
+                        isX
                             ? TargetProperty.CompositeTransform.TranslateX
                             : TargetProperty.CompositeTransform.TranslateY;
 

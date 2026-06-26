@@ -281,7 +281,13 @@ public sealed class CompositionFactory : DependencyObject
         int durationMs = 700
     )
     {
-        var key = $"CEA{from.X}{from.Y}{delayMs}{durationMs}";
+        Span<char> keyBuf = stackalloc char[64];
+        keyBuf.TryWrite(
+            CultureInfo.InvariantCulture,
+            $"CEA{from.X:R}{from.Y:R}{delayMs}{durationMs}",
+            out var keyLen
+        );
+        var key = new string(keyBuf[..keyLen]);
         var c = target.EnableTranslation(true).GetElementVisual()!.Compositor;
 
         return c.GetCached(
@@ -351,7 +357,13 @@ public sealed class CompositionFactory : DependencyObject
         int delayMs = 0
     )
     {
-        var key = $"SFade{to}{from}{durationMs}{delayMs}";
+        Span<char> keyBuf = stackalloc char[64];
+        keyBuf.TryWrite(
+            CultureInfo.InvariantCulture,
+            $"SFade{to:R}{from:R}{durationMs}{delayMs}",
+            out var keyLen
+        );
+        var key = new string(keyBuf[..keyLen]);
         return c.GetCached(
             key,
             () =>
@@ -377,15 +389,19 @@ public sealed class CompositionFactory : DependencyObject
     {
         v.StopAnimation(nameof(Visual.CenterPoint));
 
+        Span<char> keyBuf = stackalloc char[16];
+        keyBuf.TryWrite(CultureInfo.InvariantCulture, $"CP{x:R}{y:R}", out var keyLen);
+        var key = new string(keyBuf[..keyLen]);
+
         var e = v.GetCached(
-            $"CP{x}{y}",
+            key,
             () =>
                 v.CreateExpressionAnimation(nameof(Visual.CenterPoint))
                     .SetExpression(
-                        string.Format(
-                            CENTRE_EXPRESSION,
-                            x.ToString(CultureInfo.InvariantCulture.NumberFormat),
-                            y.ToString(CultureInfo.InvariantCulture.NumberFormat)
+                        string.Create(
+                            CultureInfo.InvariantCulture,
+                            $"({nameof(Vector3)}(this.Target.{nameof(Visual.Size)}.{nameof(Vector2.X)} * {x}f, "
+                                + $"this.Target.{nameof(Visual.Size)}.{nameof(Vector2.Y)} * {y}f, 0f))"
                         )
                     )
         );
@@ -445,13 +461,18 @@ public sealed class CompositionFactory : DependencyObject
 
     public static Visual EnableStandardTranslation(Visual v, double? duration = null)
     {
+        var dur = duration ?? DefaultOffsetDuration;
+        Span<char> keyBuf = stackalloc char[16];
+        keyBuf.TryWrite(CultureInfo.InvariantCulture, $"__ST{dur:R}", out var keyLen);
+        var key = new string(keyBuf[..keyLen]);
+
         var o = v.GetCached(
-            $"__ST{(duration ?? DefaultOffsetDuration)}",
+            key,
             () =>
                 v.CreateVector3KeyFrameAnimation(TRANSLATION)
                     .AddKeyFrame(0, STARTING_VALUE)
                     .AddKeyFrame(1, FINAL_VALUE, CubicBezierPoints.FluentDecelerate)
-                    .SetDuration(duration ?? DefaultOffsetDuration)
+                    .SetDuration(dur)
         );
 
         v.Properties.SetImplicitAnimation(TRANSLATION, o);

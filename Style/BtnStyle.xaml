@@ -156,6 +156,7 @@
             </Setter.Value>
         </Setter>
         <Setter Property="animations:FluentAnimation.PointerOverOffset" Value="-1" />
+        <Setter Property="animations:FluentAnimation.PointerDownScale" Value="0.85" />
     </Style>
 
     <Style x:Key="MenuButtonStyle" TargetType="Button">
@@ -212,6 +213,7 @@
             </Setter.Value>
         </Setter>
         <Setter Property="animations:FluentAnimation.PointerOverOffset" Value="-1" />
+        <Setter Property="animations:FluentAnimation.PointerDownScale" Value="0.85" />
     </Style>
 
     <Style x:Key="PlayHoverButtonStyle" TargetType="Button">

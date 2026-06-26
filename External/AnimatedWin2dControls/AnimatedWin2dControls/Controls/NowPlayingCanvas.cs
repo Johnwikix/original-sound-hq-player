@@ -181,12 +181,28 @@ namespace AnimatedWin2dControls.Controls
 
         private void SwapBackgroundRenderer()
         {
-            _background.Dispose();
-            _background = CreateBackgroundRenderer(BackgroundShaderIndex);
-            SyncStateFromProperties();
-            if (_lastPalette is not null) _background.SetPalette(_lastPalette);
-            else _background.RefreshColors();
-            _background.LoadResources();
+            bool wasCanvasPaused = _canvas?.Paused ?? true;
+            if (_canvas is not null)
+                _canvas.Paused = true;
+
+            try
+            {
+                _bgCache?.Dispose();
+                _bgCache = null;
+
+                _background.Dispose();
+                _background = CreateBackgroundRenderer(BackgroundShaderIndex);
+                SyncStateFromProperties();
+                if (_lastPalette is not null) _background.SetPalette(_lastPalette);
+                else _background.RefreshColors();
+                _background.LoadResources();
+            }
+            finally
+            {
+                if (_canvas is not null)
+                    _canvas.Paused = wasCanvasPaused
+                        || _pausedByVisibility || _pausedByParent || _pausedByWindow;
+            }
         }
 
         private static BaseBackgroundRenderer CreateBackgroundRenderer(int index) => index switch

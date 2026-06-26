@@ -4,7 +4,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Diagnostics;
-using ZLinq;
+using System.Globalization;
 
 namespace WinUIMusicPlayer.Helper.Animations;
 
@@ -155,8 +155,11 @@ public sealed class FluentAnimationHelper
     public static CompositionAnimation CreatePointerDown(Visual v, float scale)
     {
         CompositionFactory.StartCentering(v);
+        Span<char> keyBuf = stackalloc char[16];
+        keyBuf.TryWrite(CultureInfo.InvariantCulture, $"__FAPD{scale:R}", out var keyLen);
+        var key = new string(keyBuf[..keyLen]);
         return v.Compositor.GetCached(
-            $"__FAPD{scale}",
+            key,
             () =>
             {
                 return v.CreateVector3KeyFrameAnimation(nameof(Visual.Scale))
@@ -174,9 +177,16 @@ public sealed class FluentAnimationHelper
     {
         var x = axis == Orientation.Vertical ? 0 : offset;
         var y = axis == Orientation.Vertical ? offset : 0;
+        Span<char> keyBuf = stackalloc char[32];
+        keyBuf.TryWrite(
+            CultureInfo.InvariantCulture,
+            $"__FAPO{offset:R}-{(int)axis}",
+            out var keyLen
+        );
+        var key = new string(keyBuf[..keyLen]);
         v.StartAnimation(
             v.Compositor.GetCached(
-                $"__FAPO{offset}-{axis}",
+                key,
                 () =>
                 {
                     return v.CreateVector3KeyFrameAnimation(CompositionFactory.TRANSLATION)
@@ -240,32 +250,49 @@ public sealed class FluentAnimationHelper
 
         if (_group.GetValue(property) is string name)
         {
-            if (store is not null && store.Name == name)
+            ReadOnlySpan<char> nameSpan = name.AsSpan();
+
+            if (store is not null && store.Name.AsSpan().SequenceEqual(nameSpan))
             {
                 return store;
             }
-            else
+
+            // Little hax to allow targeting a ContentPresenter.Content
+            if (
+                TrySplitContentTarget(nameSpan, out var presenterName)
+                && c.FindDescendantByName<ContentPresenter>(presenterName) is ContentPresenter pres
+            )
             {
-                // Little hax to allow targeting a ContentPresenter.Content
-                if (
-                    name.Contains('.')
-                    && name.Split(".") is { Length: 2 } parts
-                    && parts[1] == "Content"
-                    && c.FindDescendants().AsValueEnumerable()
-                        .OfType<ContentPresenter>()
-                        .FirstOrDefault(d => d.Name == parts[0])
-                        is ContentPresenter pres
-                )
-                {
-                    return pres.FindDescendant<FrameworkElement>();
-                }
+                return pres.FindDescendant<FrameworkElement>();
             }
-            return c.FindDescendants().AsValueEnumerable()
-                .OfType<FrameworkElement>()
-                .FirstOrDefault(d => d.Name == name);
+
+            return c.FindDescendantByName(nameSpan);
         }
 
         return null;
+    }
+
+    private static bool TrySplitContentTarget(
+        ReadOnlySpan<char> input,
+        out ReadOnlySpan<char> targetName
+    )
+    {
+        int firstDot = input.IndexOf('.');
+        if (firstDot < 0)
+        {
+            targetName = default;
+            return false;
+        }
+
+        var suffix = input[(firstDot + 1)..];
+        if (suffix.IndexOf('.') >= 0 || !suffix.SequenceEqual("Content"))
+        {
+            targetName = default;
+            return false;
+        }
+
+        targetName = input[..firstDot];
+        return true;
     }
 
     private FrameworkElement? GetPointerTarget(Control c)
