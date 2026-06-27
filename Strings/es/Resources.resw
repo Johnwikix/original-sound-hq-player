@@ -382,6 +382,9 @@
   <data name="FlyoutFavorite" xml:space="preserve">
     <value>Agregar a favoritos</value>
   </data>
+  <data name="AddToFavourite" xml:space="preserve">
+    <value>Agregar a favoritos</value>
+  </data>
   <data name="EnterPlaylistName" xml:space="preserve">
     <value>Ingrese el nombre de la Playlist</value>
   </data>

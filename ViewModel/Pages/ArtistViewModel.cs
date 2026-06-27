@@ -52,9 +52,9 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void InitalizeOption()
         {
-            ArtistMenuOptions.Add(new() { Title = "播放", Tag = "Play", Command = PlayCommand });
-            ArtistMenuOptions.Add(new() { Title = "添加到最爱", Tag = "AddToFavour", Command = AddToFavourCommand });
-            ArtistMenuOptions.Add(new() { Title = "添加到播放列表", Tag = "AddToPlayList", Children = [] });
+            ArtistMenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutPlayItem"), Tag = "Play", Command = PlayCommand });
+            ArtistMenuOptions.Add(new() { Title = ToolUtils.GetString("AddToFavourite"), Tag = "AddToFavour", Command = AddToFavourCommand });
+            ArtistMenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutAddToPlaylistItem"), Tag = "AddToPlayList", Children = [] });
         }
 
         public void UpdateAlbumMenuOptionsPlayList()

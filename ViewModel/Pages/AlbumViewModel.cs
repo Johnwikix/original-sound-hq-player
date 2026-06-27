@@ -35,10 +35,10 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void InitalizeOption()
         {
-            AlbumMenuOptions.Add(new() { Title = "播放", Tag = "Play", Command = PlayCommand });
-            AlbumMenuOptions.Add(new() { Title = "添加到最爱", Tag = "AddToFavour", Command = AddToFavourCommand });
-            AlbumMenuOptions.Add(new() { Title = "添加到播放列表", Tag = "AddToPlayList", Children = [] });
-            AlbumMenuOptions.Add(new() { Title = "属性", Tag = "Property", Command = ShowPropertyWindowCommand });
+            AlbumMenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutPlayItem"), Tag = "Play", Command = PlayCommand });
+            AlbumMenuOptions.Add(new() { Title = ToolUtils.GetString("AddToFavourite"), Tag = "AddToFavour", Command = AddToFavourCommand });
+            AlbumMenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutAddToPlaylistItem"), Tag = "AddToPlayList", Children = [] });
+            AlbumMenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutPropertiesItem"), Tag = "Property", Command = ShowPropertyWindowCommand });
         }
 
         public void UpdateAlbumMenuOptionsPlayList()

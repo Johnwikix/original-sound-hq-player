@@ -382,6 +382,9 @@
   <data name="FlyoutFavorite" xml:space="preserve">
     <value>添加到最爱</value>
   </data>
+  <data name="AddToFavourite" xml:space="preserve">
+    <value>添加到最爱</value>
+  </data>
   <data name="EnterPlaylistName" xml:space="preserve">
     <value>请输入播放列表名称</value>
   </data>
