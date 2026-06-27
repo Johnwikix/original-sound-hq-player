@@ -57,7 +57,7 @@
 
 - 🎛️ **Full Playback Control**
   - Play, pause, skip, shuffle, sequential, single-loop
-  - Global keyboard shortcuts: `Esc` Back / `Space` Play/Pause / `←` `→` Seek 5s
+  - Customizable global shortcuts
 
 - 🔊 **Professional Audio Processing**
   - Supports 12+ audio formats including DSD, FLAC, WAV, MP3
@@ -66,8 +66,8 @@
 
 - 📝 **Music Info & Lyrics**
   - Real-time display of title, artist, album, duration, sample rate, bitrate, file type
-  - LRCAPI-based album art and lyrics matching
-  - Time-synced scrolling lyrics
+  - Automatic album art and lyrics matching
+  - Advanced per-word animated lyrics with multiple shader background options
 
 - 📱 **Sony Walkman Support**
   - Transfer music with metadata (including lyrics) to Sony Walkman over USB
@@ -82,7 +82,6 @@
 
 - 🗃️ **Data & Core Capabilities**
   - SQLite-powered music library and playlists
-  - Customizable animation timings and startup page
   - Single-instance enforcement with minimum window size guard
 
 ## 🎵 Audio Output Modes
