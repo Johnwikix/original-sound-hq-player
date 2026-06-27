@@ -5,11 +5,14 @@ using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
 using System.Numerics;
+using System.Threading;
 
 namespace AnimatedWin2dControls.Renderer
 {
     public sealed class FogRenderer : BreathingRendererBase, IDisposable
     {
+        // 保护 _fogEffect 生命周期:Dispose/LoadResources 持锁,Draw 走 TryEnter(0) 抢不到就丢一帧,渲染线程永不阻塞。
+        private readonly object _gate = new();
         private PixelShaderEffect<FogEffect>? _fogEffect;
         private float _timeAccumulator = 0f;
 
@@ -17,8 +20,11 @@ namespace AnimatedWin2dControls.Renderer
 
         public void LoadResources()
         {
-            Dispose();
-            _fogEffect = new PixelShaderEffect<FogEffect>();
+            lock (_gate)
+            {
+                _fogEffect?.Dispose();
+                _fogEffect = new PixelShaderEffect<FogEffect>();
+            }
         }
 
         public void Update(double deltaTime)
@@ -30,23 +36,33 @@ namespace AnimatedWin2dControls.Renderer
 
         public void Draw(ICanvasAnimatedControl control, CanvasDrawingSession ds)
         {
-            if (_fogEffect == null || !IsEnabled) return;
+            if (!IsEnabled) return;
+            if (!Monitor.TryEnter(_gate, 0)) return;
+            try
+            {
+                var effect = _fogEffect;
+                if (effect == null) return;
 
-            float width = control.ConvertDipsToPixels((float)control.Size.Width, CanvasDpiRounding.Round);
-            float height = control.ConvertDipsToPixels((float)control.Size.Height, CanvasDpiRounding.Round);
+                float width = control.ConvertDipsToPixels((float)control.Size.Width, CanvasDpiRounding.Round);
+                float height = control.ConvertDipsToPixels((float)control.Size.Height, CanvasDpiRounding.Round);
 
-            _fogEffect.ConstantBuffer = new FogEffect(
-                 _timeAccumulator,
-                 new float2(width, height)
-             );
+                effect.ConstantBuffer = new FogEffect(
+                     _timeAccumulator,
+                     new float2(width, height)
+                 );
 
-            ds.DrawImage(_fogEffect);
+                ds.DrawImage(effect);
+            }
+            finally { Monitor.Exit(_gate); }
         }
 
         public void Dispose()
         {
-            _fogEffect?.Dispose();
-            _fogEffect = null;
+            lock (_gate)
+            {
+                _fogEffect?.Dispose();
+                _fogEffect = null;
+            }
         }
     }
 }

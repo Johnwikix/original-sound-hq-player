@@ -6,6 +6,7 @@ using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
+using System.Threading;
 
 namespace AnimatedWin2dControls.Renderer
 {
@@ -15,6 +16,8 @@ namespace AnimatedWin2dControls.Renderer
     /// </summary>
     public sealed class FluidBackgroundRenderer : BaseBackgroundRenderer
     {
+        // 保护 _effect 生命周期:Dispose/LoadResources 持锁,Draw 走 TryEnter(0) 抢不到就丢一帧,渲染线程永不阻塞。
+        private readonly object _gate = new();
         private PixelShaderEffect<FluidBackgroundEffect>? _effect;
 
         private float _rnd1 = (float)(Rng.NextDouble() * Math.PI * 2);
@@ -23,8 +26,11 @@ namespace AnimatedWin2dControls.Renderer
 
         public override void LoadResources()
         {
-            Dispose();
-            _effect = new PixelShaderEffect<FluidBackgroundEffect>();
+            lock (_gate)
+            {
+                _effect?.Dispose();
+                _effect = new PixelShaderEffect<FluidBackgroundEffect>();
+            }
 
             if (CurrentPalette is not null)
                 SetPalette(CurrentPalette);
@@ -43,42 +49,51 @@ namespace AnimatedWin2dControls.Renderer
 
         public override void Draw(ICanvasAnimatedControl control, CanvasDrawingSession ds)
         {
-            if (_effect == null || Opacity <= 0) return;
-
-            float width = control.ConvertDipsToPixels((float)control.Size.Width, CanvasDpiRounding.Round);
-            float height = control.ConvertDipsToPixels((float)control.Size.Height, CanvasDpiRounding.Round);
-
-            _effect.ConstantBuffer = new FluidBackgroundEffect(
-                new float2(width, height),
-                Time,
-                new float3(C1.X, C1.Y, C1.Z),
-                new float3(C2.X, C2.Y, C2.Z),
-                new float3(C3.X, C3.Y, C3.Z),
-                new float3(C4.X, C4.Y, C4.Z),
-                _rnd1, _rnd2, _rnd3,
-                useHSVBlending: false,
-                enableLightWave: EnableLightWave,
-                enableDithering: true);
-
-            if (Opacity >= 1.0)
+            if (!Monitor.TryEnter(_gate, 0)) return;
+            try
             {
-                ds.DrawImage(_effect);
-            }
-            else
-            {
-                using var opacityEffect = new OpacityEffect
+                var effect = _effect;
+                if (effect == null || Opacity <= 0) return;
+
+                float width = control.ConvertDipsToPixels((float)control.Size.Width, CanvasDpiRounding.Round);
+                float height = control.ConvertDipsToPixels((float)control.Size.Height, CanvasDpiRounding.Round);
+
+                effect.ConstantBuffer = new FluidBackgroundEffect(
+                    new float2(width, height),
+                    Time,
+                    new float3(C1.X, C1.Y, C1.Z),
+                    new float3(C2.X, C2.Y, C2.Z),
+                    new float3(C3.X, C3.Y, C3.Z),
+                    new float3(C4.X, C4.Y, C4.Z),
+                    _rnd1, _rnd2, _rnd3,
+                    useHSVBlending: false,
+                    enableLightWave: EnableLightWave,
+                    enableDithering: true);
+
+                if (Opacity >= 1.0)
                 {
-                    Source = _effect,
-                    Opacity = (float)Opacity
-                };
-                ds.DrawImage(opacityEffect);
+                    ds.DrawImage(effect);
+                }
+                else
+                {
+                    using var opacityEffect = new OpacityEffect
+                    {
+                        Source = effect,
+                        Opacity = (float)Opacity
+                    };
+                    ds.DrawImage(opacityEffect);
+                }
             }
+            finally { Monitor.Exit(_gate); }
         }
 
         public override void Dispose()
         {
-            _effect?.Dispose();
-            _effect = null;
+            lock (_gate)
+            {
+                _effect?.Dispose();
+                _effect = null;
+            }
         }
     }
 }

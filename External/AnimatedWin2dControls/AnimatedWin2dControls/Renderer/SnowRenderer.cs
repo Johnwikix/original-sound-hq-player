@@ -5,11 +5,14 @@ using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
 using System.Numerics;
+using System.Threading;
 
 namespace AnimatedWin2dControls.Renderer
 {
     public sealed class SnowRenderer : BreathingRendererBase, IDisposable
     {
+        // 保护 _snowEffect 生命周期:Dispose/LoadResources 持锁,Draw 走 TryEnter(0) 抢不到就丢一帧,渲染线程永不阻塞。
+        private readonly object _gate = new();
         private PixelShaderEffect<SnowEffect>? _snowEffect;
         private float _timeAccumulator = 0f;
 
@@ -19,8 +22,11 @@ namespace AnimatedWin2dControls.Renderer
 
         public void LoadResources()
         {
-            Dispose();
-            _snowEffect = new PixelShaderEffect<SnowEffect>();
+            lock (_gate)
+            {
+                _snowEffect?.Dispose();
+                _snowEffect = new PixelShaderEffect<SnowEffect>();
+            }
         }
 
         public void Update(double deltaTime)
@@ -32,25 +38,35 @@ namespace AnimatedWin2dControls.Renderer
 
         public void Draw(ICanvasAnimatedControl control, CanvasDrawingSession ds)
         {
-            if (_snowEffect == null || !IsEnabled) return;
+            if (!IsEnabled) return;
+            if (!Monitor.TryEnter(_gate, 0)) return;
+            try
+            {
+                var effect = _snowEffect;
+                if (effect == null) return;
 
-            float width = control.ConvertDipsToPixels((float)control.Size.Width, CanvasDpiRounding.Round);
-            float height = control.ConvertDipsToPixels((float)control.Size.Height, CanvasDpiRounding.Round);
+                float width = control.ConvertDipsToPixels((float)control.Size.Width, CanvasDpiRounding.Round);
+                float height = control.ConvertDipsToPixels((float)control.Size.Height, CanvasDpiRounding.Round);
 
-            _snowEffect.ConstantBuffer = new SnowEffect(
-                _timeAccumulator,
-                new float2(width, height),
-                Amount,
-                Speed
-            );
+                effect.ConstantBuffer = new SnowEffect(
+                    _timeAccumulator,
+                    new float2(width, height),
+                    Amount,
+                    Speed
+                );
 
-            ds.DrawImage(_snowEffect);
+                ds.DrawImage(effect);
+            }
+            finally { Monitor.Exit(_gate); }
         }
 
         public void Dispose()
         {
-            _snowEffect?.Dispose();
-            _snowEffect = null;
+            lock (_gate)
+            {
+                _snowEffect?.Dispose();
+                _snowEffect = null;
+            }
         }
     }
 }

@@ -6,6 +6,7 @@ using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
+using System.Threading;
 
 namespace AnimatedWin2dControls.Renderer.Background
 {
@@ -14,12 +15,17 @@ namespace AnimatedWin2dControls.Renderer.Background
     /// </summary>
     public sealed class WavyBackgroundRenderer : BaseBackgroundRenderer
     {
+        // 保护 _effect 生命周期:Dispose/LoadResources 持锁,Draw 走 TryEnter(0) 抢不到就丢一帧,渲染线程永不阻塞。
+        private readonly object _gate = new();
         private PixelShaderEffect<WavyBackgroundEffect>? _effect;
 
         public override void LoadResources()
         {
-            Dispose();
-            _effect = new PixelShaderEffect<WavyBackgroundEffect>();
+            lock (_gate)
+            {
+                _effect?.Dispose();
+                _effect = new PixelShaderEffect<WavyBackgroundEffect>();
+            }
             if (CurrentPalette is not null) SetPalette(CurrentPalette);
             else ApplyDefaultColors();
             SnapToTarget();
@@ -33,35 +39,44 @@ namespace AnimatedWin2dControls.Renderer.Background
 
         public override void Draw(ICanvasAnimatedControl control, CanvasDrawingSession ds)
         {
-            if (_effect == null || Opacity <= 0) return;
-
-            float width = control.ConvertDipsToPixels((float)control.Size.Width, CanvasDpiRounding.Round);
-            float height = control.ConvertDipsToPixels((float)control.Size.Height, CanvasDpiRounding.Round);
-
-            _effect.ConstantBuffer = new WavyBackgroundEffect(
-                Time,
-                new float2(width, height),
-                new float3(C1.X, C1.Y, C1.Z),
-                new float3(C2.X, C2.Y, C2.Z),
-                new float3(C3.X, C3.Y, C3.Z),
-                new float3(C4.X, C4.Y, C4.Z));
-
-            if (Opacity >= 1.0) ds.DrawImage(_effect);
-            else
+            if (!Monitor.TryEnter(_gate, 0)) return;
+            try
             {
-                using var opacityEffect = new OpacityEffect
+                var effect = _effect;
+                if (effect == null || Opacity <= 0) return;
+
+                float width = control.ConvertDipsToPixels((float)control.Size.Width, CanvasDpiRounding.Round);
+                float height = control.ConvertDipsToPixels((float)control.Size.Height, CanvasDpiRounding.Round);
+
+                effect.ConstantBuffer = new WavyBackgroundEffect(
+                    Time,
+                    new float2(width, height),
+                    new float3(C1.X, C1.Y, C1.Z),
+                    new float3(C2.X, C2.Y, C2.Z),
+                    new float3(C3.X, C3.Y, C3.Z),
+                    new float3(C4.X, C4.Y, C4.Z));
+
+                if (Opacity >= 1.0) ds.DrawImage(effect);
+                else
                 {
-                    Source = _effect,
-                    Opacity = (float)Opacity
-                };
-                ds.DrawImage(opacityEffect);
+                    using var opacityEffect = new OpacityEffect
+                    {
+                        Source = effect,
+                        Opacity = (float)Opacity
+                    };
+                    ds.DrawImage(opacityEffect);
+                }
             }
+            finally { Monitor.Exit(_gate); }
         }
 
         public override void Dispose()
         {
-            _effect?.Dispose();
-            _effect = null;
+            lock (_gate)
+            {
+                _effect?.Dispose();
+                _effect = null;
+            }
         }
     }
 }

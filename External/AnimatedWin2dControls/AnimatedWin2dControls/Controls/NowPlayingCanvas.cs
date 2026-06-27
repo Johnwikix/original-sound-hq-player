@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Windows.Foundation;
 
 namespace AnimatedWin2dControls.Controls
@@ -119,7 +120,8 @@ namespace AnimatedWin2dControls.Controls
 
         private CanvasAnimatedControl? _canvas;
         // 急实例化以保证 SetPalette 在 LoadResources 之前被调用时也能落到实例上 (与原 FluidBackgroundRenderer 行为一致)。
-        private BaseBackgroundRenderer _background = CreateBackgroundRenderer(0);
+        // volatile: 渲染线程在 OnCanvasUpdate/Draw 中以快照方式读取,UI 线程在 SwapBackgroundRenderer 中整体替换。
+        private volatile BaseBackgroundRenderer? _background = CreateBackgroundRenderer(0);
         // 缓存最近一次调色板，shader 切换 / 设备重建后用于把新 renderer 重新染上当前调色板。
         private AnimatedWin2dControls.Impressionist.PaletteResult? _lastPalette;
         private readonly FogRenderer _fog = new();
@@ -133,6 +135,8 @@ namespace AnimatedWin2dControls.Controls
         // 背景半帧率：每 (skip+1) 帧才重绘一次不透明合成缓存，其余帧复用。0=全帧率，1=半帧率。
         private int _backgroundFrameSkip = 1;
         private long _frameCounter;
+        // 保护 _bgCache 生命周期:Swap/OnCanvasCreateResources/PrepareForShutdown 持锁,DrawBackground 持锁完成 check+create+render+DrawImage。
+        private readonly object _cacheGate = new();
         private CanvasRenderTarget? _bgCache;
         private float _bgCacheWidthDip;
         private float _bgCacheHeightDip;
@@ -187,15 +191,24 @@ namespace AnimatedWin2dControls.Controls
 
             try
             {
-                _bgCache?.Dispose();
-                _bgCache = null;
+                // 持锁 dispose 缓存,等渲染线程退栈后再释放,杜绝 _bgCache.Dispose 与 ds.DrawImage 并发
+                lock (_cacheGate)
+                {
+                    _bgCache?.Dispose();
+                    _bgCache = null;
+                }
 
-                _background.Dispose();
-                _background = CreateBackgroundRenderer(BackgroundShaderIndex);
+                // null-first: 渲染线程下一帧看到 null 直接跳过旧 renderer,杜绝 _effect.Dispose 与 Draw 并发
+                var oldBg = _background;
+                _background = null;
+                oldBg?.Dispose();
+
+                var newBg = CreateBackgroundRenderer(BackgroundShaderIndex);
+                _background = newBg;
                 SyncStateFromProperties();
-                if (_lastPalette is not null) _background.SetPalette(_lastPalette);
-                else _background.RefreshColors();
-                _background.LoadResources();
+                if (_lastPalette is not null) newBg.SetPalette(_lastPalette);
+                else newBg.RefreshColors();
+                newBg.LoadResources();
             }
             finally
             {
@@ -223,7 +236,7 @@ namespace AnimatedWin2dControls.Controls
             _isDark = IsDark;
             _useImageDominantTheme = UseImageDominantTheme;
 
-            if (_background != null)
+            if (_background is not null)
             {
                 _background.EnableLightWave = _enableLightWave;
                 _background.IsDark = _isDark;
@@ -340,11 +353,14 @@ namespace AnimatedWin2dControls.Controls
             try
             {
                 // 设备重建（含设备丢失/恢复）：丢弃合成缓存，由下一帧按当前设备/尺寸重建
-                _bgCache?.Dispose();
-                _bgCache = null;
+                lock (_cacheGate)
+                {
+                    _bgCache?.Dispose();
+                    _bgCache = null;
+                }
 
                 if (_background == null) _background = CreateBackgroundRenderer(BackgroundShaderIndex);
-                _background.EnableLightWave = _enableLightWave;
+                _background!.EnableLightWave = _enableLightWave;
                 _background.IsDark = _isDark;
                 _background.UseImageDominantTheme = _useImageDominantTheme;
 
@@ -361,10 +377,11 @@ namespace AnimatedWin2dControls.Controls
 
         private void OnCanvasUpdate(ICanvasAnimatedControl sender, CanvasAnimatedUpdateEventArgs args)
         {
+            var bg = _background;
             var elapsed = args.Timing.ElapsedTime;
 
             // 渲染线程：只读已缓存到渲染模块的状态，绝不访问依赖属性
-            _background?.Update(elapsed);
+            bg?.Update(elapsed);
             _fog.Update(elapsed.TotalSeconds);
             _snow.Update(elapsed.TotalSeconds);
             _raindrop.Update(elapsed.TotalSeconds);
@@ -387,11 +404,12 @@ namespace AnimatedWin2dControls.Controls
         // 流体恒为满屏不透明，缓存整面覆盖交换链，故无需清屏；歌词层每帧叠加其上。
         private void DrawBackground(ICanvasAnimatedControl sender, CanvasDrawingSession ds)
         {
+            var bg = _background;
             _frameCounter++;
 
             if (_backgroundFrameSkip <= 0)
             {
-                _background?.Draw(sender, ds);
+                bg?.Draw(sender, ds);
                 _snow.Draw(sender, ds);
                 _fog.Draw(sender, ds);
                 _raindrop.Draw(sender, ds);
@@ -404,25 +422,32 @@ namespace AnimatedWin2dControls.Controls
 
             bool renderBg = _frameCounter % (_backgroundFrameSkip + 1) == 0;
 
-            if (_bgCache is null || _bgCacheWidthDip != widthDip || _bgCacheHeightDip != heightDip)
+            // 持锁贯穿 check+create+render+DrawImage,杜绝 UI 线程在 DrawImage 前插入 _bgCache.Dispose。
+            // 拿不到锁就跳过本帧(Swap 间隙毫秒级),下一帧会重建。
+            if (!Monitor.TryEnter(_cacheGate, 0)) return;
+            try
             {
-                _bgCache?.Dispose();
-                _bgCache = new CanvasRenderTarget(sender, widthDip, heightDip);
-                _bgCacheWidthDip = widthDip;
-                _bgCacheHeightDip = heightDip;
-                renderBg = true; // 尺寸变化后必须立即重绘缓存
-            }
+                if (_bgCache is null || _bgCacheWidthDip != widthDip || _bgCacheHeightDip != heightDip)
+                {
+                    _bgCache?.Dispose();
+                    _bgCache = new CanvasRenderTarget(sender, widthDip, heightDip);
+                    _bgCacheWidthDip = widthDip;
+                    _bgCacheHeightDip = heightDip;
+                    renderBg = true; // 尺寸变化后必须立即重绘缓存
+                }
 
-            if (renderBg)
-            {
-                using var cds = _bgCache.CreateDrawingSession();
-                _background?.Draw(sender, cds);
-                _snow.Draw(sender, cds);
-                _fog.Draw(sender, cds);
-                _raindrop.Draw(sender, cds);
-            }
+                if (renderBg)
+                {
+                    using var cds = _bgCache!.CreateDrawingSession();
+                    bg?.Draw(sender, cds);
+                    _snow.Draw(sender, cds);
+                    _fog.Draw(sender, cds);
+                    _raindrop.Draw(sender, cds);
+                }
 
-            ds.DrawImage(_bgCache);
+                ds.DrawImage(_bgCache);
+            }
+            finally { Monitor.Exit(_cacheGate); }
         }
 
         // ── 输入转发 ──────────────────────────────────────────────────────────
@@ -440,7 +465,7 @@ namespace AnimatedWin2dControls.Controls
             try
             {
                 _lastPalette = palette;
-                _background.SetPalette(palette);
+                _background?.SetPalette(palette);
                 if (UseImageDominantTheme && palette is not null)
                     ThemeResolved?.Invoke(this, palette.PaletteIsDark);
             }
@@ -458,14 +483,18 @@ namespace AnimatedWin2dControls.Controls
             _canvas = null;
 
             _coordinator.PrepareForShutdown();
-            _background.Dispose();
+            _background?.Dispose();
+            _background = null;
             _lastPalette = null;
             _fog.Dispose();
             _snow.Dispose();
             _raindrop.Dispose();
 
-            _bgCache?.Dispose();
-            _bgCache = null;
+            lock (_cacheGate)
+            {
+                _bgCache?.Dispose();
+                _bgCache = null;
+            }
         }
 
         public void Dispose()
