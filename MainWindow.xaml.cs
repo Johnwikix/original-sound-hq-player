@@ -1,4 +1,5 @@
-﻿using H.NotifyIcon;
+﻿using CommunityToolkit.WinUI;
+using H.NotifyIcon;
 using H.NotifyIcon.EfficiencyMode;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -8,10 +9,10 @@ using Microsoft.UI.Xaml;
 using System;
 using System.Diagnostics;
 using System.Timers;
+using Windows.UI;
 using Windows.UI.ViewManagement;
 using Windows.UI.WindowManagement;
 using WinUIEx;
-using CommunityToolkit.WinUI;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Taskbar;
@@ -245,9 +246,11 @@ namespace WinUIMusicPlayer
             {
                 this.Show();
                 InitializeTaskbarHelper();
+                this.Activate();
                 WindowHelper.SetForegroundWindow(AppData.HWnd);
             }
         }
+
         public void Dispose()
         {
             Dispose(true);
@@ -261,6 +264,6 @@ namespace WinUIMusicPlayer
                 AppNotifyIconControl.Dispose();
                 _taskbarHelper.Dispose();
             }
-        }    
+        }
     }
 }

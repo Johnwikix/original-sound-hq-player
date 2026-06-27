@@ -264,10 +264,7 @@ namespace AnimatedWin2dControls.Controls
                 if (_advanced)
                 {
                     _canvas.PointerWheelChanged += OnCanvasPointerWheelChanged;
-                    _canvas.PointerPressed += OnCanvasPointerPressed;
                     _canvas.PointerMoved += OnCanvasPointerMoved;
-                    _canvas.PointerReleased += OnCanvasPointerReleased;
-                    _canvas.PointerCanceled += OnCanvasPointerCanceled;
                     _canvas.PointerExited += OnCanvasPointerExited;
                     _canvas.PointerEntered += OnCanvasPointerEntered;
                     _canvas.Tapped += OnCanvasTapped;
@@ -291,10 +288,7 @@ namespace AnimatedWin2dControls.Controls
             _canvas.Update -= OnCanvasUpdate;
             _canvas.Draw -= OnCanvasDraw;
             _canvas.PointerWheelChanged -= OnCanvasPointerWheelChanged;
-            _canvas.PointerPressed -= OnCanvasPointerPressed;
             _canvas.PointerMoved -= OnCanvasPointerMoved;
-            _canvas.PointerReleased -= OnCanvasPointerReleased;
-            _canvas.PointerCanceled -= OnCanvasPointerCanceled;
             _canvas.PointerExited -= OnCanvasPointerExited;
             _canvas.PointerEntered -= OnCanvasPointerEntered;
             _canvas.Tapped -= OnCanvasTapped;
@@ -434,10 +428,7 @@ namespace AnimatedWin2dControls.Controls
         // ── 输入转发 ──────────────────────────────────────────────────────────
 
         private void OnCanvasPointerWheelChanged(object sender, PointerRoutedEventArgs e) => _coordinator.OnPointerWheelChanged(sender, e);
-        private void OnCanvasPointerPressed(object sender, PointerRoutedEventArgs e) => _coordinator.OnPointerPressed(sender, e);
         private void OnCanvasPointerMoved(object sender, PointerRoutedEventArgs e) => _coordinator.OnPointerMoved(sender, e);
-        private void OnCanvasPointerReleased(object sender, PointerRoutedEventArgs e) => _coordinator.OnPointerReleased(sender, e);
-        private void OnCanvasPointerCanceled(object sender, PointerRoutedEventArgs e) => _coordinator.OnPointerCanceled(sender, e);
         private void OnCanvasPointerExited(object sender, PointerRoutedEventArgs e) => _coordinator.OnPointerExited(sender, e);
         private void OnCanvasPointerEntered(object sender, PointerRoutedEventArgs e) => _coordinator.OnPointerEntered(sender, e);
         private void OnCanvasTapped(object sender, TappedRoutedEventArgs e) => _coordinator.OnTapped(sender, e);

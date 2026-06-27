@@ -79,12 +79,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         public double UserScrollReturnSpeed = 12.0;
         public double WheelScrollPixels = 80.0;
 
-        private bool _pointerCaptured;
-        private double _pointerLastY;
-        private double _flingY;
-        private const double FlingDecay = 0.92;
-        private const double FlingStopThreshold = 5.0;
-
         private int _hoveredLineIndex = -1;
         private bool _isMouseInLyricsArea;
         private Point _lastMousePos;
@@ -434,19 +428,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (_userScrollCooldownSec > 0)
                 _userScrollCooldownSec -= dt;
 
-            if (_userScrolling && _userScrollCooldownSec <= 0 && !_pointerCaptured)
+            if (_userScrolling && _userScrollCooldownSec <= 0)
             {
                 _isUserScrollingChanged = true;
                 _userScrolling = false;
                 _mouseYScrollTransition.Start(0);
                 _pendingMouseScrollY = 0;
-            }
-
-            if (_flingY != 0)
-            {
-                _mouseYScrollTransition.JumpTo(_mouseYScrollTransition.Value + _flingY * dt);
-                _flingY *= 1.0 - (1.0 - FlingDecay) * dt * 60.0;
-                if (Math.Abs(_flingY) < FlingStopThreshold) _flingY = 0;
             }
 
             double combinedScroll = _smoothedScrollY + _mouseYScrollTransition.Value;
@@ -674,22 +661,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _isUserScrollingChanged = !_userScrolling;
             _userScrolling = true;
             _userScrollCooldownSec = UserScrollCooldown;
-            _flingY = 0;
             Canvas?.Invalidate();
-            e.Handled = true;
-        }
-
-        public void OnPointerPressed(object sender, PointerRoutedEventArgs e)
-        {
-            if (Canvas == null) return;
-            if (!IsPointerInLyricsRegion(e.GetCurrentPoint(Canvas).Position)) return;
-            Canvas.CapturePointer(e.Pointer);
-            _pointerCaptured = true;
-            _pointerLastY = e.GetCurrentPoint(Canvas).Position.Y;
-            _flingY = 0;
-            _isUserScrollingChanged = !_userScrolling;
-            _userScrolling = true;
-            _userScrollCooldownSec = UserScrollCooldown;
             e.Handled = true;
         }
 
@@ -703,28 +675,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             // OnPointerEntered/Exited 的一次性信号（画布内的"背景↔歌词"互转不发 enter/exit）。
             _isMouseInLyricsArea = IsPointerInLyricsRegion(pos);
 
-            if (_pointerCaptured)
-            {
-                double dy = pos.Y - _pointerLastY;
-                _pendingMouseScrollY += dy;
-                _mouseYScrollTransition.Start(_pendingMouseScrollY);
-                _pointerLastY = pos.Y;
-                _flingY = dy;
-                Canvas.Invalidate();
-            }
             e.Handled = true;
-        }
-
-        public void OnPointerReleased(object sender, PointerRoutedEventArgs e)
-        {
-            if (Canvas == null) return;
-            Canvas.ReleasePointerCapture(e.Pointer);
-            _pointerCaptured = false;
-        }
-
-        public void OnPointerCanceled(object sender, PointerRoutedEventArgs e)
-        {
-            _pointerCaptured = false;
         }
 
         public void OnPointerExited(object sender, PointerRoutedEventArgs e)
@@ -765,7 +716,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _pendingMouseScrollY = 0;
                 _userScrolling = false;
                 _userScrollCooldownSec = 0;
-                _flingY = 0;
 
                 var time = line.StartMs + _cachedOffsetMs;
                 if (time < 0) time = 0;
