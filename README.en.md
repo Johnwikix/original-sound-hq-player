@@ -28,7 +28,7 @@
 
 <div align="center">
 
-[**🏠 Product Page**](https://johnwikix.github.io/original-sound-player-page) | [**📖 Docs**](https://github.com/Johnwikix/original-sound-hq-player/wiki) | [**🐞 Report Issue**](https://github.com/Johnwikix/original-sound-hq-player/issues)
+[**🏠 Product Page**](https://johnwikix.github.io/original-sound-player-page) | [**🐞 Report Issue**](https://github.com/Johnwikix/original-sound-hq-player/issues)
 
 </div>
 
