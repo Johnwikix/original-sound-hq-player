@@ -120,7 +120,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private EasingType _cachedScrollEasingType = EasingType.Sine;
         private EaseMode _cachedScrollEasingMode = EaseMode.Out;
         private double _cachedPlayingLineTopOffset = 0.35;
-        private double _cachedTargetFrameRate = 60.0;
+        private double _cachedTargetFrameRate = 120.0;
 
         public double TargetFrameRate => _cachedTargetFrameRate;
 

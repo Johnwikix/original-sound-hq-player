@@ -39,7 +39,7 @@
         VerticalScrollBarVisibility="Hidden"
         VerticalScrollMode="Enabled">
         <StackPanel x:Name="ContentPanel" HorizontalAlignment="Stretch">
-            <StackPanel Height="600" Background="Transparent" />
+            <StackPanel Height="1200" Background="Transparent" />
             <ListView
                 x:Name="LyricList"
                 HorizontalAlignment="Stretch"
@@ -48,7 +48,7 @@
                 ItemClick="LyricList_ItemClick"
                 ItemTemplate="{StaticResource LyricLineTemplate}"
                 SelectionMode="None" />
-            <StackPanel Height="600" Background="Transparent" />
+            <StackPanel Height="1200" Background="Transparent" />
         </StackPanel>
     </ScrollView>
 </UserControl>

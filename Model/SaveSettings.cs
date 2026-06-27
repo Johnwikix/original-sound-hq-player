@@ -62,7 +62,7 @@ namespace WinUIMusicPlayer.Model
         public double PlayingLineTopOffsetPercent { get; set; } = 40.0;
         public double TranslatedOpacityPercent { get; set; } = 60.0;
         public double UnplayedOpacityPercent { get; set; } = 50.0;
-        public double TargetFrameRate { get; set; } = 60.0;
+        public double TargetFrameRate { get; set; } = 120.0;
         public bool EnableAdvancedLyricsEffect { get; set; } = false;
         public bool IsLyricsMigrated { get; set; } = false;
         public List<string> PlayOrPauseShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "P" };
