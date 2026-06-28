@@ -223,6 +223,7 @@ namespace AnimatedWin2dControls.Controls
             1 => new PS3XMBBackgroundRenderer(),
             2 => new GradientFlowBackgroundRenderer(),
             3 => new WavyBackgroundRenderer(),
+            4 => new ChromaticResonanceBackgroundRenderer(),
             _ => new FluidBackgroundRenderer(),
         };
 

@@ -8,14 +8,29 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:winex="using:WinUIEx"
     Title="音乐属性"
-    MinWidth="750"
-    MinHeight="900"
+    MinWidth="650"
+    MinHeight="750"
     mc:Ignorable="d">
 
     <winex:WindowEx.SystemBackdrop>
         <DesktopAcrylicBackdrop />
     </winex:WindowEx.SystemBackdrop>
+
     <Grid>
+        <Grid Visibility="{x:Bind BoolToVisibility(IsLoading)}">
+            <ProgressRing
+                Width="100"
+                Height="100"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                IsActive="True" />
+            <TextBlock
+                x:Uid="LoadingGrid"
+                Margin="0,180,0,0"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center" />
+        </Grid>
+
         <Grid
             x:Name="MusicDetailTitleBar"
             Height="44"
@@ -33,542 +48,398 @@
                 FontSize="16"
                 Style="{StaticResource CaptionTextBlockStyle}" />
         </Grid>
-        <Grid Visibility="{x:Bind BoolToVisibility(IsLoading)}">
-            <ProgressRing
-                Width="100"
-                Height="100"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                IsActive="True" />
-            <TextBlock
-                x:Uid="LoadingGrid"
-                Margin="0,180,0,0"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center" />
-        </Grid>
-        <RelativePanel Margin="10,50,10,10" Visibility="{x:Bind BoolToNVisibility(IsLoading)}">
+
+        <Grid Margin="0,44,0,0" Visibility="{x:Bind BoolToNVisibility(IsLoading)}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="Auto" />
+            </Grid.RowDefinitions>
+
             <ScrollViewer
-                Margin="0,0,0,50"
-                RelativePanel.AlignLeftWithPanel="True"
-                RelativePanel.AlignRightWithPanel="True"
-                RelativePanel.AlignTopWithPanel="True"
+                Grid.Row="0"
+                Padding="14,8,14,4"
                 VerticalScrollBarVisibility="Auto">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="5*" />
-                        <ColumnDefinition Width="2.5*" />
-                    </Grid.ColumnDefinitions>
-                    <Grid Grid.Column="0">
+                <StackPanel Spacing="10">
+                    <StackPanel Margin="12,0" Spacing="6">
+                        <StackPanel>
+                            <TextBlock
+                                x:Uid="TitleTextBlock"
+                                Margin="0,0,0,2"
+                                FontSize="12"
+                                Opacity="0.7" />
+                            <TextBox
+                                BorderThickness="0"
+                                Text="{x:Bind MusicDetail.Title, Mode=TwoWay}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock
+                                x:Uid="AuthorTextBlock"
+                                Margin="0,0,0,2"
+                                FontSize="12"
+                                Opacity="0.7" />
+                            <TextBox
+                                BorderThickness="0"
+                                Text="{x:Bind MusicDetail.Author, Mode=TwoWay}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel>
+                            <TextBlock
+                                x:Uid="AlbumTextBlock"
+                                Margin="0,0,0,2"
+                                FontSize="12"
+                                Opacity="0.7" />
+                            <TextBox
+                                BorderThickness="0"
+                                Text="{x:Bind MusicDetail.Album, Mode=TwoWay}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </StackPanel>
+
+                    <Grid
+                        Margin="12,0"
+                        ColumnSpacing="14"
+                        RowSpacing="6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Grid.Column="0">
+                            <TextBlock
+                                x:Uid="YearTextBlock"
+                                Margin="0,0,0,2"
+                                FontSize="12"
+                                Opacity="0.7" />
+                            <NumberBox
+                                Minimum="0"
+                                SmallChange="1"
+                                SpinButtonPlacementMode="Compact"
+                                Value="{x:Bind MusicDetail.Year, Mode=TwoWay}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="1">
+                            <TextBlock
+                                x:Uid="DiskNumberBox"
+                                Margin="0,0,0,2"
+                                FontSize="12"
+                                Opacity="0.7" />
+                            <NumberBox
+                                Minimum="0"
+                                SmallChange="1"
+                                SpinButtonPlacementMode="Compact"
+                                Value="{x:Bind MusicDetail.DiskNumber, Mode=TwoWay}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="2">
+                            <TextBlock
+                                x:Uid="TrackNumberBox"
+                                Margin="0,0,0,2"
+                                FontSize="12"
+                                Opacity="0.7" />
+                            <NumberBox
+                                Minimum="0"
+                                SmallChange="1"
+                                SpinButtonPlacementMode="Compact"
+                                Value="{x:Bind MusicDetail.TrackNumber, Mode=TwoWay}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="3">
+                            <TextBlock
+                                x:Uid="LyricsTimeOffsetTag"
+                                Margin="0,0,0,2"
+                                FontSize="12"
+                                Opacity="0.7" />
+                            <NumberBox
+                                LargeChange="1000"
+                                Maximum="10000"
+                                Minimum="-10000"
+                                SmallChange="100"
+                                SpinButtonPlacementMode="Compact"
+                                Value="{x:Bind MusicDetail.LyricsOffsetMs, Mode=TwoWay}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid
+                        Margin="12,0"
+                        ColumnSpacing="14"
+                        RowSpacing="6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Grid.Row="0" Grid.Column="0">
+                            <TextBlock
+                                x:Uid="DurationTextBlock"
+                                Margin="0,0,0,2"
+                                FontSize="12"
+                                Opacity="0.7" />
+                            <TextBlock Margin="0,4,0,0" Text="{x:Bind ConvertDuration(MusicDetail.Duration), Mode=OneWay}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="1">
+                            <TextBlock
+                                x:Uid="BitDepthTextBlock"
+                                Margin="0,0,0,2"
+                                FontSize="12"
+                                Opacity="0.7" />
+                            <TextBlock Margin="0,4,0,0" Text="{x:Bind ConvertBitDepth(MusicDetail.BitDepth), Mode=OneWay}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="2">
+                            <TextBlock
+                                x:Uid="BitRateTextBlock"
+                                Margin="0,0,0,2"
+                                FontSize="12"
+                                Opacity="0.7" />
+                            <TextBlock Margin="0,4,0,0" Text="{x:Bind ConvertBitRate(MusicDetail.BitRate), Mode=OneWay}" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="3">
+                            <TextBlock
+                                x:Uid="SampleRateTextBlock"
+                                Margin="0,0,0,2"
+                                FontSize="12"
+                                Opacity="0.7" />
+                            <TextBlock Margin="0,4,0,0" Text="{x:Bind ConvertSampleRate(MusicDetail.SampleRate), Mode=OneWay}" />
+                        </StackPanel>
+                    </Grid>
+
+                    <Grid
+                        Margin="12,0"
+                        ColumnSpacing="14"
+                        RowSpacing="6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1.5*" />
-                            <ColumnDefinition Width="5*" />
-                        </Grid.ColumnDefinitions>
-
-                        <TextBlock
-                            x:Uid="TitleTextBlock"
-                            Grid.Row="0"
-                            Grid.Column="0"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            FontWeight="Bold"
-                            TextWrapping="Wrap" />
-                        <TextBox
-                            Grid.Row="0"
-                            Grid.Column="1"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Stretch"
-                            BorderThickness="0"
-                            Text="{x:Bind MusicDetail.Title, Mode=TwoWay}"
-                            TextWrapping="Wrap" />
-
-                        <TextBlock
-                            x:Uid="AuthorTextBlock"
-                            Grid.Row="1"
-                            Grid.Column="0"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            FontWeight="Bold"
-                            TextWrapping="Wrap" />
-                        <TextBox
-                            Grid.Row="1"
-                            Grid.Column="1"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Stretch"
-                            BorderThickness="0"
-                            Text="{x:Bind MusicDetail.Author, Mode=TwoWay}"
-                            TextWrapping="Wrap" />
-
-                        <TextBlock
-                            x:Uid="AlbumTextBlock"
-                            Grid.Row="2"
-                            Grid.Column="0"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            FontWeight="Bold"
-                            TextWrapping="Wrap" />
-                        <TextBox
-                            Grid.Row="2"
-                            Grid.Column="1"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Stretch"
-                            BorderThickness="0"
-                            Text="{x:Bind MusicDetail.Album, Mode=TwoWay}"
-                            TextWrapping="Wrap" />
-
-                        <TextBlock
-                            x:Uid="YearTextBlock"
-                            Grid.Row="3"
-                            Grid.Column="0"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            FontWeight="Bold"
-                            TextWrapping="Wrap" />
-                        <NumberBox
-                            Grid.Row="3"
-                            Grid.Column="1"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Stretch"
-                            BorderThickness="0"
-                            Minimum="0"
-                            SmallChange="1"
-                            SpinButtonPlacementMode="Inline"
-                            Value="{x:Bind MusicDetail.Year, Mode=TwoWay}" />
-
-                        <TextBlock
-                            x:Uid="DiskNumberBox"
-                            Grid.Row="4"
-                            Grid.Column="0"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            FontWeight="Bold"
-                            TextWrapping="Wrap" />
-                        <NumberBox
-                            Grid.Row="4"
-                            Grid.Column="1"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Stretch"
-                            BorderThickness="0"
-                            Minimum="0"
-                            SmallChange="1"
-                            SpinButtonPlacementMode="Inline"
-                            Value="{x:Bind MusicDetail.DiskNumber, Mode=TwoWay}" />
-
-                        <TextBlock
-                            x:Uid="TrackNumberBox"
-                            Grid.Row="5"
-                            Grid.Column="0"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            FontWeight="Bold"
-                            TextWrapping="Wrap" />
-                        <NumberBox
-                            Grid.Row="5"
-                            Grid.Column="1"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Stretch"
-                            BorderThickness="0"
-                            Minimum="0"
-                            SmallChange="1"
-                            SpinButtonPlacementMode="Inline"
-                            Value="{x:Bind MusicDetail.TrackNumber, Mode=TwoWay}" />
-                        <TextBlock
-                            x:Uid="LyricsTimeOffsetTag"
-                            Grid.Row="6"
-                            Grid.Column="0"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Center"
-                            FontWeight="Bold"
-                            TextWrapping="Wrap" />
-                        <NumberBox
-                            Grid.Row="6"
-                            Grid.Column="1"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Stretch"
-                            BorderThickness="0"
-                            LargeChange="1000"
-                            Maximum="10000"
-                            Minimum="-10000"
-                            SmallChange="100"
-                            SpinButtonPlacementMode="Inline"
-                            Value="{x:Bind MusicDetail.LyricsOffsetMs, Mode=TwoWay}" />
-                        <Grid Grid.Row="7" Grid.Column="1">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <Grid Grid.Column="0">
-                                <Pivot Padding="0">
-                                    <PivotItem>
-                                        <PivotItem.Header>
-                                            <TextBlock FontSize="16" Text="Lrc" />
-                                        </PivotItem.Header>
-                                        <TextBox
-                                            Grid.Row="1"
-                                            Height="200"
-                                            Margin="0,5,0,5"
-                                            HorizontalAlignment="Stretch"
-                                            BorderThickness="0"
-                                            ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                            Text="{x:Bind LyricsText, Mode=TwoWay}"
-                                            TextWrapping="Wrap" />
-                                    </PivotItem>
-                                    <PivotItem>
-                                        <PivotItem.Header>
-                                            <TextBlock x:Uid="LrcTranslation" FontSize="16" />
-                                        </PivotItem.Header>
-                                        <TextBox
-                                            Grid.Row="2"
-                                            Height="200"
-                                            Margin="0,5,0,5"
-                                            HorizontalAlignment="Stretch"
-                                            BorderThickness="0"
-                                            ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                            Text="{x:Bind TranslatedLyricsText, Mode=TwoWay}"
-                                            TextWrapping="Wrap" />
-                                    </PivotItem>
-                                    <PivotItem>
-                                        <PivotItem.Header>
-                                            <TextBlock FontSize="16" Text="Krc" />
-                                        </PivotItem.Header>
-                                        <TextBox
-                                            Grid.Row="2"
-                                            Height="200"
-                                            Margin="0,5,0,5"
-                                            HorizontalAlignment="Stretch"
-                                            BorderThickness="0"
-                                            ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                            Text="{x:Bind KrcText, Mode=TwoWay}"
-                                            TextWrapping="Wrap" />
-                                    </PivotItem>
-                                    <PivotItem>
-                                        <PivotItem.Header>
-                                            <TextBlock x:Uid="KrcTranslation" FontSize="16" />
-                                        </PivotItem.Header>
-                                        <TextBox
-                                            Grid.Row="2"
-                                            Height="200"
-                                            Margin="0,5,0,5"
-                                            HorizontalAlignment="Stretch"
-                                            BorderThickness="0"
-                                            ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                            Text="{x:Bind TKrcText, Mode=TwoWay}"
-                                            TextWrapping="Wrap" />
-                                    </PivotItem>
-                                </Pivot>
-                            </Grid>
-                            <Grid
-                                Grid.Column="1"
-                                HorizontalAlignment="Stretch"
-                                VerticalAlignment="Center">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-                                <Button
-                                    Grid.Row="0"
-                                    Margin="0,5,5,5"
-                                    VerticalAlignment="Stretch"
-                                    Click="OpenFile_Click">
-                                    <Button.Content>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Grid>
-                                                <FontIcon FontSize="16" Glyph="&#xE838;" />
-                                            </Grid>
-                                        </StackPanel>
-                                    </Button.Content>
-                                </Button>
-                                <Button
-                                    Grid.Row="1"
-                                    Margin="0,5,5,5"
-                                    VerticalAlignment="Stretch"
-                                    Click="ReadLyricsFromFile_Click">
-                                    <Button.Content>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Grid>
-                                                <FontIcon FontSize="16" Glyph="&#xE72C;" />
-                                            </Grid>
-                                        </StackPanel>
-                                    </Button.Content>
-                                    <ToolTipService.ToolTip>
-                                        <ToolTip x:Uid="ReadLyricsFromFile" />
-                                    </ToolTipService.ToolTip>
-                                </Button>
-                                <Button
-                                    Grid.Row="2"
-                                    Margin="0,5,5,5"
-                                    VerticalAlignment="Stretch"
-                                    Click="SaveLyrics_Click">
-                                    <Button.Content>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Grid>
-                                                <FontIcon FontSize="16" Glyph="&#xE74E;" />
-                                            </Grid>
-                                        </StackPanel>
-                                    </Button.Content>
-                                    <ToolTipService.ToolTip>
-                                        <ToolTip x:Uid="SaveLyricsTextBox" />
-                                    </ToolTipService.ToolTip>
-                                </Button>
-                                <Button
-                                    Grid.Row="3"
-                                    Margin="0,5,5,5"
-                                    VerticalAlignment="Stretch"
-                                    Click="GetLyricsFromNet_Click">
-                                    <Button.Content>
-                                        <StackPanel Orientation="Horizontal">
-                                            <Grid>
-                                                <FontIcon FontSize="16" Glyph="&#xF385;" />
-                                                <FontIcon FontSize="16" Glyph="&#xF386;" />
-                                            </Grid>
-                                        </StackPanel>
-                                    </Button.Content>
-                                    <ToolTipService.ToolTip>
-                                        <ToolTip x:Uid="LyricsTextBox" />
-                                    </ToolTipService.ToolTip>
-                                </Button>
-                            </Grid>
-                        </Grid>
-                        <TextBlock
-                            x:Uid="DurationTextBlock"
-                            Grid.Row="8"
-                            Grid.Column="0"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Right"
-                            FontWeight="Bold"
-                            TextWrapping="Wrap" />
-                        <TextBlock
-                            Grid.Row="8"
-                            Grid.Column="1"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Left"
-                            Text="{x:Bind ConvertDuration(MusicDetail.Duration), Mode=OneWay}" />
-
-                        <TextBlock
-                            x:Uid="BitDepthTextBlock"
-                            Grid.Row="9"
-                            Grid.Column="0"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Right"
-                            FontWeight="Bold"
-                            TextWrapping="Wrap" />
-                        <TextBlock
-                            Grid.Row="9"
-                            Grid.Column="1"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Left"
-                            Text="{x:Bind ConvertBitDepth(MusicDetail.BitDepth), Mode=OneWay}" />
-
-                        <TextBlock
-                            x:Uid="BitRateTextBlock"
-                            Grid.Row="10"
-                            Grid.Column="0"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Right"
-                            FontWeight="Bold"
-                            TextWrapping="Wrap" />
-                        <TextBlock
-                            Grid.Row="10"
-                            Grid.Column="1"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Left"
-                            Text="{x:Bind ConvertBitRate(MusicDetail.BitRate), Mode=OneWay}" />
-
-                        <TextBlock
-                            x:Uid="SampleRateTextBlock"
-                            Grid.Row="11"
-                            Grid.Column="0"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Right"
-                            FontWeight="Bold"
-                            TextWrapping="Wrap" />
-                        <TextBlock
-                            Grid.Row="11"
-                            Grid.Column="1"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Left"
-                            Text="{x:Bind ConvertSampleRate(MusicDetail.SampleRate), Mode=OneWay}" />
-
-                        <TextBlock
-                            x:Uid="LastFolderNameTextBlock"
-                            Grid.Row="12"
-                            Grid.Column="0"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Right"
-                            FontWeight="Bold"
-                            TextWrapping="Wrap" />
-                        <TextBlock
-                            Grid.Row="12"
-                            Grid.Column="1"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Left"
-                            IsTextSelectionEnabled="True"
-                            Text="{x:Bind MusicDetail.LastLevelFolderPath, Mode=OneWay}"
-                            TextTrimming="WordEllipsis"
-                            TextWrapping="Wrap" />
-
-                        <TextBlock
-                            x:Uid="PathTextBlock"
-                            Grid.Row="13"
-                            Grid.Column="0"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Right"
-                            FontWeight="Bold"
-                            TextWrapping="Wrap" />
-                        <TextBlock
-                            Grid.Row="13"
-                            Grid.Column="1"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Left"
-                            IsTextSelectionEnabled="True"
-                            Text="{x:Bind MusicDetail.Path, Mode=OneWay}"
-                            TextTrimming="WordEllipsis"
-                            TextWrapping="Wrap" />
-
-                        <TextBlock
-                            x:Uid="CreateTime"
-                            Grid.Row="14"
-                            Grid.Column="0"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Right"
-                            FontWeight="Bold"
-                            TextWrapping="Wrap" />
-                        <TextBlock
-                            Grid.Row="14"
-                            Grid.Column="1"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Left"
-                            IsTextSelectionEnabled="True"
-                            Text="{x:Bind ConvertTime(MusicDetail.CreateTime), Mode=OneWay}"
-                            TextTrimming="WordEllipsis"
-                            TextWrapping="Wrap" />
-                        <TextBlock
-                            x:Uid="UpdateTime"
-                            Grid.Row="15"
-                            Grid.Column="0"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Right"
-                            FontWeight="Bold"
-                            TextWrapping="Wrap" />
-                        <TextBlock
-                            Grid.Row="15"
-                            Grid.Column="1"
-                            Margin="5,5,5,0"
-                            HorizontalAlignment="Left"
-                            IsTextSelectionEnabled="True"
-                            Text="{x:Bind ConvertTime(MusicDetail.UpdateTime), Mode=OneWay}"
-                            TextTrimming="WordEllipsis"
-                            TextWrapping="Wrap" />
-                    </Grid>
-                    <Grid Grid.Column="1" Margin="5">
-                        <StackPanel>
-                            <Border
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Top"
-                                CornerRadius="5">
-                                <Grid>
-                                    <Image Canvas.ZIndex="1" Source="{x:Bind AlbumCoverBitmap, Mode=TwoWay}" />
-                                    <Grid
-                                        HorizontalAlignment="Stretch"
-                                        VerticalAlignment="Stretch"
-                                        Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                                        Canvas.ZIndex="0">
-                                        <Viewbox Stretch="Uniform">
-                                            <Border
-                                                HorizontalAlignment="Stretch"
-                                                VerticalAlignment="Stretch"
-                                                Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}">
-                                                <!--  图标层  -->
-                                                <FontIcon
-                                                    Width="100"
-                                                    Height="100"
-                                                    HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center"
-                                                    Canvas.ZIndex="1"
-                                                    FontSize="50"
-                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                    Glyph="&#xE93C;" />
-                                            </Border>
-                                        </Viewbox>
-                                    </Grid>
-                                </Grid>
-                            </Border>
-                            <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                                <Button
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    Click="GetImageFromNet_Click">
-                                    <Button.Content>
-                                        <StackPanel Orientation="Horizontal">
-                                            <FontIcon FontSize="16" Glyph="&#xebd3;" />
-                                        </StackPanel>
-                                    </Button.Content>
-                                    <ToolTipService.ToolTip>
-                                        <ToolTip x:Uid="GetImageFromNetButton" />
-                                    </ToolTipService.ToolTip>
-                                </Button>
-                                <Button
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    Click="SaveImageButton_Click">
-                                    <Button.Content>
-                                        <StackPanel Orientation="Horizontal">
-                                            <FontIcon FontSize="16" Glyph="&#xe78c;" />
-                                        </StackPanel>
-                                    </Button.Content>
-                                    <ToolTipService.ToolTip>
-                                        <ToolTip x:Uid="SaveImageButton" />
-                                    </ToolTipService.ToolTip>
-                                </Button>
-                                <Button
-                                    Margin="5"
-                                    HorizontalAlignment="Center"
-                                    Click="SelectCoverImageButton_Click">
-                                    <Button.Content>
-                                        <StackPanel Orientation="Horizontal">
-                                            <FontIcon FontSize="16" Glyph="&#xe70f;" />
-                                        </StackPanel>
-                                    </Button.Content>
-                                    <ToolTipService.ToolTip>
-                                        <ToolTip x:Uid="SelectCoverImageButton" />
-                                    </ToolTipService.ToolTip>
-                                </Button>
-                            </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="0">
+                            <TextBlock
+                                x:Uid="LastFolderNameTextBlock"
+                                Margin="0,0,0,2"
+                                FontSize="12"
+                                Opacity="0.7" />
+                            <TextBlock
+                                IsTextSelectionEnabled="True"
+                                Text="{x:Bind MusicDetail.LastLevelFolderPath, Mode=OneWay}"
+                                TextTrimming="CharacterEllipsis"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="0" Grid.Column="1">
+                            <TextBlock
+                                x:Uid="PathTextBlock"
+                                Margin="0,0,0,2"
+                                FontSize="12"
+                                Opacity="0.7" />
+                            <TextBlock
+                                IsTextSelectionEnabled="True"
+                                Text="{x:Bind MusicDetail.Path, Mode=OneWay}"
+                                TextTrimming="CharacterEllipsis"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="0">
+                            <TextBlock
+                                x:Uid="CreateTime"
+                                Margin="0,0,0,2"
+                                FontSize="12"
+                                Opacity="0.7" />
+                            <TextBlock
+                                IsTextSelectionEnabled="True"
+                                Text="{x:Bind ConvertTime(MusicDetail.CreateTime), Mode=OneWay}"
+                                TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                        <StackPanel Grid.Row="1" Grid.Column="1">
+                            <TextBlock
+                                x:Uid="UpdateTime"
+                                Margin="0,0,0,2"
+                                FontSize="12"
+                                Opacity="0.7" />
+                            <TextBlock
+                                IsTextSelectionEnabled="True"
+                                Text="{x:Bind ConvertTime(MusicDetail.UpdateTime), Mode=OneWay}"
+                                TextTrimming="CharacterEllipsis" />
                         </StackPanel>
                     </Grid>
-                </Grid>
+
+                    <Grid Margin="0,4,12,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="12" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Pivot
+                            Grid.Column="0"
+                            Height="300"
+                            Padding="0,4,0,0">
+                            <PivotItem>
+                                <PivotItem.Header>
+                                    <TextBlock FontSize="14" Text="Lrc" />
+                                </PivotItem.Header>
+                                <TextBox
+                                    MinHeight="120"
+                                    Margin="0,4,0,0"
+                                    BorderThickness="0"
+                                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                    Text="{x:Bind LyricsText, Mode=TwoWay}"
+                                    TextWrapping="Wrap" />
+                            </PivotItem>
+                            <PivotItem>
+                                <PivotItem.Header>
+                                    <TextBlock x:Uid="LrcTranslation" FontSize="14" />
+                                </PivotItem.Header>
+                                <TextBox
+                                    MinHeight="120"
+                                    Margin="0,4,0,0"
+                                    BorderThickness="0"
+                                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                    Text="{x:Bind TranslatedLyricsText, Mode=TwoWay}"
+                                    TextWrapping="Wrap" />
+                            </PivotItem>
+                            <PivotItem>
+                                <PivotItem.Header>
+                                    <TextBlock FontSize="14" Text="Krc" />
+                                </PivotItem.Header>
+                                <TextBox
+                                    MinHeight="120"
+                                    Margin="0,4,0,0"
+                                    BorderThickness="0"
+                                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                    Text="{x:Bind KrcText, Mode=TwoWay}"
+                                    TextWrapping="Wrap" />
+                            </PivotItem>
+                            <PivotItem>
+                                <PivotItem.Header>
+                                    <TextBlock x:Uid="KrcTranslation" FontSize="14" />
+                                </PivotItem.Header>
+                                <TextBox
+                                    MinHeight="120"
+                                    Margin="0,4,0,0"
+                                    BorderThickness="0"
+                                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                    Text="{x:Bind TKrcText, Mode=TwoWay}"
+                                    TextWrapping="Wrap" />
+                            </PivotItem>
+                        </Pivot>
+                        <StackPanel
+                            Grid.Column="1"
+                            Margin="0"
+                            VerticalAlignment="Bottom"
+                            Spacing="4">
+                            <Button
+                                Width="36"
+                                Height="36"
+                                Padding="0"
+                                Click="OpenFile_Click">
+                                <FontIcon FontSize="14" Glyph="&#xE838;" />
+                            </Button>
+                            <Button
+                                Width="36"
+                                Height="36"
+                                Padding="0"
+                                Click="ReadLyricsFromFile_Click">
+                                <FontIcon FontSize="14" Glyph="&#xE72C;" />
+                                <ToolTipService.ToolTip>
+                                    <ToolTip x:Uid="ReadLyricsFromFile" />
+                                </ToolTipService.ToolTip>
+                            </Button>
+                            <Button
+                                Width="36"
+                                Height="36"
+                                Padding="0"
+                                Click="SaveLyrics_Click">
+                                <FontIcon FontSize="14" Glyph="&#xE74E;" />
+                                <ToolTipService.ToolTip>
+                                    <ToolTip x:Uid="SaveLyricsTextBox" />
+                                </ToolTipService.ToolTip>
+                            </Button>
+                            <Button
+                                Width="36"
+                                Height="36"
+                                Padding="0"
+                                Click="GetLyricsFromNet_Click">
+                                <Grid>
+                                    <FontIcon FontSize="14" Glyph="&#xF385;" />
+                                    <FontIcon FontSize="14" Glyph="&#xF386;" />
+                                </Grid>
+                                <ToolTipService.ToolTip>
+                                    <ToolTip x:Uid="LyricsTextBox" />
+                                </ToolTipService.ToolTip>
+                            </Button>
+                        </StackPanel>
+                        <Grid
+                            Grid.Column="3"
+                            Width="244"
+                            Height="244"
+                            Margin="0,56,0,0"
+                            VerticalAlignment="Top">
+                            <Border Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}" CornerRadius="6">
+                                <Grid>
+                                    <FontIcon
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        FontSize="80"
+                                        Glyph="&#xE93C;"
+                                        Opacity="0.3" />
+                                    <Image Source="{x:Bind AlbumCoverBitmap, Mode=TwoWay}" Stretch="Uniform" />
+                                    <StackPanel
+                                        Margin="0,0,8,8"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Bottom"
+                                        Orientation="Horizontal"
+                                        Spacing="6">
+                                        <Button
+                                            Width="32"
+                                            Height="32"
+                                            Padding="0"
+                                            Click="GetImageFromNet_Click">
+                                            <FontIcon FontSize="14" Glyph="&#xebd3;" />
+                                            <ToolTipService.ToolTip>
+                                                <ToolTip x:Uid="GetImageFromNetButton" />
+                                            </ToolTipService.ToolTip>
+                                        </Button>
+                                        <Button
+                                            Width="32"
+                                            Height="32"
+                                            Padding="0"
+                                            Click="SaveImageButton_Click">
+                                            <FontIcon FontSize="14" Glyph="&#xe78c;" />
+                                            <ToolTipService.ToolTip>
+                                                <ToolTip x:Uid="SaveImageButton" />
+                                            </ToolTipService.ToolTip>
+                                        </Button>
+                                        <Button
+                                            Width="32"
+                                            Height="32"
+                                            Padding="0"
+                                            Click="SelectCoverImageButton_Click">
+                                            <FontIcon FontSize="14" Glyph="&#xe70f;" />
+                                            <ToolTipService.ToolTip>
+                                                <ToolTip x:Uid="SelectCoverImageButton" />
+                                            </ToolTipService.ToolTip>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </Grid>
+                    </Grid>
+                </StackPanel>
             </ScrollViewer>
+
             <StackPanel
+                Grid.Row="1"
+                Margin="14,4,14,12"
+                HorizontalAlignment="Right"
                 Orientation="Horizontal"
-                RelativePanel.AlignBottomWithPanel="True"
-                RelativePanel.AlignRightWithPanel="True">
-                <Button x:Uid="SaveButton" Margin="5">
+                Spacing="8">
+                <Button x:Uid="SaveButton">
                     <Button.Flyout>
                         <Flyout x:Name="ConfirmFlyout">
                             <StackPanel>
@@ -590,16 +461,9 @@
                         </Flyout>
                     </Button.Flyout>
                 </Button>
-                <Button
-                    x:Uid="SaveToDataBase"
-                    Margin="5"
-                    Click="SaveToDataBaseButton_Click" />
-                <Button
-                    x:Uid="CloseButtonItem"
-                    Margin="5"
-                    Click="CloseButton_Click" />
+                <Button x:Uid="SaveToDataBase" Click="SaveToDataBaseButton_Click" />
+                <Button x:Uid="CloseButtonItem" Click="CloseButton_Click" />
             </StackPanel>
-
-        </RelativePanel>
+        </Grid>
     </Grid>
 </winex:WindowEx>

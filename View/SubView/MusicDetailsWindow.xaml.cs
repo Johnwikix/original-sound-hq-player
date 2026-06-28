@@ -169,7 +169,7 @@ namespace WinUIMusicPlayer.View.SubView
         private void setWindow()
         {
             hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
-            WindowSizeHelper.ResizeWindowAndCenterInMainWindow(hwnd, 850, 650, App.MainWindow.AppWindow, this.AppWindow);
+            WindowSizeHelper.ResizeWindowAndCenterInMainWindow(hwnd, 850, 700, App.MainWindow.AppWindow, this.AppWindow);
             this.AppWindow.SetIcon("Assets/icon.ico");
             NotificationService = App.Services.GetRequiredService<NotificationService>();
         }

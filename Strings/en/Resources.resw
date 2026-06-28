@@ -724,6 +724,9 @@
   <data name="BackgroundShader_WavyBackground.Content" xml:space="preserve">
     <value>Wavy Background</value>
   </data>
+  <data name="BackgroundShader_ChromaticResonance.Content" xml:space="preserve">
+    <value>Palette Streams</value>
+  </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>Retrieve lyrics</value>
   </data>

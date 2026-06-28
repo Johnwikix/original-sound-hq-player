@@ -724,6 +724,9 @@
   <data name="BackgroundShader_WavyBackground.Content" xml:space="preserve">
     <value>ウェーブ背景</value>
   </data>
+  <data name="BackgroundShader_ChromaticResonance.Content" xml:space="preserve">
+    <value>パレット流光</value>
+  </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>歌詞を再取得する</value>
   </data>
