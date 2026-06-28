@@ -374,12 +374,49 @@
                                 </ToolTipService.ToolTip>
                             </Button>
                         </StackPanel>
-                        <Grid
+                        <StackPanel
                             Grid.Column="3"
                             Width="244"
-                            Height="244"
-                            Margin="0,56,0,0"
+                            Height="284"
+                            Margin="0,16,0,0"
                             VerticalAlignment="Top">
+                            <StackPanel
+                                Margin="0,0,8,0"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Bottom"
+                                Orientation="Horizontal"
+                                Spacing="6">
+                                <Button
+                                    Width="32"
+                                    Height="32"
+                                    Padding="0"
+                                    Click="GetImageFromNet_Click">
+                                    <FontIcon FontSize="14" Glyph="&#xebd3;" />
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip x:Uid="GetImageFromNetButton" />
+                                    </ToolTipService.ToolTip>
+                                </Button>
+                                <Button
+                                    Width="32"
+                                    Height="32"
+                                    Padding="0"
+                                    Click="SaveImageButton_Click">
+                                    <FontIcon FontSize="14" Glyph="&#xe78c;" />
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip x:Uid="SaveImageButton" />
+                                    </ToolTipService.ToolTip>
+                                </Button>
+                                <Button
+                                    Width="32"
+                                    Height="32"
+                                    Padding="0"
+                                    Click="SelectCoverImageButton_Click">
+                                    <FontIcon FontSize="14" Glyph="&#xe70f;" />
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip x:Uid="SelectCoverImageButton" />
+                                    </ToolTipService.ToolTip>
+                                </Button>
+                            </StackPanel>
                             <Border Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}" CornerRadius="6">
                                 <Grid>
                                     <FontIcon
@@ -389,46 +426,9 @@
                                         Glyph="&#xE93C;"
                                         Opacity="0.3" />
                                     <Image Source="{x:Bind AlbumCoverBitmap, Mode=TwoWay}" Stretch="Uniform" />
-                                    <StackPanel
-                                        Margin="0,0,8,8"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Bottom"
-                                        Orientation="Horizontal"
-                                        Spacing="6">
-                                        <Button
-                                            Width="32"
-                                            Height="32"
-                                            Padding="0"
-                                            Click="GetImageFromNet_Click">
-                                            <FontIcon FontSize="14" Glyph="&#xebd3;" />
-                                            <ToolTipService.ToolTip>
-                                                <ToolTip x:Uid="GetImageFromNetButton" />
-                                            </ToolTipService.ToolTip>
-                                        </Button>
-                                        <Button
-                                            Width="32"
-                                            Height="32"
-                                            Padding="0"
-                                            Click="SaveImageButton_Click">
-                                            <FontIcon FontSize="14" Glyph="&#xe78c;" />
-                                            <ToolTipService.ToolTip>
-                                                <ToolTip x:Uid="SaveImageButton" />
-                                            </ToolTipService.ToolTip>
-                                        </Button>
-                                        <Button
-                                            Width="32"
-                                            Height="32"
-                                            Padding="0"
-                                            Click="SelectCoverImageButton_Click">
-                                            <FontIcon FontSize="14" Glyph="&#xe70f;" />
-                                            <ToolTipService.ToolTip>
-                                                <ToolTip x:Uid="SelectCoverImageButton" />
-                                            </ToolTipService.ToolTip>
-                                        </Button>
-                                    </StackPanel>
                                 </Grid>
                             </Border>
-                        </Grid>
+                        </StackPanel>
                     </Grid>
                 </StackPanel>
             </ScrollViewer>

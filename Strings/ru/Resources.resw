@@ -725,7 +725,7 @@
     <value>Волновой фон</value>
   </data>
   <data name="BackgroundShader_ChromaticResonance.Content" xml:space="preserve">
-    <value>Потоки палитры</value>
+    <value>Цветные полосы</value>
   </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>Повторно получить текст песни</value>

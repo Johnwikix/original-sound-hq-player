@@ -725,7 +725,7 @@
     <value>Welliger Hintergrund</value>
   </data>
   <data name="BackgroundShader_ChromaticResonance.Content" xml:space="preserve">
-    <value>Palette-Strömung</value>
+    <value>Farbbänder</value>
   </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>Songtext erneut abrufen</value>

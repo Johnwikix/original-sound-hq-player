@@ -725,7 +725,7 @@
     <value>波浪背景</value>
   </data>
   <data name="BackgroundShader_ChromaticResonance.Content" xml:space="preserve">
-    <value>调色板流光</value>
+    <value>色彩光带</value>
   </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>重新获取歌词</value>

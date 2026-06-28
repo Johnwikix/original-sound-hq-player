@@ -139,11 +139,13 @@ namespace AnimatedWin2dControls.Shaders.Background
             // 暗模式 dim 权重 0.1（背景压暗）+ 线条 brightCap 0.6（峰值不冲白）
             // 浅色模式 dim 权重 0.5 + 线条 brightCap 1.0（保持原观感）
             const float thres = 0.45f;
-            float floorAmt = isDark ? 0.01f : 0.5f;
-            float brightCap = isDark ? 0.5f : 1.0f;
+            float floorAmt = isDark ? 0.0f : 0.5f;
+            float brightCap = isDark ? 0.45f : 1.0f;
             float3 col;
             if (lum < thres)
-                col = hue * (floorAmt + (1f - floorAmt) * lum / thres);
+            {
+                col = hue * (floorAmt + ((1f - floorAmt) * lum / thres));
+            }
             else
             {
                 float lumPast = (lum - thres) * brightCap;

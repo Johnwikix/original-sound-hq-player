@@ -725,7 +725,7 @@
     <value>Fondo Ondulado</value>
   </data>
   <data name="BackgroundShader_ChromaticResonance.Content" xml:space="preserve">
-    <value>Flujos de Paleta</value>
+    <value>Bandas de Color</value>
   </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>Obtener nuevamente la letra de la canción</value>
