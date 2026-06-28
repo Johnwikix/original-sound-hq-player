@@ -1016,7 +1016,13 @@
     <value>歌詞タイムオフセット</value>
   </data>
   <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
-    <value>高度な一語ずつ歌詞エフェクトを有効にする</value>
+    <value>�߶Ȥ�һ�Z���ĸ��~���ե����Ȥ��Є��ˤ���</value>
+  </data>
+  <data name="EnableCustomLyricsColor.Text" xml:space="preserve">
+    <value>Custom Lyrics Color</value>
+  </data>
+  <data name="EnableCustomLyricsColorHint.Text" xml:space="preserve">
+    <value>For Advanced Lyrics only</value>
   </data>
   <data name="SettingsContent.Content" xml:space="preserve">
     <value>設定</value>

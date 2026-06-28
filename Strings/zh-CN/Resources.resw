@@ -1018,6 +1018,12 @@
   <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
     <value>启用高级逐字歌词特效</value>
   </data>
+  <data name="EnableCustomLyricsColor.Text" xml:space="preserve">
+    <value>自定义歌词颜色</value>
+  </data>
+  <data name="EnableCustomLyricsColorHint.Text" xml:space="preserve">
+    <value>仅高级歌词生效</value>
+  </data>
   <data name="SettingsContent.Content" xml:space="preserve">
     <value>设置</value>
   </data>

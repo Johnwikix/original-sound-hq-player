@@ -1016,7 +1016,13 @@
     <value>Смещение времени текста песни</value>
   </data>
   <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
-    <value>Включить расширенные эффекты по словесному тексту песни</value>
+    <value>���ܧݧ��ڧ�� ��ѧ��ڧ�֧ߧߧ��� ����֧ܧ�� ��� ��ݧ�ӧ֧�ߧ�ާ� ��֧ܧ��� ��֧�ߧ�</value>
+  </data>
+  <data name="EnableCustomLyricsColor.Text" xml:space="preserve">
+    <value>Custom Lyrics Color</value>
+  </data>
+  <data name="EnableCustomLyricsColorHint.Text" xml:space="preserve">
+    <value>For Advanced Lyrics only</value>
   </data>
   <data name="SettingsContent.Content" xml:space="preserve">
     <value>Настройки</value>

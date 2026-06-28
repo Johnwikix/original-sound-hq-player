@@ -467,10 +467,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    AppSettings.CustomColorAlpha = value.A;
-                    AppSettings.CustomColorRed = value.R;
-                    AppSettings.CustomColorGreen = value.G;
-                    AppSettings.CustomColorBlue = value.B;
+                    AppSettings.CustomColorArgb = (uint)((value.A << 24) | (value.R << 16) | (value.G << 8) | value.B);
                     if (IsInitialized)
                     {
                         App.MainWindow?.SetCustomAppStyle();
@@ -478,7 +475,40 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = Color.FromArgb(255, 128, 128, 128);
+        } = Color.FromArgb(0xFF, 0x80, 0x80, 0x80);
+
+        public bool IsCustomLyricsColorEnabled
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        ScheduleSettingsBroadcast();
+                    }
+                }
+            }
+        } = false;
+
+        public Color LyricsCustomColor
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    AppSettings.LyricsCustomColorRgb = (uint)((value.R << 16) | (value.G << 8) | value.B);
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        ScheduleSettingsBroadcast();
+                    }
+                }
+            }
+        } = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
 
         public float CustomOpacity
         {

@@ -1,6 +1,7 @@
 using System;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
 using Microsoft.Graphics.Canvas.Text;
+using Windows.UI;
 
 namespace AnimatedWin2dControls.Messages;
 
@@ -26,6 +27,8 @@ public static class LyricsSettingsBus
         public readonly EaseMode ScrollEasingMode;
         public readonly double PlayingLineTopOffset;
         public readonly double TargetFrameRate;
+        public readonly bool IsCustomColorEnabled;
+        public readonly Color LyricsCustomColor;
 
         public Settings(
             string fontFamilyName,
@@ -45,7 +48,9 @@ public static class LyricsSettingsBus
             EasingType scrollEasingType,
             EaseMode scrollEasingMode,
             double playingLineTopOffset,
-            double targetFrameRate)
+            double targetFrameRate,
+            bool isCustomColorEnabled,
+            Color lyricsCustomColor)
         {
             FontFamilyName = fontFamilyName;
             LyricsTextAlignment = lyricsTextAlignment;
@@ -65,6 +70,8 @@ public static class LyricsSettingsBus
             ScrollEasingMode = scrollEasingMode;
             PlayingLineTopOffset = playingLineTopOffset;
             TargetFrameRate = targetFrameRate;
+            IsCustomColorEnabled = isCustomColorEnabled;
+            LyricsCustomColor = lyricsCustomColor;
         }
     }
 

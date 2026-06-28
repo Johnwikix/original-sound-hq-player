@@ -224,7 +224,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 Canvas.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / s.TargetFrameRate);
 
             bool isDark = s.IsDark;
-            if (isDark)
+            if (s.IsCustomColorEnabled)
+            {
+                _playedColor = s.LyricsCustomColor;
+                _unplayedColor = s.LyricsCustomColor;
+            }
+            else if (isDark)
             {
                 _playedColor = Colors.White;
                 _unplayedColor = Colors.White;

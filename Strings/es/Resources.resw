@@ -1018,6 +1018,12 @@
   <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
     <value>Habilitar efectos avanzados de letra palabra por palabra</value>
   </data>
+  <data name="EnableCustomLyricsColor.Text" xml:space="preserve">
+    <value>Custom Lyrics Color</value>
+  </data>
+  <data name="EnableCustomLyricsColorHint.Text" xml:space="preserve">
+    <value>For Advanced Lyrics only</value>
+  </data>
   <data name="SettingsContent.Content" xml:space="preserve">
     <value>Configuración</value>
   </data>

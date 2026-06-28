@@ -1290,6 +1290,45 @@
                                     </ComboBox.ItemTemplate>
                                 </ComboBox>
                             </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock x:Uid="EnableCustomLyricsColor" FontSize="14" />
+                                    <TextBlock
+                                        x:Uid="EnableCustomLyricsColorHint"
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.IsCustomLyricsColorEnabled, Mode=TwoWay}" />
+                            </Grid>
+
+                            <StackPanel
+                                Padding="58,8,44,8"
+                                Visibility="{x:Bind ViewModel.AppViewModel.IsCustomLyricsColorEnabled, Mode=OneWay}">
+                                <ColorPicker
+                                    HorizontalAlignment="Left"
+                                    ColorSpectrumShape="Ring"
+                                    IsAlphaEnabled="False"
+                                    IsAlphaSliderVisible="False"
+                                    IsAlphaTextInputVisible="False"
+                                    IsColorChannelTextInputVisible="True"
+                                    IsColorSliderVisible="True"
+                                    IsHexInputVisible="False"
+                                    IsMoreButtonVisible="True"
+                                    Color="{x:Bind ViewModel.AppViewModel.LyricsCustomColor, Mode=TwoWay}" />
+                            </StackPanel>
                         </StackPanel>
                     </Expander.Content>
                 </Expander>

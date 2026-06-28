@@ -812,10 +812,16 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.FontFamilyList = new ObservableCollection<FontInfo>(ToolUtils.GetSystemFontsInternal());
                 AppViewModel.FontFamily = AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(new FontFamily(settings.GlobalFont).Source));
                 AppViewModel.CustomOpacity = settings.CustomAcrylicOpacity;
-                AppViewModel.CustomColor = Color.FromArgb(settings.CustomColorAlpha,
-                                                  settings.CustomColorRed,
-                                                 settings.CustomColorGreen,
-                                                 settings.CustomColorBlue);
+                AppViewModel.CustomColor = Color.FromArgb(
+                    (byte)((settings.CustomColorArgb >> 24) & 0xFF),
+                    (byte)((settings.CustomColorArgb >> 16) & 0xFF),
+                    (byte)((settings.CustomColorArgb >> 8) & 0xFF),
+                    (byte)(settings.CustomColorArgb & 0xFF));
+                AppViewModel.IsCustomLyricsColorEnabled = settings.IsCustomLyricsColorEnabled;
+                AppViewModel.LyricsCustomColor = Color.FromArgb(0xFF,
+                    (byte)((settings.LyricsCustomColorRgb >> 16) & 0xFF),
+                    (byte)((settings.LyricsCustomColorRgb >> 8) & 0xFF),
+                    (byte)(settings.LyricsCustomColorRgb & 0xFF));
                 AppViewModel.IsUpdateBackDrop = settings.IsUpdateBackDrop;
                 AppViewModel.LyricsAlignment = settings.LyricsAlignment;
                 AppViewModel.LyricsMargin = new Thickness(settings.LyricsMargin, 0, settings.LyricsMargin, 0);
@@ -923,10 +929,9 @@ namespace WinUIMusicPlayer.Services
             newSettings.AppWidth = AppViewModel.AppWidth;
             newSettings.GlobalFont = AppViewModel.FontFamily.FontFamily.Source;
             newSettings.CustomAcrylicOpacity = AppViewModel.CustomOpacity;
-            newSettings.CustomColorAlpha = AppViewModel.CustomColor.A;
-            newSettings.CustomColorRed = AppViewModel.CustomColor.R;
-            newSettings.CustomColorGreen = AppViewModel.CustomColor.G;
-            newSettings.CustomColorBlue = AppViewModel.CustomColor.B;
+            newSettings.CustomColorArgb = (uint)((AppViewModel.CustomColor.A << 24) | (AppViewModel.CustomColor.R << 16) | (AppViewModel.CustomColor.G << 8) | AppViewModel.CustomColor.B);
+            newSettings.IsCustomLyricsColorEnabled = AppViewModel.IsCustomLyricsColorEnabled;
+            newSettings.LyricsCustomColorRgb = (uint)((AppViewModel.LyricsCustomColor.R << 16) | (AppViewModel.LyricsCustomColor.G << 8) | AppViewModel.LyricsCustomColor.B);
             newSettings.IsUpdateBackDrop = AppViewModel.IsUpdateBackDrop;
             newSettings.LyricsAlignment = AppViewModel.LyricsAlignment;
             newSettings.LyricsMargin = (int)AppViewModel.LyricsMargin.Left;

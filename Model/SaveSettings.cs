@@ -19,10 +19,9 @@ namespace WinUIMusicPlayer.Model
         public string DefaultPlayList { get; set; } = "song";
         public string AppStyle { get; set; } = "TransparentAcrylic";
         public float CustomAcrylicOpacity { get; set; } = 0.5f;
-        public byte CustomColorAlpha { get; set; } = 255;
-        public byte CustomColorRed { get; set; } = 128;
-        public byte CustomColorGreen { get; set; } = 128;
-        public byte CustomColorBlue { get; set; } = 128;
+        public uint CustomColorArgb { get; set; } = 0xFF808080u;
+        public uint LyricsCustomColorRgb { get; set; } = 0x00FFFFFFu;
+        public bool IsCustomLyricsColorEnabled { get; set; } = false;
         public string AppTheme { get; set; } = "Default";
         public float LyricsBlurAmount { get; set; } = 5f;
         public bool IsRunningBackend { get; set; } = true;

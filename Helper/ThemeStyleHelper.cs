@@ -102,19 +102,19 @@ namespace WinUIMusicPlayer.Helper
                         {
                             backdrop.UpdateProperties(1.0,
                                             AppSettings.CustomAcrylicOpacity,
-                                            Color.FromArgb(AppSettings.CustomColorAlpha,
-                                                AppSettings.CustomColorRed,
-                                                AppSettings.CustomColorGreen,
-                                                AppSettings.CustomColorBlue));
+                                            Color.FromArgb((byte)(AppSettings.CustomColorArgb >> 24),
+                                                (byte)(AppSettings.CustomColorArgb >> 16),
+                                                (byte)(AppSettings.CustomColorArgb >> 8),
+                                                (byte)AppSettings.CustomColorArgb));
                         }
                         else
                         {
                             _acrylicSystemBackdrop.TintOpacity = 1.0;
                             _acrylicSystemBackdrop.LuminosityOpacity = AppSettings.CustomAcrylicOpacity;
-                            _acrylicSystemBackdrop.TintColor = Color.FromArgb(AppSettings.CustomColorAlpha,
-                                                        AppSettings.CustomColorRed,
-                                                        AppSettings.CustomColorGreen,
-                                                        AppSettings.CustomColorBlue);
+                            _acrylicSystemBackdrop.TintColor = Color.FromArgb((byte)(AppSettings.CustomColorArgb >> 24),
+                                                        (byte)(AppSettings.CustomColorArgb >> 16),
+                                                        (byte)(AppSettings.CustomColorArgb >> 8),
+                                                        (byte)AppSettings.CustomColorArgb);
                             _window.SystemBackdrop = _acrylicSystemBackdrop;
                         }
                         break;
@@ -141,10 +141,10 @@ namespace WinUIMusicPlayer.Helper
                 {
                     backdrop.UpdateProperties(1.0,
                         AppSettings.CustomAcrylicOpacity,
-                        Color.FromArgb(AppSettings.CustomColorAlpha,
-                            AppSettings.CustomColorRed,
-                            AppSettings.CustomColorGreen,
-                            AppSettings.CustomColorBlue));
+                        Color.FromArgb((byte)(AppSettings.CustomColorArgb >> 24),
+                            (byte)(AppSettings.CustomColorArgb >> 16),
+                            (byte)(AppSettings.CustomColorArgb >> 8),
+                            (byte)AppSettings.CustomColorArgb));
                     CustomStyleChanged?.Invoke(this, EventArgs.Empty);
                 }
             }

@@ -1344,7 +1344,9 @@ namespace WinUIMusicPlayer.ViewModel
                 scrollEasingType: AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance.EasingType.Sine,
                 scrollEasingMode: AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance.EaseMode.Out,
                 playingLineTopOffset: PlayingLineTopOffsetPercent / 100.0,
-                targetFrameRate: TargetFrameRate));
+                targetFrameRate: TargetFrameRate,
+                isCustomColorEnabled: IsCustomLyricsColorEnabled,
+                lyricsCustomColor: LyricsCustomColor));
         }
 
         private void SendLyricsFontSize()
