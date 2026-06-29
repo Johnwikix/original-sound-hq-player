@@ -837,6 +837,54 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = false;
 
+        public bool EnableGlobalHotKey
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    AppSettings.EnableGlobalHotKey = value;
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        InitHotKeys();
+                    }
+                }
+            }
+        } = false;
+
+        public bool HasGlobalHotKeyConflict
+        {
+            get => field;
+            private set => SetProperty(ref field, value);
+        } = false;
+
+        public string GlobalHotKeyConflictTitle
+        {
+            get => field;
+            private set => SetProperty(ref field, value);
+        } = string.Empty;
+
+        private void OnGlobalHotKeyConflictsChanged(object? sender, EventArgs e)
+        {
+            bool any = GlobalHotKeyHook.Conflicts.Count > 0;
+            if (HasGlobalHotKeyConflict != any)
+            {
+                HasGlobalHotKeyConflict = any;
+            }
+            if (any)
+            {
+                string format = ToolUtils.GetString("GlobalHotKeyConflictTitleFormat");
+                string list = string.Join(", ", GlobalHotKeyHook.Conflicts);
+                GlobalHotKeyConflictTitle = string.Format(format, list);
+            }
+            else
+            {
+                GlobalHotKeyConflictTitle = string.Empty;
+            }
+        }
+
         public List<string> PlayOrPauseShortcut
         {
             get;
@@ -847,10 +895,13 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
-                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.PlayOrPauseSong, value, () =>
+                        if (EnableGlobalHotKey)
                         {
-                            App.Services.GetRequiredService<MusicBrowseViewModel>().PlayButton_Click();
-                        });
+                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.PlayOrPauseSong, value, () =>
+                            {
+                                App.Services.GetRequiredService<MusicBrowseViewModel>().PlayButton_Click();
+                            });
+                        }
                     }
                 }
             }
@@ -866,10 +917,13 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
-                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.NextSong, value, () =>
+                        if (EnableGlobalHotKey)
                         {
-                            App.Services.GetRequiredService<MusicBrowseViewModel>().NextMusicButton_Click();
-                        });
+                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.NextSong, value, () =>
+                            {
+                                App.Services.GetRequiredService<MusicBrowseViewModel>().NextMusicButton_Click();
+                            });
+                        }
                     }
                 }
             }
@@ -885,10 +939,13 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
-                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.PreviousSong, value, () =>
+                        if (EnableGlobalHotKey)
                         {
-                            App.Services.GetRequiredService<MusicBrowseViewModel>().LastMusicButton_Click();
-                        });
+                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.PreviousSong, value, () =>
+                            {
+                                App.Services.GetRequiredService<MusicBrowseViewModel>().LastMusicButton_Click();
+                            });
+                        }
                     }
                 }
             }
@@ -904,10 +961,13 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
-                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.VolumeUp, value, () =>
+                        if (EnableGlobalHotKey)
                         {
-                            AdjustVolume(5);
-                        });
+                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.VolumeUp, value, () =>
+                            {
+                                AdjustVolume(5);
+                            });
+                        }
                     }
                 }
             }
@@ -923,10 +983,13 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
-                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.VolumeDown, value, () =>
+                        if (EnableGlobalHotKey)
                         {
-                            AdjustVolume(-5);
-                        });
+                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.VolumeDown, value, () =>
+                            {
+                                AdjustVolume(-5);
+                            });
+                        }
                     }
                 }
             }
@@ -942,15 +1005,18 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
-                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.TogglePlayingDetail, value, () =>
+                        if (EnableGlobalHotKey)
                         {
-                            if (App.MainWindow is not { Visible: true }) return;
-                            var mainPage = App.Services.GetRequiredService<MainPage>();
-                            if (mainPage.IsPlayingDetailVisible)
-                                mainPage.NavigatebackToMusicBrowsePage();
-                            else
-                                mainPage.NavigateToPlayingDetailPage();
-                        });
+                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.TogglePlayingDetail, value, () =>
+                            {
+                                if (App.MainWindow is not { Visible: true }) return;
+                                var mainPage = App.Services.GetRequiredService<MainPage>();
+                                if (mainPage.IsPlayingDetailVisible)
+                                    mainPage.NavigatebackToMusicBrowsePage();
+                                else
+                                    mainPage.NavigateToPlayingDetailPage();
+                            });
+                        }
                     }
                 }
             }
@@ -966,11 +1032,14 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
-                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.Back, value, () =>
+                        if (EnableGlobalHotKey)
                         {
-                            if (App.MainWindow is not { Visible: true }) return;
-                            App.Services.GetRequiredService<MainPage>().HandleBackNavigation();
-                        });
+                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.Back, value, () =>
+                            {
+                                if (App.MainWindow is not { Visible: true }) return;
+                                App.Services.GetRequiredService<MainPage>().HandleBackNavigation();
+                            });
+                        }
                     }
                 }
             }
@@ -986,10 +1055,13 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
-                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.ShowWindow, value, () =>
+                        if (EnableGlobalHotKey)
                         {
-                            App.MainWindow?.ToggleShowHide();
-                        });
+                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.ShowWindow, value, () =>
+                            {
+                                App.MainWindow?.ToggleShowHide();
+                            });
+                        }
                     }
                 }
             }
@@ -1005,11 +1077,14 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
-                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.ToggleFullScreen, value, () =>
+                        if (EnableGlobalHotKey)
                         {
-                            if (App.MainWindow is not { Visible: true }) return;
-                            ToggleFullScreen();
-                        });
+                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.ToggleFullScreen, value, () =>
+                            {
+                                if (App.MainWindow is not { Visible: true }) return;
+                                ToggleFullScreen();
+                            });
+                        }
                     }
                 }
             }
@@ -1019,6 +1094,12 @@ namespace WinUIMusicPlayer.ViewModel
         {
             var window = App.MainWindow;
             if (window is null) return;
+
+            GlobalHotKeyHook.ConflictsChanged -= OnGlobalHotKeyConflictsChanged;
+            GlobalHotKeyHook.ConflictsChanged += OnGlobalHotKeyConflictsChanged;
+            GlobalHotKeyHook.ClearAll(window);
+
+            if (!EnableGlobalHotKey) return;
 
             GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.PlayOrPauseSong, PlayOrPauseShortcut, () =>
             {

@@ -855,6 +855,8 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.TogglePlayingDetailShortcut = settings.TogglePlayingDetailShortcut;
                 AppViewModel.BackShortcut = settings.BackShortcut;
                 AppViewModel.ShowWindowShortcut = settings.ShowWindowShortcut;
+                AppSettings.EnableGlobalHotKey = settings.EnableGlobalHotKey;
+                AppViewModel.EnableGlobalHotKey = settings.EnableGlobalHotKey;
                 LoadSettingsToAppViewModel();
             }
         }
@@ -965,6 +967,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.TogglePlayingDetailShortcut = AppViewModel.TogglePlayingDetailShortcut;
             newSettings.BackShortcut = AppViewModel.BackShortcut;
             newSettings.ShowWindowShortcut = AppViewModel.ShowWindowShortcut;
+            newSettings.EnableGlobalHotKey = AppViewModel.EnableGlobalHotKey;
             return newSettings;
         }
 

@@ -1090,4 +1090,16 @@
   <data name="SettingsPageToggleFullScreenShortcut.Text" xml:space="preserve">
     <value>Alternar pantalla completa</value>
   </data>
+<data name="SettingsPageEnableGlobalHotKey.Text" xml:space="preserve">
+    <value>Atajos globales</value>
+  </data>
+  <data name="SettingsPageEnableGlobalHotKeyDescription.Text" xml:space="preserve">
+    <value>Desactivado: solo responde cuando esta ventana est\u00E1 enfocada. Activado: funciona minimizado pero puede anular otros programas.</value>
+  </data>
+  <data name="GlobalHotKeyConflictTitleFormat" xml:space="preserve">
+    <value>Atajo global ocupado: {0}</value>
+  </data>
 </root>
+
+
+

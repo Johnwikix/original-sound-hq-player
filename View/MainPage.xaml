@@ -89,7 +89,6 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <!--  ThumbToolTipValueConverter 鍦╝ot涓嬫姤閿?  -->
                 <Grid Grid.Row="0" Margin="0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -563,6 +562,23 @@
                                 </Grid>
                             </TeachingTip.Content>
                         </TeachingTip>
+                        <Button
+                            Margin="10,0,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            Command="{x:Bind ViewModel.AppViewModel.FullScreenButtonChangedCommand, Mode=OneWay}"
+                            Style="{StaticResource MenuButtonStyle}">
+                            <FontIcon
+                                x:Name="FullScreenIcon"
+                                Grid.Column="0"
+                                Margin="0"
+                                VerticalAlignment="Center"
+                                FontSize="16"
+                                Glyph="{x:Bind ViewModel.AppViewModel.IsFullScreen, Converter={StaticResource FullScreenIconConverter}, Mode=OneWay}" />
+                        </Button>
                         <Button
                             x:Name="PlayModeButton"
                             Margin="10"

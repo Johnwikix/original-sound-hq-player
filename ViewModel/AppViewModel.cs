@@ -1404,5 +1404,11 @@ namespace WinUIMusicPlayer.ViewModel
         {
             IsPlayDetailButtonVisible = !IsPlayDetailButtonVisible;
         }
+
+        [RelayCommand]
+        private void OnFullScreenButtonChanged()
+        {
+            ToggleFullScreen();
+        }
     }
 }

@@ -30,12 +30,6 @@ namespace WinUIMusicPlayer.ViewModel.Pages
         }
 
         [RelayCommand]
-        private void OnFullScreenButtonChanged()
-        {
-            AppViewModel.ToggleFullScreen();
-        }
-
-        [RelayCommand]
         public void OnPlayButtonChanged()
         {
             PlayButton_Click();

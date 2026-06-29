@@ -1090,4 +1090,17 @@
   <data name="SettingsPageToggleFullScreenShortcut.Text" xml:space="preserve">
     <value>切换全屏</value>
   </data>
+<data name="SettingsPageEnableGlobalHotKey.Text" xml:space="preserve">
+    <value>全局快捷键</value>
+  </data>
+  <data name="SettingsPageEnableGlobalHotKeyDescription.Text" xml:space="preserve">
+    <value>关闭时仅本程序前台响应；开启后可在最小化时控制，但可能占用其他程序的快捷键</value>
+  </data>
+  <data name="GlobalHotKeyConflictTitleFormat" xml:space="preserve">
+    <value>全局快捷键被占用：{0}</value>
+  </data>
 </root>
+
+
+
+

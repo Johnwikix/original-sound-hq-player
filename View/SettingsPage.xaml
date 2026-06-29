@@ -320,6 +320,33 @@
                     </Expander.Header>
                     <Expander.Content>
                         <StackPanel>
+                            <InfoBar
+                                IsOpen="{x:Bind ViewModel.AppViewModel.HasGlobalHotKeyConflict, Mode=OneWay}"
+                                Severity="Warning"
+                                Title="{x:Bind ViewModel.AppViewModel.GlobalHotKeyConflictTitle, Mode=OneWay}" />
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock
+                                        x:Uid="SettingsPageEnableGlobalHotKey"
+                                        FontSize="14" />
+                                    <TextBlock
+                                        x:Uid="SettingsPageEnableGlobalHotKeyDescription"
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.EnableGlobalHotKey, Mode=TwoWay}" />
+                            </Grid>
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"

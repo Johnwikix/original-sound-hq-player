@@ -1090,4 +1090,17 @@
   <data name="SettingsPageToggleFullScreenShortcut.Text" xml:space="preserve">
     <value>Vollbild umschalten</value>
   </data>
+<data name="SettingsPageEnableGlobalHotKey.Text" xml:space="preserve">
+    <value>Globale Tastenk\u00FCrzel</value>
+  </data>
+  <data name="SettingsPageEnableGlobalHotKeyDescription.Text" xml:space="preserve">
+    <value>Aus: reagiert nur bei Fokus auf dieses Fenster. Ein: funktioniert auch minimiert, kann aber andere Apps \u00FCberschreiben.</value>
+  </data>
+  <data name="GlobalHotKeyConflictTitleFormat" xml:space="preserve">
+    <value>Globales Tastenkürzel belegt: {0}</value>
+  </data>
 </root>
+
+
+
+

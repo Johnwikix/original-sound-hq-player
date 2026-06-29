@@ -73,5 +73,6 @@ namespace WinUIMusicPlayer.Model
         public List<string> BackShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "B" };
         public List<string> ShowWindowShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "W" };
         public List<string> ToggleFullScreenShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "F" };
+        public bool EnableGlobalHotKey { get; set; } = false;
     }
 }

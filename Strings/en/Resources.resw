@@ -1090,4 +1090,16 @@
   <data name="SettingsPageToggleFullScreenShortcut.Text" xml:space="preserve">
     <value>Toggle FullScreen</value>
   </data>
+<data name="SettingsPageEnableGlobalHotKey.Text" xml:space="preserve">
+    <value>Global hotkeys</value>
+  </data>
+  <data name="SettingsPageEnableGlobalHotKeyDescription.Text" xml:space="preserve">
+    <value>When off, only responds when this app is focused. When on, works while minimized but may override other apps' shortcuts.</value>
+  </data>
+  <data name="GlobalHotKeyConflictTitleFormat" xml:space="preserve">
+    <value>Global hotkey occupied: {0}</value>
+  </data>
 </root>
+
+
+

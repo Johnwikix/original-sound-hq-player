@@ -77,7 +77,7 @@
                     Background="Transparent"
                     BorderBrush="Transparent"
                     BorderThickness="0"
-                    Command="{x:Bind ViewModel.FullScreenButtonChangedCommand, Mode=OneWay}"
+                    Command="{x:Bind ViewModel.AppViewModel.FullScreenButtonChangedCommand, Mode=OneWay}"
                     Style="{StaticResource MenuButtonStyle}">
                     <FontIcon
                         x:Name="FullScreenIcon"
@@ -106,7 +106,6 @@
                         Glyph="{x:Bind ViewModel.AppViewModel.IsPlayDetailButtonVisible, Converter={StaticResource PlayDetailButtonVisibleConverter}, Mode=OneWay}" />
                 </Button>
             </StackPanel>
-            <!--  涓撹緫灏侀潰  -->
             <Grid Grid.Column="0" Margin="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
