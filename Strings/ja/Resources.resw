@@ -1087,4 +1087,7 @@
   <data name="SettingsPageShowWindowShortcut.Text" xml:space="preserve">
     <value>表示 / 非表示</value>
   </data>
+  <data name="SettingsPageToggleFullScreenShortcut.Text" xml:space="preserve">
+    <value>フルスクリーン切替</value>
+  </data>
 </root>

@@ -995,6 +995,22 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = new List<string> { "Ctrl", "Alt", "W" };
 
+        public List<string> ToggleFullScreenShortcut
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.ToggleFullScreen, value, ToggleFullScreen);
+                    }
+                }
+            }
+        } = new List<string> { "Ctrl", "Alt", "F" };
+
         public void InitHotKeys()
         {
             var window = App.MainWindow;
@@ -1045,6 +1061,8 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 window.ToggleShowHide();
             });
+
+            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.ToggleFullScreen, ToggleFullScreenShortcut, ToggleFullScreen);
         }
 
         public List<double> TargetFrameRateOptions { get; } = [60, 72, 80, 90, 120, 144, 160, 165, 180, 240, 280, 320, 360, 480];

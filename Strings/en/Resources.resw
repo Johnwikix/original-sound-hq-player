@@ -1087,4 +1087,7 @@
   <data name="SettingsPageShowWindowShortcut.Text" xml:space="preserve">
     <value>Toggle Hide / Show</value>
   </data>
+  <data name="SettingsPageToggleFullScreenShortcut.Text" xml:space="preserve">
+    <value>Toggle FullScreen</value>
+  </data>
 </root>

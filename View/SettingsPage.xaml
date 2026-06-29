@@ -456,6 +456,23 @@
                                     Grid.Column="1"
                                     Shortcut="{x:Bind ViewModel.AppViewModel.ShowWindowShortcut, Mode=TwoWay}" />
                             </Grid>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="SettingsPageToggleFullScreenShortcut"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <controls2:ShortcutTextBox
+                                    Grid.Column="1"
+                                    Shortcut="{x:Bind ViewModel.AppViewModel.ToggleFullScreenShortcut, Mode=TwoWay}" />
+                            </Grid>
                         </StackPanel>
                     </Expander.Content>
                 </Expander>

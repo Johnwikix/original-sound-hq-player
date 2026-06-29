@@ -17,6 +17,7 @@ namespace WinUIMusicPlayer.Helper
         TogglePlayingDetail,
         Back,
         ShowWindow,
+        ToggleFullScreen,
     }
 
     public static class GlobalHotKeyHook

@@ -1087,4 +1087,7 @@
   <data name="SettingsPageShowWindowShortcut.Text" xml:space="preserve">
     <value>Скрыть / Показать</value>
   </data>
+  <data name="SettingsPageToggleFullScreenShortcut.Text" xml:space="preserve">
+    <value>Переключить полноэкранный режим</value>
+  </data>
 </root>

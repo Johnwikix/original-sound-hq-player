@@ -2,7 +2,6 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using System;
 using WinUIMusicPlayer.Services;
@@ -33,19 +32,7 @@ namespace WinUIMusicPlayer.ViewModel.Pages
         [RelayCommand]
         private void OnFullScreenButtonChanged()
         {
-            if (App.MainWindow.AppWindow is not null)
-            {
-                if (AppViewModel.IsFullScreen)
-                {
-                    App.MainWindow.AppWindow.SetPresenter(AppWindowPresenterKind.Default);
-                }
-                else
-                {
-                    App.MainWindow.AppWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
-                }
-                AppViewModel.IsFullScreen = !AppViewModel.IsFullScreen;
-            }
-
+            AppViewModel.ToggleFullScreen();
         }
 
         [RelayCommand]

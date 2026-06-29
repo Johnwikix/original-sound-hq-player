@@ -5,6 +5,7 @@ using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Data;
 using System;
@@ -210,6 +211,18 @@ namespace WinUIMusicPlayer.ViewModel
         public int UsbSelectedIndex { get; set => SetProperty(ref field, value); } = 0;
         public Visibility ProcessRingVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
         public bool IsFullScreen { get; set => SetProperty(ref field, value); } = false;
+
+        public void ToggleFullScreen()
+        {
+            var window = App.MainWindow?.AppWindow;
+            if (window is null) return;
+
+            var next = !IsFullScreen;
+            window.SetPresenter(next
+                ? AppWindowPresenterKind.FullScreen
+                : AppWindowPresenterKind.Default);
+            IsFullScreen = next;
+        }
         public string InfoBarTitle { get; set => SetProperty(ref field, value); } = string.Empty;
         public bool InfoBarIsOpen { get; set => SetProperty(ref field, value); } = false;
         public string InfoBarMessage { get; set => SetProperty(ref field, value); } = string.Empty;

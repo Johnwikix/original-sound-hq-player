@@ -1087,4 +1087,7 @@
   <data name="SettingsPageShowWindowShortcut.Text" xml:space="preserve">
     <value>Ein-/Ausblenden</value>
   </data>
+  <data name="SettingsPageToggleFullScreenShortcut.Text" xml:space="preserve">
+    <value>Vollbild umschalten</value>
+  </data>
 </root>

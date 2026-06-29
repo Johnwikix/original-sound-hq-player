@@ -3,7 +3,6 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
@@ -637,24 +636,6 @@ namespace WinUIMusicPlayer.ViewModel
             AppViewModel.AdjustVolume(-1);
         }
 
-
-        [RelayCommand]
-        private void OnFullScreenButtonChanged()
-        {
-            if (App.MainWindow.AppWindow is not null)
-            {
-                if (AppViewModel.IsFullScreen)
-                {
-                    App.MainWindow.AppWindow.SetPresenter(AppWindowPresenterKind.Default);
-                }
-                else
-                {
-                    App.MainWindow.AppWindow.SetPresenter(AppWindowPresenterKind.FullScreen);
-                }
-                AppViewModel.IsFullScreen = !AppViewModel.IsFullScreen;
-            }
-
-        }
 
         [RelayCommand]
         private void PlayDetailButtonVisibleChanged()
