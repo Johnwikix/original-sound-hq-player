@@ -1,6 +1,7 @@
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Messages;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -1380,6 +1381,28 @@ namespace WinUIMusicPlayer.ViewModel
                 AnimatedWin2dControls.Messages.UILyricsBus.Publish(UILyrics);
         }
 
+        [RelayCommand]
+        private void OnVolumeSliderIconButtonChanged()
+        {
+            IsMuted = !IsMuted;
+            Volume = IsMuted ? 0 : TempVolume;
+        }
 
+        [RelayCommand]
+        private void OnVolumeUpChanged()
+        {
+            AdjustVolume(1);
+        }
+        [RelayCommand]
+        private void OnVolumeDownChanged()
+        {
+            AdjustVolume(-1);
+        }
+
+        [RelayCommand]
+        private void PlayDetailButtonVisibleChanged()
+        {
+            IsPlayDetailButtonVisible = !IsPlayDetailButtonVisible;
+        }
     }
 }

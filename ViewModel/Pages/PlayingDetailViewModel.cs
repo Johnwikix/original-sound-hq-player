@@ -80,12 +80,6 @@ namespace WinUIMusicPlayer.ViewModel.Pages
         }
 
         [RelayCommand]
-        private void PlayDetailButtonVisibleChanged()
-        {
-            AppViewModel.IsPlayDetailButtonVisible = !AppViewModel.IsPlayDetailButtonVisible;
-        }
-
-        [RelayCommand]
         public void OnNextMusicButtonChanged()
         {
             NextMusicButton_Click();

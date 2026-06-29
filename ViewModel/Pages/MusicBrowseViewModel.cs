@@ -618,30 +618,6 @@ namespace WinUIMusicPlayer.ViewModel
             MusicPlaybackService.ChangeWaveChannelTime(newPosMs);
             AppViewModel.IsManualSelect = false;
         }
-        [RelayCommand]
-        private void OnVolumeSliderIconButtonChanged()
-        {
-            AppViewModel.IsMuted = !AppViewModel.IsMuted;
-            AppViewModel.Volume = AppViewModel.IsMuted ? 0 : AppViewModel.TempVolume;
-        }
-
-        [RelayCommand]
-        private void OnVolumeUpChanged()
-        {
-            AppViewModel.AdjustVolume(1);
-        }
-        [RelayCommand]
-        private void OnVolumeDownChanged()
-        {
-            AppViewModel.AdjustVolume(-1);
-        }
-
-
-        [RelayCommand]
-        private void PlayDetailButtonVisibleChanged()
-        {
-            AppViewModel.IsPlayDetailButtonVisible = !AppViewModel.IsPlayDetailButtonVisible;
-        }
 
         private void OnSelectionChanged()
         {

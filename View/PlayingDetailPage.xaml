@@ -95,7 +95,7 @@
                     Background="Transparent"
                     BorderBrush="Transparent"
                     BorderThickness="0"
-                    Command="{x:Bind ViewModel.PlayDetailButtonVisibleChangedCommand, Mode=OneWay}"
+                    Command="{x:Bind ViewModel.AppViewModel.PlayDetailButtonVisibleChangedCommand, Mode=OneWay}"
                     Style="{StaticResource MenuButtonStyle}">
                     <FontIcon
                         x:Name="VisibleIcon"
@@ -370,7 +370,6 @@
                             FontSize="{x:Bind ViewModel.InfoFontSize, Mode=OneWay}"
                             Text="{x:Bind ViewModel.AppViewModel.PlayTimeText, Mode=OneWay}" />
                     </Grid>
-                    <!--  鎺у埗闈㈡澘 ThumbToolTipValueConverter 鍦╝ot涓嬫姤閿? -->
                     <Grid x:Name="PlayingDetailControlBar">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
@@ -445,7 +444,6 @@
                                 Target="{x:Bind CurrentPlayListButtonPlayingDetail}">
                                 <TeachingTip.Content>
                                     <Grid Width="290" Margin="0">
-                                        <!--  ListView鍐呭锛岀粰鍙充笂瑙掔暀鍑虹┖闂? -->
                                         <ListView
                                             x:Name="CurrentPlayListViewPlayingDetail"
                                             MaxHeight="400"
@@ -462,8 +460,6 @@
                                                 </DataTemplate>
                                             </ListView.ItemTemplate>
                                         </ListView>
-
-                                        <!--  鍏抽棴鎸夐挳鍦ㄦ渶涓婂眰  -->
                                         <Button
                                             x:Name="CurrentPlayListTeachingTipCloseButton"
                                             Width="24"
@@ -500,7 +496,6 @@
                                 <FontIcon FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}" Glyph="&#xF8AC;" />
                             </Button>
 
-                            <!--  鎾斁鎸夐挳  -->
                             <Button
                                 x:Name="PlayPauseButtonPlayingDetail"
                                 Grid.Column="3"
@@ -532,7 +527,6 @@
                                 Style="{StaticResource MenuButtonStyle}">
                                 <FontIcon FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}" Glyph="&#xF8AD;" />
                             </Button>
-                            <!--  鎾斁妯″紡鎸夐挳  -->
                             <Button
                                 x:Name="PlayModeButtonPlayingDetail"
                                 Grid.Column="5"
@@ -568,16 +562,38 @@
                                     Glyph="{x:Bind ViewModel.AppViewModel.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
                                 <Button.Flyout>
                                     <Flyout x:Name="VolumeFlyout" Placement="Right">
-                                        <Slider
-                                            x:Name="VolumeSliderPlayingDetail"
-                                            Width="100"
-                                            VerticalAlignment="Center"
-                                            Maximum="100"
-                                            Minimum="0"
-                                            PointerEntered="VolumeSlider_PointerEntered"
-                                            PointerExited="VolumeSlider_PointerExited"
-                                            PointerWheelChanged="VolumeSlider_PointerWheelChanged"
-                                            Value="{x:Bind ViewModel.AppViewModel.Volume, Mode=TwoWay}" />
+                                        <StackPanel Orientation="Horizontal">
+                                            <Button
+                                                Margin="0,0,5,0"
+                                                HorizontalAlignment="Left"
+                                                VerticalAlignment="Center"
+                                                Background="Transparent"
+                                                BorderBrush="Transparent"
+                                                BorderThickness="0"
+                                                Command="{x:Bind ViewModel.AppViewModel.VolumeSliderIconButtonChangedCommand, Mode=OneWay}">
+                                                <FontIcon
+                                                    x:Name="VolumeInsideSliderIcon"
+                                                    Grid.Column="0"
+                                                    Margin="0"
+                                                    VerticalAlignment="Center"
+                                                    Glyph="{x:Bind ViewModel.AppViewModel.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
+                                            </Button>
+                                            <Slider
+                                                x:Name="VolumeSliderPlayingDetail"
+                                                Width="100"
+                                                VerticalAlignment="Center"
+                                                Maximum="100"
+                                                Minimum="0"
+                                                PointerEntered="VolumeSlider_PointerEntered"
+                                                PointerExited="VolumeSlider_PointerExited"
+                                                PointerWheelChanged="VolumeSlider_PointerWheelChanged"
+                                                Value="{x:Bind ViewModel.AppViewModel.Volume, Mode=TwoWay}" />
+                                            <TextBlock
+                                                Width="30"
+                                                Margin="10,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Text="{x:Bind ViewModel.AppViewModel.Volume, Mode=OneWay}" />
+                                        </StackPanel>
                                     </Flyout>
                                 </Button.Flyout>
                             </Button>
@@ -591,7 +607,6 @@
                 Grid.Column="1"
                 Margin="0,40,0,40"
                 SizeChanged="LyricsRegionHost_SizeChanged">
-                <!--  绠€鍗曟瓕璇嶏細浠呭湪闈為珮绾фā寮忎笅浣滀负 XAML 瑕嗗眰鍙犲湪瀹夸富涔嬩笂锛涢珮绾ф瓕璇嶇敱 NowPlaying 瀹夸富鐩存帴缁樺埗  -->
                 <lyrics:LyricsControl
                     x:Name="LyricsView"
                     x:Load="{x:Bind tool:BindUtils.IsLyricsControlEnabled(ViewModel.AppViewModel.IsFluidBackgroundEnabled, ViewModel.AppViewModel.EnableAdvancedLyricsEffect), Mode=OneTime}"

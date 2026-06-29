@@ -422,7 +422,7 @@
                             Margin="0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
-                            Command="{x:Bind ViewModel.MusicBrowseVM.VolumeUpChangedCommand, Mode=OneWay}"
+                            Command="{x:Bind ViewModel.AppViewModel.VolumeUpChangedCommand, Mode=OneWay}"
                             IsHitTestVisible="False"
                             Opacity="0">
                             <FontIcon Glyph="&#xE9E9;" />
@@ -432,7 +432,7 @@
                             Margin="0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
-                            Command="{x:Bind ViewModel.MusicBrowseVM.VolumeDownChangedCommand, Mode=OneWay}"
+                            Command="{x:Bind ViewModel.AppViewModel.VolumeDownChangedCommand, Mode=OneWay}"
                             IsHitTestVisible="False"
                             Opacity="0">
                             <FontIcon Glyph="&#xE9E9;" />
@@ -461,7 +461,7 @@
                                             Background="Transparent"
                                             BorderBrush="Transparent"
                                             BorderThickness="0"
-                                            Command="{x:Bind ViewModel.MusicBrowseVM.VolumeSliderIconButtonChangedCommand, Mode=OneWay}">
+                                            Command="{x:Bind ViewModel.AppViewModel.VolumeSliderIconButtonChangedCommand, Mode=OneWay}">
                                             <FontIcon
                                                 x:Name="VolumeInsideSliderIcon"
                                                 Grid.Column="0"
