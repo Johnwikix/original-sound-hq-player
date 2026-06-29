@@ -1005,7 +1005,11 @@ namespace WinUIMusicPlayer.ViewModel
                     if (IsInitialized)
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
-                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.ToggleFullScreen, value, ToggleFullScreen);
+                        GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.ToggleFullScreen, value, () =>
+                        {
+                            if (App.MainWindow is not { Visible: true }) return;
+                            ToggleFullScreen();
+                        });
                     }
                 }
             }
@@ -1062,7 +1066,11 @@ namespace WinUIMusicPlayer.ViewModel
                 window.ToggleShowHide();
             });
 
-            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.ToggleFullScreen, ToggleFullScreenShortcut, ToggleFullScreen);
+            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.ToggleFullScreen, ToggleFullScreenShortcut, () =>
+            {
+                if (App.MainWindow is not { Visible: true }) return;
+                ToggleFullScreen();
+            });
         }
 
         public List<double> TargetFrameRateOptions { get; } = [60, 72, 80, 90, 120, 144, 160, 165, 180, 240, 280, 320, 360, 480];
