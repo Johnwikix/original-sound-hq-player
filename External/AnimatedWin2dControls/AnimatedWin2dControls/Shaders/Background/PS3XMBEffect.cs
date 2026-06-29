@@ -92,8 +92,9 @@ namespace AnimatedWin2dControls.Shaders.Background
             float s1 = GetStars(0.1f * pp + time * new float2(20f, -10.1f), 0.11f, 0.71f, time);
             float s2 = GetStars(0.2f * pp + time * new float2(30f, -10.1f), 0.1f, 0.31f, time);
             float s3 = GetStars(0.32f * pp + time * new float2(40f, -10.1f), 0.1f, 0.91f, time);
+            float s4 = GetStars(0.42f * pp + time * new float2(50f, -10.1f), 0.08f, 0.5f, time);
 
-            return w * f * (s1 * 4f + s2 * 5f + s3 * 2f);
+            return w * f * (s1 * 4f + s2 * 5f + s3 * 2f + s4 * 3f);
         }
 
         private static float Sdf(float3 p, float time)
@@ -185,7 +186,7 @@ namespace AnimatedWin2dControls.Shaders.Background
 
             c = Hlsl.Lerp(c, 1f, Hlsl.Clamp(m, 0f, 1f));
 
-            c += GetDust(uv, new float2(2000f, 2000f), mg.Y, time, ires) * 0.3f;
+            c += GetDust(uv, new float2(3000f, 3000f), mg.Y, time, ires) * 0.3f;
 
             float ditherOffset = enableDithering ? (Dither(U) - 0.5f) / 255f : 0f;
 
