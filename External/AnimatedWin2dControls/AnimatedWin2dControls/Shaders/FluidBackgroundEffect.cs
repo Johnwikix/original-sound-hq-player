@@ -11,7 +11,7 @@ namespace AnimatedWin2dControls.Shaders
     [D2DShaderProfile(D2D1ShaderProfile.PixelShader50)]
     [D2DGeneratedPixelShaderDescriptor]
     public readonly partial struct FluidBackgroundEffect(
-        float2 resolution, float time,
+        float2 dispatchSize, float time,
         float3 color1, float3 color2, float3 color3, float3 color4,
         float randomValue1, float randomValue2, float randomValue3,
         bool useHSVBlending, bool enableLightWave, bool enableDithering = true) : ID2D1PixelShader
@@ -128,10 +128,13 @@ namespace AnimatedWin2dControls.Shaders
         public float4 Execute()
         {
             float2 scene = D2D.GetScenePosition().XY;
-            float2 uv = scene / resolution;
+            float2 uv = scene / dispatchSize;
 
             float2 tuv = uv;
             tuv -= 0.5f;
+
+            float ratio = dispatchSize.X / dispatchSize.Y;
+            tuv.Y *= 1.0f / ratio;
 
             float degree = F_Noise(new float2(time * 0.1f, tuv.X * tuv.Y));
 
@@ -145,6 +148,8 @@ namespace AnimatedWin2dControls.Shaders
 
             tuv.X += Hlsl.Sin((tuv.Y * frequency) + speed) / amplitude;
             tuv.Y += Hlsl.Sin(((tuv.X * frequency) * 1.5f) + speed) / (amplitude * 0.5f);
+
+            tuv.Y *= ratio;
 
             float3 c1, c2, c3, c4;
             if (useHSVBlending)
