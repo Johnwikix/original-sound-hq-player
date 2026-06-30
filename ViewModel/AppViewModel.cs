@@ -1220,7 +1220,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async void EditPlayListName(PlayList playList, Func<Task<string>> getNameCallback)
+        public async Task EditPlayListName(PlayList playList, Func<Task<string>> getNameCallback)
         {
             if (playList is null || getNameCallback is null) return;
 

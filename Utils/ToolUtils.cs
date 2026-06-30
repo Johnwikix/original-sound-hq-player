@@ -1067,7 +1067,7 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static async void ExportPlayList(PlayList playList)
+        public static async Task ExportPlayList(PlayList playList)
         {
             try
             {

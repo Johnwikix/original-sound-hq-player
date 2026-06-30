@@ -78,7 +78,7 @@ namespace WinUIMusicPlayer.ViewModel
             AppSettings.EqUpdated += AppSettings_OnEqUpdated;
             if (AppViewModel.IsFolderWatchEnabled)
             {
-                StartWatchingFileFolder();
+                _ = StartWatchingFileFolder();
             }
             StartWatchingUsbStorageDevices();
         }
@@ -157,7 +157,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void AppSettings_OnEqUpdated(object? sender, EventArgs e)
         {
-            MusicPlaybackService.EqUpdate();
+            _ = MusicPlaybackService.EqUpdate();
         }
 
         private void AppSettings_OutputSettingsUpdated(object? sender, EventArgs e)
@@ -296,7 +296,7 @@ namespace WinUIMusicPlayer.ViewModel
             catch (OperationCanceledException) { }
         }
 
-        private async void StartWatchingFileFolder()
+        private async Task StartWatchingFileFolder()
         {
             try
             {
@@ -491,7 +491,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async void ThemeChangedUpdateCover()
+        public void ThemeChangedUpdateCover()
         {
             if (AppViewModel.CurrentPlayingMusic is null) return;
             AppViewModel.UpdateCover();

@@ -168,7 +168,7 @@ namespace WinUIMusicPlayer.Services
         }
 
         /// <summary>Fire-and-forget: sends command, returns rented buffer to pool after completion.</summary>
-        private async void FireCommand(CommandId commandId, byte[] pooledBuf, int len)
+        private async Task FireCommand(CommandId commandId, byte[] pooledBuf, int len)
         {
             try
             {
@@ -193,7 +193,7 @@ namespace WinUIMusicPlayer.Services
             var req = new PlayRequest { Url = musicUrl };
             var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.PlayRequestSize);
             int len = BinarySerializer.WritePlayRequest(buf, req);
-            FireCommand(CommandId.Play, buf, len);
+            _ = FireCommand(CommandId.Play, buf, len);
         }
 
         public void PlayButton()
@@ -219,7 +219,7 @@ namespace WinUIMusicPlayer.Services
             };
             var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.IpcSettingSize);
             int len = BinarySerializer.WriteIpcSetting(buf, settings);
-            FireCommand(CommandId.UpdateSettings, buf, len);
+            _ = FireCommand(CommandId.UpdateSettings, buf, len);
         }
 
         public async Task UpdateEq()
@@ -279,7 +279,7 @@ namespace WinUIMusicPlayer.Services
             var req = new ChangePositionRequest { PositionMs = positionMs };
             var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.ChangePositionRequestSize);
             BinarySerializer.WriteChangePositionRequest(buf, req);
-            FireCommand(CommandId.ChangePosition, buf, BinarySerializer.ChangePositionRequestSize);
+            _ = FireCommand(CommandId.ChangePosition, buf, BinarySerializer.ChangePositionRequestSize);
         }
 
         public void ChangeVolume(double volume)
@@ -287,7 +287,7 @@ namespace WinUIMusicPlayer.Services
             var req = new ChangeVolumeRequest { Volume = volume };
             var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.ChangeVolumeRequestSize);
             BinarySerializer.WriteChangeVolumeRequest(buf, req);
-            FireCommand(CommandId.ChangeVolume, buf, BinarySerializer.ChangeVolumeRequestSize);
+            _ = FireCommand(CommandId.ChangeVolume, buf, BinarySerializer.ChangeVolumeRequestSize);
         }
 
         public void MusicEnd()
@@ -305,7 +305,7 @@ namespace WinUIMusicPlayer.Services
             var req = new SetEqualizerGainRequest { BandIndex = bandIndex, Gain = gain };
             var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.SetEqualizerGainRequestSize);
             BinarySerializer.WriteSetEqualizerGainRequest(buf, req);
-            FireCommand(CommandId.SetEqualizerGain, buf, BinarySerializer.SetEqualizerGainRequestSize);
+            _ = FireCommand(CommandId.SetEqualizerGain, buf, BinarySerializer.SetEqualizerGainRequestSize);
         }
 
         public void SetEqualizer()

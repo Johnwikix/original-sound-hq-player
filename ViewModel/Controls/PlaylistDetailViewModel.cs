@@ -240,7 +240,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         private void OnExport()
         {
             if (AppViewModel.CurrentPlayList is null) return;
-            ToolUtils.ExportPlayList(AppViewModel.CurrentPlayList);
+            _ = ToolUtils.ExportPlayList(AppViewModel.CurrentPlayList);
         }
 
         private static BulkObservableCollection<Music> ToMusicCollection(BulkObservableCollection<PlayListMusicItem> src)

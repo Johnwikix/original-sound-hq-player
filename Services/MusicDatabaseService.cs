@@ -113,13 +113,13 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        private async void CopyFile(string sourceFilePath, string targetFilePath)
+        private void CopyFile(string sourceFilePath, string targetFilePath)
         {
             if (File.Exists(sourceFilePath))
             {
                 using FileStream sourceStream = File.Open(sourceFilePath, FileMode.Open);
                 using FileStream destinationStream = File.Create(targetFilePath);
-                await sourceStream.CopyToAsync(destinationStream);
+                sourceStream.CopyTo(destinationStream);
             }
         }
 

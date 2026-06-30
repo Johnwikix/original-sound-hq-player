@@ -165,7 +165,7 @@ private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, Ap
         }
     }
 
-        public async void InitializeApp()
+        public void InitializeApp()
         {
             try
             {

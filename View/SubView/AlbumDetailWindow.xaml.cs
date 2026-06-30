@@ -76,7 +76,7 @@ namespace WinUIMusicPlayer.View.SubView
             this.SetTitleBarBackgroundColors(Colors.Transparent);
             SetTitleBar(AlbumDetailTitleBar);
             SetWindow();
-            InitalizeData(music);
+            _ = InitalizeData(music);
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
             themeStyleHelper.SetAppStyle();
             themeStyleHelper.SetAppTheme();
@@ -135,7 +135,7 @@ namespace WinUIMusicPlayer.View.SubView
             themeStyleHelper.SetAppTheme();
         }
 
-        private async void InitalizeData(Music album)
+        private async Task InitalizeData(Music album)
         {
             albumCoverData = await ToolUtils.GetRawImage(album, true);
             AlbumCoverBitmap = await ToolUtils.ConvertByteArrayToBitmapImage(albumCoverData);

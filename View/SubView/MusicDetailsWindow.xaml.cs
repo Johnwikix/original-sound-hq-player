@@ -129,7 +129,7 @@ namespace WinUIMusicPlayer.View.SubView
             this.SetTitleBarBackgroundColors(Colors.Transparent);
             SetTitleBar(MusicDetailTitleBar);
             setWindow();
-            InitalizeData(music);
+            _ = InitalizeData(music);
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
             themeStyleHelper.SetAppStyle();
             themeStyleHelper.SetAppTheme();
@@ -187,7 +187,7 @@ namespace WinUIMusicPlayer.View.SubView
             themeStyleHelper.SetAppTheme();
         }
 
-        private async void InitalizeData(Music music)
+        private async Task InitalizeData(Music music)
         {
             MusicDetail = music;
             var (lyrics, trans, krc, tKrc) = await App.Services.GetRequiredService<MusicDatabaseService>().GetLyricsAsync(music.Id);

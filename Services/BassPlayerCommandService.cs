@@ -65,7 +65,7 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public async void EqUpdate()
+        public async Task EqUpdate()
         {
             await IpcService.UpdateEq();
         }

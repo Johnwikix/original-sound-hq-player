@@ -1320,7 +1320,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        private async void OpenLogPath()
+        private async Task OpenLogPath()
         {
             var logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OriginalSoundPlayer", "Logs");
             var folder = await StorageFolder.GetFolderFromPathAsync(logDirectory);

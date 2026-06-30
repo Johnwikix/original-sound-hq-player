@@ -144,7 +144,7 @@ namespace WinUIMusicPlayer.View.Controls
         private void EditPlaylistNameBtn_Click(object sender, RoutedEventArgs e)
         {
             if (ViewModel.AppViewModel.CurrentPlayList is null) return;
-            ViewModel.AppViewModel.EditPlayListName(ViewModel.AppViewModel.CurrentPlayList, () =>
+            _ = ViewModel.AppViewModel.EditPlayListName(ViewModel.AppViewModel.CurrentPlayList, () =>
                 DialogHelper.ShowInputAsync(this.XamlRoot, "ModifyPlaylist", ViewModel.AppViewModel.CurrentPlayList.Name));
         }
 

@@ -74,12 +74,12 @@ namespace WinUIMusicPlayer.View
                 var button = sender as Button;
                 if (button is not null && button.Tag is int folderId)
                 {
-                    RemoveFolder(folderId);
+                    _ = RemoveFolder(folderId);
                 }
             }
         }
 
-        private async void RemoveFolder(int folderId)
+        private async Task RemoveFolder(int folderId)
         {
             LoadingGrid.Visibility = Visibility.Visible;
             AddFolderGrid.Visibility = Visibility.Collapsed;

@@ -60,7 +60,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async void RemovePlayList(PlayList playList)
+        public async Task RemovePlayList(PlayList playList)
         {
             if (playList is null) return;
 
@@ -68,9 +68,9 @@ namespace WinUIMusicPlayer.ViewModel
             AppViewModel.AllPlayList.Remove(playList);
         }
 
-        public void ExportPlayList(PlayList playList)
+        public async Task ExportPlayList(PlayList playList)
         {
-            ToolUtils.ExportPlayList(playList);
+            await ToolUtils.ExportPlayList(playList);
         }
 
         public void EnterPlayList(PlayList playList)
