@@ -1093,11 +1093,38 @@
 <data name="SettingsPageEnableGlobalHotKey.Text" xml:space="preserve">
     <value>\u30B0\u30ED\u30FC\u30D0\u30EB\u30B7\u30E7\u30FC\u30C8\u30AB\u30C3\u30C8</value>
   </data>
-  <data name="SettingsPageEnableGlobalHotKeyDescription.Text" xml:space="preserve">
-    <value>\u30AA\u30D5\u6642\u306F\u672C\u30A6\u30A3\u30F3\u30C9\u30A6\u30D5\u30A9\u30FC\u30AB\u30B9\u6642\u306E\u307F\u53CD\u5FDC\u3002\u30AA\u30F3\u6642\u306F\u6700\u5C0F\u5316\u6642\u3067\u3082\u52D5\u4F5C\u3057\u307E\u3059\u304C\u4ED6\u30A2\u30D7\u30EA\u3092\u4E0A\u66F8\u304D\u3059\u308B\u53EF\u80FD\u6027\u304C\u3042\u308A\u307E\u3059\u3002</value>
+<data name="SettingsPageEnableGlobalHotKeyDescription.Text" xml:space="preserve">
+    <value>登録されたグローバルショートカットが他のプログラムと競合する可能性があります。</value>
   </data>
   <data name="GlobalHotKeyConflictTitleFormat" xml:space="preserve">
     <value>グローバルショートカットが使用中: {0}</value>
+  </data>
+  <data name="GlobalHotKeyConflictPlayPause" xml:space="preserve">
+    <value>再生 / 一時停止</value>
+  </data>
+  <data name="GlobalHotKeyConflictNextSong" xml:space="preserve">
+    <value>次の曲</value>
+  </data>
+  <data name="GlobalHotKeyConflictPreviousSong" xml:space="preserve">
+    <value>前の曲</value>
+  </data>
+  <data name="GlobalHotKeyConflictVolumeUp" xml:space="preserve">
+    <value>音量アップ</value>
+  </data>
+  <data name="GlobalHotKeyConflictVolumeDown" xml:space="preserve">
+    <value>音量ダウン</value>
+  </data>
+  <data name="GlobalHotKeyConflictTogglePlayingDetail" xml:space="preserve">
+    <value>再生詳細の切り替え</value>
+  </data>
+  <data name="GlobalHotKeyConflictBack" xml:space="preserve">
+    <value>戻る</value>
+  </data>
+  <data name="GlobalHotKeyConflictShowWindow" xml:space="preserve">
+    <value>表示 / 非表示</value>
+  </data>
+  <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
+    <value>フルスクリーン切替</value>
   </data>
 </root>
 

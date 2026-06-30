@@ -1094,10 +1094,37 @@
     <value>Global hotkeys</value>
   </data>
   <data name="SettingsPageEnableGlobalHotKeyDescription.Text" xml:space="preserve">
-    <value>When off, only responds when this app is focused. When on, works while minimized but may override other apps' shortcuts.</value>
+    <value>Registered global hotkeys may conflict with other programs.</value>
   </data>
   <data name="GlobalHotKeyConflictTitleFormat" xml:space="preserve">
     <value>Global hotkey occupied: {0}</value>
+  </data>
+  <data name="GlobalHotKeyConflictPlayPause" xml:space="preserve">
+    <value>Play / Pause</value>
+  </data>
+  <data name="GlobalHotKeyConflictNextSong" xml:space="preserve">
+    <value>Next Song</value>
+  </data>
+  <data name="GlobalHotKeyConflictPreviousSong" xml:space="preserve">
+    <value>Previous Song</value>
+  </data>
+  <data name="GlobalHotKeyConflictVolumeUp" xml:space="preserve">
+    <value>Volume Up</value>
+  </data>
+  <data name="GlobalHotKeyConflictVolumeDown" xml:space="preserve">
+    <value>Volume Down</value>
+  </data>
+  <data name="GlobalHotKeyConflictTogglePlayingDetail" xml:space="preserve">
+    <value>Toggle Playing Detail</value>
+  </data>
+  <data name="GlobalHotKeyConflictBack" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="GlobalHotKeyConflictShowWindow" xml:space="preserve">
+    <value>Show / Hide Window</value>
+  </data>
+  <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
+    <value>Toggle FullScreen</value>
   </data>
 </root>
 

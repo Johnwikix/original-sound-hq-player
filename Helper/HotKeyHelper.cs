@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Windows.System;
 using WinRT.Interop;
+using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Helper
 {
@@ -100,6 +101,28 @@ namespace WinUIMusicPlayer.Helper
         public static bool IsHotKeyRegistered(List<string> keys)
         {
             return _keys.ContainsValue(keys);
+        }
+
+        /// <summary>
+        /// 返回 <see cref="ShortcutId"/> 的本地化显示名，供冲突提示等 UI 使用。
+        /// 取值来自 <c>GlobalHotKeyConflict*</c> 资源键（与设置页 <c>SettingsPage*Shortcut.Text</c> 同款）。
+        /// </summary>
+        public static string GetDisplayName(ShortcutId id)
+        {
+            string key = id switch
+            {
+                ShortcutId.PlayOrPauseSong => "GlobalHotKeyConflictPlayPause",
+                ShortcutId.NextSong => "GlobalHotKeyConflictNextSong",
+                ShortcutId.PreviousSong => "GlobalHotKeyConflictPreviousSong",
+                ShortcutId.VolumeUp => "GlobalHotKeyConflictVolumeUp",
+                ShortcutId.VolumeDown => "GlobalHotKeyConflictVolumeDown",
+                ShortcutId.TogglePlayingDetail => "GlobalHotKeyConflictTogglePlayingDetail",
+                ShortcutId.Back => "GlobalHotKeyConflictBack",
+                ShortcutId.ShowWindow => "GlobalHotKeyConflictShowWindow",
+                ShortcutId.ToggleFullScreen => "GlobalHotKeyConflictToggleFullScreen",
+                _ => id.ToString(),
+            };
+            return ToolUtils.GetString(key);
         }
 
         public static bool TryInvokeAction(int id)

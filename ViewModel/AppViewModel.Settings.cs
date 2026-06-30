@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
+using System.Linq;
 using WinUIMusicPlayer.Utils;
 using System.Threading.Tasks;
 using Windows.Storage;
@@ -876,7 +877,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (any)
             {
                 string format = ToolUtils.GetString("GlobalHotKeyConflictTitleFormat");
-                string list = string.Join(", ", GlobalHotKeyHook.Conflicts);
+                string list = string.Join(", ", GlobalHotKeyHook.Conflicts.Select(GlobalHotKeyHook.GetDisplayName));
                 GlobalHotKeyConflictTitle = string.Format(format, list);
             }
             else

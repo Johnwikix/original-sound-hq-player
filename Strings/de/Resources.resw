@@ -1093,11 +1093,38 @@
 <data name="SettingsPageEnableGlobalHotKey.Text" xml:space="preserve">
     <value>Globale Tastenk\u00FCrzel</value>
   </data>
-  <data name="SettingsPageEnableGlobalHotKeyDescription.Text" xml:space="preserve">
-    <value>Aus: reagiert nur bei Fokus auf dieses Fenster. Ein: funktioniert auch minimiert, kann aber andere Apps \u00FCberschreiben.</value>
+<data name="SettingsPageEnableGlobalHotKeyDescription.Text" xml:space="preserve">
+    <value>Registrierte globale Tastenkombinationen können mit anderen Programmen in Konflikt geraten.</value>
   </data>
   <data name="GlobalHotKeyConflictTitleFormat" xml:space="preserve">
     <value>Globales Tastenkürzel belegt: {0}</value>
+  </data>
+  <data name="GlobalHotKeyConflictPlayPause" xml:space="preserve">
+    <value>Wiedergabe / Pause</value>
+  </data>
+  <data name="GlobalHotKeyConflictNextSong" xml:space="preserve">
+    <value>Nächster Titel</value>
+  </data>
+  <data name="GlobalHotKeyConflictPreviousSong" xml:space="preserve">
+    <value>Vorheriger Titel</value>
+  </data>
+  <data name="GlobalHotKeyConflictVolumeUp" xml:space="preserve">
+    <value>Lauter</value>
+  </data>
+  <data name="GlobalHotKeyConflictVolumeDown" xml:space="preserve">
+    <value>Leiser</value>
+  </data>
+  <data name="GlobalHotKeyConflictTogglePlayingDetail" xml:space="preserve">
+    <value>Wiedergabedetails umschalten</value>
+  </data>
+  <data name="GlobalHotKeyConflictBack" xml:space="preserve">
+    <value>Zurück</value>
+  </data>
+  <data name="GlobalHotKeyConflictShowWindow" xml:space="preserve">
+    <value>Ein-/Ausblenden</value>
+  </data>
+  <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
+    <value>Vollbild umschalten</value>
   </data>
 </root>
 

@@ -1093,11 +1093,38 @@
 <data name="SettingsPageEnableGlobalHotKey.Text" xml:space="preserve">
     <value>Atajos globales</value>
   </data>
-  <data name="SettingsPageEnableGlobalHotKeyDescription.Text" xml:space="preserve">
-    <value>Desactivado: solo responde cuando esta ventana est\u00E1 enfocada. Activado: funciona minimizado pero puede anular otros programas.</value>
+<data name="SettingsPageEnableGlobalHotKeyDescription.Text" xml:space="preserve">
+    <value>Los atajos globales registrados pueden entrar en conflicto con otros programas.</value>
   </data>
   <data name="GlobalHotKeyConflictTitleFormat" xml:space="preserve">
     <value>Atajo global ocupado: {0}</value>
+  </data>
+  <data name="GlobalHotKeyConflictPlayPause" xml:space="preserve">
+    <value>Reproducir / Pausa</value>
+  </data>
+  <data name="GlobalHotKeyConflictNextSong" xml:space="preserve">
+    <value>Siguiente canción</value>
+  </data>
+  <data name="GlobalHotKeyConflictPreviousSong" xml:space="preserve">
+    <value>Canción anterior</value>
+  </data>
+  <data name="GlobalHotKeyConflictVolumeUp" xml:space="preserve">
+    <value>Subir volumen</value>
+  </data>
+  <data name="GlobalHotKeyConflictVolumeDown" xml:space="preserve">
+    <value>Bajar volumen</value>
+  </data>
+  <data name="GlobalHotKeyConflictTogglePlayingDetail" xml:space="preserve">
+    <value>Alternar detalle de reproducción</value>
+  </data>
+  <data name="GlobalHotKeyConflictBack" xml:space="preserve">
+    <value>Atrás</value>
+  </data>
+  <data name="GlobalHotKeyConflictShowWindow" xml:space="preserve">
+    <value>Mostrar / Ocultar</value>
+  </data>
+  <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
+    <value>Alternar pantalla completa</value>
   </data>
 </root>
 

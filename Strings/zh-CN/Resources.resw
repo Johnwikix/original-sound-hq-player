@@ -1094,10 +1094,37 @@
     <value>全局快捷键</value>
   </data>
   <data name="SettingsPageEnableGlobalHotKeyDescription.Text" xml:space="preserve">
-    <value>关闭时仅本程序前台响应；开启后可在最小化时控制，但可能占用其他程序的快捷键</value>
+    <value>注册的全局快捷键可能会和其他程序冲突</value>
   </data>
   <data name="GlobalHotKeyConflictTitleFormat" xml:space="preserve">
     <value>全局快捷键被占用：{0}</value>
+  </data>
+  <data name="GlobalHotKeyConflictPlayPause" xml:space="preserve">
+    <value>播放 / 暂停</value>
+  </data>
+  <data name="GlobalHotKeyConflictNextSong" xml:space="preserve">
+    <value>下一首</value>
+  </data>
+  <data name="GlobalHotKeyConflictPreviousSong" xml:space="preserve">
+    <value>上一首</value>
+  </data>
+  <data name="GlobalHotKeyConflictVolumeUp" xml:space="preserve">
+    <value>音量增加</value>
+  </data>
+  <data name="GlobalHotKeyConflictVolumeDown" xml:space="preserve">
+    <value>音量减小</value>
+  </data>
+  <data name="GlobalHotKeyConflictTogglePlayingDetail" xml:space="preserve">
+    <value>切换播放详情</value>
+  </data>
+  <data name="GlobalHotKeyConflictBack" xml:space="preserve">
+    <value>返回</value>
+  </data>
+  <data name="GlobalHotKeyConflictShowWindow" xml:space="preserve">
+    <value>显示 / 隐藏主窗口</value>
+  </data>
+  <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
+    <value>切换全屏</value>
   </data>
 </root>
 
