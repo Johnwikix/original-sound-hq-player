@@ -159,17 +159,17 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 AppViewModel.SequentialPlayingList = new(col);
                 var first = col.AsValueEnumerable().First();
-                BrowseViewModel.PlayMusic(music: first, IsChangeList: true).Wait();
+                _ = BrowseViewModel.PlayMusic(music: first, IsChangeList: true);
             }
             else if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Any())
             {
                 AppViewModel.SequentialPlayingList = new(uniqueSelectedMusics);
-                BrowseViewModel.PlayMusic(music: uniqueSelectedMusics.AsValueEnumerable().First(), IsChangeList: true).Wait();
+                _ = BrowseViewModel.PlayMusic(music: uniqueSelectedMusics.AsValueEnumerable().First(), IsChangeList: true);
             }
             else
             {
                 AppViewModel.SequentialPlayingList = new(AppViewModel.FavoriteSongs);
-                BrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true).Wait();
+                _ = BrowseViewModel.PlayMusic(music: SelectedMusic, IsChangeList: true);
             }
         }
 

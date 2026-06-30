@@ -230,7 +230,7 @@ namespace WinUIMusicPlayer.View
             var selectedMusic = CurrentPlayListViewPlayingDetail.SelectedItem as Music;
             if (selectedMusic is not null)
             {
-                App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(music: selectedMusic, IsChangeList: false).Wait();
+                _ = App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(music: selectedMusic, IsChangeList: false);
             }
         }
 

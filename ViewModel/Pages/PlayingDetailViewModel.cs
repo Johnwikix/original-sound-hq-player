@@ -103,11 +103,11 @@ namespace WinUIMusicPlayer.ViewModel.Pages
                         ?.Index ?? -1;
             if (index > 0)
             {
-                App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(AppViewModel.CurrentPlayingList[index - 1]).Wait();
+                _ = App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(AppViewModel.CurrentPlayingList[index - 1]);
             }
             else if (index == 0 && AppViewModel.CurrentPlayingList.Count > 1)
             {
-                App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(AppViewModel.CurrentPlayingList[^1]).Wait();
+                _ = App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(AppViewModel.CurrentPlayingList[^1]);
             }
         }
 

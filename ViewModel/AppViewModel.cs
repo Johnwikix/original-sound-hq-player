@@ -244,6 +244,7 @@ namespace WinUIMusicPlayer.ViewModel
         private DispatcherQueueHandler? _startTimerHandler;
         private DispatcherQueueHandler? _stopTimerHandler;
         private DispatcherQueueHandler? _updateProgressTimerHandler;
+        private long _lastSmtcUpdateTick;
         public event Action<long>? CurrentPlayingTimeChanged;
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
 
@@ -472,7 +473,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (_progressTimer is null)
             {
                 _progressTimer = App.MainWindow.DispatcherQueue.CreateTimer();
-                _progressTimer.Interval = TimeSpan.FromMilliseconds(50);
+                _progressTimer.Interval = TimeSpan.FromMilliseconds(125);
                 _progressTimer.IsRepeating = true;
                 _progressTimer.Tick += OnProgressTick;
             }
@@ -562,7 +563,11 @@ namespace WinUIMusicPlayer.ViewModel
                     ? string.Create(17, (curMs, totalMs), WriteTimeWithHours)
                     : string.Create(11, (curMs, totalMs), WriteTimeNoHours);
 
-                SystemMediaControlsService.UpdateTimelineProperties(CurrentTime, TotalTime);
+                if (Environment.TickCount64 - _lastSmtcUpdateTick >= 250)
+                {
+                    _lastSmtcUpdateTick = Environment.TickCount64;
+                    SystemMediaControlsService.UpdateTimelineProperties(CurrentTime, TotalTime);
+                }
             }
             catch (Exception ex)
             {

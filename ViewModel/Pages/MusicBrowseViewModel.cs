@@ -572,11 +572,11 @@ namespace WinUIMusicPlayer.ViewModel
                         ?.Index ?? -1;
             if (index > 0)
             {
-                PlayMusic(AppViewModel.CurrentPlayingList[index - 1]).Wait();
+                _ = PlayMusic(AppViewModel.CurrentPlayingList[index - 1]);
             }
             else if (index == 0 && AppViewModel.CurrentPlayingList.Count > 1)
             {
-                PlayMusic(AppViewModel.CurrentPlayingList[AppViewModel.CurrentPlayingList.Count - 1]).Wait();
+                _ = PlayMusic(AppViewModel.CurrentPlayingList[AppViewModel.CurrentPlayingList.Count - 1]);
             }
         }
 

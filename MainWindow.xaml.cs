@@ -151,19 +151,19 @@ namespace WinUIMusicPlayer
         }
 
 
-        private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, AppWindowClosingEventArgs args)
+private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, AppWindowClosingEventArgs args)
+    {
+        if (AppSettings.IsRunningBackend)
         {
-            if (AppSettings.IsRunningBackend)
-            {
-                args.Cancel = true;
-                this.Hide();
-                WorkingSetCompressor.TrimSelf();
-            }
-            else
-            {
-                await App.Current_Exit();
-            }
+            args.Cancel = true;
+            this.Hide();
+            _ = WorkingSetCompressor.TrimSelfAsync();
         }
+        else
+        {
+            await App.Current_Exit();
+        }
+    }
 
         public async void InitializeApp()
         {
@@ -235,21 +235,21 @@ namespace WinUIMusicPlayer
                 _logger.LogError(ex, "初始化任务栏助手失败");
             }
         }
-        public void ToggleShowHide()
+public void ToggleShowHide()
+    {
+        if (this.Visible)
         {
-            if (this.Visible)
-            {
-                this.Hide();
-                WorkingSetCompressor.TrimSelf();
-            }
-            else
-            {
-                this.Show();
-                InitializeTaskbarHelper();
-                this.Activate();
-                WindowHelper.SetForegroundWindow(AppData.HWnd);
-            }
+            this.Hide();
+            _ = WorkingSetCompressor.TrimSelfAsync();
         }
+        else
+        {
+            this.Show();
+            InitializeTaskbarHelper();
+            this.Activate();
+            WindowHelper.SetForegroundWindow(AppData.HWnd);
+        }
+    }
 
         public void Dispose()
         {

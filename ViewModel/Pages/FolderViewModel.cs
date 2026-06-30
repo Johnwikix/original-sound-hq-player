@@ -163,7 +163,7 @@ namespace WinUIMusicPlayer.ViewModel
                 slice.Sort((a, b) => string.CompareOrdinal(a.LastLevelFolderPath, b.LastLevelFolderPath));
 
                 AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(slice.ToArray());
-                MusicBrowseViewModel.PlayMusic(music: slice[0], IsChangeList: true).Wait();
+                _ = MusicBrowseViewModel.PlayMusic(music: slice[0], IsChangeList: true);
             }
             finally
             {
