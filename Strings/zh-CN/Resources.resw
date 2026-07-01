@@ -1123,8 +1123,29 @@
   <data name="GlobalHotKeyConflictShowWindow" xml:space="preserve">
     <value>显示 / 隐藏主窗口</value>
   </data>
-  <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
-    <value>切换全屏</value>
+<data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
+    <value>Toggle FullScreen</value>
+  </data>
+  <data name="Advanced.Text" xml:space="preserve">
+    <value>高级</value>
+  </data>
+  <data name="TrimOnHide.Text" xml:space="preserve">
+    <value>隐藏窗口时释放内存</value>
+  </data>
+  <data name="TrimOnHideDescription.Text" xml:space="preserve">
+    <value>应用最小化到任务栏或关闭到托盘时释放进程工作集。</value>
+  </data>
+  <data name="TrimAfterPlayback.Text" xml:space="preserve">
+    <value>播放后自动释放内存</value>
+  </data>
+  <data name="TrimAfterPlaybackDescription.Text" xml:space="preserve">
+    <value>每首歌曲播放结束后强制完整 GC，可能导致低端设备 UI 卡顿。</value>
+  </data>
+  <data name="TrimNow.Content" xml:space="preserve">
+    <value>立即释放内存</value>
+  </data>
+  <data name="TrimNowLabel.Text" xml:space="preserve">
+    <value>立即释放内存</value>
   </data>
 </root>
 

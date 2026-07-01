@@ -1123,8 +1123,29 @@
   <data name="GlobalHotKeyConflictShowWindow" xml:space="preserve">
     <value>Mostrar / Ocultar</value>
   </data>
-  <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
-    <value>Alternar pantalla completa</value>
+<data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
+    <value>Toggle FullScreen</value>
+  </data>
+  <data name="Advanced.Text" xml:space="preserve">
+    <value>Avanzado</value>
+  </data>
+  <data name="TrimOnHide.Text" xml:space="preserve">
+    <value>Liberar memoria al ocultar ventana</value>
+  </data>
+  <data name="TrimOnHideDescription.Text" xml:space="preserve">
+    <value>Libera el conjunto de trabajo cuando la app se minimiza a la barra de tareas o se cierra a la bandeja.</value>
+  </data>
+  <data name="TrimAfterPlayback.Text" xml:space="preserve">
+    <value>Liberar memoria automáticamente tras reproducción</value>
+  </data>
+  <data name="TrimAfterPlaybackDescription.Text" xml:space="preserve">
+    <value>Fuerza un GC completo tras cada pista. Puede causar tirones de UI en dispositivos de gama baja.</value>
+  </data>
+  <data name="TrimNow.Content" xml:space="preserve">
+    <value>Liberar memoria ahora</value>
+  </data>
+  <data name="TrimNowLabel.Text" xml:space="preserve">
+    <value>Liberar memoria ahora</value>
   </data>
 </root>
 

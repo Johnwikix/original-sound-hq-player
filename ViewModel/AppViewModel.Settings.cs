@@ -855,6 +855,38 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = false;
 
+        public bool IsTrimOnHideEnabled
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    AppSettings.IsTrimOnHideEnabled = value;
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = true;
+
+        public bool IsTrimAfterPlaybackEnabled
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    AppSettings.IsTrimAfterPlaybackEnabled = value;
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = false;
+
         public bool HasGlobalHotKeyConflict
         {
             get => field;
@@ -1362,6 +1394,12 @@ namespace WinUIMusicPlayer.ViewModel
                 DesiredRemainingView = Windows.UI.ViewManagement.ViewSizePreference.UseMore
             };
             await Launcher.LaunchFolderAsync(folder, options);
+        }
+
+        [RelayCommand]
+        private static async Task TrimNow()
+        {
+            await WorkingSetCompressor.TrimSelfAsync();
         }
     }
 }

@@ -711,11 +711,12 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 _logger.LogError(ex, $"播放音乐失败: {ex.Message}");
             }
-        }
+        }   
 
         private void TrimMemory() {
             try
             {
+                if (!AppViewModel.IsTrimAfterPlaybackEnabled) return;
                 if (WorkingSetCompressor.GetPrivateWorkingSet() > MemoryTrimThreshold)
                 {
                     _ = WorkingSetCompressor.TrimSelfAsync();

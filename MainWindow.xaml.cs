@@ -157,7 +157,8 @@ private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, Ap
         {
             args.Cancel = true;
             this.Hide();
-            _ = WorkingSetCompressor.TrimSelfAsync();
+            if (AppSettings.IsTrimOnHideEnabled)
+                _ = WorkingSetCompressor.TrimSelfAsync();
         }
         else
         {
@@ -240,7 +241,8 @@ public void ToggleShowHide()
         if (this.Visible)
         {
             this.Hide();
-            _ = WorkingSetCompressor.TrimSelfAsync();
+            if (AppSettings.IsTrimOnHideEnabled)
+                _ = WorkingSetCompressor.TrimSelfAsync();
         }
         else
         {

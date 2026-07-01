@@ -1123,8 +1123,29 @@
   <data name="GlobalHotKeyConflictShowWindow" xml:space="preserve">
     <value>Скрыть / Показать</value>
   </data>
-  <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
-    <value>Переключить полноэкранный режим</value>
+<data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
+    <value>Toggle FullScreen</value>
+  </data>
+  <data name="Advanced.Text" xml:space="preserve">
+    <value>Дополнительно</value>
+  </data>
+  <data name="TrimOnHide.Text" xml:space="preserve">
+    <value>Освобождать память при скрытии окна</value>
+  </data>
+  <data name="TrimOnHideDescription.Text" xml:space="preserve">
+    <value>Освобождает рабочий набор при сворачивании приложения в панель задач или в трей.</value>
+  </data>
+  <data name="TrimAfterPlayback.Text" xml:space="preserve">
+    <value>Автоматически освобождать память после воспроизведения</value>
+  </data>
+  <data name="TrimAfterPlaybackDescription.Text" xml:space="preserve">
+    <value>Принудительно выполняет полный GC после каждого трека. Может вызвать подёргивания интерфейса на слабых устройствах.</value>
+  </data>
+  <data name="TrimNow.Content" xml:space="preserve">
+    <value>Освободить память сейчас</value>
+  </data>
+  <data name="TrimNowLabel.Text" xml:space="preserve">
+    <value>Освободить память сейчас</value>
   </data>
 </root>
 

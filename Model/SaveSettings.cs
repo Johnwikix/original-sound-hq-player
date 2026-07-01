@@ -74,5 +74,7 @@ namespace WinUIMusicPlayer.Model
         public List<string> ShowWindowShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "W" };
         public List<string> ToggleFullScreenShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "F" };
         public bool EnableGlobalHotKey { get; set; } = false;
+        public bool IsTrimOnHideEnabled { get; set; } = true;
+        public bool IsTrimAfterPlaybackEnabled { get; set; } = false;
     }
 }

@@ -1123,8 +1123,29 @@
   <data name="GlobalHotKeyConflictShowWindow" xml:space="preserve">
     <value>表示 / 非表示</value>
   </data>
-  <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
-    <value>フルスクリーン切替</value>
+<data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
+    <value>Toggle FullScreen</value>
+  </data>
+  <data name="Advanced.Text" xml:space="preserve">
+    <value>詳細設定</value>
+  </data>
+  <data name="TrimOnHide.Text" xml:space="preserve">
+    <value>ウィンドウ非表示時にメモリを解放</value>
+  </data>
+  <data name="TrimOnHideDescription.Text" xml:space="preserve">
+    <value>アプリをタスクバーに最小化またはトレイに閉じるときにワーキングセットを解放します。</value>
+  </data>
+  <data name="TrimAfterPlayback.Text" xml:space="preserve">
+    <value>再生後にメモリを自動解放</value>
+  </data>
+  <data name="TrimAfterPlaybackDescription.Text" xml:space="preserve">
+    <value>各トラックの後にフル GC を強制します。低スペックデバイスでは UI の引っ掛かりが発生する可能性があります。</value>
+  </data>
+  <data name="TrimNow.Content" xml:space="preserve">
+    <value>今すぐメモリを解放</value>
+  </data>
+  <data name="TrimNowLabel.Text" xml:space="preserve">
+    <value>今すぐメモリを解放</value>
   </data>
 </root>
 
