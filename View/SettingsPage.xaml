@@ -392,14 +392,11 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                    <TextBlock x:Uid="TrimNowLabel" FontSize="14" />
-                                    <TextBlock
-                                        x:Uid="TrimNowDescription"
-                                        FontSize="12"
-                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        TextWrapping="Wrap" />
-                                </StackPanel>
+                                <TextBlock
+                                    x:Uid="TrimNowLabel"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
                                 <Button
                                     Grid.Column="1"
                                     VerticalAlignment="Center"
