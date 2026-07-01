@@ -869,7 +869,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = true;
+        } = false;
 
         public bool IsTrimAfterPlaybackEnabled
         {
