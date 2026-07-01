@@ -17,7 +17,7 @@
     <PackageReference Include="ComputeSharp.D2D1" Version="3.2.0" />
     <PackageReference Include="ComputeSharp.D2D1.WinUI" Version="3.2.0" />
     <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.1839" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2270" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.2.0" />
     <PackageReference Include="ZLinq" Version="1.5.6" />
   </ItemGroup>
