@@ -402,7 +402,7 @@
                                     VerticalAlignment="Center"
                                     Command="{x:Bind ViewModel.AppViewModel.TrimNowCommand, Mode=OneWay}">
                                     <Button.Content>
-                                        <FontIcon Glyph="&#xE8FB;" />
+                                        <FontIcon Glyph="&#xE895;" />
                                     </Button.Content>
                                 </Button>
                             </Grid>
