@@ -220,7 +220,7 @@
                         x:Uid="SpectrumVisualization"
                         Margin="10,0,10,0"
                         Click="SpectrumVisualization_Click"
-                        Description="© 2025 Sennpei Studio"
+                        Description="© 2026 Sennpei Studio"
                         HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/SpectrumVisualization.png}"
                         IsClickEnabled="True" />
                 </StackPanel>
@@ -1790,7 +1790,7 @@
                 <controls:SettingsExpander
                     x:Uid="AppTitleHeader"
                     Margin="10,0,10,0"
-                    Description="© 2025 Sennpei Studio"
+                    Description="© 2026 Sennpei Studio"
                     HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/Square44x44Logo.altform-unplated_targetsize-32.png}">
                     <TextBlock
                         x:Name="Version"
