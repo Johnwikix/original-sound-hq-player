@@ -148,6 +148,11 @@ namespace WinUIMusicPlayer.Utils
             return $"{music.Album}{Environment.NewLine}{music.Author}";
         }
 
+        public static bool BothTrue(bool a, bool b)
+        {
+            return a && b;
+        }
+
         public static double PercentToDouble(double percent) => percent / 100.0;
 
         public static string FormatF1(double value) => value.ToString("F1", System.Globalization.CultureInfo.InvariantCulture);

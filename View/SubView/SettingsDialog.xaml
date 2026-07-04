@@ -3,6 +3,7 @@
     x:Class="WinUIMusicPlayer.View.SubView.SettingsDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:WinUIMusicPlayer.View.SubView"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -475,21 +476,34 @@
                         IsEnabled="{x:Bind VM.IsFluidBackgroundEnabled, Mode=OneWay}"
                         IsOn="{x:Bind VM.IsRaindropEffectEnabled, Mode=TwoWay}" />
                 </StackPanel>
-                
+
                 <StackPanel
                     Grid.Row="5"
                     Grid.Column="2"
                     Spacing="4">
                     <TextBlock
-                        x:Uid="EnableLightWave"
+                        x:Uid="EnableCustomLyricsColor"
                         Grid.Column="0"
                         VerticalAlignment="Center"
                         FontSize="14" />
-                    <ToggleSwitch
-                        Grid.Column="1"
-                        MinWidth="0"
-                        IsEnabled="{x:Bind tool:BindUtils.IsLightWaveEnabled(VM.IsFluidBackgroundEnabled, VM.BackgroundShaderIndex), Mode=OneWay}"
-                        IsOn="{x:Bind VM.EnableLightWave, Mode=TwoWay}" />
+                    <Grid Width="250" HorizontalAlignment="Left">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <ToggleSwitch
+                            Grid.Column="0"
+                            MinWidth="0"
+                            Margin="0,0,10,0"
+                            IsEnabled="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=OneWay}"
+                            IsOn="{x:Bind VM.IsCustomLyricsColorEnabled, Mode=TwoWay}" />
+                        <controls:ColorPickerButton
+                            Grid.Column="1"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Center"
+                            IsEnabled="{x:Bind tool:BindUtils.BothTrue( VM.IsCustomLyricsColorEnabled, VM.EnableAdvancedLyricsEffect), Mode=OneWay}"
+                            SelectedColor="{x:Bind VM.LyricsCustomColor, Mode=TwoWay}" />
+                    </Grid>
                 </StackPanel>
 
                 <!--  Row 6: 流体背景 | 启用高级逐字歌词特效 | 背景着色器  -->
