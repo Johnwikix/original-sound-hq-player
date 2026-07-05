@@ -183,18 +183,32 @@ namespace WinUIMusicPlayer.View
 
             if (portrait)
             {
+                // Z-order: LyricsRegionHost 最底层（插入 index 0），LeftControlPanel 浮在上面
+                PlayingDetail.Children.Remove(LyricsRegionHost);
+                PlayingDetail.Children.Insert(0, LyricsRegionHost);
+
                 PlayingDetail.RowDefinitions.Clear();
-                PlayingDetail.RowDefinitions.Add(new RowDefinition { Height = new GridLength(topHeight, GridUnitType.Pixel) });
                 PlayingDetail.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                 PlayingDetail.ColumnDefinitions.Clear();
                 PlayingDetail.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
+                // LyricsRegionHost 占满全页
+                Grid.SetRow(LyricsRegionHost, 0);
+                Grid.SetColumn(LyricsRegionHost, 0);
+                Grid.SetRowSpan(LyricsRegionHost, 1);
+                Grid.SetColumnSpan(LyricsRegionHost, 1);
+                LyricsRegionHost.Margin = new Thickness(0);
+
+                // LeftControlPanel 固定在顶部，浮在 lyrics 之上
+                LeftControlPanel.Height = topHeight;
+                LeftControlPanel.VerticalAlignment = VerticalAlignment.Top;
                 Grid.SetRow(LeftControlPanel, 0);
                 Grid.SetColumn(LeftControlPanel, 0);
                 Grid.SetRowSpan(LeftControlPanel, 1);
                 Grid.SetColumnSpan(LeftControlPanel, 1);
 
                 LeftControlPanel.ColumnDefinitions.Clear();
+                LeftControlPanel.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
                 LeftControlPanel.Margin = new Thickness(0, PortraitTopVerticalMargin, 0, 0);
                 LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(topHeight, GridUnitType.Pixel) }); 
                 LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -211,23 +225,17 @@ namespace WinUIMusicPlayer.View
                 Grid.SetColumn(CoverContainer, 0);
                 Grid.SetColumnSpan(CoverContainer, 1);
 
-                AnimatedTextBlock.Margin = new Thickness(16, 10, 36, 0);
+                AnimatedTextBlock.Margin = new Thickness(16, 0, 16, 0);
                 Grid.SetRow(AnimatedTextBlock, 1);
                 Grid.SetColumn(AnimatedTextBlock, 1);
                 Grid.SetRowSpan(AnimatedTextBlock, 1);
                 Grid.SetColumnSpan(AnimatedTextBlock, 1);
 
-                ControlsStack.Margin = new Thickness(16, 0, 36, 16);
+                ControlsStack.Margin = new Thickness(16, 0, 16, 16);
                 Grid.SetRow(ControlsStack, 2);
                 Grid.SetColumn(ControlsStack, 1);
                 Grid.SetRowSpan(ControlsStack, 1);
                 Grid.SetColumnSpan(ControlsStack, 1);
-
-                Grid.SetRow(LyricsRegionHost, 1);
-                Grid.SetColumn(LyricsRegionHost, 0);
-                Grid.SetRowSpan(LyricsRegionHost, 1);
-                Grid.SetColumnSpan(LyricsRegionHost, 1);
-                LyricsRegionHost.Margin = new Thickness(8, 8, 8, 40);
             }
             else
             {
@@ -236,6 +244,14 @@ namespace WinUIMusicPlayer.View
                 PlayingDetail.ColumnDefinitions.Clear();
                 PlayingDetail.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 PlayingDetail.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                // 还原 Z-order（LyricsRegionHost 移到最后）
+                PlayingDetail.Children.Remove(LyricsRegionHost);
+                PlayingDetail.Children.Add(LyricsRegionHost);
+
+                LeftControlPanel.ClearValue(FrameworkElement.MaxHeightProperty);
+                LeftControlPanel.ClearValue(FrameworkElement.VerticalAlignmentProperty);
+                LeftControlPanel.Background = null;
 
                 Grid.SetRow(LeftControlPanel, 0);
                 Grid.SetColumn(LeftControlPanel, 0);
