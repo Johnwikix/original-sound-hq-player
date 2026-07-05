@@ -19,6 +19,7 @@ using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.ViewModel.Pages;
 using ZLinq;
+using CommunityToolkit.WinUI;
 
 // To learn more about WinUI, the WinUI project structure,
 // and more about our project templates, see: http://aka.ms/winui-project-info.
@@ -38,7 +39,9 @@ namespace WinUIMusicPlayer.View
         private const double PortraitEnterRatio = 1.25;
         private const double PortraitExitRatio = 1.15;
         private const double PortraitTopHeight = 300;
-        private const double PortraitTopVerticalMargin = 64;
+        private const double PortraitTopVerticalMargin = 56;
+        private const double textScale = 1.25;  
+        private const double lyricsScale = 1.5;
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
         {
             AnimatedWin2dControls.Controls.AlbumImgControl.AlbumArtControl.CoverCacheBasePath = AppSettings.MusicCoverCache;
@@ -73,7 +76,7 @@ namespace WinUIMusicPlayer.View
             App.MainWindow.SizeChanged += MainWindow_SizeChanged;
             App.MainWindow.AppWindow.Changed += AppWindow_Changed;
             ViewModel.AppViewModel.PropertyChanged += AppViewModel_PropertyChanged;
-            ChangeControlsFontSize();
+            _ = ChangeControlsFontSize();
             if (ViewModel.AppViewModel.LyricPagePalette is { } palette)
                 NowPlaying?.SetPalette(palette);
             UpdateLyricsRegion();
@@ -107,10 +110,10 @@ namespace WinUIMusicPlayer.View
 
         private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
         {
-            ChangeControlsFontSize();
+            _ = ChangeControlsFontSize();
         }
 
-        private void ChangeControlsFontSize()
+        private async Task ChangeControlsFontSize()
         {
             var windowSize = App.MainWindow.AppWindow.Size;
             _dpiScale = WindowSizeHelper.GetScaleFactor(AppData.HWnd);
@@ -127,10 +130,19 @@ namespace WinUIMusicPlayer.View
                 _ => (120, 42, 38, 46, 32, 72, 22, new Thickness(15, 0, 15, 0))
             };
 
-            if (portrait) secondSize = (int)(secondSize * 0.75);
+            if (portrait)
+            { 
+                lyrics = (int)(lyrics * lyricsScale);
+                title = (int)(title * textScale);
+                artist = (int)(artist * textScale);
+                firstSize = (int)(firstSize * textScale);
+                secondSize = (int)(secondSize * textScale);
+                shapeSize = (int)(shapeSize * textScale);
+                info = (int)(info * textScale);
+            }
 
             // 4. 应用变更
-            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
             {
                 ViewModel.TitleFontSize = title;
                 ViewModel.ArtistAlbumFontSize = artist;
@@ -179,6 +191,7 @@ namespace WinUIMusicPlayer.View
                 Grid.SetColumnSpan(LeftControlPanel, 1);
 
                 LeftControlPanel.ColumnDefinitions.Clear();
+                LeftControlPanel.Margin = new Thickness(0, PortraitTopVerticalMargin, 0, 0);
                 LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(300, GridUnitType.Pixel) }); 
                 LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 LeftControlPanel.RowDefinitions.Clear();
@@ -187,8 +200,6 @@ namespace WinUIMusicPlayer.View
                 LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
                 LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
-                CoverContainer.Padding = new Thickness(10);
-                CoverContainer.Margin = new Thickness(10);
                 CoverContainer.VerticalAlignment = VerticalAlignment.Center;
                 CoverContainer.HorizontalAlignment = HorizontalAlignment.Center;
                 Grid.SetRow(CoverContainer, 0);
@@ -196,13 +207,13 @@ namespace WinUIMusicPlayer.View
                 Grid.SetColumn(CoverContainer, 0);
                 Grid.SetColumnSpan(CoverContainer, 1);
 
-                AnimatedTextBlock.Margin = new Thickness(16, 0, 16, 0);
+                AnimatedTextBlock.Margin = new Thickness(16, 5, 36, 0);
                 Grid.SetRow(AnimatedTextBlock, 1);
                 Grid.SetColumn(AnimatedTextBlock, 1);
                 Grid.SetRowSpan(AnimatedTextBlock, 1);
                 Grid.SetColumnSpan(AnimatedTextBlock, 1);
 
-                ControlsStack.Margin = new Thickness(16, 0, 16, 16);
+                ControlsStack.Margin = new Thickness(16, 0, 36, 16);
                 Grid.SetRow(ControlsStack, 2);
                 Grid.SetColumn(ControlsStack, 1);
                 Grid.SetRowSpan(ControlsStack, 1);
@@ -228,6 +239,7 @@ namespace WinUIMusicPlayer.View
                 Grid.SetColumnSpan(LeftControlPanel, 1);
 
                 LeftControlPanel.ColumnDefinitions.Clear();
+                LeftControlPanel.ClearValue(FrameworkElement.MarginProperty);
                 LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(4, GridUnitType.Star) });
                 LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -238,8 +250,7 @@ namespace WinUIMusicPlayer.View
                 LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
                 LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
-                CoverContainer.Margin = new Thickness(0);
-                CoverContainer.Padding = new Thickness(0);
+                CoverContainer.ClearValue(FrameworkElement.MarginProperty);
                 CoverContainer.ClearValue(FrameworkElement.VerticalAlignmentProperty);
                 CoverContainer.ClearValue(FrameworkElement.HorizontalAlignmentProperty);
                 Grid.SetRow(CoverContainer, 1);
