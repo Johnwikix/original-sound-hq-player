@@ -183,9 +183,10 @@ namespace WinUIMusicPlayer.View
 
             if (portrait)
             {
-                // Z-order: LyricsRegionHost 最底层（插入 index 0），LeftControlPanel 浮在上面
-                PlayingDetail.Children.Remove(LyricsRegionHost);
-                PlayingDetail.Children.Insert(0, LyricsRegionHost);
+                // Z-order: LyricsRegionHost 最底层，LeftControlPanel 浮在上面（不用 Remove/Insert 避免 Unloaded 触发 PrepareForShutdown）
+                Canvas.SetZIndex(LyricsRegionHost, 0);
+                Canvas.SetZIndex(TopControl, 1);
+                Canvas.SetZIndex(LeftControlPanel, 2);
 
                 PlayingDetail.RowDefinitions.Clear();
                 PlayingDetail.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
@@ -245,9 +246,10 @@ namespace WinUIMusicPlayer.View
                 PlayingDetail.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 PlayingDetail.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-                // 还原 Z-order（LyricsRegionHost 移到最后）
-                PlayingDetail.Children.Remove(LyricsRegionHost);
-                PlayingDetail.Children.Add(LyricsRegionHost);
+                // 还原 Z-order
+                LyricsRegionHost.ClearValue(Canvas.ZIndexProperty);
+                TopControl.ClearValue(Canvas.ZIndexProperty);
+                LeftControlPanel.ClearValue(Canvas.ZIndexProperty);
 
                 LeftControlPanel.ClearValue(FrameworkElement.HeightProperty);
                 LeftControlPanel.ClearValue(FrameworkElement.VerticalAlignmentProperty);
