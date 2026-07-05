@@ -198,7 +198,7 @@ namespace WinUIMusicPlayer.View
                 Grid.SetColumn(LyricsRegionHost, 0);
                 Grid.SetRowSpan(LyricsRegionHost, 1);
                 Grid.SetColumnSpan(LyricsRegionHost, 1);
-                LyricsRegionHost.Margin = new Thickness(0);
+                LyricsRegionHost.Margin = new Thickness(0,60,0,0);
 
                 // LeftControlPanel 固定在顶部，浮在 lyrics 之上
                 LeftControlPanel.Height = topHeight;
