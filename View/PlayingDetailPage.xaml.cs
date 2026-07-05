@@ -196,7 +196,7 @@ namespace WinUIMusicPlayer.View
 
                 LeftControlPanel.ColumnDefinitions.Clear();
                 LeftControlPanel.Margin = new Thickness(0, PortraitTopVerticalMargin, 0, 0);
-                LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(300, GridUnitType.Pixel) }); 
+                LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(topHeight, GridUnitType.Pixel) }); 
                 LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 LeftControlPanel.RowDefinitions.Clear();
                 LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
