@@ -164,9 +164,6 @@ namespace WinUIMusicPlayer.View
                 AnimatedPlayingDetailTitleTextBlock?.FontSize = title;
                 AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = artist;
 
-                if (portrait && PlayingDetail.RowDefinitions.Count >= 1)
-                    PlayingDetail.RowDefinitions[0].Height = new GridLength(topHeight, GridUnitType.Pixel);
-
                 if (windowSize.Width > 0 && wantPortrait != _isPortraitWanted)
                 {
                     _isPortraitWanted = wantPortrait;
