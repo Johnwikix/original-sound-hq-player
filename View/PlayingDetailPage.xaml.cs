@@ -238,12 +238,8 @@ namespace WinUIMusicPlayer.View
                 LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
                 LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
-                CoverContainer.Padding = new Thickness(20);
                 CoverContainer.Margin = new Thickness(0);
-                CoverContainer.ClearValue(FrameworkElement.WidthProperty);
-                CoverContainer.ClearValue(FrameworkElement.HeightProperty);
-                CoverContainer.ClearValue(FrameworkElement.MaxHeightProperty);
-                CoverContainer.ClearValue(FrameworkElement.MaxWidthProperty);
+                CoverContainer.Padding = new Thickness(0);
                 CoverContainer.ClearValue(FrameworkElement.VerticalAlignmentProperty);
                 CoverContainer.ClearValue(FrameworkElement.HorizontalAlignmentProperty);
                 Grid.SetRow(CoverContainer, 1);
