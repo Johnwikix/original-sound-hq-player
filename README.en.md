@@ -15,7 +15,7 @@
   <div>
     <img src="https://img.shields.io/badge/Language-C%23-purple" alt="C#">
     <img src="https://img.shields.io/badge/Framework-WinUI%203-blue" alt="WinUI 3">
-    <img src="https://img.shields.io/badge/License-MIT-blue" alt="License">
+    <img src="https://img.shields.io/badge/License-AGPL--3.0-blue" alt="License">
     <a href="https://github.com/Johnwikix/original-sound-hq-player/stargazers"><img src="https://img.shields.io/github/stars/Johnwikix/original-sound-hq-player" alt="Star"></a>
     <a href="https://github.com/Johnwikix/original-sound-hq-player/releases/latest"><img src="https://img.shields.io/github/downloads/Johnwikix/original-sound-hq-player/total?label=Downloads" alt="Downloads"></a>
   </div>
@@ -161,7 +161,7 @@ Issues and Pull Requests are welcome.
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is licensed under the [GNU AGPL-3.0 License](LICENSE).
 
 ## 📬 Contact
 

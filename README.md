@@ -15,7 +15,7 @@
   <div>
     <img src="https://img.shields.io/badge/语言-C%23-purple" alt="C#">
     <img src="https://img.shields.io/badge/框架-WinUI%203-blue" alt="WinUI 3">
-    <img src="https://img.shields.io/badge/许可证-MIT-blue" alt="License">
+    <img src="https://img.shields.io/badge/许可证-AGPL--3.0-blue" alt="License">
     <a href="https://github.com/Johnwikix/original-sound-hq-player/stargazers"><img src="https://img.shields.io/github/stars/Johnwikix/original-sound-hq-player?label=%E6%98%9F%E6%A0%87%E6%95%B0" alt="Star"></a>
     <a href="https://github.com/Johnwikix/original-sound-hq-player/releases/latest"><img src="https://img.shields.io/github/downloads/Johnwikix/original-sound-hq-player/total?label=%E4%B8%8B%E8%BD%BD%E9%87%8F" alt="Downloads"></a>
   </div>
@@ -161,7 +161,7 @@
 
 ## 📄 许可证
 
-本项目基于 [MIT 许可证](LICENSE) 授权。
+本项目基于 [GNU AGPL-3.0 许可证](LICENSE) 授权。
 
 ## 📬 联系方式
 
