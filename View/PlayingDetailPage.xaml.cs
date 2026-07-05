@@ -249,7 +249,7 @@ namespace WinUIMusicPlayer.View
                 PlayingDetail.Children.Remove(LyricsRegionHost);
                 PlayingDetail.Children.Add(LyricsRegionHost);
 
-                LeftControlPanel.ClearValue(FrameworkElement.MaxHeightProperty);
+                LeftControlPanel.ClearValue(FrameworkElement.HeightProperty);
                 LeftControlPanel.ClearValue(FrameworkElement.VerticalAlignmentProperty);
                 LeftControlPanel.Background = null;
 
