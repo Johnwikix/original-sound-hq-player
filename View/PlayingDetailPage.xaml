@@ -106,7 +106,7 @@
                         Glyph="{x:Bind ViewModel.AppViewModel.IsPlayDetailButtonVisible, Converter={StaticResource PlayDetailButtonVisibleConverter}, Mode=OneWay}" />
                 </Button>
             </StackPanel>
-            <Grid Grid.Column="0" Margin="0">
+            <Grid x:Name="LeftControlPanel" Grid.Column="0" Margin="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="4*" />
@@ -119,7 +119,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <Grid Grid.Row="1" Grid.Column="1">
+                <Grid x:Name="CoverContainer" Grid.Row="1" Grid.Column="1">
                     <Grid
                         x:Name="PlayingDetailAlbumCoverImageGrid"
                         Padding="20"
@@ -319,6 +319,7 @@
                     </Grid>
                 </Grid>
                 <StackPanel
+                    x:Name="ControlsStack"
                     Grid.Row="3"
                     Grid.Column="1"
                     Margin="20,0,20,20">

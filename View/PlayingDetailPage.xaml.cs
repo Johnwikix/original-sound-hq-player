@@ -33,6 +33,12 @@ namespace WinUIMusicPlayer.View
         public PlayingDetailViewModel ViewModel { get; }
         private ILogger<PlayingDetailPage> _logger;
         private float _dpiScale = 1.0f;
+        private bool _isPortraitLayout;
+        private bool _isPortraitWanted;
+        private const double PortraitEnterRatio = 1.25;
+        private const double PortraitExitRatio = 1.15;
+        private const double PortraitTopHeight = 300;
+        private const double PortraitTopVerticalMargin = 64;
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
         {
             AnimatedWin2dControls.Controls.AlbumImgControl.AlbumArtControl.CoverCacheBasePath = AppSettings.MusicCoverCache;
@@ -108,8 +114,9 @@ namespace WinUIMusicPlayer.View
         {
             var windowSize = App.MainWindow.AppWindow.Size;
             _dpiScale = WindowSizeHelper.GetScaleFactor(AppData.HWnd);
-            double width = windowSize.Width / _dpiScale;
-            var (lyrics, title, artist, firstSize, secondSize, shapeSize, info, margin) = width switch
+            bool portrait = _isPortraitLayout;
+            double driver = windowSize.Width / _dpiScale;
+            var (lyrics, title, artist, firstSize, secondSize, shapeSize, info, margin) = driver switch
             {
                 <= 1024 => (36, 24, 20, 20, 14, 26, 10, new Thickness(2, 0, 2, 0)),
                 < 1280 => (42, 26, 22, 22, 16, 28, 12, new Thickness(2, 0, 2, 0)),
@@ -119,6 +126,8 @@ namespace WinUIMusicPlayer.View
                 < 2880 => (96, 38, 34, 40, 28, 66, 20, new Thickness(12, 0, 12, 0)),
                 _ => (120, 42, 38, 46, 32, 72, 22, new Thickness(15, 0, 15, 0))
             };
+
+            if (portrait) secondSize = (int)(secondSize * 0.75);
 
             // 4. 应用变更
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
@@ -133,7 +142,137 @@ namespace WinUIMusicPlayer.View
                 ViewModel.ControlMargin = margin;
                 AnimatedPlayingDetailTitleTextBlock?.FontSize = title;
                 AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = artist;
+
+                if (windowSize.Width > 0)
+                {
+                    double ratio = (double)windowSize.Height / windowSize.Width;
+                    bool wantPortrait = _isPortraitWanted
+                        ? ratio > PortraitExitRatio
+                        : ratio > PortraitEnterRatio;
+
+                    if (wantPortrait != _isPortraitWanted)
+                    {
+                        _isPortraitWanted = wantPortrait;
+                        ApplyAspectRatioLayout(wantPortrait);
+                        UpdateLyricsRegion();
+                    }
+                }
             });
+        }
+
+        private void ApplyAspectRatioLayout(bool portrait)
+        {
+            if (_isPortraitLayout == portrait) return;
+            _isPortraitLayout = portrait;
+
+            if (portrait)
+            {
+                PlayingDetail.RowDefinitions.Clear();
+                PlayingDetail.RowDefinitions.Add(new RowDefinition { Height = new GridLength(PortraitTopHeight, GridUnitType.Pixel) });
+                PlayingDetail.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                PlayingDetail.ColumnDefinitions.Clear();
+                PlayingDetail.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                Grid.SetRow(LeftControlPanel, 0);
+                Grid.SetColumn(LeftControlPanel, 0);
+                Grid.SetRowSpan(LeftControlPanel, 1);
+                Grid.SetColumnSpan(LeftControlPanel, 1);
+
+                LeftControlPanel.ColumnDefinitions.Clear();
+                LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(300, GridUnitType.Pixel) }); 
+                LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                LeftControlPanel.RowDefinitions.Clear();
+                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+                CoverContainer.Padding = new Thickness(10);
+                CoverContainer.Margin = new Thickness(10);
+                CoverContainer.VerticalAlignment = VerticalAlignment.Center;
+                CoverContainer.HorizontalAlignment = HorizontalAlignment.Center;
+                Grid.SetRow(CoverContainer, 0);
+                Grid.SetRowSpan(CoverContainer, 4);
+                Grid.SetColumn(CoverContainer, 0);
+                Grid.SetColumnSpan(CoverContainer, 1);
+
+                AnimatedTextBlock.Margin = new Thickness(16, 0, 16, 0);
+                Grid.SetRow(AnimatedTextBlock, 1);
+                Grid.SetColumn(AnimatedTextBlock, 1);
+                Grid.SetRowSpan(AnimatedTextBlock, 1);
+                Grid.SetColumnSpan(AnimatedTextBlock, 1);
+
+                ControlsStack.Margin = new Thickness(16, 0, 16, 16);
+                Grid.SetRow(ControlsStack, 2);
+                Grid.SetColumn(ControlsStack, 1);
+                Grid.SetRowSpan(ControlsStack, 1);
+                Grid.SetColumnSpan(ControlsStack, 1);
+
+                Grid.SetRow(LyricsRegionHost, 1);
+                Grid.SetColumn(LyricsRegionHost, 0);
+                Grid.SetRowSpan(LyricsRegionHost, 1);
+                Grid.SetColumnSpan(LyricsRegionHost, 1);
+                LyricsRegionHost.Margin = new Thickness(8, 8, 8, 40);
+            }
+            else
+            {
+                PlayingDetail.RowDefinitions.Clear();
+                PlayingDetail.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                PlayingDetail.ColumnDefinitions.Clear();
+                PlayingDetail.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                PlayingDetail.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+                Grid.SetRow(LeftControlPanel, 0);
+                Grid.SetColumn(LeftControlPanel, 0);
+                Grid.SetRowSpan(LeftControlPanel, 1);
+                Grid.SetColumnSpan(LeftControlPanel, 1);
+
+                LeftControlPanel.ColumnDefinitions.Clear();
+                LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(4, GridUnitType.Star) });
+                LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                LeftControlPanel.RowDefinitions.Clear();
+                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(8, GridUnitType.Star) });
+                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+
+                CoverContainer.Padding = new Thickness(20);
+                CoverContainer.Margin = new Thickness(0);
+                CoverContainer.ClearValue(FrameworkElement.WidthProperty);
+                CoverContainer.ClearValue(FrameworkElement.HeightProperty);
+                CoverContainer.ClearValue(FrameworkElement.MaxHeightProperty);
+                CoverContainer.ClearValue(FrameworkElement.MaxWidthProperty);
+                CoverContainer.ClearValue(FrameworkElement.VerticalAlignmentProperty);
+                CoverContainer.ClearValue(FrameworkElement.HorizontalAlignmentProperty);
+                Grid.SetRow(CoverContainer, 1);
+                Grid.SetRowSpan(CoverContainer, 1);
+                Grid.SetColumn(CoverContainer, 1);
+                Grid.SetColumnSpan(CoverContainer, 1);
+
+                AnimatedTextBlock.ClearValue(FrameworkElement.MarginProperty);
+                AnimatedTextBlock.Margin = new Thickness(20, 0, 20, 0);
+                Grid.SetRow(AnimatedTextBlock, 2);
+                Grid.SetColumn(AnimatedTextBlock, 1);
+                Grid.SetRowSpan(AnimatedTextBlock, 1);
+                Grid.SetColumnSpan(AnimatedTextBlock, 1);
+
+                ControlsStack.Margin = new Thickness(20, 0, 20, 20);
+                Grid.SetRow(ControlsStack, 3);
+                Grid.SetColumn(ControlsStack, 1);
+                Grid.SetRowSpan(ControlsStack, 1);
+                Grid.SetColumnSpan(ControlsStack, 1);
+
+                Grid.SetRow(LyricsRegionHost, 0);
+                Grid.SetColumn(LyricsRegionHost, 1);
+                Grid.SetRowSpan(LyricsRegionHost, 1);
+                Grid.SetColumnSpan(LyricsRegionHost, 1);
+                LyricsRegionHost.Margin = new Thickness(0, 40, 0, 40);
+            }
+
+            PlayingDetail.UpdateLayout();
+            LeftControlPanel.UpdateLayout();
         }
 
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
