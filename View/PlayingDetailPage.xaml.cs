@@ -36,8 +36,8 @@ namespace WinUIMusicPlayer.View
         private float _dpiScale = 1.0f;
         private bool _isPortraitLayout;
         private bool _isPortraitWanted;
-        private const double PortraitEnterRatio = 1.20;
-        private const double PortraitExitRatio = 1.15;
+        private const double PortraitEnterRatio = 1.15;
+        private const double PortraitExitRatio = 1.10;
         private const double PortraitTopVerticalMargin = 56;
         private const double textScale = 1.25;  
         private const double lyricsScale = 1.5;
