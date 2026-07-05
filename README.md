@@ -156,6 +156,8 @@
 
 - [BetterLyrics](https://github.com/jayfunc/BetterLyrics)
 - [WindowsMusicPlayer-TheUntamedMusicPlayer](https://github.com/LanZhan-Harmony/WindowsMusicPlayer-TheUntamedMusicPlayer)
+- [HyPlayer](https://github.com/HyPlayer/HyPlayer)
+- [DevWinUI](https://github.com/ghost1372/DevWinUI)
 
 ## 📄 许可证
 
@@ -163,7 +165,7 @@
 
 ## 📬 联系方式
 
-- 问题反馈交流 QQ 群：`1009034363`
+- 问题反馈交流 QQ 群：一群 `1009034363`，二群 `1033738779`
 - 邮箱：[dannypan9709@foxmail.com](mailto:dannypan9709@foxmail.com)
 
 ## 🗂️ 数据存储

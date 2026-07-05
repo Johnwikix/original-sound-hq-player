@@ -156,6 +156,8 @@ Issues and Pull Requests are welcome.
 
 - [BetterLyrics](https://github.com/jayfunc/BetterLyrics)
 - [WindowsMusicPlayer-TheUntamedMusicPlayer](https://github.com/LanZhan-Harmony/WindowsMusicPlayer-TheUntamedMusicPlayer)
+- [HyPlayer](https://github.com/HyPlayer/HyPlayer)
+- [DevWinUI](https://github.com/ghost1372/DevWinUI)
 
 ## 📄 License
 
@@ -163,7 +165,7 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## 📬 Contact
 
-- QQ Group: `1009034363`
+- QQ Group: Group 1 `1009034363`, Group 2 `1033738779`
 - Email: [dannypan9709@foxmail.com](mailto:dannypan9709@foxmail.com)
 
 ## 🗂️ Data Storage
