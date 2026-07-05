@@ -36,9 +36,8 @@ namespace WinUIMusicPlayer.View
         private float _dpiScale = 1.0f;
         private bool _isPortraitLayout;
         private bool _isPortraitWanted;
-        private const double PortraitEnterRatio = 1.25;
+        private const double PortraitEnterRatio = 1.20;
         private const double PortraitExitRatio = 1.15;
-        private const double PortraitTopHeight = 300;
         private const double PortraitTopVerticalMargin = 56;
         private const double textScale = 1.25;  
         private const double lyricsScale = 1.5;
@@ -117,17 +116,27 @@ namespace WinUIMusicPlayer.View
         {
             var windowSize = App.MainWindow.AppWindow.Size;
             _dpiScale = WindowSizeHelper.GetScaleFactor(AppData.HWnd);
-            bool portrait = _isPortraitLayout;
-            double driver = windowSize.Width / _dpiScale;
-            var (lyrics, title, artist, firstSize, secondSize, shapeSize, info, margin) = driver switch
+
+            bool wantPortrait = _isPortraitWanted;
+            if (windowSize.Width > 0)
             {
-                <= 1024 => (36, 24, 20, 20, 14, 26, 10, new Thickness(2, 0, 2, 0)),
-                < 1280 => (42, 26, 22, 22, 16, 28, 12, new Thickness(2, 0, 2, 0)),
-                < 1600 => (52, 28, 24, 28, 22, 40, 16, new Thickness(5, 0, 5, 0)),
-                < 1920 => (64, 32, 28, 32, 26, 40, 16, new Thickness(5, 0, 5, 0)),
-                < 2560 => (80, 36, 32, 36, 26, 60, 18, new Thickness(10, 0, 10, 0)),
-                < 2880 => (96, 38, 34, 40, 28, 66, 20, new Thickness(12, 0, 12, 0)),
-                _ => (120, 42, 38, 46, 32, 72, 22, new Thickness(15, 0, 15, 0))
+                double ratio = (double)windowSize.Height / windowSize.Width;
+                wantPortrait = _isPortraitWanted
+                    ? ratio > PortraitExitRatio
+                    : ratio > PortraitEnterRatio;
+            }
+
+            bool portrait = wantPortrait;
+            double driver = windowSize.Width / _dpiScale;
+            var (lyrics, title, artist, firstSize, secondSize, shapeSize, info, margin, topHeight) = driver switch
+            {
+                <= 1024 => (36, 24, 20, 20, 14, 26, 10, new Thickness(2, 0, 2, 0), 300),
+                < 1280 => (42, 26, 22, 22, 16, 28, 12, new Thickness(2, 0, 2, 0), 315),
+                < 1600 => (52, 28, 24, 28, 22, 40, 16, new Thickness(5, 0, 5, 0), 330),
+                < 1920 => (64, 32, 28, 32, 26, 40, 16, new Thickness(5, 0, 5, 0), 345),
+                < 2560 => (80, 36, 32, 36, 26, 60, 18, new Thickness(10, 0, 10, 0), 360),
+                < 2880 => (96, 38, 34, 40, 28, 66, 20, new Thickness(12, 0, 12, 0), 385),
+                _ => (120, 42, 38, 46, 32, 72, 22, new Thickness(15, 0, 15, 0), 400)
             };
 
             if (portrait)
@@ -155,24 +164,19 @@ namespace WinUIMusicPlayer.View
                 AnimatedPlayingDetailTitleTextBlock?.FontSize = title;
                 AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = artist;
 
-                if (windowSize.Width > 0)
-                {
-                    double ratio = (double)windowSize.Height / windowSize.Width;
-                    bool wantPortrait = _isPortraitWanted
-                        ? ratio > PortraitExitRatio
-                        : ratio > PortraitEnterRatio;
+                if (portrait && PlayingDetail.RowDefinitions.Count >= 1)
+                    PlayingDetail.RowDefinitions[0].Height = new GridLength(topHeight, GridUnitType.Pixel);
 
-                    if (wantPortrait != _isPortraitWanted)
-                    {
-                        _isPortraitWanted = wantPortrait;
-                        ApplyAspectRatioLayout(wantPortrait);
-                        UpdateLyricsRegion();
-                    }
+                if (windowSize.Width > 0 && wantPortrait != _isPortraitWanted)
+                {
+                    _isPortraitWanted = wantPortrait;
+                    ApplyAspectRatioLayout(wantPortrait, topHeight);
+                    UpdateLyricsRegion();
                 }
             });
         }
 
-        private void ApplyAspectRatioLayout(bool portrait)
+        private void ApplyAspectRatioLayout(bool portrait, double topHeight = 300)
         {
             if (_isPortraitLayout == portrait) return;
             _isPortraitLayout = portrait;
@@ -180,7 +184,7 @@ namespace WinUIMusicPlayer.View
             if (portrait)
             {
                 PlayingDetail.RowDefinitions.Clear();
-                PlayingDetail.RowDefinitions.Add(new RowDefinition { Height = new GridLength(PortraitTopHeight, GridUnitType.Pixel) });
+                PlayingDetail.RowDefinitions.Add(new RowDefinition { Height = new GridLength(topHeight, GridUnitType.Pixel) });
                 PlayingDetail.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                 PlayingDetail.ColumnDefinitions.Clear();
                 PlayingDetail.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -207,7 +211,7 @@ namespace WinUIMusicPlayer.View
                 Grid.SetColumn(CoverContainer, 0);
                 Grid.SetColumnSpan(CoverContainer, 1);
 
-                AnimatedTextBlock.Margin = new Thickness(16, 5, 36, 0);
+                AnimatedTextBlock.Margin = new Thickness(16, 10, 36, 0);
                 Grid.SetRow(AnimatedTextBlock, 1);
                 Grid.SetColumn(AnimatedTextBlock, 1);
                 Grid.SetRowSpan(AnimatedTextBlock, 1);
