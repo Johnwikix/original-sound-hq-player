@@ -111,6 +111,7 @@ namespace WinUIMusicPlayer.View
             double width = windowSize.Width / _dpiScale;
             var (lyrics, title, artist, firstSize, secondSize, shapeSize, info, margin) = width switch
             {
+                <= 1024 => (36, 24, 20, 20, 14, 26, 10, new Thickness(2, 0, 2, 0)),
                 < 1280 => (42, 26, 22, 22, 16, 28, 12, new Thickness(2, 0, 2, 0)),
                 < 1600 => (52, 28, 24, 28, 22, 40, 16, new Thickness(5, 0, 5, 0)),
                 < 1920 => (64, 32, 28, 32, 26, 40, 16, new Thickness(5, 0, 5, 0)),

@@ -10,8 +10,8 @@
     xmlns:view="using:WinUIMusicPlayer.View"
     xmlns:winex="using:WinUIEx"
     Title="OriginalSound HQ Player"
-    MinWidth="1152"
-    MinHeight="768">
+    MinWidth="960"
+    MinHeight="720">
     <winex:WindowEx.SystemBackdrop>
         <DesktopAcrylicBackdrop />
     </winex:WindowEx.SystemBackdrop>

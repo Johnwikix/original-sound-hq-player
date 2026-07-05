@@ -48,7 +48,7 @@
                     IsBackEnabled="{x:Bind ViewModel.AppViewModel.IsBackBtnEnable, Mode=OneWay}"
                     IsPaneToggleButtonVisible="True"
                     ItemInvoked="NavigationView_ItemInvoked"
-                    PaneDisplayMode="Left">
+                    PaneDisplayMode="Auto">
                     <NavigationView.AutoSuggestBox>
                         <AutoSuggestBox
                             x:Name="SearchAutoSuggestBox"
