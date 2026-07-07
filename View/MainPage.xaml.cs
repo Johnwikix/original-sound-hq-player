@@ -1,6 +1,7 @@
 using DevWinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
@@ -9,6 +10,7 @@ using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using WinUIEx;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -47,9 +49,10 @@ namespace WinUIMusicPlayer.View
             MainFrame.Navigated += MainFrame_Navigated;
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
             _playingNavigation = navigationServiceFactory.CreateNavigationService(PlayingFrame);
-            _playingNavigation.RegisterPage<PlayingDetailPage>();             
+            _playingNavigation.RegisterPage<PlayingDetailPage>();
             ViewModel.MusicBrowseVM.SetMainPage(this);
             Loaded += MainPage_Loaded;
+            Unloaded += MainPage_Unloaded;
         }
 
         private void MainPage_Loaded(object sender, RoutedEventArgs e)
@@ -60,7 +63,120 @@ namespace WinUIMusicPlayer.View
             SetSettingsDialog();
             AddPlayListDialog ??= new AddPlayListDialog(ViewModel.AppViewModel);
             NavigationViewControl.Visibility = Visibility.Visible;
+            if (App.MainWindow is { } mainWindow)
+            {
+                new DragMoveHelper(mainWindow).SetDragMove(AppTitleBar);
+                mainWindow.AppWindow.Changed += MainPage_AppWindow_Changed;
+                ViewModel.AppViewModel.PropertyChanged += AppViewModel_PropertyChanged;
+            }
+            UpdateMaximizeIcon();
+            UpdateFullscreenIcon();
             Loaded -= MainPage_Loaded;
+        }
+
+        private void MainPage_Unloaded(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                if (App.MainWindow is { } mw)
+                    mw.AppWindow.Changed -= MainPage_AppWindow_Changed;
+            }
+            catch
+            {
+            }
+            try
+            {
+                if (ViewModel?.AppViewModel is { } appVm)
+                    appVm.PropertyChanged -= AppViewModel_PropertyChanged;
+            }
+            catch
+            {
+            }
+            Unloaded -= MainPage_Unloaded;
+        }
+
+        private void MainPage_AppWindow_Changed(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowChangedEventArgs args)
+        {
+            if (args.DidPositionChange || args.DidSizeChange)
+            {
+                UpdateMaximizeIcon();
+                UpdateFullscreenIcon();
+            }
+        }
+
+        private void AppViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(AppViewModel.IsFullScreen))
+            {
+                UpdateFullscreenIcon();
+            }
+        }
+
+        private void UpdateMaximizeIcon()
+        {
+            if (App.MainWindow?.AppWindow.Presenter is OverlappedPresenter overlapped)
+            {
+                bool isMaximized = overlapped.State == OverlappedPresenterState.Maximized;
+                EnterMaximizeFontIcon.Opacity = isMaximized ? 0 : 1;
+                ExitMaximizeFontIcon.Opacity = isMaximized ? 1 : 0;
+            }
+        }
+
+        private void UpdateFullscreenIcon()
+        {
+            bool isFullScreen = ViewModel.AppViewModel.IsFullScreen;
+            EnterFullscreenFontIcon.Opacity = isFullScreen ? 0 : 1;
+            ExitFullscreenFontIcon.Opacity = isFullScreen ? 1 : 0;
+        }
+
+        private void AppTitleBar_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            if (!ViewModel.AppViewModel.IsPlayingDetailVisible) return;
+            TopRightButtons.Opacity = 1.0;
+        }
+
+        private void AppTitleBar_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            if (!ViewModel.AppViewModel.IsPlayingDetailVisible) return;
+            TopRightButtons.Opacity = 0.0;
+        }
+
+        private void MinimizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            App.MainWindow?.Minimize();
+        }
+
+        private void MaximizeButton_Click(object sender, RoutedEventArgs e)
+        {
+            var window = App.MainWindow;
+            if (window?.AppWindow.Presenter is OverlappedPresenter overlapped)
+            {
+                if (overlapped.State == OverlappedPresenterState.Maximized)
+                    window.Restore();
+                else
+                    window.Maximize();
+            }
+            UpdateMaximizeIcon();
+        }
+
+        private void FullscreenTitleBarButton_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.AppViewModel.ToggleFullScreen();
+        }
+
+        private void CloseTitleBarButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (App.MainWindow is null) return;
+            if (AppSettings.IsRunningBackend)
+            {
+                App.MainWindow.Hide();
+                if (AppSettings.IsTrimOnHideEnabled)
+                    _ = WorkingSetCompressor.TrimSelfAsync();
+            }
+            else
+            {
+                _ = App.Current_Exit();
+            }
         }
 
         private void MainFrame_Navigated(object sender, Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
@@ -69,7 +185,7 @@ namespace WinUIMusicPlayer.View
         }
 
         private void NavigateTo(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)
-        {            
+        {
             MainFrame.Navigate(pageType, parameter, navigationTransitionInfo);
             MainFrame.BackStack.Clear();
         }
@@ -139,11 +255,12 @@ namespace WinUIMusicPlayer.View
             {
                 NavigationViewControl.Visibility = Visibility.Visible;
                 _playingNavigation.Dismiss(300);
+                ViewModel.AppViewModel.IsPlayingDetailVisible = false;
             }
             if (MainFrame.Content is not SettingsPage) {
                 NavigationViewControl.SelectedItem = NavigationViewControl.SettingsItem;
                 NavigateTo(typeof(SettingsPage), null, new EntranceNavigationTransitionInfo());
-            }            
+            }
         }
 
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
@@ -192,9 +309,11 @@ namespace WinUIMusicPlayer.View
                 {
                     if (Interlocked.Decrement(ref pendingCount) == 0)
                         _isPageTransitioning = false;
-                }                
+                }
                 _playingNavigation.Show(typeof(PlayingDetailPage), 300, onCompleted: OnOneCompleted);
                 NavigationViewControl.Visibility = Visibility.Collapsed;
+                ViewModel.AppViewModel.IsPlayingDetailVisible = true;
+                TopRightButtons.Opacity = 0;
             }
             else
             {
@@ -214,9 +333,11 @@ namespace WinUIMusicPlayer.View
                 {
                     if (Interlocked.Decrement(ref pendingCount) == 0)
                         _isPageTransitioning = false;
-                }                
+                }
                 _playingNavigation.Dismiss(300, onCompleted: OnOneCompleted);
                 NavigationViewControl.Visibility = Visibility.Visible;
+                ViewModel.AppViewModel.IsPlayingDetailVisible = false;
+                TopRightButtons.Opacity = 1;
             }
             else
             {

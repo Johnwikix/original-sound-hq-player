@@ -69,7 +69,7 @@
                     Style="{StaticResource MenuButtonStyle}">
                     <FontIcon FontSize="16" Glyph="&#xE70D;" />
                 </Button>
-                <Button
+                <!--<Button
                     Margin="0"
                     Padding="10,8"
                     HorizontalAlignment="Left"
@@ -86,7 +86,7 @@
                         VerticalAlignment="Center"
                         FontSize="16"
                         Glyph="{x:Bind ViewModel.AppViewModel.IsFullScreen, Converter={StaticResource FullScreenIconConverter}, Mode=OneWay}" />
-                </Button>
+                </Button>-->
                 <Button
                     Margin="0"
                     Padding="10,8"
@@ -106,7 +106,10 @@
                         Glyph="{x:Bind ViewModel.AppViewModel.IsPlayDetailButtonVisible, Converter={StaticResource PlayDetailButtonVisibleConverter}, Mode=OneWay}" />
                 </Button>
             </StackPanel>
-            <Grid x:Name="LeftControlPanel" Grid.Column="0" Margin="0">
+            <Grid
+                x:Name="LeftControlPanel"
+                Grid.Column="0"
+                Margin="0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="4*" />
@@ -119,7 +122,10 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
-                <Grid x:Name="CoverContainer" Grid.Row="1" Grid.Column="1">
+                <Grid
+                    x:Name="CoverContainer"
+                    Grid.Row="1"
+                    Grid.Column="1">
                     <Grid
                         x:Name="PlayingDetailAlbumCoverImageGrid"
                         Padding="20"

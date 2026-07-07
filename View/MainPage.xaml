@@ -20,27 +20,6 @@
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
             <Grid Grid.Row="0">
-                <Grid
-                    x:Name="AppTitleBar"
-                    Height="44"
-                    Margin="50,0,0,0"
-                    Padding="0"
-                    VerticalAlignment="Top"
-                    Opacity="{x:Bind tools:BindUtils.VisibilityToOpacityConverter(NavigationViewControl.Visibility), Mode=OneWay}">
-                    <Grid.OpacityTransition>
-                        <ScalarTransition />
-                    </Grid.OpacityTransition>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock
-                        x:Uid="AppTitle"
-                        Grid.Column="1"
-                        Margin="18,0,0,0"
-                        VerticalAlignment="Center"
-                        FontSize="16"
-                        Style="{StaticResource CaptionTextBlockStyle}" />
-                </Grid>
                 <NavigationView
                     x:Name="NavigationViewControl"
                     BackRequested="NavigationViewControl_BackRequested"
@@ -563,23 +542,6 @@
                             </TeachingTip.Content>
                         </TeachingTip>
                         <Button
-                            Margin="10,0,0,0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            Background="Transparent"
-                            BorderBrush="Transparent"
-                            BorderThickness="0"
-                            Command="{x:Bind ViewModel.AppViewModel.FullScreenButtonChangedCommand, Mode=OneWay}"
-                            Style="{StaticResource MenuButtonStyle}">
-                            <FontIcon
-                                x:Name="FullScreenIcon"
-                                Grid.Column="0"
-                                Margin="0"
-                                VerticalAlignment="Center"
-                                FontSize="16"
-                                Glyph="{x:Bind ViewModel.AppViewModel.IsFullScreen, Converter={StaticResource FullScreenIconConverter}, Mode=OneWay}" />
-                        </Button>
-                        <Button
                             x:Name="PlayModeButton"
                             Margin="10"
                             HorizontalAlignment="Left"
@@ -596,5 +558,122 @@
             </Grid>
         </Grid>
         <Frame x:Name="PlayingFrame" Visibility="Collapsed" />
+        <Grid
+            x:Name="AppTitleBar"
+            Height="44"
+            Margin="50,0,0,0"
+            Padding="0"
+            VerticalAlignment="Top"
+            Background="Transparent"
+            PointerEntered="AppTitleBar_PointerEntered"
+            PointerExited="AppTitleBar_PointerExited">
+            <Grid.OpacityTransition>
+                <ScalarTransition />
+            </Grid.OpacityTransition>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock
+                x:Uid="AppTitle"
+                Grid.Column="0"
+                Margin="18,0,0,0"
+                VerticalAlignment="Center"
+                FontSize="16"
+                IsHitTestVisible="False"
+                Opacity="{x:Bind tools:BindUtils.VisibilityToOpacityConverter(NavigationViewControl.Visibility), Mode=OneWay}"
+                Style="{StaticResource CaptionTextBlockStyle}" />
+            <StackPanel
+                x:Name="TopRightButtons"
+                Grid.Column="2"
+                Margin="0,0,0,0"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                Opacity="1"
+                Orientation="Horizontal">
+                <StackPanel.OpacityTransition>
+                    <ScalarTransition />
+                </StackPanel.OpacityTransition>
+                <Button
+                    x:Name="FullscreenTitleBarButton"
+                    x:Uid="FullscreenTitleBarButton"
+                    Click="FullscreenTitleBarButton_Click"
+                    Style="{StaticResource TitleBarButtonStyle}"
+                    ToolTipService.ToolTip="Fullscreen">
+                    <Grid>
+                        <FontIcon
+                            x:Name="EnterFullscreenFontIcon"
+                            FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                            FontSize="14"
+                            Glyph="&#xE740;">
+                            <FontIcon.OpacityTransition>
+                                <ScalarTransition />
+                            </FontIcon.OpacityTransition>
+                        </FontIcon>
+                        <FontIcon
+                            x:Name="ExitFullscreenFontIcon"
+                            FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                            FontSize="14"
+                            Glyph="&#xE73F;"
+                            Opacity="0">
+                            <FontIcon.OpacityTransition>
+                                <ScalarTransition />
+                            </FontIcon.OpacityTransition>
+                        </FontIcon>
+                    </Grid>
+                </Button>
+                <Button
+                    x:Name="MinimizeButton"
+                    x:Uid="MinimizeButton"
+                    Click="MinimizeButton_Click"
+                    Style="{StaticResource TitleBarButtonStyle}"
+                    ToolTipService.ToolTip="Minimize">
+                    <FontIcon
+                        FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                        FontSize="14"
+                        Glyph="&#xE738;" />
+                </Button>
+                <Button
+                    x:Name="MaximizeButton"
+                    x:Uid="MaximizeButton"
+                    Click="MaximizeButton_Click"
+                    Style="{StaticResource TitleBarButtonStyle}"
+                    ToolTipService.ToolTip="Maximize">
+                    <Grid>
+                        <FontIcon
+                            x:Name="EnterMaximizeFontIcon"
+                            FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                            FontSize="14"
+                            Glyph="&#xE71A;">
+                            <FontIcon.OpacityTransition>
+                                <ScalarTransition />
+                            </FontIcon.OpacityTransition>
+                        </FontIcon>
+                        <FontIcon
+                            x:Name="ExitMaximizeFontIcon"
+                            FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                            FontSize="14"
+                            Glyph="&#xE744;"
+                            Opacity="0">
+                            <FontIcon.OpacityTransition>
+                                <ScalarTransition />
+                            </FontIcon.OpacityTransition>
+                        </FontIcon>
+                    </Grid>
+                </Button>
+                <Button
+                    x:Name="CloseTitleBarButton"
+                    x:Uid="CloseTitleBarButton"
+                    Click="CloseTitleBarButton_Click"
+                    Style="{StaticResource TitleBarCloseButtonStyle}"
+                    ToolTipService.ToolTip="Close">
+                    <FontIcon
+                        FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                        FontSize="14"
+                        Glyph="&#xE711;" />
+                </Button>
+            </StackPanel>
+        </Grid>
     </Grid>
 </Page>

@@ -39,7 +39,7 @@ namespace WinUIMusicPlayer
         private TaskbarHelper _taskbarHelper;
         private ILogger<MainWindow> _logger;
         private readonly object _trimLock = new();
-        
+
         public MainWindow()
         {
             InitializeComponent();
@@ -82,6 +82,10 @@ namespace WinUIMusicPlayer
             else
             {
                 this.CenterOnScreen();
+            }
+            if (AppWindow.Presenter is OverlappedPresenter overlapped)
+            {
+                overlapped.SetBorderAndTitleBar(hasBorder: true, hasTitleBar: false);
             }
         }
 

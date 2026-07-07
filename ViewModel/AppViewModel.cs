@@ -212,6 +212,7 @@ namespace WinUIMusicPlayer.ViewModel
         public int UsbSelectedIndex { get; set => SetProperty(ref field, value); } = 0;
         public Visibility ProcessRingVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
         public bool IsFullScreen { get; set => SetProperty(ref field, value); } = false;
+        public bool IsPlayingDetailVisible { get; set => SetProperty(ref field, value); } = false;
 
         public void ToggleFullScreen()
         {
