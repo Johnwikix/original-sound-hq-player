@@ -10,6 +10,8 @@ using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Foundation;
+using Windows.Graphics;
 using WinUIEx;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
@@ -65,9 +67,10 @@ namespace WinUIMusicPlayer.View
             NavigationViewControl.Visibility = Visibility.Visible;
             if (App.MainWindow is { } mainWindow)
             {
-                new DragMoveHelper(mainWindow).SetDragMove(AppTitleBar);
                 mainWindow.AppWindow.Changed += MainPage_AppWindow_Changed;
                 ViewModel.AppViewModel.PropertyChanged += AppViewModel_PropertyChanged;
+                AppTitleBar.SizeChanged += AppTitleBar_SizeChanged;
+                UpdateTitleBarDragRects();
             }
             UpdateMaximizeIcon();
             UpdateFullscreenIcon();
@@ -164,6 +167,49 @@ namespace WinUIMusicPlayer.View
             ViewModel.AppViewModel.ToggleFullScreen();
         }
 
+        private void AppTitleBar_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            UpdateTitleBarDragRects();
+        }
+
+        private void UpdateTitleBarDragRects()
+        {
+            if (App.MainWindow?.AppWindow?.TitleBar is null) return;
+            try
+            {
+                var winContent = (FrameworkElement)App.MainWindow.Content;
+                if (winContent is null) return;
+
+                AppTitleBar.UpdateLayout();
+                TopRightButtons.UpdateLayout();
+
+                double scale = AppTitleBar.XamlRoot?.RasterizationScale ?? 1.0;
+
+                var ttv = AppTitleBar.TransformToVisual(winContent);
+                var tbTL = ttv.TransformPoint(new Point(0, 0));
+                var tbBR = ttv.TransformPoint(new Point(AppTitleBar.ActualWidth, AppTitleBar.ActualHeight));
+
+                var rbv = TopRightButtons.TransformToVisual(winContent);
+                var rbTL = rbv.TransformPoint(new Point(0, 0));
+                var rbBR = rbv.TransformPoint(new Point(TopRightButtons.ActualWidth, TopRightButtons.ActualHeight));
+
+                var leftRect = new RectInt32(
+                    (int)(tbTL.X * scale), (int)(tbTL.Y * scale),
+                    Math.Max(0, (int)((rbTL.X - tbTL.X) * scale)),
+                    Math.Max(0, (int)((tbBR.Y - tbTL.Y) * scale)));
+
+                var rightRect = new RectInt32(
+                    (int)(rbBR.X * scale), (int)(rbBR.Y * scale),
+                    Math.Max(0, (int)((tbBR.X - rbBR.X) * scale)),
+                    Math.Max(0, (int)((tbBR.Y - rbBR.Y) * scale)));
+
+                App.MainWindow.AppWindow.TitleBar.SetDragRectangles(new[] { leftRect, rightRect });
+            }
+            catch
+            {
+            }
+        }
+
         private void CloseTitleBarButton_Click(object sender, RoutedEventArgs e)
         {
             if (App.MainWindow is null) return;
@@ -257,7 +303,8 @@ namespace WinUIMusicPlayer.View
                 _playingNavigation.Dismiss(300);
                 ViewModel.AppViewModel.IsPlayingDetailVisible = false;
             }
-            if (MainFrame.Content is not SettingsPage) {
+            if (MainFrame.Content is not SettingsPage)
+            {
                 NavigationViewControl.SelectedItem = NavigationViewControl.SettingsItem;
                 NavigateTo(typeof(SettingsPage), null, new EntranceNavigationTransitionInfo());
             }

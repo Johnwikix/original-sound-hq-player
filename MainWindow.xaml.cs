@@ -49,6 +49,10 @@ namespace WinUIMusicPlayer
             AppWindow.TitleBar.ExtendsContentIntoTitleBar = true;
             AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Standard;
             this.SetTitleBarBackgroundColors(Colors.Transparent);
+            if (AppWindow.Presenter is OverlappedPresenter overlapped)
+            {
+                overlapped.SetBorderAndTitleBar(hasBorder: true, hasTitleBar: false);
+            }
             _logger = App.GetLogger<MainWindow>();
             this.Activated += MainWindow_Activated;
             themeStyleHelper = new ThemeStyleHelper(this, AppWindow);
@@ -82,10 +86,6 @@ namespace WinUIMusicPlayer
             else
             {
                 this.CenterOnScreen();
-            }
-            if (AppWindow.Presenter is OverlappedPresenter overlapped)
-            {
-                overlapped.SetBorderAndTitleBar(hasBorder: true, hasTitleBar: false);
             }
         }
 
@@ -155,20 +155,20 @@ namespace WinUIMusicPlayer
         }
 
 
-private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, AppWindowClosingEventArgs args)
-    {
-        if (AppSettings.IsRunningBackend)
+        private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, AppWindowClosingEventArgs args)
         {
-            args.Cancel = true;
-            this.Hide();
-            if (AppSettings.IsTrimOnHideEnabled)
-                _ = WorkingSetCompressor.TrimSelfAsync();
+            if (AppSettings.IsRunningBackend)
+            {
+                args.Cancel = true;
+                this.Hide();
+                if (AppSettings.IsTrimOnHideEnabled)
+                    _ = WorkingSetCompressor.TrimSelfAsync();
+            }
+            else
+            {
+                await App.Current_Exit();
+            }
         }
-        else
-        {
-            await App.Current_Exit();
-        }
-    }
 
         public void InitializeApp()
         {
@@ -240,22 +240,22 @@ private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, Ap
                 _logger.LogError(ex, "初始化任务栏助手失败");
             }
         }
-public void ToggleShowHide()
-    {
-        if (this.Visible)
+        public void ToggleShowHide()
         {
-            this.Hide();
-            if (AppSettings.IsTrimOnHideEnabled)
-                _ = WorkingSetCompressor.TrimSelfAsync();
+            if (this.Visible)
+            {
+                this.Hide();
+                if (AppSettings.IsTrimOnHideEnabled)
+                    _ = WorkingSetCompressor.TrimSelfAsync();
+            }
+            else
+            {
+                this.Show();
+                InitializeTaskbarHelper();
+                this.Activate();
+                WindowHelper.SetForegroundWindow(AppData.HWnd);
+            }
         }
-        else
-        {
-            this.Show();
-            InitializeTaskbarHelper();
-            this.Activate();
-            WindowHelper.SetForegroundWindow(AppData.HWnd);
-        }
-    }
 
         public void Dispose()
         {
