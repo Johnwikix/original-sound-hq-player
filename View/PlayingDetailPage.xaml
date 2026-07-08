@@ -341,7 +341,7 @@
                             BorderThickness="0"
                             Click="CancelPlayingDetailButton_Click"
                             Style="{StaticResource MenuButtonStyle}">
-                            <FontIcon FontSize="16" Glyph="&#xE70D;" />
+                            <FontIcon FontSize="18" Glyph="&#xE70D;" />
                         </Button>
                         <Button
                             Margin="10,0,0,0"
@@ -358,7 +358,7 @@
                                 Grid.Column="0"
                                 Margin="0"
                                 VerticalAlignment="Center"
-                                FontSize="16"
+                                FontSize="18"
                                 Glyph="{x:Bind ViewModel.AppViewModel.IsPlayDetailButtonVisible, Converter={StaticResource PlayDetailButtonVisibleConverter}, Mode=OneWay}" />
                         </Button>
                     </StackPanel>
@@ -393,7 +393,7 @@
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon
                                 x:Name="EqualizerIconPlayingDetail"
-                                FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
+                                FontSize="18"
                                 Glyph="&#xE9E9;" />
                         </Button>
                         <Button
@@ -409,7 +409,7 @@
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon
                                 x:Name="CurrentPlayListIconPlayingDetail"
-                                FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
+                                FontSize="18"
                                 Glyph="&#xE90B;" />
                         </Button>
                         <TeachingTip
@@ -467,7 +467,7 @@
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.LastMusicButtonChangedCommand, Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
-                            <FontIcon FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}" Glyph="&#xF8AC;" />
+                            <FontIcon FontSize="18" Glyph="&#xF8AC;" />
                         </Button>
 
                         <Button
@@ -482,9 +482,9 @@
                             Command="{x:Bind ViewModel.PlayButtonChangedCommand, Mode=OneWay}"
                             Style="{StaticResource PlayButtonStyle}">
                             <FontIcon
-                                Width="{x:Bind ViewModel.FirstShapeSize, Mode=OneWay}"
-                                Height="{x:Bind ViewModel.FirstShapeSize, Mode=OneWay}"
-                                FontSize="{x:Bind ViewModel.FirstControlSize, Mode=OneWay}"
+                                Width="32"
+                                Height="32"
+                                FontSize="26"
                                 Glyph="{x:Bind ViewModel.AppViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
                         </Button>
 
@@ -499,7 +499,7 @@
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.NextMusicButtonChangedCommand, Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
-                            <FontIcon FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}" Glyph="&#xF8AD;" />
+                            <FontIcon FontSize="18" Glyph="&#xF8AD;" />
                         </Button>
                         <Button
                             x:Name="PlayModeButtonPlayingDetail"
@@ -514,7 +514,7 @@
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon
                                 x:Name="PlayModeIconPlayingDetail"
-                                FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
+                                FontSize="18"
                                 Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayMode, Converter={StaticResource PlayModeToIconConverter}, Mode=TwoWay}" />
                         </Button>
                         <Button
@@ -532,7 +532,7 @@
                                 Grid.Column="0"
                                 Margin="0"
                                 VerticalAlignment="Center"
-                                FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
+                                FontSize="18"
                                 Glyph="{x:Bind ViewModel.AppViewModel.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
                             <Button.Flyout>
                                 <Flyout x:Name="VolumeFlyout" Placement="Right">
