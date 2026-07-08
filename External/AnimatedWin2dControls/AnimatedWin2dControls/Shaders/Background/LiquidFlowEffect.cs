@@ -75,7 +75,8 @@ namespace AnimatedWin2dControls.Shaders.Background
                     float2 off = (new float2((float)m, (float)n) + 0.5f) / (float)AA - 0.5f;
                     float2 u = U + off;
 
-                    float t = time;
+                    // 整体流速减半：所有 t 的派生项（旋转相位、Z 轴摆动）同步降速，仅作用于本 shader。
+                    float t = time * 0.5f;
                     float3 p = new float3(0f, 0f, -1f - 0.5f * Hlsl.Sin(t * 0.1f));
                     float3 d = Hlsl.Normalize(new float3(2f * u - dispatchSize, dispatchSize.Y));
                     float3 l = 0f;
