@@ -3,18 +3,21 @@ using ComputeSharp.D2D1;
 
 namespace AnimatedWin2dControls.Shaders.Background
 {
+
+    // 来自 https://www.shadertoy.com/view/sfsSDs
     [D2DInputCount(0)]
     [D2DShaderProfile(D2D1ShaderProfile.PixelShader50)]
     [D2DGeneratedPixelShaderDescriptor]
     [D2DRequiresScenePosition]
-    public readonly partial struct MorphingAbstractEffect(
+    public readonly partial struct LiquidFlowEffect(
         float time,
         float2 dispatchSize,
         float3 color1,
         float3 color2,
         float3 color3,
         float3 color4,
-        bool enableDithering = true) : ID2D1PixelShader
+        bool enableDithering = true,
+        bool isDark = true) : ID2D1PixelShader
     {
         private const int AA = 2;
 
@@ -83,7 +86,7 @@ namespace AnimatedWin2dControls.Shaders.Background
                         b.XY = R(Hlsl.Sin(b.XY * 0.25f), t * 0.5f + b.Z * 2f);
 
                         float s = 0.001f + Hlsl.Abs(Noise(b * 20f) / 20f - Noise(b)) * 0.7f;
-                        s += Hlsl.Abs(p.Y * 0.2f + Hlsl.Sin(p.Z * 2f + Hlsl.Abs(p.X) * 0.5f)) * 0.5f;
+                        s += Hlsl.Abs(p.Y * 0.2f + Hlsl.Sin(p.Z * 2f + p.X * 0.5f)) * 0.5f;
 
                         p += d * s;
 
@@ -101,6 +104,18 @@ namespace AnimatedWin2dControls.Shaders.Background
             }
 
             color /= (float)(AA * AA);
+
+            if (isDark)
+            {
+                float maxC = Hlsl.Max(color.X, Hlsl.Max(color.Y, color.Z));
+                float knee = 0.2f;
+                float ceiling = 0.6f;
+                float range = ceiling - knee;
+                float compressed = maxC <= knee
+                    ? maxC
+                    : knee + range * (1.0f - Hlsl.Exp(-(maxC - knee) / range));
+                color *= compressed / maxC;
+            }
 
             float ditherOffset = enableDithering ? (Dither(U) - 0.5f) / 255f : 0f;
 

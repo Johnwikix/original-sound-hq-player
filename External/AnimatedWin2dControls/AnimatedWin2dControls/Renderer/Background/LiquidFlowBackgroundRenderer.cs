@@ -9,17 +9,17 @@ using System.Threading;
 
 namespace AnimatedWin2dControls.Renderer.Background
 {
-    public sealed class MorphingAbstractBackgroundRenderer : BaseBackgroundRenderer
+    public sealed class LiquidFlowBackgroundRenderer : BaseBackgroundRenderer
     {
         private readonly object _gate = new();
-        private PixelShaderEffect<MorphingAbstractEffect>? _effect;
+        private PixelShaderEffect<LiquidFlowEffect>? _effect;
 
         public override void LoadResources()
         {
             lock (_gate)
             {
                 _effect?.Dispose();
-                _effect = new PixelShaderEffect<MorphingAbstractEffect>();
+                _effect = new PixelShaderEffect<LiquidFlowEffect>();
             }
             if (CurrentPalette is not null) SetPalette(CurrentPalette);
             else ApplyDefaultColors();
@@ -43,13 +43,15 @@ namespace AnimatedWin2dControls.Renderer.Background
                 float width = control.ConvertDipsToPixels((float)control.Size.Width, CanvasDpiRounding.Round);
                 float height = control.ConvertDipsToPixels((float)control.Size.Height, CanvasDpiRounding.Round);
 
-                effect.ConstantBuffer = new MorphingAbstractEffect(
+                effect.ConstantBuffer = new LiquidFlowEffect(
                     Time,
                     new float2(width, height),
                     new float3(C1.X, C1.Y, C1.Z),
                     new float3(C2.X, C2.Y, C2.Z),
                     new float3(C3.X, C3.Y, C3.Z),
-                    new float3(C4.X, C4.Y, C4.Z));
+                    new float3(C4.X, C4.Y, C4.Z),
+                    enableDithering: true,
+                    isDark: IsDark);
 
                 if (Opacity >= 1.0) ds.DrawImage(effect);
                 else

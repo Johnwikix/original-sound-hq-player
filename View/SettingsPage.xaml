@@ -830,7 +830,7 @@
                                         <ComboBoxItem x:Uid="BackgroundShader_GradientFlow" />
                                         <ComboBoxItem x:Uid="BackgroundShader_WavyBackground" />
                                         <ComboBoxItem x:Uid="BackgroundShader_ChromaticResonance" />
-                                        <ComboBoxItem x:Uid="BackgroundShader_MorphingAbstract" />
+                                        <ComboBoxItem x:Uid="BackgroundShader_LiquidFlow" />
                                     </ComboBox>
                                 </Grid>
                             </Grid>

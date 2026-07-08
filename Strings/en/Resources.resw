@@ -727,8 +727,8 @@
   <data name="BackgroundShader_ChromaticResonance.Content" xml:space="preserve">
     <value>Color Bands</value>
   </data>
-  <data name="BackgroundShader_MorphingAbstract.Content" xml:space="preserve">
-    <value>Morphing Abstract</value>
+  <data name="BackgroundShader_LiquidFlow.Content" xml:space="preserve">
+    <value>Liquid Flow</value>
   </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>Retrieve lyrics</value>
