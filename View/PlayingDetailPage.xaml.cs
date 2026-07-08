@@ -182,7 +182,6 @@ namespace WinUIMusicPlayer.View
             {
                 // Z-order: LyricsRegionHost 最底层，LeftControlPanel 浮在上面（不用 Remove/Insert 避免 Unloaded 触发 PrepareForShutdown）
                 Canvas.SetZIndex(LyricsRegionHost, 0);
-                Canvas.SetZIndex(TopControl, 1);
                 Canvas.SetZIndex(LeftControlPanel, 2);
 
                 PlayingDetail.RowDefinitions.Clear();
@@ -208,18 +207,17 @@ namespace WinUIMusicPlayer.View
                 LeftControlPanel.ColumnDefinitions.Clear();
                 LeftControlPanel.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
                 LeftControlPanel.Margin = new Thickness(0, PortraitTopVerticalMargin, 0, 0);
-                LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(topHeight, GridUnitType.Pixel) }); 
+                LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(topHeight, GridUnitType.Pixel) });
                 LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 LeftControlPanel.RowDefinitions.Clear();
                 LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
-                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
                 LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
                 LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
                 CoverContainer.VerticalAlignment = VerticalAlignment.Center;
                 CoverContainer.HorizontalAlignment = HorizontalAlignment.Center;
                 Grid.SetRow(CoverContainer, 0);
-                Grid.SetRowSpan(CoverContainer, 4);
+                Grid.SetRowSpan(CoverContainer, 3);
                 Grid.SetColumn(CoverContainer, 0);
                 Grid.SetColumnSpan(CoverContainer, 1);
 
@@ -228,12 +226,6 @@ namespace WinUIMusicPlayer.View
                 Grid.SetColumn(AnimatedTextBlock, 1);
                 Grid.SetRowSpan(AnimatedTextBlock, 1);
                 Grid.SetColumnSpan(AnimatedTextBlock, 1);
-
-                ControlsStack.Margin = new Thickness(16, 0, 16, 16);
-                Grid.SetRow(ControlsStack, 2);
-                Grid.SetColumn(ControlsStack, 1);
-                Grid.SetRowSpan(ControlsStack, 1);
-                Grid.SetColumnSpan(ControlsStack, 1);
             }
             else
             {
@@ -245,7 +237,6 @@ namespace WinUIMusicPlayer.View
 
                 // 还原 Z-order
                 LyricsRegionHost.ClearValue(Canvas.ZIndexProperty);
-                TopControl.ClearValue(Canvas.ZIndexProperty);
                 LeftControlPanel.ClearValue(Canvas.ZIndexProperty);
 
                 LeftControlPanel.ClearValue(FrameworkElement.HeightProperty);
@@ -266,7 +257,7 @@ namespace WinUIMusicPlayer.View
                 LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                 LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(8, GridUnitType.Star) });
                 LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(120, GridUnitType.Pixel) });
                 LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
                 CoverContainer.ClearValue(FrameworkElement.MarginProperty);
@@ -284,12 +275,6 @@ namespace WinUIMusicPlayer.View
                 Grid.SetRowSpan(AnimatedTextBlock, 1);
                 Grid.SetColumnSpan(AnimatedTextBlock, 1);
 
-                ControlsStack.Margin = new Thickness(20, 0, 20, 20);
-                Grid.SetRow(ControlsStack, 3);
-                Grid.SetColumn(ControlsStack, 1);
-                Grid.SetRowSpan(ControlsStack, 1);
-                Grid.SetColumnSpan(ControlsStack, 1);
-
                 Grid.SetRow(LyricsRegionHost, 0);
                 Grid.SetColumn(LyricsRegionHost, 1);
                 Grid.SetRowSpan(LyricsRegionHost, 1);
@@ -306,17 +291,14 @@ namespace WinUIMusicPlayer.View
             App.Services.GetRequiredService<MainPage>().NavigatebackToMusicBrowsePage();
         }
 
-        private void TopControl_PointerEntered(object sender, PointerRoutedEventArgs e)
+        private void ControlsStack_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
-            ViewModel.AppViewModel.TopControlsOpacity = 1.0f;
+            ViewModel.AppViewModel.ControlsStackOpacity = 1.0f;
         }
 
-        private void TopControl_PointerExited(object sender, PointerRoutedEventArgs e)
+        private void ControlsStack_PointerExited(object sender, PointerRoutedEventArgs e)
         {
-            if (!ViewModel.AppViewModel.IsPlayDetailButtonVisible)
-            {
-                ViewModel.AppViewModel.TopControlsOpacity = 0.0f;
-            }
+            ViewModel.AppViewModel.ControlsStackOpacity = 0.0f;
         }
 
         private void ProgressSlider_PointerEntered(object sender, PointerRoutedEventArgs e)

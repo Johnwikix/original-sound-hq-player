@@ -229,7 +229,7 @@ namespace WinUIMusicPlayer.ViewModel
         public bool InfoBarIsOpen { get; set => SetProperty(ref field, value); } = false;
         public string InfoBarMessage { get; set => SetProperty(ref field, value); } = string.Empty;
         public string PageType { get; set; } = string.Empty;
-        public float TopControlsOpacity { get; set => SetProperty(ref field, value); } = 1.0f;
+        public float ControlsStackOpacity { get; set => SetProperty(ref field, value); } = 0.0f;
         public bool IsBackBtnEnable { get; set => SetProperty(ref field, value); } = false;
         public TimeSpan LyricsDurationTime { get; set; } = TimeSpan.Zero;
         public bool IsManualSelect { get; set; } = false;
