@@ -63,8 +63,7 @@ namespace AnimatedWin2dControls.Shaders.Background
         public float4 Execute()
         {
             float2 U = D2D.GetScenePosition().XY;
-            float3 finalColor = 0f;
-            float3 finalPos = 0f;
+            float3 color = 0f;
 
             for (int m = 0; m < AA; m++)
             {
@@ -76,7 +75,7 @@ namespace AnimatedWin2dControls.Shaders.Background
                     float t = time;
                     float3 p = new float3(0f, 0f, -1f - 0.5f * Hlsl.Sin(t * 0.1f));
                     float3 d = Hlsl.Normalize(new float3(2f * u - dispatchSize, dispatchSize.Y));
-                    float l = 0f;
+                    float3 l = 0f;
 
                     for (float i = 0f; i < 10f; i += 1f)
                     {
@@ -88,37 +87,20 @@ namespace AnimatedWin2dControls.Shaders.Background
 
                         p += d * s;
 
-                        float sinLuma = 1f + 1.5f * Hlsl.Sin(i + Hlsl.Length(p.XY * 0.1f) + 2f);
-                        l += sinLuma / s;
+                        float mix = Hlsl.Sin(i + Hlsl.Length(p.XY * 0.1f)) * 0.5f + 0.5f;
+                        float3 stepColor = Hlsl.Lerp(
+                            Hlsl.Lerp(color1, color2, mix),
+                            Hlsl.Lerp(color3, color4, mix),
+                            mix
+                        );
+                        l += stepColor * 2.5f / s;
                     }
 
-                    float lerpLuma = l * l / 500f;
-                    float3 acesLuma = Aces(new float3(lerpLuma, lerpLuma, lerpLuma));
-                    finalColor += acesLuma;
-                    finalPos += p;
+                    color += Aces(l * l / 500f);
                 }
             }
 
-            finalColor /= (float)(AA * AA);
-            finalPos /= (float)(AA * AA);
-
-            float3 pScaled = finalPos * 0.03f;
-            float2 colorUV = new float2(
-                Hlsl.Sin(pScaled.X + pScaled.Z + time * 0.05f) * 0.5f + 0.5f,
-                Hlsl.Sin(pScaled.Z * 0.7f - pScaled.X * 0.4f + pScaled.Y * 0.2f + time * 0.03f) * 0.5f + 0.5f
-            );
-            float3 gradient = Hlsl.Lerp(
-                Hlsl.Lerp(color1, color2, colorUV.X),
-                Hlsl.Lerp(color3, color4, colorUV.X),
-                colorUV.Y
-            );
-
-            float brightness = Hlsl.Saturate(finalColor.X * 1.5f);
-            float gradientLuma = Hlsl.Dot(gradient, new float3(0.299f, 0.587f, 0.114f));
-            float3 color = Hlsl.Lerp(
-                gradient * (1f - brightness * 0.3f),
-                gradient + brightness * 0.4f,
-                gradientLuma);
+            color /= (float)(AA * AA);
 
             float ditherOffset = enableDithering ? (Dither(U) - 0.5f) / 255f : 0f;
 
