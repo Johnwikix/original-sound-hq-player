@@ -14,5 +14,6 @@ namespace AnimatedWin2dControls
         GradientFlow = 2,
         WavyBackground = 3,
         ChromaticResonance = 4,
+        MorphingAbstract = 5,
     }
 }

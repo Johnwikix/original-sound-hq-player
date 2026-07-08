@@ -727,6 +727,9 @@
   <data name="BackgroundShader_ChromaticResonance.Content" xml:space="preserve">
     <value>カラーバンド</value>
   </data>
+  <data name="BackgroundShader_MorphingAbstract.Content" xml:space="preserve">
+    <value>Morphing Abstract</value>
+  </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>歌詞を再取得する</value>
   </data>

@@ -224,6 +224,7 @@ namespace AnimatedWin2dControls.Controls
             2 => new GradientFlowBackgroundRenderer(),
             3 => new WavyBackgroundRenderer(),
             4 => new ChromaticResonanceBackgroundRenderer(),
+            5 => new MorphingAbstractBackgroundRenderer(),
             _ => new FluidBackgroundRenderer(),
         };
 
