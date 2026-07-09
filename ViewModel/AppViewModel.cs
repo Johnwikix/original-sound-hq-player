@@ -1395,5 +1395,34 @@ namespace WinUIMusicPlayer.ViewModel
         {
             ToggleFullScreen();
         }
+
+        [RelayCommand]
+        private void OnStopButtonChanged()
+        {
+            App.Services.GetRequiredService<BassPlayerCommandService>().MusicEnd();
+            ProgressSlider = 0;
+        }
+
+        [RelayCommand]
+        private void OnFastForwardButton()
+        {
+            SeekRelative(30_000);
+        }
+        [RelayCommand]
+        private void OnFastBackwardButton()
+        {
+            SeekRelative(-10_000);
+        }
+
+        private void SeekRelative(long deltaMs)
+        {
+            var (curMs, totalMs) = GetTimeProgressCache();
+            long newPosMs = Math.Clamp(curMs + deltaMs, 0, totalMs);
+            IsManualSelect = true;
+            SetTimeProgressCache(newPosMs, totalMs);
+            ProgressSlider = newPosMs / 1000.0;
+            App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime(newPosMs);
+            IsManualSelect = false;
+        }
     }
 }

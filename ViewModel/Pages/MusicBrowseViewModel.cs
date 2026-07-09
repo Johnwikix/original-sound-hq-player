@@ -579,14 +579,7 @@ namespace WinUIMusicPlayer.ViewModel
                 _ = PlayMusic(AppViewModel.CurrentPlayingList[AppViewModel.CurrentPlayingList.Count - 1]);
             }
         }
-
-
-        [RelayCommand]
-        private void OnStopButtonChanged()
-        {
-            MusicPlaybackService.MusicEnd();
-            AppViewModel.ProgressSlider = 0;
-        }
+        
         [RelayCommand]
         private void OnAlbumCoverImage()
         {
@@ -597,27 +590,8 @@ namespace WinUIMusicPlayer.ViewModel
         {
             var mainPage = MainPage ?? App.Services.GetRequiredService<MainPage>();
             _ = mainPage.EqualizerDialog.ShowThemedAsync(mainPage.XamlRoot);
-        }
-        [RelayCommand]
-        private void OnFastForwardButton()
-        {
-            SeekRelative(30_000);
-        }
-        [RelayCommand]
-        private void OnFastBackwardButton()
-        {
-            SeekRelative(-10_000);
-        }
-        private void SeekRelative(long deltaMs)
-        {
-            var (curMs, totalMs) = AppViewModel.GetTimeProgressCache();
-            long newPosMs = Math.Clamp(curMs + deltaMs, 0, totalMs);
-            AppViewModel.IsManualSelect = true;
-            AppViewModel.SetTimeProgressCache(newPosMs, totalMs);
-            AppViewModel.ProgressSlider = newPosMs / 1000.0;
-            MusicPlaybackService.ChangeWaveChannelTime(newPosMs);
-            AppViewModel.IsManualSelect = false;
-        }
+        }        
+        
 
         private void OnSelectionChanged()
         {

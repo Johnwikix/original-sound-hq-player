@@ -304,7 +304,7 @@
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
-                            Command="{x:Bind ViewModel.MusicBrowseVM.FastBackwardButtonCommand, Mode=OneWay}"
+                            Command="{x:Bind ViewModel.AppViewModel.FastBackwardButtonCommand, Mode=OneWay}"
                             IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="18" Glyph="&#xED3C;" />
@@ -368,7 +368,7 @@
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
-                            Command="{x:Bind ViewModel.MusicBrowseVM.FastForwardButtonCommand, Mode=OneWay}"
+                            Command="{x:Bind ViewModel.AppViewModel.FastForwardButtonCommand, Mode=OneWay}"
                             IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="18" Glyph="&#xED3D;" />
@@ -383,7 +383,7 @@
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
-                            Command="{x:Bind ViewModel.MusicBrowseVM.StopButtonChangedCommand, Mode=OneWay}"
+                            Command="{x:Bind ViewModel.AppViewModel.StopButtonChangedCommand, Mode=OneWay}"
                             IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="18" Glyph="&#xEE95;" />
