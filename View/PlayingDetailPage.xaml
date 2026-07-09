@@ -90,18 +90,14 @@
                     Grid.Row="2"
                     Grid.Column="1"
                     Margin="20,0,20,0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <atb:AnimatedTextBlock
                         x:Name="AnimatedPlayingDetailTitleTextBlock"
                         Grid.Row="0"
-                        Grid.Column="0"
                         Margin="0"
                         x:Load="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=OneTime}"
                         FontSize="24"
@@ -112,7 +108,6 @@
                     <atb:AnimatedTextBlock
                         x:Name="AnimatedPlayingDetailAlbumArtistTextBlock"
                         Grid.Row="1"
-                        Grid.Column="0"
                         Margin="0,0,0,1"
                         x:Load="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=OneTime}"
                         FontSize="24"
@@ -123,7 +118,6 @@
                         TextWrapping="NoWrap" />
                     <dev:AutoScrollView
                         Grid.Row="0"
-                        Grid.Column="0"
                         Margin="0"
                         Padding="0"
                         IsPlaying="False"
@@ -145,7 +139,6 @@
                     </dev:AutoScrollView>
                     <StackPanel
                         Grid.Row="1"
-                        Grid.Column="0"
                         Margin="0,0,0,2"
                         Opacity="{x:Bind tool:BindUtils.BoolToOpacityRe08Converter(ViewModel.AppViewModel.IsWin2dAnimatedText), Mode=OneTime}">
                         <dev:AutoScrollView
@@ -187,79 +180,33 @@
                                 TextWrapping="NoWrap" />
                         </dev:AutoScrollView>
                     </StackPanel>
-                    <Button
-                        x:Name="AnimatedPlayBarFavouriteButtonPlayingDetail"
-                        Grid.Row="0"
-                        Grid.Column="1"
-                        Margin="0"
+                    <StackPanel
+                        Grid.Row="2"
                         VerticalAlignment="Center"
-                        Background="Transparent"
-                        BorderBrush="Transparent"
-                        BorderThickness="0"
-                        Command="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}"
-                        CommandParameter="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic, Mode=OneWay}"
-                        Style="{StaticResource MenuButtonStyle}">
-                        <FontIcon
-                            FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
-                            Foreground="Red"
-                            Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
-                    </Button>
-                    <Grid Grid.Row="1" Grid.Column="1">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="*" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-                        <Button
-                            Grid.Row="0"
-                            Margin="0"
+                        Orientation="Horizontal">
+                        <TextBlock
+                            x:Name="PlayingDetailMusicInfoTextBlock"
+                            Margin="0,0,10,0"
                             VerticalAlignment="Center"
-                            Background="Transparent"
-                            BorderBrush="Transparent"
-                            BorderThickness="0"
-                            Style="{StaticResource MenuButtonStyle}">
-                            <FontIcon
-                                Grid.Column="0"
-                                Margin="0"
-                                VerticalAlignment="Center"
-                                FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
-                                Glyph="&#xE917;" />
-                            <Button.Flyout>
-                                <Flyout Placement="Right">
-                                    <NumberBox
-                                        Width="175"
-                                        LargeChange="1000"
-                                        Maximum="100000"
-                                        Minimum="-100000"
-                                        SmallChange="100"
-                                        SpinButtonPlacementMode="Inline"
-                                        Value="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.LyricsOffsetMs, Mode=TwoWay}" />
-                                </Flyout>
-                            </Button.Flyout>
-                            <ToolTipService.ToolTip>
-                                <ToolTip x:Uid="LyricsTimeOffset" />
-                            </ToolTipService.ToolTip>
-                        </Button>
-                        <Button
-                            x:Name="SettingsButton"
-                            Grid.Row="1"
-                            Margin="0"
+                            FontSize="{x:Bind ViewModel.InfoFontSize, Mode=OneWay}"
+                            Text="{x:Bind ViewModel.AppViewModel.MusicInfo, Mode=OneWay}" />
+                        <Border
+                            x:Name="PlayingDetailHRImage"
+                            Padding="4,0,4,0"
+                            HorizontalAlignment="Center"
                             VerticalAlignment="Center"
-                            Background="Transparent"
-                            BorderBrush="Transparent"
-                            BorderThickness="0"
-                            Click="SettingsButton_Click"
-                            Style="{StaticResource MenuButtonStyle}">
-                            <FontIcon
-                                Grid.Column="0"
-                                Margin="0"
+                            Background="#F7C8AC"
+                            CornerRadius="2"
+                            Visibility="{x:Bind tool:BindUtils.GetHrMusicVisibility(ViewModel.AppViewModel.CurrentPlayingMusic.SampleRate, ViewModel.AppViewModel.CurrentPlayingMusic.BitDepth), Mode=OneWay}">
+                            <TextBlock
+                                HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
-                                FontSize="{x:Bind ViewModel.SecondControlSize, Mode=OneWay}"
-                                Glyph="&#xF035;" />
-                            <ToolTipService.ToolTip>
-                                <ToolTip x:Uid="SettingsContent" />
-                            </ToolTipService.ToolTip>
-                        </Button>
-                    </Grid>
+                                FontSize="{x:Bind tool:BindUtils.GetHrMusicFontSize(ViewModel.InfoFontSize), Mode=OneWay}"
+                                FontWeight="Bold"
+                                Foreground="#F98555"
+                                Text="HQ" />
+                        </Border>
+                    </StackPanel>
                 </Grid>
             </Grid>
             <Grid
@@ -280,7 +227,7 @@
         <StackPanel
             x:Name="ControlsStack"
             Height="100"
-            Margin="16,0,16,16"
+            Margin="16,0,16,0"
             HorizontalAlignment="Stretch"
             VerticalAlignment="Bottom"
             Background="Transparent"
@@ -320,48 +267,25 @@
                         FontSize="{x:Bind ViewModel.InfoFontSize, Mode=OneWay}"
                         Text="{x:Bind ViewModel.AppViewModel.PlayTimeText, Mode=OneWay}" />
                 </Grid>
-                <Grid Grid.Row="1" Margin="0,5,0,0">
+                <Grid Grid.Row="1" Margin="0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel
+                    <Button
+                        x:Name="CancelPlayingDetailButton"
                         Grid.Column="0"
                         Margin="0"
-                        HorizontalAlignment="Left"
+                        Padding="10,8"
                         VerticalAlignment="Center"
-                        Orientation="Horizontal">
-                        <Button
-                            x:Name="CancelPlayingDetailButton"
-                            Margin="0"
-                            Padding="10,8"
-                            Background="Transparent"
-                            BorderBrush="Transparent"
-                            BorderThickness="0"
-                            Click="CancelPlayingDetailButton_Click"
-                            Style="{StaticResource MenuButtonStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xE70D;" />
-                        </Button>
-                        <Button
-                            Margin="10,0,0,0"
-                            Padding="10,8"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            Background="Transparent"
-                            BorderBrush="Transparent"
-                            BorderThickness="0"
-                            Command="{x:Bind ViewModel.AppViewModel.PlayDetailButtonVisibleChangedCommand, Mode=OneWay}"
-                            Style="{StaticResource MenuButtonStyle}">
-                            <FontIcon
-                                x:Name="VisibleIcon"
-                                Grid.Column="0"
-                                Margin="0"
-                                VerticalAlignment="Center"
-                                FontSize="18"
-                                Glyph="{x:Bind ViewModel.AppViewModel.IsPlayDetailButtonVisible, Converter={StaticResource PlayDetailButtonVisibleConverter}, Mode=OneWay}" />
-                        </Button>
-                    </StackPanel>
+                        Background="Transparent"
+                        BorderBrush="Transparent"
+                        BorderThickness="0"
+                        Click="CancelPlayingDetailButton_Click"
+                        Style="{StaticResource MenuButtonStyle}">
+                        <FontIcon FontSize="18" Glyph="&#xE70D;" />
+                    </Button>
                     <Grid
                         Grid.Column="1"
                         Margin="0"
@@ -383,7 +307,7 @@
                         <Button
                             x:Name="EqualizerButtonPlayingDetail"
                             Grid.Column="0"
-                            Margin="{x:Bind ViewModel.ControlMargin, Mode=OneWay}"
+                            Margin="5"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             Background="Transparent"
@@ -399,7 +323,7 @@
                         <Button
                             x:Name="CurrentPlayListButtonPlayingDetail"
                             Grid.Column="1"
-                            Margin="{x:Bind ViewModel.ControlMargin, Mode=OneWay}"
+                            Margin="5"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             Background="Transparent"
@@ -459,7 +383,7 @@
                         <Button
                             x:Name="LastMusicButtonPlayingDetail"
                             Grid.Column="2"
-                            Margin="{x:Bind ViewModel.ControlMargin, Mode=OneWay}"
+                            Margin="5"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             Background="Transparent"
@@ -473,7 +397,7 @@
                         <Button
                             x:Name="PlayPauseButtonPlayingDetail"
                             Grid.Column="3"
-                            Margin="{x:Bind ViewModel.ControlMargin, Mode=OneWay}"
+                            Margin="5"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             Background="Transparent"
@@ -491,7 +415,7 @@
                         <Button
                             x:Name="NextMusicButtonPlayingDetail"
                             Grid.Column="4"
-                            Margin="{x:Bind ViewModel.ControlMargin, Mode=OneWay}"
+                            Margin="5"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             Background="Transparent"
@@ -504,7 +428,7 @@
                         <Button
                             x:Name="PlayModeButtonPlayingDetail"
                             Grid.Column="5"
-                            Margin="{x:Bind ViewModel.ControlMargin, Mode=OneWay}"
+                            Margin="5"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             Background="Transparent"
@@ -520,7 +444,7 @@
                         <Button
                             x:Name="VolumePlayingDetailBtn"
                             Grid.Column="6"
-                            Margin="{x:Bind ViewModel.ControlMargin, Mode=OneWay}"
+                            Margin="5"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
                             Background="Transparent"
@@ -574,32 +498,73 @@
                     </Grid>
                     <StackPanel
                         Grid.Column="2"
-                        Margin="0"
                         HorizontalAlignment="Right"
-                        VerticalAlignment="Center"
                         Orientation="Horizontal">
-                        <TextBlock
-                            x:Name="PlayingDetailMusicInfoTextBlock"
-                            Margin="0,0,10,0"
+                        <Button
+                            x:Name="AnimatedPlayBarFavouriteButtonPlayingDetail"
+                            Grid.Row="0"
+                            Grid.Column="1"
+                            Margin="0"
                             VerticalAlignment="Center"
-                            FontSize="{x:Bind ViewModel.InfoFontSize, Mode=OneWay}"
-                            Text="{x:Bind ViewModel.AppViewModel.MusicInfo, Mode=OneWay}" />
-                        <Border
-                            x:Name="PlayingDetailHRImage"
-                            Padding="4,0,4,1"
-                            HorizontalAlignment="Center"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            Command="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.UpdateFavouriteCommand, Mode=OneWay}"
+                            CommandParameter="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic, Mode=OneWay}"
+                            Style="{StaticResource MenuButtonStyle}">
+                            <FontIcon
+                                FontSize="18"
+                                Foreground="Red"
+                                Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
+                        </Button>
+                        <Button
+                            Margin="0"
                             VerticalAlignment="Center"
-                            Background="#F7C8AC"
-                            CornerRadius="2"
-                            Visibility="{x:Bind tool:BindUtils.GetHrMusicVisibility(ViewModel.AppViewModel.CurrentPlayingMusic.SampleRate, ViewModel.AppViewModel.CurrentPlayingMusic.BitDepth), Mode=OneWay}">
-                            <TextBlock
-                                HorizontalAlignment="Center"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            Style="{StaticResource MenuButtonStyle}">
+                            <FontIcon
+                                Grid.Column="0"
+                                Margin="0"
                                 VerticalAlignment="Center"
-                                FontSize="{x:Bind tool:BindUtils.GetHrMusicFontSize(ViewModel.InfoFontSize), Mode=OneWay}"
-                                FontWeight="Bold"
-                                Foreground="#F98555"
-                                Text="HQ" />
-                        </Border>
+                                FontSize="18"
+                                Glyph="&#xE917;" />
+                            <Button.Flyout>
+                                <Flyout Placement="Right">
+                                    <NumberBox
+                                        Width="175"
+                                        LargeChange="1000"
+                                        Maximum="100000"
+                                        Minimum="-100000"
+                                        SmallChange="100"
+                                        SpinButtonPlacementMode="Inline"
+                                        Value="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.LyricsOffsetMs, Mode=TwoWay}" />
+                                </Flyout>
+                            </Button.Flyout>
+                            <ToolTipService.ToolTip>
+                                <ToolTip x:Uid="LyricsTimeOffset" />
+                            </ToolTipService.ToolTip>
+                        </Button>
+                        <Button
+                            x:Name="SettingsButton"
+                            Margin="0"
+                            VerticalAlignment="Center"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            Click="SettingsButton_Click"
+                            Style="{StaticResource MenuButtonStyle}">
+                            <FontIcon
+                                Grid.Column="0"
+                                Margin="0"
+                                VerticalAlignment="Center"
+                                FontSize="18"
+                                Glyph="&#xF035;" />
+                            <ToolTipService.ToolTip>
+                                <ToolTip x:Uid="SettingsContent" />
+                            </ToolTipService.ToolTip>
+                        </Button>
                     </StackPanel>
                 </Grid>
             </Grid>

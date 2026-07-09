@@ -599,8 +599,7 @@
                     x:Name="FullscreenTitleBarButton"
                     x:Uid="FullscreenTitleBarButton"
                     Click="FullscreenTitleBarButton_Click"
-                    Style="{StaticResource TitleBarButtonStyle}"
-                    ToolTipService.ToolTip="Fullscreen">
+                    Style="{StaticResource TitleBarButtonStyle}">
                     <Grid>
                         <FontIcon
                             x:Name="EnterFullscreenFontIcon"
@@ -627,8 +626,7 @@
                     x:Name="MinimizeButton"
                     x:Uid="MinimizeButton"
                     Click="MinimizeButton_Click"
-                    Style="{StaticResource TitleBarButtonStyle}"
-                    ToolTipService.ToolTip="Minimize">
+                    Style="{StaticResource TitleBarButtonStyle}">
                     <FontIcon
                         FontFamily="{ThemeResource SymbolThemeFontFamily}"
                         FontSize="14"
@@ -638,8 +636,7 @@
                     x:Name="MaximizeButton"
                     x:Uid="MaximizeButton"
                     Click="MaximizeButton_Click"
-                    Style="{StaticResource TitleBarButtonStyle}"
-                    ToolTipService.ToolTip="Maximize">
+                    Style="{StaticResource TitleBarButtonStyle}">
                     <Grid>
                         <FontIcon
                             x:Name="EnterMaximizeFontIcon"
@@ -666,8 +663,7 @@
                     x:Name="CloseTitleBarButton"
                     x:Uid="CloseTitleBarButton"
                     Click="CloseTitleBarButton_Click"
-                    Style="{StaticResource TitleBarCloseButtonStyle}"
-                    ToolTipService.ToolTip="Close">
+                    Style="{StaticResource TitleBarCloseButtonStyle}">
                     <FontIcon
                         FontFamily="{ThemeResource SymbolThemeFontFamily}"
                         FontSize="14"

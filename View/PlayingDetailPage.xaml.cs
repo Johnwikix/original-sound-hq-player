@@ -39,7 +39,7 @@ namespace WinUIMusicPlayer.View
         private const double PortraitEnterRatio = 1.15;
         private const double PortraitExitRatio = 1.10;
         private const double PortraitTopVerticalMargin = 10;
-        private const double textScale = 1.25;  
+        private const double textScale = 2.0;  
         private const double lyricsScale = 1.5;
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
         {
@@ -128,15 +128,15 @@ namespace WinUIMusicPlayer.View
 
             bool portrait = wantPortrait;
             double driver = windowSize.Width / _dpiScale;
-            var (lyrics, title, artist, firstSize, secondSize, shapeSize, info, margin, topHeight) = driver switch
+            var (lyrics, title, artist,info, topHeight) = driver switch
             {
-                <= 1024 => (36, 24, 20, 20, 14, 26, 10, new Thickness(2, 0, 2, 0), 300),
-                < 1280 => (42, 26, 22, 22, 16, 28, 12, new Thickness(2, 0, 2, 0), 315),
-                < 1600 => (52, 28, 24, 28, 22, 40, 16, new Thickness(5, 0, 5, 0), 330),
-                < 1920 => (64, 32, 28, 32, 26, 40, 16, new Thickness(5, 0, 5, 0), 345),
-                < 2560 => (80, 36, 32, 36, 26, 60, 18, new Thickness(10, 0, 10, 0), 360),
-                < 2880 => (96, 38, 34, 40, 28, 66, 20, new Thickness(12, 0, 12, 0), 385),
-                _ => (120, 42, 38, 46, 32, 72, 22, new Thickness(15, 0, 15, 0), 400)
+                <= 1024 => (36, 24, 20, 10,  300),
+                < 1280 => (42, 26, 22, 12,  315),
+                < 1600 => (52, 28, 24, 16, 330),
+                < 1920 => (64, 32, 28,  16, 345),
+                < 2560 => (80, 36, 32, 18, 360),
+                < 2880 => (96, 38, 34, 20, 385),
+                _ => (120, 42, 38, 22, 400)
             };
 
             if (portrait)
@@ -144,9 +144,6 @@ namespace WinUIMusicPlayer.View
                 lyrics = (int)(lyrics * lyricsScale);
                 title = (int)(title * textScale);
                 artist = (int)(artist * textScale);
-                firstSize = (int)(firstSize * textScale);
-                secondSize = (int)(secondSize * textScale);
-                shapeSize = (int)(shapeSize * textScale);
                 info = (int)(info * textScale);
             }
 
@@ -157,10 +154,6 @@ namespace WinUIMusicPlayer.View
                 ViewModel.ArtistAlbumFontSize = artist;
                 ViewModel.InfoFontSize = info;
                 ViewModel.AppViewModel.LyricsFontSize = lyrics;
-                ViewModel.FirstControlSize = firstSize;
-                ViewModel.SecondControlSize = secondSize;
-                ViewModel.FirstShapeSize = shapeSize;
-                ViewModel.ControlMargin = margin;
                 AnimatedPlayingDetailTitleTextBlock?.FontSize = title;
                 AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = artist;
 

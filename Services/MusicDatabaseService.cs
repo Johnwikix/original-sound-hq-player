@@ -829,7 +829,6 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.IsGlobalFontSizeEnabled = settings.IsGlobalFontSizeEnabled;
                 AppViewModel.MusicCoverCache = string.IsNullOrEmpty(settings.MusicCoverCache) ? Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicCoverCache") : settings.MusicCoverCache;
                 AppViewModel.IsDopEnabled = settings.IsDopEnabled;
-                AppViewModel.IsPlayDetailButtonVisible = settings.IsPlayDetailBtnVisible;
                 AppViewModel.IsFadeEnabled = settings.IsFadeEnabled;
                 AppViewModel.LyricsBlurAmount = settings.LyricsBlurAmount;
                 AppViewModel.UseImageDominantTheme = settings.UseImageDominantTheme;
@@ -946,7 +945,6 @@ namespace WinUIMusicPlayer.Services
             newSettings.MusicCoverCache = AppViewModel.MusicCoverCache;
             newSettings.IsDopEnabled = AppViewModel.IsDopEnabled;
             newSettings.DsdPcmFreq = AppViewModel.DsdPcmFreq;
-            newSettings.IsPlayDetailBtnVisible = AppViewModel.IsPlayDetailButtonVisible;
             newSettings.IsFadeEnabled = AppViewModel.IsFadeEnabled;
             newSettings.LyricsBlurAmount = AppViewModel.LyricsBlurAmount;
             newSettings.UseImageDominantTheme = AppViewModel.UseImageDominantTheme;

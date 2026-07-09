@@ -361,21 +361,6 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public bool IsPlayDetailButtonVisible
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = true;
-
         public bool IsUserDraggingProgressSlider
         {
             get => field;
@@ -1403,12 +1388,6 @@ namespace WinUIMusicPlayer.ViewModel
         private void OnVolumeDownChanged()
         {
             AdjustVolume(-1);
-        }
-
-        [RelayCommand]
-        private void PlayDetailButtonVisibleChanged()
-        {
-            IsPlayDetailButtonVisible = !IsPlayDetailButtonVisible;
         }
 
         [RelayCommand]
