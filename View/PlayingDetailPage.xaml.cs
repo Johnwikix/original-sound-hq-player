@@ -38,7 +38,7 @@ namespace WinUIMusicPlayer.View
         private bool _isPortraitWanted;
         private const double PortraitEnterRatio = 1.15;
         private const double PortraitExitRatio = 1.10;
-        private const double PortraitTopVerticalMargin = 10;
+        private const double PortraitTopVerticalMargin = 20;
         private const double textScale = 1.8;  
         private const double lyricsScale = 1.5;
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
@@ -130,13 +130,13 @@ namespace WinUIMusicPlayer.View
             double driver = windowSize.Width / _dpiScale;
             var (lyrics, title, artist,info, topHeight) = driver switch
             {
-                <= 1024 => (36, 26, 20, 10,  240),
-                < 1280 => (42, 28, 22, 11,  260),
-                < 1600 => (52, 30, 24, 13, 280),
-                < 1920 => (64, 34, 28,  14, 300),
-                < 2560 => (80, 38, 32, 15, 320),
-                < 2880 => (96, 40, 34, 16, 340),
-                _ => (120, 44, 38, 18, 360)
+                <= 1024 => (36, 26, 20, 10,  260),
+                < 1280 => (42, 28, 22, 11,  280),
+                < 1600 => (52, 30, 24, 13, 300),
+                < 1920 => (64, 34, 28,  14, 320),
+                < 2560 => (80, 38, 32, 15, 340),
+                < 2880 => (96, 40, 34, 16, 360),
+                _ => (120, 44, 38, 18, 380)
             };
 
             if (portrait)
@@ -199,7 +199,7 @@ namespace WinUIMusicPlayer.View
 
                 LeftControlPanel.ColumnDefinitions.Clear();
                 LeftControlPanel.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.Transparent);
-                LeftControlPanel.Margin = new Thickness(5, PortraitTopVerticalMargin, 5, 0);
+                LeftControlPanel.Margin = new Thickness(10, PortraitTopVerticalMargin, 10, 0);
                 LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(topHeight, GridUnitType.Pixel) });
                 LeftControlPanel.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 LeftControlPanel.RowDefinitions.Clear();
@@ -277,11 +277,6 @@ namespace WinUIMusicPlayer.View
 
             PlayingDetail.UpdateLayout();
             LeftControlPanel.UpdateLayout();
-        }
-
-        private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
-        {
-            App.Services.GetRequiredService<MainPage>().NavigatebackToMusicBrowsePage();
         }
 
         private void ControlsStack_PointerEntered(object sender, PointerRoutedEventArgs e)

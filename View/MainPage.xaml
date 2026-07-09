@@ -584,13 +584,30 @@
                 IsHitTestVisible="False"
                 Opacity="{x:Bind tools:BindUtils.VisibilityToOpacityConverter(NavigationViewControl.Visibility), Mode=OneWay}"
                 Style="{StaticResource CaptionTextBlockStyle}" />
+            <Button
+                x:Name="CancelPlayingDetailButton"
+                Margin="5,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Background="Transparent"
+                BorderBrush="Transparent"
+                BorderThickness="0"
+                Click="CancelPlayingDetailButton_Click"
+                Opacity="{x:Bind tools:BindUtils.BoolToOpacityConverter(ViewModel.AppViewModel.IsPointerOverTitleBar), Mode=OneWay}"
+                Style="{StaticResource MenuButtonStyle}"
+                Visibility="{x:Bind ViewModel.AppViewModel.IsPlayingDetailVisible, Mode=OneWay}">
+                <Button.OpacityTransition>
+                    <ScalarTransition />
+                </Button.OpacityTransition>
+                <FontIcon FontSize="18" Glyph="&#xE70D;" />
+            </Button>
             <StackPanel
                 x:Name="TopRightButtons"
                 Grid.Column="2"
                 Margin="0,0,0,0"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Top"
-                Opacity="1"
+                Opacity="{x:Bind tools:BindUtils.BoolToOpacityConverter(ViewModel.AppViewModel.IsPointerOverTitleBar), Mode=OneWay}"
                 Orientation="Horizontal">
                 <StackPanel.OpacityTransition>
                     <ScalarTransition />

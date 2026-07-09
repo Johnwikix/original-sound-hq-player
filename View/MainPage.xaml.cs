@@ -135,13 +135,13 @@ namespace WinUIMusicPlayer.View
         private void AppTitleBar_PointerEntered(object sender, PointerRoutedEventArgs e)
         {
             if (!ViewModel.AppViewModel.IsPlayingDetailVisible) return;
-            TopRightButtons.Opacity = 1.0;
+            ViewModel.AppViewModel.IsPointerOverTitleBar = true;
         }
 
         private void AppTitleBar_PointerExited(object sender, PointerRoutedEventArgs e)
         {
             if (!ViewModel.AppViewModel.IsPlayingDetailVisible) return;
-            TopRightButtons.Opacity = 0.0;
+            ViewModel.AppViewModel.IsPointerOverTitleBar = false;
         }
 
         private void MinimizeButton_Click(object sender, RoutedEventArgs e)
@@ -360,7 +360,7 @@ namespace WinUIMusicPlayer.View
                 _playingNavigation.Show(typeof(PlayingDetailPage), 300, onCompleted: OnOneCompleted);
                 NavigationViewControl.Visibility = Visibility.Collapsed;
                 ViewModel.AppViewModel.IsPlayingDetailVisible = true;
-                TopRightButtons.Opacity = 0;
+                ViewModel.AppViewModel.IsPointerOverTitleBar = false;
             }
             else
             {
@@ -384,7 +384,7 @@ namespace WinUIMusicPlayer.View
                 _playingNavigation.Dismiss(300, onCompleted: OnOneCompleted);
                 NavigationViewControl.Visibility = Visibility.Visible;
                 ViewModel.AppViewModel.IsPlayingDetailVisible = false;
-                TopRightButtons.Opacity = 1;
+                ViewModel.AppViewModel.IsPointerOverTitleBar = true;
             }
             else
             {
@@ -564,6 +564,11 @@ namespace WinUIMusicPlayer.View
                     }
                 }
             }
+        }
+
+        private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)
+        {
+            NavigatebackToMusicBrowsePage();
         }
     }
 }

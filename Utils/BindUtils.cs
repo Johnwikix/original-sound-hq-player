@@ -93,6 +93,12 @@ namespace WinUIMusicPlayer.Utils
             return visibility is Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
         }
 
+        public static double BoolToOpacityConverter(bool value)
+            => value ? 1.0 : 0.0;
+
+        public static Visibility BoolAndVisibilityToVisibilityConverter(bool isTrue, Visibility visibility)
+            => isTrue && visibility == Visibility.Visible ? Visibility.Visible : Visibility.Collapsed;
+
         public static Visibility ImageSourceToVisibilityConverter(ImageSource source)
         {
             return source is null ? Visibility.Visible : Visibility.Collapsed;
