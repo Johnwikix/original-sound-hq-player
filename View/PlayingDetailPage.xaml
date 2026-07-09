@@ -273,19 +273,69 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <Button
-                        x:Name="CancelPlayingDetailButton"
+                    <StackPanel
                         Grid.Column="0"
-                        Margin="0"
-                        Padding="10,8"
-                        VerticalAlignment="Center"
-                        Background="Transparent"
-                        BorderBrush="Transparent"
-                        BorderThickness="0"
-                        Click="CancelPlayingDetailButton_Click"
-                        Style="{StaticResource MenuButtonStyle}">
-                        <FontIcon FontSize="18" Glyph="&#xE70D;" />
-                    </Button>
+                        Margin="10,0"
+                        Orientation="Horizontal">
+                        <Button
+                            x:Name="CancelPlayingDetailButton"
+                            VerticalAlignment="Center"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            Click="CancelPlayingDetailButton_Click"
+                            Style="{StaticResource MenuButtonStyle}">
+                            <FontIcon FontSize="18" Glyph="&#xE70D;" />
+                        </Button>
+                        <Button
+                            Margin="0"
+                            VerticalAlignment="Center"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            Style="{StaticResource MenuButtonStyle}">
+                            <FontIcon
+                                Grid.Column="0"
+                                Margin="0"
+                                VerticalAlignment="Center"
+                                FontSize="18"
+                                Glyph="&#xE917;" />
+                            <Button.Flyout>
+                                <Flyout Placement="Top">
+                                    <NumberBox
+                                        Width="175"
+                                        LargeChange="1000"
+                                        Maximum="100000"
+                                        Minimum="-100000"
+                                        SmallChange="100"
+                                        SpinButtonPlacementMode="Inline"
+                                        Value="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.LyricsOffsetMs, Mode=TwoWay}" />
+                                </Flyout>
+                            </Button.Flyout>
+                            <ToolTipService.ToolTip>
+                                <ToolTip x:Uid="LyricsTimeOffset" />
+                            </ToolTipService.ToolTip>
+                        </Button>
+                        <Button
+                            x:Name="SettingsButton"
+                            Margin="0"
+                            VerticalAlignment="Center"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            Click="SettingsButton_Click"
+                            Style="{StaticResource MenuButtonStyle}">
+                            <FontIcon
+                                Grid.Column="0"
+                                Margin="0"
+                                VerticalAlignment="Center"
+                                FontSize="18"
+                                Glyph="&#xF035;" />
+                            <ToolTipService.ToolTip>
+                                <ToolTip x:Uid="SettingsContent" />
+                            </ToolTipService.ToolTip>
+                        </Button>
+                    </StackPanel>
                     <Grid
                         Grid.Column="1"
                         Margin="0"
@@ -535,54 +585,6 @@
                                 x:Name="EqualizerIconPlayingDetail"
                                 FontSize="18"
                                 Glyph="&#xE9E9;" />
-                        </Button>
-                        <Button
-                            Margin="0"
-                            VerticalAlignment="Center"
-                            Background="Transparent"
-                            BorderBrush="Transparent"
-                            BorderThickness="0"
-                            Style="{StaticResource MenuButtonStyle}">
-                            <FontIcon
-                                Grid.Column="0"
-                                Margin="0"
-                                VerticalAlignment="Center"
-                                FontSize="18"
-                                Glyph="&#xE917;" />
-                            <Button.Flyout>
-                                <Flyout Placement="Top">
-                                    <NumberBox
-                                        Width="175"
-                                        LargeChange="1000"
-                                        Maximum="100000"
-                                        Minimum="-100000"
-                                        SmallChange="100"
-                                        SpinButtonPlacementMode="Inline"
-                                        Value="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.LyricsOffsetMs, Mode=TwoWay}" />
-                                </Flyout>
-                            </Button.Flyout>
-                            <ToolTipService.ToolTip>
-                                <ToolTip x:Uid="LyricsTimeOffset" />
-                            </ToolTipService.ToolTip>
-                        </Button>
-                        <Button
-                            x:Name="SettingsButton"
-                            Margin="0"
-                            VerticalAlignment="Center"
-                            Background="Transparent"
-                            BorderBrush="Transparent"
-                            BorderThickness="0"
-                            Click="SettingsButton_Click"
-                            Style="{StaticResource MenuButtonStyle}">
-                            <FontIcon
-                                Grid.Column="0"
-                                Margin="0"
-                                VerticalAlignment="Center"
-                                FontSize="18"
-                                Glyph="&#xF035;" />
-                            <ToolTipService.ToolTip>
-                                <ToolTip x:Uid="SettingsContent" />
-                            </ToolTipService.ToolTip>
                         </Button>
                         <Button
                             x:Name="PlayModeButtonPlayingDetail"
