@@ -39,7 +39,7 @@ namespace WinUIMusicPlayer.View
         private const double PortraitEnterRatio = 1.15;
         private const double PortraitExitRatio = 1.10;
         private const double PortraitTopVerticalMargin = 20;
-        private const double textScale = 1.8;  
+        private const double textScale = 1.5;  
         private const double lyricsScale = 1.5;
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
         {
@@ -130,13 +130,13 @@ namespace WinUIMusicPlayer.View
             double driver = windowSize.Width / _dpiScale;
             var (lyrics, title, artist,info, topHeight) = driver switch
             {
-                <= 1024 => (36, 26, 20, 10,  260),
-                < 1280 => (42, 28, 22, 11,  280),
-                < 1600 => (52, 30, 24, 13, 300),
-                < 1920 => (64, 34, 28,  14, 320),
-                < 2560 => (80, 38, 32, 15, 340),
-                < 2880 => (96, 40, 34, 16, 360),
-                _ => (120, 44, 38, 18, 380)
+                <= 1024 => (36, 30, 24, 10,  260),
+                < 1280 => (42, 36, 26, 11,  280),
+                < 1600 => (52, 44, 30, 13, 300),
+                < 1920 => (64, 56, 34,  14, 320),
+                < 2560 => (80, 64, 38, 15, 340),
+                < 2880 => (96, 72, 40, 16, 360),
+                _ => (120, 86, 44, 18, 380)
             };
 
             if (portrait)
@@ -250,7 +250,7 @@ namespace WinUIMusicPlayer.View
                 LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
                 LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(8, GridUnitType.Star) });
                 LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(80, GridUnitType.Pixel) });
+                LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(50, GridUnitType.Pixel) });
                 LeftControlPanel.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
 
                 CoverContainer.ClearValue(FrameworkElement.MarginProperty);
