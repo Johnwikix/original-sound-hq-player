@@ -265,7 +265,7 @@
                         Grid.Column="1"
                         Margin="10,0,0,0"
                         VerticalAlignment="Center"
-                        FontSize="{x:Bind ViewModel.InfoFontSize, Mode=OneWay}"
+                        FontSize="14"
                         Text="{x:Bind ViewModel.AppViewModel.PlayTimeText, Mode=OneWay}" />
                 </Grid>
                 <Grid Grid.Row="1" Margin="0">
