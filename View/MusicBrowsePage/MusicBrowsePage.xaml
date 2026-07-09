@@ -17,7 +17,7 @@
     IsTabStop="True"
     TabIndex="0"
     mc:Ignorable="d">
-    <Grid Margin="0,32,0,0">
+    <Grid Margin="0">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
