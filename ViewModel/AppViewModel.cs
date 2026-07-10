@@ -212,6 +212,7 @@ namespace WinUIMusicPlayer.ViewModel
         public int UsbSelectedIndex { get; set => SetProperty(ref field, value); } = 0;
         public Visibility ProcessRingVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
         public bool IsFullScreen { get; set => SetProperty(ref field, value); } = false;
+        public bool IsMaximized { get; set => SetProperty(ref field, value); } = false;
         public bool IsPlayingDetailVisible { get; set => SetProperty(ref field, value); } = false;
         public bool IsPointerOverTitleBar { get; set => SetProperty(ref field, value); } = true;
 
@@ -225,6 +226,20 @@ namespace WinUIMusicPlayer.ViewModel
                 ? AppWindowPresenterKind.FullScreen
                 : AppWindowPresenterKind.Default);
             IsFullScreen = next;
+        }
+
+        public void UpdateMaximizeState()
+        {
+            if (App.MainWindow?.AppWindow.Presenter is OverlappedPresenter overlapped)
+            {
+                IsMaximized = overlapped.State == OverlappedPresenterState.Maximized;
+            }
+        }
+
+        public void UpdateFullScreenState()
+        {
+            IsFullScreen = App.MainWindow?.AppWindow.Presenter.Kind
+                           == AppWindowPresenterKind.FullScreen;
         }
         public string InfoBarTitle { get; set => SetProperty(ref field, value); } = string.Empty;
         public bool InfoBarIsOpen { get; set => SetProperty(ref field, value); } = false;

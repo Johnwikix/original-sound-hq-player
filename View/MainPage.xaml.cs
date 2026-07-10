@@ -29,6 +29,8 @@ using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.View
 {
+    public enum TitleBarArea { None, Top }
+
     /// <summary>
     /// An empty page that can be used on its own or navigated to within a Frame.
     /// </summary>
@@ -68,12 +70,10 @@ namespace WinUIMusicPlayer.View
             if (App.MainWindow is { } mainWindow)
             {
                 mainWindow.AppWindow.Changed += MainPage_AppWindow_Changed;
-                ViewModel.AppViewModel.PropertyChanged += AppViewModel_PropertyChanged;
                 AppTitleBar.SizeChanged += AppTitleBar_SizeChanged;
-                UpdateTitleBarDragRects();
+                SetTitleBarArea(TitleBarArea.Top);
             }
-            UpdateMaximizeIcon();
-            UpdateFullscreenIcon();
+            ViewModel.AppViewModel.UpdateMaximizeState();
             Loaded -= MainPage_Loaded;
         }
 
@@ -87,49 +87,20 @@ namespace WinUIMusicPlayer.View
             catch
             {
             }
-            try
-            {
-                if (ViewModel?.AppViewModel is { } appVm)
-                    appVm.PropertyChanged -= AppViewModel_PropertyChanged;
-            }
-            catch
-            {
-            }
             Unloaded -= MainPage_Unloaded;
         }
 
-        private void MainPage_AppWindow_Changed(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowChangedEventArgs args)
+        private void MainPage_AppWindow_Changed(AppWindow sender, AppWindowChangedEventArgs args)
         {
             if (args.DidPositionChange || args.DidSizeChange)
             {
-                UpdateMaximizeIcon();
-                UpdateFullscreenIcon();
+                ViewModel.AppViewModel.UpdateMaximizeState();
+                SetTitleBarArea(TitleBarArea.Top);
             }
-        }
-
-        private void AppViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            if (e.PropertyName == nameof(AppViewModel.IsFullScreen))
+            if (args.DidPresenterChange)
             {
-                UpdateFullscreenIcon();
+                ViewModel.AppViewModel.UpdateFullScreenState();
             }
-        }
-
-        private void UpdateMaximizeIcon()
-        {
-            if (App.MainWindow?.AppWindow.Presenter is OverlappedPresenter overlapped)
-            {
-                bool isMaximized = overlapped.State == OverlappedPresenterState.Maximized;
-                EnterMaximizeFontIcon.Opacity = isMaximized ? 0 : 1;
-                ExitMaximizeFontIcon.Opacity = isMaximized ? 1 : 0;
-            }
-        }
-
-        private void UpdateFullscreenIcon()
-        {
-            bool isFullScreen = ViewModel.AppViewModel.IsFullScreen;
-            EnterFullscreenFontIcon.Opacity = isFullScreen ? 0 : 1;
-            ExitFullscreenFontIcon.Opacity = isFullScreen ? 1 : 0;
         }
 
         private void AppTitleBar_PointerEntered(object sender, PointerRoutedEventArgs e)
@@ -159,7 +130,7 @@ namespace WinUIMusicPlayer.View
                 else
                     window.Maximize();
             }
-            UpdateMaximizeIcon();
+            ViewModel.AppViewModel.UpdateMaximizeState();
         }
 
         private void FullscreenTitleBarButton_Click(object sender, RoutedEventArgs e)
@@ -169,44 +140,30 @@ namespace WinUIMusicPlayer.View
 
         private void AppTitleBar_SizeChanged(object sender, SizeChangedEventArgs e)
         {
-            UpdateTitleBarDragRects();
+            SetTitleBarArea(TitleBarArea.Top);
         }
 
-        private void UpdateTitleBarDragRects()
+        private void SetTitleBarArea(TitleBarArea titleBarArea)
         {
             if (App.MainWindow?.AppWindow?.TitleBar is null) return;
-            try
+
+            var scale = AppTitleBar.XamlRoot?.RasterizationScale ?? 1.0;
+
+            switch (titleBarArea)
             {
-                var winContent = (FrameworkElement)App.MainWindow.Content;
-                if (winContent is null) return;
+                case TitleBarArea.None:
+                    App.MainWindow.AppWindow.TitleBar.SetDragRectangles([new RectInt32(0, 0, 0, 0)]);
+                    break;
 
-                AppTitleBar.UpdateLayout();
-                TopRightButtons.UpdateLayout();
-
-                double scale = AppTitleBar.XamlRoot?.RasterizationScale ?? 1.0;
-
-                var ttv = AppTitleBar.TransformToVisual(winContent);
-                var tbTL = ttv.TransformPoint(new Point(0, 0));
-                var tbBR = ttv.TransformPoint(new Point(AppTitleBar.ActualWidth, AppTitleBar.ActualHeight));
-
-                var rbv = TopRightButtons.TransformToVisual(winContent);
-                var rbTL = rbv.TransformPoint(new Point(0, 0));
-                var rbBR = rbv.TransformPoint(new Point(TopRightButtons.ActualWidth, TopRightButtons.ActualHeight));
-
-                var leftRect = new RectInt32(
-                    (int)(tbTL.X * scale), (int)(tbTL.Y * scale),
-                    Math.Max(0, (int)((rbTL.X - tbTL.X) * scale)),
-                    Math.Max(0, (int)((tbBR.Y - tbTL.Y) * scale)));
-
-                var rightRect = new RectInt32(
-                    (int)(rbBR.X * scale), (int)(rbBR.Y * scale),
-                    Math.Max(0, (int)((tbBR.X - rbBR.X) * scale)),
-                    Math.Max(0, (int)((tbBR.Y - rbBR.Y) * scale)));
-
-                App.MainWindow.AppWindow.TitleBar.SetDragRectangles(new[] { leftRect, rightRect });
-            }
-            catch
-            {
+                case TitleBarArea.Top:
+                    App.MainWindow.AppWindow.TitleBar.SetDragRectangles([
+                        new RectInt32(
+                            0, 0,
+                            (int)(AppTitleBar.ActualWidth * scale),
+                            (int)(AppTitleBar.ActualHeight * scale)
+                        )
+                    ]);
+                    break;
             }
         }
 

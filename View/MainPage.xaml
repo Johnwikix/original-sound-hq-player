@@ -629,31 +629,15 @@
                     x:Uid="FullscreenTitleBarButton"
                     Click="FullscreenTitleBarButton_Click"
                     Style="{StaticResource TitleBarButtonStyle}">
-                    <Grid>
-                        <FontIcon
-                            x:Name="EnterFullscreenFontIcon"
-                            FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                            FontSize="14"
-                            Glyph="&#xE740;">
-                            <FontIcon.OpacityTransition>
-                                <ScalarTransition />
-                            </FontIcon.OpacityTransition>
-                        </FontIcon>
-                        <FontIcon
-                            x:Name="ExitFullscreenFontIcon"
-                            FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                            FontSize="14"
-                            Glyph="&#xE73F;"
-                            Opacity="0">
-                            <FontIcon.OpacityTransition>
-                                <ScalarTransition />
-                            </FontIcon.OpacityTransition>
-                        </FontIcon>
-                    </Grid>
+                    <FontIcon
+                        FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                        FontSize="14"
+                        Glyph="{x:Bind ViewModel.AppViewModel.IsFullScreen, Mode=OneWay, Converter={StaticResource FullScreenIconConverter}}" />
                 </Button>
                 <Button
                     x:Name="MinimizeButton"
                     x:Uid="MinimizeButton"
+                    Visibility="{x:Bind tools:BindUtils.BoolToVisibilityReConverter(ViewModel.AppViewModel.IsFullScreen), Mode=OneWay}"
                     Click="MinimizeButton_Click"
                     Style="{StaticResource TitleBarButtonStyle}">
                     <FontIcon
@@ -664,6 +648,7 @@
                 <Button
                     x:Name="MaximizeButton"
                     x:Uid="MaximizeButton"
+                    Visibility="{x:Bind tools:BindUtils.BoolToVisibilityReConverter(ViewModel.AppViewModel.IsFullScreen), Mode=OneWay}"
                     Click="MaximizeButton_Click"
                     Style="{StaticResource TitleBarButtonStyle}">
                     <Grid>
@@ -671,7 +656,8 @@
                             x:Name="EnterMaximizeFontIcon"
                             FontFamily="{ThemeResource SymbolThemeFontFamily}"
                             FontSize="14"
-                            Glyph="&#xE71A;">
+                            Glyph="&#xE71A;"
+                            Opacity="{x:Bind tools:BindUtils.BoolToOpacityReConverter(ViewModel.AppViewModel.IsMaximized), Mode=OneWay}">
                             <FontIcon.OpacityTransition>
                                 <ScalarTransition />
                             </FontIcon.OpacityTransition>
@@ -681,7 +667,7 @@
                             FontFamily="{ThemeResource SymbolThemeFontFamily}"
                             FontSize="14"
                             Glyph="&#xE744;"
-                            Opacity="0">
+                            Opacity="{x:Bind tools:BindUtils.BoolToOpacityConverter(ViewModel.AppViewModel.IsMaximized), Mode=OneWay}">
                             <FontIcon.OpacityTransition>
                                 <ScalarTransition />
                             </FontIcon.OpacityTransition>
