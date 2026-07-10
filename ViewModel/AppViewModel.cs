@@ -809,10 +809,9 @@ namespace WinUIMusicPlayer.ViewModel
                 }
                 slice.Sort(comparer);
 
-                var results = slice.ToArray();
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
                 {
-                    _ = targetCollection.ReplaceAllAsync(results);
+                    targetCollection.FillFrom(buf.AsSpan(0, count));
                 });
             }
             finally
@@ -943,7 +942,7 @@ namespace WinUIMusicPlayer.ViewModel
             _ = UpdateSongCollectionsAsync(AlbumSongs, SongViewType.Album, m => m.Album == CurrentAlbumObj?.Album);
             _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => m.Author == CurrentArtistObj?.Author);
             _ = UpdateSongCollectionsAsync(FolderSongs, SongViewType.Folder, m => m.LastLevelFolderPath == CurrentFolderObj?.LastLevelFolderPath);
-            RefreshPlayListSongMapping();
+            _ = RefreshPlayListSongMapping();
             UpdateGroupedByFirstLetter(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumPageSource);
             UpdateGroupedByFirstLetter(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistPageSource);
             UpdateGroupedByFirstLetter(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), FolderPageSource);
@@ -977,7 +976,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
             else if (pageType == typeof(PlayListPage))
             {
-                RefreshPlayListSongMapping();
+                _ = RefreshPlayListSongMapping();
             }
             else
             {
@@ -986,7 +985,7 @@ namespace WinUIMusicPlayer.ViewModel
             App.Services.GetRequiredService<MusicBrowseViewModel>()?.UpdateViewList();
         }
 
-        public void RefreshPlayListSongMapping()
+        public async Task RefreshPlayListSongMapping()
         {
             var plmSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(AppData.AllPlayListMusics);
             int plmCount = plmSpan.Length;
@@ -1012,10 +1011,9 @@ namespace WinUIMusicPlayer.ViewModel
                 var slice = buf.AsSpan(0, written);
                 slice.Sort(_byPlayListOrderDesc);
 
-                var results = slice.ToArray();
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
                 {
-                    _ = PlayListSongs.ReplaceAllAsync(results);
+                    PlayListSongs.FillFrom(buf.AsSpan(0, written));
                 });
             }
             finally

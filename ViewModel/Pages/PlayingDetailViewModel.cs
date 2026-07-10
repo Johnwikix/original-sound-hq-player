@@ -122,13 +122,14 @@ namespace WinUIMusicPlayer.ViewModel.Pages
                     AppViewModel.LyricsDurationTime = nextTime.Subtract(currentTime);
                 }
             }
-            App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 try
                 {
-                    for (int i = 0; i < AppViewModel.UILyrics.Count; i++)
+                    var uiLyrics = AppViewModel.UILyrics;
+                    for (int i = 0; i < uiLyrics.Count; i++)
                     {
-                        AppViewModel.UILyrics[i].IsCurrent = (i == index);
+                        uiLyrics[i].IsCurrent = (i == index);
                     }
                     AppViewModel.LastLyricIndex = index;
                 }

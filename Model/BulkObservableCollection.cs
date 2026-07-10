@@ -109,10 +109,12 @@ namespace WinUIMusicPlayer.Model
 
         public void FillFrom(ReadOnlySpan<T> source)
         {
-            Items.Clear();
-            var arr = new T[source.Length];
-            source.CopyTo(arr);
-            Items.AddRange(arr);
+            var list = (List<T>)Items;
+            list.Clear();
+            if (list.Capacity < source.Length)
+                list.Capacity = source.Length;
+            foreach (var item in source)
+                list.Add(item);
             RaiseChangeNotifications();
         }
 

@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
@@ -59,6 +60,13 @@ namespace WinUIMusicPlayer.ViewModel
         private readonly Lock _scanCtsLock = new();
         private ILogger<MusicBrowseViewModel> _logger;
         private const long MemoryTrimThreshold = 400L * 1024 * 1024;
+
+        private static readonly DispatcherQueueHandler _showProcessRing = static () =>
+            App.Services.GetRequiredService<MusicBrowseViewModel>().AppViewModel.ProcessRingVisibility = Visibility.Visible;
+        private static readonly DispatcherQueueHandler _hideProcessRing = static () =>
+            App.Services.GetRequiredService<MusicBrowseViewModel>().AppViewModel.ProcessRingVisibility = Visibility.Collapsed;
+        private static readonly DispatcherQueueHandler _clearUILyrics = static () =>
+            App.Services.GetRequiredService<MusicBrowseViewModel>().AppViewModel.UILyrics = [];
         public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
         public MusicBrowseViewModel(BassPlayerCommandService bassPlayerCommand, SystemMediaControlsService systemMediaControlsService, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, AudioConverterService converterService, ILogger<MusicBrowseViewModel> logger)
@@ -356,18 +364,15 @@ namespace WinUIMusicPlayer.ViewModel
 
             try
             {
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                    AppViewModel.ProcessRingVisibility = Visibility.Visible);
+                App.MainWindow.DispatcherQueue.TryEnqueue(_showProcessRing);
 
                 await AutoRescanService.AutoScan(cts.Token);
 
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                    AppViewModel.ProcessRingVisibility = Visibility.Collapsed);
+                App.MainWindow.DispatcherQueue.TryEnqueue(_hideProcessRing);
             }
             catch (OperationCanceledException)
             {
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                    AppViewModel.ProcessRingVisibility = Visibility.Collapsed);
+                App.MainWindow.DispatcherQueue.TryEnqueue(_hideProcessRing);
             }
             finally
             {
@@ -422,10 +427,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (AppViewModel.CurrentPlayingMusic is not null)
             {
                 _ = UpdatePlayBar(AppViewModel.CurrentPlayingMusic);
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                {
-                    AppViewModel.UILyrics = [];
-                });
+                App.MainWindow.DispatcherQueue.TryEnqueue(_clearUILyrics);
                 AppViewModel.LoadLyricsToUI(AppViewModel.CurrentPlayingMusic);
             }
         }

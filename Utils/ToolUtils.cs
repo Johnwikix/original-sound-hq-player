@@ -11,6 +11,7 @@ using Microsoft.VisualBasic.FileIO;
 using Microsoft.Win32;
 using Microsoft.Windows.ApplicationModel.Resources;
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -639,29 +640,56 @@ namespace WinUIMusicPlayer.Utils
         [GeneratedRegex(@"\[(\d{2}):(\d{2})\.(\d{2,3})\]")]
         private static partial Regex TimeCodeRegex();
 
+        private static readonly SpanAction<char, string> _convertLyricsWriter = ConvertLyricsCore;
+
         public static string ConvertLyrics(string lyrics)
         {
-            Regex timeRegex = TimeCodeRegex();
-            string[] lines = lyrics.Split(new string[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-            for (int i = 0; i < lines.Length; i++)
-            {
-                Match timeMatch = timeRegex.Match(lines[i]);
-                while (timeMatch.Success)
-                {
-                    string timePart = timeMatch.Value;
-                    string minutes = timeMatch.Groups[1].Value;
-                    string seconds = timeMatch.Groups[2].Value;
-                    string milliseconds = timeMatch.Groups[3].Value;
+            var regex = TimeCodeRegex();
+            var source = lyrics.AsSpan();
 
-                    string newTimePart = milliseconds.Length == 3
-                        ? $"[{minutes}:{seconds}.{milliseconds[0]}{milliseconds[1]}]"
-                        : $"[{minutes}:{seconds}.{milliseconds}]";
-                    lines[i] = lines[i].Replace(timePart, newTimePart);
-                    timeMatch = timeMatch.NextMatch();
+            int ms3Count = 0;
+            foreach (var match in regex.EnumerateMatches(source))
+                if (match.Length == 11) ms3Count++;
+
+            int finalLength = source.Length - ms3Count;
+            if (finalLength == source.Length)
+                return lyrics;
+
+            return string.Create(finalLength, lyrics, _convertLyricsWriter);
+        }
+
+        private static void ConvertLyricsCore(Span<char> dest, string lyrics)
+        {
+            var r = TimeCodeRegex();
+            var src = lyrics.AsSpan();
+            int srcPos = 0, destPos = 0;
+
+            foreach (var match in r.EnumerateMatches(src))
+            {
+                int literalLen = match.Index - srcPos;
+                if (literalLen > 0)
+                {
+                    src.Slice(srcPos, literalLen).CopyTo(dest.Slice(destPos));
+                    destPos += literalLen;
                 }
+
+                if (match.Length == 11)
+                {
+                    src.Slice(match.Index, 9).CopyTo(dest.Slice(destPos));
+                    destPos += 9;
+                    dest[destPos++] = src[match.Index + 10];
+                }
+                else
+                {
+                    src.Slice(match.Index, 10).CopyTo(dest.Slice(destPos));
+                    destPos += 10;
+                }
+
+                srcPos = match.Index + match.Length;
             }
 
-            return string.Join("\r\n", lines);
+            if (srcPos < src.Length)
+                src.Slice(srcPos).CopyTo(dest.Slice(destPos));
         }
 
         public static string SanitizeFileName(string name, char[] invalidChars)
