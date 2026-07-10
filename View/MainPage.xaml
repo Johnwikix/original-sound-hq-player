@@ -598,15 +598,16 @@
 
             <Button
                 x:Name="CancelPlayingDetailButton"
-                Margin="5,0"
+                Grid.Column="0"
+                Margin="0"
                 HorizontalAlignment="Left"
-                VerticalAlignment="Center"
+                VerticalAlignment="Top"
                 Background="Transparent"
                 BorderBrush="Transparent"
                 BorderThickness="0"
                 Click="CancelPlayingDetailButton_Click"
                 Opacity="{x:Bind tools:BindUtils.BoolToOpacityConverter(ViewModel.AppViewModel.IsPointerOverTitleBar), Mode=OneWay}"
-                Style="{StaticResource MenuButtonStyle}"
+                Style="{StaticResource TitleBarButtonStyle}"
                 Visibility="{x:Bind ViewModel.AppViewModel.IsPlayingDetailVisible, Mode=OneWay}">
                 <Button.OpacityTransition>
                     <ScalarTransition />
@@ -637,9 +638,9 @@
                 <Button
                     x:Name="MinimizeButton"
                     x:Uid="MinimizeButton"
-                    Visibility="{x:Bind tools:BindUtils.BoolToVisibilityReConverter(ViewModel.AppViewModel.IsFullScreen), Mode=OneWay}"
                     Click="MinimizeButton_Click"
-                    Style="{StaticResource TitleBarButtonStyle}">
+                    Style="{StaticResource TitleBarButtonStyle}"
+                    Visibility="{x:Bind tools:BindUtils.BoolToVisibilityReConverter(ViewModel.AppViewModel.IsFullScreen), Mode=OneWay}">
                     <FontIcon
                         FontFamily="{ThemeResource SymbolThemeFontFamily}"
                         FontSize="14"
@@ -648,9 +649,9 @@
                 <Button
                     x:Name="MaximizeButton"
                     x:Uid="MaximizeButton"
-                    Visibility="{x:Bind tools:BindUtils.BoolToVisibilityReConverter(ViewModel.AppViewModel.IsFullScreen), Mode=OneWay}"
                     Click="MaximizeButton_Click"
-                    Style="{StaticResource TitleBarButtonStyle}">
+                    Style="{StaticResource TitleBarButtonStyle}"
+                    Visibility="{x:Bind tools:BindUtils.BoolToVisibilityReConverter(ViewModel.AppViewModel.IsFullScreen), Mode=OneWay}">
                     <Grid>
                         <FontIcon
                             x:Name="EnterMaximizeFontIcon"
