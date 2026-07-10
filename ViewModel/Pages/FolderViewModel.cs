@@ -8,6 +8,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using WinRT;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -94,10 +95,10 @@ namespace WinUIMusicPlayer.ViewModel
         public void FolderGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
             var gridView = sender as GridView;
-            GridViewItem item = gridView.ContainerFromItem(e.ClickedItem) as GridViewItem;
+            GridViewItem? item = gridView?.ContainerFromItem(e.ClickedItem)?.As<GridViewItem>();
             if (item is not null)
             {
-                Music folder = item.Content as Music;
+                Music? folder = item.Content as Music;
                 if (MusicBrowseViewModel is not null && folder is not null)
                 {
                     try

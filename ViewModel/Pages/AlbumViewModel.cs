@@ -6,6 +6,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
+using WinRT;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -95,10 +96,10 @@ namespace WinUIMusicPlayer.ViewModel
         public void AlbumGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
             var gridView = sender as GridView;
-            var item = gridView.ContainerFromItem(e.ClickedItem) as GridViewItem;
+            var item = gridView?.ContainerFromItem(e.ClickedItem)?.As<GridViewItem>();
             if (item is not null)
             {
-                Music album = item.Content as Music;
+                Music? album = item.Content as Music;
                 if (MusicBrowseViewModel is not null && album is not null)
                 {
                     AppViewModel.PageType = "album";

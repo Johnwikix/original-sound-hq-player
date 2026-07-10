@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
 using System;
+using WinRT;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.NavigationService;
@@ -40,7 +41,7 @@ namespace WinUIMusicPlayer.View
         {
             if (DetailView.ViewModel.IsClosingForTransition) return;
             var gridView = sender as GridView;
-            var item = gridView?.ContainerFromItem(e.ClickedItem) as GridViewItem;
+            var item = gridView?.ContainerFromItem(e.ClickedItem).As<GridViewItem>();
             var coverBorder = FindCoverBorderInItem(item);
             if (coverBorder is not null)
             {
@@ -70,7 +71,7 @@ namespace WinUIMusicPlayer.View
             Border? sourceBorder = null;
             if (folder is not null)
             {
-                var item = FolderGridView.ContainerFromItem(folder) as GridViewItem;
+                var item = FolderGridView.ContainerFromItem(folder).As<GridViewItem>();
                 sourceBorder = FindCoverBorderInItem(item);
             }
             bool canAnimate = detailBorder is not null && sourceBorder is not null;

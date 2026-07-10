@@ -213,7 +213,7 @@ namespace WinUIMusicPlayer.ViewModel
         public Visibility ProcessRingVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
         public bool IsFullScreen { get; set => SetProperty(ref field, value); } = false;
         public bool IsPlayingDetailVisible { get; set => SetProperty(ref field, value); } = false;
-        public bool IsPointerOverTitleBar { get; set => SetProperty(ref field, value); } = false;
+        public bool IsPointerOverTitleBar { get; set => SetProperty(ref field, value); } = true;
 
         public void ToggleFullScreen()
         {
