@@ -11,6 +11,7 @@
         <Setter Property="MinWidth" Value="40" />
         <Setter Property="MinHeight" Value="32" />
         <Setter Property="FontSize" Value="14" />
+        <Setter Property="CornerRadius" Value="8" />
         <Setter Property="Foreground" Value="{ThemeResource TextFillColorPrimaryBrush}" />
         <Setter Property="UseSystemFocusVisuals" Value="{StaticResource UseSystemFocusVisuals}" />
         <Setter Property="Template">
