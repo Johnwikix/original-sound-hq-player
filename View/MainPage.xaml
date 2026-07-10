@@ -19,7 +19,7 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="Auto" />
             </Grid.RowDefinitions>
-            <Grid Grid.Row="0" Margin="0,30,0,0">
+            <Grid Grid.Row="0" Margin="0,32,0,0">
                 <NavigationView
                     x:Name="NavigationViewControl"
                     BackRequested="NavigationViewControl_BackRequested"
@@ -577,19 +577,19 @@
             </Grid.ColumnDefinitions>
             <StackPanel
                 Grid.Column="0"
-                Margin="18,0,0,0"
+                Margin="15,0,0,0"
                 Opacity="{x:Bind tools:BindUtils.VisibilityToOpacityConverter(NavigationViewControl.Visibility), Mode=OneWay}"
                 Orientation="Horizontal">
                 <Image
                     x:Name="AppLogo"
-                    Width="20"
-                    Height="20"
+                    Width="18"
+                    Height="18"
                     Margin="0,2,0,0"
                     VerticalAlignment="Center"
                     Source="ms-appx:///Assets/icon.ico" />
                 <TextBlock
                     x:Uid="AppTitle"
-                    Margin="10,0,0,0"
+                    Margin="15,0,0,0"
                     VerticalAlignment="Center"
                     FontSize="16"
                     IsHitTestVisible="False"
@@ -616,7 +616,7 @@
             <StackPanel
                 x:Name="TopRightButtons"
                 Grid.Column="2"
-                Margin="0,0,0,0"
+                Margin="0"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Top"
                 Opacity="{x:Bind tools:BindUtils.BoolToOpacityConverter(ViewModel.AppViewModel.IsPointerOverTitleBar), Mode=OneWay}"
