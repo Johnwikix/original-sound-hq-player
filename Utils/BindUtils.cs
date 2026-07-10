@@ -4,6 +4,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using WinRT.OriginalSound_HIFI_PlayerGenericHelpers;
 using WinUIMusicPlayer.Model;
@@ -156,7 +157,15 @@ namespace WinUIMusicPlayer.Utils
         public static string MusicToInfo(Music music)
         {
             if (music is null) return string.Empty;
-            return $"{music.Album}{Environment.NewLine}{music.Author}";
+            var album = music.Album;
+            var author = music.Author;
+            var newLine = Environment.NewLine;
+            return string.Create(album.Length + newLine.Length + author.Length, (album, author, newLine), static (span, state) =>
+            {
+                state.album.CopyTo(span);
+                state.newLine.CopyTo(span.Slice(state.album.Length));
+                state.author.CopyTo(span.Slice(state.album.Length + state.newLine.Length));
+            });
         }
 
         public static bool BothTrue(bool a, bool b)
@@ -166,18 +175,61 @@ namespace WinUIMusicPlayer.Utils
 
         public static double PercentToDouble(double percent) => percent / 100.0;
 
-        public static string FormatF1(double value) => value.ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
-        public static string FormatF1(float value) => value.ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
-        public static string FormatF0(double value) => value.ToString("F0", System.Globalization.CultureInfo.InvariantCulture);
-        public static string FormatMs(double value) => value.ToString("F0", System.Globalization.CultureInfo.InvariantCulture) + " ms";
-        public static string FormatPercent(double value) => value.ToString("F0", System.Globalization.CultureInfo.InvariantCulture) + "%";
+        public static string FormatF1(double value)
+        {
+            Span<char> buf = stackalloc char[32];
+            value.TryFormat(buf, out var written, "F1", CultureInfo.InvariantCulture);
+            return new string(buf[..written]);
+        }
+        public static string FormatF1(float value)
+        {
+            Span<char> buf = stackalloc char[32];
+            value.TryFormat(buf, out var written, "F1", CultureInfo.InvariantCulture);
+            return new string(buf[..written]);
+        }
+        public static string FormatF0(double value)
+        {
+            Span<char> buf = stackalloc char[32];
+            value.TryFormat(buf, out var written, "F0", CultureInfo.InvariantCulture);
+            return new string(buf[..written]);
+        }
+        public static string FormatMs(double value)
+        {
+            Span<char> buf = stackalloc char[32];
+            value.TryFormat(buf, out var written, "F0", CultureInfo.InvariantCulture);
+            " ms".CopyTo(buf.Slice(written));
+            return new string(buf[..(written + 3)]);
+        }
+        public static string FormatPercent(double value)
+        {
+            Span<char> buf = stackalloc char[32];
+            value.TryFormat(buf, out var written, "F0", CultureInfo.InvariantCulture);
+            buf[written] = '%';
+            return new string(buf[..(written + 1)]);
+        }
 
         public static string FormatThumbTipTime(double totalSeconds)
         {
             var timeSpan = TimeSpan.FromSeconds(totalSeconds);
-            if (timeSpan.TotalHours >= 1)
-                return $"{(int)timeSpan.TotalHours:D2}:{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
-            return $"{timeSpan.Minutes:D2}:{timeSpan.Seconds:D2}";
+            return timeSpan.TotalHours >= 1
+                ? string.Create(8, timeSpan, static (span, ts) => WriteThumbWithHours(span, ts))
+                : string.Create(5, timeSpan, static (span, ts) => WriteThumbNoHours(span, ts));
+        }
+
+        private static void WriteThumbWithHours(Span<char> span, TimeSpan ts)
+        {
+            ((int)ts.TotalHours).TryFormat(span.Slice(0, 2), out _, "D2", CultureInfo.InvariantCulture);
+            span[2] = ':';
+            ts.Minutes.TryFormat(span.Slice(3, 2), out _, "D2", CultureInfo.InvariantCulture);
+            span[5] = ':';
+            ts.Seconds.TryFormat(span.Slice(6, 2), out _, "D2", CultureInfo.InvariantCulture);
+        }
+
+        private static void WriteThumbNoHours(Span<char> span, TimeSpan ts)
+        {
+            ts.Minutes.TryFormat(span.Slice(0, 2), out _, "D2", CultureInfo.InvariantCulture);
+            span[2] = ':';
+            ts.Seconds.TryFormat(span.Slice(3, 2), out _, "D2", CultureInfo.InvariantCulture);
         }
     }
 }

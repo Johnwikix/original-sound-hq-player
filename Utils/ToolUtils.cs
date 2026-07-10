@@ -805,10 +805,13 @@ namespace WinUIMusicPlayer.Utils
                 LyricsInfo? lyricsInfo = track.Lyrics.AsValueEnumerable().FirstOrDefault();
                 if (lyricsInfo is not null)
                 {
-                    foreach (LyricsInfo.LyricsPhrase phrase in lyricsInfo.SynchronizedLyrics)
+                    var synced = lyricsInfo.SynchronizedLyrics;
+                    var sb = new StringBuilder(synced.Count * 64);
+                    foreach (LyricsInfo.LyricsPhrase phrase in synced)
                     {
-                        lyrics += "[" + EncodeTimecode_ms(phrase.TimestampStart) + "] " + phrase.Text + "\n";
+                        sb.Append('[').Append(EncodeTimecode_ms(phrase.TimestampStart)).Append("] ").Append(phrase.Text).Append('\n');
                     }
+                    lyrics = sb.ToString();
                 }
                 if (GarbledTextFixer.IsGbkToIso88591Garbled(title))
                 {

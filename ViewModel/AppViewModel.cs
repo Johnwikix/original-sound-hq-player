@@ -611,23 +611,20 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void LoadLyricsToUI(Music music)
         {
-
             _loadingMusicId = music.Id;
-            _ = Task.Run(async () =>
-            {
-                LastLyricIndex = -1;
-                //设置播放服务中的歌词
-                List<LyricLine> parsedLyrics = await App.Services.GetRequiredService<LyricsRefreshService>().SetLyrics(music);
-                // 解析歌词并添加到UI集合
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                {
-                    if (_loadingMusicId == music.Id)
-                    {
-                        UILyrics = parsedLyrics;
-                    }
-                });
-            });
+            _ = Task.Run(() => LoadLyricsCore(music));
+        }
 
+        private static async Task LoadLyricsCore(Music music)
+        {
+            var vm = App.Services.GetRequiredService<AppViewModel>();
+            vm.LastLyricIndex = -1;
+            var parsedLyrics = await App.Services.GetRequiredService<LyricsRefreshService>().SetLyrics(music);
+            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            {
+                if (vm._loadingMusicId == music.Id)
+                    vm.UILyrics = parsedLyrics;
+            });
         }
 
         public void AdjustVolume(int delta)
