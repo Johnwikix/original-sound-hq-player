@@ -143,6 +143,9 @@ namespace WinUIMusicPlayer.View
             SetTitleBarArea(TitleBarArea.Top);
         }
 
+        private static readonly RectInt32[] _dragRectNone = [new(0, 0, 0, 0)];
+        private static readonly RectInt32[] _dragRectTop = [new()];
+
         private void SetTitleBarArea(TitleBarArea titleBarArea)
         {
             if (App.MainWindow?.AppWindow?.TitleBar is null) return;
@@ -152,17 +155,16 @@ namespace WinUIMusicPlayer.View
             switch (titleBarArea)
             {
                 case TitleBarArea.None:
-                    App.MainWindow.AppWindow.TitleBar.SetDragRectangles([new RectInt32(0, 0, 0, 0)]);
+                    App.MainWindow.AppWindow.TitleBar.SetDragRectangles(_dragRectNone);
                     break;
 
                 case TitleBarArea.Top:
-                    App.MainWindow.AppWindow.TitleBar.SetDragRectangles([
-                        new RectInt32(
-                            0, 0,
-                            (int)(AppTitleBar.ActualWidth * scale),
-                            (int)(AppTitleBar.ActualHeight * scale)
-                        )
-                    ]);
+                    _dragRectTop[0] = new RectInt32(
+                        0, 0,
+                        (int)(AppTitleBar.ActualWidth * scale),
+                        (int)(AppTitleBar.ActualHeight * scale)
+                    );
+                    App.MainWindow.AppWindow.TitleBar.SetDragRectangles(_dragRectTop);
                     break;
             }
         }
