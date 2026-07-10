@@ -575,15 +575,27 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <TextBlock
-                x:Uid="AppTitle"
+            <StackPanel
                 Grid.Column="0"
                 Margin="18,0,0,0"
-                VerticalAlignment="Center"
-                FontSize="16"
-                IsHitTestVisible="False"
                 Opacity="{x:Bind tools:BindUtils.VisibilityToOpacityConverter(NavigationViewControl.Visibility), Mode=OneWay}"
-                Style="{StaticResource CaptionTextBlockStyle}" />
+                Orientation="Horizontal">
+                <Image
+                    x:Name="AppLogo"
+                    Width="20"
+                    Height="20"
+                    Margin="0,2,0,0"
+                    VerticalAlignment="Center"
+                    Source="ms-appx:///Assets/icon.ico" />
+                <TextBlock
+                    x:Uid="AppTitle"
+                    Margin="10,0,0,0"
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    IsHitTestVisible="False"
+                    Style="{StaticResource CaptionTextBlockStyle}" />
+            </StackPanel>
+
             <Button
                 x:Name="CancelPlayingDetailButton"
                 Margin="5,0"
