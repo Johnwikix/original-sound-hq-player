@@ -91,15 +91,15 @@ namespace WinUIMusicPlayer.View
         }
 
         private void MainPage_AppWindow_Changed(AppWindow sender, AppWindowChangedEventArgs args)
-        {
+        {            
+            if (args.DidPresenterChange)
+            {
+                ViewModel.AppViewModel.UpdateFullScreenState();
+            }
             if (args.DidPositionChange || args.DidSizeChange)
             {
                 ViewModel.AppViewModel.UpdateMaximizeState();
                 SetTitleBarArea(TitleBarArea.Top);
-            }
-            if (args.DidPresenterChange)
-            {
-                ViewModel.AppViewModel.UpdateFullScreenState();
             }
         }
 
