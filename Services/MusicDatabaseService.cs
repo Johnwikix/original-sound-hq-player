@@ -30,6 +30,7 @@ namespace WinUIMusicPlayer.Services
         private SQLiteAsyncConnection _dbConnection;
         private string DbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
         private string SettingsPath => GetSettingsFilePath();
+        private string PlayStatePath => GetPlayStateFilePath();
         private readonly AddFolderService addFolderService = new();
         // 优化1: 信号量保持4并发，但 _toDelete/_toUpdate 改为方法局部变量，消除共享状态与线程安全隐患
         private readonly SemaphoreSlim _rescanfolderSemaphore = new(4, 4);
@@ -50,7 +51,6 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.CreateTableAsync<Music>();
                 await _dbConnection.CreateTableAsync<MusicLyrics>();
                 await _dbConnection.CreateTableAsync<Folder>();
-                await _dbConnection.CreateTableAsync<SavePlayState>();
                 await _dbConnection.CreateTableAsync<SaveEqualizer>();
                 await _dbConnection.CreateTableAsync<PlayList>();
                 await _dbConnection.CreateTableAsync<PlayListMusic>();
@@ -110,6 +110,24 @@ namespace WinUIMusicPlayer.Services
             catch
             {
                 return Path.Combine(ApplicationData.Current.LocalFolder.Path, "Settings.json");
+            }
+        }
+
+        private string GetPlayStateFilePath()
+        {
+            try
+            {
+                string userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                string appFolderPath = Path.Combine(userProfilePath, "OriginalSoundPlayer", "Settings");
+                if (!Directory.Exists(appFolderPath))
+                {
+                    Directory.CreateDirectory(appFolderPath);
+                }
+                return Path.Combine(appFolderPath, "PlayState.json");
+            }
+            catch
+            {
+                return Path.Combine(ApplicationData.Current.LocalFolder.Path, "PlayState.json");
             }
         }
 
@@ -574,6 +592,39 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        public async Task<SavePlayState> GetPlayState()
+        {
+            try
+            {
+                string path = PlayStatePath;
+                if (!File.Exists(path))
+                {
+                    return null;
+                }
+                string json = await File.ReadAllTextAsync(path);
+                return JsonSerializer.Deserialize(json, PlayStateJsonContext.Default.SavePlayState);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message, ex.StackTrace);
+                return null;
+            }
+        }
+
+        private async Task WritePlayStateToJson(SavePlayState state)
+        {
+            try
+            {
+                string path = PlayStatePath;
+                string json = JsonSerializer.Serialize(state, PlayStateJsonContext.Default.SavePlayState);
+                await File.WriteAllTextAsync(path, json);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"WritePlayStateToJson 写入播放状态文件时出错: {ex.Message}");
+            }
+        }
+
         public async Task<SaveEqualizer> GetEqualizer()
         {
             return await _dbConnection.Table<SaveEqualizer>().FirstOrDefaultAsync();
@@ -733,19 +784,16 @@ namespace WinUIMusicPlayer.Services
 
         public async Task GetPlayStateAsync()
         {
-            var playState = await _dbConnection.Table<SavePlayState>().FirstOrDefaultAsync();
-            if (playState is null)
-            {
-                playState = new SavePlayState
-                {
-                    PlayMode = PlayMode.ListLoop,
-                    Volume = 50f,
-                    LastPlayedMusicId = null
-                };
-                await _dbConnection.InsertAsync(playState);
-            }
+            bool isFirstTime = !File.Exists(PlayStatePath);
+            var playState = await GetPlayState();
+            playState ??= new SavePlayState();
+
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
+                if (playState.LastPlayedMusicId is null && AppViewModel.SongsSource.Count > 0)
+                {
+                    playState.LastPlayedMusicId = AppViewModel.SongsSource[0].Id;
+                }
                 AppViewModel.CurrentPlayMode = playState.PlayMode;
                 AppViewModel.PlayModeFlyoutText = ToolUtils.GetPlayModeText(playState.PlayMode);
                 AppViewModel.CurrentPlayingMusic = LoadCurrentPlayingMusic(playState.LastPlayedMusicId);
@@ -753,6 +801,10 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.TempVolume = playState.Volume;
                 AppViewModel.SelectedSortOption = AppViewModel.SortOptions.AsValueEnumerable().FirstOrDefault(item => item.Tag == playState.SortOrder)
                     ?? AppViewModel.SortOptions.AsValueEnumerable().FirstOrDefault() ?? new SortOption("DefaultOrder", "SortOrderDefault");
+                if (isFirstTime)
+                {
+                    _ = WritePlayStateToJson(playState);
+                }
             });
         }
 
@@ -1035,20 +1087,15 @@ namespace WinUIMusicPlayer.Services
                     PlayListMusicIds = musicIds
                 };
                 _ = _dbConnection.InsertAsync(playListState);
-                var playState = await _dbConnection.Table<SavePlayState>().FirstOrDefaultAsync();
-                playState ??= new SavePlayState { Id = 1 };
-                playState.PlayMode = currentPlayMode;
-                playState.LastPlayedMusicId = currentPlayingMusicId;
-                playState.Volume = volume;
-                playState.SortOrder = sortOrder;
-                if (playState.Id == 0)
+
+                var playState = new SavePlayState
                 {
-                    _ = _dbConnection.InsertAsync(playState);
-                }
-                else
-                {
-                    _ = _dbConnection.UpdateAsync(playState);
-                }
+                    PlayMode = currentPlayMode,
+                    LastPlayedMusicId = currentPlayingMusicId,
+                    Volume = volume,
+                    SortOrder = sortOrder
+                };
+                await WritePlayStateToJson(playState);
             }
             catch (Exception ex)
             {

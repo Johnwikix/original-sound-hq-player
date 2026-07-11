@@ -5,7 +5,6 @@
 		<type fullname="WinUIMusicPlayer.Model.PlayList" preserve="all"/>
 		<type fullname="WinUIMusicPlayer.Model.Music" preserve="all"/>
 		<type fullname="WinUIMusicPlayer.Model.Folder" preserve="all"/>
-		<type fullname="WinUIMusicPlayer.Model.SavePlayState" preserve="all"/>
 		<type fullname="WinUIMusicPlayer.Model.SaveEqualizer" preserve="all"/>
 		<type fullname="WinUIMusicPlayer.Model.LastPlayListState" preserve="all"/>
 		<type fullname="WinUIMusicPlayer.Model.SubFolder" preserve="all"/>
