@@ -19,17 +19,19 @@ public static class PaletteExtractor
     public static async Task<PaletteResult?> ExtractFromBmpCacheAsync(
         string bmpCachePath,
         PaletteAlgorithm algorithm = PaletteAlgorithm.KMeansPP,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        bool deterministicInit = true)
     {
         var colorDict = await ImagePixelSampler.SampleFromBmpCacheAsync(bmpCachePath, 10, ct);
         if (colorDict is null || colorDict.Count == 0) return null;
-        return RunAlgorithm(colorDict, 4, algorithm);
+        return RunAlgorithm(colorDict, 4, algorithm, deterministicInit);
     }
 
     public static async Task<PaletteResult?> ExtractFromImageBytesAsync(
         byte[] imageBytes,
         PaletteAlgorithm algorithm = PaletteAlgorithm.KMeansPP,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        bool deterministicInit = true)
     {
         if (imageBytes is not { Length: > 0 }) return null;
 
@@ -63,26 +65,29 @@ public static class PaletteExtractor
         var colorDict = ImagePixelSampler.SampleBgra8Pixels(pixels, (int)dstW, (int)dstH, 10);
         if (colorDict.Count == 0) return null;
 
-        return RunAlgorithm(colorDict, 4, algorithm);
+        return RunAlgorithm(colorDict, 4, algorithm, deterministicInit);
     }
 
     public static PaletteResult ExtractFromBgra8Pixels(
         ReadOnlySpan<byte> bgra8Pixels, int width, int height,
-        PaletteAlgorithm algorithm = PaletteAlgorithm.KMeansPP)
+        PaletteAlgorithm algorithm = PaletteAlgorithm.KMeansPP,
+        bool deterministicInit = true)
     {
         var colorDict = ImagePixelSampler.SampleBgra8Pixels(bgra8Pixels, width, height, 10);
-        return RunAlgorithm(colorDict, 4, algorithm);
+        return RunAlgorithm(colorDict, 4, algorithm, deterministicInit);
     }
 
     private static PaletteResult RunAlgorithm(
-        Dictionary<Vector3, int> colorDict, int clusterCount, PaletteAlgorithm algorithm)
+        Dictionary<Vector3, int> colorDict, int clusterCount, PaletteAlgorithm algorithm,
+        bool deterministicInit = true)
     {
         return algorithm switch
         {
             PaletteAlgorithm.OctTree => OctTreePaletteGenerator.CreatePalette(
                 colorDict, clusterCount, ignoreWhite: false),
             _ => KMeansPaletteGenerator.CreatePalette(
-                colorDict, clusterCount, ignoreWhite: false, toLab: true, useKMeansPP: true),
+                colorDict, clusterCount, ignoreWhite: false, toLab: true,
+                useKMeansPP: true, deterministicInit: deterministicInit),
         };
     }
 }

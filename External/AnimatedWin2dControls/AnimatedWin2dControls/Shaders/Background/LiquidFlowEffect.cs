@@ -91,11 +91,14 @@ namespace AnimatedWin2dControls.Shaders.Background
 
                         p += d * s;
 
-                        float mix = Hlsl.Sin(i + Hlsl.Length(p.XY * 0.1f)) * 0.5f + 0.5f;
+                        // 双相位：U 用 i 主导快扫描，V 用 i*0.73 + Length(p.XY*0.07) + π/2 做正交偏移，
+                        // 避免 U=V 重新退化为对角线单参数插值，使 c1..c4 四个角都可达。
+                        float mixU = Hlsl.Sin(i + Hlsl.Length(p.XY * 0.1f)) * 0.5f + 0.5f;
+                        float mixV = Hlsl.Sin(i * 0.73f + Hlsl.Length(p.XY * 0.07f) + 1.57f) * 0.5f + 0.5f;
                         float3 stepColor = Hlsl.Lerp(
-                            Hlsl.Lerp(color1, color2, mix),
-                            Hlsl.Lerp(color3, color4, mix),
-                            mix
+                            Hlsl.Lerp(color1, color2, mixU),
+                            Hlsl.Lerp(color3, color4, mixU),
+                            mixV
                         );
                         l += stepColor * 2.5f / s;
                     }

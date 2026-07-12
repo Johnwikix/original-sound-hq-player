@@ -16,7 +16,7 @@ internal static class KMeansPaletteGenerator
         bool toLab = false)
     {
         var filtered = FilterColors(sourceColor, ignoreWhite, isDarkFilter: null, toLab);
-        var centers = KMeansCluster(filtered, 1, useKMeansPP: false);
+        var centers = KMeansCluster(filtered, 1, useKMeansPP: false, deterministicInit: true);
         var color = centers[0];
         if (toLab) color = color.LABVectorToRGBVector();
         bool isDark = color.RGBVectorLStarIsDark();
@@ -28,12 +28,14 @@ internal static class KMeansPaletteGenerator
         int clusterCount,
         bool ignoreWhite = false,
         bool toLab = false,
-        bool useKMeansPP = false)
+        bool useKMeansPP = false,
+        bool deterministicInit = true)
     {
         if (sourceColor.Count == 1)
         {
             ignoreWhite = false;
             useKMeansPP = false;
+            deterministicInit = false;
         }
 
         var themeResult = CreateThemeColor(sourceColor, ignoreWhite, toLab);
@@ -45,7 +47,7 @@ internal static class KMeansPaletteGenerator
         if (filtered.Count == 0)
             filtered = FilterColors(sourceColor, false, null, toLab);
 
-        var centers = KMeansCluster(filtered, clusterCount, useKMeansPP);
+        var centers = KMeansCluster(filtered, clusterCount, useKMeansPP, deterministicInit);
 
         var palette = new List<Vector3>(clusterCount);
         int count = centers.Length;
@@ -87,7 +89,8 @@ internal static class KMeansPaletteGenerator
     private static Vector3[] KMeansCluster(
         Dictionary<Vector3, int> colors,
         int numClusters,
-        bool useKMeansPP)
+        bool useKMeansPP,
+        bool deterministicInit)
     {
         int clusterCount = Math.Min(numClusters, colors.Count);
         if (clusterCount == 0) return [Vector3.Zero];
@@ -96,7 +99,11 @@ internal static class KMeansPaletteGenerator
         colors.Keys.CopyTo(keys, 0);
 
         Vector3[] centers;
-        if (useKMeansPP)
+        if (deterministicInit)
+        {
+            centers = DeterministicInit(colors, keys, clusterCount);
+        }
+        else if (useKMeansPP)
         {
             centers = KMeansPlusPlusInit(colors, keys, clusterCount);
         }
@@ -173,6 +180,56 @@ internal static class KMeansPaletteGenerator
             if (dist < minDist) { minDist = dist; nearest = i; }
         }
         return nearest;
+    }
+
+    // Gonzalez 远-近确定性初始化：首个中心取 population 最大者作为主色锚点，
+    // 后续每轮取与现有中心 min-distance 最大的点。给定相同输入完全可复现。
+    private static Vector3[] DeterministicInit(
+        Dictionary<Vector3, int> colors,
+        Vector3[] keys,
+        int clusterCount)
+    {
+        var centers = new Vector3[clusterCount];
+        int n = keys.Length;
+
+        int firstIdx = 0;
+        int bestPop = -1;
+        for (int k = 0; k < n; k++)
+        {
+            int pop = colors[keys[k]];
+            if (pop > bestPop) { bestPop = pop; firstIdx = k; }
+        }
+        centers[0] = keys[firstIdx];
+
+        float[] rented = ArrayPool<float>.Shared.Rent(n);
+        try
+        {
+            for (int k = 0; k < n; k++)
+                rented[k] = Vector3.DistanceSquared(keys[k], centers[0]);
+
+            for (int i = 1; i < clusterCount; i++)
+            {
+                int bestK = 0;
+                float bestD = -1f;
+                for (int k = 0; k < n; k++)
+                {
+                    if (rented[k] > bestD) { bestD = rented[k]; bestK = k; }
+                }
+                centers[i] = keys[bestK];
+
+                for (int k = 0; k < n; k++)
+                {
+                    float d = Vector3.DistanceSquared(keys[k], centers[i]);
+                    if (d < rented[k]) rented[k] = d;
+                }
+            }
+        }
+        finally
+        {
+            ArrayPool<float>.Shared.Return(rented, clearArray: false);
+        }
+
+        return centers;
     }
 
     private static Vector3[] KMeansPlusPlusInit(
