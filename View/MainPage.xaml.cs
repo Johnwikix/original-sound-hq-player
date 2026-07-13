@@ -261,6 +261,7 @@ namespace WinUIMusicPlayer.View
                 NavigationViewControl.Visibility = Visibility.Visible;
                 _playingNavigation.Dismiss(300);
                 ViewModel.AppViewModel.IsPlayingDetailVisible = false;
+                ViewModel.AppViewModel.IsPointerOverTitleBar = true;
             }
             if (MainFrame.Content is not SettingsPage)
             {
