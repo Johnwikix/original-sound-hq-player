@@ -1148,7 +1148,7 @@
     <value>Liberar memoria ahora</value>
   </data>
   <data name="WindowBoundsDescription.Text" xml:space="preserve">
-    <value>Posición y tamaño de la ventana principal</value>
+    <value>Posición de la ventana principal</value>
   </data>
   <data name="WindowBoundsHint.Text" xml:space="preserve">
     <value>La posición y el tamaño de la ventana se guardan automáticamente al salir y se restauran al iniciar de nuevo. Pulsa Restablecer si la ventana queda fuera de la pantalla.</value>

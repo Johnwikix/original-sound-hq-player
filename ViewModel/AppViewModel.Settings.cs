@@ -1406,28 +1406,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void ResetWindowBounds()
         {
-            try
-            {
-                var ps = _musicDatabaseService.CurrentPlayState;
-                if (ps == null) return;
-                if (App.MainWindow == null) return;
-
-                App.MainWindow.CenterOnScreen(1400, 900);
-
-                var pos = App.MainWindow.AppWindow.Position;
-                var size = App.MainWindow.AppWindow.Size;
-                ps.WindowX = pos.X;
-                ps.WindowY = pos.Y;
-                ps.WindowWidth = size.Width;
-                ps.WindowHeight = size.Height;
-                ps.HasWindowBounds = true;
-                ps.IsMaximized = false;
-                _musicDatabaseService.WritePlayStateJsonSync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "重置窗口位置失败");
-            }
+            App.MainWindow.CenterOnScreen();
         }
     }
 }

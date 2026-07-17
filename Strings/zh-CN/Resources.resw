@@ -1148,7 +1148,7 @@
     <value>立即释放内存</value>
   </data>
   <data name="WindowBoundsDescription.Text" xml:space="preserve">
-    <value>主窗口位置和大小</value>
+    <value>主窗口位置</value>
   </data>
   <data name="WindowBoundsHint.Text" xml:space="preserve">
     <value>应用退出时会自动保存窗口位置与大小，下次启动时自动恢复。若窗口脱屏可点击重置。</value>

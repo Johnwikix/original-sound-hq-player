@@ -1148,7 +1148,7 @@
     <value>Освободить память сейчас</value>
   </data>
   <data name="WindowBoundsDescription.Text" xml:space="preserve">
-    <value>Положение и размер главного окна</value>
+    <value>Положение главного окна</value>
   </data>
   <data name="WindowBoundsHint.Text" xml:space="preserve">
     <value>Положение и размер окна сохраняются автоматически при выходе из приложения и восстанавливаются при следующем запуске. Нажмите «Сброс», если окно оказалось за пределами экрана.</value>

@@ -1148,7 +1148,7 @@
     <value>Speicher jetzt freigeben</value>
   </data>
   <data name="WindowBoundsDescription.Text" xml:space="preserve">
-    <value>Position und Größe des Hauptfensters</value>
+    <value>Position des Hauptfensters</value>
   </data>
   <data name="WindowBoundsHint.Text" xml:space="preserve">
     <value>Position und Größe des Fensters werden beim Beenden automatisch gespeichert und beim nächsten Start wiederhergestellt. Klicke auf Zurücksetzen, falls das Fenster außerhalb des Bildschirms ist.</value>

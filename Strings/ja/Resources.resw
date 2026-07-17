@@ -1148,7 +1148,7 @@
     <value>今すぐメモリを解放</value>
   </data>
   <data name="WindowBoundsDescription.Text" xml:space="preserve">
-    <value>メインウィンドウの位置とサイズ</value>
+    <value>メインウィンドウの位置</value>
   </data>
   <data name="WindowBoundsHint.Text" xml:space="preserve">
     <value>アプリ終了時にウィンドウの位置とサイズが自動保存され、次回起動時に復元されます。ウィンドウが画面外の場合はリセットをクリックしてください。</value>
