@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
+using WinUIEx;
 using WinUIMusicPlayer.Utils;
 using System.Threading.Tasks;
 using Windows.Storage;
@@ -1409,18 +1410,19 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 var ps = _musicDatabaseService.CurrentPlayState;
                 if (ps == null) return;
-                var (x, y, w, h) = WindowSizeHelper.GetDefaultBounds();
-                ps.WindowX = x;
-                ps.WindowY = y;
-                ps.WindowWidth = w;
-                ps.WindowHeight = h;
+                if (App.MainWindow == null) return;
+
+                App.MainWindow.CenterOnScreen(1400, 900);
+
+                var pos = App.MainWindow.AppWindow.Position;
+                var size = App.MainWindow.AppWindow.Size;
+                ps.WindowX = pos.X;
+                ps.WindowY = pos.Y;
+                ps.WindowWidth = size.Width;
+                ps.WindowHeight = size.Height;
                 ps.HasWindowBounds = true;
                 ps.IsMaximized = false;
                 _musicDatabaseService.WritePlayStateJsonSync();
-                if (App.MainWindow?.AppWindow != null)
-                {
-                    WindowSizeHelper.MoveToBounds(App.MainWindow.AppWindow, x, y, w, h);
-                }
             }
             catch (Exception ex)
             {

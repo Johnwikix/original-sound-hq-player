@@ -769,9 +769,6 @@
   <data name="saveConfirm.Text" xml:space="preserve">
     <value>音楽ファイルにメタ情報を書き込むかどうかを確認</value>
   </data>
-  <data name="MainWindowSizeSettings.Text" xml:space="preserve">
-    <value>メインウィンドウのサイズ設定</value>
-  </data>
   <data name="IsCustomAppSize.Text" xml:space="preserve">
     <value>カスタムウィンドウサイズを有効にするかどうか</value>
   </data>

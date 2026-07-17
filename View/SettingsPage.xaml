@@ -406,9 +406,35 @@
                                     </Button.Content>
                                 </Button>
                             </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock x:Uid="WindowBoundsDescription" FontSize="14" TextWrapping="Wrap" />
+                                    <TextBlock
+                                        x:Uid="WindowBoundsHint"
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <Button
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    VerticalAlignment="Center"
+                                    Command="{x:Bind ViewModel.AppViewModel.ResetWindowBoundsCommand, Mode=OneWay}"
+                                    x:Uid="ResetWindowBounds" />
+                            </Grid>
                         </StackPanel>
                     </Expander.Content>
                 </Expander>
+
+                <!--  快捷键设置  -->
 
                 <!--  快捷键设置  -->
                 <Expander
@@ -1685,51 +1711,6 @@
                                     IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.ThemeType,'Light')}"
                                     Tag="Light" />
                             </StackPanel>
-                        </StackPanel>
-                    </Expander.Content>
-                </Expander>
-
-                <!--  窗口大小设置  -->
-                <Expander
-                    MinHeight="69"
-                    Margin="10,0,10,0"
-                    Padding="0"
-                    HorizontalAlignment="Stretch"
-                    HorizontalContentAlignment="Stretch"
-                    CornerRadius="{ThemeResource ControlCornerRadius}">
-                    <Expander.Header>
-                        <Grid Padding="16,16,4,16">
-                            <TextBlock
-                                x:Uid="MainWindowSizeSettings"
-                                VerticalAlignment="Center"
-                                FontSize="14" />
-                        </Grid>
-                    </Expander.Header>
-                    <Expander.Content>
-                        <StackPanel>
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                    <TextBlock x:Uid="WindowBoundsDescription" FontSize="14" TextWrapping="Wrap" />
-                                    <TextBlock
-                                        x:Uid="WindowBoundsHint"
-                                        FontSize="12"
-                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        TextWrapping="Wrap" />
-                                </StackPanel>
-                                <Button
-                                    Grid.Column="1"
-                                    MinWidth="0"
-                                    VerticalAlignment="Center"
-                                    Command="{x:Bind ViewModel.AppViewModel.ResetWindowBoundsCommand, Mode=OneWay}"
-                                    x:Uid="ResetWindowBounds" />
-                            </Grid>
                         </StackPanel>
                     </Expander.Content>
                 </Expander>

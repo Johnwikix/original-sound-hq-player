@@ -147,20 +147,6 @@ namespace WinUIMusicPlayer.Helper
                 && op.State == OverlappedPresenterState.Maximized;
         }
 
-        public static void MoveToBounds(AppWindow appWindow, int x, int y, int width, int height)
-        {
-            if (appWindow == null || width <= 0 || height <= 0) return;
-            appWindow.MoveAndResize(new RectInt32(x, y, width, height));
-        }
-
-        public static (int X, int Y, int Width, int Height) GetBounds(AppWindow appWindow)
-        {
-            if (appWindow == null) return (0, 0, 0, 0);
-            var pos = appWindow.Position;
-            var size = appWindow.Size;
-            return (pos.X, pos.Y, size.Width, size.Height);
-        }
-
         public static bool IsBoundsOnScreen(int x, int y, int width, int height, int minVisible = 30)
         {
             if (width <= 0 || height <= 0) return false;
@@ -182,15 +168,6 @@ namespace WinUIMusicPlayer.Helper
                 }
             }
             return false;
-        }
-
-        public static (int X, int Y, int Width, int Height) GetDefaultBounds(int width = 1280, int height = 810)
-        {
-            var primary = DisplayArea.Primary;
-            var work = primary?.WorkArea ?? new RectInt32(0, 0, width, height);
-            int x = work.X + (work.Width - width) / 2;
-            int y = work.Y + (work.Height - height) / 2;
-            return (x, y, width, height);
         }
 
         // Win32 API 声明

@@ -769,9 +769,6 @@
   <data name="saveConfirm.Text" xml:space="preserve">
     <value>是否确定写入元信息至音乐文件</value>
   </data>
-  <data name="MainWindowSizeSettings.Text" xml:space="preserve">
-    <value>主窗口大小设置</value>
-  </data>
   <data name="IsCustomAppSize.Text" xml:space="preserve">
     <value>是否启用自定义窗口大小</value>
   </data>

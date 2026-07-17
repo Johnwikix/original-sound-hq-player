@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml;
 using System;
 using System.Diagnostics;
 using System.Timers;
+using Windows.Graphics;
 using Windows.UI;
 using Windows.UI.ViewManagement;
 using Windows.UI.WindowManagement;
@@ -114,7 +115,7 @@ namespace WinUIMusicPlayer
             if (ps != null && ps.HasWindowBounds
                 && WindowSizeHelper.IsBoundsOnScreen(ps.WindowX, ps.WindowY, ps.WindowWidth, ps.WindowHeight))
             {
-                WindowSizeHelper.MoveToBounds(AppWindow, ps.WindowX, ps.WindowY, ps.WindowWidth, ps.WindowHeight);
+                AppWindow.MoveAndResize(new RectInt32(ps.WindowX, ps.WindowY, ps.WindowWidth, ps.WindowHeight));
             }
             else
             {

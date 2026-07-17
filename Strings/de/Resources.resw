@@ -769,9 +769,6 @@
   <data name="saveConfirm.Text" xml:space="preserve">
     <value>Metadaten wirklich in die Musikdatei schreiben?</value>
   </data>
-  <data name="MainWindowSizeSettings.Text" xml:space="preserve">
-    <value>Fenstergröße</value>
-  </data>
   <data name="IsCustomAppSize.Text" xml:space="preserve">
     <value>Benutzerdefinierte Fenstergröße aktivieren</value>
   </data>

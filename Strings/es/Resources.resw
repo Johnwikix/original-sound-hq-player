@@ -769,9 +769,6 @@
   <data name="saveConfirm.Text" xml:space="preserve">
     <value>Si está seguro de escribir metainformación en el archivo musical</value>
   </data>
-  <data name="MainWindowSizeSettings.Text" xml:space="preserve">
-    <value>Configuración del tamaño de la ventana principal</value>
-  </data>
   <data name="IsCustomAppSize.Text" xml:space="preserve">
     <value>¿ habilitar el tamaño de la ventana personalizada</value>
   </data>

@@ -769,9 +769,6 @@
   <data name="saveConfirm.Text" xml:space="preserve">
     <value>Are you sure to write metadata to the music file</value>
   </data>
-  <data name="MainWindowSizeSettings.Text" xml:space="preserve">
-    <value>Main window size setting</value>
-  </data>
   <data name="IsCustomAppSize.Text" xml:space="preserve">
     <value>Do you want to enable custom window size</value>
   </data>
