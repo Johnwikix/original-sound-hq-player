@@ -141,6 +141,58 @@ namespace WinUIMusicPlayer.Helper
             return GetDpiForWindow(hwnd) / 96.0f;
         }
 
+        public static bool IsAppWindowMaximized(AppWindow appWindow)
+        {
+            return appWindow?.Presenter is OverlappedPresenter op
+                && op.State == OverlappedPresenterState.Maximized;
+        }
+
+        public static void MoveToBounds(AppWindow appWindow, int x, int y, int width, int height)
+        {
+            if (appWindow == null || width <= 0 || height <= 0) return;
+            appWindow.MoveAndResize(new RectInt32(x, y, width, height));
+        }
+
+        public static (int X, int Y, int Width, int Height) GetBounds(AppWindow appWindow)
+        {
+            if (appWindow == null) return (0, 0, 0, 0);
+            var pos = appWindow.Position;
+            var size = appWindow.Size;
+            return (pos.X, pos.Y, size.Width, size.Height);
+        }
+
+        public static bool IsBoundsOnScreen(int x, int y, int width, int height, int minVisible = 30)
+        {
+            if (width <= 0 || height <= 0) return false;
+
+            var areas = DisplayArea.FindAll();
+            for (int i = 0; i < areas.Count; i++)
+            {
+                var area = areas[i];
+                var work = area.WorkArea;
+                int left = Math.Max(x, work.X);
+                int top = Math.Max(y, work.Y);
+                int right = Math.Min(x + width, work.X + work.Width);
+                int bottom = Math.Min(y + height, work.Y + work.Height);
+                int visibleW = right - left;
+                int visibleH = bottom - top;
+                if (visibleW >= minVisible && visibleH >= minVisible)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        public static (int X, int Y, int Width, int Height) GetDefaultBounds(int width = 1280, int height = 810)
+        {
+            var primary = DisplayArea.Primary;
+            var work = primary?.WorkArea ?? new RectInt32(0, 0, width, height);
+            int x = work.X + (work.Width - width) / 2;
+            int y = work.Y + (work.Height - height) / 2;
+            return (x, y, width, height);
+        }
+
         // Win32 API 声明
         private delegate IntPtr WndProcDelegate(IntPtr hwnd, uint msg, IntPtr wParam, IntPtr lParam);
 

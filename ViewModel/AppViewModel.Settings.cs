@@ -1401,5 +1401,31 @@ namespace WinUIMusicPlayer.ViewModel
         {
             await WorkingSetCompressor.TrimSelfAsync();
         }
+
+        [RelayCommand]
+        private void ResetWindowBounds()
+        {
+            try
+            {
+                var ps = _musicDatabaseService.CurrentPlayState;
+                if (ps == null) return;
+                var (x, y, w, h) = WindowSizeHelper.GetDefaultBounds();
+                ps.WindowX = x;
+                ps.WindowY = y;
+                ps.WindowWidth = w;
+                ps.WindowHeight = h;
+                ps.HasWindowBounds = true;
+                ps.IsMaximized = false;
+                _musicDatabaseService.WritePlayStateJsonSync();
+                if (App.MainWindow?.AppWindow != null)
+                {
+                    WindowSizeHelper.MoveToBounds(App.MainWindow.AppWindow, x, y, w, h);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "重置窗口位置失败");
+            }
+        }
     }
 }

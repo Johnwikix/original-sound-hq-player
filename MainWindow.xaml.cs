@@ -15,6 +15,7 @@ using Windows.UI.WindowManagement;
 using WinUIEx;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Taskbar;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
@@ -61,6 +62,7 @@ namespace WinUIMusicPlayer
             themeStyleHelper.CustomStyleChanged += (s, e) => customStyleChanged?.Invoke(this, EventArgs.Empty);
             InitializeApp();
             this.AppWindow.Closing += AppWindow_Closing;
+            this.AppWindow.Changed += AppWindow_Changed;
             //重复启动显示窗口
             newWndProcDelegate = new WindowHelper.WndProcDelegate(NewWindowProc);
             defaultWndProc = WindowHelper.GetWindowLongPtr(AppData.HWnd, WindowHelper.GWLP_WNDPROC);
@@ -75,17 +77,56 @@ namespace WinUIMusicPlayer
             InitializeTaskbarHelper();
         }
 
+        private (int X, int Y, int Width, int Height) _lastRestoredBounds;
+        private bool _hasRestoredBounds;
+        public (int X, int Y, int Width, int Height) TrackedBounds => _lastRestoredBounds;
+        public bool HasTrackedBounds => _hasRestoredBounds;
+        public bool IsCurrentlyMaximized => WindowSizeHelper.IsAppWindowMaximized(AppWindow);
+
+        private void CaptureRestoredBounds()
+        {
+            if (AppWindow == null) return;
+            var pos = AppWindow.Position;
+            var size = AppWindow.Size;
+            _lastRestoredBounds = (pos.X, pos.Y, size.Width, size.Height);
+            _hasRestoredBounds = true;
+        }
+
+        private void AppWindow_Changed(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowChangedEventArgs args)
+        {
+            if (AppWindow == null) return;
+            if (args.DidPositionChange || args.DidSizeChange)
+            {
+                if (AppWindow.Presenter is OverlappedPresenter op
+                    && op.State == OverlappedPresenterState.Restored)
+                {
+                    CaptureRestoredBounds();
+                }
+            }
+        }
+
         private void SetWindow()
         {
             this.SetIcon("Assets/icon.ico");
             Title = ToolUtils.GetString("AppMainTitle");
-            if (AppSettings.IsCustomAppSize)
+
+            var ps = App.Services.GetRequiredService<MusicDatabaseService>().CurrentPlayState;
+            if (ps != null && ps.HasWindowBounds
+                && WindowSizeHelper.IsBoundsOnScreen(ps.WindowX, ps.WindowY, ps.WindowWidth, ps.WindowHeight))
             {
-                this.CenterOnScreen(AppSettings.AppWidth, AppSettings.AppHeight);
+                WindowSizeHelper.MoveToBounds(AppWindow, ps.WindowX, ps.WindowY, ps.WindowWidth, ps.WindowHeight);
             }
             else
             {
                 this.CenterOnScreen();
+            }
+
+            CaptureRestoredBounds();
+
+            if (ps != null && ps.IsMaximized
+                && AppWindow.Presenter is OverlappedPresenter overlapped)
+            {
+                overlapped.Maximize();
             }
         }
 
@@ -157,6 +198,7 @@ namespace WinUIMusicPlayer
 
         private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, AppWindowClosingEventArgs args)
         {
+            AppWindow.Changed -= AppWindow_Changed;
             if (AppSettings.IsRunningBackend)
             {
                 args.Cancel = true;

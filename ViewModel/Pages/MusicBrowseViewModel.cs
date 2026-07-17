@@ -676,11 +676,6 @@ namespace WinUIMusicPlayer.ViewModel
                 AppViewModel.LoadLyricsToUI(music);
                 MainPage?.UpdateCurrentPlayList();
                 AppViewModel.UpdateProgressTimerUI();
-                _ = _musicDatabaseService.SavePlayState(AppViewModel.SequentialPlayingList,
-                        AppViewModel.CurrentPlayMode,
-                        AppViewModel.CurrentPlayingMusic?.Id,
-                        (float)(AppViewModel.Volume),
-                        AppViewModel.SelectedSortOption.Tag.ToString());
                 TrimMemory();
             }
             catch (Exception ex)

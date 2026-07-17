@@ -1150,6 +1150,15 @@
   <data name="TrimNowLabel.Text" xml:space="preserve">
     <value>今すぐメモリを解放</value>
   </data>
+  <data name="WindowBoundsDescription.Text" xml:space="preserve">
+    <value>メインウィンドウの位置とサイズ</value>
+  </data>
+  <data name="WindowBoundsHint.Text" xml:space="preserve">
+    <value>アプリ終了時にウィンドウの位置とサイズが自動保存され、次回起動時に復元されます。ウィンドウが画面外の場合はリセットをクリックしてください。</value>
+  </data>
+  <data name="ResetWindowBounds.Content" xml:space="preserve">
+    <value>ウィンドウ位置をリセット</value>
+  </data>
 </root>
 
 

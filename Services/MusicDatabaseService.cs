@@ -32,6 +32,10 @@ namespace WinUIMusicPlayer.Services
         private string SettingsPath => GetSettingsFilePath();
         private string PlayStatePath => GetPlayStateFilePath();
         private readonly AddFolderService addFolderService = new();
+        private SaveSettings _currentSettings;
+        public SaveSettings CurrentSettings => _currentSettings;
+        private SavePlayState _currentPlayState;
+        public SavePlayState CurrentPlayState => _currentPlayState;
         // 优化1: 信号量保持4并发，但 _toDelete/_toUpdate 改为方法局部变量，消除共享状态与线程安全隐患
         private readonly SemaphoreSlim _rescanfolderSemaphore = new(4, 4);
         private AppViewModel AppViewModel { get; set; }
@@ -785,7 +789,7 @@ namespace WinUIMusicPlayer.Services
         public async Task GetPlayStateAsync()
         {
             bool isFirstTime = !File.Exists(PlayStatePath);
-            var playState = await GetPlayState();
+            var playState = _currentPlayState ?? await GetPlayState();
             playState ??= new SavePlayState();
 
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
@@ -806,6 +810,26 @@ namespace WinUIMusicPlayer.Services
                     _ = WritePlayStateToJson(playState);
                 }
             });
+        }
+
+        public void LoadWindowState()
+        {
+            try
+            {
+                if (!File.Exists(PlayStatePath))
+                {
+                    _currentPlayState = new SavePlayState();
+                    return;
+                }
+                string json = File.ReadAllText(PlayStatePath);
+                _currentPlayState = JsonSerializer.Deserialize(json, PlayStateJsonContext.Default.SavePlayState)
+                    ?? new SavePlayState();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"LoadWindowState 读取播放状态文件时出错: {ex.Message}");
+                _currentPlayState = new SavePlayState();
+            }
         }
 
         public async Task GetEqualizerSettingsAsync()
@@ -836,6 +860,7 @@ namespace WinUIMusicPlayer.Services
                 };
                 await InsertSettings(settings);
             }
+            _currentSettings = settings;
             if (settings is not null)
             {
                 AppSettings.OutputMode = settings.OutputMode;
@@ -1073,33 +1098,37 @@ namespace WinUIMusicPlayer.Services
             return AppViewModel.SongsSource.FirstOrDefault(m => m.Id == lastPlayedMusicId);
         }
 
-        public async Task SavePlayState(IEnumerable<Music> currentPlayingList, PlayMode currentPlayMode, int? currentPlayingMusicId, double volume, string sortOrder)
+        public async Task SavePlayStateAsync(SavePlayState playState, IEnumerable<Music> currentPlayingList)
         {
             try
             {
-                await _dbConnection.DeleteAllAsync<LastPlayListState>();
-                // 优化8: 去掉多余的 ToArray()
-                // 注意: ZLinq.ValueEnumerable 是 struct，未实现 IEnumerable<T>，
-                //       .AsEnumerable() 会分配 enumerator，所以保留 .ToArray()。
+                await _dbConnection.DeleteAllAsync<LastPlayListState>().ConfigureAwait(false);
                 var musicIds = string.Join(',', currentPlayingList.AsValueEnumerable().Select(m => m.Id).ToArray());
-                var playListState = new LastPlayListState
-                {
-                    PlayListMusicIds = musicIds
-                };
-                _ = _dbConnection.InsertAsync(playListState);
+                await _dbConnection.InsertAsync(new LastPlayListState { PlayListMusicIds = musicIds }).ConfigureAwait(false);
 
-                var playState = new SavePlayState
-                {
-                    PlayMode = currentPlayMode,
-                    LastPlayedMusicId = currentPlayingMusicId,
-                    Volume = volume,
-                    SortOrder = sortOrder
-                };
-                await WritePlayStateToJson(playState);
+                string path = PlayStatePath;
+                string json = JsonSerializer.Serialize(playState, PlayStateJsonContext.Default.SavePlayState);
+                await File.WriteAllTextAsync(path, json).ConfigureAwait(false);
+                _currentPlayState = playState;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"SavePlayState 保存播放状态时出错: {ex.Message}");
+                _logger.LogError(ex, $"SavePlayStateAsync 异步保存播放状态时出错: {ex.Message}");
+            }
+        }
+
+        public void WritePlayStateJsonSync()
+        {
+            if (_currentPlayState == null) return;
+            try
+            {
+                string path = PlayStatePath;
+                string json = JsonSerializer.Serialize(_currentPlayState, PlayStateJsonContext.Default.SavePlayState);
+                File.WriteAllText(path, json);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"WritePlayStateJsonSync 写入播放状态 JSON 时出错: {ex.Message}");
             }
         }
 

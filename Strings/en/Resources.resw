@@ -1150,6 +1150,15 @@
   <data name="TrimNowLabel.Text" xml:space="preserve">
     <value>Release memory now</value>
   </data>
+  <data name="WindowBoundsDescription.Text" xml:space="preserve">
+    <value>Main window position and size</value>
+  </data>
+  <data name="WindowBoundsHint.Text" xml:space="preserve">
+    <value>Window position and size are saved automatically when the app exits, and restored on next launch. Click reset if the window is offscreen.</value>
+  </data>
+  <data name="ResetWindowBounds.Content" xml:space="preserve">
+    <value>Reset window position</value>
+  </data>
 </root>
 
 

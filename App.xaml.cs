@@ -223,6 +223,7 @@ namespace WinUIMusicPlayer
         {
             try
             {
+                await SavePlayStateAsync();
                 Services.GetRequiredService<BassPlayerCommandService>().MusicEnd();
                 MainWindow.Hide();
                 await _host.StopAsync();
@@ -242,6 +243,37 @@ namespace WinUIMusicPlayer
             {
                 //Current.Exit();
                 Environment.Exit(0);
+            }
+        }
+
+        private static async Task SavePlayStateAsync()
+        {
+            try
+            {
+                var db = Services.GetService<MusicDatabaseService>();
+                var appvm = Services.GetService<AppViewModel>();
+                if (db == null || appvm == null || MainWindow == null) return;
+                if (!MainWindow.HasTrackedBounds) return;
+
+                var (x, y, w, h) = MainWindow.TrackedBounds;
+                var playState = new SavePlayState
+                {
+                    PlayMode = appvm.CurrentPlayMode,
+                    LastPlayedMusicId = appvm.CurrentPlayingMusic?.Id,
+                    Volume = appvm.Volume,
+                    SortOrder = appvm.SelectedSortOption?.Tag?.ToString() ?? "DefaultOrder",
+                    HasWindowBounds = true,
+                    WindowX = x,
+                    WindowY = y,
+                    WindowWidth = w,
+                    WindowHeight = h,
+                    IsMaximized = MainWindow.IsCurrentlyMaximized
+                };
+                await db.SavePlayStateAsync(playState, appvm.SequentialPlayingList);
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "保存播放状态失败: {Message}", ex.Message);
             }
         }
     }

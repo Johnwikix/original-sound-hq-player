@@ -1716,67 +1716,19 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                    <TextBlock x:Uid="IsCustomAppSize" FontSize="14" />
+                                    <TextBlock x:Uid="WindowBoundsDescription" FontSize="14" TextWrapping="Wrap" />
                                     <TextBlock
+                                        x:Uid="WindowBoundsHint"
                                         FontSize="12"
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Text="{x:Bind tool:ToolUtils.GetString('CustomAppSizeDescription')}"
                                         TextWrapping="Wrap" />
                                 </StackPanel>
-                                <ToggleSwitch
+                                <Button
                                     Grid.Column="1"
                                     MinWidth="0"
-                                    IsOn="{x:Bind ViewModel.AppViewModel.IsCustomAppSize, Mode=TwoWay}" />
-                            </Grid>
-
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    x:Uid="AppWidth"
-                                    Grid.Column="0"
                                     VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <NumberBox
-                                    x:Name="AppWidth"
-                                    Grid.Column="1"
-                                    Width="300"
-                                    VerticalAlignment="Center"
-                                    LargeChange="100"
-                                    Minimum="1280"
-                                    SmallChange="10"
-                                    SpinButtonPlacementMode="Inline"
-                                    Value="{x:Bind ViewModel.AppViewModel.AppWidth, Mode=TwoWay}" />
-                            </Grid>
-
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    x:Uid="AppHeight"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <NumberBox
-                                    x:Name="AppHeight"
-                                    Grid.Column="1"
-                                    Width="300"
-                                    VerticalAlignment="Center"
-                                    LargeChange="100"
-                                    Minimum="720"
-                                    SmallChange="10"
-                                    SpinButtonPlacementMode="Inline"
-                                    Value="{x:Bind ViewModel.AppViewModel.AppHeight, Mode=TwoWay}" />
+                                    Command="{x:Bind ViewModel.AppViewModel.ResetWindowBoundsCommand, Mode=OneWay}"
+                                    x:Uid="ResetWindowBounds" />
                             </Grid>
                         </StackPanel>
                     </Expander.Content>
