@@ -78,17 +78,38 @@ namespace WinUIMusicPlayer
             InitializeTaskbarHelper();
         }
 
+        // 仅在 OverlappedPresenterState.Restored(普通窗口)时刷新此基准；
+        // Maximized / Minimized / FullScreen 等瞬时状态不会覆盖本字段——
+        // 退出保存时一律回退到此处，作为下次启动的还原依据。
+        // 启动路径 SetWindow() 在 MoveAndResize/CenterOnScreen 之后会立即抓一次，
+        // 保证首次退出也能拿到有效基准。
+        // 写入前还要通过尺寸合理性校验，防止状态切换瞬间捕获到全屏/最大化尺寸。
         private (int X, int Y, int Width, int Height) _lastRestoredBounds;
         private bool _hasRestoredBounds;
         public (int X, int Y, int Width, int Height) TrackedBounds => _lastRestoredBounds;
         public bool HasTrackedBounds => _hasRestoredBounds;
         public bool IsCurrentlyMaximized => WindowSizeHelper.IsAppWindowMaximized(AppWindow);
 
+        // 窗口尺寸合理范围: 200..10000。多屏 + 高 DPI 也不可能超过此范围。
+        // 任何超出该范围的捕获值都被视为污染(如全屏/最大化尺寸), 拒绝写入。
+        private const int MinReasonableSize = 200;
+        private const int MaxReasonableSize = 10000;
+
         private void CaptureRestoredBounds()
         {
             if (AppWindow == null) return;
+            if (AppWindow.Presenter is not OverlappedPresenter op) return;
+            // 仅信任普通窗口的位置/尺寸；其他状态由 _lastRestoredBounds 兜底。
+            if (op.State != OverlappedPresenterState.Restored) return;
+
             var pos = AppWindow.Position;
             var size = AppWindow.Size;
+
+            // 纵深防御: 即使 DidPresenterChange 守卫因未来 API 变更失效,
+            // 也不写入超大/超小尺寸。校验失败保留旧值, 不覆盖 _lastRestoredBounds。
+            if (size.Width < MinReasonableSize || size.Width > MaxReasonableSize) return;
+            if (size.Height < MinReasonableSize || size.Height > MaxReasonableSize) return;
+
             _lastRestoredBounds = (pos.X, pos.Y, size.Width, size.Height);
             _hasRestoredBounds = true;
         }
@@ -96,8 +117,19 @@ namespace WinUIMusicPlayer
         private void AppWindow_Changed(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowChangedEventArgs args)
         {
             if (AppWindow == null) return;
+
+            // 状态切换瞬间 DidPositionChange/DidSizeChange 会先于 DidPresenterChange 到达,
+            // 此时 op.State 仍是旧值(Restored), 但 AppWindow.Position/Size 已经是新状态
+            // (Maximized/FullScreen/Minimized)的尺寸. 一旦捕获就会污染 _lastRestoredBounds.
+            // 故状态切换期间绝对不捕获 — 根因防御.
+            if (args.DidPresenterChange) return;
+
             if (args.DidPositionChange || args.DidSizeChange)
             {
+                // 注意: 窗口进入 FullScreen 时 Presenter 类型会从 OverlappedPresenter 切换到
+                // FullScreenPresenter (二者是 AppWindowPresenter 的兄弟类, 不是父子),
+                // 此时 `is OverlappedPresenter` 永远为 false 是预期行为 — FullScreen 下
+                // _lastRestoredBounds 不应被刷新 (配合尺寸合理性校验 200..10000 双重防御)。
                 if (AppWindow.Presenter is OverlappedPresenter op
                     && op.State == OverlappedPresenterState.Restored)
                 {
