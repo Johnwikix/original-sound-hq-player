@@ -211,21 +211,32 @@ namespace WinUIMusicPlayer.ViewModel
         public ObservableCollection<UsbStorageDevice> UsbStorageDevices { get; set => SetProperty(ref field, value); }
         public int UsbSelectedIndex { get; set => SetProperty(ref field, value); } = 0;
         public Visibility ProcessRingVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
-        public bool IsFullScreen { get; set => SetProperty(ref field, value); } = false;
+        public bool IsFullScreen
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                    ApplyFullScreen(value);
+            }
+        } = false;
         public bool IsMaximized { get; set => SetProperty(ref field, value); } = false;
         public bool IsPlayingDetailVisible { get; set => SetProperty(ref field, value); } = false;
         public bool IsPointerOverTitleBar { get; set => SetProperty(ref field, value); } = true;
 
-        public void ToggleFullScreen()
+        public void ToggleFullScreen() => IsFullScreen = !IsFullScreen;
+
+        private void ApplyFullScreen(bool enable)
         {
             var window = App.MainWindow?.AppWindow;
             if (window is null) return;
 
-            var next = !IsFullScreen;
-            window.SetPresenter(next
+            var desired = enable
                 ? AppWindowPresenterKind.FullScreen
-                : AppWindowPresenterKind.Default);
-            IsFullScreen = next;
+                : AppWindowPresenterKind.Default;
+
+            if (window.Presenter.Kind != desired)
+                window.SetPresenter(desired);
         }
 
         public void UpdateMaximizeState()
@@ -236,7 +247,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public void UpdateFullScreenState()
+        public void SyncFullScreenStateFromWindow()
         {
             IsFullScreen = App.MainWindow?.AppWindow.Presenter.Kind
                            == AppWindowPresenterKind.FullScreen;

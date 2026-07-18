@@ -94,7 +94,7 @@ namespace WinUIMusicPlayer.View
         {            
             if (args.DidPresenterChange)
             {
-                ViewModel.AppViewModel.UpdateFullScreenState();
+                ViewModel.AppViewModel.SyncFullScreenStateFromWindow();
             }
             if (args.DidPositionChange || args.DidSizeChange)
             {
