@@ -394,6 +394,9 @@
   <data name="CloseButton" xml:space="preserve">
     <value>Отменить</value>
   </data>
+  <data name="DialogClose" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
   <data name="ModifyPlaylist" xml:space="preserve">
     <value>Изменить плейлист</value>
   </data>

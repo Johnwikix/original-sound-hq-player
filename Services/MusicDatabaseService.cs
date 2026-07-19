@@ -31,6 +31,7 @@ namespace WinUIMusicPlayer.Services
         private string DbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
         private string SettingsPath => GetSettingsFilePath();
         private string PlayStatePath => GetPlayStateFilePath();
+        private string VersionRecordPath => GetVersionRecordFilePath();
         private readonly AddFolderService addFolderService = new();
         private SaveSettings _currentSettings;
         public SaveSettings CurrentSettings => _currentSettings;
@@ -132,6 +133,24 @@ namespace WinUIMusicPlayer.Services
             catch
             {
                 return Path.Combine(ApplicationData.Current.LocalFolder.Path, "PlayState.json");
+            }
+        }
+
+        private string GetVersionRecordFilePath()
+        {
+            try
+            {
+                string userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                string appFolderPath = Path.Combine(userProfilePath, "OriginalSoundPlayer", "Settings");
+                if (!Directory.Exists(appFolderPath))
+                {
+                    Directory.CreateDirectory(appFolderPath);
+                }
+                return Path.Combine(appFolderPath, "VersionRecord.json");
+            }
+            catch
+            {
+                return Path.Combine(ApplicationData.Current.LocalFolder.Path, "VersionRecord.json");
             }
         }
 
@@ -1827,6 +1846,39 @@ namespace WinUIMusicPlayer.Services
             {
             }
             return paths;
+        }
+
+        public async Task<string?> GetRecordedVersionAsync()
+        {
+            try
+            {
+                string path = VersionRecordPath;
+                if (!File.Exists(path))
+                    return null;
+                string json = await File.ReadAllTextAsync(path);
+                var record = JsonSerializer.Deserialize(json, VersionJsonContext.Default.VersionRecord);
+                return record?.Version;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"GetRecordedVersionAsync 读取版本记录时出错: {ex.Message}");
+                return null;
+            }
+        }
+
+        public async Task SaveCurrentVersionAsync(string version)
+        {
+            try
+            {
+                string path = VersionRecordPath;
+                var record = new VersionRecord { Version = version };
+                string json = JsonSerializer.Serialize(record, VersionJsonContext.Default.VersionRecord);
+                await File.WriteAllTextAsync(path, json);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"SaveCurrentVersionAsync 保存版本记录时出错: {ex.Message}");
+            }
         }
 
         private static bool HasMusicExtension(string filePath)

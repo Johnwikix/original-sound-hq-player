@@ -394,6 +394,9 @@
   <data name="CloseButton" xml:space="preserve">
     <value>キャンセル</value>
   </data>
+  <data name="DialogClose" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
   <data name="ModifyPlaylist" xml:space="preserve">
     <value>再生リストを編集</value>
   </data>
