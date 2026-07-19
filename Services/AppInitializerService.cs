@@ -85,9 +85,9 @@ namespace WinUIMusicPlayer.Services
                 StorageFile file = await StorageFile.GetFileFromApplicationUriAsync(
                     new Uri("ms-appx:///UpdateNotes.json"));
                 string json = await FileIO.ReadTextAsync(file);
-                using var doc = JsonDocument.Parse(json);
-                string lang = AppData.SystemLanguage == "zh" ? "zh-CN" : "en";
-                return doc.RootElement.TryGetProperty(lang, out var notes) ? notes.GetString() : null;
+                var notes = JsonSerializer.Deserialize(json, UpdateNotesJsonContext.Default.UpdateNotes);
+                if (notes is null) return null;
+                return AppData.SystemLanguage == "zh" ? notes.ZhCN : notes.En;
             }
             catch
             {
