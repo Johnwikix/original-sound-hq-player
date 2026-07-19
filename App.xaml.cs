@@ -292,11 +292,26 @@ namespace WinUIMusicPlayer
                     }
                     else if (state == OverlappedPresenterState.Maximized)
                     {
-                        hasWindowBounds = existing?.HasWindowBounds ?? false;
-                        x = existing?.WindowX ?? 0;
-                        y = existing?.WindowY ?? 0;
-                        w = existing?.WindowWidth ?? 0;
-                        h = existing?.WindowHeight ?? 0;
+                        // 关键修复: 最大化状态下保存本次会话的还原矩形 (含次屏坐标),
+                        // 而不是磁盘旧值, 否则下次启动会错误地恢复到旧显示器.
+                        var tracked = MainWindow.TrackedBounds;
+                        if (MainWindow.HasTrackedBounds
+                            && tracked.Width > 0 && tracked.Height > 0)
+                        {
+                            x = tracked.X;
+                            y = tracked.Y;
+                            w = tracked.Width;
+                            h = tracked.Height;
+                            hasWindowBounds = true;
+                        }
+                        else
+                        {
+                            hasWindowBounds = existing?.HasWindowBounds ?? false;
+                            x = existing?.WindowX ?? 0;
+                            y = existing?.WindowY ?? 0;
+                            w = existing?.WindowWidth ?? 0;
+                            h = existing?.WindowHeight ?? 0;
+                        }
                         isMaximized = true;
                     }
                     else
