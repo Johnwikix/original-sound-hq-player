@@ -2,7 +2,7 @@
 
 <div align="center">
   <img src="Assets/Music.png" alt="Logo" width="120">
-  
+
   <h1>原音 HQ 播放器</h1>
 
   <h3>OriginalSound HI-FI Player</h3>
@@ -27,8 +27,7 @@
 <br>
 
 <div align="center">
-
-[**🏠 产品主页**](https://johnwikix.github.io/original-sound-player-page) | [**🐞 反馈问题**](https://github.com/Johnwikix/original-sound-hq-player/issues)
+[**🏠 产品主页/使用说明**](https://johnwikix.github.io/original-sound-player-page) | [**🐞 反馈问题**](https://github.com/Johnwikix/original-sound-hq-player/issues)
 
 </div>
 
