@@ -12,9 +12,7 @@ public sealed partial class UpdateHistoryDialog : ContentDialog
         ReleaseNotesText.Text = releaseNotes;
         GitHubLink.Content = "⭐ Star on GitHub";
         GitHubLink.NavigateUri = new System.Uri(githubUrl);
-        //GuideLink.Content = ToolUtils.GetString("GuideLink.Content");
         GuideLink.NavigateUri = new System.Uri("https://johnwikix.github.io/original-sound-player-page/#/guide");
-        //FaqLink.Content = ToolUtils.GetString("FaqLink.Content");
         FaqLink.NavigateUri = new System.Uri("https://johnwikix.github.io/original-sound-player-page/#/faq");
         CloseButtonText = ToolUtils.GetString("DialogClose");
     }
