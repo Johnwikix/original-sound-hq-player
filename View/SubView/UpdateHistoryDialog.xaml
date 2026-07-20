@@ -7,7 +7,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     CornerRadius="10"
     mc:Ignorable="d">
-    <Grid MinWidth="400" MaxWidth="600">
+    <Grid MinWidth="480" MaxWidth="640">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -15,7 +15,7 @@
         </Grid.RowDefinitions>
         <ScrollViewer
             Grid.Row="1"
-            MaxHeight="400"
+            MaxHeight="360"
             Margin="0,16,0,16">
             <TextBlock
                 x:Name="ReleaseNotesText"
@@ -29,16 +29,51 @@
             <Border.BorderBrush>
                 <SolidColorBrush Opacity="0.15" Color="Gray" />
             </Border.BorderBrush>
-            <StackPanel
-                Margin="0,12,0,0"
-                HorizontalAlignment="Center"
-                Spacing="4">
-                <TextBlock
-                    x:Uid="StarOnGitHub"
-                    HorizontalAlignment="Center"
-                    TextAlignment="Center"
-                    TextWrapping="Wrap" />
-                <HyperlinkButton x:Name="GitHubLink" HorizontalAlignment="Center" />
+            <StackPanel Margin="0,8,0,0" Spacing="4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        x:Uid="StarOnGitHub"
+                        VerticalAlignment="Center"
+                        TextWrapping="Wrap" />
+                    <HyperlinkButton
+                        x:Name="GitHubLink"
+                        Grid.Column="1"
+                        VerticalAlignment="Center" />
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        x:Uid="UpdateGuide"
+                        VerticalAlignment="Center"
+                        TextWrapping="Wrap" />
+                    <HyperlinkButton
+                        x:Name="GuideLink"
+                        x:Uid="GuideLink"
+                        Grid.Column="1"
+                        VerticalAlignment="Center" />
+                </Grid>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock
+                        x:Uid="UpdateFaq"
+                        VerticalAlignment="Center"
+                        TextWrapping="Wrap" />
+                    <HyperlinkButton
+                        x:Name="FaqLink"
+                        x:Uid="FaqLink"
+                        Grid.Column="1"
+                        VerticalAlignment="Center" />
+                </Grid>
             </StackPanel>
         </Border>
     </Grid>

@@ -1162,6 +1162,18 @@
   <data name="StarOnGitHub.Text" xml:space="preserve">
     <value>If you like this project, please give us a Star on GitHub!</value>
   </data>
+  <data name="UpdateGuide.Text" xml:space="preserve">
+    <value>User Guide</value>
+  </data>
+  <data name="GuideLink.Content" xml:space="preserve">
+    <value>View User Guide</value>
+  </data>
+  <data name="UpdateFaq.Text" xml:space="preserve">
+    <value>FAQ</value>
+  </data>
+  <data name="FaqLink.Content" xml:space="preserve">
+    <value>View FAQ</value>
+  </data>
 </root>
 
 

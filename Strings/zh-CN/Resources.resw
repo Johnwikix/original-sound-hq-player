@@ -1162,6 +1162,18 @@
   <data name="StarOnGitHub.Text" xml:space="preserve">
     <value>如果喜欢这个项目，请在 GitHub 上点个 Star 支持我们！</value>
   </data>
+  <data name="UpdateGuide.Text" xml:space="preserve">
+    <value>使用指南</value>
+  </data>
+  <data name="GuideLink.Content" xml:space="preserve">
+    <value>查看使用指南</value>
+  </data>
+  <data name="UpdateFaq.Text" xml:space="preserve">
+    <value>常见问题</value>
+  </data>
+  <data name="FaqLink.Content" xml:space="preserve">
+    <value>查看常见问题</value>
+  </data>
 </root>
 
 

@@ -1159,6 +1159,18 @@
   <data name="ResetWindowBounds.Content" xml:space="preserve">
     <value>Сбросить положение окна</value>
   </data>
+  <data name="UpdateGuide.Text" xml:space="preserve">
+    <value>Руководство пользователя</value>
+  </data>
+  <data name="GuideLink.Content" xml:space="preserve">
+    <value>Посмотреть руководство</value>
+  </data>
+  <data name="UpdateFaq.Text" xml:space="preserve">
+    <value>Часто задаваемые вопросы</value>
+  </data>
+  <data name="FaqLink.Content" xml:space="preserve">
+    <value>Посмотреть FAQ</value>
+  </data>
 </root>
 
 

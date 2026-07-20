@@ -1159,6 +1159,18 @@
   <data name="ResetWindowBounds.Content" xml:space="preserve">
     <value>ウィンドウ位置をリセット</value>
   </data>
+  <data name="UpdateGuide.Text" xml:space="preserve">
+    <value>ユーザーガイド</value>
+  </data>
+  <data name="GuideLink.Content" xml:space="preserve">
+    <value>ユーザーガイドを見る</value>
+  </data>
+  <data name="UpdateFaq.Text" xml:space="preserve">
+    <value>よくある質問</value>
+  </data>
+  <data name="FaqLink.Content" xml:space="preserve">
+    <value>FAQを見る</value>
+  </data>
 </root>
 
 

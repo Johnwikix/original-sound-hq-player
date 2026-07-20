@@ -1159,6 +1159,18 @@
   <data name="ResetWindowBounds.Content" xml:space="preserve">
     <value>Fensterposition zurücksetzen</value>
   </data>
+  <data name="UpdateGuide.Text" xml:space="preserve">
+    <value>Benutzerhandbuch</value>
+  </data>
+  <data name="GuideLink.Content" xml:space="preserve">
+    <value>Benutzerhandbuch anzeigen</value>
+  </data>
+  <data name="UpdateFaq.Text" xml:space="preserve">
+    <value>FAQ</value>
+  </data>
+  <data name="FaqLink.Content" xml:space="preserve">
+    <value>FAQ anzeigen</value>
+  </data>
 </root>
 
 
