@@ -15,11 +15,15 @@
         </Grid.RowDefinitions>
         <ScrollViewer
             Grid.Row="1"
-            MaxHeight="360"
-            Margin="0,16,0,16">
+            MaxHeight="300"
+            Margin="0">
             <TextBlock
                 x:Name="ReleaseNotesText"
+                FontSize="16"
+                FontStretch="SemiExpanded"
                 IsTextSelectionEnabled="True"
+                LineHeight="32"
+                LineStackingStrategy="BlockLineHeight"
                 TextWrapping="Wrap" />
         </ScrollViewer>
         <Border
