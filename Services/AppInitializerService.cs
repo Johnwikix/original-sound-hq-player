@@ -25,11 +25,10 @@ namespace WinUIMusicPlayer.Services
         // 应用启动时执行初始化
         public async Task StartAsync(CancellationToken cancellationToken)
         {
+            await MusicDatabaseService.Initialize();
             var ipcService = App.Services.GetRequiredService<IpcService>();
             var musicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             var appViewModel = App.Services.GetRequiredService<AppViewModel>();
-
-            await MusicDatabaseService.Initialize();
             await ipcService.InitializingAsync();
             await Task.WhenAll(
                 MusicDatabaseService.GetEqualizerSettingsAsync(),
