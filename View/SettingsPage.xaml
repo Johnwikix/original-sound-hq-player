@@ -609,7 +609,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
                                     x:Uid="SettingsPageToggleFullScreenShortcut"
-                                    Grid.Column="0"
+                                    Grid.Column="0" 
                                     VerticalAlignment="Center"
                                     FontSize="14" />
                                 <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.ToggleFullScreenShortcut, Mode=TwoWay}" />

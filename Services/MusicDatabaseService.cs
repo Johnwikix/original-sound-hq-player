@@ -950,6 +950,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.TogglePlayingDetailShortcut = settings.TogglePlayingDetailShortcut;
                 AppViewModel.BackShortcut = settings.BackShortcut;
                 AppViewModel.ShowWindowShortcut = settings.ShowWindowShortcut;
+                AppViewModel.ToggleFullScreenShortcut = settings.ToggleFullScreenShortcut;
                 AppSettings.EnableGlobalHotKey = settings.EnableGlobalHotKey;
                 AppViewModel.EnableGlobalHotKey = settings.EnableGlobalHotKey;
                 AppSettings.IsTrimOnHideEnabled = settings.IsTrimOnHideEnabled;
@@ -1065,6 +1066,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.TogglePlayingDetailShortcut = AppViewModel.TogglePlayingDetailShortcut;
             newSettings.BackShortcut = AppViewModel.BackShortcut;
             newSettings.ShowWindowShortcut = AppViewModel.ShowWindowShortcut;
+            newSettings.ToggleFullScreenShortcut = AppViewModel.ToggleFullScreenShortcut;
             newSettings.EnableGlobalHotKey = AppViewModel.EnableGlobalHotKey;
             newSettings.IsTrimOnHideEnabled = AppViewModel.IsTrimOnHideEnabled;
             newSettings.IsTrimAfterPlaybackEnabled = AppViewModel.IsTrimAfterPlaybackEnabled;
