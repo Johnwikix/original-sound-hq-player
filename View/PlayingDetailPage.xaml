@@ -121,11 +121,11 @@
                     <TextBlock
                         x:Name="PlayingDetailTitleTextBlock"
                         Margin="0"
-                        Opacity="{x:Bind tool:BindUtils.BoolToOpacityReConverter(ViewModel.AppViewModel.IsWin2dAnimatedText), Mode=OneTime}"
                         HorizontalAlignment="Stretch"
                         FontSize="{x:Bind ViewModel.TitleFontSize, Mode=OneWay}"
                         FontWeight="SemiBold"
                         IsTextSelectionEnabled="True"
+                        Opacity="{x:Bind tool:BindUtils.BoolToOpacityReConverter(ViewModel.AppViewModel.IsWin2dAnimatedText), Mode=OneTime}"
                         Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
                         TextAlignment="{x:Bind ViewModel.AppViewModel.PlayingDetailAlignment, Mode=OneTime}"
                         TextTrimming="CharacterEllipsis"
@@ -137,11 +137,11 @@
                         <TextBlock
                             x:Name="PlayingDetailAlbumTextBlock"
                             Margin="0"
-                            Opacity="{x:Bind tool:BindUtils.BoolToOpacityReConverter(ViewModel.AppViewModel.IsWin2dAnimatedText), Mode=OneTime}"
                             HorizontalAlignment="Stretch"
                             FontSize="{x:Bind ViewModel.ArtistAlbumFontSize, Mode=OneWay}"
                             FontWeight="Normal"
                             IsTextSelectionEnabled="True"
+                            Opacity="{x:Bind tool:BindUtils.BoolToOpacityReConverter(ViewModel.AppViewModel.IsWin2dAnimatedText), Mode=OneTime}"
                             Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
                             TextAlignment="{x:Bind ViewModel.AppViewModel.PlayingDetailAlignment, Mode=OneTime}"
                             TextTrimming="CharacterEllipsis"
@@ -149,11 +149,11 @@
                         <TextBlock
                             x:Name="PlayingDetailArtistTextBlock"
                             Margin="0"
-                            Opacity="{x:Bind tool:BindUtils.BoolToOpacityReConverter(ViewModel.AppViewModel.IsWin2dAnimatedText), Mode=OneTime}"
                             HorizontalAlignment="Stretch"
                             FontSize="{x:Bind ViewModel.ArtistAlbumFontSize, Mode=OneWay}"
                             FontWeight="Normal"
                             IsTextSelectionEnabled="True"
+                            Opacity="{x:Bind tool:BindUtils.BoolToOpacityReConverter(ViewModel.AppViewModel.IsWin2dAnimatedText), Mode=OneTime}"
                             Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
                             TextAlignment="{x:Bind ViewModel.AppViewModel.PlayingDetailAlignment, Mode=OneTime}"
                             TextTrimming="CharacterEllipsis"
@@ -162,6 +162,7 @@
                     <StackPanel
                         Grid.Row="2"
                         Margin="0,0,0,5"
+                        HorizontalAlignment="{x:Bind ViewModel.AppViewModel.PlayingDetailAlignment, Mode=OneTime, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}}"
                         VerticalAlignment="Center"
                         Orientation="Horizontal">
                         <TextBlock

@@ -19,4 +19,5 @@
     <converters:PlayDetailButtonVisibleConverter x:Key="PlayDetailButtonVisibleConverter" />
     <converters:ThicknessToDoubleConverter x:Key="ThicknessToDoubleConverter" />
     <converters:EnumToStringConverter x:Key="EnumToStringConverter" />
+    <converters:TextAlignmentToHorizontalAlignmentConverter x:Key="TextAlignmentToHorizontalAlignmentConverter" />
 </ResourceDictionary>

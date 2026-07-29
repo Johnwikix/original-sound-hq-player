@@ -806,11 +806,16 @@
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock
-                                    x:Uid="PlayingDetailAlignment"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock
+                                        x:Uid="PlayingDetailAlignment"
+                                        FontSize="14" />
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
                                 <ComboBox
                                     Grid.Column="1"
                                     Width="300"
