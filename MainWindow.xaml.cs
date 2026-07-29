@@ -342,8 +342,8 @@ namespace WinUIMusicPlayer
         {
             if (dispose)
             {
-                AppNotifyIconControl.Dispose();
-                _taskbarHelper.Dispose();
+                AppNotifyIconControl?.Dispose();
+                _taskbarHelper?.Dispose();
             }
         }
     }

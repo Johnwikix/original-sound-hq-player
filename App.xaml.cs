@@ -11,6 +11,7 @@ using System.IO;
 using System.Runtime;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.System.UserProfile;
 using WinUIMusicPlayer.Helper;
@@ -37,6 +38,7 @@ namespace WinUIMusicPlayer
         public static MainWindow MainWindow { get; set; }
         public static IServiceProvider Services { get; private set; }
         private static ILogger<App> _logger;
+        private static int _isExiting;
         public static ILogger<T> GetLogger<T>()
         {
             return Services.GetRequiredService<ILogger<T>>();
@@ -222,14 +224,18 @@ namespace WinUIMusicPlayer
         /// <summary>
         public static async Task Current_Exit()
         {
+            if (Interlocked.CompareExchange(ref _isExiting, 1, 0) != 0) return;
             try
             {
                 await SavePlayStateAsync();
                 Services.GetRequiredService<BassPlayerCommandService>().MusicEnd();
                 MainWindow.Hide();
                 await _host.StopAsync();
+                var ipc = Services.GetService<IpcService>();
+                if (ipc is not null) ipc.Dispose();
                 Services.GetRequiredService<LrcService>().Dispose();
-                Services.GetRequiredService<PlayingDetailPage>().Dispose();
+                var playingDetail = Services.GetService<PlayingDetailPage>();
+                if (playingDetail is { IsLoaded: true }) playingDetail.Dispose();
                 Services.GetRequiredService<AppViewModel>().Dispose();
                 CoverLoadQueue.Shutdown(TimeSpan.FromSeconds(3));
                 //_host.Dispose();
@@ -242,6 +248,7 @@ namespace WinUIMusicPlayer
             }
             finally
             {
+                try { Log.CloseAndFlush(); } catch { }
                 //Current.Exit();
                 Environment.Exit(0);
             }

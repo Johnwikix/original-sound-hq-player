@@ -51,8 +51,13 @@ namespace WinUIMusicPlayer.View
             _logger = App.GetLogger<PlayingDetailPage>();
         }
 
+        private bool _isLoaded;
+        private bool _disposed;
+        public bool IsLoaded => _isLoaded;
+
         private void PlayingDetailPage_Loaded(object sender, RoutedEventArgs e)
         {
+            _isLoaded = true;
             if (ViewModel.AppViewModel.IsWin2dAnimatedText)
             {
                 var effectType = ViewModel.AppViewModel.Win2dTextEffectType.Value;
@@ -431,6 +436,8 @@ namespace WinUIMusicPlayer.View
 
         public void Dispose()
         {
+            if (_disposed) return;
+            _disposed = true;
             Dispose(true);
             GC.SuppressFinalize(this);
         }
@@ -451,9 +458,11 @@ namespace WinUIMusicPlayer.View
         {
             if (dispose)
             {
-                App.MainWindow.SizeChanged -= MainWindow_SizeChanged;
-                App.MainWindow.AppWindow.Changed -= AppWindow_Changed;
-                ViewModel.AppViewModel.PropertyChanged -= AppViewModel_PropertyChanged;
+                App.MainWindow?.SizeChanged -= MainWindow_SizeChanged;
+                if (App.MainWindow?.AppWindow is { } appWindow)
+                    appWindow.Changed -= AppWindow_Changed;
+                if (ViewModel?.AppViewModel is { } appvm)
+                    appvm.PropertyChanged -= AppViewModel_PropertyChanged;
                 LyricsView?.LyricInteracted -= LyricsView_LyricInteracted;
                 LyricsView?.ExceptionInteracted -= LyricsView_ExceptionInteracted;
                 LyricsView?.ShutdownLyricsCanvas();
