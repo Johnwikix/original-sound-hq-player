@@ -652,7 +652,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
             AppViewModel.RefreshDataSource();
             var slideNavigationTransitionEffect = currentSelectedIndex - PreviousSelectedIndex > 0 ? SlideNavigationTransitionEffect.FromRight : SlideNavigationTransitionEffect.FromLeft;
-            MusicBrowsePage.NavigatePage(AppData.CurrentPage, null, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect });
+            MusicBrowsePage?.NavigatePage(AppData.CurrentPage, null, new SlideNavigationTransitionInfo() { Effect = slideNavigationTransitionEffect });
             PreviousSelectedIndex = currentSelectedIndex;
         }
 
@@ -670,7 +670,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     AppViewModel.CurrentPlayingMusic = music;
                     AppViewModel.UILyrics = [];
-                    MusicBrowsePage.UpdateViewList();
+                    MusicBrowsePage?.UpdateViewList();
                 });
                 _ = UpdatePlayBar(music, token);
                 AppViewModel.LoadLyricsToUI(music);
