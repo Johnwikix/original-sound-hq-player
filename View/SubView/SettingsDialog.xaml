@@ -506,10 +506,20 @@
                             SelectedColor="{x:Bind VM.LyricsCustomColor, Mode=TwoWay}" />
                     </Grid>
                 </StackPanel>
-
-                <!--  Row 6: 流体背景 | 启用高级逐字歌词特效  -->
+                <!--  Row 6: 歌曲信息可见  -->
                 <StackPanel
                     Grid.Row="6"
+                    Grid.Column="0"
+                    Spacing="4">
+                    <TextBlock
+                        x:Uid="MusicInfoVisible"
+                        FontSize="14"
+                        FontWeight="SemiBold" />
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind VM.IsMusicInfoVisible, Mode=TwoWay}" />
+                </StackPanel>
+                <!--  Row 7: 流体背景 | 启用高级逐字歌词特效  -->
+                <StackPanel
+                    Grid.Row="7"
                     Grid.Column="0"
                     Spacing="4">
                     <TextBlock
@@ -548,7 +558,7 @@
 
                 </StackPanel>
                 <StackPanel
-                    Grid.Row="6"
+                    Grid.Row="7"
                     Grid.Column="1"
                     Spacing="4">
                     <TextBlock
@@ -563,9 +573,9 @@
                         TextWrapping="Wrap" />
                     <ToggleSwitch IsOn="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=TwoWay}" />
                 </StackPanel>
-                <!--  Row 6: 歌曲信息对齐  -->
+                <!--  Row 7: 歌曲信息对齐  -->
                 <StackPanel
-                    Grid.Row="6"
+                    Grid.Row="7"
                     Grid.Column="2"
                     Spacing="4">
                     <TextBlock
@@ -588,19 +598,7 @@
                     </ComboBox>
                 </StackPanel>
 
-                <!--  Row 7: 歌曲信息可见  -->
-                <StackPanel
-                    Grid.Row="7"
-                    Grid.Column="2"
-                    Spacing="4">
-                    <TextBlock
-                        x:Uid="MusicInfoVisible"
-                        FontSize="14"
-                        FontWeight="SemiBold" />
-                    <ToggleSwitch
-                        MinWidth="0"
-                        IsOn="{x:Bind VM.IsMusicInfoVisible, Mode=TwoWay}" />
-                </StackPanel>
+
             </Grid>
         </ScrollViewer>
     </Grid>
