@@ -835,6 +835,9 @@
   <data name="LyricsAlignment.Text" xml:space="preserve">
     <value>Songtext-Ausrichtung</value>
   </data>
+  <data name="PlayingDetailAlignment.Text" xml:space="preserve">
+    <value>Titelausrichtung</value>
+  </data>
   <data name="Left.Content" xml:space="preserve">
     <value>Links</value>
   </data>

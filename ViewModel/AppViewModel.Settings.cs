@@ -546,7 +546,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = false;
 
-        public string LyricsAlignment
+        public Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment LyricsAlignment
         {
             get => field;
             set
@@ -560,7 +560,22 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = "Left";
+        } = Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment.Left;
+
+        public TextAlignment PlayingDetailAlignment
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = TextAlignment.Left;
 
         public bool IsGlobalFontSizeEnabled
         {

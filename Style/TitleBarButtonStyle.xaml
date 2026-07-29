@@ -68,7 +68,10 @@
         </Setter>
     </Style>
 
-    <Style x:Key="TitleBarCloseButtonStyle" TargetType="Button" BasedOn="{StaticResource TitleBarButtonStyle}">
+    <Style
+        x:Key="TitleBarCloseButtonStyle"
+        BasedOn="{StaticResource TitleBarButtonStyle}"
+        TargetType="Button">
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Button">

@@ -18,4 +18,5 @@
     <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
     <converters:PlayDetailButtonVisibleConverter x:Key="PlayDetailButtonVisibleConverter" />
     <converters:ThicknessToDoubleConverter x:Key="ThicknessToDoubleConverter" />
+    <converters:EnumToStringConverter x:Key="EnumToStringConverter" />
 </ResourceDictionary>

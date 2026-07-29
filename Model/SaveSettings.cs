@@ -1,4 +1,6 @@
 ﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+using Microsoft.Graphics.Canvas.Text;
+using Microsoft.UI.Xaml;
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using WinUIMusicPlayer.Utils;
@@ -46,7 +48,10 @@ namespace WinUIMusicPlayer.Model
         public bool IsGlobalFontSizeEnabled { get; set; } = false;
         public double GlobalFontSize { get; set; } = 32;
         public bool IsUpdateBackDrop { get; set; } = false;
-        public string LyricsAlignment { get; set; } = "Left";
+        [JsonConverter(typeof(JsonStringEnumConverter<CanvasHorizontalAlignment>))]
+        public CanvasHorizontalAlignment LyricsAlignment { get; set; } = CanvasHorizontalAlignment.Left;
+        [JsonConverter(typeof(JsonStringEnumConverter<TextAlignment>))]
+        public TextAlignment PlayingDetailAlignment { get; set; } = TextAlignment.Left;
         public int LyricsMargin { get; set; } = 20;
         public string MusicCoverCache { get; set; } = string.Empty;
         public bool UseImageDominantTheme { get; set; } = false;

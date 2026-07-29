@@ -1347,15 +1347,9 @@ namespace WinUIMusicPlayer.ViewModel
         {
 
             string fontFamilyName = FontFamily?.FontFamily?.Source ?? "Segoe UI";
-            var alignment = LyricsAlignment switch
-            {
-                "Center" => Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment.Center,
-                "Right" => Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment.Right,
-                _ => Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment.Left,
-            };
             AnimatedWin2dControls.Messages.LyricsSettingsBus.Publish(new AnimatedWin2dControls.Messages.LyricsSettingsBus.Settings(
                 fontFamilyName: fontFamilyName,
-                lyricsTextAlignment: alignment,
+                lyricsTextAlignment: LyricsAlignment,
                 isDark: IsDarkMode,
                 scrollSensitivity: 1.0,
                 lyricsBlurAmount: LyricsBlurAmount,

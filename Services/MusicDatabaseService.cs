@@ -957,6 +957,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.IsTrimOnHideEnabled = settings.IsTrimOnHideEnabled;
                 AppSettings.IsTrimAfterPlaybackEnabled = settings.IsTrimAfterPlaybackEnabled;
                 AppViewModel.IsTrimAfterPlaybackEnabled = settings.IsTrimAfterPlaybackEnabled;
+                AppViewModel.PlayingDetailAlignment = settings.PlayingDetailAlignment;
                 LoadSettingsToAppViewModel();
             }
         }
@@ -1070,6 +1071,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.EnableGlobalHotKey = AppViewModel.EnableGlobalHotKey;
             newSettings.IsTrimOnHideEnabled = AppViewModel.IsTrimOnHideEnabled;
             newSettings.IsTrimAfterPlaybackEnabled = AppViewModel.IsTrimAfterPlaybackEnabled;
+            newSettings.PlayingDetailAlignment = AppViewModel.PlayingDetailAlignment;
             return newSettings;
         }
 

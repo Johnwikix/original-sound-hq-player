@@ -835,6 +835,9 @@
   <data name="LyricsAlignment.Text" xml:space="preserve">
     <value>歌词位置</value>
   </data>
+  <data name="PlayingDetailAlignment.Text" xml:space="preserve">
+    <value>歌曲信息对齐</value>
+  </data>
   <data name="Left.Content" xml:space="preserve">
     <value>靠左</value>
   </data>

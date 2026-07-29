@@ -60,6 +60,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <!--  Row 0: 输出设备 | 目标帧率 | 歌词字号  -->
@@ -161,7 +162,7 @@
                     <ComboBox
                         Width="250"
                         HorizontalAlignment="Left"
-                        SelectedValue="{x:Bind VM.LyricsAlignment, Mode=TwoWay}"
+                        SelectedValue="{x:Bind VM.LyricsAlignment, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
                         SelectedValuePath="Tag">
                         <ComboBoxItem x:Uid="Left" Tag="Left" />
                         <ComboBoxItem x:Uid="Center" Tag="Center" />
@@ -506,9 +507,29 @@
                     </Grid>
                 </StackPanel>
 
-                <!--  Row 6: 流体背景 | 启用高级逐字歌词特效 | 背景着色器  -->
+                <!--  Row 6: 歌曲信息对齐  -->
                 <StackPanel
                     Grid.Row="6"
+                    Grid.Column="0"
+                    Spacing="4">
+                    <TextBlock
+                        x:Uid="PlayingDetailAlignment"
+                        FontSize="14"
+                        FontWeight="SemiBold" />
+                    <ComboBox
+                        Width="250"
+                        HorizontalAlignment="Left"
+                        SelectedValue="{x:Bind VM.PlayingDetailAlignment, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
+                        SelectedValuePath="Tag">
+                        <ComboBoxItem x:Uid="Left" Tag="Left" />
+                        <ComboBoxItem x:Uid="Center" Tag="Center" />
+                        <ComboBoxItem x:Uid="Right" Tag="Right" />
+                    </ComboBox>
+                </StackPanel>
+
+                <!--  Row 7: 流体背景 | 启用高级逐字歌词特效  -->
+                <StackPanel
+                    Grid.Row="7"
                     Grid.Column="0"
                     Spacing="4">
                     <TextBlock
@@ -547,7 +568,7 @@
 
                 </StackPanel>
                 <StackPanel
-                    Grid.Row="6"
+                    Grid.Row="7"
                     Grid.Column="1"
                     Spacing="4">
                     <TextBlock

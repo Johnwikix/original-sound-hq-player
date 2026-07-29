@@ -835,6 +835,9 @@
   <data name="LyricsAlignment.Text" xml:space="preserve">
     <value>Выравнивание текстов песен</value>
   </data>
+  <data name="PlayingDetailAlignment.Text" xml:space="preserve">
+    <value>Выравнивание информации о треке</value>
+  </data>
   <data name="Left.Content" xml:space="preserve">
     <value>Налево</value>
   </data>

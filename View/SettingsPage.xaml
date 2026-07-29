@@ -797,6 +797,31 @@
                                     </ComboBox>
                                 </Grid>
                             </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock
+                                    x:Uid="PlayingDetailAlignment"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ComboBox
+                                    Grid.Column="1"
+                                    Width="300"
+                                    VerticalAlignment="Center"
+                                    SelectedValue="{x:Bind ViewModel.AppViewModel.PlayingDetailAlignment, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
+                                    SelectedValuePath="Tag">
+                                    <ComboBoxItem x:Uid="Left" Tag="Left" />
+                                    <ComboBoxItem x:Uid="Center" Tag="Center" />
+                                    <ComboBoxItem x:Uid="Right" Tag="Right" />
+                                </ComboBox>
+                            </Grid>
                         </StackPanel>
                     </Expander.Content>
                 </Expander>
@@ -1102,7 +1127,7 @@
                                     Grid.Column="1"
                                     Width="300"
                                     VerticalAlignment="Center"
-                                    SelectedValue="{x:Bind ViewModel.AppViewModel.LyricsAlignment, Mode=TwoWay}"
+                                    SelectedValue="{x:Bind ViewModel.AppViewModel.LyricsAlignment, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
                                     SelectedValuePath="Tag">
                                     <ComboBoxItem x:Uid="Left" Tag="Left" />
                                     <ComboBoxItem x:Uid="Center" Tag="Center" />
