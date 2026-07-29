@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using CommunityToolkit.WinUI;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
@@ -810,8 +811,7 @@ namespace WinUIMusicPlayer.Services
             bool isFirstTime = !File.Exists(PlayStatePath);
             var playState = _currentPlayState ?? await GetPlayState();
             playState ??= new SavePlayState();
-
-            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
             {
                 if (playState.LastPlayedMusicId is null && AppViewModel.SongsSource.Count > 0)
                 {

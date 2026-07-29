@@ -135,7 +135,7 @@ namespace WinUIMusicPlayer.ViewModel
         public BulkObservableCollection<Music> AlbumSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<Music> ArtistSongs { get; set => SetProperty(ref field, value); } = [];
         public BulkObservableCollection<Music> FolderSongs { get; set => SetProperty(ref field, value); } = [];
-        public Music CurrentPlayingMusic
+        public Music? CurrentPlayingMusic
         {
             get => field;
             set
