@@ -577,6 +577,21 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = TextAlignment.Left;
 
+        public bool IsMusicInfoVisible
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                }
+            }
+        } = true;
+
         public bool IsGlobalFontSizeEnabled
         {
             get => field;

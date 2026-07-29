@@ -587,6 +587,20 @@
                         <ComboBoxItem x:Uid="Right" Tag="Right" />
                     </ComboBox>
                 </StackPanel>
+
+                <!--  Row 7: 歌曲信息可见  -->
+                <StackPanel
+                    Grid.Row="7"
+                    Grid.Column="2"
+                    Spacing="4">
+                    <TextBlock
+                        x:Uid="MusicInfoVisible"
+                        FontSize="14"
+                        FontWeight="SemiBold" />
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind VM.IsMusicInfoVisible, Mode=TwoWay}" />
+                </StackPanel>
             </Grid>
         </ScrollViewer>
     </Grid>

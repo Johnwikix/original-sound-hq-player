@@ -838,6 +838,9 @@
   <data name="PlayingDetailAlignment.Text" xml:space="preserve">
     <value>曲情報のアラインメント</value>
   </data>
+  <data name="MusicInfoVisible.Text" xml:space="preserve">
+    <value>トラック情報を表示</value>
+  </data>
   <data name="Left.Content" xml:space="preserve">
     <value>左</value>
   </data>

@@ -160,11 +160,13 @@
                             TextWrapping="NoWrap" />
                     </StackPanel>
                     <StackPanel
+                        x:Name="PlayingDetailInfoPanel"
                         Grid.Row="2"
                         Margin="0,0,0,5"
                         HorizontalAlignment="{x:Bind ViewModel.AppViewModel.PlayingDetailAlignment, Mode=OneTime, Converter={StaticResource TextAlignmentToHorizontalAlignmentConverter}}"
                         VerticalAlignment="Center"
-                        Orientation="Horizontal">
+                        Orientation="Horizontal"
+                        Visibility="{x:Bind ViewModel.AppViewModel.IsMusicInfoVisible, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}">
                         <TextBlock
                             x:Name="PlayingDetailMusicInfoTextBlock"
                             Margin="0,0,10,0"
