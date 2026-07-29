@@ -839,7 +839,7 @@
     <value>Выравнивание информации о треке</value>
   </data>
   <data name="MusicInfoVisible.Text" xml:space="preserve">
-    <value>Показывать информацию о треке</value>
+    <value>Показывать информацию об аудио</value>
   </data>
   <data name="Left.Content" xml:space="preserve">
     <value>Налево</value>

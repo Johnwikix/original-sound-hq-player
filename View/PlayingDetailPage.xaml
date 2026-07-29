@@ -103,7 +103,7 @@
                         FontSize="24"
                         FontWeight="SemiBold"
                         Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
-                        TextAlignment="{x:Bind ViewModel.AppViewModel.PlayingDetailAlignment, Mode=OneTime}"
+                        TextAlignment="{x:Bind ViewModel.AppViewModel.PlayingDetailAlignment, Mode=OneWay}"
                         TextTrimming="CharacterEllipsis"
                         TextWrapping="NoWrap" />
                     <atb:AnimatedTextBlock
@@ -115,7 +115,7 @@
                         FontWeight="Normal"
                         Opacity="0.8"
                         Text="{x:Bind tool:BindUtils.MusicToInfo(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
-                        TextAlignment="{x:Bind ViewModel.AppViewModel.PlayingDetailAlignment, Mode=OneTime}"
+                        TextAlignment="{x:Bind ViewModel.AppViewModel.PlayingDetailAlignment, Mode=OneWay}"
                         TextTrimming="CharacterEllipsis"
                         TextWrapping="NoWrap" />
                     <TextBlock
@@ -127,7 +127,7 @@
                         IsTextSelectionEnabled="True"
                         Opacity="{x:Bind tool:BindUtils.BoolToOpacityReConverter(ViewModel.AppViewModel.IsWin2dAnimatedText), Mode=OneTime}"
                         Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
-                        TextAlignment="{x:Bind ViewModel.AppViewModel.PlayingDetailAlignment, Mode=OneTime}"
+                        TextAlignment="{x:Bind ViewModel.AppViewModel.PlayingDetailAlignment, Mode=OneWay}"
                         TextTrimming="CharacterEllipsis"
                         TextWrapping="NoWrap" />
                     <StackPanel
@@ -143,7 +143,7 @@
                             IsTextSelectionEnabled="True"
                             Opacity="{x:Bind tool:BindUtils.BoolToOpacityReConverter(ViewModel.AppViewModel.IsWin2dAnimatedText), Mode=OneTime}"
                             Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
-                            TextAlignment="{x:Bind ViewModel.AppViewModel.PlayingDetailAlignment, Mode=OneTime}"
+                            TextAlignment="{x:Bind ViewModel.AppViewModel.PlayingDetailAlignment, Mode=OneWay}"
                             TextTrimming="CharacterEllipsis"
                             TextWrapping="NoWrap" />
                         <TextBlock
@@ -155,7 +155,7 @@
                             IsTextSelectionEnabled="True"
                             Opacity="{x:Bind tool:BindUtils.BoolToOpacityReConverter(ViewModel.AppViewModel.IsWin2dAnimatedText), Mode=OneTime}"
                             Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
-                            TextAlignment="{x:Bind ViewModel.AppViewModel.PlayingDetailAlignment, Mode=OneTime}"
+                            TextAlignment="{x:Bind ViewModel.AppViewModel.PlayingDetailAlignment, Mode=OneWay}"
                             TextTrimming="CharacterEllipsis"
                             TextWrapping="NoWrap" />
                     </StackPanel>

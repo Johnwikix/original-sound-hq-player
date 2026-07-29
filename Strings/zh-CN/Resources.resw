@@ -839,7 +839,7 @@
     <value>歌曲信息对齐</value>
   </data>
   <data name="MusicInfoVisible.Text" xml:space="preserve">
-    <value>歌曲信息可见</value>
+    <value>音频信息可见</value>
   </data>
   <data name="Left.Content" xml:space="preserve">
     <value>靠左</value>

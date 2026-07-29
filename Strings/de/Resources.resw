@@ -839,7 +839,7 @@
     <value>Titelausrichtung</value>
   </data>
   <data name="MusicInfoVisible.Text" xml:space="preserve">
-    <value>Trackinfo anzeigen</value>
+    <value>Audioinfo anzeigen</value>
   </data>
   <data name="Left.Content" xml:space="preserve">
     <value>Links</value>

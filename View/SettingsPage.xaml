@@ -416,7 +416,10 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                    <TextBlock x:Uid="WindowBoundsDescription" FontSize="14" TextWrapping="Wrap" />
+                                    <TextBlock
+                                        x:Uid="WindowBoundsDescription"
+                                        FontSize="14"
+                                        TextWrapping="Wrap" />
                                     <TextBlock
                                         x:Uid="WindowBoundsHint"
                                         FontSize="12"
@@ -424,17 +427,15 @@
                                         TextWrapping="Wrap" />
                                 </StackPanel>
                                 <Button
+                                    x:Uid="ResetWindowBounds"
                                     Grid.Column="1"
                                     MinWidth="0"
                                     VerticalAlignment="Center"
-                                    Command="{x:Bind ViewModel.AppViewModel.ResetWindowBoundsCommand, Mode=OneWay}"
-                                    x:Uid="ResetWindowBounds" />
+                                    Command="{x:Bind ViewModel.AppViewModel.ResetWindowBoundsCommand, Mode=OneWay}" />
                             </Grid>
                         </StackPanel>
                     </Expander.Content>
                 </Expander>
-
-                <!--  快捷键设置  -->
 
                 <!--  快捷键设置  -->
                 <Expander
@@ -609,7 +610,7 @@
                                 </Grid.ColumnDefinitions>
                                 <TextBlock
                                     x:Uid="SettingsPageToggleFullScreenShortcut"
-                                    Grid.Column="0" 
+                                    Grid.Column="0"
                                     VerticalAlignment="Center"
                                     FontSize="14" />
                                 <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.ToggleFullScreenShortcut, Mode=TwoWay}" />
@@ -826,14 +827,7 @@
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                                    <TextBlock
-                                        x:Uid="PlayingDetailAlignment"
-                                        FontSize="14" />
-                                    <TextBlock
-                                        FontSize="12"
-                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
-                                        TextWrapping="Wrap" />
+                                    <TextBlock x:Uid="PlayingDetailAlignment" FontSize="14" />
                                 </StackPanel>
                                 <ComboBox
                                     Grid.Column="1"

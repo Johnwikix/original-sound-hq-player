@@ -839,7 +839,7 @@
     <value>Track Info Alignment</value>
   </data>
   <data name="MusicInfoVisible.Text" xml:space="preserve">
-    <value>Track Info Visible</value>
+    <value>Audio Info Visible</value>
   </data>
   <data name="Left.Content" xml:space="preserve">
     <value>Left</value>

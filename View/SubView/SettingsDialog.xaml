@@ -506,7 +506,7 @@
                             SelectedColor="{x:Bind VM.LyricsCustomColor, Mode=TwoWay}" />
                     </Grid>
                 </StackPanel>
-                <!--  Row 6: 歌曲信息可见  -->
+                <!--  Row 6: 音频信息可见  -->
                 <StackPanel
                     Grid.Row="6"
                     Grid.Column="0"
@@ -516,6 +516,25 @@
                         FontSize="14"
                         FontWeight="SemiBold" />
                     <ToggleSwitch MinWidth="0" IsOn="{x:Bind VM.IsMusicInfoVisible, Mode=TwoWay}" />
+                </StackPanel>
+                <!--  Row 6: 歌曲信息对齐  -->
+                <StackPanel
+                    Grid.Row="6"
+                    Grid.Column="1"
+                    Spacing="4">
+                    <TextBlock
+                        x:Uid="PlayingDetailAlignment"
+                        FontSize="14"
+                        FontWeight="SemiBold" />
+                    <ComboBox
+                        Width="250"
+                        HorizontalAlignment="Left"
+                        SelectedValue="{x:Bind VM.PlayingDetailAlignment, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
+                        SelectedValuePath="Tag">
+                        <ComboBoxItem x:Uid="Left" Tag="Left" />
+                        <ComboBoxItem x:Uid="Center" Tag="Center" />
+                        <ComboBoxItem x:Uid="Right" Tag="Right" />
+                    </ComboBox>
                 </StackPanel>
                 <!--  Row 7: 流体背景 | 启用高级逐字歌词特效  -->
                 <StackPanel
@@ -573,30 +592,7 @@
                         TextWrapping="Wrap" />
                     <ToggleSwitch IsOn="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=TwoWay}" />
                 </StackPanel>
-                <!--  Row 7: 歌曲信息对齐  -->
-                <StackPanel
-                    Grid.Row="7"
-                    Grid.Column="2"
-                    Spacing="4">
-                    <TextBlock
-                        x:Uid="PlayingDetailAlignment"
-                        FontSize="14"
-                        FontWeight="SemiBold" />
-                    <TextBlock
-                        FontSize="12"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}"
-                        TextWrapping="Wrap" />
-                    <ComboBox
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        SelectedValue="{x:Bind VM.PlayingDetailAlignment, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
-                        SelectedValuePath="Tag">
-                        <ComboBoxItem x:Uid="Left" Tag="Left" />
-                        <ComboBoxItem x:Uid="Center" Tag="Center" />
-                        <ComboBoxItem x:Uid="Right" Tag="Right" />
-                    </ComboBox>
-                </StackPanel>
+
 
 
             </Grid>

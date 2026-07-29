@@ -109,7 +109,11 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         {
             _textAlignment = value;
             _textFormatDirty = true;
+            _staticLayoutDirty = true;
             SetValue(TextAlignmentProperty, value);
+            ApplyTextFormatIfNeeded();
+            RebuildLayoutsIfReady();
+            _canvas?.Invalidate();
         }
     }
 

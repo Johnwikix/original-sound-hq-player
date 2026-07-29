@@ -39,8 +39,8 @@ namespace WinUIMusicPlayer.View
         private const double PortraitEnterRatio = 1.15;
         private const double PortraitExitRatio = 1.10;
         private const double PortraitTopVerticalMargin = 20;
-        private const double textScale = 1.5;  
-        private const double lyricsScale = 1.5;
+        private const double textScale = 1.6;  
+        private const double lyricsScale = 1.6;
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
         {
             AnimatedWin2dControls.Controls.AlbumImgControl.AlbumArtControl.CoverCacheBasePath = AppSettings.MusicCoverCache;
