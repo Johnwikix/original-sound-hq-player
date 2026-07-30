@@ -1183,6 +1183,18 @@
   <data name="FaqLink.Content" xml:space="preserve">
     <value>Посмотреть FAQ</value>
   </data>
+  <data name="ScrollEasingType.Text" xml:space="preserve">
+    <value>Кривая скролла</value>
+  </data>
+  <data name="EasingTypeDescription" xml:space="preserve">
+    <value>Форма кривой анимации скролла между строками текста</value>
+  </data>
+  <data name="ScrollEasingMode.Text" xml:space="preserve">
+    <value>Направление скролла</value>
+  </data>
+  <data name="EaseModeDescription" xml:space="preserve">
+    <value>Применяется ли ускорение в начале, в конце или с обеих сторон</value>
+  </data>
 </root>
 
 

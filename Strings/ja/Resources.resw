@@ -1183,6 +1183,18 @@
   <data name="FaqLink.Content" xml:space="preserve">
     <value>FAQを見る</value>
   </data>
+  <data name="ScrollEasingType.Text" xml:space="preserve">
+    <value>スクロールイージング曲線</value>
+  </data>
+  <data name="EasingTypeDescription" xml:space="preserve">
+    <value>歌詞行間のスクロールアニメーション曲線の形状</value>
+  </data>
+  <data name="ScrollEasingMode.Text" xml:space="preserve">
+    <value>スクロールイージング方向</value>
+  </data>
+  <data name="EaseModeDescription" xml:space="preserve">
+    <value>開始時、終了時、または両方にイージングを適用するか</value>
+  </data>
 </root>
 
 

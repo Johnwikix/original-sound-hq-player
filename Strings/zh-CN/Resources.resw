@@ -1185,4 +1185,16 @@
   <data name="FaqLink.Content" xml:space="preserve">
     <value>查看常见问题</value>
   </data>
+  <data name="ScrollEasingType.Text" xml:space="preserve">
+    <value>滚动缓动曲线</value>
+  </data>
+  <data name="EasingTypeDescription" xml:space="preserve">
+    <value>歌词行间滚动动画曲线的形状</value>
+  </data>
+  <data name="ScrollEasingMode.Text" xml:space="preserve">
+    <value>滚动缓动方向</value>
+  </data>
+  <data name="EaseModeDescription" xml:space="preserve">
+    <value>缓动在开头、末尾或两侧应用</value>
+  </data>
 </root>

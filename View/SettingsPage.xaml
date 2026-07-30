@@ -1544,6 +1544,71 @@
                                         SelectedColor="{x:Bind ViewModel.AppViewModel.LyricsCustomColor, Mode=TwoWay}" />
                                 </Grid>
                             </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock x:Uid="ScrollEasingType" FontSize="14" />
+                                    <TextBlock
+                                        x:Uid="EasingTypeDescription"
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ComboBox
+                                    Grid.Column="1"
+                                    Width="300"
+                                    VerticalAlignment="Center"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
+                                    SelectedIndex="{x:Bind ViewModel.AppViewModel.ScrollEasingTypeIndex, Mode=TwoWay}">
+                                    <ComboBoxItem>Linear</ComboBoxItem>
+                                    <ComboBoxItem>SmoothStep</ComboBoxItem>
+                                    <ComboBoxItem>Sine</ComboBoxItem>
+                                    <ComboBoxItem>Quad</ComboBoxItem>
+                                    <ComboBoxItem>Cubic</ComboBoxItem>
+                                    <ComboBoxItem>Quart</ComboBoxItem>
+                                    <ComboBoxItem>Quint</ComboBoxItem>
+                                    <ComboBoxItem>Expo</ComboBoxItem>
+                                    <ComboBoxItem>Circle</ComboBoxItem>
+                                    <ComboBoxItem>Back</ComboBoxItem>
+                                    <ComboBoxItem>Elastic</ComboBoxItem>
+                                    <ComboBoxItem>Bounce</ComboBoxItem>
+                                </ComboBox>
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock x:Uid="ScrollEasingMode" FontSize="14" />
+                                    <TextBlock
+                                        x:Uid="EaseModeDescription"
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ComboBox
+                                    Grid.Column="1"
+                                    Width="300"
+                                    VerticalAlignment="Center"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
+                                    SelectedIndex="{x:Bind ViewModel.AppViewModel.ScrollEasingModeIndex, Mode=TwoWay}">
+                                    <ComboBoxItem>In</ComboBoxItem>
+                                    <ComboBoxItem>Out</ComboBoxItem>
+                                    <ComboBoxItem>InOut</ComboBoxItem>
+                                </ComboBox>
+                            </Grid>
                         </StackPanel>
                     </Expander.Content>
                 </Expander>

@@ -1,4 +1,5 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
+using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -905,6 +906,50 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         } = false;
+
+        public EasingType ScrollEasingType
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    OnPropertyChanged(nameof(ScrollEasingTypeIndex));
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        ScheduleSettingsBroadcast();
+                    }
+                }
+            }
+        } = EasingType.Sine;
+        public int ScrollEasingTypeIndex
+        {
+            get => (int)ScrollEasingType;
+            set => ScrollEasingType = (EasingType)value;
+        }
+
+        public EaseMode ScrollEasingMode
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    OnPropertyChanged(nameof(ScrollEasingModeIndex));
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        ScheduleSettingsBroadcast();
+                    }
+                }
+            }
+        } = EaseMode.Out;
+        public int ScrollEasingModeIndex
+        {
+            get => (int)ScrollEasingMode;
+            set => ScrollEasingMode = (EaseMode)value;
+        }
 
         public bool EnableGlobalHotKey
         {

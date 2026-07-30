@@ -1186,6 +1186,18 @@
   <data name="FaqLink.Content" xml:space="preserve">
     <value>View FAQ</value>
   </data>
+  <data name="ScrollEasingType.Text" xml:space="preserve">
+    <value>Scroll Easing Curve</value>
+  </data>
+  <data name="EasingTypeDescription" xml:space="preserve">
+    <value>Shape of the scroll animation curve between lyric lines</value>
+  </data>
+  <data name="ScrollEasingMode.Text" xml:space="preserve">
+    <value>Scroll Easing Direction</value>
+  </data>
+  <data name="EaseModeDescription" xml:space="preserve">
+    <value>Whether easing applies at the start, end, or both sides</value>
+  </data>
 </root>
 
 

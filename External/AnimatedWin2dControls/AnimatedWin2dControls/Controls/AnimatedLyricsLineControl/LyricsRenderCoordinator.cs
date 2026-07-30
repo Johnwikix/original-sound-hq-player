@@ -66,6 +66,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private double _targetScrollY;
         private double _smoothedScrollY;
+        private double _lastTargetScrollY;
         private bool _userScrolling;
         private bool _isUserScrollingChanged;
         private double _userScrollCooldownSec;
@@ -336,6 +337,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                         _pendingMouseScrollY = 0;
                         _targetScrollY = targetScroll.Value;
                         _smoothedScrollY = targetScroll.Value;
+                        _lastTargetScrollY = targetScroll.Value;
                     }
                 }
             }
@@ -418,10 +420,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                         _targetScrollY = targetScroll.Value;
                         _smoothedScrollY = targetScroll.Value;
                     }
-                    else
+                    else if (targetScroll.Value != _lastTargetScrollY)
                     {
                         _canvasYScrollTransition.Start(targetScroll.Value);
                     }
+                    _lastTargetScrollY = targetScroll.Value;
                 }
             }
 

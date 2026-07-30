@@ -1183,6 +1183,18 @@
   <data name="FaqLink.Content" xml:space="preserve">
     <value>Ver preguntas frecuentes</value>
   </data>
+  <data name="ScrollEasingType.Text" xml:space="preserve">
+    <value>Curva de desplazamiento</value>
+  </data>
+  <data name="EasingTypeDescription" xml:space="preserve">
+    <value>Forma de la curva de animación entre líneas de letras</value>
+  </data>
+  <data name="ScrollEasingMode.Text" xml:space="preserve">
+    <value>Dirección de desplazamiento</value>
+  </data>
+  <data name="EaseModeDescription" xml:space="preserve">
+    <value>Si la aceleración se aplica al inicio, al final o en ambos lados</value>
+  </data>
 </root>
 
 

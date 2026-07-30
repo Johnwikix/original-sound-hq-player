@@ -942,6 +942,8 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.UnplayedOpacityPercent = settings.UnplayedOpacityPercent;
                 AppViewModel.TargetFrameRate = settings.TargetFrameRate;
                 AppViewModel.EnableAdvancedLyricsEffect = settings.EnableAdvancedLyricsEffect;
+                AppViewModel.ScrollEasingType = settings.ScrollEasingType;
+                AppViewModel.ScrollEasingMode = settings.ScrollEasingMode;
                 AppViewModel.PlayOrPauseShortcut = settings.PlayOrPauseShortcut;
                 AppViewModel.NextSongShortcut = settings.NextSongShortcut;
                 AppViewModel.PreviousSongShortcut = settings.PreviousSongShortcut;
@@ -1061,6 +1063,8 @@ namespace WinUIMusicPlayer.Services
             newSettings.UnplayedOpacityPercent = AppViewModel.UnplayedOpacityPercent;
             newSettings.TargetFrameRate = AppViewModel.TargetFrameRate;
             newSettings.EnableAdvancedLyricsEffect = AppViewModel.EnableAdvancedLyricsEffect;
+            newSettings.ScrollEasingType = AppViewModel.ScrollEasingType;
+            newSettings.ScrollEasingMode = AppViewModel.ScrollEasingMode;
             newSettings.PlayOrPauseShortcut = AppViewModel.PlayOrPauseShortcut;
             newSettings.NextSongShortcut = AppViewModel.NextSongShortcut;
             newSettings.PreviousSongShortcut = AppViewModel.PreviousSongShortcut;

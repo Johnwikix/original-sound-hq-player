@@ -1,4 +1,5 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
+using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml;
 using System.Collections.Generic;
@@ -70,6 +71,10 @@ namespace WinUIMusicPlayer.Model
         public double UnplayedOpacityPercent { get; set; } = 50.0;
         public double TargetFrameRate { get; set; } = 120.0;
         public bool EnableAdvancedLyricsEffect { get; set; } = false;
+        [JsonConverter(typeof(JsonStringEnumConverter<EasingType>))]
+        public EasingType ScrollEasingType { get; set; } = EasingType.Sine;
+        [JsonConverter(typeof(JsonStringEnumConverter<EaseMode>))]
+        public EaseMode ScrollEasingMode { get; set; } = EaseMode.Out;
         public bool IsLyricsMigrated { get; set; } = false;
         public List<string> PlayOrPauseShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "P" };
         public List<string> NextSongShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "Right" };

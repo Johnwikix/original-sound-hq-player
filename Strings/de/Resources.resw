@@ -1183,6 +1183,18 @@
   <data name="FaqLink.Content" xml:space="preserve">
     <value>FAQ anzeigen</value>
   </data>
+  <data name="ScrollEasingType.Text" xml:space="preserve">
+    <value>Bewegungskurve</value>
+  </data>
+  <data name="EasingTypeDescription" xml:space="preserve">
+    <value>Form der Scroll-Animationskurve zwischen Textzeilen</value>
+  </data>
+  <data name="ScrollEasingMode.Text" xml:space="preserve">
+    <value>Bewegungsrichtung</value>
+  </data>
+  <data name="EaseModeDescription" xml:space="preserve">
+    <value>Ob die Beschleunigung am Anfang, am Ende oder auf beiden Seiten angewendet wird</value>
+  </data>
 </root>
 
 

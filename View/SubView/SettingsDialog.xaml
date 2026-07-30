@@ -506,7 +506,7 @@
                             SelectedColor="{x:Bind VM.LyricsCustomColor, Mode=TwoWay}" />
                     </Grid>
                 </StackPanel>
-                <!--  Row 6: 音频信息可见  -->
+                <!--  Row 6: 音频信息可见 | 滚动缓动类型 | 滚动缓动模式  -->
                 <StackPanel
                     Grid.Row="6"
                     Grid.Column="0"
@@ -516,6 +516,65 @@
                         FontSize="14"
                         FontWeight="SemiBold" />
                     <ToggleSwitch MinWidth="0" IsOn="{x:Bind VM.IsMusicInfoVisible, Mode=TwoWay}" />
+                </StackPanel>
+                <StackPanel
+                    Grid.Row="6"
+                    Grid.Column="1"
+                    Spacing="4">
+                    <Grid Width="250" HorizontalAlignment="Left">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock
+                            x:Uid="ScrollEasingType"
+                            Grid.Column="0"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                    </Grid>
+                    <ComboBox
+                        Width="250"
+                        HorizontalAlignment="Left"
+                        IsEnabled="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=OneWay}"
+                        SelectedIndex="{x:Bind VM.ScrollEasingTypeIndex, Mode=TwoWay}">
+                        <ComboBoxItem>Linear</ComboBoxItem>
+                        <ComboBoxItem>SmoothStep</ComboBoxItem>
+                        <ComboBoxItem>Sine</ComboBoxItem>
+                        <ComboBoxItem>Quad</ComboBoxItem>
+                        <ComboBoxItem>Cubic</ComboBoxItem>
+                        <ComboBoxItem>Quart</ComboBoxItem>
+                        <ComboBoxItem>Quint</ComboBoxItem>
+                        <ComboBoxItem>Expo</ComboBoxItem>
+                        <ComboBoxItem>Circle</ComboBoxItem>
+                        <ComboBoxItem>Back</ComboBoxItem>
+                        <ComboBoxItem>Elastic</ComboBoxItem>
+                        <ComboBoxItem>Bounce</ComboBoxItem>
+                    </ComboBox>
+                </StackPanel>
+                <StackPanel
+                    Grid.Row="6"
+                    Grid.Column="2"
+                    Spacing="4">
+                    <Grid Width="250" HorizontalAlignment="Left">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock
+                            x:Uid="ScrollEasingMode"
+                            Grid.Column="0"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                    </Grid>
+                    <ComboBox
+                        Width="250"
+                        HorizontalAlignment="Left"
+                        IsEnabled="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=OneWay}"
+                        SelectedIndex="{x:Bind VM.ScrollEasingModeIndex, Mode=TwoWay}">
+                        <ComboBoxItem>In</ComboBoxItem>
+                        <ComboBoxItem>Out</ComboBoxItem>
+                        <ComboBoxItem>InOut</ComboBoxItem>
+                    </ComboBox>
                 </StackPanel>
                 <!--  Row 7: 流体背景 | 启用高级逐字歌词特效  -->
                 <StackPanel
