@@ -60,6 +60,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             {
                 EaseMode.In => easeIn(tt),
                 EaseMode.Out => T.One - easeIn(T.One - tt),
+                EaseMode.Continuous => T.One - easeIn(T.One - tt),
                 EaseMode.InOut => tt < half
                     ? easeIn(tt * two) / two
                     : T.One - (easeIn((T.One - tt) * two) / two),

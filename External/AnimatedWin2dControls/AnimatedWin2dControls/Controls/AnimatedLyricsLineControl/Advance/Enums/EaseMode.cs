@@ -5,5 +5,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         In,
         Out,
         InOut,
+        Continuous,
     }
 }

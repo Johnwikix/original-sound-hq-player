@@ -574,6 +574,7 @@
                         <ComboBoxItem>In</ComboBoxItem>
                         <ComboBoxItem>Out</ComboBoxItem>
                         <ComboBoxItem>InOut</ComboBoxItem>
+                        <ComboBoxItem>Continuous</ComboBoxItem>
                     </ComboBox>
                 </StackPanel>
                 <!--  Row 7: 流体背景 | 启用高级逐字歌词特效  -->

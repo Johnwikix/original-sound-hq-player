@@ -119,7 +119,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private double _cachedTranslatedOpacity = 0.6;
         private double _cachedStrokeWidth;
         private EasingType _cachedScrollEasingType = EasingType.Sine;
-        private EaseMode _cachedScrollEasingMode = EaseMode.Out;
+        private EaseMode _cachedScrollEasingMode = EaseMode.Continuous;
+        private double _cachedScrollDurationMs = 500;
         private double _cachedPlayingLineTopOffset = 0.35;
         private double _cachedTargetFrameRate = 120.0;
 
@@ -413,15 +414,20 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 var targetScroll = LyricsLayoutManager.CalculateTargetScrollOffset(lines, _currentLineIndex);
                 if (targetScroll.HasValue)
                 {
-                    _canvasYScrollTransition.SetDurationMs(300);
                     if (_layoutDirty)
                     {
                         _canvasYScrollTransition.JumpTo(targetScroll.Value);
                         _targetScrollY = targetScroll.Value;
                         _smoothedScrollY = targetScroll.Value;
                     }
+                    else if (_cachedScrollEasingMode == EaseMode.Continuous)
+                    {
+                        _canvasYScrollTransition.SetDurationMs(300);
+                        _canvasYScrollTransition.Start(targetScroll.Value);
+                    }
                     else if (targetScroll.Value != _lastTargetScrollY)
                     {
+                        _canvasYScrollTransition.SetDurationMs(_cachedScrollDurationMs);
                         _canvasYScrollTransition.Start(targetScroll.Value);
                     }
                     _lastTargetScrollY = targetScroll.Value;

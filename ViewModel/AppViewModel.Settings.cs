@@ -944,7 +944,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = EaseMode.Out;
+        } = EaseMode.Continuous;
         public int ScrollEasingModeIndex
         {
             get => (int)ScrollEasingMode;
