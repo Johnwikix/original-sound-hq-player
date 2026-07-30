@@ -573,9 +573,46 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
                     }
+                    OnPropertyChanged(nameof(EffectivePlayingDetailAlignment));
                 }
             }
         } = TextAlignment.Left;
+
+        public bool UsePlayingDetailAlignmentInPortrait
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                    }
+                    OnPropertyChanged(nameof(EffectivePlayingDetailAlignment));
+                }
+            }
+        } = false;
+
+        private bool _isPortraitLayout;
+        public bool IsPortraitLayout
+        {
+            get => _isPortraitLayout;
+            set
+            {
+                if (_isPortraitLayout != value)
+                {
+                    _isPortraitLayout = value;
+                    OnPropertyChanged();
+                    OnPropertyChanged(nameof(EffectivePlayingDetailAlignment));
+                }
+            }
+        }
+
+        public TextAlignment EffectivePlayingDetailAlignment =>
+            IsPortraitLayout && !UsePlayingDetailAlignmentInPortrait
+                ? TextAlignment.Left
+                : PlayingDetailAlignment;
 
         public bool IsMusicInfoVisible
         {

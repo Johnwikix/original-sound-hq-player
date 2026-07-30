@@ -175,6 +175,7 @@ namespace WinUIMusicPlayer.View
         {
             if (_isPortraitLayout == portrait) return;
             _isPortraitLayout = portrait;
+            ViewModel.AppViewModel.IsPortraitLayout = portrait;
 
             if (portrait)
             {

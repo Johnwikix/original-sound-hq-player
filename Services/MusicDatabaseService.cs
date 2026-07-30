@@ -958,6 +958,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.IsTrimAfterPlaybackEnabled = settings.IsTrimAfterPlaybackEnabled;
                 AppViewModel.IsTrimAfterPlaybackEnabled = settings.IsTrimAfterPlaybackEnabled;
                 AppViewModel.PlayingDetailAlignment = settings.PlayingDetailAlignment;
+                AppViewModel.UsePlayingDetailAlignmentInPortrait = settings.UsePlayingDetailAlignmentInPortrait;
                 AppViewModel.IsMusicInfoVisible = settings.IsMusicInfoVisible;
                 LoadSettingsToAppViewModel();
             }
@@ -1073,6 +1074,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsTrimOnHideEnabled = AppViewModel.IsTrimOnHideEnabled;
             newSettings.IsTrimAfterPlaybackEnabled = AppViewModel.IsTrimAfterPlaybackEnabled;
             newSettings.PlayingDetailAlignment = AppViewModel.PlayingDetailAlignment;
+            newSettings.UsePlayingDetailAlignmentInPortrait = AppViewModel.UsePlayingDetailAlignmentInPortrait;
             newSettings.IsMusicInfoVisible = AppViewModel.IsMusicInfoVisible;
             return newSettings;
         }

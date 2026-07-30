@@ -526,15 +526,31 @@
                         x:Uid="PlayingDetailAlignment"
                         FontSize="14"
                         FontWeight="SemiBold" />
-                    <ComboBox
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        SelectedValue="{x:Bind VM.PlayingDetailAlignment, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
-                        SelectedValuePath="Tag">
-                        <ComboBoxItem x:Uid="Left" Tag="Left" />
-                        <ComboBoxItem x:Uid="Center" Tag="Center" />
-                        <ComboBoxItem x:Uid="Right" Tag="Right" />
-                    </ComboBox>
+                    <TextBlock
+                        x:Uid="UseAlignmentInPortrait"
+                        FontSize="12"
+                        FontWeight="SemiBold" />
+                    <Grid Width="250">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <ToggleSwitch
+                            Grid.Column="0"
+                            MinWidth="0"
+                            Margin="0,0,10,0"
+                            IsOn="{x:Bind VM.UsePlayingDetailAlignmentInPortrait, Mode=TwoWay}" />
+                        <ComboBox
+                            Grid.Column="1"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Center"
+                            SelectedValue="{x:Bind VM.PlayingDetailAlignment, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
+                            SelectedValuePath="Tag">
+                            <ComboBoxItem x:Uid="Left" Tag="Left" />
+                            <ComboBoxItem x:Uid="Center" Tag="Center" />
+                            <ComboBoxItem x:Uid="Right" Tag="Right" />
+                        </ComboBox>
+                    </Grid>
                 </StackPanel>
                 <!--  Row 7: 流体背景 | 启用高级逐字歌词特效  -->
                 <StackPanel

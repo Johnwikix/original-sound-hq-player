@@ -4,6 +4,32 @@
 
 Accepted. Implemented alongside the new `PlayingDetailAlignment` setting.
 
+## Follow-up: `EffectivePlayingDetailAlignment` (portrait override layer)
+
+`PlayingDetailAlignment` was later augmented with two additions:
+
+1. `AppViewModel.IsPortraitLayout` (bool), pushed by `PlayingDetailPage` whenever the
+   window-aspect-ratio hysteresis flips between landscape and portrait.
+2. `AppViewModel.UsePlayingDetailAlignmentInPortrait` (bool, persisted; default `false`
+   to preserve existing user behaviour on upgrade).
+
+A derived read-only property `AppViewModel.EffectivePlayingDetailAlignment` collapses the
+three inputs:
+
+```
+IsPortraitLayout && !UsePlayingDetailAlignmentInPortrait ? TextAlignment.Left : PlayingDetailAlignment
+```
+
+All `PlayingDetailPage.xaml` `TextAlignment` / `HorizontalAlignment` bindings now point at
+`EffectivePlayingDetailAlignment` (mode `OneWay`, including the previously `OneTime`
+`PlayingDetailInfoPanel` binding whose one-shot nature was a latent bug). Each input setter
+fires `PropertyChanged(nameof(EffectivePlayingDetailAlignment))` so the resolution stays in
+one place and the `PlayingDetailPage` no longer carries any orientation / alignment branch.
+
+The ComboBox in both `SettingsPage` and `SettingsDialog` is deliberately **not** disabled
+when the toggle is off: in landscape the ComboBox value still applies, and the user may
+want to pre-pick an alignment while the window happens to be portrait.
+
 ## Context
 
 The codebase originally modeled a few user-selectable settings as `string`

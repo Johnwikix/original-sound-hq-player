@@ -838,6 +838,12 @@
   <data name="PlayingDetailAlignment.Text" xml:space="preserve">
     <value>Выравнивание информации о треке</value>
   </data>
+  <data name="UseAlignmentInPortrait.Text" xml:space="preserve">
+    <value>Применять выравнивание в портретном режиме</value>
+  </data>
+  <data name="ForceLeftWhenOff" xml:space="preserve">
+    <value>В портретном режиме принудительно применяется левое выравнивание</value>
+  </data>
   <data name="MusicInfoVisible.Text" xml:space="preserve">
     <value>Показывать информацию об аудио</value>
   </data>

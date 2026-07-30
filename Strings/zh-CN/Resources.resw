@@ -838,6 +838,12 @@
   <data name="PlayingDetailAlignment.Text" xml:space="preserve">
     <value>歌曲信息对齐</value>
   </data>
+  <data name="UseAlignmentInPortrait.Text" xml:space="preserve">
+    <value>竖屏时也应用对齐</value>
+  </data>
+  <data name="ForceLeftWhenOff" xml:space="preserve">
+    <value>关闭时竖屏强制使用左对齐</value>
+  </data>
   <data name="MusicInfoVisible.Text" xml:space="preserve">
     <value>音频信息可见</value>
   </data>

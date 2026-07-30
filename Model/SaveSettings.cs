@@ -52,6 +52,7 @@ namespace WinUIMusicPlayer.Model
         public CanvasHorizontalAlignment LyricsAlignment { get; set; } = CanvasHorizontalAlignment.Left;
         [JsonConverter(typeof(JsonStringEnumConverter<TextAlignment>))]
         public TextAlignment PlayingDetailAlignment { get; set; } = TextAlignment.Left;
+        public bool UsePlayingDetailAlignmentInPortrait { get; set; } = false;
         public bool IsMusicInfoVisible { get; set; } = true;
         public int LyricsMargin { get; set; } = 20;
         public string MusicCoverCache { get; set; } = string.Empty;
