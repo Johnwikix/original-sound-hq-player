@@ -273,7 +273,6 @@
   <data name="CoverServiceLrcAPISourceAuthCode.Header" xml:space="preserve">
     <value>封面服务LrcAPI源鉴权码</value>
   </data>
-
   <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
     <value>最大封面预载数量</value>
   </data>
@@ -839,7 +838,7 @@
     <value>歌曲信息对齐</value>
   </data>
   <data name="UseAlignmentInPortrait.Text" xml:space="preserve">
-    <value>竖屏时也应用对齐</value>
+    <value>开关控制竖屏时是否也应用对齐</value>
   </data>
   <data name="ForceLeftWhenOff" xml:space="preserve">
     <value>关闭时竖屏强制使用左对齐</value>
@@ -1105,7 +1104,7 @@
   <data name="SettingsPageToggleFullScreenShortcut.Text" xml:space="preserve">
     <value>切换全屏</value>
   </data>
-<data name="SettingsPageEnableGlobalHotKey.Text" xml:space="preserve">
+  <data name="SettingsPageEnableGlobalHotKey.Text" xml:space="preserve">
     <value>全局快捷键</value>
   </data>
   <data name="SettingsPageEnableGlobalHotKeyDescription.Text" xml:space="preserve">
@@ -1138,7 +1137,7 @@
   <data name="GlobalHotKeyConflictShowWindow" xml:space="preserve">
     <value>显示 / 隐藏主窗口</value>
   </data>
-<data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
+  <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
     <value>Toggle FullScreen</value>
   </data>
   <data name="Advanced.Text" xml:space="preserve">
@@ -1187,7 +1186,3 @@
     <value>查看常见问题</value>
   </data>
 </root>
-
-
-
-
