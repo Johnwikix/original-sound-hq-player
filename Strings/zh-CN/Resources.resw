@@ -1197,4 +1197,52 @@
   <data name="EaseModeDescription" xml:space="preserve">
     <value>缓动在开头、末尾或两侧应用</value>
   </data>
+  <data name="EasingTypeLinear.Content" xml:space="preserve">
+    <value>线性</value>
+  </data>
+  <data name="EasingTypeSmoothStep.Content" xml:space="preserve">
+    <value>平滑步进</value>
+  </data>
+  <data name="EasingTypeSine.Content" xml:space="preserve">
+    <value>正弦</value>
+  </data>
+  <data name="EasingTypeQuad.Content" xml:space="preserve">
+    <value>二次方</value>
+  </data>
+  <data name="EasingTypeCubic.Content" xml:space="preserve">
+    <value>三次方</value>
+  </data>
+  <data name="EasingTypeQuart.Content" xml:space="preserve">
+    <value>四次方</value>
+  </data>
+  <data name="EasingTypeQuint.Content" xml:space="preserve">
+    <value>五次方</value>
+  </data>
+  <data name="EasingTypeExpo.Content" xml:space="preserve">
+    <value>指数</value>
+  </data>
+  <data name="EasingTypeCircle.Content" xml:space="preserve">
+    <value>圆形</value>
+  </data>
+  <data name="EasingTypeBack.Content" xml:space="preserve">
+    <value>回退</value>
+  </data>
+  <data name="EasingTypeElastic.Content" xml:space="preserve">
+    <value>弹性</value>
+  </data>
+  <data name="EasingTypeBounce.Content" xml:space="preserve">
+    <value>弹跳</value>
+  </data>
+  <data name="EaseModeIn.Content" xml:space="preserve">
+    <value>缓入</value>
+  </data>
+  <data name="EaseModeOut.Content" xml:space="preserve">
+    <value>缓出</value>
+  </data>
+  <data name="EaseModeInOut.Content" xml:space="preserve">
+    <value>缓入缓出</value>
+  </data>
+  <data name="EaseModeContinuous.Content" xml:space="preserve">
+    <value>连续追逐</value>
+  </data>
 </root>

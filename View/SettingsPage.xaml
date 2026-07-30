@@ -1567,18 +1567,18 @@
                                     VerticalAlignment="Center"
                                     IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
                                     SelectedIndex="{x:Bind ViewModel.AppViewModel.ScrollEasingTypeIndex, Mode=TwoWay}">
-                                    <ComboBoxItem>Linear</ComboBoxItem>
-                                    <ComboBoxItem>SmoothStep</ComboBoxItem>
-                                    <ComboBoxItem>Sine</ComboBoxItem>
-                                    <ComboBoxItem>Quad</ComboBoxItem>
-                                    <ComboBoxItem>Cubic</ComboBoxItem>
-                                    <ComboBoxItem>Quart</ComboBoxItem>
-                                    <ComboBoxItem>Quint</ComboBoxItem>
-                                    <ComboBoxItem>Expo</ComboBoxItem>
-                                    <ComboBoxItem>Circle</ComboBoxItem>
-                                    <ComboBoxItem>Back</ComboBoxItem>
-                                    <ComboBoxItem>Elastic</ComboBoxItem>
-                                    <ComboBoxItem>Bounce</ComboBoxItem>
+                                    <ComboBoxItem x:Uid="EasingTypeLinear" />
+                                    <ComboBoxItem x:Uid="EasingTypeSmoothStep" />
+                                    <ComboBoxItem x:Uid="EasingTypeSine" />
+                                    <ComboBoxItem x:Uid="EasingTypeQuad" />
+                                    <ComboBoxItem x:Uid="EasingTypeCubic" />
+                                    <ComboBoxItem x:Uid="EasingTypeQuart" />
+                                    <ComboBoxItem x:Uid="EasingTypeQuint" />
+                                    <ComboBoxItem x:Uid="EasingTypeExpo" />
+                                    <ComboBoxItem x:Uid="EasingTypeCircle" />
+                                    <ComboBoxItem x:Uid="EasingTypeBack" />
+                                    <ComboBoxItem x:Uid="EasingTypeElastic" />
+                                    <ComboBoxItem x:Uid="EasingTypeBounce" />
                                 </ComboBox>
                             </Grid>
 
@@ -1604,10 +1604,10 @@
                                     VerticalAlignment="Center"
                                     IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
                                     SelectedIndex="{x:Bind ViewModel.AppViewModel.ScrollEasingModeIndex, Mode=TwoWay}">
-                                    <ComboBoxItem>In</ComboBoxItem>
-                                    <ComboBoxItem>Out</ComboBoxItem>
-                                    <ComboBoxItem>InOut</ComboBoxItem>
-                                    <ComboBoxItem>Continuous</ComboBoxItem>
+                                    <ComboBoxItem x:Uid="EaseModeIn" />
+                                    <ComboBoxItem x:Uid="EaseModeOut" />
+                                    <ComboBoxItem x:Uid="EaseModeInOut" />
+                                    <ComboBoxItem x:Uid="EaseModeContinuous" />
                                 </ComboBox>
                             </Grid>
                         </StackPanel>

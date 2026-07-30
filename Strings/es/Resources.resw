@@ -1195,6 +1195,54 @@
   <data name="EaseModeDescription" xml:space="preserve">
     <value>Si la aceleración se aplica al inicio, al final o en ambos lados</value>
   </data>
+  <data name="EasingTypeLinear.Content" xml:space="preserve">
+    <value>Linear</value>
+  </data>
+  <data name="EasingTypeSmoothStep.Content" xml:space="preserve">
+    <value>SmoothStep</value>
+  </data>
+  <data name="EasingTypeSine.Content" xml:space="preserve">
+    <value>Sine</value>
+  </data>
+  <data name="EasingTypeQuad.Content" xml:space="preserve">
+    <value>Quad</value>
+  </data>
+  <data name="EasingTypeCubic.Content" xml:space="preserve">
+    <value>Cubic</value>
+  </data>
+  <data name="EasingTypeQuart.Content" xml:space="preserve">
+    <value>Quart</value>
+  </data>
+  <data name="EasingTypeQuint.Content" xml:space="preserve">
+    <value>Quint</value>
+  </data>
+  <data name="EasingTypeExpo.Content" xml:space="preserve">
+    <value>Expo</value>
+  </data>
+  <data name="EasingTypeCircle.Content" xml:space="preserve">
+    <value>Circle</value>
+  </data>
+  <data name="EasingTypeBack.Content" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="EasingTypeElastic.Content" xml:space="preserve">
+    <value>Elastic</value>
+  </data>
+  <data name="EasingTypeBounce.Content" xml:space="preserve">
+    <value>Bounce</value>
+  </data>
+  <data name="EaseModeIn.Content" xml:space="preserve">
+    <value>In</value>
+  </data>
+  <data name="EaseModeOut.Content" xml:space="preserve">
+    <value>Out</value>
+  </data>
+  <data name="EaseModeInOut.Content" xml:space="preserve">
+    <value>InOut</value>
+  </data>
+  <data name="EaseModeContinuous.Content" xml:space="preserve">
+    <value>Continuous</value>
+  </data>
 </root>
 
 
