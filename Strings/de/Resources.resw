@@ -839,7 +839,7 @@
     <value>Titelausrichtung</value>
   </data>
   <data name="UseAlignmentInPortrait.Text" xml:space="preserve">
-    <value>Ausrichtung auch im Hochformat verwenden</value>
+    <value>Ausrichtung im Hochformat anwenden</value>
   </data>
   <data name="ForceLeftWhenOff" xml:space="preserve">
     <value>Wenn aus, erzwingt das Hochformat Linksausrichtung</value>

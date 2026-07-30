@@ -839,7 +839,7 @@
     <value>曲情報のアラインメント</value>
   </data>
   <data name="UseAlignmentInPortrait.Text" xml:space="preserve">
-    <value>縦画面でもアラインメントを適用</value>
+    <value>縦画面でアラインメントを適用</value>
   </data>
   <data name="ForceLeftWhenOff" xml:space="preserve">
     <value>オフのときは縦画面で左寄せに強制</value>

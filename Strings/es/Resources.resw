@@ -839,7 +839,7 @@
     <value>Alineación de la información de la pista</value>
   </data>
   <data name="UseAlignmentInPortrait.Text" xml:space="preserve">
-    <value>Usar alineación en vertical</value>
+    <value>Aplicar alineación en vertical</value>
   </data>
   <data name="ForceLeftWhenOff" xml:space="preserve">
     <value>Cuando está apagado, el modo vertical fuerza la alineación izquierda</value>

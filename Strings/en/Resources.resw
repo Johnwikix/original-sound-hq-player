@@ -839,7 +839,7 @@
     <value>Track Info Alignment</value>
   </data>
   <data name="UseAlignmentInPortrait.Text" xml:space="preserve">
-    <value>Use alignment in portrait</value>
+    <value>Apply alignment in portrait</value>
   </data>
   <data name="ForceLeftWhenOff" xml:space="preserve">
     <value>When off, portrait mode forces left alignment</value>
