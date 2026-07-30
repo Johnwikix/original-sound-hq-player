@@ -36,6 +36,8 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
     //private DateTimeOffset _lastRenderTime;
     private string _cachedLayoutText = null;
     private float _cachedLayoutWidth, _cachedLayoutHeight;
+    private int _cachedFormatVersion;
+    private int _formatVersion;
     private bool _isClockRegistered = false;
     private TimeSpan _totalAnimationTime;       // 替代 CanvasTimingInformation.TotalTime
     private TimeSpan _animationBeginTime;
@@ -423,6 +425,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         _textFormat.WordWrapping = Win2dHelpers.MapWordWrapping(_textWrapping);
 
         _textFormatDirty = false;
+        _formatVersion++;
     }
 
     private void ApplyTextForeground()
@@ -506,9 +509,10 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         float w = (float)resourceCreator.Size.Width;
         float h = (float)resourceCreator.Size.Height;
 
-        // 文字和尺寸都没变则跳过重建
+        // 文字、尺寸、格式版本都没变则跳过重建
         if (_newTextLayout != null
             && _cachedLayoutText == _newText
+            && _cachedFormatVersion == _formatVersion
             && Math.Abs(_cachedLayoutWidth - w) < 0.5f
             && Math.Abs(_cachedLayoutHeight - h) < 0.5f)
             return;
@@ -519,6 +523,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         _newTextLayout.VerticalAlignment = CanvasVerticalAlignment.Center;
 
         _cachedLayoutText = _newText;
+        _cachedFormatVersion = _formatVersion;
         _cachedLayoutWidth = w;
         _cachedLayoutHeight = h;
         _staticLayoutDirty = true;
