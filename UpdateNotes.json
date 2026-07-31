@@ -1,4 +1,4 @@
 {
-  "zh-CN": "更新内容\n• 自动记忆窗口大小和位置\n• 更新对话框\n• 更新依赖版本",
-  "en": "Release Notes\n• Automatically remember window size and position\n• Updated dialog box\n• Updated dependency versions"
+  "zh-CN": "更新内容\n• 开放歌词滚动曲线设置\n• 新增播放页音乐信息布局调整\n• 修复 issues 19（https://github.com/Johnwikix/original-sound-hq-player/issues/19）提到的bug",
+  "en": "Release Notes\n• Added lyrics scrolling curve settings\n• Added music info layout adjustments on playback page\n• Fixed the bug mentioned in issue 19 (https://github.com/Johnwikix/original-sound-hq-player/issues/19)"
 }
