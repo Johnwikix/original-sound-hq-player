@@ -50,7 +50,6 @@ namespace WinUIMusicPlayer.View
             InitializeComponent();
             ViewModel = viewModel;
             DataContext = this;
-            MainFrame.Navigated += MainFrame_Navigated;
             var navigationServiceFactory = App.Services.GetRequiredService<INavigationServiceFactory>();
             _playingNavigation = navigationServiceFactory.CreateNavigationService(PlayingFrame);
             _playingNavigation.RegisterPage<PlayingDetailPage>();
@@ -182,11 +181,6 @@ namespace WinUIMusicPlayer.View
             {
                 _ = App.Current_Exit();
             }
-        }
-
-        private void MainFrame_Navigated(object sender, Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
-        {
-            GC.Collect(GC.MaxGeneration, GCCollectionMode.Optimized, blocking: false);
         }
 
         private void NavigateTo(Type pageType, object? parameter = null, NavigationTransitionInfo? navigationTransitionInfo = null)

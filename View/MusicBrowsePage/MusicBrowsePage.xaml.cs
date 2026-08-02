@@ -31,7 +31,6 @@ namespace WinUIMusicPlayer.View
         public MusicBrowsePage()
         {
             InitializeComponent();
-            ContentFrame.Navigated += OnContentFrameNavigated;
             ViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             ViewModel.SetMusicBrowsePage(this);
             DataContext = this;
@@ -82,11 +81,6 @@ namespace WinUIMusicPlayer.View
                     break;
             }
             ViewModel.AppViewModel.RefreshDataSource();
-        }
-
-        private void OnContentFrameNavigated(object sender, NavigationEventArgs e)
-        {
-            GC.Collect(GC.MaxGeneration, GCCollectionMode.Optimized, blocking: false);
         }
 
         private void OnPageLoaded(object sender, RoutedEventArgs e)

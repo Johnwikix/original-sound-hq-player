@@ -357,9 +357,6 @@ namespace WinUIMusicPlayer.Services.NavigationService
                 _logger.LogError(ex, $"Show 滑入错误: {ex.Message}");
                 Interlocked.Exchange(ref _isAnimating, 0);
             }
-            finally {
-                GC.Collect(GC.MaxGeneration, GCCollectionMode.Optimized, blocking: false);
-            }
         }
 
         // ────────────────────────────────────────────────────────────
@@ -408,9 +405,6 @@ namespace WinUIMusicPlayer.Services.NavigationService
             {
                 _logger.LogError(ex, $"Dismiss 滑出错误: {ex.Message}");
                 Interlocked.Exchange(ref _isAnimating, 0);
-            }
-            finally {
-                GC.Collect(GC.MaxGeneration, GCCollectionMode.Optimized, blocking: false);
             }
         }
 
