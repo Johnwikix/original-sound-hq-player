@@ -26,7 +26,7 @@
 
 ### 3.1 核心发现：周期性诱导全量 GC
 
-- **每 ~7.5 秒一次 `GC.Collect(blocking:false)`**（GCReason = `InducedNotForced`），间隔实测 0 / 8.8 / 15.5 / 22.7 / 30.6s。
+- **每 ~7-11 秒一次 `GC.Collect(blocking:false)`**（GCReason = `InducedNotForced`）——非固定周期，跨会话实测间隔 6.7~11.6s（早期会话均值 ~7.5-7.8s，随时间略拉长）。例如 0 / 8.8 / 15.5 / 22.7 / 30.6s。
 - 每次 **Gen2 STW 30~45ms**（ServerGC 后 26~40ms），总 time-in-gc 仅 ~0.4-0.7%，但单次停顿足以掉帧 2-3 次。
 - **全新启动、不操作的应用：20 秒内零 GC 事件**——周期 GC 在用户操作（浏览页面/播放）之后才激活。
 
@@ -42,11 +42,11 @@ GCHeapStats 显示托管堆仅 ~42MB，但：
 
 停顿成本 = GCHandle 遍历 + 终结器批处理，而非堆扫描。
 
-### 3.3 GC.Collect 调用者排查（决定性证据）
+### 3.3 GC.Collect 调用者排查
 
 - **全 AppX 目录托管 dll 元数据扫描**（System.Reflection.Metadata 解析 MemberRef）：只有应用自身 dll 调用 `System.GC::Collect`（WorkingSetCompressor 两处），WinRT.Runtime / Microsoft.Windows.SDK.NET 仅调用 Add/RemoveMemoryPressure。
 - **应用插桩**（WorkingSetCompressor 加调用栈日志 + Release 重建）：空闲 30 秒 + 渲染期间**零次调用**。
-- **结论：周期 GC.Collect 来自原生层**（Microsoft.ui.xaml.dll / WindowsAppRuntime 等 WindowsAppSDK 组件），应用无法阻止。
+- **推测：周期 GC.Collect 可能来自原生层**（Microsoft.ui.xaml.dll / WindowsAppRuntime 等 WindowsAppSDK 组件）。但此结论基于"未找到托管调用者"的排除法，不排除应用自身存在未识别的触发因素——issue 中已按此口径表述。
 
 ### 3.4 JIT / AOT 差异与 CsWinRT PR #1933
 
@@ -65,10 +65,11 @@ GCHeapStats 显示托管堆仅 ~42MB，但：
 ## 4. 根因链
 
 ```
-WinRT 重度 UI（~24 万活 RCW） + 每 7.5s 原生层强制 GC.Collect
+WinRT 重度 UI（~24 万活 RCW） + 每 ~7-11s 疑似原生层强制 GC.Collect
     → 每次全量 GC 遍历 24 万 GCHandle + 1.5-2.8 万终结器
     → 30-45ms STW（JIT 下再被 CsWinRT 每引用 100KB 固定压力放大）
     → 播放详情渲染（Win2D + ComputeSharp 每帧创建/释放 RCW）感知为卡顿
+    （注：根因归属平台或应用尚未定论，详见 3.3 与 issue）
 ```
 
 ## 5. 已应用的缓解（非视觉改动）
@@ -79,13 +80,13 @@ WinRT 重度 UI（~24 万活 RCW） + 每 7.5s 原生层强制 GC.Collect
 
 ## 6. 待平台侧回答的问题
 
-1. WindowsAppSDK 哪个原生组件在应用活动后每 ~7.5s 调用 `GC.Collect(blocking:false)`？是否可以禁用？
-2. 对 WinRT 重度应用（20 万+ RCW），GCHandle 追踪 + 每对象 100KB 固定压力是否缺乏可扩展性（幽灵压力远超真实堆）？
-3. 平台是否有推荐的 RCW 生命周期管理方式以降低基数？
+1. 是否有 WindowsAppSDK/WinUI 组件在应用活动后周期性（~7-11s）调用 `GC.Collect(blocking:false)`？是否为已知行为、可否配置？
+2. 20 万+ GCHandle（RCW 追踪）的基数本身是否就是根因？WinUI 3 重度 UI 应用的合理范围与收敛建议？
+3. 针对此类应用的 GCHandle 遍历 + 终结器批处理成本，是否有推荐优化方式？
 
 ## 7. 复现要点
 
 - 任意 WinRT 重度 WinUI 3 应用（大量 Composition/Win2D 对象）。
 - 启动后浏览几个页面/播放内容，保持 UI 活动。
 - `dotnet-trace collect -p <pid> --providers "Microsoft-Windows-DotNETRuntime:0x4C14FCCBD:4" --duration 00:00:35`
-- 观察：GCReason=InducedNotForced 每 ~7.5s 一次；GCHeapStats GCHandleCount ~20 万+。
+- 观察：GCReason=InducedNotForced 每 ~7-11s 一次；GCHeapStats GCHandleCount ~20 万+。
