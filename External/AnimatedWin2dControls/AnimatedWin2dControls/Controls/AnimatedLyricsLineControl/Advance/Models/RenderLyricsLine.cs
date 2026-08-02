@@ -1,4 +1,5 @@
 using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.Geometry;
 using Microsoft.Graphics.Canvas.Text;
@@ -52,6 +53,19 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         public CanvasTextLayoutRegion[]? PrimaryTextRegions { get; private set; }
         public RenderLyricsRegion[]? RenderLyricsRegions { get; private set; }
+
+        /// <summary>
+        /// 布局期录制的静态白→黑渐变 CommandList，作为各 region 播放进度填充的
+        /// 颜色源（<see cref="RenderLyricsRegion"/> 的 CropEffect 输入）。
+        /// 录制一次后不再重建，动画全部由 ColorMatrix/Crop 属性更新驱动。
+        /// </summary>
+        public CanvasCommandList? RampFillCommandList { get; private set; }
+
+        private static readonly CanvasGradientStop[] s_rampStops =
+        {
+            new() { Position = 0f, Color = Microsoft.UI.Colors.White },
+            new() { Position = 1f, Color = Microsoft.UI.Colors.Black },
+        };
 
         public double? PrimaryLineHeight => _cachedPrimaryLineHeight;
         private double _cachedPrimaryLineHeight;
@@ -279,14 +293,69 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             CachedBlurEffect ??= new GaussianBlurEffect { Source = CachedCropEffect, BorderMode = EffectBorderMode.Soft };
             CachedOpacityEffect ??= new OpacityEffect { Source = CachedBlurEffect };
 
-            if (PrimaryTextRegions != null && (RenderLyricsRegions == null || RenderLyricsRegions.Length != PrimaryTextRegions.Length))
+            EnsureRampFill(resourceCreator);
+
+            if (PrimaryTextRegions != null && RampFillCommandList != null
+                && (RenderLyricsRegions == null || RenderLyricsRegions.Length != PrimaryTextRegions.Length))
             {
                 DisposeRenderLyricsRegions();
                 RenderLyricsRegions = new RenderLyricsRegion[PrimaryTextRegions.Length];
                 for (int i = 0; i < PrimaryTextRegions.Length; i++)
                 {
-                    RenderLyricsRegions[i] = new RenderLyricsRegion(CachedFill, CachedStroke);
+                    RenderLyricsRegions[i] = new RenderLyricsRegion(CachedFill, RampFillCommandList);
                 }
+            }
+        }
+
+        /// <summary>
+        /// 布局期录制白→黑渐变 CommandList（覆盖所有字符 region 的并集）。
+        /// 渐变值 v = 1 - xl/Width（xl 相对主文本 LayoutBounds 左缘），供
+        /// <see cref="Advance.Renderer.LyricsLineRenderer"/> 的 ColorMatrix 切片
+        /// 把"已播/淡出/未播"映射到 [0,1] 区间做线性颜色插值。
+        /// 填充范围取字符 region 并集而非仅 LayoutBounds，保证 wrap 多行时
+        /// 后续行的 crop 采样不会落在 CL 的透明区域（透明输入 alpha=0 会让
+        /// ColorMatrix 输出 alpha=0，整片 slice 不可见）。
+        /// </summary>
+        private void EnsureRampFill(ICanvasResourceCreator resourceCreator)
+        {
+            RampFillCommandList?.Dispose();
+            RampFillCommandList = null;
+            if (PrimaryTextLayout == null || PrimaryTextRegions == null || PrimaryTextRegions.Length == 0) return;
+
+            // 渐变轴基准：主文本 LayoutBounds 左缘（fade 矩阵 v=1-xl/W 的 xl 基准，见 LyricsLineRenderer）。
+            var bounds = PrimaryTextLayout.LayoutBounds;
+            float x0 = (float)(PrimaryPosition.X + bounds.X);
+            float w = (float)bounds.Width;
+            if (w <= 0) return;
+
+            // 填充范围：所有字符 region 的并集 + 安全边距。
+            const float pad = 4f;
+            float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
+            for (int i = 0; i < PrimaryTextRegions.Length; i++)
+            {
+                var r = PrimaryTextRegions[i].LayoutBounds;
+                minX = Math.Min(minX, (float)r.X);
+                minY = Math.Min(minY, (float)r.Y);
+                maxX = Math.Max(maxX, (float)(r.X + r.Width));
+                maxY = Math.Max(maxY, (float)(r.Y + r.Height));
+            }
+            if (maxX <= minX || maxY <= minY) return;
+
+            float x = (float)(PrimaryPosition.X + minX) - pad;
+            float y = (float)(PrimaryPosition.Y + minY) - pad;
+            float fillW = (maxX - minX) + pad * 2;
+            float fillH = (maxY - minY) + pad * 2;
+
+            RampFillCommandList = new CanvasCommandList(resourceCreator);
+            using (var ds = RampFillCommandList.CreateDrawingSession())
+            {
+                using var brush = new CanvasLinearGradientBrush(resourceCreator, s_rampStops)
+                {
+                    // 渐变轴保持与 fade 矩阵一致（文本左缘 x0 起，宽度 w），Y 方向无梯度。
+                    StartPoint = new Vector2(x0, y),
+                    EndPoint = new Vector2(x0 + w, y)
+                };
+                ds.FillRectangle(x, y, fillW, fillH, brush);
             }
         }
 
@@ -311,6 +380,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             CachedOpacityEffect = null;
 
             DisposeRenderLyricsRegions();
+            RampFillCommandList?.Dispose();
+            RampFillCommandList = null;
             DisposePrimaryRenderCharsEffects();
         }
 
