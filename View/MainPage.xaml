@@ -396,32 +396,14 @@
                         VerticalAlignment="Center"
                         Orientation="Horizontal">
                         <Button
-                            x:Name="VolumeUp"
-                            Margin="0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            Command="{x:Bind ViewModel.AppViewModel.VolumeUpChangedCommand, Mode=OneWay}"
-                            IsHitTestVisible="False"
-                            Opacity="0">
-                            <FontIcon Glyph="&#xE9E9;" />
-                        </Button>
-                        <Button
-                            x:Name="VolumeDown"
-                            Margin="0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            Command="{x:Bind ViewModel.AppViewModel.VolumeDownChangedCommand, Mode=OneWay}"
-                            IsHitTestVisible="False"
-                            Opacity="0">
-                            <FontIcon Glyph="&#xE9E9;" />
-                        </Button>
-                        <Button
+                            x:Name="VolumeButton"
                             Margin="0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
+                            PointerWheelChanged="VolumeButton_PointerWheelChanged"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon
                                 x:Name="VolumeSliderIcon"

@@ -1396,17 +1396,6 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        private void OnVolumeUpChanged()
-        {
-            AdjustVolume(1);
-        }
-        [RelayCommand]
-        private void OnVolumeDownChanged()
-        {
-            AdjustVolume(-1);
-        }
-
-        [RelayCommand]
         private void OnFullScreenButtonChanged()
         {
             ToggleFullScreen();

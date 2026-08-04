@@ -381,6 +381,20 @@ namespace WinUIMusicPlayer.View
             ViewModel.AppViewModel.IsMouseOverVolumeSlider = true;
         }
 
+        private void VolumeButton_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+        {
+            var delta = e.GetCurrentPoint(VolumePlayingDetailBtn).Properties.MouseWheelDelta;
+            if (delta > 0)
+            {
+                ViewModel.AppViewModel.AdjustVolume(5);
+            }
+            else if (delta < 0)
+            {
+                ViewModel.AppViewModel.AdjustVolume(-5);
+            }
+            e.Handled = true;
+        }
+
         private void VolumeSlider_PointerExited(object sender, PointerRoutedEventArgs e)
         {
             ViewModel.AppViewModel.IsMouseOverVolumeSlider = false;

@@ -538,6 +538,7 @@
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
+                            PointerWheelChanged="VolumeButton_PointerWheelChanged"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon
                                 x:Name="VolumeSliderIconPlayingDetail"
@@ -582,6 +583,9 @@
                                     </StackPanel>
                                 </Flyout>
                             </Button.Flyout>
+                            <ToolTipService.ToolTip>
+                                <ToolTip Content="{x:Bind ViewModel.AppViewModel.Volume, Mode=OneWay}" />
+                            </ToolTipService.ToolTip>
                         </Button>
                         <Button
                             x:Name="PlayModeButtonPlayingDetail"
