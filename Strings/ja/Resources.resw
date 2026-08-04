@@ -352,6 +352,9 @@
   <data name="FlyoutDeleteItem" xml:space="preserve">
     <value>ディスクから削除</value>
   </data>
+  <data name="PlayListDeleteMenu.Text" xml:space="preserve">
+    <value>プレイリストを削除</value>
+  </data>
   <data name="FlyoutRemoveFromPlaylistItem" xml:space="preserve">
     <value>再生リストから削除</value>
   </data>

@@ -52,9 +52,8 @@ namespace WinUIMusicPlayer.View
 
         private static void SetActionButtonsVisibility(Grid grid, Visibility visibility)
         {
-            if (grid.FindName("EditNameBtn") is Button editBtn) editBtn.Visibility = visibility;
-            if (grid.FindName("ExportBtn") is Button exportBtn) exportBtn.Visibility = visibility;
-            if (grid.FindName("RemoveBtn") is Button removeBtn) removeBtn.Visibility = visibility;
+            if (grid.FindName("PlayBtn") is Button playBtn) playBtn.Visibility = visibility;
+            if (grid.FindName("MoreBtn") is Button moreBtn) moreBtn.Visibility = visibility;
         }
 
         private void PlayListGridView_ItemClick(object sender, ItemClickEventArgs e)
@@ -184,9 +183,17 @@ namespace WinUIMusicPlayer.View
             PlayListGrid.OpacityTransition = TransitionCache.Slow;
         }
 
+        private void PlayPlayList_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button button && button.Tag is PlayList playList)
+            {
+                _ = ViewModel.PlayPlayList(playList);
+            }
+        }
+
         private async void RemovePlayListButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is not Button button || button.Tag is not PlayList playList) return;
+            if (sender is not MenuFlyoutItem item || item.Tag is not PlayList playList) return;
             if (await DialogHelper.ShowConfirmAsync(this.XamlRoot, "AreUSureDeletePlayList"))
             {
                 await ViewModel.RemovePlayList(playList);
@@ -195,14 +202,14 @@ namespace WinUIMusicPlayer.View
 
         private void EditPlayListNameButton_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is not Button button || button.Tag is not PlayList playList) return;
+            if (sender is not MenuFlyoutItem item || item.Tag is not PlayList playList) return;
             _ = ViewModel.AppViewModel.EditPlayListName(playList, () =>
                 DialogHelper.ShowInputAsync(this.XamlRoot, "ModifyPlaylist", playList.Name));
         }
 
         private void ExportPlayList_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button button && button.Tag is PlayList playList)
+            if (sender is MenuFlyoutItem item && item.Tag is PlayList playList)
             {
                 _ = ViewModel.ExportPlayList(playList);
             }

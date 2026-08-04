@@ -107,52 +107,58 @@
                                     HorizontalAlignment="Center"
                                     VerticalAlignment="Top"
                                     Canvas.ZIndex="2">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="*" />
-                                    </Grid.ColumnDefinitions>
                                     <Button
-                                        x:Name="EditNameBtn"
-                                        Grid.Column="0"
+                                        x:Name="PlayBtn"
                                         Width="36"
                                         Height="36"
                                         Margin="4,0,4,4"
                                         HorizontalAlignment="Left"
                                         VerticalAlignment="Bottom"
-                                        Click="EditPlayListNameButton_Click"
+                                        Click="PlayPlayList_Click"
                                         Style="{StaticResource CircularButtonStyle}"
                                         Tag="{x:Bind}"
                                         Visibility="Collapsed">
-                                        <FontIcon FontSize="14" Glyph="&#xE70F;" />
+                                        <FontIcon FontSize="14" Glyph="&#xE768;" />
                                     </Button>
                                     <Button
-                                        x:Name="ExportBtn"
-                                        Grid.Column="1"
-                                        Width="36"
-                                        Height="36"
-                                        Margin="0,0,4,4"
-                                        HorizontalAlignment="Left"
-                                        VerticalAlignment="Bottom"
-                                        Click="ExportPlayList_Click"
-                                        Style="{StaticResource CircularButtonStyle}"
-                                        Tag="{x:Bind}"
-                                        Visibility="Collapsed">
-                                        <FontIcon FontSize="14" Glyph="&#xEDE1;" />
-                                    </Button>
-                                    <Button
-                                        x:Name="RemoveBtn"
-                                        Grid.Column="2"
+                                        x:Name="MoreBtn"
                                         Width="36"
                                         Height="36"
                                         Margin="4,0,4,4"
                                         HorizontalAlignment="Right"
                                         VerticalAlignment="Bottom"
-                                        Click="RemovePlayListButton_Click"
                                         Style="{StaticResource CircularButtonStyle}"
                                         Tag="{x:Bind}"
                                         Visibility="Collapsed">
-                                        <FontIcon FontSize="14" Glyph="&#xecc9;" />
+                                        <Button.Flyout>
+                                            <MenuFlyout>
+                                                <MenuFlyoutItem
+                                                    x:Uid="Edit"
+                                                    Click="EditPlayListNameButton_Click"
+                                                    Tag="{x:Bind}">
+                                                    <MenuFlyoutItem.Icon>
+                                                        <FontIcon Glyph="&#xE70F;" />
+                                                    </MenuFlyoutItem.Icon>
+                                                </MenuFlyoutItem>
+                                                <MenuFlyoutItem
+                                                    x:Uid="ExportM3u8List"
+                                                    Click="ExportPlayList_Click"
+                                                    Tag="{x:Bind}">
+                                                    <MenuFlyoutItem.Icon>
+                                                        <FontIcon Glyph="&#xEDE1;" />
+                                                    </MenuFlyoutItem.Icon>
+                                                </MenuFlyoutItem>
+                                                <MenuFlyoutItem
+                                                    x:Uid="PlayListDeleteMenu"
+                                                    Click="RemovePlayListButton_Click"
+                                                    Tag="{x:Bind}">
+                                                    <MenuFlyoutItem.Icon>
+                                                        <FontIcon Glyph="&#xecc9;" />
+                                                    </MenuFlyoutItem.Icon>
+                                                </MenuFlyoutItem>
+                                            </MenuFlyout>
+                                        </Button.Flyout>
+                                        <FontIcon FontSize="14" Glyph="&#xE712;" />
                                     </Button>
                                 </Grid>
                                 <Grid

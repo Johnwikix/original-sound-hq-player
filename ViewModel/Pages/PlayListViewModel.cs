@@ -13,13 +13,15 @@ namespace WinUIMusicPlayer.ViewModel
     {
         public AppViewModel AppViewModel { get; }
         private MusicDatabaseService MusicDatabaseService { get; }
+        private MusicBrowseViewModel MusicBrowseViewModel { get; }
 
         public bool IsInDetailMode { get; set => SetProperty(ref field, value); }
 
-        public PlayListViewModel(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
+        public PlayListViewModel(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, MusicBrowseViewModel musicBrowseViewModel)
         {
             AppViewModel = appViewModel;
             MusicDatabaseService = musicDatabaseService;
+            MusicBrowseViewModel = musicBrowseViewModel;
             AppViewModel.PropertyChanged += OnAppVmPropertyChanged;
         }
 
@@ -83,6 +85,21 @@ namespace WinUIMusicPlayer.ViewModel
         public async Task InsertPlayList(PlayList newPlaylist)
         {
             await MusicDatabaseService.InsertPlayList(newPlaylist);
+        }
+
+        public async Task PlayPlayList(PlayList playList)
+        {
+            if (playList is null) return;
+            var items = MusicDatabaseService.GetMusicByPlayListIdFromMem(playList.Id, AppViewModel.SearchText);
+            if (items is null) return;
+            var arr = new BulkObservableCollection<Music>();
+            foreach (var item in items)
+            {
+                if (item.Music is not null) arr.Add(item.Music);
+            }
+            if (arr.Count == 0) return;
+            AppViewModel.SequentialPlayingList = arr;
+            await MusicBrowseViewModel.PlayMusic(music: arr[0], IsChangeList: true);
         }
     }
 }
