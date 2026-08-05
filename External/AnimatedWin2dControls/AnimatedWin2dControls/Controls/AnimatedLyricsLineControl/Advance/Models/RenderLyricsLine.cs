@@ -61,6 +61,21 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         /// </summary>
         public CanvasCommandList? RampFillCommandList { get; private set; }
 
+        /// <summary>
+        /// 布局期录制的"带宽渐变"CommandList：白→黑全量程（255 电平）铺满
+        /// <see cref="FadeBandWidthMax"/> 像素。fade 带（≤ fadeWMax 宽）采样它时
+        /// 恒有 ≥1 电平/px，等价于直接绘制渐变，无全行 Ramp 采样带来的色阶断层。
+        /// 录制在画布原点 [0, fadeWMax]，运行时由 Transform2DEffect 平移定位到
+        /// 当前 band 位置（仅属性更新，零分配）。
+        /// </summary>
+        public CanvasCommandList? BandFillCommandList { get; private set; }
+
+        /// <summary>fade 带的最大宽度（像素），与 <see cref="BandFillCommandList"/> 同步录制。</summary>
+        public float FadeBandWidthMax { get; private set; }
+
+        /// <summary>整行（无逐字时间）路径的 fade 带宽度占行宽的比例。</summary>
+        public const float FullLineFadeFraction = 0.05f;
+
         private static readonly CanvasGradientStop[] s_rampStops =
         {
             new() { Position = 0f, Color = Microsoft.UI.Colors.White },
@@ -295,14 +310,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
             EnsureRampFill(resourceCreator);
 
-            if (PrimaryTextRegions != null && RampFillCommandList != null
+            if (PrimaryTextRegions != null && RampFillCommandList != null && BandFillCommandList != null
                 && (RenderLyricsRegions == null || RenderLyricsRegions.Length != PrimaryTextRegions.Length))
             {
                 DisposeRenderLyricsRegions();
                 RenderLyricsRegions = new RenderLyricsRegion[PrimaryTextRegions.Length];
                 for (int i = 0; i < PrimaryTextRegions.Length; i++)
                 {
-                    RenderLyricsRegions[i] = new RenderLyricsRegion(CachedFill, RampFillCommandList);
+                    RenderLyricsRegions[i] = new RenderLyricsRegion(resourceCreator, CachedFill, RampFillCommandList, BandFillCommandList);
                 }
             }
         }
@@ -320,6 +335,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         {
             RampFillCommandList?.Dispose();
             RampFillCommandList = null;
+            BandFillCommandList?.Dispose();
+            BandFillCommandList = null;
             if (PrimaryTextLayout == null || PrimaryTextRegions == null || PrimaryTextRegions.Length == 0) return;
 
             // 渐变轴基准：主文本 LayoutBounds 左缘（fade 矩阵 v=1-xl/W 的 xl 基准，见 LyricsLineRenderer）。
@@ -331,6 +348,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             // 填充范围：所有字符 region 的并集 + 安全边距。
             const float pad = 4f;
             float minX = float.MaxValue, minY = float.MaxValue, maxX = float.MinValue, maxY = float.MinValue;
+            float fadeWMax = 0f;
             for (int i = 0; i < PrimaryTextRegions.Length; i++)
             {
                 var r = PrimaryTextRegions[i].LayoutBounds;
@@ -338,8 +356,17 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 minY = Math.Min(minY, (float)r.Y);
                 maxX = Math.Max(maxX, (float)(r.X + r.Width));
                 maxY = Math.Max(maxY, (float)(r.Y + r.Height));
+
+                // fade 带宽上限：子行路径 = 半字符宽（fadeInRegion*rW，见 LyricsLineRenderer）；
+                // 整行路径 = FullLineFadeFraction * W。取各 region 最大值。
+                float regionFadeMax = IsPrimaryHasRealSyllableInfo
+                    ? 0.5f * (float)r.Width / Math.Max(1, PrimaryTextRegions[i].CharacterCount)
+                    : FullLineFadeFraction * w;
+                fadeWMax = Math.Max(fadeWMax, regionFadeMax);
             }
             if (maxX <= minX || maxY <= minY) return;
+            fadeWMax = Math.Max(1f, fadeWMax);
+            FadeBandWidthMax = fadeWMax;
 
             float x = (float)(PrimaryPosition.X + minX) - pad;
             float y = (float)(PrimaryPosition.Y + minY) - pad;
@@ -356,6 +383,21 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     EndPoint = new Vector2(x0 + w, y)
                 };
                 ds.FillRectangle(x, y, fillW, fillH, brush);
+            }
+
+            // 带宽渐变 CL：白→黑全量程铺满 fadeWMax px → fade 带内恒 ≥1 电平/px，
+            // 与直接绘制渐变的 8-bit 输出逐像素一致（消除全行 Ramp 采样的量化断层）。
+            // 录制在画布原点，运行时由 Transform2DEffect 平移；填充带 pad 边距，
+            // 保证分数 DPI 下采样到 band 边缘时仍在不透明内容内（轴外钳制为黑）。
+            BandFillCommandList = new CanvasCommandList(resourceCreator);
+            using (var ds = BandFillCommandList.CreateDrawingSession())
+            {
+                using var brush = new CanvasLinearGradientBrush(resourceCreator, s_rampStops)
+                {
+                    StartPoint = new Vector2(0, y),
+                    EndPoint = new Vector2(fadeWMax, y)
+                };
+                ds.FillRectangle(-pad, y, fadeWMax + pad * 2, fillH, brush);
             }
         }
 
@@ -382,6 +424,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             DisposeRenderLyricsRegions();
             RampFillCommandList?.Dispose();
             RampFillCommandList = null;
+            BandFillCommandList?.Dispose();
+            BandFillCommandList = null;
             DisposePrimaryRenderCharsEffects();
         }
 

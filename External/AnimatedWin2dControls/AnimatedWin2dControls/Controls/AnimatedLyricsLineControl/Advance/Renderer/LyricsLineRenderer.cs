@@ -37,7 +37,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         private static readonly float CropHorizonPadding = 10f;
         private static readonly float CropVerticalPadding = 5f;
-        private const float FullLineFadeFraction = 0.05f;
         /// <summary>属性更新脏检查阈值：进度变化不足 0.5px 时跳过，肉眼不可见。</summary>
         private const float DirtyEpsilonPx = 0.5f;
 
@@ -47,8 +46,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         private Color _lastUnplayedColor;
         private float _lastPlayedAlpha = float.NegativeInfinity;
         private float _lastUnplayedAlpha = float.NegativeInfinity;
-        private float _rampX0;
-        private float _rampWidth;
         private Matrix5x4 _playedMatrix;
         private Matrix5x4 _unplayedMatrix;
         // straight（非预乘）端点（fade 线性插值用）。
@@ -144,7 +141,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             // lineFillChanged，否则只有循环中第一个 region 能消费到 true，后续
             // region 的 ColorMatrix 会停留在首次赋值的旧值）。
             bool lineFillChanged = UpdateLineFillMatrices();
-            UpdateRegionFill(region, fullRect, progress, FullLineFadeFraction, lineFillChanged);
+            UpdateRegionFill(region, fullRect, progress, RenderLyricsLine.FullLineFadeFraction, lineFillChanged);
             ds.DrawImage(region.FinalFillEffect);
         }
 
@@ -235,7 +232,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             // 必须强制赋值一次，否则切片永久显示透明（或恒等矩阵透传 Ramp 渐变）。
             if (!lineFillChanged && !regionDirty && region.FillMatricesApplied) return;
 
-            if (regionDirty)
+            // 几何（裁剪矩形 + fade 平移）与矩阵同门：新 region 的 Transform2DEffect
+            // 初始为恒等矩阵，若沿用旧几何会按 [0, fadeWMax] 处采样（band 之外透明）。
+            bool needGeometry = regionDirty || !region.FillMatricesApplied;
+            if (needGeometry)
             {
                 region.LastPlayedWidthPx = playedW;
                 region.LastFadeWidthPx = fadeW;
@@ -243,6 +243,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 region.FillCropPlayed.SourceRectangle = new Rect(rX, rY, playedW, rH);
                 region.FillCropUnplayed.SourceRectangle = new Rect(rX + unplayedX * rW, rY, unplayedW, rH);
                 region.FillCropFade.SourceRectangle = new Rect(rX + p * rW, rY, fadeW, rH);
+                region.FillTransformFade.TransformMatrix = Matrix3x2.CreateTranslation(rX + p * rW, 0);
             }
 
             if (lineFillChanged || !region.FillMatricesApplied)
@@ -254,7 +255,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
             if (fadeW >= DirtyEpsilonPx && (lineFillChanged || regionDirty))
             {
-                region.FillColorFade.ColorMatrix = BuildFadeMatrix(rX, p * rW, fadeW);
+                region.FillColorFade.ColorMatrix = BuildFadeMatrix(fadeW);
             }
         }
 
@@ -267,16 +268,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
             float playedAlpha = (float)Line.PlayedPrimaryOpacityTransition.Value;
             float unplayedAlpha = (float)Line.UnplayedPrimaryOpacityTransition.Value;
-
-            // Ramp 几何基准每次调用都刷新：布局重建可能用同一 line 对象重建
-            // PrimaryTextLayout（lineFillChanged 的引用比较无法感知），若沿用旧值，
-            // fade 矩阵会按陈旧的 _rampX0/_rampWidth 映射渐变采样。
-            if (Line.PrimaryTextLayout != null)
-            {
-                var bounds = Line.PrimaryTextLayout.LayoutBounds;
-                _rampX0 = (float)(Line.PrimaryPosition.X + bounds.X);
-                _rampWidth = (float)bounds.Width;
-            }
 
             bool changed = !ReferenceEquals(Line, _lastFillLine)
                 || playedAlpha != _lastPlayedAlpha
@@ -324,18 +315,20 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         }
 
         /// <summary>
-        /// 淡出带切片矩阵：把 Ramp CL 采样值 v=1-(d+xl)/W 线性映射到 t∈[0,1]，
-        /// 在带内做 played→unplayed 的 straight 线性插值（与原 4-stop 渐变
-        /// 的 straight 空间插值逐像素等价，无任何偏差）。
+        /// 淡出带切片矩阵：把 BandFill 局部渐变采样值 v = 1 - x_local/fadeWMax
+        /// （x_local 相对 band 左缘，<see cref="RenderLyricsLine.BandFillCommandList"/>）
+        /// 线性映射到 t∈[0,1]，在带内做 played→unplayed 的 straight 线性插值。
+        /// 因 BandFill 全量程只铺 fadeWMax 像素（≥1 电平/px），带内输出与直接
+        /// 渐变逐像素一致，不再出现全行 Ramp 采样放大 8-bit 量化造成的色阶断层。
         /// </summary>
-        private Matrix5x4 BuildFadeMatrix(float rX, float pPx, float fadePx)
+        private Matrix5x4 BuildFadeMatrix(float fadePx)
         {
-            float W = _rampWidth;
-            if (W <= 0) return _playedMatrix;
+            if (Line == null) return _playedMatrix;
+            float fadeWMax = Line.FadeBandWidthMax;
+            if (fadePx <= 0 || fadeWMax <= 0) return _playedMatrix;
 
-            float d = rX - _rampX0;
-            float a = (W - d - pPx) / fadePx;
-            float b = -W / fadePx;
+            float a = fadeWMax / fadePx;
+            float b = -fadeWMax / fadePx;
 
             float kR = b * (_unplayedR - _playedR), cR = _playedR + a * (_unplayedR - _playedR);
             float kG = b * (_unplayedG - _playedG), cG = _playedG + a * (_unplayedG - _playedG);
