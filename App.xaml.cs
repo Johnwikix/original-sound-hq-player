@@ -217,9 +217,25 @@ namespace WinUIMusicPlayer
             }
             catch (Exception ex)
             {
-                _logger?.LogError(ex, "应用程序启动时出错: {Message}", ex.Message);
+                _logger?.LogCritical(ex, "应用程序启动失败: {Message}", ex.Message);
+                try { Log.CloseAndFlush(); } catch { }
+                SingleInstanceHelper.ReleaseMutex();
+                ShowStartupErrorBox(ex);
+                Environment.Exit(1);
             }
         }
+
+        private static void ShowStartupErrorBox(Exception ex)
+        {
+            var logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OriginalSoundPlayer", "Logs");
+            string text = $"应用程序启动失败，即将退出。\r\n\r\n" +
+                          $"异常：{ex.Message}\r\n\r\n" +
+                          $"详细信息已记录到日志：{logDirectory}";
+            Win32MessageBox(IntPtr.Zero, text, "启动失败", 0x10 | 0x0);
+        }
+
+        [DllImport("user32.dll", EntryPoint = "MessageBoxW", CharSet = CharSet.Unicode)]
+        private static extern int Win32MessageBox(IntPtr hWnd, string text, string caption, uint type);
 
         /// <summary>
         public static async Task Current_Exit()
@@ -250,6 +266,7 @@ namespace WinUIMusicPlayer
             {
                 try { Log.CloseAndFlush(); } catch { }
                 //Current.Exit();
+                SingleInstanceHelper.ReleaseMutex();
                 Environment.Exit(0);
             }
         }
