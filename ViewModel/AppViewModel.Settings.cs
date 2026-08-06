@@ -595,16 +595,13 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = false;
 
-        private bool _isPortraitLayout;
         public bool IsPortraitLayout
         {
-            get => _isPortraitLayout;
+            get => field;
             set
             {
-                if (_isPortraitLayout != value)
+                if (SetProperty(ref field, value))
                 {
-                    _isPortraitLayout = value;
-                    OnPropertyChanged();
                     OnPropertyChanged(nameof(EffectivePlayingDetailAlignment));
                 }
             }

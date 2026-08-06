@@ -16,12 +16,7 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class AddFolderViewModel : ObservableObject
     {
-        private ObservableCollection<Folder> _folderList = [];
-        public ObservableCollection<Folder> FolderList
-        {
-            get => _folderList;
-            set => SetProperty(ref _folderList, value);
-        }
+        public ObservableCollection<Folder> FolderList { get => field; set => SetProperty(ref field, value); } = [];
         private AppViewModel AppViewModel { get; set; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private ILogger<AddFolderViewModel> _logger { get; }

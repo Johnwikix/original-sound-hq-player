@@ -4,7 +4,7 @@ using Microsoft.UI.Xaml;
 
 namespace WinUIMusicPlayer.Controls.Lyrics
 {
-    public sealed partial class LyricDisplayItem : ObservableObject
+    public sealed class LyricDisplayItem : ObservableObject
     {
         public LyricLine Source { get; }
         public int LineIndex { get; }
@@ -12,23 +12,22 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         public string TranslationText { get; }
         public bool HasTranslation => !string.IsNullOrEmpty(TranslationText);
 
-        [ObservableProperty]
-        private bool _isCurrent;
-
-        [ObservableProperty]
-        private double _displayOpacity = 0.5;
-
-        [ObservableProperty]
-        private double _displayFontSize = 36.0;
-
-        [ObservableProperty]
-        private TextAlignment _displayTextAlignment = TextAlignment.Left;
-
-        [ObservableProperty]
-        private double _displayTranslationOpacity = 0.6;
-
-        [ObservableProperty]
-        private string _displayFontFamily = "Segoe UI";
+        public bool IsCurrent { get => field; set => SetProperty(ref field, value); }
+        public double DisplayOpacity { get => field; set => SetProperty(ref field, value); } = 0.5;
+        public double DisplayFontSize
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    OnPropertyChanged(nameof(DisplayTranslationFontSize));
+                }
+            }
+        } = 36.0;
+        public TextAlignment DisplayTextAlignment { get => field; set => SetProperty(ref field, value); } = TextAlignment.Left;
+        public double DisplayTranslationOpacity { get => field; set => SetProperty(ref field, value); } = 0.6;
+        public string DisplayFontFamily { get => field; set => SetProperty(ref field, value); } = "Segoe UI";
 
         public double DisplayTranslationFontSize => DisplayFontSize * 0.75;
 
@@ -38,11 +37,6 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             LineIndex = index;
             MainText = mainText;
             TranslationText = translationText;
-        }
-
-        partial void OnDisplayFontSizeChanged(double value)
-        {
-            OnPropertyChanged(nameof(DisplayTranslationFontSize));
         }
     }
 }

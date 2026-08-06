@@ -5,16 +5,10 @@ namespace WinUIMusicPlayer.Model
 {
     public class SortOption : ObservableObject
     {
-        private string _displayText;
-
         public string Tag { get; set; }
         public string UidKey { get; set; }
 
-        public string DisplayText
-        {
-            get => _displayText;
-            set => SetProperty(ref _displayText, value);
-        }
+        public string DisplayText { get => field; set => SetProperty(ref field, value); }
 
         public SortOption(string Tag, string UidKey)
         {
