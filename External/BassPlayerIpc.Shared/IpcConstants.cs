@@ -15,10 +15,16 @@ public static class IpcConstants
 
     public const int EnvelopeHeaderSize = 5; // int16 + int16 + byte(seq)
 
-    public static readonly long MmfSize = MaxRequestSize + MaxResponseSize + MaxNotificationSize;
-    public const long RequestBufferOffset = 0;
-    public static readonly long ResponseBufferOffset = MaxRequestSize;
-    public static readonly long NotificationBufferOffset = MaxRequestSize + MaxResponseSize;
+    // Versioned mailbox layout: each region is guarded by a monotonically increasing
+    // version int that is published AFTER the payload write completes, so a reader
+    // observing a version change can safely read the full payload without tearing.
+    public const long RequestVersionOffset = 0;
+    public const long RequestBufferOffset = 4;
+    public const long ResponseVersionOffset = RequestBufferOffset + MaxRequestSize;
+    public const long ResponseBufferOffset = ResponseVersionOffset + 4;
+    public const long NotificationVersionOffset = ResponseBufferOffset + MaxResponseSize;
+    public const long NotificationSlot1Offset = NotificationVersionOffset + 4;
+    public const long NotificationSlot2Offset = NotificationSlot1Offset + MaxNotificationSize;
 
-    public const int NotificationSlotOffset = 1024; // offset within notification buffer for slot index (int32)
+    public static readonly long MmfSize = NotificationSlot2Offset + MaxNotificationSize;
 }

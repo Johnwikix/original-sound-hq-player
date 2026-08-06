@@ -14,10 +14,7 @@ namespace WinUIMusicPlayer.Services
 {
     public class IpcService : IDisposable
     {
-        private readonly long MmfSize = IpcConstants.MmfSize;
-        private const long RequestBufferOffset = IpcConstants.RequestBufferOffset;
-        private static readonly long ResponseBufferOffset = IpcConstants.ResponseBufferOffset;
-        private static readonly long NotificationBufferOffset = IpcConstants.NotificationBufferOffset;
+        private static readonly long MmfSize = IpcConstants.MmfSize;
 
         private MemoryMappedFile? _mmf;
         private MemoryMappedViewAccessor? _accessor;
@@ -27,7 +24,13 @@ namespace WinUIMusicPlayer.Services
 
         private readonly SemaphoreSlim _sendLock = new(1, 1);
         private bool _isConnected = false;
-        private byte _seqCounter;
+
+        // Versioned mailbox state: the shared-memory version ints are the source of
+        // truth; the semaphores are only wakeup hints, so timeouts and stale signals
+        // can never permanently desynchronize the request/response protocol.
+        private int _requestVersionCounter;
+        private int _lastResponseVersion;
+        private int _lastNotificationVersion;
 
         private CancellationTokenSource? _notificationCts;
         private Task? _notificationListenerTask;
@@ -95,9 +98,16 @@ namespace WinUIMusicPlayer.Services
                     if (cancellationToken.IsCancellationRequested) break;
                     if (!hasNotification) continue;
 
-                    var typeId = IpcEnvelope.ReadMessageTypeId(_accessor!, NotificationBufferOffset);
+                    int version = IpcEnvelope.ReadVersion(_accessor!, IpcConstants.NotificationVersionOffset);
+                    if (version == _lastNotificationVersion) continue;
+                    _lastNotificationVersion = version;
+
+                    // Double-buffered: the slot is selected by version parity, so the
+                    // server never overwrites the slot we are currently reading.
+                    long slot = IpcEnvelope.NotificationSlotOffset(version);
+                    var typeId = IpcEnvelope.ReadMessageTypeId(_accessor!, slot);
                     int payloadLen = IpcEnvelope.ReadPayload(
-                        _accessor!, NotificationBufferOffset,
+                        _accessor!, slot,
                         _notificationBuffer,
                         IpcConstants.MaxNotificationSize - IpcConstants.EnvelopeHeaderSize);
 
@@ -124,7 +134,8 @@ namespace WinUIMusicPlayer.Services
         }
 
         public async Task<(MessageTypeId Type, int ResponseLen)> SendWithResponseAsync(
-            CommandId commandId, ReadOnlyMemory<byte> payload, byte[] responseBuffer, int timeoutMs = 1000)
+            CommandId commandId, ReadOnlyMemory<byte> payload, byte[] responseBuffer,
+            int timeoutMs = 1000, bool skipIfBusy = false)
         {
             if (!_isConnected)
             {
@@ -132,23 +143,30 @@ namespace WinUIMusicPlayer.Services
                 return (MessageTypeId.Failed, 0);
             }
 
-            await _sendLock.WaitAsync();
+            if (skipIfBusy)
+            {
+                if (!await _sendLock.WaitAsync(0)) return (MessageTypeId.Failed, 0);
+            }
+            else
+            {
+                await _sendLock.WaitAsync();
+            }
+
             try
             {
-                byte seq = unchecked(++_seqCounter);
-                IpcEnvelope.WriteCommand(_accessor!, RequestBufferOffset, commandId, seq, payload.Span);
+                int requestVersion = ++_requestVersionCounter;
+                IpcEnvelope.WriteCommand(_accessor!, IpcConstants.RequestBufferOffset, commandId, (byte)requestVersion, payload.Span);
+                IpcEnvelope.PublishVersion(_accessor!, IpcConstants.RequestVersionOffset, requestVersion);
                 try { _requestReadySemaphore!.Release(); }
                 catch (SemaphoreFullException) { }
 
-                bool responded = await Task.Run(() => _responseReadySemaphore!.WaitOne(timeoutMs));
+                int lastResponseVersion = _lastResponseVersion;
+                bool responded = await WaitForResponseAsync(lastResponseVersion, timeoutMs);
                 if (!responded) return (MessageTypeId.Failed, 0);
 
-                byte respSeq = IpcEnvelope.ReadSequenceId(_accessor!, ResponseBufferOffset);
-                if (respSeq != seq) return (MessageTypeId.Failed, 0);
-
-                var typeId = IpcEnvelope.ReadMessageTypeId(_accessor!, ResponseBufferOffset);
+                var typeId = IpcEnvelope.ReadMessageTypeId(_accessor!, IpcConstants.ResponseBufferOffset);
                 int respLen = IpcEnvelope.ReadPayload(
-                    _accessor!, ResponseBufferOffset,
+                    _accessor!, IpcConstants.ResponseBufferOffset,
                     _responseBuffer,
                     IpcConstants.MaxResponseSize - IpcConstants.EnvelopeHeaderSize);
 
@@ -165,6 +183,32 @@ namespace WinUIMusicPlayer.Services
             {
                 _sendLock.Release();
             }
+        }
+
+        /// <summary>
+        /// Waits until the response version advances beyond <paramref name="lastVersion"/>.
+        /// A stale signal only causes a spurious wakeup (version unchanged), so a timed-out
+        /// request can never poison subsequent requests.
+        /// </summary>
+        private async Task<bool> WaitForResponseAsync(int lastVersion, int timeoutMs)
+        {
+            int step = Math.Min(50, timeoutMs);
+            int elapsed = 0;
+            while (elapsed < timeoutMs)
+            {
+                bool signaled = await Task.Run(() => _responseReadySemaphore!.WaitOne(step));
+                if (signaled)
+                {
+                    int version = IpcEnvelope.ReadVersion(_accessor!, IpcConstants.ResponseVersionOffset);
+                    if (version != lastVersion)
+                    {
+                        _lastResponseVersion = version;
+                        return true;
+                    }
+                }
+                elapsed += step;
+            }
+            return false;
         }
 
         /// <summary>Fire-and-forget: sends command, returns rented buffer to pool after completion.</summary>
@@ -265,7 +309,10 @@ namespace WinUIMusicPlayer.Services
 
         public async Task<(long currentMs, long totalMs)> GetTimeProgress()
         {
-            var (resType, _) = await SendWithResponseAsync(CommandId.GetTimeProgress, ReadOnlyMemory<byte>.Empty, _timeProgressBuf);
+            // skipIfBusy: drop this tick if the previous progress request is still in
+            // flight, so a slow server cannot queue up stale progress polls.
+            var (resType, _) = await SendWithResponseAsync(CommandId.GetTimeProgress,
+                ReadOnlyMemory<byte>.Empty, _timeProgressBuf, timeoutMs: 300, skipIfBusy: true);
             if (resType == MessageTypeId.TimeProgress)
             {
                 var (curMs, totalMs) = BinarySerializer.ReadTimeProgress(_timeProgressBuf);

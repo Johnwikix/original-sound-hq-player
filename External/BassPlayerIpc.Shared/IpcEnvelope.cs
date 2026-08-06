@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace BassPlayerIpc.Shared;
 
@@ -104,5 +105,42 @@ public static class IpcEnvelope
 
         accessor.ReadArray(offset + IpcConstants.EnvelopeHeaderSize, buffer, 0, payloadLen);
         return payloadLen;
+    }
+
+    /// <summary>
+    /// Reads a mailbox version int. The trailing memory barrier ensures the
+    /// payload reads that follow see all writes published before the version.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int ReadVersion(MemoryMappedViewAccessor accessor, long offset)
+    {
+        int version = accessor.ReadInt32(offset);
+        Thread.MemoryBarrier();
+        return version;
+    }
+
+    /// <summary>
+    /// Publishes a mailbox version int. The barriers ensure payload writes
+    /// complete before the version becomes visible to the peer process.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void PublishVersion(MemoryMappedViewAccessor accessor, long offset, int value)
+    {
+        Thread.MemoryBarrier();
+        accessor.Write(offset, value);
+        Thread.MemoryBarrier();
+    }
+
+    /// <summary>
+    /// Notification buffers are double-buffered: the slot is selected by the
+    /// published version parity, so the peer can never read a slot that is
+    /// concurrently being overwritten.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static long NotificationSlotOffset(int version)
+    {
+        return (version & 1) == 0
+            ? IpcConstants.NotificationSlot1Offset
+            : IpcConstants.NotificationSlot2Offset;
     }
 }
