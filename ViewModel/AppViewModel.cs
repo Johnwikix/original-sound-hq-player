@@ -538,8 +538,10 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     try
                     {
-                        var (cur, tot) = await svc.GetTimeProgress();
-                        _cache.Store(cur, tot);
+                        var result = await svc.GetTimeProgress();
+                        // null = round-trip failed (server busy/timeout); keep the last
+                        // known value instead of storing (0, 0) and jumping the UI.
+                        if (result is { } p) _cache.Store(p.currentMs, p.totalMs);
                     }
                     catch (Exception ex)
                     {

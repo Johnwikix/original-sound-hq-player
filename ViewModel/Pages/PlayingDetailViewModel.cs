@@ -33,14 +33,9 @@ namespace WinUIMusicPlayer.ViewModel.Pages
 
         public void PlayButton_Click()
         {
-            App.Services.GetRequiredService<BassPlayerCommandService>().PlayButton();
-            UpdatePlayPauseButtonIcon();
-        }
-
-        public void UpdatePlayPauseButtonIcon()
-        {
-            App.MainWindow.UpdateTaskbarIcon();
-            App.Services.GetRequiredService<SystemMediaControlsService>().UpdateSystemMediaControlsState();
+            // IsPlaying's setter triggers the taskbar/SMTC update automatically, so no
+            // manual UpdatePlayPauseButtonIcon here (it would run with stale state).
+            _ = App.Services.GetRequiredService<BassPlayerCommandService>().PlayButton();
         }
 
         [RelayCommand]

@@ -196,21 +196,9 @@ namespace WinUIMusicPlayer.View
                 EqualizerDialog = new EqualizerDialog();
                 EqualizerDialog.EqualizerGainChanged += (s, frequency) =>
                 {
-                    int feq = ToolUtils.FrequencyIndexMap[frequency];
-                    ViewModel.PlayerCommandService.SetEqualizerGain((byte)feq, (float)AppSettings.Equalizer[frequency]);
-                };
-                EqualizerDialog.ClearEqualizer += (s, e) =>
-                {
-                    ViewModel.PlayerCommandService.UpdateSettings();
-                    if (AppSettings.IsEqualizerEnabled)
-                    {
-                        ViewModel.PlayerCommandService.ToggleEqualizer();
-                        ViewModel.PlayerCommandService.SetEqualizer();
-                    }
-                    else
-                    {
-                        ViewModel.PlayerCommandService.ClearEqualizer();
-                    }
+                    // Fire-and-forget full state sync: idempotent, latest state wins,
+                    // so rapid slider drags can never lose the final gain values.
+                    ViewModel.PlayerCommandService.EqUpdate();
                 };
             }
         }

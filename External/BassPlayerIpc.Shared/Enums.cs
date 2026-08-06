@@ -19,10 +19,6 @@ public enum CommandId : short
     UpdateSettings = 10,
 
     // Equalizer
-    ToggleEqualizer = 11,
-    SetEqualizer = 12,
-    ClearEqualizer = 13,
-    SetEqualizerGain = 14,
     UpdateEq = 15,
 
     // Devices
@@ -48,6 +44,7 @@ public enum MessageTypeId : short
     WasapiDevices = 10,
     AsioDevices = 11,
     TimeProgress = 12,
+    EqState = 13,
 }
 
 public enum ErrorCode : short

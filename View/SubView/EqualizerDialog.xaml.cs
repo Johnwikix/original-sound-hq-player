@@ -17,8 +17,8 @@ namespace WinUIMusicPlayer.View.SubView
         private Dictionary<string, double[]> _presets;
         private List<Slider> _sliders;
         private bool _isInitializedSliderValue = false;
+        private bool _isSyncingToggle = false;
         public EventHandler<string> EqualizerGainChanged { get; set; }
-        public EventHandler ClearEqualizer { get; set; }
 
         public EqualizerDialog()
         {
@@ -51,7 +51,7 @@ namespace WinUIMusicPlayer.View.SubView
 
         private void InitializeSliders()
         {
-            // ³õÊ¼»¯»¬¿éÁÐ±í
+            // ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
             Slider32Hz.Value = AppSettings.Equalizer["32Hz"];
             Slider64Hz.Value = AppSettings.Equalizer["64Hz"];
             Slider125Hz.Value = AppSettings.Equalizer["125Hz"];
@@ -101,17 +101,23 @@ namespace WinUIMusicPlayer.View.SubView
             }
         }
 
-        private void ToggleSwitchEqualizer_Toggled(object sender, RoutedEventArgs e)
+        private async void ToggleSwitchEqualizer_Toggled(object sender, RoutedEventArgs e)
         {
+            if (_isSyncingToggle) return;
+
             AppSettings.IsEqualizerEnabled = ToggleSwitchEqualizer.IsOn;
-            if (AppSettings.IsEqualizerEnabled)
+
+            // Await the server's real applied state: the server rejects the switch in
+            // some modes (e.g. DSD over exclusive output), in which case roll the UI
+            // switch back so the displayed state matches reality.
+            bool? real = await App.Services.GetRequiredService<BassPlayerCommandService>().UpdateEqStateAsync();
+            if (real is bool r && r != AppSettings.IsEqualizerEnabled)
             {
-                AppSettings.OnEqUpdated();
+                AppSettings.IsEqualizerEnabled = r;
+                _isSyncingToggle = true;
+                ToggleSwitchEqualizer.IsOn = r;
+                _isSyncingToggle = false;
             }
-            DispatcherQueue.TryEnqueue(() =>
-            {
-                ClearEqualizer?.Invoke(this, EventArgs.Empty);
-            });
         }
 
         private async void CloseButton_Click(object sender, RoutedEventArgs e)
@@ -176,7 +182,7 @@ namespace WinUIMusicPlayer.View.SubView
                 if (!slider.IsEnabled) return;
 
                 var delta = e.GetCurrentPoint(slider).Properties.MouseWheelDelta;
-                var step = slider.StepFrequency; // Ê¹ÓÃ0.1×÷Îª²½½øÖµ
+                var step = slider.StepFrequency; // Ê¹ï¿½ï¿½0.1ï¿½ï¿½Îªï¿½ï¿½ï¿½ï¿½Öµ
 
                 if (delta > 0)
                 {

@@ -16,10 +16,10 @@ public static class BinarySerializer
     public const int ChangePositionRequestSize = 8;
     public const int ChangeVolumeRequestSize = 8;
     public const int IpcSettingSize = StringHeaderSize + MaxStringBytes + 4 + 4 + 4 + 1 + 4 + 4 + 1 + 4 + 1 + 1;
-    public const int SetEqualizerGainRequestSize = 1 + 4;
-    public const int UpdateEqRequestSize = 40;
+    public const int UpdateEqRequestSize = 1 + 40; // IsEnabled + 10 bands
     public const int FailedResponseSize = 2;
     public const int PlayStateResponseSize = 1;
+    public const int EqStateResponseSize = 2; // IsEnabled + IsActive
     public const int VolumeResponseSize = 4;
     public const int TimeProgressSize = 16;
 
@@ -118,29 +118,12 @@ public static class BinarySerializer
         return s;
     }
 
-    // ──────────────────────── SetEqualizerGainRequest ────────────────────────
-
-    public static int WriteSetEqualizerGainRequest(Span<byte> dest, SetEqualizerGainRequest req)
-    {
-        dest[0] = req.BandIndex;
-        BinaryPrimitives.WriteSingleLittleEndian(dest[1..], req.Gain);
-        return 5;
-    }
-
-    public static SetEqualizerGainRequest ReadSetEqualizerGainRequest(ReadOnlySpan<byte> src)
-    {
-        return new()
-        {
-            BandIndex = src[0],
-            Gain = BinaryPrimitives.ReadSingleLittleEndian(src[1..])
-        };
-    }
-
     // ──────────────────────── UpdateEqRequest ────────────────────────
 
     public static int WriteUpdateEqRequest(Span<byte> dest, UpdateEqRequest req)
     {
         int offset = 0;
+        dest[offset++] = req.IsEnabled ? (byte)1 : (byte)0;
         BinaryPrimitives.WriteSingleLittleEndian(dest[offset..], req.Band0); offset += 4;
         BinaryPrimitives.WriteSingleLittleEndian(dest[offset..], req.Band1); offset += 4;
         BinaryPrimitives.WriteSingleLittleEndian(dest[offset..], req.Band2); offset += 4;
@@ -158,16 +141,17 @@ public static class BinarySerializer
     {
         return new()
         {
-            Band0 = BinaryPrimitives.ReadSingleLittleEndian(src),
-            Band1 = BinaryPrimitives.ReadSingleLittleEndian(src[4..]),
-            Band2 = BinaryPrimitives.ReadSingleLittleEndian(src[8..]),
-            Band3 = BinaryPrimitives.ReadSingleLittleEndian(src[12..]),
-            Band4 = BinaryPrimitives.ReadSingleLittleEndian(src[16..]),
-            Band5 = BinaryPrimitives.ReadSingleLittleEndian(src[20..]),
-            Band6 = BinaryPrimitives.ReadSingleLittleEndian(src[24..]),
-            Band7 = BinaryPrimitives.ReadSingleLittleEndian(src[28..]),
-            Band8 = BinaryPrimitives.ReadSingleLittleEndian(src[32..]),
-            Band9 = BinaryPrimitives.ReadSingleLittleEndian(src[36..]),
+            IsEnabled = src[0] != 0,
+            Band0 = BinaryPrimitives.ReadSingleLittleEndian(src[1..]),
+            Band1 = BinaryPrimitives.ReadSingleLittleEndian(src[5..]),
+            Band2 = BinaryPrimitives.ReadSingleLittleEndian(src[9..]),
+            Band3 = BinaryPrimitives.ReadSingleLittleEndian(src[13..]),
+            Band4 = BinaryPrimitives.ReadSingleLittleEndian(src[17..]),
+            Band5 = BinaryPrimitives.ReadSingleLittleEndian(src[21..]),
+            Band6 = BinaryPrimitives.ReadSingleLittleEndian(src[25..]),
+            Band7 = BinaryPrimitives.ReadSingleLittleEndian(src[29..]),
+            Band8 = BinaryPrimitives.ReadSingleLittleEndian(src[33..]),
+            Band9 = BinaryPrimitives.ReadSingleLittleEndian(src[37..]),
         };
     }
 
@@ -193,6 +177,18 @@ public static class BinarySerializer
     public static PlayStateResponse ReadPlayStateResponse(ReadOnlySpan<byte> src)
     {
         return new() { IsPlaying = src[0] != 0 };
+    }
+
+    public static int WriteEqStateResponse(Span<byte> dest, EqStateResponse resp)
+    {
+        dest[0] = resp.IsEnabled ? (byte)1 : (byte)0;
+        dest[1] = resp.IsActive ? (byte)1 : (byte)0;
+        return 2;
+    }
+
+    public static EqStateResponse ReadEqStateResponse(ReadOnlySpan<byte> src)
+    {
+        return new() { IsEnabled = src[0] != 0, IsActive = src[1] != 0 };
     }
 
     public static int WriteVolumeResponse(Span<byte> dest, VolumeResponse resp)

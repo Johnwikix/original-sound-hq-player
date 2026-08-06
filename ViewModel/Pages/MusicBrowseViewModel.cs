@@ -165,7 +165,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void AppSettings_OnEqUpdated(object? sender, EventArgs e)
         {
-            _ = MusicPlaybackService.EqUpdate();
+            MusicPlaybackService.EqUpdate();
         }
 
         private void AppSettings_OutputSettingsUpdated(object? sender, EventArgs e)
@@ -541,7 +541,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void PlayButton_Click()
         {
-            MusicPlaybackService.PlayButton();
+            _ = MusicPlaybackService.PlayButton();
         }
 
         [RelayCommand]

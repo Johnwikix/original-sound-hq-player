@@ -35,14 +35,9 @@ public struct IpcSetting
     public bool IsFadeEnabled;
 }
 
-public struct SetEqualizerGainRequest
-{
-    public byte BandIndex;
-    public float Gain;
-}
-
 public struct UpdateEqRequest
 {
+    public bool IsEnabled;
     public float Band0;
     public float Band1;
     public float Band2;
@@ -65,6 +60,12 @@ public struct FailedResponse
 public struct PlayStateResponse
 {
     public bool IsPlaying;
+}
+
+public struct EqStateResponse
+{
+    public bool IsEnabled;
+    public bool IsActive;
 }
 
 public struct VolumeResponse

@@ -59,15 +59,17 @@ namespace WinUIMusicPlayer.Services
                     AppViewModel.Volume = vol.Volume;
                 });
             }
-            else if (typeId == MessageTypeId.NotificationDropped)
-            {
-                _logger.LogWarning("Notification dropped by server - client may miss state updates");
-            }
         }
 
-        public async Task EqUpdate()
+        public void EqUpdate()
         {
-            await IpcService.UpdateEq();
+            IpcService.UpdateEq();
+        }
+
+        /// <summary>Full EQ state sync awaiting the server's real applied state.</summary>
+        public async Task<bool?> UpdateEqStateAsync()
+        {
+            return await IpcService.UpdateEqAsync();
         }
 
         public void UpdateSettings()
@@ -122,43 +124,31 @@ namespace WinUIMusicPlayer.Services
             catch (Exception ex) { _logger.LogError(ex, $"PlayNextTrack failed: {ex.Message}"); }
         }
 
-        public void ToggleEqualizer()
-        {
-            IpcService.ToggleEqualizer();
-        }
-
-        public void SetEqualizerGain(byte bandIndex, float gain)
-        {
-            IpcService.SetEqualizerGain(bandIndex, gain);
-        }
-
-        public void SetEqualizer()
-        {
-            IpcService.SetEqualizer();
-        }
-
-        public void ClearEqualizer()
-        {
-            IpcService.ClearEqualizer();
-        }
-
         public void PlayMusic(Music music)
         {
             IpcService.Play(music.Path);
             AppViewModel.StartProgressTimer();
         }
 
-        public void PlayButton()
+        public async Task PlayButton()
         {
-            IpcService.PlayButton();
-            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            try
             {
-                if (AppViewModel.IsPlaying)
+                bool? state = await IpcService.PlayButton();
+                if (state is bool s)
                 {
-                    AppViewModel.IsPlaying = false;
-                    AppViewModel.StopProgressTimer();
+                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        AppViewModel.IsPlaying = s;
+                        if (s) AppViewModel.StartProgressTimer();
+                        else AppViewModel.StopProgressTimer();
+                    });
                 }
-            });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "PlayButton failed");
+            }
         }
 
         public void ChangeWaveChannelTime(long positionMs)
@@ -171,7 +161,7 @@ namespace WinUIMusicPlayer.Services
             IpcService.ChangeVolume(volume);
         }
 
-        public async Task<(long currentMs, long totalMs)> GetTimeProgress()
+        public async Task<(long currentMs, long totalMs)?> GetTimeProgress()
         {
             try
             {
@@ -180,7 +170,7 @@ namespace WinUIMusicPlayer.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"GetTimeProgress failed: {ex.Message}");
-                return (0, 0);
+                return null;
             }
         }
 
