@@ -199,9 +199,9 @@ namespace WinUIMusicPlayer.Services
             };
             if (rows.Count == 0) return snapshot;
 
-            var songs = new Dictionary<(string Title, string Author), (int Count, double Ms, string Album)>();
-            var artists = new Dictionary<string, (int Count, double Ms)>();
-            var albums = new Dictionary<string, (int Count, double Ms)>();
+            var songs = new Dictionary<(string Title, string Author), (int Count, double Ms, string Album, int MusicId)>();
+            var artists = new Dictionary<string, (int Count, double Ms, int MusicId)>();
+            var albums = new Dictionary<string, (int Count, double Ms, int MusicId)>();
 
             double totalMs = 0;
             for (int i = 0; i < rows.Count; i++)
@@ -217,26 +217,26 @@ namespace WinUIMusicPlayer.Services
                 var songKey = (title, author);
                 if (!songs.TryGetValue(songKey, out var song))
                 {
-                    song = (0, 0, album);
+                    song = (0, 0, album, row.MusicId);
                     songs[songKey] = song;
                 }
-                song = (song.Count + 1, song.Ms + ms, string.IsNullOrEmpty(song.Album) ? album : song.Album);
+                song = (song.Count + 1, song.Ms + ms, string.IsNullOrEmpty(song.Album) ? album : song.Album, song.MusicId);
                 songs[songKey] = song;
 
                 if (!artists.TryGetValue(author, out var artist))
                 {
-                    artist = (0, 0);
+                    artist = (0, 0, row.MusicId);
                     artists[author] = artist;
                 }
-                artist = (artist.Count + 1, artist.Ms + ms);
+                artist = (artist.Count + 1, artist.Ms + ms, artist.MusicId);
                 artists[author] = artist;
 
                 if (!albums.TryGetValue(album, out var albumSlot))
                 {
-                    albumSlot = (0, 0);
+                    albumSlot = (0, 0, row.MusicId);
                     albums[album] = albumSlot;
                 }
-                albumSlot = (albumSlot.Count + 1, albumSlot.Ms + ms);
+                albumSlot = (albumSlot.Count + 1, albumSlot.Ms + ms, albumSlot.MusicId);
                 albums[album] = albumSlot;
             }
 
@@ -249,7 +249,7 @@ namespace WinUIMusicPlayer.Services
             return snapshot;
         }
 
-        private static List<SongPlayStat> BuildTopSongs(Dictionary<(string Title, string Author), (int Count, double Ms, string Album)> songs, int limit)
+        private static List<SongPlayStat> BuildTopSongs(Dictionary<(string Title, string Author), (int Count, double Ms, string Album, int MusicId)> songs, int limit)
         {
             var result = new List<SongPlayStat>(songs.Count);
             foreach (var kv in songs)
@@ -259,6 +259,7 @@ namespace WinUIMusicPlayer.Services
                     Title = kv.Key.Title,
                     Artist = kv.Key.Author,
                     Album = kv.Value.Album,
+                    MusicId = kv.Value.MusicId,
                     PlayCount = kv.Value.Count,
                     TotalDurationSeconds = kv.Value.Ms / 1000.0,
                 });
@@ -270,7 +271,7 @@ namespace WinUIMusicPlayer.Services
             return result;
         }
 
-        private static List<ArtistPlayStat> BuildTopArtists(Dictionary<string, (int Count, double Ms)> artists, int limit)
+        private static List<ArtistPlayStat> BuildTopArtists(Dictionary<string, (int Count, double Ms, int MusicId)> artists, int limit)
         {
             var result = new List<ArtistPlayStat>(artists.Count);
             foreach (var kv in artists)
@@ -278,6 +279,7 @@ namespace WinUIMusicPlayer.Services
                 result.Add(new ArtistPlayStat
                 {
                     Artist = kv.Key,
+                    MusicId = kv.Value.MusicId,
                     PlayCount = kv.Value.Count,
                     TotalDurationSeconds = kv.Value.Ms / 1000.0,
                 });
@@ -289,10 +291,11 @@ namespace WinUIMusicPlayer.Services
             return result;
         }
 
-        private static void BuildTopAlbum(StatsSnapshot snapshot, Dictionary<string, (int Count, double Ms)> albums)
+        private static void BuildTopAlbum(StatsSnapshot snapshot, Dictionary<string, (int Count, double Ms, int MusicId)> albums)
         {
             string bestName = string.Empty;
             int bestCount = 0;
+            int bestMusicId = 0;
             double bestMs = 0;
             foreach (var kv in albums)
             {
@@ -301,10 +304,12 @@ namespace WinUIMusicPlayer.Services
                     bestCount = kv.Value.Count;
                     bestMs = kv.Value.Ms;
                     bestName = kv.Key;
+                    bestMusicId = kv.Value.MusicId;
                 }
             }
             snapshot.TopAlbumName = bestName;
             snapshot.TopAlbumPlayCount = bestCount;
+            snapshot.TopAlbumMusicId = bestMusicId;
         }
     }
 }

@@ -27,6 +27,9 @@ namespace WinUIMusicPlayer.Model.Stats
         /// <summary>最常播放专辑达标次数。</summary>
         public int TopAlbumPlayCount { get; set; }
 
+        /// <summary>最常播放专辑最近一次会话的歌曲 Id（播放锚点，歌曲可能已删除）。</summary>
+        public int TopAlbumMusicId { get; set; }
+
         /// <summary>按开始收听的小时统计会话数（本地时区），长度 24。</summary>
         public int[] HourlyCounts { get; set; } = new int[24];
     }

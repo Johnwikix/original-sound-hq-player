@@ -3,8 +3,10 @@
     x:Class="WinUIMusicPlayer.View.StatsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:behaviors="using:WinUIMusicPlayer.Behaviors"
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:statsmodels="using:WinUIMusicPlayer.Model.Stats"
     mc:Ignorable="d">
@@ -58,9 +60,9 @@
                     VerticalAlignment="Center"
                     Style="{ThemeResource BodyStrongTextBlockStyle}" />
                 <Button
-                    Command="{x:Bind ViewModel.RefreshCommand, Mode=OneWay}"
                     Padding="6"
-                    VerticalAlignment="Center">
+                    VerticalAlignment="Center"
+                    Command="{x:Bind ViewModel.RefreshCommand, Mode=OneWay}">
                     <FontIcon FontSize="12" Glyph="&#xE72C;" />
                 </Button>
                 <ComboBox SelectedIndex="{x:Bind ViewModel.SelectedTimeRangeIndex, Mode=TwoWay}">
@@ -171,11 +173,21 @@
                                 <FontIcon FontSize="14" Glyph="&#xEC4A;" />
                                 <TextBlock x:Uid="StatsTopAlbum" Style="{ThemeResource CaptionTextBlockStyle}" />
                             </StackPanel>
-                            <TextBlock
-                                Margin="0,8,0,0"
-                                Style="{ThemeResource SubtitleTextBlockStyle}"
-                                Text="{x:Bind ViewModel.TopAlbumText, Mode=OneWay}"
-                                TextTrimming="CharacterEllipsis" />
+                            <Button
+                                Margin="0,4"
+                                Padding="8,4"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                Background="Transparent"
+                                BorderBrush="Transparent"
+                                BorderThickness="0"
+                                Command="{x:Bind ViewModel.PlayTopAlbumCommand}"
+                                CornerRadius="2">
+                                <TextBlock
+                                    Style="{ThemeResource SubtitleTextBlockStyle}"
+                                    Text="{x:Bind ViewModel.TopAlbumText, Mode=OneWay}"
+                                    TextTrimming="CharacterEllipsis" />
+                            </Button>
                         </StackPanel>
                     </Border>
                 </Grid>
@@ -233,22 +245,49 @@
                                     <DataTemplate x:DataType="statsmodels:ArtistPlayStat">
                                         <Grid Margin="0,4">
                                             <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                                <PersonPicture
-                                                    Width="32"
-                                                    Height="32"
-                                                    DisplayName="{x:Bind Artist}" />
-                                                <TextBlock
-                                                    VerticalAlignment="Center"
-                                                    Style="{ThemeResource BodyStrongTextBlockStyle}"
-                                                    Text="{x:Bind Artist}"
-                                                    TextTrimming="CharacterEllipsis" />
-                                            </StackPanel>
+                                            <Button
+                                                Padding="0"
+                                                Background="Transparent"
+                                                BorderBrush="Transparent"
+                                                BorderThickness="0"
+                                                Command="{x:Bind PlayCommand}"
+                                                CommandParameter="{x:Bind}"
+                                                CornerRadius="20"
+                                                Style="{StaticResource PlayHoverButtonStyle}">
+                                                <Grid
+                                                    Width="40"
+                                                    Height="40"
+                                                    Background="{ThemeResource LayerFillColorAltBrush}"
+                                                    CornerRadius="20">
+                                                    <Image
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        Canvas.ZIndex="1"
+                                                        Stretch="UniformToFill">
+                                                        <interactivity:Interaction.Behaviors>
+                                                            <behaviors:AlbumCoverBehavior Music="{x:Bind Music, Mode=OneWay}" />
+                                                        </interactivity:Interaction.Behaviors>
+                                                    </Image>
+                                                    <FontIcon
+                                                        Canvas.ZIndex="0"
+                                                        FontSize="15"
+                                                        Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                        Glyph="&#xE77B;" />
+                                                </Grid>
+                                            </Button>
                                             <TextBlock
                                                 Grid.Column="1"
+                                                Margin="12,0,0,0"
+                                                VerticalAlignment="Center"
+                                                Style="{ThemeResource BodyStrongTextBlockStyle}"
+                                                Text="{x:Bind Artist}"
+                                                TextTrimming="CharacterEllipsis" />
+                                            <TextBlock
+                                                Grid.Column="2"
                                                 VerticalAlignment="Center"
                                                 FontWeight="SemiBold">
                                                 <Run Text="{x:Bind PlayCount}" />
@@ -281,18 +320,40 @@
                                                 <ColumnDefinition Width="*" />
                                                 <ColumnDefinition Width="Auto" />
                                             </Grid.ColumnDefinitions>
-                                            <Grid
-                                                Width="40"
-                                                Height="40"
-                                                Margin="0,0,12,0"
-                                                Background="{ThemeResource LayerFillColorAltBrush}"
-                                                CornerRadius="4">
-                                                <FontIcon
-                                                    FontSize="16"
-                                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                                                    Glyph="&#xE8D6;" />
-                                            </Grid>
-                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <Button
+                                                Padding="0"
+                                                Background="Transparent"
+                                                BorderBrush="Transparent"
+                                                BorderThickness="0"
+                                                Command="{x:Bind PlayCommand}"
+                                                CommandParameter="{x:Bind}"
+                                                CornerRadius="4"
+                                                Style="{StaticResource PlayHoverButtonStyle}">
+                                                <Grid
+                                                    Width="40"
+                                                    Height="40"
+                                                    Background="{ThemeResource LayerFillColorAltBrush}"
+                                                    CornerRadius="4">
+                                                    <Image
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        Canvas.ZIndex="1"
+                                                        Stretch="UniformToFill">
+                                                        <interactivity:Interaction.Behaviors>
+                                                            <behaviors:AlbumCoverBehavior Music="{x:Bind Music, Mode=OneWay}" />
+                                                        </interactivity:Interaction.Behaviors>
+                                                    </Image>
+                                                    <FontIcon
+                                                        Canvas.ZIndex="0"
+                                                        FontSize="16"
+                                                        Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                        Glyph="&#xE8D6;" />
+                                                </Grid>
+                                            </Button>
+                                            <StackPanel
+                                                Grid.Column="1"
+                                                Margin="12,0,0,0"
+                                                VerticalAlignment="Center">
                                                 <TextBlock
                                                     Style="{ThemeResource BodyStrongTextBlockStyle}"
                                                     Text="{x:Bind Title}"
