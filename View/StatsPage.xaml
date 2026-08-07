@@ -184,7 +184,8 @@
                                 Command="{x:Bind ViewModel.PlayTopAlbumCommand}"
                                 CornerRadius="2">
                                 <TextBlock
-                                    Style="{ThemeResource SubtitleTextBlockStyle}"
+                                    FontSize="20"
+                                    FontWeight="SemiBold"
                                     Text="{x:Bind ViewModel.TopAlbumText, Mode=OneWay}"
                                     TextTrimming="CharacterEllipsis" />
                             </Button>
@@ -283,9 +284,11 @@
                                                 Grid.Column="1"
                                                 Margin="12,0,0,0"
                                                 VerticalAlignment="Center"
-                                                Style="{ThemeResource BodyStrongTextBlockStyle}"
+                                                FontSize="14"
+                                                FontWeight="SemiBold"
                                                 Text="{x:Bind Artist}"
-                                                TextTrimming="CharacterEllipsis" />
+                                                TextTrimming="CharacterEllipsis"
+                                                TextWrapping="NoWrap" />
                                             <TextBlock
                                                 Grid.Column="2"
                                                 VerticalAlignment="Center"
@@ -355,14 +358,17 @@
                                                 Margin="12,0,0,0"
                                                 VerticalAlignment="Center">
                                                 <TextBlock
-                                                    Style="{ThemeResource BodyStrongTextBlockStyle}"
+                                                    FontSize="14"
+                                                    FontWeight="SemiBold"
                                                     Text="{x:Bind Title}"
-                                                    TextTrimming="CharacterEllipsis" />
+                                                    TextTrimming="CharacterEllipsis"
+                                                    TextWrapping="NoWrap" />
                                                 <TextBlock
                                                     Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                                                    Style="{ThemeResource CaptionTextBlockStyle}"
+                                                    FontSize="12"
                                                     Text="{x:Bind Artist}"
-                                                    TextTrimming="CharacterEllipsis" />
+                                                    TextTrimming="CharacterEllipsis"
+                                                    TextWrapping="NoWrap" />
                                             </StackPanel>
                                             <TextBlock
                                                 Grid.Column="2"

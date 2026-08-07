@@ -175,6 +175,7 @@ namespace WinUIMusicPlayer.ViewModel
                 (int)StatsRange.ThisMonth => startLocal.AddMonths(1),
                 (int)StatsRange.ThisQuarter => startLocal.AddMonths(3),
                 (int)StatsRange.ThisYear => startLocal.AddYears(1),
+                (int)StatsRange.AllTime => now.Date.AddDays(1),
                 _ => startLocal.AddDays(1),
             };
             endLocal = endLocal.AddTicks(-1);
@@ -323,8 +324,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private static string FormatHours(double totalSeconds)
         {
-            double hours = totalSeconds / 3600.0;
-            return hours >= 100 ? hours.ToString("F0") : hours.ToString("F1");
+            return (totalSeconds / 3600.0).ToString("F2");
         }
 
         private void UpdateHourlyPeaks(int[] counts)
