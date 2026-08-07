@@ -248,7 +248,7 @@ namespace WinUIMusicPlayer
                 await SavePlayStateAsync();
                 try
                 {
-                    Services.GetService<PlaybackStatsService>()?.FlushSession();
+                    await (Services.GetService<PlaybackStatsService>()?.FlushSessionAsync() ?? Task.CompletedTask);
                 }
                 catch (Exception ex)
                 {

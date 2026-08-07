@@ -13,13 +13,17 @@ namespace WinUIMusicPlayer.Services
     /// <summary>
     /// 播放统计系统核心服务：
     /// 1. 记录每次播放会话（开始时间 / 歌曲元数据快照 / 实际收听时长）；
-    /// 2. 参考 scrobble 语义，仅把收听时长达到歌曲总时长一定比例的会话计入统计；
+    /// 2. 参考 scrobble 语义，仅把收听时长达到歌曲总时长一定比例的会话写入历史；
     /// 3. 提供时间段内的汇总查询（总时长、曲目数、Top 歌曲 / 歌手 / 专辑、时段分布）。
+    /// 历史表只存入达标会话：未达标会话在结算时直接丢弃，不占用存储。
     /// </summary>
     public class PlaybackStatsService
     {
         /// <summary>一次播放至少听过歌曲时长的该比例，才计入统计。</summary>
         public const double QualifiedRatio = 0.5;
+
+        /// <summary>单次心跳位置增量超过该值视为 seek / 暂停恢复 / 切歌跳变，只切基准不累计。</summary>
+        private const long MaxPositionDeltaMs = 5000;
 
         /// <summary>会话结算写入数据库完成后触发（任意线程）。</summary>
         public event Action? StatsUpdated;
@@ -30,7 +34,10 @@ namespace WinUIMusicPlayer.Services
         private readonly Lock _sessionLock = new();
 
         private PlaybackHistory? _currentSession;
-        private int _lastSecond = -1;
+
+        /// <summary>当前会话上次心跳的播放位置（毫秒），用于按位置差分累计收听时长。</summary>
+        private long _lastPositionMs = -1;
+
         private long _lastErrorLogTicks;
 
         public PlaybackStatsService(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<PlaybackStatsService> logger)
@@ -49,6 +56,7 @@ namespace WinUIMusicPlayer.Services
             get { lock (_sessionLock) return _currentSession; }
         }
 
+        /// <summary>是否达到统计入库阈值（收听时长超过歌曲总时长比例）。</summary>
         public bool IsQualified(PlaybackHistory session)
         {
             return session.TotalDurationMs > 0
@@ -57,6 +65,7 @@ namespace WinUIMusicPlayer.Services
 
         /// <summary>
         /// 结算上一会话并开始一次新的播放会话。必须在 UI 线程调用（播放入口处）。
+        /// 会话不在开始时入库，而是在 <see cref="FlushSession"/> 结算且达标后一次性写入。
         /// </summary>
         public void StartSession(Music music)
         {
@@ -72,34 +81,34 @@ namespace WinUIMusicPlayer.Services
                 TotalDurationMs = music.Duration.TotalMilliseconds,
                 StartedAt = DateTime.UtcNow,
             };
+            // FlushSession 会同步清空 _currentSession 后才返回，此处赋值无竞态。
             lock (_sessionLock)
             {
                 _currentSession = session;
-                _lastSecond = -1;
+                _lastPositionMs = -1;
             }
-
-            // 先入库拿到 Id；切歌 / 停止 / 退出时 UpdateAsync 结算收听时长。
-            _ = PersistInsertAsync(session);
         }
 
-        /// <summary>结算当前会话（写入结束时间与收听时长）。幂等，可重复调用。</summary>
+        /// <summary>结算当前会话（达标则写入数据库并触发更新，未达标丢弃）。幂等，可重复调用。</summary>
         public void FlushSession()
+        {
+            _ = FlushSessionAsync();
+        }
+
+        /// <summary>结算当前会话并等待入池完成（退出应用时使用，避免最后会话丢库）。</summary>
+        public async Task FlushSessionAsync()
         {
             PlaybackHistory? session;
             lock (_sessionLock)
             {
                 session = _currentSession;
                 _currentSession = null;
-                _lastSecond = -1;
+                _lastPositionMs = -1;
             }
             if (session is null) return;
-            session.EndedAt = DateTime.UtcNow;
-            _ = FinalizeAndNotifyAsync(session);
-        }
 
-        private async Task FinalizeAndNotifyAsync(PlaybackHistory session)
-        {
-            await PersistUpdateAsync(session);
+            session.EndedAt = DateTime.UtcNow;
+            await PersistSessionAsync(session);
             try
             {
                 StatsUpdated?.Invoke();
@@ -116,20 +125,26 @@ namespace WinUIMusicPlayer.Services
             {
                 if (!_appViewModel.IsPlaying) return;
 
-                PlaybackHistory session;
                 lock (_sessionLock)
                 {
-                    session = _currentSession;
-                    if (session is null) return;
-                    int second = (int)(currentMs / 1000);
-                    if (second == _lastSecond) return;
-                    _lastSecond = second;
-                }
+                    var session = _currentSession;
+                    if (session is null || session.TotalDurationMs <= 0) return;
 
-                double played = session.DurationPlayedMs + 1000;
-                session.DurationPlayedMs = session.TotalDurationMs > 0
-                    ? Math.Min(played, session.TotalDurationMs)
-                    : played;
+                    if (_lastPositionMs < 0)
+                    {
+                        _lastPositionMs = currentMs;
+                        return;
+                    }
+
+                    long delta = currentMs - _lastPositionMs;
+                    _lastPositionMs = currentMs;
+
+                    // 暂停时位置不前进（delta≈0，自然不计）；seek / 切歌产生的跳变只切基准，不累计。
+                    if (delta <= 0 || delta > MaxPositionDeltaMs) return;
+
+                    double played = session.DurationPlayedMs + delta;
+                    session.DurationPlayedMs = Math.Min(played, session.TotalDurationMs);
+                }
             }
             catch (Exception ex)
             {
@@ -143,10 +158,20 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        private async Task PersistInsertAsync(PlaybackHistory session)
+        private async Task PersistSessionAsync(PlaybackHistory session)
         {
             try
             {
+                if (!IsQualified(session))
+                {
+                    _logger.LogInformation("播放会话未达标不入库: MusicId={MusicId}, 收听={PlayedMs:0}ms, 总时长={TotalMs:0}ms, 会话={SessionSec:0}s",
+                        session.MusicId, session.DurationPlayedMs, session.TotalDurationMs,
+                        (session.EndedAt - session.StartedAt).TotalSeconds);
+                    return;
+                }
+
+                _logger.LogInformation("播放会话达标入库: MusicId={MusicId}, 收听={PlayedMs:0}ms, 总时长={TotalMs:0}ms",
+                    session.MusicId, session.DurationPlayedMs, session.TotalDurationMs);
                 await Db.InsertAsync(session);
             }
             catch (Exception ex)
@@ -155,161 +180,147 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        private async Task PersistUpdateAsync(PlaybackHistory session)
-        {
-            try
-            {
-                await Db.UpdateAsync(session);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "结算播放历史会话失败: {Message}", ex.Message);
-            }
-        }
-
         /// <summary>
-        /// 取时间段内所有达标（听满阈值比例）的会话。
-        /// 统计页请使用 <see cref="GetStatsSnapshotAsync"/> 一次性聚合，避免重复全表查询。
-        /// </summary>
-        public async Task<List<PlaybackHistory>> GetQualifiedLogsAsync(DateTime startUtc, DateTime endUtc)
-        {
-            var rows = await Db.Table<PlaybackHistory>()
-                .Where(h => h.StartedAt >= startUtc && h.StartedAt <= endUtc)
-                .ToListAsync();
-            if (rows.Count == 0) return rows;
-
-            var qualified = new List<PlaybackHistory>(rows.Count);
-            for (int i = 0; i < rows.Count; i++)
-            {
-                if (IsQualified(rows[i])) qualified.Add(rows[i]);
-            }
-            return qualified;
-        }
-
-        /// <summary>
-        /// 统计页数据快照：一次查询 + 内存聚合，生成总时长、曲目数、Top 歌曲 / 歌手 / 专辑与时段分布。
+        /// 统计页数据快照：SQL 聚合一次生成总时长、曲目数、Top 歌曲 / 歌手 / 专辑与时段分布。
+        /// 所有聚合下推数据库，避免把历史表整表物化到内存。
         /// </summary>
         public async Task<StatsSnapshot> GetStatsSnapshotAsync(DateTime startUtc, DateTime endUtc, int topLimit = 10)
         {
-            var rows = await GetQualifiedLogsAsync(startUtc, endUtc);
-            var snapshot = new StatsSnapshot
+            long startTicks = startUtc.ToUniversalTime().Ticks;
+            long endTicks = endUtc.ToUniversalTime().Ticks;
+
+            var snapshot = new StatsSnapshot();
+
+            var summary = await Db.QueryAsync<SqlSummaryRow>(
+                "SELECT COUNT(*) AS PlayCount, COALESCE(SUM(MIN(DurationPlayedMs, TotalDurationMs)), 0) AS Ms " +
+                "FROM PlaybackHistory WHERE StartedAt >= ? AND StartedAt <= ?",
+                startTicks, endTicks);
+            if (summary.Count > 0)
             {
-                TracksPlayedCount = rows.Count,
-                HourlyCounts = new int[24],
-            };
-            if (rows.Count == 0) return snapshot;
-
-            var songs = new Dictionary<(string Title, string Author), (int Count, double Ms, string Album, int MusicId)>();
-            var artists = new Dictionary<string, (int Count, double Ms, int MusicId)>();
-            var albums = new Dictionary<string, (int Count, double Ms, int MusicId)>();
-
-            double totalMs = 0;
-            for (int i = 0; i < rows.Count; i++)
-            {
-                var row = rows[i];
-                string title = row.Title ?? string.Empty;
-                string author = row.Author ?? string.Empty;
-                string album = row.Album ?? string.Empty;
-                double ms = Math.Min(row.DurationPlayedMs, row.TotalDurationMs);
-                totalMs += ms;
-                snapshot.HourlyCounts[row.StartedAt.ToLocalTime().Hour]++;
-
-                var songKey = (title, author);
-                if (!songs.TryGetValue(songKey, out var song))
-                {
-                    song = (0, 0, album, row.MusicId);
-                    songs[songKey] = song;
-                }
-                song = (song.Count + 1, song.Ms + ms, string.IsNullOrEmpty(song.Album) ? album : song.Album, song.MusicId);
-                songs[songKey] = song;
-
-                if (!artists.TryGetValue(author, out var artist))
-                {
-                    artist = (0, 0, row.MusicId);
-                    artists[author] = artist;
-                }
-                artist = (artist.Count + 1, artist.Ms + ms, artist.MusicId);
-                artists[author] = artist;
-
-                if (!albums.TryGetValue(album, out var albumSlot))
-                {
-                    albumSlot = (0, 0, row.MusicId);
-                    albums[album] = albumSlot;
-                }
-                albumSlot = (albumSlot.Count + 1, albumSlot.Ms + ms, albumSlot.MusicId);
-                albums[album] = albumSlot;
+                snapshot.TracksPlayedCount = summary[0].PlayCount;
+                snapshot.TotalListeningSeconds = summary[0].Ms / 1000.0;
             }
 
-            snapshot.TotalListeningSeconds = totalMs / 1000.0;
+            var hours = await Db.QueryAsync<SqlHourRow>(
+                "SELECT CAST(strftime('%H', datetime((StartedAt / 10000000) - 62135596800, 'unixepoch', 'localtime')) AS INTEGER) AS Hour, " +
+                "COUNT(*) AS Cnt FROM PlaybackHistory WHERE StartedAt >= ? AND StartedAt <= ? GROUP BY Hour",
+                startTicks, endTicks);
+            for (int i = 0; i < hours.Count; i++)
+            {
+                var h = hours[i];
+                if (h.Hour is >= 0 and < 24) snapshot.HourlyCounts[h.Hour] = h.Cnt;
+            }
 
-            snapshot.TopSongs = BuildTopSongs(songs, topLimit);
-            snapshot.TopArtists = BuildTopArtists(artists, topLimit);
-            BuildTopAlbum(snapshot, albums);
+            snapshot.TopSongs = await BuildTopSongsAsync(startTicks, endTicks, topLimit);
+            snapshot.TopArtists = await BuildTopArtistsAsync(startTicks, endTicks, topLimit);
+            await BuildTopAlbumAsync(snapshot, startTicks, endTicks);
 
             return snapshot;
         }
 
-        private static List<SongPlayStat> BuildTopSongs(Dictionary<(string Title, string Author), (int Count, double Ms, string Album, int MusicId)> songs, int limit)
+        private async Task<List<SongPlayStat>> BuildTopSongsAsync(long startTicks, long endTicks, int topLimit)
         {
-            var result = new List<SongPlayStat>(songs.Count);
-            foreach (var kv in songs)
+            var rows = await Db.QueryAsync<SqlSongRow>(
+                "SELECT COALESCE(Title, '') AS Title, COALESCE(Author, '') AS Artist, COALESCE(MAX(Album), '') AS Album, " +
+                "MAX(MusicId) AS MusicId, COUNT(*) AS PlayCount, SUM(MIN(DurationPlayedMs, TotalDurationMs)) AS Ms " +
+                "FROM PlaybackHistory WHERE StartedAt >= ? AND StartedAt <= ? " +
+                "GROUP BY Title, Artist ORDER BY PlayCount DESC, Ms DESC LIMIT ?",
+                startTicks, endTicks, topLimit);
+
+            var result = new List<SongPlayStat>(rows.Count);
+            for (int i = 0; i < rows.Count; i++)
             {
+                var r = rows[i];
                 result.Add(new SongPlayStat
                 {
-                    Title = kv.Key.Title,
-                    Artist = kv.Key.Author,
-                    Album = kv.Value.Album,
-                    MusicId = kv.Value.MusicId,
-                    PlayCount = kv.Value.Count,
-                    TotalDurationSeconds = kv.Value.Ms / 1000.0,
+                    Title = r.Title,
+                    Artist = r.Artist,
+                    Album = r.Album,
+                    MusicId = r.MusicId,
+                    PlayCount = r.PlayCount,
+                    TotalDurationSeconds = r.Ms / 1000.0,
                 });
             }
-            result.Sort(static (a, b) => b.PlayCount != a.PlayCount
-                ? b.PlayCount.CompareTo(a.PlayCount)
-                : b.TotalDurationSeconds.CompareTo(a.TotalDurationSeconds));
-            if (result.Count > limit) result.RemoveRange(limit, result.Count - limit);
             return result;
         }
 
-        private static List<ArtistPlayStat> BuildTopArtists(Dictionary<string, (int Count, double Ms, int MusicId)> artists, int limit)
+        private async Task<List<ArtistPlayStat>> BuildTopArtistsAsync(long startTicks, long endTicks, int topLimit)
         {
-            var result = new List<ArtistPlayStat>(artists.Count);
-            foreach (var kv in artists)
+            var rows = await Db.QueryAsync<SqlArtistRow>(
+                "SELECT COALESCE(Author, '') AS Artist, MAX(MusicId) AS MusicId, COUNT(*) AS PlayCount, " +
+                "SUM(MIN(DurationPlayedMs, TotalDurationMs)) AS Ms " +
+                "FROM PlaybackHistory WHERE StartedAt >= ? AND StartedAt <= ? " +
+                "GROUP BY Artist ORDER BY PlayCount DESC, Ms DESC LIMIT ?",
+                startTicks, endTicks, topLimit);
+
+            var result = new List<ArtistPlayStat>(rows.Count);
+            for (int i = 0; i < rows.Count; i++)
             {
+                var r = rows[i];
                 result.Add(new ArtistPlayStat
                 {
-                    Artist = kv.Key,
-                    MusicId = kv.Value.MusicId,
-                    PlayCount = kv.Value.Count,
-                    TotalDurationSeconds = kv.Value.Ms / 1000.0,
+                    Artist = r.Artist,
+                    MusicId = r.MusicId,
+                    PlayCount = r.PlayCount,
+                    TotalDurationSeconds = r.Ms / 1000.0,
                 });
             }
-            result.Sort(static (a, b) => b.PlayCount != a.PlayCount
-                ? b.PlayCount.CompareTo(a.PlayCount)
-                : b.TotalDurationSeconds.CompareTo(a.TotalDurationSeconds));
-            if (result.Count > limit) result.RemoveRange(limit, result.Count - limit);
             return result;
         }
 
-        private static void BuildTopAlbum(StatsSnapshot snapshot, Dictionary<string, (int Count, double Ms, int MusicId)> albums)
+        private async Task BuildTopAlbumAsync(StatsSnapshot snapshot, long startTicks, long endTicks)
         {
-            string bestName = string.Empty;
-            int bestCount = 0;
-            int bestMusicId = 0;
-            double bestMs = 0;
-            foreach (var kv in albums)
-            {
-                if (kv.Value.Count > bestCount || (kv.Value.Count == bestCount && kv.Value.Ms > bestMs))
-                {
-                    bestCount = kv.Value.Count;
-                    bestMs = kv.Value.Ms;
-                    bestName = kv.Key;
-                    bestMusicId = kv.Value.MusicId;
-                }
-            }
-            snapshot.TopAlbumName = bestName;
-            snapshot.TopAlbumPlayCount = bestCount;
-            snapshot.TopAlbumMusicId = bestMusicId;
+            var rows = await Db.QueryAsync<SqlAlbumRow>(
+                "SELECT COALESCE(Album, '') AS Album, MAX(MusicId) AS MusicId, COUNT(*) AS PlayCount, " +
+                "SUM(MIN(DurationPlayedMs, TotalDurationMs)) AS Ms " +
+                "FROM PlaybackHistory WHERE StartedAt >= ? AND StartedAt <= ? " +
+                "GROUP BY Album ORDER BY PlayCount DESC, Ms DESC LIMIT 1",
+                startTicks, endTicks);
+
+            if (rows.Count == 0) return;
+
+            var r = rows[0];
+            snapshot.TopAlbumName = r.Album;
+            snapshot.TopAlbumPlayCount = r.PlayCount;
+            snapshot.TopAlbumMusicId = r.MusicId;
+        }
+
+        private sealed class SqlSummaryRow
+        {
+            public int PlayCount { get; set; }
+            public double Ms { get; set; }
+        }
+
+        private sealed class SqlHourRow
+        {
+            public int Hour { get; set; }
+            public int Cnt { get; set; }
+        }
+
+        private sealed class SqlSongRow
+        {
+            public string Title { get; set; } = string.Empty;
+            public string Artist { get; set; } = string.Empty;
+            public string Album { get; set; } = string.Empty;
+            public int MusicId { get; set; }
+            public int PlayCount { get; set; }
+            public double Ms { get; set; }
+        }
+
+        private sealed class SqlArtistRow
+        {
+            public string Artist { get; set; } = string.Empty;
+            public int MusicId { get; set; }
+            public int PlayCount { get; set; }
+            public double Ms { get; set; }
+        }
+
+        private sealed class SqlAlbumRow
+        {
+            public string Album { get; set; } = string.Empty;
+            public int MusicId { get; set; }
+            public int PlayCount { get; set; }
+            public double Ms { get; set; }
         }
     }
 }
