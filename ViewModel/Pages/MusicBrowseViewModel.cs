@@ -10,10 +10,10 @@ using Microsoft.UI.Xaml.Media.Animation;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Portable;
 using WinUIMusicPlayer.Helper;
@@ -36,6 +36,7 @@ namespace WinUIMusicPlayer.ViewModel
             get => field;
             set
             {
+                if (value is null) return;
                 if (SetProperty(ref field, value))
                 {
                     OnSelectionChanged();
@@ -705,6 +706,20 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 _logger.LogError($"内存清理失败: {ex.Message}");
             }
+        }
+
+
+        [RelayCommand]
+        private void OnAlbumButton(string? artist)
+        {
+            if (string.IsNullOrWhiteSpace(artist)) return;
+            SelectBarArtist(artist);
+        }
+        [RelayCommand]
+        private void OnArtistButton(string? album)
+        {
+            if (string.IsNullOrWhiteSpace(album)) return;
+            SelectBarAlbum(album);
         }
 
         public void SelectBarArtist(string artist)

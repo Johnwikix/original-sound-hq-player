@@ -190,13 +190,15 @@
                                     TextTrimming="CharacterEllipsis" />
                             </dev:AutoScrollView>
                             <Button
-                                x:Name="MusicAlbumTextBlock"
+                                x:Name="MusicAlbumButton"
                                 Grid.Row="1"
                                 Margin="10,0,10,0"
                                 Padding="1"
                                 VerticalAlignment="Bottom"
                                 Background="Transparent"
                                 BorderThickness="0"
+                                Command="{x:Bind ViewModel.MusicBrowseVM.AlbumButtonCommand, Mode=OneWay}"
+                                CommandParameter="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
                                 IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}">
                                 <Button.Content>
                                     <dev:AutoScrollView
@@ -207,20 +209,21 @@
                                         PointerExited="AutoScrollHover_PointerExited">
                                         <TextBlock
                                             FontSize="12"
-                                            Tapped="AlbumTextBlock_Tapped"
                                             Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Album, Mode=OneWay}"
                                             TextTrimming="WordEllipsis" />
                                     </dev:AutoScrollView>
                                 </Button.Content>
                             </Button>
                             <Button
-                                x:Name="MusicAuthorTextBlock"
+                                x:Name="MusicAuthorButton"
                                 Grid.Row="2"
                                 Margin="10,0,10,0"
                                 Padding="1"
                                 VerticalAlignment="Center"
                                 Background="Transparent"
                                 BorderThickness="0"
+                                Command="{x:Bind ViewModel.MusicBrowseVM.ArtistButtonCommand, Mode=OneWay}"
+                                CommandParameter="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
                                 IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}">
                                 <Button.Content>
                                     <dev:AutoScrollView
@@ -231,7 +234,6 @@
                                         PointerExited="AutoScrollHover_PointerExited">
                                         <TextBlock
                                             FontSize="12"
-                                            Tapped="AuthorTextBlock_Tapped"
                                             Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Author, Mode=OneWay}"
                                             TextTrimming="WordEllipsis" />
                                     </dev:AutoScrollView>

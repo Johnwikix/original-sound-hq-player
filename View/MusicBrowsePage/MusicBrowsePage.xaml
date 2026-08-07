@@ -29,7 +29,7 @@
             Margin="5,0,0,0"
             Visibility="Visible">
             <StackPanel Orientation="Horizontal">
-                <SelectorBar x:Name="selectPage" SelectedItem="{x:Bind ViewModel.SelectedPage, Mode=TwoWay}">
+                <SelectorBar x:Name="selectPage" SelectedItem="{x:Bind ViewModel.SelectedPage, Mode=OneWay}" SelectionChanged="SelectPage_SelectionChanged">
                     <SelectorBarItem
                         x:Name="Song"
                         x:Uid="SongTab"

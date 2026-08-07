@@ -440,24 +440,6 @@ namespace WinUIMusicPlayer.View
             });
         }
 
-        private void AuthorTextBlock_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            if (sender is TextBlock textBlock)
-            {
-                string artist = textBlock.Text;
-                ViewModel.MusicBrowseVM.SelectBarArtist(artist);
-            }
-        }
-
-        private void AlbumTextBlock_Tapped(object sender, TappedRoutedEventArgs e)
-        {
-            if (sender is TextBlock textBlock)
-            {
-                string albumName = textBlock.Text;
-                ViewModel.MusicBrowseVM.SelectBarAlbum(albumName);
-            }
-        }
-
         private void CurrentPlayListView_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
             var selectedMusic = CurrentPlayListView.SelectedItem as Music;
