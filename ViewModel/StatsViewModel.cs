@@ -118,9 +118,6 @@ namespace WinUIMusicPlayer.ViewModel
             _ = dq.TryEnqueue(DispatcherQueuePriority.Normal, DebouncedLoad);
         }
 
-        [RelayCommand]
-        private void Refresh() => DebouncedLoad();
-
         private void DebouncedLoad()
         {
             if (_debounceTimer is null)
@@ -193,7 +190,6 @@ namespace WinUIMusicPlayer.ViewModel
             try
             {
                 var (startUtc, endUtc) = CalculateRange();
-                _logger.LogInformation("加载播放统计，时间范围: {Start:O} ~ {End:O}", startUtc, endUtc);
 
                 var snapshot = await _statsService.GetStatsSnapshotAsync(startUtc, endUtc, 10);
 

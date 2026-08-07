@@ -22,9 +22,6 @@ namespace WinUIMusicPlayer.Services
         /// <summary>一次播放至少听过歌曲时长的该比例，才计入统计。</summary>
         public const double QualifiedRatio = 0.5;
 
-        /// <summary>单次心跳位置增量超过该值视为 seek / 暂停恢复 / 切歌跳变，只切基准不累计。</summary>
-        private const long MaxPositionDeltaMs = 5000;
-
         /// <summary>会话结算写入数据库完成后触发（任意线程）。</summary>
         public event Action? StatsUpdated;
 
@@ -39,6 +36,8 @@ namespace WinUIMusicPlayer.Services
         private long _lastPositionMs = -1;
 
         private long _lastErrorLogTicks;
+
+        private long _lastRebaseLogTicks;
 
         public PlaybackStatsService(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<PlaybackStatsService> logger)
         {
@@ -66,10 +65,23 @@ namespace WinUIMusicPlayer.Services
         /// <summary>
         /// 结算上一会话并开始一次新的播放会话。必须在 UI 线程调用（播放入口处）。
         /// 会话不在开始时入库，而是在 <see cref="FlushSession"/> 结算且达标后一次性写入。
+        /// 同一首歌在短时间内重复进入（自动切歌与手动点击并发等）会被忽略，避免会话被误切短。
         /// </summary>
         public void StartSession(Music music)
         {
             if (music is null) return;
+
+            lock (_sessionLock)
+            {
+                var existing = _currentSession;
+                if (existing is not null
+                    && existing.MusicId == music.Id
+                    && (DateTime.UtcNow - existing.StartedAt).TotalSeconds < 5)
+                {
+                    return;
+                }
+            }
+
             FlushSession();
 
             var session = new PlaybackHistory
@@ -139,8 +151,22 @@ namespace WinUIMusicPlayer.Services
                     long delta = currentMs - _lastPositionMs;
                     _lastPositionMs = currentMs;
 
-                    // 暂停时位置不前进（delta≈0，自然不计）；seek / 切歌产生的跳变只切基准，不累计。
-                    if (delta <= 0 || delta > MaxPositionDeltaMs) return;
+                    // 暂停 / 回跳（seek 后退、切歌过渡）只切基准不累计；
+                    // 正向跳变（快进、拖动、UI 卡顿后的追赶）按收听时间计入，防止整段丢时。
+                    if (delta <= 0)
+                    {
+                        if (delta < 0 && (DateTime.UtcNow - session.StartedAt).TotalSeconds >= 2)
+                        {
+                            long now = Environment.TickCount64;
+                            if (now - _lastRebaseLogTicks >= 10_000)
+                            {
+                                _lastRebaseLogTicks = now;
+                                _logger.LogInformation("统计位置回跳切基准: MusicId={MusicId}, delta={Delta}ms, pos={Pos}ms",
+                                    session.MusicId, delta, currentMs);
+                            }
+                        }
+                        return;
+                    }
 
                     double played = session.DurationPlayedMs + delta;
                     session.DurationPlayedMs = Math.Min(played, session.TotalDurationMs);

@@ -59,12 +59,6 @@
                     x:Uid="StatsPageTimeRange"
                     VerticalAlignment="Center"
                     Style="{ThemeResource BodyStrongTextBlockStyle}" />
-                <Button
-                    Padding="6"
-                    VerticalAlignment="Center"
-                    Command="{x:Bind ViewModel.RefreshCommand, Mode=OneWay}">
-                    <FontIcon FontSize="12" Glyph="&#xE72C;" />
-                </Button>
                 <ComboBox SelectedIndex="{x:Bind ViewModel.SelectedTimeRangeIndex, Mode=TwoWay}">
                     <ComboBoxItem x:Uid="StatsRangeToday" />
                     <ComboBoxItem x:Uid="StatsRangeThisWeek" />
@@ -293,7 +287,7 @@
                                                 Grid.Column="2"
                                                 VerticalAlignment="Center"
                                                 FontWeight="SemiBold">
-                                                <Run Text="{x:Bind PlayCount}" />
+                                                <Run Text="{x:Bind PlayCount, Mode=OneWay}" />
                                                 <Run
                                                     x:Uid="StatsTimes"
                                                     FontSize="10"
@@ -374,7 +368,7 @@
                                                 Grid.Column="2"
                                                 VerticalAlignment="Center"
                                                 FontWeight="SemiBold">
-                                                <Run Text="{x:Bind PlayCount}" />
+                                                <Run Text="{x:Bind PlayCount, Mode=OneWay}" />
                                                 <Run
                                                     x:Uid="StatsTimes"
                                                     FontSize="10"

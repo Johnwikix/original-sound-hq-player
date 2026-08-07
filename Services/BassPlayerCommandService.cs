@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.ViewModel;
@@ -77,23 +78,34 @@ namespace WinUIMusicPlayer.Services
             IpcService.UpdateSettings();
         }
 
+        /// <summary>自动切歌单飞标记：防止重复 PlayEnded 通知导致并发触发两次切歌。</summary>
+        private int _autoPlayInFlight;
+
         public async Task AutoPlayNextTrack()
         {
-            AppViewModel.StopProgressTimer();
-            switch (AppViewModel.CurrentPlayMode)
+            if (Interlocked.Exchange(ref _autoPlayInFlight, 1) != 0) return;
+            try
             {
-                case PlayMode.SingleLoop:
-                    await MusicBrowsePlayMusic(AppViewModel.CurrentPlayingMusic);
-                    break;
-                case PlayMode.ListLoop:
-                case PlayMode.RandomLoop:
-                    int currentIndex = AppViewModel.GetCurrentIndex();
-                    int nextIndex = (currentIndex + 1) % AppViewModel.CurrentPlayingList.Count;
-                    await MusicBrowsePlayMusic(AppViewModel.CurrentPlayingList[nextIndex]);
-                    break;
-                case PlayMode.RepeatOff:
-                    MusicEnd();
-                    break;
+                AppViewModel.StopProgressTimer();
+                switch (AppViewModel.CurrentPlayMode)
+                {
+                    case PlayMode.SingleLoop:
+                        await MusicBrowsePlayMusic(AppViewModel.CurrentPlayingMusic);
+                        break;
+                    case PlayMode.ListLoop:
+                    case PlayMode.RandomLoop:
+                        int currentIndex = AppViewModel.GetCurrentIndex();
+                        int nextIndex = (currentIndex + 1) % AppViewModel.CurrentPlayingList.Count;
+                        await MusicBrowsePlayMusic(AppViewModel.CurrentPlayingList[nextIndex]);
+                        break;
+                    case PlayMode.RepeatOff:
+                        MusicEnd();
+                        break;
+                }
+            }
+            finally
+            {
+                Interlocked.Exchange(ref _autoPlayInFlight, 0);
             }
         }
 
