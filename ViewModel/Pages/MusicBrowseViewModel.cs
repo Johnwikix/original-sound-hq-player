@@ -13,7 +13,6 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Input;
 using Windows.Devices.Enumeration;
 using Windows.Devices.Portable;
 using WinUIMusicPlayer.Helper;
@@ -710,13 +709,13 @@ namespace WinUIMusicPlayer.ViewModel
 
 
         [RelayCommand]
-        private void OnAlbumButton(string? artist)
+        private void OnArtistButton(string? artist)
         {
             if (string.IsNullOrWhiteSpace(artist)) return;
             SelectBarArtist(artist);
         }
         [RelayCommand]
-        private void OnArtistButton(string? album)
+        private void OnAlbumButton(string? album)
         {
             if (string.IsNullOrWhiteSpace(album)) return;
             SelectBarAlbum(album);
