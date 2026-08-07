@@ -91,7 +91,10 @@ namespace WinUIMusicPlayer.View
             {
                 ViewModel.AppViewModel.DefaultPlayListComboBoxTag = "song";
             }
-            SelectBarItem(ViewModel.AppViewModel.DefaultPlayListComboBoxTag);
+            if (ContentFrame.Content is null)
+            {
+                SelectBarItem(ViewModel.AppViewModel.DefaultPlayListComboBoxTag);
+            }
             Loaded -= OnPageLoaded;
         }
 
@@ -146,16 +149,13 @@ namespace WinUIMusicPlayer.View
         {
             ViewModel.AppViewModel.PageType = "artist";
             ViewModel.AppViewModel.CurrentArtistObj = ViewModel.AppViewModel.FindFirstByArtist(artist);
-            if (ContentFrame is not null && ContentFrame.Content is not null)
+            if (ContentFrame?.Content is ArtistPage artistPage)
             {
-                if (ContentFrame.Content is ArtistPage artistPage)
-                {
-                    artistPage.EnterDetailFromCrossLink();
-                }
-                else
-                {
-                    SelectBarItem("artist");
-                }
+                artistPage.EnterDetailFromCrossLink();
+            }
+            else
+            {
+                SelectBarItem("artist");
             }
         }
 

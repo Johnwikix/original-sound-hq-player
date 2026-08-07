@@ -709,11 +709,13 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void SelectBarArtist(string artist)
         {
+            MainPage?.NavigateToMusicBrowsePage();
             MusicBrowsePage.SelectBarArtist(artist);
         }
 
         public void SelectBarAlbum(string Album)
         {
+            MainPage?.NavigateToMusicBrowsePage();
             MusicBrowsePage.SelectBarAlbum(Album);
         }
 
