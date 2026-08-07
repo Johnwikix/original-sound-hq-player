@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="WinUIMusicPlayer.View.StatsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:statsmodels="using:WinUIMusicPlayer.Model.Stats"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <Style x:Key="StatsCardStyle" TargetType="Border">
+            <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Padding" Value="16" />
+            <Setter Property="Margin" Value="0,0,4,4" />
+        </Style>
+    </Page.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!--  页面标题  -->
+        <Grid Grid.Row="0" Margin="32,0,32,0">
+            <TextBlock
+                x:Uid="Stats"
+                Margin="10,20,0,10"
+                FontSize="28" />
+        </Grid>
+
+        <!--  加载条  -->
+        <ProgressBar
+            Grid.Row="0"
+            Grid.RowSpan="3"
+            VerticalAlignment="Top"
+            Background="Transparent"
+            IsIndeterminate="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
+            Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+        <!--  时间范围选择  -->
+        <controls:SettingsExpander
+            Grid.Row="1"
+            Margin="36,16,36,4"
+            IsExpanded="{x:Bind ViewModel.IsCustomRangeSelected, Mode=OneWay}">
+            <controls:SettingsExpander.HeaderIcon>
+                <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE9D9;" />
+            </controls:SettingsExpander.HeaderIcon>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <TextBlock
+                    x:Uid="StatsPageTimeRange"
+                    VerticalAlignment="Center"
+                    Style="{ThemeResource BodyStrongTextBlockStyle}" />
+                <Button
+                    Command="{x:Bind ViewModel.RefreshCommand, Mode=OneWay}"
+                    Padding="6"
+                    VerticalAlignment="Center">
+                    <FontIcon FontSize="12" Glyph="&#xE72C;" />
+                </Button>
+                <ComboBox SelectedIndex="{x:Bind ViewModel.SelectedTimeRangeIndex, Mode=TwoWay}">
+                    <ComboBoxItem x:Uid="StatsRangeToday" />
+                    <ComboBoxItem x:Uid="StatsRangeThisWeek" />
+                    <ComboBoxItem x:Uid="StatsRangeThisMonth" />
+                    <ComboBoxItem x:Uid="StatsRangeThisQuarter" />
+                    <ComboBoxItem x:Uid="StatsRangeThisYear" />
+                    <ComboBoxItem x:Uid="StatsRangeAllTime" />
+                    <ComboBoxItem x:Uid="StatsRangeCustom" />
+                </ComboBox>
+            </StackPanel>
+
+            <controls:SettingsExpander.Items>
+                <controls:SettingsCard x:Uid="StatsCustomStart">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <CalendarDatePicker Date="{x:Bind ViewModel.CustomStartDate, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.IsCustomRangeSelected, Mode=OneWay}" />
+                        <TimePicker
+                            VerticalAlignment="Bottom"
+                            IsEnabled="{x:Bind ViewModel.IsCustomRangeSelected, Mode=OneWay}"
+                            Time="{x:Bind ViewModel.CustomStartTime, Mode=TwoWay}" />
+                    </StackPanel>
+                </controls:SettingsCard>
+
+                <controls:SettingsCard x:Uid="StatsCustomEnd">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <CalendarDatePicker Date="{x:Bind ViewModel.CustomEndDate, Mode=TwoWay}" IsEnabled="{x:Bind ViewModel.IsCustomRangeSelected, Mode=OneWay}" />
+                        <TimePicker
+                            VerticalAlignment="Bottom"
+                            IsEnabled="{x:Bind ViewModel.IsCustomRangeSelected, Mode=OneWay}"
+                            Time="{x:Bind ViewModel.CustomEndTime, Mode=TwoWay}" />
+                    </StackPanel>
+                </controls:SettingsCard>
+            </controls:SettingsExpander.Items>
+        </controls:SettingsExpander>
+
+        <!--  结果展示  -->
+        <ScrollViewer Grid.Row="2" Padding="36,0,32,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <!--  顶部汇总卡片  -->
+                <Grid Grid.Row="0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!--  总收听时长  -->
+                    <Border Grid.Column="0" Style="{StaticResource StatsCardStyle}">
+                        <StackPanel>
+                            <StackPanel
+                                Opacity="0.8"
+                                Orientation="Horizontal"
+                                Spacing="8">
+                                <FontIcon FontSize="14" Glyph="&#xE916;" />
+                                <TextBlock x:Uid="StatsTotalDuration" Style="{ThemeResource CaptionTextBlockStyle}" />
+                            </StackPanel>
+                            <StackPanel
+                                Margin="0,8,0,0"
+                                Orientation="Horizontal"
+                                Spacing="4">
+                                <TextBlock
+                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                    Style="{ThemeResource SubtitleTextBlockStyle}"
+                                    Text="{x:Bind ViewModel.TotalDurationText, Mode=OneWay}" />
+                                <TextBlock
+                                    Margin="0,0,0,2"
+                                    VerticalAlignment="Bottom"
+                                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                    Opacity="0.8"
+                                    Style="{ThemeResource CaptionTextBlockStyle}"
+                                    Text="Hrs" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <!--  已播放曲目数  -->
+                    <Border Grid.Column="1" Style="{StaticResource StatsCardStyle}">
+                        <StackPanel>
+                            <StackPanel
+                                Opacity="0.8"
+                                Orientation="Horizontal"
+                                Spacing="8">
+                                <FontIcon FontSize="14" Glyph="&#xE8D6;" />
+                                <TextBlock x:Uid="StatsTracksPlayed" Style="{ThemeResource CaptionTextBlockStyle}" />
+                            </StackPanel>
+                            <TextBlock
+                                Margin="0,8,0,0"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                Text="{x:Bind ViewModel.TracksPlayedCount, Mode=OneWay}" />
+                        </StackPanel>
+                    </Border>
+
+                    <!--  最常播放专辑  -->
+                    <Border Grid.Column="2" Style="{StaticResource StatsCardStyle}">
+                        <StackPanel>
+                            <StackPanel
+                                Opacity="0.8"
+                                Orientation="Horizontal"
+                                Spacing="8">
+                                <FontIcon FontSize="14" Glyph="&#xEC4A;" />
+                                <TextBlock x:Uid="StatsTopAlbum" Style="{ThemeResource CaptionTextBlockStyle}" />
+                            </StackPanel>
+                            <TextBlock
+                                Margin="0,8,0,0"
+                                Style="{ThemeResource SubtitleTextBlockStyle}"
+                                Text="{x:Bind ViewModel.TopAlbumText, Mode=OneWay}"
+                                TextTrimming="CharacterEllipsis" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!--  时段分布  -->
+                <Border Grid.Row="1" Style="{StaticResource StatsCardStyle}">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <TextBlock
+                            x:Uid="StatsActivityByHour"
+                            Margin="0,0,0,12"
+                            Style="{ThemeResource SubtitleTextBlockStyle}" />
+                        <Grid Grid.Row="1">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock
+                                    x:Uid="StatsMostActive"
+                                    FontSize="12"
+                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                                <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.PeakHourText, Mode=OneWay}" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1">
+                                <TextBlock
+                                    x:Uid="StatsLeastActive"
+                                    FontSize="12"
+                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                                <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.QuietHourText, Mode=OneWay}" />
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!--  Top 歌手 / Top 歌曲  -->
+                <Grid Grid.Row="2">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <!--  Top 歌手  -->
+                    <Border Grid.Column="0" Style="{StaticResource StatsCardStyle}">
+                        <StackPanel>
+                            <TextBlock
+                                x:Uid="StatsTopArtists"
+                                Margin="0,0,0,12"
+                                Style="{ThemeResource SubtitleTextBlockStyle}" />
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.TopArtists, Mode=OneWay}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="statsmodels:ArtistPlayStat">
+                                        <Grid Margin="0,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                                <PersonPicture
+                                                    Width="32"
+                                                    Height="32"
+                                                    DisplayName="{x:Bind Artist}" />
+                                                <TextBlock
+                                                    VerticalAlignment="Center"
+                                                    Style="{ThemeResource BodyStrongTextBlockStyle}"
+                                                    Text="{x:Bind Artist}"
+                                                    TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                            <TextBlock
+                                                Grid.Column="1"
+                                                VerticalAlignment="Center"
+                                                FontWeight="SemiBold">
+                                                <Run Text="{x:Bind PlayCount}" />
+                                                <Run
+                                                    x:Uid="StatsTimes"
+                                                    FontSize="10"
+                                                    FontWeight="Normal"
+                                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                                            </TextBlock>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <!--  Top 歌曲  -->
+                    <Border Grid.Column="1" Style="{StaticResource StatsCardStyle}">
+                        <StackPanel>
+                            <TextBlock
+                                x:Uid="StatsTopSongs"
+                                Margin="0,0,0,12"
+                                Style="{ThemeResource SubtitleTextBlockStyle}" />
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.TopSongs, Mode=OneWay}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="statsmodels:SongPlayStat">
+                                        <Grid Margin="0,4">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid
+                                                Width="40"
+                                                Height="40"
+                                                Margin="0,0,12,0"
+                                                Background="{ThemeResource LayerFillColorAltBrush}"
+                                                CornerRadius="4">
+                                                <FontIcon
+                                                    FontSize="16"
+                                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                    Glyph="&#xE8D6;" />
+                                            </Grid>
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <TextBlock
+                                                    Style="{ThemeResource BodyStrongTextBlockStyle}"
+                                                    Text="{x:Bind Title}"
+                                                    TextTrimming="CharacterEllipsis" />
+                                                <TextBlock
+                                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                    Style="{ThemeResource CaptionTextBlockStyle}"
+                                                    Text="{x:Bind Artist}"
+                                                    TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                            <TextBlock
+                                                Grid.Column="2"
+                                                VerticalAlignment="Center"
+                                                FontWeight="SemiBold">
+                                                <Run Text="{x:Bind PlayCount}" />
+                                                <Run
+                                                    x:Uid="StatsTimes"
+                                                    FontSize="10"
+                                                    FontWeight="Normal"
+                                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" />
+                                            </TextBlock>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <Grid Grid.Row="3" Height="32" />
+            </Grid>
+        </ScrollViewer>
+    </Grid>
+</Page>

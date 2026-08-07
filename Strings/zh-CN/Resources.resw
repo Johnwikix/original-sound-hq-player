@@ -138,6 +138,66 @@
   <data name="PlayLists.Text" xml:space="preserve">
     <value>播放列表</value>
   </data>
+  <data name="Stats.Text" xml:space="preserve">
+    <value>统计</value>
+  </data>
+  <data name="StatsPageTimeRange.Text" xml:space="preserve">
+    <value>时间范围</value>
+  </data>
+  <data name="StatsRangeToday.Content" xml:space="preserve">
+    <value>今天</value>
+  </data>
+  <data name="StatsRangeThisWeek.Content" xml:space="preserve">
+    <value>本周</value>
+  </data>
+  <data name="StatsRangeThisMonth.Content" xml:space="preserve">
+    <value>本月</value>
+  </data>
+  <data name="StatsRangeThisQuarter.Content" xml:space="preserve">
+    <value>本季度</value>
+  </data>
+  <data name="StatsRangeThisYear.Content" xml:space="preserve">
+    <value>今年</value>
+  </data>
+  <data name="StatsRangeAllTime.Content" xml:space="preserve">
+    <value>全部时间</value>
+  </data>
+  <data name="StatsRangeCustom.Content" xml:space="preserve">
+    <value>自定义</value>
+  </data>
+  <data name="StatsCustomStart.Header" xml:space="preserve">
+    <value>开始</value>
+  </data>
+  <data name="StatsCustomEnd.Header" xml:space="preserve">
+    <value>结束</value>
+  </data>
+  <data name="StatsTotalDuration.Text" xml:space="preserve">
+    <value>累计收听时长</value>
+  </data>
+  <data name="StatsTracksPlayed.Text" xml:space="preserve">
+    <value>已收听曲目</value>
+  </data>
+  <data name="StatsTopAlbum.Text" xml:space="preserve">
+    <value>最常播放专辑</value>
+  </data>
+  <data name="StatsActivityByHour.Text" xml:space="preserve">
+    <value>时段活跃度</value>
+  </data>
+  <data name="StatsMostActive.Text" xml:space="preserve">
+    <value>最活跃时段</value>
+  </data>
+  <data name="StatsLeastActive.Text" xml:space="preserve">
+    <value>最不活跃时段</value>
+  </data>
+  <data name="StatsTopArtists.Text" xml:space="preserve">
+    <value>Top 歌手</value>
+  </data>
+  <data name="StatsTopSongs.Text" xml:space="preserve">
+    <value>Top 歌曲</value>
+  </data>
+  <data name="StatsTimes.Text" xml:space="preserve">
+    <value>次</value>
+  </data>
   <data name="AppMainTitle" xml:space="preserve">
     <value>原音HQ播放器</value>
   </data>

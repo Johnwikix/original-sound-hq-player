@@ -669,6 +669,14 @@ namespace WinUIMusicPlayer.ViewModel
                 await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
                 {
                     AppViewModel.CurrentPlayingMusic = music;
+                    try
+                    {
+                        App.Services.GetService<PlaybackStatsService>()?.StartSession(music);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "记录播放统计会话失败: {Message}", ex.Message);
+                    }
                     AppViewModel.UILyrics = [];
                     MusicBrowsePage?.UpdateViewList();
                 });

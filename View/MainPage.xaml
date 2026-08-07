@@ -54,6 +54,14 @@
                                 <TextBlock x:Uid="PlayLists" />
                             </NavigationViewItem.Content>
                         </NavigationViewItem>
+                        <NavigationViewItem Tag="Stats">
+                            <NavigationViewItem.Icon>
+                                <FontIcon Glyph="&#xE9D9;" />
+                            </NavigationViewItem.Icon>
+                            <NavigationViewItem.Content>
+                                <TextBlock x:Uid="Stats" />
+                            </NavigationViewItem.Content>
+                        </NavigationViewItem>
                     </NavigationView.MenuItems>
                     <Frame x:Name="MainFrame" Background="Transparent" />
                 </NavigationView>

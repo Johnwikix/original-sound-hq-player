@@ -253,6 +253,11 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
+    <Page Update="View\StatsPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+  <ItemGroup>
     <Page Update="View\FavouritePlayListPage.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

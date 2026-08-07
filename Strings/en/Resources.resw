@@ -138,6 +138,66 @@
   <data name="PlayLists.Text" xml:space="preserve">
     <value>Playlists</value>
   </data>
+  <data name="Stats.Text" xml:space="preserve">
+    <value>Statistics</value>
+  </data>
+  <data name="StatsPageTimeRange.Text" xml:space="preserve">
+    <value>Time Range</value>
+  </data>
+  <data name="StatsRangeToday.Content" xml:space="preserve">
+    <value>Today</value>
+  </data>
+  <data name="StatsRangeThisWeek.Content" xml:space="preserve">
+    <value>This Week</value>
+  </data>
+  <data name="StatsRangeThisMonth.Content" xml:space="preserve">
+    <value>This Month</value>
+  </data>
+  <data name="StatsRangeThisQuarter.Content" xml:space="preserve">
+    <value>This Quarter</value>
+  </data>
+  <data name="StatsRangeThisYear.Content" xml:space="preserve">
+    <value>This Year</value>
+  </data>
+  <data name="StatsRangeAllTime.Content" xml:space="preserve">
+    <value>All Time</value>
+  </data>
+  <data name="StatsRangeCustom.Content" xml:space="preserve">
+    <value>Custom</value>
+  </data>
+  <data name="StatsCustomStart.Header" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="StatsCustomEnd.Header" xml:space="preserve">
+    <value>End</value>
+  </data>
+  <data name="StatsTotalDuration.Text" xml:space="preserve">
+    <value>Total Listening Time</value>
+  </data>
+  <data name="StatsTracksPlayed.Text" xml:space="preserve">
+    <value>Tracks Played</value>
+  </data>
+  <data name="StatsTopAlbum.Text" xml:space="preserve">
+    <value>Top Album</value>
+  </data>
+  <data name="StatsActivityByHour.Text" xml:space="preserve">
+    <value>Activity by Hour</value>
+  </data>
+  <data name="StatsMostActive.Text" xml:space="preserve">
+    <value>Most Active</value>
+  </data>
+  <data name="StatsLeastActive.Text" xml:space="preserve">
+    <value>Least Active</value>
+  </data>
+  <data name="StatsTopArtists.Text" xml:space="preserve">
+    <value>Top Artists</value>
+  </data>
+  <data name="StatsTopSongs.Text" xml:space="preserve">
+    <value>Top Songs</value>
+  </data>
+  <data name="StatsTimes.Text" xml:space="preserve">
+    <value>times</value>
+  </data>
   <data name="AppMainTitle" xml:space="preserve">
     <value>OriginalSound HQ Player</value>
   </data>

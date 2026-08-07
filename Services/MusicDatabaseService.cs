@@ -19,6 +19,7 @@ using Windows.Storage;
 using Windows.UI;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Model.Stats;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 using ZLinq;
@@ -63,6 +64,16 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.CreateTableAsync<LastPlayListState>();
                 await _dbConnection.CreateTableAsync<SubFolder>();
                 await _dbConnection.CreateTableAsync<UsbDeviceMusic>();
+                try
+                {
+                    await _dbConnection.CreateTableAsync<PlaybackHistory>();
+                    await _dbConnection.ExecuteAsync(
+                        "CREATE INDEX IF NOT EXISTS IX_PlaybackHistory_StartedAt ON PlaybackHistory(StartedAt)");
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "初始化播放统计表失败，统计功能降级不可用: {Message}", ex.Message);
+                }
             }
             AppViewModel = App.Services.GetRequiredService<AppViewModel>();
             await MigrateLyricsAsync();

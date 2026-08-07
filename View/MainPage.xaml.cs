@@ -230,6 +230,9 @@ namespace WinUIMusicPlayer.View
                 case "PlayLists":
                     NavigateTo(typeof(PlayListPage), null, new EntranceNavigationTransitionInfo());
                     break;
+                case "Stats":
+                    NavigateTo(typeof(StatsPage), null, new EntranceNavigationTransitionInfo());
+                    break;
                 default:
                     NavigateTo(typeof(MusicBrowsePage), null, new EntranceNavigationTransitionInfo());
                     break;
@@ -267,6 +270,7 @@ namespace WinUIMusicPlayer.View
                     "AddFolder" => typeof(AddFolderPage),
                     "MusicBrowse" => typeof(MusicBrowsePage),
                     "PlayLists" => typeof(PlayListPage),
+                    "Stats" => typeof(StatsPage),
                     _ => null
                 };
             }

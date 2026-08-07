@@ -104,6 +104,14 @@ namespace WinUIMusicPlayer.Services
 
         public void MusicEnd()
         {
+            try
+            {
+                App.Services.GetService<PlaybackStatsService>()?.FlushSession();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "结算播放统计失败: {Message}", ex.Message);
+            }
             IpcService.MusicEnd();
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {

@@ -88,6 +88,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<PlayListViewModel>();
                  services.AddSingleton<SongListViewModel>();
                  services.AddSingleton<PlayingDetailViewModel>();
+                 services.AddSingleton<StatsViewModel>();
                  services.AddSingleton<MusicGroupDetailViewModel>();
                  services.AddSingleton<PlaylistDetailViewModel>();
                  services.AddSingleton<SystemMediaControlsService>();
@@ -96,6 +97,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<LyricsRefreshService>();
                  services.AddSingleton<IpcService>();
                  services.AddSingleton<BassPlayerCommandService>();
+                 services.AddSingleton<PlaybackStatsService>();
                  services.AddSingleton<MusicDatabaseService>();
                  services.AddSingleton<LrcService>();
              }).Build();
@@ -244,6 +246,14 @@ namespace WinUIMusicPlayer
             try
             {
                 await SavePlayStateAsync();
+                try
+                {
+                    Services.GetService<PlaybackStatsService>()?.FlushSession();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "退出时结算播放统计失败: {Message}", ex.Message);
+                }
                 Services.GetRequiredService<BassPlayerCommandService>().MusicEnd();
                 MainWindow.Hide();
                 await _host.StopAsync();
