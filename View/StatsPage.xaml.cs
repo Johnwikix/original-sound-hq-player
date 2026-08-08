@@ -100,7 +100,42 @@ namespace WinUIMusicPlayer.View
             }
 
             AnimateScale(scale);
-            HeatmapContent.Height = HeatmapLayoutHeight * scale;
+            SetHeatmapHeight(HeatmapLayoutHeight * scale);
+        }
+
+        private long _lastHeightSetMs;
+        private double _pendingHeight;
+        private bool _heightSettleQueued;
+
+        /// <summary>
+        /// 拖动窗口时 SizeChanged 高频触发，Height 为布局属性，每帧设置会引发整卡重复布局；
+        /// 按 ≥33ms（约 30Hz）节流，节流中被跳过的末值经 DispatcherQueue 惰性补齐，保证最终高度准确。
+        /// </summary>
+        private void SetHeatmapHeight(double height)
+        {
+            long now = Environment.TickCount64;
+            if (now - _lastHeightSetMs >= 33)
+            {
+                HeatmapContent.Height = height;
+                _lastHeightSetMs = now;
+                return;
+            }
+
+            _pendingHeight = height;
+            if (_heightSettleQueued)
+            {
+                return;
+            }
+
+            _heightSettleQueued = true;
+            _ = DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, SettleHeatmapHeight);
+        }
+
+        private void SettleHeatmapHeight()
+        {
+            _heightSettleQueued = false;
+            HeatmapContent.Height = _pendingHeight;
+            _lastHeightSetMs = Environment.TickCount64;
         }
 
         private void AnimateScale(double toScale)

@@ -319,7 +319,7 @@
                                                     Opacity="{x:Bind Opacity}">
                                                     <ToolTipService.ToolTip>
                                                         <StackPanel Orientation="Horizontal">
-                                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind Date.ToShortDateString()}" />
+                                                            <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind TooltipDate}" />
                                                             <Grid Width="4" />
                                                             <TextBlock FontWeight="SemiBold" Text="{x:Bind PlayCount}" />
                                                             <Grid Width="2" />

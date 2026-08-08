@@ -485,7 +485,8 @@ namespace WinUIMusicPlayer.ViewModel
                     Date = currentDate,
                     PlayCount = count,
                     Level = level,
-                    IsEmpty = false
+                    IsEmpty = false,
+                    TooltipDate = currentDate.ToShortDateString()
                 });
             }
 
