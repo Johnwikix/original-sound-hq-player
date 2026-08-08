@@ -138,6 +138,69 @@
   <data name="PlayLists.Text" xml:space="preserve">
     <value>Wiedergabelisten</value>
   </data>
+  <data name="Stats.Text" xml:space="preserve">
+    <value>Statistik</value>
+  </data>
+  <data name="StatsPageTimeRange.Text" xml:space="preserve">
+    <value>Zeitraum</value>
+  </data>
+  <data name="StatsRangePastWeek.Content" xml:space="preserve">
+    <value>Letzte Woche</value>
+  </data>
+  <data name="StatsRangePastMonth.Content" xml:space="preserve">
+    <value>Letzter Monat</value>
+  </data>
+  <data name="StatsRangePastQuarter.Content" xml:space="preserve">
+    <value>Letztes Quartal</value>
+  </data>
+  <data name="StatsRangePastYear.Content" xml:space="preserve">
+    <value>Letztes Jahr</value>
+  </data>
+  <data name="StatsRangeCustom.Content" xml:space="preserve">
+    <value>Benutzerdefiniert</value>
+  </data>
+  <data name="StatsCustomStart.Header" xml:space="preserve">
+    <value>Beginn</value>
+  </data>
+  <data name="StatsCustomEnd.Header" xml:space="preserve">
+    <value>Ende</value>
+  </data>
+  <data name="StatsTotalDuration.Text" xml:space="preserve">
+    <value>Gesamte Hördauer</value>
+  </data>
+  <data name="StatsTracksPlayed.Text" xml:space="preserve">
+    <value>Abgespielte Titel</value>
+  </data>
+  <data name="StatsTopAlbums.Text" xml:space="preserve">
+    <value>Top 5 Alben</value>
+  </data>
+  <data name="StatsActiveDays.Text" xml:space="preserve">
+    <value>Aktive Tage</value>
+  </data>
+  <data name="StatsHeatmap.Text" xml:space="preserve">
+    <value>Heatmap</value>
+  </data>
+  <data name="StatsActivityByHour.Text" xml:space="preserve">
+    <value>Aktivität pro Stunde</value>
+  </data>
+  <data name="StatsMostActive.Text" xml:space="preserve">
+    <value>Am aktivsten</value>
+  </data>
+  <data name="StatsLeastActive.Text" xml:space="preserve">
+    <value>Am wenigsten aktiv</value>
+  </data>
+  <data name="StatsTopArtists.Text" xml:space="preserve">
+    <value>Top 5 Künstler</value>
+  </data>
+  <data name="StatsTopSongs.Text" xml:space="preserve">
+    <value>Top 10 Songs</value>
+  </data>
+  <data name="StatsTopSongsNext.Text" xml:space="preserve">
+    <value>Top 6-10</value>
+  </data>
+  <data name="StatsTimes.Text" xml:space="preserve">
+    <value>Mal</value>
+  </data>
   <data name="AppMainTitle" xml:space="preserve">
     <value>Original-Sound HQ Player</value>
   </data>

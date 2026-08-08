@@ -138,6 +138,69 @@
   <data name="PlayLists.Text" xml:space="preserve">
     <value>再生リスト</value>
   </data>
+  <data name="Stats.Text" xml:space="preserve">
+    <value>統計</value>
+  </data>
+  <data name="StatsPageTimeRange.Text" xml:space="preserve">
+    <value>時間範囲</value>
+  </data>
+  <data name="StatsRangePastWeek.Content" xml:space="preserve">
+    <value>過去1週間</value>
+  </data>
+  <data name="StatsRangePastMonth.Content" xml:space="preserve">
+    <value>過去1か月</value>
+  </data>
+  <data name="StatsRangePastQuarter.Content" xml:space="preserve">
+    <value>過去3か月</value>
+  </data>
+  <data name="StatsRangePastYear.Content" xml:space="preserve">
+    <value>過去1年</value>
+  </data>
+  <data name="StatsRangeCustom.Content" xml:space="preserve">
+    <value>カスタム</value>
+  </data>
+  <data name="StatsCustomStart.Header" xml:space="preserve">
+    <value>開始</value>
+  </data>
+  <data name="StatsCustomEnd.Header" xml:space="preserve">
+    <value>終了</value>
+  </data>
+  <data name="StatsTotalDuration.Text" xml:space="preserve">
+    <value>合計視聴時間</value>
+  </data>
+  <data name="StatsTracksPlayed.Text" xml:space="preserve">
+    <value>再生した曲</value>
+  </data>
+  <data name="StatsTopAlbums.Text" xml:space="preserve">
+    <value>トップ5アルバム</value>
+  </data>
+  <data name="StatsActiveDays.Text" xml:space="preserve">
+    <value>アクティブ日数</value>
+  </data>
+  <data name="StatsHeatmap.Text" xml:space="preserve">
+    <value>ヒートマップ</value>
+  </data>
+  <data name="StatsActivityByHour.Text" xml:space="preserve">
+    <value>時間帯別アクティビティ</value>
+  </data>
+  <data name="StatsMostActive.Text" xml:space="preserve">
+    <value>最も活発な時間帯</value>
+  </data>
+  <data name="StatsLeastActive.Text" xml:space="preserve">
+    <value>最も不活発な時間帯</value>
+  </data>
+  <data name="StatsTopArtists.Text" xml:space="preserve">
+    <value>トップ5アーティスト</value>
+  </data>
+  <data name="StatsTopSongs.Text" xml:space="preserve">
+    <value>トップ10曲</value>
+  </data>
+  <data name="StatsTopSongsNext.Text" xml:space="preserve">
+    <value>トップ6-10</value>
+  </data>
+  <data name="StatsTimes.Text" xml:space="preserve">
+    <value>回</value>
+  </data>
   <data name="AppMainTitle" xml:space="preserve">
     <value>原音HQプレイヤー</value>
   </data>

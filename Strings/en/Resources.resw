@@ -144,23 +144,17 @@
   <data name="StatsPageTimeRange.Text" xml:space="preserve">
     <value>Time Range</value>
   </data>
-  <data name="StatsRangeToday.Content" xml:space="preserve">
-    <value>Today</value>
+  <data name="StatsRangePastWeek.Content" xml:space="preserve">
+    <value>Past Week</value>
   </data>
-  <data name="StatsRangeThisWeek.Content" xml:space="preserve">
-    <value>This Week</value>
+  <data name="StatsRangePastMonth.Content" xml:space="preserve">
+    <value>Past Month</value>
   </data>
-  <data name="StatsRangeThisMonth.Content" xml:space="preserve">
-    <value>This Month</value>
+  <data name="StatsRangePastQuarter.Content" xml:space="preserve">
+    <value>Past Quarter</value>
   </data>
-  <data name="StatsRangeThisQuarter.Content" xml:space="preserve">
-    <value>This Quarter</value>
-  </data>
-  <data name="StatsRangeThisYear.Content" xml:space="preserve">
-    <value>This Year</value>
-  </data>
-  <data name="StatsRangeAllTime.Content" xml:space="preserve">
-    <value>All Time</value>
+  <data name="StatsRangePastYear.Content" xml:space="preserve">
+    <value>Past Year</value>
   </data>
   <data name="StatsRangeCustom.Content" xml:space="preserve">
     <value>Custom</value>

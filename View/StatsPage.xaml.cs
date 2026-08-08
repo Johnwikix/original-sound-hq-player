@@ -35,13 +35,18 @@ namespace WinUIMusicPlayer.View
             ViewModel.OnPageInactive();
         }
 
-        /// <summary>按当前 UI 文化设置热度图左侧星期标签（首日 +2 / +4 天）。</summary>
+        /// <summary>按当前 UI 文化设置热度图左侧 7 个星期刻度（首日起，逐行递增）。</summary>
         private void StatsPage_Loaded(object sender, RoutedEventArgs e)
         {
             var dtfi = CultureInfo.CurrentUICulture.DateTimeFormat;
-            HeatmapLabel1.Text = dtfi.GetDayName((DayOfWeek)(((int)dtfi.FirstDayOfWeek + 1) % 7));
-            HeatmapLabel3.Text = dtfi.GetDayName((DayOfWeek)(((int)dtfi.FirstDayOfWeek + 3) % 7));
-            HeatmapLabel5.Text = dtfi.GetDayName((DayOfWeek)(((int)dtfi.FirstDayOfWeek + 5) % 7));
+            int first = (int)dtfi.FirstDayOfWeek;
+            HeatmapLabel0.Text = dtfi.GetDayName((DayOfWeek)(first % 7));
+            HeatmapLabel1.Text = dtfi.GetDayName((DayOfWeek)((first + 1) % 7));
+            HeatmapLabel2.Text = dtfi.GetDayName((DayOfWeek)((first + 2) % 7));
+            HeatmapLabel3.Text = dtfi.GetDayName((DayOfWeek)((first + 3) % 7));
+            HeatmapLabel4.Text = dtfi.GetDayName((DayOfWeek)((first + 4) % 7));
+            HeatmapLabel5.Text = dtfi.GetDayName((DayOfWeek)((first + 5) % 7));
+            HeatmapLabel6.Text = dtfi.GetDayName((DayOfWeek)((first + 6) % 7));
         }
     }
 }

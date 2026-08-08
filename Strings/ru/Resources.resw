@@ -138,6 +138,69 @@
   <data name="PlayLists.Text" xml:space="preserve">
     <value>Плейлисты</value>
   </data>
+  <data name="Stats.Text" xml:space="preserve">
+    <value>Статистика</value>
+  </data>
+  <data name="StatsPageTimeRange.Text" xml:space="preserve">
+    <value>Временной диапазон</value>
+  </data>
+  <data name="StatsRangePastWeek.Content" xml:space="preserve">
+    <value>Прошлая неделя</value>
+  </data>
+  <data name="StatsRangePastMonth.Content" xml:space="preserve">
+    <value>Прошлый месяц</value>
+  </data>
+  <data name="StatsRangePastQuarter.Content" xml:space="preserve">
+    <value>Прошлый квартал</value>
+  </data>
+  <data name="StatsRangePastYear.Content" xml:space="preserve">
+    <value>Прошлый год</value>
+  </data>
+  <data name="StatsRangeCustom.Content" xml:space="preserve">
+    <value>Свой диапазон</value>
+  </data>
+  <data name="StatsCustomStart.Header" xml:space="preserve">
+    <value>Начало</value>
+  </data>
+  <data name="StatsCustomEnd.Header" xml:space="preserve">
+    <value>Конец</value>
+  </data>
+  <data name="StatsTotalDuration.Text" xml:space="preserve">
+    <value>Общее время прослушивания</value>
+  </data>
+  <data name="StatsTracksPlayed.Text" xml:space="preserve">
+    <value>Прослушано треков</value>
+  </data>
+  <data name="StatsTopAlbums.Text" xml:space="preserve">
+    <value>Топ-5 альбомов</value>
+  </data>
+  <data name="StatsActiveDays.Text" xml:space="preserve">
+    <value>Активных дней</value>
+  </data>
+  <data name="StatsHeatmap.Text" xml:space="preserve">
+    <value>Тепловая карта</value>
+  </data>
+  <data name="StatsActivityByHour.Text" xml:space="preserve">
+    <value>Активность по часам</value>
+  </data>
+  <data name="StatsMostActive.Text" xml:space="preserve">
+    <value>Наиболее активный час</value>
+  </data>
+  <data name="StatsLeastActive.Text" xml:space="preserve">
+    <value>Наименее активный час</value>
+  </data>
+  <data name="StatsTopArtists.Text" xml:space="preserve">
+    <value>Топ-5 исполнителей</value>
+  </data>
+  <data name="StatsTopSongs.Text" xml:space="preserve">
+    <value>Топ-10 песен</value>
+  </data>
+  <data name="StatsTopSongsNext.Text" xml:space="preserve">
+    <value>Топ 6-10</value>
+  </data>
+  <data name="StatsTimes.Text" xml:space="preserve">
+    <value>раз</value>
+  </data>
   <data name="AppMainTitle" xml:space="preserve">
     <value>HQ-плеер Original Sound</value>
   </data>

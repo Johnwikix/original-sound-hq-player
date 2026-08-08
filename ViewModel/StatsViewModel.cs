@@ -14,16 +14,14 @@ using WinUIMusicPlayer.ViewModel.Pages;
 
 namespace WinUIMusicPlayer.ViewModel
 {
-    /// <summary>统计时间段。</summary>
+    /// <summary>统计时间段（滚动口径，含今天）。</summary>
     public enum StatsRange
     {
-        Today = 0,
-        ThisWeek = 1,
-        ThisMonth = 2,
-        ThisQuarter = 3,
-        ThisYear = 4,
-        AllTime = 5,
-        Custom = 6,
+        PastWeek = 0,
+        PastMonth = 1,
+        PastQuarter = 2,
+        PastYear = 3,
+        Custom = 4,
     }
 
     /// <summary>
@@ -31,8 +29,6 @@ namespace WinUIMusicPlayer.ViewModel
     /// </summary>
     public partial class StatsViewModel : ObservableObject
     {
-        private static readonly DateTime AllTimeStartUtc = new(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
         private readonly AppViewModel _appViewModel;
         private readonly PlaybackStatsService _statsService;
         private readonly ILogger<StatsViewModel> _logger;
@@ -62,7 +58,7 @@ namespace WinUIMusicPlayer.ViewModel
                     DebouncedLoad();
                 }
             }
-        } = (int)StatsRange.ThisWeek;
+        } = (int)StatsRange.PastWeek;
 
         public bool IsCustomRangeSelected { get => field; set => SetProperty(ref field, value); }
         public DateTimeOffset? CustomStartDate { get => field; set { if (SetProperty(ref field, value) && IsCustomRangeSelected) DebouncedLoad(); } }
@@ -158,38 +154,16 @@ namespace WinUIMusicPlayer.ViewModel
                 return (customStart.ToUniversalTime(), customEnd.ToUniversalTime());
             }
 
-            DateTime startLocal = now.Date;
-            switch ((StatsRange)SelectedTimeRangeIndex)
+            // 滚动口径：过去 N 天（含今天）。
+            DateTime startLocal = SelectedTimeRangeIndex switch
             {
-                case StatsRange.ThisWeek:
-                    int dayOfWeek = (int)now.DayOfWeek;
-                    if (dayOfWeek == 0) dayOfWeek = 7;
-                    startLocal = now.Date.AddDays(-(dayOfWeek - 1));
-                    break;
-                case StatsRange.ThisMonth:
-                    startLocal = new DateTime(now.Year, now.Month, 1);
-                    break;
-                case StatsRange.ThisQuarter:
-                    startLocal = new DateTime(now.Year, (now.Month - 1) / 3 * 3 + 1, 1);
-                    break;
-                case StatsRange.ThisYear:
-                    startLocal = new DateTime(now.Year, 1, 1);
-                    break;
-                case StatsRange.AllTime:
-                    startLocal = AllTimeStartUtc.ToLocalTime().Date;
-                    break;
-            }
-
-            DateTime endLocal = SelectedTimeRangeIndex switch
-            {
-                (int)StatsRange.ThisWeek => startLocal.AddDays(7),
-                (int)StatsRange.ThisMonth => startLocal.AddMonths(1),
-                (int)StatsRange.ThisQuarter => startLocal.AddMonths(3),
-                (int)StatsRange.ThisYear => startLocal.AddYears(1),
-                (int)StatsRange.AllTime => now.Date.AddDays(1),
-                _ => startLocal.AddDays(1),
+                (int)StatsRange.PastMonth => now.Date.AddDays(-29),
+                (int)StatsRange.PastQuarter => now.Date.AddDays(-89),
+                (int)StatsRange.PastYear => now.Date.AddDays(-364),
+                _ => now.Date.AddDays(-6),
             };
-            endLocal = endLocal.AddTicks(-1);
+
+            DateTime endLocal = now.Date.AddDays(1).AddTicks(-1);
 
             return (startLocal.ToUniversalTime(), endLocal.ToUniversalTime());
         }
@@ -216,8 +190,14 @@ namespace WinUIMusicPlayer.ViewModel
                 ApplyTopAlbums(snapshot.TopAlbums);
 
                 UpdateHourlyPeaks(snapshot.HourlyCounts);
-                ApplyHeatmap(snapshot.DailyCounts, startUtc, endUtc);
                 UpdateHourlySeries(snapshot.HourlyCounts);
+
+                // 热度图固定展示滚动过去一年，不随所选时间范围变化。
+                DateTime now = DateTime.Now;
+                var heatmapStartLocal = now.Date.AddDays(-364);
+                var heatmapEndLocal = now.Date.AddDays(1).AddTicks(-1);
+                var dailyCounts = await _statsService.GetDailyCountsAsync(heatmapStartLocal, heatmapEndLocal);
+                ApplyHeatmap(dailyCounts, heatmapStartLocal, heatmapEndLocal);
             }
             catch (Exception ex)
             {
@@ -408,8 +388,9 @@ namespace WinUIMusicPlayer.ViewModel
         /// <summary>
         /// 构建 GitHub 风格日活跃热度图：按周一/文化首日起始列，7 列一周；
         /// 播放天数 ≥ 最大值 25% 分四档强度；月份变化处生成顶部标签。
+        /// 传入本地日期范围（含起止日）。
         /// </summary>
-        private void ApplyHeatmap(Dictionary<DateTime, int> dailyCounts, DateTime startUtc, DateTime endUtc)
+        private void ApplyHeatmap(Dictionary<DateTime, int> dailyCounts, DateTime startLocal, DateTime endLocal)
         {
             if (dailyCounts.Count == 0)
             {
@@ -419,8 +400,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
 
             var culture = CultureInfo.CurrentUICulture;
-            var startDate = startUtc.ToLocalTime().Date;
-            var endDate = endUtc.ToLocalTime().Date;
+            var startDate = startLocal.Date;
+            var endDate = endLocal.Date;
 
             var maxCount = 0;
             foreach (var value in dailyCounts.Values)

@@ -144,23 +144,17 @@
   <data name="StatsPageTimeRange.Text" xml:space="preserve">
     <value>时间范围</value>
   </data>
-  <data name="StatsRangeToday.Content" xml:space="preserve">
-    <value>今天</value>
+  <data name="StatsRangePastWeek.Content" xml:space="preserve">
+    <value>过去一周</value>
   </data>
-  <data name="StatsRangeThisWeek.Content" xml:space="preserve">
-    <value>本周</value>
+  <data name="StatsRangePastMonth.Content" xml:space="preserve">
+    <value>过去一个月</value>
   </data>
-  <data name="StatsRangeThisMonth.Content" xml:space="preserve">
-    <value>本月</value>
+  <data name="StatsRangePastQuarter.Content" xml:space="preserve">
+    <value>过去一季度</value>
   </data>
-  <data name="StatsRangeThisQuarter.Content" xml:space="preserve">
-    <value>本季度</value>
-  </data>
-  <data name="StatsRangeThisYear.Content" xml:space="preserve">
-    <value>今年</value>
-  </data>
-  <data name="StatsRangeAllTime.Content" xml:space="preserve">
-    <value>全部时间</value>
+  <data name="StatsRangePastYear.Content" xml:space="preserve">
+    <value>过去一年</value>
   </data>
   <data name="StatsRangeCustom.Content" xml:space="preserve">
     <value>自定义</value>

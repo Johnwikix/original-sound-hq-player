@@ -65,12 +65,10 @@
             <StackPanel Orientation="Horizontal" Spacing="8">
 
                 <ComboBox SelectedIndex="{x:Bind ViewModel.SelectedTimeRangeIndex, Mode=TwoWay}">
-                    <ComboBoxItem x:Uid="StatsRangeToday" />
-                    <ComboBoxItem x:Uid="StatsRangeThisWeek" />
-                    <ComboBoxItem x:Uid="StatsRangeThisMonth" />
-                    <ComboBoxItem x:Uid="StatsRangeThisQuarter" />
-                    <ComboBoxItem x:Uid="StatsRangeThisYear" />
-                    <ComboBoxItem x:Uid="StatsRangeAllTime" />
+                    <ComboBoxItem x:Uid="StatsRangePastWeek" />
+                    <ComboBoxItem x:Uid="StatsRangePastMonth" />
+                    <ComboBoxItem x:Uid="StatsRangePastQuarter" />
+                    <ComboBoxItem x:Uid="StatsRangePastYear" />
                     <ComboBoxItem x:Uid="StatsRangeCustom" />
                 </ComboBox>
             </StackPanel>
@@ -209,8 +207,20 @@
                                     <RowDefinition Height="18" />
                                 </Grid.RowDefinitions>
                                 <TextBlock
+                                    x:Name="HeatmapLabel0"
+                                    Grid.Row="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="10"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock
                                     x:Name="HeatmapLabel1"
                                     Grid.Row="1"
+                                    VerticalAlignment="Center"
+                                    FontSize="10"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock
+                                    x:Name="HeatmapLabel2"
+                                    Grid.Row="2"
                                     VerticalAlignment="Center"
                                     FontSize="10"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
@@ -221,8 +231,20 @@
                                     FontSize="10"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                 <TextBlock
+                                    x:Name="HeatmapLabel4"
+                                    Grid.Row="4"
+                                    VerticalAlignment="Center"
+                                    FontSize="10"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock
                                     x:Name="HeatmapLabel5"
                                     Grid.Row="5"
+                                    VerticalAlignment="Center"
+                                    FontSize="10"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock
+                                    x:Name="HeatmapLabel6"
+                                    Grid.Row="6"
                                     VerticalAlignment="Center"
                                     FontSize="10"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}" />

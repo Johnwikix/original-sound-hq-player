@@ -241,6 +241,22 @@ namespace WinUIMusicPlayer.Services
                 if (h.Hour is >= 0 and < 24) snapshot.HourlyCounts[h.Hour] = h.Cnt;
             }
 
+            snapshot.TopSongs = await BuildTopSongsAsync(startTicks, endTicks, songLimit);
+            snapshot.TopArtists = await BuildTopArtistsAsync(startTicks, endTicks, artistLimit);
+            snapshot.TopAlbums = await BuildTopAlbumsAsync(startTicks, endTicks, albumLimit);
+
+            return snapshot;
+        }
+
+        /// <summary>
+        /// 按本地日期聚合会话数（热度图用，可独立于统计时间范围查询）。
+        /// </summary>
+        public async Task<Dictionary<DateTime, int>> GetDailyCountsAsync(DateTime startUtc, DateTime endUtc)
+        {
+            long startTicks = startUtc.ToUniversalTime().Ticks;
+            long endTicks = endUtc.ToUniversalTime().Ticks;
+
+            var result = new Dictionary<DateTime, int>();
             var days = await Db.QueryAsync<SqlDayRow>(
                 "SELECT strftime('%Y-%m-%d', datetime((StartedAt / 10000000) - 62135596800, 'unixepoch', 'localtime')) AS Day, " +
                 "COUNT(*) AS Cnt FROM PlaybackHistory WHERE StartedAt >= ? AND StartedAt <= ? GROUP BY Day",
@@ -251,15 +267,10 @@ namespace WinUIMusicPlayer.Services
                 if (DateTime.TryParseExact(d.Day, "yyyy-MM-dd", null,
                         System.Globalization.DateTimeStyles.None, out var day))
                 {
-                    snapshot.DailyCounts[day] = d.Cnt;
+                    result[day] = d.Cnt;
                 }
             }
-
-            snapshot.TopSongs = await BuildTopSongsAsync(startTicks, endTicks, songLimit);
-            snapshot.TopArtists = await BuildTopArtistsAsync(startTicks, endTicks, artistLimit);
-            snapshot.TopAlbums = await BuildTopAlbumsAsync(startTicks, endTicks, albumLimit);
-
-            return snapshot;
+            return result;
         }
 
         private async Task<List<SongPlayStat>> BuildTopSongsAsync(long startTicks, long endTicks, int topLimit)
