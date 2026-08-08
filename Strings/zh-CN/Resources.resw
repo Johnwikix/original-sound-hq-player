@@ -177,8 +177,11 @@
   <data name="StatsTracksPlayed.Text" xml:space="preserve">
     <value>已收听曲目</value>
   </data>
-  <data name="StatsTopAlbum.Text" xml:space="preserve">
-    <value>最常播放专辑</value>
+  <data name="StatsTopAlbums.Text" xml:space="preserve">
+    <value>Top 5 专辑</value>
+  </data>
+  <data name="StatsActiveDays.Text" xml:space="preserve">
+    <value>活跃天数</value>
   </data>
   <data name="StatsActivityByHour.Text" xml:space="preserve">
     <value>时段活跃度</value>
@@ -190,10 +193,13 @@
     <value>最不活跃时段</value>
   </data>
   <data name="StatsTopArtists.Text" xml:space="preserve">
-    <value>Top 歌手</value>
+    <value>Top 5 歌手</value>
   </data>
   <data name="StatsTopSongs.Text" xml:space="preserve">
-    <value>Top 歌曲</value>
+    <value>Top 10 歌曲</value>
+  </data>
+  <data name="StatsTopSongsNext.Text" xml:space="preserve">
+    <value>Top 6-10</value>
   </data>
   <data name="StatsTimes.Text" xml:space="preserve">
     <value>次</value>

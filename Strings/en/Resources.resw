@@ -177,8 +177,11 @@
   <data name="StatsTracksPlayed.Text" xml:space="preserve">
     <value>Tracks Played</value>
   </data>
-  <data name="StatsTopAlbum.Text" xml:space="preserve">
-    <value>Top Album</value>
+  <data name="StatsTopAlbums.Text" xml:space="preserve">
+    <value>Top 5 Albums</value>
+  </data>
+  <data name="StatsActiveDays.Text" xml:space="preserve">
+    <value>Active Days</value>
   </data>
   <data name="StatsActivityByHour.Text" xml:space="preserve">
     <value>Activity by Hour</value>
@@ -190,10 +193,13 @@
     <value>Least Active</value>
   </data>
   <data name="StatsTopArtists.Text" xml:space="preserve">
-    <value>Top Artists</value>
+    <value>Top 5 Artists</value>
   </data>
   <data name="StatsTopSongs.Text" xml:space="preserve">
-    <value>Top Songs</value>
+    <value>Top 10 Songs</value>
+  </data>
+  <data name="StatsTopSongsNext.Text" xml:space="preserve">
+    <value>Top 6-10</value>
   </data>
   <data name="StatsTimes.Text" xml:space="preserve">
     <value>times</value>

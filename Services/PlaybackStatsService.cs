@@ -210,7 +210,8 @@ namespace WinUIMusicPlayer.Services
         /// 统计页数据快照：SQL 聚合一次生成总时长、曲目数、Top 歌曲 / 歌手 / 专辑与时段分布。
         /// 所有聚合下推数据库，避免把历史表整表物化到内存。
         /// </summary>
-        public async Task<StatsSnapshot> GetStatsSnapshotAsync(DateTime startUtc, DateTime endUtc, int topLimit = 10)
+        public async Task<StatsSnapshot> GetStatsSnapshotAsync(
+            DateTime startUtc, DateTime endUtc, int songLimit = 10, int artistLimit = 5, int albumLimit = 5)
         {
             long startTicks = startUtc.ToUniversalTime().Ticks;
             long endTicks = endUtc.ToUniversalTime().Ticks;
@@ -218,12 +219,15 @@ namespace WinUIMusicPlayer.Services
             var snapshot = new StatsSnapshot();
 
             var summary = await Db.QueryAsync<SqlSummaryRow>(
-                "SELECT COUNT(*) AS PlayCount, COALESCE(SUM(MIN(DurationPlayedMs, TotalDurationMs)), 0) AS Ms " +
+                "SELECT COUNT(*) AS PlayCount, " +
+                "COUNT(DISTINCT strftime('%Y-%m-%d', datetime((StartedAt / 10000000) - 62135596800, 'unixepoch', 'localtime'))) AS ActiveDays, " +
+                "COALESCE(SUM(MIN(DurationPlayedMs, TotalDurationMs)), 0) AS Ms " +
                 "FROM PlaybackHistory WHERE StartedAt >= ? AND StartedAt <= ?",
                 startTicks, endTicks);
             if (summary.Count > 0)
             {
                 snapshot.TracksPlayedCount = summary[0].PlayCount;
+                snapshot.ActiveDaysCount = summary[0].ActiveDays;
                 snapshot.TotalListeningSeconds = summary[0].Ms / 1000.0;
             }
 
@@ -237,9 +241,9 @@ namespace WinUIMusicPlayer.Services
                 if (h.Hour is >= 0 and < 24) snapshot.HourlyCounts[h.Hour] = h.Cnt;
             }
 
-            snapshot.TopSongs = await BuildTopSongsAsync(startTicks, endTicks, topLimit);
-            snapshot.TopArtists = await BuildTopArtistsAsync(startTicks, endTicks, topLimit);
-            await BuildTopAlbumAsync(snapshot, startTicks, endTicks);
+            snapshot.TopSongs = await BuildTopSongsAsync(startTicks, endTicks, songLimit);
+            snapshot.TopArtists = await BuildTopArtistsAsync(startTicks, endTicks, artistLimit);
+            snapshot.TopAlbums = await BuildTopAlbumsAsync(startTicks, endTicks, albumLimit);
 
             return snapshot;
         }
@@ -294,26 +298,34 @@ namespace WinUIMusicPlayer.Services
             return result;
         }
 
-        private async Task BuildTopAlbumAsync(StatsSnapshot snapshot, long startTicks, long endTicks)
+        private async Task<List<AlbumPlayStat>> BuildTopAlbumsAsync(long startTicks, long endTicks, int topLimit)
         {
             var rows = await Db.QueryAsync<SqlAlbumRow>(
                 "SELECT COALESCE(Album, '') AS Album, MAX(MusicId) AS MusicId, COUNT(*) AS PlayCount, " +
                 "SUM(MIN(DurationPlayedMs, TotalDurationMs)) AS Ms " +
                 "FROM PlaybackHistory WHERE StartedAt >= ? AND StartedAt <= ? " +
-                "GROUP BY Album ORDER BY PlayCount DESC, Ms DESC LIMIT 1",
-                startTicks, endTicks);
+                "GROUP BY Album ORDER BY PlayCount DESC, Ms DESC LIMIT ?",
+                startTicks, endTicks, topLimit);
 
-            if (rows.Count == 0) return;
-
-            var r = rows[0];
-            snapshot.TopAlbumName = r.Album;
-            snapshot.TopAlbumPlayCount = r.PlayCount;
-            snapshot.TopAlbumMusicId = r.MusicId;
+            var result = new List<AlbumPlayStat>(rows.Count);
+            for (int i = 0; i < rows.Count; i++)
+            {
+                var r = rows[i];
+                result.Add(new AlbumPlayStat
+                {
+                    Album = r.Album,
+                    MusicId = r.MusicId,
+                    PlayCount = r.PlayCount,
+                    TotalDurationSeconds = r.Ms / 1000.0,
+                });
+            }
+            return result;
         }
 
         private sealed class SqlSummaryRow
         {
             public int PlayCount { get; set; }
+            public int ActiveDays { get; set; }
             public double Ms { get; set; }
         }
 

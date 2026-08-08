@@ -33,19 +33,16 @@ namespace WinUIMusicPlayer.ViewModel
         private static readonly DateTime AllTimeStartUtc = new(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         private readonly AppViewModel _appViewModel;
-        private readonly MusicBrowseViewModel _musicBrowseViewModel;
         private readonly PlaybackStatsService _statsService;
         private readonly ILogger<StatsViewModel> _logger;
         private DispatcherQueueTimer? _debounceTimer;
 
         public StatsViewModel(
             AppViewModel appViewModel,
-            MusicBrowseViewModel musicBrowseViewModel,
             PlaybackStatsService statsService,
             ILogger<StatsViewModel> logger)
         {
             _appViewModel = appViewModel;
-            _musicBrowseViewModel = musicBrowseViewModel;
             _statsService = statsService;
             _logger = logger;
             _statsService.StatsUpdated += OnStatsUpdated;
@@ -64,7 +61,7 @@ namespace WinUIMusicPlayer.ViewModel
                     DebouncedLoad();
                 }
             }
-        } = (int)StatsRange.Today;
+        } = (int)StatsRange.ThisWeek;
 
         public bool IsCustomRangeSelected { get => field; set => SetProperty(ref field, value); }
         public DateTimeOffset? CustomStartDate { get => field; set { if (SetProperty(ref field, value) && IsCustomRangeSelected) DebouncedLoad(); } }
@@ -77,15 +74,22 @@ namespace WinUIMusicPlayer.ViewModel
         public bool IsLoading { get => field; set => SetProperty(ref field, value); }
         public string TotalDurationText { get => field; set => SetProperty(ref field, value); } = "--";
         public int TracksPlayedCount { get => field; set => SetProperty(ref field, value); }
-        public string TopAlbumText { get => field; set => SetProperty(ref field, value); } = "--";
 
-        /// <summary>最常播放专辑的歌曲对象（该专辑歌曲全删后为 null）。</summary>
-        public Music? TopAlbumMusic { get => field; set => SetProperty(ref field, value); }
+        /// <summary>时间段内活跃收听的天数。</summary>
+        public int ActiveDaysCount { get => field; set => SetProperty(ref field, value); }
+
         public string PeakHourText { get => field; set => SetProperty(ref field, value); } = "--:--";
         public string QuietHourText { get => field; set => SetProperty(ref field, value); } = "--:--";
 
         public ObservableCollection<SongPlayStat> TopSongs { get; } = [];
         public ObservableCollection<ArtistPlayStat> TopArtists { get; } = [];
+        public ObservableCollection<AlbumPlayStat> TopAlbums { get; } = [];
+
+        /// <summary>Top 10 歌曲前 5 首（分段视图，与歌手/专辑列逐行对齐）。</summary>
+        public ObservableCollection<SongPlayStat> TopSongsFirst { get; } = [];
+
+        /// <summary>Top 10 歌曲第 6-10 首（分段视图，与歌手/专辑列逐行对齐）。</summary>
+        public ObservableCollection<SongPlayStat> TopSongsSecond { get; } = [];
 
         // ── 页面生命周期 ─────────────────────────────────────────
 
@@ -191,16 +195,15 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 var (startUtc, endUtc) = CalculateRange();
 
-                var snapshot = await _statsService.GetStatsSnapshotAsync(startUtc, endUtc, 10);
+                var snapshot = await _statsService.GetStatsSnapshotAsync(startUtc, endUtc);
 
                 TotalDurationText = FormatHours(snapshot.TotalListeningSeconds);
                 TracksPlayedCount = snapshot.TracksPlayedCount;
+                ActiveDaysCount = snapshot.ActiveDaysCount;
 
                 ApplyTopSongs(snapshot.TopSongs);
                 ApplyTopArtists(snapshot.TopArtists);
-
-                TopAlbumText = string.IsNullOrEmpty(snapshot.TopAlbumName) ? "--" : snapshot.TopAlbumName;
-                TopAlbumMusic = _appViewModel.TryFindById(snapshot.TopAlbumMusicId, out var albumMusic) ? albumMusic : null;
+                ApplyTopAlbums(snapshot.TopAlbums);
 
                 UpdateHourlyPeaks(snapshot.HourlyCounts);
             }
@@ -245,6 +248,39 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 TopSongs.RemoveAt(fresh.Count);
             }
+            SyncTopSongSegments();
+        }
+
+        /// <summary>把 Top 10 歌曲同步为两段（1-5 / 6-10），与左侧歌手/专辑列逐行对齐。</summary>
+        private void SyncTopSongSegments()
+        {
+            SyncSegment(TopSongsFirst, TopSongs, 0, Math.Min(TopSongs.Count, 5));
+            SyncSegment(TopSongsSecond, TopSongs, 5, Math.Max(0, Math.Min(TopSongs.Count, 10) - 5));
+        }
+
+        /// <summary>增量同步分段视图：复用同一对象引用，避免行重建闪烁。</summary>
+        private static void SyncSegment(ObservableCollection<SongPlayStat> dst, IReadOnlyList<SongPlayStat> src, int start, int len)
+        {
+            int cur = dst.Count;
+            for (int i = 0; i < len; i++)
+            {
+                var item = src[start + i];
+                if (i < cur)
+                {
+                    if (!ReferenceEquals(dst[i], item))
+                    {
+                        dst[i] = item;
+                    }
+                }
+                else
+                {
+                    dst.Add(item);
+                }
+            }
+            for (int i = len; i < cur; i++)
+            {
+                dst.RemoveAt(len);
+            }
         }
 
         /// <summary>
@@ -279,6 +315,35 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        private void ApplyTopAlbums(List<AlbumPlayStat> fresh)
+        {
+            int oldCount = TopAlbums.Count;
+            int min = Math.Min(oldCount, fresh.Count);
+            for (int i = 0; i < min; i++)
+            {
+                var old = TopAlbums[i];
+                var next = fresh[i];
+                if (old.Album == next.Album && old.MusicId == next.MusicId)
+                {
+                    ResolveMusic(old);
+                    old.PlayCount = next.PlayCount;
+                    old.TotalDurationSeconds = next.TotalDurationSeconds;
+                    continue;
+                }
+                ResolveMusic(next);
+                TopAlbums[i] = next;
+            }
+            for (int i = oldCount; i < fresh.Count; i++)
+            {
+                ResolveMusic(fresh[i]);
+                TopAlbums.Add(fresh[i]);
+            }
+            for (int i = fresh.Count; i < oldCount; i++)
+            {
+                TopAlbums.RemoveAt(fresh.Count);
+            }
+        }
+
         private void ResolveMusic(SongPlayStat stat)
         {
             if (_appViewModel.TryFindById(stat.MusicId, out var m) && m is not null)
@@ -295,27 +360,12 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        [RelayCommand]
-        private async Task PlayTopAlbum()
+        private void ResolveMusic(AlbumPlayStat stat)
         {
-            var albumMusic = TopAlbumMusic;
-            if (albumMusic is null) return;
-
-            var src = _appViewModel.SongsSource;
-            var list = new List<Music>(Math.Max(src.Count, 1));
-            for (int i = 0; i < src.Count; i++)
+            if (_appViewModel.TryFindById(stat.MusicId, out var m) && m is not null)
             {
-                var m = src[i];
-                if (m.Album is not null && m.Album.Equals(albumMusic.Album, StringComparison.OrdinalIgnoreCase))
-                {
-                    list.Add(m);
-                }
+                stat.Music = m;
             }
-            if (list.Count == 0) return;
-
-            list.Sort((a, b) => string.CompareOrdinal(a.Album, b.Album));
-            _appViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(list);
-            await _musicBrowseViewModel.PlayMusic(list[0], IsChangeList: true);
         }
 
         private static string FormatHours(double totalSeconds)
