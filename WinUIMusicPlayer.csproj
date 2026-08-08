@@ -212,6 +212,9 @@
     <Page Update="Controls\ShortcutTextBox.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Update="Controls\Charts\HourlyBarChartControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Update="Style\SilderDictionary.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

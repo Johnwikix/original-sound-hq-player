@@ -241,6 +241,20 @@ namespace WinUIMusicPlayer.Services
                 if (h.Hour is >= 0 and < 24) snapshot.HourlyCounts[h.Hour] = h.Cnt;
             }
 
+            var days = await Db.QueryAsync<SqlDayRow>(
+                "SELECT strftime('%Y-%m-%d', datetime((StartedAt / 10000000) - 62135596800, 'unixepoch', 'localtime')) AS Day, " +
+                "COUNT(*) AS Cnt FROM PlaybackHistory WHERE StartedAt >= ? AND StartedAt <= ? GROUP BY Day",
+                startTicks, endTicks);
+            for (int i = 0; i < days.Count; i++)
+            {
+                var d = days[i];
+                if (DateTime.TryParseExact(d.Day, "yyyy-MM-dd", null,
+                        System.Globalization.DateTimeStyles.None, out var day))
+                {
+                    snapshot.DailyCounts[day] = d.Cnt;
+                }
+            }
+
             snapshot.TopSongs = await BuildTopSongsAsync(startTicks, endTicks, songLimit);
             snapshot.TopArtists = await BuildTopArtistsAsync(startTicks, endTicks, artistLimit);
             snapshot.TopAlbums = await BuildTopAlbumsAsync(startTicks, endTicks, albumLimit);
@@ -332,6 +346,12 @@ namespace WinUIMusicPlayer.Services
         private sealed class SqlHourRow
         {
             public int Hour { get; set; }
+            public int Cnt { get; set; }
+        }
+
+        private sealed class SqlDayRow
+        {
+            public string Day { get; set; } = string.Empty;
             public int Cnt { get; set; }
         }
 

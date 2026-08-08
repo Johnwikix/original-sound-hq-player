@@ -183,6 +183,9 @@
   <data name="StatsActiveDays.Text" xml:space="preserve">
     <value>Active Days</value>
   </data>
+  <data name="StatsHeatmap.Text" xml:space="preserve">
+    <value>Heatmap</value>
+  </data>
   <data name="StatsActivityByHour.Text" xml:space="preserve">
     <value>Activity by Hour</value>
   </data>

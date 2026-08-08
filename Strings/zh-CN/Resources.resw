@@ -183,6 +183,9 @@
   <data name="StatsActiveDays.Text" xml:space="preserve">
     <value>活跃天数</value>
   </data>
+  <data name="StatsHeatmap.Text" xml:space="preserve">
+    <value>收听热度图</value>
+  </data>
   <data name="StatsActivityByHour.Text" xml:space="preserve">
     <value>时段活跃度</value>
   </data>

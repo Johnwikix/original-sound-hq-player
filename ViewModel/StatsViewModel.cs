@@ -5,6 +5,7 @@ using Microsoft.UI.Dispatching;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Model.Stats;
@@ -80,6 +81,15 @@ namespace WinUIMusicPlayer.ViewModel
 
         public string PeakHourText { get => field; set => SetProperty(ref field, value); } = "--:--";
         public string QuietHourText { get => field; set => SetProperty(ref field, value); } = "--:--";
+
+        /// <summary>热度图节点（按 7 列周布局，行首补空格子对齐星期）。</summary>
+        public ObservableCollection<HeatmapNode> HeatmapData { get => field; set => SetProperty(ref field, value); } = [];
+
+        /// <summary>热度图顶部月份标签（Offset 为所在列像素偏移）。</summary>
+        public ObservableCollection<MonthLabel> MonthLabels { get => field; set => SetProperty(ref field, value); } = [];
+
+        /// <summary>24 小时活跃度柱状图数据。</summary>
+        public ObservableCollection<HourlyActivityItem> HourlySeriesValues { get => field; set => SetProperty(ref field, value); } = [];
 
         public ObservableCollection<SongPlayStat> TopSongs { get; } = [];
         public ObservableCollection<ArtistPlayStat> TopArtists { get; } = [];
@@ -206,6 +216,8 @@ namespace WinUIMusicPlayer.ViewModel
                 ApplyTopAlbums(snapshot.TopAlbums);
 
                 UpdateHourlyPeaks(snapshot.HourlyCounts);
+                ApplyHeatmap(snapshot.DailyCounts, startUtc, endUtc);
+                UpdateHourlySeries(snapshot.HourlyCounts);
             }
             catch (Exception ex)
             {
@@ -391,6 +403,133 @@ namespace WinUIMusicPlayer.ViewModel
             }
             PeakHourText = $"{maxIdx:D2}:00 - {maxIdx + 1:D2}:00";
             QuietHourText = $"{minIdx:D2}:00 - {minIdx + 1:D2}:00";
+        }
+
+        /// <summary>
+        /// 构建 GitHub 风格日活跃热度图：按周一/文化首日起始列，7 列一周；
+        /// 播放天数 ≥ 最大值 25% 分四档强度；月份变化处生成顶部标签。
+        /// </summary>
+        private void ApplyHeatmap(Dictionary<DateTime, int> dailyCounts, DateTime startUtc, DateTime endUtc)
+        {
+            if (dailyCounts.Count == 0)
+            {
+                HeatmapData = [];
+                MonthLabels = [];
+                return;
+            }
+
+            var culture = CultureInfo.CurrentUICulture;
+            var startDate = startUtc.ToLocalTime().Date;
+            var endDate = endUtc.ToLocalTime().Date;
+
+            var maxCount = 0;
+            foreach (var value in dailyCounts.Values)
+            {
+                if (value > maxCount) maxCount = value;
+            }
+
+            var nodes = new List<HeatmapNode>();
+            var monthLabels = new List<MonthLabel>();
+
+            var startDayOfWeek = (int)culture.DateTimeFormat.FirstDayOfWeek;
+            for (var i = 0; i < startDayOfWeek; i++) nodes.Add(new HeatmapNode { IsEmpty = true });
+
+            var currentMonth = startDate.Month;
+            var currentYear = startDate.Year;
+
+            if (DateTime.DaysInMonth(startDate.Year, startDate.Month) - startDate.Day >= 15)
+            {
+                monthLabels.Add(new MonthLabel
+                {
+                    Name = startDate.ToString("MMM", culture),
+                    Offset = 0
+                });
+            }
+
+            var days = (int)(endDate - startDate).TotalDays + 1;
+
+            for (var i = 0; i < days; i++)
+            {
+                var currentDate = startDate.AddDays(i);
+
+                if (currentDate.Month != currentMonth)
+                {
+                    currentMonth = currentDate.Month;
+
+                    var colIndex = nodes.Count / 7;
+                    double offset = colIndex * 18 + 2;
+
+                    string labelName;
+                    if (currentDate.Year != currentYear)
+                    {
+                        currentYear = currentDate.Year;
+                        labelName = currentDate.ToString("y", culture);
+                    }
+                    else
+                    {
+                        labelName = currentDate.ToString("MMM", culture);
+                    }
+
+                    monthLabels.Add(new MonthLabel
+                    {
+                        Name = labelName,
+                        Offset = offset
+                    });
+                }
+
+                dailyCounts.TryGetValue(currentDate, out var count);
+                var level = 0;
+                if (count > 0)
+                {
+                    if (maxCount <= 4)
+                    {
+                        level = count;
+                    }
+                    else
+                    {
+                        var ratio = (double)count / maxCount;
+                        if (ratio <= 0.25) level = 1;
+                        else if (ratio <= 0.5) level = 2;
+                        else if (ratio <= 0.75) level = 3;
+                        else level = 4;
+                    }
+                }
+
+                nodes.Add(new HeatmapNode
+                {
+                    Date = currentDate,
+                    PlayCount = count,
+                    Level = level,
+                    IsEmpty = false
+                });
+            }
+
+            HeatmapData = new ObservableCollection<HeatmapNode>(nodes);
+            MonthLabels = new ObservableCollection<MonthLabel>(monthLabels);
+        }
+
+        /// <summary>由小时计数生成 24 根柱状图数据（高度按峰值归一化）。</summary>
+        private void UpdateHourlySeries(int[] counts)
+        {
+            var maxHourCount = 0;
+            for (int i = 0; i < counts.Length; i++)
+            {
+                if (counts[i] > maxHourCount) maxHourCount = counts[i];
+            }
+
+            var items = new List<HourlyActivityItem>(24);
+            for (int i = 0; i < 24; i++)
+            {
+                items.Add(new HourlyActivityItem
+                {
+                    TimeLabel = $"{i:D2}:00",
+                    Count = counts[i],
+                    HeightPercentage = maxHourCount == 0 ? 0 : (double)counts[i] / maxHourCount,
+                    TooltipText = counts[i].ToString()
+                });
+            }
+
+            HourlySeriesValues = new ObservableCollection<HourlyActivityItem>(items);
         }
     }
 }
