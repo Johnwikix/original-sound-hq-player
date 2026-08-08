@@ -209,6 +209,8 @@ namespace WinUIMusicPlayer.Services
         /// <summary>
         /// 统计页数据快照：SQL 聚合一次生成总时长、曲目数、Top 歌曲 / 歌手 / 专辑与时段分布。
         /// 所有聚合下推数据库，避免把历史表整表物化到内存。
+        /// 汇总 / 活跃天数 / 小时分布 / 每日分布由同一次按 (本地日期, 小时) 分组扫描聚合得到，
+        /// 避免对同一范围做多遍重复扫描。
         /// </summary>
         public async Task<StatsSnapshot> GetStatsSnapshotAsync(
             DateTime startUtc, DateTime endUtc, int songLimit = 10, int artistLimit = 5, int albumLimit = 5)
@@ -218,28 +220,40 @@ namespace WinUIMusicPlayer.Services
 
             var snapshot = new StatsSnapshot();
 
-            var summary = await Db.QueryAsync<SqlSummaryRow>(
-                "SELECT COUNT(*) AS PlayCount, " +
-                "COUNT(DISTINCT strftime('%Y-%m-%d', datetime((StartedAt / 10000000) - 62135596800, 'unixepoch', 'localtime'))) AS ActiveDays, " +
-                "COALESCE(SUM(MIN(DurationPlayedMs, TotalDurationMs)), 0) AS Ms " +
-                "FROM PlaybackHistory WHERE StartedAt >= ? AND StartedAt <= ?",
+            var rows = await Db.QueryAsync<SqlDayHourRow>(
+                "SELECT " +
+                "strftime('%Y-%m-%d', datetime((StartedAt / 10000000) - 62135596800, 'unixepoch', 'localtime')) AS Day, " +
+                "CAST(strftime('%H', datetime((StartedAt / 10000000) - 62135596800, 'unixepoch', 'localtime')) AS INTEGER) AS Hour, " +
+                "COUNT(*) AS Cnt, " +
+                "SUM(MIN(DurationPlayedMs, TotalDurationMs)) AS Ms " +
+                "FROM PlaybackHistory WHERE StartedAt >= ? AND StartedAt <= ? " +
+                "GROUP BY Day, Hour",
                 startTicks, endTicks);
-            if (summary.Count > 0)
-            {
-                snapshot.TracksPlayedCount = summary[0].PlayCount;
-                snapshot.ActiveDaysCount = summary[0].ActiveDays;
-                snapshot.TotalListeningSeconds = summary[0].Ms / 1000.0;
-            }
 
-            var hours = await Db.QueryAsync<SqlHourRow>(
-                "SELECT CAST(strftime('%H', datetime((StartedAt / 10000000) - 62135596800, 'unixepoch', 'localtime')) AS INTEGER) AS Hour, " +
-                "COUNT(*) AS Cnt FROM PlaybackHistory WHERE StartedAt >= ? AND StartedAt <= ? GROUP BY Hour",
-                startTicks, endTicks);
-            for (int i = 0; i < hours.Count; i++)
+            int tracks = 0;
+            double ms = 0;
+            for (int i = 0; i < rows.Count; i++)
             {
-                var h = hours[i];
-                if (h.Hour is >= 0 and < 24) snapshot.HourlyCounts[h.Hour] = h.Cnt;
+                var r = rows[i];
+                tracks += r.Cnt;
+                ms += r.Ms;
+                if (r.Hour is >= 0 and < 24) snapshot.HourlyCounts[r.Hour] += r.Cnt;
+                if (DateTime.TryParseExact(r.Day, "yyyy-MM-dd", null,
+                        System.Globalization.DateTimeStyles.None, out var day))
+                {
+                    if (snapshot.DailyCounts.TryGetValue(day, out var existing))
+                    {
+                        snapshot.DailyCounts[day] = existing + r.Cnt;
+                    }
+                    else
+                    {
+                        snapshot.DailyCounts[day] = r.Cnt;
+                    }
+                }
             }
+            snapshot.TracksPlayedCount = tracks;
+            snapshot.ActiveDaysCount = snapshot.DailyCounts.Count;
+            snapshot.TotalListeningSeconds = ms / 1000.0;
 
             snapshot.TopSongs = await BuildTopSongsAsync(startTicks, endTicks, songLimit);
             snapshot.TopArtists = await BuildTopArtistsAsync(startTicks, endTicks, artistLimit);
@@ -347,17 +361,12 @@ namespace WinUIMusicPlayer.Services
             return result;
         }
 
-        private sealed class SqlSummaryRow
+        private sealed class SqlDayHourRow
         {
-            public int PlayCount { get; set; }
-            public int ActiveDays { get; set; }
-            public double Ms { get; set; }
-        }
-
-        private sealed class SqlHourRow
-        {
+            public string Day { get; set; } = string.Empty;
             public int Hour { get; set; }
             public int Cnt { get; set; }
+            public double Ms { get; set; }
         }
 
         private sealed class SqlDayRow

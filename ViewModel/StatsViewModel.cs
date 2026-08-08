@@ -193,10 +193,14 @@ namespace WinUIMusicPlayer.ViewModel
                 UpdateHourlySeries(snapshot.HourlyCounts);
 
                 // 热度图固定展示滚动过去一年，不随所选时间范围变化。
+                // 选「过去一年」时热度图范围与快照范围一致，直接复用快照日聚合，不再单独扫描。
                 DateTime now = DateTime.Now;
                 var heatmapStartLocal = now.Date.AddDays(-364);
                 var heatmapEndLocal = now.Date.AddDays(1).AddTicks(-1);
-                var dailyCounts = await _statsService.GetDailyCountsAsync(heatmapStartLocal, heatmapEndLocal);
+
+                var dailyCounts = SelectedTimeRangeIndex == (int)StatsRange.PastYear
+                    ? snapshot.DailyCounts
+                    : await _statsService.GetDailyCountsAsync(heatmapStartLocal, heatmapEndLocal);
                 ApplyHeatmap(dailyCounts, heatmapStartLocal, heatmapEndLocal);
             }
             catch (Exception ex)

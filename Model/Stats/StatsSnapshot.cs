@@ -29,5 +29,8 @@ namespace WinUIMusicPlayer.Model.Stats
 
         /// <summary>按开始收听的小时统计会话数（本地时区），长度 24。</summary>
         public int[] HourlyCounts { get; set; } = new int[24];
+
+        /// <summary>按开始收听的本地日期统计会话数（热度图用，由同一分组扫描顺带聚合）。</summary>
+        public Dictionary<DateTime, int> DailyCounts { get; set; } = [];
     }
 }
