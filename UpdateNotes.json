@@ -1,4 +1,4 @@
 {
-  "zh-CN": "更新内容\n• 开放歌词滚动曲线设置\n• 新增播放页音乐信息布局调整\n• 修复 issues 19（https://github.com/Johnwikix/original-sound-hq-player/issues/19）提到的bug",
-  "en": "Release Notes\n• Added lyrics scrolling curve settings\n• Added music info layout adjustments on playback page\n• Fixed the bug mentioned in issue 19 (https://github.com/Johnwikix/original-sound-hq-player/issues/19)"
+  "zh-CN": "更新内容\n• 音频引擎的进程间通信优化\n• 使用自构建 cswinrt “修复”程序窗口卡顿\n• 新增播放统计页面",
+  "en": "Release Notes\n• Optimized inter-process communication for the audio engine\n• Used custom-built cswinrt to fix window stuttering\n• Added playback statistics page"
 }

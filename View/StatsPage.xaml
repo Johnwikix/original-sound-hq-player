@@ -196,20 +196,23 @@
                             SizeChanged="HeatmapHost_SizeChanged">
                             <Grid
                                 x:Name="HeatmapContent"
-                                Margin="16,8,16,8"
-                                HorizontalAlignment="Left"
+                                Margin="32,8,32,8"
                                 VerticalAlignment="Top">
-                                <Grid.RenderTransform>
-                                    <ScaleTransform x:Name="HeatmapScale" />
-                                </Grid.RenderTransform>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="20" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
+                                <Grid
+                                    x:Name="HeatmapScaled"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Top">
+                                    <Grid.RenderTransform>
+                                        <ScaleTransform x:Name="HeatmapScale" />
+                                    </Grid.RenderTransform>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="20" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
 
                                 <Grid
                                     x:Name="HeatmapWeekdayColumn"
@@ -330,6 +333,7 @@
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
+                                </Grid>
                             </Grid>
                         </Grid>
                     </Grid>
