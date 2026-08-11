@@ -41,7 +41,7 @@ namespace WinUIMusicPlayer.View
         {
             if (DetailView.ViewModel.IsClosingForTransition) return;
             var gridView = sender as GridView;
-            var item = gridView?.ContainerFromItem(e.ClickedItem).As<GridViewItem>();
+            var item = gridView?.ContainerFromItem(e.ClickedItem)?.As<GridViewItem>();
             var coverBorder = FindCoverBorderInItem(item);
             if (coverBorder is not null)
             {
@@ -71,7 +71,7 @@ namespace WinUIMusicPlayer.View
             Border? sourceBorder = null;
             if (artist is not null)
             {
-                var item = ArtistsGridView.ContainerFromItem(artist).As<GridViewItem>();
+                var item = ArtistsGridView.ContainerFromItem(artist)?.As<GridViewItem>();
                 sourceBorder = FindCoverBorderInItem(item);
             }
             bool canAnimate = detailBorder is not null && sourceBorder is not null;
