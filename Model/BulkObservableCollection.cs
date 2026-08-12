@@ -69,7 +69,7 @@ namespace WinUIMusicPlayer.Model
         /// </summary>
         public async Task AddRangeAsync(IEnumerable<T> items)
         {
-            if (items == null) return;
+            if (items == null || IsKnownEmpty(items)) return;
 
             if (_dispatcher.HasThreadAccess)
             {
@@ -96,15 +96,14 @@ namespace WinUIMusicPlayer.Model
 
         private void ExecuteAddRange(IEnumerable<T> items)
         {
+            if (items == null || IsKnownEmpty(items)) return;
             Items.AddRange(items);
             RaiseChangeNotifications();
         }
 
         public void AddRange(IEnumerable<T> items)
         {
-            if (items == null) return;
-            Items.AddRange(items);
-            RaiseChangeNotifications();
+            ExecuteAddRange(items);
         }
 
         public void FillFrom(ReadOnlySpan<T> source)
@@ -121,11 +120,62 @@ namespace WinUIMusicPlayer.Model
         public void RemoveRange(IEnumerable<T> items)
         {
             if (items == null) return;
-            foreach (var item in items)
+
+            var snapshot = items as ICollection<T>;
+            if (snapshot == null)
             {
-                Items.Remove(item);
+                var copy = new List<T>();
+                foreach (var item in items)
+                {
+                    copy.Add(item);
+                }
+                snapshot = copy;
             }
+
+            if (snapshot.Count == 0) return;
+
+            if (snapshot.Count == 1)
+            {
+                foreach (var item in snapshot)
+                {
+                    Items.Remove(item);
+                }
+            }
+            else
+            {
+                RemoveRangeCore(snapshot);
+            }
+
             RaiseChangeNotifications();
+        }
+
+        private void RemoveRangeCore(ICollection<T> toRemove)
+        {
+            var counts = new Dictionary<T, int>(toRemove.Count);
+            foreach (var item in toRemove)
+            {
+                counts.TryGetValue(item, out var count);
+                counts[item] = count + 1;
+            }
+
+            var itemsList = (List<T>)Items;
+            int write = 0;
+            for (int i = 0; i < itemsList.Count; i++)
+            {
+                var item = itemsList[i];
+                if (counts.TryGetValue(item, out var count) && count > 0)
+                {
+                    counts[item] = count - 1;
+                }
+                else
+                {
+                    itemsList[write++] = item;
+                }
+            }
+            if (write < itemsList.Count)
+            {
+                itemsList.RemoveRange(write, itemsList.Count - write);
+            }
         }
 
         public ReadOnlySpan<T> AsSpan() => CollectionsMarshal.AsSpan((List<T>)Items);
@@ -145,5 +195,11 @@ namespace WinUIMusicPlayer.Model
             OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
+
+        /// <summary>
+        /// 仅通过 Count 判断空集合，不做枚举（避免消费一次性 IEnumerable）
+        /// </summary>
+        private static bool IsKnownEmpty(IEnumerable<T> items) =>
+            items is IReadOnlyCollection<T> { Count: 0 };
     }
 }
