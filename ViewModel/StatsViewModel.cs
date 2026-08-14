@@ -417,7 +417,8 @@ namespace WinUIMusicPlayer.ViewModel
             var monthLabels = new List<MonthLabel>();
 
             var startDayOfWeek = (int)culture.DateTimeFormat.FirstDayOfWeek;
-            for (var i = 0; i < startDayOfWeek; i++) nodes.Add(new HeatmapNode { IsEmpty = true });
+            var leadingEmptyCells = ((int)startDate.DayOfWeek - startDayOfWeek + 7) % 7;
+            for (var i = 0; i < leadingEmptyCells; i++) nodes.Add(new HeatmapNode { IsEmpty = true });
 
             var currentMonth = startDate.Month;
             var currentYear = startDate.Year;
