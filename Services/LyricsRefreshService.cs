@@ -29,6 +29,11 @@ namespace WinUIMusicPlayer.Services
         private static readonly Regex s_krcDetect =
             new(@"^\[\d+,\d+\]", RegexOptions.Compiled | RegexOptions.Multiline);
 
+        // 格式探測：逐字 LRC 特徵（行首時間標籤後緊接非空文本，再出現第二個時間標籤）
+        private static readonly Regex s_enhancedLrcDetect =
+            new(@"^\[\d{1,2}:\d{2}\.\d{2,3}\][^\r\n\[]+\[\d{1,2}:\d{2}\.\d{2,3}\]",
+                RegexOptions.Compiled | RegexOptions.Multiline);
+
         // 本地文件擴展名候選（靜態，避免每次調用分配 array）
         private static readonly string[] s_lyricExtensions = [".krc", ".qrc", ".lrc"];
 
@@ -256,6 +261,8 @@ namespace WinUIMusicPlayer.Services
                 lyrics = ParseQrcLyrics(content, ct);
             else if (IsKrcFormat(content))
                 lyrics = ParseKrcLyrics(content, ct);
+            else if (IsEnhancedLrcFormat(content))
+                lyrics = ParseEnhancedLyrics(content, ct);
             else
                 return SpliteContent(content, transContent, new List<LyricLine>());
 
@@ -270,6 +277,9 @@ namespace WinUIMusicPlayer.Services
 
         private static bool IsKrcFormat(string content) =>
             !string.IsNullOrWhiteSpace(content) && s_krcDetect.IsMatch(content);
+
+        private static bool IsEnhancedLrcFormat(string content) =>
+            !string.IsNullOrWhiteSpace(content) && s_enhancedLrcDetect.IsMatch(content);
 
         // ──────────────────────────────────────────────────────────────
         //  KRC 解析
@@ -566,6 +576,111 @@ namespace WinUIMusicPlayer.Services
 
                 i = textEnd;
             }
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        //  Enhanced LRC 解析
+        // ──────────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// 解析逐字 LRC 格式（一行多個 [mm:ss.xx] 標籤，標籤後文本在該時刻開始，
+        /// 行尾標籤同時代表上一字符結束與下一行字符開始）：完全 Span 解析，零 string 分配
+        /// </summary>
+        private List<LyricLine> ParseEnhancedLyrics(string content, CancellationToken cancellationToken = default)
+        {
+            var lyrics = new List<LyricLine>();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var span = content.AsSpan();
+            while (!span.IsEmpty)
+            {
+                int nl = span.IndexOfAny('\n', '\r');
+                var lineSpan = nl >= 0 ? span[..nl] : span;
+                span = nl >= 0 ? span[(nl + 1)..] : ReadOnlySpan<char>.Empty;
+
+                var trimmed = lineSpan.Trim();
+                if (trimmed.IsEmpty || trimmed[0] != '[') continue;
+
+                if (trimmed.StartsWith("[ti:", StringComparison.Ordinal) ||
+                    trimmed.StartsWith("[ar:", StringComparison.Ordinal) ||
+                    trimmed.StartsWith("[al:", StringComparison.Ordinal) ||
+                    trimmed.StartsWith("[by:", StringComparison.Ordinal) ||
+                    trimmed.StartsWith("[offset:", StringComparison.Ordinal) ||
+                    trimmed.StartsWith("[kana:", StringComparison.Ordinal))
+                    continue;
+
+                LyricLine? lyricLine = null;
+                long lineStartMs = 0;
+                long lineEndMs = 0;
+                bool hasLineStart = false;
+
+                int pos = 0;
+                int end = trimmed.Length;
+                while (pos < end)
+                {
+                    int bracketClose = trimmed.Slice(pos).IndexOf(']');
+                    if (bracketClose < 1) break;
+                    bracketClose += pos;
+
+                    if (!TryParseQrcTagTime(trimmed.Slice(pos + 1, bracketClose - pos - 1), out long tagMs))
+                        break;
+
+                    if (!hasLineStart)
+                    {
+                        lineStartMs = tagMs;
+                        hasLineStart = true;
+                    }
+                    lineEndMs = tagMs;
+
+                    // 標籤後文本掃描到下一個 [ 或行尾
+                    int textStart = bracketClose + 1;
+                    int nextTag = trimmed.Slice(textStart).IndexOf('[');
+                    int textEnd = nextTag >= 0 ? textStart + nextTag : end;
+
+                    long segEndMs = tagMs;
+                    if (nextTag >= 0)
+                    {
+                        int nextBracketClose = trimmed.Slice(textEnd).IndexOf(']');
+                        if (nextBracketClose >= 1 &&
+                            TryParseQrcTagTime(trimmed.Slice(textEnd + 1, nextBracketClose - 1), out long nextMs))
+                            segEndMs = nextMs;
+                    }
+
+                    var textSpan = trimmed.Slice(textStart, textEnd - textStart);
+                    if (!textSpan.IsEmpty)
+                    {
+                        lyricLine ??= RentLine();
+                        lyricLine.StartMs = lineStartMs;
+
+                        long segDurationMs = Math.Max(0, segEndMs - tagMs);
+                        var subWords = SplitSpan(textSpan);
+                        int wordCount = subWords.Count;
+                        if (wordCount > 0)
+                        {
+                            double perMs = segDurationMs > 0 ? (double)segDurationMs / wordCount : 0;
+                            for (int k = 0; k < wordCount; k++)
+                            {
+                                var w = RentWord();
+                                w.Word = subWords[k];
+                                w.StartMs = tagMs + perMs * k;
+                                w.DurationMs = perMs;
+                                lyricLine.Words.Add(w);
+                            }
+                        }
+                    }
+
+                    if (nextTag < 0) break;
+                    pos = textEnd;
+                }
+
+                if (lyricLine is { Words.Count: > 0 })
+                {
+                    lyricLine.EndMs = lineEndMs;
+                    lyrics.Add(lyricLine);
+                }
+            }
+
+            return lyrics;
         }
 
         private static bool TryParseQrcTagTime(ReadOnlySpan<char> tagSpan, out long ms)
