@@ -404,6 +404,7 @@ namespace WinUIMusicPlayer.View.SubView
                         MusicDetail.Path = music.Path;
                         MusicDetail.CreateTime = music.CreateTime;
                         MusicDetail.UpdateTime = music.UpdateTime;
+                        LyricsText = music.EmbeddedLyrics;
                     });
                 }
             });

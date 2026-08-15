@@ -365,6 +365,22 @@ namespace WinUIMusicPlayer.Services
             });
         }
 
+        private async Task SaveEmbeddedLyricsAsync(IEnumerable<Music> musics)
+        {
+            foreach (var music in musics)
+            {
+                if (string.IsNullOrWhiteSpace(music.EmbeddedLyrics)) continue;
+                var existing = await _dbConnection.FindAsync<MusicLyrics>(music.Id);
+                if (existing is not null &&
+                    !(string.IsNullOrWhiteSpace(existing.Lyrics) && string.IsNullOrWhiteSpace(existing.TranslatedLyrics) &&
+                      string.IsNullOrWhiteSpace(existing.Krc) && string.IsNullOrWhiteSpace(existing.TKrc)))
+                {
+                    continue;
+                }
+                await SaveLyricsAsync(music.Id, music.EmbeddedLyrics, null, null, null);
+            }
+        }
+
         public IEnumerable<PlayListMusicItem> GetMusicByPlayListIdFromMem(int playListId, string search = null)
         {
             var plmSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(AppData.AllPlayListMusics);
@@ -1199,6 +1215,7 @@ namespace WinUIMusicPlayer.Services
             if (newMusicFiles.AsValueEnumerable().Any())
             {
                 await _dbConnection.InsertAllAsync(newMusicFiles);
+                await SaveEmbeddedLyricsAsync(newMusicFiles);
             }
         }
 
@@ -1214,6 +1231,7 @@ namespace WinUIMusicPlayer.Services
                 foreach (var musicFile in musicFilesToRemove)
                 {
                     await _dbConnection.DeleteAsync(musicFile);
+                    await _dbConnection.DeleteAsync<MusicLyrics>(musicFile.Id);
                 }
 
                 var subfoldersToRemove = await _dbConnection.Table<SubFolder>()
@@ -1255,6 +1273,7 @@ namespace WinUIMusicPlayer.Services
                     foreach (var musicFile in musicFilesToRemove)
                     {
                         await _dbConnection.DeleteAsync(musicFile);
+                        await _dbConnection.DeleteAsync<MusicLyrics>(musicFile.Id);
                     }
 
                     await _dbConnection.DeleteAsync(folderToRemove);
@@ -1298,6 +1317,7 @@ namespace WinUIMusicPlayer.Services
         {
             StorageFile storageFile = await StorageFile.GetFileFromPathAsync(music.Path);
             Music newMusic = await ToolUtils.GetMusicInfo(storageFile);
+            music.EmbeddedLyrics = newMusic.EmbeddedLyrics;
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 music.Title = newMusic.Title;
@@ -1393,6 +1413,7 @@ namespace WinUIMusicPlayer.Services
             if (validResults.Count != 0)
             {
                 await _dbConnection.UpdateAllAsync(validResults);
+                await SaveEmbeddedLyricsAsync(validResults);
             }
 
             // 优化17: 新增文件批量处理，预分配数组
@@ -1408,6 +1429,7 @@ namespace WinUIMusicPlayer.Services
             if (validMusic.Count != 0)
             {
                 await _dbConnection.InsertAllAsync(validMusic);
+                await SaveEmbeddedLyricsAsync(validMusic);
             }
 
             if (isUpdate)
@@ -1465,6 +1487,7 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 await _dbConnection.DeleteAsync(music);
+                await _dbConnection.DeleteAsync<MusicLyrics>(music.Id);
             }
             catch (Exception ex)
             {
@@ -1567,6 +1590,7 @@ namespace WinUIMusicPlayer.Services
             if (validMusic.Count != 0)
             {
                 await _dbConnection.InsertAllAsync(validMusic);
+                await SaveEmbeddedLyricsAsync(validMusic);
             }
 
             return validMusic.Count;
@@ -1613,6 +1637,7 @@ namespace WinUIMusicPlayer.Services
 
             if (validMusic.Count != 0)
                 await _dbConnection.InsertAllAsync(validMusic);
+            await SaveEmbeddedLyricsAsync(validMusic);
 
             async Task WorkerLoop(ChannelReader<Music> reader)
             {
@@ -1668,6 +1693,7 @@ namespace WinUIMusicPlayer.Services
 
             if (validResults.Count != 0)
                 await _dbConnection.UpdateAllAsync(validResults);
+            await SaveEmbeddedLyricsAsync(validResults);
 
             async Task WorkerLoop(ChannelReader<Music> reader)
             {

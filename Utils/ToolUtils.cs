@@ -816,7 +816,6 @@ namespace WinUIMusicPlayer.Utils
                 string artist = "未知艺术家";
                 string album = "未知专辑";
                 string lyrics = string.Empty;
-                string klyrics = string.Empty;
                 TimeSpan duration = TimeSpan.Zero;
                 int trackNumber = track.TrackNumber ?? 0;
                 int diskNumber = track.DiscNumber ?? 0;
@@ -874,6 +873,7 @@ namespace WinUIMusicPlayer.Utils
                     CreateTime = ToolUtils.GetSafeFileCreateTime(file.Path),
                     UpdateTime = ToolUtils.GetSafeFileUpdateTime(file.Path)
                 };
+                music.EmbeddedLyrics = lyrics;
                 return music;
             }
             catch (Exception ex)
@@ -903,6 +903,7 @@ namespace WinUIMusicPlayer.Utils
                         CreateTime = ToolUtils.GetSafeFileCreateTime(file.Path),
                         UpdateTime = ToolUtils.GetSafeFileUpdateTime(file.Path)
                     };
+                    music.EmbeddedLyrics = wavFileInfo.Lyrics;
                     return music;
                 }
                 catch (Exception innerEx)
