@@ -18,23 +18,23 @@ namespace WinUIMusicPlayer.Services
     public class LyricsRefreshService : IDisposable
     {
         // ──────────────────────────────────────────────────────────────
-        //  靜態 Regex：編譯一次，全生命週期復用，避免每次解析重複構建
+        //  静态 Regex：编译一次，全生命周期复用，避免每次解析重复构建
         // ──────────────────────────────────────────────────────────────
 
-        // 格式探測：QRC 特徵
+        // 格式探测：QRC 特征
         private static readonly Regex s_qrcDetect =
             new(@"<\d{2}:\d{2}\.\d{2,3}>", RegexOptions.Compiled);
 
-        // 格式探測：KRC 特徵
+        // 格式探测：KRC 特征
         private static readonly Regex s_krcDetect =
             new(@"^\[\d+,\d+\]", RegexOptions.Compiled | RegexOptions.Multiline);
 
-        // 格式探測：逐字 LRC 特徵（行首時間標籤後緊接非空文本，再出現第二個時間標籤）
+        // 格式探测：逐字 LRC 特征（行首时间标签后紧接非空文本，再出现第二个时间标签）
         private static readonly Regex s_enhancedLrcDetect =
             new(@"^\[\d{1,2}:\d{2}\.\d{2,3}\][^\r\n\[]+\[\d{1,2}:\d{2}\.\d{2,3}\]",
                 RegexOptions.Compiled | RegexOptions.Multiline);
 
-        // 本地文件擴展名候選（靜態，避免每次調用分配 array）
+        // 本地文件扩展名候选（静态，避免每次调用分配 array）
         private static readonly string[] s_lyricExtensions = [".krc", ".qrc", ".lrc"];
 
         // 行级时间偏移（ms）：每行动画在 EndMs 前提前结束，确保过渡平滑
@@ -127,7 +127,7 @@ namespace WinUIMusicPlayer.Services
                     return localLyrics;
                 }
 
-                // 2. music.Krc 緩存（KRC/QRC 在線）
+                // 2. music.Krc 缓存（KRC/QRC 在线）
                 var (krcLyrics, krcOut, tKrcOut) = await TryParseKrcLyricsInternal(music, krc ?? "", tKrc ?? "", ct);
                 if (krcLyrics.Count > 0)
                 {
@@ -139,7 +139,7 @@ namespace WinUIMusicPlayer.Services
                     return krcLyrics;
                 }
 
-                // 3. LRC 緩存或在線搜索（本地文件已在步驟1處理）
+                // 3. LRC 缓存或在线搜索（本地文件已在步骤1处理）
                 lyricsText ??= krcOut;
                 var (lrcLyrics, lrcOut, transOut) = await ParseLrcLyricsInternal(music, lyricsText ?? "", transLrc ?? "", null, null, ct);
 
@@ -197,11 +197,11 @@ namespace WinUIMusicPlayer.Services
         }
 
         // ──────────────────────────────────────────────────────────────
-        //  本地文件讀取
+        //  本地文件读取
         // ──────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// 按 .krc → .qrc → .lrc 順序查找本地文件，自動識別格式並解析。
+        /// 按 .krc → .qrc → .lrc 顺序查找本地文件，自动识别格式并解析。
         /// </summary>
         private List<LyricLine>? TryParseLocalLyricsFile(Music music, CancellationToken ct)
         {
@@ -233,7 +233,7 @@ namespace WinUIMusicPlayer.Services
         }
 
         /// <summary>
-        /// 讀取翻譯文件：原文件名_Translated{ext}，使用 string.Concat 避免插值分配
+        /// 读取翻译文件：原文件名_Translated{ext}，使用 string.Concat 避免插值分配
         /// </summary>
         private string? TryReadTranslationFile(string musicPath, string ext)
         {
@@ -250,7 +250,7 @@ namespace WinUIMusicPlayer.Services
         }
 
         // ──────────────────────────────────────────────────────────────
-        //  格式判斷與分發
+        //  格式判断与分发
         // ──────────────────────────────────────────────────────────────
 
         private List<LyricLine>? ParseByFormat(string content, string? transContent, CancellationToken ct)
@@ -342,7 +342,7 @@ namespace WinUIMusicPlayer.Services
                     trimmed.StartsWith("[kana:", StringComparison.Ordinal))
                     continue;
 
-                // 手動解析 [startMs,durationMs] 避免 regex + ToString()
+                // 手动解析 [startMs,durationMs] 避免 regex + ToString()
                 int bracketClose = trimmed.IndexOf(']');
                 if (bracketClose < 1) continue;
                 int comma = trimmed.Slice(1, bracketClose - 1).IndexOf(',');
@@ -471,7 +471,7 @@ namespace WinUIMusicPlayer.Services
                     trimmed.StartsWith("[kana:", StringComparison.Ordinal))
                     continue;
 
-                // 手動解析 [mm:ss.xx] 避免 regex + ToString()
+                // 手动解析 [mm:ss.xx] 避免 regex + ToString()
                 int bracketClose = trimmed.IndexOf(']');
                 if (bracketClose < 1) continue;
                 var timePart = trimmed.Slice(1, bracketClose - 1);
@@ -536,7 +536,7 @@ namespace WinUIMusicPlayer.Services
                     continue;
                 }
 
-                // 文字在 > 之後到下一個 < 或結尾
+                // 文字在 > 之后到下一个 < 或结尾
                 int textStart = tagEnd + 1;
                 int nextTag = content.Slice(textStart).IndexOf('<');
                 int textEnd = nextTag >= 0 ? textStart + nextTag : content.Length;
@@ -583,8 +583,8 @@ namespace WinUIMusicPlayer.Services
         // ──────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// 解析逐字 LRC 格式（一行多個 [mm:ss.xx] 標籤，標籤後文本在該時刻開始，
-        /// 行尾標籤同時代表上一字符結束與下一行字符開始）：完全 Span 解析，零 string 分配
+        /// 解析逐字 LRC 格式（一行多个 [mm:ss.xx] 标签，标签后文本在该时刻开始，
+        /// 行尾标签同时代表上一字符结束与下一行字符开始）：完全 Span 解析，零 string 分配
         /// </summary>
         private List<LyricLine> ParseEnhancedLyrics(string content, CancellationToken cancellationToken = default)
         {
@@ -632,7 +632,7 @@ namespace WinUIMusicPlayer.Services
                     }
                     lineEndMs = tagMs;
 
-                    // 標籤後文本掃描到下一個 [ 或行尾
+                    // 标签后文本扫描到下一个 [ 或行尾
                     int textStart = bracketClose + 1;
                     int nextTag = trimmed.Slice(textStart).IndexOf('[');
                     int textEnd = nextTag >= 0 ? textStart + nextTag : end;
@@ -699,7 +699,7 @@ namespace WinUIMusicPlayer.Services
         }
 
         /// <summary>
-        /// QRC 時間轉毫秒：接收 ReadOnlySpan&lt;char&gt;，全程無 string 分配
+        /// QRC 时间转毫秒：接收 ReadOnlySpan&lt;char&gt;，全程无 string 分配
         /// </summary>
         private static long ParseQrcTimeToMs(ReadOnlySpan<char> mm, ReadOnlySpan<char> ss, ReadOnlySpan<char> msSpan)
         {
@@ -710,11 +710,11 @@ namespace WinUIMusicPlayer.Services
         }
 
         // ──────────────────────────────────────────────────────────────
-        //  翻譯合併（KRC/QRC 共用）
+        //  翻译合并（KRC/QRC 共用）
         // ──────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// 手動 for loop 替代 LINQ + 匿名型別，零額外分配
+        /// 手动 for loop 替代 LINQ + 匿名型别，零额外分配
         /// </summary>
         private void MergeTranslation(List<LyricLine> lyrics, string transContent)
         {
@@ -741,8 +741,8 @@ namespace WinUIMusicPlayer.Services
         // ──────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// 從 music.Lyrics 緩存或在線搜索獲取內容，並自動判斷格式（LRC/KRC/QRC）解析。
-        /// 本地文件已由 TryParseLocalLyricsFile 處理，此處不再讀取本地文件。
+        /// 从 music.Lyrics 缓存或在线搜索获取内容，并自动判断格式（LRC/KRC/QRC）解析。
+        /// 本地文件已由 TryParseLocalLyricsFile 处理，此处不再读取本地文件。
         /// </summary>
         private async Task<(List<LyricLine> lyrics, string? lrc, string? trans)> ParseLrcLyricsInternal(
             Music music, string lrcContent, string transLrcStr, string? providedLrc, string? providedTrans, CancellationToken cancellationToken = default)
@@ -788,7 +788,7 @@ namespace WinUIMusicPlayer.Services
         // ──────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// 零分配分詞：手動 Span 掃描，替換 Regex
+        /// 零分配分词：手动 Span 扫描，替换 Regex
         /// </summary>
         public static List<string> SplitEverything(string input)
         {
@@ -899,7 +899,7 @@ namespace WinUIMusicPlayer.Services
         }
 
         /// <summary>
-        /// LRC 時間行解析：手動 Span 掃描 [mm:ss.xx]，零 Regex 分配
+        /// LRC 时间行解析：手动 Span 扫描 [mm:ss.xx]，零 Regex 分配
         /// </summary>
         private void ParseLrcToLines(string content, Action<double, string> onLineParsed)
         {
@@ -941,7 +941,7 @@ namespace WinUIMusicPlayer.Services
         }
 
         // ──────────────────────────────────────────────────────────────
-        //  取消與釋放
+        //  取消与释放
         // ──────────────────────────────────────────────────────────────
 
         private void CancelPreviousLyricsTask()
