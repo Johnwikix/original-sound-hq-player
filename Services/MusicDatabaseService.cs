@@ -365,11 +365,11 @@ namespace WinUIMusicPlayer.Services
             });
         }
 
-        private async Task SaveEmbeddedLyricsAsync(IEnumerable<Music> musics)
+        private async Task SaveEmbeddedLyricsAsync(IEnumerable<(Music Music, string Lyrics)> results)
         {
-            foreach (var music in musics)
+            foreach (var (music, lyrics) in results)
             {
-                if (string.IsNullOrWhiteSpace(music.EmbeddedLyrics)) continue;
+                if (string.IsNullOrWhiteSpace(lyrics)) continue;
                 var existing = await _dbConnection.FindAsync<MusicLyrics>(music.Id);
                 if (existing is not null &&
                     !(string.IsNullOrWhiteSpace(existing.Lyrics) && string.IsNullOrWhiteSpace(existing.TranslatedLyrics) &&
@@ -377,7 +377,7 @@ namespace WinUIMusicPlayer.Services
                 {
                     continue;
                 }
-                await SaveLyricsAsync(music.Id, music.EmbeddedLyrics, null, null, null);
+                await SaveLyricsAsync(music.Id, lyrics, null, null, null);
             }
         }
 
@@ -1192,14 +1192,14 @@ namespace WinUIMusicPlayer.Services
 
         public async Task<List<Music>> GetMusicListByFolder(StorageFolder folder)
         {
-            var musicFiles = new List<Music>();
+            var musicFiles = new List<(Music Music, string Lyrics)>();
             await addFolderService.GetMusicFilesRecursive(folder, musicFiles);
-            return musicFiles;
+            return musicFiles.AsValueEnumerable().Select(r => r.Music).ToList();
         }
 
         public async Task ScanFolderAsync(StorageFolder folder, int folderId)
         {
-            var musicFiles = new List<Music>();
+            var musicFiles = new List<(Music Music, string Lyrics)>();
             List<SubFolder> subFolders = AutoRescanService.RecordInitialFolderTimes(folder.Path, folderId);
             await InsertSubFolders(subFolders);
             await addFolderService.GetMusicFilesRecursive(folder, musicFiles);
@@ -1209,12 +1209,12 @@ namespace WinUIMusicPlayer.Services
 
             // 优化9: 用 HashSet 做路径查重，O(1) 代替 O(n)
             var newMusicFiles = musicFiles.AsValueEnumerable()
-                .Where(m => !existingMusicPaths.Contains(m.Path))
+                .Where(r => !existingMusicPaths.Contains(r.Music.Path))
                 .ToList();
 
-            if (newMusicFiles.AsValueEnumerable().Any())
+            if (newMusicFiles.Count != 0)
             {
-                await _dbConnection.InsertAllAsync(newMusicFiles);
+                await _dbConnection.InsertAllAsync(newMusicFiles.AsValueEnumerable().Select(r => r.Music).ToList());
                 await SaveEmbeddedLyricsAsync(newMusicFiles);
             }
         }
@@ -1313,11 +1313,11 @@ namespace WinUIMusicPlayer.Services
             return allFiles;
         }
 
-        private async Task<Music> UpdateMusic(Music music)
+        private async Task<(Music Music, string Lyrics)> UpdateMusic(Music music)
         {
             StorageFile storageFile = await StorageFile.GetFileFromPathAsync(music.Path);
-            Music newMusic = await ToolUtils.GetMusicInfo(storageFile);
-            music.EmbeddedLyrics = newMusic.EmbeddedLyrics;
+            var (newMusic, lyrics) = await ToolUtils.GetMusicInfo(storageFile);
+            if (newMusic is null) return (music, "");
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 music.Title = newMusic.Title;
@@ -1336,7 +1336,7 @@ namespace WinUIMusicPlayer.Services
                 music.UpdateTime = newMusic.UpdateTime;
                 music.CreateTime = newMusic.CreateTime;
             });
-            return music;
+            return (music, lyrics ?? "");
         }
 
         public async Task RescanFolder(int folderId)
@@ -1402,33 +1402,33 @@ namespace WinUIMusicPlayer.Services
 
             // 优化16: 批量更新，预分配数组
             var updateList = toUpdateBag.ToList();
-            var updateTasks = new Task<Music>[updateList.Count];
+            var updateTasks = new Task<(Music Music, string Lyrics)>[updateList.Count];
             for (int i = 0; i < updateList.Count; i++)
             {
                 var music = updateList[i];
                 updateTasks[i] = UpdateMusicWithSemaphoreAsync(music);
             }
             var results = await Task.WhenAll(updateTasks);
-            var validResults = results.AsValueEnumerable().Where(r => r is not null).ToList();
+            var validResults = results.AsValueEnumerable().Where(r => r.Music is not null).ToList();
             if (validResults.Count != 0)
             {
-                await _dbConnection.UpdateAllAsync(validResults);
+                await _dbConnection.UpdateAllAsync(validResults.AsValueEnumerable().Select(r => r.Music).ToList());
                 await SaveEmbeddedLyricsAsync(validResults);
             }
 
             // 优化17: 新增文件批量处理，预分配数组
             var filePathKeys = filePaths.Keys.ToList();
-            var addTasks = new Task<Music>[filePathKeys.Count];
+            var addTasks = new Task<(Music? Music, string Lyrics)>[filePathKeys.Count];
             for (int i = 0; i < filePathKeys.Count; i++)
             {
                 var path = filePathKeys[i];
                 addTasks[i] = AddNewMusicAsync(path);
             }
             var addResults = await Task.WhenAll(addTasks);
-            var validMusic = addResults.AsValueEnumerable().Where(m => m is not null).ToList();
+            var validMusic = addResults.AsValueEnumerable().Where(r => r.Music is not null).ToList();
             if (validMusic.Count != 0)
             {
-                await _dbConnection.InsertAllAsync(validMusic);
+                await _dbConnection.InsertAllAsync(validMusic.AsValueEnumerable().Select(r => r.Music!).ToList());
                 await SaveEmbeddedLyricsAsync(validMusic);
             }
 
@@ -1499,7 +1499,7 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        private async Task<Music> UpdateMusicWithSemaphoreAsync(Music music)
+        private async Task<(Music Music, string Lyrics)> UpdateMusicWithSemaphoreAsync(Music music)
         {
             await _rescanfolderSemaphore.WaitAsync();
             try
@@ -1512,7 +1512,7 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        private async Task<Music> AddNewMusicAsync(string path)
+        private async Task<(Music? Music, string Lyrics)> AddNewMusicAsync(string path)
         {
             await _rescanfolderSemaphore.WaitAsync();
             try
@@ -1520,15 +1520,16 @@ namespace WinUIMusicPlayer.Services
                 var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == path).FirstOrDefaultAsync();
                 if (existingMusic is not null)
                 {
-                    return null;
+                    return (null, "");
                 }
                 StorageFile storageFile = await StorageFile.GetFileFromPathAsync(path);
-                return await ToolUtils.GetMusicInfo(storageFile);
+                var (music, lyrics) = await ToolUtils.GetMusicInfo(storageFile);
+                return (music, lyrics ?? "");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"AddNewMusicAsync 添加新音乐文件时出错: {ex.Message}");
-                return null;
+                return (null, "");
             }
             finally
             {
@@ -1579,17 +1580,17 @@ namespace WinUIMusicPlayer.Services
             await Task.WhenAll(deleteTasks);
 
             var filePathKeys = filePaths.Keys.ToList();
-            var addTasks = new Task<Music>[filePathKeys.Count];
+            var addTasks = new Task<(Music? Music, string Lyrics)>[filePathKeys.Count];
             for (int i = 0; i < filePathKeys.Count; i++)
             {
                 var path = filePathKeys[i];
                 addTasks[i] = AddNewMusicAsync(path);
             }
             var addResults = await Task.WhenAll(addTasks);
-            var validMusic = addResults.AsValueEnumerable().Where(m => m is not null).ToList();
+            var validMusic = addResults.AsValueEnumerable().Where(r => r.Music is not null).ToList();
             if (validMusic.Count != 0)
             {
-                await _dbConnection.InsertAllAsync(validMusic);
+                await _dbConnection.InsertAllAsync(validMusic.AsValueEnumerable().Select(r => r.Music!).ToList());
                 await SaveEmbeddedLyricsAsync(validMusic);
             }
 
@@ -1621,7 +1622,7 @@ namespace WinUIMusicPlayer.Services
             var toAddList = _toAdd is ICollection<Music> c ? new List<Music>(c) : _toAdd.ToList();
             if (toAddList.Count == 0) return;
 
-            var validMusic = new List<Music>();
+            var validMusic = new List<(Music Music, string Lyrics)>();
             var channel = Channel.CreateUnbounded<Music>();
             int workerCount = Math.Min(4, toAddList.Count);
             var workers = new Task[workerCount];
@@ -1636,7 +1637,7 @@ namespace WinUIMusicPlayer.Services
             await Task.WhenAll(workers);
 
             if (validMusic.Count != 0)
-                await _dbConnection.InsertAllAsync(validMusic);
+                await _dbConnection.InsertAllAsync(validMusic.AsValueEnumerable().Select(r => r.Music).ToList());
             await SaveEmbeddedLyricsAsync(validMusic);
 
             async Task WorkerLoop(ChannelReader<Music> reader)
@@ -1645,26 +1646,27 @@ namespace WinUIMusicPlayer.Services
                 {
                     while (reader.TryRead(out var m))
                     {
-                        var music = await AddMusicFromPathAsync(m.Path);
+                        var (music, lyrics) = await AddMusicFromPathAsync(m.Path);
                         if (music is not null)
-                            lock (validMusic) validMusic.Add(music);
+                            lock (validMusic) validMusic.Add((music, lyrics));
                     }
                 }
             }
         }
 
-        private async Task<Music> AddMusicFromPathAsync(string path)
+        private async Task<(Music? Music, string Lyrics)> AddMusicFromPathAsync(string path)
         {
             await _rescanfolderSemaphore.WaitAsync();
             try
             {
                 StorageFile storageFile = await StorageFile.GetFileFromPathAsync(path);
-                return await ToolUtils.GetMusicInfo(storageFile);
+                var (music, lyrics) = await ToolUtils.GetMusicInfo(storageFile);
+                return (music, lyrics ?? "");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"AddMusicFromPathAsync 添加新音乐文件时出错: {ex.Message}");
-                return null;
+                return (null, "");
             }
             finally
             {
@@ -1677,7 +1679,7 @@ namespace WinUIMusicPlayer.Services
             var toUpdateList = _toUpdate is ICollection<Music> c ? new List<Music>(c) : _toUpdate.ToList();
             if (toUpdateList.Count == 0) return;
 
-            var validResults = new List<Music>();
+            var validResults = new List<(Music Music, string Lyrics)>();
             var channel = Channel.CreateUnbounded<Music>();
             int workerCount = Math.Min(4, toUpdateList.Count);
             var workers = new Task[workerCount];
@@ -1692,7 +1694,7 @@ namespace WinUIMusicPlayer.Services
             await Task.WhenAll(workers);
 
             if (validResults.Count != 0)
-                await _dbConnection.UpdateAllAsync(validResults);
+                await _dbConnection.UpdateAllAsync(validResults.AsValueEnumerable().Select(r => r.Music).ToList());
             await SaveEmbeddedLyricsAsync(validResults);
 
             async Task WorkerLoop(ChannelReader<Music> reader)
@@ -1702,8 +1704,7 @@ namespace WinUIMusicPlayer.Services
                     while (reader.TryRead(out var music))
                     {
                         var result = await UpdateMusicWithSemaphoreAsync(music);
-                        if (result is not null)
-                            lock (validResults) validResults.Add(result);
+                        lock (validResults) validResults.Add(result);
                     }
                 }
             }

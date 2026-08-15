@@ -126,7 +126,7 @@ namespace WinUIMusicPlayer.Services
         }
 
 
-        public async Task GetMusicFilesRecursive(StorageFolder folder, List<Music> musicFiles)
+        public async Task GetMusicFilesRecursive(StorageFolder folder, List<(Music Music, string Lyrics)> musicFiles)
         {
             DateTime startTime = DateTime.Now;
             var files = await folder.GetFilesAsync();
@@ -138,13 +138,13 @@ namespace WinUIMusicPlayer.Services
                 await semaphore.WaitAsync();
                 try
                 {
-                    Music music = await ToolUtils.GetMusicInfo(file);
-                    return music;
+                    var (music, lyrics) = await ToolUtils.GetMusicInfo(file);
+                    return (music, lyrics);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, $"GetMusicFilesRecursive 处理文件出错: {file.Name}");
-                    return null;
+                    return ((Music?)null, (string?)null);
                 }
                 finally
                 {
@@ -154,9 +154,12 @@ namespace WinUIMusicPlayer.Services
             var results = await Task.WhenAll(tasks.ToList());
             lock (musicFiles)
             {
-                foreach (var music in results.AsValueEnumerable().Where(m => m is not null))
+                foreach (var (music, lyrics) in results)
                 {
-                    musicFiles.Add(music);
+                    if (music is not null)
+                    {
+                        musicFiles.Add((music, lyrics ?? ""));
+                    }
                 }
             }
             // 递归扫描子文件夹 - 也可以并行处理

@@ -46,8 +46,6 @@ namespace WinUIMusicPlayer.Model
         public bool IsKrcSearched { get; set; } = false;
         [Ignore]
         public int IsExistOnDevice { get; set => SetProperty(ref field, value); } = 0;
-        [Ignore]
-        public string EmbeddedLyrics { get; set; } = string.Empty;
         public string ImageHash { get; set => SetProperty(ref field, value); } = string.Empty;
         public DateTime CreateTime { get; set => SetProperty(ref field, value); }
         public DateTime UpdateTime { get; set => SetProperty(ref field, value); }

@@ -804,7 +804,7 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static async Task<Music> GetMusicInfo(StorageFile file)
+        public static async Task<(Music? Music, string? Lyrics)> GetMusicInfo(StorageFile file)
         {
             string lastLevelDirectory = Path.GetDirectoryName(file.Path);
             DirectoryInfo directoryInfo = new DirectoryInfo(lastLevelDirectory);
@@ -873,8 +873,7 @@ namespace WinUIMusicPlayer.Utils
                     CreateTime = ToolUtils.GetSafeFileCreateTime(file.Path),
                     UpdateTime = ToolUtils.GetSafeFileUpdateTime(file.Path)
                 };
-                music.EmbeddedLyrics = lyrics;
-                return music;
+                return (music, lyrics);
             }
             catch (Exception ex)
             {
@@ -903,8 +902,7 @@ namespace WinUIMusicPlayer.Utils
                         CreateTime = ToolUtils.GetSafeFileCreateTime(file.Path),
                         UpdateTime = ToolUtils.GetSafeFileUpdateTime(file.Path)
                     };
-                    music.EmbeddedLyrics = wavFileInfo.Lyrics;
-                    return music;
+                    return (music, wavFileInfo.Lyrics);
                 }
                 catch (Exception innerEx)
                 {
@@ -912,7 +910,7 @@ namespace WinUIMusicPlayer.Utils
                 }
 
             }
-            return null;
+            return (null, null);
         }
 
         private static readonly string[] SampleSizeProps = ["System.Audio.SampleSize"];

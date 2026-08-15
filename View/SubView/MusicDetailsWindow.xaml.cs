@@ -385,7 +385,7 @@ namespace WinUIMusicPlayer.View.SubView
             _ = Task.Run(async () =>
             {
                 StorageFile storageFile = await StorageFile.GetFileFromPathAsync(MusicDetail.Path);
-                Music music = await ToolUtils.GetMusicInfo(storageFile);
+                var (music, lyrics) = await ToolUtils.GetMusicInfo(storageFile);
                 if (music is not null)
                 {
                     DispatcherQueue.TryEnqueue(() =>
@@ -404,7 +404,7 @@ namespace WinUIMusicPlayer.View.SubView
                         MusicDetail.Path = music.Path;
                         MusicDetail.CreateTime = music.CreateTime;
                         MusicDetail.UpdateTime = music.UpdateTime;
-                        LyricsText = music.EmbeddedLyrics;
+                        LyricsText = lyrics ?? "";
                     });
                 }
             });
