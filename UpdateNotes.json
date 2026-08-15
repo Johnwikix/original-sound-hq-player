@@ -1,4 +1,4 @@
 {
-  "zh-CN": "更新内容\n• 音频引擎的进程间通信优化\n• 使用自构建 cswinrt “修复”程序窗口卡顿\n• 新增播放统计页面",
-  "en": "Release Notes\n• Optimized inter-process communication for the audio engine\n• Used custom-built cswinrt to fix window stuttering\n• Added playback statistics page"
+  "zh-CN": "更新内容\n• 修复统计-收听热度图日期错位\n• 新增歌词格式支持\n• 修复无法读取内嵌歌词的问题\n• Runtime 更新至 .NET 11 Preview 7\n• 修复一个专辑页无法回退的问题",
+  "en": "Release Notes\n• Fixed date misalignment in the listening heatmap on the statistics page\n• Added support for additional lyric formats\n• Fixed an issue where embedded lyrics could not be read\n• Updated runtime to .NET 11 Preview 7\n• Fixed a navigation back issue on the album page"
 }
