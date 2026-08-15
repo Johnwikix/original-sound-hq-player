@@ -899,7 +899,11 @@ namespace WinUIMusicPlayer.Services
         }
 
         /// <summary>
-        /// LRC 时间行解析：手动 Span 扫描 [mm:ss.xx]，零 Regex 分配
+        /// LRC 时间行解析：手动 Span 扫描 [mm:ss.xx]，零 Regex 分配。
+        /// 纠错规则：
+        /// 1. 行首连续多个时间标签视为重复出现行，每个标签各生成一条歌词；
+        /// 2. 只有时间标签、无任何文本的行视为垃圾行，直接丢弃；
+        /// 3. 单标签行行为与旧版完全一致。
         /// </summary>
         private void ParseLrcToLines(string content, Action<double, string> onLineParsed)
         {
@@ -915,29 +919,80 @@ namespace WinUIMusicPlayer.Services
                 var trimmed = lineSpan.Trim();
                 if (trimmed.IsEmpty || trimmed[0] != '[') continue;
 
-                int bracketClose = trimmed.IndexOf(']');
-                if (bracketClose < 2) continue;
-                var timePart = trimmed.Slice(1, bracketClose - 1);
+                int tagCount = CountLeadingLrcTags(trimmed, out int textStart);
+                if (tagCount == 0) continue;
 
-                int colon = timePart.IndexOf(':');
-                if (colon < 0) continue;
-                if (!int.TryParse(timePart.Slice(0, colon), out int minutes)) continue;
-
-                var afterMin = timePart.Slice(colon + 1);
-                int sep = afterMin.IndexOfAny('.', ':');
-                if (sep < 0) continue;
-                if (!int.TryParse(afterMin.Slice(0, sep), out int seconds)) continue;
-
-                var msSpan = afterMin.Slice(sep + 1);
-                if (!int.TryParse(msSpan, out int msRaw)) continue;
-                int milliseconds = msSpan.Length == 2 ? msRaw * 10 : msRaw;
-
-                var textSpan = trimmed.Slice(bracketClose + 1).Trim();
+                var textSpan = trimmed.Slice(textStart).Trim();
                 if (textSpan.IsEmpty) continue;
                 if (textSpan.Length == 2 && textSpan[0] == '/' && textSpan[1] == '/') continue;
 
-                onLineParsed((minutes * 60 + seconds) * 1000.0 + milliseconds, textSpan.ToString());
+                if (tagCount == 1)
+                {
+                    if (TryParseLrcTime(trimmed.Slice(1, textStart - 2), out double timeMs))
+                        onLineParsed(timeMs, textSpan.ToString());
+                    continue;
+                }
+
+                // 多时间标签：每个标签处各生成一条歌词，同一行内相同时间不重复
+                int pos = 0;
+                long lastTagMs = -1;
+                while (pos < trimmed.Length && trimmed[pos] == '[')
+                {
+                    int bracketClose = trimmed.Slice(pos).IndexOf(']');
+                    if (bracketClose < 1) break;
+                    bracketClose += pos;
+                    if (!TryParseLrcTime(trimmed.Slice(pos + 1, bracketClose - pos - 1), out double tagMs)) break;
+                    if (tagMs != lastTagMs)
+                    {
+                        onLineParsed(tagMs, textSpan.ToString());
+                        lastTagMs = (long)tagMs;
+                    }
+                    pos = bracketClose + 1;
+                }
             }
+        }
+
+        /// <summary>
+        /// 统计行首连续有效时间标签的数量，textStart 指向最后一个标签之后的位置
+        /// </summary>
+        private static int CountLeadingLrcTags(ReadOnlySpan<char> line, out int textStart)
+        {
+            int pos = 0;
+            int count = 0;
+            while (pos < line.Length && line[pos] == '[')
+            {
+                int bracketClose = line.Slice(pos).IndexOf(']');
+                if (bracketClose < 1) break;
+                bracketClose += pos;
+                if (!TryParseLrcTime(line.Slice(pos + 1, bracketClose - pos - 1), out _)) break;
+                count++;
+                pos = bracketClose + 1;
+            }
+            textStart = pos;
+            return count;
+        }
+
+        /// <summary>
+        /// 解析 [mm:ss.xx] / [mm:ss:xx] 时间标签为毫秒
+        /// </summary>
+        private static bool TryParseLrcTime(ReadOnlySpan<char> timePart, out double timeMs)
+        {
+            timeMs = 0;
+            int colon = timePart.IndexOf(':');
+            if (colon < 0) return false;
+            if (!int.TryParse(timePart.Slice(0, colon), out int minutes)) return false;
+
+            var afterMin = timePart.Slice(colon + 1);
+            int sep = afterMin.IndexOfAny('.', ':');
+            if (sep < 0) return false;
+            if (!int.TryParse(afterMin.Slice(0, sep), out int seconds)) return false;
+
+            var msSpan = afterMin.Slice(sep + 1);
+            if (!int.TryParse(msSpan, out int msRaw)) return false;
+            int milliseconds = msSpan.Length == 2 ? msRaw * 10 : msRaw;
+
+            timeMs = (minutes * 60 + seconds) * 1000.0 + milliseconds;
+            return true;
         }
 
         // ──────────────────────────────────────────────────────────────
