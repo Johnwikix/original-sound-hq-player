@@ -7,7 +7,6 @@
     xmlns:behaviors="using:WinUIMusicPlayer.Behaviors"
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:dev="using:DevWinUI"
     xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     xmlns:local="using:WinUIMusicPlayer.Controls.Lyrics"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
