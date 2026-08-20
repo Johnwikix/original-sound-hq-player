@@ -9,7 +9,7 @@
     xmlns:model="using:WinUIMusicPlayer.Model"
     mc:Ignorable="d">
 
-    <Grid Margin="0">
+    <Grid>
         <!--  Loading 界面  -->
         <Grid x:Name="LoadingGrid" Visibility="Collapsed">
             <ProgressRing
@@ -24,95 +24,277 @@
                 VerticalAlignment="Center"
                 Text="正在处理数据，请稍候..." />
         </Grid>
+
+        <!--  空状态：新用户首启引导  -->
+        <Grid
+            x:Name="EmptyGrid"
+            AllowDrop="True"
+            DragLeave="Grid_DragLeave"
+            DragOver="Grid_DragOver"
+            Drop="Grid_Drop"
+            Visibility="Collapsed">
+            <StackPanel
+                MaxWidth="520"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+                <Border
+                    Width="96"
+                    Height="96"
+                    HorizontalAlignment="Center"
+                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                    CornerRadius="28">
+                    <FontIcon
+                        FontSize="44"
+                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                        Glyph="&#xE8B7;" />
+                </Border>
+                <TextBlock
+                    x:Uid="AddFolderPageWelcomeTitle"
+                    Margin="0,24,0,0"
+                    HorizontalAlignment="Center"
+                    FontSize="28"
+                    FontWeight="SemiBold"
+                    TextAlignment="Center" />
+                <TextBlock
+                    x:Uid="AddFolderPageWelcomeSubtitle"
+                    Margin="0,8,0,0"
+                    HorizontalAlignment="Center"
+                    FontSize="14"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    TextAlignment="Center"
+                    TextWrapping="Wrap" />
+                <Button
+                    x:Name="EmptyAddFolderButton"
+                    Margin="0,32,0,0"
+                    HorizontalAlignment="Center"
+                    Click="AddFolderButton_Click"
+                    Style="{StaticResource AccentButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon Glyph="&#xE8B7;" />
+                        <TextBlock
+                            x:Uid="AddFolder"
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+                <StackPanel
+                    Margin="0,20,0,0"
+                    HorizontalAlignment="Center"
+                    Opacity="0.6"
+                    Orientation="Horizontal">
+                    <FontIcon
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        Glyph="&#xE8B7;" />
+                    <TextBlock
+                        x:Uid="AddFolderPageDragHint"
+                        Margin="6,0,0,0"
+                        VerticalAlignment="Center"
+                        FontSize="12"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+
+        <!--  列表状态  -->
         <Grid
             x:Name="AddFolderGrid"
-            Margin="0,5,0,0"
             AllowDrop="True"
+            DragLeave="Grid_DragLeave"
             DragOver="Grid_DragOver"
             Drop="Grid_Drop">
-            <!--<Grid.Transitions>
-                <TransitionCollection>
-                    <EntranceThemeTransition FromVerticalOffset="100" />
-                </TransitionCollection>
-            </Grid.Transitions>-->
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <Button
-                x:Name="AddFolder"
-                Margin="10,10,10,10"
-                Background="Transparent"
-                BorderBrush="Transparent"
-                BorderThickness="0"
-                Click="AddFolderButton_Click">
-                <FontIcon Glyph="&#xe8f4;" />
-            </Button>
+            <Grid Margin="16,16,16,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <StackPanel VerticalAlignment="Center">
+                    <TextBlock
+                        x:Uid="AddFolderPageTitle"
+                        VerticalAlignment="Center"
+                        FontSize="28" />
+                    <StackPanel Margin="0,4,0,0" Orientation="Horizontal">
+                        <TextBlock
+                            FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="{x:Bind ViewModel.FolderList.Count, Mode=OneWay}" />
+                        <TextBlock
+                            x:Uid="AddFolderPageFolderCountSuffix"
+                            Margin="4,0,0,0"
+                            FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </StackPanel>
+                <Button
+                    x:Name="AddFolderButton"
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Click="AddFolderButton_Click"
+                    Style="{StaticResource AccentButtonStyle}">
+                    <StackPanel Orientation="Horizontal">
+                        <FontIcon Glyph="&#xE8B7;" />
+                        <TextBlock
+                            x:Uid="AddFolder"
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+            </Grid>
             <ListView
                 x:Name="FolderListView"
                 Grid.Row="1"
-                ItemsSource="{x:Bind ViewModel.FolderList, Mode=TwoWay}">
+                Margin="8,0,8,0"
+                ItemsSource="{x:Bind ViewModel.FolderList, Mode=TwoWay}"
+                SelectionMode="None">
+                <ListView.ItemContainerStyle>
+                    <Style BasedOn="{StaticResource DefaultListViewItemStyle}" TargetType="ListViewItem">
+                        <Setter Property="CornerRadius" Value="8" />
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                        <Setter Property="Margin" Value="8,4" />
+                        <Setter Property="MinHeight" Value="64" />
+                        <Setter Property="Padding" Value="0" />
+                    </Style>
+                </ListView.ItemContainerStyle>
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="model:Folder">
-                        <Grid>
+                        <Grid Padding="12,8">
                             <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
                             <Button
                                 x:Name="OpenFolderButton"
-                                Grid.Column="0"
-                                Margin="0,10"
-                                Background="Transparent"
+                                Width="40"
+                                Height="40"
+                                Padding="0"
+                                VerticalAlignment="Center"
+                                Background="{ThemeResource SubtleFillColorSecondaryBrush}"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
                                 Click="OpenFolderButton_Click"
+                                CornerRadius="10"
+                                Style="{StaticResource MenuButtonStyle}"
                                 Tag="{x:Bind Path}">
-                                <FontIcon Glyph="&#xe838;" />
-                            </Button>
-                            <Button
-                                x:Name="RescanFolderButton"
-                                Grid.Column="1"
-                                Margin="10"
-                                Background="Transparent"
-                                BorderBrush="Transparent"
-                                BorderThickness="0"
-                                Click="RescanFolderButton_Click"
-                                Tag="{x:Bind Id}">
-                                <FontIcon Glyph="&#xe72c;" />
+                                <FontIcon
+                                    FontSize="18"
+                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                    Glyph="&#xE8B7;" />
+                                <ToolTipService.ToolTip>
+                                    <ToolTip x:Uid="OpenFolderToolTip" />
+                                </ToolTipService.ToolTip>
                             </Button>
                             <StackPanel
+                                Grid.Column="1"
+                                Margin="12,0,0,0"
+                                VerticalAlignment="Center">
+                                <TextBlock
+                                    FontSize="15"
+                                    Text="{x:Bind Name}"
+                                    TextTrimming="CharacterEllipsis" />
+                                <TextBlock
+                                    Margin="0,2,0,0"
+                                    FontSize="12"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="{x:Bind Path}"
+                                    TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <StackPanel
                                 Grid.Column="2"
-                                Margin="10,5,10,5"
-                                Orientation="Vertical">
-                                <!--<TextBlock FontSize="16" Text="{x:Bind Name}" />-->
-                                <TextBlock FontSize="16" Text="{x:Bind Path}" />
-                                <StackPanel Orientation="Horizontal">
-                                    <TextBlock FontSize="12" Text="{x:Bind SongCount}" />
+                                Margin="12,0,0,0"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal">
+                                <StackPanel
+                                    Margin="0,0,8,0"
+                                    VerticalAlignment="Center"
+                                    Opacity="0.7"
+                                    Orientation="Horizontal">
+                                    <TextBlock
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        Text="{x:Bind SongCount}" />
                                     <TextBlock
                                         x:Uid="FolderNumberOfSongs"
                                         Margin="3,0,0,0"
-                                        FontSize="12" />
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                                 </StackPanel>
-
+                                <Button
+                                    x:Name="RescanFolderButton"
+                                    Margin="2"
+                                    Padding="8"
+                                    Background="Transparent"
+                                    BorderBrush="Transparent"
+                                    BorderThickness="0"
+                                    Click="RescanFolderButton_Click"
+                                    Style="{StaticResource MenuButtonStyle}"
+                                    Tag="{x:Bind Id}">
+                                    <FontIcon Glyph="&#xE72C;" />
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip x:Uid="RescanFolderToolTip" />
+                                    </ToolTipService.ToolTip>
+                                </Button>
+                                <Button
+                                    x:Name="RemoveFolderButton"
+                                    Margin="2"
+                                    Padding="8"
+                                    Background="Transparent"
+                                    BorderBrush="Transparent"
+                                    BorderThickness="0"
+                                    Click="RemoveFolderButton_Click"
+                                    Style="{StaticResource MenuButtonStyle}"
+                                    Tag="{x:Bind Id}">
+                                    <FontIcon Glyph="&#xECC9;" />
+                                    <ToolTipService.ToolTip>
+                                        <ToolTip x:Uid="RemoveFolderToolTip" />
+                                    </ToolTipService.ToolTip>
+                                </Button>
                             </StackPanel>
-                            <Button
-                                x:Name="RemoveFolderButton"
-                                Grid.Column="3"
-                                Margin="10"
-                                Background="Transparent"
-                                BorderBrush="Transparent"
-                                BorderThickness="0"
-                                Click="RemoveFolderButton_Click"
-                                Tag="{x:Bind Id}">
-                                <FontIcon Glyph="&#xecc9;" />
-                            </Button>
                         </Grid>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>
+        </Grid>
+
+        <!--  拖放反馈层（置于最上层，不拦截拖放事件）  -->
+        <Grid
+            x:Name="DropOverlay"
+            Margin="12"
+            IsHitTestVisible="False"
+            Visibility="Collapsed">
+            <Border
+                Background="{ThemeResource AccentFillColorSecondaryBrush}"
+                CornerRadius="12"
+                Opacity="0.35" />
+            <Rectangle
+                Margin="2"
+                RadiusX="10"
+                RadiusY="10"
+                Stroke="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                StrokeDashArray="4,4"
+                StrokeThickness="2" />
+            <StackPanel
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Orientation="Horizontal">
+                <FontIcon
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                    Glyph="&#xE8B7;" />
+                <TextBlock
+                    x:Uid="AddFolderPageDropOverlayText"
+                    Margin="8,0,0,0"
+                    VerticalAlignment="Center"
+                    FontSize="16"
+                    FontWeight="SemiBold"
+                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+            </StackPanel>
         </Grid>
     </Grid>
 </Page>

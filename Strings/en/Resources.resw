@@ -961,6 +961,33 @@
   <data name="FolderNumberOfSongs.Text" xml:space="preserve">
     <value>Songs</value>
   </data>
+  <data name="AddFolderPageTitle.Text" xml:space="preserve">
+    <value>Music Folders</value>
+  </data>
+  <data name="AddFolderPageWelcomeTitle.Text" xml:space="preserve">
+    <value>Welcome to OriginalSound HQ Player</value>
+  </data>
+  <data name="AddFolderPageWelcomeSubtitle.Text" xml:space="preserve">
+    <value>Add local music folders to start building your library. Supports common audio formats with automatic lyrics and cover art matching.</value>
+  </data>
+  <data name="AddFolderPageDragHint.Text" xml:space="preserve">
+    <value>or drag folders here</value>
+  </data>
+  <data name="AddFolderPageDropOverlayText.Text" xml:space="preserve">
+    <value>Release to add folders</value>
+  </data>
+  <data name="AddFolderPageFolderCountSuffix.Text" xml:space="preserve">
+    <value>folders</value>
+  </data>
+  <data name="OpenFolderToolTip.Content" xml:space="preserve">
+    <value>Open folder</value>
+  </data>
+  <data name="RescanFolderToolTip.Content" xml:space="preserve">
+    <value>Rescan</value>
+  </data>
+  <data name="RemoveFolderToolTip.Content" xml:space="preserve">
+    <value>Remove folder</value>
+  </data>
   <data name="CoverDiskCache.Text" xml:space="preserve">
     <value>Cover disk cache</value>
   </data>

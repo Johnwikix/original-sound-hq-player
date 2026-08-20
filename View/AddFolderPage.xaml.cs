@@ -31,7 +31,27 @@ namespace WinUIMusicPlayer.View
             ViewModel = App.Services.GetRequiredService<AddFolderViewModel>();
             DataContext = this;
             _musicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>();
+            ViewModel.FoldersLoaded += OnFoldersLoaded;
             NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
+        }
+
+        private void OnFoldersLoaded()
+        {
+            if (DispatcherQueue is not null)
+            {
+                DispatcherQueue.TryEnqueue(UpdateState);
+            }
+            else
+            {
+                UpdateState();
+            }
+        }
+
+        private void UpdateState()
+        {
+            bool hasFolders = ViewModel.FolderList.Count > 0;
+            EmptyGrid.Visibility = hasFolders ? Visibility.Collapsed : Visibility.Visible;
+            AddFolderGrid.Visibility = hasFolders ? Visibility.Visible : Visibility.Collapsed;
         }
 
         private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
@@ -46,25 +66,21 @@ namespace WinUIMusicPlayer.View
 
         private async void AddFolderButton_Click(object sender, RoutedEventArgs e)
         {
-            LoadingGrid.Visibility = Visibility.Visible;
-            AddFolderGrid.Visibility = Visibility.Collapsed;
+            ShowLoading();
             await ViewModel.AddFolderButton_Click();
-            LoadingGrid.Visibility = Visibility.Collapsed;
-            AddFolderGrid.Visibility = Visibility.Visible;
+            HideLoading();
         }
 
 
         private async void RescanFolderButton_Click(object sender, RoutedEventArgs e)
         {
-            LoadingGrid.Visibility = Visibility.Visible;
-            AddFolderGrid.Visibility = Visibility.Collapsed;
+            ShowLoading();
             var button = sender as Button;
             if (button is not null && button.Tag is int folderId)
             {
                 await Task.Run(() => _musicDatabaseService.RescanFolder(folderId));
             }
-            LoadingGrid.Visibility = Visibility.Collapsed;
-            AddFolderGrid.Visibility = Visibility.Visible;
+            HideLoading();
         }
 
         private async void RemoveFolderButton_Click(object sender, RoutedEventArgs e)
@@ -81,11 +97,23 @@ namespace WinUIMusicPlayer.View
 
         private async Task RemoveFolder(int folderId)
         {
+            ShowLoading();
+            await ViewModel.RemoveFolderButton_Click(folderId);
+            HideLoading();
+        }
+
+        private void ShowLoading()
+        {
             LoadingGrid.Visibility = Visibility.Visible;
             AddFolderGrid.Visibility = Visibility.Collapsed;
-            await ViewModel.RemoveFolderButton_Click(folderId);
+            EmptyGrid.Visibility = Visibility.Collapsed;
+            DropOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private void HideLoading()
+        {
             LoadingGrid.Visibility = Visibility.Collapsed;
-            AddFolderGrid.Visibility = Visibility.Visible;
+            UpdateState();
         }
 
         private void Grid_DragOver(object sender, DragEventArgs e)
@@ -93,15 +121,28 @@ namespace WinUIMusicPlayer.View
             if (e.DataView.Contains(StandardDataFormats.StorageItems))
             {
                 e.AcceptedOperation = DataPackageOperation.Link;
+                DropOverlay.Visibility = Visibility.Visible;
             }
             else
             {
                 e.AcceptedOperation = DataPackageOperation.None;
+                DropOverlay.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private void Grid_DragLeave(object sender, DragEventArgs e)
+        {
+            var position = e.GetPosition(this);
+            if (position.X < 0 || position.Y < 0 ||
+                position.X > ActualWidth || position.Y > ActualHeight)
+            {
+                DropOverlay.Visibility = Visibility.Collapsed;
             }
         }
 
         private async void Grid_Drop(object sender, DragEventArgs e)
         {
+            DropOverlay.Visibility = Visibility.Collapsed;
             if (e.DataView.Contains(StandardDataFormats.StorageItems))
             {
                 try
@@ -112,11 +153,9 @@ namespace WinUIMusicPlayer.View
 
                     if (folders.Any())
                     {
-                        LoadingGrid.Visibility = Visibility.Visible;
-                        AddFolderGrid.Visibility = Visibility.Collapsed;
-                        ViewModel.Grid_Drop(folders.ToList());
-                        LoadingGrid.Visibility = Visibility.Collapsed;
-                        AddFolderGrid.Visibility = Visibility.Visible;
+                        ShowLoading();
+                        await ViewModel.Grid_Drop(folders.ToList());
+                        HideLoading();
                     }
                 }
                 catch (Exception ex)

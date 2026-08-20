@@ -961,6 +961,33 @@
   <data name="FolderNumberOfSongs.Text" xml:space="preserve">
     <value>Canciones</value>
   </data>
+  <data name="AddFolderPageTitle.Text" xml:space="preserve">
+    <value>Carpetas de música</value>
+  </data>
+  <data name="AddFolderPageWelcomeTitle.Text" xml:space="preserve">
+    <value>Bienvenido a Reproductor HQ Sonido Original</value>
+  </data>
+  <data name="AddFolderPageWelcomeSubtitle.Text" xml:space="preserve">
+    <value>Agrega carpetas de música locales para comenzar a construir tu biblioteca. Admite formatos de audio comunes con sincronización automática de letras y carátulas.</value>
+  </data>
+  <data name="AddFolderPageDragHint.Text" xml:space="preserve">
+    <value>o arrastra carpetas aquí</value>
+  </data>
+  <data name="AddFolderPageDropOverlayText.Text" xml:space="preserve">
+    <value>Suelta para agregar carpetas</value>
+  </data>
+  <data name="AddFolderPageFolderCountSuffix.Text" xml:space="preserve">
+    <value>carpetas</value>
+  </data>
+  <data name="OpenFolderToolTip.Content" xml:space="preserve">
+    <value>Abrir carpeta</value>
+  </data>
+  <data name="RescanFolderToolTip.Content" xml:space="preserve">
+    <value>Volver a escanear</value>
+  </data>
+  <data name="RemoveFolderToolTip.Content" xml:space="preserve">
+    <value>Quitar carpeta</value>
+  </data>
   <data name="CoverDiskCache.Text" xml:space="preserve">
     <value>Caché de disco de portada</value>
   </data>

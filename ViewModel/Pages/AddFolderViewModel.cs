@@ -16,6 +16,7 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class AddFolderViewModel : ObservableObject
     {
+        public event Action? FoldersLoaded;
         public ObservableCollection<Folder> FolderList { get => field; set => SetProperty(ref field, value); } = [];
         private AppViewModel AppViewModel { get; set; }
         private MusicDatabaseService _musicDatabaseService { get; }
@@ -48,10 +49,12 @@ namespace WinUIMusicPlayer.ViewModel
                     folder.SongCount = count;
                     FolderList.Add(folder);
                 }
+                FoldersLoaded?.Invoke();
             }
             catch (SQLiteException ex)
             {
                 _logger.LogError(ex, $"SQLite 错误: {ex.Message}");
+                FoldersLoaded?.Invoke();
             }
         }
 
@@ -96,7 +99,7 @@ namespace WinUIMusicPlayer.ViewModel
             await LoadFoldersAsync();
         }
 
-        public async void Grid_Drop(IEnumerable<IStorageItem> folders)
+        public async Task Grid_Drop(IEnumerable<IStorageItem> folders)
         {
             foreach (var item in folders)
             {

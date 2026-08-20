@@ -960,6 +960,33 @@
   <data name="FolderNumberOfSongs.Text" xml:space="preserve">
     <value>首歌曲</value>
   </data>
+  <data name="AddFolderPageTitle.Text" xml:space="preserve">
+    <value>音乐文件夹</value>
+  </data>
+  <data name="AddFolderPageWelcomeTitle.Text" xml:space="preserve">
+    <value>欢迎使用原音HQ播放器</value>
+  </data>
+  <data name="AddFolderPageWelcomeSubtitle.Text" xml:space="preserve">
+    <value>添加本地音乐文件夹，即可开始构建你的音乐库。支持常见音频格式，自动匹配歌词与封面。</value>
+  </data>
+  <data name="AddFolderPageDragHint.Text" xml:space="preserve">
+    <value>或将文件夹拖拽到此处</value>
+  </data>
+  <data name="AddFolderPageDropOverlayText.Text" xml:space="preserve">
+    <value>松开以添加文件夹</value>
+  </data>
+  <data name="AddFolderPageFolderCountSuffix.Text" xml:space="preserve">
+    <value>个文件夹</value>
+  </data>
+  <data name="OpenFolderToolTip.Content" xml:space="preserve">
+    <value>打开文件夹</value>
+  </data>
+  <data name="RescanFolderToolTip.Content" xml:space="preserve">
+    <value>重新扫描</value>
+  </data>
+  <data name="RemoveFolderToolTip.Content" xml:space="preserve">
+    <value>移除文件夹</value>
+  </data>
   <data name="CoverDiskCache.Text" xml:space="preserve">
     <value>封面磁盘缓存</value>
   </data>

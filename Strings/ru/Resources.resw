@@ -961,6 +961,33 @@
   <data name="FolderNumberOfSongs.Text" xml:space="preserve">
     <value>песен</value>
   </data>
+  <data name="AddFolderPageTitle.Text" xml:space="preserve">
+    <value>Папки музыки</value>
+  </data>
+  <data name="AddFolderPageWelcomeTitle.Text" xml:space="preserve">
+    <value>Добро пожаловать в HQ-плеер Original Sound</value>
+  </data>
+  <data name="AddFolderPageWelcomeSubtitle.Text" xml:space="preserve">
+    <value>Добавьте локальные папки с музыкой, чтобы начать создавать свою библиотеку. Поддерживаются распространённые аудиоформаты с автоматическим поиском текстов и обложек.</value>
+  </data>
+  <data name="AddFolderPageDragHint.Text" xml:space="preserve">
+    <value>или перетащите папки сюда</value>
+  </data>
+  <data name="AddFolderPageDropOverlayText.Text" xml:space="preserve">
+    <value>Отпустите, чтобы добавить папки</value>
+  </data>
+  <data name="AddFolderPageFolderCountSuffix.Text" xml:space="preserve">
+    <value>папок</value>
+  </data>
+  <data name="OpenFolderToolTip.Content" xml:space="preserve">
+    <value>Открыть папку</value>
+  </data>
+  <data name="RescanFolderToolTip.Content" xml:space="preserve">
+    <value>Повторное сканирование</value>
+  </data>
+  <data name="RemoveFolderToolTip.Content" xml:space="preserve">
+    <value>Удалить папку</value>
+  </data>
   <data name="CoverDiskCache.Text" xml:space="preserve">
     <value>Кэш на диске обложки</value>
   </data>
