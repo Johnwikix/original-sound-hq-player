@@ -25,10 +25,10 @@
     </Page.Resources>
 
     <Grid>
-        <Grid.ChildrenTransitions>
+        <!--<Grid.ChildrenTransitions>
             <EntranceThemeTransition FromVerticalOffset="50" IsStaggeringEnabled="False" />
             <RepositionThemeTransition IsStaggeringEnabled="True" />
-        </Grid.ChildrenTransitions>
+        </Grid.ChildrenTransitions>-->
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -192,21 +192,13 @@
                             Margin="0,0,0,12"
                             Style="{ThemeResource SubtitleTextBlockStyle}" />
 
-                        <Grid
-                            x:Name="HeatmapHost"
-                            Grid.Row="1"
-                            SizeChanged="HeatmapHost_SizeChanged">
-                            <Grid
-                                x:Name="HeatmapContent"
-                                Margin="32,8,32,8"
-                                VerticalAlignment="Top">
-                                <Grid
-                                    x:Name="HeatmapScaled"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Top">
-                                    <Grid.RenderTransform>
-                                        <ScaleTransform x:Name="HeatmapScale" />
-                                    </Grid.RenderTransform>
+                        <Grid x:Name="HeatmapHost" Grid.Row="1">
+                            <Viewbox
+                                x:Name="HeatmapScaled"
+                                Margin="16,8,16,8"
+                                Stretch="Uniform"
+                                StretchDirection="Both">
+                                <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="Auto" />
                                         <ColumnDefinition Width="Auto" />
@@ -336,7 +328,7 @@
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
                                 </Grid>
-                            </Grid>
+                            </Viewbox>
                         </Grid>
                     </Grid>
                 </Border>
