@@ -3,14 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
-using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
 using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Windows.ApplicationModel.Contacts;
 using Windows.System;
-using WinUIMusicPlayer.Helper.Animations;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
@@ -27,49 +22,13 @@ namespace WinUIMusicPlayer.View
     {
         private ContentDialog? _thirdPartyDialog;
         public SettingsViewModel ViewModel { get; }
-        private bool _isInitialized = false;
         public SettingsPage()
         {
             InitializeComponent();
             ViewModel = App.Services.GetRequiredService<SettingsViewModel>();
             DataContext = this;
             NavigationCacheMode = NavigationCacheMode.Disabled;
-            //Loaded += SettingsPage_Loaded;
             Unloaded += OnUnloaded;
-        }
-
-        private async void SettingsPage_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (_isInitialized)
-            {
-                return;
-            }
-            const int delayMs = 10;
-            const int fromOffsetY = 80;
-            const int durationMs = 300;
-            const int staggerMs = 50;
-
-            var targets = GetEntranceTargets(ContentPanel);
-            ContentScroller.ChangeView(null, 0, null, true);
-            CompositionFactory.PlayEntrance(
-                targets,
-                delayMs,
-                fromOffsetY,
-                durationMs: durationMs,
-                staggerMs: staggerMs
-            );
-
-            ContentPanel.Opacity = 1;
-
-            var totalAnimationMs = delayMs + durationMs;
-            if (targets.Count > 1)
-            {
-                totalAnimationMs += (targets.Count - 1) * staggerMs;
-            }
-            await Task.Delay(totalAnimationMs);
-            SetRepositionTransitions();
-            _isInitialized = true;
-            Loaded -= SettingsPage_Loaded;
         }
 
         protected override void OnNavigatedTo(NavigationEventArgs e)
@@ -152,43 +111,6 @@ namespace WinUIMusicPlayer.View
             {
                 autoScrollView.IsPlaying = false;
             }
-        }
-
-        private static List<UIElement> GetEntranceTargets(Panel panel)
-        {
-            var targets = new List<UIElement>();
-            foreach (var child in panel.Children)
-            {
-                if (child is StackPanel childPanel && childPanel.Children.Count > 0)
-                {
-                    foreach (var nested in childPanel.Children)
-                    {
-                        targets.Add(nested);
-                    }
-                }
-                else
-                {
-                    targets.Add(child);
-                }
-            }
-            return targets;
-        }
-
-        private void SetRepositionTransitions()
-        {
-            ApplyRepositionTransition(ContentPanel);
-            foreach (var child in ContentPanel.Children)
-            {
-                if (child is StackPanel childPanel)
-                {
-                    ApplyRepositionTransition(childPanel);
-                }
-            }
-        }
-
-        private static void ApplyRepositionTransition(StackPanel panel)
-        {
-            panel.ChildrenTransitions = [new RepositionThemeTransition { IsStaggeringEnabled = false }];
         }
     }
 }

@@ -38,7 +38,6 @@
         <ScrollViewer x:Name="ContentScroller" Grid.Row="1">
             <StackPanel x:Name="ContentPanel" Margin="32,0,32,0">
                 <StackPanel.ChildrenTransitions>
-                    <EntranceThemeTransition FromVerticalOffset="50" IsStaggeringEnabled="False" />
                     <RepositionThemeTransition IsStaggeringEnabled="True" />
                 </StackPanel.ChildrenTransitions>
                 <!--  音频设置  -->

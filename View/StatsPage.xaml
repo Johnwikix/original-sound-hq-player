@@ -25,10 +25,9 @@
     </Page.Resources>
 
     <Grid>
-        <!--<Grid.ChildrenTransitions>
-            <EntranceThemeTransition FromVerticalOffset="50" IsStaggeringEnabled="False" />
+        <Grid.ChildrenTransitions>
             <RepositionThemeTransition IsStaggeringEnabled="True" />
-        </Grid.ChildrenTransitions>-->
+        </Grid.ChildrenTransitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
