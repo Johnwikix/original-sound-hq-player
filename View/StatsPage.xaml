@@ -42,15 +42,6 @@
                 FontSize="28" />
         </Grid>
 
-        <!--  加载条  -->
-        <ProgressBar
-            Grid.Row="0"
-            Grid.RowSpan="3"
-            VerticalAlignment="Top"
-            Background="Transparent"
-            IsIndeterminate="{x:Bind ViewModel.IsLoading, Mode=OneWay}"
-            Visibility="{x:Bind ViewModel.IsLoading, Mode=OneWay, Converter={StaticResource BoolToVisibilityConverter}}" />
-
         <!--  时间范围选择  -->
         <controls:SettingsExpander
             Grid.Row="1"
