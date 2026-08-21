@@ -25,7 +25,7 @@
             <StackPanel Orientation="Horizontal">
                 <TextBlock
                     x:Uid="MusicBrowsePageTitle"
-                    Margin="10,10,15,10"
+                    Margin="16,10,16,10"
                     VerticalAlignment="Center"
                     FontSize="28" />
                 <SelectorBar
@@ -63,7 +63,7 @@
 
 
             <StackPanel
-                Margin="10"
+                Margin="16,10,16,10"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Center"
                 Orientation="Horizontal">
@@ -137,7 +137,7 @@
         <Frame
             x:Name="ContentFrame"
             Grid.Row="2"
-            Margin="0"
+            Margin="6,0,0,0"
             IsNavigationStackEnabled="False"
             Visibility="Visible" />
     </Grid>

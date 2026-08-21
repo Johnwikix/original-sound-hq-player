@@ -14,9 +14,7 @@
     xmlns:tool="using:WinUIMusicPlayer.Utils"
     mc:Ignorable="d">
     <Grid>
-        <Grid
-            x:Name="EmptyGrid"
-            Visibility="Collapsed">
+        <Grid x:Name="EmptyGrid" Visibility="Collapsed">
             <StackPanel
                 MaxWidth="520"
                 HorizontalAlignment="Center"
@@ -70,7 +68,7 @@
             RowDefinitions="Auto,*">
             <Grid
                 Grid.Row="0"
-                Margin="10,10,10,10"
+                Margin="16,10,16,10"
                 ColumnDefinitions="Auto,*,Auto">
                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                     <TextBlock
@@ -105,10 +103,10 @@
                     </StackPanel>
                 </Button>
             </Grid>
-            <Grid Grid.Row="1">
+            <Grid Grid.Row="1" Margin="10,0,10,0">
                 <GridView
                     x:Name="PlayListGridView"
-                    Margin="3,5,0,0"
+                    Margin="6,6,0,0"
                     IsItemClickEnabled="True"
                     ItemClick="PlayListGridView_ItemClick"
                     ItemsSource="{x:Bind ViewModel.AppViewModel.AllPlayList, Mode=OneWay}"

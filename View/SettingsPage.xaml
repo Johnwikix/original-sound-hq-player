@@ -27,11 +27,14 @@
         <Grid Grid.Row="0" Margin="0">
             <TextBlock
                 x:Uid="Settings"
-                Margin="10,10,0,10"
+                Margin="16,10,0,10"
                 FontSize="28" />
         </Grid>
 
-        <ScrollViewer x:Name="ContentScroller" Padding="0,0,6,0" Grid.Row="1">
+        <ScrollViewer
+            x:Name="ContentScroller"
+            Grid.Row="1"
+            Padding="6,0,6,0">
             <StackPanel x:Name="ContentPanel" Margin="0">
                 <StackPanel.ChildrenTransitions>
                     <RepositionThemeTransition IsStaggeringEnabled="True" />

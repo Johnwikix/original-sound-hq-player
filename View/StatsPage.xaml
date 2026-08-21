@@ -33,14 +33,14 @@
         <Grid Grid.Row="0" Margin="0">
             <TextBlock
                 x:Uid="Stats"
-                Margin="10,10,0,10"
+                Margin="16,10,0,10"
                 FontSize="28" />
         </Grid>
 
         <!--  时间范围选择  -->
         <controls:SettingsExpander
             Grid.Row="1"
-            Margin="10,16,16,4"
+            Margin="16,16,16,4"
             IsExpanded="{x:Bind ViewModel.IsCustomRangeSelected, Mode=OneWay}">
             <controls:SettingsExpander.HeaderIcon>
                 <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE9D9;" />
@@ -86,7 +86,7 @@
         </controls:SettingsExpander>
 
         <!--  结果展示  -->
-        <ScrollViewer Grid.Row="2" Padding="10,0,16,0">
+        <ScrollViewer Grid.Row="2" Padding="16,0,16,0">
             <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto">
 
                 <!--  顶部汇总卡片  -->
