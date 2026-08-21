@@ -17,12 +17,7 @@
     IsTabStop="True"
     TabIndex="0"
     mc:Ignorable="d">
-    <Grid Margin="0">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+    <Grid Margin="0" RowDefinitions="Auto,Auto,*">
         <Grid
             x:Name="TopPanel"
             Grid.Row="0"

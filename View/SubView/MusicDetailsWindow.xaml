@@ -37,23 +37,15 @@
             Margin="0"
             Padding="0"
             VerticalAlignment="Top">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
             <TextBlock
                 x:Uid="MusicDetailTitleBar"
-                Grid.Column="1"
                 Margin="18,0,0,0"
                 VerticalAlignment="Center"
                 FontSize="16"
                 Style="{StaticResource CaptionTextBlockStyle}" />
         </Grid>
 
-        <Grid Margin="0,44,0,0" Visibility="{x:Bind BoolToNVisibility(IsLoading)}">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+        <Grid Margin="0,44,0,0" Visibility="{x:Bind BoolToNVisibility(IsLoading)}" RowDefinitions="*,Auto">
 
             <ScrollViewer
                 Grid.Row="0"
@@ -99,16 +91,8 @@
                     <Grid
                         Margin="12,0"
                         ColumnSpacing="14"
-                        RowSpacing="6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                        RowSpacing="6"
+                        ColumnDefinitions="*,*,*,*">
                         <StackPanel Grid.Row="0" Grid.Column="0">
                             <TextBlock
                                 x:Uid="YearTextBlock"
@@ -164,16 +148,8 @@
                     <Grid
                         Margin="12,0"
                         ColumnSpacing="14"
-                        RowSpacing="6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                        RowSpacing="6"
+                        ColumnDefinitions="*,*,*,*">
                         <StackPanel Grid.Row="0" Grid.Column="0">
                             <TextBlock
                                 x:Uid="DurationTextBlock"
@@ -211,15 +187,9 @@
                     <Grid
                         Margin="12,0"
                         ColumnSpacing="14"
-                        RowSpacing="6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                        RowSpacing="6"
+                        ColumnDefinitions="*,*"
+                        RowDefinitions="Auto,Auto">
                         <StackPanel Grid.Row="0" Grid.Column="0">
                             <TextBlock
                                 x:Uid="LastFolderNameTextBlock"
@@ -268,13 +238,7 @@
                         </StackPanel>
                     </Grid>
 
-                    <Grid Margin="0,4,12,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="12" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                    <Grid Margin="0,4,12,0" ColumnDefinitions="*,Auto,12,Auto">
                         <Pivot
                             Grid.Column="0"
                             Height="300"

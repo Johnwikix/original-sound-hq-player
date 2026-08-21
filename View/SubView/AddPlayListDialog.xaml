@@ -27,11 +27,7 @@
             </StackPanel>
         </Button>
         <TextBox x:Name="NameTextBox" />
-        <Grid Margin="0,8,0,0" ColumnSpacing="8">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+        <Grid Margin="0,8,0,0" ColumnSpacing="8" ColumnDefinitions="*,*">
             <Button
                 x:Name="ConfirmButton"
                 Grid.Column="0"

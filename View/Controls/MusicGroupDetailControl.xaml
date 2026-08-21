@@ -26,19 +26,12 @@
             </Setter>
         </Style>
     </UserControl.Resources>
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
+    <Grid RowDefinitions="Auto,*">
         <Grid
             x:Name="DetailInfoBar"
             Grid.Row="0"
-            Margin="10,0,10,10">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+            Margin="10,0,10,10"
+            ColumnDefinitions="Auto,*">
             <Border
                 x:Name="DetailCoverBorder"
                 Grid.Column="0"
@@ -76,13 +69,7 @@
                     </Grid>
                 </Grid>
             </Border>
-            <Grid Grid.Column="1" Width="Auto">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+            <Grid Grid.Column="1" Width="Auto" RowDefinitions="Auto,*,*,Auto">
                 <dev:AutoScrollView
                     Grid.Row="0"
                     Margin="20,0,10,0"
@@ -126,12 +113,8 @@
                 <Grid
                     Grid.Row="3"
                     Margin="10,0,10,0"
-                    VerticalAlignment="Bottom">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
+                    VerticalAlignment="Bottom"
+                    ColumnDefinitions="Auto,Auto,Auto">
                     <Button
                         Grid.Column="0"
                         Margin="10,0,10,0"
@@ -185,20 +168,7 @@
             SelectionMode="Extended">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="model:Music">
-                    <Grid Height="50">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="3*" />
-                            <ColumnDefinition Width="1.5*" />
-                            <ColumnDefinition Width="3*" />
-                            <ColumnDefinition Width="0.5*" />
-                            <ColumnDefinition Width="0.5*" />
-                            <ColumnDefinition Width="0.5*" />
-                            <ColumnDefinition Width="70" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="50" />
-                        </Grid.ColumnDefinitions>
+                    <Grid Height="50" ColumnDefinitions="Auto,Auto,3*,1.5*,3*,0.5*,0.5*,0.5*,70,Auto,50">
                         <Button
                             x:Name="CoverThumbnail"
                             Grid.Column="0"

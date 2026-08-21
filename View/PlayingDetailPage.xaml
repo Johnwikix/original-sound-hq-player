@@ -38,27 +38,13 @@
             RenderError="LyricsView_ExceptionInteracted"
             ThemeResolved="BackGround_ThemeResolved"
             UseImageDominantTheme="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=OneWay}" />
-        <Grid x:Name="PlayingDetail" Margin="0">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+        <Grid x:Name="PlayingDetail" Margin="0" ColumnDefinitions="*,*">
             <Grid
                 x:Name="LeftControlPanel"
                 Grid.Column="0"
-                Margin="0">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="4*" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="6*" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="50" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
+                Margin="0"
+                ColumnDefinitions="*,4*,*"
+                RowDefinitions="*,6*,Auto,50,*">
                 <Grid
                     x:Name="CoverContainer"
                     Grid.Row="1"
@@ -89,12 +75,8 @@
                     x:Name="AnimatedTextBlock"
                     Grid.Row="2"
                     Grid.Column="1"
-                    Margin="20,0,20,0">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
+                    Margin="20,0,20,0"
+                    RowDefinitions="Auto,Auto,Auto">
                     <atb:AnimatedTextBlock
                         x:Name="AnimatedPlayingDetailTitleTextBlock"
                         Grid.Row="0"
@@ -244,16 +226,8 @@
             <StackPanel.OpacityTransition>
                 <ScalarTransition />
             </StackPanel.OpacityTransition>
-            <Grid x:Name="PlayingDetailControlBar">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-                <Grid Grid.Row="0" Margin="0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
+            <Grid x:Name="PlayingDetailControlBar" RowDefinitions="Auto,Auto">
+                <Grid Grid.Row="0" Margin="0" ColumnDefinitions="*,Auto">
                     <Slider
                         x:Name="ProgressSliderPlayingDetail"
                         Grid.Column="0"
@@ -274,12 +248,7 @@
                         FontSize="14"
                         Text="{x:Bind ViewModel.AppViewModel.PlayTimeText, Mode=OneWay}" />
                 </Grid>
-                <Grid Grid.Row="1" Margin="0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+                <Grid Grid.Row="1" Margin="0" ColumnDefinitions="*,Auto,*">
                     <StackPanel
                         Grid.Column="0"
                         Margin="10,0"
@@ -352,19 +321,9 @@
                         Grid.Column="1"
                         Margin="0"
                         HorizontalAlignment="Center"
-                        VerticalAlignment="Center">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                        VerticalAlignment="Center"
+                        ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                        RowDefinitions="Auto">
                         <Button
                             x:Name="AnimatedPlayBarFavouriteButtonPlayingDetail"
                             Grid.Column="0"

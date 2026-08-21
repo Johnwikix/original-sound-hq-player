@@ -22,12 +22,8 @@
             Margin="0"
             Padding="0"
             VerticalAlignment="Top">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-            </Grid.ColumnDefinitions>
             <TextBlock
                 x:Uid="AlbumDetailTitleBar"
-                Grid.Column="1"
                 Margin="18,0,0,0"
                 VerticalAlignment="Center"
                 FontSize="16"
@@ -46,18 +42,9 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center" />
         </Grid>
-        <Grid x:Name="AlbumDetail">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="*" />
-                <RowDefinition Height="Auto" />
-            </Grid.RowDefinitions>
+        <Grid x:Name="AlbumDetail" RowDefinitions="*,Auto">
             <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
-                <Grid Margin="0,50,0,10">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="Auto" />
-                    </Grid.RowDefinitions>
+                <Grid Margin="0,50,0,10" RowDefinitions="Auto,Auto,Auto">
                     <Border
                         Grid.Row="1"
                         HorizontalAlignment="Stretch"
@@ -90,22 +77,8 @@
                             </Grid>
                         </Grid>
                     </Border>
-                    <Grid Grid.Row="0">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid Grid.Row="1">
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto" />
-                            </Grid.RowDefinitions>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="2*" />
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="70" />
-                            </Grid.ColumnDefinitions>
+                    <Grid Grid.Row="0" RowDefinitions="Auto,Auto">
+                        <Grid Grid.Row="1" ColumnDefinitions="Auto,Auto,2*,Auto,70">
                             <StackPanel
                                 Grid.Row="0"
                                 Grid.Column="0"

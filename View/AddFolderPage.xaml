@@ -103,16 +103,9 @@
             AllowDrop="True"
             DragLeave="Grid_DragLeave"
             DragOver="Grid_DragOver"
-            Drop="Grid_Drop">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
-            <Grid Margin="16,16,16,8">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                </Grid.ColumnDefinitions>
+            Drop="Grid_Drop"
+            RowDefinitions="Auto,*">
+            <Grid Margin="16,16,16,8" ColumnDefinitions="*,Auto">
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock
                         x:Uid="AddFolderPageTitle"
@@ -162,12 +155,7 @@
                 </ListView.ItemContainerStyle>
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="model:Folder">
-                        <Grid Padding="12,8">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
+                        <Grid Padding="12,8" ColumnDefinitions="Auto,*,Auto">
                             <Button
                                 x:Name="OpenFolderButton"
                                 Width="40"

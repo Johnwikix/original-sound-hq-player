@@ -41,13 +41,7 @@
         </Style>
     </ContentDialog.Resources>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+    <Grid RowDefinitions="Auto,*,Auto,Auto">
 
         <!--  标题区域  -->
         <Grid Grid.Row="0" Margin="0,0,0,16">
@@ -94,11 +88,7 @@
 
         <!--  均衡器滑块区域  -->
         <Border Grid.Row="1" Margin="0">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
+            <Grid ColumnDefinitions="Auto,*">
 
                 <!--  滑块区域  -->
                 <ScrollViewer

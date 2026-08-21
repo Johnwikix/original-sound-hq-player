@@ -55,10 +55,7 @@
                     </GridView.GroupStyle>
                     <GridView.ItemTemplate>
                         <DataTemplate x:DataType="model:Music">
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
+                            <Grid ColumnDefinitions="*">
                                 <Grid Grid.Row="0" Visibility="Collapsed">
                                     <ProgressRing
                                         Width="50"

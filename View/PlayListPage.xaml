@@ -17,11 +17,8 @@
         <Grid
             x:Name="PlayListGrid"
             IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BooleanNegationConverter}}"
-            Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}, ConverterParameter=invert}">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" />
-                <RowDefinition Height="*" />
-            </Grid.RowDefinitions>
+            Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}, ConverterParameter=invert}"
+            RowDefinitions="Auto,*">
             <StackPanel Grid.Row="0" Margin="10,20,10,10">
                 <TextBlock
                     x:Uid="PlaylistTitle"
@@ -60,11 +57,8 @@
                                 HorizontalAlignment="Center"
                                 VerticalAlignment="Center"
                                 PointerEntered="OnCoverPointerEntered"
-                                PointerExited="OnCoverPointerExited">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
+                                PointerExited="OnCoverPointerExited"
+                                RowDefinitions="Auto,Auto">
                                 <Border
                                     x:Name="CoverBorder"
                                     Grid.Row="0"
@@ -165,11 +159,8 @@
                                     Grid.Row="1"
                                     Width="160"
                                     Margin="0,6,0,6"
-                                    HorizontalAlignment="Center">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
+                                    HorizontalAlignment="Center"
+                                    ColumnDefinitions="*,Auto">
                                     <TextBlock
                                         Grid.Column="0"
                                         Margin="0,0,6,0"

@@ -7,12 +7,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     CornerRadius="10"
     mc:Ignorable="d">
-    <Grid MinWidth="480" MaxWidth="640">
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="Auto" />
-        </Grid.RowDefinitions>
+    <Grid MinWidth="480" MaxWidth="640" RowDefinitions="Auto,*,Auto">
         <ScrollViewer
             Grid.Row="1"
             MaxHeight="300"
@@ -34,11 +29,7 @@
                 <SolidColorBrush Opacity="0.15" Color="Gray" />
             </Border.BorderBrush>
             <StackPanel Margin="0,8,0,0" Spacing="4">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
+                <Grid ColumnDefinitions="*,Auto">
                     <TextBlock
                         x:Uid="StarOnGitHub"
                         VerticalAlignment="Center"
@@ -48,11 +39,7 @@
                         Grid.Column="1"
                         VerticalAlignment="Center" />
                 </Grid>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
+                <Grid ColumnDefinitions="*,Auto">
                     <TextBlock
                         x:Uid="UpdateGuide"
                         VerticalAlignment="Center"
@@ -63,11 +50,7 @@
                         Grid.Column="1"
                         VerticalAlignment="Center" />
                 </Grid>
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
+                <Grid ColumnDefinitions="*,Auto">
                     <TextBlock
                         x:Uid="UpdateFaq"
                         VerticalAlignment="Center"

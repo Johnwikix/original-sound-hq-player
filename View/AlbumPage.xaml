@@ -60,13 +60,8 @@
                                 Height="205"
                                 Margin="5,10,5,10"
                                 HorizontalAlignment="Center"
-                                VerticalAlignment="Center">
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="*" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
+                                VerticalAlignment="Center"
+                                RowDefinitions="Auto,Auto,*,Auto">
                                 <Grid
                                     Grid.Row="0"
                                     Width="150"
@@ -119,12 +114,7 @@
                                     TextAlignment="Left"
                                     TextTrimming="CharacterEllipsis"
                                     TextWrapping="Wrap" />
-                                <Grid Grid.Row="3" Width="150">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="*" />
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
+                                <Grid Grid.Row="3" Width="150" ColumnDefinitions="*,Auto,Auto">
                                     <TextBlock
                                         Grid.Column="0"
                                         Height="15"

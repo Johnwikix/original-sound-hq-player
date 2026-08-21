@@ -24,15 +24,10 @@
         </Style>
     </Page.Resources>
 
-    <Grid>
+    <Grid RowDefinitions="Auto,Auto,*">
         <Grid.ChildrenTransitions>
             <RepositionThemeTransition IsStaggeringEnabled="True" />
         </Grid.ChildrenTransitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
 
         <!--  页面标题  -->
         <Grid Grid.Row="0" Margin="32,0,32,0">
@@ -92,22 +87,10 @@
 
         <!--  结果展示  -->
         <ScrollViewer Grid.Row="2" Padding="36,0,32,0">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
+            <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto">
 
                 <!--  顶部汇总卡片  -->
-                <Grid Grid.Row="0">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+                <Grid Grid.Row="0" ColumnDefinitions="*,*,*">
 
                     <!--  总收听时长  -->
                     <Border Grid.Column="0" Style="{StaticResource StatsCardStyle}">
@@ -171,11 +154,7 @@
 
                 <!--  热度图  -->
                 <Border Grid.Row="1" Style="{StaticResource StatsCardStyle}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
+                    <Grid RowDefinitions="Auto,*">
 
                         <TextBlock
                             x:Uid="StatsHeatmap"
@@ -188,30 +167,14 @@
                                 Margin="16,8,16,8"
                                 Stretch="Uniform"
                                 StretchDirection="Both">
-                                <Grid>
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto" />
-                                        <ColumnDefinition Width="Auto" />
-                                    </Grid.ColumnDefinitions>
-                                    <Grid.RowDefinitions>
-                                        <RowDefinition Height="20" />
-                                        <RowDefinition Height="Auto" />
-                                    </Grid.RowDefinitions>
+                                <Grid ColumnDefinitions="Auto,Auto" RowDefinitions="20,Auto">
 
                                     <Grid
                                         x:Name="HeatmapWeekdayColumn"
                                         Grid.Row="1"
                                         Grid.Column="0"
-                                        Margin="0,0,8,0">
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="18" />
-                                            <RowDefinition Height="18" />
-                                            <RowDefinition Height="18" />
-                                            <RowDefinition Height="18" />
-                                            <RowDefinition Height="18" />
-                                            <RowDefinition Height="18" />
-                                            <RowDefinition Height="18" />
-                                        </Grid.RowDefinitions>
+                                        Margin="0,0,8,0"
+                                        RowDefinitions="18,18,18,18,18,18,18">
                                         <TextBlock
                                             x:Name="HeatmapLabel0"
                                             Grid.Row="0"
@@ -325,21 +288,12 @@
 
                 <!--  时段分布  -->
                 <Border Grid.Row="2" Style="{StaticResource StatsCardStyle}">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                    <Grid RowDefinitions="Auto,Auto,Auto">
                         <TextBlock
                             x:Uid="StatsActivityByHour"
                             Margin="0,0,0,12"
                             Style="{ThemeResource SubtitleTextBlockStyle}" />
-                        <Grid Grid.Row="1" Margin="0,0,0,16">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
+                        <Grid Grid.Row="1" Margin="0,0,0,16" ColumnDefinitions="*,*">
                             <StackPanel>
                                 <TextBlock
                                     x:Uid="StatsMostActive"
@@ -365,11 +319,7 @@
                 </Border>
 
                 <!--  Top 5 歌手 / Top 5 专辑 / Top 10 歌曲  -->
-                <Grid Grid.Row="3">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="*" />
-                    </Grid.ColumnDefinitions>
+                <Grid Grid.Row="3" ColumnDefinitions="*,*">
 
                     <!--  左列：Top 5 歌手 + Top 5 专辑（单卡片）  -->
                     <Border Grid.Column="0" Style="{StaticResource StatsCardStyle}">
@@ -381,12 +331,7 @@
                             <ItemsControl ItemsSource="{x:Bind ViewModel.TopArtists, Mode=OneWay}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="statsmodels:ArtistPlayStat">
-                                        <Grid Margin="0,4">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
+                                        <Grid Margin="0,4" ColumnDefinitions="Auto,*,Auto">
                                             <Button
                                                 Padding="0"
                                                 Background="Transparent"
@@ -452,12 +397,7 @@
                             <ItemsControl ItemsSource="{x:Bind ViewModel.TopAlbums, Mode=OneWay}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="statsmodels:AlbumPlayStat">
-                                        <Grid Margin="0,4">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
+                                        <Grid Margin="0,4" ColumnDefinitions="Auto,*,Auto">
                                             <Button
                                                 Padding="0"
                                                 Background="Transparent"
@@ -525,12 +465,7 @@
                             <ItemsControl ItemsSource="{x:Bind ViewModel.TopSongsFirst, Mode=OneWay}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="statsmodels:SongPlayStat">
-                                        <Grid Margin="0,4">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
+                                        <Grid Margin="0,4" ColumnDefinitions="Auto,*,Auto">
                                             <Button
                                                 Padding="0"
                                                 Background="Transparent"
@@ -604,12 +539,7 @@
                             <ItemsControl ItemsSource="{x:Bind ViewModel.TopSongsSecond, Mode=OneWay}">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="statsmodels:SongPlayStat">
-                                        <Grid Margin="0,4">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="Auto" />
-                                            </Grid.ColumnDefinitions>
+                                        <Grid Margin="0,4" ColumnDefinitions="Auto,*,Auto">
                                             <Button
                                                 Padding="0"
                                                 Background="Transparent"

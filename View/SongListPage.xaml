@@ -39,18 +39,7 @@
             SelectionMode="Extended">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="model:Music">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="3*" />
-                            <ColumnDefinition Width="1.5*" />
-                            <ColumnDefinition Width="3*" />
-                            <ColumnDefinition Width="0.5*" />
-                            <ColumnDefinition Width="70" />
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="50" />
-                        </Grid.ColumnDefinitions>
+                    <Grid ColumnDefinitions="Auto,Auto,3*,1.5*,3*,0.5*,70,Auto,50">
                         <Button
                             x:Name="CoverThumbnail"
                             Grid.Column="0"
