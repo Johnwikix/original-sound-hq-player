@@ -107,17 +107,18 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel
+                    <Grid
                         x:Name="AlbumCoverAuthorTitleModel"
                         Grid.Column="0"
                         Margin="0"
+                        ColumnDefinitions="Auto,*"
                         VerticalAlignment="Center"
-                        Orientation="Horizontal"
                         Visibility="Visible">
                         <Button
                             x:Name="AlbumCoverImageBtn"
                             Margin="5,0,5,0"
                             Padding="0"
+                            Grid.Column="0"
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
@@ -165,9 +166,9 @@
                             </Grid>
                         </Button>
                         <Grid
-                            Width="Auto"
-                            Height="80"
-                            MaxWidth="300">
+                            Grid.Column="1"
+                            HorizontalAlignment="Stretch"
+                            Height="80">
                             <Grid.RowDefinitions>
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="*" />
@@ -269,7 +270,7 @@
                                 </Border>
                             </Grid>
                         </Grid>
-                    </StackPanel>
+                    </Grid>
 
                     <Grid
                         Grid.Column="1"
