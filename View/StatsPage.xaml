@@ -20,7 +20,7 @@
             <Setter Property="BorderThickness" Value="1" />
             <Setter Property="CornerRadius" Value="4" />
             <Setter Property="Padding" Value="16" />
-            <Setter Property="Margin" Value="0,0,4,4" />
+            <Setter Property="Margin" Value="0" />
         </Style>
     </Page.Resources>
 
@@ -40,7 +40,7 @@
         <!--  时间范围选择  -->
         <controls:SettingsExpander
             Grid.Row="1"
-            Margin="10,16,10,4"
+            Margin="10,16,16,4"
             IsExpanded="{x:Bind ViewModel.IsCustomRangeSelected, Mode=OneWay}">
             <controls:SettingsExpander.HeaderIcon>
                 <FontIcon FontFamily="{ThemeResource SymbolThemeFontFamily}" Glyph="&#xE9D9;" />
@@ -86,7 +86,7 @@
         </controls:SettingsExpander>
 
         <!--  结果展示  -->
-        <ScrollViewer Grid.Row="2" Padding="10,0,10,0">
+        <ScrollViewer Grid.Row="2" Padding="10,0,16,0">
             <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto">
 
                 <!--  顶部汇总卡片  -->

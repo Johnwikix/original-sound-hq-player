@@ -31,7 +31,7 @@
                 FontSize="28" />
         </Grid>
 
-        <ScrollViewer x:Name="ContentScroller" Grid.Row="1">
+        <ScrollViewer x:Name="ContentScroller" Padding="0,0,6,0" Grid.Row="1">
             <StackPanel x:Name="ContentPanel" Margin="0">
                 <StackPanel.ChildrenTransitions>
                     <RepositionThemeTransition IsStaggeringEnabled="True" />
