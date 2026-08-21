@@ -133,7 +133,7 @@
     <value>Ordner hinzufügen</value>
   </data>
   <data name="MusicBrowse.Text" xml:space="preserve">
-    <value>Musik durchsuchen</value>
+    <value>Musikbibliothek</value>
   </data>
   <data name="PlayLists.Text" xml:space="preserve">
     <value>Wiedergabelisten</value>
@@ -289,7 +289,7 @@
     <value>Ordner hinzufügen</value>
   </data>
   <data name="MusicBrowseCombox.Content" xml:space="preserve">
-    <value>Musik durchsuchen</value>
+    <value>Musikbibliothek</value>
   </data>
   <data name="PlayListsCombox.Content" xml:space="preserve">
     <value>Wiedergabelisten</value>

@@ -133,7 +133,7 @@
     <value>フォルダを追加</value>
   </data>
   <data name="MusicBrowse.Text" xml:space="preserve">
-    <value>音楽を参照</value>
+    <value>ミュージックライブラリ</value>
   </data>
   <data name="PlayLists.Text" xml:space="preserve">
     <value>再生リスト</value>
@@ -289,7 +289,7 @@
     <value>フォルダを追加</value>
   </data>
   <data name="MusicBrowseCombox.Content" xml:space="preserve">
-    <value>音楽を参照</value>
+    <value>ミュージックライブラリ</value>
   </data>
   <data name="PlayListsCombox.Content" xml:space="preserve">
     <value>再生リスト</value>

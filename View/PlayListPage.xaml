@@ -19,16 +19,19 @@
             IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BooleanNegationConverter}}"
             Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}, ConverterParameter=invert}"
             RowDefinitions="Auto,*">
-            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto"  Margin="10,10,10,10">
+            <Grid
+                Grid.Row="0"
+                Margin="10,10,10,10"
+                ColumnDefinitions="Auto,*,Auto">
                 <TextBlock
-                    Grid.Column="0"
                     x:Uid="PlaylistTitle"
+                    Grid.Column="0"
                     VerticalAlignment="Center"
                     FontSize="28" />
                 <Button
                     x:Name="AddPlayListButton"
                     Grid.Column="2"
-                    Margin="0,0,20,0"
+                    Margin="0"
                     VerticalAlignment="Center"
                     Click="AddPlayList_Click"
                     Style="{StaticResource AccentButtonStyle}">

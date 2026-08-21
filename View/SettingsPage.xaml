@@ -24,15 +24,15 @@
 
     <Grid Margin="0" RowDefinitions="Auto,*">
 
-        <Grid Grid.Row="0" Margin="32,0,32,0">
+        <Grid Grid.Row="0" Margin="0">
             <TextBlock
                 x:Uid="Settings"
-                Margin="10,20,0,10"
+                Margin="10,10,0,10"
                 FontSize="28" />
         </Grid>
 
         <ScrollViewer x:Name="ContentScroller" Grid.Row="1">
-            <StackPanel x:Name="ContentPanel" Margin="32,0,32,0">
+            <StackPanel x:Name="ContentPanel" Margin="0">
                 <StackPanel.ChildrenTransitions>
                     <RepositionThemeTransition IsStaggeringEnabled="True" />
                 </StackPanel.ChildrenTransitions>
@@ -64,7 +64,8 @@
                                     MinHeight="52"
                                     Padding="58,8,44,8"
                                     HorizontalAlignment="Stretch"
-                                    BorderThickness="0,1,0,0" ColumnDefinitions="*,Auto">
+                                    BorderThickness="0,1,0,0"
+                                    ColumnDefinitions="*,Auto">
                                     <TextBlock
                                         x:Uid="SettingOutputDevice"
                                         Grid.Column="0"
@@ -89,7 +90,8 @@
                                     MinHeight="52"
                                     Padding="58,8,44,8"
                                     HorizontalAlignment="Stretch"
-                                    BorderThickness="0,1,0,0" ColumnDefinitions="*,Auto">
+                                    BorderThickness="0,1,0,0"
+                                    ColumnDefinitions="*,Auto">
                                     <TextBlock
                                         x:Uid="SettingBufferSize"
                                         Grid.Column="0"
@@ -111,7 +113,8 @@
                                 <Grid
                                     MinHeight="52"
                                     Padding="58,8,44,8"
-                                    HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                    HorizontalAlignment="Stretch"
+                                    ColumnDefinitions="*,Auto">
                                     <TextBlock
                                         x:Uid="DSD2PCMFreq"
                                         Grid.Column="0"
@@ -129,7 +132,8 @@
                                 <Grid
                                     MinHeight="52"
                                     Padding="58,8,44,8"
-                                    HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                    HorizontalAlignment="Stretch"
+                                    ColumnDefinitions="*,Auto">
                                     <TextBlock
                                         x:Uid="SettingDSDGain"
                                         Grid.Column="0"
@@ -150,7 +154,8 @@
                                 <Grid
                                     MinHeight="52"
                                     Padding="58,8,44,8"
-                                    HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                    HorizontalAlignment="Stretch"
+                                    ColumnDefinitions="*,Auto">
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                         <TextBlock FontSize="14" Text="DSD Dop / DSD Native" />
                                         <TextBlock
@@ -168,7 +173,8 @@
                                 <Grid
                                     MinHeight="52"
                                     Padding="58,8,44,8"
-                                    HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                    HorizontalAlignment="Stretch"
+                                    ColumnDefinitions="*,Auto">
                                     <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                         <TextBlock x:Uid="FadeInOut" FontSize="14" />
                                         <TextBlock
@@ -191,7 +197,7 @@
                         x:Uid="SpectrumVisualization"
                         Margin="10,0,10,0"
                         Click="SpectrumVisualization_Click"
-                        Description="? 2026 Sennpei Studio"
+                        Description="@ 2026 Sennpei Studio"
                         HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/SpectrumVisualization.png}"
                         IsClickEnabled="True" />
                 </StackPanel>
@@ -221,7 +227,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="DefaultEntryInterface"
                                     Grid.Column="0"
@@ -242,7 +249,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="DefaultMusicEntryInterface"
                                     Grid.Column="0"
@@ -286,7 +294,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="FolderWatchEnabled"
                                     Grid.Column="0"
@@ -302,7 +311,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                     <TextBlock x:Uid="TrimOnHide" FontSize="14" />
                                     <TextBlock
@@ -320,7 +330,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                     <TextBlock x:Uid="TrimAfterPlayback" FontSize="14" />
                                     <TextBlock
@@ -338,7 +349,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="TrimNowLabel"
                                     Grid.Column="0"
@@ -357,7 +369,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                     <TextBlock
                                         x:Uid="WindowBoundsDescription"
@@ -405,7 +418,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                     <TextBlock x:Uid="SettingsPageEnableGlobalHotKey" FontSize="14" />
                                     <TextBlock
@@ -422,7 +436,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="SettingsPagePlayPauseShortcut"
                                     Grid.Column="0"
@@ -433,7 +448,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="SettingsPageNextSongShortcut"
                                     Grid.Column="0"
@@ -444,7 +460,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="SettingsPagePreviousSongShortcut"
                                     Grid.Column="0"
@@ -455,7 +472,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="SettingsPageVolumeUpShortcut"
                                     Grid.Column="0"
@@ -466,7 +484,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="SettingsPageVolumeDownShortcut"
                                     Grid.Column="0"
@@ -477,7 +496,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="SettingsPageTogglePlayingDetailShortcut"
                                     Grid.Column="0"
@@ -488,7 +508,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="SettingsPageBackShortcut"
                                     Grid.Column="0"
@@ -499,7 +520,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="SettingsPageShowWindowShortcut"
                                     Grid.Column="0"
@@ -510,7 +532,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="SettingsPageToggleFullScreenShortcut"
                                     Grid.Column="0"
@@ -543,7 +566,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                     <TextBlock x:Uid="CoverSize" FontSize="14" />
                                     <TextBlock
@@ -567,7 +591,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                     <TextBlock x:Uid="CoverDiskCache" FontSize="14" />
                                     <TextBlock
@@ -576,7 +601,10 @@
                                         Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
                                         TextWrapping="Wrap" />
                                 </StackPanel>
-                                <Grid Grid.Column="1" Width="300" ColumnDefinitions="*,Auto">
+                                <Grid
+                                    Grid.Column="1"
+                                    Width="300"
+                                    ColumnDefinitions="*,Auto">
                                     <Button
                                         Grid.Column="0"
                                         Margin="0,0,10,0"
@@ -610,7 +638,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="AutoCoverMatching"
                                     Grid.Column="0"
@@ -625,7 +654,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                     <TextBlock x:Uid="Win2dCover" FontSize="14" />
                                     <TextBlock
@@ -643,7 +673,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                     <TextBlock x:Uid="Win2dAnimatedTitle" FontSize="14" />
                                     <TextBlock
@@ -652,7 +683,10 @@
                                         Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
                                         TextWrapping="Wrap" />
                                 </StackPanel>
-                                <Grid Grid.Column="1" Width="300" ColumnDefinitions="Auto,*">
+                                <Grid
+                                    Grid.Column="1"
+                                    Width="300"
+                                    ColumnDefinitions="Auto,*">
                                     <ToggleSwitch
                                         Grid.Column="0"
                                         MinWidth="0"
@@ -677,7 +711,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="MusicInfoVisible"
                                     Grid.Column="0"
@@ -692,7 +727,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                     <TextBlock x:Uid="UseAlignmentInPortrait" FontSize="14" />
                                     <TextBlock
@@ -701,7 +737,10 @@
                                         Text="{x:Bind tool:ToolUtils.GetString('ForceLeftWhenOff')}"
                                         TextWrapping="Wrap" />
                                 </StackPanel>
-                                <Grid Grid.Column="1" Width="300" ColumnDefinitions="Auto,*">
+                                <Grid
+                                    Grid.Column="1"
+                                    Width="300"
+                                    ColumnDefinitions="Auto,*">
                                     <ToggleSwitch
                                         Grid.Column="0"
                                         MinWidth="0"
@@ -744,7 +783,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                     <TextBlock x:Uid="ShaderBackground" FontSize="14" />
                                     <TextBlock
@@ -753,7 +793,10 @@
                                         Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
                                         TextWrapping="Wrap" />
                                 </StackPanel>
-                                <Grid Grid.Column="1" Width="300" ColumnDefinitions="Auto,*">
+                                <Grid
+                                    Grid.Column="1"
+                                    Width="300"
+                                    ColumnDefinitions="Auto,*">
                                     <ToggleSwitch
                                         Grid.Column="0"
                                         MinWidth="0"
@@ -778,7 +821,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="EnableLightWave"
                                     Grid.Column="0"
@@ -794,7 +838,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="FogEffect"
                                     Grid.Column="0"
@@ -810,7 +855,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="SnowEffect"
                                     Grid.Column="0"
@@ -826,7 +872,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="RaindropEffect"
                                     Grid.Column="0"
@@ -842,7 +889,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="PaletteAlgorithm"
                                     Grid.Column="0"
@@ -882,7 +930,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="AutoLyricMatching"
                                     Grid.Column="0"
@@ -897,7 +946,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                     <TextBlock x:Uid="EnableAdvancedLyricsEffect" FontSize="14" />
                                     <TextBlock
@@ -915,7 +965,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="LyricsFontFamily"
                                     Grid.Column="0"
@@ -934,13 +985,17 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="LyricsFontSize"
                                     Grid.Column="0"
                                     VerticalAlignment="Center"
                                     FontSize="14" />
-                                <Grid Grid.Column="1" Width="300" ColumnDefinitions="Auto,*">
+                                <Grid
+                                    Grid.Column="1"
+                                    Width="300"
+                                    ColumnDefinitions="Auto,*">
                                     <ToggleSwitch
                                         Grid.Column="0"
                                         MinWidth="0"
@@ -961,7 +1016,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="LyricsAlignment"
                                     Grid.Column="0"
@@ -983,7 +1039,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="LyricsMargin"
                                     Grid.Column="0"
@@ -1004,13 +1061,17 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="LyricsBlurAmount"
                                     Grid.Column="0"
                                     VerticalAlignment="Center"
                                     FontSize="14" />
-                                <Grid Grid.Column="1" Width="300" ColumnDefinitions="100,*">
+                                <Grid
+                                    Grid.Column="1"
+                                    Width="300"
+                                    ColumnDefinitions="100,*">
                                     <TextBlock
                                         Grid.Column="0"
                                         Margin="5,0"
@@ -1031,13 +1092,17 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="PlayingLineTopOffset"
                                     Grid.Column="0"
                                     VerticalAlignment="Center"
                                     FontSize="14" />
-                                <Grid Grid.Column="1" Width="300" ColumnDefinitions="100,*">
+                                <Grid
+                                    Grid.Column="1"
+                                    Width="300"
+                                    ColumnDefinitions="100,*">
                                     <TextBlock
                                         Grid.Column="0"
                                         Margin="5,0"
@@ -1058,13 +1123,17 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="UnplayedOpacity"
                                     Grid.Column="0"
                                     VerticalAlignment="Center"
                                     FontSize="14" />
-                                <Grid Grid.Column="1" Width="300" ColumnDefinitions="100,*">
+                                <Grid
+                                    Grid.Column="1"
+                                    Width="300"
+                                    ColumnDefinitions="100,*">
                                     <TextBlock
                                         Grid.Column="0"
                                         Margin="5,0"
@@ -1085,13 +1154,17 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="TranslatedOpacity"
                                     Grid.Column="0"
                                     VerticalAlignment="Center"
                                     FontSize="14" />
-                                <Grid Grid.Column="1" Width="300" ColumnDefinitions="100,*">
+                                <Grid
+                                    Grid.Column="1"
+                                    Width="300"
+                                    ColumnDefinitions="100,*">
                                     <TextBlock
                                         Grid.Column="0"
                                         Margin="5,0"
@@ -1112,13 +1185,17 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="CharFloatAmount"
                                     Grid.Column="0"
                                     VerticalAlignment="Center"
                                     FontSize="14" />
-                                <Grid Grid.Column="1" Width="300" ColumnDefinitions="100,*">
+                                <Grid
+                                    Grid.Column="1"
+                                    Width="300"
+                                    ColumnDefinitions="100,*">
                                     <TextBlock
                                         Grid.Column="0"
                                         Margin="5,0"
@@ -1140,13 +1217,17 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="CharScaleAmount"
                                     Grid.Column="0"
                                     VerticalAlignment="Center"
                                     FontSize="14" />
-                                <Grid Grid.Column="1" Width="300" ColumnDefinitions="100,*">
+                                <Grid
+                                    Grid.Column="1"
+                                    Width="300"
+                                    ColumnDefinitions="100,*">
                                     <TextBlock
                                         Grid.Column="0"
                                         Margin="5,0"
@@ -1168,13 +1249,17 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="GlowAmount"
                                     Grid.Column="0"
                                     VerticalAlignment="Center"
                                     FontSize="14" />
-                                <Grid Grid.Column="1" Width="300" ColumnDefinitions="100,*">
+                                <Grid
+                                    Grid.Column="1"
+                                    Width="300"
+                                    ColumnDefinitions="100,*">
                                     <TextBlock
                                         Grid.Column="0"
                                         Margin="5,0"
@@ -1196,13 +1281,17 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="LongSyllableThreshold"
                                     Grid.Column="0"
                                     VerticalAlignment="Center"
                                     FontSize="14" />
-                                <Grid Grid.Column="1" Width="300" ColumnDefinitions="100,*">
+                                <Grid
+                                    Grid.Column="1"
+                                    Width="300"
+                                    ColumnDefinitions="100,*">
                                     <TextBlock
                                         Grid.Column="0"
                                         Margin="5,0"
@@ -1224,7 +1313,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="TargetFrameRate"
                                     Grid.Column="0"
@@ -1251,7 +1341,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                     <TextBlock x:Uid="EnableCustomLyricsColor" FontSize="14" />
                                     <TextBlock
@@ -1260,7 +1351,10 @@
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                         TextWrapping="Wrap" />
                                 </StackPanel>
-                                <Grid Grid.Column="1" Width="300" ColumnDefinitions="Auto,*">
+                                <Grid
+                                    Grid.Column="1"
+                                    Width="300"
+                                    ColumnDefinitions="Auto,*">
                                     <ToggleSwitch
                                         Grid.Column="0"
                                         MinWidth="0"
@@ -1279,7 +1373,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                     <TextBlock x:Uid="ScrollEasingType" FontSize="14" />
                                     <TextBlock
@@ -1312,7 +1407,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
                                     <TextBlock x:Uid="ScrollEasingMode" FontSize="14" />
                                     <TextBlock
@@ -1400,7 +1496,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="IsUpdateBackDrop"
                                     Grid.Column="0"
@@ -1508,7 +1605,8 @@
                             <Grid
                                 MinHeight="52"
                                 Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="UseImageDominantTheme"
                                     Grid.Column="0"
@@ -1560,7 +1658,7 @@
                 <controls:SettingsExpander
                     x:Uid="AppTitleHeader"
                     Margin="10,0,10,0"
-                    Description="? 2026 Sennpei Studio"
+                    Description="@ 2026 Sennpei Studio"
                     HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/Square44x44Logo.altform-unplated_targetsize-32.png}">
                     <TextBlock
                         x:Name="Version"
