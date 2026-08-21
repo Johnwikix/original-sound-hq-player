@@ -24,6 +24,19 @@ namespace WinUIMusicPlayer.View
             this.InitializeComponent();
             DataContext = this;
             this.NavigationCacheMode = NavigationCacheMode.Disabled;
+            ViewModel.AppViewModel.AllPlayList.CollectionChanged += OnAllPlayListChanged;
+        }
+
+        private void OnAllPlayListChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            DispatcherQueue.TryEnqueue(UpdateState);
+        }
+
+        private void UpdateState()
+        {
+            bool hasPlayLists = ViewModel.AppViewModel.AllPlayList.Count > 0;
+            EmptyGrid.Visibility = hasPlayLists ? Visibility.Collapsed : Visibility.Visible;
+            PlayListGrid.Visibility = hasPlayLists ? Visibility.Visible : Visibility.Collapsed;
         }
 
         public void ReceiveNavigationParameter(object parameter)
@@ -36,6 +49,7 @@ namespace WinUIMusicPlayer.View
             base.OnNavigatedTo(e);
             DetailView.ViewModel.IsClosingForTransition = false;
             ViewModel.ReceiveNavigation();
+            UpdateState();
         }
 
         private void OnCoverPointerEntered(object sender, PointerRoutedEventArgs e)

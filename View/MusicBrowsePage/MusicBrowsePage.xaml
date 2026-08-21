@@ -24,7 +24,7 @@
             Visibility="Visible">
             <StackPanel Orientation="Horizontal">
                 <TextBlock
-                    x:Uid="MusicBrowse"
+                    x:Uid="MusicBrowsePageTitle"
                     Margin="10,10,15,10"
                     VerticalAlignment="Center"
                     FontSize="28" />

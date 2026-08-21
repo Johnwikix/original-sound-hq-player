@@ -219,6 +219,15 @@
   <data name="PlaylistTitle.Text" xml:space="preserve">
     <value>Плейлисты</value>
   </data>
+  <data name="PlayListPageCountSuffix.Text" xml:space="preserve">
+    <value>плейлистов</value>
+  </data>
+  <data name="PlayListPageEmptyTitle.Text" xml:space="preserve">
+    <value>Плейлистов пока нет</value>
+  </data>
+  <data name="PlayListPageEmptySubtitle.Text" xml:space="preserve">
+    <value>Создайте свой первый плейлист и организуйте музыку по своему вкусу.</value>
+  </data>
   <data name="AddPlayList.Text" xml:space="preserve">
     <value>Новый плейлист</value>
   </data>
@@ -290,6 +299,9 @@
   </data>
   <data name="MusicBrowseCombox.Content" xml:space="preserve">
     <value>Музыкальная библиотека</value>
+  </data>
+  <data name="MusicBrowsePageTitle.Text" xml:space="preserve">
+    <value>Музыка</value>
   </data>
   <data name="PlayListsCombox.Content" xml:space="preserve">
     <value>Плейлисты</value>

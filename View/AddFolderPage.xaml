@@ -141,21 +141,21 @@
             <ListView
                 x:Name="FolderListView"
                 Grid.Row="1"
-                Margin="8,0,8,0"
+                Margin="0"
                 ItemsSource="{x:Bind ViewModel.FolderList, Mode=TwoWay}"
                 SelectionMode="None">
                 <ListView.ItemContainerStyle>
                     <Style BasedOn="{StaticResource DefaultListViewItemStyle}" TargetType="ListViewItem">
                         <Setter Property="CornerRadius" Value="8" />
                         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                        <Setter Property="Margin" Value="8,4" />
+                        <Setter Property="Margin" Value="0,2,8,2" />
                         <Setter Property="MinHeight" Value="64" />
                         <Setter Property="Padding" Value="0" />
                     </Style>
                 </ListView.ItemContainerStyle>
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="model:Folder">
-                        <Grid Padding="12,8" ColumnDefinitions="Auto,*,Auto">
+                        <Grid Padding="12,2" ColumnDefinitions="Auto,*,Auto">
                             <Button
                                 x:Name="OpenFolderButton"
                                 Width="40"

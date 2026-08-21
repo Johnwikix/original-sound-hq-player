@@ -219,6 +219,15 @@
   <data name="PlaylistTitle.Text" xml:space="preserve">
     <value>播放列表</value>
   </data>
+  <data name="PlayListPageCountSuffix.Text" xml:space="preserve">
+    <value>个播放列表</value>
+  </data>
+  <data name="PlayListPageEmptyTitle.Text" xml:space="preserve">
+    <value>还没有播放列表</value>
+  </data>
+  <data name="PlayListPageEmptySubtitle.Text" xml:space="preserve">
+    <value>创建你的第一个播放列表，按自己的喜好整理音乐。</value>
+  </data>
   <data name="AddPlayList.Text" xml:space="preserve">
     <value>新建播放列表</value>
   </data>
@@ -290,6 +299,9 @@
   </data>
   <data name="MusicBrowseCombox.Content" xml:space="preserve">
     <value>音乐库</value>
+  </data>
+  <data name="MusicBrowsePageTitle.Text" xml:space="preserve">
+    <value>音乐</value>
   </data>
   <data name="PlayListsCombox.Content" xml:space="preserve">
     <value>播放列表</value>

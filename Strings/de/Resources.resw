@@ -219,6 +219,15 @@
   <data name="PlaylistTitle.Text" xml:space="preserve">
     <value>Wiedergabelisten</value>
   </data>
+  <data name="PlayListPageCountSuffix.Text" xml:space="preserve">
+    <value>Wiedergabelisten</value>
+  </data>
+  <data name="PlayListPageEmptyTitle.Text" xml:space="preserve">
+    <value>Noch keine Wiedergabelisten</value>
+  </data>
+  <data name="PlayListPageEmptySubtitle.Text" xml:space="preserve">
+    <value>Erstelle deine erste Wiedergabeliste und organisiere deine Musik nach deinem Geschmack.</value>
+  </data>
   <data name="AddPlayList.Text" xml:space="preserve">
     <value>Neue Wiedergabeliste</value>
   </data>
@@ -290,6 +299,9 @@
   </data>
   <data name="MusicBrowseCombox.Content" xml:space="preserve">
     <value>Musikbibliothek</value>
+  </data>
+  <data name="MusicBrowsePageTitle.Text" xml:space="preserve">
+    <value>Musik</value>
   </data>
   <data name="PlayListsCombox.Content" xml:space="preserve">
     <value>Wiedergabelisten</value>

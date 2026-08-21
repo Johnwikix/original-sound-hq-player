@@ -219,6 +219,15 @@
   <data name="PlaylistTitle.Text" xml:space="preserve">
     <value>Playlist</value>
   </data>
+  <data name="PlayListPageCountSuffix.Text" xml:space="preserve">
+    <value>playlists</value>
+  </data>
+  <data name="PlayListPageEmptyTitle.Text" xml:space="preserve">
+    <value>Aún no hay playlists</value>
+  </data>
+  <data name="PlayListPageEmptySubtitle.Text" xml:space="preserve">
+    <value>Crea tu primera playlist y organiza tu música a tu manera.</value>
+  </data>
   <data name="AddPlayList.Text" xml:space="preserve">
     <value>Nueva lista de reproducción</value>
   </data>
@@ -290,6 +299,9 @@
   </data>
   <data name="MusicBrowseCombox.Content" xml:space="preserve">
     <value>Biblioteca de música</value>
+  </data>
+  <data name="MusicBrowsePageTitle.Text" xml:space="preserve">
+    <value>Música</value>
   </data>
   <data name="PlayListsCombox.Content" xml:space="preserve">
     <value>Playlist</value>

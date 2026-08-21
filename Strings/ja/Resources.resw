@@ -219,6 +219,15 @@
   <data name="PlaylistTitle.Text" xml:space="preserve">
     <value>再生リスト</value>
   </data>
+  <data name="PlayListPageCountSuffix.Text" xml:space="preserve">
+    <value>個の再生リスト</value>
+  </data>
+  <data name="PlayListPageEmptyTitle.Text" xml:space="preserve">
+    <value>再生リストがまだありません</value>
+  </data>
+  <data name="PlayListPageEmptySubtitle.Text" xml:space="preserve">
+    <value>最初の再生リストを作成して、自分の好みに合わせて音楽を整理しましょう。</value>
+  </data>
   <data name="AddPlayList.Text" xml:space="preserve">
     <value>新規プレイリスト</value>
   </data>
@@ -290,6 +299,9 @@
   </data>
   <data name="MusicBrowseCombox.Content" xml:space="preserve">
     <value>ミュージックライブラリ</value>
+  </data>
+  <data name="MusicBrowsePageTitle.Text" xml:space="preserve">
+    <value>音楽</value>
   </data>
   <data name="PlayListsCombox.Content" xml:space="preserve">
     <value>再生リスト</value>
