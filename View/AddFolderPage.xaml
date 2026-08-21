@@ -105,7 +105,7 @@
             DragOver="Grid_DragOver"
             Drop="Grid_Drop"
             RowDefinitions="Auto,*">
-            <Grid Margin="16,16,16,8" ColumnDefinitions="*,Auto">
+            <Grid Margin="10,10,10,10" ColumnDefinitions="*,Auto">
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock
                         x:Uid="AddFolderPageTitle"

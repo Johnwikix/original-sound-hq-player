@@ -133,7 +133,7 @@
     <value>添加文件夹</value>
   </data>
   <data name="MusicBrowse.Text" xml:space="preserve">
-    <value>音乐浏览</value>
+    <value>音乐库</value>
   </data>
   <data name="PlayLists.Text" xml:space="preserve">
     <value>播放列表</value>

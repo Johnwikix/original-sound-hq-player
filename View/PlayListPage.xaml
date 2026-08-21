@@ -13,21 +13,22 @@
     xmlns:model="using:WinUIMusicPlayer.Model"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
     mc:Ignorable="d">
-    <Grid Margin="10,0,10,0">
+    <Grid>
         <Grid
             x:Name="PlayListGrid"
             IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BooleanNegationConverter}}"
             Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}, ConverterParameter=invert}"
             RowDefinitions="Auto,*">
-            <StackPanel Grid.Row="0" Margin="10,20,10,10">
+            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto"  Margin="10,10,10,10">
                 <TextBlock
+                    Grid.Column="0"
                     x:Uid="PlaylistTitle"
                     VerticalAlignment="Center"
                     FontSize="28" />
                 <Button
                     x:Name="AddPlayListButton"
-                    Margin="0,20,0,0"
-                    HorizontalAlignment="Left"
+                    Grid.Column="2"
+                    Margin="0,0,20,0"
                     VerticalAlignment="Center"
                     Click="AddPlayList_Click"
                     Style="{StaticResource AccentButtonStyle}">
@@ -39,7 +40,7 @@
                         <TextBlock x:Uid="AddPlayList" VerticalAlignment="Center" />
                     </StackPanel>
                 </Button>
-            </StackPanel>
+            </Grid>
             <Grid Grid.Row="1">
                 <GridView
                     x:Name="PlayListGridView"

@@ -21,10 +21,18 @@
         <Grid
             x:Name="TopPanel"
             Grid.Row="0"
-            Margin="5,0,0,0"
             Visibility="Visible">
             <StackPanel Orientation="Horizontal">
-                <SelectorBar x:Name="selectPage" SelectedItem="{x:Bind ViewModel.SelectedPage, Mode=OneWay}" SelectionChanged="SelectPage_SelectionChanged">
+                <TextBlock
+                    x:Uid="MusicBrowse"
+                    Margin="10,10,15,10"
+                    VerticalAlignment="Center"
+                    FontSize="28" />
+                <SelectorBar
+                    x:Name="selectPage"
+                    VerticalAlignment="Center"
+                    SelectedItem="{x:Bind ViewModel.SelectedPage, Mode=OneWay}"
+                    SelectionChanged="SelectPage_SelectionChanged">
                     <SelectorBarItem
                         x:Name="Song"
                         x:Uid="SongTab"
@@ -129,7 +137,7 @@
         <Frame
             x:Name="ContentFrame"
             Grid.Row="2"
-            Margin="10"
+            Margin="0"
             IsNavigationStackEnabled="False"
             Visibility="Visible" />
     </Grid>
