@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" ?>
+﻿<?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="WinUIMusicPlayer.View.SettingsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -36,7 +36,7 @@
                 <StackPanel.ChildrenTransitions>
                     <RepositionThemeTransition IsStaggeringEnabled="True" />
                 </StackPanel.ChildrenTransitions>
-                <!--  ��Ƶ����  -->
+                <!--  音频设置  -->
                 <TextBlock
                     x:Uid="SettingAudio"
                     Margin="10,10,0,0"
@@ -196,7 +196,7 @@
                         IsClickEnabled="True" />
                 </StackPanel>
 
-                <!--  ��������  -->
+                <!--  功能设置  -->
                 <TextBlock
                     x:Uid="SettingFunction"
                     Margin="10,10,0,0"
@@ -265,7 +265,7 @@
                     </Expander.Content>
                 </Expander>
 
-                <!--  �߼�  -->
+                <!--  高级  -->
                 <Expander
                     MinHeight="69"
                     Margin="10,0,10,0"
@@ -380,7 +380,7 @@
                     </Expander.Content>
                 </Expander>
 
-                <!--  ��ݼ�����  -->
+                <!--  快捷键设置  -->
                 <Expander
                     MinHeight="69"
                     Margin="10,0,10,0"
@@ -522,7 +522,7 @@
                     </Expander.Content>
                 </Expander>
 
-                <!--  ��������  -->
+                <!--  封面设置  -->
                 <Expander
                     MinHeight="69"
                     Margin="10,0,10,0"
@@ -723,7 +723,7 @@
                     </Expander.Content>
                 </Expander>
 
-                <!--  ���屳��  -->
+                <!--  着色器背景  -->
                 <Expander
                     MinHeight="69"
                     Margin="10,0,10,0"
@@ -861,7 +861,7 @@
                     </Expander.Content>
                 </Expander>
 
-                <!--  �������  -->
+                <!--  歌词设置  -->
                 <Expander
                     MinHeight="69"
                     Margin="10,0,10,0"
@@ -1337,7 +1337,7 @@
                     </Expander.Content>
                 </Expander>
 
-                <!--  �رհ�ť����  -->
+                <!--  关闭按钮功能  -->
                 <Expander
                     MinHeight="69"
                     Margin="10,0,10,0"
@@ -1373,13 +1373,13 @@
                     </Expander.Content>
                 </Expander>
 
-                <!--  �������  -->
+                <!--  外观设置  -->
                 <TextBlock
                     x:Uid="Appearance"
                     Margin="10,10,0,0"
                     FontSize="16" />
 
-                <!--  ��������  -->
+                <!--  应用样式  -->
                 <Expander
                     MinHeight="69"
                     Margin="10,10,10,0"
@@ -1487,7 +1487,7 @@
                     </Expander.Content>
                 </Expander>
 
-                <!--  ��������  -->
+                <!--  应用主题  -->
                 <Expander
                     MinHeight="69"
                     Margin="10,0,10,0"
@@ -1551,7 +1551,7 @@
                     </Expander.Content>
                 </Expander>
 
-                <!--  ����  -->
+                <!--  关于  -->
                 <TextBlock
                     x:Uid="SettingsAbout"
                     Margin="10,10,0,10"
