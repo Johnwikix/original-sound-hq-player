@@ -1,5 +1,6 @@
 using DevWinUI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -7,6 +8,7 @@ using System;
 using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.ViewModel.Controls;
 
 namespace WinUIMusicPlayer.View.Controls
@@ -31,9 +33,26 @@ namespace WinUIMusicPlayer.View.Controls
             set => SetValue(PlaySourceTagProperty, value);
         }
 
+        public static readonly DependencyProperty DetailKindProperty =
+            DependencyProperty.Register(
+                nameof(DetailKind),
+                typeof(MusicGroupDetailViewModel.GroupKind),
+                typeof(MusicGroupDetailControl),
+                new PropertyMetadata(MusicGroupDetailViewModel.GroupKind.None));
+
+        public MusicGroupDetailViewModel.GroupKind DetailKind
+        {
+            get => (MusicGroupDetailViewModel.GroupKind)GetValue(DetailKindProperty);
+            set => SetValue(DetailKindProperty, value);
+        }
+
         public MusicGroupDetailControl()
         {
-            ViewModel = App.Services.GetRequiredService<MusicGroupDetailViewModel>();
+            ViewModel = new MusicGroupDetailViewModel(
+                App.Services.GetRequiredService<MusicBrowseViewModel>(),
+                App.Services.GetRequiredService<AppViewModel>(),
+                App.Services.GetRequiredService<MusicDatabaseService>(),
+                App.Services.GetRequiredService<ILogger<MusicGroupDetailViewModel>>());
             this.InitializeComponent();
             _scrollHelper = new ScrollerHelper(DispatcherQueue);
             _scrollHelper.Tick += OnScrollTick;
@@ -44,6 +63,7 @@ namespace WinUIMusicPlayer.View.Controls
         private void OnLoaded(object sender, RoutedEventArgs e)
         {
             ViewModel.SetView(this);
+            ViewModel.SetPageKind(DetailKind);
             ViewModel.RefreshFromAppState();
         }
 

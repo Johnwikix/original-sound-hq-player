@@ -11,6 +11,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -26,6 +27,9 @@ namespace WinUIMusicPlayer.ViewModel.Controls
     {
         public enum GroupKind { None, Album, Artist, Folder }
 
+        private static readonly Lock _instancesLock = new();
+        private static readonly List<MusicGroupDetailViewModel> _instances = [];
+
         public AppViewModel AppViewModel { get; }
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
         private MusicDatabaseService _db;
@@ -34,6 +38,8 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         private GroupKind _kind = GroupKind.None;
         private MusicGroupDetailControl? _view;
         private bool _songsBound;
+
+        public GroupKind PageKind { get; private set; } = GroupKind.None;
 
         private readonly HashSet<string> _seenAlbums = new(StringComparer.Ordinal);
         private readonly HashSet<string> _seenAuthors = new(StringComparer.Ordinal);
@@ -98,6 +104,29 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             TransmitFileToUsbCommand = new RelayCommand<UsbStorageDevice>(async dev => await OnTransmitFileToUsbAsync(dev));
 
             InitalizeOption();
+
+            lock (_instancesLock)
+            {
+                _instances.Add(this);
+            }
+        }
+
+        public static void UpdateAll(Action<MusicGroupDetailViewModel> action)
+        {
+            lock (_instancesLock)
+            {
+                foreach (var vm in _instances)
+                {
+                    action(vm);
+                }
+            }
+        }
+
+        public void SetPageKind(GroupKind kind)
+        {
+            if (PageKind == kind) return;
+            PageKind = kind;
+            RefreshFromAppState();
         }
 
         public void SetView(MusicGroupDetailControl? view) => _view = view;
@@ -106,11 +135,10 @@ namespace WinUIMusicPlayer.ViewModel.Controls
 
         private void OnAppVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName is "CurrentAlbumObj" or "CurrentArtistObj" or "CurrentFolderObj")
-            {
-                if (IsClosingForTransition) return;
-                RefreshFromAppState();
-            }
+            if (IsClosingForTransition) return;
+            if (e.PropertyName == "CurrentAlbumObj" && PageKind == GroupKind.Album) RefreshFromAppState();
+            else if (e.PropertyName == "CurrentArtistObj" && PageKind == GroupKind.Artist) RefreshFromAppState();
+            else if (e.PropertyName == "CurrentFolderObj" && PageKind == GroupKind.Folder) RefreshFromAppState();
         }
 
         private void OnSongsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
@@ -122,43 +150,53 @@ namespace WinUIMusicPlayer.ViewModel.Controls
 
         public void RefreshFromAppState()
         {
-            string pageType = AppViewModel.PageType;
-
-            if (pageType == "album"
-                && AppViewModel.CurrentAlbumObj is { } album
-                && !string.IsNullOrEmpty(album.Album))
+            switch (PageKind)
             {
-                ApplyKind(GroupKind.Album, album, album.Album);
-                CoverGlyph = "\uE93C";
-                CoverCornerRadius = new CornerRadius(5);
-                IsAlbumDetail = true;
-                BindSongs(AppViewModel.AlbumSongs);
-                RefreshAlbumTitles(album);
-                return;
-            }
-            if (pageType == "artist"
-                && AppViewModel.CurrentArtistObj is { } artist
-                && !string.IsNullOrEmpty(artist.Author))
-            {
-                ApplyKind(GroupKind.Artist, artist, artist.Author);
-                CoverGlyph = "\uE77B";
-                CoverCornerRadius = new CornerRadius(75);
-                IsAlbumDetail = false;
-                BindSongs(AppViewModel.ArtistSongs);
-                RefreshArtistTitles(artist);
-                return;
-            }
-            if (pageType == "folder"
-                && AppViewModel.CurrentFolderObj is { } folder
-                && !string.IsNullOrEmpty(folder.LastLevelFolderPath))
-            {
-                ApplyKind(GroupKind.Folder, folder, folder.LastLevelFolderPath);
-                CoverGlyph = "\uE8B7";
-                CoverCornerRadius = new CornerRadius(10);
-                IsAlbumDetail = false;
-                BindSongs(AppViewModel.FolderSongs);
-                RefreshFolderTitles(folder);
-                return;
+                case GroupKind.Album:
+                    if (AppViewModel.CurrentAlbumObj is { } album && !string.IsNullOrEmpty(album.Album))
+                    {
+                        _kind = GroupKind.Album;
+                        _songsBound = true;
+                        CoverSource = album;
+                        Title = album.Album;
+                        CoverGlyph = "\uE93C";
+                        CoverCornerRadius = new CornerRadius(5);
+                        IsAlbumDetail = true;
+                        BindSongs(AppViewModel.AlbumSongs);
+                        RefreshAlbumTitles(album);
+                        return;
+                    }
+                    break;
+                case GroupKind.Artist:
+                    if (AppViewModel.CurrentArtistObj is { } artist && !string.IsNullOrEmpty(artist.Author))
+                    {
+                        _kind = GroupKind.Artist;
+                        _songsBound = true;
+                        CoverSource = artist;
+                        Title = artist.Author;
+                        CoverGlyph = "\uE77B";
+                        CoverCornerRadius = new CornerRadius(75);
+                        IsAlbumDetail = false;
+                        BindSongs(AppViewModel.ArtistSongs);
+                        RefreshArtistTitles(artist);
+                        return;
+                    }
+                    break;
+                case GroupKind.Folder:
+                    if (AppViewModel.CurrentFolderObj is { } folder && !string.IsNullOrEmpty(folder.LastLevelFolderPath))
+                    {
+                        _kind = GroupKind.Folder;
+                        _songsBound = true;
+                        CoverSource = folder;
+                        Title = folder.LastLevelFolderPath;
+                        CoverGlyph = "\uE8B7";
+                        CoverCornerRadius = new CornerRadius(10);
+                        IsAlbumDetail = false;
+                        BindSongs(AppViewModel.FolderSongs);
+                        RefreshFolderTitles(folder);
+                        return;
+                    }
+                    break;
             }
 
             _kind = GroupKind.None;
@@ -168,14 +206,6 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             Title = string.Empty;
             SecondTitle = string.Empty;
             ThirdTitle = string.Empty;
-        }
-
-        private void ApplyKind(GroupKind kind, Music cover, string title)
-        {
-            _kind = kind;
-            _songsBound = true;
-            CoverSource = cover;
-            Title = title;
         }
 
         private void BindSongs(BulkObservableCollection<Music> source)
@@ -540,6 +570,10 @@ namespace WinUIMusicPlayer.ViewModel.Controls
 
         public void Dispose()
         {
+            lock (_instancesLock)
+            {
+                _instances.Remove(this);
+            }
             AppViewModel.PropertyChanged -= OnAppVmPropertyChanged;
             AppViewModel.AlbumSongs.CollectionChanged -= OnSongsCollectionChanged;
             AppViewModel.ArtistSongs.CollectionChanged -= OnSongsCollectionChanged;

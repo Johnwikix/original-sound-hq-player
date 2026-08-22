@@ -737,7 +737,7 @@ namespace WinUIMusicPlayer.ViewModel
             App.Services.GetRequiredService<FolderViewModel>().UpdateAlbumMenuOptionsPlayList();
             App.Services.GetRequiredService<SongListViewModel>().UpdateAlbumMenuOptionsPlayList();
             App.Services.GetRequiredService<FavouritePlayListViewModel>().UpdateAlbumMenuOptionsPlayList();
-            App.Services.GetRequiredService<MusicGroupDetailViewModel>().UpdateAlbumMenuOptionsPlayList();
+            MusicGroupDetailViewModel.UpdateAll(x => x.UpdateAlbumMenuOptionsPlayList());
             App.Services.GetRequiredService<PlaylistDetailViewModel>().UpdateAlbumMenuOptionsPlayList();
         }
 
@@ -1187,7 +1187,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void UpDateUsbDeviceMenuflyout()
         {
             App.Services.GetRequiredService<FavouritePlayListViewModel>().UpDateUsbDeviceMenuflyout();
-            App.Services.GetRequiredService<MusicGroupDetailViewModel>().UpDateUsbDeviceMenuflyout();
+            MusicGroupDetailViewModel.UpdateAll(x => x.UpDateUsbDeviceMenuflyout());
             App.Services.GetRequiredService<SongListViewModel>().UpDateUsbDeviceMenuflyout();
             App.Services.GetRequiredService<PlaylistDetailViewModel>().UpDateUsbDeviceMenuflyout();
             App.Services.GetRequiredService<AlbumViewModel>().UpDateUsbDeviceMenuflyout();

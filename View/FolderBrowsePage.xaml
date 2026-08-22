@@ -150,6 +150,7 @@
         </SemanticZoom>
         <controls:MusicGroupDetailControl
             x:Name="DetailView"
+            DetailKind="Folder"
             PlaySourceTag="FolderSongsView"
             IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay}"
             Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"

@@ -170,6 +170,7 @@
         <controls:MusicGroupDetailControl
             x:Name="DetailView"
             x:FieldModifier="public"
+            DetailKind="Album"
             IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay}"
             Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
             PlaySourceTag="AlbumSongsView" />
