@@ -279,10 +279,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (SelectedMusics.Count > 0)
             {
-                foreach (var item in SelectedMusics)
-                {
-                    AppViewModel.AddMusicToCurrentPlayList(item);
-                }
+                AppViewModel.AddMusicRangeToCurrentPlayList(SelectedMusics);
             }
         }
 
@@ -294,12 +291,6 @@ namespace WinUIMusicPlayer.ViewModel
                 AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(AppViewModel.ListSongs);
                 await MusicBrowseViewModel.PlayMusic(music: music, IsChangeList: true);
             }
-        }
-
-        [RelayCommand]
-        public void AddMusicToCurrentPlayList(Music music)
-        {
-            AppViewModel.AddMusicToCurrentPlayList(music);
         }
 
         [RelayCommand]

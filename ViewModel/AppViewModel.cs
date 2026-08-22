@@ -918,14 +918,31 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (music is null) return;
             int index = GetCurrentIndex();
-            if (index == -1) return;
+            if (index == -1)
+                CurrentPlayingList.Add(music);
+            else
+                CurrentPlayingList.Insert(index + 1, music);
+        }
 
-            int newId = music.Id;
-            foreach (var m in CurrentPlayingList)
+        public void AddMusicRangeToCurrentPlayList(IEnumerable<Music> musics)
+        {
+            if (musics is null) return;
+
+            var batch = new List<Music>();
+            foreach (var m in musics)
             {
-                if (m.Id == newId) return;
+                if (m is not null) batch.Add(m);
             }
-            CurrentPlayingList.Insert(index + 1, music);
+            if (batch.Count == 0) return;
+
+            int index = GetCurrentIndex();
+            if (index == -1)
+            {
+                CurrentPlayingList.AddRange(batch);
+                return;
+            }
+
+            CurrentPlayingList.InsertRange(index + 1, batch);        
         }
 
         public int GetCurrentIndex()

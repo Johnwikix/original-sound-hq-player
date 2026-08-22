@@ -372,10 +372,13 @@ namespace WinUIMusicPlayer.ViewModel.Controls
 
         private void OnAddMusicToCurrentPlayListFromSelection()
         {
-            var targets = SelectedMusics.Count > 0 ? SelectedMusics : (SelectedMusic is null ? [] : [SelectedMusic]);
-            foreach (var m in targets)
+            if (SelectedMusics.Count > 0)
             {
-                MusicCommands.AddToPlayListCommand.Execute(m);
+                AppViewModel.AddMusicRangeToCurrentPlayList(SelectedMusics);
+            }
+            else if (SelectedMusic is not null)
+            {
+                MusicCommands.AddToPlayListCommand.Execute(SelectedMusic);
             }
         }
 

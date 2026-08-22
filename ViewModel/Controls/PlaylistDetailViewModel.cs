@@ -303,10 +303,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         {
             if (SelectedMusics.Count > 0)
             {
-                foreach (var item in SelectedMusics)
-                {
-                    AppViewModel.AddMusicToCurrentPlayList(item.Music);
-                }
+                AppViewModel.AddMusicRangeToCurrentPlayList(SelectedMusics.Select(i => i.Music));
             }
             else if (SelectedMusic is not null)
             {

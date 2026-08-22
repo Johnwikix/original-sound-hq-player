@@ -1,5 +1,4 @@
-﻿using DevWinUI;
-using Microsoft.UI.Dispatching;
+﻿using Microsoft.UI.Dispatching;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -13,12 +12,15 @@ namespace WinUIMusicPlayer.Model
     public class BulkObservableCollection<T> : ObservableCollection<T>
     {
         private readonly DispatcherQueue _dispatcher = DispatcherQueue.GetForCurrentThread();
+        private readonly List<T> _itemsList;
 
-        public BulkObservableCollection() { }
+        public BulkObservableCollection() => _itemsList = (List<T>)Items;
 
-        public BulkObservableCollection(IEnumerable<T> collection) : base(collection) { }
+        public BulkObservableCollection(IEnumerable<T> collection) : base(collection)
+            => _itemsList = (List<T>)Items;
 
-        public BulkObservableCollection(List<T> list) : base(list) { }
+        public BulkObservableCollection(List<T> list) : base(list)
+            => _itemsList = (List<T>)Items;
 
         /// <summary>
         /// 异步将集合内容更新为新集合（并集/替换），仅触发一次通知
@@ -52,15 +54,8 @@ namespace WinUIMusicPlayer.Model
 
         private void ExecuteReplaceAll(IEnumerable<T> items)
         {
-            // 1. 检查数据是否真的变了（防止无效刷新）
-            // 如果你传入的是同一个引用且数量一致，可以选择跳过
-            var newList = items;
-
-            // 2. 悄悄修改内部原始列表
-            this.Items.Clear();
-            Items.AddRange(items);  
-            // 3. 统一触发 UI 通知
-            // 这里使用 Reset 动作，因为 Items 已经完全变了
+            _itemsList.Clear();
+            _itemsList.AddRange(items);
             RaiseChangeNotifications();
         }
 
@@ -97,7 +92,7 @@ namespace WinUIMusicPlayer.Model
         private void ExecuteAddRange(IEnumerable<T> items)
         {
             if (items == null || IsKnownEmpty(items)) return;
-            Items.AddRange(items);
+            _itemsList.AddRange(items);
             RaiseChangeNotifications();
         }
 
@@ -106,14 +101,59 @@ namespace WinUIMusicPlayer.Model
             ExecuteAddRange(items);
         }
 
+        public void InsertRange(int index, IEnumerable<T> items)
+        {
+            if (items is null) return;
+
+            if (items is ICollection<T> coll)
+            {
+                if (coll.Count == 0) return;
+                InsertRangeCore(_itemsList, index, coll);
+                RaiseChangeNotifications();
+                return;
+            }
+
+            _itemsList.InsertRange(index, items);
+            RaiseChangeNotifications();
+        }
+
+        private static void InsertRangeCore(List<T> dst, int index, ICollection<T> src)
+        {
+            int oldCount = dst.Count;
+            int insertCount = src.Count;
+            int need = oldCount + insertCount;
+            if (dst.Capacity < need) dst.Capacity = need;
+
+            CollectionsMarshal.SetCount(dst, need);
+            var span = CollectionsMarshal.AsSpan(dst);
+            span.Slice(index, oldCount - index).CopyTo(span.Slice(index + insertCount));
+
+            var target = span.Slice(index, insertCount);
+            switch (src)
+            {
+                case T[] arr:
+                    arr.AsSpan().CopyTo(target);
+                    break;
+                case List<T> srcList:
+                    CollectionsMarshal.AsSpan(srcList).CopyTo(target);
+                    break;
+                default:
+                    int i = 0;
+                    foreach (var item in src)
+                    {
+                        target[i++] = item;
+                    }
+                    break;
+            }
+        }
+
         public void FillFrom(ReadOnlySpan<T> source)
         {
-            var list = (List<T>)Items;
-            list.Clear();
+            var list = _itemsList;
             if (list.Capacity < source.Length)
                 list.Capacity = source.Length;
-            foreach (var item in source)
-                list.Add(item);
+            CollectionsMarshal.SetCount(list, source.Length);
+            source.CopyTo(CollectionsMarshal.AsSpan(list));
             RaiseChangeNotifications();
         }
 
@@ -138,7 +178,7 @@ namespace WinUIMusicPlayer.Model
             {
                 foreach (var item in snapshot)
                 {
-                    Items.Remove(item);
+                    _itemsList.Remove(item);
                 }
             }
             else
@@ -158,7 +198,7 @@ namespace WinUIMusicPlayer.Model
                 counts[item] = count + 1;
             }
 
-            var itemsList = (List<T>)Items;
+            var itemsList = _itemsList;
             int write = 0;
             for (int i = 0; i < itemsList.Count; i++)
             {
@@ -178,11 +218,11 @@ namespace WinUIMusicPlayer.Model
             }
         }
 
-        public ReadOnlySpan<T> AsSpan() => CollectionsMarshal.AsSpan((List<T>)Items);
+        public ReadOnlySpan<T> AsSpan() => CollectionsMarshal.AsSpan(_itemsList);
 
         public void SortInPlace(IComparer<T> comparer)
         {
-            CollectionsMarshal.AsSpan((List<T>)Items).Sort(comparer);
+            CollectionsMarshal.AsSpan(_itemsList).Sort(comparer);
             RaiseChangeNotifications();
         }
 
