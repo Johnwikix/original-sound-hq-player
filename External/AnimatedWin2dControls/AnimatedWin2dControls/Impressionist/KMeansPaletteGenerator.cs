@@ -115,8 +115,12 @@ internal static class KMeansPaletteGenerator
         }
 
         var clusterAssignments = ArrayPool<int>.Shared.Rent(keys.Length);
+        var pops = ArrayPool<float>.Shared.Rent(keys.Length);
         try
         {
+            for (int k = 0; k < keys.Length; k++)
+                pops[k] = colors[keys[k]];
+
             bool changed = true;
             int iterations = 0;
             while (changed && iterations < 250)
@@ -143,7 +147,7 @@ internal static class KMeansPaletteGenerator
                 for (int k = 0; k < keys.Length; k++)
                 {
                     int ci = clusterAssignments[k];
-                    int pop = colors[keys[k]];
+                    float pop = pops[k];
                     sumX[ci] += keys[k].X * pop;
                     sumY[ci] += keys[k].Y * pop;
                     sumZ[ci] += keys[k].Z * pop;
@@ -165,6 +169,7 @@ internal static class KMeansPaletteGenerator
         finally
         {
             ArrayPool<int>.Shared.Return(clusterAssignments);
+            ArrayPool<float>.Shared.Return(pops, clearArray: false);
         }
 
         return centers;
@@ -172,14 +177,34 @@ internal static class KMeansPaletteGenerator
 
     private static int FindNearestCenter(Vector3 color, Vector3[] centers, int count)
     {
-        int nearest = 0;
-        float minDist = float.MaxValue;
+        if (count == 4)
+        {
+            var c = new Vector4(color, 0f);
+            var d0 = c - new Vector4(centers[0], 0f);
+            var d1 = c - new Vector4(centers[1], 0f);
+            var d2 = c - new Vector4(centers[2], 0f);
+            var d3 = c - new Vector4(centers[3], 0f);
+            float dist0 = Vector4.Dot(d0, d0);
+            float dist1 = Vector4.Dot(d1, d1);
+            float dist2 = Vector4.Dot(d2, d2);
+            float dist3 = Vector4.Dot(d3, d3);
+
+            int nearest = 0;
+            float minDist = dist0;
+            if (dist1 < minDist) { minDist = dist1; nearest = 1; }
+            if (dist2 < minDist) { minDist = dist2; nearest = 2; }
+            if (dist3 < minDist) { minDist = dist3; nearest = 3; }
+            return nearest;
+        }
+
+        int nearestScalar = 0;
+        float minScalar = float.MaxValue;
         for (int i = 0; i < count; i++)
         {
             float dist = Vector3.DistanceSquared(color, centers[i]);
-            if (dist < minDist) { minDist = dist; nearest = i; }
+            if (dist < minScalar) { minScalar = dist; nearestScalar = i; }
         }
-        return nearest;
+        return nearestScalar;
     }
 
     // Gonzalez 远-近确定性初始化：首个中心取 population 最大者作为主色锚点，
@@ -204,8 +229,17 @@ internal static class KMeansPaletteGenerator
         float[] rented = ArrayPool<float>.Shared.Rent(n);
         try
         {
-            for (int k = 0; k < n; k++)
-                rented[k] = Vector3.DistanceSquared(keys[k], centers[0]);
+            int idx = 0;
+            for (; idx + 3 < n; idx += 4)
+            {
+                var d2 = BatchDist2(keys, centers[0], idx);
+                rented[idx] = d2.X;
+                rented[idx + 1] = d2.Y;
+                rented[idx + 2] = d2.Z;
+                rented[idx + 3] = d2.W;
+            }
+            for (; idx < n; idx++)
+                rented[idx] = Vector3.DistanceSquared(keys[idx], centers[0]);
 
             for (int i = 1; i < clusterCount; i++)
             {
@@ -217,10 +251,19 @@ internal static class KMeansPaletteGenerator
                 }
                 centers[i] = keys[bestK];
 
-                for (int k = 0; k < n; k++)
+                idx = 0;
+                for (; idx + 3 < n; idx += 4)
                 {
-                    float d = Vector3.DistanceSquared(keys[k], centers[i]);
-                    if (d < rented[k]) rented[k] = d;
+                    var d2 = BatchDist2(keys, centers[i], idx);
+                    if (d2.X < rented[idx]) rented[idx] = d2.X;
+                    if (d2.Y < rented[idx + 1]) rented[idx + 1] = d2.Y;
+                    if (d2.Z < rented[idx + 2]) rented[idx + 2] = d2.Z;
+                    if (d2.W < rented[idx + 3]) rented[idx + 3] = d2.W;
+                }
+                for (; idx < n; idx++)
+                {
+                    float d = Vector3.DistanceSquared(keys[idx], centers[i]);
+                    if (d < rented[idx]) rented[idx] = d;
                 }
             }
         }
@@ -230,6 +273,15 @@ internal static class KMeansPaletteGenerator
         }
 
         return centers;
+    }
+
+    // 一次计算 4 个点的中心距离平方（逐分量向量化，规约顺序与标量一致）。
+    private static Vector4 BatchDist2(Vector3[] keys, Vector3 center, int k)
+    {
+        var dx = new Vector4(keys[k].X, keys[k + 1].X, keys[k + 2].X, keys[k + 3].X) - new Vector4(center.X);
+        var dy = new Vector4(keys[k].Y, keys[k + 1].Y, keys[k + 2].Y, keys[k + 3].Y) - new Vector4(center.Y);
+        var dz = new Vector4(keys[k].Z, keys[k + 1].Z, keys[k + 2].Z, keys[k + 3].Z) - new Vector4(center.Z);
+        return dx * dx + dy * dy + dz * dz;
     }
 
     private static Vector3[] KMeansPlusPlusInit(

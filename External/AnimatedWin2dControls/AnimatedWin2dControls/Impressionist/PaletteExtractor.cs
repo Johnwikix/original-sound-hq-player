@@ -39,7 +39,7 @@ public static class PaletteExtractor
         using var rasStream = memStream.AsRandomAccessStream();
         var decoder = await BitmapDecoder.CreateAsync(rasStream).AsTask(ct);
 
-        const uint MaxSize = 150;
+        const uint MaxSize = 200;
         uint srcW = decoder.PixelWidth, srcH = decoder.PixelHeight;
         float scale = Math.Min(1f, Math.Min((float)MaxSize / srcW, (float)MaxSize / srcH));
         uint dstW = Math.Max(1, (uint)(srcW * scale));
