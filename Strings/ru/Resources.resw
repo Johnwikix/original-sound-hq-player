@@ -1244,7 +1244,7 @@
     <value>Скрыть / Показать</value>
   </data>
 <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
-    <value>Toggle FullScreen</value>
+    <value>Переключить полноэкранный режим</value>
   </data>
   <data name="Advanced.Text" xml:space="preserve">
     <value>Дополнительно</value>

@@ -1244,7 +1244,7 @@
     <value>Ein-/Ausblenden</value>
   </data>
 <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
-    <value>Toggle FullScreen</value>
+    <value>Vollbild umschalten</value>
   </data>
   <data name="Advanced.Text" xml:space="preserve">
     <value>Erweitert</value>

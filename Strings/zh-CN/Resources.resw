@@ -1243,7 +1243,7 @@
     <value>显示 / 隐藏主窗口</value>
   </data>
   <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
-    <value>Toggle FullScreen</value>
+    <value>切换全屏</value>
   </data>
   <data name="Advanced.Text" xml:space="preserve">
     <value>高级</value>

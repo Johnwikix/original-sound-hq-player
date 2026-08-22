@@ -1244,7 +1244,7 @@
     <value>Mostrar / Ocultar</value>
   </data>
 <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
-    <value>Toggle FullScreen</value>
+    <value>Alternar pantalla completa</value>
   </data>
   <data name="Advanced.Text" xml:space="preserve">
     <value>Avanzado</value>

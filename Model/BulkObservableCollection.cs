@@ -14,6 +14,10 @@ namespace WinUIMusicPlayer.Model
         private readonly DispatcherQueue _dispatcher = DispatcherQueue.GetForCurrentThread();
         private readonly List<T> _itemsList;
 
+        private static readonly PropertyChangedEventArgs s_countArgs = new(nameof(Count));
+        private static readonly PropertyChangedEventArgs s_indexerArgs = new("Item[]");
+        private static readonly NotifyCollectionChangedEventArgs s_resetArgs = new(NotifyCollectionChangedAction.Reset);
+
         public BulkObservableCollection() => _itemsList = (List<T>)Items;
 
         public BulkObservableCollection(IEnumerable<T> collection) : base(collection)
@@ -54,6 +58,7 @@ namespace WinUIMusicPlayer.Model
 
         private void ExecuteReplaceAll(IEnumerable<T> items)
         {
+            if (_itemsList.Count == 0 && IsKnownEmpty(items)) return;
             _itemsList.Clear();
             _itemsList.AddRange(items);
             RaiseChangeNotifications();
@@ -101,6 +106,19 @@ namespace WinUIMusicPlayer.Model
             ExecuteAddRange(items);
         }
 
+        public void AddRange(ReadOnlySpan<T> source)
+        {
+            if (source.Length == 0) return;
+
+            var list = _itemsList;
+            int oldCount = list.Count;
+            int need = oldCount + source.Length;
+            if (list.Capacity < need) list.Capacity = need;
+            CollectionsMarshal.SetCount(list, need);
+            source.CopyTo(CollectionsMarshal.AsSpan(list).Slice(oldCount));
+            RaiseChangeNotifications();
+        }
+
         public void InsertRange(int index, IEnumerable<T> items)
         {
             if (items is null) return;
@@ -108,7 +126,14 @@ namespace WinUIMusicPlayer.Model
             if (items is ICollection<T> coll)
             {
                 if (coll.Count == 0) return;
-                InsertRangeCore(_itemsList, index, coll);
+                if (ReferenceEquals(coll, _itemsList))
+                {
+                    _itemsList.InsertRange(index, coll);
+                }
+                else
+                {
+                    InsertRangeCore(_itemsList, index, coll);
+                }
                 RaiseChangeNotifications();
                 return;
             }
@@ -194,8 +219,8 @@ namespace WinUIMusicPlayer.Model
             var counts = new Dictionary<T, int>(toRemove.Count);
             foreach (var item in toRemove)
             {
-                counts.TryGetValue(item, out var count);
-                counts[item] = count + 1;
+                ref int c = ref CollectionsMarshal.GetValueRefOrAddDefault(counts, item, out _);
+                c++;
             }
 
             var itemsList = _itemsList;
@@ -227,13 +252,13 @@ namespace WinUIMusicPlayer.Model
         }
 
         /// <summary>
-        /// 统一触发 Count 和 Reset 通知
+        /// 统一触发 Count 和 Reset 通知（复用静态缓存的事件参数，零分配）
         /// </summary>
         private void RaiseChangeNotifications()
         {
-            OnPropertyChanged(new PropertyChangedEventArgs(nameof(Count)));
-            OnPropertyChanged(new PropertyChangedEventArgs("Item[]"));
-            OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
+            OnPropertyChanged(s_countArgs);
+            OnPropertyChanged(s_indexerArgs);
+            OnCollectionChanged(s_resetArgs);
         }
 
         /// <summary>

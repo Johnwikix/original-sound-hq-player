@@ -1244,7 +1244,7 @@
     <value>表示 / 非表示</value>
   </data>
 <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
-    <value>Toggle FullScreen</value>
+    <value>フルスクリーン切替</value>
   </data>
   <data name="Advanced.Text" xml:space="preserve">
     <value>詳細設定</value>

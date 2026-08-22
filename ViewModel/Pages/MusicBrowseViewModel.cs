@@ -599,29 +599,9 @@ namespace WinUIMusicPlayer.ViewModel
         {
             int currentSelectedIndex = GetSelectorBarItemIndex(SelectedPage);
 
-            // 清空非本 tab 的 detail 状态(SelectBarAlbum/Artist 等跨链已把
-            // 对应的 CurrentXxxObj 设好,这里不清本 tab,跨链才不会失效)
-            switch (SelectedPage.Name)
-            {
-                case "Song":
-                case "Favourite":
-                    AppViewModel.CurrentAlbumObj = null;
-                    AppViewModel.CurrentArtistObj = null;
-                    AppViewModel.CurrentFolderObj = null;
-                    break;
-                case "Album":
-                    AppViewModel.CurrentArtistObj = null;
-                    AppViewModel.CurrentFolderObj = null;
-                    break;
-                case "Artist":
-                    AppViewModel.CurrentAlbumObj = null;
-                    AppViewModel.CurrentFolderObj = null;
-                    break;
-                case "Folder":
-                    AppViewModel.CurrentAlbumObj = null;
-                    AppViewModel.CurrentArtistObj = null;
-                    break;
-            }
+            // 各 tab 的 detail 状态(CurrentXxxObj)在切换时保留,切回时由
+            // ReceiveNavigation/RefreshFromAppState 按 PageType 恢复;退出详情
+            // 由各页返回按钮(CollapseDetail)显式清空。
 
             AppData.CurrentPage = typeof(SongListPage);
             switch (SelectedPage.Name)
