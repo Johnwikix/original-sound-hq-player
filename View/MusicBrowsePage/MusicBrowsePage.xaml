@@ -137,7 +137,7 @@
         <Frame
             x:Name="ContentFrame"
             Grid.Row="2"
-            Margin="6,0,0,0"
+            Margin="6,6,0,0"
             IsNavigationStackEnabled="False"
             Visibility="Visible" />
     </Grid>
