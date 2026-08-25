@@ -701,8 +701,20 @@ namespace WinUIMusicPlayer.ViewModel
             SelectBarAlbum(album);
         }
 
-        public void SelectBarArtist(string artist)
+        public void SelectBarArtist(string artist) => _ = SelectBarArtistCore(artist);
+
+        private async Task SelectBarArtistCore(string artist)
         {
+            if (string.IsNullOrWhiteSpace(artist)) return;
+            var names = ArtistHelper.GetArtistNames(artist);
+            if (names.Length > 1)
+            {
+                var mainPage = MainPage ?? App.Services.GetRequiredService<MainPage>();
+                var xamlRoot = mainPage.XamlRoot ?? MusicBrowsePage?.XamlRoot;
+                if (xamlRoot is null) return;
+                artist = await DialogHelper.ShowArtistPickerAsync(xamlRoot, names) ?? string.Empty;
+                if (artist.Length == 0) return;
+            }
             MainPage?.NavigateToMusicBrowsePage();
             MusicBrowsePage.SelectBarArtist(artist);
         }

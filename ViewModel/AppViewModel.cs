@@ -42,7 +42,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (SetProperty(ref field, value))
                 {
-                    _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => m.Author == value?.Author);
+                    _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => ArtistHelper.IsMusicByArtist(m, value?.Author ?? ""));
                 }
             }
         }
@@ -670,7 +670,13 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (string.IsNullOrEmpty(artist)) return null;
             if (_indexDirty) RebuildIdIndex();
-            return _firstArtistIndex.TryGetValue(artist, out var m) ? m : null;
+            if (_firstArtistIndex.TryGetValue(artist, out var m)) return m;
+            var names = ArtistHelper.GetArtistNames(artist);
+            for (int i = 0; i < names.Length; i++)
+            {
+                if (_firstArtistIndex.TryGetValue(names[i], out m)) return m;
+            }
+            return null;
         }
 
         public Music? FindFirstByFolder(string? folder)
@@ -701,12 +707,22 @@ namespace WinUIMusicPlayer.ViewModel
                         _firstAlbumIndex[m.Album] = m;
                     _albumSongCounts[m.Album] = _albumSongCounts.GetValueOrDefault(m.Album) + 1;
                 }
-                if (!string.IsNullOrEmpty(m.Author) && !_firstArtistIndex.ContainsKey(m.Author))
-                    _firstArtistIndex[m.Author] = m;
+                if (!string.IsNullOrEmpty(m.Author))
+                    AddArtistIndexEntry(m);
                 if (!string.IsNullOrEmpty(m.LastLevelFolderPath) && !_firstFolderIndex.ContainsKey(m.LastLevelFolderPath))
                     _firstFolderIndex[m.LastLevelFolderPath] = m;
             }
             _indexDirty = false;
+        }
+
+        private void AddArtistIndexEntry(Music m)
+        {
+            var names = ArtistHelper.GetArtistNames(m.Author);
+            for (int i = 0; i < names.Length; i++)
+            {
+                if (!_firstArtistIndex.ContainsKey(names[i]))
+                    _firstArtistIndex[names[i]] = ArtistHelper.CreateArtistTile(m, names[i]);
+            }
         }
 
         public int GetAlbumSongCount(string? album)
@@ -753,10 +769,12 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     SongViewType.Album => m =>
                         (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                        (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false),
+                        (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false),
                     SongViewType.Artist => m =>
                         (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                        (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false),
+                        (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false),
                     SongViewType.Folder => m =>
                         (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
                         (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
@@ -845,72 +863,112 @@ namespace WinUIMusicPlayer.ViewModel
                 for (int i = 0; i < srcSpan.Length; i++)
                 {
                     ref readonly var m = ref srcSpan[i];
-                    if (hasSearch &&
-                        !(m.Title?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) &&
-                        !(m.Album?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) &&
-                        !(m.Author?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) &&
-                        !(m.LastLevelFolderPath?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false))
+                    if (hasSearch && !MatchesSearchShape(m, search))
                         continue;
 
                     var key = distinctSelector(m);
                     distinctMap.TryAdd(key, m);
                 }
 
-                var pool = ArrayPool<Music>.Shared;
-                var buf = pool.Rent(Math.Max(distinctMap.Count, 1));
-                int count = 0;
-                try
-                {
-                    foreach (var kvp in distinctMap)
-                        buf[count++] = kvp.Value;
-
-                    var slice = buf.AsSpan(0, count);
-                    IComparer<Music> comparer = (SelectedSortOption.Tag as string) switch
-                    {
-                        "A-Z" => _songByTitle,
-                        "Artist" => _songByAuthor,
-                        "Album" => Comparer<Music>.Create((a, b) => string.Compare(a.Album, b.Album, StringComparison.Ordinal)),
-                        "CreateTimeASC" => _songByCreateTimeAsc,
-                        "CreateTimeDESC" => _songByCreateTimeDesc,
-                        "UpdateTimeASC" => _songByUpdateTimeAsc,
-                        "UpdateTimeDESC" => _songByUpdateTimeDesc,
-                        _ => Comparer<Music>.Create((a, b) => string.Compare(distinctSelector(a), distinctSelector(b), StringComparison.Ordinal)),
-                    };
-                    slice.Sort(comparer);
-
-                    var groupDict = new Dictionary<string, List<Music>>(count / 4 + 1);
-                    for (int i = 0; i < count; i++)
-                    {
-                        var gKey = groupSelector(buf[i]);
-                        if (!groupDict.TryGetValue(gKey, out var list))
-                        {
-                            list = new List<Music>();
-                            groupDict[gKey] = list;
-                        }
-                        list.Add(buf[i]);
-                    }
-
-                    var groups = new List<MusicGroup>(groupDict.Count);
-                    foreach (var kvp in groupDict)
-                        groups.Add(new MusicGroup(kvp.Key, kvp.Value));
-                    groups.Sort((a, b) => string.Compare(
-                        a.Key == "ZZZ" ? "#" : a.Key,
-                        b.Key == "ZZZ" ? "#" : b.Key,
-                        StringComparison.Ordinal));
-
-                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                    {
-                        source.Source = groups;
-                    });
-                }
-                finally
-                {
-                    pool.Return(buf, clearArray: false);
-                }
+                PublishGroupedSource(distinctMap, distinctSelector, groupSelector, source);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, ex.Message);
+            }
+        }
+
+        public void UpdateArtistGroupedByFirstLetter(CollectionViewSource source)
+        {
+            try
+            {
+                var srcSpan = CollectionsMarshal.AsSpan(SongsSource);
+                bool hasSearch = !string.IsNullOrWhiteSpace(SearchText);
+                var search = SearchText;
+
+                var distinctMap = new Dictionary<string, Music>(srcSpan.Length / 4 + 1);
+                for (int i = 0; i < srcSpan.Length; i++)
+                {
+                    ref readonly var m = ref srcSpan[i];
+                    if (hasSearch && !MatchesSearchShape(m, search))
+                        continue;
+
+                    var names = ArtistHelper.GetArtistNames(m.Author);
+                    for (int n = 0; n < names.Length; n++)
+                    {
+                        if (!distinctMap.ContainsKey(names[n]))
+                            distinctMap[names[n]] = ArtistHelper.CreateArtistTile(m, names[n]);
+                    }
+                }
+
+                PublishGroupedSource(distinctMap, m => m.Author, m => GetFirstLetterAdvanced(m.Author), source);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, ex.Message);
+            }
+        }
+
+        private static bool MatchesSearchShape(Music m, string search)
+        {
+            return (m.Title?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                   (m.Album?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                   (m.Author?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                   (m.LastLevelFolderPath?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false);
+        }
+
+        private void PublishGroupedSource(Dictionary<string, Music> distinctMap, Func<Music, string> distinctSelector, Func<Music, string> groupSelector, CollectionViewSource source)
+        {
+            var pool = ArrayPool<Music>.Shared;
+            var buf = pool.Rent(Math.Max(distinctMap.Count, 1));
+            int count = 0;
+            try
+            {
+                foreach (var kvp in distinctMap)
+                    buf[count++] = kvp.Value;
+
+                var slice = buf.AsSpan(0, count);
+                IComparer<Music> comparer = (SelectedSortOption.Tag as string) switch
+                {
+                    "A-Z" => _songByTitle,
+                    "Artist" => _songByAuthor,
+                    "Album" => Comparer<Music>.Create((a, b) => string.Compare(a.Album, b.Album, StringComparison.Ordinal)),
+                    "CreateTimeASC" => _songByCreateTimeAsc,
+                    "CreateTimeDESC" => _songByCreateTimeDesc,
+                    "UpdateTimeASC" => _songByUpdateTimeAsc,
+                    "UpdateTimeDESC" => _songByUpdateTimeDesc,
+                    _ => Comparer<Music>.Create((a, b) => string.Compare(distinctSelector(a), distinctSelector(b), StringComparison.Ordinal)),
+                };
+                slice.Sort(comparer);
+
+                var groupDict = new Dictionary<string, List<Music>>(count / 4 + 1);
+                for (int i = 0; i < count; i++)
+                {
+                    var gKey = groupSelector(buf[i]);
+                    if (!groupDict.TryGetValue(gKey, out var list))
+                    {
+                        list = new List<Music>();
+                        groupDict[gKey] = list;
+                    }
+                    list.Add(buf[i]);
+                }
+
+                var groups = new List<MusicGroup>(groupDict.Count);
+                foreach (var kvp in groupDict)
+                    groups.Add(new MusicGroup(kvp.Key, kvp.Value));
+                groups.Sort((a, b) => string.Compare(
+                    a.Key == "ZZZ" ? "#" : a.Key,
+                    b.Key == "ZZZ" ? "#" : b.Key,
+                    StringComparison.Ordinal));
+
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    source.Source = groups;
+                });
+            }
+            finally
+            {
+                pool.Return(buf, clearArray: false);
             }
         }
 
@@ -970,11 +1028,11 @@ namespace WinUIMusicPlayer.ViewModel
             _ = UpdateSongCollectionsAsync(FavoriteSongs, SongViewType.Favorite, m => m.IsFavorite == true);
             _ = UpdateSongCollectionsAsync(ListSongs, SongViewType.All);
             _ = UpdateSongCollectionsAsync(AlbumSongs, SongViewType.Album, m => m.Album == CurrentAlbumObj?.Album);
-            _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => m.Author == CurrentArtistObj?.Author);
+            _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => ArtistHelper.IsMusicByArtist(m, CurrentArtistObj?.Author ?? ""));
             _ = UpdateSongCollectionsAsync(FolderSongs, SongViewType.Folder, m => m.LastLevelFolderPath == CurrentFolderObj?.LastLevelFolderPath);
             _ = RefreshPlayListSongMapping();
             UpdateGroupedByFirstLetter(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumPageSource);
-            UpdateGroupedByFirstLetter(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistPageSource);
+            UpdateArtistGroupedByFirstLetter(ArtistPageSource);
             UpdateGroupedByFirstLetter(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), FolderPageSource);
             App.Services.GetRequiredService<MusicBrowseViewModel>()?.UpdateViewList();
         }
@@ -992,8 +1050,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
             else if (pageType == typeof(ArtistPage))
             {
-                _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => m.Author == CurrentArtistObj?.Author);
-                UpdateGroupedByFirstLetter(m => m.Author, m => GetFirstLetterAdvanced(m.Author), ArtistPageSource);
+                _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => ArtistHelper.IsMusicByArtist(m, CurrentArtistObj?.Author ?? ""));
+                UpdateArtistGroupedByFirstLetter(ArtistPageSource);
             }
             else if (pageType == typeof(FolderBrowsePage))
             {

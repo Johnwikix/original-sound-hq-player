@@ -795,7 +795,7 @@ namespace WinUIMusicPlayer.Services
             {
                 if (!string.IsNullOrEmpty(search))
                 {
-                    return query.Where(m => m.Author is not null && m.Author.ToLower().Equals(artist.ToLower()))
+                    return query.Where(m => ArtistHelper.IsMusicByArtist(m, artist))
                         .Where(m =>
                         m.Title is not null && m.Title.ToLower().Contains(search.ToLower()) ||
                         m.Album is not null && m.Album.ToLower().Contains(search.ToLower())
@@ -803,7 +803,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 else
                 {
-                    return query.Where(m => m.Author is not null && m.Author.ToLower().Equals(artist.ToLower()))
+                    return query.Where(m => ArtistHelper.IsMusicByArtist(m, artist))
                          .OrderBy(m => m.Album).ToImmutableList();
                 }
             }
@@ -986,6 +986,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.IsTrimOnHideEnabled = settings.IsTrimOnHideEnabled;
                 AppSettings.IsTrimAfterPlaybackEnabled = settings.IsTrimAfterPlaybackEnabled;
                 AppViewModel.IsTrimAfterPlaybackEnabled = settings.IsTrimAfterPlaybackEnabled;
+                AppViewModel.ArtistSplitSymbols = settings.ArtistSplitSymbols;
                 AppViewModel.PlayingDetailAlignment = settings.PlayingDetailAlignment;
                 AppViewModel.UsePlayingDetailAlignmentInPortrait = settings.UsePlayingDetailAlignmentInPortrait;
                 AppViewModel.IsMusicInfoVisible = settings.IsMusicInfoVisible;
@@ -1104,6 +1105,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.EnableGlobalHotKey = AppViewModel.EnableGlobalHotKey;
             newSettings.IsTrimOnHideEnabled = AppViewModel.IsTrimOnHideEnabled;
             newSettings.IsTrimAfterPlaybackEnabled = AppViewModel.IsTrimAfterPlaybackEnabled;
+            newSettings.ArtistSplitSymbols = AppViewModel.ArtistSplitSymbols;
             newSettings.PlayingDetailAlignment = AppViewModel.PlayingDetailAlignment;
             newSettings.UsePlayingDetailAlignmentInPortrait = AppViewModel.UsePlayingDetailAlignmentInPortrait;
             newSettings.IsMusicInfoVisible = AppViewModel.IsMusicInfoVisible;

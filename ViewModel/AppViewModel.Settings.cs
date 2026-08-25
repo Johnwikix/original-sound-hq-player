@@ -162,6 +162,23 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = true;
 
+        public string ArtistSplitSymbols
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    AppSettings.ArtistSplitSymbols = value ?? string.Empty;
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        RefreshAllViews();
+                    }
+                }
+            }
+        } = AppSettings.ArtistSplitSymbols;
+
         public bool IsAutoCoverEnabled
         {
             get => field;

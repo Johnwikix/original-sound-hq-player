@@ -1261,6 +1261,15 @@
   <data name="TrimAfterPlaybackDescription.Text" xml:space="preserve">
     <value>Erzwingt eine vollständige GC nach jedem Titel. Kann auf schwachen Geräten zu UI-Rucklern führen.</value>
   </data>
+  <data name="ArtistSplitSymbols.Text" xml:space="preserve">
+    <value>Künstler-Trennsymbole</value>
+  </data>
+  <data name="ArtistSplitSymbolsDescription.Text" xml:space="preserve">
+    <value>Symbole zum Trennen mehrerer Künstler im Künstlerfeld (durch Komma getrennt). Z. B. ", ; / 、 &amp; feat.". Wirkt sofort.</value>
+  </data>
+  <data name="SelectArtist" xml:space="preserve">
+    <value>Künstler auswählen</value>
+  </data>
   <data name="TrimNow.Content" xml:space="preserve">
     <value>Speicher jetzt freigeben</value>
   </data>

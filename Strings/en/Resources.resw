@@ -1261,6 +1261,15 @@
   <data name="TrimAfterPlaybackDescription.Text" xml:space="preserve">
     <value>Forces a full GC after each track. May cause UI hitches on low-end devices.</value>
   </data>
+  <data name="ArtistSplitSymbols.Text" xml:space="preserve">
+    <value>Artist separators</value>
+  </data>
+  <data name="ArtistSplitSymbolsDescription.Text" xml:space="preserve">
+    <value>Symbols used to split multiple artists in the artist field (comma separated). E.g. ", ; / 、 &amp; feat.". Takes effect immediately.</value>
+  </data>
+  <data name="SelectArtist" xml:space="preserve">
+    <value>Select artist</value>
+  </data>
   <data name="TrimNow.Content" xml:space="preserve">
     <value>Release memory now</value>
   </data>

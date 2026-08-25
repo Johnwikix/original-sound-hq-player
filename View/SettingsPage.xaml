@@ -354,6 +354,26 @@
                                 Padding="58,8,44,8"
                                 HorizontalAlignment="Stretch"
                                 ColumnDefinitions="*,Auto">
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                    <TextBlock x:Uid="ArtistSplitSymbols" FontSize="14" />
+                                    <TextBlock
+                                        x:Uid="ArtistSplitSymbolsDescription"
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <TextBox
+                                    Grid.Column="1"
+                                    Width="240"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind ViewModel.AppViewModel.ArtistSplitSymbols, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
                                 <TextBlock
                                     x:Uid="TrimNowLabel"
                                     Grid.Column="0"

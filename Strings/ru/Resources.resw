@@ -1261,6 +1261,15 @@
   <data name="TrimAfterPlaybackDescription.Text" xml:space="preserve">
     <value>Принудительно выполняет полный GC после каждого трека. Может вызвать подёргивания интерфейса на слабых устройствах.</value>
   </data>
+  <data name="ArtistSplitSymbols.Text" xml:space="preserve">
+    <value>Разделители артистов</value>
+  </data>
+  <data name="ArtistSplitSymbolsDescription.Text" xml:space="preserve">
+    <value>Символы для разделения нескольких артистов в поле «Исполнитель» (через запятую). Например: ", ; / 、 &amp; feat.". Действует сразу.</value>
+  </data>
+  <data name="SelectArtist" xml:space="preserve">
+    <value>Выбрать артиста</value>
+  </data>
   <data name="TrimNow.Content" xml:space="preserve">
     <value>Освободить память сейчас</value>
   </data>

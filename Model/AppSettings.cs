@@ -72,6 +72,39 @@ namespace WinUIMusicPlayer.Model
         public static bool EnableGlobalHotKey { get; set; } = false;
         public static bool IsTrimOnHideEnabled { get; set; } = false;
         public static bool IsTrimAfterPlaybackEnabled { get; set; } = false;
+        private static string _artistSplitSymbols = ", ; / 、 & feat.";
+        private static string[] _artistSplitters = ParseArtistSplitSymbols(_artistSplitSymbols);
+        public static string ArtistSplitSymbols
+        {
+            get => _artistSplitSymbols;
+            set
+            {
+                _artistSplitSymbols = value ?? string.Empty;
+                _artistSplitters = ParseArtistSplitSymbols(_artistSplitSymbols);
+            }
+        }
+        public static string[] ArtistSplitters => _artistSplitters;
+        private static string[] ParseArtistSplitSymbols(string symbols)
+        {
+            if (string.IsNullOrWhiteSpace(symbols))
+                return [];
+
+            var list = new List<string>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var segment in symbols.Split(','))
+            {
+                if (segment.Length == 0)
+                {
+                    if (seen.Add(",")) list.Add(",");
+                    continue;
+                }
+                foreach (var token in segment.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries))
+                {
+                    if (seen.Add(token)) list.Add(token);
+                }
+            }
+            return list.ToArray();
+        }
 
     }
 }

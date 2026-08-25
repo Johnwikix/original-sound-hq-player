@@ -1261,6 +1261,15 @@
   <data name="TrimAfterPlaybackDescription.Text" xml:space="preserve">
     <value>各トラックの後にフル GC を強制します。低スペックデバイスでは UI の引っ掛かりが発生する可能性があります。</value>
   </data>
+  <data name="ArtistSplitSymbols.Text" xml:space="preserve">
+    <value>アーティスト区切り記号</value>
+  </data>
+  <data name="ArtistSplitSymbolsDescription.Text" xml:space="preserve">
+    <value>アーティスト欄内の複数アーティストを分割する記号（カンマ区切り）。例：", ; / 、 &amp; feat."。変更後すぐに反映されます。</value>
+  </data>
+  <data name="SelectArtist" xml:space="preserve">
+    <value>アーティストを選択</value>
+  </data>
   <data name="TrimNow.Content" xml:space="preserve">
     <value>今すぐメモリを解放</value>
   </data>

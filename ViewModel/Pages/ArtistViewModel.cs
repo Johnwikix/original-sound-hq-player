@@ -138,7 +138,7 @@ namespace WinUIMusicPlayer.ViewModel
                 for (int i = 0; i < srcSpan.Length; i++)
                 {
                     var m = srcSpan[i];
-                    if (m.Author is not null && m.Author.Equals(SelectedItem.Author, StringComparison.OrdinalIgnoreCase))
+                    if (ArtistHelper.IsMusicByArtist(m, SelectedItem.Author))
                     {
                         buf[count++] = m;
                     }
@@ -160,7 +160,7 @@ namespace WinUIMusicPlayer.ViewModel
         private void AddToFavour()
         {
             var artists = AppViewModel.SongsSource.AsValueEnumerable()
-                .Where(m => m.Author is not null && m.Author.Equals(SelectedItem.Author, StringComparison.OrdinalIgnoreCase))
+                .Where(m => ArtistHelper.IsMusicByArtist(m, SelectedItem.Author))
                 .OrderBy(m => m.Album);
             foreach (var artist in artists)
             {
@@ -172,7 +172,7 @@ namespace WinUIMusicPlayer.ViewModel
         private void AddToPlayList(int playListId)
         {
             var albums = AppViewModel.SongsSource
-                .Where(m => m.Author is not null && m.Author.Equals(SelectedItem.Author, StringComparison.OrdinalIgnoreCase))
+                .Where(m => ArtistHelper.IsMusicByArtist(m, SelectedItem.Author))
                 .OrderBy(m => m.Album);
             _ = _musicDatabaseService.AddMusicListToPlayList(albums, playListId);
         }
@@ -181,7 +181,7 @@ namespace WinUIMusicPlayer.ViewModel
         public async Task TransmitFileToUsb(UsbStorageDevice usbDevice)
         {
             var artists = AppViewModel.SongsSource
-                .Where(m => m.Author is not null && m.Author.Equals(SelectedItem.Author, StringComparison.OrdinalIgnoreCase))
+                .Where(m => ArtistHelper.IsMusicByArtist(m, SelectedItem.Author))
                 .OrderBy(m => m.Album);
             await AppViewModel.TransmitFileToUsb(artists, usbDevice);
         }

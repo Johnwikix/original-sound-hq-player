@@ -1260,6 +1260,15 @@
   <data name="TrimAfterPlaybackDescription.Text" xml:space="preserve">
     <value>每首歌曲播放结束后强制完整 GC，可能导致低端设备 UI 卡顿。</value>
   </data>
+  <data name="ArtistSplitSymbols.Text" xml:space="preserve">
+    <value>艺术家分隔符号</value>
+  </data>
+  <data name="ArtistSplitSymbolsDescription.Text" xml:space="preserve">
+    <value>艺术家字段中用于分隔多个艺术家的符号（逗号分隔）。例如 ", ; / 、 &amp; feat."，修改后立即生效。</value>
+  </data>
+  <data name="SelectArtist" xml:space="preserve">
+    <value>选择艺术家</value>
+  </data>
   <data name="TrimNow.Content" xml:space="preserve">
     <value>立即释放内存</value>
   </data>

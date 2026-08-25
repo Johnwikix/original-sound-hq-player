@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
@@ -15,6 +16,8 @@ namespace WinUIMusicPlayer.Helper
     {
         private static readonly ConditionalWeakTable<XamlRoot, ContentDialog> s_confirmCache = new();
         private static readonly ConditionalWeakTable<XamlRoot, ContentDialog> s_inputCache = new();
+        private static readonly ConditionalWeakTable<XamlRoot, ContentDialog> s_artistPickerCache = new();
+        private static string? s_artistPickerResult;
 
         public static async Task<bool> ShowConfirmAsync(XamlRoot xamlRoot, string titleKey)
         {
@@ -56,6 +59,37 @@ namespace WinUIMusicPlayer.Helper
             dialog.RequestedTheme = AppSettings.ElementTheme;
             dialog.XamlRoot = xamlRoot;
             return dialog.ShowAsync();
+        }
+
+        public static async Task<string?> ShowArtistPickerAsync(XamlRoot xamlRoot, IReadOnlyList<string> names)
+        {
+            var dialog = s_artistPickerCache.GetValue(xamlRoot, static root =>
+            {
+                var d = new ContentDialog { XamlRoot = root };
+                var listView = new ListView
+                {
+                    SelectionMode = ListViewSelectionMode.Single,
+                    IsItemClickEnabled = true,
+                    MaxHeight = 360
+                };
+                listView.ItemClick += (_, e) =>
+                {
+                    s_artistPickerResult = e.ClickedItem as string;
+                    d.Hide();
+                };
+                d.Content = listView;
+                return d;
+            });
+            dialog.Title = ToolUtils.GetString("SelectArtist");
+            dialog.PrimaryButtonText = null;
+            dialog.CloseButtonText = ToolUtils.GetString("CloseButton");
+            dialog.DefaultButton = ContentDialogButton.Close;
+            dialog.RequestedTheme = AppSettings.ElementTheme;
+            ((ListView)dialog.Content).ItemsSource = names;
+
+            s_artistPickerResult = null;
+            await dialog.ShowAsync();
+            return s_artistPickerResult;
         }
     }
 }

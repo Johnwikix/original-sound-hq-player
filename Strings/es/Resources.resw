@@ -1261,6 +1261,15 @@
   <data name="TrimAfterPlaybackDescription.Text" xml:space="preserve">
     <value>Fuerza un GC completo tras cada pista. Puede causar tirones de UI en dispositivos de gama baja.</value>
   </data>
+  <data name="ArtistSplitSymbols.Text" xml:space="preserve">
+    <value>Separadores de artistas</value>
+  </data>
+  <data name="ArtistSplitSymbolsDescription.Text" xml:space="preserve">
+    <value>Símbolos para dividir varios artistas en el campo de artista (separados por comas). Ej.: ", ; / 、 &amp; feat.". Tiene efecto inmediato.</value>
+  </data>
+  <data name="SelectArtist" xml:space="preserve">
+    <value>Elegir artista</value>
+  </data>
   <data name="TrimNow.Content" xml:space="preserve">
     <value>Liberar memoria ahora</value>
   </data>

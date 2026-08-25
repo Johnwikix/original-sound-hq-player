@@ -264,7 +264,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             for (int i = 0; i < srcSpan.Length; i++)
             {
                 var music = srcSpan[i];
-                if (music.Author != artist.Author) continue;
+                if (!ArtistHelper.IsMusicByArtist(music, artist.Author)) continue;
                 count++;
                 if (!string.IsNullOrEmpty(music.Album) && _seenAlbums.Add(music.Album))
                 {

@@ -88,5 +88,6 @@ namespace WinUIMusicPlayer.Model
         public bool EnableGlobalHotKey { get; set; } = false;
         public bool IsTrimOnHideEnabled { get; set; } = false;
         public bool IsTrimAfterPlaybackEnabled { get; set; } = false;
+        public string ArtistSplitSymbols { get; set; } = ", ; / 、 & feat.";
     }
 }
