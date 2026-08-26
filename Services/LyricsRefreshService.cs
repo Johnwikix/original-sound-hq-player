@@ -29,9 +29,14 @@ namespace WinUIMusicPlayer.Services
         private static readonly Regex s_krcDetect =
             new(@"^\[\d+,\d+\]", RegexOptions.Compiled | RegexOptions.Multiline);
 
-        // 格式探测：逐字 LRC 特征（行首时间标签后紧接非空文本，再出现第二个时间标签）
-        private static readonly Regex s_enhancedLrcDetect =
-            new(@"^\[\d{1,2}:\d{2}\.\d{2,3}\][^\r\n\[]+\[\d{1,2}:\d{2}\.\d{2,3}\]",
+        // 格式探测：增强型逐字 LRC 特征
+        // 新版：行首 [mm:ss.xx] 后出现 <mm:ss.xx>（样例：[00:00.000]<00:00.000>北<00:00.014>的...）
+        // 旧版：行内 [mm:ss.xx]文本[mm:ss.xx]（兼容旧逐字 LRC）
+        private static readonly Regex s_enhancedLrcDetectAngle =
+            new(@"<\d{1,2}:\d{2}[\.:]\d{2,3}>", RegexOptions.Compiled);
+
+        private static readonly Regex s_enhancedLrcDetectOld =
+            new(@"^\[\d{1,2}:\d{2}[\.:]\d{2,3}\][^\r\n\[]+\[\d{1,2}:\d{2}[\.:]\d{2,3}\]",
                 RegexOptions.Compiled | RegexOptions.Multiline);
 
         // 本地文件扩展名候选（静态，避免每次调用分配 array）
@@ -257,12 +262,13 @@ namespace WinUIMusicPlayer.Services
         {
             List<LyricLine> lyrics;
 
-            if (IsQrcFormat(content))
-                lyrics = ParseQrcLyrics(content, ct);
-            else if (IsKrcFormat(content))
+            // KRC 优先（独立格式 ^[int,int]），其次增强型逐字 LRC（支持 <> 新版 + [] 旧版），再 QRC，最后回退普通 LRC
+            if (IsKrcFormat(content))
                 lyrics = ParseKrcLyrics(content, ct);
             else if (IsEnhancedLrcFormat(content))
                 lyrics = ParseEnhancedLyrics(content, ct);
+            else if (IsQrcFormat(content))
+                lyrics = ParseQrcLyrics(content, ct);
             else
                 return SpliteContent(content, transContent, new List<LyricLine>());
 
@@ -278,8 +284,14 @@ namespace WinUIMusicPlayer.Services
         private static bool IsKrcFormat(string content) =>
             !string.IsNullOrWhiteSpace(content) && s_krcDetect.IsMatch(content);
 
-        private static bool IsEnhancedLrcFormat(string content) =>
-            !string.IsNullOrWhiteSpace(content) && s_enhancedLrcDetect.IsMatch(content);
+        private static bool IsEnhancedLrcFormat(string content)
+        {
+            if (string.IsNullOrWhiteSpace(content)) return false;
+            // 新版：行内出现 <mm:ss.xx> 即视为增强型（与 QRC 同构但需优先）
+            if (s_enhancedLrcDetectAngle.IsMatch(content)) return true;
+            // 旧版：行内 [mm:ss.xx]文本[mm:ss.xx]
+            return s_enhancedLrcDetectOld.IsMatch(content);
+        }
 
         // ──────────────────────────────────────────────────────────────
         //  KRC 解析
@@ -583,8 +595,12 @@ namespace WinUIMusicPlayer.Services
         // ──────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// 解析逐字 LRC 格式（一行多个 [mm:ss.xx] 标签，标签后文本在该时刻开始，
-        /// 行尾标签同时代表上一字符结束与下一行字符开始）：完全 Span 解析，零 string 分配
+        /// 解析增强型逐字 LRC 格式：完全 Span 解析，零 string 分配
+        /// 支持两种字级标签：
+        /// 新版（样例）：[mm:ss.xxx]&lt;mm:ss.xxx&gt;字&lt;mm:ss.xxx&gt;字  — 尖括号逐字
+        /// 旧版：[mm:ss.xxx]字[mm:ss.xxx]字   — 方括号逐字
+        /// 行首 [mm:ss.xxx] 为行起始时间，行内 &lt;mm:ss.xxx&gt; / [mm:ss.xxx] 为字起始时间，字时长 = 下一标签时间 - 当前标签时间
+        /// 兼容空段 &lt;t1&gt;&lt;t2&gt;字、同毫秒重复、行首纯文本等边界
         /// </summary>
         private List<LyricLine> ParseEnhancedLyrics(string content, CancellationToken cancellationToken = default)
         {
@@ -609,78 +625,177 @@ namespace WinUIMusicPlayer.Services
                     trimmed.StartsWith("[kana:", StringComparison.Ordinal))
                     continue;
 
-                LyricLine? lyricLine = null;
-                long lineStartMs = 0;
-                long lineEndMs = 0;
-                bool hasLineStart = false;
+                int lineBracketClose = trimmed.IndexOf(']');
+                if (lineBracketClose < 1) continue;
+                if (!TryParseQrcTagTime(trimmed.Slice(1, lineBracketClose - 1), out long lineStartMs))
+                    continue;
 
-                int pos = 0;
-                int end = trimmed.Length;
-                while (pos < end)
+                var contentSpan = trimmed.Slice(lineBracketClose + 1);
+                if (contentSpan.IsWhiteSpace()) continue;
+
+                var lyricLine = RentLine();
+                lyricLine.StartMs = lineStartMs;
+                ParseEnhancedWords(contentSpan, lineStartMs, lyricLine);
+
+                if (lyricLine.Words.Count > 0)
                 {
-                    int bracketClose = trimmed.Slice(pos).IndexOf(']');
-                    if (bracketClose < 1) break;
-                    bracketClose += pos;
-
-                    if (!TryParseQrcTagTime(trimmed.Slice(pos + 1, bracketClose - pos - 1), out long tagMs))
-                        break;
-
-                    if (!hasLineStart)
-                    {
-                        lineStartMs = tagMs;
-                        hasLineStart = true;
-                    }
-                    lineEndMs = tagMs;
-
-                    // 标签后文本扫描到下一个 [ 或行尾
-                    int textStart = bracketClose + 1;
-                    int nextTag = trimmed.Slice(textStart).IndexOf('[');
-                    int textEnd = nextTag >= 0 ? textStart + nextTag : end;
-
-                    long segEndMs = tagMs;
-                    if (nextTag >= 0)
-                    {
-                        int nextBracketClose = trimmed.Slice(textEnd).IndexOf(']');
-                        if (nextBracketClose >= 1 &&
-                            TryParseQrcTagTime(trimmed.Slice(textEnd + 1, nextBracketClose - 1), out long nextMs))
-                            segEndMs = nextMs;
-                    }
-
-                    var textSpan = trimmed.Slice(textStart, textEnd - textStart);
-                    if (!textSpan.IsEmpty)
-                    {
-                        lyricLine ??= RentLine();
-                        lyricLine.StartMs = lineStartMs;
-
-                        long segDurationMs = Math.Max(0, segEndMs - tagMs);
-                        var subWords = SplitSpan(textSpan);
-                        int wordCount = subWords.Count;
-                        if (wordCount > 0)
-                        {
-                            double perMs = segDurationMs > 0 ? (double)segDurationMs / wordCount : 0;
-                            for (int k = 0; k < wordCount; k++)
-                            {
-                                var w = RentWord();
-                                w.Word = subWords[k];
-                                w.StartMs = tagMs + perMs * k;
-                                w.DurationMs = perMs;
-                                lyricLine.Words.Add(w);
-                            }
-                        }
-                    }
-
-                    if (nextTag < 0) break;
-                    pos = textEnd;
-                }
-
-                if (lyricLine is { Words.Count: > 0 })
-                {
-                    lyricLine.EndMs = lineEndMs;
                     lyrics.Add(lyricLine);
+                }
+                else
+                {
+                    // 无有效字词则回收
+                    if (s_linePool.Count < MaxPoolSize) s_linePool.Add(lyricLine);
                 }
             }
 
             return lyrics;
+        }
+
+        /// <summary>
+        /// 增强型字级解析：扫描 &lt;mm:ss.xxx&gt; 与 [mm:ss.xxx] 两种标签，零分配
+        /// </summary>
+        private static void ParseEnhancedWords(ReadOnlySpan<char> content, long lineStartMs, LyricLine lyricLine)
+        {
+            if (content.IsEmpty || content.IsWhiteSpace()) return;
+
+            // 无任何字标签则整行作为普通文本
+            int firstAngle = content.IndexOf('<');
+            int firstBracket = content.IndexOf('[');
+            bool hasTag = firstAngle >= 0 || firstBracket >= 0;
+            if (!hasTag)
+            {
+                foreach (var w in SplitSpan(content))
+                {
+                    var word = RentWord();
+                    word.Word = w;
+                    word.StartMs = lineStartMs;
+                    lyricLine.Words.Add(word);
+                }
+                return;
+            }
+
+            // 处理行首纯文本（旧版 [line]word1[time]word2 情况）
+            int firstTagPos = -1;
+            bool firstIsAngle = false;
+            if (firstAngle >= 0 && firstBracket >= 0)
+            {
+                if (firstAngle < firstBracket) { firstTagPos = firstAngle; firstIsAngle = true; }
+                else firstTagPos = firstBracket;
+            }
+            else if (firstAngle >= 0) { firstTagPos = firstAngle; firstIsAngle = true; }
+            else firstTagPos = firstBracket;
+
+            if (firstTagPos > 0)
+            {
+                var leading = content.Slice(0, firstTagPos);
+                if (!leading.IsWhiteSpace())
+                {
+                    int peekClose = content.Slice(firstTagPos + 1).IndexOf(firstIsAngle ? '>' : ']');
+                    long nextMs = lineStartMs;
+                    if (peekClose >= 0 && TryParseQrcTagTime(content.Slice(firstTagPos + 1, peekClose), out long parsed)) nextMs = parsed;
+                    long dur = Math.Max(0, nextMs - lineStartMs);
+                    var sub = SplitSpan(leading);
+                    double per = sub.Count > 0 && dur > 0 ? (double)dur / sub.Count : 0;
+                    for (int k = 0; k < sub.Count; k++)
+                    {
+                        var w = RentWord();
+                        w.Word = sub[k];
+                        w.StartMs = lineStartMs + per * k;
+                        w.DurationMs = per;
+                        lyricLine.Words.Add(w);
+                    }
+                }
+            }
+
+            int i = firstTagPos >= 0 ? firstTagPos : 0;
+            int len = content.Length;
+            while (i < len)
+            {
+                int relAngle = content.Slice(i).IndexOf('<');
+                int relBracket = content.Slice(i).IndexOf('[');
+                int openRel = -1;
+                bool isAngle = false;
+                if (relAngle >= 0 && relBracket >= 0)
+                {
+                    if (relAngle < relBracket) { openRel = relAngle; isAngle = true; }
+                    else openRel = relBracket;
+                }
+                else if (relAngle >= 0) { openRel = relAngle; isAngle = true; }
+                else if (relBracket >= 0) openRel = relBracket;
+                else break;
+
+                int open = i + openRel;
+                // 跳过 leading 已处理的情况
+                if (open != i)
+                {
+                    i = open;
+                    continue;
+                }
+
+                int closeRel = content.Slice(open + 1).IndexOf(isAngle ? '>' : ']');
+                if (closeRel < 0) break;
+                int close = open + 1 + closeRel;
+                var tagSpan = content.Slice(open + 1, close - open - 1);
+                if (!TryParseQrcTagTime(tagSpan, out long curMs))
+                {
+                    i = close + 1;
+                    continue;
+                }
+
+                int textStart = close + 1;
+                if (textStart >= len)
+                {
+                    i = len;
+                    break;
+                }
+
+                int nextAngle = content.Slice(textStart).IndexOf('<');
+                int nextBracket = content.Slice(textStart).IndexOf('[');
+                int nextRel = -1;
+                bool nextIsAngle = false;
+                if (nextAngle >= 0 && nextBracket >= 0)
+                {
+                    if (nextAngle < nextBracket) { nextRel = nextAngle; nextIsAngle = true; }
+                    else nextRel = nextBracket;
+                }
+                else if (nextAngle >= 0) { nextRel = nextAngle; nextIsAngle = true; }
+                else if (nextBracket >= 0) nextRel = nextBracket;
+
+                int textEnd = nextRel >= 0 ? textStart + nextRel : len;
+
+                long nextMsForDur = curMs;
+                if (nextRel >= 0)
+                {
+                    int peekClose2 = content.Slice(textEnd + 1).IndexOf(nextIsAngle ? '>' : ']');
+                    if (peekClose2 >= 0 && TryParseQrcTagTime(content.Slice(textEnd + 1, peekClose2), out long nt)) nextMsForDur = nt;
+                }
+
+                var textSpan = content.Slice(textStart, textEnd - textStart);
+                if (!textSpan.IsEmpty)
+                {
+                    // 保留空白字符（如英文单词间的空格），仅跳过纯空段用于 <t1><t2> 情况需通过 IsEmpty 已过滤
+                    // 对纯空白也需保留以正确渲染英文
+                    if (textSpan.IsWhiteSpace())
+                    {
+                        // 空白段若为单个空格且时长为0可忽略，但为保真仍按时长均分
+                        // 此处保留 whitespace 单独成词
+                    }
+                    long dur = Math.Max(0, nextMsForDur - curMs);
+                    var sub = SplitSpan(textSpan);
+                    double per = sub.Count > 0 && dur > 0 ? (double)dur / sub.Count : 0;
+                    for (int k = 0; k < sub.Count; k++)
+                    {
+                        var w = RentWord();
+                        w.Word = sub[k];
+                        w.StartMs = curMs + per * k;
+                        w.DurationMs = per;
+                        lyricLine.Words.Add(w);
+                    }
+                }
+                // 空段 <t1><t2> 自动跳过（textSpan.IsEmpty）
+
+                i = textEnd;
+            }
         }
 
         private static bool TryParseQrcTagTime(ReadOnlySpan<char> tagSpan, out long ms)
@@ -688,9 +803,12 @@ namespace WinUIMusicPlayer.Services
             ms = 0;
             int colon = tagSpan.IndexOf(':');
             if (colon < 0) return false;
-            int dotRel = tagSpan.Slice(colon + 1).IndexOf('.');
-            if (dotRel < 0) return false;
-            int dot = colon + 1 + dotRel;
+            var afterColon = tagSpan.Slice(colon + 1);
+            int dotRel = afterColon.IndexOf('.');
+            int sepRel = dotRel;
+            if (sepRel < 0) sepRel = afterColon.IndexOf(':'); // 兼容 [mm:ss:xx]
+            if (sepRel < 0) return false;
+            int dot = colon + 1 + sepRel;
             ms = ParseQrcTimeToMs(
                 tagSpan.Slice(0, colon),
                 tagSpan.Slice(colon + 1, dot - colon - 1),
