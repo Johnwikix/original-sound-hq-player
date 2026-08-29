@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Controls;
 using System;
 using System.Threading.Tasks;
 using WinUIEx;
+using WinUIMusicPlayer.DesktopLyrics;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.View;
@@ -27,6 +28,31 @@ namespace WinUIMusicPlayer.Controls
             MusicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             AppViewModel = App.Services.GetRequiredService<AppViewModel>();
             DataContext = this;
+            DesktopLyricsManager.StateChanged += OnDesktopLyricsStateChanged;
+            OnDesktopLyricsStateChanged();
+        }
+
+        private bool _syncingDesktopLyricsMenu;
+
+        private void OnDesktopLyricsStateChanged()
+        {
+            if (_syncingDesktopLyricsMenu) return;
+            _syncingDesktopLyricsMenu = true;
+            DesktopLyricsToggle.IsChecked = DesktopLyricsManager.IsEnabled;
+            DesktopLyricsLock.IsChecked = DesktopLyricsManager.IsLocked;
+            _syncingDesktopLyricsMenu = false;
+        }
+
+        private void DesktopLyricsToggle_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is ToggleMenuFlyoutItem item)
+                DesktopLyricsManager.SetEnabled(item.IsChecked);
+        }
+
+        private void DesktopLyricsLock_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is ToggleMenuFlyoutItem item)
+                DesktopLyricsManager.SetLocked(item.IsChecked);
         }
 
         [RelayCommand]
@@ -137,6 +163,7 @@ namespace WinUIMusicPlayer.Controls
 
         public void Dispose()
         {
+            DesktopLyricsManager.StateChanged -= OnDesktopLyricsStateChanged;
             try
             {
                 NotifyIcon?.Dispose();

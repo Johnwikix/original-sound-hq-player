@@ -1359,4 +1359,10 @@
   <data name="EaseModeContinuous.Content" xml:space="preserve">
     <value>连续追逐</value>
   </data>
+  <data name="IconDesktopLyrics.Text" xml:space="preserve">
+    <value>桌面歌词</value>
+  </data>
+  <data name="IconDesktopLyricsLock.Text" xml:space="preserve">
+    <value>锁定桌面歌词</value>
+  </data>
 </root>

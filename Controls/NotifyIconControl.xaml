@@ -130,6 +130,23 @@
                         Text="-10" />
                 </MenuFlyoutSubItem>
                 <MenuFlyoutSeparator />
+                <ToggleMenuFlyoutItem
+                    x:Name="DesktopLyricsToggle"
+                    x:Uid="IconDesktopLyrics"
+                    Click="DesktopLyricsToggle_Click">
+                    <ToggleMenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE890;" />
+                    </ToggleMenuFlyoutItem.Icon>
+                </ToggleMenuFlyoutItem>
+                <ToggleMenuFlyoutItem
+                    x:Name="DesktopLyricsLock"
+                    x:Uid="IconDesktopLyricsLock"
+                    Click="DesktopLyricsLock_Click">
+                    <ToggleMenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE72E;" />
+                    </ToggleMenuFlyoutItem.Icon>
+                </ToggleMenuFlyoutItem>
+                <MenuFlyoutSeparator />
                 <MenuFlyoutItem
                     x:Name="Settings"
                     x:Uid="IconSettings"

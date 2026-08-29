@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Window
+    x:Class="WinUIMusicPlayer.DesktopLyrics.DesktopLyricsWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Title="DesktopLyrics">
+    <Grid x:Name="RootGrid" Background="Transparent" Padding="8" PointerPressed="RootGrid_PointerPressed">
+        <ContentPresenter x:Name="RendererHost" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+    </Grid>
+</Window>

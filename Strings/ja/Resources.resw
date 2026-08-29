@@ -1357,6 +1357,12 @@
   <data name="EaseModeContinuous.Content" xml:space="preserve">
     <value>Continuous</value>
   </data>
+  <data name="IconDesktopLyrics.Text" xml:space="preserve">
+    <value>デスクトップ歌詞</value>
+  </data>
+  <data name="IconDesktopLyricsLock.Text" xml:space="preserve">
+    <value>デスクトップ歌詞をロック</value>
+  </data>
 </root>
 
 
