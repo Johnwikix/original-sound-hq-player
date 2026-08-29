@@ -17,6 +17,7 @@ using Windows.Storage;
 using Windows.System;
 using Windows.UI;
 using WinUIMusicPlayer.Behaviors;
+using WinUIMusicPlayer.DesktopLyrics;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -529,6 +530,74 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         } = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
+
+        public double DesktopLyricsFontSize
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    AppSettings.DesktopLyricsFontSize = value;
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        DesktopLyricsManager.RefreshStyle();
+                    }
+                }
+            }
+        } = 36;
+
+        public FontInfo DesktopLyricsFontFamily
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value) && value is not null)
+                {
+                    AppSettings.DesktopLyricsFontFamily = value.FontFamily.Source;
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        DesktopLyricsManager.RefreshStyle();
+                    }
+                }
+            }
+        }
+
+        public Color DesktopLyricsColor
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    AppSettings.DesktopLyricsColorRgb = (uint)((value.R << 16) | (value.G << 8) | value.B);
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        DesktopLyricsManager.RefreshStyle();
+                    }
+                }
+            }
+        } = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
+
+        public bool IsDesktopLyricsOutlineEnabled
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    AppSettings.IsDesktopLyricsOutlineEnabled = value;
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        DesktopLyricsManager.RefreshStyle();
+                    }
+                }
+            }
+        } = true;
 
         public float CustomOpacity
         {

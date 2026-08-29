@@ -1363,6 +1363,21 @@
   <data name="IconDesktopLyricsLock.Text" xml:space="preserve">
     <value>Desktop-Songtext sperren</value>
   </data>
+  <data name="IconResetDesktopLyrics.Text" xml:space="preserve">
+    <value>Desktop-Songtext-Fenster zurücksetzen</value>
+  </data>
+  <data name="DesktopLyricsFontSize.Text" xml:space="preserve">
+    <value>Schriftgröße (Desktop-Songtext)</value>
+  </data>
+  <data name="DesktopLyricsFontFamily.Text" xml:space="preserve">
+    <value>Schriftart (Desktop-Songtext)</value>
+  </data>
+  <data name="DesktopLyricsColor.Text" xml:space="preserve">
+    <value>Farbe (Desktop-Songtext)</value>
+  </data>
+  <data name="DesktopLyricsOutline.Text" xml:space="preserve">
+    <value>Kontur (Desktop-Songtext)</value>
+  </data>
 </root>
 
 

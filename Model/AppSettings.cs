@@ -47,6 +47,12 @@ namespace WinUIMusicPlayer.Model
         public static bool IsDesktopLyricsLocked { get; set; } = false;
         public static int DesktopLyricsX { get; set; } = -1;
         public static int DesktopLyricsY { get; set; } = -1;
+        public static int DesktopLyricsWidth { get; set; } = 1800;
+        public static int DesktopLyricsHeight { get; set; } = 280;
+        public static double DesktopLyricsFontSize { get; set; } = 36;
+        public static string DesktopLyricsFontFamily { get; set; } = "Segoe UI";
+        public static uint DesktopLyricsColorRgb { get; set; } = 0x00FFFFFFu;
+        public static bool IsDesktopLyricsOutlineEnabled { get; set; } = true;
         public static bool IsAutoCoverEnabled { get; set; } = true;
         public static string EqualizerStr { get; set; } = string.Empty;
         public static Dictionary<string, double> Equalizer { get; set; } = new()

@@ -1363,6 +1363,21 @@
   <data name="IconDesktopLyricsLock.Text" xml:space="preserve">
     <value>Заблокировать текст песни</value>
   </data>
+  <data name="IconResetDesktopLyrics.Text" xml:space="preserve">
+    <value>Сбросить окно текста песни</value>
+  </data>
+  <data name="DesktopLyricsFontSize.Text" xml:space="preserve">
+    <value>Размер шрифта текста на рабочем столе</value>
+  </data>
+  <data name="DesktopLyricsFontFamily.Text" xml:space="preserve">
+    <value>Шрифт текста на рабочем столе</value>
+  </data>
+  <data name="DesktopLyricsColor.Text" xml:space="preserve">
+    <value>Цвет текста на рабочем столе</value>
+  </data>
+  <data name="DesktopLyricsOutline.Text" xml:space="preserve">
+    <value>Контур текста на рабочем столе</value>
+  </data>
 </root>
 
 

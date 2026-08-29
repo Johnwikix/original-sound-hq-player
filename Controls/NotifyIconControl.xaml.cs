@@ -55,6 +55,11 @@ namespace WinUIMusicPlayer.Controls
                 DesktopLyricsManager.SetLocked(item.IsChecked);
         }
 
+        private void ResetDesktopLyrics_Click(object sender, RoutedEventArgs e)
+        {
+            DesktopLyricsManager.ResetWindowBounds();
+        }
+
         [RelayCommand]
         public async Task ExitApplication()
         {
