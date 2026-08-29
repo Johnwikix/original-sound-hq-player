@@ -21,8 +21,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
     /// 基类与 spectrum 一致使用 WinUIEx.WindowEx。
     /// 解锁态：标准窗口（标题栏 + 可调整大小），按住内容区任意位置拖动；
     /// 锁定态：GWL_STYLE 移除标题栏/边框位 + OR-in WS_POPUP（WinUIEx ToggleWindowStyle，
-    /// 含 SWP_FRAMECHANGED）+ 整窗点击穿透，仅鼠标悬停右上角按钮组时临时恢复交互
-    /// （BetterLyrics OverlayInputHelper 方案：定时器轮询游标位置切换穿透状态）。
+    /// 含 SWP_FRAMECHANGED）+ 整窗点击穿透常开；鼠标悬停窗口时仅"显示"右上角按钮组，
+    /// 光标移到按钮上才临时取消穿透供点击（定时器轮询游标位置，BetterLyrics OverlayInputHelper 思路）。
     /// </summary>
     public sealed partial class DesktopLyricsWindow : WinUIEx.WindowEx, IDisposable
     {
@@ -40,7 +40,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private readonly IntPtr _hwnd;
         private bool _locked = true;
         private bool _clickThrough;              // 当前穿透样式状态（false = 尚未设置）
-        private bool _cursorOverControlPanel;
+        private bool _cursorOverWindow;
+        private bool _cursorOverPanel;
         private DispatcherQueueTimer? _hoverTimer;
         private WindowStyle? _originalWindowStyle;   // 首次锁定前缓存的解锁态样式
         private bool _disposed;
@@ -172,7 +173,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             if (_locked)
             {
-                _cursorOverControlPanel = false;
+                _cursorOverWindow = false;
+                _cursorOverPanel = false;
                 ControlPanel.Opacity = 0;
                 StartHoverTimer();
             }
@@ -208,13 +210,33 @@ namespace WinUIMusicPlayer.DesktopLyrics
             }
             if (!GetCursorPos(out POINT cursor)) return;
 
-            bool overPanel = IsCursorOverControlPanel(cursor);
-            if (overPanel == _cursorOverControlPanel) return;
-            _cursorOverControlPanel = overPanel;
-            ControlPanel.Opacity = overPanel ? 1.0 : 0.0;
-            ApplyClickThrough(!overPanel);
+            bool overWindow = IsCursorOverWindow(cursor);
+            bool overPanel = overWindow && IsCursorOverControlPanel(cursor);
+
+            // 悬停窗口 = 仅显示按钮组（穿透保持，绝不因进入窗口而取消）
+            if (overWindow != _cursorOverWindow)
+            {
+                _cursorOverWindow = overWindow;
+                ControlPanel.Opacity = overWindow ? 1.0 : 0.0;
+            }
+            // 光标移到按钮上 = 临时取消穿透供点击；离开按钮立即恢复穿透
+            if (overPanel != _cursorOverPanel)
+            {
+                _cursorOverPanel = overPanel;
+                ApplyClickThrough(!overPanel);
+            }
         }
 
+        /// <summary>游标是否悬停在本窗口上（AppWindow.Position/Size 与 GetCursorPos 同为物理像素）。</summary>
+        private bool IsCursorOverWindow(POINT cursor)
+        {
+            PointInt32 pos = AppWindow.Position;
+            SizeInt32 size = AppWindow.Size;
+            return cursor.X >= pos.X && cursor.X < pos.X + size.Width
+                && cursor.Y >= pos.Y && cursor.Y < pos.Y + size.Height;
+        }
+
+        /// <summary>游标是否悬停在右上角按钮组上（XAML 坐标 × RasterizationScale + ClientToScreen 换算屏幕矩形）。</summary>
         private bool IsCursorOverControlPanel(POINT cursor)
         {
             if (ControlPanel.ActualWidth <= 0 || RootGrid.XamlRoot is null) return false;
