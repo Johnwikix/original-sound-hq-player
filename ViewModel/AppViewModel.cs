@@ -1444,7 +1444,8 @@ namespace WinUIMusicPlayer.ViewModel
                 playingLineTopOffset: PlayingLineTopOffsetPercent / 100.0,
                 targetFrameRate: TargetFrameRate,
                 isCustomColorEnabled: IsCustomLyricsColorEnabled,
-                lyricsCustomColor: LyricsCustomColor));
+                lyricsCustomColor: LyricsCustomColor,
+                fontWeight: LyricsFontWeight));
         }
 
         private void SendLyricsFontSize()

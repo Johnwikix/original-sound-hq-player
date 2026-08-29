@@ -97,5 +97,6 @@ namespace WinUIMusicPlayer.Model
         public bool IsDesktopLyricsOutlineEnabled { get; set; } = true;
         public int DesktopLyricsFontWeight { get; set; } = 400;
         public double DesktopLyricsOutlineWidth { get; set; } = 1.5;
+        public int LyricsFontWeight { get; set; } = 700;
     }
 }

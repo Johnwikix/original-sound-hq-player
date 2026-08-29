@@ -1396,6 +1396,9 @@
   <data name="DesktopLyricsWeightBold.Content" xml:space="preserve">
     <value>太字</value>
   </data>
+  <data name="LyricsFontWeight.Text" xml:space="preserve">
+    <value>歌詞フォントの太さ</value>
+  </data>
 </root>
 
 

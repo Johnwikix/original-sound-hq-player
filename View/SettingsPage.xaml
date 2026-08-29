@@ -1042,6 +1042,28 @@
                                 HorizontalAlignment="Stretch"
                                 ColumnDefinitions="*,Auto">
                                 <TextBlock
+                                    x:Uid="LyricsFontWeight"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ComboBox
+                                    Grid.Column="1"
+                                    Width="300"
+                                    VerticalAlignment="Center"
+                                    SelectedIndex="{x:Bind ViewModel.AppViewModel.LyricsFontWeightIndex, Mode=TwoWay}">
+                                    <ComboBoxItem x:Uid="DesktopLyricsWeightNormal" />
+                                    <ComboBoxItem x:Uid="DesktopLyricsWeightMedium" />
+                                    <ComboBoxItem x:Uid="DesktopLyricsWeightSemiBold" />
+                                    <ComboBoxItem x:Uid="DesktopLyricsWeightBold" />
+                                </ComboBox>
+                            </Grid>
+
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
+                                <TextBlock
                                     x:Uid="LyricsAlignment"
                                     Grid.Column="0"
                                     VerticalAlignment="Center"
