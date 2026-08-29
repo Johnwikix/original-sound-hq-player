@@ -1378,6 +1378,24 @@
   <data name="DesktopLyricsOutline.Text" xml:space="preserve">
     <value>Контур текста на рабочем столе</value>
   </data>
+  <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
+    <value>Насыщенность шрифта (текст на рабочем столе)</value>
+  </data>
+  <data name="DesktopLyricsOutlineWidth.Text" xml:space="preserve">
+    <value>Ширина контура (текст на рабочем столе)</value>
+  </data>
+  <data name="DesktopLyricsWeightNormal.Content" xml:space="preserve">
+    <value>Обычный</value>
+  </data>
+  <data name="DesktopLyricsWeightMedium.Content" xml:space="preserve">
+    <value>Средний</value>
+  </data>
+  <data name="DesktopLyricsWeightSemiBold.Content" xml:space="preserve">
+    <value>Полужирный</value>
+  </data>
+  <data name="DesktopLyricsWeightBold.Content" xml:space="preserve">
+    <value>Жирный</value>
+  </data>
 </root>
 
 

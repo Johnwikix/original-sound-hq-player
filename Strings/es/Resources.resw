@@ -1378,6 +1378,24 @@
   <data name="DesktopLyricsOutline.Text" xml:space="preserve">
     <value>Contorno (letra en el escritorio)</value>
   </data>
+  <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
+    <value>Grosor de fuente (letra en el escritorio)</value>
+  </data>
+  <data name="DesktopLyricsOutlineWidth.Text" xml:space="preserve">
+    <value>Ancho de contorno (letra en el escritorio)</value>
+  </data>
+  <data name="DesktopLyricsWeightNormal.Content" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="DesktopLyricsWeightMedium.Content" xml:space="preserve">
+    <value>Medio</value>
+  </data>
+  <data name="DesktopLyricsWeightSemiBold.Content" xml:space="preserve">
+    <value>Seminegrita</value>
+  </data>
+  <data name="DesktopLyricsWeightBold.Content" xml:space="preserve">
+    <value>Negrita</value>
+  </data>
 </root>
 
 

@@ -1378,6 +1378,24 @@
   <data name="DesktopLyricsOutline.Text" xml:space="preserve">
     <value>デスクトップ歌詞の縁取り</value>
   </data>
+  <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
+    <value>デスクトップ歌詞フォントの太さ</value>
+  </data>
+  <data name="DesktopLyricsOutlineWidth.Text" xml:space="preserve">
+    <value>デスクトップ歌詞の縁取り幅</value>
+  </data>
+  <data name="DesktopLyricsWeightNormal.Content" xml:space="preserve">
+    <value>標準</value>
+  </data>
+  <data name="DesktopLyricsWeightMedium.Content" xml:space="preserve">
+    <value>中太</value>
+  </data>
+  <data name="DesktopLyricsWeightSemiBold.Content" xml:space="preserve">
+    <value>準太字</value>
+  </data>
+  <data name="DesktopLyricsWeightBold.Content" xml:space="preserve">
+    <value>太字</value>
+  </data>
 </root>
 
 

@@ -173,14 +173,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             double maxWidth,
             double maxHeight,
             CanvasHorizontalAlignment horizontalAlignment,
-            CanvasTextFormat? sharedFormat = null)
+            CanvasTextFormat? sharedFormat = null,
+            int fontWeight = 700)
         {
             DisposeTextLayout();
 
             var format = sharedFormat ?? new CanvasTextFormat
             {
                 FontFamily = fontFamily,
-                FontWeight = new Windows.UI.Text.FontWeight(700),
+                FontWeight = new Windows.UI.Text.FontWeight((ushort)fontWeight),
                 VerticalAlignment = CanvasVerticalAlignment.Top,
                 WordWrapping = CanvasWordWrapping.WholeWord,
             };

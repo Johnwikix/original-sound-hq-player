@@ -599,6 +599,48 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = true;
 
+        public int DesktopLyricsFontWeight
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    AppSettings.DesktopLyricsFontWeight = value;
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        DesktopLyricsManager.RefreshStyle();
+                    }
+                }
+            }
+        } = 400;
+
+        /// <summary>字重 ComboBox 的 SelectedIndex（0=正常400 1=中等500 2=半粗600 3=粗体700）。</summary>
+        public int DesktopLyricsWeightIndex
+        {
+            get => DesktopLyricsFontWeight switch { 500 => 1, 600 => 2, 700 => 3, _ => 0 };
+            set => DesktopLyricsFontWeight = value switch { 1 => 500, 2 => 600, 3 => 700, _ => 400 };
+        }
+
+        public double DesktopLyricsOutlineWidth
+        {
+            get => field;
+            set
+            {
+                value = Math.Clamp(value, 0, 20);
+                if (SetProperty(ref field, value))
+                {
+                    AppSettings.DesktopLyricsOutlineWidth = value;
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        DesktopLyricsManager.RefreshStyle();
+                    }
+                }
+            }
+        } = 1.5;
+
         public float CustomOpacity
         {
             get => field;

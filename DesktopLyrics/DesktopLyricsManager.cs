@@ -81,7 +81,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 (byte)((AppSettings.DesktopLyricsColorRgb >> 16) & 0xFF),
                 (byte)((AppSettings.DesktopLyricsColorRgb >> 8) & 0xFF),
                 (byte)(AppSettings.DesktopLyricsColorRgb & 0xFF)),
-            AppSettings.IsDesktopLyricsOutlineEnabled);
+            AppSettings.IsDesktopLyricsOutlineEnabled,
+            AppSettings.DesktopLyricsFontWeight,
+            AppSettings.DesktopLyricsOutlineWidth);
 
         /// <summary>应用启动时按设置恢复（AppInitializerService 调用）。</summary>
         public static void RestoreFromSettings()

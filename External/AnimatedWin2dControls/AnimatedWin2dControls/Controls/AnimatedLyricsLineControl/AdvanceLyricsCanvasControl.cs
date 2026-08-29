@@ -15,6 +15,28 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         public event EventHandler<TimeSpan>? LyricLineClicked;
         public event EventHandler<Exception>? RenderError;
 
+        /// <summary>宿主样式覆盖：字重（null = 跟随 LyricsSettingsBus，默认 700）。变更立即触发重排。</summary>
+        public int? FontWeightOverride
+        {
+            get => _coordinator.FontWeightOverride;
+            set
+            {
+                _coordinator.FontWeightOverride = value;
+                _coordinator.InvalidateStyle();
+            }
+        }
+
+        /// <summary>宿主样式覆盖：描边宽度，0 = 无描边（null = 跟随 LyricsSettingsBus）。变更立即触发重排。</summary>
+        public double? StrokeWidthOverride
+        {
+            get => _coordinator.StrokeWidthOverride;
+            set
+            {
+                _coordinator.StrokeWidthOverride = value;
+                _coordinator.InvalidateStyle();
+            }
+        }
+
         private CanvasAnimatedControl? _canvas;
         private readonly LyricsRenderCoordinator _coordinator = new();
 

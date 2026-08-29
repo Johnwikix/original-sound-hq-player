@@ -1378,6 +1378,24 @@
   <data name="DesktopLyricsOutline.Text" xml:space="preserve">
     <value>Kontur (Desktop-Songtext)</value>
   </data>
+  <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
+    <value>Schriftgewicht (Desktop-Songtext)</value>
+  </data>
+  <data name="DesktopLyricsOutlineWidth.Text" xml:space="preserve">
+    <value>Konturbreite (Desktop-Songtext)</value>
+  </data>
+  <data name="DesktopLyricsWeightNormal.Content" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="DesktopLyricsWeightMedium.Content" xml:space="preserve">
+    <value>Mittel</value>
+  </data>
+  <data name="DesktopLyricsWeightSemiBold.Content" xml:space="preserve">
+    <value>Halbfett</value>
+  </data>
+  <data name="DesktopLyricsWeightBold.Content" xml:space="preserve">
+    <value>Fett</value>
+  </data>
 </root>
 
 
