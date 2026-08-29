@@ -57,6 +57,10 @@ namespace WinUIMusicPlayer.Utils
             return isInPlayingDetailMode ? 0 : 0.8;
         }
 
+        /// <summary>桌面歌词锁定状态 → 锁定按钮字形，反映当前状态（Segoe Fluent Icons：e72e=Lock e785=Unlock）。</summary>
+        public static string LockGlyphConverter(bool locked)
+            => locked ? "\uE785" : "\uE72E";
+
         public static double BoolToOpacityReConverter(bool isInPlayingDetailMode)
         {
             return isInPlayingDetailMode ? 0 : 1;

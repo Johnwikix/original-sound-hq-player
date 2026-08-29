@@ -541,8 +541,7 @@ namespace WinUIMusicPlayer.ViewModel
                     AppSettings.DesktopLyricsFontSize = value;
                     if (IsInitialized)
                     {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        DesktopLyricsManager.RefreshStyle();
+                        ScheduleDesktopLyricsStyleCommit();
                     }
                 }
             }
@@ -558,8 +557,7 @@ namespace WinUIMusicPlayer.ViewModel
                     AppSettings.DesktopLyricsFontFamily = value.FontFamily.Source;
                     if (IsInitialized)
                     {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        DesktopLyricsManager.RefreshStyle();
+                        ScheduleDesktopLyricsStyleCommit();
                     }
                 }
             }
@@ -575,8 +573,7 @@ namespace WinUIMusicPlayer.ViewModel
                     AppSettings.DesktopLyricsColorRgb = (uint)((value.R << 16) | (value.G << 8) | value.B);
                     if (IsInitialized)
                     {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        DesktopLyricsManager.RefreshStyle();
+                        ScheduleDesktopLyricsStyleCommit();
                     }
                 }
             }
@@ -592,8 +589,7 @@ namespace WinUIMusicPlayer.ViewModel
                     AppSettings.IsDesktopLyricsOutlineEnabled = value;
                     if (IsInitialized)
                     {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        DesktopLyricsManager.RefreshStyle();
+                        ScheduleDesktopLyricsStyleCommit();
                     }
                 }
             }
@@ -609,8 +605,7 @@ namespace WinUIMusicPlayer.ViewModel
                     AppSettings.DesktopLyricsFontWeight = value;
                     if (IsInitialized)
                     {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        DesktopLyricsManager.RefreshStyle();
+                        ScheduleDesktopLyricsStyleCommit();
                     }
                 }
             }
@@ -634,12 +629,29 @@ namespace WinUIMusicPlayer.ViewModel
                     AppSettings.DesktopLyricsOutlineWidth = value;
                     if (IsInitialized)
                     {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        DesktopLyricsManager.RefreshStyle();
+                        ScheduleDesktopLyricsStyleCommit();
                     }
                 }
             }
         } = 1.5;
+
+        private bool _isDesktopLyricsLocked;
+
+        /// <summary>
+        /// 桌面歌词锁定状态（绑定源）。实际状态以 DesktopLyricsManager 为准，
+        /// 托盘/锁定按钮等入口经 StateChanged 镜像同步到本属性；经本属性赋值则会驱动 Manager。
+        /// </summary>
+        public bool IsDesktopLyricsLocked
+        {
+            get => _isDesktopLyricsLocked;
+            set
+            {
+                if (SetProperty(ref _isDesktopLyricsLocked, value) && IsInitialized)
+                {
+                    DesktopLyricsManager.SetLocked(value);
+                }
+            }
+        }
 
         public int LyricsFontWeight
         {
@@ -663,6 +675,31 @@ namespace WinUIMusicPlayer.ViewModel
         {
             get => LyricsFontWeight switch { 400 => 0, 500 => 1, 600 => 2, _ => 3 };
             set => LyricsFontWeight = value switch { 0 => 400, 1 => 500, 2 => 600, _ => 700 };
+        }
+
+        // 不要在本文件加 using Microsoft.UI.Dispatching —— 会触发 XAML 编译器源码扫描的
+        // WMC9999 内部错误（AppViewModel.cs 中的同款 using 不受影响），故用全限定类型名。
+        private Microsoft.UI.Dispatching.DispatcherQueueTimer? _desktopLyricsStyleCommitTimer;
+
+        /// <summary>
+        /// 桌面歌词样式提交防抖：滑块/数字框连续变更（如拖动描边宽度滑块逐刻度触发 setter）
+        /// 合并为一次全量设置落盘（SaveSettingAsync）+ 样式推送（RefreshStyle），
+        /// 避免逐 tick 全量序列化写盘。与 ScheduleSettingsBroadcast 同款重启式定时器。
+        /// </summary>
+        private void ScheduleDesktopLyricsStyleCommit()
+        {
+            if (_desktopLyricsStyleCommitTimer is null)
+            {
+                _desktopLyricsStyleCommitTimer = App.MainWindow.DispatcherQueue.CreateTimer();
+                _desktopLyricsStyleCommitTimer.Interval = TimeSpan.FromMilliseconds(300);
+                _desktopLyricsStyleCommitTimer.Tick += (s, e) =>
+                {
+                    _desktopLyricsStyleCommitTimer?.Stop();
+                    _ = _musicDatabaseService.SaveSettingAsync();
+                    DesktopLyricsManager.RefreshStyle();
+                };
+            }
+            _desktopLyricsStyleCommitTimer.Start();
         }
 
         public float CustomOpacity

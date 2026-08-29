@@ -5,6 +5,7 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -13,6 +14,7 @@ using Windows.Graphics;
 using WinUIEx;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.DesktopLyrics
 {
@@ -38,6 +40,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private readonly IDesktopLyricsRenderer _renderer;
         private readonly IntPtr _hwnd;
+
+        /// <summary>锁定状态绑定源（x:Bind 经 BindUtils.LockGlyphConverter 切换锁图标）。</summary>
+        public AppViewModel ViewModel { get; } = App.Services.GetRequiredService<AppViewModel>();
         private bool _locked = true;
         private bool _clickThrough;              // 当前穿透样式状态（false = 尚未设置）
         private bool _cursorOverWindow;
@@ -49,6 +54,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private bool _isDragging;
         private POINT _dragStartCursor;
         private PointInt32 _dragStartWindowPos;
+        private RectInt32? _panelScreenRectCache;   // 按钮组屏幕矩形缓存（含悬停外扩）；窗口位置/尺寸变化时失效
 
         public DesktopLyricsWindow()
         {
@@ -99,6 +105,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     presenter.SetBorderAndTitleBar(true, false);
                 _originalWindowStyle = null;   // spectrum 同款：还原后清除缓存，下次锁定重新缓存
             }
+            InvalidatePanelScreenRect();   // 边框样式切换可能改变客户区原点
             UpdateControlPanelVisual();
         }
 
@@ -237,9 +244,18 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 && cursor.Y >= pos.Y && cursor.Y < pos.Y + size.Height;
         }
 
-        /// <summary>游标是否悬停在右上角按钮组上（XAML 坐标 × RasterizationScale + ClientToScreen 换算屏幕矩形）。</summary>
+        /// <summary>
+        /// 游标是否悬停在右上角按钮组上。屏幕矩形按窗口位置/尺寸变化缓存
+        /// （见 <see cref="InvalidatePanelScreenRect"/>）：锁定态轮询期间窗口静止，
+        /// 命中缓存时纯数值比较，避免每 tick 的 TransformToVisual 分配与 XAML 调用。
+        /// </summary>
         private bool IsCursorOverControlPanel(POINT cursor)
         {
+            if (_panelScreenRectCache is { } cached)
+            {
+                return cursor.X >= cached.X && cursor.X <= cached.X + cached.Width
+                    && cursor.Y >= cached.Y && cursor.Y <= cached.Y + cached.Height;
+            }
             if (ControlPanel.ActualWidth <= 0 || RootGrid.XamlRoot is null) return false;
             double scale = RootGrid.XamlRoot.RasterizationScale;
             Rect bounds = ControlPanel.TransformToVisual(null)
@@ -250,8 +266,12 @@ namespace WinUIMusicPlayer.DesktopLyrics
             int top = origin.Y + (int)((bounds.Y - ControlPanelHoverMargin) * scale);
             int right = origin.X + (int)((bounds.X + bounds.Width + ControlPanelHoverMargin) * scale);
             int bottom = origin.Y + (int)((bounds.Y + bounds.Height + ControlPanelHoverMargin) * scale);
+            _panelScreenRectCache = new RectInt32(left, top, right - left, bottom - top);
             return cursor.X >= left && cursor.X <= right && cursor.Y >= top && cursor.Y <= bottom;
         }
+
+        /// <summary>按钮组屏幕矩形依赖窗口位置/尺寸/DPI，变化后需重算。</summary>
+        private void InvalidatePanelScreenRect() => _panelScreenRectCache = null;
 
         private void LockButton_Click(object sender, RoutedEventArgs e)
         {
@@ -314,6 +334,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private void OnAppWindowChanged(AppWindow sender, AppWindowChangedEventArgs args)
         {
             if (!args.DidPositionChange && !args.DidSizeChange) return;
+            InvalidatePanelScreenRect();
             var bounds = DesktopLyricsManager.BoundsState;
             if (args.DidPositionChange)
             {
