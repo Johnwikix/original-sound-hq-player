@@ -51,6 +51,7 @@ namespace WinUIMusicPlayer.Model
         public static bool IsDesktopLyricsOutlineEnabled { get; set; } = true;
         public static int DesktopLyricsFontWeight { get; set; } = 400;
         public static double DesktopLyricsOutlineWidth { get; set; } = 1.5;
+        public static int LyricsFontWeight { get; set; } = 700;
         public static bool IsAutoCoverEnabled { get; set; } = true;
         public static string EqualizerStr { get; set; } = string.Empty;
         public static Dictionary<string, double> Equalizer { get; set; } = new()

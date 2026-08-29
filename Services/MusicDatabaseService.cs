@@ -975,6 +975,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.IsDesktopLyricsOutlineEnabled = settings.IsDesktopLyricsOutlineEnabled;
                 AppSettings.DesktopLyricsFontWeight = settings.DesktopLyricsFontWeight;
                 AppSettings.DesktopLyricsOutlineWidth = settings.DesktopLyricsOutlineWidth;
+                AppSettings.LyricsFontWeight = settings.LyricsFontWeight;
                 AppViewModel.IsAutoLyricsEnabled = settings.IsAutoLyricsEnabled;
                 AppViewModel.IsAutoCoverEnabled = settings.IsAutoCoverEnabled;
                 AppViewModel.DsdGain = settings.DsdGain;
@@ -999,6 +1000,9 @@ namespace WinUIMusicPlayer.Services
                     (byte)((settings.DesktopLyricsColorRgb >> 8) & 0xFF),
                     (byte)(settings.DesktopLyricsColorRgb & 0xFF));
                 AppViewModel.IsDesktopLyricsOutlineEnabled = settings.IsDesktopLyricsOutlineEnabled;
+                AppViewModel.DesktopLyricsFontWeight = settings.DesktopLyricsFontWeight;
+                AppViewModel.DesktopLyricsOutlineWidth = settings.DesktopLyricsOutlineWidth;
+                AppViewModel.LyricsFontWeight = settings.LyricsFontWeight;
                 AppViewModel.CustomOpacity = settings.CustomAcrylicOpacity;
                 AppViewModel.CustomColor = Color.FromArgb(
                     (byte)((settings.CustomColorArgb >> 24) & 0xFF),
@@ -1181,6 +1185,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsDesktopLyricsOutlineEnabled = AppSettings.IsDesktopLyricsOutlineEnabled;
             newSettings.DesktopLyricsFontWeight = AppSettings.DesktopLyricsFontWeight;
             newSettings.DesktopLyricsOutlineWidth = AppSettings.DesktopLyricsOutlineWidth;
+            newSettings.LyricsFontWeight = AppSettings.LyricsFontWeight;
             newSettings.IsMusicInfoVisible = AppViewModel.IsMusicInfoVisible;
             return newSettings;
         }

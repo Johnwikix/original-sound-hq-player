@@ -41,9 +41,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         /// <summary>宿主样式覆盖：字重（null = 跟随 LyricsSettingsBus，默认 700）。变更后调用 InvalidateStyle()。</summary>
         public int? FontWeightOverride { get; set; }
 
-        /// <summary>宿主样式覆盖：描边宽度，0 = 无描边（null = 跟随 LyricsSettingsBus 的 StrokeWidth）。变更后调用 InvalidateStyle()。</summary>
-        public double? StrokeWidthOverride { get; set; }
-
         /// <summary>宿主样式覆盖变更后触发重排与重绘（重建文本布局/几何/描边缓存）。</summary>
         public void InvalidateStyle()
         {
@@ -131,6 +128,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private double _cachedUnplayedOpacity = 0.5;
         private double _cachedTranslatedOpacity = 0.6;
         private double _cachedStrokeWidth;
+        private int _cachedFontWeight = 700;
         private EasingType _cachedScrollEasingType = EasingType.Sine;
         private EaseMode _cachedScrollEasingMode = EaseMode.Continuous;
         private double _cachedScrollDurationMs = 500;
@@ -231,6 +229,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _cachedUnplayedOpacity = s.UnplayedOpacity;
             _cachedTranslatedOpacity = s.TranslatedOpacity;
             _cachedStrokeWidth = s.StrokeWidth;
+            _cachedFontWeight = s.FontWeight;
             _cachedScrollEasingType = s.ScrollEasingType;
             _cachedScrollEasingMode = s.ScrollEasingMode;
             _cachedPlayingLineTopOffset = s.PlayingLineTopOffset;
@@ -328,8 +327,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             int originalFontSize = (int)_cachedLyricsFontSize;
             int translatedFontSize = (int)(_cachedLyricsFontSize * 0.7);
             // 桌面歌词等宿主可覆盖描边宽度与字重（null = 跟随总线值）
-            int effectiveStrokeWidth = (int)(StrokeWidthOverride ?? _cachedStrokeWidth);
-            int fontWeight = FontWeightOverride ?? 700;
+            int effectiveStrokeWidth = (int)_cachedStrokeWidth;
+            int fontWeight = FontWeightOverride ?? _cachedFontWeight;
 
             try
             {
@@ -613,7 +612,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
                 bool isPlayingLine = line.GetIsPlaying(currentTimeMs);
 
-                line.EnsureCaches(sender, StrokeWidthOverride ?? _cachedStrokeWidth);
+                line.EnsureCaches(sender, _cachedStrokeWidth);
                 if (line.CachedFill == null) continue;
                 if (line.UnplayedComposite == null) continue;
 

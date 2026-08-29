@@ -641,6 +641,30 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = 1.5;
 
+        public int LyricsFontWeight
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    AppSettings.LyricsFontWeight = value;
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        SendLyricsSettings();
+                    }
+                }
+            }
+        } = 700;
+
+        /// <summary>主歌词字重 ComboBox 的 SelectedIndex（0=正常400 1=中等500 2=半粗600 3=粗体700）。</summary>
+        public int LyricsFontWeightIndex
+        {
+            get => LyricsFontWeight switch { 400 => 0, 500 => 1, 600 => 2, _ => 3 };
+            set => LyricsFontWeight = value switch { 0 => 400, 1 => 500, 2 => 600, _ => 700 };
+        }
+
         public float CustomOpacity
         {
             get => field;

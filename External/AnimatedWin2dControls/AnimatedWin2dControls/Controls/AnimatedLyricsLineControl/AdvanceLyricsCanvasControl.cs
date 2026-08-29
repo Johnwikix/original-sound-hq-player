@@ -26,17 +26,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
         }
 
-        /// <summary>宿主样式覆盖：描边宽度，0 = 无描边（null = 跟随 LyricsSettingsBus）。变更立即触发重排。</summary>
-        public double? StrokeWidthOverride
-        {
-            get => _coordinator.StrokeWidthOverride;
-            set
-            {
-                _coordinator.StrokeWidthOverride = value;
-                _coordinator.InvalidateStyle();
-            }
-        }
-
         private CanvasAnimatedControl? _canvas;
         private readonly LyricsRenderCoordinator _coordinator = new();
 

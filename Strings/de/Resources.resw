@@ -1396,6 +1396,9 @@
   <data name="DesktopLyricsWeightBold.Content" xml:space="preserve">
     <value>Fett</value>
   </data>
+  <data name="LyricsFontWeight.Text" xml:space="preserve">
+    <value>Schriftgewicht (Songtext)</value>
+  </data>
 </root>
 
 
