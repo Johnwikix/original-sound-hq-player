@@ -54,7 +54,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
             PersistBounds();
         }
 
-        /// <summary>窗口边界变化后由防抖定时器调用：同步落盘。</summary>
+        /// <summary>
+        /// 同步落盘窗口边界。仅在窗口关闭 / 恢复默认边界 / 退出时调用；
+        /// 拖动过程中的位置变化只在内存更新（见 DesktopLyricsWindow.OnAppWindowChanged），不落盘。
+        /// </summary>
         public static void PersistBounds()
         {
             EnsureBoundsLoaded();
