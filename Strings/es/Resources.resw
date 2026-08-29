@@ -1363,6 +1363,21 @@
   <data name="IconDesktopLyricsLock.Text" xml:space="preserve">
     <value>Bloquear letra en el escritorio</value>
   </data>
+  <data name="IconResetDesktopLyrics.Text" xml:space="preserve">
+    <value>Restablecer ventana de letra en el escritorio</value>
+  </data>
+  <data name="DesktopLyricsFontSize.Text" xml:space="preserve">
+    <value>Tamaño de fuente (letra en el escritorio)</value>
+  </data>
+  <data name="DesktopLyricsFontFamily.Text" xml:space="preserve">
+    <value>Fuente (letra en el escritorio)</value>
+  </data>
+  <data name="DesktopLyricsColor.Text" xml:space="preserve">
+    <value>Color (letra en el escritorio)</value>
+  </data>
+  <data name="DesktopLyricsOutline.Text" xml:space="preserve">
+    <value>Contorno (letra en el escritorio)</value>
+  </data>
 </root>
 
 

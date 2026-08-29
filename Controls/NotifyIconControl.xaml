@@ -146,6 +146,14 @@
                         <FontIcon Glyph="&#xE72E;" />
                     </ToggleMenuFlyoutItem.Icon>
                 </ToggleMenuFlyoutItem>
+                <MenuFlyoutItem
+                    x:Name="ResetDesktopLyrics"
+                    x:Uid="IconResetDesktopLyrics"
+                    Click="ResetDesktopLyrics_Click">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="&#xE7A7;" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
                 <MenuFlyoutSeparator />
                 <MenuFlyoutItem
                     x:Name="Settings"

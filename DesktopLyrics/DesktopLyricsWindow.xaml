@@ -24,27 +24,14 @@
             Opacity="0"
             Orientation="Horizontal"
             Spacing="6">
-            <Button
-                x:Name="LockButton"
-                Width="28"
-                Height="28"
-                Padding="0"
-                Background="#66000000"
-                BorderThickness="0"
-                Click="LockButton_Click"
-                CornerRadius="14">
-                <FontIcon FontSize="13" Glyph="&#xE72E;" />
+            <Button Click="LockButton_Click">
+                <FontIcon FontSize="14" Glyph="&#xE72E;" />
             </Button>
-            <Button
-                x:Name="CloseButton"
-                Width="28"
-                Height="28"
-                Padding="0"
-                Background="#66000000"
-                BorderThickness="0"
-                Click="CloseButton_Click"
-                CornerRadius="14">
-                <FontIcon FontSize="13" Glyph="&#xE711;" />
+            <Button Click="ResetButton_Click">
+                <FontIcon FontSize="14" Glyph="&#xE7A7;" />
+            </Button>
+            <Button Click="CloseButton_Click">
+                <FontIcon FontSize="14" Glyph="&#xE711;" />
             </Button>
         </StackPanel>
     </Grid>

@@ -1363,6 +1363,21 @@
   <data name="IconDesktopLyricsLock.Text" xml:space="preserve">
     <value>デスクトップ歌詞をロック</value>
   </data>
+  <data name="IconResetDesktopLyrics.Text" xml:space="preserve">
+    <value>デスクトップ歌詞ウィンドウをリセット</value>
+  </data>
+  <data name="DesktopLyricsFontSize.Text" xml:space="preserve">
+    <value>デスクトップ歌詞フォントサイズ</value>
+  </data>
+  <data name="DesktopLyricsFontFamily.Text" xml:space="preserve">
+    <value>デスクトップ歌詞フォント</value>
+  </data>
+  <data name="DesktopLyricsColor.Text" xml:space="preserve">
+    <value>デスクトップ歌詞の色</value>
+  </data>
+  <data name="DesktopLyricsOutline.Text" xml:space="preserve">
+    <value>デスクトップ歌詞の縁取り</value>
+  </data>
 </root>
 
 

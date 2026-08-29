@@ -1456,6 +1456,83 @@
                     </Expander.Content>
                 </Expander>
 
+                <!--  桌面歌词  -->
+                <Expander
+                    MinHeight="69"
+                    Margin="10,0,10,0"
+                    Padding="0"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Stretch"
+                    CornerRadius="{ThemeResource ControlCornerRadius}">
+                    <Expander.Header>
+                        <Grid Padding="16,16,4,16">
+                            <TextBlock
+                                x:Uid="IconDesktopLyrics"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                        </Grid>
+                    </Expander.Header>
+                    <Expander.Content>
+                        <StackPanel>
+                            <Grid MinHeight="52" Padding="58,8,44,8" HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                <TextBlock
+                                    x:Uid="DesktopLyricsFontSize"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <NumberBox
+                                    Grid.Column="1"
+                                    Width="300"
+                                    VerticalAlignment="Center"
+                                    LargeChange="10"
+                                    Maximum="200"
+                                    Minimum="10"
+                                    SmallChange="1"
+                                    SpinButtonPlacementMode="Inline"
+                                    Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsFontSize, Mode=TwoWay}" />
+                            </Grid>
+                            <Grid MinHeight="52" Padding="58,8,44,8" HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                <TextBlock
+                                    x:Uid="DesktopLyricsFontFamily"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ComboBox
+                                    Grid.Column="1"
+                                    Width="300"
+                                    VerticalAlignment="Center"
+                                    ItemTemplate="{StaticResource FontComboboxTemplate}"
+                                    ItemsSource="{x:Bind ViewModel.AppViewModel.FontFamilyList, Mode=OneWay}"
+                                    SelectedValue="{x:Bind ViewModel.AppViewModel.DesktopLyricsFontFamily, Mode=TwoWay}" />
+                            </Grid>
+                            <Grid MinHeight="52" Padding="58,8,44,8" HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                <TextBlock
+                                    x:Uid="DesktopLyricsColor"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <controls:ColorPickerButton
+                                    Grid.Column="1"
+                                    Width="300"
+                                    HorizontalAlignment="Stretch"
+                                    VerticalAlignment="Center"
+                                    SelectedColor="{x:Bind ViewModel.AppViewModel.DesktopLyricsColor, Mode=TwoWay}" />
+                            </Grid>
+                            <Grid MinHeight="52" Padding="58,8,44,8" HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                <TextBlock
+                                    x:Uid="DesktopLyricsOutline"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsOutlineEnabled, Mode=TwoWay}" />
+                            </Grid>
+                        </StackPanel>
+                    </Expander.Content>
+                </Expander>
+
                 <!--  关闭按钮功能  -->
                 <Expander
                     MinHeight="69"

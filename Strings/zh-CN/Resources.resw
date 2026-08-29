@@ -1365,4 +1365,19 @@
   <data name="IconDesktopLyricsLock.Text" xml:space="preserve">
     <value>锁定桌面歌词</value>
   </data>
+  <data name="IconResetDesktopLyrics.Text" xml:space="preserve">
+    <value>重置桌面歌词窗口</value>
+  </data>
+  <data name="DesktopLyricsFontSize.Text" xml:space="preserve">
+    <value>桌面歌词字号</value>
+  </data>
+  <data name="DesktopLyricsFontFamily.Text" xml:space="preserve">
+    <value>桌面歌词字体</value>
+  </data>
+  <data name="DesktopLyricsColor.Text" xml:space="preserve">
+    <value>桌面歌词颜色</value>
+  </data>
+  <data name="DesktopLyricsOutline.Text" xml:space="preserve">
+    <value>桌面歌词描边</value>
+  </data>
 </root>

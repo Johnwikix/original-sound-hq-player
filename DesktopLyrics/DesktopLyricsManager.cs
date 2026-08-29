@@ -1,19 +1,20 @@
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using Windows.UI;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 
 namespace WinUIMusicPlayer.DesktopLyrics
 {
     /// <summary>
-    /// 桌面歌词生命周期管理：托盘开关/锁定、启动恢复、退出清理。
+    /// 桌面歌词生命周期管理：托盘/播放条开关、锁定、重置窗口、样式推送、启动恢复、退出清理。
     /// 状态镜像到 AppSettings 并经 MusicDatabaseService.SaveSettingAsync 落盘。
     /// 所有方法须在 UI 线程调用。
     /// </summary>
     public static class DesktopLyricsManager
     {
         public static bool IsEnabled { get; private set; }
-        public static bool IsLocked { get; private set; } = true;
+        public static bool IsLocked { get; private set; }
 
         /// <summary>开关或锁定状态变化（供托盘菜单勾选态同步）。</summary>
         public static event Action? StateChanged;
@@ -40,6 +41,28 @@ namespace WinUIMusicPlayer.DesktopLyrics
             Persist();
             StateChanged?.Invoke();
         }
+
+        /// <summary>恢复默认尺寸并置于主屏工作区底部居中（窗口/托盘重置按钮调用）。</summary>
+        public static void ResetWindowBounds()
+        {
+            _window?.ApplyDefaultBounds();
+            Persist();
+        }
+
+        /// <summary>设置页变更样式后推送（AppSettings 已由 VM setter 更新）。</summary>
+        public static void RefreshStyle()
+        {
+            _window?.ApplyStyle(GetCurrentStyle());
+        }
+
+        public static DesktopLyricsStyle GetCurrentStyle() => new(
+            AppSettings.DesktopLyricsFontSize,
+            AppSettings.DesktopLyricsFontFamily,
+            Color.FromArgb(0xFF,
+                (byte)((AppSettings.DesktopLyricsColorRgb >> 16) & 0xFF),
+                (byte)((AppSettings.DesktopLyricsColorRgb >> 8) & 0xFF),
+                (byte)(AppSettings.DesktopLyricsColorRgb & 0xFF)),
+            AppSettings.IsDesktopLyricsOutlineEnabled);
 
         /// <summary>应用启动时按设置恢复（AppInitializerService 调用）。</summary>
         public static void RestoreFromSettings()

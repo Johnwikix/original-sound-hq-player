@@ -922,6 +922,12 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.IsDesktopLyricsLocked = settings.IsDesktopLyricsLocked;
                 AppSettings.DesktopLyricsX = settings.DesktopLyricsX;
                 AppSettings.DesktopLyricsY = settings.DesktopLyricsY;
+                AppSettings.DesktopLyricsWidth = settings.DesktopLyricsWidth;
+                AppSettings.DesktopLyricsHeight = settings.DesktopLyricsHeight;
+                AppSettings.DesktopLyricsFontSize = settings.DesktopLyricsFontSize;
+                AppSettings.DesktopLyricsFontFamily = settings.DesktopLyricsFontFamily;
+                AppSettings.DesktopLyricsColorRgb = settings.DesktopLyricsColorRgb;
+                AppSettings.IsDesktopLyricsOutlineEnabled = settings.IsDesktopLyricsOutlineEnabled;
                 AppViewModel.IsAutoLyricsEnabled = settings.IsAutoLyricsEnabled;
                 AppViewModel.IsAutoCoverEnabled = settings.IsAutoCoverEnabled;
                 AppViewModel.DsdGain = settings.DsdGain;
@@ -938,6 +944,14 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.AppHeight = settings.AppHeight;
                 AppViewModel.FontFamilyList = new ObservableCollection<FontInfo>(ToolUtils.GetSystemFontsInternal());
                 AppViewModel.FontFamily = AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(new FontFamily(settings.GlobalFont).Source));
+                AppViewModel.DesktopLyricsFontSize = settings.DesktopLyricsFontSize;
+                AppViewModel.DesktopLyricsFontFamily = AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(new FontFamily(settings.DesktopLyricsFontFamily).Source))
+                    ?? AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault();
+                AppViewModel.DesktopLyricsColor = Color.FromArgb(0xFF,
+                    (byte)((settings.DesktopLyricsColorRgb >> 16) & 0xFF),
+                    (byte)((settings.DesktopLyricsColorRgb >> 8) & 0xFF),
+                    (byte)(settings.DesktopLyricsColorRgb & 0xFF));
+                AppViewModel.IsDesktopLyricsOutlineEnabled = settings.IsDesktopLyricsOutlineEnabled;
                 AppViewModel.CustomOpacity = settings.CustomAcrylicOpacity;
                 AppViewModel.CustomColor = Color.FromArgb(
                     (byte)((settings.CustomColorArgb >> 24) & 0xFF),
@@ -1116,6 +1130,12 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsDesktopLyricsLocked = AppSettings.IsDesktopLyricsLocked;
             newSettings.DesktopLyricsX = AppSettings.DesktopLyricsX;
             newSettings.DesktopLyricsY = AppSettings.DesktopLyricsY;
+            newSettings.DesktopLyricsWidth = AppSettings.DesktopLyricsWidth;
+            newSettings.DesktopLyricsHeight = AppSettings.DesktopLyricsHeight;
+            newSettings.DesktopLyricsFontSize = AppSettings.DesktopLyricsFontSize;
+            newSettings.DesktopLyricsFontFamily = AppSettings.DesktopLyricsFontFamily;
+            newSettings.DesktopLyricsColorRgb = AppSettings.DesktopLyricsColorRgb;
+            newSettings.IsDesktopLyricsOutlineEnabled = AppSettings.IsDesktopLyricsOutlineEnabled;
             newSettings.IsMusicInfoVisible = AppViewModel.IsMusicInfoVisible;
             return newSettings;
         }
