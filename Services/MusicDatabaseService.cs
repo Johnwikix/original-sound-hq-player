@@ -918,6 +918,10 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.BackdropType = settings.AppStyle;
                 AppViewModel.ThemeType = settings.AppTheme;
                 AppViewModel.IsRunningBackend = settings.IsRunningBackend;
+                AppSettings.IsDesktopLyricsEnabled = settings.IsDesktopLyricsEnabled;
+                AppSettings.IsDesktopLyricsLocked = settings.IsDesktopLyricsLocked;
+                AppSettings.DesktopLyricsX = settings.DesktopLyricsX;
+                AppSettings.DesktopLyricsY = settings.DesktopLyricsY;
                 AppViewModel.IsAutoLyricsEnabled = settings.IsAutoLyricsEnabled;
                 AppViewModel.IsAutoCoverEnabled = settings.IsAutoCoverEnabled;
                 AppViewModel.DsdGain = settings.DsdGain;
@@ -1108,6 +1112,10 @@ namespace WinUIMusicPlayer.Services
             newSettings.ArtistSplitSymbols = AppViewModel.ArtistSplitSymbols;
             newSettings.PlayingDetailAlignment = AppViewModel.PlayingDetailAlignment;
             newSettings.UsePlayingDetailAlignmentInPortrait = AppViewModel.UsePlayingDetailAlignmentInPortrait;
+            newSettings.IsDesktopLyricsEnabled = AppSettings.IsDesktopLyricsEnabled;
+            newSettings.IsDesktopLyricsLocked = AppSettings.IsDesktopLyricsLocked;
+            newSettings.DesktopLyricsX = AppSettings.DesktopLyricsX;
+            newSettings.DesktopLyricsY = AppSettings.DesktopLyricsY;
             newSettings.IsMusicInfoVisible = AppViewModel.IsMusicInfoVisible;
             return newSettings;
         }

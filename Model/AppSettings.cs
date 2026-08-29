@@ -43,6 +43,10 @@ namespace WinUIMusicPlayer.Model
         public static bool IsRunningBackend { get; set; } = true;
         //public static bool IsDarkMode { get; set; } = false;
         public static bool IsAutoLyricsEnabled { get; set; } = true;
+        public static bool IsDesktopLyricsEnabled { get; set; } = false;
+        public static bool IsDesktopLyricsLocked { get; set; } = true;
+        public static int DesktopLyricsX { get; set; } = -1;
+        public static int DesktopLyricsY { get; set; } = -1;
         public static bool IsAutoCoverEnabled { get; set; } = true;
         public static string EqualizerStr { get; set; } = string.Empty;
         public static Dictionary<string, double> Equalizer { get; set; } = new()

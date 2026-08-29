@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.System.UserProfile;
+using WinUIMusicPlayer.DesktopLyrics;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -244,6 +245,7 @@ namespace WinUIMusicPlayer
             if (Interlocked.CompareExchange(ref _isExiting, 1, 0) != 0) return;
             try
             {
+                DesktopLyricsManager.Shutdown();
                 await SavePlayStateAsync();
                 try
                 {

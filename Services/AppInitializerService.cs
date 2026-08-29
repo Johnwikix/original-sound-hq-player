@@ -6,6 +6,7 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
+using WinUIMusicPlayer.DesktopLyrics;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
@@ -42,6 +43,7 @@ namespace WinUIMusicPlayer.Services
             await ipcService.InitializeMusic(appViewModel.CurrentPlayingMusic);
             App.MainWindow.ShowMainPage();
             appViewModel.IsInitialized = true;
+            DesktopLyricsManager.RestoreFromSettings();
             appViewModel.InitHotKeys();
             await CheckVersionUpdateAsync();
         }
