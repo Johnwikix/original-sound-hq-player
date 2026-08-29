@@ -17,12 +17,13 @@ namespace WinUIMusicPlayer.DesktopLyrics
 {
     /// <summary>
     /// 桌面歌词悬浮窗：透明、置顶、不进任务栏/Alt-Tab。
-    /// 解锁态：保留边框可调整大小，按住任意位置拖动；
-    /// 锁定态：GWL_STYLE 移除标题栏/边框（WinUIEx ToggleWindowStyle，含 SWP_FRAMECHANGED）
-    /// + 整窗点击穿透，仅鼠标悬停右上角按钮组时临时恢复交互
+    /// 基类与 spectrum 一致使用 WinUIEx.WindowEx。
+    /// 解锁态：标准窗口（标题栏 + 可调整大小），按住内容区任意位置拖动；
+    /// 锁定态：GWL_STYLE 移除标题栏/边框位 + OR-in WS_POPUP（WinUIEx ToggleWindowStyle，
+    /// 含 SWP_FRAMECHANGED）+ 整窗点击穿透，仅鼠标悬停右上角按钮组时临时恢复交互
     /// （BetterLyrics OverlayInputHelper 方案：定时器轮询游标位置切换穿透状态）。
     /// </summary>
-    public sealed partial class DesktopLyricsWindow : Window, IDisposable
+    public sealed partial class DesktopLyricsWindow : WinUIEx.WindowEx, IDisposable
     {
         private const int GWL_EXSTYLE = -20;
         private const int WS_EX_LAYERED = 0x00080000;
@@ -33,7 +34,6 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private const int BottomMargin = 60;
         private const double HoverPollingIntervalMs = 50;
         private const double ControlPanelHoverMargin = 6.0;
-        private const double BoundsPersistDelayMs = 800;
 
         private readonly IDesktopLyricsRenderer _renderer;
         private readonly IntPtr _hwnd;
@@ -41,7 +41,6 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private bool _clickThrough;              // 当前穿透样式状态（false = 尚未设置）
         private bool _cursorOverControlPanel;
         private DispatcherQueueTimer? _hoverTimer;
-        private DispatcherQueueTimer? _boundsPersistTimer;
         private WindowStyle? _originalWindowStyle;   // 首次锁定前缓存的解锁态样式
         private bool _disposed;
 
@@ -81,7 +80,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             ApplyClickThrough(locked);
             if (locked)
             {
-                // spectrum 同款：GWL_STYLE 移除标题栏/边框位 + OR-in WS_POPUP（两次均含 SWP_FRAMECHANGED 立即重算）
+                // 移除标题栏/边框位 + spectrum 的 OR-in WS_POPUP|WS_VISIBLE（均含 SWP_FRAMECHANGED）
                 _originalWindowStyle ??= this.GetWindowStyle();
                 this.ToggleWindowStyle(false, WindowStyle.Caption | WindowStyle.ThickFrame);
                 this.ToggleWindowStyle(true, WindowStyle.Popup | WindowStyle.Visible);
@@ -89,6 +88,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             else if (_originalWindowStyle is { } style)
             {
                 this.SetWindowStyle(style);
+                _originalWindowStyle = null;   // spectrum 同款：还原后清除缓存，下次锁定重新缓存
             }
             UpdateControlPanelVisual();
         }
@@ -109,6 +109,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             bounds.Y = y;
             bounds.Width = DefaultWidth;
             bounds.Height = DefaultHeight;
+            DesktopLyricsManager.PersistBounds();
         }
 
         public void Dispose()
@@ -118,14 +119,15 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void ConfigureWindow()
         {
+            // 解锁态外观（锁定修复前一致）：有边框、无系统标题栏、可调整大小。
+            // 注意：绝不能使用 presenter.SetBorderAndTitleBar —— presenter 会记住自己的样式意图，
+            // 并在后续窗口事件中重放（重新写入 WS_THICKFRAME），导致锁定后边框复活。
+            // 这里直接用 GWL_STYLE 移除 Caption 位（保留 ThickFrame 以支持边缘调整大小）。
             if (AppWindow.Presenter is OverlappedPresenter presenter)
             {
-                presenter.SetBorderAndTitleBar(true, false);
-                presenter.IsResizable = true;
-                presenter.IsMinimizable = false;
-                presenter.IsMaximizable = false;
                 presenter.IsAlwaysOnTop = true;
             }
+            this.ToggleWindowStyle(false, WindowStyle.Caption);
             AppWindow.IsShownInSwitchers = false;
 
             var bounds = DesktopLyricsManager.BoundsState;
@@ -292,26 +294,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 bounds.Width = size.Width;
                 bounds.Height = size.Height;
             }
-            ScheduleBoundsPersist();
-        }
-
-        // 位置/尺寸变化后防抖落盘（DesktopLyricsState.json），拖动/缩放停止约 1 秒后写一次
-        private void ScheduleBoundsPersist()
-        {
-            if (_boundsPersistTimer is null)
-            {
-                _boundsPersistTimer = DispatcherQueue.CreateTimer();
-                _boundsPersistTimer.Interval = TimeSpan.FromMilliseconds(BoundsPersistDelayMs);
-                _boundsPersistTimer.Tick += OnBoundsPersistTick;
-            }
-            _boundsPersistTimer.Stop();
-            _boundsPersistTimer.Start();
-        }
-
-        private void OnBoundsPersistTick(DispatcherQueueTimer sender, object args)
-        {
-            sender.Stop();
-            DesktopLyricsManager.PersistBounds();
+            // 不在此处落盘：按约定仅在关闭窗口 / ApplyDefaultBounds（HasBounds 建立）/ 退出时记录
         }
 
         private void OnWindowClosed(object sender, WindowEventArgs args)
@@ -323,7 +306,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             AppWindow.Changed -= OnAppWindowChanged;
             Closed -= OnWindowClosed;
             StopHoverTimer();
-            _boundsPersistTimer?.Stop();
+            DesktopLyricsManager.PersistBounds();
             _renderer.Dispose();
             _disposed = true;
         }
