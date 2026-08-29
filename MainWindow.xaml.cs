@@ -81,7 +81,7 @@ namespace WinUIMusicPlayer
         // 仅在 OverlappedPresenterState.Restored(普通窗口)时刷新此基准；
         // Maximized / Minimized / FullScreen 等瞬时状态不会覆盖本字段——
         // 退出保存时一律回退到此处，作为下次启动的还原依据。
-        // 启动路径 SetWindow() 在 MoveAndResize/CenterOnScreen 之后会立即抓一次，
+        // 启动路径 SetWindow() 在还原(MoveAndResizeExact)/CenterOnScreen 之后会立即抓一次，
         // 保证首次退出也能拿到有效基准。
         // 写入前还要通过尺寸合理性校验，防止状态切换瞬间捕获到全屏/最大化尺寸。
         private (int X, int Y, int Width, int Height) _lastRestoredBounds;
@@ -147,7 +147,8 @@ namespace WinUIMusicPlayer
             if (ps != null && ps.HasWindowBounds
                 && WindowSizeHelper.IsBoundsOnScreen(ps.WindowX, ps.WindowY, ps.WindowWidth, ps.WindowHeight))
             {
-                AppWindow.MoveAndResize(new RectInt32(ps.WindowX, ps.WindowY, ps.WindowWidth, ps.WindowHeight));
+                // 跨 DPI 显示器还原需先 Move 后 Resize,见 WindowSizeHelper.MoveAndResizeExact
+                WindowSizeHelper.MoveAndResizeExact(AppWindow, ps.WindowX, ps.WindowY, ps.WindowWidth, ps.WindowHeight);
             }
             else
             {

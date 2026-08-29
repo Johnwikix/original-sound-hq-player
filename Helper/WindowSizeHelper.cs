@@ -99,18 +99,46 @@ namespace WinUIMusicPlayer.Helper
             return CallWindowProc(oldWndProc, hwnd, msg, wParam, lParam);
         }
 
+        /// <summary>
+        /// 跨显示器安全的移动+还原尺寸,替代 AppWindow.MoveAndResize。
+        /// MoveAndResize 内部先 resize 后 move(microsoft-ui-xaml#10498),resize 会按移动前
+        /// 所在显示器的 DPI 解释;且移动到不同 DPI 显示器时 WinUI 会按 WM_DPICHANGED 自动
+        /// 缩放尺寸(WinAppSDK 1.1.2 起)。先 Move 让 DPI 切换完成,再 Resize 施加精确物理
+        /// 尺寸,保证还原值与保存值逐像素一致。
+        /// </summary>
+        public static void MoveAndResizeExact(AppWindow appWindow, int x, int y, int width, int height)
+        {
+            appWindow.Move(new PointInt32(x, y));
+            appWindow.Resize(new SizeInt32(width, height));
+            // 兜底:若 DPI 切换的自动缩放异步落在 Resize 之后,重放一次精确尺寸
+            if (appWindow.Size.Width != width || appWindow.Size.Height != height)
+            {
+                appWindow.Resize(new SizeInt32(width, height));
+            }
+        }
+
         public static void ResizeWindowAndCenterInMainWindow(IntPtr hwnd, int height, int width, AppWindow mainWindow, AppWindow appWindow)
         {
-            uint dpi = GetDpiForWindow(hwnd);
-            double scaleFactor = dpi / 96.0;
-            int adjustedWidth = (int)(width * scaleFactor);
-            int adjustedHeight = (int)(height * scaleFactor);
             PointInt32 mainWindowPosition = mainWindow.Position;
             int mainWindowWidth = mainWindow.Size.Width;
             int mainWindowHeight = mainWindow.Size.Height;
+
+            // 新窗口此刻仍在创建时的默认显示器上,直接换算会取错 DPI。
+            // 先按当前 DPI 粗算落点并 Move 到主窗口所在显示器,让窗口 DPI 切换完成,
+            // 之后 GetDpiForWindow 返回的才是目标显示器的 DPI。
+            double initialScale = GetDpiForWindow(hwnd) / 96.0;
+            int estimatedWidth = (int)(width * initialScale);
+            int estimatedHeight = (int)(height * initialScale);
+            appWindow.Move(new PointInt32(
+                mainWindowPosition.X + (mainWindowWidth - estimatedWidth) / 2,
+                mainWindowPosition.Y + (mainWindowHeight - estimatedHeight) / 2));
+
+            double scaleFactor = GetDpiForWindow(hwnd) / 96.0;
+            int adjustedWidth = (int)(width * scaleFactor);
+            int adjustedHeight = (int)(height * scaleFactor);
             int centerX = mainWindowPosition.X + (mainWindowWidth - adjustedWidth) / 2;
             int centerY = mainWindowPosition.Y + (mainWindowHeight - adjustedHeight) / 2;
-            appWindow.MoveAndResize(new RectInt32(_X: centerX, _Y: centerY, _Width: adjustedWidth, _Height: adjustedHeight));
+            MoveAndResizeExact(appWindow, centerX, centerY, adjustedWidth, adjustedHeight);
         }
 
         public static void ResizeWindowAndCenterInScreen(IntPtr hwnd, int height, int width, AppWindow appWindow)
