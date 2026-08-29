@@ -90,7 +90,7 @@ namespace WinUIMusicPlayer.Model
         public bool IsTrimAfterPlaybackEnabled { get; set; } = false;
         public string ArtistSplitSymbols { get; set; } = ", ; / 、 & feat.";
         public bool IsDesktopLyricsEnabled { get; set; } = false;
-        public bool IsDesktopLyricsLocked { get; set; } = true;
+        public bool IsDesktopLyricsLocked { get; set; } = false;
         public int DesktopLyricsX { get; set; } = -1;
         public int DesktopLyricsY { get; set; } = -1;
     }
