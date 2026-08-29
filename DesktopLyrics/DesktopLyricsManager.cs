@@ -104,9 +104,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
             if (_window is not null) return;
             EnsureBoundsLoaded();
             _window = new DesktopLyricsWindow();
-            _window.ApplyLock(IsLocked);
-            // 与 BetterLyrics 一致：创建后仅 Activate 一次以保证 XAML 内容渲染
+            // 必须先显示再应用锁定：对未激活的窗口做 GWL_STYLE 切 Popup / 加 WS_EX_LAYERED
+            // 会破坏 XAML 岛的呈现与输入管线，后续解锁时窗口无响应且内容丢失。
             _window.Activate();
+            _window.ApplyLock(IsLocked);
         }
 
         private static void CloseWindow()
