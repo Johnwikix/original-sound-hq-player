@@ -33,6 +33,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private const int BottomMargin = 60;
         private const double HoverPollingIntervalMs = 50;
         private const double ControlPanelHoverMargin = 6.0;
+        private const double BoundsPersistDelayMs = 800;
 
         private readonly IDesktopLyricsRenderer _renderer;
         private readonly IntPtr _hwnd;
@@ -40,6 +41,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private bool _clickThrough;              // 当前穿透样式状态（false = 尚未设置）
         private bool _cursorOverControlPanel;
         private DispatcherQueueTimer? _hoverTimer;
+        private DispatcherQueueTimer? _boundsPersistTimer;
         private WindowStyle? _originalWindowStyle;   // 首次锁定前缓存的解锁态样式
         private bool _disposed;
 
@@ -79,9 +81,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
             ApplyClickThrough(locked);
             if (locked)
             {
-                // spectrum 同款：GWL_STYLE 移除标题栏与可调边框（WinUIEx 内部含 SWP_FRAMECHANGED 立即重算）
+                // spectrum 同款：GWL_STYLE 移除标题栏/边框位 + OR-in WS_POPUP（两次均含 SWP_FRAMECHANGED 立即重算）
                 _originalWindowStyle ??= this.GetWindowStyle();
                 this.ToggleWindowStyle(false, WindowStyle.Caption | WindowStyle.ThickFrame);
+                this.ToggleWindowStyle(true, WindowStyle.Popup | WindowStyle.Visible);
             }
             else if (_originalWindowStyle is { } style)
             {
@@ -96,14 +99,16 @@ namespace WinUIMusicPlayer.DesktopLyrics
         /// <summary>恢复默认尺寸并置于主屏工作区底部居中（重置按钮调用）。</summary>
         public void ApplyDefaultBounds()
         {
+            var bounds = DesktopLyricsManager.BoundsState;
             var work = DisplayArea.Primary.WorkArea;
             int x = work.X + (work.Width - DefaultWidth) / 2;
             int y = work.Y + work.Height - DefaultHeight - BottomMargin;
             AppWindow.MoveAndResize(new RectInt32(x, y, DefaultWidth, DefaultHeight));
-            AppSettings.DesktopLyricsX = x;
-            AppSettings.DesktopLyricsY = y;
-            AppSettings.DesktopLyricsWidth = DefaultWidth;
-            AppSettings.DesktopLyricsHeight = DefaultHeight;
+            bounds.HasBounds = true;
+            bounds.X = x;
+            bounds.Y = y;
+            bounds.Width = DefaultWidth;
+            bounds.Height = DefaultHeight;
         }
 
         public void Dispose()
@@ -123,13 +128,14 @@ namespace WinUIMusicPlayer.DesktopLyrics
             }
             AppWindow.IsShownInSwitchers = false;
 
-            int width = AppSettings.DesktopLyricsWidth > 0 ? AppSettings.DesktopLyricsWidth : DefaultWidth;
-            int height = AppSettings.DesktopLyricsHeight > 0 ? AppSettings.DesktopLyricsHeight : DefaultHeight;
-            if (AppSettings.DesktopLyricsX >= 0 && AppSettings.DesktopLyricsY >= 0 &&
-                WindowSizeHelper.IsBoundsOnScreen(AppSettings.DesktopLyricsX, AppSettings.DesktopLyricsY, width, height))
+            var bounds = DesktopLyricsManager.BoundsState;
+            int width = bounds.Width > 0 ? bounds.Width : DefaultWidth;
+            int height = bounds.Height > 0 ? bounds.Height : DefaultHeight;
+            if (bounds.HasBounds &&
+                WindowSizeHelper.IsBoundsOnScreen(bounds.X, bounds.Y, width, height))
             {
                 // 多显示器：IsBoundsOnScreen 遍历所有显示器 WorkArea 校验可见性
-                AppWindow.MoveAndResize(new RectInt32(AppSettings.DesktopLyricsX, AppSettings.DesktopLyricsY, width, height));
+                AppWindow.MoveAndResize(new RectInt32(bounds.X, bounds.Y, width, height));
             }
             else
             {
@@ -271,18 +277,41 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void OnAppWindowChanged(AppWindow sender, AppWindowChangedEventArgs args)
         {
+            if (!args.DidPositionChange && !args.DidSizeChange) return;
+            var bounds = DesktopLyricsManager.BoundsState;
             if (args.DidPositionChange)
             {
                 PointInt32 pos = sender.Position;
-                AppSettings.DesktopLyricsX = pos.X;
-                AppSettings.DesktopLyricsY = pos.Y;
+                bounds.HasBounds = true;
+                bounds.X = pos.X;
+                bounds.Y = pos.Y;
             }
             if (args.DidSizeChange)
             {
                 SizeInt32 size = sender.Size;
-                AppSettings.DesktopLyricsWidth = size.Width;
-                AppSettings.DesktopLyricsHeight = size.Height;
+                bounds.Width = size.Width;
+                bounds.Height = size.Height;
             }
+            ScheduleBoundsPersist();
+        }
+
+        // 位置/尺寸变化后防抖落盘（DesktopLyricsState.json），拖动/缩放停止约 1 秒后写一次
+        private void ScheduleBoundsPersist()
+        {
+            if (_boundsPersistTimer is null)
+            {
+                _boundsPersistTimer = DispatcherQueue.CreateTimer();
+                _boundsPersistTimer.Interval = TimeSpan.FromMilliseconds(BoundsPersistDelayMs);
+                _boundsPersistTimer.Tick += OnBoundsPersistTick;
+            }
+            _boundsPersistTimer.Stop();
+            _boundsPersistTimer.Start();
+        }
+
+        private void OnBoundsPersistTick(DispatcherQueueTimer sender, object args)
+        {
+            sender.Stop();
+            DesktopLyricsManager.PersistBounds();
         }
 
         private void OnWindowClosed(object sender, WindowEventArgs args)
@@ -294,6 +323,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             AppWindow.Changed -= OnAppWindowChanged;
             Closed -= OnWindowClosed;
             StopHoverTimer();
+            _boundsPersistTimer?.Stop();
             _renderer.Dispose();
             _disposed = true;
         }

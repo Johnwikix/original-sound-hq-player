@@ -148,6 +148,55 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        private string GetDesktopLyricsStateFilePath()
+        {
+            try
+            {
+                string userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                string appFolderPath = Path.Combine(userProfilePath, "OriginalSoundPlayer", "Settings");
+                if (!Directory.Exists(appFolderPath))
+                {
+                    Directory.CreateDirectory(appFolderPath);
+                }
+                return Path.Combine(appFolderPath, "DesktopLyricsState.json");
+            }
+            catch
+            {
+                return Path.Combine(ApplicationData.Current.LocalFolder.Path, "DesktopLyricsState.json");
+            }
+        }
+
+        public SaveDesktopLyricsState LoadDesktopLyricsState()
+        {
+            try
+            {
+                string path = GetDesktopLyricsStateFilePath();
+                if (!File.Exists(path))
+                {
+                    return new SaveDesktopLyricsState();
+                }
+                return JsonSerializer.Deserialize(File.ReadAllText(path), DesktopLyricsStateJsonContext.Default.SaveDesktopLyricsState) ?? new SaveDesktopLyricsState();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"LoadDesktopLyricsState 读取桌面歌词窗口状态失败: {ex.Message}");
+                return new SaveDesktopLyricsState();
+            }
+        }
+
+        public void SaveDesktopLyricsState(SaveDesktopLyricsState state)
+        {
+            try
+            {
+                string path = GetDesktopLyricsStateFilePath();
+                File.WriteAllText(path, JsonSerializer.Serialize(state, DesktopLyricsStateJsonContext.Default.SaveDesktopLyricsState));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"SaveDesktopLyricsState 写入桌面歌词窗口状态失败: {ex.Message}");
+            }
+        }
+
         private string GetVersionRecordFilePath()
         {
             try
@@ -920,10 +969,6 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.IsRunningBackend = settings.IsRunningBackend;
                 AppSettings.IsDesktopLyricsEnabled = settings.IsDesktopLyricsEnabled;
                 AppSettings.IsDesktopLyricsLocked = settings.IsDesktopLyricsLocked;
-                AppSettings.DesktopLyricsX = settings.DesktopLyricsX;
-                AppSettings.DesktopLyricsY = settings.DesktopLyricsY;
-                AppSettings.DesktopLyricsWidth = settings.DesktopLyricsWidth;
-                AppSettings.DesktopLyricsHeight = settings.DesktopLyricsHeight;
                 AppSettings.DesktopLyricsFontSize = settings.DesktopLyricsFontSize;
                 AppSettings.DesktopLyricsFontFamily = settings.DesktopLyricsFontFamily;
                 AppSettings.DesktopLyricsColorRgb = settings.DesktopLyricsColorRgb;
@@ -1128,10 +1173,6 @@ namespace WinUIMusicPlayer.Services
             newSettings.UsePlayingDetailAlignmentInPortrait = AppViewModel.UsePlayingDetailAlignmentInPortrait;
             newSettings.IsDesktopLyricsEnabled = AppSettings.IsDesktopLyricsEnabled;
             newSettings.IsDesktopLyricsLocked = AppSettings.IsDesktopLyricsLocked;
-            newSettings.DesktopLyricsX = AppSettings.DesktopLyricsX;
-            newSettings.DesktopLyricsY = AppSettings.DesktopLyricsY;
-            newSettings.DesktopLyricsWidth = AppSettings.DesktopLyricsWidth;
-            newSettings.DesktopLyricsHeight = AppSettings.DesktopLyricsHeight;
             newSettings.DesktopLyricsFontSize = AppSettings.DesktopLyricsFontSize;
             newSettings.DesktopLyricsFontFamily = AppSettings.DesktopLyricsFontFamily;
             newSettings.DesktopLyricsColorRgb = AppSettings.DesktopLyricsColorRgb;

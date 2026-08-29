@@ -8,7 +8,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
 {
     /// <summary>
     /// 桌面歌词生命周期管理：托盘/播放条开关、锁定、重置窗口、样式推送、启动恢复、退出清理。
-    /// 状态镜像到 AppSettings 并经 MusicDatabaseService.SaveSettingAsync 落盘。
+    /// 偏好项（开关/锁定/样式）镜像到 AppSettings 经 SaveSettingAsync 落盘；
+    /// 窗口边界（会话状态）存独立 DesktopLyricsState.json（比照 PlayState）。
     /// 所有方法须在 UI 线程调用。
     /// </summary>
     public static class DesktopLyricsManager
@@ -16,10 +17,14 @@ namespace WinUIMusicPlayer.DesktopLyrics
         public static bool IsEnabled { get; private set; }
         public static bool IsLocked { get; private set; }
 
+        /// <summary>桌面歌词窗口边界状态（独立 DesktopLyricsState.json）。</summary>
+        public static SaveDesktopLyricsState BoundsState { get; private set; } = new();
+
         /// <summary>开关或锁定状态变化（供托盘菜单勾选态同步）。</summary>
         public static event Action? StateChanged;
 
         private static DesktopLyricsWindow? _window;
+        private static bool _boundsLoaded;
 
         public static void SetEnabled(bool enable)
         {
@@ -46,7 +51,21 @@ namespace WinUIMusicPlayer.DesktopLyrics
         public static void ResetWindowBounds()
         {
             _window?.ApplyDefaultBounds();
-            Persist();
+            PersistBounds();
+        }
+
+        /// <summary>窗口边界变化后由防抖定时器调用：同步落盘。</summary>
+        public static void PersistBounds()
+        {
+            EnsureBoundsLoaded();
+            try
+            {
+                App.Services.GetRequiredService<MusicDatabaseService>().SaveDesktopLyricsState(BoundsState);
+            }
+            catch
+            {
+                // 退出阶段服务可能已释放
+            }
         }
 
         /// <summary>设置页变更样式后推送（AppSettings 已由 VM setter 更新）。</summary>
@@ -73,17 +92,17 @@ namespace WinUIMusicPlayer.DesktopLyrics
             StateChanged?.Invoke();
         }
 
-        /// <summary>应用退出清理（App.Current_Exit 调用）。</summary>
+        /// <summary>应用退出清理（App.Current_Exit 调用）。边界为同步写，保证在 Environment.Exit 前完成。</summary>
         public static void Shutdown()
         {
-            if (_window is null) return;
-            CloseWindow();
-            Persist();
+            if (_window is not null) CloseWindow();
+            PersistBounds();
         }
 
         private static void CreateWindow()
         {
             if (_window is not null) return;
+            EnsureBoundsLoaded();
             _window = new DesktopLyricsWindow();
             _window.ApplyLock(IsLocked);
             // 与 BetterLyrics 一致：创建后仅 Activate 一次以保证 XAML 内容渲染
@@ -102,6 +121,20 @@ namespace WinUIMusicPlayer.DesktopLyrics
             catch
             {
                 // 退出过程中窗口可能已释放
+            }
+        }
+
+        private static void EnsureBoundsLoaded()
+        {
+            if (_boundsLoaded) return;
+            _boundsLoaded = true;
+            try
+            {
+                BoundsState = App.Services.GetRequiredService<MusicDatabaseService>().LoadDesktopLyricsState();
+            }
+            catch
+            {
+                BoundsState = new SaveDesktopLyricsState();
             }
         }
 
