@@ -1,5 +1,6 @@
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Messages;
+using Microsoft.UI;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
@@ -80,14 +81,21 @@ namespace WinUIMusicPlayer.DesktopLyrics
             ApplyClickThrough(locked);
             if (locked)
             {
-                // 移除标题栏/边框位 + spectrum 的 OR-in WS_POPUP|WS_VISIBLE（均含 SWP_FRAMECHANGED）
+                // GWL_STYLE：移除标题栏/边框位 + OR-in WS_POPUP（均含 SWP_FRAMECHANGED 立即重算）
                 _originalWindowStyle ??= this.GetWindowStyle();
                 this.ToggleWindowStyle(false, WindowStyle.Caption | WindowStyle.ThickFrame);
                 this.ToggleWindowStyle(true, WindowStyle.Popup | WindowStyle.Visible);
+                // presenter 意图同步为无边框，防止其簿记在后续事件中重放 WS_THICKFRAME
+                if (AppWindow.Presenter is OverlappedPresenter presenter)
+                    presenter.SetBorderAndTitleBar(false, false);
             }
-            else if (_originalWindowStyle is { } style)
+            else
             {
-                this.SetWindowStyle(style);
+                if (_originalWindowStyle is { } style)
+                    this.SetWindowStyle(style);
+                // presenter 意图同步回解锁基线（与 ConfigureWindow 一致）
+                if (AppWindow.Presenter is OverlappedPresenter presenter)
+                    presenter.SetBorderAndTitleBar(true, false);
                 _originalWindowStyle = null;   // spectrum 同款：还原后清除缓存，下次锁定重新缓存
             }
             UpdateControlPanelVisual();
@@ -119,15 +127,18 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void ConfigureWindow()
         {
-            // 解锁态外观（锁定修复前一致）：有边框、无系统标题栏、可调整大小。
-            // 注意：绝不能使用 presenter.SetBorderAndTitleBar —— presenter 会记住自己的样式意图，
-            // 并在后续窗口事件中重放（重新写入 WS_THICKFRAME），导致锁定后边框复活。
-            // 这里直接用 GWL_STYLE 移除 Caption 位（保留 ThickFrame 以支持边缘调整大小）。
+            // MainWindow 同款组合：内容延伸进标题栏 + SetBorderAndTitleBar(true,false) 移除
+            // 系统标题栏与右上角系统按钮，保留边框与边缘调整大小。此为解锁态基线，
+            // 锁定时在其上做 GWL_STYLE 切换（见 ApplyLock）。
+            AppWindow.TitleBar.PreferredTheme = TitleBarTheme.UseDefaultAppMode;
+            AppWindow.TitleBar.ExtendsContentIntoTitleBar = true;
+            AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Standard;
+            this.SetTitleBarBackgroundColors(Colors.Transparent);
             if (AppWindow.Presenter is OverlappedPresenter presenter)
             {
+                presenter.SetBorderAndTitleBar(true, false);
                 presenter.IsAlwaysOnTop = true;
             }
-            this.ToggleWindowStyle(false, WindowStyle.Caption);
             AppWindow.IsShownInSwitchers = false;
 
             var bounds = DesktopLyricsManager.BoundsState;
