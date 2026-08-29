@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Graphics;
 using WinUIEx;
+using WinUIMusicPlayer.DesktopLyrics;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -56,6 +57,18 @@ namespace WinUIMusicPlayer.View
             ViewModel.MusicBrowseVM.SetMainPage(this);
             Loaded += MainPage_Loaded;
             Unloaded += MainPage_Unloaded;
+            DesktopLyricsManager.StateChanged += OnDesktopLyricsStateChanged;
+            OnDesktopLyricsStateChanged();
+        }
+
+        private void DesktopLyricsButton_Click(object sender, RoutedEventArgs e)
+        {
+            DesktopLyricsManager.SetEnabled(!DesktopLyricsManager.IsEnabled);
+        }
+
+        private void OnDesktopLyricsStateChanged()
+        {
+            DesktopLyricsIcon.Opacity = DesktopLyricsManager.IsEnabled ? 1.0 : 0.4;
         }
 
         private void MainPage_Loaded(object sender, RoutedEventArgs e)

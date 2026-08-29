@@ -450,6 +450,18 @@
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon x:Name="EqualizerIcon" Glyph="&#xE9E9;" />
                         </Button>
+                        <Button
+                            x:Name="DesktopLyricsButton"
+                            Margin="10,0,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            Click="DesktopLyricsButton_Click"
+                            Style="{StaticResource MenuButtonStyle}">
+                            <FontIcon x:Name="DesktopLyricsIcon" Glyph="&#xE8C1;" Opacity="0.4" />
+                        </Button>
                         <TeachingTip
                             x:Name="CurrentPlayListTeachingTip"
                             IsLightDismissEnabled="True"

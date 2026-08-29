@@ -7,7 +7,45 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Title="DesktopLyrics">
-    <Grid x:Name="RootGrid" Background="Transparent" Padding="8" PointerPressed="RootGrid_PointerPressed">
+    <Grid
+        x:Name="RootGrid"
+        Background="Transparent"
+        Padding="8"
+        PointerCanceled="RootGrid_PointerCanceled"
+        PointerCaptureLost="RootGrid_PointerCaptureLost"
+        PointerMoved="RootGrid_PointerMoved"
+        PointerPressed="RootGrid_PointerPressed"
+        PointerReleased="RootGrid_PointerReleased">
         <ContentPresenter x:Name="RendererHost" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+        <StackPanel
+            x:Name="ControlPanel"
+            HorizontalAlignment="Right"
+            VerticalAlignment="Top"
+            Opacity="0"
+            Orientation="Horizontal"
+            Spacing="6">
+            <Button
+                x:Name="LockButton"
+                Width="28"
+                Height="28"
+                Padding="0"
+                Background="#66000000"
+                BorderThickness="0"
+                Click="LockButton_Click"
+                CornerRadius="14">
+                <FontIcon FontSize="13" Glyph="&#xE72E;" />
+            </Button>
+            <Button
+                x:Name="CloseButton"
+                Width="28"
+                Height="28"
+                Padding="0"
+                Background="#66000000"
+                BorderThickness="0"
+                Click="CloseButton_Click"
+                CornerRadius="14">
+                <FontIcon FontSize="13" Glyph="&#xE711;" />
+            </Button>
+        </StackPanel>
     </Grid>
 </Window>
