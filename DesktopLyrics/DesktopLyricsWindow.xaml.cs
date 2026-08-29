@@ -112,7 +112,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             var work = DisplayArea.Primary.WorkArea;
             int x = work.X + (work.Width - DefaultWidth) / 2;
             int y = work.Y + work.Height - DefaultHeight - BottomMargin;
-            AppWindow.MoveAndResize(new RectInt32(x, y, DefaultWidth, DefaultHeight));
+            WindowSizeHelper.MoveAndResizeExact(AppWindow, x, y, DefaultWidth, DefaultHeight);
             bounds.HasBounds = true;
             bounds.X = x;
             bounds.Y = y;
@@ -148,8 +148,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
             if (bounds.HasBounds &&
                 WindowSizeHelper.IsBoundsOnScreen(bounds.X, bounds.Y, width, height))
             {
-                // 多显示器：IsBoundsOnScreen 遍历所有显示器 WorkArea 校验可见性
-                AppWindow.MoveAndResize(new RectInt32(bounds.X, bounds.Y, width, height));
+                // 多显示器：IsBoundsOnScreen 遍历所有显示器 WorkArea 校验可见性。
+                // 跨 DPI 显示器还原需先 Move 后 Resize,见 WindowSizeHelper.MoveAndResizeExact
+                WindowSizeHelper.MoveAndResizeExact(AppWindow, bounds.X, bounds.Y, width, height);
             }
             else
             {
