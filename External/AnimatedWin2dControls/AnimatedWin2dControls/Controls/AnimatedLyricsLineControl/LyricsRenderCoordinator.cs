@@ -38,6 +38,19 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private double RegionW => LyricsRegion.Width > 0 ? LyricsRegion.Width : (Canvas?.Size.Width ?? 0);
         private double RegionH => LyricsRegion.Height > 0 ? LyricsRegion.Height : (Canvas?.Size.Height ?? 0);
 
+        /// <summary>宿主样式覆盖：字重（null = 跟随 LyricsSettingsBus，默认 700）。变更后调用 InvalidateStyle()。</summary>
+        public int? FontWeightOverride { get; set; }
+
+        /// <summary>宿主样式覆盖：描边宽度，0 = 无描边（null = 跟随 LyricsSettingsBus 的 StrokeWidth）。变更后调用 InvalidateStyle()。</summary>
+        public double? StrokeWidthOverride { get; set; }
+
+        /// <summary>宿主样式覆盖变更后触发重排与重绘（重建文本布局/几何/描边缓存）。</summary>
+        public void InvalidateStyle()
+        {
+            _layoutDirty = true;
+            Canvas?.Invalidate();
+        }
+
         /// <summary>判断画布坐标系的点是否落在歌词绘制区域内。
         /// 独立控件（LyricsRegion 留空时 RegionW/H 退化为整个画布）下必返回 true，零行为变化。</summary>
         private bool IsPointerInLyricsRegion(Point canvasPos)
@@ -314,6 +327,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             int originalFontSize = (int)_cachedLyricsFontSize;
             int translatedFontSize = (int)(_cachedLyricsFontSize * 0.7);
+            // 桌面歌词等宿主可覆盖描边宽度与字重（null = 跟随总线值）
+            int effectiveStrokeWidth = (int)(StrokeWidthOverride ?? _cachedStrokeWidth);
+            int fontWeight = FontWeightOverride ?? 700;
 
             try
             {
@@ -326,7 +342,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     _cachedLyricsTextAlignment,
                     regionW,
                     regionH,
-                    0);
+                    effectiveStrokeWidth,
+                    fontWeight);
 
                 if (_currentLineIndex >= 0)
                 {
@@ -596,7 +613,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
                 bool isPlayingLine = line.GetIsPlaying(currentTimeMs);
 
-                line.EnsureCaches(sender, _cachedStrokeWidth);
+                line.EnsureCaches(sender, StrokeWidthOverride ?? _cachedStrokeWidth);
                 if (line.CachedFill == null) continue;
                 if (line.UnplayedComposite == null) continue;
 

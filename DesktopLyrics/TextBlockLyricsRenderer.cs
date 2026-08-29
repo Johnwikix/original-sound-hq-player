@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Windows.UI.Text;
 
 namespace WinUIMusicPlayer.DesktopLyrics
 {
@@ -16,10 +17,11 @@ namespace WinUIMusicPlayer.DesktopLyrics
     /// </summary>
     public sealed class TextBlockLyricsRenderer : IDesktopLyricsRenderer
     {
-        private static readonly (double X, double Y)[] OutlineOffsets = [(-1.5, 0), (1.5, 0), (0, -1.5), (0, 1.5)];
+        // 单位基准偏移，实际偏移 = 基准 × 描边宽度（OutlineWidth）
+        private static readonly (double X, double Y)[] OutlineOffsets = [(-1, 0), (1, 0), (0, -1), (0, 1)];
 
         private readonly Grid _root = new();
-        private readonly List<StackPanel> _shadowStacks = [];
+        private readonly List<(StackPanel Panel, double X, double Y)> _shadowStacks = [];
         private readonly List<(TextBlock Main, TextBlock Trans)> _shadowPairs = [];
         private (TextBlock Main, TextBlock Trans)? _mainPair;
 
@@ -32,13 +34,15 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private FontFamily? _fontFamily;
         private SolidColorBrush? _mainBrush;
         private bool _outline = true;
+        private int _fontWeight = 400;
+        private double _outlineWidth = 1.5;
 
         public TextBlockLyricsRenderer()
         {
             foreach (var (x, y) in OutlineOffsets)
             {
-                var (stack, pair) = BuildStack(isShadow: true, x, y);
-                _shadowStacks.Add(stack);
+                var (stack, pair) = BuildStack(isShadow: true, x * _outlineWidth, y * _outlineWidth);
+                _shadowStacks.Add((stack, x, y));
                 _shadowPairs.Add(pair);
                 _root.Children.Add(stack);
             }
@@ -55,13 +59,16 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _fontSize = Math.Clamp(style.FontSize, 8, 300);
             _fontFamily = string.IsNullOrEmpty(style.FontFamily) ? null : new FontFamily(style.FontFamily);
             _mainBrush = new SolidColorBrush(style.Color);
+            _fontWeight = Math.Clamp(style.FontWeight, 100, 900);
+            _outlineWidth = Math.Clamp(style.OutlineWidth, 0, 20);
             if (_outline != style.Outline)
             {
                 _outline = style.Outline;
                 var visibility = _outline ? Visibility.Visible : Visibility.Collapsed;
-                foreach (var stack in _shadowStacks)
+                foreach (var (stack, _, _) in _shadowStacks)
                     stack.Visibility = visibility;
             }
+            ApplyOutlineWidth();
             ApplyFont();
             ApplyColor();
             UpdateText();
@@ -156,16 +163,26 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void ApplyFont()
         {
+            var fontWeight = new FontWeight { Weight = (ushort)_fontWeight };
             foreach (var (mainTb, transTb) in ShadowAndMainPairs)
             {
                 mainTb.FontSize = _fontSize;
                 transTb.FontSize = _fontSize * 0.75;
+                mainTb.FontWeight = fontWeight;
+                transTb.FontWeight = fontWeight;
                 if (_fontFamily is not null)
                 {
                     mainTb.FontFamily = _fontFamily;
                     transTb.FontFamily = _fontFamily;
                 }
             }
+        }
+
+        /// <summary>按描边宽度重写 4 层阴影栈的偏移（基准偏移 × 宽度）。</summary>
+        private void ApplyOutlineWidth()
+        {
+            foreach (var (stack, x, y) in _shadowStacks)
+                stack.Margin = new Thickness(x * _outlineWidth, y * _outlineWidth, 0, 0);
         }
 
         private void ApplyColor()

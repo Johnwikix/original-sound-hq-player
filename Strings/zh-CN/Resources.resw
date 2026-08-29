@@ -1380,4 +1380,22 @@
   <data name="DesktopLyricsOutline.Text" xml:space="preserve">
     <value>桌面歌词描边</value>
   </data>
+  <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
+    <value>桌面歌词字重</value>
+  </data>
+  <data name="DesktopLyricsOutlineWidth.Text" xml:space="preserve">
+    <value>桌面歌词描边宽度</value>
+  </data>
+  <data name="DesktopLyricsWeightNormal.Content" xml:space="preserve">
+    <value>正常</value>
+  </data>
+  <data name="DesktopLyricsWeightMedium.Content" xml:space="preserve">
+    <value>中等</value>
+  </data>
+  <data name="DesktopLyricsWeightSemiBold.Content" xml:space="preserve">
+    <value>半粗</value>
+  </data>
+  <data name="DesktopLyricsWeightBold.Content" xml:space="preserve">
+    <value>粗体</value>
+  </data>
 </root>

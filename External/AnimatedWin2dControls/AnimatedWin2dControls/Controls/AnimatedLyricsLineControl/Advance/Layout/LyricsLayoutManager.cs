@@ -18,7 +18,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             CanvasHorizontalAlignment horizontalAlignment,
             double lyricsWidth,
             double lyricsHeight,
-            int strokeWidth)
+            int strokeWidth,
+            int fontWeight = 700)
         {
             if (lines == null || resourceCreator == null) return;
 
@@ -30,7 +31,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             var shareFormat = new CanvasTextFormat
             {
                 FontFamily = fontFamily,
-                FontWeight = new Windows.UI.Text.FontWeight(700),
+                FontWeight = new Windows.UI.Text.FontWeight((ushort)fontWeight),
                 VerticalAlignment = CanvasVerticalAlignment.Top,
                 WordWrapping = CanvasWordWrapping.WholeWord,
             };

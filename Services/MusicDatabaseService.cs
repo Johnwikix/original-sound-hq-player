@@ -973,6 +973,8 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.DesktopLyricsFontFamily = settings.DesktopLyricsFontFamily;
                 AppSettings.DesktopLyricsColorRgb = settings.DesktopLyricsColorRgb;
                 AppSettings.IsDesktopLyricsOutlineEnabled = settings.IsDesktopLyricsOutlineEnabled;
+                AppSettings.DesktopLyricsFontWeight = settings.DesktopLyricsFontWeight;
+                AppSettings.DesktopLyricsOutlineWidth = settings.DesktopLyricsOutlineWidth;
                 AppViewModel.IsAutoLyricsEnabled = settings.IsAutoLyricsEnabled;
                 AppViewModel.IsAutoCoverEnabled = settings.IsAutoCoverEnabled;
                 AppViewModel.DsdGain = settings.DsdGain;
@@ -1177,6 +1179,8 @@ namespace WinUIMusicPlayer.Services
             newSettings.DesktopLyricsFontFamily = AppSettings.DesktopLyricsFontFamily;
             newSettings.DesktopLyricsColorRgb = AppSettings.DesktopLyricsColorRgb;
             newSettings.IsDesktopLyricsOutlineEnabled = AppSettings.IsDesktopLyricsOutlineEnabled;
+            newSettings.DesktopLyricsFontWeight = AppSettings.DesktopLyricsFontWeight;
+            newSettings.DesktopLyricsOutlineWidth = AppSettings.DesktopLyricsOutlineWidth;
             newSettings.IsMusicInfoVisible = AppViewModel.IsMusicInfoVisible;
             return newSettings;
         }
