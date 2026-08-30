@@ -457,6 +457,16 @@ namespace WinUIMusicPlayer.ViewModel
                             .ExtractFromImageBytesAsync(picData, AppViewModel.PaletteAlgorithm, ct: token), token);
                 }
 
+                // 封面像素：供 AppleMusic 背景着色器旋转层使用（无封面时为 null，
+                // 着色器回退到调色板渐变）。缩略图 BMP 已就绪，解码代价可忽略。
+                AnimatedWin2dControls.Impressionist.ArtworkPixelData? artwork = null;
+                if (!string.IsNullOrEmpty(music.ImageHash))
+                {
+                    string artworkThumbPath = CoverLoadQueue.GetThumbCachePath(music.ImageHash, CoverLoadQueue.CoverSize);
+                    artwork = await AnimatedWin2dControls.Impressionist.ArtworkPixelDecoder
+                        .LoadSquareRgba8FromBmpCacheAsync(artworkThumbPath, ct: token);
+                }
+
                 if (token.IsCancellationRequested) return;
 
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
@@ -465,6 +475,7 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         AppViewModel.LyricPageBackgroundHash = music.ImageHash ?? "";
                         AppViewModel.LyricPagePalette = palette;
+                        AppViewModel.LyricPageArtwork = artwork;
                         AppViewModel.MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
                     }
                 });

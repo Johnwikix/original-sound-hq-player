@@ -83,6 +83,8 @@ namespace WinUIMusicPlayer.View
             _ = ChangeControlsFontSize();
             if (ViewModel.AppViewModel.LyricPagePalette is { } palette)
                 NowPlaying?.SetPalette(palette);
+            if (ViewModel.AppViewModel.LyricPageArtwork is { } artwork)
+                NowPlaying?.SetArtwork(artwork);
             UpdateLyricsRegion();
             Loaded -= PlayingDetailPage_Loaded;
         }
@@ -95,6 +97,10 @@ namespace WinUIMusicPlayer.View
                 {
                     NowPlaying?.SetPalette(palette);
                 }
+            }
+            else if (e.PropertyName == nameof(AppViewModel.LyricPageArtwork))
+            {
+                NowPlaying?.SetArtwork(ViewModel.AppViewModel.LyricPageArtwork);
             }
             else if (e.PropertyName == nameof(AppViewModel.LyricsMargin))
             {

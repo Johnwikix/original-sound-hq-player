@@ -544,6 +544,7 @@
                             <ComboBoxItem x:Uid="BackgroundShader_WavyBackground" />
                             <ComboBoxItem x:Uid="BackgroundShader_ChromaticResonance" />
                             <ComboBoxItem x:Uid="BackgroundShader_LiquidFlow" />
+                            <ComboBoxItem x:Uid="BackgroundShader_AppleMusic" />
                         </ComboBox>
                     </Grid>
 

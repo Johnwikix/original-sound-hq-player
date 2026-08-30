@@ -39,7 +39,7 @@ namespace AnimatedWin2dControls.Renderer.Background
 
         // ── 颜色入口 ─────────────────────────────────────────────────────
 
-        public void SetPalette(PaletteResult? palette)
+        public virtual void SetPalette(PaletteResult? palette)
         {
             _currentPalette = palette;
             if (palette?.Palette is not { Count: > 0 }) { ApplyDefaultColors(); return; }
@@ -52,6 +52,14 @@ namespace AnimatedWin2dControls.Renderer.Background
                 ApplyPaletteColors(_currentPalette);
             else
                 ApplyDefaultColors();
+        }
+
+        /// <summary>
+        /// 注入封面像素数据。仅使用封面图本身的着色器（AppleMusic）覆写；
+        /// 取色型着色器忽略（封面信息已通过 <see cref="SetPalette"/> 传达）。
+        /// </summary>
+        public virtual void SetArtwork(Impressionist.ArtworkPixelData? artwork)
+        {
         }
 
         // 暴露给子类的"开盒即用"调色板入口
