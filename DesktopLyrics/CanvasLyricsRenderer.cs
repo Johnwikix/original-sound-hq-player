@@ -14,9 +14,10 @@ using Windows.UI;
 namespace WinUIMusicPlayer.DesktopLyrics
 {
     /// <summary>
-    /// Win2D 逐字歌词渲染器（薄宿主）：只渲染当前一行 + 翻译，单行块垂直居中，逐字扫光。
-    /// 直接组装 External 库内部件（RenderLyricsLine / LyricsLineRenderer / LyricsLayoutManager，
-    /// 三者均零静态总线依赖、全参数注入），绕开 LyricsRenderCoordinator 的整页滚动逻辑；
+    /// Win2D 逐字歌词渲染器（薄宿主）：只渲染当前一行 + 翻译，单行块垂直居中，逐字扫光 +
+    /// 发光/字浮/字缩动效（经 LyricsAnimator 驱动，语义与主界面一致）。
+    /// 直接组装 External 库内部件（RenderLyricsLine / LyricsLineRenderer / LyricsLayoutManager /
+    /// LyricsAnimator，均零静态总线依赖、全参数注入），绕开 LyricsRenderCoordinator 的整页滚动逻辑；
     /// 样式完全来自 <see cref="DesktopLyricsStyle"/>（不消费主界面 LyricsSettingsBus），
     /// 数据经 <see cref="IDesktopLyricsRenderer"/> 的 Set* 由宿主窗口推送（总线转发零改动）。
     /// 描边实现：EnsureCaches 的 CachedStroke 是白描边命令列表，宿主先以黑色
@@ -29,14 +30,31 @@ namespace WinUIMusicPlayer.DesktopLyrics
     /// </summary>
     public sealed class CanvasLyricsRenderer : IDesktopLyricsRenderer
     {
-        private const double SyncThresholdMs = 250;   // 内部时钟与外部时间的硬同步阈值（coordinator 同款）
+        private const double SyncThresholdMs = 500;   // 内部时钟与外部观测的硬同步阈值（seek/大跳才触发）
         private const double UnplayedOpacity = 0.5;   // 未播放部分透明度（主界面默认行为）
         private const double SecondaryOpacity = 0.6;  // 翻译行透明度（与文本渲染器 _transOpacity 一致）
         private const int TargetFrameRate = 60;
         private const string DefaultFontFamily = "Segoe UI";
 
+        // 逐字动效（发光/字浮/字缩）：触发语义与主界面一致（经 LyricsAnimator 驱动），
+        // 量值取主界面默认（GlowAmount=5px / CharFloatAmount=5px / CharScaleAmount=110%→1.1），长音节阈值 500ms
+        private const bool GlowEnabled = true;
+        private const double GlowAmountPx = 5.0;
+        private const bool FloatEnabled = true;
+        private const double FloatAmountPx = 5.0;
+        private const double FloatDurationMs = 450;
+        private const bool ScaleEnabled = true;
+        private const double ScaleFactor = 1.10;
+        private const double LongSyllableThresholdMs = 500;
+
         private readonly CanvasAnimatedControl _canvas = new() { ClearColor = Colors.Transparent };
         private readonly LyricsLineRenderer _lineRenderer = new();
+        private readonly LyricsAnimator _animator = new();
+        private readonly List<RenderLyricsLine> _renderLineList = [];   // 单元素列表，供动画器驱动当前行
+        private readonly ValueTransition<double> _scrollTransitionStub =
+            new(0, EasingHelper.GetInterpolatorByEasingType<double>(EasingType.Sine), 0.3);   // 动画器读取时长/插值器用，本宿主无滚动
+        private int _animationVersion;
+        private bool _lineJustRebuilt;
 
         private List<LyricLine>? _lyrics;
         private RenderLyricsLine? _currentLine;   // 仅当前行的 Win2D 资源；切行/样式/尺寸变化时整体重建
@@ -220,24 +238,51 @@ namespace WinUIMusicPlayer.DesktopLyrics
             if (_layoutDirty || lineChanged || sizeChanged)
                 RebuildLine(sender, newIndex, width, height);
 
-            // 逐字符"正在播放"标记：整页歌词渲染由 LyricsAnimator.UpdateLines 维护，
-            // 薄宿主不接动画器，必须自行维护——否则 ComputeRegionPlayedWidth 对播放中的
-            // 字符不记分数进度，扫光退化为按整字符跳变（卡顿）。
-            if (_currentLine is { } currentLine)
+            // 逐字动效（发光/字浮/字缩）、逐字符"正在播放"标记与透明度过渡统一交给
+            // LyricsAnimator 驱动（触发语义与主界面一致）：单元素列表 = 当前播放行。
+            // 字符标记缺失会让 ComputeRegionPlayedWidth 丢失字符内分数进度（扫光按整字符跳变）。
+            if (_renderLineList.Count > 0)
             {
-                if (currentLine.IsPrimaryHasRealSyllableInfo)
-                {
-                    var chars = currentLine.PrimaryRenderChars;
-                    for (int i = 0; i < chars.Count; i++)
-                        chars[i].IsPlayingLastFrame = chars[i].GetIsPlaying(currentTimeMs);
-                }
-                currentLine.IsPlayingLastFrame = currentLine.GetIsPlaying(currentTimeMs);
+                _animationVersion++;
+                _animator.UpdateLines(
+                    _renderLineList,
+                    startIndex: 0,
+                    endIndex: 0,
+                    primaryPlayingLineIndex: 0,
+                    lyricsWidth: width,
+                    lyricsHeight: height,
+                    targetYScrollOffset: 0,
+                    playingLineTopOffsetFactor: 0.5,
+                    isLyricsBlurEffectEnabled: false,
+                    isLyricsOutOfSightEffectEnabled: false,
+                    isLyricsFadeOutEffectEnabled: false,
+                    unplayedPrimaryOpacity: UnplayedOpacity,
+                    playedPrimaryOpacity: 1.0,
+                    secondaryOpacity: SecondaryOpacity,
+                    isLyricsGlowEffectEnabled: GlowEnabled,
+                    lyricsGlowEffectAmount: GlowAmountPx,
+                    lyricsGlowEffectLongSyllableDuration: LongSyllableThresholdMs,
+                    isLyricsFloatAnimationEnabled: FloatEnabled,
+                    lyricsFloatAnimationAmount: FloatAmountPx,
+                    lyricsFloatAnimationDuration: FloatDurationMs,
+                    isLyricsScaleEffectEnabled: ScaleEnabled,
+                    lyricsScaleEffectAmount: ScaleFactor,
+                    lyricsScaleEffectLongSyllableDuration: LongSyllableThresholdMs,
+                    blurAmountMax: 0,
+                    canvasYScrollTransition: _scrollTransitionStub,
+                    elapsedTime: args.Timing.ElapsedTime,
+                    isMouseScrolling: false,
+                    isMouseScrollingChanged: false,
+                    isLayoutChanged: _lineJustRebuilt,
+                    isPrimaryPlayingLineChanged: lineChanged,
+                    currentPositionMs: currentTimeMs,
+                    animationVersion: _animationVersion);
             }
+            _lineJustRebuilt = false;
 
             if (_dbgFirstFrames.Count < 30)
                 _dbgFirstFrames.Add($"  frame#{_dbgUpdates} elapsed={dbgElapsed:F1} internal={_internalTimeMs:F1} ext={externalTimeMs:F0}");
 
-            _currentLine?.Update(args.Timing.ElapsedTime);   // 推进透明度等 ValueTransition
             DbgReportIfNeeded(_internalTimeMs);
         }
 
@@ -280,9 +325,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 _lineRenderer.Line = line;
                 _lineRenderer.PlayedFillColor = _color;
                 _lineRenderer.UnplayedFillColor = _color;
-                _lineRenderer.IsGlowEnabled = false;
-                _lineRenderer.IsScaleEnabled = false;
-                _lineRenderer.IsFloatEnabled = false;
+                _lineRenderer.IsGlowEnabled = GlowEnabled;
+                _lineRenderer.IsScaleEnabled = ScaleEnabled;
+                _lineRenderer.IsFloatEnabled = FloatEnabled;
                 _lineRenderer.Draw(sender, ds);
                 ds.Transform = prevTransform;
             }
@@ -342,6 +387,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 line.UnplayedPrimaryOpacityTransition.Start(UnplayedOpacity);
                 line.SecondaryOpacityTransition.Start(SecondaryOpacity);
                 _currentLine = line;
+                _renderLineList.Add(line);
+                _lineJustRebuilt = true;
                 _dbgRebuilds++;
             }
             catch (ObjectDisposedException)
@@ -358,6 +405,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _currentLine.DisposeTextLayout();
             _currentLine.DisposeTextGeometry();
             _currentLine = null;
+            _renderLineList.Clear();
         }
 
         /// <summary>二分查找当前行（StartMs &lt;= t 的最后一行；间隙期保持上一行，与文本渲染器行为一致）。</summary>
