@@ -7,6 +7,7 @@ using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Numerics;
 using Windows.UI;
 
@@ -46,7 +47,6 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private double _lastLayoutHeight;
 
         private double _internalTimeMs;
-        private double _lastExternalTimeMs;
         private bool _timeSyncValid;
         private long _lastTotalMs;
         private double _offsetMs;
@@ -60,6 +60,53 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private int _fontWeight = 400;
         private bool _showTranslation = true;
         private bool _disposed;
+
+        // ── 临时诊断（定位扫光卡顿，结论后整段删除）────────────────────────
+        private long _dbgWindowStart = Environment.TickCount64;
+        private int _dbgUpdates, _dbgDraws, _dbgSlowly, _dbgSyncs, _dbgRebuilds;
+        private double _dbgElapsedSum, _dbgElapsedMin = double.MaxValue, _dbgElapsedMax;
+        private double _dbgDrawMsSum, _dbgDrawMsMax;
+        private int _dbgRegionCount = -1;
+        private bool _dbgHasSyllable;
+        private readonly object _dbgLogLock = new();
+        private readonly List<string> _dbgFirstFrames = new();
+
+        private void DbgAppend(string line)
+        {
+            try
+            {
+                lock (_dbgLogLock)
+                {
+                    var dir = Path.Combine(
+                        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                        "OriginalSoundPlayer", "Logs");
+                    Directory.CreateDirectory(dir);
+                    File.AppendAllText(Path.Combine(dir, "karaoke-debug.log"), line + Environment.NewLine);
+                }
+            }
+            catch { /* 诊断日志永不影响渲染 */ }
+        }
+
+        private void DbgReportIfNeeded(double internalMs)
+        {
+            var now = Environment.TickCount64;
+            if (now - _dbgWindowStart < 1000) return;
+
+            int updates = _dbgUpdates, draws = _dbgDraws, slowly = _dbgSlowly, syncs = _dbgSyncs, rebuilds = _dbgRebuilds;
+            double avgE = updates > 0 ? _dbgElapsedSum / updates : 0;
+            double minE = _dbgElapsedMin == double.MaxValue ? 0 : _dbgElapsedMin;
+            double maxE = _dbgElapsedMax;
+            double avgD = draws > 0 ? _dbgDrawMsSum / draws : 0;
+            double maxD = _dbgDrawMsMax;
+            _dbgWindowStart = now;
+            _dbgUpdates = _dbgDraws = _dbgSlowly = _dbgSyncs = _dbgRebuilds = 0;
+            _dbgElapsedSum = 0; _dbgElapsedMin = double.MaxValue; _dbgElapsedMax = 0; _dbgDrawMsSum = 0; _dbgDrawMsMax = 0;
+
+            DbgAppend($"[{DateTime.Now:HH:mm:ss.fff}] upd/s={updates} draw/s={draws} slowly={slowly} " +
+                      $"sync={syncs} rebuild={rebuilds} elapsed avg={avgE:F1} min={minE:F1} max={maxE:F1} " +
+                      $"drawMs avg={avgD:F2} max={maxD:F2} internal={internalMs:F0} ext={_lastTotalMs} " +
+                      $"idx={_currentIndex} playing={_isPlaying} syllable={_dbgHasSyllable} regions={_dbgRegionCount}");
+        }
 
         public CanvasLyricsRenderer()
         {
@@ -88,6 +135,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             _lyrics = lyrics as List<LyricLine> ?? (lyrics is null ? null : [.. lyrics]);
             _lyricsChanged = true;
+            DbgAppend($"[{DateTime.Now:HH:mm:ss.fff}] SetLyrics count={_lyrics?.Count ?? -1}");
         }
 
         public void SetPlaybackTime(long totalMs) => _lastTotalMs = totalMs;
@@ -124,6 +172,13 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void OnCanvasUpdate(ICanvasAnimatedControl sender, CanvasAnimatedUpdateEventArgs args)
         {
+            _dbgUpdates++;
+            double dbgElapsed = args.Timing.ElapsedTime.TotalMilliseconds;
+            _dbgElapsedSum += dbgElapsed;
+            if (dbgElapsed < _dbgElapsedMin) _dbgElapsedMin = dbgElapsed;
+            if (dbgElapsed > _dbgElapsedMax) _dbgElapsedMax = dbgElapsed;
+            if (args.Timing.IsRunningSlowly) _dbgSlowly++;
+
             if (_lyricsChanged)
             {
                 DisposeCurrentLine();
@@ -132,22 +187,25 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 _layoutDirty = true;
             }
 
-            // 时间平滑（coordinator OnUpdate 同款）：播放中内部时钟按帧自增，
-            // 与外部时间偏差超阈值才硬同步；暂停时直接跟随外部时间
+            // 时间平滑：播放中内部时钟按帧自增（60fps 平滑），仅当外部观测与内部时钟的
+            // 偏差超阈值（seek/大跳）才硬同步。注意不能用"相邻帧外部增量"作判据
+            // （coordinator 同款写法）：桌面歌词消费的进度快照是底层 250ms 轮询的阶梯值，
+            // 相邻帧增量恰好 ≈250ms，会频繁误触发硬同步把扫光钳成阶梯跳变。暂停时直接跟随外部时间。
             double externalTimeMs = _lastTotalMs;
             if (_isPlaying)
             {
-                if (!_timeSyncValid || Math.Abs(externalTimeMs - _lastExternalTimeMs) > SyncThresholdMs)
+                if (!_timeSyncValid || Math.Abs(externalTimeMs - _internalTimeMs) > SyncThresholdMs)
+                {
                     _internalTimeMs = externalTimeMs;
+                    _dbgSyncs++;
+                }
                 else
-                    _internalTimeMs += args.Timing.ElapsedTime.TotalMilliseconds;
-                _lastExternalTimeMs = externalTimeMs;
+                    _internalTimeMs += dbgElapsed;
                 _timeSyncValid = true;
             }
             else
             {
                 _internalTimeMs = externalTimeMs;
-                _lastExternalTimeMs = externalTimeMs;
                 _timeSyncValid = true;
             }
             double currentTimeMs = _internalTimeMs - _offsetMs;
@@ -162,17 +220,36 @@ namespace WinUIMusicPlayer.DesktopLyrics
             if (_layoutDirty || lineChanged || sizeChanged)
                 RebuildLine(sender, newIndex, width, height);
 
+            // 逐字符"正在播放"标记：整页歌词渲染由 LyricsAnimator.UpdateLines 维护，
+            // 薄宿主不接动画器，必须自行维护——否则 ComputeRegionPlayedWidth 对播放中的
+            // 字符不记分数进度，扫光退化为按整字符跳变（卡顿）。
+            if (_currentLine is { } currentLine)
+            {
+                if (currentLine.IsPrimaryHasRealSyllableInfo)
+                {
+                    var chars = currentLine.PrimaryRenderChars;
+                    for (int i = 0; i < chars.Count; i++)
+                        chars[i].IsPlayingLastFrame = chars[i].GetIsPlaying(currentTimeMs);
+                }
+                currentLine.IsPlayingLastFrame = currentLine.GetIsPlaying(currentTimeMs);
+            }
+
+            if (_dbgFirstFrames.Count < 30)
+                _dbgFirstFrames.Add($"  frame#{_dbgUpdates} elapsed={dbgElapsed:F1} internal={_internalTimeMs:F1} ext={externalTimeMs:F0}");
+
             _currentLine?.Update(args.Timing.ElapsedTime);   // 推进透明度等 ValueTransition
+            DbgReportIfNeeded(_internalTimeMs);
         }
 
         private void OnCanvasDraw(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs args)
         {
+            var dbgStopwatch = System.Diagnostics.Stopwatch.StartNew();
             var ds = args.DrawingSession;
             ds.Clear(Colors.Transparent);
 
             var line = _currentLine;
-            if (line?.PrimaryTextLayout is null) return;
-            if (line.PrimaryTextLayout.LayoutBounds.Width <= 0) return;
+            if (line?.PrimaryTextLayout is null) { _dbgDraws++; DbgReportIfNeeded(_internalTimeMs); return; }
+            if (line.PrimaryTextLayout.LayoutBounds.Width <= 0) { _dbgDraws++; DbgReportIfNeeded(_internalTimeMs); return; }
 
             int strokeWidth = (int)(_outline ? _outlineWidth : 0);
             double currentTimeMs = _internalTimeMs - _offsetMs;
@@ -215,6 +292,17 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 line.DisposeCaches();
                 _layoutDirty = true;
             }
+            finally
+            {
+                _dbgDraws++;
+                dbgStopwatch.Stop();
+                double ms = dbgStopwatch.Elapsed.TotalMilliseconds;
+                _dbgDrawMsSum += ms;
+                if (ms > _dbgDrawMsMax) _dbgDrawMsMax = ms;
+                _dbgHasSyllable = line.IsPrimaryHasRealSyllableInfo;
+                _dbgRegionCount = line.RenderLyricsRegions?.Length ?? -1;
+                DbgReportIfNeeded(_internalTimeMs);
+            }
         }
 
         // ── 行构建与释放 ─────────────────────────────────────────────────────
@@ -254,6 +342,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 line.UnplayedPrimaryOpacityTransition.Start(UnplayedOpacity);
                 line.SecondaryOpacityTransition.Start(SecondaryOpacity);
                 _currentLine = line;
+                _dbgRebuilds++;
             }
             catch (ObjectDisposedException)
             {
