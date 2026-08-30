@@ -1001,10 +1001,15 @@ namespace WinUIMusicPlayer.Services
                     (byte)((settings.DesktopLyricsColorRgb >> 8) & 0xFF),
                     (byte)(settings.DesktopLyricsColorRgb & 0xFF));
                 AppViewModel.IsDesktopLyricsOutlineEnabled = settings.IsDesktopLyricsOutlineEnabled;
+                AppViewModel.IsDesktopLyricsKaraokeEnabled = settings.IsDesktopLyricsKaraokeEnabled;
                 AppViewModel.IsDesktopLyricsTranslationEnabled = settings.IsDesktopLyricsTranslationEnabled;
                 AppViewModel.IsDesktopLyricsGlowEnabled = settings.IsDesktopLyricsGlowEnabled;
                 AppViewModel.IsDesktopLyricsCharFloatEnabled = settings.IsDesktopLyricsCharFloatEnabled;
                 AppViewModel.IsDesktopLyricsCharScaleEnabled = settings.IsDesktopLyricsCharScaleEnabled;
+                AppViewModel.DesktopLyricsLongSyllableThreshold = settings.DesktopLyricsLongSyllableThreshold;
+                AppViewModel.DesktopLyricsGlowAmount = settings.DesktopLyricsGlowAmount;
+                AppViewModel.DesktopLyricsCharFloatAmount = settings.DesktopLyricsCharFloatAmount;
+                AppViewModel.DesktopLyricsCharScaleAmount = settings.DesktopLyricsCharScaleAmount;
                 AppViewModel.DesktopLyricsFontWeight = settings.DesktopLyricsFontWeight;
                 AppViewModel.DesktopLyricsOutlineWidth = settings.DesktopLyricsOutlineWidth;
                 AppViewModel.LyricsFontWeight = settings.LyricsFontWeight;
@@ -1193,6 +1198,10 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsDesktopLyricsGlowEnabled = AppSettings.IsDesktopLyricsGlowEnabled;
             newSettings.IsDesktopLyricsCharFloatEnabled = AppSettings.IsDesktopLyricsCharFloatEnabled;
             newSettings.IsDesktopLyricsCharScaleEnabled = AppSettings.IsDesktopLyricsCharScaleEnabled;
+            newSettings.DesktopLyricsLongSyllableThreshold = AppSettings.DesktopLyricsLongSyllableThreshold;
+            newSettings.DesktopLyricsGlowAmount = AppSettings.DesktopLyricsGlowAmount;
+            newSettings.DesktopLyricsCharFloatAmount = AppSettings.DesktopLyricsCharFloatAmount;
+            newSettings.DesktopLyricsCharScaleAmount = AppSettings.DesktopLyricsCharScaleAmount;
             newSettings.DesktopLyricsFontWeight = AppSettings.DesktopLyricsFontWeight;
             newSettings.DesktopLyricsOutlineWidth = AppSettings.DesktopLyricsOutlineWidth;
             newSettings.LyricsFontWeight = AppSettings.LyricsFontWeight;

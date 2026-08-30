@@ -1395,6 +1395,18 @@
   <data name="DesktopLyricsCharScale.Text" xml:space="preserve">
     <value>桌面歌词字缩</value>
   </data>
+  <data name="DesktopLyricsLongSyllableThreshold.Text" xml:space="preserve">
+    <value>桌面歌词长音节阈值(ms)</value>
+  </data>
+  <data name="DesktopLyricsGlowAmount.Text" xml:space="preserve">
+    <value>桌面歌词发光强度</value>
+  </data>
+  <data name="DesktopLyricsCharFloatAmount.Text" xml:space="preserve">
+    <value>桌面歌词字浮强度</value>
+  </data>
+  <data name="DesktopLyricsCharScaleAmount.Text" xml:space="preserve">
+    <value>桌面歌词字缩强度</value>
+  </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>桌面歌词字重</value>
   </data>

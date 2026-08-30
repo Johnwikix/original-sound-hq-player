@@ -659,13 +659,91 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = true;
 
-        /// <summary>逐字效果开关（设置页绑定入口）：委托桌面歌词 VM 单例，
-        /// 持久化与窗口热切换通知由 VM 的 IsKaraokeEnabled setter 完成，此处不经样式防抖提交。</summary>
+        /// <summary>长音节阈值（ms）：音节时长达到该值才触发发光/字缩动效（与主界面 LongSyllableThreshold 同语义）。</summary>
+        public double DesktopLyricsLongSyllableThreshold
+        {
+            get => field;
+            set
+            {
+                value = Math.Clamp(value, 0, 5000);
+                if (SetProperty(ref field, value))
+                {
+                    AppSettings.DesktopLyricsLongSyllableThreshold = value;
+                    if (IsInitialized)
+                    {
+                        ScheduleDesktopLyricsStyleCommit();
+                    }
+                }
+            }
+        } = 700.0;
+
+        /// <summary>发光强度（px，模糊半径）：0 无发光（与主界面 GlowAmount 同语义）。</summary>
+        public double DesktopLyricsGlowAmount
+        {
+            get => field;
+            set
+            {
+                value = Math.Clamp(value, 0, 10);
+                if (SetProperty(ref field, value))
+                {
+                    AppSettings.DesktopLyricsGlowAmount = value;
+                    if (IsInitialized)
+                    {
+                        ScheduleDesktopLyricsStyleCommit();
+                    }
+                }
+            }
+        } = 5.0;
+
+        /// <summary>字浮强度（px，上浮距离）：0 无浮动（与主界面 CharFloatAmount 同语义）。</summary>
+        public double DesktopLyricsCharFloatAmount
+        {
+            get => field;
+            set
+            {
+                value = Math.Clamp(value, 0, 10);
+                if (SetProperty(ref field, value))
+                {
+                    AppSettings.DesktopLyricsCharFloatAmount = value;
+                    if (IsInitialized)
+                    {
+                        ScheduleDesktopLyricsStyleCommit();
+                    }
+                }
+            }
+        } = 5.0;
+
+        /// <summary>字缩强度（%，长音节字符放大比例，110 = 1.1 倍）：与主界面 CharScaleAmount 同语义。</summary>
+        public double DesktopLyricsCharScaleAmount
+        {
+            get => field;
+            set
+            {
+                value = Math.Clamp(value, 50, 150);
+                if (SetProperty(ref field, value))
+                {
+                    AppSettings.DesktopLyricsCharScaleAmount = value;
+                    if (IsInitialized)
+                    {
+                        ScheduleDesktopLyricsStyleCommit();
+                    }
+                }
+            }
+        } = 110.0;
+
+        /// <summary>逐字效果开关（设置页绑定入口）：field-backed 可观察属性保证 OneWay 绑定联动；
+        /// 转发给桌面歌词 VM 单例（其 setter 负责持久化与窗口热切换通知），不经样式防抖提交。</summary>
         public bool IsDesktopLyricsKaraokeEnabled
         {
-            get => App.Services.GetRequiredService<DesktopLyricsViewModel>().IsKaraokeEnabled;
-            set => App.Services.GetRequiredService<DesktopLyricsViewModel>().IsKaraokeEnabled = value;
-        }
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    App.Services.GetRequiredService<DesktopLyricsViewModel>().IsKaraokeEnabled = value;
+                }
+            }
+        } = false;
 
         public int DesktopLyricsFontWeight
         {

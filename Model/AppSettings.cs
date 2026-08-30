@@ -54,6 +54,10 @@ namespace WinUIMusicPlayer.Model
         public static bool IsDesktopLyricsGlowEnabled { get; set; } = true;
         public static bool IsDesktopLyricsCharFloatEnabled { get; set; } = true;
         public static bool IsDesktopLyricsCharScaleEnabled { get; set; } = true;
+        public static double DesktopLyricsLongSyllableThreshold { get; set; } = 700.0;
+        public static double DesktopLyricsGlowAmount { get; set; } = 5.0;
+        public static double DesktopLyricsCharFloatAmount { get; set; } = 5.0;
+        public static double DesktopLyricsCharScaleAmount { get; set; } = 110.0;
         public static int DesktopLyricsFontWeight { get; set; } = 400;
         public static double DesktopLyricsOutlineWidth { get; set; } = 1.5;
         public static int LyricsFontWeight { get; set; } = 700;
