@@ -130,11 +130,18 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             if (_disposed) return;
             _disposed = true;
+            // 先停循环、摘事件，再丢弃引用。注意：绝不能在 UI 线程释放行的 Win2D 资源——
+            // Paused=true 只阻止后续 tick，渲染线程可能正处于一次 Draw 的中段（关闭窗口与
+            // 渲染 tick 并发），此时释放 CachedFill/效果链/文本布局会被 DrawSecondaryText 等
+            // 访问到已释放的原生资源，抛出的异常在渲染线程上无法被 UI 线程的
+            // UnhandledException(Handled=true) 吞掉，直接终止进程。
+            // 资源交给 GC 与 Win2D 设备回收：窗口关闭后整窗资源一并消亡，无泄漏窗口期。
             _canvas.Paused = true;
             _canvas.CreateResources -= OnCanvasCreateResources;
             _canvas.Update -= OnCanvasUpdate;
             _canvas.Draw -= OnCanvasDraw;
-            DisposeCurrentLine();
+            _currentLine = null;
+            _renderLineList.Clear();
         }
 
         // ── Canvas 回调（渲染线程） ──────────────────────────────────────────
@@ -149,89 +156,99 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void OnCanvasUpdate(ICanvasAnimatedControl sender, CanvasAnimatedUpdateEventArgs args)
         {
-            if (_lyricsChanged)
+            if (_disposed) return;
+            try
             {
-                DisposeCurrentLine();
-                _currentIndex = -1;
-                _lyricsChanged = false;
+                if (_lyricsChanged)
+                {
+                    DisposeCurrentLine();
+                    _currentIndex = -1;
+                    _lyricsChanged = false;
+                    _layoutDirty = true;
+                }
+
+                // 时间平滑：播放中内部时钟按帧自增（60fps 平滑），仅当外部观测与内部时钟的
+                // 偏差超阈值（seek/大跳）才硬同步。注意不能用"相邻帧外部增量"作判据
+                // （coordinator 同款写法）：桌面歌词消费的进度快照是底层 250ms 轮询的阶梯值，
+                // 相邻帧增量恰好 ≈250ms，会频繁误触发硬同步把扫光钳成阶梯跳变。暂停时直接跟随外部时间。
+                double externalTimeMs = _lastTotalMs;
+                if (_isPlaying)
+                {
+                    if (!_timeSyncValid || Math.Abs(externalTimeMs - _internalTimeMs) > SyncThresholdMs)
+                        _internalTimeMs = externalTimeMs;
+                    else
+                        _internalTimeMs += args.Timing.ElapsedTime.TotalMilliseconds;
+                    _timeSyncValid = true;
+                }
+                else
+                {
+                    _internalTimeMs = externalTimeMs;
+                    _timeSyncValid = true;
+                }
+                double currentTimeMs = _internalTimeMs - _offsetMs;
+
+                int newIndex = FindCurrentLineIndex(currentTimeMs);
+                bool lineChanged = newIndex != _currentIndex;
+                _currentIndex = newIndex;
+
+                double width = _canvas.Size.Width;
+                double height = _canvas.Size.Height;
+                bool sizeChanged = Math.Abs(width - _lastLayoutWidth) > 0.5 || Math.Abs(height - _lastLayoutHeight) > 0.5;
+                if (_layoutDirty || lineChanged || sizeChanged)
+                    RebuildLine(sender, newIndex, width, height);
+
+                // 逐字动效（发光/字浮/字缩）、逐字符"正在播放"标记与透明度过渡统一交给
+                // LyricsAnimator 驱动（触发语义与主界面一致）：单元素列表 = 当前播放行。
+                // 字符标记缺失会让 ComputeRegionPlayedWidth 丢失字符内分数进度（扫光按整字符跳变）。
+                if (_renderLineList.Count > 0)
+                {
+                    _animationVersion++;
+                    _animator.UpdateLines(
+                        _renderLineList,
+                        startIndex: 0,
+                        endIndex: 0,
+                        primaryPlayingLineIndex: 0,
+                        lyricsWidth: width,
+                        lyricsHeight: height,
+                        targetYScrollOffset: 0,
+                        playingLineTopOffsetFactor: 0.5,
+                        isLyricsBlurEffectEnabled: false,
+                        isLyricsOutOfSightEffectEnabled: false,
+                        isLyricsFadeOutEffectEnabled: false,
+                        unplayedPrimaryOpacity: 1.0,   // 未播放填充不透明（压暗预混进颜色，见 UnplayedOpacity 注释）
+                        playedPrimaryOpacity: 1.0,
+                        secondaryOpacity: SecondaryOpacity,
+                        isLyricsGlowEffectEnabled: _glow,
+                        lyricsGlowEffectAmount: _glowAmountPx,
+                        lyricsGlowEffectLongSyllableDuration: _longSyllableThreshold,
+                        isLyricsFloatAnimationEnabled: _charFloat,
+                        lyricsFloatAnimationAmount: _floatAmountPx,
+                        lyricsFloatAnimationDuration: FloatDurationMs,
+                        isLyricsScaleEffectEnabled: _charScale,
+                        lyricsScaleEffectAmount: _scaleFactor,
+                        lyricsScaleEffectLongSyllableDuration: _longSyllableThreshold,
+                        blurAmountMax: 0,
+                        canvasYScrollTransition: _scrollTransitionStub,
+                        elapsedTime: args.Timing.ElapsedTime,
+                        isMouseScrolling: false,
+                        isMouseScrollingChanged: false,
+                        isLayoutChanged: _lineJustRebuilt,
+                        isPrimaryPlayingLineChanged: lineChanged,
+                        currentPositionMs: currentTimeMs,
+                        animationVersion: _animationVersion);
+                }
+                _lineJustRebuilt = false;
+            }
+            catch (Exception)
+            {
+                // 渲染线程异常绝不允许逃逸（逃逸 = 进程终止，见 Dispose 注释）；标记重建，下一帧重试
                 _layoutDirty = true;
             }
-
-            // 时间平滑：播放中内部时钟按帧自增（60fps 平滑），仅当外部观测与内部时钟的
-            // 偏差超阈值（seek/大跳）才硬同步。注意不能用"相邻帧外部增量"作判据
-            // （coordinator 同款写法）：桌面歌词消费的进度快照是底层 250ms 轮询的阶梯值，
-            // 相邻帧增量恰好 ≈250ms，会频繁误触发硬同步把扫光钳成阶梯跳变。暂停时直接跟随外部时间。
-            double externalTimeMs = _lastTotalMs;
-            if (_isPlaying)
-            {
-                if (!_timeSyncValid || Math.Abs(externalTimeMs - _internalTimeMs) > SyncThresholdMs)
-                    _internalTimeMs = externalTimeMs;
-                else
-                    _internalTimeMs += args.Timing.ElapsedTime.TotalMilliseconds;
-                _timeSyncValid = true;
-            }
-            else
-            {
-                _internalTimeMs = externalTimeMs;
-                _timeSyncValid = true;
-            }
-            double currentTimeMs = _internalTimeMs - _offsetMs;
-
-            int newIndex = FindCurrentLineIndex(currentTimeMs);
-            bool lineChanged = newIndex != _currentIndex;
-            _currentIndex = newIndex;
-
-            double width = _canvas.Size.Width;
-            double height = _canvas.Size.Height;
-            bool sizeChanged = Math.Abs(width - _lastLayoutWidth) > 0.5 || Math.Abs(height - _lastLayoutHeight) > 0.5;
-            if (_layoutDirty || lineChanged || sizeChanged)
-                RebuildLine(sender, newIndex, width, height);
-
-            // 逐字动效（发光/字浮/字缩）、逐字符"正在播放"标记与透明度过渡统一交给
-            // LyricsAnimator 驱动（触发语义与主界面一致）：单元素列表 = 当前播放行。
-            // 字符标记缺失会让 ComputeRegionPlayedWidth 丢失字符内分数进度（扫光按整字符跳变）。
-            if (_renderLineList.Count > 0)
-            {
-                _animationVersion++;
-                _animator.UpdateLines(
-                    _renderLineList,
-                    startIndex: 0,
-                    endIndex: 0,
-                    primaryPlayingLineIndex: 0,
-                    lyricsWidth: width,
-                    lyricsHeight: height,
-                    targetYScrollOffset: 0,
-                    playingLineTopOffsetFactor: 0.5,
-                    isLyricsBlurEffectEnabled: false,
-                    isLyricsOutOfSightEffectEnabled: false,
-                    isLyricsFadeOutEffectEnabled: false,
-                    unplayedPrimaryOpacity: 1.0,   // 未播放填充不透明（压暗预混进颜色，见 UnplayedOpacity 注释）
-                    playedPrimaryOpacity: 1.0,
-                    secondaryOpacity: SecondaryOpacity,
-                    isLyricsGlowEffectEnabled: _glow,
-                    lyricsGlowEffectAmount: _glowAmountPx,
-                    lyricsGlowEffectLongSyllableDuration: _longSyllableThreshold,
-                    isLyricsFloatAnimationEnabled: _charFloat,
-                    lyricsFloatAnimationAmount: _floatAmountPx,
-                    lyricsFloatAnimationDuration: FloatDurationMs,
-                    isLyricsScaleEffectEnabled: _charScale,
-                    lyricsScaleEffectAmount: _scaleFactor,
-                    lyricsScaleEffectLongSyllableDuration: _longSyllableThreshold,
-                    blurAmountMax: 0,
-                    canvasYScrollTransition: _scrollTransitionStub,
-                    elapsedTime: args.Timing.ElapsedTime,
-                    isMouseScrolling: false,
-                    isMouseScrollingChanged: false,
-                    isLayoutChanged: _lineJustRebuilt,
-                    isPrimaryPlayingLineChanged: lineChanged,
-                    currentPositionMs: currentTimeMs,
-                    animationVersion: _animationVersion);
-            }
-            _lineJustRebuilt = false;
         }
 
         private void OnCanvasDraw(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs args)
         {
+            if (_disposed) return;
             var ds = args.DrawingSession;
             ds.Clear(Colors.Transparent);
 
@@ -289,6 +306,11 @@ namespace WinUIMusicPlayer.DesktopLyrics
             {
                 // 设备丢失（coordinator 同款兜底）：弃缓存，下帧经 _layoutDirty 重建
                 line.DisposeCaches();
+                _layoutDirty = true;
+            }
+            catch (Exception)
+            {
+                // 渲染线程异常绝不允许逃逸（逃逸 = 进程终止，见 Dispose 注释）；标记重建，下一帧重试
                 _layoutDirty = true;
             }
         }
