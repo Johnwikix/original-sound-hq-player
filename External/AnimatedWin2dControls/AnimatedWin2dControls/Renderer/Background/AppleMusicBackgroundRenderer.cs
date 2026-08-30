@@ -72,7 +72,10 @@ namespace AnimatedWin2dControls.Renderer.Background
         private float _targetDpi;
         private float _meshDpi;
 
-        private D2D1ResourceTextureManager? _artworkManager;
+        private readonly D2D1ResourceTextureManager?[] _artworkManagers = new D2D1ResourceTextureManager?[2];
+        private int _activeArtworkSlot;
+        private float _artworkTransitionStart;
+        private bool _artworkTransitioning;
         private CanvasBitmap? _meshBitmap;
         private bool _meshIsPortrait;
         private int _meshRows;
@@ -108,8 +111,11 @@ namespace AnimatedWin2dControls.Renderer.Background
                 _compositeEffect = new PixelShaderEffect<AppleMusicCompositeEffect>();
 
                 // 资源纹理管理器与设备无关，可在多个效果实例间共享复用。
-                if (_artworkManager is not null)
-                    _rotationEffect.ResourceTextureManagers[0] = _artworkManager;
+                for (int i = 0; i < 2; i++)
+                {
+                    if (_artworkManagers[i] is not null)
+                        _rotationEffect.ResourceTextureManagers[i] = _artworkManagers[i];
+                }
             }
 
             if (CurrentPalette is not null) SetPalette(CurrentPalette);
@@ -142,7 +148,7 @@ namespace AnimatedWin2dControls.Renderer.Background
 
                 EnsureTargets(control, widthDip, heightDip, backdropWidth, backdropHeight);
                 EnsureMeshBitmap(control, backdropHeight > backdropWidth);
-                EnsureArtworkManager();
+                EnsureArtworkManagers();
                 PushPendingArtwork();
 
                 // PinchVertex：phase = acos(sin(Time * pi / 5)) / pi，mix = smoothstep(phase)。
@@ -154,12 +160,27 @@ namespace AnimatedWin2dControls.Renderer.Background
                 float pinchTextureScale = isPortrait ? PortraitTextureScale : LandscapeTextureScale;
                 float pinchTextureOffset = (1f - pinchTextureScale) * 0.5f;
 
+                // 换歌交叉淡化进度：1.2s smoothstep 推向当前封面槽位。
+                float artworkMix;
+                if (_artworkTransitioning)
+                {
+                    float t = Math.Clamp((time - _artworkTransitionStart) / 1.2f, 0f, 1f);
+                    artworkMix = t * t * (3f - 2f * t);
+                    if (_activeArtworkSlot == 0) artworkMix = 1f - artworkMix;
+                    if (t >= 1f) _artworkTransitioning = false;
+                }
+                else
+                {
+                    artworkMix = _activeArtworkSlot == 1 ? 1f : 0f;
+                }
+
                 // Pass 1 —— 旋转封面层绘制到 1/8 中间目标。
                 _rotationEffect!.ConstantBuffer = new AppleMusicRotationEffect(
                     new float2(_targetWidth, _targetHeight),
                     time,
                     rotationScale: 1f,
-                    imageScale: 1f);
+                    imageScale: 1f,
+                    artworkMix);
 
                 using (var rotationSession = _rotationTarget!.CreateDrawingSession())
                 {
@@ -370,22 +391,28 @@ namespace AnimatedWin2dControls.Renderer.Background
             _meshDpi = dpi;
         }
 
-        private void EnsureArtworkManager()
+        private void EnsureArtworkManagers()
         {
-            if (_artworkManager is not null)
+            if (_artworkManagers[0] is not null)
                 return;
 
-            // 固定 Edge² 尺寸：换歌仅 Update，不重建管理器。
-            _artworkManager = new D2D1ResourceTextureManager(
-                stackalloc uint[] { ArtworkPixelData.Edge, ArtworkPixelData.Edge },
-                D2D1BufferPrecision.UInt8Normalized,
-                D2D1ChannelDepth.Four,
-                D2D1Filter.MinMagMipLinear,
-                stackalloc D2D1ExtendMode[] { D2D1ExtendMode.Clamp, D2D1ExtendMode.Clamp },
-                CreateDefaultArtwork().Pixels,
-                stackalloc uint[] { ArtworkPixelData.Edge * 4 });
+            // 双槽固定 Edge² 尺寸：换歌写入非活动槽并交叉淡化，仅需 Update 不重建。
+            for (int i = 0; i < 2; i++)
+            {
+                _artworkManagers[i] = new D2D1ResourceTextureManager(
+                    stackalloc uint[] { ArtworkPixelData.Edge, ArtworkPixelData.Edge },
+                    D2D1BufferPrecision.UInt8Normalized,
+                    D2D1ChannelDepth.Four,
+                    D2D1Filter.MinMagMipLinear,
+                    stackalloc D2D1ExtendMode[] { D2D1ExtendMode.Clamp, D2D1ExtendMode.Clamp },
+                    CreateDefaultArtwork().Pixels,
+                    stackalloc uint[] { ArtworkPixelData.Edge * 4 });
 
-            _rotationEffect!.ResourceTextureManagers[0] = _artworkManager;
+                _rotationEffect!.ResourceTextureManagers[i] = _artworkManagers[i];
+            }
+
+            _activeArtworkSlot = 0;
+            _artworkTransitioning = false;
         }
 
         private void PushPendingArtwork()
@@ -394,11 +421,18 @@ namespace AnimatedWin2dControls.Renderer.Background
             if (pending is null) return;
             _pendingArtwork = null;
 
-            _artworkManager!.Update(
+            // 写入非活动槽并切槽，启动 1.2s 交叉淡化（与其它 shader 的像素平滑过渡对齐）。
+            int slot = 1 - _activeArtworkSlot;
+
+            _artworkManagers[slot]!.Update(
                 stackalloc uint[] { 0, 0 },
                 stackalloc uint[] { ArtworkPixelData.Edge, ArtworkPixelData.Edge },
                 stackalloc uint[] { ArtworkPixelData.Edge * 4 },
                 pending.Pixels);
+
+            _activeArtworkSlot = slot;
+            _artworkTransitionStart = Time;
+            _artworkTransitioning = true;
         }
 
         // ── 兜底封面 ─────────────────────────────────────────────────────
@@ -474,7 +508,12 @@ namespace AnimatedWin2dControls.Renderer.Background
                 _compositeEffect?.Dispose();
                 _compositeEffect = null;
 
-                _artworkManager = null;
+                // D2D1ResourceTextureManager 无 Dispose，交给终结器回收。
+                for (int i = 0; i < 2; i++)
+                {
+                    _artworkManagers[i] = null;
+                }
+
                 _meshBitmap?.Dispose();
                 _meshBitmap = null;
                 _pendingArtwork = null;
