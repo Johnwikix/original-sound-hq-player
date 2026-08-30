@@ -894,7 +894,6 @@ namespace WinUIMusicPlayer.Services
                     playState.LastPlayedMusicId = AppViewModel.SongsSource[0].Id;
                 }
                 AppViewModel.CurrentPlayMode = playState.PlayMode;
-                AppViewModel.PlayModeFlyoutText = ToolUtils.GetPlayModeText(playState.PlayMode);
                 AppViewModel.CurrentPlayingMusic = LoadCurrentPlayingMusic(playState.LastPlayedMusicId);
                 AppViewModel.Volume = playState.Volume;
                 AppViewModel.TempVolume = playState.Volume;

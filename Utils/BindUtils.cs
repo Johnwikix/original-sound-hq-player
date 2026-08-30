@@ -30,6 +30,10 @@ namespace WinUIMusicPlayer.Utils
                 return false;
             return currentPlayMode.ToString().Equals(targetPlayMode, StringComparison.OrdinalIgnoreCase);
         }
+
+        /// <summary>播放模式 → 本地化标题文本（随 CurrentPlayMode 函数绑定，替代曾经的 PlayModeFlyoutText 属性）。</summary>
+        public static string PlayModeToTextConverter(PlayMode currentPlayMode)
+            => GetPlayModeText(currentPlayMode);
         public static bool RadioButtonTagToBoolConverter(string themeType, string type)
         {
             if (themeType is null || type is null)

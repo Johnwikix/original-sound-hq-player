@@ -265,7 +265,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void LockButton_Click(object sender, RoutedEventArgs e)
         {
-            DesktopLyricsManager.SetLocked(!DesktopLyricsManager.IsLocked);
+            ViewModel.IsDesktopLyricsLocked = !ViewModel.IsDesktopLyricsLocked;
         }
 
         private void ResetButton_Click(object sender, RoutedEventArgs e)
@@ -275,7 +275,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            DesktopLyricsManager.SetEnabled(false);
+            ViewModel.IsDesktopLyricsEnabled = false;
         }
 
         // ==== 手动拖动：按住任意位置拖动（GetCursorPos 与 AppWindow.Position 均为物理像素） ====

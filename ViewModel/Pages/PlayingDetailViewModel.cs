@@ -45,23 +45,18 @@ namespace WinUIMusicPlayer.ViewModel.Pages
             {
                 case PlayMode.SingleLoop:
                     AppViewModel.CurrentPlayMode = PlayMode.ListLoop;
-                    AppViewModel.PlayModeFlyoutText = ToolUtils.GetString("IconListLoop");
                     break;
                 case PlayMode.ListLoop:
                     AppViewModel.CurrentPlayMode = PlayMode.RandomLoop;
-                    AppViewModel.PlayModeFlyoutText = ToolUtils.GetString("IconRandomLoop");
                     break;
                 case PlayMode.RandomLoop:
                     AppViewModel.CurrentPlayMode = PlayMode.RepeatOff;
-                    AppViewModel.PlayModeFlyoutText = ToolUtils.GetString("IconSinglePlayback");
                     break;
                 case PlayMode.RepeatOff:
                     AppViewModel.CurrentPlayMode = PlayMode.SingleLoop;
-                    AppViewModel.PlayModeFlyoutText = ToolUtils.GetString("IconSingleTuneCirculation");
                     break;
             }
             App.Services.GetRequiredService<BassPlayerCommandService>().UpdateSettings();
-
         }
 
         [RelayCommand]
