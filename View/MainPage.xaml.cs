@@ -57,18 +57,11 @@ namespace WinUIMusicPlayer.View
             ViewModel.MusicBrowseVM.SetMainPage(this);
             Loaded += MainPage_Loaded;
             Unloaded += MainPage_Unloaded;
-            DesktopLyricsManager.StateChanged += OnDesktopLyricsStateChanged;
-            OnDesktopLyricsStateChanged();
         }
 
         private void DesktopLyricsButton_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.AppViewModel.IsDesktopLyricsEnabled = !ViewModel.AppViewModel.IsDesktopLyricsEnabled;
-        }
-
-        private void OnDesktopLyricsStateChanged()
-        {
-            DesktopLyricsIcon.Opacity = DesktopLyricsManager.IsEnabled ? 1.0 : 0.4;
+            ViewModel.DesktopLyrics.IsEnabled = !ViewModel.DesktopLyrics.IsEnabled;
         }
 
         private void MainPage_Loaded(object sender, RoutedEventArgs e)

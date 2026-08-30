@@ -36,7 +36,7 @@
             Orientation="Horizontal"
             Spacing="6">
             <Button Click="LockButton_Click">
-                <FontIcon FontSize="14" Glyph="{x:Bind tools:BindUtils.LockGlyphConverter(ViewModel.IsDesktopLyricsLocked), Mode=OneWay}" />
+                <FontIcon FontSize="14" Glyph="{x:Bind tools:BindUtils.LockGlyphConverter(ViewModel.IsLocked), Mode=OneWay}" />
             </Button>
             <Button Click="ResetButton_Click">
                 <FontIcon FontSize="14" Glyph="&#xE7A7;" />

@@ -17,28 +17,29 @@ namespace WinUIMusicPlayer.Controls
     /// <summary>
     /// 托盘图标与上下文菜单。状态展示全部经 x:Bind 绑定 VM/转换器；
     /// 播放控制/播放模式/音量命令来自对应 VM，窗口激活与导航等托盘组合命令在本类。
-    /// 桌面歌词开关/锁定统一写 AppViewModel.IsDesktopLyricsEnabled/IsDesktopLyricsLocked，
-    /// 由 setter 驱动 DesktopLyricsManager 并经 StateChanged 镜像回绑定源。
+    /// 桌面歌词开关/锁定读写 <see cref="DesktopLyricsViewModel"/>（INPC 绑定源，setter 驱动窗口生命周期）。
     /// </summary>
     public sealed partial class NotifyIconControl : Microsoft.UI.Xaml.Controls.UserControl, IDisposable
     {
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
         public AppViewModel AppViewModel { get; }
+        public DesktopLyricsViewModel DesktopLyrics { get; }
 
         public NotifyIconControl()
         {
             this.InitializeComponent();
             MusicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             AppViewModel = App.Services.GetRequiredService<AppViewModel>();
+            DesktopLyrics = App.Services.GetRequiredService<DesktopLyricsViewModel>();
         }
 
         // ==== 托盘组合命令（窗口激活/导航/桌面歌词） ====
 
         [RelayCommand]
-        private void ToggleDesktopLyrics() => AppViewModel.IsDesktopLyricsEnabled = !AppViewModel.IsDesktopLyricsEnabled;
+        private void ToggleDesktopLyrics() => DesktopLyrics.IsEnabled = !DesktopLyrics.IsEnabled;
 
         [RelayCommand]
-        private void ToggleDesktopLyricsLock() => AppViewModel.IsDesktopLyricsLocked = !AppViewModel.IsDesktopLyricsLocked;
+        private void ToggleDesktopLyricsLock() => DesktopLyrics.IsLocked = !DesktopLyrics.IsLocked;
 
         [RelayCommand]
         private void ResetDesktopLyricsBounds() => DesktopLyricsManager.ResetWindowBounds();

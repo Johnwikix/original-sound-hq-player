@@ -69,6 +69,10 @@ namespace WinUIMusicPlayer.Utils
         public static string DesktopLyricsGlyphConverter(bool enabled)
             => enabled ? "\uED1A" : "\uE890";
 
+        /// <summary>桌面歌词开关状态 → 播放条按钮透明度（启用 1.0 / 停用 0.4）。</summary>
+        public static double DesktopLyricsButtonOpacity(bool enabled)
+            => enabled ? 1.0 : 0.4;
+
         public static double BoolToOpacityReConverter(bool isInPlayingDetailMode)
         {
             return isInPlayingDetailMode ? 0 : 1;

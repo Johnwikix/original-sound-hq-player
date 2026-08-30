@@ -127,14 +127,14 @@
                     x:Uid="IconDesktopLyrics"
                     Command="{x:Bind ToggleDesktopLyricsCommand}">
                     <MenuFlyoutItem.Icon>
-                        <FontIcon Glyph="{x:Bind tools:BindUtils.DesktopLyricsGlyphConverter(AppViewModel.IsDesktopLyricsEnabled), Mode=OneWay}" />
+                        <FontIcon Glyph="{x:Bind tools:BindUtils.DesktopLyricsGlyphConverter(DesktopLyrics.IsEnabled), Mode=OneWay}" />
                     </MenuFlyoutItem.Icon>
                 </MenuFlyoutItem>
                 <MenuFlyoutItem
                     x:Uid="IconDesktopLyricsLock"
                     Command="{x:Bind ToggleDesktopLyricsLockCommand}">
                     <MenuFlyoutItem.Icon>
-                        <FontIcon Glyph="{x:Bind tools:BindUtils.LockGlyphConverter(AppViewModel.IsDesktopLyricsLocked), Mode=OneWay}" />
+                        <FontIcon Glyph="{x:Bind tools:BindUtils.LockGlyphConverter(DesktopLyrics.IsLocked), Mode=OneWay}" />
                     </MenuFlyoutItem.Icon>
                 </MenuFlyoutItem>
                 <MenuFlyoutItem
