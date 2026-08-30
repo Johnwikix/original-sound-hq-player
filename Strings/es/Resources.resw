@@ -1393,6 +1393,18 @@
   <data name="DesktopLyricsCharScale.Text" xml:space="preserve">
     <value>Escala de caracteres (letra en el escritorio)</value>
   </data>
+  <data name="DesktopLyricsLongSyllableThreshold.Text" xml:space="preserve">
+    <value>Umbral de sílaba larga (letra en el escritorio, ms)</value>
+  </data>
+  <data name="DesktopLyricsGlowAmount.Text" xml:space="preserve">
+    <value>Intensidad de resplandor (letra en el escritorio)</value>
+  </data>
+  <data name="DesktopLyricsCharFloatAmount.Text" xml:space="preserve">
+    <value>Intensidad de flotación de caracteres (letra en el escritorio)</value>
+  </data>
+  <data name="DesktopLyricsCharScaleAmount.Text" xml:space="preserve">
+    <value>Intensidad de escala de caracteres (letra en el escritorio)</value>
+  </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>Grosor de fuente (letra en el escritorio)</value>
   </data>

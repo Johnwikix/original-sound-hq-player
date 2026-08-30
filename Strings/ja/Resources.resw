@@ -1393,6 +1393,18 @@
   <data name="DesktopLyricsCharScale.Text" xml:space="preserve">
     <value>デスクトップ歌詞の文字スケール</value>
   </data>
+  <data name="DesktopLyricsLongSyllableThreshold.Text" xml:space="preserve">
+    <value>デスクトップ歌詞の長い音節のしきい値(ms)</value>
+  </data>
+  <data name="DesktopLyricsGlowAmount.Text" xml:space="preserve">
+    <value>デスクトップ歌詞のグロー量</value>
+  </data>
+  <data name="DesktopLyricsCharFloatAmount.Text" xml:space="preserve">
+    <value>デスクトップ歌詞の文字フロート量</value>
+  </data>
+  <data name="DesktopLyricsCharScaleAmount.Text" xml:space="preserve">
+    <value>デスクトップ歌詞の文字スケール量</value>
+  </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>デスクトップ歌詞フォントの太さ</value>
   </data>

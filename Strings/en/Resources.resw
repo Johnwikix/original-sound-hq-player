@@ -1396,6 +1396,18 @@
   <data name="DesktopLyricsCharScale.Text" xml:space="preserve">
     <value>Desktop Lyrics Char Scale</value>
   </data>
+  <data name="DesktopLyricsLongSyllableThreshold.Text" xml:space="preserve">
+    <value>Desktop Lyrics Long Syllable Threshold (ms)</value>
+  </data>
+  <data name="DesktopLyricsGlowAmount.Text" xml:space="preserve">
+    <value>Desktop Lyrics Glow Amount</value>
+  </data>
+  <data name="DesktopLyricsCharFloatAmount.Text" xml:space="preserve">
+    <value>Desktop Lyrics Char Float Amount</value>
+  </data>
+  <data name="DesktopLyricsCharScaleAmount.Text" xml:space="preserve">
+    <value>Desktop Lyrics Char Scale Amount</value>
+  </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>Desktop Lyrics Font Weight</value>
   </data>

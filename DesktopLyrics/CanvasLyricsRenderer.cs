@@ -30,18 +30,15 @@ namespace WinUIMusicPlayer.DesktopLyrics
     public sealed class CanvasLyricsRenderer : IDesktopLyricsRenderer
     {
         private const double SyncThresholdMs = 500;   // 内部时钟与外部观测的硬同步阈值（seek/大跳才触发）
-        private const double UnplayedOpacity = 0.5;   // 未播放部分透明度（主界面默认行为）
+        private const double UnplayedOpacity = 0.5;   // 未播放部分向黑压暗比例：预混为不透明色。不能用半透明填充——
+                                                      // 半透明色叠在黑描边内半环上会在字形内缘形成多层色阶
         private const double SecondaryOpacity = 0.6;  // 翻译行透明度（与文本渲染器 _transOpacity 一致）
         private const int TargetFrameRate = 60;
         private const string DefaultFontFamily = "Segoe UI";
 
-        // 逐字动效量值（是否启用由样式控制）：取主界面默认
-        // （GlowAmount=5px / CharFloatAmount=5px / CharScaleAmount=110%→1.1），长音节阈值 500ms
-        private const double GlowAmountPx = 5.0;
-        private const double FloatAmountPx = 5.0;
+        // 逐字动效量值（是否启用/强度/长音节阈值均由样式控制）：默认取主界面默认
+        // （GlowAmount=5px / CharFloatAmount=5px / CharScaleAmount=110%→1.1）
         private const double FloatDurationMs = 450;
-        private const double ScaleFactor = 1.10;
-        private const double LongSyllableThresholdMs = 500;
 
         private readonly CanvasAnimatedControl _canvas = new() { ClearColor = Colors.Transparent };
         private readonly LyricsLineRenderer _lineRenderer = new();
@@ -76,6 +73,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private bool _glow = true;
         private bool _charFloat = true;
         private bool _charScale = true;
+        private double _longSyllableThreshold = 700;
+        private double _glowAmountPx = 5.0;
+        private double _floatAmountPx = 5.0;
+        private double _scaleFactor = 1.10;
         private bool _disposed;
 
         public CanvasLyricsRenderer()
@@ -100,6 +101,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _glow = style.Glow;
             _charFloat = style.CharFloat;
             _charScale = style.CharScale;
+            _longSyllableThreshold = Math.Clamp(style.LongSyllableThreshold, 0, 5000);
+            _glowAmountPx = Math.Clamp(style.GlowAmount, 0, 10);
+            _floatAmountPx = Math.Clamp(style.CharFloatAmount, 0, 10);
+            _scaleFactor = Math.Clamp(style.CharScaleAmount, 50, 150) / 100.0;
             // 字号/字体/字重/描边/翻译都影响布局，统一标记下帧重建（颜色/动效开关不触发，逐帧生效）
             _layoutDirty = true;
         }
@@ -200,18 +205,18 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     isLyricsBlurEffectEnabled: false,
                     isLyricsOutOfSightEffectEnabled: false,
                     isLyricsFadeOutEffectEnabled: false,
-                    unplayedPrimaryOpacity: UnplayedOpacity,
+                    unplayedPrimaryOpacity: 1.0,   // 未播放填充不透明（压暗预混进颜色，见 UnplayedOpacity 注释）
                     playedPrimaryOpacity: 1.0,
                     secondaryOpacity: SecondaryOpacity,
                     isLyricsGlowEffectEnabled: _glow,
-                    lyricsGlowEffectAmount: GlowAmountPx,
-                    lyricsGlowEffectLongSyllableDuration: LongSyllableThresholdMs,
+                    lyricsGlowEffectAmount: _glowAmountPx,
+                    lyricsGlowEffectLongSyllableDuration: _longSyllableThreshold,
                     isLyricsFloatAnimationEnabled: _charFloat,
-                    lyricsFloatAnimationAmount: FloatAmountPx,
+                    lyricsFloatAnimationAmount: _floatAmountPx,
                     lyricsFloatAnimationDuration: FloatDurationMs,
                     isLyricsScaleEffectEnabled: _charScale,
-                    lyricsScaleEffectAmount: ScaleFactor,
-                    lyricsScaleEffectLongSyllableDuration: LongSyllableThresholdMs,
+                    lyricsScaleEffectAmount: _scaleFactor,
+                    lyricsScaleEffectLongSyllableDuration: _longSyllableThreshold,
                     blurAmountMax: 0,
                     canvasYScrollTransition: _scrollTransitionStub,
                     elapsedTime: args.Timing.ElapsedTime,
@@ -248,6 +253,14 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 if (line.UnplayedStrokeTint != null)
                     line.UnplayedStrokeTint.Color = Colors.Black;  // 黑描边
 
+                // 未播放填充 = 歌词色向黑压暗 UnplayedOpacity 后的不透明预混色：
+                // 完整盖住描边的内半环，避免半透明填充与描边叠出多层色阶；
+                // 已播放填充保持原色不透明，扫光明暗对比不变
+                var unplayedFill = Color.FromArgb(255,
+                    (byte)Math.Round(_color.R * UnplayedOpacity),
+                    (byte)Math.Round(_color.G * UnplayedOpacity),
+                    (byte)Math.Round(_color.B * UnplayedOpacity));
+
                 // 单行块垂直居中：MeasureAndArrange 自上而下定位，BottomRightPosition.Y 即块高
                 float offsetY = (float)Math.Max(0, (_canvas.Size.Height - line.BottomRightPosition.Y) / 2);
                 var prevTransform = ds.Transform;
@@ -257,7 +270,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 _lineRenderer.CurrentProgressMs = currentTimeMs;
                 _lineRenderer.Line = line;
                 _lineRenderer.PlayedFillColor = _color;
-                _lineRenderer.UnplayedFillColor = _color;
+                _lineRenderer.UnplayedFillColor = unplayedFill;
                 _lineRenderer.IsGlowEnabled = _glow;
                 _lineRenderer.IsScaleEnabled = _charScale;
                 _lineRenderer.IsFloatEnabled = _charFloat;
@@ -314,7 +327,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     (int)(_outline ? _outlineWidth : 0),
                     _fontWeight);
                 line.PlayedPrimaryOpacityTransition.Start(1.0);
-                line.UnplayedPrimaryOpacityTransition.Start(UnplayedOpacity);
+                line.UnplayedPrimaryOpacityTransition.Start(1.0);
                 line.SecondaryOpacityTransition.Start(SecondaryOpacity);
                 _currentLine = line;
                 _renderLineList.Add(line);

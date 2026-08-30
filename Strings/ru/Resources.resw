@@ -1393,6 +1393,18 @@
   <data name="DesktopLyricsCharScale.Text" xml:space="preserve">
     <value>Масштаб символов (текст на рабочем столе)</value>
   </data>
+  <data name="DesktopLyricsLongSyllableThreshold.Text" xml:space="preserve">
+    <value>Порог долгих слогов (текст на рабочем столе, мс)</value>
+  </data>
+  <data name="DesktopLyricsGlowAmount.Text" xml:space="preserve">
+    <value>Интенсивность свечения (текст на рабочем столе)</value>
+  </data>
+  <data name="DesktopLyricsCharFloatAmount.Text" xml:space="preserve">
+    <value>Интенсивность парения символов (текст на рабочем столе)</value>
+  </data>
+  <data name="DesktopLyricsCharScaleAmount.Text" xml:space="preserve">
+    <value>Интенсивность масштаба символов (текст на рабочем столе)</value>
+  </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>Насыщенность шрифта (текст на рабочем столе)</value>
   </data>
