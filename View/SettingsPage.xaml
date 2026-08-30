@@ -1565,6 +1565,17 @@
                             </Grid>
                             <Grid MinHeight="52" Padding="58,8,44,8" HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
                                 <TextBlock
+                                    x:Uid="DesktopLyricsKaraoke"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=TwoWay}" />
+                            </Grid>
+                            <Grid MinHeight="52" Padding="58,8,44,8" HorizontalAlignment="Stretch" ColumnDefinitions="*,Auto">
+                                <TextBlock
                                     x:Uid="DesktopLyricsFontWeight"
                                     Grid.Column="0"
                                     VerticalAlignment="Center"

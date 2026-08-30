@@ -6,11 +6,12 @@ using System.Collections.Generic;
 namespace WinUIMusicPlayer.DesktopLyrics
 {
     /// <summary>
-    /// 桌面歌词渲染器抽象。宿主窗口只负责窗口生命周期/锁定/拖动，
+    /// 桌面歌词渲染器抽象。宿主窗口只负责窗口生命周期/锁定/拖动/渲染器选择，
     /// 把数据总线（UILyricsBus / TimeProgressBus / OffsetMsBus / IsPlayingBus）的快照与
     /// 独立样式（DesktopLyricsStyle）推送给渲染器。
-    /// 预留逐字效果接入：未来实现 AdvanceLyricsRenderer 包装 AdvanceLyricsCanvasControl
-    /// （该控件 Loaded 后经 LyricsRenderCoordinator 自订阅全部总线，Set* 可留空实现）。
+    /// 现有两个实现：<see cref="TextBlockLyricsRenderer"/>（文本描边，逐字效果关闭时）与
+    /// <see cref="CanvasLyricsRenderer"/>（Win2D 逐字扫光，直接组装库内部件的薄宿主），
+    /// 窗口按 ViewModel.IsKaraokeEnabled 选择并支持热切换。
     /// </summary>
     public interface IDesktopLyricsRenderer : IDisposable
     {
@@ -24,7 +25,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         void SetOffset(double offsetMs);
 
-        /// <summary>文本渲染器无需处理暂停；为未来逐字渲染的时钟暂停预留。</summary>
+        /// <summary>逐字渲染器用它做时钟暂停/恢复；文本渲染器无需处理。</summary>
         void SetIsPlaying(bool isPlaying);
     }
 }

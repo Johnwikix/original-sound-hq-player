@@ -1384,6 +1384,9 @@
   <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
     <value>Desktop Lyrics Translation</value>
   </data>
+  <data name="DesktopLyricsKaraoke.Text" xml:space="preserve">
+    <value>Desktop Lyrics Karaoke Effect</value>
+  </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>Desktop Lyrics Font Weight</value>
   </data>

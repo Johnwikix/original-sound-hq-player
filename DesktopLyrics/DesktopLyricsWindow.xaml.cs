@@ -34,7 +34,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private const double HoverPollingIntervalMs = 50;
         private const double ControlPanelHoverMargin = 6.0;
 
-        private readonly IDesktopLyricsRenderer _renderer;
+        private IDesktopLyricsRenderer? _renderer;
         private readonly IntPtr _hwnd;
 
         /// <summary>桌面歌词状态源（锁定图标绑定 / 按钮处理 / 边界与样式读写）。</summary>
@@ -57,10 +57,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
             InitializeComponent();
             _hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
 
-            // 渲染器接入点：未来接入逐字效果时，替换为包装 AdvanceLyricsCanvasControl 的 IDesktopLyricsRenderer 实现
-            _renderer = new TextBlockLyricsRenderer();
-            RendererHost.Content = _renderer.Content;
-            _renderer.SetStyle(ViewModel.Style);
+            // 渲染器按"逐字效果"开关选择：CanvasLyricsRenderer（Win2D 逐字扫光）或
+            // TextBlockLyricsRenderer（文本描边）。开关变化经 PropertyChanged 热切换（EnsureRenderer）。
+            EnsureRenderer(ViewModel.IsKaraokeEnabled);
 
             // 复用 WinUIEx 自带的完全透明背景（与主程序"透明"样式同源）
             SystemBackdrop = new TransparentTintBackdrop();
@@ -106,8 +105,26 @@ namespace WinUIMusicPlayer.DesktopLyrics
             UpdateControlPanelVisual();
         }
 
-        /// <summary>应用桌面歌词独立样式（初始化时窗口自取 VM.Style，后续经 PropertyChanged 推送）。</summary>
-        public void ApplyStyle(DesktopLyricsStyle style) => _renderer.SetStyle(style);
+    /// <summary>应用桌面歌词独立样式（初始化时窗口自取 VM.Style，后续经 PropertyChanged 推送）。</summary>
+    public void ApplyStyle(DesktopLyricsStyle style) => _renderer?.SetStyle(style);
+
+    /// <summary>
+    /// 按逐字效果开关选择/热切换渲染器。切换时旧渲染器销毁（内容从可视树摘除并释放 Win2D 资源），
+    /// 新渲染器应用当前样式；歌词/进度快照由调用方经 LyricsSyncRequestBus.Request() 重拉。
+    /// </summary>
+    private void EnsureRenderer(bool karaoke)
+    {
+        if (_renderer is not null && (_renderer is CanvasLyricsRenderer) == karaoke) return;
+
+        if (_renderer is not null)
+        {
+            RendererHost.Content = null;
+            _renderer.Dispose();
+        }
+        _renderer = karaoke ? new CanvasLyricsRenderer() : new TextBlockLyricsRenderer();
+        RendererHost.Content = _renderer.Content;
+        _renderer.SetStyle(ViewModel.Style);
+    }
 
         private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
@@ -116,8 +133,12 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 case nameof(DesktopLyricsViewModel.IsLocked):
                     ApplyLock(ViewModel.IsLocked);
                     break;
+                case nameof(DesktopLyricsViewModel.IsKaraokeEnabled):
+                    EnsureRenderer(ViewModel.IsKaraokeEnabled);
+                    LyricsSyncRequestBus.Request();   // 新渲染器重拉歌词/进度全量快照
+                    break;
                 case nameof(DesktopLyricsViewModel.Style):
-                    _renderer.SetStyle(ViewModel.Style);
+                    _renderer?.SetStyle(ViewModel.Style);
                     break;
             }
         }
@@ -328,13 +349,13 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         // ==== 数据总线转发 ====
 
-        private void OnUILyricsChanged(IList<LyricLine>? value) => _renderer.SetLyrics(value);
+        private void OnUILyricsChanged(IList<LyricLine>? value) => _renderer?.SetLyrics(value);
 
-        private void OnTimeProgressChanged(long totalMs) => _renderer.SetPlaybackTime(totalMs);
+        private void OnTimeProgressChanged(long totalMs) => _renderer?.SetPlaybackTime(totalMs);
 
-        private void OnOffsetChanged(double value) => _renderer.SetOffset(value);
+        private void OnOffsetChanged(double value) => _renderer?.SetOffset(value);
 
-        private void OnIsPlayingChanged(bool value) => _renderer.SetIsPlaying(value);
+        private void OnIsPlayingChanged(bool value) => _renderer?.SetIsPlaying(value);
 
         private void OnAppWindowChanged(AppWindow sender, AppWindowChangedEventArgs args)
         {
@@ -368,7 +389,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
             Closed -= OnWindowClosed;
             StopHoverTimer();
             ViewModel.PersistBounds();
-            _renderer.Dispose();
+            _renderer?.Dispose();
+            _renderer = null;
             _disposed = true;
         }
     }
