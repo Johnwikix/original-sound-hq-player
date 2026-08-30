@@ -51,6 +51,9 @@ namespace WinUIMusicPlayer.Model
         public static uint DesktopLyricsColorRgb { get; set; } = 0x00FFFFFFu;
         public static bool IsDesktopLyricsOutlineEnabled { get; set; } = true;
         public static bool IsDesktopLyricsTranslationEnabled { get; set; } = true;
+        public static bool IsDesktopLyricsGlowEnabled { get; set; } = true;
+        public static bool IsDesktopLyricsCharFloatEnabled { get; set; } = true;
+        public static bool IsDesktopLyricsCharScaleEnabled { get; set; } = true;
         public static int DesktopLyricsFontWeight { get; set; } = 400;
         public static double DesktopLyricsOutlineWidth { get; set; } = 1.5;
         public static int LyricsFontWeight { get; set; } = 700;

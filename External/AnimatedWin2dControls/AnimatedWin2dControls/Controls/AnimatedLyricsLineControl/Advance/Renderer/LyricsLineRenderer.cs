@@ -23,6 +23,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public bool IsScaleEnabled { get; set; }
         public bool IsFloatEnabled { get; set; }
 
+        /// <summary>
+        /// 逐字路径下随字符绘制描边切片。字浮/字缩/发光会按字符重定位/缩放填充，
+        /// 整行固定位置的描边会与填充错位；开启后每个字符的描边切片使用与填充
+        /// 完全相同的 dest 映射（见 <see cref="DrawSingleCharacter"/>），描边始终贴合字符。
+        /// 桌面歌词等宿主用；主界面描边宽度恒为 0，保持默认 false 零行为变化。
+        /// </summary>
+        public bool IsStrokeEnabled { get; set; }
+
         public void Draw(ICanvasResourceCreator resourceCreator, CanvasDrawingSession ds)
         {
             DrawSecondaryText(ds);
@@ -385,6 +393,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             double floatOffset = renderChar.FloatTransition.Value;
 
             var destCharRect = sourceCharRect.Scale(scale).AddY(floatOffset);
+
+            // 描边切片与填充共用同一 dest 映射，随字浮/字缩一起变换（见 IsStrokeEnabled 注释）
+            if (IsStrokeEnabled && Line.UnplayedStrokeTint is { } stroke)
+                ds.DrawImage(stroke, destCharRect, sourceCharRect);
 
             if (glow > 0)
             {
