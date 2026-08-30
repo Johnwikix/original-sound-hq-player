@@ -1,121 +1,32 @@
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using Windows.UI;
-using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Services;
 
 namespace WinUIMusicPlayer.DesktopLyrics
 {
     /// <summary>
-    /// 桌面歌词生命周期管理：托盘/播放条开关、锁定、重置窗口、样式推送、启动恢复、退出清理。
-    /// 偏好项（开关/锁定/样式）镜像到 AppSettings 经 SaveSettingAsync 落盘；
-    /// 窗口边界（会话状态）存独立 DesktopLyricsState.json（比照 PlayState）。
+    /// 桌面歌词窗口生命周期服务：创建 / 关闭 / 重置边界 / 启动恢复 / 退出清理。
+    /// 开关、锁定、样式、边界等状态由 <see cref="DesktopLyricsViewModel"/> 持有（INPC 绑定源），
+    /// 本类不保存任何状态：窗口创建时从 VM 读取初始锁定态，后续变化由窗口经 VM.PropertyChanged 感知。
     /// 所有方法须在 UI 线程调用。
     /// </summary>
     public static class DesktopLyricsManager
     {
-        public static bool IsEnabled { get; private set; }
-        public static bool IsLocked { get; private set; }
-
-        /// <summary>桌面歌词窗口边界状态（独立 DesktopLyricsState.json）。</summary>
-        public static SaveDesktopLyricsState BoundsState { get; private set; } = new();
-
-        /// <summary>开关或锁定状态变化（镜像到 AppViewModel 绑定源，供托盘菜单/悬浮窗图标绑定）。</summary>
-        public static event Action? StateChanged;
-
         private static DesktopLyricsWindow? _window;
-        private static bool _boundsLoaded;
 
-        public static void SetEnabled(bool enable)
-        {
-            if (IsEnabled == enable) return;
-            IsEnabled = enable;
-            AppSettings.IsDesktopLyricsEnabled = enable;
-            if (enable) CreateWindow();
-            else CloseWindow();
-            Persist();
-            StateChanged?.Invoke();
-        }
+        private static DesktopLyricsViewModel ViewModel =>
+            App.Services.GetRequiredService<DesktopLyricsViewModel>();
 
-        public static void SetLocked(bool locked)
-        {
-            if (IsLocked == locked) return;
-            IsLocked = locked;
-            AppSettings.IsDesktopLyricsLocked = locked;
-            _window?.ApplyLock(locked);
-            Persist();
-            StateChanged?.Invoke();
-        }
-
-        /// <summary>恢复默认尺寸并置于主屏工作区底部居中（窗口/托盘重置按钮调用）。</summary>
-        public static void ResetWindowBounds()
-        {
-            _window?.ApplyDefaultBounds();
-            PersistBounds();
-        }
-
-        /// <summary>
-        /// 同步落盘窗口边界。仅在窗口关闭 / 恢复默认边界 / 退出时调用；
-        /// 拖动过程中的位置变化只在内存更新（见 DesktopLyricsWindow.OnAppWindowChanged），不落盘。
-        /// </summary>
-        public static void PersistBounds()
-        {
-            EnsureBoundsLoaded();
-            try
-            {
-                App.Services.GetRequiredService<MusicDatabaseService>().SaveDesktopLyricsState(BoundsState);
-            }
-            catch
-            {
-                // 退出阶段服务可能已释放
-            }
-        }
-
-        /// <summary>设置页变更样式后推送（AppSettings 已由 VM setter 更新）。</summary>
-        public static void RefreshStyle()
-        {
-            _window?.ApplyStyle(GetCurrentStyle());
-        }
-
-        public static DesktopLyricsStyle GetCurrentStyle() => new(
-            AppSettings.DesktopLyricsFontSize,
-            AppSettings.DesktopLyricsFontFamily,
-            Color.FromArgb(0xFF,
-                (byte)((AppSettings.DesktopLyricsColorRgb >> 16) & 0xFF),
-                (byte)((AppSettings.DesktopLyricsColorRgb >> 8) & 0xFF),
-                (byte)(AppSettings.DesktopLyricsColorRgb & 0xFF)),
-            AppSettings.IsDesktopLyricsOutlineEnabled,
-            AppSettings.DesktopLyricsFontWeight,
-            AppSettings.DesktopLyricsOutlineWidth);
-
-        /// <summary>应用启动时按设置恢复（AppInitializerService 调用）。</summary>
-        public static void RestoreFromSettings()
-        {
-            IsEnabled = AppSettings.IsDesktopLyricsEnabled;
-            IsLocked = AppSettings.IsDesktopLyricsLocked;
-            if (IsEnabled) CreateWindow();
-            StateChanged?.Invoke();
-        }
-
-        /// <summary>应用退出清理（App.Current_Exit 调用）。边界为同步写，保证在 Environment.Exit 前完成。</summary>
-        public static void Shutdown()
-        {
-            if (_window is not null) CloseWindow();
-            PersistBounds();
-        }
-
-        private static void CreateWindow()
+        public static void CreateWindow()
         {
             if (_window is not null) return;
-            EnsureBoundsLoaded();
             _window = new DesktopLyricsWindow();
             // 必须先显示再应用锁定：对未激活的窗口做 GWL_STYLE 切 Popup / 加 WS_EX_LAYERED
             // 会破坏 XAML 岛的呈现与输入管线，后续解锁时窗口无响应且内容丢失。
             _window.Activate();
-            _window.ApplyLock(IsLocked);
+            _window.ApplyLock(ViewModel.IsLocked);
         }
 
-        private static void CloseWindow()
+        public static void CloseWindow()
         {
             var window = _window;
             _window = null;
@@ -130,30 +41,17 @@ namespace WinUIMusicPlayer.DesktopLyrics
             }
         }
 
-        private static void EnsureBoundsLoaded()
-        {
-            if (_boundsLoaded) return;
-            _boundsLoaded = true;
-            try
-            {
-                BoundsState = App.Services.GetRequiredService<MusicDatabaseService>().LoadDesktopLyricsState();
-            }
-            catch
-            {
-                BoundsState = new SaveDesktopLyricsState();
-            }
-        }
+        /// <summary>恢复默认尺寸并置于主屏工作区底部居中（窗口/托盘重置按钮调用）。</summary>
+        public static void ResetWindowBounds() => _window?.ApplyDefaultBounds();
 
-        private static void Persist()
+        /// <summary>应用启动时按设置恢复（AppInitializerService 调用）。</summary>
+        public static void RestoreFromSettings() => ViewModel.RestoreFromSettings();
+
+        /// <summary>应用退出清理（App.Current_Exit 调用）。边界为同步写，保证在 Environment.Exit 前完成。</summary>
+        public static void Shutdown()
         {
-            try
-            {
-                _ = App.Services.GetRequiredService<MusicDatabaseService>().SaveSettingAsync();
-            }
-            catch
-            {
-                // 退出阶段服务可能已释放，忽略
-            }
+            CloseWindow();
+            ViewModel.PersistBounds();
         }
     }
 }

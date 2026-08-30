@@ -449,22 +449,6 @@ namespace WinUIMusicPlayer.ViewModel
             AllPlayList.CollectionChanged += AllPlayList_CollectionChanged;
             _progressPollingCts = new CancellationTokenSource();
             LyricsSyncRequestBus.Requested += SendFullLyricsSync;
-
-            // 桌面歌词开关/锁定状态实际持有者是 DesktopLyricsManager（托盘/播放条/锁定按钮直接驱动它），
-            // 经 StateChanged 镜像到以下属性供 x:Bind 绑定
-            WinUIMusicPlayer.DesktopLyrics.DesktopLyricsManager.StateChanged += () =>
-            {
-                if (_isDesktopLyricsEnabled != WinUIMusicPlayer.DesktopLyrics.DesktopLyricsManager.IsEnabled)
-                {
-                    _isDesktopLyricsEnabled = WinUIMusicPlayer.DesktopLyrics.DesktopLyricsManager.IsEnabled;
-                    OnPropertyChanged(nameof(IsDesktopLyricsEnabled));
-                }
-                if (_isDesktopLyricsLocked != WinUIMusicPlayer.DesktopLyrics.DesktopLyricsManager.IsLocked)
-                {
-                    _isDesktopLyricsLocked = WinUIMusicPlayer.DesktopLyrics.DesktopLyricsManager.IsLocked;
-                    OnPropertyChanged(nameof(IsDesktopLyricsLocked));
-                }
-            };
         }
 
         public void UpdatePlayPauseButtonIcon()

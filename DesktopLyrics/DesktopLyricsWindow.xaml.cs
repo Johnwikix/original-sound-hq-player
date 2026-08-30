@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using Windows.Foundation;
 using Windows.Graphics;
 using WinUIEx;
@@ -36,8 +37,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private readonly IDesktopLyricsRenderer _renderer;
         private readonly IntPtr _hwnd;
 
-        /// <summary>锁定状态绑定源（x:Bind 经 BindUtils.LockGlyphConverter 切换锁图标）。</summary>
-        public AppViewModel ViewModel { get; } = App.Services.GetRequiredService<AppViewModel>();
+        /// <summary>桌面歌词状态源（锁定图标绑定 / 按钮处理 / 边界与样式读写）。</summary>
+        public DesktopLyricsViewModel ViewModel { get; } = App.Services.GetRequiredService<DesktopLyricsViewModel>();
         private bool _locked = true;
         private bool _clickThrough;              // 当前穿透样式状态（false = 尚未设置）
         private bool _cursorOverWindow;
@@ -59,7 +60,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             // 渲染器接入点：未来接入逐字效果时，替换为包装 AdvanceLyricsCanvasControl 的 IDesktopLyricsRenderer 实现
             _renderer = new TextBlockLyricsRenderer();
             RendererHost.Content = _renderer.Content;
-            _renderer.SetStyle(DesktopLyricsManager.GetCurrentStyle());
+            _renderer.SetStyle(ViewModel.Style);
 
             // 复用 WinUIEx 自带的完全透明背景（与主程序"透明"样式同源）
             SystemBackdrop = new TransparentTintBackdrop();
@@ -70,13 +71,14 @@ namespace WinUIMusicPlayer.DesktopLyrics
             OffsetMsBus.Changed += OnOffsetChanged;
             IsPlayingBus.Changed += OnIsPlayingChanged;
             AppWindow.Changed += OnAppWindowChanged;
+            ViewModel.PropertyChanged += OnViewModelPropertyChanged;
             Closed += OnWindowClosed;
 
             // 拉取全量歌词/进度/样式状态（AppViewModel.SendFullLyricsSync）
             LyricsSyncRequestBus.Request();
         }
 
-        /// <summary>由 DesktopLyricsManager 在创建后与锁定状态变化时调用（幂等）。</summary>
+        /// <summary>窗口创建后由 Manager 以 VM 初值调用一次；后续锁定变化经 ViewModel.PropertyChanged 触发（幂等）。</summary>
         public void ApplyLock(bool locked)
         {
             _locked = locked;
@@ -104,13 +106,26 @@ namespace WinUIMusicPlayer.DesktopLyrics
             UpdateControlPanelVisual();
         }
 
-        /// <summary>应用桌面歌词独立样式（设置页变更 / 初始化时由 Manager 推送）。</summary>
+        /// <summary>应用桌面歌词独立样式（初始化时窗口自取 VM.Style，后续经 PropertyChanged 推送）。</summary>
         public void ApplyStyle(DesktopLyricsStyle style) => _renderer.SetStyle(style);
+
+        private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            switch (e.PropertyName)
+            {
+                case nameof(DesktopLyricsViewModel.IsLocked):
+                    ApplyLock(ViewModel.IsLocked);
+                    break;
+                case nameof(DesktopLyricsViewModel.Style):
+                    _renderer.SetStyle(ViewModel.Style);
+                    break;
+            }
+        }
 
         /// <summary>恢复默认尺寸并置于主屏工作区底部居中（重置按钮调用）。</summary>
         public void ApplyDefaultBounds()
         {
-            var bounds = DesktopLyricsManager.BoundsState;
+            var bounds = ViewModel.BoundsState;
             var work = DisplayArea.Primary.WorkArea;
             int x = work.X + (work.Width - DefaultWidth) / 2;
             int y = work.Y + work.Height - DefaultHeight - BottomMargin;
@@ -120,7 +135,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             bounds.Y = y;
             bounds.Width = DefaultWidth;
             bounds.Height = DefaultHeight;
-            DesktopLyricsManager.PersistBounds();
+            ViewModel.PersistBounds();
         }
 
         public void Dispose()
@@ -144,7 +159,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             }
             AppWindow.IsShownInSwitchers = false;
 
-            var bounds = DesktopLyricsManager.BoundsState;
+            var bounds = ViewModel.BoundsState;
             int width = bounds.Width > 0 ? bounds.Width : DefaultWidth;
             int height = bounds.Height > 0 ? bounds.Height : DefaultHeight;
             if (bounds.HasBounds &&
@@ -265,7 +280,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void LockButton_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.IsDesktopLyricsLocked = !ViewModel.IsDesktopLyricsLocked;
+            ViewModel.IsLocked = !ViewModel.IsLocked;
         }
 
         private void ResetButton_Click(object sender, RoutedEventArgs e)
@@ -275,7 +290,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
-            ViewModel.IsDesktopLyricsEnabled = false;
+            ViewModel.IsEnabled = false;
         }
 
         // ==== 手动拖动：按住任意位置拖动（GetCursorPos 与 AppWindow.Position 均为物理像素） ====
@@ -325,7 +340,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             if (!args.DidPositionChange && !args.DidSizeChange) return;
             InvalidatePanelScreenRect();
-            var bounds = DesktopLyricsManager.BoundsState;
+            var bounds = ViewModel.BoundsState;
             if (args.DidPositionChange)
             {
                 PointInt32 pos = sender.Position;
@@ -349,9 +364,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
             OffsetMsBus.Changed -= OnOffsetChanged;
             IsPlayingBus.Changed -= OnIsPlayingChanged;
             AppWindow.Changed -= OnAppWindowChanged;
+            ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             Closed -= OnWindowClosed;
             StopHoverTimer();
-            DesktopLyricsManager.PersistBounds();
+            ViewModel.PersistBounds();
             _renderer.Dispose();
             _disposed = true;
         }

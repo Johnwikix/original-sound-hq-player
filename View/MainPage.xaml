@@ -460,7 +460,10 @@
                             BorderThickness="0"
                             Click="DesktopLyricsButton_Click"
                             Style="{StaticResource MenuButtonStyle}">
-                            <FontIcon x:Name="DesktopLyricsIcon" Glyph="&#xE8C1;" Opacity="0.4" />
+                            <FontIcon
+                                x:Name="DesktopLyricsIcon"
+                                Glyph="&#xE8C1;"
+                                Opacity="{x:Bind tools:BindUtils.DesktopLyricsButtonOpacity(ViewModel.DesktopLyrics.IsEnabled), Mode=OneWay}" />
                         </Button>
                         <TeachingTip
                             x:Name="CurrentPlayListTeachingTip"
