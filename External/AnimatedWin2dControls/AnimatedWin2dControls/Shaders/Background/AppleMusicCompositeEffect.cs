@@ -43,7 +43,7 @@ namespace AnimatedWin2dControls.Shaders.Background
         int meshColumns) : ID2D1PixelShader
     {
         /// <summary>软覆盖混合斜率：NDC 残差达到 1/20 时完全回落到未变形采样。</summary>
-        private const float CoverageBlendSlope = 50f;
+        private const float CoverageBlendSlope = 8f;
 
         public float4 Execute()
         {
@@ -81,10 +81,10 @@ namespace AnimatedWin2dControls.Shaders.Background
             // 出现在迭代次数不确定的循环内。相比牛顿法，不动点迭代不含雅可比
             // 计算与任何分支——求解结果像素连续，折叠域表现为平滑拉伸而非
             // 按网格单元碎裂的硬边鬼影。网格近似恒等变形，收敛迅速。
-            for (int iteration = 0; iteration < 12; iteration++)
+            for (int iteration = 0; iteration < 16; iteration++)
             {
                 float2 warp = Warp(uv);
-                uv = Hlsl.Clamp(uv + (ndc - warp) * 0.85f, 0f, 1f);
+                uv = Hlsl.Clamp(uv + (ndc - warp) * 0.9f, 0f, 1f);
             }
 
             float2 final = Warp(uv);

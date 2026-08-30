@@ -56,6 +56,9 @@ namespace AnimatedWin2dControls.Renderer.Background
         private const float PortraitTextureScale = 1f;
         private const float LandscapeTextureScale = 0.8f;
 
+        /// <summary>pinch 网格位移放大倍数：绕恒等网格线性扩偏移，增强形变可见度。</summary>
+        private const float MeshWarpStrength = 2.0f;
+
         // 保护效果/中间目标生命周期：Dispose/LoadResources 持锁，Draw 走 TryEnter(0)
         // 抢不到就丢一帧，渲染线程永不阻塞（与 PS3XMB 渲染器一致）。
         private readonly object _gate = new();
@@ -331,6 +334,18 @@ namespace AnimatedWin2dControls.Renderer.Background
                 isPortrait ? AppleMusicMesh.ResolvePortraitPreset(_presetSlot) : _presetSlot,
                 isPortrait);
 
+            // 变形强度放大：绕恒等网格线性扩偏移；演示网格位移距恒等较远时
+            // 幅度保守，放大后扭曲更接近 Apple Music 观感。
+            AmplifyMeshWarp(mesh.From, mesh.Rows, mesh.Columns);
+            AmplifyMeshWarp(mesh.To, mesh.Rows, mesh.Columns);
+
+            // 行/列单调性约束：折叠（网格片翻转）是一切求解伪影的根源——
+            // 逐行走 x、逐列走 y 强制非降序后，变形在任何混合相位下都是同胚映射，
+            // 求解器处处收敛，变形全强度呈现且无碎裂。lerp 保序，From/To 分别
+            // 约束即可覆盖所有 pinchMix。
+            EnforceGridMonotonicity(mesh.From, mesh.Rows, mesh.Columns);
+            EnforceGridMonotonicity(mesh.To, mesh.Rows, mesh.Columns);
+
             // 打包为 RGBA32F：RG = from 网格 NDC 坐标，BA = to 网格 NDC 坐标，
             // 按数组行序写入（纹理顶行 = 数组 row 0 = NDC 底部）。
             int vertices = mesh.Rows * mesh.Columns;
@@ -389,6 +404,59 @@ namespace AnimatedWin2dControls.Renderer.Background
             _meshColumns = mesh.Columns;
             _meshIsPortrait = isPortrait;
             _meshDpi = dpi;
+        }
+
+        /// <summary>
+        /// 绕恒等网格线性放大位移：每个顶点相对恒等网格 (u*2-1, v*2-1) 的偏移
+        /// 乘 <see cref="MeshWarpStrength"/>。恒等网格处的线性位移边界可被单调
+        /// 约束吸收到边界外，避免放大后贴边压缩。
+        /// </summary>
+        private static void AmplifyMeshWarp(System.Numerics.Vector2[] grid, int rows, int columns)
+        {
+            for (int r = 0; r < rows; r++)
+            {
+                float v = 1f - r / (float)(rows - 1);
+                for (int c = 0; c < columns; c++)
+                {
+                    float u = c / (float)(columns - 1);
+                    var identity = new System.Numerics.Vector2(u * 2f - 1f, v * 2f - 1f);
+                    int i = r * columns + c;
+                    grid[i] = identity + (grid[i] - identity) * MeshWarpStrength;
+                }
+            }
+        }
+
+        /// <summary>
+        /// 网格行/列单调性约束：逐行走 x、逐列走 y 强制非降序（保留最小间隙），
+        /// 消除网格片翻转（折叠）。仅修正顺序，不限制位移幅度。
+        /// </summary>
+        private static void EnforceGridMonotonicity(System.Numerics.Vector2[] grid, int rows, int columns)
+        {
+            const float MinGap = 0.02f;
+
+            // 逐行：x 沿列索引非降序。
+            for (int r = 0; r < rows; r++)
+            {
+                float lower = grid[r * columns].X;
+                for (int c = 1; c < columns; c++)
+                {
+                    float x = MathF.Max(grid[r * columns + c].X, lower + MinGap);
+                    grid[r * columns + c] = new(x, grid[r * columns + c].Y);
+                    lower = x;
+                }
+            }
+
+            // 逐列：y 沿行索引非降序（NDC y 向上）。
+            for (int c = 0; c < columns; c++)
+            {
+                float lower = grid[c].Y;
+                for (int r = 1; r < rows; r++)
+                {
+                    float y = MathF.Max(grid[r * columns + c].Y, lower + MinGap);
+                    grid[r * columns + c] = new(grid[r * columns + c].X, y);
+                    lower = y;
+                }
+            }
         }
 
         private void EnsureArtworkManagers()
