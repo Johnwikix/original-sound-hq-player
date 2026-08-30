@@ -1,7 +1,6 @@
 using AnimatedWin2dControls.Impressionist;
 using AnimatedWin2dControls.Shaders.Background;
 using ComputeSharp.D2D1;
-using ComputeSharp.D2D1.Interop;
 using ComputeSharp.D2D1.WinUI;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Effects;
@@ -20,8 +19,8 @@ namespace AnimatedWin2dControls.Renderer.Background
     ///
     /// <list type="number">
     /// <item><see cref="AppleMusicRotationEffect"/> —— 三层旋转封面 + aspect-fill
-    /// 兜底，封面经 <c>D2D1ResourceTextureManager</c>（RGBA8，线性 + Clamp）注入，
-    /// 绘制到 1/8 像素密度的中间目标（对应原版 1/7.53 背景面）。</item>
+    /// 兜底，封面经双 CanvasBitmap 输入（RGBA8，线性 + Clamp 描述）注入并可显式
+    /// Dispose，绘制到 1/8 像素密度的中间目标（对应原版 1/7.53 背景面）。</item>
     /// <item>原生 <see cref="GaussianBlurEffect"/>（Soft 边框）做 77 抽头 σ 可分离
     /// 高斯模糊的等价实现：premultiplied 软边框模糊 + 合成 pass 内 un-premultiply，
     /// 与原版"零边框采样 + 覆盖率归一化"逐像素一致。</item>
@@ -59,6 +58,9 @@ namespace AnimatedWin2dControls.Renderer.Background
         /// <summary>pinch 网格位移放大倍数：绕恒等网格线性扩偏移，增强形变可见度。</summary>
         private const float MeshWarpStrength = 2.0f;
 
+        /// <summary>换歌封面交叉淡化时长（秒）。</summary>
+        private const float ArtworkTransitionDuration = 0.8f;
+
         // 保护效果/中间目标生命周期：Dispose/LoadResources 持锁，Draw 走 TryEnter(0)
         // 抢不到就丢一帧，渲染线程永不阻塞（与 PS3XMB 渲染器一致）。
         private readonly object _gate = new();
@@ -75,7 +77,9 @@ namespace AnimatedWin2dControls.Renderer.Background
         private float _targetDpi;
         private float _meshDpi;
 
-        private readonly D2D1ResourceTextureManager?[] _artworkManagers = new D2D1ResourceTextureManager?[2];
+        // 双槽封面位图：A/B 各一张（128×128，96 DPI），换歌时新封面写入非活动槽并
+        // 交叉淡化。与网格一致走效果输入，可对旧图显式 Dispose（无终结器延迟）。
+        private readonly CanvasBitmap?[] _coverBitmaps = new CanvasBitmap?[2];
         private int _activeArtworkSlot;
         private float _artworkTransitionStart;
         private bool _artworkTransitioning;
@@ -86,8 +90,9 @@ namespace AnimatedWin2dControls.Renderer.Background
 
         private readonly int _presetSlot = AppleMusicMesh.SelectPresetSlot();
 
-        // 渲染线程每帧在锁内取走并推入资源纹理；引用赋值原子，无需额外同步。
-        private ArtworkPixelData? _pendingArtwork;
+        // 渲染线程每帧在锁内取走并推入封面位图；volatile 保证 UI 线程写入的可见性
+        // （引用赋值原子 + 单写单消费，配合 volatile 无丢失更新）。
+        private volatile ArtworkPixelData? _pendingArtwork;
         private ArtworkPixelData? _realArtwork;
 
         public override void LoadResources()
@@ -106,19 +111,17 @@ namespace AnimatedWin2dControls.Renderer.Background
                 _scaleEffect = null;
                 _meshBitmap?.Dispose();
                 _meshBitmap = null;
+                _coverBitmaps[0]?.Dispose();
+                _coverBitmaps[1]?.Dispose();
+                _coverBitmaps[0] = null;
+                _coverBitmaps[1] = null;
 
-                // 效果绑定旧设备的已实现资源，设备重建后必须整体重建。
+                // 效果绑定旧设备的已实现资源，设备重建后必须整体重建；
+                // 位图输入为设备绑定资源，重建后由 Draw 惰性重创建并重新绑定。
                 _rotationEffect?.Dispose();
                 _rotationEffect = new PixelShaderEffect<AppleMusicRotationEffect>();
                 _compositeEffect?.Dispose();
                 _compositeEffect = new PixelShaderEffect<AppleMusicCompositeEffect>();
-
-                // 资源纹理管理器与设备无关，可在多个效果实例间共享复用。
-                for (int i = 0; i < 2; i++)
-                {
-                    if (_artworkManagers[i] is not null)
-                        _rotationEffect.ResourceTextureManagers[i] = _artworkManagers[i];
-                }
             }
 
             if (CurrentPalette is not null) SetPalette(CurrentPalette);
@@ -151,8 +154,8 @@ namespace AnimatedWin2dControls.Renderer.Background
 
                 EnsureTargets(control, widthDip, heightDip, backdropWidth, backdropHeight);
                 EnsureMeshBitmap(control, backdropHeight > backdropWidth);
-                EnsureArtworkManagers();
-                PushPendingArtwork();
+                EnsureCoverBitmaps(control);
+                PushPendingArtwork(control);
 
                 // PinchVertex：phase = acos(sin(Time * pi / 5)) / pi，mix = smoothstep(phase)。
                 float time = Time;
@@ -163,14 +166,25 @@ namespace AnimatedWin2dControls.Renderer.Background
                 float pinchTextureScale = isPortrait ? PortraitTextureScale : LandscapeTextureScale;
                 float pinchTextureOffset = (1f - pinchTextureScale) * 0.5f;
 
-                // 换歌交叉淡化进度：1.2s smoothstep 推向当前封面槽位。
+                // 换歌交叉淡化进度：0.8s smoothstep 推向当前封面槽位。
+                // 过渡期间到达的新封面保留在 _pendingArtwork，完成帧立即接续，
+                // 避免连续快速切歌时覆盖"正在淡入的槽"导致画面跳变。
                 float artworkMix;
                 if (_artworkTransitioning)
                 {
-                    float t = Math.Clamp((time - _artworkTransitionStart) / 1.2f, 0f, 1f);
+                    float t = Math.Clamp((time - _artworkTransitionStart) / ArtworkTransitionDuration, 0f, 1f);
+                    if (t >= 1f)
+                    {
+                        _artworkTransitioning = false;
+                        PushPendingArtwork(control);
+
+                        // 有积压封面：已接续新过渡，t 归零（起点显示上一阶段终点画面）。
+                        // 无积压：保留 t=1（终点画面），避免完成帧 mix 跳回旧封面闪一帧。
+                        t = _artworkTransitioning ? 0f : 1f;
+                    }
+
                     artworkMix = t * t * (3f - 2f * t);
                     if (_activeArtworkSlot == 0) artworkMix = 1f - artworkMix;
-                    if (t >= 1f) _artworkTransitioning = false;
                 }
                 else
                 {
@@ -459,44 +473,66 @@ namespace AnimatedWin2dControls.Renderer.Background
             }
         }
 
-        private void EnsureArtworkManagers()
+        private void EnsureCoverBitmaps(ICanvasAnimatedControl control)
         {
-            if (_artworkManagers[0] is not null)
+            if (_coverBitmaps[0] is not null)
                 return;
 
-            // 双槽固定 Edge² 尺寸：换歌写入非活动槽并交叉淡化，仅需 Update 不重建。
+            // 初始双槽同为默认渐变；换歌时 PushPendingArtwork 以新图替换非活动槽。
+            byte[] pixels = CreateDefaultArtwork().Pixels;
+
             for (int i = 0; i < 2; i++)
             {
-                _artworkManagers[i] = new D2D1ResourceTextureManager(
-                    stackalloc uint[] { ArtworkPixelData.Edge, ArtworkPixelData.Edge },
-                    D2D1BufferPrecision.UInt8Normalized,
-                    D2D1ChannelDepth.Four,
-                    D2D1Filter.MinMagMipLinear,
-                    stackalloc D2D1ExtendMode[] { D2D1ExtendMode.Clamp, D2D1ExtendMode.Clamp },
-                    CreateDefaultArtwork().Pixels,
-                    stackalloc uint[] { ArtworkPixelData.Edge * 4 });
-
-                _rotationEffect!.ResourceTextureManagers[i] = _artworkManagers[i];
+                _coverBitmaps[i] = CreateCoverBitmap(control, pixels);
+                _rotationEffect!.Sources[i] = _coverBitmaps[i];
             }
 
             _activeArtworkSlot = 0;
             _artworkTransitioning = false;
         }
 
-        private void PushPendingArtwork()
+        /// <summary>
+        /// 以旋转目标会话的 DPI（96）创建封面位图：与中间目标 DPI 不一致会触发
+        /// ComputeSharp 的 DPI 补偿节点，导致效果图配置错误。本 pass 以归一化 UV
+        /// 采样输入，DPI 取值不影响采样语义。
+        /// </summary>
+        private static CanvasBitmap CreateCoverBitmap(ICanvasAnimatedControl control, byte[] pixels)
+        {
+            return CanvasBitmap.CreateFromBytes(
+                control,
+                pixels,
+                ArtworkPixelData.Edge,
+                ArtworkPixelData.Edge,
+                DirectXPixelFormat.R8G8B8A8UIntNormalized,
+                96f,
+                CanvasAlphaMode.Premultiplied);
+        }
+
+        private void PushPendingArtwork(ICanvasAnimatedControl control)
         {
             var pending = _pendingArtwork;
             if (pending is null) return;
+
+            // 过渡进行中：保留最新封面，待完成帧接续（见 Draw 中的 mix 计算）。
+            if (_artworkTransitioning) return;
             _pendingArtwork = null;
 
-            // 写入非活动槽并切槽，启动 1.2s 交叉淡化（与其它 shader 的像素平滑过渡对齐）。
             int slot = 1 - _activeArtworkSlot;
 
-            _artworkManagers[slot]!.Update(
-                stackalloc uint[] { 0, 0 },
-                stackalloc uint[] { ArtworkPixelData.Edge, ArtworkPixelData.Edge },
-                stackalloc uint[] { ArtworkPixelData.Edge * 4 },
-                pending.Pixels);
+            CanvasBitmap? created;
+            try
+            {
+                created = CreateCoverBitmap(control, pending.Pixels);
+            }
+            catch (Exception)
+            {
+                // 创建失败：保留旧槽内容与活动状态，不发散（本帧放弃本次更新）。
+                return;
+            }
+
+            _coverBitmaps[slot]?.Dispose();
+            _coverBitmaps[slot] = created;
+            _rotationEffect!.Sources[slot] = created;
 
             _activeArtworkSlot = slot;
             _artworkTransitionStart = Time;
@@ -576,12 +612,10 @@ namespace AnimatedWin2dControls.Renderer.Background
                 _compositeEffect?.Dispose();
                 _compositeEffect = null;
 
-                // D2D1ResourceTextureManager 无 Dispose，交给终结器回收。
-                for (int i = 0; i < 2; i++)
-                {
-                    _artworkManagers[i] = null;
-                }
-
+                _coverBitmaps[0]?.Dispose();
+                _coverBitmaps[1]?.Dispose();
+                _coverBitmaps[0] = null;
+                _coverBitmaps[1] = null;
                 _meshBitmap?.Dispose();
                 _meshBitmap = null;
                 _pendingArtwork = null;
