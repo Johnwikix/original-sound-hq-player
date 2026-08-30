@@ -30,13 +30,21 @@ namespace AnimatedWin2dControls.Shaders.Background
         float2 dispatchSize,
         float time,
         float rotationScale,
-        float imageScale) : ID2D1PixelShader
+        float imageScale,
+        float artworkMix) : ID2D1PixelShader
     {
         private const float TwoPi = 6.2831853071795864769f;
 
-        /// <summary>RGBA8 封面纹理（非预乘，管理器侧配置线性 + Clamp 采样）。</summary>
+        /// <summary>
+        /// RGBA8 封面纹理（非预乘，管理器侧配置线性 + Clamp 采样）。
+        /// 双纹理用于换歌时的像素级交叉淡化：A=上一张，B=当前张，artworkMix 由
+        /// 渲染器随时间 0→1 推进。0 输入着色器的资源纹理索引可连续使用 0..N-1。
+        /// </summary>
         [D2DResourceTextureIndex(0)]
-        private readonly D2D1ResourceTexture2D<Float4> _artwork;
+        private readonly D2D1ResourceTexture2D<Float4> _artworkA;
+
+        [D2DResourceTextureIndex(1)]
+        private readonly D2D1ResourceTexture2D<Float4> _artworkB;
 
         public float4 Execute()
         {
@@ -81,6 +89,15 @@ namespace AnimatedWin2dControls.Shaders.Background
                 (uv.Y - 0.5f) / viewScale.Y + 0.5f);
 
             return new float4(SampleArtwork(fillUv).XYZ, 1f);
+        }
+
+        /// <summary>按 artworkMix 交叉淡化两张封面。</summary>
+        private float4 SampleArtwork(float2 uv)
+        {
+            float4 a = _artworkA.Sample(uv.X, uv.Y);
+            float4 b = _artworkB.Sample(uv.X, uv.Y);
+
+            return Hlsl.Lerp(a, b, Hlsl.Saturate(artworkMix));
         }
 
         /// <summary>
@@ -174,10 +191,5 @@ namespace AnimatedWin2dControls.Shaders.Background
             return 120f;
         }
 
-        /// <summary>线性 + Clamp 采样封面（采样器状态由资源纹理管理器配置）。</summary>
-        private float4 SampleArtwork(float2 uv)
-        {
-            return _artwork.Sample(uv.X, uv.Y);
-        }
     }
 }

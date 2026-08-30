@@ -19,8 +19,8 @@ namespace AnimatedWin2dControls.Shaders.Background
     /// NDC 坐标，格点位于纹素中心）。线性滤波下的硬件双线性即逐顶点混合的精确
     /// 等价形式（lerp 与双线性可交换），故 <c>Warp(uv)</c> 只需一次采样。
     /// 网格变形经牛顿迭代逐像素反向求解；原版对未收敛像素的逐三角形扫描在 D2D1
-    /// 中无法实现（FXC 禁止梯度指令出现在不可展开循环内），此类像素回落到下层
-    /// 全屏 treated 材质，仅在网格折叠重叠区存在细微差异。
+    /// 中无法实现（FXC 禁止梯度指令出现在不可展开循环内），此处以残差软混合近似：
+    /// 求解越好越贴近变形采样，折叠域内平滑回落到未变形采样，避免硬边鬼影。
     /// </para>
     /// </summary>
     [D2DInputCount(2)]
@@ -42,30 +42,24 @@ namespace AnimatedWin2dControls.Shaders.Background
         int meshRows,
         int meshColumns) : ID2D1PixelShader
     {
-        /// <summary>NDC 残差低于该值视为网格覆盖（约 1 像素）。</summary>
-        private const float CoverageEpsilon = 0.002f;
+        /// <summary>软覆盖混合斜率：NDC 残差达到 1/20 时完全回落到未变形采样。</summary>
+        private const float CoverageBlendSlope = 50f;
 
         public float4 Execute()
         {
             float2 scene = D2D.GetScenePosition().XY;
             float2 uv = scene / dispatchSize;
 
-            // 网格下层的全屏 treated 层（MaterialTreatedPixel）：填补网格外露缝隙。
-            float3 color = SampleTreatedMaterial(uv);
-
             // pinch 网格（PinchVertex + PinchPixel），逐像素反向求解变形。
+            // 求解结果永远有效（软覆盖混合），无需回退分支。
             float2 ndc = new float2(uv.X * 2f - 1f, 1f - uv.Y * 2f);
-            float4 solution = SolveMeshUv(ndc);
+            float2 meshUv = SolveMeshUv(ndc);
 
-            if (solution.W > 0.5f)
-            {
-                float2 meshUv = new float2(solution.X, solution.Y);
-                float2 textureCoordinate = new float2(
-                    meshUv.X * pinchTextureScale + pinchTextureOffset,
-                    meshUv.Y * pinchTextureScale + pinchTextureOffset);
+            float2 textureCoordinate = new float2(
+                meshUv.X * pinchTextureScale + pinchTextureOffset,
+                meshUv.Y * pinchTextureScale + pinchTextureOffset);
 
-                color = SampleTreatedMaterial(textureCoordinate);
-            }
+            float3 color = SampleTreatedMaterial(textureCoordinate);
 
             color = FinishMaterial(color, scene);
 
@@ -73,62 +67,34 @@ namespace AnimatedWin2dControls.Shaders.Background
         }
 
         /// <summary>
-        /// 逐像素牛顿求解网格变形。返回 (u, v, residual, covered)：变形为 from/to
-        /// 网格逐顶点混合后的分片双线性插值。网格近似恒等变形，屏幕 uv 是很好的
-        /// 迭代初值；折叠域内不收敛的像素以 covered=0 标记，回落到下层材质。
+        /// 逐像素牛顿求解网格变形，返回混合后的采样 uv：变形为 from/to 网格逐顶点
+        /// 按 <paramref name="pinchMix"/> 混合后的分片双线性插值。网格近似恒等变形，
+        /// 屏幕 uv 是很好的迭代初值；折叠域内不收敛的像素按残差软混合回落到
+        /// 未变形采样（原版为逐三角形精确扫描），全程连续无硬边。
         /// </summary>
-        private float4 SolveMeshUv(float2 ndc)
+        private float2 SolveMeshUv(float2 ndc)
         {
-            float2 uv = new float2(0.5f * (ndc.X + 1f), 0.5f * (1f - ndc.Y));
+            float2 screenUv = new float2(0.5f * (ndc.X + 1f), 0.5f * (1f - ndc.Y));
+            float2 uv = screenUv;
 
-            float stepU = 0.25f / (meshColumns - 1);
-            float stepV = 0.25f / (meshRows - 1);
-
-            // 固定 5 次迭代、无 break：FXC 禁止梯度指令（Sample）出现在迭代次数
-            // 不确定的循环内（即使可展开也按警告即错误处理），收敛后以 delta=0
-            // 保持 uv 不变。雅可比退化时用符号保持的极小值兜底，避免 inf*0 = NaN。
-            for (int iteration = 0; iteration < 5; iteration++)
+            // 固定 12 次阻尼不动点迭代、无 break：FXC 禁止梯度指令（Sample）
+            // 出现在迭代次数不确定的循环内。相比牛顿法，不动点迭代不含雅可比
+            // 计算与任何分支——求解结果像素连续，折叠域表现为平滑拉伸而非
+            // 按网格单元碎裂的硬边鬼影。网格近似恒等变形，收敛迅速。
+            for (int iteration = 0; iteration < 12; iteration++)
             {
-                float2 position = Warp(uv);
-                float2 error = new float2(position.X - ndc.X, position.Y - ndc.Y);
-
-                // 分片双线性变形的数值雅可比。
-                float2 duPosition = Warp(new float2(uv.X + stepU, uv.Y));
-                float2 dvPosition = Warp(new float2(uv.X, uv.Y + stepV));
-                float jacUx = (duPosition.X - position.X) / stepU;
-                float jacUy = (duPosition.Y - position.Y) / stepU;
-                float jacVx = (dvPosition.X - position.X) / stepV;
-                float jacVy = (dvPosition.Y - position.Y) / stepV;
-
-                float determinant = jacUx * jacVy - jacUy * jacVx;
-                float determinantSafe = Hlsl.Abs(determinant) < 1e-9f
-                    ? (determinant < 0f ? -1e-9f : 1e-9f)
-                    : determinant;
-
-                // 解 [[jacU][jacV]] * delta = -error。
-                float deltaX = (-jacVy * error.X + jacVx * error.Y) / determinantSafe;
-                float deltaY = (jacUy * error.X - jacUx * error.Y) / determinantSafe;
-
-                // 收敛（或雅可比退化）后停止推进。
-                float active = (Hlsl.Abs(error.X) < 1e-5f && Hlsl.Abs(error.Y) < 1e-5f)
-                    || Hlsl.Abs(determinant) < 1e-9f
-                    ? 0f
-                    : 1f;
-
-                uv = new float2(
-                    Hlsl.Clamp(uv.X + deltaX * active, -0.25f, 1.25f),
-                    Hlsl.Clamp(uv.Y + deltaY * active, -0.25f, 1.25f));
+                float2 warp = Warp(uv);
+                uv = Hlsl.Clamp(uv + (ndc - warp) * 0.85f, 0f, 1f);
             }
 
             float2 final = Warp(uv);
             float residual = Hlsl.Length(new float2(final.X - ndc.X, final.Y - ndc.Y));
 
-            if (residual < CoverageEpsilon)
-            {
-                return new float4(uv.X, uv.Y, residual, 1f);
-            }
+            // 软覆盖：残差越大越回落到未变形采样。折叠域内 original 走逐三角形
+            // 精确扫描；此处以平滑混合近似，消除"几何鬼影"式的硬边内容错位。
+            float coverage = Hlsl.Saturate(1f - residual * CoverageBlendSlope);
 
-            return float4.Zero;
+            return Hlsl.Lerp(screenUv, Hlsl.Clamp(uv, 0f, 1f), coverage);
         }
 
         /// <summary>
