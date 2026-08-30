@@ -34,6 +34,86 @@ namespace WinUIMusicPlayer.Utils
         /// <summary>播放模式 → 本地化标题文本（随 CurrentPlayMode 函数绑定，替代曾经的 PlayModeFlyoutText 属性）。</summary>
         public static string PlayModeToTextConverter(PlayMode currentPlayMode)
             => GetPlayModeText(currentPlayMode);
+
+        // ==== 原 Converters/*Converter 的只读转换迁移至此（x:Bind 函数绑定，零装箱/编译期校验）；
+        //      仍需 ConvertBack 的 TwoWay 场景（设置页 ComboBox/Slider/IsChecked）保留转换器类 ====
+
+        public static string PlayStatusToGlyphConverter(bool isPlaying)
+            => isPlaying ? "\uF8AE" : "\uF5B0";
+
+        public static string PlayStatusToTextConverter(bool isPlaying)
+            => isPlaying ? GetString("IconPause") : GetString("IconPlay");
+
+        public static string PlayModeToGlyphConverter(PlayMode playMode)
+            => playMode switch
+            {
+                PlayMode.SingleLoop => "\ue8ed",
+                PlayMode.ListLoop => "\ue8ee",
+                PlayMode.RandomLoop => "\ue8b1",
+                PlayMode.RepeatOff => "\uF5E7",
+                _ => "\ue8ee",
+            };
+
+        public static string FavouriteGlyphConverter(bool isFavourite)
+            => isFavourite ? "\uEB52" : "\uEB51";
+
+        public static string VolumeToGlyphConverter(double volume)
+            => volume > 75 ? "\ue995"
+             : volume > 50 ? "\ue994"
+             : volume > 25 ? "\ue993"
+             : volume > 0 ? "\uE992"
+             : "\ue74f";
+
+        public static string FullScreenGlyphConverter(bool isFullScreen)
+            => isFullScreen ? "\uE73F" : "\uE740";
+
+        public static string IsExistOnDeviceGlyphConverter(int existOnDevice)
+            => existOnDevice == 1 ? "\uE73A"
+             : existOnDevice == 2 ? "\uE73D"
+             : string.Empty;
+
+        public static Visibility BoolToVisibilityConverter(bool isVisible)
+            => isVisible ? Visibility.Visible : Visibility.Collapsed;
+
+        public static HorizontalAlignment TextAlignmentToHorizontalAlignmentConverter(TextAlignment alignment)
+            => alignment switch
+            {
+                TextAlignment.Center => HorizontalAlignment.Center,
+                TextAlignment.Right => HorizontalAlignment.Right,
+                _ => HorizontalAlignment.Left,
+            };
+
+        public static string MusicToTitleConverter(Music? music)
+            => music?.Title ?? GetString("AppMainTitle");
+
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<long, string> TimeSpanTextCache = new();
+
+        public static string TimeSpanToTextConverter(TimeSpan timeSpan)
+        {
+            long key = timeSpan.Ticks;
+            if (TimeSpanTextCache.TryGetValue(key, out var cached)) return cached;
+            string result = timeSpan.TotalHours >= 1
+                ? string.Create(8, timeSpan, static (span, ts) => WriteTimeSpanWithHours(span, ts))
+                : string.Create(5, timeSpan, static (span, ts) => WriteTimeSpanNoHours(span, ts));
+            TimeSpanTextCache[key] = result;
+            return result;
+        }
+
+        private static void WriteTimeSpanWithHours(Span<char> dst, TimeSpan ts)
+        {
+            ts.Hours.TryFormat(dst.Slice(0, 2), out _, "D2", System.Globalization.CultureInfo.InvariantCulture);
+            dst[2] = ':';
+            ts.Minutes.TryFormat(dst.Slice(3, 2), out _, "D2", System.Globalization.CultureInfo.InvariantCulture);
+            dst[5] = ':';
+            ts.Seconds.TryFormat(dst.Slice(6, 2), out _, "D2", System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        private static void WriteTimeSpanNoHours(Span<char> dst, TimeSpan ts)
+        {
+            ts.Minutes.TryFormat(dst.Slice(0, 2), out _, "D2", System.Globalization.CultureInfo.InvariantCulture);
+            dst[2] = ':';
+            ts.Seconds.TryFormat(dst.Slice(3, 2), out _, "D2", System.Globalization.CultureInfo.InvariantCulture);
+        }
         public static bool RadioButtonTagToBoolConverter(string themeType, string type)
         {
             if (themeType is null || type is null)

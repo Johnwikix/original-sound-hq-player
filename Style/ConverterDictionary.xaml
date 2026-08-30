@@ -3,21 +3,9 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:converters="using:WinUIMusicPlayer.Converters">
+    <!--  仅保留仍需 ConvertBack 的 TwoWay 场景与 Slider 内置转换；只读展示转换已迁移至 BindUtils 函数绑定  -->
     <converters:BooleanNegationConverter x:Key="BooleanNegationConverter" />
-    <converters:BoolToOpacityConverter x:Key="BoolToOpacityConverter" />
-    <converters:FavouriteIconConverter x:Key="FavouriteIconConverter" />
-    <converters:IsExistOnDeviceConverter x:Key="IsExistOnDeviceConverter" />
-    <converters:MusicToTitleConverter x:Key="MusicToTitleConverter" />
-    <converters:PlayModeToIconConverter x:Key="PlayModeToIconConverter" />
-    <converters:PlayStatusToIconConverter x:Key="PlayStatusToIconConverter" />
-    <converters:PlayStatusToStringConverter x:Key="PlayStatusToStringConverter" />
-    <converters:TimeSpanToStringConverter x:Key="TimeSpanToStringConverter" />
-    <converters:VolumeToIconConverter x:Key="VolumeToIconConverter" />
-    <converters:FullScreenIconConverter x:Key="FullScreenIconConverter" />
     <converters:AdvancedThumbToolTipValueConverter x:Key="AdvancedThumbToolTipValueConverter" />
-    <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
-    <converters:PlayDetailButtonVisibleConverter x:Key="PlayDetailButtonVisibleConverter" />
     <converters:ThicknessToDoubleConverter x:Key="ThicknessToDoubleConverter" />
     <converters:EnumToStringConverter x:Key="EnumToStringConverter" />
-    <converters:TextAlignmentToHorizontalAlignmentConverter x:Key="TextAlignmentToHorizontalAlignmentConverter" />
 </ResourceDictionary>
