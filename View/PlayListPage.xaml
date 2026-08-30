@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="WinUIMusicPlayer.View.PlayListPage"
+    xmlns:tools="using:WinUIMusicPlayer.Utils"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:behaviors="using:WinUIMusicPlayer.Behaviors"
@@ -63,8 +64,8 @@
         </Grid>
         <Grid
             x:Name="PlayListGrid"
-            IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BooleanNegationConverter}}"
-            Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}, ConverterParameter=invert}"
+                    IsHitTestVisible="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.IsInDetailMode), Mode=OneWay}"
+                    Opacity="{x:Bind tools:BindUtils.BoolToOpacityReConverter(ViewModel.IsInDetailMode), Mode=OneWay}"
             RowDefinitions="Auto,*">
             <Grid
                 Grid.Row="0"
@@ -252,7 +253,7 @@
             Margin="0,20,0,10"
             x:FieldModifier="public"
             IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay}"
-            Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
+                    Opacity="{x:Bind tools:BindUtils.BoolToOpacityConverter(ViewModel.IsInDetailMode), Mode=OneWay}"
             PlaySourceTag="PlayListSongsView" />
     </Grid>
 </Page>

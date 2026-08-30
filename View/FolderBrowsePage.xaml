@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="WinUIMusicPlayer.View.FolderBrowsePage"
+    xmlns:tools="using:WinUIMusicPlayer.Utils"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:behaviors="using:WinUIMusicPlayer.Behaviors"
@@ -16,8 +17,8 @@
     <Grid Margin="0">
         <SemanticZoom
             x:Name="BrowseZoom"
-            IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BooleanNegationConverter}}"
-            Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}, ConverterParameter=invert}">
+                    IsHitTestVisible="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.IsInDetailMode), Mode=OneWay}"
+            Opacity="{x:Bind tools:BindUtils.BoolToOpacityReConverter(ViewModel.IsInDetailMode), Mode=OneWay}">
             <SemanticZoom.ZoomedInView>
                 <GridView
                     x:Name="FolderGridView"
@@ -107,7 +108,7 @@
                                             HorizontalAlignment="Right"
                                             VerticalAlignment="Bottom"
                                             FontSize="16"
-                                            Glyph="{x:Bind IsExistOnDevice, Mode=OneWay, Converter={StaticResource IsExistOnDeviceConverter}}" />
+                                            Glyph="{x:Bind tools:BindUtils.IsExistOnDeviceGlyphConverter(IsExistOnDevice), Mode=OneWay}" />
                                     </Grid>
                                     <TextBlock
                                         Width="150"
@@ -153,7 +154,7 @@
             DetailKind="Folder"
             PlaySourceTag="FolderSongsView"
             IsHitTestVisible="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay}"
-            Opacity="{x:Bind ViewModel.IsInDetailMode, Mode=OneWay, Converter={StaticResource BoolToOpacityConverter}}"
+                    Opacity="{x:Bind tools:BindUtils.BoolToOpacityConverter(ViewModel.IsInDetailMode), Mode=OneWay}"
             x:FieldModifier="public" />
     </Grid>
 </Page>

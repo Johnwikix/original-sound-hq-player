@@ -265,7 +265,7 @@
                             CommandParameter="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic, Mode=OneWay}"
                             IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
-                            <FontIcon Foreground="Red" Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.IsFavorite, Mode=TwoWay, Converter={StaticResource FavouriteIconConverter}}" />
+                            <FontIcon Foreground="Red" Glyph="{x:Bind tools:BindUtils.FavouriteGlyphConverter(ViewModel.AppViewModel.CurrentPlayingMusic.IsFavorite), Mode=OneWay}" />
                         </Button>
 
                         <Button
@@ -314,7 +314,7 @@
                                 Width="45"
                                 Height="45"
                                 FontSize="30"
-                                Glyph="{x:Bind ViewModel.AppViewModel.IsPlaying, Converter={StaticResource PlayStatusToIconConverter}, Mode=OneWay}" />
+                                Glyph="{x:Bind tools:BindUtils.PlayStatusToGlyphConverter(ViewModel.AppViewModel.IsPlaying), Mode=OneWay}" />
                         </Button>
 
                         <Button
@@ -383,7 +383,7 @@
                                 Grid.Column="0"
                                 Margin="0"
                                 VerticalAlignment="Center"
-                                Glyph="{x:Bind ViewModel.AppViewModel.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
+                                Glyph="{x:Bind tools:BindUtils.VolumeToGlyphConverter(ViewModel.AppViewModel.Volume), Mode=OneWay}" />
                             <Button.Flyout>
                                 <Flyout x:Name="VolumeFlyout" Placement="Top">
                                     <StackPanel Orientation="Horizontal">
@@ -400,7 +400,7 @@
                                                 Grid.Column="0"
                                                 Margin="0"
                                                 VerticalAlignment="Center"
-                                                Glyph="{x:Bind ViewModel.AppViewModel.Volume, Converter={StaticResource VolumeToIconConverter}, Mode=OneWay}" />
+                                                Glyph="{x:Bind tools:BindUtils.VolumeToGlyphConverter(ViewModel.AppViewModel.Volume), Mode=OneWay}" />
                                         </Button>
                                         <Slider
                                             x:Name="VolumeSlider"
@@ -521,7 +521,7 @@
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.MusicBrowseVM.PlayModeChangedCommand, Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
-                            <FontIcon x:Name="PlayModeIcon" Glyph="{x:Bind ViewModel.AppViewModel.CurrentPlayMode, Converter={StaticResource PlayModeToIconConverter}, Mode=TwoWay}" />
+                            <FontIcon x:Name="PlayModeIcon" Glyph="{x:Bind tools:BindUtils.PlayModeToGlyphConverter(ViewModel.AppViewModel.CurrentPlayMode), Mode=OneWay}" />
                         </Button>
                     </StackPanel>
                 </Grid>
@@ -599,7 +599,7 @@
                     <FontIcon
                         FontFamily="{ThemeResource SymbolThemeFontFamily}"
                         FontSize="14"
-                        Glyph="{x:Bind ViewModel.AppViewModel.IsFullScreen, Mode=OneWay, Converter={StaticResource FullScreenIconConverter}}" />
+                        Glyph="{x:Bind tools:BindUtils.FullScreenGlyphConverter(ViewModel.AppViewModel.IsFullScreen), Mode=OneWay}" />
                 </Button>
                 <Button
                     x:Name="MinimizeButton"

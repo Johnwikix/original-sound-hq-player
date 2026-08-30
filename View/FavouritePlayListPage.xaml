@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="WinUIMusicPlayer.View.FavouritePlayListPage"
+    xmlns:tools="using:WinUIMusicPlayer.Utils"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:behaviors="using:WinUIMusicPlayer.Behaviors"
@@ -90,7 +91,7 @@
                         <FontIcon
                             x:Name="IsFavouriteIcon"
                             Foreground="Red"
-                            Glyph="{x:Bind IsFavorite, Converter={StaticResource FavouriteIconConverter}}" />
+                            Glyph="{x:Bind tools:BindUtils.FavouriteGlyphConverter(IsFavorite), Mode=OneWay}" />
                     </Button>
                     <TextBlock
                         Grid.Column="2"
@@ -165,7 +166,7 @@
                         Grid.Column="6"
                         Margin="5"
                         VerticalAlignment="Center"
-                        Text="{x:Bind Duration, Converter={StaticResource TimeSpanToStringConverter}}" />
+                        Text="{x:Bind tools:BindUtils.TimeSpanToTextConverter(Duration), Mode=OneWay}" />
                     <Button
                         Grid.Column="7"
                         Margin="5"
@@ -184,7 +185,7 @@
                         x:Name="IsExistOnDeviceIcon"
                         Grid.Column="8"
                         FontSize="14"
-                        Glyph="{x:Bind IsExistOnDevice, Mode=OneWay, Converter={StaticResource IsExistOnDeviceConverter}}" />
+                        Glyph="{x:Bind tools:BindUtils.IsExistOnDeviceGlyphConverter(IsExistOnDevice), Mode=OneWay}" />
                 </Grid>
             </DataTemplate>
         </ListView.ItemTemplate>
