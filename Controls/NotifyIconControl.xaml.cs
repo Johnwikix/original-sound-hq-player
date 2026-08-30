@@ -28,31 +28,18 @@ namespace WinUIMusicPlayer.Controls
             MusicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             AppViewModel = App.Services.GetRequiredService<AppViewModel>();
             DataContext = this;
-            DesktopLyricsManager.StateChanged += OnDesktopLyricsStateChanged;
-            OnDesktopLyricsStateChanged();
         }
 
-        private bool _syncingDesktopLyricsMenu;
-
-        private void OnDesktopLyricsStateChanged()
-        {
-            if (_syncingDesktopLyricsMenu) return;
-            _syncingDesktopLyricsMenu = true;
-            DesktopLyricsToggle.IsChecked = DesktopLyricsManager.IsEnabled;
-            DesktopLyricsLock.IsChecked = DesktopLyricsManager.IsLocked;
-            _syncingDesktopLyricsMenu = false;
-        }
+        // 开关/锁定状态经 AppViewModel.IsDesktopLyricsEnabled/IsDesktopLyricsLocked 绑定到菜单图标（x:Bind），无需手动同步
 
         private void DesktopLyricsToggle_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is ToggleMenuFlyoutItem item)
-                DesktopLyricsManager.SetEnabled(item.IsChecked);
+            DesktopLyricsManager.SetEnabled(!DesktopLyricsManager.IsEnabled);
         }
 
         private void DesktopLyricsLock_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is ToggleMenuFlyoutItem item)
-                DesktopLyricsManager.SetLocked(item.IsChecked);
+            DesktopLyricsManager.SetLocked(!DesktopLyricsManager.IsLocked);
         }
 
         private void ResetDesktopLyrics_Click(object sender, RoutedEventArgs e)
@@ -168,7 +155,6 @@ namespace WinUIMusicPlayer.Controls
 
         public void Dispose()
         {
-            DesktopLyricsManager.StateChanged -= OnDesktopLyricsStateChanged;
             try
             {
                 NotifyIcon?.Dispose();

@@ -20,7 +20,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         /// <summary>桌面歌词窗口边界状态（独立 DesktopLyricsState.json）。</summary>
         public static SaveDesktopLyricsState BoundsState { get; private set; } = new();
 
-        /// <summary>开关或锁定状态变化（供托盘菜单勾选态同步）。</summary>
+        /// <summary>开关或锁定状态变化（镜像到 AppViewModel 绑定源，供托盘菜单/悬浮窗图标绑定）。</summary>
         public static event Action? StateChanged;
 
         private static DesktopLyricsWindow? _window;

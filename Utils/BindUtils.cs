@@ -61,6 +61,10 @@ namespace WinUIMusicPlayer.Utils
         public static string LockGlyphConverter(bool locked)
             => locked ? "\uE785" : "\uE72E";
 
+        /// <summary>桌面歌词开关状态 → 托盘菜单字形，随状态切换（Segoe Fluent Icons：e890=View ed1a=Hide）。</summary>
+        public static string DesktopLyricsGlyphConverter(bool enabled)
+            => enabled ? "\uED1A" : "\uE890";
+
         public static double BoolToOpacityReConverter(bool isInPlayingDetailMode)
         {
             return isInPlayingDetailMode ? 0 : 1;

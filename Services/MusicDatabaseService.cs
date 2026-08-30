@@ -1003,6 +1003,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.DesktopLyricsFontWeight = settings.DesktopLyricsFontWeight;
                 AppViewModel.DesktopLyricsOutlineWidth = settings.DesktopLyricsOutlineWidth;
                 AppViewModel.IsDesktopLyricsLocked = settings.IsDesktopLyricsLocked;
+                AppViewModel.IsDesktopLyricsEnabled = settings.IsDesktopLyricsEnabled;
                 AppViewModel.LyricsFontWeight = settings.LyricsFontWeight;
                 AppViewModel.CustomOpacity = settings.CustomAcrylicOpacity;
                 AppViewModel.CustomColor = Color.FromArgb(

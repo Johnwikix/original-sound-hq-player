@@ -8,7 +8,6 @@ using Microsoft.UI.Xaml.Input;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using Windows.Foundation;
 using Windows.Graphics;
 using WinUIEx;
@@ -28,10 +27,6 @@ namespace WinUIMusicPlayer.DesktopLyrics
     /// </summary>
     public sealed partial class DesktopLyricsWindow : WinUIEx.WindowEx, IDisposable
     {
-        private const int GWL_EXSTYLE = -20;
-        private const int WS_EX_LAYERED = 0x00080000;
-        private const int WS_EX_TRANSPARENT = 0x00000020;
-
         private const int DefaultWidth = 1800;
         private const int DefaultHeight = 280;
         private const int BottomMargin = 60;
@@ -52,7 +47,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private bool _disposed;
 
         private bool _isDragging;
-        private POINT _dragStartCursor;
+        private WindowHelper.POINT _dragStartCursor;
         private PointInt32 _dragStartWindowPos;
         private RectInt32? _panelScreenRectCache;   // 按钮组屏幕矩形缓存（含悬停外扩）；窗口位置/尺寸变化时失效
 
@@ -169,12 +164,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             if (_clickThrough == enable) return;
             _clickThrough = enable;
-            int exStyle = (int)WindowHelper.GetWindowLongPtr(_hwnd, GWL_EXSTYLE);
-            if (enable)
-                exStyle |= WS_EX_LAYERED | WS_EX_TRANSPARENT;
-            else
-                exStyle &= ~(WS_EX_LAYERED | WS_EX_TRANSPARENT);
-            WindowHelper.SetWindowLongPtr(_hwnd, GWL_EXSTYLE, exStyle);
+            WindowHelper.SetClickThrough(_hwnd, enable);
         }
 
         private void UpdateControlPanelVisual()
@@ -216,7 +206,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 sender.Stop();
                 return;
             }
-            if (!GetCursorPos(out POINT cursor)) return;
+            if (!WindowHelper.GetCursorPos(out WindowHelper.POINT cursor)) return;
 
             bool overWindow = IsCursorOverWindow(cursor);
             bool overPanel = overWindow && IsCursorOverControlPanel(cursor);
@@ -236,7 +226,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         }
 
         /// <summary>游标是否悬停在本窗口上（AppWindow.Position/Size 与 GetCursorPos 同为物理像素）。</summary>
-        private bool IsCursorOverWindow(POINT cursor)
+        private bool IsCursorOverWindow(WindowHelper.POINT cursor)
         {
             PointInt32 pos = AppWindow.Position;
             SizeInt32 size = AppWindow.Size;
@@ -249,7 +239,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         /// （见 <see cref="InvalidatePanelScreenRect"/>）：锁定态轮询期间窗口静止，
         /// 命中缓存时纯数值比较，避免每 tick 的 TransformToVisual 分配与 XAML 调用。
         /// </summary>
-        private bool IsCursorOverControlPanel(POINT cursor)
+        private bool IsCursorOverControlPanel(WindowHelper.POINT cursor)
         {
             if (_panelScreenRectCache is { } cached)
             {
@@ -260,8 +250,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
             double scale = RootGrid.XamlRoot.RasterizationScale;
             Rect bounds = ControlPanel.TransformToVisual(null)
                 .TransformBounds(new Rect(0, 0, ControlPanel.ActualWidth, ControlPanel.ActualHeight));
-            var origin = new POINT();
-            if (!ClientToScreen(_hwnd, ref origin)) return false;
+            var origin = new WindowHelper.POINT();
+            if (!WindowHelper.ClientToScreen(_hwnd, ref origin)) return false;
             int left = origin.X + (int)((bounds.X - ControlPanelHoverMargin) * scale);
             int top = origin.Y + (int)((bounds.Y - ControlPanelHoverMargin) * scale);
             int right = origin.X + (int)((bounds.X + bounds.Width + ControlPanelHoverMargin) * scale);
@@ -294,7 +284,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             if (_locked) return;
             if (!e.GetCurrentPoint(RootGrid).Properties.IsLeftButtonPressed) return;
-            if (!GetCursorPos(out _dragStartCursor)) return;
+            if (!WindowHelper.GetCursorPos(out _dragStartCursor)) return;
             _dragStartWindowPos = AppWindow.Position;
             _isDragging = true;
             RootGrid.CapturePointer(e.Pointer);
@@ -302,7 +292,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void RootGrid_PointerMoved(object sender, PointerRoutedEventArgs e)
         {
-            if (!_isDragging || !GetCursorPos(out POINT cursor)) return;
+            if (!_isDragging || !WindowHelper.GetCursorPos(out WindowHelper.POINT cursor)) return;
             AppWindow.Move(new PointInt32(
                 _dragStartWindowPos.X + cursor.X - _dragStartCursor.X,
                 _dragStartWindowPos.Y + cursor.Y - _dragStartCursor.Y));
@@ -365,20 +355,5 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _renderer.Dispose();
             _disposed = true;
         }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct POINT
-        {
-            public int X;
-            public int Y;
-        }
-
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool GetCursorPos(out POINT lpPoint);
-
-        [DllImport("user32.dll")]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool ClientToScreen(IntPtr hWnd, ref POINT lpPoint);
     }
 }
