@@ -63,7 +63,7 @@ namespace WinUIMusicPlayer.View
 
         private void DesktopLyricsButton_Click(object sender, RoutedEventArgs e)
         {
-            DesktopLyricsManager.SetEnabled(!DesktopLyricsManager.IsEnabled);
+            ViewModel.AppViewModel.IsDesktopLyricsEnabled = !ViewModel.AppViewModel.IsDesktopLyricsEnabled;
         }
 
         private void OnDesktopLyricsStateChanged()

@@ -87,6 +87,14 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = PlayMode.ListLoop;
 
+        /// <summary>按枚举名设置播放模式（托盘菜单 CommandParameter 传入），标题文本随 setter 统一同步。</summary>
+        [RelayCommand]
+        private void SetPlayMode(string mode)
+        {
+            if (Enum.TryParse(mode, true, out PlayMode playMode))
+                CurrentPlayMode = playMode;
+        }
+
         public string SearchText
         {
             get => field;
@@ -146,7 +154,6 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        public string PlayModeFlyoutText { get; set => SetProperty(ref field, value); }
         public BulkObservableCollection<Music> SequentialPlayingList
         {
             get => field;
@@ -1512,6 +1519,12 @@ namespace WinUIMusicPlayer.ViewModel
         {
             SeekRelative(-10_000);
         }
+
+        [RelayCommand]
+        private void VolumeUp() => AdjustVolume(10);
+
+        [RelayCommand]
+        private void VolumeDown() => AdjustVolume(-10);
 
         private void SeekRelative(long deltaMs)
         {
