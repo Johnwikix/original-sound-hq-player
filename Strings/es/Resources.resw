@@ -1378,6 +1378,9 @@
   <data name="DesktopLyricsOutline.Text" xml:space="preserve">
     <value>Contorno (letra en el escritorio)</value>
   </data>
+  <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
+    <value>Traducción (letra en el escritorio)</value>
+  </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>Grosor de fuente (letra en el escritorio)</value>
   </data>

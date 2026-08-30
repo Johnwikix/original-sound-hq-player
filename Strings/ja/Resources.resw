@@ -1378,6 +1378,9 @@
   <data name="DesktopLyricsOutline.Text" xml:space="preserve">
     <value>デスクトップ歌詞の縁取り</value>
   </data>
+  <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
+    <value>デスクトップ歌詞の翻訳</value>
+  </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>デスクトップ歌詞フォントの太さ</value>
   </data>

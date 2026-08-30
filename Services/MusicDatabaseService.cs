@@ -972,6 +972,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.DesktopLyricsFontFamily = settings.DesktopLyricsFontFamily;
                 AppSettings.DesktopLyricsColorRgb = settings.DesktopLyricsColorRgb;
                 AppSettings.IsDesktopLyricsOutlineEnabled = settings.IsDesktopLyricsOutlineEnabled;
+                AppSettings.IsDesktopLyricsTranslationEnabled = settings.IsDesktopLyricsTranslationEnabled;
                 AppSettings.DesktopLyricsFontWeight = settings.DesktopLyricsFontWeight;
                 AppSettings.DesktopLyricsOutlineWidth = settings.DesktopLyricsOutlineWidth;
                 AppSettings.LyricsFontWeight = settings.LyricsFontWeight;
@@ -999,6 +1000,7 @@ namespace WinUIMusicPlayer.Services
                     (byte)((settings.DesktopLyricsColorRgb >> 8) & 0xFF),
                     (byte)(settings.DesktopLyricsColorRgb & 0xFF));
                 AppViewModel.IsDesktopLyricsOutlineEnabled = settings.IsDesktopLyricsOutlineEnabled;
+                AppViewModel.IsDesktopLyricsTranslationEnabled = settings.IsDesktopLyricsTranslationEnabled;
                 AppViewModel.DesktopLyricsFontWeight = settings.DesktopLyricsFontWeight;
                 AppViewModel.DesktopLyricsOutlineWidth = settings.DesktopLyricsOutlineWidth;
                 AppViewModel.LyricsFontWeight = settings.LyricsFontWeight;
@@ -1182,6 +1184,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.DesktopLyricsFontFamily = AppSettings.DesktopLyricsFontFamily;
             newSettings.DesktopLyricsColorRgb = AppSettings.DesktopLyricsColorRgb;
             newSettings.IsDesktopLyricsOutlineEnabled = AppSettings.IsDesktopLyricsOutlineEnabled;
+            newSettings.IsDesktopLyricsTranslationEnabled = AppSettings.IsDesktopLyricsTranslationEnabled;
             newSettings.DesktopLyricsFontWeight = AppSettings.DesktopLyricsFontWeight;
             newSettings.DesktopLyricsOutlineWidth = AppSettings.DesktopLyricsOutlineWidth;
             newSettings.LyricsFontWeight = AppSettings.LyricsFontWeight;

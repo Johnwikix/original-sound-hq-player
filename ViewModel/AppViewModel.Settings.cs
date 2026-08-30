@@ -595,6 +595,22 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = true;
 
+        public bool IsDesktopLyricsTranslationEnabled
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    AppSettings.IsDesktopLyricsTranslationEnabled = value;
+                    if (IsInitialized)
+                    {
+                        ScheduleDesktopLyricsStyleCommit();
+                    }
+                }
+            }
+        } = true;
+
         public int DesktopLyricsFontWeight
         {
             get => field;
