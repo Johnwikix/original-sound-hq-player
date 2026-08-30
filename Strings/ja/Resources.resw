@@ -811,6 +811,9 @@
   <data name="BackgroundShader_LiquidFlow.Content" xml:space="preserve">
     <value>液体フロー</value>
   </data>
+  <data name="BackgroundShader_AppleMusic.Content" xml:space="preserve">
+    <value>Apple Music スタイル</value>
+  </data>
   <data name="ReGetLyrics" xml:space="preserve">
     <value>歌詞を再取得する</value>
   </data>

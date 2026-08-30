@@ -6,6 +6,7 @@ namespace AnimatedWin2dControls
     /// 老版本曾有 SeventiesMelt=1 / Cosmic=2 / PS3XMB=3 / GradientFlow=4 / WavyBackground=5，
     /// 加载时由 <see cref="SaveSettings"/> 侧的迁移函数映射到新编号，避免索引与 ComboBox 错位。
     /// ChromaticResonance=4 为新追加，索引在尾部不破坏旧值。
+    /// AppleMusic=6 为新追加（封面图驱动的旋转层 + pinch 网格背景，经 SetArtwork 注入封面）。
     /// </summary>
     public enum BackgroundShaderMode : byte
     {
@@ -15,5 +16,6 @@ namespace AnimatedWin2dControls
         WavyBackground = 3,
         ChromaticResonance = 4,
         LiquidFlow = 5,
+        AppleMusic = 6,
     }
 }
