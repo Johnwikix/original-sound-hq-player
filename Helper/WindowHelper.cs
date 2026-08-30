@@ -57,5 +57,37 @@ namespace WinUIMusicPlayer.Helper
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool IsWindow(IntPtr hWnd);
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct POINT
+        {
+            public int X;
+            public int Y;
+        }
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool GetCursorPos(out POINT lpPoint);
+
+        [DllImport("user32.dll")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool ClientToScreen(IntPtr hWnd, ref POINT lpPoint);
+
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_LAYERED = 0x00080000;
+        private const int WS_EX_TRANSPARENT = 0x00000020;
+
+        /// <summary>
+        /// 整窗点击穿透开关（OR/CLEAR WS_EX_LAYERED | WS_EX_TRANSPARENT），
+        /// 供置顶覆盖层窗口（如桌面歌词悬浮窗）使用。
+        /// </summary>
+        public static void SetClickThrough(IntPtr hWnd, bool enable)
+        {
+            int exStyle = (int)GetWindowLongPtr(hWnd, GWL_EXSTYLE);
+            exStyle = enable
+                ? exStyle | (WS_EX_LAYERED | WS_EX_TRANSPARENT)
+                : exStyle & ~(WS_EX_LAYERED | WS_EX_TRANSPARENT);
+            SetWindowLongPtr(hWnd, GWL_EXSTYLE, exStyle);
+        }
+
     }
 }

@@ -130,22 +130,22 @@
                         Text="-10" />
                 </MenuFlyoutSubItem>
                 <MenuFlyoutSeparator />
-                <ToggleMenuFlyoutItem
+                <MenuFlyoutItem
                     x:Name="DesktopLyricsToggle"
                     x:Uid="IconDesktopLyrics"
                     Click="DesktopLyricsToggle_Click">
-                    <ToggleMenuFlyoutItem.Icon>
-                        <FontIcon Glyph="&#xE890;" />
-                    </ToggleMenuFlyoutItem.Icon>
-                </ToggleMenuFlyoutItem>
-                <ToggleMenuFlyoutItem
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="{x:Bind tools:BindUtils.DesktopLyricsGlyphConverter(AppViewModel.IsDesktopLyricsEnabled), Mode=OneWay}" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem
                     x:Name="DesktopLyricsLock"
                     x:Uid="IconDesktopLyricsLock"
                     Click="DesktopLyricsLock_Click">
-                    <ToggleMenuFlyoutItem.Icon>
-                        <FontIcon Glyph="&#xE72E;" />
-                    </ToggleMenuFlyoutItem.Icon>
-                </ToggleMenuFlyoutItem>
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="{x:Bind tools:BindUtils.LockGlyphConverter(AppViewModel.IsDesktopLyricsLocked), Mode=OneWay}" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
                 <MenuFlyoutItem
                     x:Name="ResetDesktopLyrics"
                     x:Uid="IconResetDesktopLyrics"

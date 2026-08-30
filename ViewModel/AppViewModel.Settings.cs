@@ -635,6 +635,24 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = 1.5;
 
+        private bool _isDesktopLyricsEnabled;
+
+        /// <summary>
+        /// 桌面歌词开关状态（绑定源）。实际状态以 DesktopLyricsManager 为准，
+        /// 托盘/播放条等入口经 StateChanged 镜像同步到本属性；经本属性赋值则会驱动 Manager。
+        /// </summary>
+        public bool IsDesktopLyricsEnabled
+        {
+            get => _isDesktopLyricsEnabled;
+            set
+            {
+                if (SetProperty(ref _isDesktopLyricsEnabled, value) && IsInitialized)
+                {
+                    DesktopLyricsManager.SetEnabled(value);
+                }
+            }
+        }
+
         private bool _isDesktopLyricsLocked;
 
         /// <summary>
