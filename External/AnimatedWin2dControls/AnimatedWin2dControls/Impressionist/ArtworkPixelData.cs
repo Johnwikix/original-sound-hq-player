@@ -1,15 +1,18 @@
 using System;
 using System.Buffers;
 using System.IO;
+using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
+using Windows.Graphics.Imaging;
+using Windows.Storage.Streams;
 
 namespace AnimatedWin2dControls.Impressionist
 {
     /// <summary>
     /// 已解码的方形封面像素，固定 <see cref="Edge"/>×<see cref="Edge"/>、
     /// 直通（非预乘）RGBA8 行优先、自上而下。专供 AppleMusic 背景着色器的
-    /// D2D1ResourceTextureManager 上传使用。引用类型：跨线程仅做整体引用交换。
+    /// 封面输入位图上传使用。引用类型：跨线程仅做整体引用交换。
     /// </summary>
     public sealed class ArtworkPixelData
     {
@@ -26,9 +29,8 @@ namespace AnimatedWin2dControls.Impressionist
 
     /// <summary>
     /// 从封面缩略图 BMP 缓存（见主工程 CoverLoadQueue：8B 对齐头 + Bgra8 预乘裸像素、
-    /// 自上而下）解码出固定尺寸的方形 <see cref="ArtworkPixelData"/>：
-    /// 中心裁方 + 双线性缩放到 <see cref="ArtworkPixelData.Edge"/>²。
-    /// 固定尺寸保证着色器侧资源纹理只创建一次，换歌仅需 <c>Update</c>。
+    /// 自上而下）或原始图片字节（JPEG/PNG 等任意格式）解码出固定尺寸的方形
+    /// <see cref="ArtworkPixelData"/>：中心裁方 + 双线性缩放到 <see cref="ArtworkPixelData.Edge"/>²。
     /// </summary>
     public static class ArtworkPixelDecoder
     {
@@ -82,6 +84,60 @@ namespace AnimatedWin2dControls.Impressionist
             {
                 if (rented is not null)
                     ArrayPool<byte>.Shared.Return(rented, clearArray: false);
+            }
+        }
+
+        /// <summary>
+        /// 从原始图片字节（JPEG/PNG 等任意格式，如音乐内嵌封面的大图数据）解码出
+        /// 方形 <see cref="ArtworkPixelData"/>。先等比缩放到长边 ≤ 256 再中心裁方
+        /// + 双线性缩放（缩小后解码可节省大图解码开销；用于 BMP 缓存缺失时的兜底）。
+        /// </summary>
+        public static async Task<ArtworkPixelData?> LoadSquareRgba8FromImageBytesAsync(
+            byte[] imageBytes,
+            int edge = ArtworkPixelData.Edge,
+            CancellationToken ct = default)
+        {
+            if (imageBytes is not { Length: > 0 }) return null;
+
+            try
+            {
+                using var stream = new InMemoryRandomAccessStream();
+                await stream.WriteAsync(imageBytes.AsBuffer());
+                stream.Seek(0);
+
+                BitmapDecoder decoder = await BitmapDecoder.CreateAsync(stream);
+
+                uint width = decoder.OrientedPixelWidth;
+                uint height = decoder.OrientedPixelHeight;
+                if (width <= 0 || height <= 0) return null;
+
+                double scale = Math.Min(1d, 256 / (double)Math.Max(width, height));
+
+                var transform = new BitmapTransform
+                {
+                    ScaledWidth = Math.Max(1u, (uint)Math.Round(width * scale)),
+                    ScaledHeight = Math.Max(1u, (uint)Math.Round(height * scale)),
+                    InterpolationMode = BitmapInterpolationMode.Fant,
+                };
+
+                PixelDataProvider provider = await decoder.GetPixelDataAsync(
+                    BitmapPixelFormat.Bgra8,
+                    BitmapAlphaMode.Premultiplied,
+                    transform,
+                    ExifOrientationMode.RespectExifOrientation,
+                    ColorManagementMode.ColorManageToSRgb);
+
+                byte[] pixels = provider.DetachPixelData();
+
+                return ConvertToSquareRgba8(pixels, (int)transform.ScaledWidth, (int)transform.ScaledHeight, edge);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                return null;
             }
         }
 

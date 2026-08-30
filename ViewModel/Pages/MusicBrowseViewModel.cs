@@ -457,14 +457,26 @@ namespace WinUIMusicPlayer.ViewModel
                             .ExtractFromImageBytesAsync(picData, AppViewModel.PaletteAlgorithm, ct: token), token);
                 }
 
-                // 封面像素：供 AppleMusic 背景着色器旋转层使用（无封面时为 null，
-                // 着色器回退到调色板渐变）。缩略图 BMP 已就绪，解码代价可忽略。
+                // 封面像素：仅供 AppleMusic 背景着色器旋转层使用，其它着色器只取色、
+                // 不做封面解码（非 AppleMusic 模式零新增开销）。无封面时为 null，
+                // 着色器回退到调色板渐变。
                 AnimatedWin2dControls.Impressionist.ArtworkPixelData? artwork = null;
-                if (!string.IsNullOrEmpty(music.ImageHash))
+                if (AppViewModel.BackgroundShader == AnimatedWin2dControls.BackgroundShaderMode.AppleMusic)
                 {
-                    string artworkThumbPath = CoverLoadQueue.GetThumbCachePath(music.ImageHash, CoverLoadQueue.CoverSize);
-                    artwork = await AnimatedWin2dControls.Impressionist.ArtworkPixelDecoder
-                        .LoadSquareRgba8FromBmpCacheAsync(artworkThumbPath, ct: token);
+                    // 优先读缩略图 BMP 缓存（90KB，最快）；
+                    // 缓存缺失（首次播放/被清理）时直接用已读取的大图数据兜底。
+                    if (!string.IsNullOrEmpty(music.ImageHash))
+                    {
+                        string artworkThumbPath = CoverLoadQueue.GetThumbCachePath(music.ImageHash, CoverLoadQueue.CoverSize);
+                        artwork = await AnimatedWin2dControls.Impressionist.ArtworkPixelDecoder
+                            .LoadSquareRgba8FromBmpCacheAsync(artworkThumbPath, ct: token);
+                    }
+
+                    if (artwork is null && picData.Length > 0)
+                    {
+                        artwork = await AnimatedWin2dControls.Impressionist.ArtworkPixelDecoder
+                            .LoadSquareRgba8FromImageBytesAsync(picData, ct: token);
+                    }
                 }
 
                 if (token.IsCancellationRequested) return;

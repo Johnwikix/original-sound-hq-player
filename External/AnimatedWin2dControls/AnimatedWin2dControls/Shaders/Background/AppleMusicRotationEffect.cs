@@ -17,12 +17,17 @@ namespace AnimatedWin2dControls.Shaders.Background
     /// 与原绘制顺序一致，未命中回落到 aspect-fill 层。
     /// </para>
     /// <para>
-    /// 封面通过 <see cref="D2D1ResourceTexture2D{Float4}"/> 注入，采样器在
-    /// D2D1ResourceTextureManager 初始化时配置为线性 + Clamp，等价原版的
-    /// LinearClampSampler。输出恒不透明（alpha=1），可直接写入 premultiplied 目标。
+    /// 封面经效果输入注入（输入 0/1 = 交叉淡化的两张封面 CanvasBitmap，线性 +
+    /// Clamp 采样描述），与网格同机制：渲染器可对输入位图显式 Dispose。
+    /// 注：3.2.0 的 D2D1ResourceTextureManager 无 IDisposable，仅能由终结器回收，
+    /// 故本 pass 不用管理器。输出恒不透明（alpha=1），可写入 premultiplied 目标。
     /// </para>
     /// </summary>
-    [D2DInputCount(0)]
+    [D2DInputCount(2)]
+    [D2DInputComplex(0)]
+    [D2DInputComplex(1)]
+    [D2DInputDescription(0, D2D1Filter.MinMagMipLinear)]
+    [D2DInputDescription(1, D2D1Filter.MinMagMipLinear)]
     [D2DRequiresScenePosition]
     [D2DShaderProfile(D2D1ShaderProfile.PixelShader50)]
     [D2DGeneratedPixelShaderDescriptor]
@@ -34,17 +39,6 @@ namespace AnimatedWin2dControls.Shaders.Background
         float artworkMix) : ID2D1PixelShader
     {
         private const float TwoPi = 6.2831853071795864769f;
-
-        /// <summary>
-        /// RGBA8 封面纹理（非预乘，管理器侧配置线性 + Clamp 采样）。
-        /// 双纹理用于换歌时的像素级交叉淡化：A=上一张，B=当前张，artworkMix 由
-        /// 渲染器随时间 0→1 推进。0 输入着色器的资源纹理索引可连续使用 0..N-1。
-        /// </summary>
-        [D2DResourceTextureIndex(0)]
-        private readonly D2D1ResourceTexture2D<Float4> _artworkA;
-
-        [D2DResourceTextureIndex(1)]
-        private readonly D2D1ResourceTexture2D<Float4> _artworkB;
 
         public float4 Execute()
         {
@@ -91,11 +85,15 @@ namespace AnimatedWin2dControls.Shaders.Background
             return new float4(SampleArtwork(fillUv).XYZ, 1f);
         }
 
-        /// <summary>按 artworkMix 交叉淡化两张封面。</summary>
+        /// <summary>
+        /// 按 artworkMix 交叉淡化两张封面：输入 0 = 旧封面，输入 1 = 新封面。
+        /// 输入以纹理归一化坐标采样，渲染器保证位图以绘制会话 DPI 创建（避免
+        /// DPI 补偿节点）+ 线性滤波描述（等价原版 LinearClampSampler）。
+        /// </summary>
         private float4 SampleArtwork(float2 uv)
         {
-            float4 a = _artworkA.Sample(uv.X, uv.Y);
-            float4 b = _artworkB.Sample(uv.X, uv.Y);
+            float4 a = D2D.SampleInput(0, uv);
+            float4 b = D2D.SampleInput(1, uv);
 
             return Hlsl.Lerp(a, b, Hlsl.Saturate(artworkMix));
         }
@@ -190,6 +188,5 @@ namespace AnimatedWin2dControls.Shaders.Background
 
             return 120f;
         }
-
     }
 }
