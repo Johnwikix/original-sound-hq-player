@@ -1381,6 +1381,9 @@
   <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
     <value>Traducción (letra en el escritorio)</value>
   </data>
+  <data name="DesktopLyricsKaraoke.Text" xml:space="preserve">
+    <value>Efecto karaoke (letra en el escritorio)</value>
+  </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>Grosor de fuente (letra en el escritorio)</value>
   </data>

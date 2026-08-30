@@ -611,6 +611,14 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = true;
 
+        /// <summary>逐字效果开关（设置页绑定入口）：委托桌面歌词 VM 单例，
+        /// 持久化与窗口热切换通知由 VM 的 IsKaraokeEnabled setter 完成，此处不经样式防抖提交。</summary>
+        public bool IsDesktopLyricsKaraokeEnabled
+        {
+            get => App.Services.GetRequiredService<DesktopLyricsViewModel>().IsKaraokeEnabled;
+            set => App.Services.GetRequiredService<DesktopLyricsViewModel>().IsKaraokeEnabled = value;
+        }
+
         public int DesktopLyricsFontWeight
         {
             get => field;

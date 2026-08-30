@@ -968,6 +968,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.IsRunningBackend = settings.IsRunningBackend;
                 AppSettings.IsDesktopLyricsEnabled = settings.IsDesktopLyricsEnabled;
                 AppSettings.IsDesktopLyricsLocked = settings.IsDesktopLyricsLocked;
+                AppSettings.IsDesktopLyricsKaraokeEnabled = settings.IsDesktopLyricsKaraokeEnabled;
                 AppSettings.DesktopLyricsFontSize = settings.DesktopLyricsFontSize;
                 AppSettings.DesktopLyricsFontFamily = settings.DesktopLyricsFontFamily;
                 AppSettings.DesktopLyricsColorRgb = settings.DesktopLyricsColorRgb;
@@ -1180,6 +1181,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.UsePlayingDetailAlignmentInPortrait = AppViewModel.UsePlayingDetailAlignmentInPortrait;
             newSettings.IsDesktopLyricsEnabled = AppSettings.IsDesktopLyricsEnabled;
             newSettings.IsDesktopLyricsLocked = AppSettings.IsDesktopLyricsLocked;
+            newSettings.IsDesktopLyricsKaraokeEnabled = AppSettings.IsDesktopLyricsKaraokeEnabled;
             newSettings.DesktopLyricsFontSize = AppSettings.DesktopLyricsFontSize;
             newSettings.DesktopLyricsFontFamily = AppSettings.DesktopLyricsFontFamily;
             newSettings.DesktopLyricsColorRgb = AppSettings.DesktopLyricsColorRgb;

@@ -1383,6 +1383,9 @@
   <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
     <value>桌面歌词翻译</value>
   </data>
+  <data name="DesktopLyricsKaraoke.Text" xml:space="preserve">
+    <value>桌面歌词逐字效果</value>
+  </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>桌面歌词字重</value>
   </data>

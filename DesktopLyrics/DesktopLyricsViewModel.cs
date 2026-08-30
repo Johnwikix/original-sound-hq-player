@@ -18,6 +18,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
     {
         private bool _isEnabled;
         private bool _isLocked = true;
+        private bool _isKaraokeEnabled;
         private DesktopLyricsStyle _style;
         private SaveDesktopLyricsState _boundsState = new();
         private bool _boundsLoaded;
@@ -51,6 +52,21 @@ namespace WinUIMusicPlayer.DesktopLyrics
             }
         }
 
+        /// <summary>逐字效果开关：true = CanvasLyricsRenderer（Win2D 逐字扫光），false = TextBlockLyricsRenderer。
+        /// 窗口监听本属性热切换渲染器；默认关（与主界面 EnableAdvancedLyricsEffect 先例一致）。</summary>
+        public bool IsKaraokeEnabled
+        {
+            get => _isKaraokeEnabled;
+            set
+            {
+                if (SetProperty(ref _isKaraokeEnabled, value))
+                {
+                    AppSettings.IsDesktopLyricsKaraokeEnabled = value;
+                    PersistSettings();
+                }
+            }
+        }
+
         /// <summary>样式快照（悬浮窗监听变化推送渲染器；RestoreFromSettings / 设置页提交时整体更新）。</summary>
         public DesktopLyricsStyle Style { get => _style; set => SetProperty(ref _style, value); }
 
@@ -67,6 +83,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
             OnPropertyChanged(nameof(IsEnabled));
             _isLocked = AppSettings.IsDesktopLyricsLocked;
             OnPropertyChanged(nameof(IsLocked));
+            _isKaraokeEnabled = AppSettings.IsDesktopLyricsKaraokeEnabled;
+            OnPropertyChanged(nameof(IsKaraokeEnabled));
             if (_isEnabled) DesktopLyricsManager.CreateWindow();
         }
 

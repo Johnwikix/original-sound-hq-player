@@ -1381,6 +1381,9 @@
   <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
     <value>Перевод текста на рабочем столе</value>
   </data>
+  <data name="DesktopLyricsKaraoke.Text" xml:space="preserve">
+    <value>Караоке-эффект текста на рабочем столе</value>
+  </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>Насыщенность шрифта (текст на рабочем столе)</value>
   </data>
