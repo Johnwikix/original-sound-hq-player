@@ -1384,6 +1384,15 @@
   <data name="DesktopLyricsKaraoke.Text" xml:space="preserve">
     <value>Efecto karaoke (letra en el escritorio)</value>
   </data>
+  <data name="DesktopLyricsGlow.Text" xml:space="preserve">
+    <value>Resplandor (letra en el escritorio)</value>
+  </data>
+  <data name="DesktopLyricsCharFloat.Text" xml:space="preserve">
+    <value>Flotación de caracteres (letra en el escritorio)</value>
+  </data>
+  <data name="DesktopLyricsCharScale.Text" xml:space="preserve">
+    <value>Escala de caracteres (letra en el escritorio)</value>
+  </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>Grosor de fuente (letra en el escritorio)</value>
   </data>

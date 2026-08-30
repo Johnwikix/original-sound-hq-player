@@ -7,7 +7,6 @@ using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Numerics;
 using Windows.UI;
 
@@ -15,15 +14,15 @@ namespace WinUIMusicPlayer.DesktopLyrics
 {
     /// <summary>
     /// Win2D 逐字歌词渲染器（薄宿主）：只渲染当前一行 + 翻译，单行块垂直居中，逐字扫光 +
-    /// 发光/字浮/字缩动效（经 LyricsAnimator 驱动，语义与主界面一致）。
+    /// 发光/字浮/字缩动效（经 LyricsAnimator 驱动，触发语义与主界面一致）。
     /// 直接组装 External 库内部件（RenderLyricsLine / LyricsLineRenderer / LyricsLayoutManager /
     /// LyricsAnimator，均零静态总线依赖、全参数注入），绕开 LyricsRenderCoordinator 的整页滚动逻辑；
     /// 样式完全来自 <see cref="DesktopLyricsStyle"/>（不消费主界面 LyricsSettingsBus），
     /// 数据经 <see cref="IDesktopLyricsRenderer"/> 的 Set* 由宿主窗口推送（总线转发零改动）。
-    /// 描边实现：EnsureCaches 的 CachedStroke 是白描边命令列表，宿主先以黑色
-    /// <see cref="RenderLyricsLine.UnplayedStrokeTint"/> 垫底再画逐字填充 region——
-    /// 播放中的填充路径（DrawSubLineRegions/DrawFullLineRegion）不含描边层，
-    /// 垫底后扫光在黑描边之上进行，获得与文本渲染器一致的黑边可读性。
+    /// 描边实现：EnsureCaches 的 CachedStroke 是白描边命令列表。有真实音节的行走逐字路径，
+    /// 描边切片经 LyricsLineRenderer.IsStrokeEnabled 使用与填充相同的 dest 映射随字符一起变换
+    /// （字浮/字缩时描边贴合字符，固定位置整行描边会错位）；LRC 整行路径无逐字变换，
+    /// 由本宿主整行垫底。两者都以黑色 <see cref="RenderLyricsLine.UnplayedStrokeTint"/> 着色获得黑边。
     /// 线程模型：CanvasAnimatedControl 的 Update/Draw 在渲染线程回调，Set* 在 UI 线程调用；
     /// 与 LyricsRenderCoordinator 相同，仅依赖字段原子赋值传递状态，不持锁
     /// （Set* 只写字段/标志，Win2D 资源的全部创建与释放都在 Update/Draw 回调内）。
@@ -36,14 +35,11 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private const int TargetFrameRate = 60;
         private const string DefaultFontFamily = "Segoe UI";
 
-        // 逐字动效（发光/字浮/字缩）：触发语义与主界面一致（经 LyricsAnimator 驱动），
-        // 量值取主界面默认（GlowAmount=5px / CharFloatAmount=5px / CharScaleAmount=110%→1.1），长音节阈值 500ms
-        private const bool GlowEnabled = true;
+        // 逐字动效量值（是否启用由样式控制）：取主界面默认
+        // （GlowAmount=5px / CharFloatAmount=5px / CharScaleAmount=110%→1.1），长音节阈值 500ms
         private const double GlowAmountPx = 5.0;
-        private const bool FloatEnabled = true;
         private const double FloatAmountPx = 5.0;
         private const double FloatDurationMs = 450;
-        private const bool ScaleEnabled = true;
         private const double ScaleFactor = 1.10;
         private const double LongSyllableThresholdMs = 500;
 
@@ -77,54 +73,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private double _outlineWidth = 1.5;
         private int _fontWeight = 400;
         private bool _showTranslation = true;
+        private bool _glow = true;
+        private bool _charFloat = true;
+        private bool _charScale = true;
         private bool _disposed;
-
-        // ── 临时诊断（定位扫光卡顿，结论后整段删除）────────────────────────
-        private long _dbgWindowStart = Environment.TickCount64;
-        private int _dbgUpdates, _dbgDraws, _dbgSlowly, _dbgSyncs, _dbgRebuilds;
-        private double _dbgElapsedSum, _dbgElapsedMin = double.MaxValue, _dbgElapsedMax;
-        private double _dbgDrawMsSum, _dbgDrawMsMax;
-        private int _dbgRegionCount = -1;
-        private bool _dbgHasSyllable;
-        private readonly object _dbgLogLock = new();
-        private readonly List<string> _dbgFirstFrames = new();
-
-        private void DbgAppend(string line)
-        {
-            try
-            {
-                lock (_dbgLogLock)
-                {
-                    var dir = Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                        "OriginalSoundPlayer", "Logs");
-                    Directory.CreateDirectory(dir);
-                    File.AppendAllText(Path.Combine(dir, "karaoke-debug.log"), line + Environment.NewLine);
-                }
-            }
-            catch { /* 诊断日志永不影响渲染 */ }
-        }
-
-        private void DbgReportIfNeeded(double internalMs)
-        {
-            var now = Environment.TickCount64;
-            if (now - _dbgWindowStart < 1000) return;
-
-            int updates = _dbgUpdates, draws = _dbgDraws, slowly = _dbgSlowly, syncs = _dbgSyncs, rebuilds = _dbgRebuilds;
-            double avgE = updates > 0 ? _dbgElapsedSum / updates : 0;
-            double minE = _dbgElapsedMin == double.MaxValue ? 0 : _dbgElapsedMin;
-            double maxE = _dbgElapsedMax;
-            double avgD = draws > 0 ? _dbgDrawMsSum / draws : 0;
-            double maxD = _dbgDrawMsMax;
-            _dbgWindowStart = now;
-            _dbgUpdates = _dbgDraws = _dbgSlowly = _dbgSyncs = _dbgRebuilds = 0;
-            _dbgElapsedSum = 0; _dbgElapsedMin = double.MaxValue; _dbgElapsedMax = 0; _dbgDrawMsSum = 0; _dbgDrawMsMax = 0;
-
-            DbgAppend($"[{DateTime.Now:HH:mm:ss.fff}] upd/s={updates} draw/s={draws} slowly={slowly} " +
-                      $"sync={syncs} rebuild={rebuilds} elapsed avg={avgE:F1} min={minE:F1} max={maxE:F1} " +
-                      $"drawMs avg={avgD:F2} max={maxD:F2} internal={internalMs:F0} ext={_lastTotalMs} " +
-                      $"idx={_currentIndex} playing={_isPlaying} syllable={_dbgHasSyllable} regions={_dbgRegionCount}");
-        }
 
         public CanvasLyricsRenderer()
         {
@@ -145,7 +97,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _outlineWidth = Math.Clamp(style.OutlineWidth, 0, 20);
             _fontWeight = Math.Clamp(style.FontWeight, 100, 900);
             _showTranslation = style.ShowTranslation;
-            // 字号/字体/字重/描边/翻译都影响布局，统一标记下帧重建（颜色不触发，仅每帧赋值）
+            _glow = style.Glow;
+            _charFloat = style.CharFloat;
+            _charScale = style.CharScale;
+            // 字号/字体/字重/描边/翻译都影响布局，统一标记下帧重建（颜色/动效开关不触发，逐帧生效）
             _layoutDirty = true;
         }
 
@@ -153,7 +108,6 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             _lyrics = lyrics as List<LyricLine> ?? (lyrics is null ? null : [.. lyrics]);
             _lyricsChanged = true;
-            DbgAppend($"[{DateTime.Now:HH:mm:ss.fff}] SetLyrics count={_lyrics?.Count ?? -1}");
         }
 
         public void SetPlaybackTime(long totalMs) => _lastTotalMs = totalMs;
@@ -190,13 +144,6 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void OnCanvasUpdate(ICanvasAnimatedControl sender, CanvasAnimatedUpdateEventArgs args)
         {
-            _dbgUpdates++;
-            double dbgElapsed = args.Timing.ElapsedTime.TotalMilliseconds;
-            _dbgElapsedSum += dbgElapsed;
-            if (dbgElapsed < _dbgElapsedMin) _dbgElapsedMin = dbgElapsed;
-            if (dbgElapsed > _dbgElapsedMax) _dbgElapsedMax = dbgElapsed;
-            if (args.Timing.IsRunningSlowly) _dbgSlowly++;
-
             if (_lyricsChanged)
             {
                 DisposeCurrentLine();
@@ -213,12 +160,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
             if (_isPlaying)
             {
                 if (!_timeSyncValid || Math.Abs(externalTimeMs - _internalTimeMs) > SyncThresholdMs)
-                {
                     _internalTimeMs = externalTimeMs;
-                    _dbgSyncs++;
-                }
                 else
-                    _internalTimeMs += dbgElapsed;
+                    _internalTimeMs += args.Timing.ElapsedTime.TotalMilliseconds;
                 _timeSyncValid = true;
             }
             else
@@ -259,13 +203,13 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     unplayedPrimaryOpacity: UnplayedOpacity,
                     playedPrimaryOpacity: 1.0,
                     secondaryOpacity: SecondaryOpacity,
-                    isLyricsGlowEffectEnabled: GlowEnabled,
+                    isLyricsGlowEffectEnabled: _glow,
                     lyricsGlowEffectAmount: GlowAmountPx,
                     lyricsGlowEffectLongSyllableDuration: LongSyllableThresholdMs,
-                    isLyricsFloatAnimationEnabled: FloatEnabled,
+                    isLyricsFloatAnimationEnabled: _charFloat,
                     lyricsFloatAnimationAmount: FloatAmountPx,
                     lyricsFloatAnimationDuration: FloatDurationMs,
-                    isLyricsScaleEffectEnabled: ScaleEnabled,
+                    isLyricsScaleEffectEnabled: _charScale,
                     lyricsScaleEffectAmount: ScaleFactor,
                     lyricsScaleEffectLongSyllableDuration: LongSyllableThresholdMs,
                     blurAmountMax: 0,
@@ -279,22 +223,16 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     animationVersion: _animationVersion);
             }
             _lineJustRebuilt = false;
-
-            if (_dbgFirstFrames.Count < 30)
-                _dbgFirstFrames.Add($"  frame#{_dbgUpdates} elapsed={dbgElapsed:F1} internal={_internalTimeMs:F1} ext={externalTimeMs:F0}");
-
-            DbgReportIfNeeded(_internalTimeMs);
         }
 
         private void OnCanvasDraw(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs args)
         {
-            var dbgStopwatch = System.Diagnostics.Stopwatch.StartNew();
             var ds = args.DrawingSession;
             ds.Clear(Colors.Transparent);
 
             var line = _currentLine;
-            if (line?.PrimaryTextLayout is null) { _dbgDraws++; DbgReportIfNeeded(_internalTimeMs); return; }
-            if (line.PrimaryTextLayout.LayoutBounds.Width <= 0) { _dbgDraws++; DbgReportIfNeeded(_internalTimeMs); return; }
+            if (line?.PrimaryTextLayout is null) return;
+            if (line.PrimaryTextLayout.LayoutBounds.Width <= 0) return;
 
             int strokeWidth = (int)(_outline ? _outlineWidth : 0);
             double currentTimeMs = _internalTimeMs - _offsetMs;
@@ -315,19 +253,22 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 var prevTransform = ds.Transform;
                 ds.Transform *= Matrix3x2.CreateTranslation(0, offsetY);
 
-                // 黑描边垫底：播放中的填充 region 不含描边，垫底后扫光覆盖在描边之上；
-                // 暂停/翻译路径的 UnplayedComposite 自带描边，同色重复绘制无视觉差异
-                if (strokeWidth > 0 && line.UnplayedStrokeTint != null)
-                    ds.DrawImage(line.UnplayedStrokeTint);
-
                 _lineRenderer.IsPlaying = line.GetIsPlaying(currentTimeMs);
                 _lineRenderer.CurrentProgressMs = currentTimeMs;
                 _lineRenderer.Line = line;
                 _lineRenderer.PlayedFillColor = _color;
                 _lineRenderer.UnplayedFillColor = _color;
-                _lineRenderer.IsGlowEnabled = GlowEnabled;
-                _lineRenderer.IsScaleEnabled = ScaleEnabled;
-                _lineRenderer.IsFloatEnabled = FloatEnabled;
+                _lineRenderer.IsGlowEnabled = _glow;
+                _lineRenderer.IsScaleEnabled = _charScale;
+                _lineRenderer.IsFloatEnabled = _charFloat;
+                _lineRenderer.IsStrokeEnabled = strokeWidth > 0;   // 逐字路径的描边切片随字符变换
+
+                // LRC 整行路径无逐字变换，描边用固定位置整行垫底；
+                // 有真实音节的行走逐字路径，描边切片在 LyricsLineRenderer 内随字符变换绘制，
+                // 垫底会与字浮/字缩后的填充错位，故此处跳过
+                if (strokeWidth > 0 && !line.IsPrimaryHasRealSyllableInfo && line.UnplayedStrokeTint != null)
+                    ds.DrawImage(line.UnplayedStrokeTint);
+
                 _lineRenderer.Draw(sender, ds);
                 ds.Transform = prevTransform;
             }
@@ -336,17 +277,6 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 // 设备丢失（coordinator 同款兜底）：弃缓存，下帧经 _layoutDirty 重建
                 line.DisposeCaches();
                 _layoutDirty = true;
-            }
-            finally
-            {
-                _dbgDraws++;
-                dbgStopwatch.Stop();
-                double ms = dbgStopwatch.Elapsed.TotalMilliseconds;
-                _dbgDrawMsSum += ms;
-                if (ms > _dbgDrawMsMax) _dbgDrawMsMax = ms;
-                _dbgHasSyllable = line.IsPrimaryHasRealSyllableInfo;
-                _dbgRegionCount = line.RenderLyricsRegions?.Length ?? -1;
-                DbgReportIfNeeded(_internalTimeMs);
             }
         }
 
@@ -389,7 +319,6 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 _currentLine = line;
                 _renderLineList.Add(line);
                 _lineJustRebuilt = true;
-                _dbgRebuilds++;
             }
             catch (ObjectDisposedException)
             {

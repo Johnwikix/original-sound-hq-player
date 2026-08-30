@@ -1384,6 +1384,15 @@
   <data name="DesktopLyricsKaraoke.Text" xml:space="preserve">
     <value>デスクトップ歌詞のカラオケエフェクト</value>
   </data>
+  <data name="DesktopLyricsGlow.Text" xml:space="preserve">
+    <value>デスクトップ歌詞のグロー</value>
+  </data>
+  <data name="DesktopLyricsCharFloat.Text" xml:space="preserve">
+    <value>デスクトップ歌詞の文字フロート</value>
+  </data>
+  <data name="DesktopLyricsCharScale.Text" xml:space="preserve">
+    <value>デスクトップ歌詞の文字スケール</value>
+  </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>デスクトップ歌詞フォントの太さ</value>
   </data>
