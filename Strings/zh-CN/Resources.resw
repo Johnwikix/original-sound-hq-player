@@ -1380,6 +1380,9 @@
   <data name="DesktopLyricsOutline.Text" xml:space="preserve">
     <value>桌面歌词描边</value>
   </data>
+  <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
+    <value>桌面歌词翻译</value>
+  </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>桌面歌词字重</value>
   </data>

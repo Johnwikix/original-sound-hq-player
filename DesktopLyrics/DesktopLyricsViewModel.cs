@@ -123,6 +123,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 (byte)(AppSettings.DesktopLyricsColorRgb & 0xFF)),
             AppSettings.IsDesktopLyricsOutlineEnabled,
             AppSettings.DesktopLyricsFontWeight,
-            AppSettings.DesktopLyricsOutlineWidth);
+            AppSettings.DesktopLyricsOutlineWidth,
+            AppSettings.IsDesktopLyricsTranslationEnabled);
     }
 }

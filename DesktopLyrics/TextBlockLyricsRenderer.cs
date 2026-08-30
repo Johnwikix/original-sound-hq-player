@@ -36,20 +36,22 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private bool _outline = true;
         private int _fontWeight = 400;
         private double _outlineWidth = 1.5;
+        private bool _showTranslation = true;
 
         public TextBlockLyricsRenderer()
         {
             foreach (var (x, y) in OutlineOffsets)
             {
-                var (stack, pair) = BuildStack(isShadow: true, x * _outlineWidth, y * _outlineWidth);
+                var (stack, pair) = BuildStack(isShadow: true);
                 _shadowStacks.Add((stack, x, y));
                 _shadowPairs.Add(pair);
                 _root.Children.Add(stack);
             }
 
-            var (mainPanel, mainPair) = BuildStack(isShadow: false, 0, 0);
+            var (mainPanel, mainPair) = BuildStack(isShadow: false);
             _mainPair = mainPair;
             _root.Children.Add(mainPanel);
+            ApplyOutlineWidth();
         }
 
         public UIElement Content => _root;
@@ -61,6 +63,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _mainBrush = new SolidColorBrush(style.Color);
             _fontWeight = Math.Clamp(style.FontWeight, 100, 900);
             _outlineWidth = Math.Clamp(style.OutlineWidth, 0, 20);
+            _showTranslation = style.ShowTranslation;
             if (_outline != style.Outline)
             {
                 _outline = style.Outline;
@@ -103,7 +106,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
         }
 
-        private (StackPanel Panel, (TextBlock Main, TextBlock Trans) Pair) BuildStack(bool isShadow, double offsetX, double offsetY)
+        private (StackPanel Panel, (TextBlock Main, TextBlock Trans) Pair) BuildStack(bool isShadow)
         {
             var main = new TextBlock
             {
@@ -127,8 +130,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
             {
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(offsetX, offsetY, 0, 0),
             };
+            // 阴影层偏移必须用 RenderTransform 平移（见 ApplyOutlineWidth 注释），不能回退成 Margin
+            if (isShadow)
+                panel.RenderTransform = new TranslateTransform();
             panel.Children.Add(main);
             panel.Children.Add(trans);
             return (panel, pair);
@@ -157,7 +162,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
             {
                 mainTb.Text = main;
                 transTb.Text = trans;
-                transTb.Visibility = string.IsNullOrEmpty(trans) ? Visibility.Collapsed : Visibility.Visible;
+                transTb.Visibility = _showTranslation && !string.IsNullOrEmpty(trans)
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
             }
         }
 
@@ -178,11 +185,20 @@ namespace WinUIMusicPlayer.DesktopLyrics
             }
         }
 
-        /// <summary>按描边宽度重写 4 层阴影栈的偏移（基准偏移 × 宽度）。</summary>
+        /// <summary>
+        /// 按描边宽度更新 4 层阴影栈的平移（基准偏移 × 宽度）。
+        /// 必须用 RenderTransform 而非 Margin 偏移：Margin 会扣减阴影层的测量宽度，
+        /// 换行时阴影层与主层断行位置不一致，产生与歌词错位的黑色残影（锁定态客户区更宽，命中概率更高）；
+        /// 平移不参与测量排列，5 层测量约束一致，断行永远相同。
+        /// </summary>
         private void ApplyOutlineWidth()
         {
             foreach (var (stack, x, y) in _shadowStacks)
-                stack.Margin = new Thickness(x * _outlineWidth, y * _outlineWidth, 0, 0);
+            {
+                var translate = (TranslateTransform)stack.RenderTransform;
+                translate.X = x * _outlineWidth;
+                translate.Y = y * _outlineWidth;
+            }
         }
 
         private void ApplyColor()

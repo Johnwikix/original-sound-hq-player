@@ -1381,6 +1381,9 @@
   <data name="DesktopLyricsOutline.Text" xml:space="preserve">
     <value>Desktop Lyrics Outline</value>
   </data>
+  <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
+    <value>Desktop Lyrics Translation</value>
+  </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>Desktop Lyrics Font Weight</value>
   </data>
