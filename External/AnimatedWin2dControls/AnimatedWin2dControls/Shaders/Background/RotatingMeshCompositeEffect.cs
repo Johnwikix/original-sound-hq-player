@@ -4,7 +4,7 @@ using ComputeSharp.D2D1;
 namespace AnimatedWin2dControls.Shaders.Background
 {
     /// <summary>
-    /// Apple Music 风格背景的最终合成 pass。移植自 Lyricify-Backgrounds 的
+    /// 旋转网格背景的最终合成 pass。移植自 Lyricify-Backgrounds 的
     /// <c>MaterialTreatedPixel</c> / <c>PinchVertex</c> / <c>PinchPixel</c> /
     /// <c>FinishMaterial</c>（Apache 2.0），经 ComputeSharpDemo 的 compute 版本
     /// 转写为 D2D1 像素着色器。
@@ -31,7 +31,7 @@ namespace AnimatedWin2dControls.Shaders.Background
     [D2DRequiresScenePosition]
     [D2DShaderProfile(D2D1ShaderProfile.PixelShader50)]
     [D2DGeneratedPixelShaderDescriptor]
-    public readonly partial struct AppleMusicCompositeEffect(
+    public readonly partial struct RotatingMeshCompositeEffect(
         float2 dispatchSize,
         float pinchMix,
         float3 scrimColor,

@@ -213,7 +213,7 @@ namespace WinUIMusicPlayer.ViewModel
         public int LastLyricIndex { get; set; } = -1;
         public string LyricPageBackgroundHash { get; set => SetProperty(ref field, value); } = "";
         public AnimatedWin2dControls.Impressionist.PaletteResult? LyricPagePalette { get; set => SetProperty(ref field, value); }
-        // 当前曲目封面像素（AppleMusic 背景着色器消费；null 表示无封面，着色器回退调色板渐变）。
+        // 当前曲目封面像素（RotatingMesh 背景着色器消费；null 表示无封面，着色器回退调色板渐变）。
         public AnimatedWin2dControls.Impressionist.ArtworkPixelData? LyricPageArtwork { get; set => SetProperty(ref field, value); }
         public bool IsInitialized { get; set; } = false;
         public Visibility UsbDeviceVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;

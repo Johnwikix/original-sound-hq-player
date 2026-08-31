@@ -55,7 +55,7 @@ namespace AnimatedWin2dControls.Renderer.Background
         }
 
         /// <summary>
-        /// 注入封面像素数据。仅使用封面图本身的着色器（AppleMusic）覆写；
+        /// 注入封面像素数据。仅使用封面图本身的着色器（RotatingMesh）覆写；
         /// 取色型着色器忽略（封面信息已通过 <see cref="SetPalette"/> 传达）。
         /// </summary>
         public virtual void SetArtwork(Impressionist.ArtworkPixelData? artwork)

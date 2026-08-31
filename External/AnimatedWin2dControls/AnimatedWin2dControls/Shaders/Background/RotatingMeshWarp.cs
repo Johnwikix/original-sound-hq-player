@@ -4,18 +4,18 @@ using System.Numerics;
 namespace AnimatedWin2dControls.Shaders.Background;
 
 /// <summary>
-/// CPU-side mesh generator for the Apple Music inspired pinch deformation, ported from
+/// CPU-side mesh generator for the rotating mesh warp deformation, ported from
 /// Lyricify-Backgrounds (<c>AppleMusicInspiredMesh</c>, Apache 2.0).
 ///
 /// <para>
 /// Each preset stores two control-point grids (<c>from</c> / <c>to</c>) in [0,1] space.
 /// The grid is refined with a structured-grid Catmull-Clark step and the two resulting
 /// position sets are mapped to clip space (<c>* 2 - 1</c>). The compute pipeline blends
-/// the two position sets per frame (see <see cref="AppleMusicCompositeShader"/>) and
+/// the two position sets per frame (see <see cref="RotatingMeshCompositeEffect"/>) and
 /// inverts the warp per pixel, so no vertex buffers or rasterizer are needed.
 /// </para>
 /// </summary>
-public static class AppleMusicMesh
+public static class RotatingMeshWarp
 {
     public const int PresetSlotCount = 5;
     public const int MaximumSubdivisionLevels = 4;
