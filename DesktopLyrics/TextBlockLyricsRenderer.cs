@@ -5,8 +5,10 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Windows.UI.Text;
+using WinUIMusicPlayer.Helper.Animations;
 
 namespace WinUIMusicPlayer.DesktopLyrics
 {
@@ -24,6 +26,14 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private readonly List<(StackPanel Panel, double X, double Y)> _shadowStacks = [];
         private readonly List<(TextBlock Main, TextBlock Trans)> _shadowPairs = [];
         private (TextBlock Main, TextBlock Trans)? _mainPair;
+
+        // 换行动画：主文本 + 翻译 + 4 层描边全部交给同一实例，保证同一帧换内容
+        private readonly TextBlockSwitchAnimator _switchAnimator;
+
+        // 当前已呈现的文本，用于过滤无变化更新（样式刷新等）避免无谓的闪烁
+        private string _appliedMain = string.Empty;
+        private string _appliedTrans = string.Empty;
+        private bool _appliedTransVisible;
 
         private List<LyricLine>? _lyrics;
         private int _currentIndex = -1;
@@ -52,6 +62,13 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _mainPair = mainPair;
             _root.Children.Add(mainPanel);
             ApplyOutlineWidth();
+
+            _switchAnimator = new TextBlockSwitchAnimator(
+                ShadowAndMainPairs.SelectMany(pair => new TextBlock[] { pair.Main, pair.Trans }))
+            {
+                // 新行自下而上轻微滑入，与淡入合成换行动效
+                SlideInDistance = 8,
+            };
         }
 
         public UIElement Content => _root;
@@ -158,14 +175,27 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 trans = line.TransLateText ?? string.Empty;
             }
 
-            foreach (var (mainTb, transTb) in ShadowAndMainPairs)
+            bool transVisible = _showTranslation && !string.IsNullOrEmpty(trans);
+            if (main == _appliedMain && trans == _appliedTrans && transVisible == _appliedTransVisible)
+                return;
+
+            // 上一行有内容才做退场淡出（首行/从空到有直接淡入即可）
+            bool fadeOutFirst = _appliedMain.Length > 0;
+            _appliedMain = main;
+            _appliedTrans = trans;
+            _appliedTransVisible = transVisible;
+
+            _switchAnimator.Switch(() =>
             {
-                mainTb.Text = main;
-                transTb.Text = trans;
-                transTb.Visibility = _showTranslation && !string.IsNullOrEmpty(trans)
-                    ? Visibility.Visible
-                    : Visibility.Collapsed;
-            }
+                foreach (var (mainTb, transTb) in ShadowAndMainPairs)
+                {
+                    mainTb.Text = main;
+                    transTb.Text = trans;
+                    transTb.Visibility = transVisible
+                        ? Visibility.Visible
+                        : Visibility.Collapsed;
+                }
+            }, fadeOutFirst);
         }
 
         private void ApplyFont()
