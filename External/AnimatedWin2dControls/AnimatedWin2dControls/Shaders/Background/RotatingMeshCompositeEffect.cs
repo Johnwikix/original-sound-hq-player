@@ -34,8 +34,8 @@ namespace AnimatedWin2dControls.Shaders.Background
     public readonly partial struct RotatingMeshCompositeEffect(
         float2 dispatchSize,
         float pinchMix,
-        float3 scrimColor,
-        float scrimAlpha,
+        bool isDark,
+        float lumaStrength,
         float ditherStrength,
         float pinchTextureScale,
         float pinchTextureOffset,
@@ -154,16 +154,43 @@ namespace AnimatedWin2dControls.Shaders.Background
 
         private float3 ApplyTreatedMaterial(float3 color)
         {
-            // 最终合成前先做饱和度调整。
-            color = ApplySaturation(color, 1.4f);
+            // 模糊会稀释色度，先做一次温和的饱和度补偿（原 1.4/0.7 双 pass 是
+            // 为配合 scrim 的去饱和而设，改为保色度的亮度轴映射后收敛为单 pass）。
+            color = ApplySaturation(color, 1.3f);
             color = new float3(
                 Hlsl.Clamp(color.X, -0.752941f, 1.25098f),
                 Hlsl.Clamp(color.Y, -0.752941f, 1.25098f),
                 Hlsl.Clamp(color.Z, -0.752941f, 1.25098f));
-            color = ApplySaturation(color, 0.70f);
 
-            // 黑/白 scrim：暗色歌词主题压黑，亮色主题提白（原版为黑色 scrim）。
-            return Hlsl.Lerp(color, scrimColor, scrimAlpha);
+            // 主题适配：只重映射亮度轴，色度向量（color - luma）原样保留。
+            // 原黑/白 scrim 的线性混合会把色度按 (1-α) 一并稀释——暗色发灰、
+            // 亮色浮白；此处在色域内严格保色相保色度，仅越界像素等比收拢。
+            float luma = Hlsl.Dot(color, new float3(0.2126f, 0.7152f, 0.0722f));
+            float newLuma = isDark
+                ? luma * (1f - lumaStrength)
+                : Hlsl.Lerp(luma, 1f, lumaStrength);
+
+            return ShiftLuma(color, newLuma);
+        }
+
+        /// <summary>
+        /// 亮度轴重映射：把 color 的亮度分量替换为 <paramref name="newLuma"/>，
+        /// 色度向量保持不变；结果越出 [0,1] 色域时沿原色相等比收拢 chroma
+        /// （只裁色域外像素，不整体冲淡）。
+        /// </summary>
+        private static float3 ShiftLuma(float3 color, float newLuma)
+        {
+            float luma = Hlsl.Dot(color, new float3(0.2126f, 0.7152f, 0.0722f));
+            float3 chroma = color - luma;
+
+            float maxChroma = Hlsl.Max(chroma.X, Hlsl.Max(chroma.Y, chroma.Z));
+            float minChroma = Hlsl.Min(chroma.X, Hlsl.Min(chroma.Y, chroma.Z));
+
+            float scale = 1f;
+            if (maxChroma > 0f) scale = Hlsl.Min(scale, (1f - newLuma) / maxChroma);
+            if (minChroma < 0f) scale = Hlsl.Min(scale, newLuma / -minChroma);
+
+            return newLuma + chroma * Hlsl.Saturate(scale);
         }
 
         /// <summary>

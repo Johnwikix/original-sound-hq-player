@@ -50,8 +50,10 @@ namespace AnimatedWin2dControls.Renderer.Background
         private const float BackdropBlurSigma = 21.25f;
 
         private const float MeshWarpTimeScale = 5f;
-        private const float DarkScrimAlpha = 0.4f;
-        private const float LightScrimAlpha = 0.45f;
+        // 主题适配强度：暗色按 luma ×(1-α) 压暗，亮色按 lerp(luma, 1, α) 提亮，
+        // 色度向量均不参与混合（见 RotatingMeshCompositeEffect.ShiftLuma）。
+        private const float DarkLumaStrength = 0.4f;
+        private const float LightLumaStrength = 0.45f;
         private const float PortraitTextureScale = 1f;
         private const float LandscapeTextureScale = 0.8f;
 
@@ -224,8 +226,8 @@ namespace AnimatedWin2dControls.Renderer.Background
                     _compositeEffect!.ConstantBuffer = new RotatingMeshCompositeEffect(
                         new float2(pixelWidth, pixelHeight),
                         pinchMix,
-                        IsDark ? new float3(0f, 0f, 0f) : new float3(1f, 1f, 1f),
-                        IsDark ? DarkScrimAlpha : LightScrimAlpha,
+                        IsDark,
+                        IsDark ? DarkLumaStrength : LightLumaStrength,
                         ditherStrength: 1f,
                         pinchTextureScale,
                         pinchTextureOffset,
