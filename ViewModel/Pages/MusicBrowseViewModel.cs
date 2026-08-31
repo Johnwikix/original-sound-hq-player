@@ -457,11 +457,11 @@ namespace WinUIMusicPlayer.ViewModel
                             .ExtractFromImageBytesAsync(picData, AppViewModel.PaletteAlgorithm, ct: token), token);
                 }
 
-                // 封面像素：仅供 AppleMusic 背景着色器旋转层使用，其它着色器只取色、
-                // 不做封面解码（非 AppleMusic 模式零新增开销）。无封面时为 null，
+                // 封面像素：仅供 RotatingMesh 背景着色器旋转层使用，其它着色器只取色、
+                // 不做封面解码（非 RotatingMesh 模式零新增开销）。无封面时为 null，
                 // 着色器回退到调色板渐变。
                 AnimatedWin2dControls.Impressionist.ArtworkPixelData? artwork = null;
-                if (AppViewModel.BackgroundShader == AnimatedWin2dControls.BackgroundShaderMode.AppleMusic)
+                if (AppViewModel.BackgroundShader == AnimatedWin2dControls.BackgroundShaderMode.RotatingMesh)
                 {
                     // 优先读缩略图 BMP 缓存（90KB，最快）；
                     // 缓存缺失（首次播放/被清理）时直接用已读取的大图数据兜底。

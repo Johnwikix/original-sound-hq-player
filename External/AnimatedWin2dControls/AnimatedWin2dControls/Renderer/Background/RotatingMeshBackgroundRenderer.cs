@@ -14,17 +14,17 @@ using System.Threading;
 namespace AnimatedWin2dControls.Renderer.Background
 {
     /// <summary>
-    /// Apple Music 风格背景渲染器。移植自 Lyricify-Backgrounds（Apache 2.0）经
+    /// 旋转网格背景渲染器。移植自 Lyricify-Backgrounds（Apache 2.0）经
     /// ComputeSharpDemo 转写的 compute 版本，适配本项目 D2D1 像素着色器管线：
     ///
     /// <list type="number">
-    /// <item><see cref="AppleMusicRotationEffect"/> —— 三层旋转封面 + aspect-fill
+    /// <item><see cref="RotatingMeshRotationEffect"/> —— 三层旋转封面 + aspect-fill
     /// 兜底，封面经双 CanvasBitmap 输入（RGBA8，线性 + Clamp 描述）注入并可显式
     /// Dispose，绘制到 1/8 像素密度的中间目标（对应原版 1/7.53 背景面）。</item>
     /// <item>原生 <see cref="GaussianBlurEffect"/>（Soft 边框）做 77 抽头 σ 可分离
     /// 高斯模糊的等价实现：premultiplied 软边框模糊 + 合成 pass 内 un-premultiply，
     /// 与原版"零边框采样 + 覆盖率归一化"逐像素一致。</item>
-    /// <item><see cref="AppleMusicCompositeEffect"/> —— 材质处理 + pinch 网格逆向
+    /// <item><see cref="RotatingMeshCompositeEffect"/> —— 材质处理 + pinch 网格逆向
     /// 变形 + 抖动，网格顶点经 CanvasBitmap（RGBA32F，输入 1）注入，输出到全屏。
     /// 注：ComputeSharp.D2D1 3.2.0 的资源纹理管理器仅适用于无输入的着色器
     /// （属性槽按声明索引线性映射且只注册 Count 个，与输入占用的寄存器约束冲突），
@@ -38,7 +38,7 @@ namespace AnimatedWin2dControls.Renderer.Background
     /// 频谱缩放、封面交叉淡化（demo 亦未实现）不适用 SDR 画布，予以省略。
     /// </para>
     /// </summary>
-    public sealed class AppleMusicBackgroundRenderer : BaseBackgroundRenderer
+    public sealed class RotatingMeshBackgroundRenderer : BaseBackgroundRenderer
     {
         /// <summary>中间旋转/模糊层的像素密度（1/8，对应原版 backdropDownsample≈7.53）。</summary>
         private const float BackdropPixelScale = 1f / 8f;
@@ -65,8 +65,8 @@ namespace AnimatedWin2dControls.Renderer.Background
         // 抢不到就丢一帧，渲染线程永不阻塞（与 PS3XMB 渲染器一致）。
         private readonly object _gate = new();
 
-        private PixelShaderEffect<AppleMusicRotationEffect>? _rotationEffect;
-        private PixelShaderEffect<AppleMusicCompositeEffect>? _compositeEffect;
+        private PixelShaderEffect<RotatingMeshRotationEffect>? _rotationEffect;
+        private PixelShaderEffect<RotatingMeshCompositeEffect>? _compositeEffect;
         private GaussianBlurEffect? _blurEffect;
         private ScaleEffect? _scaleEffect;
         private CanvasRenderTarget? _rotationTarget;
@@ -88,7 +88,7 @@ namespace AnimatedWin2dControls.Renderer.Background
         private int _meshRows;
         private int _meshColumns;
 
-        private readonly int _presetSlot = AppleMusicMesh.SelectPresetSlot();
+        private readonly int _presetSlot = RotatingMeshWarp.SelectPresetSlot();
 
         // 渲染线程每帧在锁内取走并推入封面位图；volatile 保证 UI 线程写入的可见性
         // （引用赋值原子 + 单写单消费，配合 volatile 无丢失更新）。
@@ -119,9 +119,9 @@ namespace AnimatedWin2dControls.Renderer.Background
                 // 效果绑定旧设备的已实现资源，设备重建后必须整体重建；
                 // 位图输入为设备绑定资源，重建后由 Draw 惰性重创建并重新绑定。
                 _rotationEffect?.Dispose();
-                _rotationEffect = new PixelShaderEffect<AppleMusicRotationEffect>();
+                _rotationEffect = new PixelShaderEffect<RotatingMeshRotationEffect>();
                 _compositeEffect?.Dispose();
-                _compositeEffect = new PixelShaderEffect<AppleMusicCompositeEffect>();
+                _compositeEffect = new PixelShaderEffect<RotatingMeshCompositeEffect>();
             }
 
             if (CurrentPalette is not null) SetPalette(CurrentPalette);
@@ -192,7 +192,7 @@ namespace AnimatedWin2dControls.Renderer.Background
                 }
 
                 // Pass 1 —— 旋转封面层绘制到 1/8 中间目标。
-                _rotationEffect!.ConstantBuffer = new AppleMusicRotationEffect(
+                _rotationEffect!.ConstantBuffer = new RotatingMeshRotationEffect(
                     new float2(_targetWidth, _targetHeight),
                     time,
                     rotationScale: 1f,
@@ -221,7 +221,7 @@ namespace AnimatedWin2dControls.Renderer.Background
                 // 网格纹理创建彻底失败时跳过合成，直接呈现模糊背景（保持不透明覆盖）。
                 if (_meshBitmap is not null)
                 {
-                    _compositeEffect!.ConstantBuffer = new AppleMusicCompositeEffect(
+                    _compositeEffect!.ConstantBuffer = new RotatingMeshCompositeEffect(
                         new float2(pixelWidth, pixelHeight),
                         pinchMix,
                         IsDark ? new float3(0f, 0f, 0f) : new float3(1f, 1f, 1f),
@@ -344,12 +344,12 @@ namespace AnimatedWin2dControls.Renderer.Background
             if (_meshBitmap is not null && _meshIsPortrait == isPortrait && _meshDpi == dpi)
                 return;
 
-            AppleMusicMesh.MeshData mesh = AppleMusicMesh.Create(
-                isPortrait ? AppleMusicMesh.ResolvePortraitPreset(_presetSlot) : _presetSlot,
+            RotatingMeshWarp.MeshData mesh = RotatingMeshWarp.Create(
+                isPortrait ? RotatingMeshWarp.ResolvePortraitPreset(_presetSlot) : _presetSlot,
                 isPortrait);
 
             // 变形强度放大：绕恒等网格线性扩偏移；演示网格位移距恒等较远时
-            // 幅度保守，放大后扭曲更接近 Apple Music 观感。
+            // 幅度保守，放大后扭曲更接近该风格的观感。
             AmplifyMeshWarp(mesh.From, mesh.Rows, mesh.Columns);
             AmplifyMeshWarp(mesh.To, mesh.Rows, mesh.Columns);
 
@@ -557,7 +557,7 @@ namespace AnimatedWin2dControls.Renderer.Background
 
         private static ArtworkPixelData CreateDefaultArtwork()
         {
-            // 深蓝灰对角渐变，接近 Apple Music 无封面时的氛围色。
+            // 深蓝灰对角渐变，无封面时的兜底氛围色。
             return CreateGradientArtwork(
                 new Vector3(0.10f, 0.12f, 0.16f),
                 new Vector3(0.05f, 0.06f, 0.09f),

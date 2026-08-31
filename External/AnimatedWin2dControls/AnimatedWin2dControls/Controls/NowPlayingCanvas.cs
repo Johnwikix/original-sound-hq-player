@@ -124,7 +124,7 @@ namespace AnimatedWin2dControls.Controls
         private volatile BaseBackgroundRenderer? _background = CreateBackgroundRenderer(0);
         // 缓存最近一次调色板，shader 切换 / 设备重建后用于把新 renderer 重新染上当前调色板。
         private AnimatedWin2dControls.Impressionist.PaletteResult? _lastPalette;
-        // 缓存最近一次封面像素，shader 切换后把新 renderer 重新染上当前封面（AppleMusic 用）。
+        // 缓存最近一次封面像素，shader 切换后把新 renderer 重新染上当前封面（RotatingMesh 用）。
         private AnimatedWin2dControls.Impressionist.ArtworkPixelData? _lastArtwork;
         private readonly FogRenderer _fog = new();
         private readonly SnowRenderer _snow = new();
@@ -228,7 +228,7 @@ namespace AnimatedWin2dControls.Controls
             3 => new WavyBackgroundRenderer(),
             4 => new ChromaticResonanceBackgroundRenderer(),
             5 => new LiquidFlowBackgroundRenderer(),
-            6 => new AppleMusicBackgroundRenderer(),
+            6 => new RotatingMeshBackgroundRenderer(),
             _ => new FluidBackgroundRenderer(),
         };
 
@@ -481,7 +481,7 @@ namespace AnimatedWin2dControls.Controls
         // ── 封面 ─────────────────────────────────────────────────────────────
 
         /// <summary>
-        /// 注入当前曲目封面像素（仅封面驱动型着色器如 AppleMusic 消费；
+        /// 注入当前曲目封面像素（仅封面驱动型着色器如 RotatingMesh 消费；
         /// 传 null 表示当前曲目无封面，着色器回退到调色板渐变）。
         /// </summary>
         public void SetArtwork(AnimatedWin2dControls.Impressionist.ArtworkPixelData? artwork)

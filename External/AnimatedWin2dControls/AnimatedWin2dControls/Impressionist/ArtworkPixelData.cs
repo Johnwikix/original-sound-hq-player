@@ -11,7 +11,7 @@ namespace AnimatedWin2dControls.Impressionist
 {
     /// <summary>
     /// 已解码的方形封面像素，固定 <see cref="Edge"/>×<see cref="Edge"/>、
-    /// 直通（非预乘）RGBA8 行优先、自上而下。专供 AppleMusic 背景着色器的
+    /// 直通（非预乘）RGBA8 行优先、自上而下。专供 RotatingMesh 背景着色器的
     /// 封面输入位图上传使用。引用类型：跨线程仅做整体引用交换。
     /// </summary>
     public sealed class ArtworkPixelData
