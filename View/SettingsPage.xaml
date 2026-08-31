@@ -835,8 +835,8 @@
                                         <ComboBoxItem x:Uid="BackgroundShader_Fluid" />
                                         <ComboBoxItem x:Uid="BackgroundShader_PS3XMB" />
                                         <ComboBoxItem x:Uid="BackgroundShader_RotatingMesh" />
-                                        <ComboBoxItem x:Uid="BackgroundShader_GradientFlow" />
                                         <ComboBoxItem x:Uid="BackgroundShader_LiquidFlow" />
+                                        <ComboBoxItem x:Uid="BackgroundShader_GradientFlow" />
                                         <ComboBoxItem x:Uid="BackgroundShader_WavyBackground" />
                                         <ComboBoxItem x:Uid="BackgroundShader_ChromaticResonance" />
                                     </ComboBox>

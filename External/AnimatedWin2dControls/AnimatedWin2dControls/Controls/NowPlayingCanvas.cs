@@ -224,11 +224,11 @@ namespace AnimatedWin2dControls.Controls
         private static BaseBackgroundRenderer CreateBackgroundRenderer(int index) => index switch
         {
             1 => new PS3XMBBackgroundRenderer(),
-            2 => new GradientFlowBackgroundRenderer(),
-            3 => new WavyBackgroundRenderer(),
-            4 => new ChromaticResonanceBackgroundRenderer(),
-            5 => new LiquidFlowBackgroundRenderer(),
-            6 => new RotatingMeshBackgroundRenderer(),
+            2 => new RotatingMeshBackgroundRenderer(),
+            3 => new LiquidFlowBackgroundRenderer(),
+            4 => new GradientFlowBackgroundRenderer(),
+            5 => new WavyBackgroundRenderer(),
+            6 => new ChromaticResonanceBackgroundRenderer(),
             _ => new FluidBackgroundRenderer(),
         };
 
