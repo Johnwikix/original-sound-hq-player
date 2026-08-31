@@ -10,6 +10,8 @@ public sealed partial class UpdateHistoryDialog : ContentDialog
         InitializeComponent();
         Title = $"{ToolUtils.GetString("AppMainTitle")} v{version}";
         ReleaseNotesText.Text = releaseNotes;
+        RtssWarningTitle.Text = ToolUtils.GetString("RtssWarningTitle");
+        RtssWarningBody.Text = ToolUtils.GetString("RtssWarningBody");
         GitHubLink.Content = "⭐ Star on GitHub";
         GitHubLink.NavigateUri = new System.Uri(githubUrl);
         GuideLink.NavigateUri = new System.Uri("https://johnwikix.github.io/original-sound-player-page/guide");

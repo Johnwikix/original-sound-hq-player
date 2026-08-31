@@ -1432,6 +1432,12 @@
   <data name="LyricsFontWeight.Text" xml:space="preserve">
     <value>Lyrics Font Weight</value>
   </data>
+  <data name="RtssWarningTitle" xml:space="preserve">
+    <value>Incompatible with D3D FPS overlays such as RivaTuner Statistics Server (RTSS)</value>
+  </data>
+  <data name="RtssWarningBody" xml:space="preserve">
+    <value>RivaTuner Statistics Server (commonly known as RTSS, usually bundled with MSI Afterburner) is a D3D FPS-monitoring tool that injects itself into the graphics pipeline via DXGI. When this player's "Desktop Lyrics" and shader background are both enabled, two Win2D swap chains are presented concurrently and clash with the RTSS DXGI hooks, which can crash the app. Please close RTSS / MSI Afterburner, or add this player to RTSS's hook exclusion list, before use.</value>
+  </data>
 </root>
 
 
