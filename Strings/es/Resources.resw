@@ -1429,6 +1429,12 @@
   <data name="LyricsFontWeight.Text" xml:space="preserve">
     <value>Grosor de fuente (letra)</value>
   </data>
+  <data name="RtssWarningTitle" xml:space="preserve">
+    <value>Incompatible con software de monitorización de FPS por D3D como RivaTuner Statistics Server (RTSS)</value>
+  </data>
+  <data name="RtssWarningBody" xml:space="preserve">
+    <value>RivaTuner Statistics Server (conocido como RTSS, normalmente instalado junto con MSI Afterburner) es una herramienta de monitorización de FPS por D3D que se inyecta en la pipeline gráfica a través de DXGI. Cuando en este reproductor están activados a la vez "Letras en escritorio" y el fondo con shader, hay dos swap chains de Win2D funcionando en paralelo que entran en conflicto con los hooks DXGI de RTSS y provocar el cierre de la aplicación. Cierra RTSS / MSI Afterburner antes de usar el reproductor, o añade este reproductor a la lista de exclusión de hooks de RTSS.</value>
+  </data>
 </root>
 
 

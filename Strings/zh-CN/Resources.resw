@@ -1431,4 +1431,10 @@
   <data name="LyricsFontWeight.Text" xml:space="preserve">
     <value>歌词字重</value>
   </data>
+  <data name="RtssWarningTitle" xml:space="preserve">
+    <value>与 RivaTuner Statistics Server (RTSS) 等 D3D FPS 监控软件不兼容</value>
+  </data>
+  <data name="RtssWarningBody" xml:space="preserve">
+    <value>RivaTuner Statistics Server（简称 RTSS，常与 MSI Afterburner 一同安装）属于 D3D 帧率监控类软件，会通过 DXGI 注入替换程序的图形渲染链路。当本程序的「桌面歌词」与「着色器背景」同时启用时，会同时存在两个 Win2D 渲染线程，与 RTSS 的 DXGI 钩子发生冲突，可能导致程序崩溃。请在使用本程序前关闭 RTSS / MSI Afterburner，或在 RTSS 中将本程序加入挂钩排除列表。</value>
+  </data>
 </root>

@@ -1429,6 +1429,12 @@
   <data name="LyricsFontWeight.Text" xml:space="preserve">
     <value>歌詞フォントの太さ</value>
   </data>
+  <data name="RtssWarningTitle" xml:space="preserve">
+    <value>RivaTuner Statistics Server (RTSS) などの D3D FPS 計測ソフトウェアとは互換性がありません</value>
+  </data>
+  <data name="RtssWarningBody" xml:space="preserve">
+    <value>RivaTuner Statistics Server（通称 RTSS、通常は MSI Afterburner と一緒にインストールされます）は、D3D 経由でグラフィックスパイプラインにフックする FPS 計測ソフトウェアです。本プレイヤーの「デスクトップ歌詞」とシェーダ背景を同時に有効にすると、Win2D のスワップチェーンが 2 つ並行して動作し、RTSS の DXGI フックと衝突してアプリがクラッシュする可能性があります。使用前に RTSS / MSI Afterburner を終了するか、RTSS のフック除外リストに本プレイヤーを追加してください。</value>
+  </data>
 </root>
 
 

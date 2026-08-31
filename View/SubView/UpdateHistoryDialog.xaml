@@ -7,7 +7,42 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     CornerRadius="10"
     mc:Ignorable="d">
-    <Grid MinWidth="480" MaxWidth="640" RowDefinitions="Auto,*,Auto">
+    <Grid
+        MinWidth="480"
+        MaxWidth="780"
+        RowDefinitions="Auto,*,Auto">
+        <Border
+            Grid.Row="0"
+            Margin="0,0,0,8"
+            Padding="12"
+            BorderThickness="1"
+            CornerRadius="6">
+            <Border.BorderBrush>
+                <SolidColorBrush Opacity="0.6" Color="#E81123" />
+            </Border.BorderBrush>
+            <Border.Background>
+                <SolidColorBrush Opacity="0.08" Color="#E81123" />
+            </Border.Background>
+            <StackPanel Spacing="4">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="18"
+                        Text="&#x26A0;" />
+                    <TextBlock
+                        x:Name="RtssWarningTitle"
+                        VerticalAlignment="Center"
+                        FontSize="15"
+                        FontWeight="SemiBold"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+                <TextBlock
+                    x:Name="RtssWarningBody"
+                    FontSize="13"
+                    Opacity="0.85"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
         <ScrollViewer
             Grid.Row="1"
             MaxHeight="300"
