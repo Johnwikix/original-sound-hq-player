@@ -41,10 +41,10 @@
         <ScrollViewer Grid.Row="1">
             <Grid
                 Padding="4,0,4,16"
-                ColumnSpacing="16"
-                RowSpacing="8"
                 ColumnDefinitions="250,250,250"
-                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+                ColumnSpacing="16"
+                RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                RowSpacing="8">
 
                 <!--  Row 0: 输出设备 | 目标帧率 | 歌词字号  -->
                 <StackPanel
@@ -97,7 +97,10 @@
                         x:Uid="LyricsFontSize"
                         FontSize="14"
                         FontWeight="SemiBold" />
-                    <Grid Width="250" HorizontalAlignment="Left" ColumnDefinitions="Auto,*">
+                    <Grid
+                        Width="250"
+                        HorizontalAlignment="Left"
+                        ColumnDefinitions="Auto,*">
                         <ToggleSwitch
                             Grid.Column="0"
                             MinWidth="0"
@@ -171,7 +174,10 @@
                     Grid.Row="2"
                     Grid.Column="0"
                     Spacing="4">
-                    <Grid Width="250" HorizontalAlignment="Left" ColumnDefinitions="Auto,*">
+                    <Grid
+                        Width="250"
+                        HorizontalAlignment="Left"
+                        ColumnDefinitions="Auto,*">
                         <TextBlock
                             x:Uid="LyricsBlurAmount"
                             Grid.Column="0"
@@ -197,7 +203,10 @@
                     Grid.Row="2"
                     Grid.Column="1"
                     Spacing="4">
-                    <Grid Width="250" HorizontalAlignment="Left" ColumnDefinitions="Auto,*">
+                    <Grid
+                        Width="250"
+                        HorizontalAlignment="Left"
+                        ColumnDefinitions="Auto,*">
                         <TextBlock
                             x:Uid="PlayingLineTopOffset"
                             Grid.Column="0"
@@ -223,7 +232,10 @@
                     Grid.Row="2"
                     Grid.Column="2"
                     Spacing="4">
-                    <Grid Width="250" HorizontalAlignment="Left" ColumnDefinitions="Auto,*">
+                    <Grid
+                        Width="250"
+                        HorizontalAlignment="Left"
+                        ColumnDefinitions="Auto,*">
                         <TextBlock
                             x:Uid="UnplayedOpacity"
                             Grid.Column="0"
@@ -251,7 +263,10 @@
                     Grid.Row="3"
                     Grid.Column="0"
                     Spacing="4">
-                    <Grid Width="250" HorizontalAlignment="Left" ColumnDefinitions="Auto,*">
+                    <Grid
+                        Width="250"
+                        HorizontalAlignment="Left"
+                        ColumnDefinitions="Auto,*">
                         <TextBlock
                             x:Uid="TranslatedOpacity"
                             Grid.Column="0"
@@ -277,7 +292,10 @@
                     Grid.Row="3"
                     Grid.Column="1"
                     Spacing="4">
-                    <Grid Width="250" HorizontalAlignment="Left" ColumnDefinitions="Auto,*">
+                    <Grid
+                        Width="250"
+                        HorizontalAlignment="Left"
+                        ColumnDefinitions="Auto,*">
                         <TextBlock
                             x:Uid="GlowAmount"
                             Grid.Column="0"
@@ -304,7 +322,10 @@
                     Grid.Row="3"
                     Grid.Column="2"
                     Spacing="4">
-                    <Grid Width="250" HorizontalAlignment="Left" ColumnDefinitions="Auto,*">
+                    <Grid
+                        Width="250"
+                        HorizontalAlignment="Left"
+                        ColumnDefinitions="Auto,*">
                         <TextBlock
                             x:Uid="CharFloatAmount"
                             Grid.Column="0"
@@ -333,7 +354,10 @@
                     Grid.Row="4"
                     Grid.Column="0"
                     Spacing="4">
-                    <Grid Width="250" HorizontalAlignment="Left" ColumnDefinitions="Auto,*">
+                    <Grid
+                        Width="250"
+                        HorizontalAlignment="Left"
+                        ColumnDefinitions="Auto,*">
                         <TextBlock
                             x:Uid="CharScaleAmount"
                             Grid.Column="0"
@@ -360,7 +384,10 @@
                     Grid.Row="4"
                     Grid.Column="1"
                     Spacing="4">
-                    <Grid Width="250" HorizontalAlignment="Left" ColumnDefinitions="Auto,*">
+                    <Grid
+                        Width="250"
+                        HorizontalAlignment="Left"
+                        ColumnDefinitions="Auto,*">
                         <TextBlock
                             x:Uid="LongSyllableThreshold"
                             Grid.Column="0"
@@ -434,7 +461,10 @@
                         Grid.Column="0"
                         VerticalAlignment="Center"
                         FontSize="14" />
-                    <Grid Width="250" HorizontalAlignment="Left" ColumnDefinitions="Auto,*">
+                    <Grid
+                        Width="250"
+                        HorizontalAlignment="Left"
+                        ColumnDefinitions="Auto,*">
                         <ToggleSwitch
                             Grid.Column="0"
                             MinWidth="0"
@@ -464,7 +494,10 @@
                     Grid.Row="6"
                     Grid.Column="1"
                     Spacing="4">
-                    <Grid Width="250" HorizontalAlignment="Left" ColumnDefinitions="Auto,*">
+                    <Grid
+                        Width="250"
+                        HorizontalAlignment="Left"
+                        ColumnDefinitions="Auto,*">
                         <TextBlock
                             x:Uid="ScrollEasingType"
                             Grid.Column="0"
@@ -494,7 +527,10 @@
                     Grid.Row="6"
                     Grid.Column="2"
                     Spacing="4">
-                    <Grid Width="250" HorizontalAlignment="Left" ColumnDefinitions="Auto,*">
+                    <Grid
+                        Width="250"
+                        HorizontalAlignment="Left"
+                        ColumnDefinitions="Auto,*">
                         <TextBlock
                             x:Uid="ScrollEasingMode"
                             Grid.Column="0"
@@ -526,7 +562,10 @@
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                         Text="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}"
                         TextWrapping="Wrap" />
-                    <Grid Width="250" HorizontalAlignment="Left" ColumnDefinitions="Auto,*">
+                    <Grid
+                        Width="250"
+                        HorizontalAlignment="Left"
+                        ColumnDefinitions="Auto,*">
                         <ToggleSwitch
                             Grid.Column="0"
                             MinWidth="0"
@@ -540,14 +579,13 @@
                             SelectedIndex="{x:Bind VM.BackgroundShaderIndex, Mode=TwoWay}">
                             <ComboBoxItem x:Uid="BackgroundShader_Fluid" />
                             <ComboBoxItem x:Uid="BackgroundShader_PS3XMB" />
+                            <ComboBoxItem x:Uid="BackgroundShader_RotatingMesh" />
                             <ComboBoxItem x:Uid="BackgroundShader_GradientFlow" />
+                            <ComboBoxItem x:Uid="BackgroundShader_LiquidFlow" />
                             <ComboBoxItem x:Uid="BackgroundShader_WavyBackground" />
                             <ComboBoxItem x:Uid="BackgroundShader_ChromaticResonance" />
-                            <ComboBoxItem x:Uid="BackgroundShader_LiquidFlow" />
-                            <ComboBoxItem x:Uid="BackgroundShader_RotatingMesh" />
                         </ComboBox>
                     </Grid>
-
                 </StackPanel>
                 <StackPanel
                     Grid.Row="7"

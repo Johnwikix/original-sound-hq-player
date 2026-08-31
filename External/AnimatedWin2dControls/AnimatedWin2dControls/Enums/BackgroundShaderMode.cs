@@ -12,10 +12,10 @@ namespace AnimatedWin2dControls
     {
         FluidBackground = 0,
         PS3XMB = 1,
-        GradientFlow = 2,
-        WavyBackground = 3,
-        ChromaticResonance = 4,
-        LiquidFlow = 5,
-        RotatingMesh = 6,
+        RotatingMesh = 2,
+        LiquidFlow = 3,
+        GradientFlow = 4,
+        WavyBackground = 5,
+        ChromaticResonance = 6
     }
 }

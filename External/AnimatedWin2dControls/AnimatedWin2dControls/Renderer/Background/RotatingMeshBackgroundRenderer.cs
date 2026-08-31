@@ -478,14 +478,24 @@ namespace AnimatedWin2dControls.Renderer.Background
             if (_coverBitmaps[0] is not null)
                 return;
 
-            // 初始双槽同为默认渐变；换歌时 PushPendingArtwork 以新图替换非活动槽。
-            byte[] pixels = CreateDefaultArtwork().Pixels;
+            // 设备重建（跨屏拖动 DPI 变化）后封面位图随旧设备销毁：以"当前应显示"
+            // 的封面播种双槽——真实封面优先，其次尚未推入的 pending（含 LoadResources
+            // → SetPalette 重新排队的调色板兜底），最后默认渐变。若仍无条件播种默认
+            // 渐变，真实封面的 pending 已被消费，封面将永久丢失（模糊后即纯色）。
+            var current = _realArtwork ?? _pendingArtwork
+                ?? BuildPaletteArtwork(CurrentPalette) ?? CreateDefaultArtwork();
+            byte[] pixels = current.Pixels;
 
             for (int i = 0; i < 2; i++)
             {
                 _coverBitmaps[i] = CreateCoverBitmap(control, pixels);
                 _rotationEffect!.Sources[i] = _coverBitmaps[i];
             }
+
+            // 播种已呈现 pending 同一张封面时直接消费，避免重建后多跑一次同图
+            // 交叉淡化（过渡期还会延迟真正的换歌推送）。
+            if (_pendingArtwork == current)
+                _pendingArtwork = null;
 
             _activeArtworkSlot = 0;
             _artworkTransitioning = false;
