@@ -151,6 +151,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             AppSettings.DesktopLyricsGlowAmount,
             AppSettings.DesktopLyricsCharFloatAmount,
             AppSettings.DesktopLyricsCharScaleAmount,
-            AppSettings.IsDesktopLyricsCustomColorEnabled);
+            AppSettings.IsDesktopLyricsCustomColorEnabled,
+            AppSettings.DesktopLyricsShadowAmount);
     }
 }

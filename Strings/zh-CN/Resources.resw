@@ -1410,6 +1410,9 @@
   <data name="DesktopLyricsCharScaleAmount.Text" xml:space="preserve">
     <value>桌面歌词字缩强度</value>
   </data>
+  <data name="DesktopLyricsShadowAmount.Text" xml:space="preserve">
+    <value>桌面歌词阴影强度</value>
+  </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>桌面歌词字重</value>
   </data>

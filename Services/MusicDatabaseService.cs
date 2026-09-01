@@ -1054,6 +1054,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.DesktopLyricsGlowAmount = settings.DesktopLyricsGlowAmount;
                 AppViewModel.DesktopLyricsCharFloatAmount = settings.DesktopLyricsCharFloatAmount;
                 AppViewModel.DesktopLyricsCharScaleAmount = settings.DesktopLyricsCharScaleAmount;
+                AppViewModel.DesktopLyricsShadowAmount = settings.DesktopLyricsShadowAmount;
                 AppViewModel.DesktopLyricsFontWeight = settings.DesktopLyricsFontWeight;
                 AppViewModel.LyricsFontWeight = settings.LyricsFontWeight;
                 AppViewModel.CustomOpacity = settings.CustomAcrylicOpacity;
@@ -1256,6 +1257,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.DesktopLyricsGlowAmount = AppSettings.DesktopLyricsGlowAmount;
             newSettings.DesktopLyricsCharFloatAmount = AppSettings.DesktopLyricsCharFloatAmount;
             newSettings.DesktopLyricsCharScaleAmount = AppSettings.DesktopLyricsCharScaleAmount;
+            newSettings.DesktopLyricsShadowAmount = AppSettings.DesktopLyricsShadowAmount;
             newSettings.DesktopLyricsFontWeight = AppSettings.DesktopLyricsFontWeight;
             newSettings.LyricsFontWeight = AppSettings.LyricsFontWeight;
             newSettings.IsMusicInfoVisible = AppViewModel.IsMusicInfoVisible;

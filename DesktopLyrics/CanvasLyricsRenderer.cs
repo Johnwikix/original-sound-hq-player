@@ -77,6 +77,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private double _glowAmountPx = 5.0;
         private double _floatAmountPx = 5.0;
         private double _scaleFactor = 1.10;
+        private double _shadowOpacity = 0.75;   // 0 = 关闭（跳过阴影绘制 pass 与剪影资源构建）
         private bool _disposed;
 
         // 反相软阴影（渲染线程持有，随行重建创建/释放，见 RebuildLine/DisposeCurrentLine）。
@@ -130,6 +131,11 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _glowAmountPx = Math.Clamp(style.GlowAmount, 0, 10);
             _floatAmountPx = Math.Clamp(style.CharFloatAmount, 0, 10);
             _scaleFactor = Math.Clamp(style.CharScaleAmount, 50, 150) / 100.0;
+            bool shadowWasEnabled = _shadowOpacity > 0;
+            _shadowOpacity = Math.Clamp(style.ShadowAmount, 0, 100) / 100.0;
+            // 阴影开↔关切换需重建/丢弃剪影资源；仅强度变化不改资源，逐帧生效（同颜色）
+            if ((_shadowOpacity > 0) != shadowWasEnabled)
+                _layoutDirty = true;
             // 字号/字体/字重/翻译都影响布局，统一标记下帧重建（颜色/动效开关不触发，逐帧生效）
             _layoutDirty = true;
         }
@@ -437,6 +443,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             var line = _currentLine;
             if (line?.PrimaryTextLayout is null) return;
+            if (_shadowOpacity <= 0) return;   // 阴影关闭：不建剪影资源，绘制 pass 同样跳过
 
             _shadowBrush = new CanvasSolidColorBrush(resourceCreator, DesktopLyricsShadow.Invert(_color));
 
@@ -494,11 +501,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
         /// 画笔颜色每帧同步为当前文字色的反相：换色逐帧生效，无需重建剪影。</summary>
         private void DrawTextShadow(CanvasDrawingSession ds)
         {
-            if (_shadowBrush is null) return;
-            _shadowBrush.Color = DesktopLyricsShadow.Invert(_color);
-
+            if (_shadowOpacity <= 0) return;   // 阴影关闭：直接跳过本绘制 pass
             var line = _currentLine;
-            if (line is null) return;
+            if (line is null || _shadowBrush is null) return;
+            _shadowBrush.Color = DesktopLyricsShadow.Invert(_color, _shadowOpacity);
 
             // 主文本逐字符切片：dest 映射与共享库 DrawSingleCharacter 完全一致
             // （缩放绕字符矩形中心 + 纵向浮动），外扩取块高容纳模糊光晕（同 glow 做法）

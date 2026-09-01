@@ -48,6 +48,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private SolidColorBrush? _mainBrush;
         private int _fontWeight = 400;
         private bool _showTranslation = true;
+        private double _shadowOpacity = 0.75;   // 0 = 关闭（跳过 mask 维护，Composition 侧不透明度归零不画）
 
         public TextBlockLyricsRenderer()
         {
@@ -93,6 +94,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _mainBrush = new SolidColorBrush(style.Color);
             _fontWeight = Math.Clamp(style.FontWeight, 100, 900);
             _showTranslation = style.ShowTranslation;
+            _shadowOpacity = Math.Clamp(style.ShadowAmount, 0, 100) / 100.0;
             ApplyFont();
             ApplyColor();
             UpdateText();
@@ -178,14 +180,14 @@ namespace WinUIMusicPlayer.DesktopLyrics
             return (panel, pair);
         }
 
-        private static DevWinUI.CompositionShadow CreateTextShadow(TextBlock text)
+        private DevWinUI.CompositionShadow CreateTextShadow(TextBlock text)
         {
-            // 零偏移光晕式阴影：保可读性且不喧宾夺主；颜色随文字反相（见 ApplyColor）
+            // 零偏移光晕式阴影：保可读性且不喧宾夺主；颜色/强度随用户设置（见 ApplyColor）
             return new DevWinUI.CompositionShadow
             {
                 Content = text,
                 BlurRadius = DesktopLyricsShadow.BlurRadius,
-                ShadowOpacity = DesktopLyricsShadow.Opacity,
+                ShadowOpacity = _shadowOpacity,
                 OffsetX = 0,
                 OffsetY = 0,
                 Color = Colors.Black,
@@ -194,10 +196,11 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         /// <summary>重取两个字形 AlphaMask。文档不保证 GetAlphaMask 返回的 brush 随
         /// 文本/字体变化自动更新，换字与样式变化后需显式刷新；推到低优先级队列，
-        /// 让新文本先完成一次布局再取几何，避免阴影形状滞后一拍。</summary>
+        /// 让新文本先完成一次布局再取几何，避免阴影形状滞后一拍。
+        /// 阴影关闭（强度 0）时跳过 mask 维护。</summary>
         private void RefreshShadowMask()
         {
-            if (_mainShadow is null || _transShadow is null) return;
+            if (_mainShadow is null || _transShadow is null || _shadowOpacity <= 0) return;
             _root.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
             {
                 if (_mainPair is not { } pair) return;
@@ -267,11 +270,17 @@ namespace WinUIMusicPlayer.DesktopLyrics
             if (_mainPair is not { } pair || _mainBrush is null) return;
             pair.Main.Foreground = _mainBrush;
             pair.Trans.Foreground = _mainBrush;
-            // 阴影色跟随文字色反相：自适应黑/白与自定义颜色都成立，SetStyle 即时生效
+            // 阴影色跟随文字色反相，强度取用户设置（0 = 关闭）：自适应黑/白与自定义颜色都成立
             if (_mainShadow is { } mainShadow)
+            {
                 mainShadow.Color = DesktopLyricsShadow.Invert(_mainBrush.Color);
+                mainShadow.ShadowOpacity = _shadowOpacity;
+            }
             if (_transShadow is { } transShadow)
+            {
                 transShadow.Color = DesktopLyricsShadow.Invert(_mainBrush.Color);
+                transShadow.ShadowOpacity = _shadowOpacity;
+            }
         }
 
         private int FindCurrentLineIndex(double effectiveMs)

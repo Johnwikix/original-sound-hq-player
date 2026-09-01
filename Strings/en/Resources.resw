@@ -1411,6 +1411,9 @@
   <data name="DesktopLyricsCharScaleAmount.Text" xml:space="preserve">
     <value>Desktop Lyrics Char Scale Amount</value>
   </data>
+  <data name="DesktopLyricsShadowAmount.Text" xml:space="preserve">
+    <value>Desktop Lyrics Shadow Amount</value>
+  </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>Desktop Lyrics Font Weight</value>
   </data>

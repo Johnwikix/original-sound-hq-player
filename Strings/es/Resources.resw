@@ -1408,6 +1408,9 @@
   <data name="DesktopLyricsCharScaleAmount.Text" xml:space="preserve">
     <value>Intensidad de escala de caracteres (letra en el escritorio)</value>
   </data>
+  <data name="DesktopLyricsShadowAmount.Text" xml:space="preserve">
+    <value>Intensidad de sombra (letra en el escritorio)</value>
+  </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>Grosor de fuente (letra en el escritorio)</value>
   </data>
