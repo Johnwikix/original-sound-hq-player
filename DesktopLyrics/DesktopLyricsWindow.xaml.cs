@@ -128,21 +128,27 @@ namespace WinUIMusicPlayer.DesktopLyrics
         _renderer.SetStyle(style);
     }
 
-    /// <summary>按样式快照的自定义颜色覆盖开关启停环境取色轮询；开关/样式变化时立即采样（或还原）一次。</summary>
+    /// <summary>按样式快照的自定义颜色覆盖开关启停环境取色轮询；任何样式变化都全量推送渲染器。
+    /// 注意自适应模式下不能只刷新取色：字号/字重/阴影强度等非颜色样式改动若不显式推送，
+    /// 要等到下一次黑白翻转或渲染器切换才生效（曾表现为阴影滑块拖动无效）。</summary>
     private void UpdateAdaptiveColorMode()
     {
-        if (!ViewModel.Style.UseCustomColor)
-        {
-            StartAdaptiveColorTimer();
-            RefreshAdaptiveColor();
-        }
-        else
+        if (ViewModel.Style.UseCustomColor)
         {
             StopAdaptiveColorTimer();
             _adaptiveIsDarkBackground = null;
             _lastAdaptiveTextColor = null;
-            ApplyEffectiveStyle();
         }
+        else
+        {
+            StartAdaptiveColorTimer();
+        }
+
+        // 无条件全量推送（幂等、轻量）：自适应模式下颜色由 _lastAdaptiveTextColor 覆盖
+        ApplyEffectiveStyle();
+
+        if (!ViewModel.Style.UseCustomColor)
+            RefreshAdaptiveColor();
     }
 
     private void StartAdaptiveColorTimer()
