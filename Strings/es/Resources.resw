@@ -1381,9 +1381,6 @@
   <data name="DesktopLyricsCustomColor.Text" xml:space="preserve">
     <value>Usar color personalizado</value>
   </data>
-  <data name="DesktopLyricsOutline.Text" xml:space="preserve">
-    <value>Contorno (letra en el escritorio)</value>
-  </data>
   <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
     <value>Traducción (letra en el escritorio)</value>
   </data>
@@ -1413,9 +1410,6 @@
   </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>Grosor de fuente (letra en el escritorio)</value>
-  </data>
-  <data name="DesktopLyricsOutlineWidth.Text" xml:space="preserve">
-    <value>Ancho de contorno (letra en el escritorio)</value>
   </data>
   <data name="DesktopLyricsWeightNormal.Content" xml:space="preserve">
     <value>Normal</value>

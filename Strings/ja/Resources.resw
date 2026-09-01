@@ -1381,9 +1381,6 @@
   <data name="DesktopLyricsCustomColor.Text" xml:space="preserve">
     <value>カスタム色で上書き</value>
   </data>
-  <data name="DesktopLyricsOutline.Text" xml:space="preserve">
-    <value>デスクトップ歌詞の縁取り</value>
-  </data>
   <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
     <value>デスクトップ歌詞の翻訳</value>
   </data>
@@ -1413,9 +1410,6 @@
   </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>デスクトップ歌詞フォントの太さ</value>
-  </data>
-  <data name="DesktopLyricsOutlineWidth.Text" xml:space="preserve">
-    <value>デスクトップ歌詞の縁取り幅</value>
   </data>
   <data name="DesktopLyricsWeightNormal.Content" xml:space="preserve">
     <value>標準</value>

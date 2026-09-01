@@ -596,22 +596,6 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = false;
 
-        public bool IsDesktopLyricsOutlineEnabled
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.IsDesktopLyricsOutlineEnabled = value;
-                    if (IsInitialized)
-                    {
-                        ScheduleDesktopLyricsStyleCommit();
-                    }
-                }
-            }
-        } = true;
-
         public bool IsDesktopLyricsTranslationEnabled
         {
             get => field;
@@ -784,23 +768,6 @@ namespace WinUIMusicPlayer.ViewModel
             get => DesktopLyricsFontWeight switch { 500 => 1, 600 => 2, 700 => 3, _ => 0 };
             set => DesktopLyricsFontWeight = value switch { 1 => 500, 2 => 600, 3 => 700, _ => 400 };
         }
-
-        public double DesktopLyricsOutlineWidth
-        {
-            get => field;
-            set
-            {
-                value = Math.Clamp(value, 0, 20);
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.DesktopLyricsOutlineWidth = value;
-                    if (IsInitialized)
-                    {
-                        ScheduleDesktopLyricsStyleCommit();
-                    }
-                }
-            }
-        } = 1.5;
 
         public int LyricsFontWeight
         {

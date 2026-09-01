@@ -1383,9 +1383,6 @@
   <data name="DesktopLyricsCustomColor.Text" xml:space="preserve">
     <value>自定义颜色覆盖</value>
   </data>
-  <data name="DesktopLyricsOutline.Text" xml:space="preserve">
-    <value>桌面歌词描边</value>
-  </data>
   <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
     <value>桌面歌词翻译</value>
   </data>
@@ -1415,9 +1412,6 @@
   </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>桌面歌词字重</value>
-  </data>
-  <data name="DesktopLyricsOutlineWidth.Text" xml:space="preserve">
-    <value>桌面歌词描边宽度</value>
   </data>
   <data name="DesktopLyricsWeightNormal.Content" xml:space="preserve">
     <value>正常</value>

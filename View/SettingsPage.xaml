@@ -1576,21 +1576,6 @@
                                 HorizontalAlignment="Stretch"
                                 ColumnDefinitions="*,Auto">
                                 <TextBlock
-                                    x:Uid="DesktopLyricsOutline"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <ToggleSwitch
-                                    Grid.Column="1"
-                                    MinWidth="0"
-                                    IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsOutlineEnabled, Mode=TwoWay}" />
-                            </Grid>
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch"
-                                ColumnDefinitions="*,Auto">
-                                <TextBlock
                                     x:Uid="DesktopLyricsTranslation"
                                     Grid.Column="0"
                                     VerticalAlignment="Center"
@@ -1807,37 +1792,6 @@
                                     <ComboBoxItem x:Uid="DesktopLyricsWeightSemiBold" />
                                     <ComboBoxItem x:Uid="DesktopLyricsWeightBold" />
                                 </ComboBox>
-                            </Grid>
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch"
-                                ColumnDefinitions="*,Auto">
-                                <TextBlock
-                                    x:Uid="DesktopLyricsOutlineWidth"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <Grid
-                                    Grid.Column="1"
-                                    Width="300"
-                                    ColumnDefinitions="100,*">
-                                    <TextBlock
-                                        Grid.Column="0"
-                                        Margin="5,0"
-                                        VerticalAlignment="Center"
-                                        Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.DesktopLyricsOutlineWidth), Mode=OneWay}" />
-                                    <Slider
-                                        Grid.Column="1"
-                                        VerticalAlignment="Center"
-                                        Maximum="6"
-                                        Minimum="0.5"
-                                        SnapsTo="Ticks"
-                                        StepFrequency="0.5"
-                                        TickFrequency="0.5"
-                                        TickPlacement="Outside"
-                                        Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsOutlineWidth, Mode=TwoWay}" />
-                                </Grid>
                             </Grid>
                         </StackPanel>
                     </Expander.Content>

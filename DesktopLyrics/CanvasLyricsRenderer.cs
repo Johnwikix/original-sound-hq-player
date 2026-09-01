@@ -19,10 +19,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
     /// LyricsAnimator，均零静态总线依赖、全参数注入），绕开 LyricsRenderCoordinator 的整页滚动逻辑；
     /// 样式完全来自 <see cref="DesktopLyricsStyle"/>（不消费主界面 LyricsSettingsBus），
     /// 数据经 <see cref="IDesktopLyricsRenderer"/> 的 Set* 由宿主窗口推送（总线转发零改动）。
-    /// 描边实现：EnsureCaches 的 CachedStroke 是白描边命令列表。有真实音节的行走逐字路径，
-    /// 描边切片经 LyricsLineRenderer.IsStrokeEnabled 使用与填充相同的 dest 映射随字符一起变换
-    /// （字浮/字缩时描边贴合字符，固定位置整行描边会错位）；LRC 整行路径无逐字变换，
-    /// 由本宿主整行垫底。两者都以黑色 <see cref="RenderLyricsLine.UnplayedStrokeTint"/> 着色获得黑边。
+    /// 无描边：可读性由窗口侧环境自适应取色保证（按背景切黑/白文字色），
+    /// 共享库的描边入口（EnsureCaches/MeasureAndArrange 的宽度参数）恒传 0。
     /// 线程模型：CanvasAnimatedControl 的 Update/Draw 在渲染线程回调，Set* 在 UI 线程调用；
     /// 与 LyricsRenderCoordinator 相同，仅依赖字段原子赋值传递状态，不持锁
     /// （Set* 只写字段/标志，Win2D 资源的全部创建与释放都在 Update/Draw 回调内）。
@@ -30,8 +28,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
     public sealed class CanvasLyricsRenderer : IDesktopLyricsRenderer
     {
         private const double SyncThresholdMs = 500;   // 内部时钟与外部观测的硬同步阈值（seek/大跳才触发）
-        private const double UnplayedOpacity = 0.4;   // 未播放部分与原色的明暗拉离比例：预混为不透明色。不能用半透明填充——
-                                                      // 半透明色叠在黑描边内半环上会在字形内缘形成多层色阶。
+        private const double UnplayedOpacity = 0.4;   // 未播放部分与原色的明暗拉离比例：预混为不透明色，
+                                                      // 避免半透明填充在发光/暂停态效果链里叠出多层色阶。
                                                       // 压暗/提亮方向按歌词色亮度定，见 ComputeUnplayedFill
         private const double SecondaryOpacity = 0.6;  // 翻译行透明度（与文本渲染器 TransOpacity 一致）
         private const int TargetFrameRate = 60;
@@ -67,8 +65,6 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private double _fontSize = 36;
         private string _fontFamily = DefaultFontFamily;
         private Color _color = Colors.White;
-        private bool _outline = true;
-        private double _outlineWidth = 1.5;
         private int _fontWeight = 400;
         private bool _showTranslation = true;
         private bool _glow = true;
@@ -95,8 +91,6 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _fontSize = Math.Clamp(style.FontSize, 8, 300);
             _fontFamily = string.IsNullOrEmpty(style.FontFamily) ? DefaultFontFamily : style.FontFamily;
             _color = style.Color;
-            _outline = style.Outline;
-            _outlineWidth = Math.Clamp(style.OutlineWidth, 0, 20);
             _fontWeight = Math.Clamp(style.FontWeight, 100, 900);
             _showTranslation = style.ShowTranslation;
             _glow = style.Glow;
@@ -106,7 +100,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _glowAmountPx = Math.Clamp(style.GlowAmount, 0, 10);
             _floatAmountPx = Math.Clamp(style.CharFloatAmount, 0, 10);
             _scaleFactor = Math.Clamp(style.CharScaleAmount, 50, 150) / 100.0;
-            // 字号/字体/字重/描边/翻译都影响布局，统一标记下帧重建（颜色/动效开关不触发，逐帧生效）
+            // 字号/字体/字重/翻译都影响布局，统一标记下帧重建（颜色/动效开关不触发，逐帧生效）
             _layoutDirty = true;
         }
 
@@ -257,22 +251,19 @@ namespace WinUIMusicPlayer.DesktopLyrics
             if (line?.PrimaryTextLayout is null) return;
             if (line.PrimaryTextLayout.LayoutBounds.Width <= 0) return;
 
-            int strokeWidth = (int)(_outline ? _outlineWidth : 0);
             double currentTimeMs = _internalTimeMs - _offsetMs;
 
             try
             {
-                // 缓存（含 UnplayedComposite）在 MeasureAndArrange 时被释放，惰性重建必须先于判空
-                line.EnsureCaches(sender, strokeWidth);
+                // 缓存（含 UnplayedComposite）在 MeasureAndArrange 时被释放，惰性重建必须先于判空；
+                // 无描边，共享库的描边宽度入口恒传 0（CachedStroke 保持空命令列表，不产生可见描边）
+                line.EnsureCaches(sender, 0);
                 if (line.CachedFill is null || line.UnplayedComposite is null) return;
 
                 if (line.UnplayedFillTint != null)
-                    line.UnplayedFillTint.Color = _color;          // 翻译行/暂停态的填充色
-                if (line.UnplayedStrokeTint != null)
-                    line.UnplayedStrokeTint.Color = Colors.Black;  // 黑描边
+                    line.UnplayedFillTint.Color = _color;   // 翻译行/暂停态的填充色
 
                 // 未播放填充 = 与歌词色拉开明暗的不透明预混色（亮色向黑压暗/暗色向白提亮）：
-                // 完整盖住描边的内半环，避免半透明填充与描边叠出多层色阶；
                 // 已播放填充保持原色不透明。固定向黑压暗在黑字模式下会与已播放同色，扫光消失
                 var unplayedFill = ComputeUnplayedFill();
 
@@ -289,13 +280,6 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 _lineRenderer.IsGlowEnabled = _glow;
                 _lineRenderer.IsScaleEnabled = _charScale;
                 _lineRenderer.IsFloatEnabled = _charFloat;
-                _lineRenderer.IsStrokeEnabled = strokeWidth > 0;   // 逐字路径的描边切片随字符变换
-
-                // LRC 整行路径无逐字变换，描边用固定位置整行垫底；
-                // 有真实音节的行走逐字路径，描边切片在 LyricsLineRenderer 内随字符变换绘制，
-                // 垫底会与字浮/字缩后的填充错位，故此处跳过
-                if (strokeWidth > 0 && !line.IsPrimaryHasRealSyllableInfo && line.UnplayedStrokeTint != null)
-                    ds.DrawImage(line.UnplayedStrokeTint);
 
                 _lineRenderer.Draw(sender, ds);
                 ds.Transform = prevTransform;
@@ -355,7 +339,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     CanvasHorizontalAlignment.Center,
                     width,
                     height,
-                    (int)(_outline ? _outlineWidth : 0),
+                    0,   // 描边宽度恒 0（无描边）
                     _fontWeight);
                 line.PlayedPrimaryOpacityTransition.Start(1.0);
                 line.UnplayedPrimaryOpacityTransition.Start(1.0);

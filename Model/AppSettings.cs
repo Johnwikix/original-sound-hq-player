@@ -51,7 +51,6 @@ namespace WinUIMusicPlayer.Model
         public static uint DesktopLyricsColorRgb { get; set; } = 0x00FFFFFFu;
         /// <summary>false（默认）= 桌面歌词颜色按悬浮窗周围环境自动取黑/白；true = 用户自选颜色覆盖自动取色。</summary>
         public static bool IsDesktopLyricsCustomColorEnabled { get; set; } = false;
-        public static bool IsDesktopLyricsOutlineEnabled { get; set; } = true;
         public static bool IsDesktopLyricsTranslationEnabled { get; set; } = true;
         public static bool IsDesktopLyricsGlowEnabled { get; set; } = true;
         public static bool IsDesktopLyricsCharFloatEnabled { get; set; } = true;
@@ -61,7 +60,6 @@ namespace WinUIMusicPlayer.Model
         public static double DesktopLyricsCharFloatAmount { get; set; } = 5.0;
         public static double DesktopLyricsCharScaleAmount { get; set; } = 110.0;
         public static int DesktopLyricsFontWeight { get; set; } = 400;
-        public static double DesktopLyricsOutlineWidth { get; set; } = 1.5;
         public static int LyricsFontWeight { get; set; } = 700;
         public static bool IsAutoCoverEnabled { get; set; } = true;
         public static string EqualizerStr { get; set; } = string.Empty;

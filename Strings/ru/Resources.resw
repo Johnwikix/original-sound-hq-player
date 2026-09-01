@@ -1381,9 +1381,6 @@
   <data name="DesktopLyricsCustomColor.Text" xml:space="preserve">
     <value>Использовать свой цвет</value>
   </data>
-  <data name="DesktopLyricsOutline.Text" xml:space="preserve">
-    <value>Контур текста на рабочем столе</value>
-  </data>
   <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
     <value>Перевод текста на рабочем столе</value>
   </data>
@@ -1413,9 +1410,6 @@
   </data>
   <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
     <value>Насыщенность шрифта (текст на рабочем столе)</value>
-  </data>
-  <data name="DesktopLyricsOutlineWidth.Text" xml:space="preserve">
-    <value>Ширина контура (текст на рабочем столе)</value>
   </data>
   <data name="DesktopLyricsWeightNormal.Content" xml:space="preserve">
     <value>Обычный</value>

@@ -96,7 +96,6 @@ namespace WinUIMusicPlayer.Model
         public string DesktopLyricsFontFamily { get; set; } = "Segoe UI";
         public uint DesktopLyricsColorRgb { get; set; } = 0x00FFFFFFu;
         public bool IsDesktopLyricsCustomColorEnabled { get; set; } = false;
-        public bool IsDesktopLyricsOutlineEnabled { get; set; } = true;
         public bool IsDesktopLyricsTranslationEnabled { get; set; } = true;
         public bool IsDesktopLyricsGlowEnabled { get; set; } = true;
         public bool IsDesktopLyricsCharFloatEnabled { get; set; } = true;
@@ -106,7 +105,6 @@ namespace WinUIMusicPlayer.Model
         public double DesktopLyricsCharFloatAmount { get; set; } = 5.0;
         public double DesktopLyricsCharScaleAmount { get; set; } = 110.0;
         public int DesktopLyricsFontWeight { get; set; } = 400;
-        public double DesktopLyricsOutlineWidth { get; set; } = 1.5;
         public int LyricsFontWeight { get; set; } = 700;
     }
 }

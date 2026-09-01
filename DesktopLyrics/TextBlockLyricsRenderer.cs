@@ -5,7 +5,6 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Windows.UI.Text;
 using WinUIMusicPlayer.Helper.Animations;
@@ -13,21 +12,16 @@ using WinUIMusicPlayer.Helper.Animations;
 namespace WinUIMusicPlayer.DesktopLyrics
 {
     /// <summary>
-    /// 文本版桌面歌词渲染器：显示当前歌词行（主文本 + 翻译），
-    /// 主色文字 + 4 向偏移黑字模拟描边（描边可关）。
+    /// 文本版桌面歌词渲染器：显示当前歌词行（主文本 + 翻译），主色文字。
+    /// 可读性由窗口侧环境自适应取色保证（按背景切黑/白文字色），不再需要描边。
     /// 样式为桌面歌词独立设置（经 <see cref="SetStyle"/> 推送），不跟随主界面歌词设置。
     /// </summary>
     public sealed class TextBlockLyricsRenderer : IDesktopLyricsRenderer
     {
-        // 单位基准偏移，实际偏移 = 基准 × 描边宽度（OutlineWidth）
-        private static readonly (double X, double Y)[] OutlineOffsets = [(-1, 0), (1, 0), (0, -1), (0, 1)];
-
         private readonly Grid _root = new();
-        private readonly List<(StackPanel Panel, double X, double Y)> _shadowStacks = [];
-        private readonly List<(TextBlock Main, TextBlock Trans)> _shadowPairs = [];
         private (TextBlock Main, TextBlock Trans)? _mainPair;
 
-        // 换行动画：主文本 + 翻译 + 4 层描边全部交给同一实例，保证同一帧换内容
+        // 换行动画：主文本 + 翻译交给同一实例，保证同一帧换内容
         private readonly TextBlockSwitchAnimator _switchAnimator;
 
         // 当前已呈现的文本，用于过滤无变化更新（样式刷新等）避免无谓的闪烁
@@ -43,28 +37,17 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private const double TransOpacity = 0.6;   // 翻译行透明度（与 Canvas 渲染器 SecondaryOpacity 一致）
         private FontFamily? _fontFamily;
         private SolidColorBrush? _mainBrush;
-        private bool _outline = true;
         private int _fontWeight = 400;
-        private double _outlineWidth = 1.5;
         private bool _showTranslation = true;
 
         public TextBlockLyricsRenderer()
         {
-            foreach (var (x, y) in OutlineOffsets)
-            {
-                var (stack, pair) = BuildStack(isShadow: true);
-                _shadowStacks.Add((stack, x, y));
-                _shadowPairs.Add(pair);
-                _root.Children.Add(stack);
-            }
-
-            var (mainPanel, mainPair) = BuildStack(isShadow: false);
+            var (mainPanel, mainPair) = BuildStack();
             _mainPair = mainPair;
             _root.Children.Add(mainPanel);
-            ApplyOutlineWidth();
 
             _switchAnimator = new TextBlockSwitchAnimator(
-                ShadowAndMainPairs.SelectMany(pair => new TextBlock[] { pair.Main, pair.Trans }))
+                new TextBlock[] { mainPair.Main, mainPair.Trans })
             {
                 // 新行自下而上轻微滑入，与淡入合成换行动效
                 SlideInDistance = 8,
@@ -79,16 +62,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _fontFamily = string.IsNullOrEmpty(style.FontFamily) ? null : new FontFamily(style.FontFamily);
             _mainBrush = new SolidColorBrush(style.Color);
             _fontWeight = Math.Clamp(style.FontWeight, 100, 900);
-            _outlineWidth = Math.Clamp(style.OutlineWidth, 0, 20);
             _showTranslation = style.ShowTranslation;
-            if (_outline != style.Outline)
-            {
-                _outline = style.Outline;
-                var visibility = _outline ? Visibility.Visible : Visibility.Collapsed;
-                foreach (var (stack, _, _) in _shadowStacks)
-                    stack.Visibility = visibility;
-            }
-            ApplyOutlineWidth();
             ApplyFont();
             ApplyColor();
             UpdateText();
@@ -123,14 +97,14 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
         }
 
-        private (StackPanel Panel, (TextBlock Main, TextBlock Trans) Pair) BuildStack(bool isShadow)
+        private (StackPanel Panel, (TextBlock Main, TextBlock Trans) Pair) BuildStack()
         {
             var main = new TextBlock
             {
                 TextAlignment = TextAlignment.Center,
                 TextWrapping = TextWrapping.Wrap,
                 FontSize = _fontSize,
-                Foreground = isShadow ? new SolidColorBrush(Colors.Black) : (_mainBrush ?? new SolidColorBrush(Colors.White)),
+                Foreground = _mainBrush ?? new SolidColorBrush(Colors.White),
             };
             var trans = new TextBlock
             {
@@ -138,7 +112,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 TextWrapping = TextWrapping.Wrap,
                 FontSize = _fontSize * 0.75,
                 Opacity = TransOpacity,
-                Foreground = isShadow ? new SolidColorBrush(Colors.Black) : (_mainBrush ?? new SolidColorBrush(Colors.White)),
+                Foreground = _mainBrush ?? new SolidColorBrush(Colors.White),
                 Visibility = Visibility.Collapsed,
             };
             var pair = (main, trans);
@@ -148,9 +122,6 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            // 阴影层偏移必须用 RenderTransform 平移（见 ApplyOutlineWidth 注释），不能回退成 Margin
-            if (isShadow)
-                panel.RenderTransform = new TranslateTransform();
             panel.Children.Add(main);
             panel.Children.Add(trans);
             return (panel, pair);
@@ -187,47 +158,27 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
             _switchAnimator.Switch(() =>
             {
-                foreach (var (mainTb, transTb) in ShadowAndMainPairs)
-                {
-                    mainTb.Text = main;
-                    transTb.Text = trans;
-                    transTb.Visibility = transVisible
-                        ? Visibility.Visible
-                        : Visibility.Collapsed;
-                }
+                if (_mainPair is not { } pair) return;
+                pair.Main.Text = main;
+                pair.Trans.Text = trans;
+                pair.Trans.Visibility = transVisible
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
             }, fadeOutFirst);
         }
 
         private void ApplyFont()
         {
+            if (_mainPair is not { } pair) return;
             var fontWeight = new FontWeight { Weight = (ushort)_fontWeight };
-            foreach (var (mainTb, transTb) in ShadowAndMainPairs)
+            pair.Main.FontSize = _fontSize;
+            pair.Trans.FontSize = _fontSize * 0.75;
+            pair.Main.FontWeight = fontWeight;
+            pair.Trans.FontWeight = fontWeight;
+            if (_fontFamily is not null)
             {
-                mainTb.FontSize = _fontSize;
-                transTb.FontSize = _fontSize * 0.75;
-                mainTb.FontWeight = fontWeight;
-                transTb.FontWeight = fontWeight;
-                if (_fontFamily is not null)
-                {
-                    mainTb.FontFamily = _fontFamily;
-                    transTb.FontFamily = _fontFamily;
-                }
-            }
-        }
-
-        /// <summary>
-        /// 按描边宽度更新 4 层阴影栈的平移（基准偏移 × 宽度）。
-        /// 必须用 RenderTransform 而非 Margin 偏移：Margin 会扣减阴影层的测量宽度，
-        /// 换行时阴影层与主层断行位置不一致，产生与歌词错位的黑色残影（锁定态客户区更宽，命中概率更高）；
-        /// 平移不参与测量排列，5 层测量约束一致，断行永远相同。
-        /// </summary>
-        private void ApplyOutlineWidth()
-        {
-            foreach (var (stack, x, y) in _shadowStacks)
-            {
-                var translate = (TranslateTransform)stack.RenderTransform;
-                translate.X = x * _outlineWidth;
-                translate.Y = y * _outlineWidth;
+                pair.Main.FontFamily = _fontFamily;
+                pair.Trans.FontFamily = _fontFamily;
             }
         }
 
@@ -237,17 +188,6 @@ namespace WinUIMusicPlayer.DesktopLyrics
             {
                 pair.Main.Foreground = _mainBrush;
                 pair.Trans.Foreground = _mainBrush;
-            }
-        }
-
-        private IEnumerable<(TextBlock Main, TextBlock Trans)> ShadowAndMainPairs
-        {
-            get
-            {
-                foreach (var pair in _shadowPairs)
-                    yield return pair;
-                if (_mainPair is { } main)
-                    yield return main;
             }
         }
 
