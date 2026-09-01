@@ -103,8 +103,8 @@ namespace WinUIMusicPlayer.Model
         public double DesktopLyricsGlowAmount { get; set; } = 5.0;
         public double DesktopLyricsCharFloatAmount { get; set; } = 5.0;
         public double DesktopLyricsCharScaleAmount { get; set; } = 110.0;
-        /// <summary>桌面歌词阴影强度（0–100%）：0 = 关闭（渲染直接跳过阴影）。</summary>
-        public double DesktopLyricsShadowAmount { get; set; } = 75.0;
+        /// <summary>桌面歌词阴影强度（0–100%）：0 = 关闭（渲染直接跳过阴影）；50 = 单层满强度；100 = 双重叠加。</summary>
+        public double DesktopLyricsShadowAmount { get; set; } = 50.0;
         public int DesktopLyricsFontWeight { get; set; } = 400;
         public int LyricsFontWeight { get; set; } = 700;
     }

@@ -769,7 +769,8 @@ namespace WinUIMusicPlayer.ViewModel
             set => DesktopLyricsFontWeight = value switch { 1 => 500, 2 => 600, 3 => 700, _ => 400 };
         }
 
-        /// <summary>阴影强度（%，0–100）：文字色反相软阴影的不透明度；0 = 关闭（渲染直接跳过阴影）。</summary>
+        /// <summary>阴影强度（%，0–100）：文字色反相软阴影；0 = 关闭（渲染直接跳过阴影），
+        /// 50 = 单层满强度，100 = 双重叠加（Win2D 侧光晕约再深一倍，Composition 侧封顶不透明）。</summary>
         public double DesktopLyricsShadowAmount
         {
             get => field;
@@ -785,7 +786,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = 75.0;
+        } = 50.0;
 
         public int LyricsFontWeight
         {

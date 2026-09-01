@@ -77,7 +77,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private double _glowAmountPx = 5.0;
         private double _floatAmountPx = 5.0;
         private double _scaleFactor = 1.10;
-        private double _shadowOpacity = 0.75;   // 0 = 关闭（跳过阴影绘制 pass 与剪影资源构建）
+        // 阴影强度（0–2，= 滑块百分比 / 50）：≤1 单层绘制（alpha = 强度），
+        // >1 叠加第二遍（alpha = 强度-1）——整体不透明度上限 1，超过部分靠二次叠加加深光晕
+        private double _shadowStrength = 1.0;
         private bool _disposed;
 
         // 反相软阴影（渲染线程持有，随行重建创建/释放，见 RebuildLine/DisposeCurrentLine）。
@@ -131,10 +133,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _glowAmountPx = Math.Clamp(style.GlowAmount, 0, 10);
             _floatAmountPx = Math.Clamp(style.CharFloatAmount, 0, 10);
             _scaleFactor = Math.Clamp(style.CharScaleAmount, 50, 150) / 100.0;
-            bool shadowWasEnabled = _shadowOpacity > 0;
-            _shadowOpacity = Math.Clamp(style.ShadowAmount, 0, 100) / 100.0;
+            bool shadowWasEnabled = _shadowStrength > 0;
+            _shadowStrength = Math.Clamp(style.ShadowAmount, 0, 100) / 50.0;
             // 阴影开↔关切换需重建/丢弃剪影资源；仅强度变化不改资源，逐帧生效（同颜色）
-            if ((_shadowOpacity > 0) != shadowWasEnabled)
+            if ((_shadowStrength > 0) != shadowWasEnabled)
                 _layoutDirty = true;
             // 字号/字体/字重/翻译都影响布局，统一标记下帧重建（颜色/动效开关不触发，逐帧生效）
             _layoutDirty = true;
@@ -443,26 +445,51 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             var line = _currentLine;
             if (line?.PrimaryTextLayout is null) return;
-            if (_shadowOpacity <= 0) return;   // 阴影关闭：不建剪影资源，绘制 pass 同样跳过
+            if (_shadowStrength <= 0) return;   // 阴影关闭：不建剪影资源，绘制 pass 同样跳过
 
             _shadowBrush = new CanvasSolidColorBrush(resourceCreator, DesktopLyricsShadow.Invert(_color));
 
             if (line.PrimaryRenderChars is { } chars && chars.Count > 0)
             {
                 _charSlices = [];
-                foreach (var ch in chars)
+                Rect? previousClip = null;
+                for (int i = 0; i < chars.Count; i++)
                 {
-                    if (ch.LayoutRect.Width <= 0 || ch.LayoutRect.Height <= 0) continue;
+                    var ch = chars[i];
+                    var clip = ch.LayoutRect;
+                    if (clip.Height <= 0) continue;
+
+                    // 命中测试盒退化（宽度为 0）时借用相邻字符的盒子合成，否则该字符
+                    // 剪影为空——只剩邻字光晕盖住其左半边，表现为最后一个字符阴影缺失
+                    // （尾字符为标点时墨水恰好偏左，缺陷被掩盖）
+                    if (clip.Width <= 0)
+                    {
+                        if (previousClip is { } prev)
+                            clip = new Rect(prev.Right, clip.Y, prev.Width, clip.Height);
+                        else if (chars.Count > 1 && chars[1].LayoutRect.Width > 0)
+                            clip = new Rect(Math.Max(0, chars[1].LayoutRect.X - chars[1].LayoutRect.Width), clip.Y, chars[1].LayoutRect.Width, clip.Height);
+                        else
+                            continue;
+                    }
+
+                    // 首尾分条向外再扩一个字宽：外侧没有邻居，外扩不会与相邻分条叠画，
+                    // 用来兜住边缘字形墨水出框被裁切
+                    if (i == 0)
+                        clip = clip.Extend(clip.Width, 0, 0, 0);
+                    if (i == chars.Count - 1)
+                        clip = clip.Extend(0, 0, Math.Max(clip.Width, 4), 0);
+
                     var list = new CanvasCommandList(resourceCreator);
                     // 分条即字符命中测试盒：水平按字符列精确裁开（相邻列互不重叠，光晕不二次叠画）；
                     // 盒高本身就是整行高（含字形上伸/下延），垂直不再外扩，避免换行歌词时
                     // 把相邻子行的字形裁进本条造成双重阴影
                     using (var clSession = list.CreateDrawingSession())
-                    using (clSession.CreateLayer(1f, ch.LayoutRect))
+                    using (clSession.CreateLayer(1f, clip))
                     {
                         clSession.DrawTextLayout(line.PrimaryTextLayout, line.PrimaryPosition, _shadowBrush);
                     }
                     _charSlices.Add(new CharShadowSlice(ch, list, CreateShadowBlur(list)));
+                    previousClip = clip;
                 }
             }
             else
@@ -498,38 +525,50 @@ namespace WinUIMusicPlayer.DesktopLyrics
         }
 
         /// <summary>画当前行的软阴影剪影（须在填充文字之前、与文字同一 offsetY 变换下调用）。
-        /// 画笔颜色每帧同步为当前文字色的反相：换色逐帧生效，无需重建剪影。</summary>
+        /// 画笔颜色每帧同步为当前文字色的反相：换色逐帧生效，无需重建剪影。
+        /// 强度 ≤1 单层绘制；>1 叠加第二遍（整体不透明度上限 1，超出部分靠二次叠加加深光晕）。</summary>
         private void DrawTextShadow(CanvasDrawingSession ds)
         {
-            if (_shadowOpacity <= 0) return;   // 阴影关闭：直接跳过本绘制 pass
+            if (_shadowStrength <= 0) return;   // 阴影关闭：直接跳过本绘制 pass
             var line = _currentLine;
             if (line is null || _shadowBrush is null) return;
-            _shadowBrush.Color = DesktopLyricsShadow.Invert(_color, _shadowOpacity);
+            bool hasSlices = _charSlices is { } slices && slices.Count > 0;
+            if (!hasSlices && _primaryWholeShadowBlur is null && _secondaryShadowBlur is null) return;
 
-            // 主文本逐字符切片：dest 映射与共享库 DrawSingleCharacter 完全一致
-            // （缩放绕字符矩形中心 + 纵向浮动），外扩取块高容纳模糊光晕（同 glow 做法）
-            if (_charSlices is { } slices && slices.Count > 0)
+            float baseAlpha = (float)Math.Min(1.0, _shadowStrength);
+            float extraAlpha = (float)Math.Max(0.0, _shadowStrength - 1.0);
+
+            for (int pass = 0; pass < 2; pass++)
             {
-                foreach (var slice in slices)
+                float alpha = pass == 0 ? baseAlpha : extraAlpha;
+                if (alpha <= 0) break;
+                _shadowBrush.Color = DesktopLyricsShadow.Invert(_color, alpha);
+
+                if (hasSlices)
                 {
-                    var rect = slice.Char.LayoutRect;
-                    var sourceRect = new Rect(
-                        rect.X + line.PrimaryPosition.X,
-                        rect.Y + line.PrimaryPosition.Y,
-                        rect.Width, rect.Height);
-                    var destRect = sourceRect
-                        .Scale(slice.Char.ScaleTransition.Value)
-                        .AddY(slice.Char.FloatTransition.Value);
-                    ds.DrawImage(slice.Blur, destRect.Extend(destRect.Height), sourceRect.Extend(sourceRect.Height));
+                    // 主文本逐字符切片：dest 映射与共享库 DrawSingleCharacter 完全一致
+                    // （缩放绕字符矩形中心 + 纵向浮动），外扩取块高容纳模糊光晕（同 glow 做法）
+                    foreach (var slice in _charSlices!)
+                    {
+                        var rect = slice.Char.LayoutRect;
+                        var sourceRect = new Rect(
+                            rect.X + line.PrimaryPosition.X,
+                            rect.Y + line.PrimaryPosition.Y,
+                            rect.Width, rect.Height);
+                        var destRect = sourceRect
+                            .Scale(slice.Char.ScaleTransition.Value)
+                            .AddY(slice.Char.FloatTransition.Value);
+                        ds.DrawImage(slice.Blur, destRect.Extend(destRect.Height), sourceRect.Extend(sourceRect.Height));
+                    }
                 }
-            }
-            else if (_primaryWholeShadowBlur is { } whole)
-            {
-                ds.DrawImage(whole);
-            }
+                else if (_primaryWholeShadowBlur is { } whole)
+                {
+                    ds.DrawImage(whole);
+                }
 
-            if (_secondaryShadowBlur is { } secondaryBlur)
-                ds.DrawImage(secondaryBlur);
+                if (_secondaryShadowBlur is { } secondaryBlur)
+                    ds.DrawImage(secondaryBlur);
+            }
         }
 
         private void DisposeShadowResources()

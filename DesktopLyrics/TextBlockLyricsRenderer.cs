@@ -48,7 +48,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private SolidColorBrush? _mainBrush;
         private int _fontWeight = 400;
         private bool _showTranslation = true;
-        private double _shadowOpacity = 0.75;   // 0 = 关闭（跳过 mask 维护，Composition 侧不透明度归零不画）
+        // 阴影强度：滑块百分比 / 50，上限 1.0（Composition 不透明度封顶，
+        // 50% 即满强度；50 以上仅 Win2D 逐字侧经二次叠加继续加深）。0 = 关闭
+        private double _shadowOpacity = 1.0;
 
         public TextBlockLyricsRenderer()
         {
@@ -94,7 +96,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _mainBrush = new SolidColorBrush(style.Color);
             _fontWeight = Math.Clamp(style.FontWeight, 100, 900);
             _showTranslation = style.ShowTranslation;
-            _shadowOpacity = Math.Clamp(style.ShadowAmount, 0, 100) / 100.0;
+            _shadowOpacity = Math.Min(1.0, Math.Clamp(style.ShadowAmount, 0, 100) / 50.0);
             ApplyFont();
             ApplyColor();
             UpdateText();
