@@ -56,9 +56,12 @@ namespace WinUIMusicPlayer.DesktopLyrics
         // 阴影强度（0–2，= 滑块百分比 / 50）：内层透明度 = min(1,s)，外层 = clamp(s-1,0,1)；
         // 0 = 关闭（跳过 mask 维护，两层不透明度归零不画）
         private double _shadowStrength = 1.0;
+        // 缓存委托：mask 刷新每次都要 TryEnqueue，方法组转换会每次分配一个新委托
+        private readonly DispatcherQueueHandler _applyMasksHandler;
 
         public TextBlockLyricsRenderer()
         {
+            _applyMasksHandler = ApplyMasks;
             var (mainPanel, mainPair) = BuildStack();
             _mainPair = mainPair;
             _root.Children.Add(mainPanel);
@@ -218,7 +221,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 _transShadowInner is null || _transShadowOuter is null ||
                 _shadowStrength <= 0) return;
             ApplyMasks();
-            _root.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, ApplyMasks);
+            _root.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, _applyMasksHandler);
         }
 
         private void ApplyMasks()

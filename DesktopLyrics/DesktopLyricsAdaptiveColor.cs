@@ -101,6 +101,11 @@ namespace WinUIMusicPlayer.DesktopLyrics
             return TrySampleRing(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top, out luminance);
         }
 
+        /// <summary>复用缓冲（仅 UI 线程 1Hz 定时器调用，单线程无竞争）：像素缓冲 16KB、
+        /// 直方图 1KB，避免每秒 ~65KB 的稳定分配把 Gen0 GC 拖成周期性小停顿。</summary>
+        private static readonly int[] PixelsBuffer = new int[SampleSize * SampleSize];
+        private static readonly int[] HistogramBuffer = new int[256];
+
         /// <summary>
         /// 采样任意屏幕矩形（如歌词文本行换算到屏幕坐标后的边界）外围 36px 环带的
         /// YIQ 亮度中位数（0=纯黑，255=纯白）。环带先裁剪进虚拟屏幕（贴边/跨屏不把
@@ -130,36 +135,17 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     try
                     {
                         SetStretchBltMode(hdcMem, StretchBltColorOnColor);
-                        var histogram = new int[256];
-                        var pixels = new int[SampleSize * SampleSize];
+                        int[] pixels = PixelsBuffer;
+                        int[] histogram = HistogramBuffer;
+                        Array.Clear(histogram);
                         long total = 0;
 
                         // 上下左右四条环带依次整幅拉伸进 64x64 采样位并就地累计（每条环带权重一致）
-                        bool Accumulate(int sx, int sy, int sw, int sh)
-                        {
-                            int cx = Math.Max(sx, vsLeft);
-                            int cy = Math.Max(sy, vsTop);
-                            int right = Math.Min(sx + sw, vsRight);
-                            int bottom = Math.Min(sy + sh, vsBottom);
-                            if (right <= cx || bottom <= cy) return true;   // 整条在虚拟屏外，跳过（不算失败）
-                            if (!StretchBlt(hdcMem, 0, 0, SampleSize, SampleSize, hdcScreen, cx, cy, right - cx, bottom - cy, RasterOpSrcCopy)) return false;
-                            Marshal.Copy(bits, pixels, 0, pixels.Length);
-                            foreach (int pixel in pixels)
-                            {
-                                int r = (pixel >> 16) & 0xFF;
-                                int g = (pixel >> 8) & 0xFF;
-                                int b = pixel & 0xFF;
-                                histogram[(r * 299 + g * 587 + b * 114) / 1000]++;
-                                total++;
-                            }
-                            return true;
-                        }
-
                         bool sampled =
-                            Accumulate(x, y - EdgeThickness, width, EdgeThickness) &&
-                            Accumulate(x, y + height, width, EdgeThickness) &&
-                            Accumulate(x - EdgeThickness, y, EdgeThickness, height) &&
-                            Accumulate(x + width, y, EdgeThickness, height);
+                            AccumulateBandCore(hdcMem, hdcScreen, bits, pixels, histogram, vsLeft, vsTop, vsRight, vsBottom, x, y - EdgeThickness, width, EdgeThickness, ref total) &&
+                            AccumulateBandCore(hdcMem, hdcScreen, bits, pixels, histogram, vsLeft, vsTop, vsRight, vsBottom, x, y + height, width, EdgeThickness, ref total) &&
+                            AccumulateBandCore(hdcMem, hdcScreen, bits, pixels, histogram, vsLeft, vsTop, vsRight, vsBottom, x - EdgeThickness, y, EdgeThickness, height, ref total) &&
+                            AccumulateBandCore(hdcMem, hdcScreen, bits, pixels, histogram, vsLeft, vsTop, vsRight, vsBottom, x + width, y, EdgeThickness, height, ref total);
                         if (!sampled || total == 0) return false;
 
                         // 直方图中位数：少数派像素（文字/图标/角落元素）拉不动它，
@@ -194,6 +180,32 @@ namespace WinUIMusicPlayer.DesktopLyrics
             {
                 ReleaseDC(IntPtr.Zero, hdcScreen);
             }
+        }
+
+        /// <summary>拉取一条环带进 64x64 采样位并就地累计 YIQ 直方图；显式全参数静态方法，
+        /// 零捕获、零分配。整条环带在虚拟屏外时返回 true 跳过（不算失败）。</summary>
+        private static bool AccumulateBandCore(
+            IntPtr hdcMem, IntPtr hdcScreen, IntPtr bits, int[] pixels, int[] histogram,
+            int vsLeft, int vsTop, int vsRight, int vsBottom,
+            int sx, int sy, int sw, int sh, ref long total)
+        {
+            int cx = Math.Max(sx, vsLeft);
+            int cy = Math.Max(sy, vsTop);
+            int right = Math.Min(sx + sw, vsRight);
+            int bottom = Math.Min(sy + sh, vsBottom);
+            if (right <= cx || bottom <= cy) return true;   // 整条在虚拟屏外，跳过（不算失败）
+            if (!StretchBlt(hdcMem, 0, 0, SampleSize, SampleSize, hdcScreen, cx, cy, right - cx, bottom - cy, RasterOpSrcCopy)) return false;
+            Marshal.Copy(bits, pixels, 0, pixels.Length);
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                int pixel = pixels[i];
+                int r = (pixel >> 16) & 0xFF;
+                int g = (pixel >> 8) & 0xFF;
+                int b = pixel & 0xFF;
+                histogram[(r * 299 + g * 587 + b * 114) / 1000]++;
+                total++;
+            }
+            return true;
         }
 
         private static bool TryCreateSampleDib(IntPtr hdcMem, out IntPtr hBitmap, out IntPtr bits)
