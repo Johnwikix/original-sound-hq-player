@@ -1543,6 +1543,21 @@
                                 HorizontalAlignment="Stretch"
                                 ColumnDefinitions="*,Auto">
                                 <TextBlock
+                                    x:Uid="DesktopLyricsCustomColor"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCustomColorEnabled, Mode=TwoWay}" />
+                            </Grid>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
+                                <TextBlock
                                     x:Uid="DesktopLyricsColor"
                                     Grid.Column="0"
                                     VerticalAlignment="Center"
@@ -1552,6 +1567,7 @@
                                     Width="300"
                                     HorizontalAlignment="Stretch"
                                     VerticalAlignment="Center"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCustomColorEnabled, Mode=OneWay}"
                                     SelectedColor="{x:Bind ViewModel.AppViewModel.DesktopLyricsColor, Mode=TwoWay}" />
                             </Grid>
                             <Grid

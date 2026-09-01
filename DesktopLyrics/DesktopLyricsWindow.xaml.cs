@@ -15,6 +15,7 @@ using WinUIEx;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.ViewModel;
+using Windows.UI;
 
 namespace WinUIMusicPlayer.DesktopLyrics
 {
@@ -33,6 +34,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private const int BottomMargin = 60;
         private const double HoverPollingIntervalMs = 50;
         private const double ControlPanelHoverMargin = 6.0;
+        private const double AdaptiveSamplingIntervalMs = 1000;   // 环境取色轮询周期（BetterLyrics 同款 1s）
 
         private IDesktopLyricsRenderer? _renderer;
         private readonly IntPtr _hwnd;
@@ -51,6 +53,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private WindowHelper.POINT _dragStartCursor;
         private PointInt32 _dragStartWindowPos;
         private RectInt32? _panelScreenRectCache;   // 按钮组屏幕矩形缓存（含悬停外扩）；窗口位置/尺寸变化时失效
+        private DispatcherQueueTimer? _adaptiveColorTimer;
+        private Color? _lastAdaptiveTextColor;      // 上次应用的取色结果（相同则跳过重绘）
 
         public DesktopLyricsWindow()
         {
@@ -64,6 +68,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             // 复用 WinUIEx 自带的完全透明背景（与主程序"透明"样式同源）
             SystemBackdrop = new TransparentTintBackdrop();
             ConfigureWindow();
+            UpdateAdaptiveColorMode();
 
             UILyricsBus.Changed += OnUILyricsChanged;
             TimeProgressBus.CurrentPlayingTimeChanged += OnTimeProgressChanged;
@@ -105,8 +110,59 @@ namespace WinUIMusicPlayer.DesktopLyrics
             UpdateControlPanelVisual();
         }
 
-    /// <summary>应用桌面歌词独立样式（初始化时窗口自取 VM.Style，后续经 PropertyChanged 推送）。</summary>
-    public void ApplyStyle(DesktopLyricsStyle style) => _renderer?.SetStyle(style);
+    /// <summary>
+    /// 把有效样式推给渲染器：自定义颜色覆盖开启时用样式原色，
+    /// 否则用环境取色结果（黑/白）覆盖样式颜色（悬浮窗默认跟随背景）。
+    /// </summary>
+    private void ApplyEffectiveStyle()
+    {
+        if (_renderer is null) return;
+        DesktopLyricsStyle style = ViewModel.Style;
+        if (!style.UseCustomColor && _lastAdaptiveTextColor is { } adaptive)
+        {
+            style = style with { Color = adaptive };
+        }
+        _renderer.SetStyle(style);
+    }
+
+    /// <summary>按样式快照的自定义颜色覆盖开关启停环境取色轮询；开关/样式变化时立即采样（或还原）一次。</summary>
+    private void UpdateAdaptiveColorMode()
+    {
+        if (!ViewModel.Style.UseCustomColor)
+        {
+            StartAdaptiveColorTimer();
+            RefreshAdaptiveColor();
+        }
+        else
+        {
+            StopAdaptiveColorTimer();
+            _lastAdaptiveTextColor = null;
+            ApplyEffectiveStyle();
+        }
+    }
+
+    private void StartAdaptiveColorTimer()
+    {
+        if (_adaptiveColorTimer is null)
+        {
+            _adaptiveColorTimer = DispatcherQueue.CreateTimer();
+            _adaptiveColorTimer.Interval = TimeSpan.FromMilliseconds(AdaptiveSamplingIntervalMs);
+            _adaptiveColorTimer.Tick += (_, _) => RefreshAdaptiveColor();
+        }
+        _adaptiveColorTimer.Start();
+    }
+
+    private void StopAdaptiveColorTimer() => _adaptiveColorTimer?.Stop();
+
+    /// <summary>采样窗口周围环境色推导黑/白文字色；与上次结果相同则跳过重绘。</summary>
+    private void RefreshAdaptiveColor()
+    {
+        if (ViewModel.Style.UseCustomColor) return;
+        if (!DesktopLyricsAdaptiveColor.TryGetAdaptiveTextColor(_hwnd, out Color textColor)) return;
+        if (_lastAdaptiveTextColor == textColor) return;
+        _lastAdaptiveTextColor = textColor;
+        ApplyEffectiveStyle();
+    }
 
     /// <summary>
     /// 按逐字效果开关选择/热切换渲染器。切换时旧渲染器销毁（内容从可视树摘除并释放 Win2D 资源），
@@ -123,7 +179,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         }
         _renderer = karaoke ? new CanvasLyricsRenderer() : new TextBlockLyricsRenderer();
         RendererHost.Content = _renderer.Content;
-        _renderer.SetStyle(ViewModel.Style);
+        ApplyEffectiveStyle();
     }
 
         private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -138,7 +194,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     LyricsSyncRequestBus.Request();   // 新渲染器重拉歌词/进度全量快照
                     break;
                 case nameof(DesktopLyricsViewModel.Style):
-                    _renderer?.SetStyle(ViewModel.Style);
+                    UpdateAdaptiveColorMode();
                     break;
             }
         }
@@ -388,6 +444,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             Closed -= OnWindowClosed;
             StopHoverTimer();
+            StopAdaptiveColorTimer();
             ViewModel.PersistBounds();
             _renderer?.Dispose();
             _renderer = null;

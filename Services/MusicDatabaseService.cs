@@ -972,6 +972,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.DesktopLyricsFontSize = settings.DesktopLyricsFontSize;
                 AppSettings.DesktopLyricsFontFamily = settings.DesktopLyricsFontFamily;
                 AppSettings.DesktopLyricsColorRgb = settings.DesktopLyricsColorRgb;
+                AppSettings.IsDesktopLyricsCustomColorEnabled = settings.IsDesktopLyricsCustomColorEnabled;
                 AppSettings.IsDesktopLyricsOutlineEnabled = settings.IsDesktopLyricsOutlineEnabled;
                 AppSettings.IsDesktopLyricsTranslationEnabled = settings.IsDesktopLyricsTranslationEnabled;
                 AppSettings.DesktopLyricsFontWeight = settings.DesktopLyricsFontWeight;
@@ -1001,6 +1002,7 @@ namespace WinUIMusicPlayer.Services
                     (byte)((settings.DesktopLyricsColorRgb >> 8) & 0xFF),
                     (byte)(settings.DesktopLyricsColorRgb & 0xFF));
                 AppViewModel.IsDesktopLyricsOutlineEnabled = settings.IsDesktopLyricsOutlineEnabled;
+                AppViewModel.IsDesktopLyricsCustomColorEnabled = settings.IsDesktopLyricsCustomColorEnabled;
                 AppViewModel.IsDesktopLyricsKaraokeEnabled = settings.IsDesktopLyricsKaraokeEnabled;
                 AppViewModel.IsDesktopLyricsTranslationEnabled = settings.IsDesktopLyricsTranslationEnabled;
                 AppViewModel.IsDesktopLyricsGlowEnabled = settings.IsDesktopLyricsGlowEnabled;
@@ -1193,6 +1195,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.DesktopLyricsFontSize = AppSettings.DesktopLyricsFontSize;
             newSettings.DesktopLyricsFontFamily = AppSettings.DesktopLyricsFontFamily;
             newSettings.DesktopLyricsColorRgb = AppSettings.DesktopLyricsColorRgb;
+            newSettings.IsDesktopLyricsCustomColorEnabled = AppSettings.IsDesktopLyricsCustomColorEnabled;
             newSettings.IsDesktopLyricsOutlineEnabled = AppSettings.IsDesktopLyricsOutlineEnabled;
             newSettings.IsDesktopLyricsTranslationEnabled = AppSettings.IsDesktopLyricsTranslationEnabled;
             newSettings.IsDesktopLyricsGlowEnabled = AppSettings.IsDesktopLyricsGlowEnabled;

@@ -1381,6 +1381,9 @@
   <data name="DesktopLyricsColor.Text" xml:space="preserve">
     <value>Desktop Lyrics Color</value>
   </data>
+  <data name="DesktopLyricsCustomColor.Text" xml:space="preserve">
+    <value>Custom Color Override</value>
+  </data>
   <data name="DesktopLyricsOutline.Text" xml:space="preserve">
     <value>Desktop Lyrics Outline</value>
   </data>

@@ -95,6 +95,7 @@ namespace WinUIMusicPlayer.Model
         public double DesktopLyricsFontSize { get; set; } = 36;
         public string DesktopLyricsFontFamily { get; set; } = "Segoe UI";
         public uint DesktopLyricsColorRgb { get; set; } = 0x00FFFFFFu;
+        public bool IsDesktopLyricsCustomColorEnabled { get; set; } = false;
         public bool IsDesktopLyricsOutlineEnabled { get; set; } = true;
         public bool IsDesktopLyricsTranslationEnabled { get; set; } = true;
         public bool IsDesktopLyricsGlowEnabled { get; set; } = true;

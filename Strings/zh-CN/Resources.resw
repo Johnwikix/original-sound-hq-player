@@ -1380,6 +1380,9 @@
   <data name="DesktopLyricsColor.Text" xml:space="preserve">
     <value>桌面歌词颜色</value>
   </data>
+  <data name="DesktopLyricsCustomColor.Text" xml:space="preserve">
+    <value>自定义颜色覆盖</value>
+  </data>
   <data name="DesktopLyricsOutline.Text" xml:space="preserve">
     <value>桌面歌词描边</value>
   </data>

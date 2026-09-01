@@ -579,6 +579,23 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
 
+        /// <summary>false（默认）= 桌面歌词颜色按悬浮窗周围环境自动取色（黑/白）；true = 用上方自选颜色覆盖自动取色。</summary>
+        public bool IsDesktopLyricsCustomColorEnabled
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    AppSettings.IsDesktopLyricsCustomColorEnabled = value;
+                    if (IsInitialized)
+                    {
+                        ScheduleDesktopLyricsStyleCommit();
+                    }
+                }
+            }
+        } = false;
+
         public bool IsDesktopLyricsOutlineEnabled
         {
             get => field;

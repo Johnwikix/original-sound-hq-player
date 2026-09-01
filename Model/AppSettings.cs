@@ -49,6 +49,8 @@ namespace WinUIMusicPlayer.Model
         public static double DesktopLyricsFontSize { get; set; } = 36;
         public static string DesktopLyricsFontFamily { get; set; } = "Segoe UI";
         public static uint DesktopLyricsColorRgb { get; set; } = 0x00FFFFFFu;
+        /// <summary>false（默认）= 桌面歌词颜色按悬浮窗周围环境自动取黑/白；true = 用户自选颜色覆盖自动取色。</summary>
+        public static bool IsDesktopLyricsCustomColorEnabled { get; set; } = false;
         public static bool IsDesktopLyricsOutlineEnabled { get; set; } = true;
         public static bool IsDesktopLyricsTranslationEnabled { get; set; } = true;
         public static bool IsDesktopLyricsGlowEnabled { get; set; } = true;

@@ -1378,6 +1378,9 @@
   <data name="DesktopLyricsColor.Text" xml:space="preserve">
     <value>Color (letra en el escritorio)</value>
   </data>
+  <data name="DesktopLyricsCustomColor.Text" xml:space="preserve">
+    <value>Usar color personalizado</value>
+  </data>
   <data name="DesktopLyricsOutline.Text" xml:space="preserve">
     <value>Contorno (letra en el escritorio)</value>
   </data>

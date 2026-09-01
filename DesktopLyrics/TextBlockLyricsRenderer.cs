@@ -40,7 +40,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private double _offsetMs;
         private long _lastTotalMs;
         private double _fontSize = 36;
-        private double _transOpacity = 0.6;
+        private const double TransOpacity = 1.0;   // 翻译行实心填充（原 0.6 半透明在透明悬浮窗上被背景透出发虚）
         private FontFamily? _fontFamily;
         private SolidColorBrush? _mainBrush;
         private bool _outline = true;
@@ -137,7 +137,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 TextAlignment = TextAlignment.Center,
                 TextWrapping = TextWrapping.Wrap,
                 FontSize = _fontSize * 0.75,
-                Opacity = _transOpacity,
+                Opacity = TransOpacity,
                 Foreground = isShadow ? new SolidColorBrush(Colors.Black) : (_mainBrush ?? new SolidColorBrush(Colors.White)),
                 Visibility = Visibility.Collapsed,
             };

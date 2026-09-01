@@ -149,6 +149,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             AppSettings.DesktopLyricsLongSyllableThreshold,
             AppSettings.DesktopLyricsGlowAmount,
             AppSettings.DesktopLyricsCharFloatAmount,
-            AppSettings.DesktopLyricsCharScaleAmount);
+            AppSettings.DesktopLyricsCharScaleAmount,
+            AppSettings.IsDesktopLyricsCustomColorEnabled);
     }
 }

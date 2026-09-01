@@ -30,9 +30,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
     public sealed class CanvasLyricsRenderer : IDesktopLyricsRenderer
     {
         private const double SyncThresholdMs = 500;   // 内部时钟与外部观测的硬同步阈值（seek/大跳才触发）
-        private const double UnplayedOpacity = 0.5;   // 未播放部分向黑压暗比例：预混为不透明色。不能用半透明填充——
-                                                      // 半透明色叠在黑描边内半环上会在字形内缘形成多层色阶
-        private const double SecondaryOpacity = 0.6;  // 翻译行透明度（与文本渲染器 _transOpacity 一致）
+        private const double UnplayedOpacity = 0.5;   // 未播放部分与原色的明暗拉离比例：预混为不透明色。不能用半透明填充——
+                                                      // 半透明色叠在黑描边内半环上会在字形内缘形成多层色阶。
+                                                      // 压暗/提亮方向按歌词色亮度定，见 ComputeUnplayedFill
+        private const double SecondaryOpacity = 1.0;  // 翻译行实心填充（原 0.6 半透明在透明悬浮窗上被背景透出发虚）
         private const int TargetFrameRate = 60;
         private const string DefaultFontFamily = "Segoe UI";
 
@@ -270,13 +271,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 if (line.UnplayedStrokeTint != null)
                     line.UnplayedStrokeTint.Color = Colors.Black;  // 黑描边
 
-                // 未播放填充 = 歌词色向黑压暗 UnplayedOpacity 后的不透明预混色：
+                // 未播放填充 = 与歌词色拉开明暗的不透明预混色（亮色向黑压暗/暗色向白提亮）：
                 // 完整盖住描边的内半环，避免半透明填充与描边叠出多层色阶；
-                // 已播放填充保持原色不透明，扫光明暗对比不变
-                var unplayedFill = Color.FromArgb(255,
-                    (byte)Math.Round(_color.R * UnplayedOpacity),
-                    (byte)Math.Round(_color.G * UnplayedOpacity),
-                    (byte)Math.Round(_color.B * UnplayedOpacity));
+                // 已播放填充保持原色不透明。固定向黑压暗在黑字模式下会与已播放同色，扫光消失
+                var unplayedFill = ComputeUnplayedFill();
 
                 // 单行块垂直居中：MeasureAndArrange 自上而下定位，BottomRightPosition.Y 即块高
                 float offsetY = (float)Math.Max(0, (_canvas.Size.Height - line.BottomRightPosition.Y) / 2);
@@ -316,6 +314,17 @@ namespace WinUIMusicPlayer.DesktopLyrics
         }
 
         // ── 行构建与释放 ─────────────────────────────────────────────────────
+
+        /// <summary>未播放填充色：按歌词色亮度（YIQ）选明暗拉离方向——亮色文字向黑压暗、
+        /// 暗色文字（自适应黑字/用户深色）向白提亮，比例 <see cref="UnplayedOpacity"/>，
+        /// 保证任何歌词色下已播放与未播放部分都有可见的扫光明暗差。</summary>
+        private Color ComputeUnplayedFill()
+        {
+            double yiq = ((_color.R * 299) + (_color.G * 587) + (_color.B * 114)) / 1000.0;
+            byte target = yiq >= 128 ? (byte)0 : byte.MaxValue;
+            byte Mix(byte c) => (byte)Math.Round(c + (target - c) * UnplayedOpacity);
+            return Color.FromArgb(255, Mix(_color.R), Mix(_color.G), Mix(_color.B));
+        }
 
         /// <summary>重建当前行的数据与 Win2D 布局资源（切行/样式/尺寸/设备重建时调用）。</summary>
         private void RebuildLine(ICanvasResourceCreator resourceCreator, int index, double width, double height)
