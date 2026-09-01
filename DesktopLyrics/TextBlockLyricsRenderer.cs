@@ -1,5 +1,6 @@
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using Microsoft.UI;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -14,15 +15,22 @@ namespace WinUIMusicPlayer.DesktopLyrics
 {
     /// <summary>
     /// 文本版桌面歌词渲染器：显示当前歌词行（主文本 + 翻译），主色文字。
-    /// 可读性由窗口侧环境自适应取色保证（按背景切黑/白文字色），不再需要描边。
+    /// 文字带 Composition 软阴影（DevWinUI CompositionShadow，DropShadow + 字形 AlphaMask），
+    /// 颜色为文字色反相（见 DesktopLyricsShadow）：混合背景上黑白二选一必有一侧对比度不足，
+    /// 阴影是可读性保底，均匀背景下近乎无感；环境自适应取色仍按背景切黑/白文字色
+    /// （见 DesktopLyricsAdaptiveColor）。
     /// 样式为桌面歌词独立设置（经 <see cref="SetStyle"/> 推送），不跟随主界面歌词设置。
     /// </summary>
     public sealed class TextBlockLyricsRenderer : IDesktopLyricsRenderer
     {
         private readonly Grid _root = new();
         private (TextBlock Main, TextBlock Trans)? _mainPair;
+        // 全限定引用：DevWinUI 命名空间下有同名 LyricLine，不能 using 进来
+        private DevWinUI.CompositionShadow? _mainShadow;
+        private DevWinUI.CompositionShadow? _transShadow;
 
-        // 换行动画：主文本 + 翻译交给同一实例，保证同一帧换内容
+        // 换行动画：阴影包裹层（而非 TextBlock 本身）交给同一实例，
+        // 文字与阴影在同一视觉子树里同步淡入淡出/滑入
         private readonly TextBlockSwitchAnimator _switchAnimator;
 
         // 当前已呈现的文本，用于过滤无变化更新（样式刷新等）避免无谓的闪烁
@@ -48,7 +56,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _root.Children.Add(mainPanel);
 
             _switchAnimator = new TextBlockSwitchAnimator(
-                new TextBlock[] { mainPair.Main, mainPair.Trans })
+                new FrameworkElement[] { _mainShadow!, _transShadow! })
             {
                 // 新行自下而上轻微滑入，与淡入合成换行动效
                 SlideInDistance = 8,
@@ -88,6 +96,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             ApplyFont();
             ApplyColor();
             UpdateText();
+            RefreshShadowMask();   // 字体/字号变化而文本未变时 UpdateText 会早退，mask 需单独刷新
         }
 
         public void SetLyrics(IList<LyricLine>? lyrics)
@@ -121,8 +130,12 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private (StackPanel Panel, (TextBlock Main, TextBlock Trans) Pair) BuildStack()
         {
+            // HorizontalAlignment.Center 让元素宽度贴住文字本身：字形 AlphaMask 与
+            // 阴影 SpriteVisual（按 Content 实际尺寸布置）几何完全重合，杜绝
+            // mask 拉伸/对齐歧义造成的阴影错位（此前翻译行阴影左偏即源于此）
             var main = new TextBlock
             {
+                HorizontalAlignment = HorizontalAlignment.Center,
                 TextAlignment = TextAlignment.Center,
                 TextWrapping = TextWrapping.Wrap,
                 FontSize = _fontSize,
@@ -130,6 +143,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             };
             var trans = new TextBlock
             {
+                HorizontalAlignment = HorizontalAlignment.Center,
                 TextAlignment = TextAlignment.Center,
                 TextWrapping = TextWrapping.Wrap,
                 FontSize = _fontSize * 0.75,
@@ -139,14 +153,51 @@ namespace WinUIMusicPlayer.DesktopLyrics
             };
             var pair = (main, trans);
 
+            // 阴影包裹层：DevWinUI 默认模板为 Grid{阴影Border + Content}，
+            // 影子 SpriteVisual 挂在文字后方的 Border 上，字形 mask 见 RefreshShadowMask
+            _mainShadow = CreateTextShadow(main);
+            _transShadow = CreateTextShadow(trans);
+
+            // 布局尺寸变化（换字/字体/换行）后重取 mask，阴影形状不滞后
+            main.SizeChanged += (_, _) => RefreshShadowMask();
+            trans.SizeChanged += (_, _) => RefreshShadowMask();
+
             var panel = new StackPanel
             {
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            panel.Children.Add(main);
-            panel.Children.Add(trans);
+            panel.Children.Add(_mainShadow);
+            panel.Children.Add(_transShadow);
             return (panel, pair);
+        }
+
+        private static DevWinUI.CompositionShadow CreateTextShadow(TextBlock text)
+        {
+            // 零偏移光晕式阴影：保可读性且不喧宾夺主；颜色随文字反相（见 ApplyColor）
+            return new DevWinUI.CompositionShadow
+            {
+                Content = text,
+                BlurRadius = DesktopLyricsShadow.BlurRadius,
+                ShadowOpacity = DesktopLyricsShadow.Opacity,
+                OffsetX = 0,
+                OffsetY = 0,
+                Color = Colors.Black,
+            };
+        }
+
+        /// <summary>重取两个字形 AlphaMask。文档不保证 GetAlphaMask 返回的 brush 随
+        /// 文本/字体变化自动更新，换字与样式变化后需显式刷新；推到低优先级队列，
+        /// 让新文本先完成一次布局再取几何，避免阴影形状滞后一拍。</summary>
+        private void RefreshShadowMask()
+        {
+            if (_mainShadow is null || _transShadow is null) return;
+            _root.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
+            {
+                if (_mainPair is not { } pair) return;
+                _mainShadow.Mask = pair.Main.GetAlphaMask();
+                _transShadow.Mask = pair.Trans.GetAlphaMask();
+            });
         }
 
         private void ApplyCurrentLine(double effectiveMs)
@@ -186,6 +237,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 pair.Trans.Visibility = transVisible
                     ? Visibility.Visible
                     : Visibility.Collapsed;
+                RefreshShadowMask();
             }, fadeOutFirst);
         }
 
@@ -206,11 +258,14 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void ApplyColor()
         {
-            if (_mainPair is { } pair && _mainBrush is not null)
-            {
-                pair.Main.Foreground = _mainBrush;
-                pair.Trans.Foreground = _mainBrush;
-            }
+            if (_mainPair is not { } pair || _mainBrush is null) return;
+            pair.Main.Foreground = _mainBrush;
+            pair.Trans.Foreground = _mainBrush;
+            // 阴影色跟随文字色反相：自适应黑/白与自定义颜色都成立，SetStyle 即时生效
+            if (_mainShadow is { } mainShadow)
+                mainShadow.Color = DesktopLyricsShadow.Invert(_mainBrush.Color);
+            if (_transShadow is { } transShadow)
+                transShadow.Color = DesktopLyricsShadow.Invert(_mainBrush.Color);
         }
 
         private int FindCurrentLineIndex(double effectiveMs)

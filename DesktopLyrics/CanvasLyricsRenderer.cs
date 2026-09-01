@@ -1,6 +1,8 @@
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
 using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Brushes;
+using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI;
@@ -20,8 +22,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
     /// LyricsAnimator，均零静态总线依赖、全参数注入），绕开 LyricsRenderCoordinator 的整页滚动逻辑；
     /// 样式完全来自 <see cref="DesktopLyricsStyle"/>（不消费主界面 LyricsSettingsBus），
     /// 数据经 <see cref="IDesktopLyricsRenderer"/> 的 Set* 由宿主窗口推送（总线转发零改动）。
-    /// 无描边：可读性由窗口侧环境自适应取色保证（按背景切黑/白文字色），
-    /// 共享库的描边入口（EnsureCaches/MeasureAndArrange 的宽度参数）恒传 0。
+    /// 无描边（共享库描边入口恒传 0）；可读性三重保障：环境自适应取色（按背景切黑/白文字色）+
+    /// 文字色反相的软阴影（本类自建 CanvasCommandList 剪影 + GaussianBlurEffect，零共享库改动）。
     /// 线程模型：CanvasAnimatedControl 的 Update/Draw 在渲染线程回调，Set* 在 UI 线程调用；
     /// 与 LyricsRenderCoordinator 相同，仅依赖字段原子赋值传递状态，不持锁
     /// （Set* 只写字段/标志，Win2D 资源的全部创建与释放都在 Update/Draw 回调内）。
@@ -76,6 +78,14 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private double _floatAmountPx = 5.0;
         private double _scaleFactor = 1.10;
         private bool _disposed;
+
+        // 反相软阴影（渲染线程持有，随行重建创建/释放，见 RebuildLine/DisposeCurrentLine）：
+        // 剪影命令列表记录主文本+翻译的字形，模糊后画在填充文字下层。
+        // 命令列表惰性求值依赖 TextLayout 存活——二者同生命周期（行销毁时一并 Dispose），
+        // 画笔每帧改色（阴影色 = 文字色反相，见 DrawTextShadow），样式换色无需重建
+        private CanvasCommandList? _shadowCommandList;
+        private GaussianBlurEffect? _shadowBlur;
+        private CanvasSolidColorBrush? _shadowBrush;
 
         /// <summary>跨线程文本边界盒：RebuildLine 在渲染线程写入、UI 线程读取。
         /// 用不可变引用的原子赋值传递（Nullable&lt;Rect&gt; 结构体直接跨线程读会有撕裂风险）。</summary>
@@ -286,6 +296,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 var prevTransform = ds.Transform;
                 ds.Transform *= Matrix3x2.CreateTranslation(0, offsetY);
 
+                // 反相软阴影垫底（与文字同一坐标系），其后共享库绘制填充文字
+                DrawTextShadow(ds);
+
                 _lineRenderer.IsPlaying = line.GetIsPlaying(currentTimeMs);
                 _lineRenderer.CurrentProgressMs = currentTimeMs;
                 _lineRenderer.Line = line;
@@ -360,6 +373,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 line.UnplayedPrimaryOpacityTransition.Start(1.0);
                 line.SecondaryOpacityTransition.Start(SecondaryOpacity);
                 _currentLine = line;
+                RebuildShadowResources(resourceCreator);
                 _renderLineList.Add(line);
                 _lineJustRebuilt = true;
             }
@@ -398,6 +412,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void DisposeCurrentLine()
         {
+            DisposeShadowResources();   // 阴影资源与行同生命周期，先于行成员释放（含 _currentLine 为空的早退路径）
             if (_currentLine is null) return;
             _currentLine.DisposeCaches();
             _currentLine.DisposeTextLayout();
@@ -405,6 +420,52 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _currentLine = null;
             _renderLineList.Clear();
             _lastTextBounds = null;   // 行已销毁（切行/无歌词/设备重建），窗口回退窗口环带采样
+        }
+
+        // ── 反相软阴影 ───────────────────────────────────────────────────────
+
+        /// <summary>按当前行的主文本+翻译字形重建阴影剪影（渲染线程，仅行构建时调用）。
+        /// 剪影记录的是布局字形（不跟随逐字浮动/缩放/发光动效），与填充文字的静止位置对齐。</summary>
+        private void RebuildShadowResources(ICanvasResourceCreator resourceCreator)
+        {
+            var line = _currentLine;
+            if (line?.PrimaryTextLayout is null) return;
+
+            _shadowBrush = new CanvasSolidColorBrush(resourceCreator, DesktopLyricsShadow.Invert(_color));
+            _shadowCommandList = new CanvasCommandList(resourceCreator);
+            using (var clSession = _shadowCommandList.CreateDrawingSession())
+            {
+                clSession.DrawTextLayout(line.PrimaryTextLayout, line.PrimaryPosition, _shadowBrush);
+                if (line.SecondaryTextLayout is { } secondary)
+                    clSession.DrawTextLayout(secondary, line.SecondaryPosition, _shadowBrush);
+            }
+            // Soft 边界让模糊在剪影边缘自然衰减，不产生命令列表边界的硬截断
+            _shadowBlur = new GaussianBlurEffect
+            {
+                Source = _shadowCommandList,
+                BlurAmount = DesktopLyricsShadow.BlurSigma,
+                BorderMode = EffectBorderMode.Soft,
+            };
+        }
+
+        /// <summary>画当前行的软阴影剪影（须在填充文字之前、与文字同一 offsetY 变换下调用）。
+        /// 画笔颜色每帧同步为当前文字色的反相：换色逐帧生效，无需重建剪影。</summary>
+        private void DrawTextShadow(CanvasDrawingSession ds)
+        {
+            if (_shadowBlur is null || _shadowBrush is null) return;
+            _shadowBrush.Color = DesktopLyricsShadow.Invert(_color);
+            ds.DrawImage(_shadowBlur);
+        }
+
+        private void DisposeShadowResources()
+        {
+            // 先效果后源再画笔；Win2D Dispose 幂等，设备丢失后重复释放安全
+            _shadowBlur?.Dispose();
+            _shadowBlur = null;
+            _shadowCommandList?.Dispose();
+            _shadowCommandList = null;
+            _shadowBrush?.Dispose();
+            _shadowBrush = null;
         }
 
         /// <summary>二分查找当前行（StartMs &lt;= t 的最后一行；间隙期保持上一行，与文本渲染器行为一致）。</summary>

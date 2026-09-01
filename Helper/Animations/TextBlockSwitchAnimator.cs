@@ -11,16 +11,21 @@ using System.Threading;
 namespace WinUIMusicPlayer.Helper.Animations;
 
 /// <summary>
-/// 通用 TextBlock 文本切换动画组件：Composition 驱动的三段式切换——
+/// 通用文本切换动画组件：Composition 驱动的三段式切换——
 /// 旧文本淡出 → <paramref name="applyText"/> 换内容 → 新文本淡入（可选自下滑入），
 /// 换文本发生在合成器批次完成回调中，前后帧各层内容严格一致，不再生硬瞬换。
 ///
 /// <para>
-/// 用法一（多处同步切换，如描边层 + 主层）：把一组需要同步换字的 TextBlock 交给
-/// 同一实例，回调里一次性写入全部新文本，所有层在同一帧换内容：
+/// 目标是 <see cref="FrameworkElement"/>：既可以是承载文字的 TextBlock 本身，也可以是
+/// 包含文字的包裹层（如套了 CompositionShadow 阴影的容器）——动画作用在包裹层的
+/// 元素视觉上时，其子视觉（阴影 SpriteVisual）会随整棵子树同步淡入淡出/平移。
+///
+/// <para>
+/// 用法一（多处同步切换）：把一组需要同步切换的元素交给同一实例，回调里一次性
+/// 写入全部新文本，所有层在同一帧换内容：
 /// <code>
-/// var animator = new TextBlockSwitchAnimator(mainText, shadowText) { SlideInDistance = 8 };
-/// animator.Switch(() => { mainText.Text = newMain; shadowText.Text = newMain; });
+/// var animator = new TextBlockSwitchAnimator(mainShadow, transShadow) { SlideInDistance = 8 };
+/// animator.Switch(() => { mainText.Text = newMain; transText.Text = newTrans; });
 /// </code></para>
 ///
 /// <para>用法二（单个 TextBlock 速用）：<see cref="SwitchText(TextBlock, string)"/>。</para>
@@ -36,7 +41,7 @@ public sealed class TextBlockSwitchAnimator
 {
     private static readonly ConditionalWeakTable<TextBlock, TextBlockSwitchAnimator> Attached = [];
 
-    private readonly TextBlock[] _targets;
+    private readonly FrameworkElement[] _targets;
     private int _generation;
 
     /// <summary>旧文本退场淡出时长。</summary>
@@ -51,13 +56,13 @@ public sealed class TextBlockSwitchAnimator
     /// <summary>总开关：false 时 <see cref="Switch(Action, bool)"/> 直接落地文本。</summary>
     public bool IsEnabled { get; set; } = true;
 
-    public TextBlockSwitchAnimator(IEnumerable<TextBlock> targets)
+    public TextBlockSwitchAnimator(IEnumerable<FrameworkElement> targets)
     {
         ArgumentNullException.ThrowIfNull(targets);
         _targets = targets.Where(static t => t is not null).Distinct().ToArray();
     }
 
-    public TextBlockSwitchAnimator(params TextBlock[] targets)
+    public TextBlockSwitchAnimator(params FrameworkElement[] targets)
         : this(targets.AsEnumerable())
     {
     }
@@ -144,12 +149,12 @@ public sealed class TextBlockSwitchAnimator
         List<(int, Visual)>? actives = null;
         for (int i = 0; i < _targets.Length; i++)
         {
-            var tb = _targets[i];
-            if (tb is not { IsLoaded: true, Visibility: Visibility.Visible })
+            var target = _targets[i];
+            if (target is not { IsLoaded: true, Visibility: Visibility.Visible })
                 continue;
 
             Visual? visual = null;
-            try { visual = tb.GetElementVisual(); }
+            try { visual = target.GetElementVisual(); }
             catch { }
 
             if (visual is not null)
@@ -174,8 +179,8 @@ public sealed class TextBlockSwitchAnimator
 
         foreach (var (index, visual) in actives)
         {
-            var tb = _targets[index];
-            float restOpacity = (float)tb.Opacity;
+            var target = _targets[index];
+            float restOpacity = (float)target.Opacity;
 
             var compositor = visual.Compositor;
             var ease = compositor.GetCachedFluentEntranceEase();
@@ -189,7 +194,7 @@ public sealed class TextBlockSwitchAnimator
             {
                 // Translation 为布局无关的合成偏移（需启用），淡入终点归零，
                 // 与 XAML RenderTransform（描边层平移）互不干扰。
-                tb.EnableCompositionTranslation();
+                target.EnableCompositionTranslation();
                 var slide = compositor.CreateVector3KeyFrameAnimation()
                     .SetTarget(CompositionFactory.TRANSLATION)
                     .AddKeyFrame(0f, new Vector3(0f, (float)SlideInDistance, 0f))

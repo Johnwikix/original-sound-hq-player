@@ -1717,7 +1717,6 @@ namespace WinUIMusicPlayer.ViewModel
                     // 但保留输出重配事件以维持原有启动初始化行为
                     IsRealDevceChange = false;
                     SelectedDevice = device;
-                    AppSettings.OnOutputSettingsChanged();
                 }
             }
             finally { _isLoadingDevices = false; }
