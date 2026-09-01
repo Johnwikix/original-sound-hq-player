@@ -43,6 +43,8 @@ namespace WinUIMusicPlayer.Services
         private readonly SemaphoreSlim _playStateIoGate = new(1, 1);
         // 桌面歌词窗口状态文件仅同步读写，用 lock 即可
         private readonly object _desktopLyricsStateFileLock = new();
+        // 版本记录文件同一套互斥
+        private readonly SemaphoreSlim _versionRecordIoGate = new(1, 1);
         private SavePlayState _currentPlayState;
         public SavePlayState CurrentPlayState => _currentPlayState;
         // 优化1: 信号量保持4并发，但 _toDelete/_toUpdate 改为方法局部变量，消除共享状态与线程安全隐患
@@ -2052,34 +2054,50 @@ namespace WinUIMusicPlayer.Services
 
         public async Task<string?> GetRecordedVersionAsync()
         {
+            string path = VersionRecordPath;
+            if (!File.Exists(path))
+                return null;
+            await _versionRecordIoGate.WaitAsync();
             try
             {
-                string path = VersionRecordPath;
-                if (!File.Exists(path))
-                    return null;
                 string json = await File.ReadAllTextAsync(path);
                 var record = JsonSerializer.Deserialize(json, VersionJsonContext.Default.VersionRecord);
                 return record?.Version;
+            }
+            catch (JsonException ex)
+            {
+                // 损坏文件留底后按未记录处理：最坏情况只是更新日志弹窗多弹一次
+                _logger.LogError(ex, $"VersionRecord.json 解析失败，备份损坏文件后按未记录继续: {ex.Message}");
+                TryBackupCorruptFile(path);
+                return null;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"GetRecordedVersionAsync 读取版本记录时出错: {ex.Message}");
                 return null;
             }
+            finally
+            {
+                _versionRecordIoGate.Release();
+            }
         }
 
         public async Task SaveCurrentVersionAsync(string version)
         {
+            await _versionRecordIoGate.WaitAsync();
             try
             {
-                string path = VersionRecordPath;
                 var record = new VersionRecord { Version = version };
                 string json = JsonSerializer.Serialize(record, VersionJsonContext.Default.VersionRecord);
-                await File.WriteAllTextAsync(path, json);
+                await File.WriteAllTextAsync(VersionRecordPath, json);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"SaveCurrentVersionAsync 保存版本记录时出错: {ex.Message}");
+            }
+            finally
+            {
+                _versionRecordIoGate.Release();
             }
         }
 
