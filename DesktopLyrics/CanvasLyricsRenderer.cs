@@ -79,13 +79,19 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private double _scaleFactor = 1.10;
         private bool _disposed;
 
-        // 反相软阴影（渲染线程持有，随行重建创建/释放，见 RebuildLine/DisposeCurrentLine）：
-        // 剪影命令列表记录主文本+翻译的字形，模糊后画在填充文字下层。
-        // 命令列表惰性求值依赖 TextLayout 存活——二者同生命周期（行销毁时一并 Dispose），
-        // 画笔每帧改色（阴影色 = 文字色反相，见 DrawTextShadow），样式换色无需重建
-        private CanvasCommandList? _shadowCommandList;
-        private GaussianBlurEffect? _shadowBlur;
+        // 反相软阴影（渲染线程持有，随行重建创建/释放，见 RebuildLine/DisposeCurrentLine）。
+        // 主文本按字符垂直分条记录剪影（CharShadowSlice），绘制时以与共享库填充完全相同的
+        // dest 映射逐字符绘制——阴影跟随字浮/字缩动效；无字符信息时退回整行剪影；
+        // 翻译行无逐字动效，恒为整行剪影。画笔共享一个，每帧改色（阴影色 = 文字色反相），
+        // 换色无需重建。命令列表惰性求值依赖 TextLayout 存活，二者同生命周期
         private CanvasSolidColorBrush? _shadowBrush;
+        private List<CharShadowSlice>? _charSlices;
+        private CanvasCommandList? _primaryWholeShadowList;
+        private GaussianBlurEffect? _primaryWholeShadowBlur;
+        private CanvasCommandList? _secondaryShadowList;
+        private GaussianBlurEffect? _secondaryShadowBlur;
+
+        private sealed record CharShadowSlice(RenderLyricsChar Char, CanvasCommandList List, GaussianBlurEffect Blur);
 
         /// <summary>跨线程文本边界盒：RebuildLine 在渲染线程写入、UI 线程读取。
         /// 用不可变引用的原子赋值传递（Nullable&lt;Rect&gt; 结构体直接跨线程读会有撕裂风险）。</summary>
@@ -424,25 +430,61 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         // ── 反相软阴影 ───────────────────────────────────────────────────────
 
-        /// <summary>按当前行的主文本+翻译字形重建阴影剪影（渲染线程，仅行构建时调用）。
-        /// 剪影记录的是布局字形（不跟随逐字浮动/缩放/发光动效），与填充文字的静止位置对齐。</summary>
+        /// <summary>按当前行字形重建阴影剪影（渲染线程，仅行构建时调用）。主文本按字符
+        /// 垂直分条（在字符布局矩形边界处裁开，相邻字符的光晕互不叠画），模糊后逐字符
+        /// 以与填充一致的映射绘制，阴影跟随字浮/字缩；翻译行无动效，整行一条剪影。</summary>
         private void RebuildShadowResources(ICanvasResourceCreator resourceCreator)
         {
             var line = _currentLine;
             if (line?.PrimaryTextLayout is null) return;
 
             _shadowBrush = new CanvasSolidColorBrush(resourceCreator, DesktopLyricsShadow.Invert(_color));
-            _shadowCommandList = new CanvasCommandList(resourceCreator);
-            using (var clSession = _shadowCommandList.CreateDrawingSession())
+
+            if (line.PrimaryRenderChars is { } chars && chars.Count > 0)
             {
-                clSession.DrawTextLayout(line.PrimaryTextLayout, line.PrimaryPosition, _shadowBrush);
-                if (line.SecondaryTextLayout is { } secondary)
-                    clSession.DrawTextLayout(secondary, line.SecondaryPosition, _shadowBrush);
+                _charSlices = [];
+                foreach (var ch in chars)
+                {
+                    if (ch.LayoutRect.Width <= 0 || ch.LayoutRect.Height <= 0) continue;
+                    var list = new CanvasCommandList(resourceCreator);
+                    // 分条即字符命中测试盒：水平按字符列精确裁开（相邻列互不重叠，光晕不二次叠画）；
+                    // 盒高本身就是整行高（含字形上伸/下延），垂直不再外扩，避免换行歌词时
+                    // 把相邻子行的字形裁进本条造成双重阴影
+                    using (var clSession = list.CreateDrawingSession())
+                    using (clSession.CreateLayer(1f, ch.LayoutRect))
+                    {
+                        clSession.DrawTextLayout(line.PrimaryTextLayout, line.PrimaryPosition, _shadowBrush);
+                    }
+                    _charSlices.Add(new CharShadowSlice(ch, list, CreateShadowBlur(list)));
+                }
             }
-            // Soft 边界让模糊在剪影边缘自然衰减，不产生命令列表边界的硬截断
-            _shadowBlur = new GaussianBlurEffect
+            else
             {
-                Source = _shadowCommandList,
+                _primaryWholeShadowList = new CanvasCommandList(resourceCreator);
+                using (var clSession = _primaryWholeShadowList.CreateDrawingSession())
+                {
+                    clSession.DrawTextLayout(line.PrimaryTextLayout, line.PrimaryPosition, _shadowBrush);
+                }
+                _primaryWholeShadowBlur = CreateShadowBlur(_primaryWholeShadowList);
+            }
+
+            if (line.SecondaryTextLayout is { } secondary)
+            {
+                _secondaryShadowList = new CanvasCommandList(resourceCreator);
+                using (var clSession = _secondaryShadowList.CreateDrawingSession())
+                {
+                    clSession.DrawTextLayout(secondary, line.SecondaryPosition, _shadowBrush);
+                }
+                _secondaryShadowBlur = CreateShadowBlur(_secondaryShadowList);
+            }
+        }
+
+        private GaussianBlurEffect CreateShadowBlur(CanvasCommandList source)
+        {
+            // Soft 边界让模糊在剪影边缘自然衰减，不产生命令列表边界的硬截断
+            return new GaussianBlurEffect
+            {
+                Source = source,
                 BlurAmount = DesktopLyricsShadow.BlurSigma,
                 BorderMode = EffectBorderMode.Soft,
             };
@@ -452,18 +494,58 @@ namespace WinUIMusicPlayer.DesktopLyrics
         /// 画笔颜色每帧同步为当前文字色的反相：换色逐帧生效，无需重建剪影。</summary>
         private void DrawTextShadow(CanvasDrawingSession ds)
         {
-            if (_shadowBlur is null || _shadowBrush is null) return;
+            if (_shadowBrush is null) return;
             _shadowBrush.Color = DesktopLyricsShadow.Invert(_color);
-            ds.DrawImage(_shadowBlur);
+
+            var line = _currentLine;
+            if (line is null) return;
+
+            // 主文本逐字符切片：dest 映射与共享库 DrawSingleCharacter 完全一致
+            // （缩放绕字符矩形中心 + 纵向浮动），外扩取块高容纳模糊光晕（同 glow 做法）
+            if (_charSlices is { } slices && slices.Count > 0)
+            {
+                foreach (var slice in slices)
+                {
+                    var rect = slice.Char.LayoutRect;
+                    var sourceRect = new Rect(
+                        rect.X + line.PrimaryPosition.X,
+                        rect.Y + line.PrimaryPosition.Y,
+                        rect.Width, rect.Height);
+                    var destRect = sourceRect
+                        .Scale(slice.Char.ScaleTransition.Value)
+                        .AddY(slice.Char.FloatTransition.Value);
+                    ds.DrawImage(slice.Blur, destRect.Extend(destRect.Height), sourceRect.Extend(sourceRect.Height));
+                }
+            }
+            else if (_primaryWholeShadowBlur is { } whole)
+            {
+                ds.DrawImage(whole);
+            }
+
+            if (_secondaryShadowBlur is { } secondaryBlur)
+                ds.DrawImage(secondaryBlur);
         }
 
         private void DisposeShadowResources()
         {
             // 先效果后源再画笔；Win2D Dispose 幂等，设备丢失后重复释放安全
-            _shadowBlur?.Dispose();
-            _shadowBlur = null;
-            _shadowCommandList?.Dispose();
-            _shadowCommandList = null;
+            if (_charSlices is { } slices)
+            {
+                foreach (var slice in slices)
+                {
+                    slice.Blur.Dispose();
+                    slice.List.Dispose();
+                }
+            }
+            _charSlices = null;
+            _primaryWholeShadowBlur?.Dispose();
+            _primaryWholeShadowBlur = null;
+            _primaryWholeShadowList?.Dispose();
+            _primaryWholeShadowList = null;
+            _secondaryShadowBlur?.Dispose();
+            _secondaryShadowBlur = null;
+            _secondaryShadowList?.Dispose();
+            _secondaryShadowList = null;
             _shadowBrush?.Dispose();
             _shadowBrush = null;
         }

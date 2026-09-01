@@ -157,6 +157,12 @@ namespace WinUIMusicPlayer.DesktopLyrics
             // 影子 SpriteVisual 挂在文字后方的 Border 上，字形 mask 见 RefreshShadowMask
             _mainShadow = CreateTextShadow(main);
             _transShadow = CreateTextShadow(trans);
+            // 包裹层自身也要贴住内容宽度：SpriteVisual 固定在 Control 原点，而包裹层在
+            // StackPanel 里默认被拉伸到面板宽度（= 较宽的主行宽度），居中的窄翻译行内容
+            // 相对原点偏右，阴影整体左偏 (Control宽-内容宽)/2——翻译行阴影左偏的根因。
+            // DevWinUI 只同步阴影尺寸不同步偏移，按"内容撑满 Control"设计，必须贴住。
+            _mainShadow.HorizontalAlignment = HorizontalAlignment.Center;
+            _transShadow.HorizontalAlignment = HorizontalAlignment.Center;
 
             // 布局尺寸变化（换字/字体/换行）后重取 mask，阴影形状不滞后
             main.SizeChanged += (_, _) => RefreshShadowMask();
