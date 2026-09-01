@@ -35,6 +35,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private const double HoverPollingIntervalMs = 50;
         private const double ControlPanelHoverMargin = 6.0;
         private const double AdaptiveSamplingIntervalMs = 1000;   // 环境取色轮询周期（BetterLyrics 同款 1s）
+        private const double AdaptiveSwitchThreshold = 128;       // 环境 YIQ 亮度中位数阈值：低于视为暗背景（白字）
+        private const double AdaptiveHysteresis = 16;             // 切换滞回带：边界附近的采样抖动不引起黑白来回闪
 
         private IDesktopLyricsRenderer? _renderer;
         private readonly IntPtr _hwnd;
@@ -54,7 +56,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private PointInt32 _dragStartWindowPos;
         private RectInt32? _panelScreenRectCache;   // 按钮组屏幕矩形缓存（含悬停外扩）；窗口位置/尺寸变化时失效
         private DispatcherQueueTimer? _adaptiveColorTimer;
-        private Color? _lastAdaptiveTextColor;      // 上次应用的取色结果（相同则跳过重绘）
+        private bool? _adaptiveIsDarkBackground;    // 上次明暗判定（null=未判定），滞回切换的基准
+        private Color? _lastAdaptiveTextColor;      // 当前应用的取色文字色（判定不变则跳过重绘）
 
         public DesktopLyricsWindow()
         {
@@ -136,6 +139,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         else
         {
             StopAdaptiveColorTimer();
+            _adaptiveIsDarkBackground = null;
             _lastAdaptiveTextColor = null;
             ApplyEffectiveStyle();
         }
@@ -154,13 +158,28 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
     private void StopAdaptiveColorTimer() => _adaptiveColorTimer?.Stop();
 
-    /// <summary>采样窗口周围环境色推导黑/白文字色；与上次结果相同则跳过重绘。</summary>
+    /// <summary>采样窗口周围环境亮度，经滞回判定黑/白文字色；判定不变则跳过重绘。</summary>
     private void RefreshAdaptiveColor()
     {
         if (ViewModel.Style.UseCustomColor) return;
-        if (!DesktopLyricsAdaptiveColor.TryGetAdaptiveTextColor(_hwnd, out Color textColor)) return;
-        if (_lastAdaptiveTextColor == textColor) return;
-        _lastAdaptiveTextColor = textColor;
+        if (!DesktopLyricsAdaptiveColor.TrySampleBackgroundLuminance(_hwnd, out double luminance)) return;
+
+        bool isDark;
+        if (_adaptiveIsDarkBackground is { } previous)
+        {
+            // 滞回：只有明确越过阈值±滞回带才翻转，边界值每秒重采的抖动不切换
+            isDark = previous
+                ? luminance < AdaptiveSwitchThreshold + AdaptiveHysteresis
+                : luminance < AdaptiveSwitchThreshold - AdaptiveHysteresis;
+        }
+        else
+        {
+            isDark = luminance < AdaptiveSwitchThreshold;
+        }
+
+        if (_adaptiveIsDarkBackground == isDark) return;
+        _adaptiveIsDarkBackground = isDark;
+        _lastAdaptiveTextColor = isDark ? Colors.White : Colors.Black;
         ApplyEffectiveStyle();
     }
 

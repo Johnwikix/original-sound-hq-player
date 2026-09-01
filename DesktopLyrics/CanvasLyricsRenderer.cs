@@ -30,10 +30,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
     public sealed class CanvasLyricsRenderer : IDesktopLyricsRenderer
     {
         private const double SyncThresholdMs = 500;   // 内部时钟与外部观测的硬同步阈值（seek/大跳才触发）
-        private const double UnplayedOpacity = 0.5;   // 未播放部分与原色的明暗拉离比例：预混为不透明色。不能用半透明填充——
+        private const double UnplayedOpacity = 0.4;   // 未播放部分与原色的明暗拉离比例：预混为不透明色。不能用半透明填充——
                                                       // 半透明色叠在黑描边内半环上会在字形内缘形成多层色阶。
                                                       // 压暗/提亮方向按歌词色亮度定，见 ComputeUnplayedFill
-        private const double SecondaryOpacity = 1.0;  // 翻译行实心填充（原 0.6 半透明在透明悬浮窗上被背景透出发虚）
+        private const double SecondaryOpacity = 0.6;  // 翻译行透明度（与文本渲染器 TransOpacity 一致）
         private const int TargetFrameRate = 60;
         private const string DefaultFontFamily = "Segoe UI";
 
