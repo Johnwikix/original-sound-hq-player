@@ -16,21 +16,26 @@ namespace WinUIMusicPlayer.DesktopLyrics
     /// <summary>
     /// 文本版桌面歌词渲染器：显示当前歌词行（主文本 + 翻译），主色文字。
     /// 文字带 Composition 软阴影（DevWinUI CompositionShadow，DropShadow + 字形 AlphaMask），
-    /// 颜色为文字色反相（见 DesktopLyricsShadow）：混合背景上黑白二选一必有一侧对比度不足，
-    /// 阴影是可读性保底，均匀背景下近乎无感；环境自适应取色仍按背景切黑/白文字色
-    /// （见 DesktopLyricsAdaptiveColor）。
+    /// 双层嵌套叠加——强度与 Win2D 渲染器同一条曲线（DesktopLyricsShadow.SplitStrength：
+    /// 内层 min(1,s) + 外层 clamp(s-1,0,1)），颜色为文字色反相；混合背景上黑白二选一
+    /// 必有一侧对比度不足，阴影是可读性保底，均匀背景下近乎无感；环境自适应取色仍按
+    /// 背景切黑/白文字色（见 DesktopLyricsAdaptiveColor）。
     /// 样式为桌面歌词独立设置（经 <see cref="SetStyle"/> 推送），不跟随主界面歌词设置。
     /// </summary>
     public sealed class TextBlockLyricsRenderer : IDesktopLyricsRenderer
     {
         private readonly Grid _root = new();
         private (TextBlock Main, TextBlock Trans)? _mainPair;
-        // 全限定引用：DevWinUI 命名空间下有同名 LyricLine，不能 using 进来
-        private DevWinUI.CompositionShadow? _mainShadow;
-        private DevWinUI.CompositionShadow? _transShadow;
+        // 双层阴影包裹（全限定引用：DevWinUI 命名空间下有同名 LyricLine，不能 using 进来）：
+        // 内层贴文字，外层套在内层外（Content = 内层），两者都用文字字形 AlphaMask；
+        // 强度 ≤100%（s ≤ 1）时外层透明度为 0 不参与
+        private DevWinUI.CompositionShadow? _mainShadowInner;
+        private DevWinUI.CompositionShadow? _mainShadowOuter;
+        private DevWinUI.CompositionShadow? _transShadowInner;
+        private DevWinUI.CompositionShadow? _transShadowOuter;
 
-        // 换行动画：阴影包裹层（而非 TextBlock 本身）交给同一实例，
-        // 文字与阴影在同一视觉子树里同步淡入淡出/滑入
+        // 换行动画：最外层阴影包裹（而非 TextBlock 本身）交给同一实例，
+        // 文字与两层阴影在同一视觉子树里同步淡入淡出/滑入
         private readonly TextBlockSwitchAnimator _switchAnimator;
 
         // 当前已呈现的文本，用于过滤无变化更新（样式刷新等）避免无谓的闪烁
@@ -48,9 +53,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private SolidColorBrush? _mainBrush;
         private int _fontWeight = 400;
         private bool _showTranslation = true;
-        // 阴影强度：滑块百分比 / 50，上限 1.0（Composition 不透明度封顶，
-        // 50% 即满强度；50 以上仅 Win2D 逐字侧经二次叠加继续加深）。0 = 关闭
-        private double _shadowOpacity = 1.0;
+        // 阴影强度（0–2，= 滑块百分比 / 50）：内层透明度 = min(1,s)，外层 = clamp(s-1,0,1)；
+        // 0 = 关闭（跳过 mask 维护，两层不透明度归零不画）
+        private double _shadowStrength = 1.0;
 
         public TextBlockLyricsRenderer()
         {
@@ -59,7 +64,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _root.Children.Add(mainPanel);
 
             _switchAnimator = new TextBlockSwitchAnimator(
-                new FrameworkElement[] { _mainShadow!, _transShadow! })
+                new FrameworkElement[] { _mainShadowOuter!, _transShadowOuter! })
             {
                 // 新行自下而上轻微滑入，与淡入合成换行动效
                 SlideInDistance = 8,
@@ -96,7 +101,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _mainBrush = new SolidColorBrush(style.Color);
             _fontWeight = Math.Clamp(style.FontWeight, 100, 900);
             _showTranslation = style.ShowTranslation;
-            _shadowOpacity = Math.Min(1.0, Math.Clamp(style.ShadowAmount, 0, 100) / 50.0);
+            _shadowStrength = Math.Clamp(style.ShadowAmount, 0, 100) / 50.0;
             ApplyFont();
             ApplyColor();
             UpdateText();
@@ -157,16 +162,22 @@ namespace WinUIMusicPlayer.DesktopLyrics
             };
             var pair = (main, trans);
 
-            // 阴影包裹层：DevWinUI 默认模板为 Grid{阴影Border + Content}，
-            // 影子 SpriteVisual 挂在文字后方的 Border 上，字形 mask 见 RefreshShadowMask
-            _mainShadow = CreateTextShadow(main);
-            _transShadow = CreateTextShadow(trans);
-            // 包裹层自身也要贴住内容宽度：SpriteVisual 固定在 Control 原点，而包裹层在
-            // StackPanel 里默认被拉伸到面板宽度（= 较宽的主行宽度），居中的窄翻译行内容
-            // 相对原点偏右，阴影整体左偏 (Control宽-内容宽)/2——翻译行阴影左偏的根因。
-            // DevWinUI 只同步阴影尺寸不同步偏移，按"内容撑满 Control"设计，必须贴住。
-            _mainShadow.HorizontalAlignment = HorizontalAlignment.Center;
-            _transShadow.HorizontalAlignment = HorizontalAlignment.Center;
+            // 双层阴影包裹（内层套文字，外层套内层）：DevWinUI 默认模板为
+            // Grid{阴影Border + Content}，影子 SpriteVisual 挂在文字后方的 Border 上，
+            // 字形 mask 见 RefreshShadowMask；强度 >50% 时外层以剩余强度叠加
+            _mainShadowInner = CreateTextShadow(main);
+            _mainShadowOuter = CreateTextShadow(_mainShadowInner);
+            _transShadowInner = CreateTextShadow(trans);
+            _transShadowOuter = CreateTextShadow(_transShadowInner);
+
+            // 包裹层自身也要贴住内容宽度（内外两层都要）：SpriteVisual 固定在 Control 原点，
+            // 而包裹层在 StackPanel 里默认被拉伸到面板宽度（= 较宽的主行宽度），居中的窄
+            // 翻译行内容相对原点偏右，阴影整体左偏 (Control宽-内容宽)/2——翻译行阴影左偏
+            // 的根因。DevWinUI 只同步阴影尺寸不同步偏移，按"内容撑满 Control"设计，必须贴住。
+            _mainShadowInner.HorizontalAlignment = HorizontalAlignment.Center;
+            _mainShadowOuter.HorizontalAlignment = HorizontalAlignment.Center;
+            _transShadowInner.HorizontalAlignment = HorizontalAlignment.Center;
+            _transShadowOuter.HorizontalAlignment = HorizontalAlignment.Center;
 
             // 布局尺寸变化（换字/字体/换行）后重取 mask，阴影形状不滞后
             main.SizeChanged += (_, _) => RefreshShadowMask();
@@ -177,38 +188,50 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            panel.Children.Add(_mainShadow);
-            panel.Children.Add(_transShadow);
+            panel.Children.Add(_mainShadowOuter);
+            panel.Children.Add(_transShadowOuter);
             return (panel, pair);
         }
 
-        private DevWinUI.CompositionShadow CreateTextShadow(TextBlock text)
+        private static DevWinUI.CompositionShadow CreateTextShadow(FrameworkElement content)
         {
             // 零偏移光晕式阴影：保可读性且不喧宾夺主；颜色/强度随用户设置（见 ApplyColor）
             return new DevWinUI.CompositionShadow
             {
-                Content = text,
+                Content = content,
                 BlurRadius = DesktopLyricsShadow.BlurRadius,
-                ShadowOpacity = _shadowOpacity,
                 OffsetX = 0,
                 OffsetY = 0,
                 Color = Colors.Black,
             };
         }
 
-        /// <summary>重取两个字形 AlphaMask。文档不保证 GetAlphaMask 返回的 brush 随
-        /// 文本/字体变化自动更新，换字与样式变化后需显式刷新；推到低优先级队列，
-        /// 让新文本先完成一次布局再取几何，避免阴影形状滞后一拍。
+        /// <summary>重取四个字形 AlphaMask（主/翻译 × 内/外层）。文档不保证 GetAlphaMask
+        /// 返回的 brush 随文本/字体变化自动更新，换字与样式变化后需显式刷新。
+        /// 外层的 Content 不是 TextBlock，DevWinUI 的自动 mask 对它退化为矩形阴影，
+        /// 必须手动喂与内层相同的字形 mask。先同步兜底一次，再推到低优先级队列——
+        /// 让新文本先完成一次布局后取正确几何，避免阴影形状滞后一拍。
         /// 阴影关闭（强度 0）时跳过 mask 维护。</summary>
         private void RefreshShadowMask()
         {
-            if (_mainShadow is null || _transShadow is null || _shadowOpacity <= 0) return;
-            _root.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
-            {
-                if (_mainPair is not { } pair) return;
-                _mainShadow.Mask = pair.Main.GetAlphaMask();
-                _transShadow.Mask = pair.Trans.GetAlphaMask();
-            });
+            if (_mainShadowInner is null || _mainShadowOuter is null ||
+                _transShadowInner is null || _transShadowOuter is null ||
+                _shadowStrength <= 0) return;
+            ApplyMasks();
+            _root.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, ApplyMasks);
+        }
+
+        private void ApplyMasks()
+        {
+            if (_mainPair is not { } pair ||
+                _mainShadowInner is null || _mainShadowOuter is null ||
+                _transShadowInner is null || _transShadowOuter is null) return;
+            var mainMask = pair.Main.GetAlphaMask();
+            _mainShadowInner.Mask = mainMask;
+            _mainShadowOuter.Mask = mainMask;
+            var transMask = pair.Trans.GetAlphaMask();
+            _transShadowInner.Mask = transMask;
+            _transShadowOuter.Mask = transMask;
         }
 
         private void ApplyCurrentLine(double effectiveMs)
@@ -272,17 +295,28 @@ namespace WinUIMusicPlayer.DesktopLyrics
             if (_mainPair is not { } pair || _mainBrush is null) return;
             pair.Main.Foreground = _mainBrush;
             pair.Trans.Foreground = _mainBrush;
-            // 阴影色跟随文字色反相，强度取用户设置（0 = 关闭）：自适应黑/白与自定义颜色都成立
-            if (_mainShadow is { } mainShadow)
-            {
-                mainShadow.Color = DesktopLyricsShadow.Invert(_mainBrush.Color);
-                mainShadow.ShadowOpacity = _shadowOpacity;
-            }
-            if (_transShadow is { } transShadow)
-            {
-                transShadow.Color = DesktopLyricsShadow.Invert(_mainBrush.Color);
-                transShadow.ShadowOpacity = _shadowOpacity;
-            }
+
+            // 阴影色跟随文字色反相；两层透明度公式与 Win2D 渲染器同源
+            // （DesktopLyricsShadow.SplitStrength）：内层 = min(1,s)，外层 = clamp(s-1,0,1)
+            var color = DesktopLyricsShadow.Invert(_mainBrush.Color);
+            float innerOpacity = (float)Math.Min(1.0, _shadowStrength);
+            float outerOpacity = (float)Math.Clamp(_shadowStrength - 1.0, 0.0, 1.0);
+            ApplyShadowLayer(_mainShadowInner, _mainShadowOuter, color, innerOpacity, outerOpacity);
+            ApplyShadowLayer(_transShadowInner, _transShadowOuter, color, innerOpacity, outerOpacity);
+        }
+
+        private static void ApplyShadowLayer(
+            DevWinUI.CompositionShadow? inner,
+            DevWinUI.CompositionShadow? outer,
+            Windows.UI.Color color,
+            float innerOpacity,
+            float outerOpacity)
+        {
+            if (inner is null || outer is null) return;
+            inner.Color = color;
+            inner.ShadowOpacity = innerOpacity;
+            outer.Color = color;
+            outer.ShadowOpacity = outerOpacity;
         }
 
         private int FindCurrentLineIndex(double effectiveMs)

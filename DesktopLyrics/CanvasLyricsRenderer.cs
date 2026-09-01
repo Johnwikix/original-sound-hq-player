@@ -537,6 +537,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
             float baseAlpha = (float)Math.Min(1.0, _shadowStrength);
             float extraAlpha = (float)Math.Max(0.0, _shadowStrength - 1.0);
+            // 与 TextBlock 渲染器同源公式：DesktopLyricsShadow.SplitStrength(_shadowStrength)
+            // （此处内联避免每帧元组解构），0–50 单层，50–100 第二遍叠加
 
             for (int pass = 0; pass < 2; pass++)
             {
