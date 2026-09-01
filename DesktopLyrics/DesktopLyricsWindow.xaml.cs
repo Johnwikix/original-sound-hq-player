@@ -158,11 +158,25 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
     private void StopAdaptiveColorTimer() => _adaptiveColorTimer?.Stop();
 
-    /// <summary>采样窗口周围环境亮度，经滞回判定黑/白文字色；判定不变则跳过重绘。</summary>
+    /// <summary>采样歌词实际绘制区域（渲染器上报边界，环带 36px）周围的环境亮度，
+    /// 无文本时回退窗口外圈；经滞回判定黑/白文字色，判定不变则跳过重绘。</summary>
     private void RefreshAdaptiveColor()
     {
         if (ViewModel.Style.UseCustomColor) return;
-        if (!DesktopLyricsAdaptiveColor.TrySampleBackgroundLuminance(_hwnd, out double luminance)) return;
+
+        bool sampled;
+        double luminance = 0;
+        if (_renderer?.LastTextBounds is { } bounds && bounds.Width > 1 && bounds.Height > 1)
+        {
+            (int X, int Y, int Width, int Height) screen = MapToScreen(bounds);
+            sampled = screen.Width > 0 &&
+                DesktopLyricsAdaptiveColor.TrySampleRing(screen.X, screen.Y, screen.Width, screen.Height, out luminance);
+        }
+        else
+        {
+            sampled = DesktopLyricsAdaptiveColor.TrySampleBackgroundLuminance(_hwnd, out luminance);
+        }
+        if (!sampled) return;
 
         bool isDark;
         if (_adaptiveIsDarkBackground is { } previous)
@@ -181,6 +195,20 @@ namespace WinUIMusicPlayer.DesktopLyrics
         _adaptiveIsDarkBackground = isDark;
         _lastAdaptiveTextColor = isDark ? Colors.White : Colors.Black;
         ApplyEffectiveStyle();
+    }
+
+    /// <summary>元素坐标（DIP，相对窗口内容根）→ 屏幕物理像素矩形。
+    /// 与 ControlPanel 命中测试同款换算：ClientToScreen 客户区原点 + XamlRoot 光栅化缩放。</summary>
+    private (int X, int Y, int Width, int Height) MapToScreen(Rect elementBounds)
+    {
+        double scale = RootGrid.XamlRoot?.RasterizationScale ?? 1.0;
+        var origin = new WindowHelper.POINT();
+        if (!WindowHelper.ClientToScreen(_hwnd, ref origin)) return default;
+        return (
+            origin.X + (int)Math.Round(elementBounds.X * scale),
+            origin.Y + (int)Math.Round(elementBounds.Y * scale),
+            (int)Math.Ceiling(elementBounds.Width * scale),
+            (int)Math.Ceiling(elementBounds.Height * scale));
     }
 
     /// <summary>

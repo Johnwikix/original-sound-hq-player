@@ -90,16 +90,25 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private static extern bool StretchBlt(IntPtr hdcDest, int xDest, int yDest, int wDest, int hDest, IntPtr hdcSrc, int xSrc, int ySrc, int wSrc, int hSrc, int rop);
 
         /// <summary>
-        /// 采样悬浮窗周围环境的 YIQ 亮度中位数（0=纯黑，255=纯白）。
-        /// 环带先裁剪进虚拟屏幕（贴边/跨屏窗口不把屏外黑像素计进亮度），
-        /// 全部环带都在屏外（如窗口最小化）时返回 false，调用方保持当前颜色。
+        /// 采样窗口外围一圈环境的 YIQ 亮度中位数（0=纯黑，255=纯白）。
+        /// 回退路径：窗口取色优先采样实际文本区域外围（见矩形重载），无文本时用本方法。
+        /// 窗口最小化等取不到矩形时返回 false，调用方保持当前颜色。
         /// </summary>
         public static bool TrySampleBackgroundLuminance(IntPtr hwnd, out double luminance)
         {
             luminance = 0;
             if (hwnd == IntPtr.Zero || !GetWindowRect(hwnd, out RECT rect)) return false;
-            int width = rect.Right - rect.Left;
-            int height = rect.Bottom - rect.Top;
+            return TrySampleRing(rect.Left, rect.Top, rect.Right - rect.Left, rect.Bottom - rect.Top, out luminance);
+        }
+
+        /// <summary>
+        /// 采样任意屏幕矩形（如歌词文本行换算到屏幕坐标后的边界）外围 36px 环带的
+        /// YIQ 亮度中位数（0=纯黑，255=纯白）。环带先裁剪进虚拟屏幕（贴边/跨屏不把
+        /// 屏外黑像素计进亮度），整个环带都在屏外时返回 false，调用方保持当前颜色。
+        /// </summary>
+        public static bool TrySampleRing(int x, int y, int width, int height, out double luminance)
+        {
+            luminance = 0;
             if (width <= 0 || height <= 0) return false;
 
             int vsLeft = GetSystemMetrics(SmXVirtualScreen);
@@ -126,12 +135,12 @@ namespace WinUIMusicPlayer.DesktopLyrics
                         long total = 0;
 
                         // 上下左右四条环带依次整幅拉伸进 64x64 采样位并就地累计（每条环带权重一致）
-                        bool Accumulate(int x, int y, int w, int h)
+                        bool Accumulate(int sx, int sy, int sw, int sh)
                         {
-                            int cx = Math.Max(x, vsLeft);
-                            int cy = Math.Max(y, vsTop);
-                            int right = Math.Min(x + w, vsRight);
-                            int bottom = Math.Min(y + h, vsBottom);
+                            int cx = Math.Max(sx, vsLeft);
+                            int cy = Math.Max(sy, vsTop);
+                            int right = Math.Min(sx + sw, vsRight);
+                            int bottom = Math.Min(sy + sh, vsBottom);
                             if (right <= cx || bottom <= cy) return true;   // 整条在虚拟屏外，跳过（不算失败）
                             if (!StretchBlt(hdcMem, 0, 0, SampleSize, SampleSize, hdcScreen, cx, cy, right - cx, bottom - cy, RasterOpSrcCopy)) return false;
                             Marshal.Copy(bits, pixels, 0, pixels.Length);
@@ -147,10 +156,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
                         }
 
                         bool sampled =
-                            Accumulate(rect.Left, rect.Top - EdgeThickness, width, EdgeThickness) &&
-                            Accumulate(rect.Left, rect.Bottom, width, EdgeThickness) &&
-                            Accumulate(rect.Left - EdgeThickness, rect.Top, EdgeThickness, height) &&
-                            Accumulate(rect.Right, rect.Top, EdgeThickness, height);
+                            Accumulate(x, y - EdgeThickness, width, EdgeThickness) &&
+                            Accumulate(x, y + height, width, EdgeThickness) &&
+                            Accumulate(x - EdgeThickness, y, EdgeThickness, height) &&
+                            Accumulate(x + width, y, EdgeThickness, height);
                         if (!sampled || total == 0) return false;
 
                         // 直方图中位数：少数派像素（文字/图标/角落元素）拉不动它，

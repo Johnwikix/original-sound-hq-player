@@ -1,42 +1,32 @@
 ### 目标
-完全移除桌面歌词的描边体系（渲染、样式、设置、UI、资源），保留自适应取色、自定义颜色覆盖、扫光修复与翻译行 0.6 透明度。不改 External/AnimatedWin2dControls 共享库（主窗口渲染零影响），桌面侧向库传描边宽度 0。
+桌面歌词自适应取色的采样区域从"环绕整个窗口矩形"改为"环绕当前行实际绘制文本边界"：渲染器上报每行文本区域 → 窗口换算屏幕坐标 → 采样其外围 36px 环带。窗口外圈环带降级为无文本时的回退。不改 External/AnimatedWin2dControls 共享库。
 
 ### 改动清单
 
-**1. DesktopLyrics/DesktopLyricsStyle.cs**
-- 删除 `Outline`、`OutlineWidth` 两个参数，更新文档注释。
+**1. 实现前置检查**
+- grep `RenderLyricsLine` 的 `PrimaryPosition`/`SecondaryPosition`/`PrimaryTextLayout`/`SecondaryTextLayout` 可访问性（CanvasLyricsRenderer 已在用 `PrimaryTextLayout`，应为 public）。若 Position 属性非 public，改用其他公开成员合成边界并在实施时调整（不影响其余步骤）。
 
-**2. DesktopLyrics/DesktopLyricsViewModel.cs**
-- `BuildStyleFromSettings()` 删除对应的两个实参。
+**2. DesktopLyrics/IDesktopLyricsRenderer.cs**
+- 接口新增 `Rect? LastTextBounds { get; }`（元素坐标 DIP，主文本+翻译行合并边界；null = 当前无文本）。
 
-**3. DesktopLyrics/TextBlockLyricsRenderer.cs（最大简化）**
-- 删除 `OutlineOffsets`、`_shadowStacks`、`_shadowPairs`、`_outline`、`_outlineWidth`。
-- 构造函数不再创建 4 层阴影栈，只保留唯一主栈；`BuildStack(bool isShadow)` 去掉阴影分支（无 RenderTransform，Foreground = 主色刷）。
-- `_switchAnimator` 改绑唯一栈的 main+trans 两个 TextBlock；`ShadowAndMainPairs` 属性删除，`UpdateText`/`ApplyFont` 改为直接遍历 `_mainPair`。
-- 删除 `ApplyOutlineWidth()` 及 SetStyle 中的 Outline 开关分支与 `_outlineWidth` 赋值；更新类注释。
+**3. DesktopLyrics/CanvasLyricsRenderer.cs**
+- 新增不可变盒子类 + `volatile` 引用字段（RebuildLine 在渲染线程写、UI 线程读，引用赋值原子防撕裂）。
+- `RebuildLine` 在 `MeasureAndArrange` 成功后计算边界：主文本 `PrimaryTextLayout.LayoutBounds` 偏移 `PrimaryPosition`，翻译行同理，`Rect.Union` 合并；**再加上垂直居中偏移 `offsetY = max(0, (height - line.BottomRightPosition.Y) / 2)`**（OnCanvasDraw 绘制时才平移，上报必须补上；width/height 参数 RebuildLine 已有）。
+- `DisposeCurrentLine` 置空盒子；`LastTextBounds` 属性读盒子。
 
-**4. DesktopLyrics/CanvasLyricsRenderer.cs**
-- 删除 `_outline`、`_outlineWidth` 字段及 SetStyle 对应行。
-- `OnCanvasDraw`：`EnsureCaches(sender, 0)`；删除 `strokeWidth` 计算、`IsStrokeEnabled` 赋值、`UnplayedStrokeTint.Color = Colors.Black` 赋值、LRC 整行描边垫底 `DrawImage` 块及相关注释。
-- `RebuildLine`：`MeasureAndArrange(...)` 描边宽度实参传 0。
-- 更新类头注释与 `UnplayedOpacity` 注释（不再引用"黑描边内半环"，保留不透明预混方案）。
-- 库侧 `RenderLyricsLine.EnsureCaches`/`LyricsLayoutManager.MeasureAndArrange`/`LyricsLineRenderer.IsStrokeEnabled` 均不改，仅以 0/默认值调用。
+**4. DesktopLyrics/TextBlockLyricsRenderer.cs**
+- `LastTextBounds` 惰性计算（纯 UI 线程，无需事件钩子）：`_mainPair.Main.TransformToVisual(null).TransformBounds(...)`，翻译行可见则 `Rect.Union`；文本为空或宽高 ≤1 返回 null。
 
-**5. 设置链删除 `IsDesktopLyricsOutlineEnabled` 与 `DesktopLyricsOutlineWidth`**
-- Model/AppSettings.cs（L52、L64 附近两行）
-- Model/SaveSettings.cs（两个属性）
-- ViewModel/AppViewModel.Settings.cs（`IsDesktopLyricsOutlineEnabled` ~L599、`DesktopLyricsOutlineWidth` ~L788 两个属性）
-- Services/MusicDatabaseService.cs：GetSettingsAsync 读取两行（~L976/L979）与 AppViewModel 回填两处、SaveCurrentSettings 写入两行（~L1199/L1209）。
-- 兼容性：旧 Settings.json 中残留的这两个 key 反序列化时被忽略、下次保存自然消失，无需迁移。
+**5. DesktopLyrics/DesktopLyricsAdaptiveColor.cs**
+- 抽出环带采样核心 `SampleRing(x, y, w, h, ...)`（现窗口版四条带逻辑原样保留，只是矩形来源参数化，虚拟屏裁剪照旧）。
+- 新增 `TrySampleBackgroundLuminance(int x, int y, int width, int height, out double luminance)`（任意屏幕矩形的外圈环带）；保留 `IntPtr hwnd` 重作回退路径。
 
-**6. View/SettingsPage.xaml**
-- 删除"桌面歌词描边"ToggleSwitch 行（~L1573-1587）与"描边宽度"Slider 行（~L1811-1841）。
-
-**7. Strings/{zh-CN,en,de,es,ja,ru}/Resources.resw**
-- 删除 `DesktopLyricsOutline` 与 `DesktopLyricsOutlineWidth` 条目。
+**6. DesktopLyrics/DesktopLyricsWindow.xaml.cs**
+- `RefreshAdaptiveColor`：先取 `_renderer?.LastTextBounds`；有效则经 `MapToScreen`（`ClientToScreen` 客户区原点 + `RootGrid.XamlRoot.RasterizationScale`，与现有 ControlPanel 命中测试同款换算）得屏幕矩形 → 调矩形版采样；无文本/换算失败回退现有 `hwnd` 版。滞回判定逻辑不变。
+- 新增私有 `MapToScreen(Rect)`；更新相关注释。
 
 ### 保留不动
-自适应取色采样器与滞回逻辑、`UseCustomColor`/`IsDesktopLyricsCustomColorEnabled` 覆盖开关及其 UI、`ComputeUnplayedFill()`（0.4 提亮/压暗）、翻译行 0.6 透明度、发光等逐字动效、External 库全部文件。
+External 库全部文件、滞回阈值（128±16）、1s 轮询节奏、自定义颜色覆盖、扫光 40% 预混、翻译行 0.6 透明度。
 
 ### 验证
-`dotnet build -c Debug -p:Platform=x64` 零错误；grep 确认 `Outline`/`OutlineWidth`/`IsStrokeEnabled` 在 DesktopLyrics 目录与设置链无残留引用。
+`dotnet build -c Debug -p:Platform=x64` 零错误；人工验证路径：短行/长行/无歌词(间奏)三种状态下采样区域分别贴合文本行、无异常回退日志、黑白切换仍稳定。

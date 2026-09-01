@@ -6,6 +6,7 @@ using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Windows.Foundation;
 using Windows.UI.Text;
 using WinUIMusicPlayer.Helper.Animations;
 
@@ -55,6 +56,27 @@ namespace WinUIMusicPlayer.DesktopLyrics
         }
 
         public UIElement Content => _root;
+
+        /// <summary>最近一次实际绘制的文本区域（元素坐标 DIP）：主文本边界，翻译行可见则合并。
+        /// 纯 UI 线程按需计算（窗口取色轮询时调用），无需布局事件钩子；
+        /// 无文本或尚未完成布局时返回 null（窗口回退窗口环带采样）。</summary>
+        public Rect? LastTextBounds
+        {
+            get
+            {
+                if (_mainPair is not { } pair || _root.XamlRoot is null) return null;
+                if (pair.Main.ActualWidth <= 1 || pair.Main.ActualHeight <= 1) return null;
+                var bounds = pair.Main.TransformToVisual(null)
+                    .TransformBounds(new Rect(0, 0, pair.Main.ActualWidth, pair.Main.ActualHeight));
+                if (pair.Trans.Visibility == Visibility.Visible && pair.Trans.ActualWidth > 1)
+                {
+                    var translation = pair.Trans.TransformToVisual(null)
+                        .TransformBounds(new Rect(0, 0, pair.Trans.ActualWidth, pair.Trans.ActualHeight));
+                    bounds.Union(translation);
+                }
+                return bounds;
+            }
+        }
 
         public void SetStyle(DesktopLyricsStyle style)
         {

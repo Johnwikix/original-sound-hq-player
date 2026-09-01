@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using Windows.Foundation;
 using Windows.UI;
 
 namespace WinUIMusicPlayer.DesktopLyrics
@@ -75,6 +76,19 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private double _floatAmountPx = 5.0;
         private double _scaleFactor = 1.10;
         private bool _disposed;
+
+        /// <summary>跨线程文本边界盒：RebuildLine 在渲染线程写入、UI 线程读取。
+        /// 用不可变引用的原子赋值传递（Nullable&lt;Rect&gt; 结构体直接跨线程读会有撕裂风险）。</summary>
+        private sealed class TextBoundsBox
+        {
+            public TextBoundsBox(Rect value) => Value = value;
+            public Rect Value { get; }
+        }
+
+        private volatile TextBoundsBox? _lastTextBounds;
+
+        /// <summary>最近一次实际绘制的文本区域（元素坐标 DIP，主文本+翻译合并边界）；null = 当前无文本。</summary>
+        public Rect? LastTextBounds => _lastTextBounds?.Value;
 
         public CanvasLyricsRenderer()
         {
@@ -341,6 +355,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     height,
                     0,   // 描边宽度恒 0（无描边）
                     _fontWeight);
+                ReportTextBounds(line, height);
                 line.PlayedPrimaryOpacityTransition.Start(1.0);
                 line.UnplayedPrimaryOpacityTransition.Start(1.0);
                 line.SecondaryOpacityTransition.Start(SecondaryOpacity);
@@ -355,6 +370,32 @@ namespace WinUIMusicPlayer.DesktopLyrics
             }
         }
 
+        /// <summary>上报当前行实际绘制边界（元素坐标 DIP，主文本+翻译合并）：
+        /// 布局边界 + 布局内位置偏移，再补上垂直居中平移——OnCanvasDraw 绘制时才加
+        /// offsetY（(画布高-块高)/2，见 OnCanvasDraw），此处用同样的公式补偿，
+        /// 窗口据此把环境取色采样收窄到歌词实际所在的背景环带。</summary>
+        private void ReportTextBounds(RenderLyricsLine line, double canvasHeight)
+        {
+            double offsetY = Math.Max(0, (canvasHeight - line.BottomRightPosition.Y) / 2);
+            bool hasBounds = false;
+            Rect bounds = default;
+            if (line.PrimaryTextLayout is { } primary)
+            {
+                var b = primary.LayoutBounds;
+                bounds = new Rect(b.X + line.PrimaryPosition.X, b.Y + line.PrimaryPosition.Y + offsetY, b.Width, b.Height);
+                hasBounds = true;
+            }
+            if (line.SecondaryTextLayout is { } secondary)
+            {
+                var b = secondary.LayoutBounds;
+                var translation = new Rect(b.X + line.SecondaryPosition.X, b.Y + line.SecondaryPosition.Y + offsetY, b.Width, b.Height);
+                if (hasBounds) bounds.Union(translation);
+                else bounds = translation;
+                hasBounds = true;
+            }
+            _lastTextBounds = hasBounds ? new TextBoundsBox(bounds) : null;
+        }
+
         private void DisposeCurrentLine()
         {
             if (_currentLine is null) return;
@@ -363,6 +404,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _currentLine.DisposeTextGeometry();
             _currentLine = null;
             _renderLineList.Clear();
+            _lastTextBounds = null;   // 行已销毁（切行/无歌词/设备重建），窗口回退窗口环带采样
         }
 
         /// <summary>二分查找当前行（StartMs &lt;= t 的最后一行；间隙期保持上一行，与文本渲染器行为一致）。</summary>
