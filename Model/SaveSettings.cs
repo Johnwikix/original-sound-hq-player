@@ -75,7 +75,6 @@ namespace WinUIMusicPlayer.Model
         public EasingType ScrollEasingType { get; set; } = EasingType.Sine;
         [JsonConverter(typeof(JsonStringEnumConverter<EaseMode>))]
         public EaseMode ScrollEasingMode { get; set; } = EaseMode.Continuous;
-        public bool IsLyricsMigrated { get; set; } = false;
         public List<string> PlayOrPauseShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "P" };
         public List<string> NextSongShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "Right" };
         public List<string> PreviousSongShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "Left" };

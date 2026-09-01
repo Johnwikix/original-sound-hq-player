@@ -110,6 +110,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             try
             {
+                // 启动水合期间 GetSettingsAsync 回填开关会走到这里，此时全量落盘会把
+                // 尚未加载完的设置写成默认值，故初始化完成前只更新内存不写盘
+                if (!App.Services.GetRequiredService<ViewModel.AppViewModel>().IsInitialized) return;
                 _ = App.Services.GetRequiredService<MusicDatabaseService>().SaveSettingAsync();
             }
             catch

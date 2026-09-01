@@ -1702,12 +1702,22 @@ namespace WinUIMusicPlayer.ViewModel
                 var device = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == AppSettings.DeviceName && d.OutputMode == AppSettings.OutputMode);
                 if (device is null)
                 {
-                    SelectedDevice = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == "DefaultDevice" && d.OutputMode == "DirectSound");
+                    // 枚举不到已保存设备（未上电/驱动未就绪等瞬时原因）时只回退内存状态到默认设备，
+                    // 不触发落盘，避免把用户保存的输出设备设置永久重置（下次启动设备在位时自动恢复）
+                    AppSettings.OutputMode = "DirectSound";
                     AppSettings.BassOutputDeviceId = -1;
+                    AppSettings.DeviceName = "DefaultDevice";
+                    IsRealDevceChange = false;
+                    SelectedDevice = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == "DefaultDevice" && d.OutputMode == "DirectSound");
+                    AppSettings.OnOutputSettingsChanged();
                 }
                 else
                 {
+                    // 启动/刷新枚举时回选已保存设备不算真实切换：跳过落盘（避免多余全量写盘），
+                    // 但保留输出重配事件以维持原有启动初始化行为
+                    IsRealDevceChange = false;
                     SelectedDevice = device;
+                    AppSettings.OnOutputSettingsChanged();
                 }
             }
             finally { _isLoadingDevices = false; }

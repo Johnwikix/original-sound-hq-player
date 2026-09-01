@@ -37,6 +37,12 @@ namespace WinUIMusicPlayer.Services
         private readonly AddFolderService addFolderService = new();
         private SaveSettings _currentSettings;
         public SaveSettings CurrentSettings => _currentSettings;
+        // 设置文件读写互斥：写不并发（避免 IOException 丢更新），读不撞写（避免读到半截 JSON）
+        private readonly SemaphoreSlim _settingsIoGate = new(1, 1);
+        // 播放状态文件同一套互斥（同步读写路径用 Wait() 阻塞进入，临界区仅一次小文件 IO）
+        private readonly SemaphoreSlim _playStateIoGate = new(1, 1);
+        // 桌面歌词窗口状态文件仅同步读写，用 lock 即可
+        private readonly object _desktopLyricsStateFileLock = new();
         private SavePlayState _currentPlayState;
         public SavePlayState CurrentPlayState => _currentPlayState;
         // 优化1: 信号量保持4并发，但 _toDelete/_toUpdate 改为方法局部变量，消除共享状态与线程安全隐患
@@ -76,7 +82,6 @@ namespace WinUIMusicPlayer.Services
                 }
             }
             AppViewModel = App.Services.GetRequiredService<AppViewModel>();
-            await MigrateLyricsAsync();
         }
 
         private void InitalizeDbPath()
@@ -168,32 +173,44 @@ namespace WinUIMusicPlayer.Services
 
         public SaveDesktopLyricsState LoadDesktopLyricsState()
         {
-            try
+            lock (_desktopLyricsStateFileLock)
             {
                 string path = GetDesktopLyricsStateFilePath();
                 if (!File.Exists(path))
                 {
                     return new SaveDesktopLyricsState();
                 }
-                return JsonSerializer.Deserialize(File.ReadAllText(path), DesktopLyricsStateJsonContext.Default.SaveDesktopLyricsState) ?? new SaveDesktopLyricsState();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"LoadDesktopLyricsState 读取桌面歌词窗口状态失败: {ex.Message}");
-                return new SaveDesktopLyricsState();
+                try
+                {
+                    return JsonSerializer.Deserialize(File.ReadAllText(path), DesktopLyricsStateJsonContext.Default.SaveDesktopLyricsState) ?? new SaveDesktopLyricsState();
+                }
+                catch (JsonException ex)
+                {
+                    // 损坏文件留底后按默认值继续，避免之后一次写入把事故固化成永久丢失
+                    _logger.LogError(ex, $"DesktopLyricsState.json 解析失败，备份损坏文件后按默认值继续: {ex.Message}");
+                    TryBackupCorruptFile(path);
+                    return new SaveDesktopLyricsState();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"LoadDesktopLyricsState 读取桌面歌词窗口状态失败: {ex.Message}");
+                    return new SaveDesktopLyricsState();
+                }
             }
         }
 
         public void SaveDesktopLyricsState(SaveDesktopLyricsState state)
         {
-            try
+            lock (_desktopLyricsStateFileLock)
             {
-                string path = GetDesktopLyricsStateFilePath();
-                File.WriteAllText(path, JsonSerializer.Serialize(state, DesktopLyricsStateJsonContext.Default.SaveDesktopLyricsState));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"SaveDesktopLyricsState 写入桌面歌词窗口状态失败: {ex.Message}");
+                try
+                {
+                    File.WriteAllText(GetDesktopLyricsStateFilePath(), JsonSerializer.Serialize(state, DesktopLyricsStateJsonContext.Default.SaveDesktopLyricsState));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"SaveDesktopLyricsState 写入桌面歌词窗口状态失败: {ex.Message}");
+                }
             }
         }
 
@@ -358,42 +375,6 @@ namespace WinUIMusicPlayer.Services
         private class TableColumnInfo
         {
             public string Name { get; set; }
-        }
-
-        private async Task MigrateLyricsAsync()
-        {
-            var settings = await GetSettings();
-            if (settings.IsLyricsMigrated)
-                return;
-
-            var rowCount = await _dbConnection.ExecuteScalarAsync<int>(
-                "SELECT COUNT(*) FROM MusicLyrics LIMIT 1");
-            if (rowCount > 0)
-            {
-                settings.IsLyricsMigrated = true;
-                await UpdateSettings(settings);
-                return;
-            }
-
-            try
-            {
-                var lyricsColumnCount = await _dbConnection.ExecuteScalarAsync<int>(
-                    "SELECT COUNT(*) FROM pragma_table_info('Music') WHERE name IN ('Lyrics', 'TranslatedLyrics', 'Krc', 'TKrc')");
-
-                if (lyricsColumnCount > 0)
-                {
-                    await _dbConnection.ExecuteAsync(
-                        "INSERT INTO MusicLyrics (MusicId, Lyrics, TranslatedLyrics, Krc, TKrc) " +
-                        "SELECT Id, Lyrics, TranslatedLyrics, Krc, TKrc FROM Music " +
-                        "WHERE Lyrics IS NOT NULL OR TranslatedLyrics IS NOT NULL " +
-                        "OR Krc IS NOT NULL OR TKrc IS NOT NULL");
-                }
-            }
-            finally
-            {
-                settings.IsLyricsMigrated = true;
-                await UpdateSettings(settings);
-            }
         }
 
         public async Task<(string? lyrics, string? transLrc, string? krc, string? tKrc)> GetLyricsAsync(int musicId)
@@ -648,23 +629,48 @@ namespace WinUIMusicPlayer.Services
 
         public async Task<SaveSettings> GetSettings()
         {
+            string path = SettingsPath;
+            if (!File.Exists(path))
+            {
+                return new SaveSettings();
+            }
+            await _settingsIoGate.WaitAsync();
             try
             {
-                string path = SettingsPath;
-                if (!File.Exists(path))
-                {
-                    var defaultSettings = new SaveSettings();
-                    await WriteSettingsToJson(defaultSettings);
-                    return defaultSettings;
-                }
                 string json = await File.ReadAllTextAsync(path);
                 return JsonSerializer.Deserialize(json, SettingsJsonContext.Default.SaveSettings)
                        ?? new SaveSettings();
             }
+            catch (JsonException ex)
+            {
+                // 文件损坏：把坏文件改名留底后按默认值继续，避免之后一次全量保存把事故固化成永久丢失
+                _logger.LogError(ex, $"Settings.json 解析失败，备份损坏文件后按默认值继续: {ex.Message}");
+                TryBackupCorruptFile(path);
+                return new SaveSettings();
+            }
             catch (Exception ex)
             {
+                // 文件被占用等瞬时 IO 错误：按默认值继续，但不删不动原文件
                 _logger.LogError(ex, ex.Message, ex.StackTrace);
                 return new SaveSettings();
+            }
+            finally
+            {
+                _settingsIoGate.Release();
+            }
+        }
+
+        private void TryBackupCorruptFile(string path)
+        {
+            try
+            {
+                string backupPath = $"{path}.corrupt-{DateTime.Now:yyyyMMdd-HHmmss}.bak";
+                File.Move(path, backupPath);
+                _logger.LogInformation($"损坏的 JSON 文件已备份为: {backupPath}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"备份损坏的 JSON 文件失败: {ex.Message}");
             }
         }
 
@@ -680,48 +686,69 @@ namespace WinUIMusicPlayer.Services
 
         private async Task WriteSettingsToJson(SaveSettings settings)
         {
+            await _settingsIoGate.WaitAsync();
             try
             {
-                string path = SettingsPath;
                 string json = JsonSerializer.Serialize(settings, SettingsJsonContext.Default.SaveSettings);
-                await File.WriteAllTextAsync(path, json);
+                await File.WriteAllTextAsync(SettingsPath, json);
+                _currentSettings = settings;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"WriteSettingsToJson 写入设置文件时出错: {ex.Message}");
             }
+            finally
+            {
+                _settingsIoGate.Release();
+            }
         }
 
         public async Task<SavePlayState> GetPlayState()
         {
+            string path = PlayStatePath;
+            if (!File.Exists(path))
+            {
+                return null;
+            }
+            await _playStateIoGate.WaitAsync();
             try
             {
-                string path = PlayStatePath;
-                if (!File.Exists(path))
-                {
-                    return null;
-                }
                 string json = await File.ReadAllTextAsync(path);
                 return JsonSerializer.Deserialize(json, PlayStateJsonContext.Default.SavePlayState);
+            }
+            catch (JsonException ex)
+            {
+                // 损坏文件留底后按无状态继续，避免之后一次写入把事故固化成永久丢失
+                _logger.LogError(ex, $"PlayState.json 解析失败，备份损坏文件后按空状态继续: {ex.Message}");
+                TryBackupCorruptFile(path);
+                return null;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, ex.Message, ex.StackTrace);
                 return null;
             }
+            finally
+            {
+                _playStateIoGate.Release();
+            }
         }
 
         private async Task WritePlayStateToJson(SavePlayState state)
         {
+            await _playStateIoGate.WaitAsync();
             try
             {
-                string path = PlayStatePath;
                 string json = JsonSerializer.Serialize(state, PlayStateJsonContext.Default.SavePlayState);
-                await File.WriteAllTextAsync(path, json);
+                await File.WriteAllTextAsync(PlayStatePath, json);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"WritePlayStateToJson 写入播放状态文件时出错: {ex.Message}");
+            }
+            finally
+            {
+                _playStateIoGate.Release();
             }
         }
 
@@ -908,21 +935,33 @@ namespace WinUIMusicPlayer.Services
 
         public void LoadWindowState()
         {
+            string path = PlayStatePath;
+            if (!File.Exists(path))
+            {
+                _currentPlayState = new SavePlayState();
+                return;
+            }
+            _playStateIoGate.Wait();
             try
             {
-                if (!File.Exists(PlayStatePath))
-                {
-                    _currentPlayState = new SavePlayState();
-                    return;
-                }
-                string json = File.ReadAllText(PlayStatePath);
+                string json = File.ReadAllText(path);
                 _currentPlayState = JsonSerializer.Deserialize(json, PlayStateJsonContext.Default.SavePlayState)
                     ?? new SavePlayState();
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogError(ex, $"PlayState.json 解析失败，备份损坏文件后按空状态继续: {ex.Message}");
+                TryBackupCorruptFile(path);
+                _currentPlayState = new SavePlayState();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"LoadWindowState 读取播放状态文件时出错: {ex.Message}");
                 _currentPlayState = new SavePlayState();
+            }
+            finally
+            {
+                _playStateIoGate.Release();
             }
         }
 
@@ -960,6 +999,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.OutputMode = settings.OutputMode;
                 AppSettings.DeviceName = settings.DeviceFriendlyName;
                 AppSettings.BassOutputDeviceId = settings.BassOutputDeviceId;
+                AppSettings.BassASIODeviceId = settings.BassASIODeviceId;
                 AppViewModel.DefaultEntryComboBoxTag = settings.DefaultEntry;
                 AppViewModel.DefaultPlayListComboBoxTag = settings.DefaultPlayList;
                 AppViewModel.Latency = settings.Latency;
@@ -991,7 +1031,10 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.AppWidth = settings.AppWidth;
                 AppViewModel.AppHeight = settings.AppHeight;
                 AppViewModel.FontFamilyList = new ObservableCollection<FontInfo>(ToolUtils.GetSystemFontsInternal());
-                AppViewModel.FontFamily = AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(new FontFamily(settings.GlobalFont).Source));
+                AppViewModel.FontFamily = AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(new FontFamily(settings.GlobalFont).Source))
+                    // 找不到已保存字体（被卸载/名称不匹配）时必须兜底：FontFamily 为 null 会让
+                    // SaveCurrentSettings 取 GlobalFont 时抛 NRE，导致整个会话所有保存静默失败
+                    ?? AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault();
                 AppViewModel.DesktopLyricsFontSize = settings.DesktopLyricsFontSize;
                 AppViewModel.DesktopLyricsFontFamily = AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(new FontFamily(settings.DesktopLyricsFontFamily).Source))
                     ?? AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault();
@@ -1087,8 +1130,18 @@ namespace WinUIMusicPlayer.Services
 
         public async Task SaveSettingAsync()
         {
-            SaveSettings newSettings = SaveCurrentSettings(new SaveSettings());
-            await WriteSettingsToJson(newSettings);
+            try
+            {
+                // 以最后一次已知的磁盘状态为基底合并写盘：未被 SaveCurrentSettings 覆盖的字段
+                // 不会被默认值冲掉；快照构建的异常也不再静默吞掉（此前 fire-and-forget 会丢掉整次保存）。
+                SaveSettings merged = _currentSettings ?? await GetSettings();
+                SaveCurrentSettings(merged);
+                await WriteSettingsToJson(merged);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"SaveSettingAsync 保存设置失败: {ex.Message}");
+            }
         }
 
         public async Task SaveEqualizerSettingAsync()
@@ -1119,6 +1172,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.OutputMode = AppSettings.OutputMode;
             newSettings.DeviceFriendlyName = AppSettings.DeviceName;
             newSettings.BassOutputDeviceId = AppSettings.BassOutputDeviceId;
+            newSettings.BassASIODeviceId = AppSettings.BassASIODeviceId;
             newSettings.Latency = AppViewModel.Latency;
             newSettings.DefaultEntry = AppViewModel.DefaultEntryComboBoxTag;
             newSettings.DefaultPlayList = AppViewModel.DefaultPlayListComboBoxTag;
@@ -1260,9 +1314,7 @@ namespace WinUIMusicPlayer.Services
                 var musicIds = string.Join(',', currentPlayingList.AsValueEnumerable().Select(m => m.Id).ToArray());
                 await _dbConnection.InsertAsync(new LastPlayListState { PlayListMusicIds = musicIds }).ConfigureAwait(false);
 
-                string path = PlayStatePath;
-                string json = JsonSerializer.Serialize(playState, PlayStateJsonContext.Default.SavePlayState);
-                await File.WriteAllTextAsync(path, json).ConfigureAwait(false);
+                await WritePlayStateToJson(playState);
                 _currentPlayState = playState;
             }
             catch (Exception ex)
@@ -1274,15 +1326,19 @@ namespace WinUIMusicPlayer.Services
         public void WritePlayStateJsonSync()
         {
             if (_currentPlayState == null) return;
+            _playStateIoGate.Wait();
             try
             {
-                string path = PlayStatePath;
                 string json = JsonSerializer.Serialize(_currentPlayState, PlayStateJsonContext.Default.SavePlayState);
-                File.WriteAllText(path, json);
+                File.WriteAllText(PlayStatePath, json);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"WritePlayStateJsonSync 写入播放状态 JSON 时出错: {ex.Message}");
+            }
+            finally
+            {
+                _playStateIoGate.Release();
             }
         }
 
