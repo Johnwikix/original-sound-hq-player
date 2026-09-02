@@ -1547,43 +1547,22 @@
                                     Grid.Column="0"
                                     VerticalAlignment="Center"
                                     FontSize="14" />
-                                <ToggleSwitch
-                                    Grid.Column="1"
-                                    MinWidth="0"
-                                    IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCustomColorEnabled, Mode=TwoWay}" />
-                            </Grid>
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch"
-                                ColumnDefinitions="*,Auto">
-                                <TextBlock
-                                    x:Uid="DesktopLyricsColor"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <controls:ColorPickerButton
+                                <Grid
                                     Grid.Column="1"
                                     Width="300"
-                                    HorizontalAlignment="Stretch"
-                                    VerticalAlignment="Center"
-                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCustomColorEnabled, Mode=OneWay}"
-                                    SelectedColor="{x:Bind ViewModel.AppViewModel.DesktopLyricsColor, Mode=TwoWay}" />
-                            </Grid>
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch"
-                                ColumnDefinitions="*,Auto">
-                                <TextBlock
-                                    x:Uid="DesktopLyricsTranslation"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <ToggleSwitch
-                                    Grid.Column="1"
-                                    MinWidth="0"
-                                    IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsTranslationEnabled, Mode=TwoWay}" />
+                                    ColumnDefinitions="Auto,*">
+                                    <ToggleSwitch
+                                        Grid.Column="0"
+                                        MinWidth="0"
+                                        Margin="0,0,10,0"
+                                        IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCustomColorEnabled, Mode=TwoWay}" />
+                                    <controls:ColorPickerButton
+                                        Grid.Column="1"
+                                        HorizontalAlignment="Stretch"
+                                        VerticalAlignment="Center"
+                                        IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCustomColorEnabled, Mode=OneWay}"
+                                        SelectedColor="{x:Bind ViewModel.AppViewModel.DesktopLyricsColor, Mode=TwoWay}" />
+                                </Grid>
                             </Grid>
                             <Grid
                                 MinHeight="52"
@@ -1606,6 +1585,21 @@
                                 HorizontalAlignment="Stretch"
                                 ColumnDefinitions="*,Auto">
                                 <TextBlock
+                                    x:Uid="DesktopLyricsTranslation"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsTranslationEnabled, Mode=TwoWay}" />
+                            </Grid>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
+                                <TextBlock
                                     x:Uid="DesktopLyricsGlow"
                                     Grid.Column="0"
                                     VerticalAlignment="Center"
@@ -1615,6 +1609,68 @@
                                     MinWidth="0"
                                     IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}"
                                     IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsGlowEnabled, Mode=TwoWay}" />
+                            </Grid>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
+                                <TextBlock
+                                    x:Uid="DesktopLyricsCharFloat"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCharFloatEnabled, Mode=TwoWay}" />
+                            </Grid>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
+                                <TextBlock
+                                    x:Uid="DesktopLyricsCharScale"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <ToggleSwitch
+                                    Grid.Column="1"
+                                    MinWidth="0"
+                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCharScaleEnabled, Mode=TwoWay}" />
+                            </Grid>
+                            <Grid
+                                MinHeight="52"
+                                Padding="58,8,44,8"
+                                HorizontalAlignment="Stretch"
+                                ColumnDefinitions="*,Auto">
+                                <TextBlock
+                                    x:Uid="DesktopLyricsShadowAmount"
+                                    Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    FontSize="14" />
+                                <Grid
+                                    Grid.Column="1"
+                                    Width="300"
+                                    ColumnDefinitions="100,*">
+                                    <TextBlock
+                                        Grid.Column="0"
+                                        Margin="5,0"
+                                        VerticalAlignment="Center"
+                                        Text="{x:Bind tool:BindUtils.FormatF0(ViewModel.AppViewModel.DesktopLyricsShadowAmount), Mode=OneWay}" />
+                                    <Slider
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        Maximum="100"
+                                        Minimum="0"
+                                        SnapsTo="Ticks"
+                                        TickFrequency="5"
+                                        TickPlacement="Outside"
+                                        Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsShadowAmount, Mode=TwoWay}" />
+                                </Grid>
                             </Grid>
                             <Grid
                                 MinHeight="52"
@@ -1653,22 +1709,6 @@
                                 HorizontalAlignment="Stretch"
                                 ColumnDefinitions="*,Auto">
                                 <TextBlock
-                                    x:Uid="DesktopLyricsCharFloat"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <ToggleSwitch
-                                    Grid.Column="1"
-                                    MinWidth="0"
-                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}"
-                                    IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCharFloatEnabled, Mode=TwoWay}" />
-                            </Grid>
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch"
-                                ColumnDefinitions="*,Auto">
-                                <TextBlock
                                     x:Uid="DesktopLyricsCharFloatAmount"
                                     Grid.Column="0"
                                     VerticalAlignment="Center"
@@ -1700,22 +1740,6 @@
                                 HorizontalAlignment="Stretch"
                                 ColumnDefinitions="*,Auto">
                                 <TextBlock
-                                    x:Uid="DesktopLyricsCharScale"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <ToggleSwitch
-                                    Grid.Column="1"
-                                    MinWidth="0"
-                                    IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}"
-                                    IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCharScaleEnabled, Mode=TwoWay}" />
-                            </Grid>
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch"
-                                ColumnDefinitions="*,Auto">
-                                <TextBlock
                                     x:Uid="DesktopLyricsCharScaleAmount"
                                     Grid.Column="0"
                                     VerticalAlignment="Center"
@@ -1739,36 +1763,6 @@
                                         TickFrequency="1"
                                         TickPlacement="Outside"
                                         Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsCharScaleAmount, Mode=TwoWay}" />
-                                </Grid>
-                            </Grid>
-                            <Grid
-                                MinHeight="52"
-                                Padding="58,8,44,8"
-                                HorizontalAlignment="Stretch"
-                                ColumnDefinitions="*,Auto">
-                                <TextBlock
-                                    x:Uid="DesktopLyricsShadowAmount"
-                                    Grid.Column="0"
-                                    VerticalAlignment="Center"
-                                    FontSize="14" />
-                                <Grid
-                                    Grid.Column="1"
-                                    Width="300"
-                                    ColumnDefinitions="100,*">
-                                    <TextBlock
-                                        Grid.Column="0"
-                                        Margin="5,0"
-                                        VerticalAlignment="Center"
-                                        Text="{x:Bind tool:BindUtils.FormatF0(ViewModel.AppViewModel.DesktopLyricsShadowAmount), Mode=OneWay}" />
-                                    <Slider
-                                        Grid.Column="1"
-                                        VerticalAlignment="Center"
-                                        Maximum="100"
-                                        Minimum="0"
-                                        SnapsTo="Ticks"
-                                        TickFrequency="5"
-                                        TickPlacement="Outside"
-                                        Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsShadowAmount, Mode=TwoWay}" />
                                 </Grid>
                             </Grid>
                             <Grid
