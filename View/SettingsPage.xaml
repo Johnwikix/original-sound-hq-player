@@ -15,7 +15,7 @@
             <StackPanel Orientation="Horizontal">
                 <TextBlock
                     x:Uid="Settings"
-                    Margin="16,10,16,10"
+                    Margin="16,16,16,16"
                     VerticalAlignment="Center"
                     FontSize="28" />
                 <SelectorBar

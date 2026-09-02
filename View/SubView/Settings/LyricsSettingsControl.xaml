@@ -23,6 +23,9 @@
     <ScrollViewer Style="{StaticResource SettingsScrollViewerStyle}">
         <Grid Style="{StaticResource SettingsGridStyle}">
             <StackPanel Spacing="{StaticResource SettingsCardSpacing}">
+                <StackPanel.ChildrenTransitions>
+                    <RepositionThemeTransition IsStaggeringEnabled="True" />
+                </StackPanel.ChildrenTransitions>
 
                 <TextBlock
                     x:Uid="SettingLyrics"
