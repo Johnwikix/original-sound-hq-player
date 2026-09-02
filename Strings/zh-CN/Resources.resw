@@ -1437,4 +1437,25 @@
   <data name="RtssWarningBody" xml:space="preserve">
     <value>RivaTuner Statistics Server（简称 RTSS，常与 MSI Afterburner 一同安装）属于 D3D 帧率监控类软件，会通过 DXGI 注入替换程序的图形渲染链路。当本程序的「桌面歌词」与「着色器背景」同时启用时，会同时存在两个 Win2D 渲染线程，与 RTSS 的 DXGI 钩子发生冲突，可能导致程序崩溃。请在使用本程序前关闭 RTSS / MSI Afterburner，或在 RTSS 中将本程序加入挂钩排除列表。</value>
   </data>
+  <data name="SettingsSectionAudio.Text" xml:space="preserve">
+    <value>音频</value>
+  </data>
+  <data name="SettingsSectionGeneral.Text" xml:space="preserve">
+    <value>常规</value>
+  </data>
+  <data name="SettingsSectionShortcuts.Text" xml:space="preserve">
+    <value>快捷键</value>
+  </data>
+  <data name="SettingsSectionCoverBackground.Text" xml:space="preserve">
+    <value>封面与背景</value>
+  </data>
+  <data name="SettingsSectionLyrics.Text" xml:space="preserve">
+    <value>歌词</value>
+  </data>
+  <data name="SettingsSectionAppearance.Text" xml:space="preserve">
+    <value>外观</value>
+  </data>
+  <data name="SettingsSectionAbout.Text" xml:space="preserve">
+    <value>关于</value>
+  </data>
 </root>

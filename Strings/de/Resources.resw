@@ -1435,6 +1435,27 @@
   <data name="RtssWarningBody" xml:space="preserve">
     <value>RivaTuner Statistics Server (kurz RTSS, wird meist zusammen mit MSI Afterburner installiert) ist ein D3D-FPS-Überwachungstool, das sich über DXGI in die Grafikpipeline einklinkt. Wenn in diesem Player gleichzeitig „Desktop-Lyrics" und der Shader-Hintergrund aktiv sind, laufen zwei Win2D-Swap-Chains parallel und kollidieren mit den RTSS-DXGI-Hooks, was zum Absturz der App führen kann. Bitte schließe RTSS / MSI Afterburner vor der Nutzung oder füge diesen Player zur Ausschlussliste der RTSS-Hooks hinzu.</value>
   </data>
+  <data name="SettingsSectionAudio.Text" xml:space="preserve">
+    <value>Audio</value>
+  </data>
+  <data name="SettingsSectionGeneral.Text" xml:space="preserve">
+    <value>Allgemein</value>
+  </data>
+  <data name="SettingsSectionShortcuts.Text" xml:space="preserve">
+    <value>Tastenkombinationen</value>
+  </data>
+  <data name="SettingsSectionCoverBackground.Text" xml:space="preserve">
+    <value>Cover &amp; Hintergrund</value>
+  </data>
+  <data name="SettingsSectionLyrics.Text" xml:space="preserve">
+    <value>Songtexte</value>
+  </data>
+  <data name="SettingsSectionAppearance.Text" xml:space="preserve">
+    <value>Erscheinungsbild</value>
+  </data>
+  <data name="SettingsSectionAbout.Text" xml:space="preserve">
+    <value>Info</value>
+  </data>
 </root>
 
 

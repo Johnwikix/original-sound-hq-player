@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="WinUIMusicPlayer.View.SubView.Settings.AudioSettingsControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    xmlns:customControl="using:WinUIMusicPlayer.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dev="using:DevWinUI"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:model="using:WinUIMusicPlayer.Model"
+    xmlns:tool="using:WinUIMusicPlayer.Utils"
+    xmlns:tools="using:WinUIMusicPlayer.Utils"
+    xmlns:ui="using:CommunityToolkit.WinUI"
+    mc:Ignorable="d">
+
+    <ScrollViewer Padding="6,0,6,0">
+        <StackPanel>
+            <StackPanel.ChildrenTransitions>
+                <RepositionThemeTransition IsStaggeringEnabled="True" />
+            </StackPanel.ChildrenTransitions>
+                <TextBlock
+                    x:Uid="SettingOutput"
+                    Margin="10,16,10,4"
+                    FontSize="16" />
+                <Border
+                    Margin="10,0,10,0"
+                    Padding="0"
+                    HorizontalAlignment="Stretch"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{ThemeResource ControlCornerRadius}">
+                    <StackPanel>
+                        <Grid
+                            MinHeight="52"
+                            Padding="16,8,16,8"
+                            HorizontalAlignment="Stretch"
+                            BorderThickness="0"
+                            ColumnDefinitions="*,Auto">
+                            <TextBlock
+                                x:Uid="SettingOutputDevice"
+                                Grid.Column="0"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                            <ComboBox
+                                x:Name="OutputDeviceComboBox"
+                                Grid.Column="1"
+                                Width="300"
+                                VerticalAlignment="Center"
+                                ItemsSource="{x:Bind ViewModel.AppViewModel.BassOutputDevices, Mode=OneWay}"
+                                SelectedItem="{x:Bind ViewModel.AppViewModel.SelectedDevice, Mode=TwoWay}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="model:BassOutputDevice">
+                                        <TextBlock Text="{x:Bind Tag}" />
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </Grid>
+
+                        <Grid
+                            MinHeight="52"
+                            Padding="16,8,16,8"
+                            HorizontalAlignment="Stretch"
+                            BorderThickness="0,1,0,0"
+                            ColumnDefinitions="*,Auto">
+                            <TextBlock
+                                x:Uid="SettingBufferSize"
+                                Grid.Column="0"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                            <NumberBox
+                                x:Name="LatencyNumberBox"
+                                Grid.Column="1"
+                                Width="300"
+                                VerticalAlignment="Center"
+                                LargeChange="100"
+                                Maximum="900"
+                                Minimum="100"
+                                SmallChange="10"
+                                SpinButtonPlacementMode="Inline"
+                                Value="{x:Bind ViewModel.AppViewModel.Latency, Mode=TwoWay}" />
+                        </Grid>
+
+                        <Grid
+                            MinHeight="52"
+                            Padding="16,8,16,8"
+                            HorizontalAlignment="Stretch"
+                            ColumnDefinitions="*,Auto">
+                            <TextBlock
+                                x:Uid="DSD2PCMFreq"
+                                Grid.Column="0"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                            <ComboBox
+                                Grid.Column="1"
+                                Width="300"
+                                VerticalAlignment="Center"
+                                IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.AppViewModel.IsDopEnabled), Mode=OneWay}"
+                                ItemsSource="{x:Bind ViewModel.AppViewModel.DsdPcmFreqs, Mode=OneWay}"
+                                SelectedValue="{x:Bind ViewModel.AppViewModel.DsdPcmFreq, Mode=TwoWay}" />
+                        </Grid>
+
+                        <Grid
+                            MinHeight="52"
+                            Padding="16,8,16,8"
+                            HorizontalAlignment="Stretch"
+                            ColumnDefinitions="*,Auto">
+                            <TextBlock
+                                x:Uid="SettingDSDGain"
+                                Grid.Column="0"
+                                VerticalAlignment="Center"
+                                FontSize="14" />
+                            <NumberBox
+                                x:Name="DSDGainNumberBox"
+                                Grid.Column="1"
+                                Width="300"
+                                VerticalAlignment="Center"
+                                IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.AppViewModel.IsDopEnabled), Mode=OneWay}"
+                                Minimum="0"
+                                SmallChange="1"
+                                SpinButtonPlacementMode="Inline"
+                                Value="{x:Bind ViewModel.AppViewModel.DsdGain, Mode=TwoWay}" />
+                        </Grid>
+
+                        <Grid
+                            MinHeight="52"
+                            Padding="16,8,16,8"
+                            HorizontalAlignment="Stretch"
+                            ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock FontSize="14" Text="DSD Dop / DSD Native" />
+                                <TextBlock
+                                    FontSize="12"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="{x:Bind tool:ToolUtils.GetString('DsdDopDescription')}"
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                            <ToggleSwitch
+                                Grid.Column="1"
+                                MinWidth="0"
+                                IsOn="{x:Bind ViewModel.AppViewModel.IsDopEnabled, Mode=TwoWay}" />
+                        </Grid>
+
+                        <Grid
+                            MinHeight="52"
+                            Padding="16,8,16,8"
+                            HorizontalAlignment="Stretch"
+                            ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                <TextBlock x:Uid="FadeInOut" FontSize="14" />
+                                <TextBlock
+                                    FontSize="12"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Text="{x:Bind tool:ToolUtils.GetString('FadeInOutDescription')}"
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                            <ToggleSwitch
+                                Grid.Column="1"
+                                MinWidth="0"
+                                IsOn="{x:Bind ViewModel.AppViewModel.IsFadeEnabled, Mode=TwoWay}" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <controls:SettingsCard
+                    x:Name="SpectrumVisualization"
+                    x:Uid="SpectrumVisualization"
+                    Margin="10,0,10,0"
+                    Click="SpectrumVisualization_Click"
+                    Description="© 2026 Sennpei Studio"
+                    HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/SpectrumVisualization.png}"
+                    IsClickEnabled="True" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

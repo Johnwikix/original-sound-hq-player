@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="WinUIMusicPlayer.View.SubView.Settings.AppearanceSettingsControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    xmlns:customControl="using:WinUIMusicPlayer.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dev="using:DevWinUI"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:model="using:WinUIMusicPlayer.Model"
+    xmlns:tool="using:WinUIMusicPlayer.Utils"
+    xmlns:tools="using:WinUIMusicPlayer.Utils"
+    xmlns:ui="using:CommunityToolkit.WinUI"
+    mc:Ignorable="d">
+
+    <ScrollViewer Padding="6,0,6,0">
+        <StackPanel>
+            <StackPanel.ChildrenTransitions>
+                <RepositionThemeTransition IsStaggeringEnabled="True" />
+            </StackPanel.ChildrenTransitions>
+            <TextBlock
+                x:Uid="AppStyle"
+                Margin="10,16,10,4"
+                FontSize="16" />
+            <Border
+                Margin="10,0,10,0"
+                Padding="0"
+                HorizontalAlignment="Stretch"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="{ThemeResource ControlCornerRadius}">
+                <StackPanel>
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Uid="IsUpdateBackDrop"
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <ToggleSwitch
+                            Grid.Column="1"
+                            MinWidth="0"
+                            IsOn="{x:Bind ViewModel.AppViewModel.IsUpdateBackDrop, Mode=TwoWay}" />
+                    </Grid>
+
+                    <StackPanel Padding="16,8,16,8">
+                        <RadioButton
+                            x:Name="TransparentTintRadioButton"
+                            x:Uid="TransparentTintStyle"
+                            Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                            CommandParameter="TransparentTint"
+                            GroupName="BackdropGroup"
+                            IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'TransparentTint')}"
+                            Tag="TransparentTint" />
+                        <RadioButton
+                            x:Name="MicaRadioButton"
+                            x:Uid="MicaStyle"
+                            Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                            CommandParameter="Mica"
+                            GroupName="BackdropGroup"
+                            IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'Mica')}"
+                            Tag="Mica" />
+                        <RadioButton
+                            x:Name="AcrylicRadioButton"
+                            x:Uid="AcrylicStyle"
+                            Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                            CommandParameter="Acrylic"
+                            GroupName="BackdropGroup"
+                            IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'Acrylic')}"
+                            Tag="Acrylic" />
+                        <RadioButton
+                            x:Name="TransparentAcrylicRadioButton"
+                            x:Uid="TransparentAcrylicStyle"
+                            Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                            CommandParameter="TransparentAcrylic"
+                            GroupName="BackdropGroup"
+                            IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'TransparentAcrylic')}"
+                            Tag="TransparentAcrylic" />
+                        <RadioButton
+                            x:Name="CustomAcrylicStyleRadioButton"
+                            x:Uid="CustomAcrylicStyle"
+                            Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                            CommandParameter="CustomAcrylicStyle"
+                            GroupName="BackdropGroup"
+                            IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'CustomAcrylicStyle')}"
+                            Tag="CustomAcrylicStyle"
+                            Visibility="{x:Bind ViewModel.CheckSystemVersion()}" />
+                        <StackPanel Visibility="{x:Bind ViewModel.AppViewModel.IsColorPickerVisible, Mode=OneWay}">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock
+                                    x:Uid="CustomOpacity"
+                                    Grid.Column="0"
+                                    Margin="0,0,10,0"
+                                    VerticalAlignment="Center" />
+                                <Slider
+                                    Grid.Column="1"
+                                    Width="245"
+                                    HorizontalAlignment="Left"
+                                    VerticalAlignment="Center"
+                                    Maximum="100"
+                                    Minimum="0"
+                                    Value="{x:Bind ViewModel.AppViewModel.CustomOpacity, Mode=TwoWay}" />
+                            </Grid>
+                            <ColorPicker
+                                HorizontalAlignment="Left"
+                                ColorSpectrumShape="Ring"
+                                IsAlphaEnabled="True"
+                                IsAlphaSliderVisible="True"
+                                IsAlphaTextInputVisible="True"
+                                IsColorChannelTextInputVisible="True"
+                                IsColorSliderVisible="True"
+                                IsHexInputVisible="False"
+                                IsMoreButtonVisible="True"
+                                Color="{x:Bind ViewModel.AppViewModel.CustomColor, Mode=TwoWay}" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <TextBlock
+                x:Uid="ThemeStyle"
+                Margin="10,16,10,4"
+                FontSize="16" />
+            <Border
+                Margin="10,0,10,0"
+                Padding="0"
+                HorizontalAlignment="Stretch"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="{ThemeResource ControlCornerRadius}">
+                <StackPanel>
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Uid="UseImageDominantTheme"
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <ToggleSwitch
+                            Grid.Column="1"
+                            MinWidth="0"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
+                            IsOn="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=TwoWay}" />
+                    </Grid>
+
+                    <StackPanel Padding="16,8,16,8">
+                        <RadioButton
+                            x:Name="DefaultRadioButton"
+                            x:Uid="SystemDefaultTheme"
+                            Command="{x:Bind ViewModel.AppViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
+                            CommandParameter="Default"
+                            GroupName="ThemeGroup"
+                            IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.ThemeType,'Default')}"
+                            Tag="Default" />
+                        <RadioButton
+                            x:Name="DarkRadioButton"
+                            x:Uid="Dark"
+                            Command="{x:Bind ViewModel.AppViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
+                            CommandParameter="Dark"
+                            GroupName="ThemeGroup"
+                            IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.ThemeType,'Dark')}"
+                            Tag="Dark" />
+                        <RadioButton
+                            x:Name="LightRadioButton"
+                            x:Uid="Light"
+                            Command="{x:Bind ViewModel.AppViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
+                            CommandParameter="Light"
+                            GroupName="ThemeGroup"
+                            IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.ThemeType,'Light')}"
+                            Tag="Light" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

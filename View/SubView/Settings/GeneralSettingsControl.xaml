@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="WinUIMusicPlayer.View.SubView.Settings.GeneralSettingsControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    xmlns:customControl="using:WinUIMusicPlayer.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dev="using:DevWinUI"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:model="using:WinUIMusicPlayer.Model"
+    xmlns:tool="using:WinUIMusicPlayer.Utils"
+    xmlns:tools="using:WinUIMusicPlayer.Utils"
+    xmlns:ui="using:CommunityToolkit.WinUI"
+    mc:Ignorable="d">
+
+    <ScrollViewer Padding="6,0,6,0">
+        <StackPanel>
+            <StackPanel.ChildrenTransitions>
+                <RepositionThemeTransition IsStaggeringEnabled="True" />
+            </StackPanel.ChildrenTransitions>
+            <TextBlock
+                x:Uid="SettingInterface"
+                Margin="10,16,10,4"
+                FontSize="16" />
+            <Border
+                Margin="10,0,10,0"
+                Padding="0"
+                HorizontalAlignment="Stretch"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="{ThemeResource ControlCornerRadius}">
+                <StackPanel>
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Uid="DefaultEntryInterface"
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <ComboBox
+                            Grid.Column="1"
+                            Width="300"
+                            VerticalAlignment="Center"
+                            SelectedValue="{x:Bind ViewModel.AppViewModel.DefaultEntryComboBoxTag, Mode=TwoWay}"
+                            SelectedValuePath="Tag">
+                            <ComboBoxItem x:Uid="AddFolderCombox" Tag="AddFolder" />
+                            <ComboBoxItem x:Uid="MusicBrowseCombox" Tag="MusicBrowse" />
+                            <ComboBoxItem x:Uid="PlayListsCombox" Tag="PlayLists" />
+                        </ComboBox>
+                    </Grid>
+
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Uid="DefaultMusicEntryInterface"
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <ComboBox
+                            Grid.Column="1"
+                            Width="300"
+                            VerticalAlignment="Center"
+                            SelectedValue="{x:Bind ViewModel.AppViewModel.DefaultPlayListComboBoxTag, Mode=TwoWay}"
+                            SelectedValuePath="Tag">
+                            <ComboBoxItem x:Uid="SongCombox" Tag="song" />
+                            <ComboBoxItem x:Uid="AlbumCombox" Tag="album" />
+                            <ComboBoxItem x:Uid="ArtistCombox" Tag="artist" />
+                            <ComboBoxItem x:Uid="FolderCombox" Tag="folder" />
+                            <ComboBoxItem x:Uid="FavouriteCombox" Tag="favourite" />
+                        </ComboBox>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <TextBlock
+                x:Uid="Advanced"
+                Margin="10,16,10,4"
+                FontSize="16" />
+            <Border
+                Margin="10,0,10,0"
+                Padding="0"
+                HorizontalAlignment="Stretch"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="{ThemeResource ControlCornerRadius}">
+                <StackPanel>
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Uid="FolderWatchEnabled"
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <ToggleSwitch
+                            Grid.Column="1"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            IsOn="{x:Bind ViewModel.AppViewModel.IsFolderWatchEnabled, Mode=TwoWay}" />
+                    </Grid>
+
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock x:Uid="TrimOnHide" FontSize="14" />
+                            <TextBlock
+                                x:Uid="TrimOnHideDescription"
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <ToggleSwitch
+                            Grid.Column="1"
+                            MinWidth="0"
+                            IsOn="{x:Bind ViewModel.AppViewModel.IsTrimOnHideEnabled, Mode=TwoWay}" />
+                    </Grid>
+
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock x:Uid="TrimAfterPlayback" FontSize="14" />
+                            <TextBlock
+                                x:Uid="TrimAfterPlaybackDescription"
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <ToggleSwitch
+                            Grid.Column="1"
+                            MinWidth="0"
+                            IsOn="{x:Bind ViewModel.AppViewModel.IsTrimAfterPlaybackEnabled, Mode=TwoWay}" />
+                    </Grid>
+
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock x:Uid="ArtistSplitSymbols" FontSize="14" />
+                            <TextBlock
+                                x:Uid="ArtistSplitSymbolsDescription"
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBox
+                            Grid.Column="1"
+                            Width="240"
+                            VerticalAlignment="Center"
+                            Text="{x:Bind ViewModel.AppViewModel.ArtistSplitSymbols, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                    </Grid>
+
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Uid="TrimNowLabel"
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <Button
+                            Grid.Column="1"
+                            VerticalAlignment="Center"
+                            Command="{x:Bind ViewModel.AppViewModel.TrimNowCommand, Mode=OneWay}">
+                            <Button.Content>
+                                <FontIcon Glyph="&#xE895;" />
+                            </Button.Content>
+                        </Button>
+                    </Grid>
+
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock
+                                x:Uid="WindowBoundsDescription"
+                                FontSize="14"
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                x:Uid="WindowBoundsHint"
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <Button
+                            x:Uid="ResetWindowBounds"
+                            Grid.Column="1"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            Command="{x:Bind ViewModel.AppViewModel.ResetWindowBoundsCommand, Mode=OneWay}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <TextBlock
+                x:Uid="CloseButtonFunction"
+                Margin="10,16,10,4"
+                FontSize="16" />
+            <Border
+                Margin="10,0,10,0"
+                Padding="0"
+                HorizontalAlignment="Stretch"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="{ThemeResource ControlCornerRadius}">
+                <StackPanel>
+                    <StackPanel Padding="16,8,16,8">
+                        <RadioButton
+                            x:Name="CloseAppRadioButton"
+                            x:Uid="CloseApp"
+                            GroupName="ClosedGroup"
+                            IsChecked="{x:Bind ViewModel.AppViewModel.IsRunningBackend, Mode=TwoWay, Converter={StaticResource BooleanNegationConverter}}"
+                            Tag="Closed" />
+                        <RadioButton
+                            x:Name="RunningBackendRadioButton"
+                            x:Uid="Backgrounder"
+                            GroupName="ClosedGroup"
+                            IsChecked="{x:Bind ViewModel.AppViewModel.IsRunningBackend, Mode=TwoWay}"
+                            Tag="RunningBackend" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="WinUIMusicPlayer.View.SubView.Settings.AboutSettingsControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    xmlns:customControl="using:WinUIMusicPlayer.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dev="using:DevWinUI"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:model="using:WinUIMusicPlayer.Model"
+    xmlns:tool="using:WinUIMusicPlayer.Utils"
+    xmlns:tools="using:WinUIMusicPlayer.Utils"
+    xmlns:ui="using:CommunityToolkit.WinUI"
+    mc:Ignorable="d">
+
+    <ScrollViewer Padding="6,0,6,0">
+        <StackPanel>
+            <StackPanel.ChildrenTransitions>
+                <RepositionThemeTransition IsStaggeringEnabled="True" />
+            </StackPanel.ChildrenTransitions>
+            <controls:SettingsExpander
+                x:Uid="AppTitleHeader"
+                Margin="10,0,10,0"
+                Description="© 2026 Sennpei Studio"
+                HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/Square44x44Logo.altform-unplated_targetsize-32.png}">
+                <TextBlock
+                    x:Name="Version"
+                    Margin="10"
+                    VerticalAlignment="Center"
+                    FontSize="14"
+                    Text="{x:Bind ViewModel.AppViewModel.Version, Mode=OneWay}" />
+                <controls:SettingsExpander.Items>
+                    <controls:SettingsCard ContentAlignment="Left">
+                        <StackPanel Orientation="Horizontal">
+                            <HyperlinkButton
+                                x:Name="WebSite"
+                                x:Uid="OfficialWebSite"
+                                Command="{x:Bind ViewModel.AppViewModel.OpenWebSiteCommand, Mode=OneWay}" />
+                            <HyperlinkButton
+                                x:Name="ThirdParty"
+                                x:Uid="ThirdPartyComponents"
+                                Click="ThirdParty_Click" />
+                            <HyperlinkButton
+                                x:Name="LogPath"
+                                x:Uid="LogPath"
+                                Command="{x:Bind ViewModel.AppViewModel.OpenLogPathCommand, Mode=OneWay}" />
+                            <HyperlinkButton
+                                x:Name="MainGitHub"
+                                Command="{x:Bind ViewModel.AppViewModel.OpenMainGitHubCommand, Mode=OneWay}"
+                                Content="GitHub" />
+                        </StackPanel>
+                    </controls:SettingsCard>
+                </controls:SettingsExpander.Items>
+            </controls:SettingsExpander>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
