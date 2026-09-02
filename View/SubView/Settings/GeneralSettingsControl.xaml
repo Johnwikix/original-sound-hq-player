@@ -14,220 +14,55 @@
     xmlns:ui="using:CommunityToolkit.WinUI"
     mc:Ignorable="d">
 
-    <ScrollViewer Padding="6,0,6,0">
-        <StackPanel>
-            <StackPanel.ChildrenTransitions>
-                <RepositionThemeTransition IsStaggeringEnabled="True" />
-            </StackPanel.ChildrenTransitions>
-            <TextBlock
-                x:Uid="SettingInterface"
-                Margin="10,16,10,4"
-                FontSize="16" />
-            <Border
-                Margin="10,0,10,0"
-                Padding="0"
-                HorizontalAlignment="Stretch"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="{ThemeResource ControlCornerRadius}">
-                <StackPanel>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+    <ScrollViewer Style="{StaticResource SettingsScrollViewerStyle}">
+        <Grid Style="{StaticResource SettingsGridStyle}">
+            <StackPanel Spacing="{StaticResource SettingsCardSpacing}">
+
+                <TextBlock
+                    x:Uid="SettingInterface"
+                    Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="DefaultEntryInterface"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ComboBox
-                            Grid.Column="1"
-                            Width="300"
-                            VerticalAlignment="Center"
-                            SelectedValue="{x:Bind ViewModel.AppViewModel.DefaultEntryComboBoxTag, Mode=TwoWay}"
-                            SelectedValuePath="Tag">
-                            <ComboBoxItem x:Uid="AddFolderCombox" Tag="AddFolder" />
-                            <ComboBoxItem x:Uid="MusicBrowseCombox" Tag="MusicBrowse" />
-                            <ComboBoxItem x:Uid="PlayListsCombox" Tag="PlayLists" />
-                        </ComboBox>
-                    </Grid>
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ComboBox
+                        Width="300"
+                        SelectedValue="{x:Bind ViewModel.AppViewModel.DefaultEntryComboBoxTag, Mode=TwoWay}"
+                        SelectedValuePath="Tag">
+                        <ComboBoxItem x:Uid="AddFolderCombox" Tag="AddFolder" />
+                        <ComboBoxItem x:Uid="MusicBrowseCombox" Tag="MusicBrowse" />
+                        <ComboBoxItem x:Uid="PlayListsCombox" Tag="PlayLists" />
+                    </ComboBox>
+                </controls:SettingsCard>
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="DefaultMusicEntryInterface"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ComboBox
-                            Grid.Column="1"
-                            Width="300"
-                            VerticalAlignment="Center"
-                            SelectedValue="{x:Bind ViewModel.AppViewModel.DefaultPlayListComboBoxTag, Mode=TwoWay}"
-                            SelectedValuePath="Tag">
-                            <ComboBoxItem x:Uid="SongCombox" Tag="song" />
-                            <ComboBoxItem x:Uid="AlbumCombox" Tag="album" />
-                            <ComboBoxItem x:Uid="ArtistCombox" Tag="artist" />
-                            <ComboBoxItem x:Uid="FolderCombox" Tag="folder" />
-                            <ComboBoxItem x:Uid="FavouriteCombox" Tag="favourite" />
-                        </ComboBox>
-                    </Grid>
-                </StackPanel>
-            </Border>
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ComboBox
+                        Width="300"
+                        SelectedValue="{x:Bind ViewModel.AppViewModel.DefaultPlayListComboBoxTag, Mode=TwoWay}"
+                        SelectedValuePath="Tag">
+                        <ComboBoxItem x:Uid="SongCombox" Tag="song" />
+                        <ComboBoxItem x:Uid="AlbumCombox" Tag="album" />
+                        <ComboBoxItem x:Uid="ArtistCombox" Tag="artist" />
+                        <ComboBoxItem x:Uid="FolderCombox" Tag="folder" />
+                        <ComboBoxItem x:Uid="FavouriteCombox" Tag="favourite" />
+                    </ComboBox>
+                </controls:SettingsCard>
 
-            <TextBlock
-                x:Uid="Advanced"
-                Margin="10,16,10,4"
-                FontSize="16" />
-            <Border
-                Margin="10,0,10,0"
-                Padding="0"
-                HorizontalAlignment="Stretch"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="{ThemeResource ControlCornerRadius}">
-                <StackPanel>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
-                            x:Uid="FolderWatchEnabled"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            VerticalAlignment="Center"
-                            IsOn="{x:Bind ViewModel.AppViewModel.IsFolderWatchEnabled, Mode=TwoWay}" />
-                    </Grid>
-
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock x:Uid="TrimOnHide" FontSize="14" />
-                            <TextBlock
-                                x:Uid="TrimOnHideDescription"
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsOn="{x:Bind ViewModel.AppViewModel.IsTrimOnHideEnabled, Mode=TwoWay}" />
-                    </Grid>
-
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock x:Uid="TrimAfterPlayback" FontSize="14" />
-                            <TextBlock
-                                x:Uid="TrimAfterPlaybackDescription"
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsOn="{x:Bind ViewModel.AppViewModel.IsTrimAfterPlaybackEnabled, Mode=TwoWay}" />
-                    </Grid>
-
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock x:Uid="ArtistSplitSymbols" FontSize="14" />
-                            <TextBlock
-                                x:Uid="ArtistSplitSymbolsDescription"
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <TextBox
-                            Grid.Column="1"
-                            Width="240"
-                            VerticalAlignment="Center"
-                            Text="{x:Bind ViewModel.AppViewModel.ArtistSplitSymbols, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
-                    </Grid>
-
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="TrimNowLabel"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <Button
-                            Grid.Column="1"
-                            VerticalAlignment="Center"
-                            Command="{x:Bind ViewModel.AppViewModel.TrimNowCommand, Mode=OneWay}">
-                            <Button.Content>
-                                <FontIcon Glyph="&#xE895;" />
-                            </Button.Content>
-                        </Button>
-                    </Grid>
-
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock
-                                x:Uid="WindowBoundsDescription"
-                                FontSize="14"
-                                TextWrapping="Wrap" />
-                            <TextBlock
-                                x:Uid="WindowBoundsHint"
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <Button
-                            x:Uid="ResetWindowBounds"
-                            Grid.Column="1"
-                            MinWidth="0"
-                            VerticalAlignment="Center"
-                            Command="{x:Bind ViewModel.AppViewModel.ResetWindowBoundsCommand, Mode=OneWay}" />
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-            <TextBlock
-                x:Uid="CloseButtonFunction"
-                Margin="10,16,10,4"
-                FontSize="16" />
-            <Border
-                Margin="10,0,10,0"
-                Padding="0"
-                HorizontalAlignment="Stretch"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="{ThemeResource ControlCornerRadius}">
-                <StackPanel>
-                    <StackPanel Padding="16,8,16,8">
+                            x:Uid="CloseButtonFunction"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <StackPanel>
                         <RadioButton
                             x:Name="CloseAppRadioButton"
                             x:Uid="CloseApp"
@@ -241,298 +76,286 @@
                             IsChecked="{x:Bind ViewModel.AppViewModel.IsRunningBackend, Mode=TwoWay}"
                             Tag="RunningBackend" />
                     </StackPanel>
-                </StackPanel>
-            </Border>
+                </controls:SettingsCard>
 
-            <TextBlock
-                x:Uid="SettingOutput"
-                Margin="10,16,10,4"
-                FontSize="16" />
-            <Border
-                Margin="10,0,10,0"
-                Padding="0"
-                HorizontalAlignment="Stretch"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="{ThemeResource ControlCornerRadius}">
-                <StackPanel>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        BorderThickness="0"
-                        ColumnDefinitions="*,Auto">
+                <TextBlock
+                    x:Uid="SettingOutput"
+                    Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="SettingOutputDevice"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ComboBox
-                            x:Name="OutputDeviceComboBox"
-                            Grid.Column="1"
-                            Width="300"
-                            VerticalAlignment="Center"
-                            ItemsSource="{x:Bind ViewModel.AppViewModel.BassOutputDevices, Mode=OneWay}"
-                            SelectedItem="{x:Bind ViewModel.AppViewModel.SelectedDevice, Mode=TwoWay}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate x:DataType="model:BassOutputDevice">
-                                    <TextBlock Text="{x:Bind Tag}" />
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                    </Grid>
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ComboBox
+                        x:Name="OutputDeviceComboBox"
+                        Width="300"
+                        ItemsSource="{x:Bind ViewModel.AppViewModel.BassOutputDevices, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.AppViewModel.SelectedDevice, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="model:BassOutputDevice">
+                                <TextBlock Text="{x:Bind Tag}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </controls:SettingsCard>
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        BorderThickness="0,1,0,0"
-                        ColumnDefinitions="*,Auto">
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="SettingBufferSize"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <NumberBox
-                            x:Name="LatencyNumberBox"
-                            Grid.Column="1"
-                            Width="300"
-                            VerticalAlignment="Center"
-                            LargeChange="100"
-                            Maximum="900"
-                            Minimum="100"
-                            SmallChange="10"
-                            SpinButtonPlacementMode="Inline"
-                            Value="{x:Bind ViewModel.AppViewModel.Latency, Mode=TwoWay}" />
-                    </Grid>
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <NumberBox
+                        x:Name="LatencyNumberBox"
+                        Width="300"
+                        LargeChange="100"
+                        Maximum="900"
+                        Minimum="100"
+                        SmallChange="10"
+                        SpinButtonPlacementMode="Inline"
+                        Value="{x:Bind ViewModel.AppViewModel.Latency, Mode=TwoWay}" />
+                </controls:SettingsCard>
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                <controls:SettingsCard IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.AppViewModel.IsDopEnabled), Mode=OneWay}">
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="DSD2PCMFreq"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ComboBox
-                            Grid.Column="1"
-                            Width="300"
-                            VerticalAlignment="Center"
-                            IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.AppViewModel.IsDopEnabled), Mode=OneWay}"
-                            ItemsSource="{x:Bind ViewModel.AppViewModel.DsdPcmFreqs, Mode=OneWay}"
-                            SelectedValue="{x:Bind ViewModel.AppViewModel.DsdPcmFreq, Mode=TwoWay}" />
-                    </Grid>
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ComboBox
+                        Width="300"
+                        ItemsSource="{x:Bind ViewModel.AppViewModel.DsdPcmFreqs, Mode=OneWay}"
+                        SelectedValue="{x:Bind ViewModel.AppViewModel.DsdPcmFreq, Mode=TwoWay}" />
+                </controls:SettingsCard>
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                <controls:SettingsCard IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.AppViewModel.IsDopEnabled), Mode=OneWay}">
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="SettingDSDGain"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <NumberBox
-                            x:Name="DSDGainNumberBox"
-                            Grid.Column="1"
-                            Width="300"
-                            VerticalAlignment="Center"
-                            IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.AppViewModel.IsDopEnabled), Mode=OneWay}"
-                            Minimum="0"
-                            SmallChange="1"
-                            SpinButtonPlacementMode="Inline"
-                            Value="{x:Bind ViewModel.AppViewModel.DsdGain, Mode=TwoWay}" />
-                    </Grid>
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <NumberBox
+                        x:Name="DSDGainNumberBox"
+                        Width="300"
+                        Minimum="0"
+                        SmallChange="1"
+                        SpinButtonPlacementMode="Inline"
+                        Value="{x:Bind ViewModel.AppViewModel.DsdGain, Mode=TwoWay}" />
+                </controls:SettingsCard>
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock FontSize="14" Text="DSD Dop / DSD Native" />
-                            <TextBlock
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="{x:Bind tool:ToolUtils.GetString('DsdDopDescription')}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsOn="{x:Bind ViewModel.AppViewModel.IsDopEnabled, Mode=TwoWay}" />
-                    </Grid>
+                <controls:SettingsCard
+                    Description="{x:Bind tool:ToolUtils.GetString('DsdDopDescription'), Mode=OneWay}"
+                    Header="DSD Dop / DSD Native">
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.IsDopEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock x:Uid="FadeInOut" FontSize="14" />
-                            <TextBlock
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="{x:Bind tool:ToolUtils.GetString('FadeInOutDescription')}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsOn="{x:Bind ViewModel.AppViewModel.IsFadeEnabled, Mode=TwoWay}" />
-                    </Grid>
-                </StackPanel>
-            </Border>
+                <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('FadeInOutDescription'), Mode=OneWay}">
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="FadeInOut"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.IsFadeEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
 
-            <TextBlock
-                x:Uid="SettingsPageShortcuts"
-                Margin="10,16,10,4"
-                FontSize="16" />
-            <Border
-                Margin="10,0,10,0"
-                Padding="0"
-                HorizontalAlignment="Stretch"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="{ThemeResource ControlCornerRadius}">
-                <StackPanel>
-                    <InfoBar
-                        Title="{x:Bind ViewModel.AppViewModel.GlobalHotKeyConflictTitle, Mode=OneWay}"
-                        IsOpen="{x:Bind ViewModel.AppViewModel.HasGlobalHotKeyConflict, Mode=OneWay}"
-                        Severity="Warning" />
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock x:Uid="SettingsPageEnableGlobalHotKey" FontSize="14" />
-                            <TextBlock
-                                x:Uid="SettingsPageEnableGlobalHotKeyDescription"
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsOn="{x:Bind ViewModel.AppViewModel.EnableGlobalHotKey, Mode=TwoWay}" />
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                <TextBlock
+                    x:Uid="SettingsPageShortcuts"
+                    Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+
+                <InfoBar
+                    Title="{x:Bind ViewModel.AppViewModel.GlobalHotKeyConflictTitle, Mode=OneWay}"
+                    Margin="0,0,0,4"
+                    IsOpen="{x:Bind ViewModel.AppViewModel.HasGlobalHotKeyConflict, Mode=OneWay}"
+                    Severity="Warning" />
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock x:Uid="SettingsPageEnableGlobalHotKey" />
+                    </controls:SettingsCard.Header>
+                    <controls:SettingsCard.Description>
+                        <TextBlock
+                            x:Uid="SettingsPageEnableGlobalHotKeyDescription"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Description>
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.EnableGlobalHotKey, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="SettingsPagePlayPauseShortcut"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.PlayOrPauseShortcut, Mode=TwoWay}" />
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <customControl:ShortcutTextBox Shortcut="{x:Bind ViewModel.AppViewModel.PlayOrPauseShortcut, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="SettingsPageNextSongShortcut"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.NextSongShortcut, Mode=TwoWay}" />
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <customControl:ShortcutTextBox Shortcut="{x:Bind ViewModel.AppViewModel.NextSongShortcut, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="SettingsPagePreviousSongShortcut"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.PreviousSongShortcut, Mode=TwoWay}" />
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <customControl:ShortcutTextBox Shortcut="{x:Bind ViewModel.AppViewModel.PreviousSongShortcut, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="SettingsPageVolumeUpShortcut"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.VolumeUpShortcut, Mode=TwoWay}" />
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <customControl:ShortcutTextBox Shortcut="{x:Bind ViewModel.AppViewModel.VolumeUpShortcut, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="SettingsPageVolumeDownShortcut"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.VolumeDownShortcut, Mode=TwoWay}" />
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <customControl:ShortcutTextBox Shortcut="{x:Bind ViewModel.AppViewModel.VolumeDownShortcut, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="SettingsPageTogglePlayingDetailShortcut"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.TogglePlayingDetailShortcut, Mode=TwoWay}" />
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <customControl:ShortcutTextBox Shortcut="{x:Bind ViewModel.AppViewModel.TogglePlayingDetailShortcut, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="SettingsPageBackShortcut"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.BackShortcut, Mode=TwoWay}" />
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <customControl:ShortcutTextBox Shortcut="{x:Bind ViewModel.AppViewModel.BackShortcut, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="SettingsPageShowWindowShortcut"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.ShowWindowShortcut, Mode=TwoWay}" />
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <customControl:ShortcutTextBox Shortcut="{x:Bind ViewModel.AppViewModel.ShowWindowShortcut, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="SettingsPageToggleFullScreenShortcut"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.ToggleFullScreenShortcut, Mode=TwoWay}" />
-                    </Grid>
-                </StackPanel>
-            </Border>
-        </StackPanel>
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <customControl:ShortcutTextBox Shortcut="{x:Bind ViewModel.AppViewModel.ToggleFullScreenShortcut, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <TextBlock
+                    x:Uid="Advanced"
+                    Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="FolderWatchEnabled"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.IsFolderWatchEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock x:Uid="TrimOnHide" />
+                    </controls:SettingsCard.Header>
+                    <controls:SettingsCard.Description>
+                        <TextBlock
+                            x:Uid="TrimOnHideDescription"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Description>
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.IsTrimOnHideEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock x:Uid="TrimAfterPlayback" />
+                    </controls:SettingsCard.Header>
+                    <controls:SettingsCard.Description>
+                        <TextBlock
+                            x:Uid="TrimAfterPlaybackDescription"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Description>
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.IsTrimAfterPlaybackEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock x:Uid="ArtistSplitSymbols" />
+                    </controls:SettingsCard.Header>
+                    <controls:SettingsCard.Description>
+                        <TextBlock
+                            x:Uid="ArtistSplitSymbolsDescription"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Description>
+                    <TextBox
+                        Width="240"
+                        Text="{x:Bind ViewModel.AppViewModel.ArtistSplitSymbols, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="TrimNowLabel"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <Button Command="{x:Bind ViewModel.AppViewModel.TrimNowCommand, Mode=OneWay}">
+                        <Button.Content>
+                            <FontIcon Glyph="&#xE895;" />
+                        </Button.Content>
+                    </Button>
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="WindowBoundsDescription"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <controls:SettingsCard.Description>
+                        <TextBlock
+                            x:Uid="WindowBoundsHint"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Description>
+                    <Button
+                        x:Uid="ResetWindowBounds"
+                        MinWidth="0"
+                        Command="{x:Bind ViewModel.AppViewModel.ResetWindowBoundsCommand, Mode=OneWay}" />
+                </controls:SettingsCard>
+            </StackPanel>
+        </Grid>
     </ScrollViewer>
 </UserControl>

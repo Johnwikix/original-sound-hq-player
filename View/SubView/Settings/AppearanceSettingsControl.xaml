@@ -14,172 +14,163 @@
     xmlns:ui="using:CommunityToolkit.WinUI"
     mc:Ignorable="d">
 
-    <ScrollViewer Padding="6,0,6,0">
-        <StackPanel>
-            <StackPanel.ChildrenTransitions>
-                <RepositionThemeTransition IsStaggeringEnabled="True" />
-            </StackPanel.ChildrenTransitions>
-            <TextBlock
-                x:Uid="AppStyle"
-                Margin="10,16,10,4"
-                FontSize="16" />
-            <Border
-                Margin="10,0,10,0"
-                Padding="0"
-                HorizontalAlignment="Stretch"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="{ThemeResource ControlCornerRadius}">
-                <StackPanel>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+    <ScrollViewer Style="{StaticResource SettingsScrollViewerStyle}">
+        <Grid Style="{StaticResource SettingsGridStyle}">
+            <StackPanel Spacing="{StaticResource SettingsCardSpacing}">
+
+                <TextBlock
+                    x:Uid="AppStyle"
+                    Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="IsUpdateBackDrop"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsOn="{x:Bind ViewModel.AppViewModel.IsUpdateBackDrop, Mode=TwoWay}" />
-                    </Grid>
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.IsUpdateBackDrop, Mode=TwoWay}" />
+                </controls:SettingsCard>
 
-                    <StackPanel Padding="16,8,16,8">
-                        <RadioButton
-                            x:Name="TransparentTintRadioButton"
-                            x:Uid="TransparentTintStyle"
-                            Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
-                            CommandParameter="TransparentTint"
-                            GroupName="BackdropGroup"
-                            IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'TransparentTint')}"
-                            Tag="TransparentTint" />
-                        <RadioButton
-                            x:Name="MicaRadioButton"
-                            x:Uid="MicaStyle"
-                            Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
-                            CommandParameter="Mica"
-                            GroupName="BackdropGroup"
-                            IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'Mica')}"
-                            Tag="Mica" />
-                        <RadioButton
-                            x:Name="AcrylicRadioButton"
-                            x:Uid="AcrylicStyle"
-                            Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
-                            CommandParameter="Acrylic"
-                            GroupName="BackdropGroup"
-                            IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'Acrylic')}"
-                            Tag="Acrylic" />
-                        <RadioButton
-                            x:Name="TransparentAcrylicRadioButton"
-                            x:Uid="TransparentAcrylicStyle"
-                            Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
-                            CommandParameter="TransparentAcrylic"
-                            GroupName="BackdropGroup"
-                            IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'TransparentAcrylic')}"
-                            Tag="TransparentAcrylic" />
-                        <RadioButton
-                            x:Name="CustomAcrylicStyleRadioButton"
-                            x:Uid="CustomAcrylicStyle"
-                            Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
-                            CommandParameter="CustomAcrylicStyle"
-                            GroupName="BackdropGroup"
-                            IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'CustomAcrylicStyle')}"
-                            Tag="CustomAcrylicStyle"
-                            Visibility="{x:Bind ViewModel.CheckSystemVersion()}" />
-                        <StackPanel Visibility="{x:Bind ViewModel.AppViewModel.IsColorPickerVisible, Mode=OneWay}">
-                            <Grid ColumnDefinitions="Auto,*">
-                                <TextBlock
-                                    x:Uid="CustomOpacity"
-                                    Grid.Column="0"
-                                    Margin="0,0,10,0"
-                                    VerticalAlignment="Center" />
-                                <Slider
-                                    Grid.Column="1"
-                                    Width="245"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    Maximum="100"
-                                    Minimum="0"
-                                    Value="{x:Bind ViewModel.AppViewModel.CustomOpacity, Mode=TwoWay}" />
-                            </Grid>
-                            <ColorPicker
-                                HorizontalAlignment="Left"
-                                ColorSpectrumShape="Ring"
-                                IsAlphaEnabled="True"
-                                IsAlphaSliderVisible="True"
-                                IsAlphaTextInputVisible="True"
-                                IsColorChannelTextInputVisible="True"
-                                IsColorSliderVisible="True"
-                                IsHexInputVisible="False"
-                                IsMoreButtonVisible="True"
-                                Color="{x:Bind ViewModel.AppViewModel.CustomColor, Mode=TwoWay}" />
-                        </StackPanel>
-                    </StackPanel>
-                </StackPanel>
-            </Border>
+                <controls:SettingsCard ContentAlignment="Left">
+                    <RadioButton
+                        x:Name="TransparentTintRadioButton"
+                        x:Uid="TransparentTintStyle"
+                        Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                        CommandParameter="TransparentTint"
+                        GroupName="BackdropGroup"
+                        IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'TransparentTint')}"
+                        Tag="TransparentTint" />
+                </controls:SettingsCard>
 
-            <TextBlock
-                x:Uid="ThemeStyle"
-                Margin="10,16,10,4"
-                FontSize="16" />
-            <Border
-                Margin="10,0,10,0"
-                Padding="0"
-                HorizontalAlignment="Stretch"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="{ThemeResource ControlCornerRadius}">
-                <StackPanel>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                <controls:SettingsCard ContentAlignment="Left">
+                    <RadioButton
+                        x:Name="MicaRadioButton"
+                        x:Uid="MicaStyle"
+                        Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                        CommandParameter="Mica"
+                        GroupName="BackdropGroup"
+                        IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'Mica')}"
+                        Tag="Mica" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard ContentAlignment="Left">
+                    <RadioButton
+                        x:Name="AcrylicRadioButton"
+                        x:Uid="AcrylicStyle"
+                        Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                        CommandParameter="Acrylic"
+                        GroupName="BackdropGroup"
+                        IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'Acrylic')}"
+                        Tag="Acrylic" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard ContentAlignment="Left">
+                    <RadioButton
+                        x:Name="TransparentAcrylicRadioButton"
+                        x:Uid="TransparentAcrylicStyle"
+                        Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                        CommandParameter="TransparentAcrylic"
+                        GroupName="BackdropGroup"
+                        IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'TransparentAcrylic')}"
+                        Tag="TransparentAcrylic" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard
+                    ContentAlignment="Left"
+                    Visibility="{x:Bind ViewModel.CheckSystemVersion()}">
+                    <RadioButton
+                        x:Name="CustomAcrylicStyleRadioButton"
+                        x:Uid="CustomAcrylicStyle"
+                        Command="{x:Bind ViewModel.AppViewModel.BackdropTypeChangedCommand, Mode=OneWay}"
+                        CommandParameter="CustomAcrylicStyle"
+                        GroupName="BackdropGroup"
+                        IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.BackdropType,'CustomAcrylicStyle')}"
+                        Tag="CustomAcrylicStyle" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard Visibility="{x:Bind ViewModel.AppViewModel.IsColorPickerVisible, Mode=OneWay}">
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="CustomOpacity"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <Slider
+                        Width="245"
+                        Maximum="100"
+                        Minimum="0"
+                        Value="{x:Bind ViewModel.AppViewModel.CustomOpacity, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <Border
+                    Padding="12"
+                    HorizontalAlignment="Left"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{ThemeResource ControlCornerRadius}"
+                    Visibility="{x:Bind ViewModel.AppViewModel.IsColorPickerVisible, Mode=OneWay}">
+                    <ColorPicker
+                        ColorSpectrumShape="Ring"
+                        IsAlphaEnabled="True"
+                        IsAlphaSliderVisible="True"
+                        IsAlphaTextInputVisible="True"
+                        IsColorChannelTextInputVisible="True"
+                        IsColorSliderVisible="True"
+                        IsHexInputVisible="False"
+                        IsMoreButtonVisible="True"
+                        Color="{x:Bind ViewModel.AppViewModel.CustomColor, Mode=TwoWay}" />
+                </Border>
+
+                <TextBlock
+                    x:Uid="ThemeStyle"
+                    Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+
+                <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}">
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="UseImageDominantTheme"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
-                            IsOn="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=TwoWay}" />
-                    </Grid>
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=TwoWay}" />
+                </controls:SettingsCard>
 
-                    <StackPanel Padding="16,8,16,8">
-                        <RadioButton
-                            x:Name="DefaultRadioButton"
-                            x:Uid="SystemDefaultTheme"
-                            Command="{x:Bind ViewModel.AppViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
-                            CommandParameter="Default"
-                            GroupName="ThemeGroup"
-                            IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.ThemeType,'Default')}"
-                            Tag="Default" />
-                        <RadioButton
-                            x:Name="DarkRadioButton"
-                            x:Uid="Dark"
-                            Command="{x:Bind ViewModel.AppViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
-                            CommandParameter="Dark"
-                            GroupName="ThemeGroup"
-                            IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.ThemeType,'Dark')}"
-                            Tag="Dark" />
-                        <RadioButton
-                            x:Name="LightRadioButton"
-                            x:Uid="Light"
-                            Command="{x:Bind ViewModel.AppViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
-                            CommandParameter="Light"
-                            GroupName="ThemeGroup"
-                            IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.ThemeType,'Light')}"
-                            Tag="Light" />
-                    </StackPanel>
-                </StackPanel>
-            </Border>
-        </StackPanel>
+                <controls:SettingsCard ContentAlignment="Left">
+                    <RadioButton
+                        x:Name="DefaultRadioButton"
+                        x:Uid="SystemDefaultTheme"
+                        Command="{x:Bind ViewModel.AppViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
+                        CommandParameter="Default"
+                        GroupName="ThemeGroup"
+                        IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.ThemeType,'Default')}"
+                        Tag="Default" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard ContentAlignment="Left">
+                    <RadioButton
+                        x:Name="DarkRadioButton"
+                        x:Uid="Dark"
+                        Command="{x:Bind ViewModel.AppViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
+                        CommandParameter="Dark"
+                        GroupName="ThemeGroup"
+                        IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.ThemeType,'Dark')}"
+                        Tag="Dark" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard ContentAlignment="Left">
+                    <RadioButton
+                        x:Name="LightRadioButton"
+                        x:Uid="Light"
+                        Command="{x:Bind ViewModel.AppViewModel.ThemeTypeChangedCommand, Mode=OneWay}"
+                        CommandParameter="Light"
+                        GroupName="ThemeGroup"
+                        IsChecked="{x:Bind tool:BindUtils.RadioButtonTagToBoolConverter(ViewModel.AppViewModel.ThemeType,'Light')}"
+                        Tag="Light" />
+                </controls:SettingsCard>
+            </StackPanel>
+        </Grid>
     </ScrollViewer>
 </UserControl>

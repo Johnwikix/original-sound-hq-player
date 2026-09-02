@@ -14,53 +14,52 @@
     xmlns:ui="using:CommunityToolkit.WinUI"
     mc:Ignorable="d">
 
-    <ScrollViewer Padding="6,0,6,0">
-        <StackPanel>
-            <StackPanel.ChildrenTransitions>
-                <RepositionThemeTransition IsStaggeringEnabled="True" />
-            </StackPanel.ChildrenTransitions>
-            <controls:SettingsExpander
-                x:Uid="AppTitleHeader"
-                Margin="10,0,10,0"
-                Description="© 2026 Sennpei Studio"
-                HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/Square44x44Logo.altform-unplated_targetsize-32.png}">
-                <TextBlock
-                    x:Name="Version"
-                    Margin="10"
-                    VerticalAlignment="Center"
-                    FontSize="14"
-                    Text="{x:Bind ViewModel.AppViewModel.Version, Mode=OneWay}" />
-                <controls:SettingsExpander.Items>
-                    <controls:SettingsCard ContentAlignment="Left">
-                        <StackPanel Orientation="Horizontal">
-                            <HyperlinkButton
-                                x:Name="WebSite"
-                                x:Uid="OfficialWebSite"
-                                Command="{x:Bind ViewModel.AppViewModel.OpenWebSiteCommand, Mode=OneWay}" />
-                            <HyperlinkButton
-                                x:Name="ThirdParty"
-                                x:Uid="ThirdPartyComponents"
-                                Click="ThirdParty_Click" />
-                            <HyperlinkButton
-                                x:Name="LogPath"
-                                x:Uid="LogPath"
-                                Command="{x:Bind ViewModel.AppViewModel.OpenLogPathCommand, Mode=OneWay}" />
-                            <HyperlinkButton
-                                x:Name="MainGitHub"
-                                Command="{x:Bind ViewModel.AppViewModel.OpenMainGitHubCommand, Mode=OneWay}"
-                                Content="GitHub" />
-                        </StackPanel>
-                    </controls:SettingsCard>
-                </controls:SettingsExpander.Items>
-            </controls:SettingsExpander>
+    <ScrollViewer Style="{StaticResource SettingsScrollViewerStyle}">
+        <Grid Style="{StaticResource SettingsGridStyle}">
+            <StackPanel Spacing="{StaticResource SettingsCardSpacing}">
+                <controls:SettingsExpander
+                    x:Uid="AppTitleHeader"
+                    Margin="0,30,0,0"
+                    Description="© 2026 Sennpei Studio"
+                    HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/Square44x44Logo.altform-unplated_targetsize-32.png}">
+                    <TextBlock
+                        x:Name="Version"
+                        Margin="10"
+                        VerticalAlignment="Center"
+                        FontSize="14"
+                        Text="{x:Bind ViewModel.AppViewModel.Version, Mode=OneWay}" />
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard ContentAlignment="Left">
+                            <StackPanel Orientation="Horizontal">
+                                <HyperlinkButton
+                                    x:Name="WebSite"
+                                    x:Uid="OfficialWebSite"
+                                    Command="{x:Bind ViewModel.AppViewModel.OpenWebSiteCommand, Mode=OneWay}" />
+                                <HyperlinkButton
+                                    x:Name="ThirdParty"
+                                    x:Uid="ThirdPartyComponents"
+                                    Click="ThirdParty_Click" />
+                                <HyperlinkButton
+                                    x:Name="LogPath"
+                                    x:Uid="LogPath"
+                                    Command="{x:Bind ViewModel.AppViewModel.OpenLogPathCommand, Mode=OneWay}" />
+                                <HyperlinkButton
+                                    x:Name="MainGitHub"
+                                    Command="{x:Bind ViewModel.AppViewModel.OpenMainGitHubCommand, Mode=OneWay}"
+                                    Content="GitHub" />
+                            </StackPanel>
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
 
-            <controls:SettingsCard
-                x:Uid="SpectrumVisualization"
-                Margin="10,16,10,0"
-                Click="SpectrumVisualization_Click"
-                Description="© 2026 Sennpei Studio"
-                HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/SpectrumVisualization.png}"
-                IsClickEnabled="True" />
-        </StackPanel>
+                <controls:SettingsCard
+                    x:Uid="SpectrumVisualization"
+                    Margin="0,16,0,0"
+                    Click="SpectrumVisualization_Click"
+                    Description="© 2026 Sennpei Studio"
+                    HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/SpectrumVisualization.png}"
+                    IsClickEnabled="True" />
+            </StackPanel>
+        </Grid>
     </ScrollViewer>
 </UserControl>

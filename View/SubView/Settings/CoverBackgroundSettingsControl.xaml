@@ -14,363 +14,229 @@
     xmlns:ui="using:CommunityToolkit.WinUI"
     mc:Ignorable="d">
 
-    <ScrollViewer Padding="6,0,6,0">
-        <StackPanel>
-            <StackPanel.ChildrenTransitions>
-                <RepositionThemeTransition IsStaggeringEnabled="True" />
-            </StackPanel.ChildrenTransitions>
-            <TextBlock
-                x:Uid="SettingCover"
-                Margin="10,16,10,4"
-                FontSize="16" />
-            <Border
-                Margin="10,0,10,0"
-                Padding="0"
-                HorizontalAlignment="Stretch"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="{ThemeResource ControlCornerRadius}">
-                <StackPanel>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock x:Uid="CoverSize" FontSize="14" />
-                            <TextBlock
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="{x:Bind tool:ToolUtils.GetString('CoverSizeToolTip')}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <NumberBox
-                            x:Name="CoverSize"
-                            Grid.Column="1"
-                            Width="300"
-                            VerticalAlignment="Center"
-                            LargeChange="10"
-                            Minimum="0"
-                            SmallChange="1"
-                            SpinButtonPlacementMode="Inline"
-                            Value="{x:Bind ViewModel.AppViewModel.CoverSize, Mode=TwoWay}" />
-                    </Grid>
+    <ScrollViewer Style="{StaticResource SettingsScrollViewerStyle}">
+        <Grid Style="{StaticResource SettingsGridStyle}">
+            <StackPanel Spacing="{StaticResource SettingsCardSpacing}">
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock x:Uid="CoverDiskCache" FontSize="14" />
-                            <TextBlock
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <Grid
-                            Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="*,Auto">
-                            <Button
-                                Grid.Column="0"
-                                Margin="0,0,10,0"
-                                HorizontalAlignment="Stretch"
-                                HorizontalContentAlignment="Stretch"
-                                Command="{x:Bind ViewModel.AppViewModel.OpenCoverCacheLocationCommand, Mode=OneWay}">
-                                <Button.Content>
-                                    <dev:AutoScrollView
-                                        x:Name="AutoScrollViewControl"
-                                        Margin="0,0,10,0"
-                                        IsPlaying="False"
-                                        PointerCanceled="AutoScrollHover_PointerCanceled"
-                                        PointerEntered="AutoScrollHover_PointerEntered"
-                                        PointerExited="AutoScrollHover_PointerExited">
-                                        <TextBlock
-                                            VerticalAlignment="Center"
-                                            Text="{x:Bind ViewModel.AppViewModel.MusicCoverCache, Mode=OneWay}"
-                                            TextAlignment="Right"
-                                            TextTrimming="CharacterEllipsis"
-                                            TextWrapping="NoWrap" />
-                                    </dev:AutoScrollView>
-                                </Button.Content>
-                            </Button>
-                            <Button
-                                x:Uid="ChangeMusicCoverCache"
-                                Grid.Column="1"
-                                Command="{x:Bind ViewModel.AppViewModel.ChangeCoverCacheLocationCommand, Mode=OneWay}" />
-                        </Grid>
-                    </Grid>
+                <TextBlock
+                    x:Uid="SettingCover"
+                    Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('CoverSizeToolTip'), Mode=OneWay}">
+                    <controls:SettingsCard.Header>
+                        <TextBlock x:Uid="CoverSize" />
+                    </controls:SettingsCard.Header>
+                    <NumberBox
+                        x:Name="CoverSize"
+                        Width="300"
+                        LargeChange="10"
+                        Minimum="0"
+                        SmallChange="1"
+                        SpinButtonPlacementMode="Inline"
+                        Value="{x:Bind ViewModel.AppViewModel.CoverSize, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}">
+                    <controls:SettingsCard.Header>
+                        <TextBlock x:Uid="CoverDiskCache" />
+                    </controls:SettingsCard.Header>
+                    <Grid Width="300" ColumnDefinitions="*,Auto">
+                        <Button
+                            Grid.Column="0"
+                            Margin="0,0,10,0"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            Command="{x:Bind ViewModel.AppViewModel.OpenCoverCacheLocationCommand, Mode=OneWay}">
+                            <Button.Content>
+                                <dev:AutoScrollView
+                                    x:Name="AutoScrollViewControl"
+                                    Margin="0,0,10,0"
+                                    IsPlaying="False"
+                                    PointerCanceled="AutoScrollHover_PointerCanceled"
+                                    PointerEntered="AutoScrollHover_PointerEntered"
+                                    PointerExited="AutoScrollHover_PointerExited">
+                                    <TextBlock
+                                        VerticalAlignment="Center"
+                                        Text="{x:Bind ViewModel.AppViewModel.MusicCoverCache, Mode=OneWay}"
+                                        TextAlignment="Right"
+                                        TextTrimming="CharacterEllipsis"
+                                        TextWrapping="NoWrap" />
+                                </dev:AutoScrollView>
+                            </Button.Content>
+                        </Button>
+                        <Button
+                            x:Uid="ChangeMusicCoverCache"
+                            Grid.Column="1"
+                            Command="{x:Bind ViewModel.AppViewModel.ChangeCoverCacheLocationCommand, Mode=OneWay}" />
+                    </Grid>
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="AutoCoverMatching"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.IsAutoCoverEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}">
+                    <controls:SettingsCard.Header>
+                        <TextBlock x:Uid="Win2dCover" />
+                    </controls:SettingsCard.Header>
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.IsWin2dCoverImageControlEnable, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}">
+                    <controls:SettingsCard.Header>
+                        <TextBlock x:Uid="Win2dAnimatedTitle" />
+                    </controls:SettingsCard.Header>
+                    <Grid Width="300" ColumnDefinitions="Auto,*">
                         <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsOn="{x:Bind ViewModel.AppViewModel.IsAutoCoverEnabled, Mode=TwoWay}" />
-                    </Grid>
-
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock x:Uid="Win2dCover" FontSize="14" />
-                            <TextBlock
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsOn="{x:Bind ViewModel.AppViewModel.IsWin2dCoverImageControlEnable, Mode=TwoWay}" />
-                    </Grid>
-
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock x:Uid="Win2dAnimatedTitle" FontSize="14" />
-                            <TextBlock
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <Grid
-                            Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="Auto,*">
-                            <ToggleSwitch
-                                Grid.Column="0"
-                                MinWidth="0"
-                                Margin="0,0,10,0"
-                                IsOn="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=TwoWay}" />
-                            <ComboBox
-                                Grid.Column="1"
-                                HorizontalAlignment="Stretch"
-                                VerticalAlignment="Center"
-                                IsEnabled="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=OneWay}"
-                                ItemsSource="{x:Bind ViewModel.AppViewModel.TextEffectItems}"
-                                SelectedItem="{x:Bind ViewModel.AppViewModel.Win2dTextEffectType, Mode=TwoWay}">
-                                <ComboBox.ItemTemplate>
-                                    <DataTemplate x:DataType="model:EffectComboBoxItem">
-                                        <TextBlock Text="{x:Bind DisplayName}" />
-                                    </DataTemplate>
-                                </ComboBox.ItemTemplate>
-                            </ComboBox>
-                        </Grid>
-                    </Grid>
-
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="MusicInfoVisible"
                             Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ToggleSwitch
-                            Grid.Column="1"
                             MinWidth="0"
-                            IsOn="{x:Bind ViewModel.AppViewModel.IsMusicInfoVisible, Mode=TwoWay}" />
-                    </Grid>
-
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock x:Uid="UseAlignmentInPortrait" FontSize="14" />
-                            <TextBlock
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="{x:Bind tool:ToolUtils.GetString('ForceLeftWhenOff')}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <Grid
-                            Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="Auto,*">
-                            <ToggleSwitch
-                                Grid.Column="0"
-                                MinWidth="0"
-                                Margin="0,0,10,0"
-                                IsOn="{x:Bind ViewModel.AppViewModel.UsePlayingDetailAlignmentInPortrait, Mode=TwoWay}" />
-                            <ComboBox
-                                Grid.Column="1"
-                                HorizontalAlignment="Stretch"
-                                VerticalAlignment="Center"
-                                SelectedValue="{x:Bind ViewModel.AppViewModel.PlayingDetailAlignment, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
-                                SelectedValuePath="Tag">
-                                <ComboBoxItem x:Uid="Left" Tag="Left" />
-                                <ComboBoxItem x:Uid="Center" Tag="Center" />
-                                <ComboBoxItem x:Uid="Right" Tag="Right" />
-                            </ComboBox>
-                        </Grid>
-                    </Grid>
-                </StackPanel>
-            </Border>
-
-            <TextBlock
-                x:Uid="ShaderBackgroundExpander"
-                Margin="10,16,10,4"
-                FontSize="16" />
-            <Border
-                Margin="10,0,10,0"
-                Padding="0"
-                HorizontalAlignment="Stretch"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="{ThemeResource ControlCornerRadius}">
-                <StackPanel>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock x:Uid="ShaderBackground" FontSize="14" />
-                            <TextBlock
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <Grid
-                            Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="Auto,*">
-                            <ToggleSwitch
-                                Grid.Column="0"
-                                MinWidth="0"
-                                Margin="0,0,10,0"
-                                IsOn="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=TwoWay}" />
-                            <ComboBox
-                                Grid.Column="1"
-                                HorizontalAlignment="Stretch"
-                                VerticalAlignment="Center"
-                                IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
-                                SelectedIndex="{x:Bind ViewModel.AppViewModel.BackgroundShaderIndex, Mode=TwoWay}">
-                                <ComboBoxItem x:Uid="BackgroundShader_Fluid" />
-                                <ComboBoxItem x:Uid="BackgroundShader_PS3XMB" />
-                                <ComboBoxItem x:Uid="BackgroundShader_RotatingMesh" />
-                                <ComboBoxItem x:Uid="BackgroundShader_LiquidFlow" />
-                                <ComboBoxItem x:Uid="BackgroundShader_GradientFlow" />
-                                <ComboBoxItem x:Uid="BackgroundShader_WavyBackground" />
-                                <ComboBoxItem x:Uid="BackgroundShader_ChromaticResonance" />
-                            </ComboBox>
-                        </Grid>
-                    </Grid>
-
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="EnableLightWave"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsEnabled="{x:Bind tool:BindUtils.IsLightWaveEnabled(ViewModel.AppViewModel.IsFluidBackgroundEnabled, ViewModel.AppViewModel.BackgroundShaderIndex), Mode=OneWay}"
-                            IsOn="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=TwoWay}" />
-                    </Grid>
-
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="FogEffect"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
-                            IsOn="{x:Bind ViewModel.AppViewModel.IsFogEffectEnabled, Mode=TwoWay}" />
-                    </Grid>
-
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="SnowEffect"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
-                            IsOn="{x:Bind ViewModel.AppViewModel.IsSnowEffectEnabled, Mode=TwoWay}" />
-                    </Grid>
-
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="RaindropEffect"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
-                            IsOn="{x:Bind ViewModel.AppViewModel.IsRaindropEffectEnabled, Mode=TwoWay}" />
-                    </Grid>
-
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="PaletteAlgorithm"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
+                            Margin="0,0,10,0"
+                            IsOn="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=TwoWay}" />
                         <ComboBox
                             Grid.Column="1"
-                            Width="300"
-                            IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
-                            SelectedIndex="{x:Bind ViewModel.AppViewModel.PaletteAlgorithmIndex, Mode=TwoWay}">
-                            <ComboBoxItem Content="K-Means++" />
-                            <ComboBoxItem Content="OctTree" />
+                            HorizontalAlignment="Stretch"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=OneWay}"
+                            ItemsSource="{x:Bind ViewModel.AppViewModel.TextEffectItems}"
+                            SelectedItem="{x:Bind ViewModel.AppViewModel.Win2dTextEffectType, Mode=TwoWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="model:EffectComboBoxItem">
+                                    <TextBlock Text="{x:Bind DisplayName}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
                         </ComboBox>
                     </Grid>
-                </StackPanel>
-            </Border>
-        </StackPanel>
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="MusicInfoVisible"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.IsMusicInfoVisible, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('ForceLeftWhenOff'), Mode=OneWay}">
+                    <controls:SettingsCard.Header>
+                        <TextBlock x:Uid="UseAlignmentInPortrait" />
+                    </controls:SettingsCard.Header>
+                    <Grid Width="300" ColumnDefinitions="Auto,*">
+                        <ToggleSwitch
+                            Grid.Column="0"
+                            MinWidth="0"
+                            Margin="0,0,10,0"
+                            IsOn="{x:Bind ViewModel.AppViewModel.UsePlayingDetailAlignmentInPortrait, Mode=TwoWay}" />
+                        <ComboBox
+                            Grid.Column="1"
+                            HorizontalAlignment="Stretch"
+                            SelectedValue="{x:Bind ViewModel.AppViewModel.PlayingDetailAlignment, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
+                            SelectedValuePath="Tag">
+                            <ComboBoxItem x:Uid="Left" Tag="Left" />
+                            <ComboBoxItem x:Uid="Center" Tag="Center" />
+                            <ComboBoxItem x:Uid="Right" Tag="Right" />
+                        </ComboBox>
+                    </Grid>
+                </controls:SettingsCard>
+
+                <TextBlock
+                    x:Uid="ShaderBackgroundExpander"
+                    Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+
+                <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}">
+                    <controls:SettingsCard.Header>
+                        <TextBlock x:Uid="ShaderBackground" />
+                    </controls:SettingsCard.Header>
+                    <Grid Width="300" ColumnDefinitions="Auto,*">
+                        <ToggleSwitch
+                            Grid.Column="0"
+                            MinWidth="0"
+                            Margin="0,0,10,0"
+                            IsOn="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=TwoWay}" />
+                        <ComboBox
+                            Grid.Column="1"
+                            HorizontalAlignment="Stretch"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}"
+                            SelectedIndex="{x:Bind ViewModel.AppViewModel.BackgroundShaderIndex, Mode=TwoWay}">
+                            <ComboBoxItem x:Uid="BackgroundShader_Fluid" />
+                            <ComboBoxItem x:Uid="BackgroundShader_PS3XMB" />
+                            <ComboBoxItem x:Uid="BackgroundShader_RotatingMesh" />
+                            <ComboBoxItem x:Uid="BackgroundShader_LiquidFlow" />
+                            <ComboBoxItem x:Uid="BackgroundShader_GradientFlow" />
+                            <ComboBoxItem x:Uid="BackgroundShader_WavyBackground" />
+                            <ComboBoxItem x:Uid="BackgroundShader_ChromaticResonance" />
+                        </ComboBox>
+                    </Grid>
+                </controls:SettingsCard>
+
+                <controls:SettingsCard IsEnabled="{x:Bind tool:BindUtils.IsLightWaveEnabled(ViewModel.AppViewModel.IsFluidBackgroundEnabled, ViewModel.AppViewModel.BackgroundShaderIndex), Mode=OneWay}">
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="EnableLightWave"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}">
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="FogEffect"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.IsFogEffectEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}">
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="SnowEffect"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.IsSnowEffectEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}">
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="RaindropEffect"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.IsRaindropEffectEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}">
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="PaletteAlgorithm"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ComboBox
+                        Width="300"
+                        SelectedIndex="{x:Bind ViewModel.AppViewModel.PaletteAlgorithmIndex, Mode=TwoWay}">
+                        <ComboBoxItem Content="K-Means++" />
+                        <ComboBoxItem Content="OctTree" />
+                    </ComboBox>
+                </controls:SettingsCard>
+            </StackPanel>
+        </Grid>
     </ScrollViewer>
 </UserControl>

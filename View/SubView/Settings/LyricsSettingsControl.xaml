@@ -20,885 +20,639 @@
         </DataTemplate>
     </UserControl.Resources>
 
-    <ScrollViewer Padding="6,0,6,0">
-        <StackPanel>
-            <StackPanel.ChildrenTransitions>
-                <RepositionThemeTransition IsStaggeringEnabled="True" />
-            </StackPanel.ChildrenTransitions>
-            <TextBlock
-                x:Uid="SettingLyrics"
-                Margin="10,16,10,4"
-                FontSize="16" />
-            <Border
-                Margin="10,0,10,0"
-                Padding="0"
-                HorizontalAlignment="Stretch"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="{ThemeResource ControlCornerRadius}">
-                <StackPanel>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+    <ScrollViewer Style="{StaticResource SettingsScrollViewerStyle}">
+        <Grid Style="{StaticResource SettingsGridStyle}">
+            <StackPanel Spacing="{StaticResource SettingsCardSpacing}">
+
+                <TextBlock
+                    x:Uid="SettingLyrics"
+                    Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="AutoLyricMatching"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsOn="{x:Bind ViewModel.AppViewModel.IsAutoLyricsEnabled, Mode=TwoWay}" />
-                    </Grid>
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.IsAutoLyricsEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock x:Uid="EnableAdvancedLyricsEffect" FontSize="14" />
-                            <TextBlock
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                Text="{x:Bind tool:ToolUtils.GetString('RebootToApply')}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsOn="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=TwoWay}" />
-                    </Grid>
-
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="LyricsFontFamily"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ComboBox
-                            x:Name="LyricsFontFamily"
-                            Grid.Column="1"
-                            Width="300"
-                            VerticalAlignment="Center"
-                            ItemTemplate="{StaticResource FontComboboxTemplate}"
-                            ItemsSource="{x:Bind ViewModel.AppViewModel.FontFamilyList, Mode=OneWay}"
-                            SelectedValue="{x:Bind ViewModel.AppViewModel.FontFamily, Mode=TwoWay}" />
-                    </Grid>
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ComboBox
+                        x:Name="LyricsFontFamily"
+                        Width="300"
+                        ItemTemplate="{StaticResource FontComboboxTemplate}"
+                        ItemsSource="{x:Bind ViewModel.AppViewModel.FontFamilyList, Mode=OneWay}"
+                        SelectedValue="{x:Bind ViewModel.AppViewModel.FontFamily, Mode=TwoWay}" />
+                </controls:SettingsCard>
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="LyricsFontSize"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <Grid Width="300" ColumnDefinitions="Auto,*">
+                        <ToggleSwitch
                             Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <Grid
-                            Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="Auto,*">
-                            <ToggleSwitch
-                                Grid.Column="0"
-                                MinWidth="0"
-                                Margin="0,0,10,0"
-                                IsOn="{x:Bind ViewModel.AppViewModel.IsGlobalFontSizeEnabled, Mode=TwoWay}" />
-                            <NumberBox
-                                x:Name="LyricsFontSize"
-                                Grid.Column="1"
-                                VerticalAlignment="Center"
-                                LargeChange="10"
-                                Minimum="0"
-                                SmallChange="1"
-                                SpinButtonPlacementMode="Inline"
-                                Value="{x:Bind ViewModel.AppViewModel.GlobalFontSize, Mode=TwoWay}" />
-                        </Grid>
-                    </Grid>
-
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="LyricsFontWeight"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ComboBox
-                            Grid.Column="1"
-                            Width="300"
-                            VerticalAlignment="Center"
-                            SelectedIndex="{x:Bind ViewModel.AppViewModel.LyricsFontWeightIndex, Mode=TwoWay}">
-                            <ComboBoxItem x:Uid="DesktopLyricsWeightNormal" />
-                            <ComboBoxItem x:Uid="DesktopLyricsWeightMedium" />
-                            <ComboBoxItem x:Uid="DesktopLyricsWeightSemiBold" />
-                            <ComboBoxItem x:Uid="DesktopLyricsWeightBold" />
-                        </ComboBox>
-                    </Grid>
-
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="LyricsAlignment"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ComboBox
-                            x:Name="LyricsAlignmentComboBox"
-                            Grid.Column="1"
-                            Width="300"
-                            VerticalAlignment="Center"
-                            SelectedValue="{x:Bind ViewModel.AppViewModel.LyricsAlignment, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
-                            SelectedValuePath="Tag">
-                            <ComboBoxItem x:Uid="Left" Tag="Left" />
-                            <ComboBoxItem x:Uid="Center" Tag="Center" />
-                            <ComboBoxItem x:Uid="Right" Tag="Right" />
-                        </ComboBox>
-                    </Grid>
-
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="LyricsMargin"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
+                            MinWidth="0"
+                            Margin="0,0,10,0"
+                            IsOn="{x:Bind ViewModel.AppViewModel.IsGlobalFontSizeEnabled, Mode=TwoWay}" />
                         <NumberBox
-                            x:Name="LyricsMarginNumberBox"
+                            x:Name="LyricsFontSize"
                             Grid.Column="1"
-                            Width="300"
-                            VerticalAlignment="Center"
                             LargeChange="10"
                             Minimum="0"
                             SmallChange="1"
                             SpinButtonPlacementMode="Inline"
-                            Value="{x:Bind ViewModel.AppViewModel.LyricsMargin, Converter={StaticResource ThicknessToDoubleConverter}, Mode=TwoWay}" />
+                            Value="{x:Bind ViewModel.AppViewModel.GlobalFontSize, Mode=TwoWay}" />
                     </Grid>
+                </controls:SettingsCard>
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="LyricsFontWeight"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ComboBox
+                        Width="300"
+                        SelectedIndex="{x:Bind ViewModel.AppViewModel.LyricsFontWeightIndex, Mode=TwoWay}">
+                        <ComboBoxItem x:Uid="DesktopLyricsWeightNormal" />
+                        <ComboBoxItem x:Uid="DesktopLyricsWeightMedium" />
+                        <ComboBoxItem x:Uid="DesktopLyricsWeightSemiBold" />
+                        <ComboBoxItem x:Uid="DesktopLyricsWeightBold" />
+                    </ComboBox>
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="LyricsAlignment"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ComboBox
+                        x:Name="LyricsAlignmentComboBox"
+                        Width="300"
+                        SelectedValue="{x:Bind ViewModel.AppViewModel.LyricsAlignment, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
+                        SelectedValuePath="Tag">
+                        <ComboBoxItem x:Uid="Left" Tag="Left" />
+                        <ComboBoxItem x:Uid="Center" Tag="Center" />
+                        <ComboBoxItem x:Uid="Right" Tag="Right" />
+                    </ComboBox>
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="LyricsMargin"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <NumberBox
+                        x:Name="LyricsMarginNumberBox"
+                        Width="300"
+                        LargeChange="10"
+                        Minimum="0"
+                        SmallChange="1"
+                        SpinButtonPlacementMode="Inline"
+                        Value="{x:Bind ViewModel.AppViewModel.LyricsMargin, Converter={StaticResource ThicknessToDoubleConverter}, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="LyricsBlurAmount"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <Grid Width="300" ColumnDefinitions="100,*">
+                        <TextBlock
                             Grid.Column="0"
+                            Margin="5,0"
                             VerticalAlignment="Center"
-                            FontSize="14" />
-                        <Grid
+                            Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.LyricsBlurAmount), Mode=OneWay}" />
+                        <Slider
                             Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="100,*">
-                            <TextBlock
-                                Grid.Column="0"
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.LyricsBlurAmount), Mode=OneWay}" />
-                            <Slider
-                                Grid.Column="1"
-                                VerticalAlignment="Center"
-                                Maximum="10"
-                                Minimum="0"
-                                SnapsTo="Ticks"
-                                TickFrequency="0.1"
-                                TickPlacement="Outside"
-                                Value="{x:Bind ViewModel.AppViewModel.LyricsBlurAmount, Mode=TwoWay}" />
-                        </Grid>
+                            Maximum="10"
+                            Minimum="0"
+                            SnapsTo="Ticks"
+                            TickFrequency="0.1"
+                            TickPlacement="Outside"
+                            Value="{x:Bind ViewModel.AppViewModel.LyricsBlurAmount, Mode=TwoWay}" />
                     </Grid>
+                </controls:SettingsCard>
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="PlayingLineTopOffset"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <Grid Width="300" ColumnDefinitions="100,*">
+                        <TextBlock
                             Grid.Column="0"
+                            Margin="5,0"
                             VerticalAlignment="Center"
-                            FontSize="14" />
-                        <Grid
+                            Text="{x:Bind tool:BindUtils.FormatPercent(ViewModel.AppViewModel.PlayingLineTopOffsetPercent), Mode=OneWay}" />
+                        <Slider
                             Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="100,*">
-                            <TextBlock
-                                Grid.Column="0"
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                Text="{x:Bind tool:BindUtils.FormatPercent(ViewModel.AppViewModel.PlayingLineTopOffsetPercent), Mode=OneWay}" />
-                            <Slider
-                                Grid.Column="1"
-                                VerticalAlignment="Center"
-                                Maximum="70"
-                                Minimum="30"
-                                SnapsTo="Ticks"
-                                TickFrequency="1"
-                                TickPlacement="Outside"
-                                Value="{x:Bind ViewModel.AppViewModel.PlayingLineTopOffsetPercent, Mode=TwoWay}" />
-                        </Grid>
+                            Maximum="70"
+                            Minimum="30"
+                            SnapsTo="Ticks"
+                            TickFrequency="1"
+                            TickPlacement="Outside"
+                            Value="{x:Bind ViewModel.AppViewModel.PlayingLineTopOffsetPercent, Mode=TwoWay}" />
                     </Grid>
+                </controls:SettingsCard>
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="UnplayedOpacity"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <Grid Width="300" ColumnDefinitions="100,*">
+                        <TextBlock
                             Grid.Column="0"
+                            Margin="5,0"
                             VerticalAlignment="Center"
-                            FontSize="14" />
-                        <Grid
+                            Text="{x:Bind tool:BindUtils.FormatPercent(ViewModel.AppViewModel.UnplayedOpacityPercent), Mode=OneWay}" />
+                        <Slider
                             Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="100,*">
-                            <TextBlock
-                                Grid.Column="0"
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                Text="{x:Bind tool:BindUtils.FormatPercent(ViewModel.AppViewModel.UnplayedOpacityPercent), Mode=OneWay}" />
-                            <Slider
-                                Grid.Column="1"
-                                VerticalAlignment="Center"
-                                Maximum="100"
-                                Minimum="0"
-                                SnapsTo="Ticks"
-                                TickFrequency="1"
-                                TickPlacement="Outside"
-                                Value="{x:Bind ViewModel.AppViewModel.UnplayedOpacityPercent, Mode=TwoWay}" />
-                        </Grid>
+                            Maximum="100"
+                            Minimum="0"
+                            SnapsTo="Ticks"
+                            TickFrequency="1"
+                            TickPlacement="Outside"
+                            Value="{x:Bind ViewModel.AppViewModel.UnplayedOpacityPercent, Mode=TwoWay}" />
                     </Grid>
+                </controls:SettingsCard>
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="TranslatedOpacity"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <Grid
-                            Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="100,*">
-                            <TextBlock
-                                Grid.Column="0"
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                Text="{x:Bind tool:BindUtils.FormatPercent(ViewModel.AppViewModel.TranslatedOpacityPercent), Mode=OneWay}" />
-                            <Slider
-                                Grid.Column="1"
-                                VerticalAlignment="Center"
-                                Maximum="100"
-                                Minimum="0"
-                                SnapsTo="Ticks"
-                                TickFrequency="1"
-                                TickPlacement="Outside"
-                                Value="{x:Bind ViewModel.AppViewModel.TranslatedOpacityPercent, Mode=TwoWay}" />
-                        </Grid>
-                    </Grid>
-
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <Grid Width="300" ColumnDefinitions="100,*">
                         <TextBlock
-                            x:Uid="CharFloatAmount"
                             Grid.Column="0"
+                            Margin="5,0"
                             VerticalAlignment="Center"
-                            FontSize="14" />
-                        <Grid
+                            Text="{x:Bind tool:BindUtils.FormatPercent(ViewModel.AppViewModel.TranslatedOpacityPercent), Mode=OneWay}" />
+                        <Slider
                             Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="100,*">
-                            <TextBlock
-                                Grid.Column="0"
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.CharFloatAmount), Mode=OneWay}" />
-                            <Slider
-                                Grid.Column="1"
-                                VerticalAlignment="Center"
-                                IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
-                                Maximum="10"
-                                Minimum="0"
-                                SnapsTo="Ticks"
-                                TickFrequency="0.1"
-                                TickPlacement="Outside"
-                                Value="{x:Bind ViewModel.AppViewModel.CharFloatAmount, Mode=TwoWay}" />
-                        </Grid>
+                            Maximum="100"
+                            Minimum="0"
+                            SnapsTo="Ticks"
+                            TickFrequency="1"
+                            TickPlacement="Outside"
+                            Value="{x:Bind ViewModel.AppViewModel.TranslatedOpacityPercent, Mode=TwoWay}" />
                     </Grid>
+                </controls:SettingsCard>
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                <!--  高级歌词效果:依赖总开关的细项收进二级折叠  -->
+                <controls:SettingsExpander Description="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}">
+                    <controls:SettingsExpander.Header>
                         <TextBlock
-                            x:Uid="CharScaleAmount"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <Grid
-                            Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="100,*">
-                            <TextBlock
-                                Grid.Column="0"
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                Text="{x:Bind tool:BindUtils.FormatF0(ViewModel.AppViewModel.CharScaleAmount), Mode=OneWay}" />
-                            <Slider
-                                Grid.Column="1"
-                                VerticalAlignment="Center"
-                                IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
-                                Maximum="150"
-                                Minimum="50"
-                                SnapsTo="Ticks"
-                                TickFrequency="1"
-                                TickPlacement="Outside"
-                                Value="{x:Bind ViewModel.AppViewModel.CharScaleAmount, Mode=TwoWay}" />
-                        </Grid>
-                    </Grid>
+                            x:Uid="EnableAdvancedLyricsEffect"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsExpander.Header>
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=TwoWay}" />
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
+                            <controls:SettingsCard.Header>
+                                <TextBlock
+                                    x:Uid="CharFloatAmount"
+                                    TextWrapping="Wrap" />
+                            </controls:SettingsCard.Header>
+                            <Grid Width="300" ColumnDefinitions="100,*">
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.CharFloatAmount), Mode=OneWay}" />
+                                <Slider
+                                    Grid.Column="1"
+                                    Maximum="10"
+                                    Minimum="0"
+                                    SnapsTo="Ticks"
+                                    TickFrequency="0.1"
+                                    TickPlacement="Outside"
+                                    Value="{x:Bind ViewModel.AppViewModel.CharFloatAmount, Mode=TwoWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="GlowAmount"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <Grid
-                            Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="100,*">
-                            <TextBlock
-                                Grid.Column="0"
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.GlowAmount), Mode=OneWay}" />
-                            <Slider
-                                Grid.Column="1"
-                                VerticalAlignment="Center"
-                                IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
-                                Maximum="10"
-                                Minimum="0"
-                                SnapsTo="Ticks"
-                                TickFrequency="0.1"
-                                TickPlacement="Outside"
-                                Value="{x:Bind ViewModel.AppViewModel.GlowAmount, Mode=TwoWay}" />
-                        </Grid>
-                    </Grid>
+                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
+                            <controls:SettingsCard.Header>
+                                <TextBlock
+                                    x:Uid="CharScaleAmount"
+                                    TextWrapping="Wrap" />
+                            </controls:SettingsCard.Header>
+                            <Grid Width="300" ColumnDefinitions="100,*">
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind tool:BindUtils.FormatF0(ViewModel.AppViewModel.CharScaleAmount), Mode=OneWay}" />
+                                <Slider
+                                    Grid.Column="1"
+                                    Maximum="150"
+                                    Minimum="50"
+                                    SnapsTo="Ticks"
+                                    TickFrequency="1"
+                                    TickPlacement="Outside"
+                                    Value="{x:Bind ViewModel.AppViewModel.CharScaleAmount, Mode=TwoWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="LongSyllableThreshold"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <Grid
-                            Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="100,*">
-                            <TextBlock
-                                Grid.Column="0"
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                Text="{x:Bind tool:BindUtils.FormatMs(ViewModel.AppViewModel.LongSyllableThreshold), Mode=OneWay}" />
-                            <Slider
-                                Grid.Column="1"
-                                VerticalAlignment="Center"
-                                IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
-                                Maximum="1000"
-                                Minimum="400"
-                                SnapsTo="Ticks"
-                                TickFrequency="10"
-                                TickPlacement="Outside"
-                                Value="{x:Bind ViewModel.AppViewModel.LongSyllableThreshold, Mode=TwoWay}" />
-                        </Grid>
-                    </Grid>
+                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
+                            <controls:SettingsCard.Header>
+                                <TextBlock
+                                    x:Uid="GlowAmount"
+                                    TextWrapping="Wrap" />
+                            </controls:SettingsCard.Header>
+                            <Grid Width="300" ColumnDefinitions="100,*">
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.GlowAmount), Mode=OneWay}" />
+                                <Slider
+                                    Grid.Column="1"
+                                    Maximum="10"
+                                    Minimum="0"
+                                    SnapsTo="Ticks"
+                                    TickFrequency="0.1"
+                                    TickPlacement="Outside"
+                                    Value="{x:Bind ViewModel.AppViewModel.GlowAmount, Mode=TwoWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="TargetFrameRate"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ComboBox
-                            Grid.Column="1"
-                            Width="300"
-                            VerticalAlignment="Center"
-                            IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
-                            ItemsSource="{x:Bind ViewModel.AppViewModel.TargetFrameRateOptions}"
-                            SelectedItem="{x:Bind ViewModel.AppViewModel.TargetFrameRate, Mode=TwoWay}">
-                            <ComboBox.ItemTemplate>
-                                <DataTemplate x:DataType="x:Double">
-                                    <TextBlock>
-                                        <Run Text="{x:Bind Mode=OneWay}" />
-                                        <Run Text=" hz" />
-                                    </TextBlock>
-                                </DataTemplate>
-                            </ComboBox.ItemTemplate>
-                        </ComboBox>
-                    </Grid>
+                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
+                            <controls:SettingsCard.Header>
+                                <TextBlock
+                                    x:Uid="LongSyllableThreshold"
+                                    TextWrapping="Wrap" />
+                            </controls:SettingsCard.Header>
+                            <Grid Width="300" ColumnDefinitions="100,*">
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind tool:BindUtils.FormatMs(ViewModel.AppViewModel.LongSyllableThreshold), Mode=OneWay}" />
+                                <Slider
+                                    Grid.Column="1"
+                                    Maximum="1000"
+                                    Minimum="400"
+                                    SnapsTo="Ticks"
+                                    TickFrequency="10"
+                                    TickPlacement="Outside"
+                                    Value="{x:Bind ViewModel.AppViewModel.LongSyllableThreshold, Mode=TwoWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock x:Uid="EnableCustomLyricsColor" FontSize="14" />
-                            <TextBlock
-                                x:Uid="EnableCustomLyricsColorHint"
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <Grid
-                            Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="Auto,*">
-                            <ToggleSwitch
-                                Grid.Column="0"
-                                MinWidth="0"
-                                Margin="0,0,10,0"
-                                IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
-                                IsOn="{x:Bind ViewModel.AppViewModel.IsCustomLyricsColorEnabled, Mode=TwoWay}" />
-                            <controls:ColorPickerButton
-                                Grid.Column="1"
-                                HorizontalAlignment="Stretch"
-                                VerticalAlignment="Center"
-                                IsEnabled="{x:Bind tool:BindUtils.BothTrue(ViewModel.AppViewModel.IsCustomLyricsColorEnabled, ViewModel.AppViewModel.EnableAdvancedLyricsEffect), Mode=OneWay}"
-                                SelectedColor="{x:Bind ViewModel.AppViewModel.LyricsCustomColor, Mode=TwoWay}" />
-                        </Grid>
-                    </Grid>
+                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
+                            <controls:SettingsCard.Header>
+                                <TextBlock
+                                    x:Uid="TargetFrameRate"
+                                    TextWrapping="Wrap" />
+                            </controls:SettingsCard.Header>
+                            <ComboBox
+                                Width="300"
+                                ItemsSource="{x:Bind ViewModel.AppViewModel.TargetFrameRateOptions}"
+                                SelectedItem="{x:Bind ViewModel.AppViewModel.TargetFrameRate, Mode=TwoWay}">
+                                <ComboBox.ItemTemplate>
+                                    <DataTemplate x:DataType="x:Double">
+                                        <TextBlock>
+                                            <Run Text="{x:Bind Mode=OneWay}" />
+                                            <Run Text=" hz" />
+                                        </TextBlock>
+                                    </DataTemplate>
+                                </ComboBox.ItemTemplate>
+                            </ComboBox>
+                        </controls:SettingsCard>
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock x:Uid="ScrollEasingType" FontSize="14" />
-                            <TextBlock
-                                x:Uid="EasingTypeDescription"
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <ComboBox
-                            Grid.Column="1"
-                            Width="300"
-                            VerticalAlignment="Center"
-                            IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
-                            SelectedIndex="{x:Bind ViewModel.AppViewModel.ScrollEasingTypeIndex, Mode=TwoWay}">
-                            <ComboBoxItem x:Uid="EasingTypeLinear" />
-                            <ComboBoxItem x:Uid="EasingTypeSmoothStep" />
-                            <ComboBoxItem x:Uid="EasingTypeSine" />
-                            <ComboBoxItem x:Uid="EasingTypeQuad" />
-                            <ComboBoxItem x:Uid="EasingTypeCubic" />
-                            <ComboBoxItem x:Uid="EasingTypeQuart" />
-                            <ComboBoxItem x:Uid="EasingTypeQuint" />
-                            <ComboBoxItem x:Uid="EasingTypeExpo" />
-                            <ComboBoxItem x:Uid="EasingTypeCircle" />
-                            <ComboBoxItem x:Uid="EasingTypeBack" />
-                            <ComboBoxItem x:Uid="EasingTypeElastic" />
-                            <ComboBoxItem x:Uid="EasingTypeBounce" />
-                        </ComboBox>
-                    </Grid>
+                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
+                            <controls:SettingsCard.Header>
+                                <TextBlock x:Uid="EnableCustomLyricsColor" />
+                            </controls:SettingsCard.Header>
+                            <controls:SettingsCard.Description>
+                                <TextBlock
+                                    x:Uid="EnableCustomLyricsColorHint"
+                                    TextWrapping="Wrap" />
+                            </controls:SettingsCard.Description>
+                            <Grid Width="300" ColumnDefinitions="Auto,*">
+                                <ToggleSwitch
+                                    Grid.Column="0"
+                                    MinWidth="0"
+                                    Margin="0,0,10,0"
+                                    IsOn="{x:Bind ViewModel.AppViewModel.IsCustomLyricsColorEnabled, Mode=TwoWay}" />
+                                <controls:ColorPickerButton
+                                    Grid.Column="1"
+                                    HorizontalAlignment="Stretch"
+                                    IsEnabled="{x:Bind tool:BindUtils.BothTrue(ViewModel.AppViewModel.IsCustomLyricsColorEnabled, ViewModel.AppViewModel.EnableAdvancedLyricsEffect), Mode=OneWay}"
+                                    SelectedColor="{x:Bind ViewModel.AppViewModel.LyricsCustomColor, Mode=TwoWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
 
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock x:Uid="ScrollEasingMode" FontSize="14" />
-                            <TextBlock
-                                x:Uid="EaseModeDescription"
-                                FontSize="12"
-                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <ComboBox
-                            Grid.Column="1"
-                            Width="300"
-                            VerticalAlignment="Center"
-                            IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
-                            SelectedIndex="{x:Bind ViewModel.AppViewModel.ScrollEasingModeIndex, Mode=TwoWay}">
-                            <ComboBoxItem x:Uid="EaseModeIn" />
-                            <ComboBoxItem x:Uid="EaseModeOut" />
-                            <ComboBoxItem x:Uid="EaseModeInOut" />
-                            <ComboBoxItem x:Uid="EaseModeContinuous" />
-                        </ComboBox>
-                    </Grid>
-                </StackPanel>
-            </Border>
+                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
+                            <controls:SettingsCard.Header>
+                                <TextBlock x:Uid="ScrollEasingType" />
+                            </controls:SettingsCard.Header>
+                            <controls:SettingsCard.Description>
+                                <TextBlock
+                                    x:Uid="EasingTypeDescription"
+                                    TextWrapping="Wrap" />
+                            </controls:SettingsCard.Description>
+                            <ComboBox
+                                Width="300"
+                                SelectedIndex="{x:Bind ViewModel.AppViewModel.ScrollEasingTypeIndex, Mode=TwoWay}">
+                                <ComboBoxItem x:Uid="EasingTypeLinear" />
+                                <ComboBoxItem x:Uid="EasingTypeSmoothStep" />
+                                <ComboBoxItem x:Uid="EasingTypeSine" />
+                                <ComboBoxItem x:Uid="EasingTypeQuad" />
+                                <ComboBoxItem x:Uid="EasingTypeCubic" />
+                                <ComboBoxItem x:Uid="EasingTypeQuart" />
+                                <ComboBoxItem x:Uid="EasingTypeQuint" />
+                                <ComboBoxItem x:Uid="EasingTypeExpo" />
+                                <ComboBoxItem x:Uid="EasingTypeCircle" />
+                                <ComboBoxItem x:Uid="EasingTypeBack" />
+                                <ComboBoxItem x:Uid="EasingTypeElastic" />
+                                <ComboBoxItem x:Uid="EasingTypeBounce" />
+                            </ComboBox>
+                        </controls:SettingsCard>
 
-            <TextBlock
-                x:Uid="IconDesktopLyrics"
-                Margin="10,16,10,4"
-                FontSize="16" />
-            <Border
-                Margin="10,0,10,0"
-                Padding="0"
-                HorizontalAlignment="Stretch"
-                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                BorderThickness="1"
-                CornerRadius="{ThemeResource ControlCornerRadius}">
-                <StackPanel>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
+                            <controls:SettingsCard.Header>
+                                <TextBlock x:Uid="ScrollEasingMode" />
+                            </controls:SettingsCard.Header>
+                            <controls:SettingsCard.Description>
+                                <TextBlock
+                                    x:Uid="EaseModeDescription"
+                                    TextWrapping="Wrap" />
+                            </controls:SettingsCard.Description>
+                            <ComboBox
+                                Width="300"
+                                SelectedIndex="{x:Bind ViewModel.AppViewModel.ScrollEasingModeIndex, Mode=TwoWay}">
+                                <ComboBoxItem x:Uid="EaseModeIn" />
+                                <ComboBoxItem x:Uid="EaseModeOut" />
+                                <ComboBoxItem x:Uid="EaseModeInOut" />
+                                <ComboBoxItem x:Uid="EaseModeContinuous" />
+                            </ComboBox>
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
+
+                <TextBlock
+                    x:Uid="IconDesktopLyrics"
+                    Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="DesktopLyricsFontSize"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <NumberBox
-                            Grid.Column="1"
-                            Width="300"
-                            VerticalAlignment="Center"
-                            LargeChange="10"
-                            Maximum="200"
-                            Minimum="10"
-                            SmallChange="1"
-                            SpinButtonPlacementMode="Inline"
-                            Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsFontSize, Mode=TwoWay}" />
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <NumberBox
+                        Width="300"
+                        LargeChange="10"
+                        Maximum="200"
+                        Minimum="10"
+                        SmallChange="1"
+                        SpinButtonPlacementMode="Inline"
+                        Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsFontSize, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="DesktopLyricsFontFamily"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ComboBox
-                            Grid.Column="1"
-                            Width="300"
-                            VerticalAlignment="Center"
-                            ItemTemplate="{StaticResource FontComboboxTemplate}"
-                            ItemsSource="{x:Bind ViewModel.AppViewModel.FontFamilyList, Mode=OneWay}"
-                            SelectedValue="{x:Bind ViewModel.AppViewModel.DesktopLyricsFontFamily, Mode=TwoWay}" />
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="DesktopLyricsCustomColor"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <Grid
-                            Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="Auto,*">
-                            <ToggleSwitch
-                                Grid.Column="0"
-                                MinWidth="0"
-                                Margin="0,0,10,0"
-                                IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCustomColorEnabled, Mode=TwoWay}" />
-                            <controls:ColorPickerButton
-                                Grid.Column="1"
-                                HorizontalAlignment="Stretch"
-                                VerticalAlignment="Center"
-                                IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCustomColorEnabled, Mode=OneWay}"
-                                SelectedColor="{x:Bind ViewModel.AppViewModel.DesktopLyricsColor, Mode=TwoWay}" />
-                        </Grid>
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="DesktopLyricsKaraoke"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=TwoWay}" />
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="DesktopLyricsTranslation"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsTranslationEnabled, Mode=TwoWay}" />
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="DesktopLyricsGlow"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}"
-                            IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsGlowEnabled, Mode=TwoWay}" />
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="DesktopLyricsCharFloat"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}"
-                            IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCharFloatEnabled, Mode=TwoWay}" />
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="DesktopLyricsCharScale"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}"
-                            IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCharScaleEnabled, Mode=TwoWay}" />
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="DesktopLyricsShadowAmount"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <Grid
-                            Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="100,*">
-                            <TextBlock
-                                Grid.Column="0"
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                Text="{x:Bind tool:BindUtils.FormatF0(ViewModel.AppViewModel.DesktopLyricsShadowAmount), Mode=OneWay}" />
-                            <Slider
-                                Grid.Column="1"
-                                VerticalAlignment="Center"
-                                Maximum="100"
-                                Minimum="0"
-                                SnapsTo="Ticks"
-                                TickFrequency="5"
-                                TickPlacement="Outside"
-                                Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsShadowAmount, Mode=TwoWay}" />
-                        </Grid>
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="DesktopLyricsGlowAmount"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <Grid
-                            Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="100,*">
-                            <TextBlock
-                                Grid.Column="0"
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.DesktopLyricsGlowAmount), Mode=OneWay}" />
-                            <Slider
-                                Grid.Column="1"
-                                VerticalAlignment="Center"
-                                IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}"
-                                Maximum="10"
-                                Minimum="0"
-                                SnapsTo="Ticks"
-                                TickFrequency="0.1"
-                                TickPlacement="Outside"
-                                Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsGlowAmount, Mode=TwoWay}" />
-                        </Grid>
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="DesktopLyricsCharFloatAmount"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <Grid
-                            Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="100,*">
-                            <TextBlock
-                                Grid.Column="0"
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.DesktopLyricsCharFloatAmount), Mode=OneWay}" />
-                            <Slider
-                                Grid.Column="1"
-                                VerticalAlignment="Center"
-                                IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}"
-                                Maximum="10"
-                                Minimum="0"
-                                SnapsTo="Ticks"
-                                TickFrequency="0.1"
-                                TickPlacement="Outside"
-                                Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsCharFloatAmount, Mode=TwoWay}" />
-                        </Grid>
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="DesktopLyricsCharScaleAmount"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <Grid
-                            Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="100,*">
-                            <TextBlock
-                                Grid.Column="0"
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                Text="{x:Bind tool:BindUtils.FormatF0(ViewModel.AppViewModel.DesktopLyricsCharScaleAmount), Mode=OneWay}" />
-                            <Slider
-                                Grid.Column="1"
-                                VerticalAlignment="Center"
-                                IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}"
-                                Maximum="150"
-                                Minimum="50"
-                                SnapsTo="Ticks"
-                                TickFrequency="1"
-                                TickPlacement="Outside"
-                                Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsCharScaleAmount, Mode=TwoWay}" />
-                        </Grid>
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
-                        <TextBlock
-                            x:Uid="DesktopLyricsLongSyllableThreshold"
-                            Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <Grid
-                            Grid.Column="1"
-                            Width="300"
-                            ColumnDefinitions="100,*">
-                            <TextBlock
-                                Grid.Column="0"
-                                Margin="5,0"
-                                VerticalAlignment="Center"
-                                Text="{x:Bind tool:BindUtils.FormatMs(ViewModel.AppViewModel.DesktopLyricsLongSyllableThreshold), Mode=OneWay}" />
-                            <Slider
-                                Grid.Column="1"
-                                VerticalAlignment="Center"
-                                IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}"
-                                Maximum="1000"
-                                Minimum="400"
-                                SnapsTo="Ticks"
-                                TickFrequency="10"
-                                TickPlacement="Outside"
-                                Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsLongSyllableThreshold, Mode=TwoWay}" />
-                        </Grid>
-                    </Grid>
-                    <Grid
-                        MinHeight="52"
-                        Padding="16,8,16,8"
-                        HorizontalAlignment="Stretch"
-                        ColumnDefinitions="*,Auto">
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ComboBox
+                        Width="300"
+                        ItemTemplate="{StaticResource FontComboboxTemplate}"
+                        ItemsSource="{x:Bind ViewModel.AppViewModel.FontFamilyList, Mode=OneWay}"
+                        SelectedValue="{x:Bind ViewModel.AppViewModel.DesktopLyricsFontFamily, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock
                             x:Uid="DesktopLyricsFontWeight"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ComboBox
+                        Width="300"
+                        SelectedIndex="{x:Bind ViewModel.AppViewModel.DesktopLyricsWeightIndex, Mode=TwoWay}">
+                        <ComboBoxItem x:Uid="DesktopLyricsWeightNormal" />
+                        <ComboBoxItem x:Uid="DesktopLyricsWeightMedium" />
+                        <ComboBoxItem x:Uid="DesktopLyricsWeightSemiBold" />
+                        <ComboBoxItem x:Uid="DesktopLyricsWeightBold" />
+                    </ComboBox>
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="DesktopLyricsCustomColor"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <Grid Width="300" ColumnDefinitions="Auto,*">
+                        <ToggleSwitch
                             Grid.Column="0"
-                            VerticalAlignment="Center"
-                            FontSize="14" />
-                        <ComboBox
+                            MinWidth="0"
+                            Margin="0,0,10,0"
+                            IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCustomColorEnabled, Mode=TwoWay}" />
+                        <controls:ColorPickerButton
                             Grid.Column="1"
-                            Width="300"
-                            VerticalAlignment="Center"
-                            SelectedIndex="{x:Bind ViewModel.AppViewModel.DesktopLyricsWeightIndex, Mode=TwoWay}">
-                            <ComboBoxItem x:Uid="DesktopLyricsWeightNormal" />
-                            <ComboBoxItem x:Uid="DesktopLyricsWeightMedium" />
-                            <ComboBoxItem x:Uid="DesktopLyricsWeightSemiBold" />
-                            <ComboBoxItem x:Uid="DesktopLyricsWeightBold" />
-                        </ComboBox>
+                            HorizontalAlignment="Stretch"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCustomColorEnabled, Mode=OneWay}"
+                            SelectedColor="{x:Bind ViewModel.AppViewModel.DesktopLyricsColor, Mode=TwoWay}" />
                     </Grid>
-                </StackPanel>
-            </Border>
-        </StackPanel>
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="DesktopLyricsTranslation"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsTranslationEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="DesktopLyricsShadowAmount"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <Grid Width="300" ColumnDefinitions="100,*">
+                        <TextBlock
+                            Grid.Column="0"
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            Text="{x:Bind tool:BindUtils.FormatF0(ViewModel.AppViewModel.DesktopLyricsShadowAmount), Mode=OneWay}" />
+                        <Slider
+                            Grid.Column="1"
+                            Maximum="100"
+                            Minimum="0"
+                            SnapsTo="Ticks"
+                            TickFrequency="5"
+                            TickPlacement="Outside"
+                            Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsShadowAmount, Mode=TwoWay}" />
+                    </Grid>
+                </controls:SettingsCard>
+
+                <!--  卡拉OK效果:依赖卡拉OK开关的细项收进二级折叠  -->
+                <controls:SettingsExpander>
+                    <controls:SettingsExpander.Header>
+                        <TextBlock
+                            x:Uid="DesktopLyricsKaraoke"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsExpander.Header>
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=TwoWay}" />
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}">
+                            <controls:SettingsCard.Header>
+                                <TextBlock
+                                    x:Uid="DesktopLyricsGlow"
+                                    TextWrapping="Wrap" />
+                            </controls:SettingsCard.Header>
+                            <ToggleSwitch
+                                MinWidth="0"
+                                IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsGlowEnabled, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}">
+                            <controls:SettingsCard.Header>
+                                <TextBlock
+                                    x:Uid="DesktopLyricsGlowAmount"
+                                    TextWrapping="Wrap" />
+                            </controls:SettingsCard.Header>
+                            <Grid Width="300" ColumnDefinitions="100,*">
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.DesktopLyricsGlowAmount), Mode=OneWay}" />
+                                <Slider
+                                    Grid.Column="1"
+                                    Maximum="10"
+                                    Minimum="0"
+                                    SnapsTo="Ticks"
+                                    TickFrequency="0.1"
+                                    TickPlacement="Outside"
+                                    Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsGlowAmount, Mode=TwoWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}">
+                            <controls:SettingsCard.Header>
+                                <TextBlock
+                                    x:Uid="DesktopLyricsCharFloat"
+                                    TextWrapping="Wrap" />
+                            </controls:SettingsCard.Header>
+                            <ToggleSwitch
+                                MinWidth="0"
+                                IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCharFloatEnabled, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}">
+                            <controls:SettingsCard.Header>
+                                <TextBlock
+                                    x:Uid="DesktopLyricsCharFloatAmount"
+                                    TextWrapping="Wrap" />
+                            </controls:SettingsCard.Header>
+                            <Grid Width="300" ColumnDefinitions="100,*">
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind tool:BindUtils.FormatF1(ViewModel.AppViewModel.DesktopLyricsCharFloatAmount), Mode=OneWay}" />
+                                <Slider
+                                    Grid.Column="1"
+                                    Maximum="10"
+                                    Minimum="0"
+                                    SnapsTo="Ticks"
+                                    TickFrequency="0.1"
+                                    TickPlacement="Outside"
+                                    Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsCharFloatAmount, Mode=TwoWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}">
+                            <controls:SettingsCard.Header>
+                                <TextBlock
+                                    x:Uid="DesktopLyricsCharScale"
+                                    TextWrapping="Wrap" />
+                            </controls:SettingsCard.Header>
+                            <ToggleSwitch
+                                MinWidth="0"
+                                IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCharScaleEnabled, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}">
+                            <controls:SettingsCard.Header>
+                                <TextBlock
+                                    x:Uid="DesktopLyricsCharScaleAmount"
+                                    TextWrapping="Wrap" />
+                            </controls:SettingsCard.Header>
+                            <Grid Width="300" ColumnDefinitions="100,*">
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind tool:BindUtils.FormatF0(ViewModel.AppViewModel.DesktopLyricsCharScaleAmount), Mode=OneWay}" />
+                                <Slider
+                                    Grid.Column="1"
+                                    Maximum="150"
+                                    Minimum="50"
+                                    SnapsTo="Ticks"
+                                    TickFrequency="1"
+                                    TickPlacement="Outside"
+                                    Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsCharScaleAmount, Mode=TwoWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
+
+                        <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}">
+                            <controls:SettingsCard.Header>
+                                <TextBlock
+                                    x:Uid="DesktopLyricsLongSyllableThreshold"
+                                    TextWrapping="Wrap" />
+                            </controls:SettingsCard.Header>
+                            <Grid Width="300" ColumnDefinitions="100,*">
+                                <TextBlock
+                                    Grid.Column="0"
+                                    Margin="5,0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind tool:BindUtils.FormatMs(ViewModel.AppViewModel.DesktopLyricsLongSyllableThreshold), Mode=OneWay}" />
+                                <Slider
+                                    Grid.Column="1"
+                                    Maximum="1000"
+                                    Minimum="400"
+                                    SnapsTo="Ticks"
+                                    TickFrequency="10"
+                                    TickPlacement="Outside"
+                                    Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsLongSyllableThreshold, Mode=TwoWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
+            </StackPanel>
+        </Grid>
     </ScrollViewer>
 </UserControl>
