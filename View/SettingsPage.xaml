@@ -9,44 +9,45 @@
     xmlns:sub="using:WinUIMusicPlayer.View.SubView.Settings"
     mc:Ignorable="d">
 
-    <Grid RowDefinitions="Auto,Auto,*">
+    <Grid RowDefinitions="Auto,*">
 
-        <TextBlock
-            x:Uid="Settings"
-            Grid.Row="0"
-            Margin="16,10,0,10"
-            FontSize="28" />
-
-        <SelectorBar
-            x:Name="SectionSelector"
-            Grid.Row="1"
-            Margin="12,0,12,4">
-            <SelectorBarItem
-                x:Uid="SettingsSectionAudio"
-                Tag="Audio"
-                IsSelected="True" />
-            <SelectorBarItem
-                x:Uid="SettingsSectionGeneral"
-                Tag="General" />
-            <SelectorBarItem
-                x:Uid="SettingsSectionShortcuts"
-                Tag="Shortcuts" />
-            <SelectorBarItem
-                x:Uid="SettingsSectionCoverBackground"
-                Tag="CoverBackground" />
-            <SelectorBarItem
-                x:Uid="SettingsSectionLyrics"
-                Tag="Lyrics" />
-            <SelectorBarItem
-                x:Uid="SettingsSectionAppearance"
-                Tag="Appearance" />
-            <SelectorBarItem
-                x:Uid="SettingsSectionAbout"
-                Tag="About" />
-        </SelectorBar>
+        <Grid Grid.Row="0">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock
+                    x:Uid="Settings"
+                    Margin="16,10,16,10"
+                    VerticalAlignment="Center"
+                    FontSize="28" />
+                <SelectorBar
+                    x:Name="SectionSelector"
+                    VerticalAlignment="Center">
+                    <SelectorBarItem
+                        x:Uid="SettingsSectionGeneral"
+                        FontSize="20"
+                        Tag="General"
+                        IsSelected="True" />
+                    <SelectorBarItem
+                        x:Uid="SettingsSectionCoverBackground"
+                        FontSize="20"
+                        Tag="CoverBackground" />
+                    <SelectorBarItem
+                        x:Uid="SettingsSectionLyrics"
+                        FontSize="20"
+                        Tag="Lyrics" />
+                    <SelectorBarItem
+                        x:Uid="SettingsSectionAppearance"
+                        FontSize="20"
+                        Tag="Appearance" />
+                    <SelectorBarItem
+                        x:Uid="SettingsSectionAbout"
+                        FontSize="20"
+                        Tag="About" />
+                </SelectorBar>
+            </StackPanel>
+        </Grid>
 
         <controls:SwitchPresenter
-            Grid.Row="2"
+            Grid.Row="1"
             Value="{x:Bind SectionSelector.SelectedItem.Tag, Mode=OneWay}">
             <controls:SwitchPresenter.ContentTransitions>
                 <TransitionCollection>
@@ -54,19 +55,9 @@
                 </TransitionCollection>
             </controls:SwitchPresenter.ContentTransitions>
 
-            <!--  音频设置  -->
-            <controls:Case Value="Audio">
-                <sub:AudioSettingsControl />
-            </controls:Case>
-
-            <!--  功能设置  -->
+            <!--  功能设置（含音频、快捷键）  -->
             <controls:Case Value="General">
                 <sub:GeneralSettingsControl />
-            </controls:Case>
-
-            <!--  快捷键设置  -->
-            <controls:Case Value="Shortcuts">
-                <sub:ShortcutsSettingsControl />
             </controls:Case>
 
             <!--  封面与着色器背景  -->
@@ -84,7 +75,7 @@
                 <sub:AppearanceSettingsControl />
             </controls:Case>
 
-            <!--  关于  -->
+            <!--  关于（含音频可视化）  -->
             <controls:Case Value="About">
                 <sub:AboutSettingsControl />
             </controls:Case>

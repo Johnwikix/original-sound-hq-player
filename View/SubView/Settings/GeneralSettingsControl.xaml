@@ -243,6 +243,296 @@
                     </StackPanel>
                 </StackPanel>
             </Border>
+
+            <TextBlock
+                x:Uid="SettingOutput"
+                Margin="10,16,10,4"
+                FontSize="16" />
+            <Border
+                Margin="10,0,10,0"
+                Padding="0"
+                HorizontalAlignment="Stretch"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="{ThemeResource ControlCornerRadius}">
+                <StackPanel>
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        BorderThickness="0"
+                        ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Uid="SettingOutputDevice"
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <ComboBox
+                            x:Name="OutputDeviceComboBox"
+                            Grid.Column="1"
+                            Width="300"
+                            VerticalAlignment="Center"
+                            ItemsSource="{x:Bind ViewModel.AppViewModel.BassOutputDevices, Mode=OneWay}"
+                            SelectedItem="{x:Bind ViewModel.AppViewModel.SelectedDevice, Mode=TwoWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="model:BassOutputDevice">
+                                    <TextBlock Text="{x:Bind Tag}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                    </Grid>
+
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        BorderThickness="0,1,0,0"
+                        ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Uid="SettingBufferSize"
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <NumberBox
+                            x:Name="LatencyNumberBox"
+                            Grid.Column="1"
+                            Width="300"
+                            VerticalAlignment="Center"
+                            LargeChange="100"
+                            Maximum="900"
+                            Minimum="100"
+                            SmallChange="10"
+                            SpinButtonPlacementMode="Inline"
+                            Value="{x:Bind ViewModel.AppViewModel.Latency, Mode=TwoWay}" />
+                    </Grid>
+
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Uid="DSD2PCMFreq"
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <ComboBox
+                            Grid.Column="1"
+                            Width="300"
+                            VerticalAlignment="Center"
+                            IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.AppViewModel.IsDopEnabled), Mode=OneWay}"
+                            ItemsSource="{x:Bind ViewModel.AppViewModel.DsdPcmFreqs, Mode=OneWay}"
+                            SelectedValue="{x:Bind ViewModel.AppViewModel.DsdPcmFreq, Mode=TwoWay}" />
+                    </Grid>
+
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Uid="SettingDSDGain"
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <NumberBox
+                            x:Name="DSDGainNumberBox"
+                            Grid.Column="1"
+                            Width="300"
+                            VerticalAlignment="Center"
+                            IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.AppViewModel.IsDopEnabled), Mode=OneWay}"
+                            Minimum="0"
+                            SmallChange="1"
+                            SpinButtonPlacementMode="Inline"
+                            Value="{x:Bind ViewModel.AppViewModel.DsdGain, Mode=TwoWay}" />
+                    </Grid>
+
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock FontSize="14" Text="DSD Dop / DSD Native" />
+                            <TextBlock
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="{x:Bind tool:ToolUtils.GetString('DsdDopDescription')}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <ToggleSwitch
+                            Grid.Column="1"
+                            MinWidth="0"
+                            IsOn="{x:Bind ViewModel.AppViewModel.IsDopEnabled, Mode=TwoWay}" />
+                    </Grid>
+
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock x:Uid="FadeInOut" FontSize="14" />
+                            <TextBlock
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Text="{x:Bind tool:ToolUtils.GetString('FadeInOutDescription')}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <ToggleSwitch
+                            Grid.Column="1"
+                            MinWidth="0"
+                            IsOn="{x:Bind ViewModel.AppViewModel.IsFadeEnabled, Mode=TwoWay}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <TextBlock
+                x:Uid="SettingsPageShortcuts"
+                Margin="10,16,10,4"
+                FontSize="16" />
+            <Border
+                Margin="10,0,10,0"
+                Padding="0"
+                HorizontalAlignment="Stretch"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                CornerRadius="{ThemeResource ControlCornerRadius}">
+                <StackPanel>
+                    <InfoBar
+                        Title="{x:Bind ViewModel.AppViewModel.GlobalHotKeyConflictTitle, Mode=OneWay}"
+                        IsOpen="{x:Bind ViewModel.AppViewModel.HasGlobalHotKeyConflict, Mode=OneWay}"
+                        Severity="Warning" />
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                            <TextBlock x:Uid="SettingsPageEnableGlobalHotKey" FontSize="14" />
+                            <TextBlock
+                                x:Uid="SettingsPageEnableGlobalHotKeyDescription"
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <ToggleSwitch
+                            Grid.Column="1"
+                            MinWidth="0"
+                            IsOn="{x:Bind ViewModel.AppViewModel.EnableGlobalHotKey, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Uid="SettingsPagePlayPauseShortcut"
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.PlayOrPauseShortcut, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Uid="SettingsPageNextSongShortcut"
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.NextSongShortcut, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Uid="SettingsPagePreviousSongShortcut"
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.PreviousSongShortcut, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Uid="SettingsPageVolumeUpShortcut"
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.VolumeUpShortcut, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Uid="SettingsPageVolumeDownShortcut"
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.VolumeDownShortcut, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Uid="SettingsPageTogglePlayingDetailShortcut"
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.TogglePlayingDetailShortcut, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Uid="SettingsPageBackShortcut"
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.BackShortcut, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Uid="SettingsPageShowWindowShortcut"
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.ShowWindowShortcut, Mode=TwoWay}" />
+                    </Grid>
+                    <Grid
+                        MinHeight="52"
+                        Padding="16,8,16,8"
+                        HorizontalAlignment="Stretch"
+                        ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Uid="SettingsPageToggleFullScreenShortcut"
+                            Grid.Column="0"
+                            VerticalAlignment="Center"
+                            FontSize="14" />
+                        <customControl:ShortcutTextBox Grid.Column="1" Shortcut="{x:Bind ViewModel.AppViewModel.ToggleFullScreenShortcut, Mode=TwoWay}" />
+                    </Grid>
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </UserControl>

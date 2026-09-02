@@ -1,6 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using System;
+using Windows.System;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
@@ -24,6 +26,16 @@ namespace WinUIMusicPlayer.View.SubView.Settings
         {
             Unloaded -= OnUnloaded;
             _thirdPartyDialog = null;
+        }
+
+        private void SpectrumVisualization_Click(object sender, RoutedEventArgs e)
+        {
+            string storeUri = "spectrumvisualization:";
+            LauncherOptions options = new LauncherOptions
+            {
+                FallbackUri = new Uri("ms-windows-store://pdp/?ProductId=9PL2DSHJ79W7")
+            };
+            _ = Launcher.LaunchUriAsync(new Uri(storeUri), options);
         }
 
         private void ThirdParty_Click(object sender, RoutedEventArgs e)

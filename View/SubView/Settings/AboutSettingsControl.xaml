@@ -53,6 +53,14 @@
                     </controls:SettingsCard>
                 </controls:SettingsExpander.Items>
             </controls:SettingsExpander>
+
+            <controls:SettingsCard
+                x:Uid="SpectrumVisualization"
+                Margin="10,16,10,0"
+                Click="SpectrumVisualization_Click"
+                Description="© 2026 Sennpei Studio"
+                HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/SpectrumVisualization.png}"
+                IsClickEnabled="True" />
         </StackPanel>
     </ScrollViewer>
 </UserControl>
