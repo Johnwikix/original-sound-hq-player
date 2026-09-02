@@ -27,6 +27,10 @@
                         Tag="General"
                         IsSelected="True" />
                     <SelectorBarItem
+                        x:Uid="SettingsSectionShortcuts"
+                        FontSize="20"
+                        Tag="Shortcuts" />
+                    <SelectorBarItem
                         x:Uid="SettingsSectionCoverBackground"
                         FontSize="20"
                         Tag="CoverBackground" />
@@ -34,10 +38,6 @@
                         x:Uid="SettingsSectionLyrics"
                         FontSize="20"
                         Tag="Lyrics" />
-                    <SelectorBarItem
-                        x:Uid="SettingsSectionAppearance"
-                        FontSize="20"
-                        Tag="Appearance" />
                     <SelectorBarItem
                         x:Uid="SettingsSectionAbout"
                         FontSize="20"
@@ -55,9 +55,14 @@
                 </TransitionCollection>
             </controls:SwitchPresenter.ContentTransitions>
 
-            <!--  功能设置（含音频、快捷键）  -->
+            <!--  功能设置（含音频、外观）  -->
             <controls:Case Value="General">
                 <sub:GeneralSettingsControl />
+            </controls:Case>
+
+            <!--  快捷键设置  -->
+            <controls:Case Value="Shortcuts">
+                <sub:ShortcutsSettingsControl />
             </controls:Case>
 
             <!--  封面与着色器背景  -->
@@ -68,11 +73,6 @@
             <!--  歌词与桌面歌词  -->
             <controls:Case Value="Lyrics">
                 <sub:LyricsSettingsControl />
-            </controls:Case>
-
-            <!--  外观设置  -->
-            <controls:Case Value="Appearance">
-                <sub:AppearanceSettingsControl />
             </controls:Case>
 
             <!--  关于（含音频可视化）  -->

@@ -1019,7 +1019,7 @@
     <value>DSDtoPCM SampleRate</value>
   </data>
   <data name="DsdDopDescription" xml:space="preserve">
-    <value>В этом режиме эквалайзер не работает, Dop работает только под эксклюзивной лицензией Wasapi, Native работает только под ASIO, в этом режиме поддерживается только аппаратная регулировка громкости, попробуйте увеличить буфер устройства ASIO</value>
+    <value>В этом режиме эквалайзер отключён; DoP требует эксклюзивный Wasapi, Native — ASIO. Поддерживается только аппаратная громкость.</value>
   </data>
   <data name="DefaultDevice" xml:space="preserve">
     <value>Устройства по умолчанию</value>

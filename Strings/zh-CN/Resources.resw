@@ -1018,7 +1018,7 @@
     <value>DSD到PCM采样率</value>
   </data>
   <data name="DsdDopDescription" xml:space="preserve">
-    <value>此模式下均衡器不会生效，Dop只在Wasapi独占下生效，Native只在ASIO下生效，此模式下只支持硬件音量调整，如果出现爆音请尝试增加ASIO设备缓冲区</value>
+    <value>此模式下均衡器无效，Dop 需 Wasapi 独占、Native 需 ASIO，仅支持硬件音量</value>
   </data>
   <data name="DefaultDevice" xml:space="preserve">
     <value>默认设备</value>

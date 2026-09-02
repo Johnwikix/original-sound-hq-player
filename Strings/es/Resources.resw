@@ -1019,7 +1019,7 @@
     <value>DSDtoPCM SampleRate</value>
   </data>
   <data name="DsdDopDescription" xml:space="preserve">
-    <value>El igualador no entrará en vigor en este modo, el DOP solo entrará en vigor bajo el monopolio de wasapi, Native solo entrará en vigor bajo asio, en este modo solo se admite el ajuste de volumen del hardware, si hay un sonido explosivo, intente aumentar el amortiguador del dispositivo Asio</value>
+    <value>El ecualizador no funciona en este modo; DoP requiere Wasapi exclusivo y Native requiere ASIO. Solo se admite el volumen de hardware.</value>
   </data>
   <data name="DefaultDevice" xml:space="preserve">
     <value>Dispositivos predeterminados</value>

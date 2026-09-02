@@ -1019,7 +1019,7 @@
     <value>DSDtoPCM SampleRate</value>
   </data>
   <data name="DsdDopDescription" xml:space="preserve">
-    <value>このモードではイコライザは有効になりません。DopはWasapi排他的にのみ有効になり、NativeはASIOでのみ有効になります。このモードではハードウェア音量調整のみがサポートされています。爆音が発生した場合はASIOデバイスバッファを追加してみてください</value>
+    <value>このモードではイコライザーは無効です。DoP は Wasapi 排他、Native は ASIO でのみ有効で、ハードウェア音量のみ対応します。</value>
   </data>
   <data name="DefaultDevice" xml:space="preserve">
     <value>デフォルトデバイス</value>

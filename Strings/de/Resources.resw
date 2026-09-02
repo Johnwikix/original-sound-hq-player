@@ -1019,7 +1019,7 @@
     <value>DSD-zu-PCM Samplerate</value>
   </data>
   <data name="DsdDopDescription" xml:space="preserve">
-    <value>In diesem Modus ist der EQ inaktiv. DoP funktioniert nur mit Wasapi Exklusiv, Native nur mit ASIO. Nur Hardware-Lautstärke wird unterstützt. Bei Tonaussetzern ASIO-Puffer erhöhen.</value>
+    <value>In diesem Modus ist der EQ inaktiv; DoP erfordert Wasapi-exklusiv, Native erfordert ASIO. Nur Hardware-Lautstärke.</value>
   </data>
   <data name="DefaultDevice" xml:space="preserve">
     <value>Standardgerät</value>

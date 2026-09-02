@@ -5,11 +5,11 @@ using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.View.SubView.Settings
 {
-    public sealed partial class AppearanceSettingsControl : UserControl
+    public sealed partial class ShortcutsSettingsControl : UserControl
     {
         public SettingsViewModel ViewModel { get; }
 
-        public AppearanceSettingsControl()
+        public ShortcutsSettingsControl()
         {
             InitializeComponent();
             ViewModel = App.Services.GetRequiredService<SettingsViewModel>();

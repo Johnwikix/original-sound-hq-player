@@ -1019,7 +1019,7 @@
     <value>DSDtoPCM SampleRate</value>
   </data>
   <data name="DsdDopDescription" xml:space="preserve">
-    <value>In this mode, the equalizer will not take effect, Dop will only take effect under WasAPI monopoly, and Native will only take effect under ASIO. This mode only supports hardware volume adjustment. If there is a popping sound, please try increasing the ASIO device buffer</value>
+    <value>Equalizer is disabled in this mode; DoP requires Wasapi exclusive and Native requires ASIO. Only hardware volume is supported.</value>
   </data>
   <data name="DefaultDevice" xml:space="preserve">
     <value>Default Device</value>

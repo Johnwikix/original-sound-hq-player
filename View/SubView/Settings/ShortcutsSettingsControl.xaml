@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="WinUIMusicPlayer.View.SubView.Settings.ShortcutsSettingsControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    xmlns:customControl="using:WinUIMusicPlayer.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dev="using:DevWinUI"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:model="using:WinUIMusicPlayer.Model"
+    xmlns:tool="using:WinUIMusicPlayer.Utils"
+    xmlns:tools="using:WinUIMusicPlayer.Utils"
+    xmlns:ui="using:CommunityToolkit.WinUI"
+    mc:Ignorable="d">
+
+    <ScrollViewer Style="{StaticResource SettingsScrollViewerStyle}">
+        <Grid Style="{StaticResource SettingsGridStyle}">
+            <StackPanel Spacing="{StaticResource SettingsCardSpacing}">
+
+                <TextBlock
+                    x:Uid="SettingsPageShortcuts"
+                    Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+
+                <InfoBar
+                    Title="{x:Bind ViewModel.AppViewModel.GlobalHotKeyConflictTitle, Mode=OneWay}"
+                    IsOpen="{x:Bind ViewModel.AppViewModel.HasGlobalHotKeyConflict, Mode=OneWay}"
+                    Severity="Warning" />
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock x:Uid="SettingsPageEnableGlobalHotKey" />
+                    </controls:SettingsCard.Header>
+                    <controls:SettingsCard.Description>
+                        <TextBlock
+                            x:Uid="SettingsPageEnableGlobalHotKeyDescription"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Description>
+                    <ToggleSwitch
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.AppViewModel.EnableGlobalHotKey, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="SettingsPagePlayPauseShortcut"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <customControl:ShortcutTextBox Shortcut="{x:Bind ViewModel.AppViewModel.PlayOrPauseShortcut, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="SettingsPageNextSongShortcut"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <customControl:ShortcutTextBox Shortcut="{x:Bind ViewModel.AppViewModel.NextSongShortcut, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="SettingsPagePreviousSongShortcut"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <customControl:ShortcutTextBox Shortcut="{x:Bind ViewModel.AppViewModel.PreviousSongShortcut, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="SettingsPageVolumeUpShortcut"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <customControl:ShortcutTextBox Shortcut="{x:Bind ViewModel.AppViewModel.VolumeUpShortcut, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="SettingsPageVolumeDownShortcut"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <customControl:ShortcutTextBox Shortcut="{x:Bind ViewModel.AppViewModel.VolumeDownShortcut, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="SettingsPageTogglePlayingDetailShortcut"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <customControl:ShortcutTextBox Shortcut="{x:Bind ViewModel.AppViewModel.TogglePlayingDetailShortcut, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="SettingsPageBackShortcut"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <customControl:ShortcutTextBox Shortcut="{x:Bind ViewModel.AppViewModel.BackShortcut, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="SettingsPageShowWindowShortcut"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <customControl:ShortcutTextBox Shortcut="{x:Bind ViewModel.AppViewModel.ShowWindowShortcut, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock
+                            x:Uid="SettingsPageToggleFullScreenShortcut"
+                            TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <customControl:ShortcutTextBox Shortcut="{x:Bind ViewModel.AppViewModel.ToggleFullScreenShortcut, Mode=TwoWay}" />
+                </controls:SettingsCard>
+            </StackPanel>
+        </Grid>
+    </ScrollViewer>
+</UserControl>

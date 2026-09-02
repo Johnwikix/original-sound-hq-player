@@ -21,7 +21,8 @@
                     x:Uid="AppTitleHeader"
                     Margin="0,30,0,0"
                     Description="© 2026 Sennpei Studio"
-                    HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/Square44x44Logo.altform-unplated_targetsize-32.png}">
+                    HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/Square44x44Logo.altform-unplated_targetsize-32.png}"
+                    IsExpanded="True">
                     <TextBlock
                         x:Name="Version"
                         Margin="10"
@@ -54,7 +55,6 @@
 
                 <controls:SettingsCard
                     x:Uid="SpectrumVisualization"
-                    Margin="0,16,0,0"
                     Click="SpectrumVisualization_Click"
                     Description="© 2026 Sennpei Studio"
                     HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/SpectrumVisualization.png}"
