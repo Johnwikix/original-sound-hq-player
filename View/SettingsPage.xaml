@@ -23,24 +23,24 @@
                     VerticalAlignment="Center">
                     <SelectorBarItem
                         x:Uid="SettingsSectionGeneral"
-                        FontSize="20"
+                        FontSize="18"
                         Tag="General"
                         IsSelected="True" />
                     <SelectorBarItem
                         x:Uid="SettingsSectionShortcuts"
-                        FontSize="20"
+                        FontSize="18"
                         Tag="Shortcuts" />
                     <SelectorBarItem
                         x:Uid="SettingsSectionCoverBackground"
-                        FontSize="20"
+                        FontSize="18"
                         Tag="CoverBackground" />
                     <SelectorBarItem
                         x:Uid="SettingsSectionLyrics"
-                        FontSize="20"
+                        FontSize="18"
                         Tag="Lyrics" />
                     <SelectorBarItem
                         x:Uid="SettingsSectionAbout"
-                        FontSize="20"
+                        FontSize="18"
                         Tag="About" />
                 </SelectorBar>
             </StackPanel>

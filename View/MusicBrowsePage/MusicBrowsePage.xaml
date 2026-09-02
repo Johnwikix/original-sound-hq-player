@@ -36,27 +36,27 @@
                     <SelectorBarItem
                         x:Name="Song"
                         x:Uid="SongTab"
-                        FontSize="20"
+                        FontSize="18"
                         Tag="song" />
                     <SelectorBarItem
                         x:Name="Album"
                         x:Uid="AlbumTab"
-                        FontSize="20"
+                        FontSize="18"
                         Tag="album" />
                     <SelectorBarItem
                         x:Name="Artist"
                         x:Uid="ArtistTab"
-                        FontSize="20"
+                        FontSize="18"
                         Tag="artist" />
                     <SelectorBarItem
                         x:Name="Folder"
                         x:Uid="FolderTab"
-                        FontSize="20"
+                        FontSize="18"
                         Tag="folder" />
                     <SelectorBarItem
                         x:Name="Favourite"
                         x:Uid="FavouriteTab"
-                        FontSize="20"
+                        FontSize="18"
                         Tag="favourite" />
                 </SelectorBar>
             </StackPanel>
