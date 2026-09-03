@@ -19,13 +19,27 @@
         PointerPressed="RootGrid_PointerPressed"
         PointerReleased="RootGrid_PointerReleased">
         <Grid.Resources>
-            <!--  悬浮按钮覆写默认 Button 主题资源：悬停/按下用深色底 + 白色前景，
-                  保证在白色歌词背景上的可见度（模板经 ThemeResource 解析，窗口树内生效）  -->
-            <SolidColorBrush x:Key="ButtonBackground" Color="#8E000000" />
-            <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#CF000000" />
-            <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#D3000000" />
-            <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#FFFFFFFF" />
-            <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#FFFFFFFF" />
+            <ResourceDictionary>
+                <ResourceDictionary.ThemeDictionaries>
+                    <!--  悬浮按钮覆写默认 Button 主题资源（模板经 ThemeResource 解析，窗口树内生效）：
+                          暗色主题用深色底 + 白色前景，保证在白色歌词背景上的可见度  -->
+                    <ResourceDictionary x:Key="Default">
+                        <SolidColorBrush x:Key="ButtonBackground" Color="#8E000000" />
+                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#CF000000" />
+                        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#D3000000" />
+                        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#FFFFFFFF" />
+                        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#FFFFFFFF" />
+                    </ResourceDictionary>
+                    <!--  亮色主题镜像：浅色底 + 黑色前景，与窗口 RequestedTheme（themeChanged 同步）联动  -->
+                    <ResourceDictionary x:Key="Light">
+                        <SolidColorBrush x:Key="ButtonBackground" Color="#8EFFFFFF" />
+                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#CFFFFFFF" />
+                        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#D3FFFFFF" />
+                        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#FF000000" />
+                        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#FF000000" />
+                    </ResourceDictionary>
+                </ResourceDictionary.ThemeDictionaries>
+            </ResourceDictionary>
         </Grid.Resources>
         <ContentPresenter x:Name="RendererHost" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
         <StackPanel

@@ -40,6 +40,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private IDesktopLyricsRenderer? _renderer;
         private readonly IntPtr _hwnd;
+        private ThemeStyleHelper? _themeStyleHelper;
 
         /// <summary>桌面歌词状态源（锁定图标绑定 / 按钮处理 / 边界与样式读写）。</summary>
         public DesktopLyricsViewModel ViewModel { get; } = App.Services.GetRequiredService<DesktopLyricsViewModel>();
@@ -72,6 +73,15 @@ namespace WinUIMusicPlayer.DesktopLyrics
             SystemBackdrop = new TransparentTintBackdrop();
             ConfigureWindow();
             UpdateAdaptiveColorMode();
+
+            // 跟随主程序明暗主题（MusicDetailsWindow 同款）：只转发 themeChanged，
+            // 不调用 SetAppStyle——覆盖窗口需保持全透明背景，不能被换成亚克力/云母
+            _themeStyleHelper = new ThemeStyleHelper(this, AppWindow);
+            _themeStyleHelper.SetAppTheme();
+            if (App.MainWindow is not null)
+            {
+                App.MainWindow.themeChanged += MainWindow_themeChanged;
+            }
 
             UILyricsBus.Changed += OnUILyricsChanged;
             TimeProgressBus.CurrentPlayingTimeChanged += OnTimeProgressChanged;
@@ -487,8 +497,17 @@ namespace WinUIMusicPlayer.DesktopLyrics
             // 不在此处落盘：按约定仅在关闭窗口 / ApplyDefaultBounds（HasBounds 建立）/ 退出时记录
         }
 
+        private void MainWindow_themeChanged(object? sender, EventArgs e)
+        {
+            _themeStyleHelper?.SetAppTheme();
+        }
+
         private void OnWindowClosed(object sender, WindowEventArgs args)
         {
+            if (App.MainWindow is not null)
+            {
+                App.MainWindow.themeChanged -= MainWindow_themeChanged;
+            }
             UILyricsBus.Changed -= OnUILyricsChanged;
             TimeProgressBus.CurrentPlayingTimeChanged -= OnTimeProgressChanged;
             OffsetMsBus.Changed -= OnOffsetChanged;
