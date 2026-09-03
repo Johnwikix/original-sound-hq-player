@@ -49,7 +49,12 @@ namespace AnimatedWin2dControls.Renderer.Background
         /// </summary>
         private const float BackdropBlurSigma = 21.25f;
 
-        private const float MeshWarpTimeScale = 5f;
+        /// <summary>
+        /// pinch 网格变形的半周期（秒）：phase = acos(sin(t·π/本值))/π，
+        /// from↔to 全往复周期 = 2×本值。原版 5（10s 一轮）肉眼难察，缩到 3.5
+        /// （7s 一轮）让流动可感，同时保留慢速氛围感。
+        /// </summary>
+        private const float MeshWarpTimeScale = 3.5f;
         // 主题适配强度：暗色按 luma ×(1-α) 压暗，亮色按 lerp(luma, 1, α) 提亮，
         // 色度向量均不参与混合（见 RotatingMeshCompositeEffect.ShiftLuma）。
         private const float DarkLumaStrength = 0.4f;
@@ -58,7 +63,13 @@ namespace AnimatedWin2dControls.Renderer.Background
         private const float LandscapeTextureScale = 0.8f;
 
         /// <summary>pinch 网格位移放大倍数：绕恒等网格线性扩偏移，增强形变可见度。</summary>
-        private const float MeshWarpStrength = 2.0f;
+        private const float MeshWarpStrength = 2.6f;
+
+        /// <summary>
+        /// 旋转层整体速率倍数：iOS 16.3 原周期 120/70/90s 过缓（模糊色团几乎
+        /// 察觉不到转动），整体提速 60% 至 75/44/56s，三层相对速比保持不变。
+        /// </summary>
+        private const float RotationScale = 1.6f;
 
         /// <summary>换歌封面交叉淡化时长（秒）。</summary>
         private const float ArtworkTransitionDuration = 0.8f;
@@ -159,7 +170,7 @@ namespace AnimatedWin2dControls.Renderer.Background
                 EnsureCoverBitmaps(control);
                 PushPendingArtwork(control);
 
-                // PinchVertex：phase = acos(sin(Time * pi / 5)) / pi，mix = smoothstep(phase)。
+                // PinchVertex：phase = acos(sin(Time·π/MeshWarpTimeScale))/π，mix = smoothstep(phase)。
                 float time = Time;
                 float phase = MathF.Acos(MathF.Sin(time * MathF.PI / MeshWarpTimeScale)) / MathF.PI;
                 float pinchMix = phase * phase * (3f - 2f * phase);
@@ -197,7 +208,7 @@ namespace AnimatedWin2dControls.Renderer.Background
                 _rotationEffect!.ConstantBuffer = new RotatingMeshRotationEffect(
                     new float2(_targetWidth, _targetHeight),
                     time,
-                    rotationScale: 1f,
+                    rotationScale: RotationScale,
                     imageScale: 1f,
                     artworkMix);
 

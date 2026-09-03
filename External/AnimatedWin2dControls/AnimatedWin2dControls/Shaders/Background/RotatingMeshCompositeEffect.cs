@@ -42,8 +42,12 @@ namespace AnimatedWin2dControls.Shaders.Background
         int meshRows,
         int meshColumns) : ID2D1PixelShader
     {
-        /// <summary>软覆盖混合斜率：NDC 残差达到 1/20 时完全回落到未变形采样。</summary>
-        private const float CoverageBlendSlope = 8f;
+        /// <summary>
+        /// 软覆盖混合斜率：残差小于 1/(4·slope) 的像素完全贴合变形采样。迭代收敛
+        /// 后残差只剩 ~10⁻³·位移量，此兜底仅在强剪切病态域（求解不收敛处）生效，
+        /// 不会削弱正常区域的变形强度。
+        /// </summary>
+        private const float CoverageBlendSlope = 4f;
 
         public float4 Execute()
         {
@@ -77,14 +81,17 @@ namespace AnimatedWin2dControls.Shaders.Background
             float2 screenUv = new float2(0.5f * (ndc.X + 1f), 0.5f * (1f - ndc.Y));
             float2 uv = screenUv;
 
-            // 固定 12 次阻尼不动点迭代、无 break：FXC 禁止梯度指令（Sample）
-            // 出现在迭代次数不确定的循环内。相比牛顿法，不动点迭代不含雅可比
-            // 计算与任何分支——求解结果像素连续，折叠域表现为平滑拉伸而非
-            // 按网格单元碎裂的硬边鬼影。网格近似恒等变形，收敛迅速。
-            for (int iteration = 0; iteration < 16; iteration++)
+            // 固定次数阻尼不动点迭代、无 break：FXC 禁止梯度指令（Sample）
+            // 出现在迭代次数不确定的循环内。迭代 x += α(ndc - Warp(x)) 的收敛域
+            // 是变形雅可比特征值 ∈ (0, 2/α)：α = 0.7 时位移拉伸梯度上限 ≈1.86
+            // （α = 0.9 时只有 ≈1.22），足以覆盖放大网格的强剪切区；稳定域内
+            // 收缩率 ≤ ~0.75，26 次后残差 ≈ 10⁻³·初始位移，变形全强度呈现。
+            // 相比牛顿法，不动点迭代不含雅可比计算与任何分支——求解结果像素
+            // 连续，折叠域表现为平滑拉伸而非按网格单元碎裂的硬边鬼影。
+            for (int iteration = 0; iteration < 26; iteration++)
             {
                 float2 warp = Warp(uv);
-                uv = Hlsl.Clamp(uv + (ndc - warp) * 0.9f, 0f, 1f);
+                uv = Hlsl.Clamp(uv + (ndc - warp) * 0.7f, 0f, 1f);
             }
 
             float2 final = Warp(uv);
