@@ -351,7 +351,13 @@ namespace WinUIMusicPlayer.View
                 playListPage.CollapseDetail();
                 return;
             }
-            App.Services.GetRequiredService<MusicBrowseViewModel>().BackButton();
+            // 返回键/全局热键在任意主页面都会进入这里。MusicBrowsePage 离开视觉树后，
+            // 其 ContentFrame.Content 仍持有缓存页且 IsInDetailMode 为恢复详情态而刻意保留，
+            // 继续下发会在已脱离视觉树的页面上触发 ConnectedAnimation 并抛异常。
+            if (MainFrame.Content is MusicBrowsePage)
+            {
+                App.Services.GetRequiredService<MusicBrowseViewModel>().BackButton();
+            }
         }
 
         private void NavigationViewControl_BackRequested(NavigationView sender, NavigationViewBackRequestedEventArgs args)

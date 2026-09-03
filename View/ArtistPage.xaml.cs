@@ -74,7 +74,9 @@ namespace WinUIMusicPlayer.View
                 var item = ArtistsGridView.ContainerFromItem(artist)?.As<GridViewItem>();
                 sourceBorder = FindCoverBorderInItem(item);
             }
-            bool canAnimate = detailBorder is not null && sourceBorder is not null;
+            // 页面已脱离窗口视觉树时 XamlRoot 为 null，PrepareToAnimate 会抛
+            // "source element is not in the element tree"，此时只能走无动画收起。
+            bool canAnimate = detailBorder is not null && sourceBorder is not null && detailBorder.XamlRoot is not null;
 
             if (canAnimate)
             {
