@@ -1,4 +1,4 @@
 {
-  "zh-CN": "更新内容\n• 当前播放队列允许重复歌曲添加\n• 音乐文件夹页和播放列表页布局更新\n• 修复一些bug",
-  "en": "Release Notes\n• Allow duplicate songs to be added to the current playback queue\n• Updated layout for music folder page and playlist page\n• Fixed some bugs"
+  "zh-CN": "更新内容\n• 新增桌面歌词，支持字重、阴影强度、描边宽度等设置，窗口位置自动记忆\n• 新增 LRC Enhanced 歌词格式支持\n• 新增艺术家拆分显示，可显示多位艺人\n• 动画歌词支持逐字渲染与字重动画\n• 设置页重构，按类别拆分为多个子页面\n• 新增 AM 风格着色器，旋转网格着色器性能优化（SIMD 加速）",
+  "en": "Release Notes\n• Added desktop lyrics with weight, shadow intensity and stroke width settings; window position is remembered\n• Added LRC Enhanced lyrics format support\n• Added split-artist display for tracks with multiple artists\n• Animated lyrics now support per-word rendering and font-weight animation\n• Settings page refactored into categorized sub-pages\n• Added AM-style shader; rotating mesh shader optimized with SIMD"
 }
