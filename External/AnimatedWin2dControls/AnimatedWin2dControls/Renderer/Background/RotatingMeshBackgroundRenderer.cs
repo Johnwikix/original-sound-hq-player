@@ -17,19 +17,24 @@ namespace AnimatedWin2dControls.Renderer.Background
     /// 旋转网格背景渲染器。移植自 Lyricify-Backgrounds（Apache 2.0）经
     /// ComputeSharpDemo 转写的 compute 版本，适配本项目 D2D1 像素着色器管线：
     ///
-    /// <list type="number">
-    /// <item><see cref="RotatingMeshRotationEffect"/> —— 三层旋转封面 + aspect-fill
-    /// 兜底，封面经双 CanvasBitmap 输入（RGBA8，线性 + Clamp 描述）注入并可显式
-    /// Dispose，绘制到 1/8 像素密度的中间目标（对应原版 1/7.53 背景面）。</item>
-    /// <item>原生 <see cref="GaussianBlurEffect"/>（Soft 边框）做 77 抽头 σ 可分离
-    /// 高斯模糊的等价实现：premultiplied 软边框模糊 + 合成 pass 内 un-premultiply，
-    /// 与原版"零边框采样 + 覆盖率归一化"逐像素一致。</item>
-    /// <item><see cref="RotatingMeshCompositeEffect"/> —— 材质处理 + pinch 网格逆向
-    /// 变形 + 抖动，网格顶点经 CanvasBitmap（RGBA32F，输入 1）注入，输出到全屏。
-    /// 注：ComputeSharp.D2D1 3.2.0 的资源纹理管理器仅适用于无输入的着色器
-    /// （属性槽按声明索引线性映射且只注册 Count 个，与输入占用的寄存器约束冲突），
-    /// 故合成 pass 的网格改走效果输入。</item>
-    /// </list>
+        /// <list type="number">
+        /// <item><see cref="RotatingMeshRotationEffect"/> —— 三层旋转封面 + aspect-fill
+        /// 兜底，封面经双 CanvasBitmap 输入（RGBA8，线性 + Clamp 描述）注入并可显式
+        /// Dispose，绘制到 1/8 像素密度的中间目标（对应原版 1/7.53 背景面）。</item>
+        /// <item>原生 <see cref="GaussianBlurEffect"/>（Soft 边框）做 77 抽头 σ 可分离
+        /// 高斯模糊的等价实现：premultiplied 软边框模糊 + 合成 pass 内 un-premultiply，
+        /// 与原版"零边框采样 + 覆盖率归一化"逐像素一致。</item>
+        /// <item><see cref="RotatingMeshSolveEffect"/> —— 1/4 像素密度预求解 pinch
+        /// 网格的逆向变形：网格顶点经 CanvasBitmap（RGBA32F，效果输入）注入，解出的
+        /// uv 场写入 RGBA32F 求解目标。变形场被网格分辨率截断为低频，低密度求解 +
+        /// 硬件双线性重建与全分辨率逐像素迭代无可感知差异，而 26 次不动点迭代的
+        /// 成本从全屏像素量降至 1/16（见 <see cref="SolvePixelScale"/>）。</item>
+        /// <item><see cref="RotatingMeshCompositeEffect"/> —— 网格 uv 场双线性重建 +
+        /// 材质处理 + 抖动，输出到全屏。
+        /// 注：ComputeSharp.D2D1 3.2.0 的资源纹理管理器仅适用于无输入的着色器
+        /// （属性槽按声明索引线性映射且只注册 Count 个，与输入占用的寄存器约束冲突），
+        /// 故网格与 uv 场均走效果输入。</item>
+        /// </list>
     ///
     /// <para>
     /// 封面适配：原 demo 从固定路径读图，本渲染器改由 <see cref="SetArtwork"/> 注入
@@ -40,6 +45,14 @@ namespace AnimatedWin2dControls.Renderer.Background
     /// </summary>
     public sealed class RotatingMeshBackgroundRenderer : BaseBackgroundRenderer
     {
+        /// <summary>
+        /// 变形求解 pass 的像素密度（1/4）。被求解的 uv 场由 21×21/33×33 网格
+        /// 双线性插值生成，空间频率被网格分辨率截断，1/4 密度下每个网格单元仍有
+        /// 8 个以上采样点，合成 pass 硬件双线性重建与全分辨率逐像素求解无可感知
+        /// 差异；26 次不动点迭代的成本因此从全屏像素量降至 1/16。
+        /// </summary>
+        private const float SolvePixelScale = 1f / 4f;
+
         /// <summary>中间旋转/模糊层的像素密度（1/8，对应原版 backdropDownsample≈7.53）。</summary>
         private const float BackdropPixelScale = 1f / 8f;
 
@@ -79,14 +92,18 @@ namespace AnimatedWin2dControls.Renderer.Background
         private readonly object _gate = new();
 
         private PixelShaderEffect<RotatingMeshRotationEffect>? _rotationEffect;
+        private PixelShaderEffect<RotatingMeshSolveEffect>? _solveEffect;
         private PixelShaderEffect<RotatingMeshCompositeEffect>? _compositeEffect;
         private GaussianBlurEffect? _blurEffect;
         private ScaleEffect? _scaleEffect;
         private CanvasRenderTarget? _rotationTarget;
+        private CanvasRenderTarget? _solveTarget;
         private CanvasRenderTarget? _blurTarget;
         private CanvasRenderTarget? _upscaledTarget;
         private int _targetWidth;
         private int _targetHeight;
+        private int _solveWidth;
+        private int _solveHeight;
         private float _targetDpi;
         private float _meshDpi;
 
@@ -114,6 +131,8 @@ namespace AnimatedWin2dControls.Renderer.Background
             {
                 _rotationTarget?.Dispose();
                 _rotationTarget = null;
+                _solveTarget?.Dispose();
+                _solveTarget = null;
                 _blurTarget?.Dispose();
                 _blurTarget = null;
                 _upscaledTarget?.Dispose();
@@ -133,6 +152,8 @@ namespace AnimatedWin2dControls.Renderer.Background
                 // 位图输入为设备绑定资源，重建后由 Draw 惰性重创建并重新绑定。
                 _rotationEffect?.Dispose();
                 _rotationEffect = new PixelShaderEffect<RotatingMeshRotationEffect>();
+                _solveEffect?.Dispose();
+                _solveEffect = new PixelShaderEffect<RotatingMeshSolveEffect>();
                 _compositeEffect?.Dispose();
                 _compositeEffect = new PixelShaderEffect<RotatingMeshCompositeEffect>();
             }
@@ -204,6 +225,23 @@ namespace AnimatedWin2dControls.Renderer.Background
                     artworkMix = _activeArtworkSlot == 1 ? 1f : 0f;
                 }
 
+                // Pass 0 —— 1/4 分辨率求解 pinch 网格的逆向变形场（RGBA32F：RG = 网格 uv）。
+                // 变形场被网格分辨率截断为低频，低密度求解 + 合成 pass 硬件双线性重建
+                // 与全分辨率逐像素求解无可感知差异，迭代成本降至 1/16（见 SolvePixelScale）。
+                if (_meshBitmap is not null && _solveEffect is not null && _solveTarget is not null)
+                {
+                    _solveEffect.ConstantBuffer = new RotatingMeshSolveEffect(
+                        new float2(_solveWidth, _solveHeight),
+                        pinchMix,
+                        _meshRows,
+                        _meshColumns);
+
+                    using (var solveSession = _solveTarget.CreateDrawingSession())
+                    {
+                        solveSession.DrawImage(_solveEffect);
+                    }
+                }
+
                 // Pass 1 —— 旋转封面层绘制到 1/8 中间目标。
                 _rotationEffect!.ConstantBuffer = new RotatingMeshRotationEffect(
                     new float2(_targetWidth, _targetHeight),
@@ -230,20 +268,18 @@ namespace AnimatedWin2dControls.Renderer.Background
                     upscaleSession.DrawImage(_scaleEffect!);
                 }
 
-                // Pass 3 —— 材质处理 + pinch 网格 + 抖动，输出全屏。
-                // 网格纹理创建彻底失败时跳过合成，直接呈现模糊背景（保持不透明覆盖）。
-                if (_meshBitmap is not null)
+                // Pass 3 —— 材质处理 + pinch 网格 uv 重建 + 抖动，输出全屏。
+                // 网格纹理或求解目标创建彻底失败时跳过合成，直接呈现模糊背景
+                // （保持不透明覆盖）。
+                if (_meshBitmap is not null && _solveTarget is not null)
                 {
                     _compositeEffect!.ConstantBuffer = new RotatingMeshCompositeEffect(
                         new float2(pixelWidth, pixelHeight),
-                        pinchMix,
                         IsDark,
                         IsDark ? DarkLumaStrength : LightLumaStrength,
                         ditherStrength: 1f,
                         pinchTextureScale,
-                        pinchTextureOffset,
-                        _meshRows,
-                        _meshColumns);
+                        pinchTextureOffset);
 
                     if (Opacity >= 1.0)
                     {
@@ -318,6 +354,8 @@ namespace AnimatedWin2dControls.Renderer.Background
             _rotationTarget?.Dispose();
             _blurTarget?.Dispose();
             _upscaledTarget?.Dispose();
+            _solveTarget?.Dispose();
+            _solveTarget = null;
             _blurEffect?.Dispose();
             _scaleEffect?.Dispose();
 
@@ -344,7 +382,32 @@ namespace AnimatedWin2dControls.Renderer.Background
                 InterpolationMode = CanvasImageInterpolation.Linear,
             };
 
+            // 求解目标：1/4 像素密度的 RGBA32F（uv 场需要浮点精度）。必须以控制
+            // DPI 创建（DIP 尺寸 = 像素数 × 96/dpi），与合成 pass 的绘制会话同
+            // DPI——不一致会触发 ComputeSharp 的 DPI 补偿节点，导致图配置错误。
+            // RGBA32F 不受支持等异常时留空，Draw 走模糊背景回落，渲染不中断。
+            int solveWidth = Math.Max(1, (int)MathF.Round(widthDip * (dpi / 96f) * SolvePixelScale));
+            int solveHeight = Math.Max(1, (int)MathF.Round(heightDip * (dpi / 96f) * SolvePixelScale));
+
+            try
+            {
+                _solveTarget = new CanvasRenderTarget(
+                    control,
+                    solveWidth * 96f / dpi,
+                    solveHeight * 96f / dpi,
+                    dpi,
+                    DirectXPixelFormat.R32G32B32A32Float,
+                    CanvasAlphaMode.Premultiplied);
+                _solveWidth = solveWidth;
+                _solveHeight = solveHeight;
+            }
+            catch (Exception)
+            {
+                _solveTarget = null;
+            }
+
             _compositeEffect!.Sources[0] = _upscaledTarget;
+            if (_solveTarget is not null) _compositeEffect.Sources[1] = _solveTarget;
             _targetWidth = backdropWidth;
             _targetHeight = backdropHeight;
             _targetDpi = dpi;
@@ -406,7 +469,8 @@ namespace AnimatedWin2dControls.Renderer.Background
             catch (Exception)
             {
                 // 格式不支持等异常情况下降级为 1×1 零纹理（8-bit 恒受支持）：
-                // 网格求解不收敛，全屏回落到下层 treated 材质（无变形但渲染不中断）。
+                // 求解 pass 对恒零网格的变形场处处残差超限、回落为未变形 uv，
+                // 合成 pass 即呈现无变形的模糊材质（渲染不中断）。
                 // 源位绝不能为 null，否则效果图为未绑定输入（D2DERR_INVALID_GRAPH_CONFIGURATION）。
             }
 
@@ -426,7 +490,9 @@ namespace AnimatedWin2dControls.Renderer.Background
                 catch (Exception) { }
             }
 
-            _compositeEffect!.Sources[1] = _meshBitmap;
+            // 网格走求解 pass 的效果输入：求解 pass 以控制 DPI 绘制（目标与
+            // 会话同 DPI），网格位图的 DPI 与之一致，不触发 DPI 补偿节点。
+            _solveEffect!.Sources[0] = _meshBitmap;
             _meshRows = mesh.Rows;
             _meshColumns = mesh.Columns;
             _meshIsPortrait = isPortrait;
@@ -619,19 +685,23 @@ namespace AnimatedWin2dControls.Renderer.Background
         {
             lock (_gate)
             {
-                _rotationTarget?.Dispose();
-                _rotationTarget = null;
-                _blurTarget?.Dispose();
-                _blurTarget = null;
-                _upscaledTarget?.Dispose();
-                _upscaledTarget = null;
-                _blurEffect?.Dispose();
-                _blurEffect = null;
-                _scaleEffect?.Dispose();
-                _scaleEffect = null;
+            _rotationTarget?.Dispose();
+            _rotationTarget = null;
+            _solveTarget?.Dispose();
+            _solveTarget = null;
+            _blurTarget?.Dispose();
+            _blurTarget = null;
+            _upscaledTarget?.Dispose();
+            _upscaledTarget = null;
+            _blurEffect?.Dispose();
+            _blurEffect = null;
+            _scaleEffect?.Dispose();
+            _scaleEffect = null;
 
                 _rotationEffect?.Dispose();
                 _rotationEffect = null;
+                _solveEffect?.Dispose();
+                _solveEffect = null;
                 _compositeEffect?.Dispose();
                 _compositeEffect = null;
 

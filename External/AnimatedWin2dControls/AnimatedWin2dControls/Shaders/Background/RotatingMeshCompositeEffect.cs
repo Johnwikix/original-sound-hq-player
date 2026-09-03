@@ -5,9 +5,8 @@ namespace AnimatedWin2dControls.Shaders.Background
 {
     /// <summary>
     /// 旋转网格背景的最终合成 pass。移植自 Lyricify-Backgrounds 的
-    /// <c>MaterialTreatedPixel</c> / <c>PinchVertex</c> / <c>PinchPixel</c> /
-    /// <c>FinishMaterial</c>（Apache 2.0），经 ComputeSharpDemo 的 compute 版本
-    /// 转写为 D2D1 像素着色器。
+    /// <c>MaterialTreatedPixel</c> / <c>PinchPixel</c> / <c>FinishMaterial</c>
+    /// （Apache 2.0），经 ComputeSharpDemo 的 compute 版本转写为 D2D1 像素着色器。
     ///
     /// <para>
     /// 输入 0 为经原生 <c>GaussianBlurEffect</c>（Soft 边框）模糊后的旋转封面层，
@@ -15,12 +14,10 @@ namespace AnimatedWin2dControls.Shaders.Background
     /// 与原版"零边框采样 + 按累计 alpha 归一化"的结果完全一致。
     /// </para>
     /// <para>
-    /// 输入 1 为 pinch 网格纹理（RGBA32F：RG = from 网格 NDC 坐标，BA = to 网格
-    /// NDC 坐标，格点位于纹素中心）。线性滤波下的硬件双线性即逐顶点混合的精确
-    /// 等价形式（lerp 与双线性可交换），故 <c>Warp(uv)</c> 只需一次采样。
-    /// 网格变形经牛顿迭代逐像素反向求解；原版对未收敛像素的逐三角形扫描在 D2D1
-    /// 中无法实现（FXC 禁止梯度指令出现在不可展开循环内），此处以残差软混合近似：
-    /// 求解越好越贴近变形采样，折叠域内平滑回落到未变形采样，避免硬边鬼影。
+    /// 输入 1 为 <see cref="RotatingMeshSolveEffect"/> 预求解的网格 uv 场
+    /// （1/4 分辨率 RGBA32F：RG = 网格 uv）。网格变形的逆向求解已前移至该
+    /// 低分辨率 pass——变形场被网格分辨率截断为低频，此处硬件双线性采样
+    /// 重建与逐像素全分辨率求解无可感知差异，而合成 pass 只剩材质处理与抖动。
     /// </para>
     /// </summary>
     [D2DInputCount(2)]
@@ -33,31 +30,19 @@ namespace AnimatedWin2dControls.Shaders.Background
     [D2DGeneratedPixelShaderDescriptor]
     public readonly partial struct RotatingMeshCompositeEffect(
         float2 dispatchSize,
-        float pinchMix,
         bool isDark,
         float lumaStrength,
         float ditherStrength,
         float pinchTextureScale,
-        float pinchTextureOffset,
-        int meshRows,
-        int meshColumns) : ID2D1PixelShader
+        float pinchTextureOffset) : ID2D1PixelShader
     {
-        /// <summary>
-        /// 软覆盖混合斜率：残差小于 1/(4·slope) 的像素完全贴合变形采样。迭代收敛
-        /// 后残差只剩 ~10⁻³·位移量，此兜底仅在强剪切病态域（求解不收敛处）生效，
-        /// 不会削弱正常区域的变形强度。
-        /// </summary>
-        private const float CoverageBlendSlope = 4f;
-
         public float4 Execute()
         {
             float2 scene = D2D.GetScenePosition().XY;
             float2 uv = scene / dispatchSize;
 
-            // pinch 网格（PinchVertex + PinchPixel），逐像素反向求解变形。
-            // 求解结果永远有效（软覆盖混合），无需回退分支。
-            float2 ndc = new float2(uv.X * 2f - 1f, 1f - uv.Y * 2f);
-            float2 meshUv = SolveMeshUv(ndc);
+            // 预求解的网格 uv 场（PinchPixel 的逆），硬件双线性重建。
+            float2 meshUv = D2D.SampleInput(1, uv).XY;
 
             float2 textureCoordinate = new float2(
                 meshUv.X * pinchTextureScale + pinchTextureOffset,
@@ -68,59 +53,6 @@ namespace AnimatedWin2dControls.Shaders.Background
             color = FinishMaterial(color, scene);
 
             return new float4(Hlsl.Saturate(color.X), Hlsl.Saturate(color.Y), Hlsl.Saturate(color.Z), 1f);
-        }
-
-        /// <summary>
-        /// 逐像素牛顿求解网格变形，返回混合后的采样 uv：变形为 from/to 网格逐顶点
-        /// 按 <paramref name="pinchMix"/> 混合后的分片双线性插值。网格近似恒等变形，
-        /// 屏幕 uv 是很好的迭代初值；折叠域内不收敛的像素按残差软混合回落到
-        /// 未变形采样（原版为逐三角形精确扫描），全程连续无硬边。
-        /// </summary>
-        private float2 SolveMeshUv(float2 ndc)
-        {
-            float2 screenUv = new float2(0.5f * (ndc.X + 1f), 0.5f * (1f - ndc.Y));
-            float2 uv = screenUv;
-
-            // 固定次数阻尼不动点迭代、无 break：FXC 禁止梯度指令（Sample）
-            // 出现在迭代次数不确定的循环内。迭代 x += α(ndc - Warp(x)) 的收敛域
-            // 是变形雅可比特征值 ∈ (0, 2/α)：α = 0.7 时位移拉伸梯度上限 ≈1.86
-            // （α = 0.9 时只有 ≈1.22），足以覆盖放大网格的强剪切区；稳定域内
-            // 收缩率 ≤ ~0.75，26 次后残差 ≈ 10⁻³·初始位移，变形全强度呈现。
-            // 相比牛顿法，不动点迭代不含雅可比计算与任何分支——求解结果像素
-            // 连续，折叠域表现为平滑拉伸而非按网格单元碎裂的硬边鬼影。
-            for (int iteration = 0; iteration < 26; iteration++)
-            {
-                float2 warp = Warp(uv);
-                uv = Hlsl.Clamp(uv + (ndc - warp) * 0.7f, 0f, 1f);
-            }
-
-            float2 final = Warp(uv);
-            float residual = Hlsl.Length(new float2(final.X - ndc.X, final.Y - ndc.Y));
-
-            // 软覆盖：残差越大越回落到未变形采样。折叠域内 original 走逐三角形
-            // 精确扫描；此处以平滑混合近似，消除"几何鬼影"式的硬边内容错位。
-            float coverage = Hlsl.Saturate(1f - residual * CoverageBlendSlope);
-
-            return Hlsl.Lerp(screenUv, Hlsl.Clamp(uv, 0f, 1f), coverage);
-        }
-
-        /// <summary>
-        /// 正向变形：from/to 网格逐顶点按 <paramref name="pinchMix"/> 混合后的双线性
-        /// 插值（即 <c>PinchVertex</c>）。网格数据按数组行序存于输入 1（纹理顶行 =
-        /// 数组 row 0 = NDC 底部），格点位于纹素中心，硬件双线性即格点插值。
-        /// </summary>
-        private float2 Warp(float2 uv)
-        {
-            float gridX = Hlsl.Clamp(uv.X * (meshColumns - 1), 0f, meshColumns - 1f);
-            float gridY = Hlsl.Clamp((1f - uv.Y) * (meshRows - 1), 0f, meshRows - 1f);
-
-            float4 vertex = D2D.SampleInput(1, new float2(
-                (gridX + 0.5f) / meshColumns,
-                (gridY + 0.5f) / meshRows));
-
-            return new float2(
-                Hlsl.Lerp(vertex.X, vertex.Z, pinchMix),
-                Hlsl.Lerp(vertex.Y, vertex.W, pinchMix));
         }
 
         /// <summary>
