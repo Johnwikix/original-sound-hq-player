@@ -1456,6 +1456,45 @@
   <data name="SettingsSectionAbout.Text" xml:space="preserve">
     <value>このアプリ</value>
   </data>
+  <data name="AboutAppTitle.Text" xml:space="preserve">
+    <value>OriginalSound HQ</value>
+  </data>
+  <data name="AboutSlogan.Text" xml:space="preserve">
+    <value>モダンなリスニングのためのローカル音楽プレーヤー</value>
+  </data>
+  <data name="AboutSloganSub.Text" xml:space="preserve">
+    <value>没入感のあるUI · 高音質 · 高度なカスタマイズ</value>
+  </data>
+  <data name="AboutCacheExpander.Header" xml:space="preserve">
+    <value>キャッシュ</value>
+  </data>
+  <data name="AboutCacheExpander.Description" xml:space="preserve">
+    <value>カバー画像のキャッシュとその保存場所</value>
+  </data>
+  <data name="OpenCacheFolderButton.Content" xml:space="preserve">
+    <value>キャッシュフォルダーを開く</value>
+  </data>
+  <data name="AboutLogCard.Header" xml:space="preserve">
+    <value>ログ</value>
+  </data>
+  <data name="AboutLogCard.Description" xml:space="preserve">
+    <value>アプリの動作ログの保存場所。問題の調査に使用します</value>
+  </data>
+  <data name="OpenLogFolderButton.Content" xml:space="preserve">
+    <value>ログフォルダーを開く</value>
+  </data>
+  <data name="AboutSettingsCard.Header" xml:space="preserve">
+    <value>設定ファイル</value>
+  </data>
+  <data name="AboutSettingsCard.Description" xml:space="preserve">
+    <value>アプリの設定と状態データ（Settings.json など）が保存されるフォルダー</value>
+  </data>
+  <data name="OpenSettingsFolderButton.Content" xml:space="preserve">
+    <value>設定フォルダーを開く</value>
+  </data>
+  <data name="AboutDisclaimerHeader.Text" xml:space="preserve">
+    <value>免責事項</value>
+  </data>
 </root>
 
 

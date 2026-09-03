@@ -1458,4 +1458,43 @@
   <data name="SettingsSectionAbout.Text" xml:space="preserve">
     <value>关于</value>
   </data>
+  <data name="AboutAppTitle.Text" xml:space="preserve">
+    <value>原音HQ播放器</value>
+  </data>
+  <data name="AboutSlogan.Text" xml:space="preserve">
+    <value>为现代聆听而生的本地音乐播放器</value>
+  </data>
+  <data name="AboutSloganSub.Text" xml:space="preserve">
+    <value>沉浸式界面 · 极致音质 · 高度可定制</value>
+  </data>
+  <data name="AboutCacheExpander.Header" xml:space="preserve">
+    <value>缓存</value>
+  </data>
+  <data name="AboutCacheExpander.Description" xml:space="preserve">
+    <value>封面图片缓存及其存储位置</value>
+  </data>
+  <data name="OpenCacheFolderButton.Content" xml:space="preserve">
+    <value>打开缓存文件夹</value>
+  </data>
+  <data name="AboutLogCard.Header" xml:space="preserve">
+    <value>日志</value>
+  </data>
+  <data name="AboutLogCard.Description" xml:space="preserve">
+    <value>应用运行日志的保存位置，用于问题排查</value>
+  </data>
+  <data name="OpenLogFolderButton.Content" xml:space="preserve">
+    <value>打开日志文件夹</value>
+  </data>
+  <data name="AboutSettingsCard.Header" xml:space="preserve">
+    <value>设置文件</value>
+  </data>
+  <data name="AboutSettingsCard.Description" xml:space="preserve">
+    <value>应用配置与状态数据（Settings.json 等）所在的文件夹</value>
+  </data>
+  <data name="OpenSettingsFolderButton.Content" xml:space="preserve">
+    <value>打开设置文件夹</value>
+  </data>
+  <data name="AboutDisclaimerHeader.Text" xml:space="preserve">
+    <value>免责声明</value>
+  </data>
 </root>

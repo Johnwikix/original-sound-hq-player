@@ -6,7 +6,6 @@
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
     xmlns:customControl="using:WinUIMusicPlayer.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:dev="using:DevWinUI"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
@@ -37,41 +36,6 @@
                         SmallChange="1"
                         SpinButtonPlacementMode="Inline"
                         Value="{x:Bind ViewModel.AppViewModel.CoverSize, Mode=TwoWay}" />
-                </controls:SettingsCard>
-
-                <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}">
-                    <controls:SettingsCard.Header>
-                        <TextBlock x:Uid="CoverDiskCache" />
-                    </controls:SettingsCard.Header>
-                    <Grid Width="300" ColumnDefinitions="*,Auto">
-                        <Button
-                            Grid.Column="0"
-                            Margin="0,0,10,0"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Stretch"
-                            Command="{x:Bind ViewModel.AppViewModel.OpenCoverCacheLocationCommand, Mode=OneWay}">
-                            <Button.Content>
-                                <dev:AutoScrollView
-                                    x:Name="AutoScrollViewControl"
-                                    Margin="0,0,10,0"
-                                    IsPlaying="False"
-                                    PointerCanceled="AutoScrollHover_PointerCanceled"
-                                    PointerEntered="AutoScrollHover_PointerEntered"
-                                    PointerExited="AutoScrollHover_PointerExited">
-                                    <TextBlock
-                                        VerticalAlignment="Center"
-                                        Text="{x:Bind ViewModel.AppViewModel.MusicCoverCache, Mode=OneWay}"
-                                        TextAlignment="Right"
-                                        TextTrimming="CharacterEllipsis"
-                                        TextWrapping="NoWrap" />
-                                </dev:AutoScrollView>
-                            </Button.Content>
-                        </Button>
-                        <Button
-                            x:Uid="ChangeMusicCoverCache"
-                            Grid.Column="1"
-                            Command="{x:Bind ViewModel.AppViewModel.ChangeCoverCacheLocationCommand, Mode=OneWay}" />
-                    </Grid>
                 </controls:SettingsCard>
 
                 <controls:SettingsCard>

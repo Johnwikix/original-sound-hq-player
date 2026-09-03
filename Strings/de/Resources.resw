@@ -1456,6 +1456,45 @@
   <data name="SettingsSectionAbout.Text" xml:space="preserve">
     <value>Info</value>
   </data>
+  <data name="AboutAppTitle.Text" xml:space="preserve">
+    <value>OriginalSound HQ</value>
+  </data>
+  <data name="AboutSlogan.Text" xml:space="preserve">
+    <value>Ein lokaler Musikplayer für modernes Hören</value>
+  </data>
+  <data name="AboutSloganSub.Text" xml:space="preserve">
+    <value>Immersive Oberfläche · Premium-Klang · Umfangreich anpassbar</value>
+  </data>
+  <data name="AboutCacheExpander.Header" xml:space="preserve">
+    <value>Cache</value>
+  </data>
+  <data name="AboutCacheExpander.Description" xml:space="preserve">
+    <value>Coverbild-Cache und Speicherort</value>
+  </data>
+  <data name="OpenCacheFolderButton.Content" xml:space="preserve">
+    <value>Cache-Ordner öffnen</value>
+  </data>
+  <data name="AboutLogCard.Header" xml:space="preserve">
+    <value>Protokolle</value>
+  </data>
+  <data name="AboutLogCard.Description" xml:space="preserve">
+    <value>Speicherort der Anwendungsprotokolle, zur Fehlerdiagnose</value>
+  </data>
+  <data name="OpenLogFolderButton.Content" xml:space="preserve">
+    <value>Protokollordner öffnen</value>
+  </data>
+  <data name="AboutSettingsCard.Header" xml:space="preserve">
+    <value>Einstellungsdateien</value>
+  </data>
+  <data name="AboutSettingsCard.Description" xml:space="preserve">
+    <value>Ordner mit Konfigurations- und Statusdaten der App (Settings.json usw.)</value>
+  </data>
+  <data name="OpenSettingsFolderButton.Content" xml:space="preserve">
+    <value>Einstellungsordner öffnen</value>
+  </data>
+  <data name="AboutDisclaimerHeader.Text" xml:space="preserve">
+    <value>Haftungsausschluss</value>
+  </data>
 </root>
 
 

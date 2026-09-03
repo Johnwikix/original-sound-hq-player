@@ -1456,6 +1456,45 @@
   <data name="SettingsSectionAbout.Text" xml:space="preserve">
     <value>Acerca de</value>
   </data>
+  <data name="AboutAppTitle.Text" xml:space="preserve">
+    <value>OriginalSound HQ</value>
+  </data>
+  <data name="AboutSlogan.Text" xml:space="preserve">
+    <value>Un reproductor de música local creado para la escucha moderna</value>
+  </data>
+  <data name="AboutSloganSub.Text" xml:space="preserve">
+    <value>Interfaz inmersiva · Calidad de sonido superior · Muy personalizable</value>
+  </data>
+  <data name="AboutCacheExpander.Header" xml:space="preserve">
+    <value>Caché</value>
+  </data>
+  <data name="AboutCacheExpander.Description" xml:space="preserve">
+    <value>Caché de imágenes de portada y ubicación de almacenamiento</value>
+  </data>
+  <data name="OpenCacheFolderButton.Content" xml:space="preserve">
+    <value>Abrir carpeta de caché</value>
+  </data>
+  <data name="AboutLogCard.Header" xml:space="preserve">
+    <value>Registros</value>
+  </data>
+  <data name="AboutLogCard.Description" xml:space="preserve">
+    <value>Ubicación de los registros de la aplicación, para solución de problemas</value>
+  </data>
+  <data name="OpenLogFolderButton.Content" xml:space="preserve">
+    <value>Abrir carpeta de registros</value>
+  </data>
+  <data name="AboutSettingsCard.Header" xml:space="preserve">
+    <value>Archivos de configuración</value>
+  </data>
+  <data name="AboutSettingsCard.Description" xml:space="preserve">
+    <value>Carpeta que contiene la configuración y los datos de estado de la aplicación (Settings.json, etc.)</value>
+  </data>
+  <data name="OpenSettingsFolderButton.Content" xml:space="preserve">
+    <value>Abrir carpeta de configuración</value>
+  </data>
+  <data name="AboutDisclaimerHeader.Text" xml:space="preserve">
+    <value>Aviso legal</value>
+  </data>
 </root>
 
 

@@ -4,13 +4,10 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:CommunityToolkit.WinUI.Controls"
-    xmlns:customControl="using:WinUIMusicPlayer.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dev="using:DevWinUI"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:model="using:WinUIMusicPlayer.Model"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
-    xmlns:tools="using:WinUIMusicPlayer.Utils"
     xmlns:ui="using:CommunityToolkit.WinUI"
     mc:Ignorable="d">
 
@@ -20,9 +17,45 @@
                 <StackPanel.ChildrenTransitions>
                     <RepositionThemeTransition IsStaggeringEnabled="True" />
                 </StackPanel.ChildrenTransitions>
+
+                <!--  应用标题区（参考 BetterLyrics：居中 Logo + 名称 + 标语）  -->
+                <StackPanel
+                    Margin="0,36,0,12"
+                    Background="Transparent"
+                    Spacing="12">
+                    <StackPanel
+                        HorizontalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="16">
+                        <Image
+                            Width="32"
+                            Height="32"
+                            Source="ms-appx:///Assets/Square44x44Logo.altform-unplated_targetsize-32.png" />
+                        <TextBlock
+                            x:Uid="AboutAppTitle"
+                            FontSize="28"
+                            Style="{ThemeResource TitleTextBlockStyle}" />
+                    </StackPanel>
+                    <StackPanel Spacing="4">
+                        <TextBlock
+                            x:Uid="AboutSlogan"
+                            HorizontalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Style="{ThemeResource SubtitleTextBlockStyle}"
+                            TextWrapping="Wrap" />
+                        <TextBlock
+                            x:Uid="AboutSloganSub"
+                            HorizontalAlignment="Center"
+                            FontWeight="Bold"
+                            Foreground="{ThemeResource TextFillColorTertiaryBrush}"
+                            Style="{StaticResource CaptionTextBlockStyle}"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!--  应用信息（版本 + 相关链接，含免责声明在线版）  -->
                 <controls:SettingsExpander
                     x:Uid="AppTitleHeader"
-                    Margin="0,30,0,0"
                     Description="© 2026 Sennpei Studio"
                     HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/Square44x44Logo.altform-unplated_targetsize-32.png}"
                     IsExpanded="True">
@@ -31,6 +64,7 @@
                         Margin="10"
                         VerticalAlignment="Center"
                         FontSize="14"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                         Text="{x:Bind ViewModel.AppViewModel.Version, Mode=OneWay}" />
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard ContentAlignment="Left">
@@ -44,24 +78,75 @@
                                     x:Uid="ThirdPartyComponents"
                                     Click="ThirdParty_Click" />
                                 <HyperlinkButton
-                                    x:Name="LogPath"
-                                    x:Uid="LogPath"
-                                    Command="{x:Bind ViewModel.AppViewModel.OpenLogPathCommand, Mode=OneWay}" />
-                                <HyperlinkButton
                                     x:Name="MainGitHub"
                                     Command="{x:Bind ViewModel.AppViewModel.OpenMainGitHubCommand, Mode=OneWay}"
                                     Content="GitHub" />
+                                <HyperlinkButton NavigateUri="https://johnwikix.github.io/original-sound-player-page/disclaimer">
+                                    <HyperlinkButton.Content>
+                                        <TextBlock x:Uid="AboutDisclaimerHeader" />
+                                    </HyperlinkButton.Content>
+                                </HyperlinkButton>
                             </StackPanel>
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
 
+                <!--  音频可视化  -->
                 <controls:SettingsCard
                     x:Uid="SpectrumVisualization"
                     Click="SpectrumVisualization_Click"
                     Description="© 2026 Sennpei Studio"
                     HeaderIcon="{ui:BitmapIcon Source=ms-appx:///Assets/SpectrumVisualization.png}"
                     IsClickEnabled="True" />
+
+                <!--  缓存  -->
+                <controls:SettingsExpander x:Uid="AboutCacheExpander">
+                    <Button
+                        x:Uid="OpenCacheFolderButton"
+                        Command="{x:Bind ViewModel.AppViewModel.OpenCoverCacheLocationCommand, Mode=OneWay}" />
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}">
+                            <controls:SettingsCard.Header>
+                                <TextBlock x:Uid="CoverDiskCache" />
+                            </controls:SettingsCard.Header>
+                            <Grid Width="300" ColumnDefinitions="*,Auto">
+                                <dev:AutoScrollView
+                                    x:Name="AutoScrollViewControl"
+                                    Grid.Column="0"
+                                    Margin="0,0,10,0"
+                                    VerticalAlignment="Center"
+                                    IsPlaying="False"
+                                    PointerCanceled="AutoScrollHover_PointerCanceled"
+                                    PointerEntered="AutoScrollHover_PointerEntered"
+                                    PointerExited="AutoScrollHover_PointerExited">
+                                    <TextBlock
+                                        Text="{x:Bind ViewModel.AppViewModel.MusicCoverCache, Mode=OneWay}"
+                                        TextAlignment="Right"
+                                        TextTrimming="CharacterEllipsis"
+                                        TextWrapping="NoWrap" />
+                                </dev:AutoScrollView>
+                                <Button
+                                    x:Uid="ChangeMusicCoverCache"
+                                    Grid.Column="1"
+                                    Command="{x:Bind ViewModel.AppViewModel.ChangeCoverCacheLocationCommand, Mode=OneWay}" />
+                            </Grid>
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
+
+                <!--  日志  -->
+                <controls:SettingsCard x:Uid="AboutLogCard">
+                    <Button
+                        x:Uid="OpenLogFolderButton"
+                        Command="{x:Bind ViewModel.AppViewModel.OpenLogPathCommand, Mode=OneWay}" />
+                </controls:SettingsCard>
+
+                <!--  设置文件  -->
+                <controls:SettingsCard x:Uid="AboutSettingsCard">
+                    <Button
+                        x:Uid="OpenSettingsFolderButton"
+                        Command="{x:Bind ViewModel.AppViewModel.OpenSettingsFolderCommand, Mode=OneWay}" />
+                </controls:SettingsCard>
             </StackPanel>
         </Grid>
     </ScrollViewer>

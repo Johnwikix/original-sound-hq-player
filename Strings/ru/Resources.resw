@@ -1456,6 +1456,45 @@
   <data name="SettingsSectionAbout.Text" xml:space="preserve">
     <value>О программе</value>
   </data>
+  <data name="AboutAppTitle.Text" xml:space="preserve">
+    <value>OriginalSound HQ</value>
+  </data>
+  <data name="AboutSlogan.Text" xml:space="preserve">
+    <value>Локальный музыкальный плеер для современного прослушивания</value>
+  </data>
+  <data name="AboutSloganSub.Text" xml:space="preserve">
+    <value>Иммерсивный интерфейс · Высокое качество звука · Гибкая настройка</value>
+  </data>
+  <data name="AboutCacheExpander.Header" xml:space="preserve">
+    <value>Кэш</value>
+  </data>
+  <data name="AboutCacheExpander.Description" xml:space="preserve">
+    <value>Кэш обложек и место его хранения</value>
+  </data>
+  <data name="OpenCacheFolderButton.Content" xml:space="preserve">
+    <value>Открыть папку кэша</value>
+  </data>
+  <data name="AboutLogCard.Header" xml:space="preserve">
+    <value>Журналы</value>
+  </data>
+  <data name="AboutLogCard.Description" xml:space="preserve">
+    <value>Расположение журналов приложения, для диагностики проблем</value>
+  </data>
+  <data name="OpenLogFolderButton.Content" xml:space="preserve">
+    <value>Открыть папку журналов</value>
+  </data>
+  <data name="AboutSettingsCard.Header" xml:space="preserve">
+    <value>Файлы настроек</value>
+  </data>
+  <data name="AboutSettingsCard.Description" xml:space="preserve">
+    <value>Папка с файлами конфигурации и состояния приложения (Settings.json и др.)</value>
+  </data>
+  <data name="OpenSettingsFolderButton.Content" xml:space="preserve">
+    <value>Открыть папку настроек</value>
+  </data>
+  <data name="AboutDisclaimerHeader.Text" xml:space="preserve">
+    <value>Отказ от ответственности</value>
+  </data>
 </root>
 
 

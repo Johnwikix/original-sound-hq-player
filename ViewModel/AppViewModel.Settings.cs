@@ -1807,6 +1807,30 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
+        private async Task OpenSettingsFolder()
+        {
+            string settingsDirectory;
+            try
+            {
+                settingsDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OriginalSoundPlayer", "Settings");
+                if (!Directory.Exists(settingsDirectory))
+                {
+                    Directory.CreateDirectory(settingsDirectory);
+                }
+            }
+            catch
+            {
+                settingsDirectory = ApplicationData.Current.LocalFolder.Path;
+            }
+            var folder = await StorageFolder.GetFolderFromPathAsync(settingsDirectory);
+            var options = new FolderLauncherOptions
+            {
+                DesiredRemainingView = Windows.UI.ViewManagement.ViewSizePreference.UseMore
+            };
+            await Launcher.LaunchFolderAsync(folder, options);
+        }
+
+        [RelayCommand]
         private async Task ChangeCoverCacheLocation()
         {
             var folderPicker = new Microsoft.Windows.Storage.Pickers.FolderPicker(App.MainWindow.AppWindow.Id);
