@@ -1366,8 +1366,11 @@
   <data name="IconDesktopLyrics.Text" xml:space="preserve">
     <value>Desktop Lyrics</value>
   </data>
-  <data name="IconDesktopLyricsLock.Text" xml:space="preserve">
+  <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>Lock Desktop Lyrics</value>
+  </data>
+  <data name="IconUnlockDesktopLyrics" xml:space="preserve">
+    <value>Unlock Desktop Lyrics</value>
   </data>
   <data name="IconResetDesktopLyrics.Text" xml:space="preserve">
     <value>Reset Desktop Lyrics Window</value>

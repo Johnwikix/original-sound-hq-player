@@ -1363,8 +1363,11 @@
   <data name="IconDesktopLyrics.Text" xml:space="preserve">
     <value>デスクトップ歌詞</value>
   </data>
-  <data name="IconDesktopLyricsLock.Text" xml:space="preserve">
+  <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>デスクトップ歌詞をロック</value>
+  </data>
+  <data name="IconUnlockDesktopLyrics" xml:space="preserve">
+    <value>デスクトップ歌詞のロック解除</value>
   </data>
   <data name="IconResetDesktopLyrics.Text" xml:space="preserve">
     <value>デスクトップ歌詞ウィンドウをリセット</value>

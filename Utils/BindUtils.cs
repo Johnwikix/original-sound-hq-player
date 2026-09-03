@@ -141,13 +141,21 @@ namespace WinUIMusicPlayer.Utils
             return isInPlayingDetailMode ? 0 : 0.8;
         }
 
-        /// <summary>桌面歌词锁定状态 → 锁定按钮字形，反映当前状态（Segoe Fluent Icons：e72e=Lock e785=Unlock）。</summary>
+        /// <summary>桌面歌词锁定状态 → 图形，显示当前状态（锁定=闭锁 e72e，未锁=开锁 e785）。</summary>
         public static string LockGlyphConverter(bool locked)
-            => locked ? "\uE785" : "\uE72E";
+            => locked ? "\uE72E" : "\uE785";
 
-        /// <summary>桌面歌词开关状态 → 托盘菜单字形，随状态切换（Segoe Fluent Icons：e890=View ed1a=Hide）。</summary>
+        /// <summary>桌面歌词开关状态 → 图形，显示当前状态（开启=可见 e890，关闭=隐藏 ed1a）。</summary>
         public static string DesktopLyricsGlyphConverter(bool enabled)
-            => enabled ? "\uED1A" : "\uE890";
+            => enabled ? "\uE890" : "\uED1A";
+
+        /// <summary>逐字效果开关状态 → 复选框图形，显示当前状态（开启=勾选 e73a，关闭=空框 e739）。</summary>
+        public static string KaraokeGlyphConverter(bool enabled)
+            => enabled ? "\uE73A" : "\uE739";
+
+        /// <summary>桌面歌词锁定状态 → 托盘菜单文字，显示点击后的动作（未锁=锁定，已锁=解锁），文案经 resw 本地化。</summary>
+        public static string LockDesktopLyricsTextConverter(bool locked)
+            => locked ? GetString("IconUnlockDesktopLyrics") : GetString("IconLockDesktopLyrics");
 
         /// <summary>桌面歌词开关状态 → 播放条按钮透明度（启用 1.0 / 停用 0.4）。</summary>
         public static double DesktopLyricsButtonOpacity(bool enabled)

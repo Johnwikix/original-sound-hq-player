@@ -1363,8 +1363,11 @@
   <data name="IconDesktopLyrics.Text" xml:space="preserve">
     <value>Текст песни на рабочем столе</value>
   </data>
-  <data name="IconDesktopLyricsLock.Text" xml:space="preserve">
+  <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>Заблокировать текст песни</value>
+  </data>
+  <data name="IconUnlockDesktopLyrics" xml:space="preserve">
+    <value>Разблокировать текст песни</value>
   </data>
   <data name="IconResetDesktopLyrics.Text" xml:space="preserve">
     <value>Сбросить окно текста песни</value>

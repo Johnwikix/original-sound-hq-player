@@ -1363,8 +1363,11 @@
   <data name="IconDesktopLyrics.Text" xml:space="preserve">
     <value>Letra en el escritorio</value>
   </data>
-  <data name="IconDesktopLyricsLock.Text" xml:space="preserve">
+  <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>Bloquear letra en el escritorio</value>
+  </data>
+  <data name="IconUnlockDesktopLyrics" xml:space="preserve">
+    <value>Desbloquear letra en el escritorio</value>
   </data>
   <data name="IconResetDesktopLyrics.Text" xml:space="preserve">
     <value>Restablecer ventana de letra en el escritorio</value>

@@ -123,8 +123,15 @@
                     </MenuFlyoutItem.Icon>
                 </MenuFlyoutItem>
                 <MenuFlyoutItem
-                    x:Uid="IconDesktopLyricsLock"
-                    Command="{x:Bind ToggleDesktopLyricsLockCommand}">
+                    x:Uid="DesktopLyricsKaraoke"
+                    Command="{x:Bind ToggleDesktopLyricsKaraokeCommand}">
+                    <MenuFlyoutItem.Icon>
+                        <FontIcon Glyph="{x:Bind tools:BindUtils.KaraokeGlyphConverter(DesktopLyrics.IsKaraokeEnabled), Mode=OneWay}" />
+                    </MenuFlyoutItem.Icon>
+                </MenuFlyoutItem>
+                <MenuFlyoutItem
+                    Command="{x:Bind ToggleDesktopLyricsLockCommand}"
+                    Text="{x:Bind tools:BindUtils.LockDesktopLyricsTextConverter(DesktopLyrics.IsLocked), Mode=OneWay}">
                     <MenuFlyoutItem.Icon>
                         <FontIcon Glyph="{x:Bind tools:BindUtils.LockGlyphConverter(DesktopLyrics.IsLocked), Mode=OneWay}" />
                     </MenuFlyoutItem.Icon>

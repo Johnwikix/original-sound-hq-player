@@ -17,7 +17,7 @@ namespace WinUIMusicPlayer.Controls
     /// <summary>
     /// 托盘图标与上下文菜单。状态展示全部经 x:Bind 绑定 VM/转换器；
     /// 播放控制/播放模式/音量命令来自对应 VM，窗口激活与导航等托盘组合命令在本类。
-    /// 桌面歌词开关/锁定读写 <see cref="DesktopLyricsViewModel"/>（INPC 绑定源，setter 驱动窗口生命周期）。
+    /// 桌面歌词开关/逐字/锁定读写 <see cref="DesktopLyricsViewModel"/>（INPC 绑定源，setter 驱动窗口生命周期）。
     /// </summary>
     public sealed partial class NotifyIconControl : Microsoft.UI.Xaml.Controls.UserControl, IDisposable
     {
@@ -37,6 +37,9 @@ namespace WinUIMusicPlayer.Controls
 
         [RelayCommand]
         private void ToggleDesktopLyrics() => DesktopLyrics.IsEnabled = !DesktopLyrics.IsEnabled;
+
+        [RelayCommand]
+        private void ToggleDesktopLyricsKaraoke() => DesktopLyrics.IsKaraokeEnabled = !DesktopLyrics.IsKaraokeEnabled;
 
         [RelayCommand]
         private void ToggleDesktopLyricsLock() => DesktopLyrics.IsLocked = !DesktopLyrics.IsLocked;
