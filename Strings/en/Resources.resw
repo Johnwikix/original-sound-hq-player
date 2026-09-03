@@ -971,7 +971,7 @@
     <value>Playlist Cover</value>
   </data>
   <data name="ChangeMusicCoverCache.Content" xml:space="preserve">
-    <value>Change the cover cache location</value>
+    <value>Change location</value>
   </data>
   <data name="FolderNumberOfSongs.Text" xml:space="preserve">
     <value>Songs</value>
@@ -1497,6 +1497,12 @@
   </data>
   <data name="AboutDisclaimerHeader.Text" xml:space="preserve">
     <value>Disclaimer</value>
+  </data>
+  <data name="ClearCoverCacheButton.Content" xml:space="preserve">
+    <value>Clear cache</value>
+  </data>
+  <data name="AreUSureClearCoverCache" xml:space="preserve">
+    <value>Clear the cover cache?</value>
   </data>
 </root>
 

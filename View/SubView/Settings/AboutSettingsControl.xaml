@@ -109,7 +109,7 @@
                             <controls:SettingsCard.Header>
                                 <TextBlock x:Uid="CoverDiskCache" />
                             </controls:SettingsCard.Header>
-                            <Grid Width="300" ColumnDefinitions="*,Auto">
+                            <Grid Width="300" ColumnDefinitions="*,Auto,Auto">
                                 <dev:AutoScrollView
                                     x:Name="AutoScrollViewControl"
                                     Grid.Column="0"
@@ -129,6 +129,11 @@
                                     x:Uid="ChangeMusicCoverCache"
                                     Grid.Column="1"
                                     Command="{x:Bind ViewModel.AppViewModel.ChangeCoverCacheLocationCommand, Mode=OneWay}" />
+                                <Button
+                                    x:Uid="ClearCoverCacheButton"
+                                    Grid.Column="2"
+                                    Margin="10,0,0,0"
+                                    Click="ClearCoverCache_Click" />
                             </Grid>
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>

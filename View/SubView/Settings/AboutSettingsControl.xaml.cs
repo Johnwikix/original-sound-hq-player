@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
 using Windows.System;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
@@ -68,6 +69,15 @@ namespace WinUIMusicPlayer.View.SubView.Settings
                 _thirdPartyDialog.RequestedTheme = AppSettings.ElementTheme;
             }
             _thirdPartyDialog?.ShowAsync();
+        }
+
+        private async void ClearCoverCache_Click(object sender, RoutedEventArgs e)
+        {
+            if (XamlRoot is null) return;
+            if (await DialogHelper.ShowConfirmAsync(XamlRoot, "AreUSureClearCoverCache"))
+            {
+                await ViewModel.AppViewModel.ClearCoverCacheCommand.ExecuteAsync(null);
+            }
         }
 
         private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)

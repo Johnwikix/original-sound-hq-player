@@ -970,7 +970,7 @@
     <value>播放列表封面</value>
   </data>
   <data name="ChangeMusicCoverCache.Content" xml:space="preserve">
-    <value>更改封面缓存位置</value>
+    <value>更改位置</value>
   </data>
   <data name="FolderNumberOfSongs.Text" xml:space="preserve">
     <value>首歌曲</value>
@@ -1496,5 +1496,11 @@
   </data>
   <data name="AboutDisclaimerHeader.Text" xml:space="preserve">
     <value>免责声明</value>
+  </data>
+  <data name="ClearCoverCacheButton.Content" xml:space="preserve">
+    <value>清空缓存</value>
+  </data>
+  <data name="AreUSureClearCoverCache" xml:space="preserve">
+    <value>确定清空封面缓存吗？</value>
   </data>
 </root>

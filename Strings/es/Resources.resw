@@ -971,7 +971,7 @@
     <value>Portada de la lista de reproducción</value>
   </data>
   <data name="ChangeMusicCoverCache.Content" xml:space="preserve">
-    <value>Cambiar la ubicación de la caché de la portada</value>
+    <value>Cambiar ubicación</value>
   </data>
   <data name="FolderNumberOfSongs.Text" xml:space="preserve">
     <value>Canciones</value>
@@ -1494,6 +1494,12 @@
   </data>
   <data name="AboutDisclaimerHeader.Text" xml:space="preserve">
     <value>Aviso legal</value>
+  </data>
+  <data name="ClearCoverCacheButton.Content" xml:space="preserve">
+    <value>Vaciar caché</value>
+  </data>
+  <data name="AreUSureClearCoverCache" xml:space="preserve">
+    <value>¿Vaciar la caché de portadas?</value>
   </data>
 </root>
 

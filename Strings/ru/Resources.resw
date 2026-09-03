@@ -971,7 +971,7 @@
     <value>Обложка списка воспроизведения</value>
   </data>
   <data name="ChangeMusicCoverCache.Content" xml:space="preserve">
-    <value>Изменить расположение кэша обложки</value>
+    <value>Изменить расположение</value>
   </data>
   <data name="FolderNumberOfSongs.Text" xml:space="preserve">
     <value>песен</value>
@@ -1494,6 +1494,12 @@
   </data>
   <data name="AboutDisclaimerHeader.Text" xml:space="preserve">
     <value>Отказ от ответственности</value>
+  </data>
+  <data name="ClearCoverCacheButton.Content" xml:space="preserve">
+    <value>Очистить кэш</value>
+  </data>
+  <data name="AreUSureClearCoverCache" xml:space="preserve">
+    <value>Очистить кэш обложек?</value>
   </data>
 </root>
 

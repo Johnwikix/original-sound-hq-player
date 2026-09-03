@@ -971,7 +971,7 @@
     <value>プレイリストの表紙</value>
   </data>
   <data name="ChangeMusicCoverCache.Content" xml:space="preserve">
-    <value>カバーキャッシュの場所の変更</value>
+    <value>場所を変更</value>
   </data>
   <data name="FolderNumberOfSongs.Text" xml:space="preserve">
     <value>曲</value>
@@ -1494,6 +1494,12 @@
   </data>
   <data name="AboutDisclaimerHeader.Text" xml:space="preserve">
     <value>免責事項</value>
+  </data>
+  <data name="ClearCoverCacheButton.Content" xml:space="preserve">
+    <value>キャッシュをクリア</value>
+  </data>
+  <data name="AreUSureClearCoverCache" xml:space="preserve">
+    <value>カバーキャッシュをクリアしますか？</value>
   </data>
 </root>
 

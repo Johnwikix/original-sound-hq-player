@@ -971,7 +971,7 @@
     <value>Cover in Wiedergabeliste</value>
   </data>
   <data name="ChangeMusicCoverCache.Content" xml:space="preserve">
-    <value>Cover-Cache-Speicherort ändern</value>
+    <value>Speicherort ändern</value>
   </data>
   <data name="FolderNumberOfSongs.Text" xml:space="preserve">
     <value>Titel</value>
@@ -1494,6 +1494,12 @@
   </data>
   <data name="AboutDisclaimerHeader.Text" xml:space="preserve">
     <value>Haftungsausschluss</value>
+  </data>
+  <data name="ClearCoverCacheButton.Content" xml:space="preserve">
+    <value>Cache leeren</value>
+  </data>
+  <data name="AreUSureClearCoverCache" xml:space="preserve">
+    <value>Cover-Cache leeren?</value>
   </data>
 </root>
 

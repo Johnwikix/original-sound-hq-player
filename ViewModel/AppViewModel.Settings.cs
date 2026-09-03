@@ -1864,6 +1864,40 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
+        private async Task ClearCoverCache()
+        {
+            try
+            {
+                string cacheRoot = MusicCoverCache;
+                await Task.Run(() =>
+                {
+                    // 根目录下的 .bin 为网络封面原图缓存
+                    if (!string.IsNullOrEmpty(cacheRoot) && Directory.Exists(cacheRoot))
+                    {
+                        foreach (var file in Directory.EnumerateFiles(cacheRoot, "*.bin"))
+                        {
+                            File.Delete(file);
+                        }
+                    }
+
+                    // Cache 子目录存放缩略图 .bmp 与全尺寸 _raw.bin，整体删除
+                    if (!string.IsNullOrEmpty(cacheRoot))
+                    {
+                        var cacheDir = Path.Combine(cacheRoot, "Cache");
+                        if (Directory.Exists(cacheDir))
+                        {
+                            Directory.Delete(cacheDir, recursive: true);
+                        }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"清空封面缓存失败: {ex.Message}");
+            }
+        }
+
+        [RelayCommand]
         private static async Task TrimNow()
         {
             await WorkingSetCompressor.TrimSelfAsync();
