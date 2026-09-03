@@ -24,15 +24,19 @@ namespace WinUIMusicPlayer.DesktopLyrics
     /// 基类与 spectrum 一致使用 WinUIEx.WindowEx。
     /// 解锁态：标准窗口（标题栏 + 可调整大小），按住内容区任意位置拖动；
     /// 锁定态：GWL_STYLE 移除标题栏/边框位 + OR-in WS_POPUP（WinUIEx ToggleWindowStyle，
-    /// 含 SWP_FRAMECHANGED）+ 整窗点击穿透常开；鼠标悬停窗口时仅"显示"右上角按钮组，
-    /// 光标移到按钮上才临时取消穿透供点击（定时器轮询游标位置，BetterLyrics OverlayInputHelper 思路）。
+    /// 含 SWP_FRAMECHANGED）+ 整窗点击穿透常开（WS_EX_LAYERED 进锁定态一次性设置常驻，
+    /// 运行期只切 WS_EX_TRANSPARENT）；鼠标悬停窗口时仅"显示"右上角按钮组，
+    /// 光标移到按钮上才临时取消穿透供点击（游标轮询两档：悬停窗口期 50ms 快轮询保证跟手，
+    /// 其余 200ms 慢轮询只做进窗检测与自愈，BetterLyrics OverlayInputHelper 思路），
+    /// 慢轮询附带自愈：窗口被前后台切换偶发置为不可见/最小化时无焦点拉回并重申置顶。
     /// </summary>
     public sealed partial class DesktopLyricsWindow : WinUIEx.WindowEx, IDisposable
     {
         private const int DefaultWidth = 1800;
         private const int DefaultHeight = 280;
         private const int BottomMargin = 60;
-        private const double HoverPollingIntervalMs = 50;
+        private const double HoverPollingIntervalMs = 50;    // 悬停窗口期间：按钮组显隐/穿透切换要跟手
+        private const double IdlePollingIntervalMs = 200;    // 锁定态静默期：进窗检测 + 自愈
         private const double ControlPanelHoverMargin = 6.0;
         private const double AdaptiveSamplingIntervalMs = 1000;   // 环境取色轮询周期（BetterLyrics 同款 1s）
         private const double AdaptiveSwitchThreshold = 128;       // 环境 YIQ 亮度中位数阈值：低于视为暗背景（白字）
@@ -46,9 +50,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
         public DesktopLyricsViewModel ViewModel { get; } = App.Services.GetRequiredService<DesktopLyricsViewModel>();
         private bool _locked = true;
         private bool _clickThrough;              // 当前穿透样式状态（false = 尚未设置）
-        private bool _cursorOverWindow;
         private bool _cursorOverPanel;
-        private DispatcherQueueTimer? _hoverTimer;
+        private DispatcherQueueTimer? _hoverTimer;   // 50ms，仅光标悬停窗口期间运行
+        private DispatcherQueueTimer? _idleTimer;    // 200ms，锁定态常驻：进窗检测 + 自愈
         private WindowStyle? _originalWindowStyle;   // 首次锁定前缓存的解锁态样式
         private bool _disposed;
 
@@ -99,6 +103,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
         public void ApplyLock(bool locked)
         {
             _locked = locked;
+            // LAYERED 常驻且只在进锁定态时设置一次（穿透开关只切 TRANSPARENT）：
+            // 运行期反复增删 LAYERED 会与 DWM 分层合成竞态，前后台切换时偶发整窗隐身
+            if (locked) WindowHelper.EnsureLayered(_hwnd);
             ApplyClickThrough(locked);
             if (locked)
             {
@@ -326,14 +333,14 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             if (_locked)
             {
-                _cursorOverWindow = false;
                 _cursorOverPanel = false;
                 ControlPanel.Opacity = 0;
-                StartHoverTimer();
+                StartIdleTimer();
             }
             else
             {
                 StopHoverTimer();
+                StopIdleTimer();
                 ControlPanel.Opacity = 1;
             }
         }
@@ -354,25 +361,56 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _hoverTimer?.Stop();
         }
 
-        private void OnHoverTimerTick(DispatcherQueueTimer sender, object args)
+        private void StartIdleTimer()
+        {
+            if (_idleTimer is null)
+            {
+                _idleTimer = DispatcherQueue.CreateTimer();
+                _idleTimer.Interval = TimeSpan.FromMilliseconds(IdlePollingIntervalMs);
+                _idleTimer.Tick += OnIdleTimerTick;
+            }
+            _idleTimer.Start();
+        }
+
+        private void StopIdleTimer()
+        {
+            _idleTimer?.Stop();
+        }
+
+        /// <summary>锁定态静默期轮询（200ms）：自愈 + 进窗检测；一旦发现光标悬停窗口即切入 50ms 快轮询。</summary>
+        private void OnIdleTimerTick(DispatcherQueueTimer sender, object args)
         {
             if (!_locked)
             {
                 sender.Stop();
                 return;
             }
-            if (!WindowHelper.GetCursorPos(out WindowHelper.POINT cursor)) return;
-
-            bool overWindow = IsCursorOverWindow(cursor);
-            bool overPanel = overWindow && IsCursorOverControlPanel(cursor);
-
-            // 悬停窗口 = 仅显示按钮组（穿透保持，绝不因进入窗口而取消）
-            if (overWindow != _cursorOverWindow)
+            // 自愈：被前后台切换偶发置为不可见/最小化的穿透窗口不进任务栏、无恢复入口（表现为歌词消失），
+            // 检测到即无焦点拉回并重申置顶
+            if (!WindowHelper.IsWindowVisible(_hwnd) || WindowHelper.IsIconic(_hwnd))
             {
-                _cursorOverWindow = overWindow;
-                ControlPanel.Opacity = overWindow ? 1.0 : 0.0;
+                WindowHelper.RestoreOverlay(_hwnd);
+            }
+            if (WindowHelper.GetCursorPos(out WindowHelper.POINT cursor) && IsCursorOverWindow(cursor))
+            {
+                ControlPanel.Opacity = 1.0;   // 悬停窗口 = 仅显示按钮组（穿透保持，绝不因进入窗口而取消）
+                StartHoverTimer();
+            }
+        }
+
+        private void OnHoverTimerTick(DispatcherQueueTimer sender, object args)
+        {
+            // 离开窗口：还原按钮组与穿透，停快轮询，回到慢速自愈轮询
+            if (!_locked || !WindowHelper.GetCursorPos(out WindowHelper.POINT cursor) || !IsCursorOverWindow(cursor))
+            {
+                sender.Stop();
+                _cursorOverPanel = false;
+                ControlPanel.Opacity = 0;
+                ApplyClickThrough(true);
+                return;
             }
             // 光标移到按钮上 = 临时取消穿透供点击；离开按钮立即恢复穿透
+            bool overPanel = IsCursorOverControlPanel(cursor);
             if (overPanel != _cursorOverPanel)
             {
                 _cursorOverPanel = overPanel;
@@ -478,6 +516,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void OnAppWindowChanged(AppWindow sender, AppWindowChangedEventArgs args)
         {
+            // z 序变动后若被挤出置顶层（其他置顶窗口切换可致），幂等重申，防"被盖住"表现为消失
+            if (args.DidZOrderChange) WindowHelper.EnsureTopmost(_hwnd);
             if (!args.DidPositionChange && !args.DidSizeChange) return;
             InvalidatePanelScreenRect();
             var bounds = ViewModel.BoundsState;
@@ -516,6 +556,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             Closed -= OnWindowClosed;
             StopHoverTimer();
+            StopIdleTimer();
             StopAdaptiveColorTimer();
             ViewModel.PersistBounds();
             _renderer?.Dispose();
