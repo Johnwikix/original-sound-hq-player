@@ -1372,6 +1372,18 @@
   <data name="IconUnlockDesktopLyrics" xml:space="preserve">
     <value>Unlock Desktop Lyrics</value>
   </data>
+  <data name="IconShowDesktopLyrics" xml:space="preserve">
+    <value>Show Desktop Lyrics</value>
+  </data>
+  <data name="IconHideDesktopLyrics" xml:space="preserve">
+    <value>Hide Desktop Lyrics</value>
+  </data>
+  <data name="IconEnableDesktopLyricsKaraoke" xml:space="preserve">
+    <value>Enable Desktop Lyrics Karaoke</value>
+  </data>
+  <data name="IconDisableDesktopLyricsKaraoke" xml:space="preserve">
+    <value>Disable Desktop Lyrics Karaoke</value>
+  </data>
   <data name="IconResetDesktopLyrics.Text" xml:space="preserve">
     <value>Reset Desktop Lyrics Window</value>
   </data>

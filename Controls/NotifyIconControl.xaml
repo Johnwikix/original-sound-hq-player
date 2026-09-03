@@ -115,34 +115,39 @@
                         Text="-10" />
                 </MenuFlyoutSubItem>
                 <MenuFlyoutSeparator />
-                <MenuFlyoutItem
-                    x:Uid="IconDesktopLyrics"
-                    Command="{x:Bind ToggleDesktopLyricsCommand}">
-                    <MenuFlyoutItem.Icon>
+                <MenuFlyoutSubItem x:Uid="IconDesktopLyrics">
+                    <MenuFlyoutSubItem.Icon>
                         <FontIcon Glyph="{x:Bind tools:BindUtils.DesktopLyricsGlyphConverter(DesktopLyrics.IsEnabled), Mode=OneWay}" />
-                    </MenuFlyoutItem.Icon>
-                </MenuFlyoutItem>
-                <MenuFlyoutItem
-                    x:Uid="DesktopLyricsKaraoke"
-                    Command="{x:Bind ToggleDesktopLyricsKaraokeCommand}">
-                    <MenuFlyoutItem.Icon>
-                        <FontIcon Glyph="{x:Bind tools:BindUtils.KaraokeGlyphConverter(DesktopLyrics.IsKaraokeEnabled), Mode=OneWay}" />
-                    </MenuFlyoutItem.Icon>
-                </MenuFlyoutItem>
-                <MenuFlyoutItem
-                    Command="{x:Bind ToggleDesktopLyricsLockCommand}"
-                    Text="{x:Bind tools:BindUtils.LockDesktopLyricsTextConverter(DesktopLyrics.IsLocked), Mode=OneWay}">
-                    <MenuFlyoutItem.Icon>
-                        <FontIcon Glyph="{x:Bind tools:BindUtils.LockGlyphConverter(DesktopLyrics.IsLocked), Mode=OneWay}" />
-                    </MenuFlyoutItem.Icon>
-                </MenuFlyoutItem>
-                <MenuFlyoutItem
-                    x:Uid="IconResetDesktopLyrics"
-                    Command="{x:Bind ResetDesktopLyricsBoundsCommand}">
-                    <MenuFlyoutItem.Icon>
-                        <FontIcon Glyph="&#xE7A7;" />
-                    </MenuFlyoutItem.Icon>
-                </MenuFlyoutItem>
+                    </MenuFlyoutSubItem.Icon>
+                    <MenuFlyoutItem
+                        Command="{x:Bind ToggleDesktopLyricsCommand}"
+                        Text="{x:Bind tools:BindUtils.DesktopLyricsTextConverter(DesktopLyrics.IsEnabled), Mode=OneWay}">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="{x:Bind tools:BindUtils.DesktopLyricsGlyphConverter(DesktopLyrics.IsEnabled), Mode=OneWay}" />
+                        </MenuFlyoutItem.Icon>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutItem
+                        Command="{x:Bind ToggleDesktopLyricsKaraokeCommand}"
+                        Text="{x:Bind tools:BindUtils.DesktopLyricsKaraokeTextConverter(DesktopLyrics.IsKaraokeEnabled), Mode=OneWay}">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="{x:Bind tools:BindUtils.KaraokeGlyphConverter(DesktopLyrics.IsKaraokeEnabled), Mode=OneWay}" />
+                        </MenuFlyoutItem.Icon>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutItem
+                        Command="{x:Bind ToggleDesktopLyricsLockCommand}"
+                        Text="{x:Bind tools:BindUtils.LockDesktopLyricsTextConverter(DesktopLyrics.IsLocked), Mode=OneWay}">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="{x:Bind tools:BindUtils.LockGlyphConverter(DesktopLyrics.IsLocked), Mode=OneWay}" />
+                        </MenuFlyoutItem.Icon>
+                    </MenuFlyoutItem>
+                    <MenuFlyoutItem
+                        x:Uid="IconResetDesktopLyrics"
+                        Command="{x:Bind ResetDesktopLyricsBoundsCommand}">
+                        <MenuFlyoutItem.Icon>
+                            <FontIcon Glyph="&#xE7A7;" />
+                        </MenuFlyoutItem.Icon>
+                    </MenuFlyoutItem>
+                </MenuFlyoutSubItem>
                 <MenuFlyoutSeparator />
                 <MenuFlyoutItem
                     x:Uid="IconSettings"

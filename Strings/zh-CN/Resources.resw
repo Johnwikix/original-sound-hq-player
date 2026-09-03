@@ -1371,6 +1371,18 @@
   <data name="IconUnlockDesktopLyrics" xml:space="preserve">
     <value>解锁桌面歌词</value>
   </data>
+  <data name="IconShowDesktopLyrics" xml:space="preserve">
+    <value>显示桌面歌词</value>
+  </data>
+  <data name="IconHideDesktopLyrics" xml:space="preserve">
+    <value>隐藏桌面歌词</value>
+  </data>
+  <data name="IconEnableDesktopLyricsKaraoke" xml:space="preserve">
+    <value>开启桌面歌词逐字</value>
+  </data>
+  <data name="IconDisableDesktopLyricsKaraoke" xml:space="preserve">
+    <value>关闭桌面歌词逐字</value>
+  </data>
   <data name="IconResetDesktopLyrics.Text" xml:space="preserve">
     <value>重置桌面歌词窗口</value>
   </data>

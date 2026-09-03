@@ -157,6 +157,14 @@ namespace WinUIMusicPlayer.Utils
         public static string LockDesktopLyricsTextConverter(bool locked)
             => locked ? GetString("IconUnlockDesktopLyrics") : GetString("IconLockDesktopLyrics");
 
+        /// <summary>桌面歌词开关状态 → 菜单文字，显示点击后的动作（关=显示，开=隐藏），文案经 resw 本地化。</summary>
+        public static string DesktopLyricsTextConverter(bool enabled)
+            => enabled ? GetString("IconHideDesktopLyrics") : GetString("IconShowDesktopLyrics");
+
+        /// <summary>逐字效果开关状态 → 菜单文字，显示点击后的动作（关=开启，开=关闭），文案经 resw 本地化。</summary>
+        public static string DesktopLyricsKaraokeTextConverter(bool enabled)
+            => enabled ? GetString("IconDisableDesktopLyricsKaraoke") : GetString("IconEnableDesktopLyricsKaraoke");
+
         /// <summary>桌面歌词开关状态 → 播放条按钮透明度（启用 1.0 / 停用 0.4）。</summary>
         public static double DesktopLyricsButtonOpacity(bool enabled)
             => enabled ? 1.0 : 0.4;

@@ -1369,6 +1369,18 @@
   <data name="IconUnlockDesktopLyrics" xml:space="preserve">
     <value>デスクトップ歌詞のロック解除</value>
   </data>
+  <data name="IconShowDesktopLyrics" xml:space="preserve">
+    <value>デスクトップ歌詞を表示</value>
+  </data>
+  <data name="IconHideDesktopLyrics" xml:space="preserve">
+    <value>デスクトップ歌詞を非表示</value>
+  </data>
+  <data name="IconEnableDesktopLyricsKaraoke" xml:space="preserve">
+    <value>デスクトップ歌詞カラオケを有効にする</value>
+  </data>
+  <data name="IconDisableDesktopLyricsKaraoke" xml:space="preserve">
+    <value>デスクトップ歌詞カラオケを無効にする</value>
+  </data>
   <data name="IconResetDesktopLyrics.Text" xml:space="preserve">
     <value>デスクトップ歌詞ウィンドウをリセット</value>
   </data>

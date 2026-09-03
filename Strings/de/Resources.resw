@@ -1369,6 +1369,18 @@
   <data name="IconUnlockDesktopLyrics" xml:space="preserve">
     <value>Desktop-Songtext entsperren</value>
   </data>
+  <data name="IconShowDesktopLyrics" xml:space="preserve">
+    <value>Desktop-Songtext anzeigen</value>
+  </data>
+  <data name="IconHideDesktopLyrics" xml:space="preserve">
+    <value>Desktop-Songtext ausblenden</value>
+  </data>
+  <data name="IconEnableDesktopLyricsKaraoke" xml:space="preserve">
+    <value>Desktop-Songtext-Karaoke aktivieren</value>
+  </data>
+  <data name="IconDisableDesktopLyricsKaraoke" xml:space="preserve">
+    <value>Desktop-Songtext-Karaoke deaktivieren</value>
+  </data>
   <data name="IconResetDesktopLyrics.Text" xml:space="preserve">
     <value>Desktop-Songtext-Fenster zurücksetzen</value>
   </data>

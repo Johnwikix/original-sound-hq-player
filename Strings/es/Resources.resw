@@ -1369,6 +1369,18 @@
   <data name="IconUnlockDesktopLyrics" xml:space="preserve">
     <value>Desbloquear letra en el escritorio</value>
   </data>
+  <data name="IconShowDesktopLyrics" xml:space="preserve">
+    <value>Mostrar letra en el escritorio</value>
+  </data>
+  <data name="IconHideDesktopLyrics" xml:space="preserve">
+    <value>Ocultar letra en el escritorio</value>
+  </data>
+  <data name="IconEnableDesktopLyricsKaraoke" xml:space="preserve">
+    <value>Activar karaoke de la letra en el escritorio</value>
+  </data>
+  <data name="IconDisableDesktopLyricsKaraoke" xml:space="preserve">
+    <value>Desactivar karaoke de la letra en el escritorio</value>
+  </data>
   <data name="IconResetDesktopLyrics.Text" xml:space="preserve">
     <value>Restablecer ventana de letra en el escritorio</value>
   </data>
