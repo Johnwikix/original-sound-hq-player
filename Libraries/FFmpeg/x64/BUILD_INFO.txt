@@ -1,0 +1,5 @@
+FFmpeg n9.0.1 (tag), custom minimal audio-only build, LGPL-2.1-or-later.
+Source: https://github.com/FFmpeg/FFmpeg (tag n9.0.1), build tree G:\SoftwareProject\ffmpeg\src
+Toolchain: MSYS2 UCRT64 gcc (G:\msys64), external codecs statically linked: libmp3lame (LGPL), libvorbis (BSD-3), libopus (BSD-3)
+Configure flags: see G:\SoftwareProject\ffmpeg\src\ffbuild\config.sh (audio-only demuxers/decoders/encoders/muxers for the music player's format converter)
+Corresponding source offer: https://ffmpeg.org / the n9.0.1 tag of the FFmpeg repository plus the configure flags above.
