@@ -371,23 +371,41 @@ namespace WinUIMusicPlayer.AudioConverters
             _ => 2,        // ~96k
         };
 
-        /// <summary>把采样率对齐到编码器支持表中最接近的一档；编码器未声明则原样返回。</summary>
+        /// <summary>不声明 supported_samplerates 但实际有采样率上限的编码器兜底表。</summary>
+        private static readonly int[] WmaSampleRates = [8000, 11025, 16000, 22050, 32000, 44100, 48000];
+
+        /// <summary>
+        /// 把采样率对齐到编码器支持表中最接近的一档。部分编码器（wmav2）不声明
+        /// supported_samplerates，实际又限制 8k–48k，DSD 高采样率会直接 open 失败，
+        /// 因此对无表编码器按已知约束兜底。
+        /// </summary>
         private static int SnapRateToEncoder(AVCodecContext* encCtx, AVCodec* encoder, int rate)
         {
+            int[] table = null;
             void* cfg = null;
             int count = 0;
             int ret = ffmpeg.avcodec_get_supported_config(encCtx, encoder,
                 AVCodecConfig.AV_CODEC_CONFIG_SAMPLE_RATE, 0, &cfg, &count);
-            if (ret < 0 || cfg == null || count <= 0) return rate;
-            int* rates = (int*)cfg;
-            int best = 0, bestDiff = int.MaxValue;
-            for (int i = 0; i < count; i++)
+            if (ret >= 0 && cfg != null && count > 0)
             {
-                int diff = Math.Abs(rates[i] - rate);
+                int* rates = (int*)cfg;
+                table = new int[count];
+                for (int i = 0; i < count; i++) table[i] = rates[i];
+            }
+            else if (encCtx->codec_id == AVCodecID.AV_CODEC_ID_WMAV2)
+            {
+                table = WmaSampleRates;
+            }
+            if (table == null) return rate;
+
+            int best = 0, bestDiff = int.MaxValue;
+            foreach (int r in table)
+            {
+                int diff = Math.Abs(r - rate);
                 if (diff < bestDiff)
                 {
                     bestDiff = diff;
-                    best = rates[i];
+                    best = r;
                 }
             }
             return best != 0 ? best : rate;
