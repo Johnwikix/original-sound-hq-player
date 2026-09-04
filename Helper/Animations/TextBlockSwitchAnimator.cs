@@ -42,6 +42,7 @@ public sealed class TextBlockSwitchAnimator
     private static readonly ConditionalWeakTable<TextBlock, TextBlockSwitchAnimator> Attached = [];
 
     private readonly FrameworkElement[] _targets;
+    private readonly int _ownerThreadId = Environment.CurrentManagedThreadId;
     private int _generation;
 
     /// <summary>旧文本退场淡出时长。</summary>
@@ -146,6 +147,11 @@ public sealed class TextBlockSwitchAnimator
     // 其内容仍由 applyText 统一写入，不参与动画而已。
     private List<(int Index, Visual Visual)> CollectActive()
     {
+        // 防御：非创建线程（后台事件总线直达等）访问元素状态会 RPC_E_WRONG_THREAD，
+        // 返回空集让 Switch 走"直接落地文本"路径，等下一次 UI 线程切换再恢复动画。
+        if (Environment.CurrentManagedThreadId != _ownerThreadId)
+            return [];
+
         List<(int, Visual)>? actives = null;
         for (int i = 0; i < _targets.Length; i++)
         {

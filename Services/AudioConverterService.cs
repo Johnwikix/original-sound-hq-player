@@ -67,7 +67,21 @@ namespace WinUIMusicPlayer.Services
                 return false;
             }
             await SaveMetaDataAsync(music, GenerateOutputPath(music.Path, format));
+            // 转换产物主动入库（不再依赖 AutoScan 二次扫描发现），列表刷新由调用方统一触发
+            await AddConvertedFileToLibraryAsync(GenerateOutputPath(music.Path, format));
             return true;
+        }
+
+        private async Task AddConvertedFileToLibraryAsync(string outputPath)
+        {
+            try
+            {
+                await App.Services.GetRequiredService<MusicDatabaseService>().AddConvertedFileAsync(outputPath);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, $"AddConvertedFileToLibraryAsync 转换产物入库失败: {outputPath}");
+            }
         }
 
         private async Task SaveMetaDataAsync(Music music, string outputPath)

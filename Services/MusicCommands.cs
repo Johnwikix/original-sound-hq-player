@@ -94,11 +94,25 @@ namespace WinUIMusicPlayer.Services
 
         public static void OnLyricsOffsetChanged(Music music, int value)
         {
-            if (App.Services.GetRequiredService<AppViewModel>().IsInitialized)
+            if (!App.Services.GetRequiredService<AppViewModel>().IsInitialized)
+                return;
+
+            // Music 实体会在后台线程物化（AutoScan/GetMusicListAsync 从 SQLite 反序列化），
+            // setter 副作用随之在线程池触发；OffsetMsBus 的订阅者是 UI 元素（歌词动画、
+            // 桌面歌词渲染器），必须在 UI 线程投递，否则 RPC_E_WRONG_THREAD。
+            var window = App.MainWindow;
+            if (window is null) return;
+            var dq = window.DispatcherQueue;
+            if (dq.HasThreadAccess)
             {
                 OffsetMsBus.Publish(value);
-                _ = App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
             }
+            else
+            {
+                dq.TryEnqueue(() => OffsetMsBus.Publish(value));
+            }
+            // 持久化与 UI 无关，留在调用线程（物化路径也不会在读路径上重放写库之外的副作用）
+            _ = App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
         }
 
         public static async Task RemoveMusicAsync(Music music)

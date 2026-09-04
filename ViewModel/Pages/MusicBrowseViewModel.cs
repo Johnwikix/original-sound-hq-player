@@ -150,6 +150,7 @@ namespace WinUIMusicPlayer.ViewModel
             _ = ProgressDialog.UpdateProgress(100);
             if (!allSuccess)
                 UpdateInfoBar(ToolUtils.GetString("InfoBarMessageConverterFailed"));
+            await AppViewModel.RefreshSongsSourceAsync(); // 转换产物已主动入库，统一刷新一次列表
         }
 
         private async Task ConvertSingleFile(Music? music, string targetFormat, int bitrate)
@@ -174,6 +175,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 UpdateInfoBar(string.Format(ToolUtils.GetString("InfoBarMessageConverterFailedWithFile"), music.Title));
             }
+            await AppViewModel.RefreshSongsSourceAsync(); // 转换产物已主动入库，刷新列表
         }
 
         private void AppSettings_OnEqUpdated(object? sender, EventArgs e)

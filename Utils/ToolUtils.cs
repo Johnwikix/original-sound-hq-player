@@ -412,11 +412,31 @@ namespace WinUIMusicPlayer.Utils
         /// ATL 主路径失败时的兜底探测（原实现依赖 BASS，主程序移除 BASS 后改用
         /// Windows 属性系统获取音频属性；标签字段仍尽量取自 ATL）。
         /// </summary>
+        /// <summary>
+        /// 文件被占用（AutoScan 与标签写入并发、外部程序写入中等）时的短退避重试。
+        /// 共享冲突通常亚秒级结束，重试后能读到写入方完成后的完整内容。
+        /// </summary>
+        private static T RetryOnFileBusy<T>(Func<T> factory, string path, int maxRetries = 3)
+        {
+            for (int attempt = 0; ; attempt++)
+            {
+                try
+                {
+                    return factory();
+                }
+                catch (IOException) when (attempt < maxRetries)
+                {
+                    _logger.LogWarning($"文件被占用，重试 {attempt + 1}/{maxRetries}: {path}");
+                    Thread.Sleep(attempt switch { 0 => 200, 1 => 500, _ => 1000 });
+                }
+            }
+        }
+
         public static async Task<AudioFileInfo> GetAudioInfo(StorageFile file)
         {
             AudioFileInfo fileInfo = new();
             Track? track = null;
-            try { track = new Track(file.Path); }
+            try { track = RetryOnFileBusy(() => new Track(file.Path), file.Path); }
             catch (Exception ex) { _logger.LogWarning(ex, $"GetAudioInfo ATL 读取失败: {file.Path}"); }
             try
             {
@@ -855,7 +875,7 @@ namespace WinUIMusicPlayer.Utils
             string lastLevelFolderPath = directoryInfo.Name;
             try
             {
-                Track track = new(file.Path);
+                Track track = RetryOnFileBusy(() => new Track(file.Path), file.Path);
                 string title = "未知标题";
                 string artist = "未知艺术家";
                 string album = "未知专辑";

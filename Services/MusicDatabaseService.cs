@@ -1668,6 +1668,29 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        /// <summary>
+        /// 转换产物主动入库：转换流程写完文件与标签后立即调用，
+        /// 不再依赖 AutoScan 通过目录时间戳变化在下一轮扫描中"发现"新文件
+        /// （那条路径会与标签写入并发导致文件占用/元数据陈旧）。
+        /// 已存在同路径记录时为幂等空操作。
+        /// </summary>
+        public async Task AddConvertedFileAsync(string path)
+        {
+            try
+            {
+                var result = await AddNewMusicAsync(path);
+                if (result.Music is not null)
+                {
+                    await _dbConnection.InsertAsync(result.Music);
+                    await SaveEmbeddedLyricsAsync([result]);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"AddConvertedFileAsync 转换产物入库失败: {path}: {ex.Message}");
+            }
+        }
+
         private async Task<(Music? Music, string Lyrics)> AddNewMusicAsync(string path)
         {
             await _rescanfolderSemaphore.WaitAsync();
