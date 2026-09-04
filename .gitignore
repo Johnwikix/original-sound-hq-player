@@ -23,6 +23,9 @@ mono_crash.*
 [Rr]eleases/
 x64/
 x86/
+# FFmpeg shared DLLs shipped with the app (in-process conversion engine)
+!Libraries/FFmpeg/x64/
+!Libraries/FFmpeg/x64/**
 [Ww][Ii][Nn]32/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/

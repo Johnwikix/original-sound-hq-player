@@ -1,6 +1,4 @@
 ﻿using ATL;
-using ManagedBass;
-using ManagedBass.Dsd;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas.Text;
@@ -27,7 +25,6 @@ using Windows.Storage;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Helper;
-using WinUIMusicPlayer.Manager;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services;
@@ -368,46 +365,49 @@ namespace WinUIMusicPlayer.Utils
             catch (Exception ex) { _logger.LogError(ex, "DeleteRawCaches 失败"); }
         }
 
+        private static readonly string[] AudioInfoProps =
+        [
+            "System.Audio.SampleRate",
+            "System.Audio.ChannelCount",
+            "System.Audio.SampleSize",
+            "System.Audio.EncodingBitrate",
+            "System.Media.Duration",
+        ];
+
+        /// <summary>
+        /// ATL 主路径失败时的兜底探测（原实现依赖 BASS，主程序移除 BASS 后改用
+        /// Windows 属性系统获取音频属性；标签字段仍尽量取自 ATL）。
+        /// </summary>
         public static async Task<AudioFileInfo> GetAudioInfo(StorageFile file)
         {
-            BassManager.Initialize();
-            int stream = 0;
             AudioFileInfo fileInfo = new();
-            Track track = new(file.Path);
+            Track? track = null;
+            try { track = new Track(file.Path); }
+            catch (Exception ex) { _logger.LogWarning(ex, $"GetAudioInfo ATL 读取失败: {file.Path}"); }
             try
             {
-                if (Path.GetExtension(file.Path) == ".dff")
-                {
-                    stream = BassDsd.CreateStream(file.Path, 0, 0, BassFlags.DSDOverPCM | BassFlags.Float | BassFlags.Decode | BassFlags.AsyncFile);
-                    Bass.ChannelGetInfo(stream, out ChannelInfo info);
-                    Bass.ChannelGetAttribute(
-                                        stream,
-                                        ChannelAttribute.Bitrate,
-                                        out var bitrate
-                    );
-                    double totalSeconds = Bass.ChannelBytes2Seconds(stream, Bass.ChannelGetLength(stream));
-                    fileInfo.BitDepth = 1;
-                    fileInfo.BitRate = (int)bitrate;
-                    fileInfo.SampleRate = info.Frequency * 16;
-                    fileInfo.Duration = TimeSpan.FromSeconds(totalSeconds);
-                }
-                else
-                {
-                    stream = Bass.CreateStream(file.Path, 0, 0, BassFlags.Default | BassFlags.AsyncFile);
-                    Bass.ChannelGetInfo(stream, out ChannelInfo info);
-                    fileInfo.SampleRate = (int)(track?.SampleRate ?? info.Frequency);
-                    fileInfo.ChannelCount = info.Channels;
-                    fileInfo.BitDepth = info.OriginalResolution;
-                    fileInfo.Duration = (track?.Duration ?? 0) != 0
-                                   ? TimeSpan.FromSeconds(track?.Duration ?? 0) : TimeSpan.FromSeconds(Bass.ChannelBytes2Seconds(stream, Bass.ChannelGetLength(stream)));
-                }
-                fileInfo.Title = string.IsNullOrEmpty(track?.Title) ? Path.GetFileNameWithoutExtension(file.Path) : track.Title;
-                fileInfo.Album = string.IsNullOrEmpty(track?.Album) ? "未知专辑" : track.Album;
-                fileInfo.Artist = string.IsNullOrEmpty(track?.Artist) ? "未知艺术家" : track.Artist;
-                fileInfo.BitRate = track?.Bitrate ?? 0;
+                var props = await file.Properties.RetrievePropertiesAsync(AudioInfoProps);
+                fileInfo.SampleRate = GetPropertyValue(props, "System.Audio.SampleRate", 0);
+                fileInfo.ChannelCount = GetPropertyValue(props, "System.Audio.ChannelCount", 0);
+                int bitDepth = GetPropertyValue(props, "System.Audio.SampleSize", 0);
+                // DSD 位深语义与旧版保持一致（1 = DSD 单比特流）
+                fileInfo.BitDepth = IsDsdExtension(file.Path) ? 1 : bitDepth;
+                int bitRateRaw = GetPropertyValue(props, "System.Audio.EncodingBitrate", 0);
+                fileInfo.BitRate = bitRateRaw > 0 ? bitRateRaw / 1000 : 0;
+                ulong duration100ns = GetPropertyValue(props, "System.Media.Duration", 0UL);
+                if (duration100ns > 0)
+                    fileInfo.Duration = TimeSpan.FromMilliseconds(duration100ns / 10000.0);
+
+                fileInfo.Title = string.IsNullOrWhiteSpace(track?.Title) ? Path.GetFileNameWithoutExtension(file.Path) : track!.Title;
+                fileInfo.Album = string.IsNullOrWhiteSpace(track?.Album) ? "未知专辑" : track!.Album;
+                fileInfo.Artist = string.IsNullOrWhiteSpace(track?.Artist) ? "未知艺术家" : track!.Artist;
                 fileInfo.Year = track?.Year ?? 0;
                 fileInfo.TrackNumber = track?.TrackNumber ?? 0;
                 fileInfo.DiskNumber = track?.DiscNumber ?? 0;
+                if (track?.Bitrate > 0 && fileInfo.BitRate == 0)
+                    fileInfo.BitRate = track!.Bitrate;
+                if (track != null && track.DurationMs > 0 && fileInfo.Duration <= TimeSpan.Zero)
+                    fileInfo.Duration = TimeSpan.FromMilliseconds(track.DurationMs);
                 fileInfo.Lyrics = track?.Lyrics?.AsValueEnumerable().Count() > 0
                     ? ParseLyrics(track.Lyrics[0].SynchronizedLyrics)
                     : string.Empty;
@@ -419,13 +419,23 @@ namespace WinUIMusicPlayer.Utils
                 fileInfo.Title = Path.GetFileNameWithoutExtension(file.Path);
                 return fileInfo;
             }
-            finally
+        }
+
+        private static bool IsDsdExtension(string path)
+        {
+            var ext = Path.GetExtension(path.AsSpan());
+            return ext.Equals(".dsf", StringComparison.OrdinalIgnoreCase)
+                || ext.Equals(".dff", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static T GetPropertyValue<T>(IDictionary<string, object> props, string key, T fallback) where T : struct
+        {
+            if (props.TryGetValue(key, out var value) && value is not null)
             {
-                if (stream != 0)
-                {
-                    Bass.StreamFree(stream);
-                }
+                try { return (T)Convert.ChangeType(value, typeof(T)); }
+                catch { return fallback; }
             }
+            return fallback;
         }
 
         private static string ParseLyrics(IList<LyricsInfo.LyricsPhrase> SynchronizedLyrics)

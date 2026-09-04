@@ -69,29 +69,16 @@
   <ItemGroup>
 	<None Include="Player\**\*">
 		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		<Link>%(Filename)%(Extension)</Link>
+		<Link>Player\%(RecursiveDir)%(Filename)%(Extension)</Link>
 	</None>
   </ItemGroup>
-  <ItemGroup Condition="'$(Platform)' == 'x86'">
-	<None Include="Libraries\x86\**\*">
+  <ItemGroup>
+	<!-- FFmpeg 9.0.1 shared DLL（音频转换用，进程内调用；BASS 已从主程序完全移除，仅随独立播放进程分发） -->
+	<None Include="Libraries\FFmpeg\x64\*.dll" Condition="'$(Platform)' == 'x64'">
 		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		<Link>%(Filename)%(Extension)</Link>
 	</None>
-  </ItemGroup>
-  <ItemGroup Condition="'$(Platform)' == 'x64'">
-	<None Include="Libraries\x64\**\*">
-		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		<Link>%(Filename)%(Extension)</Link>
-	</None>
-  </ItemGroup>
-  <ItemGroup Condition="'$(Platform)'=='ARM64'">
-    <None Include="Libraries\x64\**\*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>%(Filename)%(Extension)</Link>
-    </None>
-  </ItemGroup>
-  <ItemGroup Condition="'$(Platform)' == 'arm64'">
-	<None Include="Libraries\arm64\**\*">
+	<None Include="Libraries\FFmpeg\x64\*.dll" Condition="'$(Platform)' == 'ARM64'">
 		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		<Link>%(Filename)%(Extension)</Link>
 	</None>
@@ -119,11 +106,7 @@
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
     <PackageReference Include="DevWinUI" Version="10.3.0" />
     <PackageReference Include="H.NotifyIcon.WinUI" Version="2.4.1" />
-    <PackageReference Include="ManagedBass" Version="4.0.2" />
-    <PackageReference Include="ManagedBass.Asio" Version="4.0.2" />
-    <PackageReference Include="ManagedBass.Dsd" Version="4.0.2" />
-    <PackageReference Include="ManagedBass.Enc" Version="4.0.2" />
-    <PackageReference Include="ManagedBass.Wasapi" Version="4.0.2" />
+    <PackageReference Include="FFmpeg.AutoGen" Version="9.0.1.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.11" />
     <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
     <PackageReference Include="Microsoft.PinYinConverter" Version="1.0.0" />

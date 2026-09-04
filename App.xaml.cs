@@ -209,9 +209,11 @@ namespace WinUIMusicPlayer
                     Environment.Exit(0);
                     return;
                 }
+                var playerPath = Path.Combine(AppContext.BaseDirectory, "Player", "BassPlayerSharp.exe");
                 Process.StartAndForget(new ProcessStartInfo
                 {
-                    FileName = "BassPlayerSharp.exe",
+                    FileName = playerPath,
+                    WorkingDirectory = Path.GetDirectoryName(playerPath),
                     CreateNoWindow = true,
                     UseShellExecute = false,
                 });
