@@ -18,15 +18,8 @@ namespace WinUIMusicPlayer.Services
     /// </summary>
     public class AudioConverterService
     {
-        /// <summary>
-        /// 本应用正在转换/写标签的输出文件集合：此期间 AutoScan 的 AddNewMusicAsync
-        /// 跳过这些路径（ATL 以 FileShare.Read 打开，与标签写入的 ReadWrite 句柄互斥，
-        /// 大文件 m4a/wma 头部重写可达数秒，靠重试等写者不可靠），入库由转换流程主动完成。
-        /// </summary>
-        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, byte> _activeOutputs =
-            new(StringComparer.OrdinalIgnoreCase);
+        public EventHandler<double>? updateProgress { get; set; }
 
-        public static bool IsActiveOutput(string path) => _activeOutputs.ContainsKey(path);
         /// <summary>内部格式名 → 输出文件扩展名（aac/alac 主流封装为 m4a）。</summary>
         private static readonly Dictionary<string, string> FormatExtensionMap = new(StringComparer.OrdinalIgnoreCase)
         {
@@ -40,7 +33,6 @@ namespace WinUIMusicPlayer.Services
             ["wma"] = "wma",
         };
 
-        public EventHandler<double>? updateProgress { get; set; }
         private readonly FFmpegAudioConverter _converter;
         private AppViewModel AppViewModel { get; }
         private ILogger<AudioConverterService> _logger;
@@ -53,39 +45,42 @@ namespace WinUIMusicPlayer.Services
             _converter.progressEvent += (_, progress) => OnProgressChanged(progress);
         }
 
-        public async Task<bool> ConvertAudio2Wav(Music music, string type = "wav", int bitRateKbps = 320)
+        public async Task<bool> ConvertAudioAsync(Music music, string type = "wav", int bitRateKbps = 320)
         {
             string format = type.ToLowerInvariant();
             string outputPath = GenerateOutputPath(music.Path, format);
-            _activeOutputs[outputPath] = 0; // 转换 + 写标签 + 入库全程对 AutoScan 屏蔽
-            try
+            // 转换 + 写标签 + 入库全程登记，AutoScan 期间跳过该文件（详见 AudioFileWriteGate）
+            using (AudioFileWriteGate.BeginWrite(outputPath))
             {
                 try
                 {
-                    bool isDsd = music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase)
-                              || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase);
-                    int dsdFreq = isDsd ? AppViewModel.DsdPcmFreq : 0;
-                    int dsdGain = isDsd ? AppViewModel.DsdGain : 0;
-
-                    if (!music.Extension.Equals(format, StringComparison.OrdinalIgnoreCase))
+                    try
                     {
-                        await Task.Run(() => _converter.Convert(music.Path, outputPath, format, dsdFreq, dsdGain, bitRateKbps));
+                        bool isDsd = music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase)
+                                  || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase);
+                        int dsdFreq = isDsd ? AppViewModel.DsdPcmFreq : 0;
+                        int dsdGain = isDsd ? AppViewModel.DsdGain : 0;
+
+                        if (!music.Extension.Equals(format, StringComparison.OrdinalIgnoreCase))
+                        {
+                            await Task.Run(() => _converter.Convert(music.Path, outputPath, format, dsdFreq, dsdGain, bitRateKbps));
+                        }
                     }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, $"ConvertAudioAsync 音频转换失败: {ex.Message}");
+                        OnProgressChanged(100);
+                        return false;
+                    }
+                    await SaveMetaDataAsync(music, outputPath);
+                    // 转换产物主动入库（不再依赖 AutoScan 二次扫描发现），列表刷新由调用方统一触发
+                    await AddConvertedFileToLibraryAsync(outputPath);
+                    return true;
                 }
-                catch (Exception ex)
+                finally
                 {
-                    _logger.LogError(ex, $"ConvertAudio2Wav 音频转换失败: {ex.Message}");
                     OnProgressChanged(100);
-                    return false;
                 }
-                await SaveMetaDataAsync(music, outputPath);
-                // 转换产物主动入库（不再依赖 AutoScan 二次扫描发现），列表刷新由调用方统一触发
-                await AddConvertedFileToLibraryAsync(outputPath);
-                return true;
-            }
-            finally
-            {
-                _activeOutputs.TryRemove(outputPath, out _);
             }
         }
 

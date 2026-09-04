@@ -1696,9 +1696,9 @@ namespace WinUIMusicPlayer.Services
             await _rescanfolderSemaphore.WaitAsync();
             try
             {
-                // 本应用正在转换/写标签的文件由转换流程主动入库，扫描路径跳过，
+                // 正在被本应用写入（转换中/写标签中）的文件由写入方主动入库，扫描路径跳过，
                 // 避免 ATL(FileShare.Read) 与标签重写句柄互斥导致的占用失败
-                if (AudioConverterService.IsActiveOutput(path))
+                if (AudioFileWriteGate.IsBeingWritten(path))
                     return (null, "");
 
                 var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == path).FirstOrDefaultAsync();

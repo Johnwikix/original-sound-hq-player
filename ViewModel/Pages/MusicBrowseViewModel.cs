@@ -144,7 +144,7 @@ namespace WinUIMusicPlayer.ViewModel
             bool allSuccess = true;
             foreach (Music music in musics)
             {
-                if (!await ConverterService.ConvertAudio2Wav(music, targetFormat, bitrate))
+                if (!await ConverterService.ConvertAudioAsync(music, targetFormat, bitrate))
                     allSuccess = false;
             }
             _ = ProgressDialog.UpdateProgress(100);
@@ -166,7 +166,7 @@ namespace WinUIMusicPlayer.ViewModel
 
             _ = ProgressDialog.UpdateProgress(ProgressBarValue);
             // 先启动转换再决定是否弹出进度对话框（瞬间完成的小文件不闪框）
-            Task<bool> convertTask = ConverterService.ConvertAudio2Wav(music, targetFormat, bitrate);
+            Task<bool> convertTask = ConverterService.ConvertAudioAsync(music, targetFormat, bitrate);
             if (ProgressBarValue < 100)
             {
                 _ = ProgressDialog.ShowThemedAsync(MusicBrowsePage.XamlRoot);
