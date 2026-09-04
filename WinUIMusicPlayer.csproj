@@ -73,12 +73,22 @@
 	</None>
   </ItemGroup>
   <ItemGroup>
-	<!-- FFmpeg 9.0.1 shared DLL（音频转换用，进程内调用；BASS 已从主程序完全移除，仅随独立播放进程分发） -->
-	<None Include="Libraries\FFmpeg\x64\*.dll" Condition="'$(Platform)' == 'x64'">
+	<!-- FFmpeg 9.0.1 shared DLL（音频转换用，进程内调用；BASS 已从主程序完全移除，仅随独立播放进程分发）。
+	     仅拷贝音频管线实际依赖的四个库：avformat→avcodec→avutil、swresample→avutil；
+	     avdevice/avfilter/swscale（设备采集/滤镜/视频缩放）未使用，不随包分发。 -->
+	<None Include="Libraries\FFmpeg\x64\avcodec-63.dll" Condition="'$(Platform)' == 'x64' or '$(Platform)' == 'ARM64'">
 		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		<Link>%(Filename)%(Extension)</Link>
 	</None>
-	<None Include="Libraries\FFmpeg\x64\*.dll" Condition="'$(Platform)' == 'ARM64'">
+	<None Include="Libraries\FFmpeg\x64\avformat-63.dll" Condition="'$(Platform)' == 'x64' or '$(Platform)' == 'ARM64'">
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		<Link>%(Filename)%(Extension)</Link>
+	</None>
+	<None Include="Libraries\FFmpeg\x64\avutil-61.dll" Condition="'$(Platform)' == 'x64' or '$(Platform)' == 'ARM64'">
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		<Link>%(Filename)%(Extension)</Link>
+	</None>
+	<None Include="Libraries\FFmpeg\x64\swresample-7.dll" Condition="'$(Platform)' == 'x64' or '$(Platform)' == 'ARM64'">
 		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		<Link>%(Filename)%(Extension)</Link>
 	</None>

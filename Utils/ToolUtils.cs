@@ -413,10 +413,10 @@ namespace WinUIMusicPlayer.Utils
         /// Windows 属性系统获取音频属性；标签字段仍尽量取自 ATL）。
         /// </summary>
         /// <summary>
-        /// 文件被占用（AutoScan 与标签写入并发、外部程序写入中等）时的短退避重试。
-        /// 共享冲突通常亚秒级结束，重试后能读到写入方完成后的完整内容。
+        /// 文件被占用（外部程序写入中、标签重写并发等）时的指数退避重试。
+        /// 大文件的容器级标签重写可达数秒，窗口需覆盖；总时长约 12 秒。
         /// </summary>
-        private static T RetryOnFileBusy<T>(Func<T> factory, string path, int maxRetries = 3)
+        private static T RetryOnFileBusy<T>(Func<T> factory, string path, int maxRetries = 6)
         {
             for (int attempt = 0; ; attempt++)
             {
@@ -427,7 +427,7 @@ namespace WinUIMusicPlayer.Utils
                 catch (IOException) when (attempt < maxRetries)
                 {
                     _logger.LogWarning($"文件被占用，重试 {attempt + 1}/{maxRetries}: {path}");
-                    Thread.Sleep(attempt switch { 0 => 200, 1 => 500, _ => 1000 });
+                    Thread.Sleep(Math.Min(200 << attempt, 3200));
                 }
             }
         }
