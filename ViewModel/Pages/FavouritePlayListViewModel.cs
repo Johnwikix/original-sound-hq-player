@@ -45,13 +45,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 Title = ToolUtils.GetString("FlyoutConvertItem"),
                 Tag = "ConvertAudio",
-                Children = [
-                new(){ Title="Wav",Tag="wav",Command=ConvertAudioCommand},
-                new(){ Title="Mp3",Tag="mp3",Command=ConvertAudioCommand},
-                new(){ Title="Flac",Tag="flac",Command=ConvertAudioCommand},
-                new(){ Title="Ogg",Tag="ogg",Command=ConvertAudioCommand},
-                new(){ Title="Opus",Tag="opus",Command=ConvertAudioCommand},
-                ]
+                Children = ToolUtils.BuildConvertMenuChildren(ConvertAudioCommand)
             });
             MenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutAddToCurrentPlayList"), Tag = "AddMusicToCurrentPlayList", Command = AddToCurrentPlayListCommand });
             MenuOptions.Add(new() { Title = ToolUtils.GetString("ReGetLyrics"), Tag = "ReGetLyrics", Command = ReGetLyricsCommand });

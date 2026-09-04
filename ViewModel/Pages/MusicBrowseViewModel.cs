@@ -118,32 +118,41 @@ namespace WinUIMusicPlayer.ViewModel
             if (uniqueSelectedMusics is null || tag is null)
                 return;
 
+            // tag 形如 "wav"（无损直转）或 "mp3:320"（有损格式:码率）
+            string[] parts = tag.Split(':');
+            string targetFormat = parts[0].ToLowerInvariant();
+            int bitrate = parts.Length > 1 && int.TryParse(parts[1], out var b) && b > 0 ? b : 320;
+
             ProgressBarValue = 0;
             var musicList = uniqueSelectedMusics.AsValueEnumerable().ToList();
             IsMutiFile = musicList.Count > 1;
             if (IsMutiFile)
             {
-                await ConvertMultipleFiles(musicList, tag);
+                await ConvertMultipleFiles(musicList, targetFormat, bitrate);
             }
             else
             {
-                await ConvertSingleFile(musicList.AsValueEnumerable().FirstOrDefault(), tag);
+                await ConvertSingleFile(musicList.AsValueEnumerable().FirstOrDefault(), targetFormat, bitrate);
             }
         }
 
-        private async Task ConvertMultipleFiles(List<Music> musics, string targetFormat)
+        private async Task ConvertMultipleFiles(List<Music> musics, string targetFormat, int bitrate)
         {
             await ProgressDialog.UpdateProgress(ProgressBarValue);
             _ = ProgressDialog.ShowThemedAsync(MusicBrowsePage.XamlRoot);
 
+            bool allSuccess = true;
             foreach (Music music in musics)
             {
-                await ConverterService.ConvertAudio2Wav(music, targetFormat);
+                if (!await ConverterService.ConvertAudio2Wav(music, targetFormat, bitrate))
+                    allSuccess = false;
             }
             _ = ProgressDialog.UpdateProgress(100);
+            if (!allSuccess)
+                UpdateInfoBar(ToolUtils.GetString("InfoBarMessageConverterFailed"));
         }
 
-        private async Task ConvertSingleFile(Music? music, string targetFormat)
+        private async Task ConvertSingleFile(Music? music, string targetFormat, int bitrate)
         {
             if (music is null)
                 return;
@@ -155,11 +164,15 @@ namespace WinUIMusicPlayer.ViewModel
             }
 
             _ = ProgressDialog.UpdateProgress(ProgressBarValue);
-            _ = ConverterService.ConvertAudio2Wav(music, targetFormat);
-
+            // 先启动转换再决定是否弹出进度对话框（瞬间完成的小文件不闪框）
+            Task<bool> convertTask = ConverterService.ConvertAudio2Wav(music, targetFormat, bitrate);
             if (ProgressBarValue < 100)
             {
                 _ = ProgressDialog.ShowThemedAsync(MusicBrowsePage.XamlRoot);
+            }
+            if (!await convertTask)
+            {
+                UpdateInfoBar(string.Format(ToolUtils.GetString("InfoBarMessageConverterFailedWithFile"), music.Title));
             }
         }
 

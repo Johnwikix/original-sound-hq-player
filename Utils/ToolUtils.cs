@@ -103,6 +103,40 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
+        /// <summary>有损格式的码率档位（kbps）。</summary>
+        public static readonly int[] ConvertBitrates = [320, 256, 192, 160, 128, 96];
+
+        /// <summary>
+        /// 「转换为」右键菜单的格式子项：无损格式直接转换；有损格式带二级码率子菜单，
+        /// Tag 形如 "mp3:320"（格式:码率），由 MusicBrowseViewModel.ConvertAudio_Click 解析。
+        /// 新增格式时在 AudioConverterService.FormatExtensionMap 与 FFmpegAudioConverter.SelectEncoder 同步支持。
+        /// 注意 resw 的 key 不能带 ".Text" 后缀——那是 x:Uid 专用编目，运行时 ResourceLoader 取不到。
+        /// </summary>
+        public static ObservableCollection<MenuModel> BuildConvertMenuChildren(System.Windows.Input.ICommand command)
+        {
+            ObservableCollection<MenuModel> LossyChildren(string format)
+            {
+                ObservableCollection<MenuModel> children = [];
+                foreach (int bitrate in ConvertBitrates)
+                {
+                    children.Add(new() { Title = $"{bitrate} kbps", Tag = $"{format}:{bitrate}", Command = command });
+                }
+                return children;
+            }
+
+            return
+            [
+                new() { Title = GetString("FlyoutConvertWav"), Tag = "wav", Command = command },
+                new() { Title = GetString("FlyoutConvertFlac"), Tag = "flac", Command = command },
+                new() { Title = GetString("FlyoutConvertAlac"), Tag = "alac", Command = command },
+                new() { Title = GetString("FlyoutConvertMp3"), Tag = "mp3", Children = LossyChildren("mp3") },
+                new() { Title = GetString("FlyoutConvertAac"), Tag = "aac", Children = LossyChildren("aac") },
+                new() { Title = GetString("FlyoutConvertOgg"), Tag = "ogg", Children = LossyChildren("ogg") },
+                new() { Title = GetString("FlyoutConvertOpus"), Tag = "opus", Children = LossyChildren("opus") },
+                new() { Title = GetString("FlyoutConvertWma"), Tag = "wma", Children = LossyChildren("wma") },
+            ];
+        }
+
         public enum PlayMode
         {
             SingleLoop,

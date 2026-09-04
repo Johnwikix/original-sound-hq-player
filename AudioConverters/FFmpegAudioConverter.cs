@@ -10,8 +10,8 @@ namespace WinUIMusicPlayer.AudioConverters
     /// 取代旧的 BASS(bassenc) 转换管线：解码 → swresample 重采样/位深/DSD 增益 → 编码封装。
     /// 位深决策与旧版 BASS 转换器保持一致：
     ///   wav  : 24bit 源 → 24bit PCM；16bit/未知(非 DSD) → 16bit；其余(32bit/float/DSD) → float；
-    ///   flac : ≥24bit 或 DSD → 24bit，否则 16bit；
-    ///   mp3/ogg/opus : 320 kbps，编码器原生采样格式。
+    ///   flac/alac : ≥24bit 或 DSD → 24bit，否则 16bit；
+    ///   mp3/aac/wma/ogg/opus : 有损，按 bitRateKbps 编码（默认 320 kbps）。
     /// </summary>
     public sealed unsafe class FFmpegAudioConverter
     {
@@ -25,11 +25,10 @@ namespace WinUIMusicPlayer.AudioConverters
         private AVPacket* _pkt;
         private int _outRate;
 
-        private const long LossyBitRate = 320_000;
         private const int FlacCompressionLevel = 8; // 对应旧版 libflac "--best"
         private static readonly int[] OpusRates = [8000, 12000, 16000, 24000, 48000];
 
-        public void Convert(string inputPath, string outputPath, string format, int dsdPcmFreq = 0, int dsdGainDb = 0)
+        public void Convert(string inputPath, string outputPath, string format, int dsdPcmFreq = 0, int dsdGainDb = 0, int bitRateKbps = 320)
         {
             bool isDsd = IsDsdFile(inputPath);
             bool applyGain = isDsd && dsdGainDb != 0;
@@ -88,7 +87,16 @@ namespace WinUIMusicPlayer.AudioConverters
                 encCtx = ffmpeg.avcodec_alloc_context3(encoder);
                 encCtx->sample_fmt = encFmt;
                 encCtx->sample_rate = outRate;
-                encCtx->bit_rate = encCodecId == AVCodecID.AV_CODEC_ID_FLAC ? 0 : LossyBitRate;
+                encCtx->bit_rate = IsLossless(encCodecId) ? 0 : Math.Max(16, bitRateKbps) * 1000L;
+                if (encCodecId == AVCodecID.AV_CODEC_ID_VORBIS)
+                {
+                    // libvorbis 的受管 ABR 模式在 DSD 转换的高采样率（88.2k/176.4k）下低于
+                    // 编码器允许的最小码率，vorbis_encode_setup 直接失败（DSF→OGG 无反应的根因）；
+                    // 改用质量模式（等价 CLI -q:a），码率档位映射到就近的 vorbis 质量档。
+                    encCtx->flags |= ffmpeg.AV_CODEC_FLAG_QSCALE;
+                    encCtx->global_quality = VorbisQualityFor(bitRateKbps) * ffmpeg.FF_QP2LAMBDA;
+                    encCtx->bit_rate = 0;
+                }
                 ffmpeg.av_channel_layout_copy(&encCtx->ch_layout, &decCtx->ch_layout);
                 // lame 等编码器只接受原生声道布局；解码器可能是 UNSPEC 顺序，统一规范化
                 ffmpeg.av_channel_layout_uninit(&encCtx->ch_layout);
@@ -113,7 +121,12 @@ namespace WinUIMusicPlayer.AudioConverters
                     ret = ffmpeg.avio_open(&ofmtCtx->pb, outputPath, ffmpeg.AVIO_FLAG_WRITE);
                     if (ret < 0) throw CreateException(ret, $"无法创建输出文件: {outputPath}");
                 }
-                if (ffmpeg.avformat_write_header(ofmtCtx, null) < 0)
+                AVDictionary* headerOpts = null;
+                if (muxerName == "ipod")
+                    ffmpeg.av_dict_set(&headerOpts, "movflags", "+faststart", 0); // m4a 元数据前置，利于流式播放
+                int headerRet = ffmpeg.avformat_write_header(ofmtCtx, &headerOpts);
+                ffmpeg.av_dict_free(&headerOpts);
+                if (headerRet < 0)
                     throw new InvalidOperationException("写入文件头失败");
 
                 // 第一级重采样：解码格式 → 编码格式（DSD 需增益且目标为整型时先到 float，
@@ -342,6 +355,22 @@ namespace WinUIMusicPlayer.AudioConverters
         private static bool IsFloatFormat(AVSampleFormat fmt)
             => fmt is AVSampleFormat.AV_SAMPLE_FMT_FLT or AVSampleFormat.AV_SAMPLE_FMT_FLTP;
 
+        private static bool IsLossless(AVCodecID id)
+            => id is AVCodecID.AV_CODEC_ID_FLAC or AVCodecID.AV_CODEC_ID_ALAC
+                or AVCodecID.AV_CODEC_ID_PCM_S16LE or AVCodecID.AV_CODEC_ID_PCM_S24LE
+                or AVCodecID.AV_CODEC_ID_PCM_F32LE;
+
+        /// <summary>码率档位映射到 libvorbis 质量档（44.1k 立体声 VBR 参考码率）。</summary>
+        private static int VorbisQualityFor(int kbps) => kbps switch
+        {
+            >= 300 => 9,   // ~320k
+            >= 220 => 8,   // ~256k
+            >= 170 => 7,   // ~224k
+            >= 140 => 5,   // ~160k
+            >= 110 => 4,   // ~128k
+            _ => 2,        // ~96k
+        };
+
         /// <summary>把采样率对齐到编码器支持表中最接近的一档；编码器未声明则原样返回。</summary>
         private static int SnapRateToEncoder(AVCodecContext* encCtx, AVCodec* encoder, int rate)
         {
@@ -449,6 +478,33 @@ namespace WinUIMusicPlayer.AudioConverters
                     foreach (var r in OpusRates)
                         if (Math.Abs(r - outRate) < Math.Abs(best - outRate)) best = r;
                     outRate = best;
+                    return;
+                case "aac":
+                    // AAC 主流封装为 .m4a（ipod 兼容 muxer）；原生编码器仅支持 FLTP
+                    muxerName = "ipod";
+                    encCodecId = AVCodecID.AV_CODEC_ID_AAC;
+                    encFmt = AVSampleFormat.AV_SAMPLE_FMT_FLTP;
+                    return;
+                case "alac":
+                    // Apple 无损，封装 .m4a；位深规则与 flac 一致
+                    muxerName = "ipod";
+                    encCodecId = AVCodecID.AV_CODEC_ID_ALAC;
+                    if (depth >= 24 || isDsd)
+                    {
+                        encFmt = AVSampleFormat.AV_SAMPLE_FMT_S32P;
+                        flacBps = 24;
+                    }
+                    else
+                    {
+                        encFmt = AVSampleFormat.AV_SAMPLE_FMT_S16P;
+                        flacBps = 16;
+                    }
+                    return;
+                case "wma":
+                    // WMA v2，asf 容器（.wma）
+                    muxerName = "asf";
+                    encCodecId = AVCodecID.AV_CODEC_ID_WMAV2;
+                    encFmt = AVSampleFormat.AV_SAMPLE_FMT_FLTP;
                     return;
                 default:
                     throw new InvalidOperationException($"不支持的输出格式: {format}");

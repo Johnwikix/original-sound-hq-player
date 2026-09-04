@@ -754,6 +754,36 @@
   <data name="InfoBarMessageConverter" xml:space="preserve">
     <value>Формат цели идентичен первоначальному формату.</value>
   </data>
+  <data name="InfoBarMessageConverterFailed" xml:space="preserve">
+    <value>Не удалось преобразовать аудио. Подробности в журнале</value>
+  </data>
+  <data name="InfoBarMessageConverterFailedWithFile" xml:space="preserve">
+    <value>Ошибка преобразования: {0}</value>
+  </data>
+  <data name="FlyoutConvertWav" xml:space="preserve">
+    <value>WAV</value>
+  </data>
+  <data name="FlyoutConvertMp3" xml:space="preserve">
+    <value>MP3</value>
+  </data>
+  <data name="FlyoutConvertFlac" xml:space="preserve">
+    <value>Flac</value>
+  </data>
+  <data name="FlyoutConvertOgg" xml:space="preserve">
+    <value>Ogg</value>
+  </data>
+  <data name="FlyoutConvertOpus" xml:space="preserve">
+    <value>Opus</value>
+  </data>
+  <data name="FlyoutConvertAac" xml:space="preserve">
+    <value>M4A (AAC)</value>
+  </data>
+  <data name="FlyoutConvertAlac" xml:space="preserve">
+    <value>M4A (ALAC)</value>
+  </data>
+  <data name="FlyoutConvertWma" xml:space="preserve">
+    <value>WMA</value>
+  </data>
   <data name="NumberOfSongs" xml:space="preserve">
     <value>песен</value>
   </data>
