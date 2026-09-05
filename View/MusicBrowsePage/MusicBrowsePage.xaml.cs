@@ -161,11 +161,8 @@ namespace WinUIMusicPlayer.View
             selectPage.UpdateLayout();
         }
 
-        private void UsbDeviceCombox_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            // 全局状态（选中设备/台账清理）由 UsbDeviceService.SelectAsync 统一处理
-            ViewModel.UsbDeviceComboxSelectionChanged(UsbDeviceCombox.SelectedItem as UsbStorageDevice);
-        }
+        // USB 设备选择由 ComboBox SelectedItem 双向绑定 UsbDeviceService.SelectedDevice 完成，
+        // 台账加载与扫描在服务内触发，此处无需代码后置逻辑。
 
         public void SelectBarAlbum(string Album)
         {

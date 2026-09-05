@@ -99,7 +99,7 @@
                     BorderThickness="0"
                     FontSize="12"
                     ItemsSource="{x:Bind ViewModel.UsbDeviceService.Devices, Mode=OneWay}"
-                    SelectionChanged="UsbDeviceCombox_SelectionChanged"
+                    SelectedItem="{x:Bind ViewModel.UsbDeviceService.SelectedDevice, Mode=TwoWay}"
                     Visibility="{x:Bind ViewModel.UsbDeviceService.DevicesVisibility, Mode=OneWay}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate x:DataType="model:UsbStorageDevice">

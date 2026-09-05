@@ -221,13 +221,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        /// <summary>USB 设备生命周期由 UsbDeviceService 收敛管理，此处仅作 UI 转发。</summary>
+        /// <summary>USB 设备生命周期由 UsbDeviceService 收敛管理（含插入后自动选中第一项）。</summary>
         public UsbDeviceService UsbDeviceService { get; }
-
-        public void UsbDeviceComboxSelectionChanged(UsbStorageDevice? usbStorageDevice)
-        {
-            _ = UsbDeviceService.SelectAsync(usbStorageDevice);
-        }
 
         public void UpdateInfoBar(string message)
         {

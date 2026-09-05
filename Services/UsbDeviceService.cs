@@ -34,8 +34,18 @@ namespace WinUIMusicPlayer.Services
         /// <summary>当前枚举到的 USB 存储设备（下拉框数据源）。</summary>
         public ObservableCollection<UsbStorageDevice> Devices { get; } = [];
 
-        /// <summary>当前选中的设备；null 表示未选择。</summary>
-        public UsbStorageDevice? SelectedDevice { get; private set => SetProperty(ref field, value); }
+        /// <summary>当前选中的设备；null 表示未选择。TwoWay 绑定到设备下拉框，
+        /// 赋值即触发台账加载与扫描（自动选中与手动选择走同一入口）。</summary>
+        public UsbStorageDevice? SelectedDevice
+        {
+            get => field;
+            set
+            {
+                if (ReferenceEquals(field, value)) return;
+                SetProperty(ref field, value);
+                _ = SelectCoreAsync(value);
+            }
+        }
 
         /// <summary>选中设备的音乐发送台账（含历史扫描与本次会话的发送记录）。</summary>
         public ObservableCollection<UsbDeviceMusic> MusicOnDevice { get; } = [];
@@ -76,7 +86,8 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        /// <summary>重新枚举 USB 存储设备并更新设备列表/可见性。</summary>
+        /// <summary>重新枚举 USB 存储设备并更新设备列表/可见性；
+        /// 无选中或选中设备被移除时自动选中第一项，免去插拔后的手动选择。</summary>
         public async Task RefreshDevicesAsync()
         {
             try
@@ -88,7 +99,14 @@ namespace WinUIMusicPlayer.Services
                     Devices.Clear();
                     foreach (var d in devices) Devices.Add(d);
                     DevicesVisibility = Devices.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
-                    if (Devices.Count == 0) ClearSelection();
+                    if (Devices.Count == 0)
+                    {
+                        ClearSelection();
+                        return;
+                    }
+                    // 自动选中：当前无选中、或选中的设备已被拔出（按 UniqueId 判断）
+                    if (SelectedDevice is null || Devices.AsValueEnumerable().All(d => d.UniqueId != SelectedDevice.UniqueId))
+                        SelectedDevice = Devices[0];
                 });
                 DevicesChanged?.Invoke(this, EventArgs.Empty);
             }
@@ -98,13 +116,10 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        /// <summary>
-        /// 选择设备：清空旧台账 → 载入该设备的历史台账 → 后台重新扫描设备上的文件并刷新。
-        /// device 为 null 时仅清空选择。
-        /// </summary>
-        public async Task SelectAsync(UsbStorageDevice? device)
+        /// <summary>选择核心：清空旧台账 → 载入该设备历史台账 → 后台重扫设备文件并刷新。
+        /// device 为 null 时仅清空（设备全部移除/用户取消选择）。</summary>
+        private async Task SelectCoreAsync(UsbStorageDevice? device)
         {
-            SelectedDevice = device;
             _scanCts?.Cancel();
             _scanCts = new CancellationTokenSource();
             var ct = _scanCts.Token;
@@ -127,16 +142,11 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        /// <summary>清空选中设备与台账（设备全部移除时）。</summary>
+        /// <summary>清空选中与台账（设备全部移除时）。选中置 null 会经由属性触发台账清理。</summary>
         public void ClearSelection()
         {
             _scanCts?.Cancel();
             SelectedDevice = null;
-            if (MusicOnDevice.Count > 0)
-            {
-                MusicOnDevice.Clear();
-                RaiseDeviceMusicChanged();
-            }
         }
 
         /// <summary>记录一次发送（已存在同标题记录时幂等跳过），并触发状态标记刷新。</summary>
