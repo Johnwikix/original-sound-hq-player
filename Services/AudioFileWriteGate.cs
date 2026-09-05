@@ -11,7 +11,7 @@ namespace WinUIMusicPlayer.Services
     /// （目前是格式转换）通过 <see cref="BeginWrite"/> 登记输出路径，
     /// 期间扫描入库（AutoScan / AddNewMusicAsync）对登记路径直接跳过——
     /// ATL 以 FileShare.Read 打开文件，与容器级标签重写的 ReadWrite 句柄互斥，
-    /// 大文件（m4a/wma）标签重写可达数秒，靠重试等写者不可靠。
+    /// 大文件（如 m4a）标签重写可达数秒，靠重试等写者不可靠。
     /// 写入方在 using 作用域内完成入库后自动释放，扫描方下一轮自然可见。
     /// </summary>
     public static class AudioFileWriteGate

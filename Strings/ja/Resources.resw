@@ -781,9 +781,6 @@
   <data name="FlyoutConvertAlac" xml:space="preserve">
     <value>M4A (ALAC)</value>
   </data>
-  <data name="FlyoutConvertWma" xml:space="preserve">
-    <value>WMA</value>
-  </data>
   <data name="SendOriginalFormat" xml:space="preserve">
     <value>元のフォーマットで送信</value>
   </data>

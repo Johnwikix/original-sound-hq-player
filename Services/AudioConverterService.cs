@@ -13,7 +13,8 @@ namespace WinUIMusicPlayer.Services
 {
     /// <summary>
     /// 音频转换服务：解码/编码由进程内的 FFmpeg DLL（FFmpegAudioConverter）完成，
-    /// BASS 已从主程序移除；转换完成后沿用 ATL 写回元数据（标签/歌词/封面）。
+    /// BASS 已从主程序移除。元数据（标签/歌词/封面）随转换由 FFmpeg 内联写入，
+    /// 无 ATL 后置；容器能力差异（歌词/封面可写范围）由转换器处理。
     /// 返回 true 表示转换成功；失败只记日志并保证进度事件达 100。
     /// </summary>
     public class AudioConverterService
@@ -30,7 +31,6 @@ namespace WinUIMusicPlayer.Services
             ["opus"] = "opus",
             ["aac"] = "m4a",
             ["alac"] = "m4a",
-            ["wma"] = "wma",
         };
 
         /// <summary>格式对应的输出文件扩展名（未知格式原样返回）。</summary>
@@ -38,8 +38,8 @@ namespace WinUIMusicPlayer.Services
             => FormatExtensionMap.TryGetValue(format, out var ext) ? ext : format;
 
         /// <summary>
-        /// 转换 + 写标签，但不入库——供 USB 导出等"目标不在音乐库"的场景。
-        /// 全程持有写入门（转换 → 标签重写 → 调用方后续动作期间扫描方跳过该路径）。
+        /// 转换（元数据随转换由 FFmpeg 内联写入，无 ATL 后置），不入库——
+        /// 供 USB 导出等"目标不在音乐库"的场景。全程持有写入门。
         /// 失败返回 false，进度事件保证达 100。
         /// </summary>
         public async Task<bool> ConvertForExportAsync(Music music, string outputPath, string format, int bitRateKbps = 320)
@@ -53,7 +53,12 @@ namespace WinUIMusicPlayer.Services
                     int dsdFreq = isDsd ? AppViewModel.DsdPcmFreq : 0;
                     int dsdGain = isDsd ? AppViewModel.DsdGain : 0;
 
-                    await Task.Run(() => _converter.Convert(music.Path, outputPath, format, dsdFreq, dsdGain, bitRateKbps));
+                    // 元数据前置获取，随转换一次性写入；容器能力差异（歌词/封面哪些可写）
+                    // 由转换器内部处理，元数据获取失败不阻断转换
+                    ConversionMetadata? meta = await BuildConversionMetadataAsync(music);
+
+                    await Task.Run(() => _converter.Convert(music.Path, outputPath, format, dsdFreq, dsdGain, bitRateKbps, meta));
+                    return true;
                 }
                 catch (Exception ex)
                 {
@@ -61,9 +66,42 @@ namespace WinUIMusicPlayer.Services
                     OnProgressChanged(100);
                     return false;
                 }
-                await SaveMetaDataAsync(music, outputPath);
-                return true;
             }
+        }
+
+        /// <summary>转换前取齐歌词与封面，构造内联元数据。</summary>
+        private async Task<ConversionMetadata?> BuildConversionMetadataAsync(Music music)
+        {
+            try
+            {
+                var (lyricsText, _, krcText, _) = await App.Services.GetRequiredService<MusicDatabaseService>().GetLyricsAsync(music.Id);
+                string? lyrics = PickLyrics(lyricsText, krcText);
+                byte[]? cover = await ToolUtils.GetRawImage(music);
+                return new ConversionMetadata
+                {
+                    Title = music.Title,
+                    Artist = music.Author,
+                    Album = music.Album,
+                    TrackNumber = music.TrackNumber,
+                    DiscNumber = music.DiskNumber,
+                    Year = music.Year,
+                    CoverBytes = cover is { Length: > 0 } ? cover : null,
+                    Lyrics = lyrics,
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, $"BuildConversionMetadataAsync 元数据获取失败（转换继续，无元数据）: {music.Path}: {ex.Message}");
+                return null;
+            }
+        }
+
+        /// <summary>歌词优先，其次 KRC；两者皆空返回 null。</summary>
+        private static string? PickLyrics(string? lyricsText, string? krcText)
+        {
+            if (!string.IsNullOrWhiteSpace(lyricsText)) return lyricsText;
+            if (!string.IsNullOrWhiteSpace(krcText)) return krcText;
+            return null;
         }
 
         private readonly FFmpegAudioConverter _converter;
@@ -100,24 +138,6 @@ namespace WinUIMusicPlayer.Services
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, $"AddConvertedFileToLibraryAsync 转换产物入库失败: {outputPath}");
-            }
-        }
-
-        private async Task SaveMetaDataAsync(Music music, string outputPath)
-        {
-            try
-            {
-                var (lyricsText, _, krcText, _) = await App.Services.GetRequiredService<MusicDatabaseService>().GetLyricsAsync(music.Id);
-                byte[] pic = await ToolUtils.GetRawImage(music);
-                ToolUtils.SaveMetaData(music, outputPath, pic, lyricsText, krcText);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"SaveMetaData 保存元数据失败: {ex.Message}");
-            }
-            finally
-            {
-                OnProgressChanged(100);
             }
         }
 

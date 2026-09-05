@@ -138,7 +138,6 @@ namespace WinUIMusicPlayer.Utils
                 new() { Title = GetString("FlyoutConvertAac"), Tag = makeTag("aac", 320), Children = LossyChildren("aac") },
                 new() { Title = GetString("FlyoutConvertOgg"), Tag = makeTag("ogg", 320), Children = LossyChildren("ogg") },
                 new() { Title = GetString("FlyoutConvertOpus"), Tag = makeTag("opus", 320), Children = LossyChildren("opus") },
-                new() { Title = GetString("FlyoutConvertWma"), Tag = makeTag("wma", 320), Children = LossyChildren("wma") },
             ];
         }
 

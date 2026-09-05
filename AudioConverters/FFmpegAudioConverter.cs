@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Text;
 using FFmpeg.AutoGen;
+using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.AudioConverters
 {
@@ -11,7 +12,7 @@ namespace WinUIMusicPlayer.AudioConverters
     /// 位深决策与旧版 BASS 转换器保持一致：
     ///   wav  : 24bit 源 → 24bit PCM；16bit/未知(非 DSD) → 16bit；其余(32bit/float/DSD) → float；
     ///   flac/alac : ≥24bit 或 DSD → 24bit，否则 16bit；
-    ///   mp3/aac/wma/ogg/opus : 有损，按 bitRateKbps 编码（默认 320 kbps）。
+    ///   mp3/aac/ogg/opus : 有损，按 bitRateKbps 编码（默认 320 kbps）；wma 输出已移除。
     /// </summary>
     public sealed unsafe class FFmpegAudioConverter
     {
@@ -28,8 +29,23 @@ namespace WinUIMusicPlayer.AudioConverters
         private const int FlacCompressionLevel = 8; // 对应旧版 libflac "--best"
         private static readonly int[] OpusRates = [8000, 12000, 16000, 24000, 48000];
 
-        public void Convert(string inputPath, string outputPath, string format, int dsdPcmFreq = 0, int dsdGainDb = 0, int bitRateKbps = 320)
+        /// <summary>
+        /// 元数据内联能力（随转换一次写入，不再有 ATL 后置）：
+        /// 基本标签：除 wav 外全部容器（RIFF INFO 无 UTF-8 互操作——中文在按本地码页
+        /// 读取的播放器/资源管理器里必然乱码，wav 干脆不写）；
+        /// 歌词：flac/aac/alac/ogg/opus（mp3 经 ffmpeg 只能写成 TXXX、ATL 不识别）；
+        /// 封面：mp3/flac/aac/alac 走附加图片流；ogg/opus 走 METADATA_BLOCK_PICTURE
+        /// （这两类 muxer 都不接受视频流， wav 不支持）。
+        /// </summary>
+        private static bool SupportsInlineLyrics(string format) => format is "flac" or "aac" or "alac" or "ogg" or "opus";
+        private static bool SupportsAttachedPicCover(string format) => format is "mp3" or "flac" or "aac" or "alac";
+        private static bool SupportsPictureCommentCover(string format) => format is "ogg" or "opus";
+        private static bool SupportsInlineTags(string format) => format != "wav";
+
+        public void Convert(string inputPath, string outputPath, string format, int dsdPcmFreq = 0, int dsdGainDb = 0, int bitRateKbps = 320, ConversionMetadata? metadata = null)
         {
+            // RIFF INFO 没有 UTF-8 互操作（中文按本地码页读取的软件必乱码），wav 不写任何元数据
+            if (!SupportsInlineTags(format)) metadata = null;
             bool isDsd = IsDsdFile(inputPath);
             bool applyGain = isDsd && dsdGainDb != 0;
             double gainLinear = applyGain ? Math.Pow(10, dsdGainDb / 20.0) : 1.0;
@@ -116,18 +132,33 @@ namespace WinUIMusicPlayer.AudioConverters
                 outStream->time_base = new AVRational { num = 1, den = outRate };
                 ffmpeg.avcodec_parameters_from_context(outStream->codecpar, encCtx);
 
+                // 封面（mp3/flac/m4a）：附加图片流，包数据在 write_header 后首个写入；
+                // ogg/opus 的 muxer 不接受视频流，封面走 METADATA_BLOCK_PICTURE 注释
+                AVStream* picStream = metadata?.CoverBytes is { Length: > 0 } coverBytes && SupportsAttachedPicCover(format)
+                    ? CreateAttachedPicStream(ofmtCtx, coverBytes)
+                    : null;
+
                 if ((ofmtCtx->oformat->flags & ffmpeg.AVFMT_NOFILE) == 0)
                 {
                     ret = ffmpeg.avio_open(&ofmtCtx->pb, outputPath, ffmpeg.AVIO_FLAG_WRITE);
                     if (ret < 0) throw CreateException(ret, $"无法创建输出文件: {outputPath}");
                 }
+
+                // 标签/歌词/（ogg·opus 的封面注释）在 write_header 时落入容器
+                if (metadata is not null)
+                    WriteInlineTags(ofmtCtx, metadata, format);
+
                 AVDictionary* headerOpts = null;
                 if (muxerName == "ipod")
                     ffmpeg.av_dict_set(&headerOpts, "movflags", "+faststart", 0); // m4a 元数据前置，利于流式播放
                 int headerRet = ffmpeg.avformat_write_header(ofmtCtx, &headerOpts);
                 ffmpeg.av_dict_free(&headerOpts);
                 if (headerRet < 0)
-                    throw new InvalidOperationException("写入文件头失败");
+                    throw CreateException(headerRet, "写入文件头失败");
+
+                // 附加封面包：首个写入，位于所有音频包之前
+                if (picStream != null)
+                    WriteAttachedPic(ofmtCtx, picStream, metadata!.CoverBytes!);
 
                 // 第一级重采样：解码格式 → 编码格式（DSD 需增益且目标为整型时先到 float，
                 // 由第二级 gainSwr 完成 float → 整型，保证增益在浮点域施加）。
@@ -222,6 +253,136 @@ namespace WinUIMusicPlayer.AudioConverters
                 if (decCtx != null) ffmpeg.avcodec_free_context(&decCtx);
                 if (inFmt != null) ffmpeg.avformat_close_input(&inFmt);
             }
+        }
+
+        // ──────────────── 内联元数据写入 ────────────────
+
+        /// <summary>把基本标签 + 歌词（+ ogg/opus 的封面注释）写入输出上下文 metadata。</summary>
+        private static void WriteInlineTags(AVFormatContext* ofmtCtx, ConversionMetadata meta, string format)
+        {
+            void Set(string key, string? value)
+            {
+                if (string.IsNullOrWhiteSpace(value)) return;
+                ffmpeg.av_dict_set(&ofmtCtx->metadata, key, value, 0);
+            }
+
+            Set("title", meta.Title);
+            Set("artist", meta.Artist);
+            Set("album", meta.Album);
+            if (meta.TrackNumber > 0) Set("track", meta.TrackNumber.ToString());
+            if (meta.DiscNumber > 0) Set("disc", meta.DiscNumber.ToString());
+            if (meta.Year > 0) Set("date", meta.Year.ToString());
+            // mp3 经 ffmpeg 只能写成 TXXX（ATL 不识别），故 mp3 不内联歌词；
+            // vorbis 系（flac/ogg/opus）用大写 LYRICS（ATL 对 vorbis 字段名大小写敏感）
+            if (SupportsInlineLyrics(format))
+                Set(format == "mp3" ? "lyrics" : "LYRICS", meta.Lyrics);
+
+            // ogg/opus 封面：vorbis comment 标准位图键（FLAC picture block 的 base64）
+            if (meta.CoverBytes is { Length: > 0 } cover && SupportsPictureCommentCover(format))
+            {
+                string mime = string.IsNullOrWhiteSpace(meta.CoverMime) ? DetectImageMime(cover) : meta.CoverMime;
+                Set("METADATA_BLOCK_PICTURE", System.Convert.ToBase64String(BuildFlacPictureBlock(mime, cover)));
+            }
+        }
+
+        /// <summary>创建附加封面流（mp3/flac/m4a）：codec 按图片签名判定，不参与编码。</summary>
+        private static AVStream* CreateAttachedPicStream(AVFormatContext* ofmtCtx, byte[] cover)
+        {
+            AVStream* picStream = ffmpeg.avformat_new_stream(ofmtCtx, null);
+            picStream->disposition = ffmpeg.AV_DISPOSITION_ATTACHED_PIC;
+            picStream->codecpar->codec_type = AVMediaType.AVMEDIA_TYPE_VIDEO;
+            picStream->codecpar->codec_id = DetectImageCodec(cover);
+            picStream->codecpar->format = -1;
+            var (w, h) = DetectImageDimensions(cover);
+            picStream->codecpar->width = w;
+            picStream->codecpar->height = h;
+            return picStream;
+        }
+
+        /// <summary>把封面字节作为单包写入附加图片流（紧随 write_header、先于所有音频包）。</summary>
+        private static void WriteAttachedPic(AVFormatContext* ofmtCtx, AVStream* picStream, byte[] cover)
+        {
+            AVPacket* pkt = ffmpeg.av_packet_alloc();
+            try
+            {
+                byte* buf = (byte*)ffmpeg.av_malloc((ulong)cover.Length);
+                System.Runtime.InteropServices.Marshal.Copy(cover, 0, (IntPtr)buf, cover.Length);
+                ffmpeg.av_packet_from_data(pkt, buf, cover.Length);
+                pkt->stream_index = picStream->index;
+                pkt->pts = 0;
+                pkt->dts = 0;
+                ffmpeg.av_packet_rescale_ts(pkt, new AVRational { num = 1, den = 1000 }, picStream->time_base);
+                ffmpeg.av_write_frame(ofmtCtx, pkt);
+                ffmpeg.av_packet_unref(pkt);
+            }
+            finally
+            {
+                ffmpeg.av_packet_free(&pkt);
+            }
+        }
+
+        /// <summary>按图片字节签名判定编码（JPEG → mjpeg，PNG → png）。</summary>
+        private static AVCodecID DetectImageCodec(byte[] data)
+        {
+            if (data.Length > 3 && data[0] == 0xFF && data[1] == 0xD8) return AVCodecID.AV_CODEC_ID_MJPEG;
+            if (data.Length > 8 && data[0] == 0x89 && data[1] == 0x50 && data[2] == 0x4E && data[3] == 0x47)
+                return AVCodecID.AV_CODEC_ID_PNG;
+            return AVCodecID.AV_CODEC_ID_MJPEG;
+        }
+
+        private static string DetectImageMime(byte[] data)
+            => DetectImageCodec(data) == AVCodecID.AV_CODEC_ID_PNG ? "image/png" : "image/jpeg";
+
+        /// <summary>解析图片尺寸：JPEG 扫 SOF0/SOF2 标记，PNG 读 IHDR 定长偏移；失败返回 (0,0)。</summary>
+        private static (int Width, int Height) DetectImageDimensions(byte[] data)
+        {
+            if (data.Length > 24 && data[0] == 0x89 && data[1] == 0x50) // PNG：IHDR 固定在 16..23
+            {
+                int w = (data[16] << 24) | (data[17] << 16) | (data[18] << 8) | data[19];
+                int h = (data[20] << 24) | (data[21] << 16) | (data[22] << 8) | data[23];
+                return (w, h);
+            }
+            if (data.Length > 9 && data[0] == 0xFF && data[1] == 0xD8) // JPEG：扫 SOF0/SOF2
+            {
+                for (int i = 2; i + 9 < data.Length;)
+                {
+                    if (data[i] != 0xFF) { i++; continue; }
+                    byte marker = data[i + 1];
+                    if (marker is 0xC0 or 0xC1 or 0xC2 or 0xC3)
+                    {
+                        int h = (data[i + 5] << 8) | data[i + 6];
+                        int w = (data[i + 7] << 8) | data[i + 8];
+                        return (w, h);
+                    }
+                    if (marker is 0xD8 or 0x01 or (>= 0xD0 and <= 0xD7)) { i += 2; continue; } // 无长度段
+                    int segLen = (data[i + 2] << 8) | data[i + 3];
+                    if (segLen < 2) break;
+                    i += 2 + segLen;
+                }
+            }
+            return (0, 0);
+        }
+
+        /// <summary>
+        /// 构造 FLAC PICTURE 元数据块（ogg/opus 的 METADATA_BLOCK_PICTURE 载荷）：
+        /// 图片类型 3（front cover）+ MIME + 描述 + 尺寸（未知填 0）+ 位图数据，全大端。
+        /// </summary>
+        private static byte[] BuildFlacPictureBlock(string mime, byte[] image)
+        {
+            byte[] mimeBytes = System.Text.Encoding.ASCII.GetBytes(mime);
+            using var ms = new MemoryStream(32 + mimeBytes.Length + image.Length);
+            // FLAC 块为全大端，BinaryWriter 是小端，逐字段 BigEndian 写入
+            void WriteU32(uint v)
+            {
+                ms.Write([(byte)(v >> 24), (byte)(v >> 16), (byte)(v >> 8), (byte)v]);
+            }
+            WriteU32(0x00000003);              // picture type: front cover
+            WriteU32((uint)mimeBytes.Length); ms.Write(mimeBytes);
+            WriteU32(0);                       // description: 空
+            WriteU32(0); WriteU32(0); WriteU32(0); // width/height/depth: 未知
+            WriteU32(0);                       // colors: 未知
+            WriteU32((uint)image.Length); ms.Write(image);
+            return ms.ToArray();
         }
 
         // ──────────────── 内部管线 ────────────────
@@ -334,8 +495,10 @@ namespace WinUIMusicPlayer.AudioConverters
         {
             if (progressEvent == null) return;
             int percent;
-            if (totalSeconds <= 0)
-                percent = force ? 100 : (lastPercent < 0 ? 0 : lastPercent);
+            if (force)
+                percent = 100; // 收尾必达 100：时长若是码率估算值（DSF 常见），按采样数折算会差 1% 卡在 99
+            else if (totalSeconds <= 0)
+                percent = lastPercent < 0 ? 0 : lastPercent;
             else
                 percent = (int)Math.Clamp(samplesWritten / (double)outRate / totalSeconds * 100, 0, 100);
             if (force || percent != lastPercent)
@@ -371,41 +534,26 @@ namespace WinUIMusicPlayer.AudioConverters
             _ => 2,        // ~96k
         };
 
-        /// <summary>不声明 supported_samplerates 但实际有采样率上限的编码器兜底表。</summary>
-        private static readonly int[] WmaSampleRates = [8000, 11025, 16000, 22050, 32000, 44100, 48000];
-
         /// <summary>
-        /// 把采样率对齐到编码器支持表中最接近的一档。部分编码器（wmav2）不声明
-        /// supported_samplerates，实际又限制 8k–48k，DSD 高采样率会直接 open 失败，
-        /// 因此对无表编码器按已知约束兜底。
+        /// 把采样率对齐到编码器支持表中最接近的一档（如 lame 最高 48k、libopus 的五档）；
+        /// 编码器未声明则原样返回。
         /// </summary>
         private static int SnapRateToEncoder(AVCodecContext* encCtx, AVCodec* encoder, int rate)
         {
-            int[] table = null;
             void* cfg = null;
             int count = 0;
             int ret = ffmpeg.avcodec_get_supported_config(encCtx, encoder,
                 AVCodecConfig.AV_CODEC_CONFIG_SAMPLE_RATE, 0, &cfg, &count);
-            if (ret >= 0 && cfg != null && count > 0)
-            {
-                int* rates = (int*)cfg;
-                table = new int[count];
-                for (int i = 0; i < count; i++) table[i] = rates[i];
-            }
-            else if (encCtx->codec_id == AVCodecID.AV_CODEC_ID_WMAV2)
-            {
-                table = WmaSampleRates;
-            }
-            if (table == null) return rate;
-
+            if (ret < 0 || cfg == null || count <= 0) return rate;
+            int* rates = (int*)cfg;
             int best = 0, bestDiff = int.MaxValue;
-            foreach (int r in table)
+            for (int i = 0; i < count; i++)
             {
-                int diff = Math.Abs(r - rate);
+                int diff = Math.Abs(rates[i] - rate);
                 if (diff < bestDiff)
                 {
                     bestDiff = diff;
-                    best = r;
+                    best = rates[i];
                 }
             }
             return best != 0 ? best : rate;
@@ -517,12 +665,6 @@ namespace WinUIMusicPlayer.AudioConverters
                         encFmt = AVSampleFormat.AV_SAMPLE_FMT_S16P;
                         flacBps = 16;
                     }
-                    return;
-                case "wma":
-                    // WMA v2，asf 容器（.wma）
-                    muxerName = "asf";
-                    encCodecId = AVCodecID.AV_CODEC_ID_WMAV2;
-                    encFmt = AVSampleFormat.AV_SAMPLE_FMT_FLTP;
                     return;
                 default:
                     throw new InvalidOperationException($"不支持的输出格式: {format}");
