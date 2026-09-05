@@ -18,10 +18,8 @@ namespace WinUIMusicPlayer.Model
             "未知艺术家", "Unknown Artist", "Artista desconocido", "不明なアーティスト", "Неизвестный артист","Unbekannter Künstler"
         ];
         //public static IReadOnlyCollection<Music> allSongs { get; set; } = [];
-        public static List<UsbDeviceMusic> MusicOnUsbDevice { get; set; } = [];
         public static List<PlayListMusic> AllPlayListMusics { get; set; } = [];
-        public static ObservableCollection<UsbStorageDevice> UsbStorageDevices { get; set; } = [];
-        public static UsbStorageDevice UsbStorageDevice { get; set; } = new();
+        // USB 设备/台账状态已收敛至 UsbDeviceService（发现/选中/扫描/发送记录）
         public static IntPtr HWnd { get; set; } = IntPtr.Zero;
         public static string SystemLanguage { get; set; } = "en";
         //public static bool IsPlayingDetail { get; set; } = false;

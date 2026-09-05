@@ -47,12 +47,10 @@ namespace WinUIMusicPlayer.ViewModel
         private bool IsMutiFile { get; set; } = false;
         private AudioConverterService ConverterService { get; set; }
         public int PreviousSelectedIndex { get; set; } = 0;
-        private CancellationTokenSource _usbScanCts;
         public BassPlayerCommandService MusicPlaybackService { get; set; }
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
         private MusicBrowsePage MusicBrowsePage { get; set; }
         private MainPage MainPage { get; set; }
-        private DeviceWatcher DeviceWatcher { get; set; }
         private List<FileSystemWatcher> Watchers { get; set; } = [];
         private readonly SemaphoreSlim scanSemaphore = new(1, 1);
         private CancellationTokenSource? _musicUpdateCts;
@@ -69,11 +67,12 @@ namespace WinUIMusicPlayer.ViewModel
             App.Services.GetRequiredService<MusicBrowseViewModel>().AppViewModel.UILyrics = [];
         public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
-        public MusicBrowseViewModel(BassPlayerCommandService bassPlayerCommand, SystemMediaControlsService systemMediaControlsService, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, AudioConverterService converterService, ILogger<MusicBrowseViewModel> logger)
+        public MusicBrowseViewModel(BassPlayerCommandService bassPlayerCommand, SystemMediaControlsService systemMediaControlsService, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, AudioConverterService converterService, UsbDeviceService usbDeviceService, ILogger<MusicBrowseViewModel> logger)
         {
             this.AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
             ConverterService = converterService;
+            UsbDeviceService = usbDeviceService;
             MusicPlaybackService = bassPlayerCommand;
             _logger = logger;
             ProgressDialog = new ProgressDialog(ToolUtils.GetString("Converting"));
@@ -88,29 +87,31 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 _ = StartWatchingFileFolder();
             }
-            StartWatchingUsbStorageDevices();
         }
+
+        // 批量转换聚合进度：总进度 = (已完成文件数 + 当前文件内部进度) / 总数。
+        // 多轮批量转换在每轮 ConvertAudio_Click 里重置。
+        private int _batchTotalFiles;
+        private int _batchCompletedFiles;
+        private double _batchCurrentFilePercent;
 
         private void OnConverterProgressUpdated(object sender, double progress)
         {
-            if (ProgressDialog is not null)
+            if (ProgressDialog is null) return;
+
+            if (_batchTotalFiles > 0)
             {
-                if (ProgressBarValue < (int)progress)
-                {
-                    ProgressBarValue = (int)progress;
-                }
-                if (IsMutiFile)
-                {
-                    if (ProgressBarValue < 100)
-                    {
-                        _ = ProgressDialog.UpdateProgress(ProgressBarValue);
-                    }
-                }
-                else
-                {
-                    _ = ProgressDialog.UpdateProgress(ProgressBarValue);
-                }
+                ProgressBarValue = (int)Math.Clamp(
+                    (_batchCompletedFiles + _batchCurrentFilePercent / 100.0) * 100.0 / _batchTotalFiles, 0, 100);
+                _ = ProgressDialog.UpdateProgress(ProgressBarValue);
+                return;
             }
+
+            if (ProgressBarValue < (int)progress)
+            {
+                ProgressBarValue = (int)progress;
+            }
+            _ = ProgressDialog.UpdateProgress(ProgressBarValue);
         }
 
         public async Task ConvertAudio_Click(IEnumerable<Music> uniqueSelectedMusics, string? tag)
@@ -141,11 +142,22 @@ namespace WinUIMusicPlayer.ViewModel
             await ProgressDialog.UpdateProgress(ProgressBarValue);
             _ = ProgressDialog.ShowThemedAsync(MusicBrowsePage.XamlRoot);
 
+            _batchTotalFiles = musics.Count;
+            _batchCompletedFiles = 0;
             bool allSuccess = true;
-            foreach (Music music in musics)
+            try
             {
-                if (!await ConverterService.ConvertAudioAsync(music, targetFormat, bitrate))
-                    allSuccess = false;
+                foreach (Music music in musics)
+                {
+                    _batchCurrentFilePercent = 0;
+                    if (!await ConverterService.ConvertAudioAsync(music, targetFormat, bitrate))
+                        allSuccess = false;
+                    _batchCompletedFiles++;
+                }
+            }
+            finally
+            {
+                _batchTotalFiles = 0; // 无论成败都退出批量模式，避免污染后续单文件进度
             }
             _ = ProgressDialog.UpdateProgress(100);
             if (!allSuccess)
@@ -209,43 +221,12 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        private void StartWatchingUsbStorageDevices()
-        {
-            try
-            {
-                // 定义设备选择器以筛选 USB 存储设备
-                string deviceSelector = StorageDevice.GetDeviceSelector();
-                // 创建设备监视器
-                DeviceWatcher = DeviceInformation.CreateWatcher(deviceSelector);
-                // 注册设备添加、移除和枚举完成事件
-                DeviceWatcher.Added += DeviceWatcher_Added;
-                DeviceWatcher.Removed += DeviceWatcher_Removed;
-                DeviceWatcher.EnumerationCompleted += DeviceWatcher_EnumerationCompleted;
-                // 启动设备监视器
-                DeviceWatcher.Start();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"启动设备监视器失败:{ex.Message}");
-            }
-        }
+        /// <summary>USB 设备生命周期由 UsbDeviceService 收敛管理，此处仅作 UI 转发。</summary>
+        public UsbDeviceService UsbDeviceService { get; }
 
-        private async void DeviceWatcher_Added(DeviceWatcher sender, DeviceInformation args)
+        public void UsbDeviceComboxSelectionChanged(UsbStorageDevice? usbStorageDevice)
         {
-            // 当 USB 存储设备插入时触发            
-            await Task.Delay(1500); // 等待设备稳定
-            await ReadUsbDevice();
-        }
-
-        private async void DeviceWatcher_Removed(DeviceWatcher sender, DeviceInformationUpdate args)
-        {
-            // 当 USB 存储设备移除时触发            
-            await ReadUsbDevice();
-        }
-
-        private void DeviceWatcher_EnumerationCompleted(DeviceWatcher sender, object args)
-        {
-            // 设备枚举完成时触发
+            _ = UsbDeviceService.SelectAsync(usbStorageDevice);
         }
 
         public void UpdateInfoBar(string message)
@@ -256,73 +237,6 @@ namespace WinUIMusicPlayer.ViewModel
                 AppViewModel.InfoBarTitle = ToolUtils.GetString("InfoBarTitleConverter");
                 AppViewModel.InfoBarMessage = message;
             });
-        }
-
-        private async Task ReadUsbDevice()
-        {
-            try
-            {
-                AppData.UsbStorageDevices = new ObservableCollection<UsbStorageDevice>(await UsbStorageDeviceReader.GetUsbStorageDevicesAsync());
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                {
-                    AppViewModel.UpDateUsbDeviceMenuflyout();
-                    if (AppData.UsbStorageDevices.Count > 0)
-                    {
-                        AppViewModel.UsbDeviceVisibility = Visibility.Visible;
-                        AppViewModel.UsbStorageDevices = AppData.UsbStorageDevices;
-                        AppViewModel.UsbSelectedIndex = 0;
-                    }
-                    else
-                    {
-                        AppViewModel.UsbSelectedIndex = -1;
-                        AppViewModel.UsbDeviceVisibility = Visibility.Collapsed;
-                        AppViewModel.UsbStorageDevices = null;
-                        AppData.MusicOnUsbDevice.Clear();
-                        ClearAllUsbStatus();
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                {
-                    AppViewModel.UsbDeviceVisibility = Visibility.Collapsed;
-                });
-                AppData.MusicOnUsbDevice.Clear();
-                ClearAllUsbStatus();
-                _logger.LogError(ex, $"读取USB设备失败:{ex.Message}");
-            }
-        }
-
-        public async void UsbDeviceComboxSelectionChanged(UsbStorageDevice usbStorageDevice)
-        {
-            AppData.UsbStorageDevice = usbStorageDevice;
-
-            _usbScanCts?.Cancel();
-            _usbScanCts = new CancellationTokenSource();
-            var ct = _usbScanCts.Token;
-
-            AppData.MusicOnUsbDevice = await _musicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId) ?? [];
-            ToolUtils.RefreshAllUsbStatus();
-
-            try
-            {
-                await Task.Run(() => _musicDatabaseService.ScanUsbDeviceAsync(usbStorageDevice.Path, usbStorageDevice.UniqueId), ct);
-
-                if (!ct.IsCancellationRequested)
-                {
-                    var updated = await _musicDatabaseService.GetUsbDeviceMusics(usbStorageDevice.UniqueId) ?? [];
-                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                    {
-                        if (AppData.UsbStorageDevice?.UniqueId == usbStorageDevice.UniqueId)
-                        {
-                            AppData.MusicOnUsbDevice = updated;
-                            ToolUtils.RefreshAllUsbStatus();
-                        }
-                    });
-                }
-            }
-            catch (OperationCanceledException) { }
         }
 
         private async Task StartWatchingFileFolder()

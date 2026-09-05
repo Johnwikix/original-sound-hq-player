@@ -217,8 +217,6 @@ namespace WinUIMusicPlayer.ViewModel
         public AnimatedWin2dControls.Impressionist.ArtworkPixelData? LyricPageArtwork { get; set => SetProperty(ref field, value); }
         public bool IsInitialized { get; set; } = false;
         public Visibility UsbDeviceVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
-        public ObservableCollection<UsbStorageDevice> UsbStorageDevices { get; set => SetProperty(ref field, value); }
-        public int UsbSelectedIndex { get; set => SetProperty(ref field, value); } = 0;
         public Visibility ProcessRingVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
         public bool IsFullScreen
         {
@@ -443,15 +441,21 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicDatabaseService _musicDatabaseService { get; }
         private ILogger<AppViewModel> _logger;
 
-        public AppViewModel(MusicDatabaseService musicDatabaseService, SystemMediaControlsService systemMediaControlsService, ILogger<AppViewModel> logger)
+        public AppViewModel(MusicDatabaseService musicDatabaseService, SystemMediaControlsService systemMediaControlsService, ILogger<AppViewModel> logger, UsbDeviceService usbDeviceService)
         {
             _musicDatabaseService = musicDatabaseService;
             SystemMediaControlsService = systemMediaControlsService;
             _logger = logger;
+            UsbDeviceService = usbDeviceService;
+            usbDeviceService.DevicesChanged += (_, _) => UpDateUsbDeviceMenuflyout();
+            usbDeviceService.DeviceMusicChanged += (_, _) => RefreshUsbDeviceMusicList();
             AllPlayList.CollectionChanged += AllPlayList_CollectionChanged;
             _progressPollingCts = new CancellationTokenSource();
             LyricsSyncRequestBus.Requested += SendFullLyricsSync;
         }
+
+        /// <summary>USB 设备生命周期（发现/选中/台账/扫描）唯一归属。</summary>
+        public UsbDeviceService UsbDeviceService { get; }
 
         public void UpdatePlayPauseButtonIcon()
         {
@@ -1263,20 +1267,9 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
 
-        public void ClearUsbDevice()
-        {
-            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-            {
-                foreach (var music in SongsSource)
-                {
-                    music.IsExistOnDevice = 0;
-                }
-            });
-        }
-
         public void RefreshUsbDeviceMusicList()
         {
-            var usbMusicGroups = AppData.MusicOnUsbDevice.AsValueEnumerable()
+            var usbMusicGroups = UsbDeviceService.MusicOnDevice.AsValueEnumerable()
                             .GroupBy(u => u.Title)
                             .ToDictionary(g => g.Key, g => g.AsValueEnumerable().ToList());
             foreach (var music in SongsSource)
@@ -1349,37 +1342,37 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async Task TransmitFileToUsb(IEnumerable<Music> selectedMusics, UsbStorageDevice usbDevice, string? format = null, int bitRateKbps = 320)        {
-            if (selectedMusics.AsValueEnumerable().Any())
+        /// <summary>传输进度环的百分比（0-100），由发送/转换流程聚合更新。</summary>
+        public int ProcessRingPercent { get => field; set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(ProcessRingPercentText)); } } = 0;
+        public string ProcessRingPercentText => $"{ProcessRingPercent}%";
+
+        public async Task TransmitFileToUsb(IEnumerable<Music> selectedMusics, UsbStorageDevice usbDevice, string? format = null, int bitRateKbps = 320)
+        {
+            var musics = selectedMusics.AsValueEnumerable().ToList();
+            if (musics.Count == 0) return;
+
+            App.Services.GetRequiredService<MusicBrowseViewModel>().ShowTransmission();
+            ProcessRingPercent = 0; // 每轮发送独立重置，连续多批不残留上一轮进度
+            int completed = 0;
+            var aggregate = new Progress<double>(p =>
             {
-                App.Services.GetRequiredService<MusicBrowseViewModel>().ShowTransmission();
-                var usbWriter = new UsbWriterHelper(
-                    App.Services.GetRequiredService<AudioConverterService>(),
-                    App.Services.GetRequiredService<MusicDatabaseService>());
-                await usbWriter.WriteToUsb(selectedMusics, usbDevice, format, bitRateKbps);
-                ProcessRingVisibility = Visibility.Collapsed; // 传输结束隐藏进度环（与 ShowTransmission 配对）
-                string recordedExtension = format is null
-                    ? null
-                    : AudioConverterService.GetExtensionForFormat(format);
-                foreach (var music in selectedMusics)
-                {
-                    var existingMusic = AppData.MusicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
-                    if (existingMusic is not null)
-                    {
-                        continue; // 如果已经存在，则跳过
-                    }
-                    UsbDeviceMusic usbDeviceMusic = new()
-                    {
-                        Title = music.Title,
-                        Author = music.Author,
-                        Album = music.Album,
-                        Extension = recordedExtension ?? music.Extension,
-                        UniqueDeviceId = usbDevice.UniqueId
-                    };
-                    AppData.MusicOnUsbDevice.Add(usbDeviceMusic);
-                }
-            }
-            RefreshUsbDeviceMusicList();
+                int percent = (int)Math.Clamp(p, 0, 100);
+                if (percent > ProcessRingPercent) ProcessRingPercent = percent;
+            });
+
+            var usbWriter = new UsbWriterHelper(
+                App.Services.GetRequiredService<AudioConverterService>(),
+                App.Services.GetRequiredService<MusicDatabaseService>());
+            await usbWriter.WriteToUsb(musics, usbDevice, format, bitRateKbps, aggregate, () =>
+            {
+                completed++;
+                return completed * 100.0 / musics.Count;
+            });
+
+            ProcessRingVisibility = Visibility.Collapsed; // 传输结束隐藏进度环（与 ShowTransmission 配对）
+            // 发送台账：转换发送记实际输出扩展名；幂等去重后触发依设备标记刷新
+            string recordedExtension = format is null ? null : AudioConverterService.GetExtensionForFormat(format);
+            UsbDeviceService.AddSentRecords(musics.Select(m => (m, recordedExtension ?? m.Extension)), usbDevice);
         }
 
         public void UpdateCover()

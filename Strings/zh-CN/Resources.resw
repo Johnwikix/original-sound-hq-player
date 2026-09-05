@@ -783,8 +783,8 @@
   <data name="FlyoutConvertWma" xml:space="preserve">
     <value>WMA</value>
   </data>
-  <data name="SendConvertedToUsb" xml:space="preserve">
-    <value>转换后发送</value>
+  <data name="SendOriginalFormat" xml:space="preserve">
+    <value>原始格式</value>
   </data>
   <data name="NumberOfSongs" xml:space="preserve">
     <value>首歌曲</value>

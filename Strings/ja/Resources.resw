@@ -784,8 +784,8 @@
   <data name="FlyoutConvertWma" xml:space="preserve">
     <value>WMA</value>
   </data>
-  <data name="SendConvertedToUsb" xml:space="preserve">
-    <value>変換して送信</value>
+  <data name="SendOriginalFormat" xml:space="preserve">
+    <value>元のフォーマットで送信</value>
   </data>
   <data name="NumberOfSongs" xml:space="preserve">
     <value>曲</value>

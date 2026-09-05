@@ -161,15 +161,10 @@ namespace WinUIMusicPlayer.View
             selectPage.UpdateLayout();
         }
 
-        private async void UsbDeviceCombox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void UsbDeviceCombox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            AppData.UsbStorageDevice = null;
-            AppData.MusicOnUsbDevice.Clear();
-            ToolUtils.ClearAllUsbStatus();
-            if (UsbDeviceCombox.SelectedItem is UsbStorageDevice usbStorageDevice)
-            {
-                ViewModel.UsbDeviceComboxSelectionChanged(usbStorageDevice);
-            }
+            // 全局状态（选中设备/台账清理）由 UsbDeviceService.SelectAsync 统一处理
+            ViewModel.UsbDeviceComboxSelectionChanged(UsbDeviceCombox.SelectedItem as UsbStorageDevice);
         }
 
         public void SelectBarAlbum(string Album)

@@ -149,7 +149,8 @@ namespace WinUIMusicPlayer.Utils
         public static void UpdateUsbSendMenu(ObservableCollection<MenuModel> options, System.Windows.Input.ICommand command)
         {
             var usbFlyout = options.AsValueEnumerable().FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
-            if (AppData.UsbStorageDevices.Count == 0)
+            var devices = App.Services.GetRequiredService<UsbDeviceService>().Devices;
+            if (devices.Count == 0)
             {
                 if (usbFlyout is not null) options.Remove(usbFlyout);
                 return;
@@ -159,38 +160,43 @@ namespace WinUIMusicPlayer.Utils
                 usbFlyout = new MenuModel { Title = GetString("SendToUsbDevice"), Tag = "SendToUsbDevice", Children = [] };
                 options.Add(usbFlyout);
             }
-            usbFlyout.Children = BuildUsbSendMenuChildren(command);
+            usbFlyout.Children = BuildUsbSendMenuChildren(devices, command);
         }
 
         /// <summary>
-        /// 「发送到 USB 设备」菜单子项：每设备一项（原格式直传，保持既有交互），
-        /// 末尾追加「转换后发送 ▸ 设备 ▸ 格式（▸ 码率）」转换层。
+        /// 「发送到 USB 设备」菜单子项：每个设备一层子菜单，首项为原格式直传，
+        /// 其后直接跟转换格式（有损格式再带码率层）——一层到位，避免设备/格式双重嵌套。
         /// </summary>
-        public static ObservableCollection<MenuModel> BuildUsbSendMenuChildren(System.Windows.Input.ICommand command)
+        public static ObservableCollection<MenuModel> BuildUsbSendMenuChildren(
+            IReadOnlyList<UsbStorageDevice> devices, System.Windows.Input.ICommand command)
         {
             ObservableCollection<MenuModel> children = [];
-            foreach (var usb in AppData.UsbStorageDevices)
+            foreach (var usb in devices)
             {
-                var title = $"{usb.Name} , {GetString("Path")}：{usb.Path} , {GetString("FreeSpace")}：{usb.FreeSpaceInGB}GB";
-                children.Add(new() { Title = title, Tag = new UsbSendTarget { Device = usb }, Command = command });
-            }
-            if (AppData.UsbStorageDevices.Count == 0) return children;
-
-            var convertedRoot = new MenuModel { Title = GetString("SendConvertedToUsb"), Children = [] };
-            foreach (var usb in AppData.UsbStorageDevices)
-            {
-                convertedRoot.Children.Add(new()
+                var deviceItem = new MenuModel
                 {
-                    Title = usb.Name,
-                    Children = BuildConvertMenuChildren(command, (format, bitrate) => new UsbSendTarget
-                    {
-                        Device = usb,
-                        Format = format,
-                        BitrateKbps = bitrate,
-                    }),
-                });
+                    Title = $"{usb.Name} , {GetString("Path")}：{usb.Path} , {GetString("FreeSpace")}：{usb.FreeSpaceInGB}GB",
+                    Children =
+                    [
+                        new()
+                        {
+                            Title = GetString("SendOriginalFormat"),
+                            Tag = new UsbSendTarget { Device = usb },
+                            Command = command,
+                        },
+                    ],
+                };
+                foreach (var formatItem in BuildConvertMenuChildren(command, (format, bitrate) => new UsbSendTarget
+                {
+                    Device = usb,
+                    Format = format,
+                    BitrateKbps = bitrate,
+                }))
+                {
+                    deviceItem.Children.Add(formatItem);
+                }
+                children.Add(deviceItem);
             }
-            children.Add(convertedRoot);
             return children;
         }
 
@@ -220,7 +226,7 @@ namespace WinUIMusicPlayer.Utils
                 if (type == "album")
                 {
                     usbAlbums = new HashSet<string>(StringComparer.Ordinal);
-                    foreach (var usbMusic in AppData.MusicOnUsbDevice)
+                    foreach (var usbMusic in App.Services.GetRequiredService<UsbDeviceService>().MusicOnDevice)
                     {
                         if (usbMusic.Album is { } a) usbAlbums.Add(a);
                     }
@@ -228,7 +234,7 @@ namespace WinUIMusicPlayer.Utils
                 else if (type == "artist")
                 {
                     usbAuthors = new HashSet<string>(StringComparer.Ordinal);
-                    foreach (var usbMusic in AppData.MusicOnUsbDevice)
+                    foreach (var usbMusic in App.Services.GetRequiredService<UsbDeviceService>().MusicOnDevice)
                     {
                         if (usbMusic.Author is { } a) usbAuthors.Add(a);
                     }
@@ -250,7 +256,7 @@ namespace WinUIMusicPlayer.Utils
                         item.IsExistOnDevice = 0;
                         foreach (var songs in allSongList)
                         {
-                            if (AppData.MusicOnUsbDevice.AsValueEnumerable().Any(usbMusic => usbMusic.Title == item.Title))
+                            if (App.Services.GetRequiredService<UsbDeviceService>().MusicOnDevice.AsValueEnumerable().Any(usbMusic => usbMusic.Title == item.Title))
                             {
                                 item.IsExistOnDevice = 1;
                                 break;
@@ -840,16 +846,6 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static void ClearAllUsbStatus()
-        {
-            App.Services.GetRequiredService<AppViewModel>().ClearUsbDevice();
-            App.Services.GetRequiredService<AppViewModel>().RefreshUsbDeviceMusicList();
-        }
-
-        public static void RefreshAllUsbStatus()
-        {
-            App.Services.GetRequiredService<AppViewModel>().RefreshUsbDeviceMusicList();
-        }
         private static async Task<byte[]?> GetPicByteFromNet(Music music, bool isManual = false)
         {
             try

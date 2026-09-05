@@ -1272,7 +1272,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.SongsSource.Clear();
                 AppViewModel.SongsSource.AddRange(await _dbConnection.Table<Music>().ToListAsync());
                 AppViewModel.NotifySongsSourceChanged();
-                var usbMusicGroups = AppData.MusicOnUsbDevice.AsValueEnumerable()
+                var usbMusicGroups = App.Services.GetRequiredService<UsbDeviceService>().MusicOnDevice.AsValueEnumerable()
                     .GroupBy(u => u.Title)
                     .ToDictionary(g => g.Key, g => g.AsValueEnumerable().ToList());
                 foreach (var music in AppViewModel.SongsSource)

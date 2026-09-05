@@ -83,6 +83,12 @@
                     VerticalAlignment="Center"
                     IsActive="True"
                     Visibility="{x:Bind ViewModel.AppViewModel.ProcessRingVisibility, Mode=OneWay}" />
+                <TextBlock
+                    Margin="0,0,5,0"
+                    VerticalAlignment="Center"
+                    FontSize="13"
+                    Text="{x:Bind ViewModel.AppViewModel.ProcessRingPercentText, Mode=OneWay}"
+                    Visibility="{x:Bind ViewModel.AppViewModel.ProcessRingVisibility, Mode=OneWay}" />
                 <ComboBox
                     x:Name="UsbDeviceCombox"
                     x:Uid="USBDevice"
@@ -92,10 +98,9 @@
                     BorderBrush="Transparent"
                     BorderThickness="0"
                     FontSize="12"
-                    ItemsSource="{x:Bind ViewModel.AppViewModel.UsbStorageDevices, Mode=OneWay}"
-                    SelectedIndex="{x:Bind ViewModel.AppViewModel.UsbSelectedIndex, Mode=TwoWay}"
+                    ItemsSource="{x:Bind ViewModel.UsbDeviceService.Devices, Mode=OneWay}"
                     SelectionChanged="UsbDeviceCombox_SelectionChanged"
-                    Visibility="{x:Bind ViewModel.AppViewModel.UsbDeviceVisibility, Mode=OneWay}">
+                    Visibility="{x:Bind ViewModel.UsbDeviceService.DevicesVisibility, Mode=OneWay}">
                     <ComboBox.ItemTemplate>
                         <DataTemplate x:DataType="model:UsbStorageDevice">
                             <StackPanel Orientation="Horizontal">
