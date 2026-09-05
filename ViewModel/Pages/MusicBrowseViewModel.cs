@@ -361,6 +361,10 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (!AppViewModel.IsFolderWatchEnabled) return;
 
+            // 本应用自己写的文件（转换产物及其目录 mtime 变化）由转换流程负责入库与刷新，
+            // watcher 不再触发扫描——转换后只会有一次刷新，也不与标签重写抢文件
+            if (AudioFileWriteGate.IsOwnWriteEvent(e.FullPath)) return;
+
             // 取消上一次未执行的扫描，重新计时
             CancellationTokenSource cts;
             lock (_scanCtsLock)

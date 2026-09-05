@@ -1669,16 +1669,17 @@ namespace WinUIMusicPlayer.Services
         }
 
         /// <summary>
-        /// 转换产物主动入库：转换流程写完文件与标签后立即调用，
-        /// 不再依赖 AutoScan 通过目录时间戳变化在下一轮扫描中"发现"新文件
-        /// （那条路径会与标签写入并发导致文件占用/元数据陈旧）。
+        /// 转换产物主动入库：转换流程写完文件与标签后（仍持有写入门时）立即调用。
+        /// 直接走入库核心，不经过写入门检查——门正是转换流程自己持有的，
+        /// 若走扫描路径的门检查会把自己挡掉，导致产物永远不入库。
         /// 已存在同路径记录时为幂等空操作。
         /// </summary>
         public async Task AddConvertedFileAsync(string path)
         {
+            await _rescanfolderSemaphore.WaitAsync();
             try
             {
-                var result = await AddNewMusicAsync(path);
+                var result = await AddMusicFileCoreAsync(path);
                 if (result.Music is not null)
                 {
                     await _dbConnection.InsertAsync(result.Music);
@@ -1689,8 +1690,13 @@ namespace WinUIMusicPlayer.Services
             {
                 _logger.LogError(ex, $"AddConvertedFileAsync 转换产物入库失败: {path}: {ex.Message}");
             }
+            finally
+            {
+                _rescanfolderSemaphore.Release();
+            }
         }
 
+        /// <summary>扫描路径入库：跳过写入门登记中的文件（写入方自己负责入库）。</summary>
         private async Task<(Music? Music, string Lyrics)> AddNewMusicAsync(string path)
         {
             await _rescanfolderSemaphore.WaitAsync();
@@ -1701,6 +1707,19 @@ namespace WinUIMusicPlayer.Services
                 if (AudioFileWriteGate.IsBeingWritten(path))
                     return (null, "");
 
+                return await AddMusicFileCoreAsync(path);
+            }
+            finally
+            {
+                _rescanfolderSemaphore.Release();
+            }
+        }
+
+        /// <summary>入库核心：存在性检查 + 读取元数据，不含信号量与写入门逻辑。</summary>
+        private async Task<(Music? Music, string Lyrics)> AddMusicFileCoreAsync(string path)
+        {
+            try
+            {
                 var existingMusic = await _dbConnection.Table<Music>().Where(m => m.Path == path).FirstOrDefaultAsync();
                 if (existingMusic is not null)
                 {
@@ -1712,12 +1731,8 @@ namespace WinUIMusicPlayer.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"AddNewMusicAsync 添加新音乐文件时出错: {ex.Message}");
+                _logger.LogError(ex, $"AddMusicFileCoreAsync 添加新音乐文件时出错: {ex.Message}");
                 return (null, "");
-            }
-            finally
-            {
-                _rescanfolderSemaphore.Release();
             }
         }
 

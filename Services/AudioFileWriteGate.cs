@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Concurrent;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -15,7 +16,8 @@ namespace WinUIMusicPlayer.Services
     /// </summary>
     public static class AudioFileWriteGate
     {
-        private static readonly ConcurrentDictionary<string, byte> _activeWrites = new(StringComparer.OrdinalIgnoreCase);
+        /// <summary>登记路径 → 其所在目录（目录的 LastWrite 事件同样由写文件引起，需一并抑制）。</summary>
+        private static readonly ConcurrentDictionary<string, string> _activeWrites = new(StringComparer.OrdinalIgnoreCase);
 
         public static bool IsBeingWritten(string path) => _activeWrites.ContainsKey(path);
 
@@ -24,6 +26,23 @@ namespace WinUIMusicPlayer.Services
         /// 避免读到"转换仍在写、产物尚未入库"的中间态。
         /// </summary>
         public static bool AnyActive => !_activeWrites.IsEmpty;
+
+        /// <summary>
+        /// 该文件系统事件是否由本应用的写入引起（事件路径 = 登记的输出文件本身，
+        /// 或其所在目录的 LastWrite 变化）。写入方自己负责入库与刷新，
+        /// FileSystemWatcher 对这类事件不应再触发扫描——那只会带来重复刷新
+        /// 和与标签重写的文件占用竞争。
+        /// </summary>
+        public static bool IsOwnWriteEvent(string fullPath)
+        {
+            if (_activeWrites.IsEmpty) return false;
+            if (_activeWrites.ContainsKey(fullPath)) return true;
+            foreach (var dir in _activeWrites.Values)
+            {
+                if (dir == fullPath) return true;
+            }
+            return false;
+        }
 
         /// <summary>
         /// 轮询等待所有写入流程结束（超过 <paramref name="timeout"/> 放行兜底，防异常挂起卡死 UI 刷新）。
@@ -42,7 +61,7 @@ namespace WinUIMusicPlayer.Services
         /// <summary>登记写入中的路径，返回释放作用域；using 结束自动解除登记。</summary>
         public static Releaser BeginWrite(string path)
         {
-            _activeWrites[path] = 0;
+            _activeWrites[path] = Path.GetDirectoryName(path) ?? string.Empty;
             return new Releaser(path);
         }
 
