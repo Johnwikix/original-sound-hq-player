@@ -33,6 +33,39 @@ namespace WinUIMusicPlayer.Services
             ["wma"] = "wma",
         };
 
+        /// <summary>格式对应的输出文件扩展名（未知格式原样返回）。</summary>
+        public static string GetExtensionForFormat(string format)
+            => FormatExtensionMap.TryGetValue(format, out var ext) ? ext : format;
+
+        /// <summary>
+        /// 转换 + 写标签，但不入库——供 USB 导出等"目标不在音乐库"的场景。
+        /// 全程持有写入门（转换 → 标签重写 → 调用方后续动作期间扫描方跳过该路径）。
+        /// 失败返回 false，进度事件保证达 100。
+        /// </summary>
+        public async Task<bool> ConvertForExportAsync(Music music, string outputPath, string format, int bitRateKbps = 320)
+        {
+            using (AudioFileWriteGate.BeginWrite(outputPath))
+            {
+                try
+                {
+                    bool isDsd = music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase)
+                              || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase);
+                    int dsdFreq = isDsd ? AppViewModel.DsdPcmFreq : 0;
+                    int dsdGain = isDsd ? AppViewModel.DsdGain : 0;
+
+                    await Task.Run(() => _converter.Convert(music.Path, outputPath, format, dsdFreq, dsdGain, bitRateKbps));
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"ConvertForExportAsync 导出转换失败: {ex.Message}");
+                    OnProgressChanged(100);
+                    return false;
+                }
+                await SaveMetaDataAsync(music, outputPath);
+                return true;
+            }
+        }
+
         private readonly FFmpegAudioConverter _converter;
         private AppViewModel AppViewModel { get; }
         private ILogger<AudioConverterService> _logger;
@@ -48,40 +81,14 @@ namespace WinUIMusicPlayer.Services
         public async Task<bool> ConvertAudioAsync(Music music, string type = "wav", int bitRateKbps = 320)
         {
             string format = type.ToLowerInvariant();
+            if (music.Extension.Equals(format, StringComparison.OrdinalIgnoreCase))
+                return true; // 同格式无需转换（多选批量时逐文件判重）
             string outputPath = GenerateOutputPath(music.Path, format);
-            // 转换 + 写标签 + 入库全程登记，AutoScan 期间跳过该文件（详见 AudioFileWriteGate）
-            using (AudioFileWriteGate.BeginWrite(outputPath))
-            {
-                try
-                {
-                    try
-                    {
-                        bool isDsd = music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase)
-                                  || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase);
-                        int dsdFreq = isDsd ? AppViewModel.DsdPcmFreq : 0;
-                        int dsdGain = isDsd ? AppViewModel.DsdGain : 0;
-
-                        if (!music.Extension.Equals(format, StringComparison.OrdinalIgnoreCase))
-                        {
-                            await Task.Run(() => _converter.Convert(music.Path, outputPath, format, dsdFreq, dsdGain, bitRateKbps));
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, $"ConvertAudioAsync 音频转换失败: {ex.Message}");
-                        OnProgressChanged(100);
-                        return false;
-                    }
-                    await SaveMetaDataAsync(music, outputPath);
-                    // 转换产物主动入库（不再依赖 AutoScan 二次扫描发现），列表刷新由调用方统一触发
-                    await AddConvertedFileToLibraryAsync(outputPath);
-                    return true;
-                }
-                finally
-                {
-                    OnProgressChanged(100);
-                }
-            }
+            if (!await ConvertForExportAsync(music, outputPath, format, bitRateKbps))
+                return false;
+            // 转换产物主动入库（不再依赖 AutoScan 二次扫描发现），列表刷新由调用方统一触发
+            await AddConvertedFileToLibraryAsync(outputPath);
+            return true;
         }
 
         private async Task AddConvertedFileToLibraryAsync(string outputPath)

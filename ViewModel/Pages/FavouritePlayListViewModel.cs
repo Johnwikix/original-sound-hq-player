@@ -55,27 +55,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         public void UpDateUsbDeviceMenuflyout()
-        {
-            var usbFlyout = MenuOptions.AsValueEnumerable().FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
-            if (AppData.UsbStorageDevices.Count == 0)
-            {
-                if (usbFlyout is not null) MenuOptions.Remove(usbFlyout);
-                return;
-            }
-            if (usbFlyout is null)
-            {
-                usbFlyout = new MenuModel { Title = ToolUtils.GetString("SendToUsbDevice"), Tag = "SendToUsbDevice", Children = [] };
-                MenuOptions.Add(usbFlyout);
-            }
-            usbFlyout.Children.Clear();
-            var pathLabel = ToolUtils.GetString("Path");
-            var freeSpaceLabel = ToolUtils.GetString("FreeSpace");
-            foreach (var usb in AppData.UsbStorageDevices)
-            {
-                var title = $"{usb.Name} , {pathLabel}：{usb.Path} , {freeSpaceLabel}：{usb.FreeSpaceInGB}GB";
-                usbFlyout.Children.Add(new() { Title = title, Tag = usb, Command = TransmitFileToUsbCommand });
-            }
-        }
+            => ToolUtils.UpdateUsbSendMenu(MenuOptions, TransmitFileToUsbCommand);
 
         public void UpdateAlbumMenuOptionsPlayList()
         {
@@ -294,9 +274,10 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        public async Task TransmitFileToUsb(UsbStorageDevice usbDevice)
+        public async Task TransmitFileToUsb(UsbSendTarget? target)
         {
-            await AppViewModel.TransmitFileToUsb(SelectedMusics, usbDevice);
+            if (target?.Device is null) return;
+            await AppViewModel.TransmitFileToUsb(SelectedMusics, target.Device, target.Format, target.BitrateKbps);
         }
     }
 }

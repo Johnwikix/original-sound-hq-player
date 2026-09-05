@@ -72,25 +72,7 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         public void UpDateUsbDeviceMenuflyout()
-        {
-            var usbFlyout = FolderMenuOptions.AsValueEnumerable().FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
-            if (AppData.UsbStorageDevices.Count == 0)
-            {
-                if (usbFlyout is not null) FolderMenuOptions.Remove(usbFlyout);
-                return;
-            }
-            if (usbFlyout is null)
-            {
-                usbFlyout = new MenuModel { Title = ToolUtils.GetString("SendToUsbDevice"), Tag = "SendToUsbDevice", Children = [] };
-                FolderMenuOptions.Add(usbFlyout);
-            }
-            usbFlyout.Children.Clear();
-            foreach (var usb in AppData.UsbStorageDevices)
-            {
-                var title = $"{usb.Name} , {ToolUtils.GetString("Path")}：{usb.Path} , {ToolUtils.GetString("FreeSpace")}：{usb.FreeSpaceInGB}GB";
-                usbFlyout.Children.Add(new() { Title = title, Tag = usb, Command = TransmitFileToUsbCommand });
-            }
-        }
+            => ToolUtils.UpdateUsbSendMenu(FolderMenuOptions, TransmitFileToUsbCommand);
 
         public void FolderGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
@@ -193,12 +175,13 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
-        public async Task TransmitFileToUsb(UsbStorageDevice usbDevice)
+        public async Task TransmitFileToUsb(UsbSendTarget? target)
         {
             var folders = AppViewModel.SongsSource
                .Where(m => m.LastLevelFolderPath is not null && m.LastLevelFolderPath.Equals(SelectedItem.LastLevelFolderPath, StringComparison.OrdinalIgnoreCase))
                .OrderBy(m => m.LastLevelFolderPath);
-            await AppViewModel.TransmitFileToUsb(folders, usbDevice);
+            if (target?.Device is null) return;
+            await AppViewModel.TransmitFileToUsb(folders, target.Device, target.Format, target.BitrateKbps);
         }
     }
 }

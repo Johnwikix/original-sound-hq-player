@@ -1349,19 +1349,18 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async Task TransmitFileToUsb(IEnumerable<Music> selectedMusics, UsbStorageDevice usbDevice)
-        {
+        public async Task TransmitFileToUsb(IEnumerable<Music> selectedMusics, UsbStorageDevice usbDevice, string? format = null, int bitRateKbps = 320)        {
             if (selectedMusics.AsValueEnumerable().Any())
             {
                 App.Services.GetRequiredService<MusicBrowseViewModel>().ShowTransmission();
-                using (var usbWriter = new UsbWriterHelper())
-                {
-                    usbWriter.hideTransmission += (sender, args) =>
-                    {
-                        App.Services.GetRequiredService<MusicBrowseViewModel>().HideTransmission();
-                    };
-                    await usbWriter.WriteToUsb(selectedMusics, usbDevice);
-                }
+                var usbWriter = new UsbWriterHelper(
+                    App.Services.GetRequiredService<AudioConverterService>(),
+                    App.Services.GetRequiredService<MusicDatabaseService>());
+                await usbWriter.WriteToUsb(selectedMusics, usbDevice, format, bitRateKbps);
+                ProcessRingVisibility = Visibility.Collapsed; // 传输结束隐藏进度环（与 ShowTransmission 配对）
+                string recordedExtension = format is null
+                    ? null
+                    : AudioConverterService.GetExtensionForFormat(format);
                 foreach (var music in selectedMusics)
                 {
                     var existingMusic = AppData.MusicOnUsbDevice.AsValueEnumerable().Where(m => m.Title == music.Title).FirstOrDefault();
@@ -1374,8 +1373,8 @@ namespace WinUIMusicPlayer.ViewModel
                         Title = music.Title,
                         Author = music.Author,
                         Album = music.Album,
-                        Extension = music.Extension,
-                        UniqueDeviceId = AppData.UsbStorageDevice.UniqueId
+                        Extension = recordedExtension ?? music.Extension,
+                        UniqueDeviceId = usbDevice.UniqueId
                     };
                     AppData.MusicOnUsbDevice.Add(usbDeviceMusic);
                 }

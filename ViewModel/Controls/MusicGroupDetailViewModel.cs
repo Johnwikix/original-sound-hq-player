@@ -101,7 +101,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             OpenInExplorerCommand = new RelayCommand(OnOpenInExplorer);
             MusicDetailCommand = new RelayCommand(OnMusicDetail);
             ReGetLyricsCommand = new RelayCommand(async () => await OnReGetLyricsAsync());
-            TransmitFileToUsbCommand = new RelayCommand<UsbStorageDevice>(async dev => await OnTransmitFileToUsbAsync(dev));
+            TransmitFileToUsbCommand = new RelayCommand<UsbSendTarget>(async target => await OnTransmitFileToUsbAsync(target));
 
             InitalizeOption();
 
@@ -499,10 +499,10 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             await AppViewModel.ReGetLyrics(SelectedMusics, SelectedMusic);
         }
 
-        private async Task OnTransmitFileToUsbAsync(UsbStorageDevice? dev)
+        private async Task OnTransmitFileToUsbAsync(UsbSendTarget? target)
         {
-            if (dev is null) return;
-            await AppViewModel.TransmitFileToUsb(SelectedMusics, dev);
+            if (target?.Device is null) return;
+            await AppViewModel.TransmitFileToUsb(SelectedMusics, target.Device, target.Format, target.BitrateKbps);
         }
 
         private async Task<bool> IsDeleteFromDisk()
@@ -530,27 +530,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         }
 
         public void UpDateUsbDeviceMenuflyout()
-        {
-            var usbFlyout = MenuOptions.AsValueEnumerable().FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
-            if (AppData.UsbStorageDevices.Count == 0)
-            {
-                if (usbFlyout is not null) MenuOptions.Remove(usbFlyout);
-                return;
-            }
-            if (usbFlyout is null)
-            {
-                usbFlyout = new MenuModel { Title = ToolUtils.GetString("SendToUsbDevice"), Tag = "SendToUsbDevice", Children = [] };
-                MenuOptions.Add(usbFlyout);
-            }
-            usbFlyout.Children.Clear();
-            var pathLabel = ToolUtils.GetString("Path");
-            var freeSpaceLabel = ToolUtils.GetString("FreeSpace");
-            foreach (var usb in AppData.UsbStorageDevices)
-            {
-                var title = $"{usb.Name} , {pathLabel}：{usb.Path} , {freeSpaceLabel}：{usb.FreeSpaceInGB}GB";
-                usbFlyout.Children.Add(new() { Title = title, Tag = usb, Command = TransmitFileToUsbCommand });
-            }
-        }
+            => ToolUtils.UpdateUsbSendMenu(MenuOptions, TransmitFileToUsbCommand);
 
         public void UpdateAlbumMenuOptionsPlayList()
         {

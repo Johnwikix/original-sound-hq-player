@@ -107,34 +107,91 @@ namespace WinUIMusicPlayer.Utils
         public static readonly int[] ConvertBitrates = [320, 256, 192, 160, 128, 96];
 
         /// <summary>
-        /// 「转换为」右键菜单的格式子项：无损格式直接转换；有损格式带二级码率子菜单，
-        /// Tag 形如 "mp3:320"（格式:码率），由 MusicBrowseViewModel.ConvertAudio_Click 解析。
+        /// 「转换为」右键菜单的格式子项：无损格式直接转换；有损格式带二级码率子菜单。
+        /// <paramref name="tagFactory"/> 决定叶子 Tag：默认 "格式" / "格式:码率"（由
+        /// MusicBrowseViewModel 解析）；USB 发送等调用方传入自己的包装（如 UsbSendTarget）。
         /// 新增格式时在 AudioConverterService.FormatExtensionMap 与 FFmpegAudioConverter.SelectEncoder 同步支持。
         /// 注意 resw 的 key 不能带 ".Text" 后缀——那是 x:Uid 专用编目，运行时 ResourceLoader 取不到。
         /// </summary>
-        public static ObservableCollection<MenuModel> BuildConvertMenuChildren(System.Windows.Input.ICommand command)
+        public static ObservableCollection<MenuModel> BuildConvertMenuChildren(
+            System.Windows.Input.ICommand command, Func<string, int, object>? tagFactory = null)
         {
+            object DefaultTag(string format, int bitrate) => bitrate == 320 ? format : $"{format}:{bitrate}";
+            var makeTag = tagFactory ?? DefaultTag;
+
             ObservableCollection<MenuModel> LossyChildren(string format)
             {
                 ObservableCollection<MenuModel> children = [];
                 foreach (int bitrate in ConvertBitrates)
                 {
-                    children.Add(new() { Title = $"{bitrate} kbps", Tag = $"{format}:{bitrate}", Command = command });
+                    children.Add(new() { Title = $"{bitrate} kbps", Tag = makeTag(format, bitrate), Command = command });
                 }
                 return children;
             }
 
             return
             [
-                new() { Title = GetString("FlyoutConvertWav"), Tag = "wav", Command = command },
-                new() { Title = GetString("FlyoutConvertFlac"), Tag = "flac", Command = command },
-                new() { Title = GetString("FlyoutConvertAlac"), Tag = "alac", Command = command },
-                new() { Title = GetString("FlyoutConvertMp3"), Tag = "mp3", Children = LossyChildren("mp3") },
-                new() { Title = GetString("FlyoutConvertAac"), Tag = "aac", Children = LossyChildren("aac") },
-                new() { Title = GetString("FlyoutConvertOgg"), Tag = "ogg", Children = LossyChildren("ogg") },
-                new() { Title = GetString("FlyoutConvertOpus"), Tag = "opus", Children = LossyChildren("opus") },
-                new() { Title = GetString("FlyoutConvertWma"), Tag = "wma", Children = LossyChildren("wma") },
+                new() { Title = GetString("FlyoutConvertWav"), Tag = makeTag("wav", 320), Command = command },
+                new() { Title = GetString("FlyoutConvertFlac"), Tag = makeTag("flac", 320), Command = command },
+                new() { Title = GetString("FlyoutConvertAlac"), Tag = makeTag("alac", 320), Command = command },
+                new() { Title = GetString("FlyoutConvertMp3"), Tag = makeTag("mp3", 320), Children = LossyChildren("mp3") },
+                new() { Title = GetString("FlyoutConvertAac"), Tag = makeTag("aac", 320), Children = LossyChildren("aac") },
+                new() { Title = GetString("FlyoutConvertOgg"), Tag = makeTag("ogg", 320), Children = LossyChildren("ogg") },
+                new() { Title = GetString("FlyoutConvertOpus"), Tag = makeTag("opus", 320), Children = LossyChildren("opus") },
+                new() { Title = GetString("FlyoutConvertWma"), Tag = makeTag("wma", 320), Children = LossyChildren("wma") },
             ];
+        }
+
+        /// <summary>
+        /// 同步「发送到 USB 设备」菜单项到指定菜单集合：无设备时移除，有设备时确保存在
+        /// 并整体替换子树。七处列表页 ViewModel 的 UpDateUsbDeviceMenuflyout 统一走这里。
+        /// </summary>
+        public static void UpdateUsbSendMenu(ObservableCollection<MenuModel> options, System.Windows.Input.ICommand command)
+        {
+            var usbFlyout = options.AsValueEnumerable().FirstOrDefault(m => (string)m.Tag == "SendToUsbDevice");
+            if (AppData.UsbStorageDevices.Count == 0)
+            {
+                if (usbFlyout is not null) options.Remove(usbFlyout);
+                return;
+            }
+            if (usbFlyout is null)
+            {
+                usbFlyout = new MenuModel { Title = GetString("SendToUsbDevice"), Tag = "SendToUsbDevice", Children = [] };
+                options.Add(usbFlyout);
+            }
+            usbFlyout.Children = BuildUsbSendMenuChildren(command);
+        }
+
+        /// <summary>
+        /// 「发送到 USB 设备」菜单子项：每设备一项（原格式直传，保持既有交互），
+        /// 末尾追加「转换后发送 ▸ 设备 ▸ 格式（▸ 码率）」转换层。
+        /// </summary>
+        public static ObservableCollection<MenuModel> BuildUsbSendMenuChildren(System.Windows.Input.ICommand command)
+        {
+            ObservableCollection<MenuModel> children = [];
+            foreach (var usb in AppData.UsbStorageDevices)
+            {
+                var title = $"{usb.Name} , {GetString("Path")}：{usb.Path} , {GetString("FreeSpace")}：{usb.FreeSpaceInGB}GB";
+                children.Add(new() { Title = title, Tag = new UsbSendTarget { Device = usb }, Command = command });
+            }
+            if (AppData.UsbStorageDevices.Count == 0) return children;
+
+            var convertedRoot = new MenuModel { Title = GetString("SendConvertedToUsb"), Children = [] };
+            foreach (var usb in AppData.UsbStorageDevices)
+            {
+                convertedRoot.Children.Add(new()
+                {
+                    Title = usb.Name,
+                    Children = BuildConvertMenuChildren(command, (format, bitrate) => new UsbSendTarget
+                    {
+                        Device = usb,
+                        Format = format,
+                        BitrateKbps = bitrate,
+                    }),
+                });
+            }
+            children.Add(convertedRoot);
+            return children;
         }
 
         public enum PlayMode
