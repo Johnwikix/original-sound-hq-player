@@ -352,8 +352,11 @@ namespace AnimatedWin2dControls.Renderer.Background
             // 注意：DPI 变化（窗口跨屏）也必须整体重建，否则中间目标与绘制会话的
             // DPI 不一致会触发 ComputeSharp 的 DPI 补偿节点，导致图配置错误。
             _rotationTarget?.Dispose();
+            _rotationTarget = null;
             _blurTarget?.Dispose();
+            _blurTarget = null;
             _upscaledTarget?.Dispose();
+            _upscaledTarget = null;
             _solveTarget?.Dispose();
             _solveTarget = null;
             _blurEffect?.Dispose();
@@ -361,8 +364,37 @@ namespace AnimatedWin2dControls.Renderer.Background
 
             // 显式 96 DPI：两参数构造会继承 control 的 DPI，破坏"DIP=px"假设。
             // rotation/blur 目标为 1/8 像素密度，DIP 尺寸 = 像素尺寸。
-            _rotationTarget = new CanvasRenderTarget(control, backdropWidth, backdropHeight, 96f);
-            _blurTarget = new CanvasRenderTarget(control, backdropWidth, backdropHeight, 96f);
+            //
+            // 中间目标统一 FP16：模糊后的是极平滑低频渐变，相邻纹素真实差远小于
+            // 1/255，8bit 存储会量化出 1-LSB 台阶，经上采样放大为宽色带——合成
+            // pass 的最终抖动只作用于输出量化，救不回已烧进中间纹理的台阶，且
+            // 饱和度补偿还会放大其对比。FP16 在 [0,1] 区间精度约 2^-11（< 0.125
+            // LSB），整条中间链路无量化。极少数不支持 FP16 渲染目标的设备回退
+            // 8bit 默认格式（表现与历史版本一致）。
+            try
+            {
+                _rotationTarget = new CanvasRenderTarget(
+                    control, backdropWidth, backdropHeight, 96f,
+                    DirectXPixelFormat.R16G16B16A16Float, CanvasAlphaMode.Premultiplied);
+                _blurTarget = new CanvasRenderTarget(
+                    control, backdropWidth, backdropHeight, 96f,
+                    DirectXPixelFormat.R16G16B16A16Float, CanvasAlphaMode.Premultiplied);
+
+                // 上采样目标与主画布同尺寸同 DPI（与 bgCache 一致），作为合成 pass 的输入 0。
+                _upscaledTarget = new CanvasRenderTarget(
+                    control, widthDip, heightDip, dpi,
+                    DirectXPixelFormat.R16G16B16A16Float, CanvasAlphaMode.Premultiplied);
+            }
+            catch (Exception)
+            {
+                _rotationTarget?.Dispose();
+                _blurTarget?.Dispose();
+                _upscaledTarget?.Dispose();
+
+                _rotationTarget = new CanvasRenderTarget(control, backdropWidth, backdropHeight, 96f);
+                _blurTarget = new CanvasRenderTarget(control, backdropWidth, backdropHeight, 96f);
+                _upscaledTarget = new CanvasRenderTarget(control, widthDip, heightDip);
+            }
 
             _blurEffect = new GaussianBlurEffect
             {
@@ -371,9 +403,6 @@ namespace AnimatedWin2dControls.Renderer.Background
                 Optimization = EffectOptimization.Balanced,
                 BorderMode = EffectBorderMode.Soft,
             };
-
-            // 上采样目标与主画布同尺寸同 DPI（与 bgCache 一致），作为合成 pass 的输入 0。
-            _upscaledTarget = new CanvasRenderTarget(control, widthDip, heightDip);
 
             _scaleEffect = new ScaleEffect
             {
