@@ -48,17 +48,22 @@ namespace WinUIMusicPlayer.Services
             {
                 try
                 {
-                    bool isDsd = music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase)
-                              || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase);
-                    int dsdFreq = isDsd ? AppViewModel.DsdPcmFreq : 0;
-                    int dsdGain = isDsd ? AppViewModel.DsdGain : 0;
+                    // 元数据获取（DB/封面缓存同步 IO）与转换整体移出调用方线程，
+                    // 避免 UI 发起的转换被 USB 唤醒等慢 IO 卡住界面
+                    return await Task.Run(async () =>
+                    {
+                        bool isDsd = music.Extension.Equals("dsf", StringComparison.OrdinalIgnoreCase)
+                                  || music.Extension.Equals("dff", StringComparison.OrdinalIgnoreCase);
+                        int dsdFreq = isDsd ? AppViewModel.DsdPcmFreq : 0;
+                        int dsdGain = isDsd ? AppViewModel.DsdGain : 0;
 
-                    // 元数据前置获取，随转换一次性写入；容器能力差异（歌词/封面哪些可写）
-                    // 由转换器内部处理，元数据获取失败不阻断转换
-                    ConversionMetadata? meta = await BuildConversionMetadataAsync(music);
+                        // 元数据前置获取，随转换一次性写入；容器能力差异（歌词/封面哪些可写）
+                        // 由转换器内部处理，元数据获取失败不阻断转换
+                        ConversionMetadata? meta = await BuildConversionMetadataAsync(music);
 
-                    await Task.Run(() => _converter.Convert(music.Path, outputPath, format, dsdFreq, dsdGain, bitRateKbps, meta));
-                    return true;
+                        _converter.Convert(music.Path, outputPath, format, dsdFreq, dsdGain, bitRateKbps, meta);
+                        return true;
+                    });
                 }
                 catch (Exception ex)
                 {

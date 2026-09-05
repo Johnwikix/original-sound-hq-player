@@ -1363,13 +1363,19 @@ namespace WinUIMusicPlayer.ViewModel
             var usbWriter = new UsbWriterHelper(
                 App.Services.GetRequiredService<AudioConverterService>(),
                 App.Services.GetRequiredService<MusicDatabaseService>());
-            await usbWriter.WriteToUsb(musics, usbDevice, format, bitRateKbps, aggregate, () =>
+            // 整体移出 UI 线程：USB 唤醒/目录创建/源盘探测等同步 IO 可能耗时数秒
+            try
             {
-                completed++;
-                return completed * 100.0 / musics.Count;
-            });
-
-            ProcessRingVisibility = Visibility.Collapsed; // 传输结束隐藏进度环（与 ShowTransmission 配对）
+                await Task.Run(() => usbWriter.WriteToUsb(musics, usbDevice, format, bitRateKbps, aggregate, () =>
+                {
+                    completed++;
+                    return completed * 100.0 / musics.Count;
+                }));
+            }
+            finally
+            {
+                ProcessRingVisibility = Visibility.Collapsed; // 传输结束隐藏进度环（与 ShowTransmission 配对）
+            }
             // 发送台账：转换发送记实际输出扩展名；幂等去重后触发依设备标记刷新
             string recordedExtension = format is null ? null : AudioConverterService.GetExtensionForFormat(format);
             UsbDeviceService.AddSentRecords(musics.Select(m => (m, recordedExtension ?? m.Extension)), usbDevice);
