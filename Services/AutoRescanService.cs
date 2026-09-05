@@ -15,6 +15,21 @@ namespace WinUIMusicPlayer.Services
     {
         private static Dictionary<string, SubFolder> _subFoldersDict = new Dictionary<string, SubFolder>(512);
         private static ILogger<AutoRescanService> _logger = App.GetLogger<AutoRescanService>();
+        private static int _activeScans;
+
+        /// <summary>是否有 AutoScan 正在执行。刷新音乐库前等待其归零，避免读到扫描中间态。</summary>
+        public static bool AnyActive => Volatile.Read(ref _activeScans) > 0;
+
+        /// <summary>轮询等待所有在飞 AutoScan 结束（超时放行兜底，防异常挂起卡死 UI 刷新）。</summary>
+        public static async Task WaitUntilIdleAsync(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+        {
+            var deadline = DateTime.UtcNow + (timeout ?? TimeSpan.FromSeconds(15));
+            while (AnyActive)
+            {
+                if (DateTime.UtcNow >= deadline) return;
+                await Task.Delay(100, cancellationToken);
+            }
+        }
 
         public static List<SubFolder> RecordInitialFolderTimes(string folder, int folderId)
         {
@@ -49,6 +64,7 @@ namespace WinUIMusicPlayer.Services
 
         public static async Task AutoScan(CancellationToken cancellationToken = default)
         {
+            Interlocked.Increment(ref _activeScans);
             try
             {
                 var dbService = App.Services.GetRequiredService<MusicDatabaseService>();
@@ -135,6 +151,10 @@ namespace WinUIMusicPlayer.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"AutoScan 错误: {ex.Message}");
+            }
+            finally
+            {
+                Interlocked.Decrement(ref _activeScans);
             }
         }
     }
