@@ -5,6 +5,7 @@ using ComputeSharp.D2D1.WinUI;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.UI.Xaml;
+using Serilog;
 using System;
 using Windows.Graphics.DirectX;
 using System.Numerics;
@@ -236,10 +237,16 @@ namespace AnimatedWin2dControls.Renderer.Background
                         _meshRows,
                         _meshColumns);
 
-                    using (var solveSession = _solveTarget.CreateDrawingSession())
+                    // EndDraw 边界①（solve 会话 Dispose）：失败自愈 + 记录，截停本帧，
+                    // 阻止异常逃逸出 Draw 被游戏循环转成 stowed exception（0xc000027b）闪退。
+                    try
                     {
-                        solveSession.DrawImage(_solveEffect);
+                        using (var solveSession = _solveTarget!.CreateDrawingSession())
+                        {
+                            solveSession.DrawImage(_solveEffect);
+                        }
                     }
+                    catch (Exception ex) { LogPassFailure("pass0-solve", control, ds, ex); return; }
                 }
 
                 // Pass 1 —— 旋转封面层绘制到 1/8 中间目标。
@@ -250,61 +257,160 @@ namespace AnimatedWin2dControls.Renderer.Background
                     imageScale: 1f,
                     artworkMix);
 
-                using (var rotationSession = _rotationTarget!.CreateDrawingSession())
+                // EndDraw 边界②（rotation 会话 Dispose）。
+                try
                 {
-                    rotationSession.DrawImage(_rotationEffect);
+                    using (var rotationSession = _rotationTarget!.CreateDrawingSession())
+                    {
+                        rotationSession.DrawImage(_rotationEffect);
+                    }
                 }
+                catch (Exception ex) { LogPassFailure("pass1-rotation", control, ds, ex); return; }
 
                 // Pass 2 —— 原生高斯模糊（Soft 边框 ≡ 原版零边框 + 覆盖率归一化）。
-                using (var blurSession = _blurTarget!.CreateDrawingSession())
+                // EndDraw 边界③（blur 会话 Dispose）。
+                try
                 {
-                    blurSession.DrawImage(_blurEffect!);
+                    using (var blurSession = _blurTarget!.CreateDrawingSession())
+                    {
+                        blurSession.DrawImage(_blurEffect!);
+                    }
                 }
+                catch (Exception ex) { LogPassFailure("pass2-blur", control, ds, ex); return; }
 
                 // Pass 2.5 —— 上采样到全屏位图：合成 pass 的输入全部为普通位图，
                 // 避免效果嵌效果（composite ← ScaleEffect ← ...）的图配置风险。
-                using (var upscaleSession = _upscaledTarget!.CreateDrawingSession())
+                // EndDraw 边界④（upscale 会话 Dispose）。
+                try
                 {
-                    upscaleSession.DrawImage(_scaleEffect!);
+                    using (var upscaleSession = _upscaledTarget!.CreateDrawingSession())
+                    {
+                        upscaleSession.DrawImage(_scaleEffect!);
+                    }
                 }
+                catch (Exception ex) { LogPassFailure("pass2.5-upscale", control, ds, ex); return; }
 
                 // Pass 3 —— 材质处理 + pinch 网格 uv 重建 + 抖动，输出全屏。
                 // 网格纹理或求解目标创建彻底失败时跳过合成，直接呈现模糊背景
                 // （保持不透明覆盖）。
                 if (_meshBitmap is not null && _solveTarget is not null)
                 {
-                    _compositeEffect!.ConstantBuffer = new RotatingMeshCompositeEffect(
-                        new float2(pixelWidth, pixelHeight),
-                        IsDark,
-                        IsDark ? DarkLumaStrength : LightLumaStrength,
-                        ditherStrength: 1f,
-                        pinchTextureScale,
-                        pinchTextureOffset);
+                    // EndDraw 边界⑤（bgCache 会话，含 Flush：上抛本会话内延迟累积的
+                    // D2D1 错误，避免漂移到后续渲染器调用点干扰定位）。
+                    try
+                    {
+                        _compositeEffect!.ConstantBuffer = new RotatingMeshCompositeEffect(
+                            new float2(pixelWidth, pixelHeight),
+                            IsDark,
+                            IsDark ? DarkLumaStrength : LightLumaStrength,
+                            ditherStrength: 1f,
+                            pinchTextureScale,
+                            pinchTextureOffset);
 
-                    if (Opacity >= 1.0)
-                    {
-                        ds.DrawImage(compositeEffect);
-                    }
-                    else
-                    {
-                        using var opacityEffect = new OpacityEffect
+                        if (Opacity >= 1.0)
                         {
-                            Source = compositeEffect,
-                            Opacity = (float)Opacity
-                        };
-                        ds.DrawImage(opacityEffect);
+                            ds.DrawImage(compositeEffect);
+                        }
+                        else
+                        {
+                            using var opacityEffect = new OpacityEffect
+                            {
+                                Source = compositeEffect,
+                                Opacity = (float)Opacity
+                            };
+                            ds.DrawImage(opacityEffect);
+                        }
+
+                        ds.Flush();
                     }
+                    catch (Exception ex) { LogPassFailure("pass3-composite", control, ds, ex); return; }
                 }
                 else
                 {
-                    ds.DrawImage(_upscaledTarget);
+                    try
+                    {
+                        ds.DrawImage(_upscaledTarget);
+                    }
+                    catch (Exception ex) { LogPassFailure("pass3-fallback-blit", control, ds, ex); return; }
                 }
-
-                // 立即上抛本会话内延迟累积的 D2D1 错误，避免异常漂移到
-                // DrawBackground 中后续渲染器的调用点，干扰定位。
-                ds.Flush();
             }
             finally { Monitor.Exit(_gate); }
+        }
+
+        // ── 渲染失败自愈（正常渲染零开销：无异常时无分配、无 I/O）──────
+
+        /// <summary>
+        /// 单个 EndDraw 边界失败的处理：清空 DPI 缓存标记强制下一帧整体重建并重新
+        /// 绑定（瞬态坏状态不跨帧滞留）。调用方随后截停本帧——异常绝不能逃逸出
+        /// Draw，否则会被游戏循环转成 stowed exception（0xc000027b）直接闪退。
+        /// 错误详情仅在 Debug 构建写入日志（Release 零日志开销）。
+        /// </summary>
+        private void LogPassFailure(string tag, ICanvasAnimatedControl control, CanvasDrawingSession ds, Exception ex)
+        {
+            _targetDpi = 0f;
+            _meshDpi = 0f;
+            #if DEBUG
+            Log.ForContext<RotatingMeshBackgroundRenderer>().Error(ex,
+                "[render] {Tag} 失败，已截停本帧并标记整体重建。图状态：{State}", tag, DumpGraphState(control, ds));
+            #endif
+        }
+
+        /// <summary>一帧内全部 D2D 资源的 DPI/尺寸/格式与效果图绑定关系快照。</summary>
+        private string DumpGraphState(ICanvasAnimatedControl control, CanvasDrawingSession ds)
+        {
+            try
+            {
+                var sb = new System.Text.StringBuilder();
+                sb.Append($"  control: dpi={control.Dpi:F1} sizeDip={control.Size.Width:F0}x{control.Size.Height:F0} sessionDpi={ds.Dpi:F1}");
+                sb.Append($"\n  fields: targetDpi={_targetDpi:F1} meshDpi={_meshDpi:F1} solve={_solveWidth}x{_solveHeight} time={Time:F2} transitioning={_artworkTransitioning} slot={_activeArtworkSlot} opacity={Opacity:F2}");
+                sb.Append("\n  resources:");
+                Describe(sb, " rotationT", _rotationTarget);
+                Describe(sb, " blurT", _blurTarget);
+                Describe(sb, " upscaledT", _upscaledTarget);
+                Describe(sb, " solveT", _solveTarget);
+                Describe(sb, " mesh", _meshBitmap);
+                Describe(sb, " coverA", _coverBitmaps[0]);
+                Describe(sb, " coverB", _coverBitmaps[1]);
+                sb.Append("\n  bindings:");
+                sb.Append($" composite[{SourcesOf(_compositeEffect, 0, 1)}]");
+                sb.Append($" solve[{SourcesOf(_solveEffect, 0)}]");
+                sb.Append($" rotation[{SourcesOf(_rotationEffect, 0, 1)}]");
+                sb.Append($" blur.src={Name(_blurEffect?.Source)} scale.src={Name(_scaleEffect?.Source)}");
+                return sb.ToString();
+            }
+            catch (Exception x)
+            {
+                return "  state-dump failed: " + x.Message;
+            }
+        }
+
+        private static void Describe(System.Text.StringBuilder sb, string label, CanvasBitmap? bitmap)
+        {
+            if (bitmap is null) { sb.Append(label).Append("=<null>"); return; }
+            sb.Append(label).Append($"(dpi={bitmap.Dpi:F1} px={bitmap.SizeInPixels.Width}x{bitmap.SizeInPixels.Height} fmt={bitmap.Format})");
+        }
+
+        private static string SourcesOf(object? effect, params int[] indexes)
+        {
+            try
+            {
+                if (effect is null) return "<effect-null>";
+                if (effect.GetType().GetProperty("Sources")?.GetValue(effect) is not System.Collections.IList list)
+                    return "<no-sources>";
+                var parts = new System.Collections.Generic.List<string>();
+                foreach (int i in indexes)
+                    parts.Add(i < list.Count ? Name(list[i]) : $"<missing:{i}>");
+                return string.Join(",", parts);
+            }
+            catch (Exception x) { return "<err:" + x.Message + ">"; }
+        }
+
+        private static string Name(object? source)
+        {
+            if (source is null) return "<null>";
+            if (source is CanvasBitmap bmp)
+                return $"bmp(dpi={bmp.Dpi:F1} px={bmp.SizeInPixels.Width}x{bmp.SizeInPixels.Height})";
+            return source.GetType().Name;
         }
 
         // ── 封面入口 ─────────────────────────────────────────────────────
@@ -385,8 +491,12 @@ namespace AnimatedWin2dControls.Renderer.Background
                     control, widthDip, heightDip, dpi,
                     DirectXPixelFormat.R16G16B16A16Float, CanvasAlphaMode.Premultiplied);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                // FP16 渲染目标创建失败（格式不支持/设备异常）：降级 8bit 默认格式。
+#if DEBUG
+                Log.Error(ex, "FP16 中间目标创建失败，降级 8bit 默认格式");
+#endif
                 _rotationTarget?.Dispose();
                 _blurTarget?.Dispose();
                 _upscaledTarget?.Dispose();
@@ -430,13 +540,20 @@ namespace AnimatedWin2dControls.Renderer.Background
                 _solveWidth = solveWidth;
                 _solveHeight = solveHeight;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                // 求解目标创建失败：置空并在日志留痕（合成图 Sources[1] 同帧无条件
+                // 重绑为 null，合成 pass 跳过，Draw 走模糊背景回落）。
+#if DEBUG
+                Log.Error(ex, "求解目标（R32G32B32A32Float）创建失败，Draw 走模糊背景回落");
+#endif
                 _solveTarget = null;
             }
 
             _compositeEffect!.Sources[0] = _upscaledTarget;
-            if (_solveTarget is not null) _compositeEffect.Sources[1] = _solveTarget;
+            // 无条件重绑（含 null）：若 solve 目标某次创建失败，残留的旧目标输入本身就是
+            // 无效图；null 时合成 pass 由 Draw 按条件跳过，不会消费到空输入。
+            _compositeEffect.Sources[1] = _solveTarget;
             _targetWidth = backdropWidth;
             _targetHeight = backdropHeight;
             _targetDpi = dpi;
@@ -495,12 +612,15 @@ namespace AnimatedWin2dControls.Renderer.Background
                     dpi,
                     CanvasAlphaMode.Premultiplied);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // 格式不支持等异常情况下降级为 1×1 零纹理（8-bit 恒受支持）：
                 // 求解 pass 对恒零网格的变形场处处残差超限、回落为未变形 uv，
                 // 合成 pass 即呈现无变形的模糊材质（渲染不中断）。
                 // 源位绝不能为 null，否则效果图为未绑定输入（D2DERR_INVALID_GRAPH_CONFIGURATION）。
+#if DEBUG
+                Log.Error(ex, "网格位图（R32G32B32A32Float）创建失败，降级 1×1 零纹理");
+#endif
             }
 
             if (_meshBitmap is null)
@@ -642,9 +762,12 @@ namespace AnimatedWin2dControls.Renderer.Background
             {
                 created = CreateCoverBitmap(control, pending.Pixels);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // 创建失败：保留旧槽内容与活动状态，不发散（本帧放弃本次更新）。
+#if DEBUG
+                Log.Error(ex, "封面位图创建失败，本帧放弃本次封面更新");
+#endif
                 return;
             }
 

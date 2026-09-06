@@ -8,6 +8,7 @@ using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Serilog;
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -142,6 +143,11 @@ namespace AnimatedWin2dControls.Controls
         private CanvasRenderTarget? _bgCache;
         private float _bgCacheWidthDip;
         private float _bgCacheHeightDip;
+        // 缓存 DPI 必须参与重建判定：跨屏拖动时 WinUI 保持窗口 DIP 尺寸不变、物理尺寸随
+        // DPI 缩放，若只比较 DIP 尺寸，bgCache 会话会滞留旧 DPI——而渲染器已按新 DPI
+        // 重建效果输入，DPI 失配会触发 ComputeSharp 的 DpiCompensation 节点，与 complex
+        // 输入组合被 D2D1 判为无效图（D2DERR_INVALID_GRAPH_CONFIGURATION）→ 闪退。
+        private float _bgCacheDpi;
 
         // 渲染线程热路径只读这些缓存字段（DP 仅能在 UI 线程访问，跨线程读会抛 COMException）
         private bool _isFogEnabled;
@@ -383,27 +389,55 @@ namespace AnimatedWin2dControls.Controls
 
         private void OnCanvasUpdate(ICanvasAnimatedControl sender, CanvasAnimatedUpdateEventArgs args)
         {
-            var bg = _background;
-            var elapsed = args.Timing.ElapsedTime;
+            // 渲染回调内任何异常都不允许逃逸：会经 Win2D 游戏循环 / DispatcherQueue
+            // 转成 stowed exception（0xc000027b）直接闪退。截停 + 记录（限流）。
+            try
+            {
+                var bg = _background;
+                var elapsed = args.Timing.ElapsedTime;
 
-            // 渲染线程：只读已缓存到渲染模块的状态，绝不访问依赖属性
-            bg?.Update(elapsed);
-            _fog.Update(elapsed.TotalSeconds);
-            _snow.Update(elapsed.TotalSeconds);
-            _raindrop.Update(elapsed.TotalSeconds);
+                // 渲染线程：只读已缓存到渲染模块的状态，绝不访问依赖属性
+                bg?.Update(elapsed);
+                _fog.Update(elapsed.TotalSeconds);
+                _snow.Update(elapsed.TotalSeconds);
+                _raindrop.Update(elapsed.TotalSeconds);
 
-            if (_advanced)
-                _coordinator.OnUpdate(sender, args);
+                if (_advanced)
+                    _coordinator.OnUpdate(sender, args);
+            }
+            catch (Exception ex)
+            {
+#if DEBUG
+                Log.ForContext<NowPlayingCanvas>().Error(ex,
+                    "Update 渲染回调异常（已截停，阻止 stowed exception 闪退）");
+#endif
+            }
         }
 
         private void OnCanvasDraw(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs args)
         {
-            var ds = args.DrawingSession;
+            // 绘制阶段同步异常截停 + 记录（限流）。注意：主交换链会话的 EndDraw 在
+            // Win2D 内部（本方法返回之后），那一层由 App 的 first-chance 过滤兜底记录。
+            try
+            {
+                var ds = args.DrawingSession;
 
-            DrawBackground(sender, ds);
+                DrawBackground(sender, ds);
 
-            if (_advanced)
-                _coordinator.OnDraw(sender, ds);
+                if (_advanced)
+                    _coordinator.OnDraw(sender, ds);
+            }
+            catch (Exception ex)
+            {
+                // 自愈：背景缓存标脏，下一帧强制重建（本帧可能半渲染）。
+                _bgCacheWidthDip = -1f;
+
+#if DEBUG
+                Log.ForContext<NowPlayingCanvas>().Error(ex,
+                    "Draw 渲染回调异常（已截停本帧，bgCache 已标脏）controlDpi={Dpi} sizeDip={W}x{H}",
+                    sender.Dpi, sender.Size.Width, sender.Size.Height);
+#endif
+            }
         }
 
         // 背景以 (skip+1) 帧为周期重绘到不透明合成缓存，其余帧复用缓存 blit。
@@ -433,12 +467,14 @@ namespace AnimatedWin2dControls.Controls
             if (!Monitor.TryEnter(_cacheGate, 0)) return;
             try
             {
-                if (_bgCache is null || _bgCacheWidthDip != widthDip || _bgCacheHeightDip != heightDip)
+                if (_bgCache is null || _bgCacheWidthDip != widthDip || _bgCacheHeightDip != heightDip
+                    || _bgCacheDpi != sender.Dpi)
                 {
                     _bgCache?.Dispose();
                     _bgCache = new CanvasRenderTarget(sender, widthDip, heightDip);
                     _bgCacheWidthDip = widthDip;
                     _bgCacheHeightDip = heightDip;
+                    _bgCacheDpi = sender.Dpi;
                     renderBg = true; // 尺寸变化后必须立即重绘缓存
                 }
 
