@@ -226,8 +226,8 @@
                                 <TextBlock
                                     x:Name="MusicInfoTextBlock"
                                     Grid.Column="0"
-                                    Margin="10,0,10,0"
-                                    FontSize="12"
+                                    Margin="12,0,10,0"
+                                    FontSize="10"
                                     Text="{x:Bind ViewModel.AppViewModel.MusicInfo, Mode=OneWay}"
                                     TextTrimming="CharacterEllipsis" />
                                 <Border
@@ -566,6 +566,7 @@
                     VerticalAlignment="Center"
                     FontSize="16"
                     IsHitTestVisible="False"
+                    IsTextScaleFactorEnabled="False"
                     Style="{StaticResource CaptionTextBlockStyle}" />
             </StackPanel>
 
