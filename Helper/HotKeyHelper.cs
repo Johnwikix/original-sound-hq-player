@@ -19,6 +19,10 @@ namespace WinUIMusicPlayer.Helper
         Back,
         ShowWindow,
         ToggleFullScreen,
+        ToggleDesktopLyrics,
+        ToggleDesktopLyricsLock,
+        ToggleDesktopLyricsKaraoke,
+        ResetDesktopLyrics,
     }
 
     public static class GlobalHotKeyHook
@@ -120,6 +124,10 @@ namespace WinUIMusicPlayer.Helper
                 ShortcutId.Back => "GlobalHotKeyConflictBack",
                 ShortcutId.ShowWindow => "GlobalHotKeyConflictShowWindow",
                 ShortcutId.ToggleFullScreen => "GlobalHotKeyConflictToggleFullScreen",
+                ShortcutId.ToggleDesktopLyrics => "GlobalHotKeyConflictToggleDesktopLyrics",
+                ShortcutId.ToggleDesktopLyricsLock => "GlobalHotKeyConflictToggleDesktopLyricsLock",
+                ShortcutId.ToggleDesktopLyricsKaraoke => "GlobalHotKeyConflictToggleDesktopLyricsKaraoke",
+                ShortcutId.ResetDesktopLyrics => "GlobalHotKeyConflictResetDesktopLyrics",
                 _ => id.ToString(),
             };
             return ToolUtils.GetString(key);

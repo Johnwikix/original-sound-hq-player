@@ -84,10 +84,14 @@ namespace WinUIMusicPlayer.Model
         public List<string> BackShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "B" };
         public List<string> ShowWindowShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "W" };
         public List<string> ToggleFullScreenShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "F" };
+        public List<string> ToggleDesktopLyricsShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "D" };
+        public List<string> ToggleDesktopLyricsLockShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "L" };
+        public List<string> ToggleDesktopLyricsKaraokeShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "K" };
+        public List<string> ResetDesktopLyricsShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "R" };
         public bool EnableGlobalHotKey { get; set; } = false;
         public bool IsTrimOnHideEnabled { get; set; } = false;
         public bool IsTrimAfterPlaybackEnabled { get; set; } = false;
-        public string ArtistSplitSymbols { get; set; } = ", ; / 、 & feat.";
+        public string ArtistSplitSymbols { get; set; } = ", ; / 、 & feat. :";
         public bool IsDesktopLyricsEnabled { get; set; } = false;
         public bool IsDesktopLyricsLocked { get; set; } = false;
         public bool IsDesktopLyricsKaraokeEnabled { get; set; } = false;

@@ -1243,6 +1243,18 @@
   <data name="SettingsPageToggleFullScreenShortcut.Text" xml:space="preserve">
     <value>フルスクリーン切替</value>
   </data>
+  <data name="SettingsPageToggleDesktopLyricsShortcut.Text" xml:space="preserve">
+    <value>デスクトップ歌詞の表示 / 非表示</value>
+  </data>
+  <data name="SettingsPageToggleDesktopLyricsLockShortcut.Text" xml:space="preserve">
+    <value>デスクトップ歌詞のロック / 解除</value>
+  </data>
+  <data name="SettingsPageToggleDesktopLyricsKaraokeShortcut.Text" xml:space="preserve">
+    <value>デスクトップ歌詞のカラオケ表示の有効 / 無効</value>
+  </data>
+  <data name="SettingsPageResetDesktopLyricsShortcut.Text" xml:space="preserve">
+    <value>デスクトップ歌詞ウィンドウをリセット</value>
+  </data>
 <data name="SettingsPageEnableGlobalHotKey.Text" xml:space="preserve">
     <value>\u30B0\u30ED\u30FC\u30D0\u30EB\u30B7\u30E7\u30FC\u30C8\u30AB\u30C3\u30C8</value>
   </data>
@@ -1279,6 +1291,18 @@
 <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
     <value>フルスクリーン切替</value>
   </data>
+<data name="GlobalHotKeyConflictToggleDesktopLyrics" xml:space="preserve">
+  <value>デスクトップ歌詞の表示 / 非表示</value>
+</data>
+<data name="GlobalHotKeyConflictToggleDesktopLyricsLock" xml:space="preserve">
+  <value>デスクトップ歌詞のロック / 解除</value>
+</data>
+<data name="GlobalHotKeyConflictToggleDesktopLyricsKaraoke" xml:space="preserve">
+  <value>デスクトップ歌詞のカラオケ表示の有効 / 無効</value>
+</data>
+<data name="GlobalHotKeyConflictResetDesktopLyrics" xml:space="preserve">
+  <value>デスクトップ歌詞ウィンドウをリセット</value>
+</data>
   <data name="Advanced.Text" xml:space="preserve">
     <value>詳細設定</value>
   </data>
@@ -1298,7 +1322,7 @@
     <value>アーティスト区切り記号</value>
   </data>
   <data name="ArtistSplitSymbolsDescription.Text" xml:space="preserve">
-    <value>アーティスト欄内の複数アーティストを分割する記号（カンマ区切り）。例：", ; / 、 &amp; feat."。変更後すぐに反映されます。</value>
+    <value>アーティスト欄内の複数アーティストを分割する記号（カンマ区切り）。例：", ; / 、 &amp; feat. :"。変更後すぐに反映されます。</value>
   </data>
   <data name="SelectArtist" xml:space="preserve">
     <value>アーティストを選択</value>

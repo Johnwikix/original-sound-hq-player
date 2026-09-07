@@ -1242,6 +1242,18 @@
   <data name="SettingsPageToggleFullScreenShortcut.Text" xml:space="preserve">
     <value>切换全屏</value>
   </data>
+  <data name="SettingsPageToggleDesktopLyricsShortcut.Text" xml:space="preserve">
+    <value>显示 / 隐藏桌面歌词</value>
+  </data>
+  <data name="SettingsPageToggleDesktopLyricsLockShortcut.Text" xml:space="preserve">
+    <value>锁定 / 解锁桌面歌词</value>
+  </data>
+  <data name="SettingsPageToggleDesktopLyricsKaraokeShortcut.Text" xml:space="preserve">
+    <value>启用 / 关闭桌面逐字歌词</value>
+  </data>
+  <data name="SettingsPageResetDesktopLyricsShortcut.Text" xml:space="preserve">
+    <value>重置桌面歌词窗口</value>
+  </data>
   <data name="SettingsPageEnableGlobalHotKey.Text" xml:space="preserve">
     <value>全局快捷键</value>
   </data>
@@ -1278,6 +1290,18 @@
   <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
     <value>切换全屏</value>
   </data>
+  <data name="GlobalHotKeyConflictToggleDesktopLyrics" xml:space="preserve">
+    <value>显示 / 隐藏桌面歌词</value>
+  </data>
+  <data name="GlobalHotKeyConflictToggleDesktopLyricsLock" xml:space="preserve">
+    <value>锁定 / 解锁桌面歌词</value>
+  </data>
+  <data name="GlobalHotKeyConflictToggleDesktopLyricsKaraoke" xml:space="preserve">
+    <value>启用 / 关闭桌面逐字歌词</value>
+  </data>
+  <data name="GlobalHotKeyConflictResetDesktopLyrics" xml:space="preserve">
+    <value>重置桌面歌词窗口</value>
+  </data>
   <data name="Advanced.Text" xml:space="preserve">
     <value>高级</value>
   </data>
@@ -1297,7 +1321,7 @@
     <value>艺术家分隔符号</value>
   </data>
   <data name="ArtistSplitSymbolsDescription.Text" xml:space="preserve">
-    <value>艺术家字段中用于分隔多个艺术家的符号（逗号分隔）。例如 ", ; / 、 &amp; feat."，修改后立即生效。</value>
+    <value>艺术家字段中用于分隔多个艺术家的符号（逗号分隔）。例如 ", ; / 、 &amp; feat. :"，修改后立即生效。</value>
   </data>
   <data name="SelectArtist" xml:space="preserve">
     <value>选择艺术家</value>

@@ -1243,6 +1243,18 @@
   <data name="SettingsPageToggleFullScreenShortcut.Text" xml:space="preserve">
     <value>Alternar pantalla completa</value>
   </data>
+  <data name="SettingsPageToggleDesktopLyricsShortcut.Text" xml:space="preserve">
+    <value>Mostrar / ocultar letra del escritorio</value>
+  </data>
+  <data name="SettingsPageToggleDesktopLyricsLockShortcut.Text" xml:space="preserve">
+    <value>Bloquear / desbloquear letra del escritorio</value>
+  </data>
+  <data name="SettingsPageToggleDesktopLyricsKaraokeShortcut.Text" xml:space="preserve">
+    <value>Activar / desactivar letra karaoka del escritorio</value>
+  </data>
+  <data name="SettingsPageResetDesktopLyricsShortcut.Text" xml:space="preserve">
+    <value>Restablecer ventana de la letra del escritorio</value>
+  </data>
 <data name="SettingsPageEnableGlobalHotKey.Text" xml:space="preserve">
     <value>Atajos globales</value>
   </data>
@@ -1279,6 +1291,18 @@
 <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
     <value>Alternar pantalla completa</value>
   </data>
+<data name="GlobalHotKeyConflictToggleDesktopLyrics" xml:space="preserve">
+  <value>Mostrar / ocultar letra del escritorio</value>
+</data>
+<data name="GlobalHotKeyConflictToggleDesktopLyricsLock" xml:space="preserve">
+  <value>Bloquear / desbloquear letra del escritorio</value>
+</data>
+<data name="GlobalHotKeyConflictToggleDesktopLyricsKaraoke" xml:space="preserve">
+  <value>Activar / desactivar letra karaoka del escritorio</value>
+</data>
+<data name="GlobalHotKeyConflictResetDesktopLyrics" xml:space="preserve">
+  <value>Restablecer ventana de la letra del escritorio</value>
+</data>
   <data name="Advanced.Text" xml:space="preserve">
     <value>Avanzado</value>
   </data>
@@ -1298,7 +1322,7 @@
     <value>Separadores de artistas</value>
   </data>
   <data name="ArtistSplitSymbolsDescription.Text" xml:space="preserve">
-    <value>Símbolos para dividir varios artistas en el campo de artista (separados por comas). Ej.: ", ; / 、 &amp; feat.". Tiene efecto inmediato.</value>
+    <value>Símbolos para dividir varios artistas en el campo de artista (separados por comas). Ej.: ", ; / 、 &amp; feat. :". Tiene efecto inmediato.</value>
   </data>
   <data name="SelectArtist" xml:space="preserve">
     <value>Elegir artista</value>

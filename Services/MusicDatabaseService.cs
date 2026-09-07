@@ -1103,6 +1103,10 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.BackShortcut = settings.BackShortcut;
                 AppViewModel.ShowWindowShortcut = settings.ShowWindowShortcut;
                 AppViewModel.ToggleFullScreenShortcut = settings.ToggleFullScreenShortcut;
+                AppViewModel.ToggleDesktopLyricsShortcut = settings.ToggleDesktopLyricsShortcut;
+                AppViewModel.ToggleDesktopLyricsLockShortcut = settings.ToggleDesktopLyricsLockShortcut;
+                AppViewModel.ToggleDesktopLyricsKaraokeShortcut = settings.ToggleDesktopLyricsKaraokeShortcut;
+                AppViewModel.ResetDesktopLyricsShortcut = settings.ResetDesktopLyricsShortcut;
                 AppSettings.EnableGlobalHotKey = settings.EnableGlobalHotKey;
                 AppViewModel.EnableGlobalHotKey = settings.EnableGlobalHotKey;
                 AppSettings.IsTrimOnHideEnabled = settings.IsTrimOnHideEnabled;
@@ -1236,6 +1240,10 @@ namespace WinUIMusicPlayer.Services
             newSettings.BackShortcut = AppViewModel.BackShortcut;
             newSettings.ShowWindowShortcut = AppViewModel.ShowWindowShortcut;
             newSettings.ToggleFullScreenShortcut = AppViewModel.ToggleFullScreenShortcut;
+            newSettings.ToggleDesktopLyricsShortcut = AppViewModel.ToggleDesktopLyricsShortcut;
+            newSettings.ToggleDesktopLyricsLockShortcut = AppViewModel.ToggleDesktopLyricsLockShortcut;
+            newSettings.ToggleDesktopLyricsKaraokeShortcut = AppViewModel.ToggleDesktopLyricsKaraokeShortcut;
+            newSettings.ResetDesktopLyricsShortcut = AppViewModel.ResetDesktopLyricsShortcut;
             newSettings.EnableGlobalHotKey = AppViewModel.EnableGlobalHotKey;
             newSettings.IsTrimOnHideEnabled = AppViewModel.IsTrimOnHideEnabled;
             newSettings.IsTrimAfterPlaybackEnabled = AppViewModel.IsTrimAfterPlaybackEnabled;

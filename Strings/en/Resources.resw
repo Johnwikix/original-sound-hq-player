@@ -1243,6 +1243,18 @@
   <data name="SettingsPageToggleFullScreenShortcut.Text" xml:space="preserve">
     <value>Toggle FullScreen</value>
   </data>
+  <data name="SettingsPageToggleDesktopLyricsShortcut.Text" xml:space="preserve">
+    <value>Show / Hide Desktop Lyrics</value>
+  </data>
+  <data name="SettingsPageToggleDesktopLyricsLockShortcut.Text" xml:space="preserve">
+    <value>Lock / Unlock Desktop Lyrics</value>
+  </data>
+  <data name="SettingsPageToggleDesktopLyricsKaraokeShortcut.Text" xml:space="preserve">
+    <value>Enable / Disable Desktop Karaoke Lyrics</value>
+  </data>
+  <data name="SettingsPageResetDesktopLyricsShortcut.Text" xml:space="preserve">
+    <value>Reset Desktop Lyrics Window</value>
+  </data>
 <data name="SettingsPageEnableGlobalHotKey.Text" xml:space="preserve">
     <value>Global hotkeys</value>
   </data>
@@ -1279,6 +1291,18 @@
   <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
     <value>Toggle FullScreen</value>
   </data>
+  <data name="GlobalHotKeyConflictToggleDesktopLyrics" xml:space="preserve">
+    <value>Show / Hide Desktop Lyrics</value>
+  </data>
+  <data name="GlobalHotKeyConflictToggleDesktopLyricsLock" xml:space="preserve">
+    <value>Lock / Unlock Desktop Lyrics</value>
+  </data>
+  <data name="GlobalHotKeyConflictToggleDesktopLyricsKaraoke" xml:space="preserve">
+    <value>Enable / Disable Desktop Karaoke Lyrics</value>
+  </data>
+  <data name="GlobalHotKeyConflictResetDesktopLyrics" xml:space="preserve">
+    <value>Reset Desktop Lyrics Window</value>
+  </data>
   <data name="Advanced.Text" xml:space="preserve">
     <value>Advanced</value>
   </data>
@@ -1298,7 +1322,7 @@
     <value>Artist separators</value>
   </data>
   <data name="ArtistSplitSymbolsDescription.Text" xml:space="preserve">
-    <value>Symbols used to split multiple artists in the artist field (comma separated). E.g. ", ; / 、 &amp; feat.". Takes effect immediately.</value>
+    <value>Symbols used to split multiple artists in the artist field (comma separated). E.g. ", ; / 、 &amp; feat. :". Takes effect immediately.</value>
   </data>
   <data name="SelectArtist" xml:space="preserve">
     <value>Select artist</value>

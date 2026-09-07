@@ -1243,6 +1243,18 @@
   <data name="SettingsPageToggleFullScreenShortcut.Text" xml:space="preserve">
     <value>Vollbild umschalten</value>
   </data>
+  <data name="SettingsPageToggleDesktopLyricsShortcut.Text" xml:space="preserve">
+    <value>Desktop-Liedtext anzeigen / ausblenden</value>
+  </data>
+  <data name="SettingsPageToggleDesktopLyricsLockShortcut.Text" xml:space="preserve">
+    <value>Desktop-Liedtext sperren / entsperren</value>
+  </data>
+  <data name="SettingsPageToggleDesktopLyricsKaraokeShortcut.Text" xml:space="preserve">
+    <value>Desktop-Karaoke-Liedtext aktivieren / deaktivieren</value>
+  </data>
+  <data name="SettingsPageResetDesktopLyricsShortcut.Text" xml:space="preserve">
+    <value>Desktop-Liedtext-Fenster zurücksetzen</value>
+  </data>
 <data name="SettingsPageEnableGlobalHotKey.Text" xml:space="preserve">
     <value>Globale Tastenk\u00FCrzel</value>
   </data>
@@ -1279,6 +1291,18 @@
 <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
     <value>Vollbild umschalten</value>
   </data>
+<data name="GlobalHotKeyConflictToggleDesktopLyrics" xml:space="preserve">
+  <value>Desktop-Liedtext anzeigen / ausblenden</value>
+</data>
+<data name="GlobalHotKeyConflictToggleDesktopLyricsLock" xml:space="preserve">
+  <value>Desktop-Liedtext sperren / entsperren</value>
+</data>
+<data name="GlobalHotKeyConflictToggleDesktopLyricsKaraoke" xml:space="preserve">
+  <value>Desktop-Karaoke-Liedtext aktivieren / deaktivieren</value>
+</data>
+<data name="GlobalHotKeyConflictResetDesktopLyrics" xml:space="preserve">
+  <value>Desktop-Liedtext-Fenster zurücksetzen</value>
+</data>
   <data name="Advanced.Text" xml:space="preserve">
     <value>Erweitert</value>
   </data>
@@ -1298,7 +1322,7 @@
     <value>Künstler-Trennsymbole</value>
   </data>
   <data name="ArtistSplitSymbolsDescription.Text" xml:space="preserve">
-    <value>Symbole zum Trennen mehrerer Künstler im Künstlerfeld (durch Komma getrennt). Z. B. ", ; / 、 &amp; feat.". Wirkt sofort.</value>
+    <value>Symbole zum Trennen mehrerer Künstler im Künstlerfeld (durch Komma getrennt). Z. B. ", ; / 、 &amp; feat. :". Wirkt sofort.</value>
   </data>
   <data name="SelectArtist" xml:space="preserve">
     <value>Künstler auswählen</value>

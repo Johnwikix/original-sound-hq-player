@@ -1557,6 +1557,94 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = new List<string> { "Ctrl", "Alt", "F" };
 
+        public List<string> ToggleDesktopLyricsShortcut
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        if (EnableGlobalHotKey)
+                        {
+                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.ToggleDesktopLyrics, value, () =>
+                            {
+                                var desktopLyrics = App.Services.GetRequiredService<DesktopLyricsViewModel>();
+                                desktopLyrics.IsEnabled = !desktopLyrics.IsEnabled;
+                            });
+                        }
+                    }
+                }
+            }
+        } = new List<string> { "Ctrl", "Alt", "D" };
+
+        public List<string> ToggleDesktopLyricsLockShortcut
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        if (EnableGlobalHotKey)
+                        {
+                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.ToggleDesktopLyricsLock, value, () =>
+                            {
+                                var desktopLyrics = App.Services.GetRequiredService<DesktopLyricsViewModel>();
+                                desktopLyrics.IsLocked = !desktopLyrics.IsLocked;
+                            });
+                        }
+                    }
+                }
+            }
+        } = new List<string> { "Ctrl", "Alt", "L" };
+
+        public List<string> ToggleDesktopLyricsKaraokeShortcut
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        if (EnableGlobalHotKey)
+                        {
+                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.ToggleDesktopLyricsKaraoke, value, () =>
+                            {
+                                var desktopLyrics = App.Services.GetRequiredService<DesktopLyricsViewModel>();
+                                desktopLyrics.IsKaraokeEnabled = !desktopLyrics.IsKaraokeEnabled;
+                            });
+                        }
+                    }
+                }
+            }
+        } = new List<string> { "Ctrl", "Alt", "K" };
+
+        public List<string> ResetDesktopLyricsShortcut
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    if (IsInitialized)
+                    {
+                        _ = _musicDatabaseService.SaveSettingAsync();
+                        if (EnableGlobalHotKey)
+                        {
+                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.ResetDesktopLyrics, value, DesktopLyricsManager.ResetWindowBounds);
+                        }
+                    }
+                }
+            }
+        } = new List<string> { "Ctrl", "Alt", "R" };
+
         public void InitHotKeys()
         {
             var window = App.MainWindow;
@@ -1619,6 +1707,26 @@ namespace WinUIMusicPlayer.ViewModel
                 if (App.MainWindow is not { Visible: true }) return;
                 ToggleFullScreen();
             });
+
+            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.ToggleDesktopLyrics, ToggleDesktopLyricsShortcut, () =>
+            {
+                var desktopLyrics = App.Services.GetRequiredService<DesktopLyricsViewModel>();
+                desktopLyrics.IsEnabled = !desktopLyrics.IsEnabled;
+            });
+
+            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.ToggleDesktopLyricsLock, ToggleDesktopLyricsLockShortcut, () =>
+            {
+                var desktopLyrics = App.Services.GetRequiredService<DesktopLyricsViewModel>();
+                desktopLyrics.IsLocked = !desktopLyrics.IsLocked;
+            });
+
+            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.ToggleDesktopLyricsKaraoke, ToggleDesktopLyricsKaraokeShortcut, () =>
+            {
+                var desktopLyrics = App.Services.GetRequiredService<DesktopLyricsViewModel>();
+                desktopLyrics.IsKaraokeEnabled = !desktopLyrics.IsKaraokeEnabled;
+            });
+
+            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.ResetDesktopLyrics, ResetDesktopLyricsShortcut, DesktopLyricsManager.ResetWindowBounds);
         }
 
         public List<double> TargetFrameRateOptions { get; } = [60, 72, 80, 90, 120, 144, 160, 165, 180, 240, 280, 320, 360, 480];

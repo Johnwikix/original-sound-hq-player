@@ -1243,6 +1243,18 @@
   <data name="SettingsPageToggleFullScreenShortcut.Text" xml:space="preserve">
     <value>Переключить полноэкранный режим</value>
   </data>
+  <data name="SettingsPageToggleDesktopLyricsShortcut.Text" xml:space="preserve">
+    <value>Показать / скрыть текст песни на рабочем столе</value>
+  </data>
+  <data name="SettingsPageToggleDesktopLyricsLockShortcut.Text" xml:space="preserve">
+    <value>Заблокировать / разблокировать текст песни на рабочем столе</value>
+  </data>
+  <data name="SettingsPageToggleDesktopLyricsKaraokeShortcut.Text" xml:space="preserve">
+    <value>Включить / отключить караоке-текст песни на рабочем столе</value>
+  </data>
+  <data name="SettingsPageResetDesktopLyricsShortcut.Text" xml:space="preserve">
+    <value>Сбросить окно текста песни на рабочем столе</value>
+  </data>
 <data name="SettingsPageEnableGlobalHotKey.Text" xml:space="preserve">
     <value>\u0413\u043B\u043E\u0431\u0430\u043B\u044C\u043D\u044B\u0435 \u0433\u043E\u0440\u044F\u0447\u0438\u0435 \u043A\u043B\u0430\u0432\u0438\u0448\u0438</value>
   </data>
@@ -1279,6 +1291,18 @@
 <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
     <value>Переключить полноэкранный режим</value>
   </data>
+<data name="GlobalHotKeyConflictToggleDesktopLyrics" xml:space="preserve">
+  <value>Показать / скрыть текст песни на рабочем столе</value>
+</data>
+<data name="GlobalHotKeyConflictToggleDesktopLyricsLock" xml:space="preserve">
+  <value>Заблокировать / разблокировать текст песни на рабочем столе</value>
+</data>
+<data name="GlobalHotKeyConflictToggleDesktopLyricsKaraoke" xml:space="preserve">
+  <value>Включить / отключить караоке-текст песни на рабочем столе</value>
+</data>
+<data name="GlobalHotKeyConflictResetDesktopLyrics" xml:space="preserve">
+  <value>Сбросить окно текста песни на рабочем столе</value>
+</data>
   <data name="Advanced.Text" xml:space="preserve">
     <value>Дополнительно</value>
   </data>
@@ -1298,7 +1322,7 @@
     <value>Разделители артистов</value>
   </data>
   <data name="ArtistSplitSymbolsDescription.Text" xml:space="preserve">
-    <value>Символы для разделения нескольких артистов в поле «Исполнитель» (через запятую). Например: ", ; / 、 &amp; feat.". Действует сразу.</value>
+    <value>Символы для разделения нескольких артистов в поле «Исполнитель» (через запятую). Например: ", ; / 、 &amp; feat. :". Действует сразу.</value>
   </data>
   <data name="SelectArtist" xml:space="preserve">
     <value>Выбрать артиста</value>
