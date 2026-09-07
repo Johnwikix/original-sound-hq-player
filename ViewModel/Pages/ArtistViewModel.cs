@@ -126,7 +126,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (count == 0 || _musicBrowseViewModel is null) return;
 
                 var slice = buf.AsSpan(0, count);
-                slice.Sort((a, b) => string.CompareOrdinal(a.Album, b.Album));
+                slice.Sort((a, b) => PinyinStringComparer.Compare(a.Album, b.Album));
 
                 AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(slice.ToArray());
                 await _musicBrowseViewModel.PlayMusic(music: slice[0], IsChangeList: true);
@@ -141,7 +141,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             var artists = AppViewModel.SongsSource.AsValueEnumerable()
                 .Where(m => ArtistHelper.IsMusicByArtist(m, SelectedItem.Author))
-                .OrderBy(m => m.Album);
+                .OrderBy(m => m.Album, PinyinStringComparer.Instance);
             foreach (var artist in artists)
             {
                 MusicCommands.AddToFavouriteCommand.Execute(artist);
@@ -153,7 +153,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             var albums = AppViewModel.SongsSource
                 .Where(m => ArtistHelper.IsMusicByArtist(m, SelectedItem.Author))
-                .OrderBy(m => m.Album);
+                .OrderBy(m => m.Album, PinyinStringComparer.Instance);
             _ = _musicDatabaseService.AddMusicListToPlayList(albums, playListId);
         }
 
@@ -162,7 +162,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             var artists = AppViewModel.SongsSource
                 .Where(m => ArtistHelper.IsMusicByArtist(m, SelectedItem.Author))
-                .OrderBy(m => m.Album);
+                .OrderBy(m => m.Album, PinyinStringComparer.Instance);
             if (target?.Device is null) return;
             await AppViewModel.TransmitFileToUsb(artists, target.Device, target.Format, target.BitrateKbps);
         }

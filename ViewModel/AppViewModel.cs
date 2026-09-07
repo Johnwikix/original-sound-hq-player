@@ -945,12 +945,12 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     "A-Z" => _songByTitle,
                     "Artist" => _songByAuthor,
-                    "Album" => Comparer<Music>.Create((a, b) => string.Compare(a.Album, b.Album, StringComparison.Ordinal)),
+                    "Album" => _songByAlbum,
                     "CreateTimeASC" => _songByCreateTimeAsc,
                     "CreateTimeDESC" => _songByCreateTimeDesc,
                     "UpdateTimeASC" => _songByUpdateTimeAsc,
                     "UpdateTimeDESC" => _songByUpdateTimeDesc,
-                    _ => Comparer<Music>.Create((a, b) => string.Compare(distinctSelector(a), distinctSelector(b), StringComparison.Ordinal)),
+                    _ => Comparer<Music>.Create((a, b) => PinyinStringComparer.Compare(distinctSelector(a), distinctSelector(b))),
                 };
                 slice.Sort(comparer);
 
@@ -1134,11 +1134,11 @@ namespace WinUIMusicPlayer.ViewModel
         private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byPlayListOrderDesc =
             Comparer<PlayListMusicItem>.Create((a, b) => b.PlayListOrder.CompareTo(a.PlayListOrder));
         private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicTitleAsc =
-            Comparer<PlayListMusicItem>.Create((a, b) => string.Compare(a.Music?.Title, b.Music?.Title, StringComparison.Ordinal));
+            Comparer<PlayListMusicItem>.Create((a, b) => PinyinStringComparer.Compare(a.Music?.Title, b.Music?.Title));
         private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicAuthorAsc =
-            Comparer<PlayListMusicItem>.Create((a, b) => string.Compare(a.Music?.Author, b.Music?.Author, StringComparison.Ordinal));
+            Comparer<PlayListMusicItem>.Create((a, b) => PinyinStringComparer.Compare(a.Music?.Author, b.Music?.Author));
         private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicAlbumAsc =
-            Comparer<PlayListMusicItem>.Create((a, b) => string.Compare(a.Music?.Album, b.Music?.Album, StringComparison.Ordinal));
+            Comparer<PlayListMusicItem>.Create((a, b) => PinyinStringComparer.Compare(a.Music?.Album, b.Music?.Album));
         private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicCreateTimeAsc =
             Comparer<PlayListMusicItem>.Create((a, b) => a.Music?.CreateTime.CompareTo(b.Music?.CreateTime) ?? 0);
         private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicCreateTimeDesc =
@@ -1149,13 +1149,15 @@ namespace WinUIMusicPlayer.ViewModel
             Comparer<PlayListMusicItem>.Create((a, b) => a.Music?.UpdateTime.CompareTo(b.Music?.UpdateTime) ?? 0);
 
         private static readonly IComparer<Music> _songByTitle =
-            Comparer<Music>.Create((a, b) => string.Compare(a.Title, b.Title, StringComparison.Ordinal));
+            Comparer<Music>.Create((a, b) => PinyinStringComparer.Compare(a.Title, b.Title));
         private static readonly IComparer<Music> _songByAuthor =
-            Comparer<Music>.Create((a, b) => string.Compare(a.Author, b.Author, StringComparison.Ordinal));
+            Comparer<Music>.Create((a, b) => PinyinStringComparer.Compare(a.Author, b.Author));
+        private static readonly IComparer<Music> _songByAlbum =
+            Comparer<Music>.Create((a, b) => PinyinStringComparer.Compare(a.Album, b.Album));
         private static readonly IComparer<Music> _songByAlbumTrack =
             Comparer<Music>.Create((a, b) =>
             {
-                int c = string.Compare(a.Album, b.Album, StringComparison.Ordinal);
+                int c = PinyinStringComparer.Compare(a.Album, b.Album);
                 return c != 0 ? c : a.TrackNumber.CompareTo(b.TrackNumber);
             });
         private static readonly IComparer<Music> _songByDiskTrack =
@@ -1167,7 +1169,7 @@ namespace WinUIMusicPlayer.ViewModel
         private static readonly IComparer<Music> _songByAlbumDiskTrack =
             Comparer<Music>.Create((a, b) =>
             {
-                int c = string.Compare(a.Album, b.Album, StringComparison.Ordinal);
+                int c = PinyinStringComparer.Compare(a.Album, b.Album);
                 if (c != 0) return c;
                 c = a.DiskNumber.CompareTo(b.DiskNumber);
                 return c != 0 ? c : a.TrackNumber.CompareTo(b.TrackNumber);
