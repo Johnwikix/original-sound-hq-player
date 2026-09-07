@@ -24,6 +24,14 @@ namespace WinUIMusicPlayer.Utils
         public static double GetHrMusicFontSize(double baseFontSize)
             => baseFontSize * 0.7;
 
+        /// <summary>底栏封面边长：基准 80 × 系统文本缩放因子（文本放大时封面同步撑大）。</summary>
+        public static double GetAlbumCoverSize(double textScaleFactor)
+            => 80 * textScaleFactor;
+
+        /// <summary>底栏封面占位图标字号：封面边长的一半（基准 80 → 40）。</summary>
+        public static double GetAlbumCoverIconSize(double textScaleFactor)
+            => 40 * textScaleFactor;
+
         public static bool PlayModeCheckerConverter(PlayMode currentPlayMode, string targetPlayMode)
         {
             if (currentPlayMode.ToString() is null || targetPlayMode is null)

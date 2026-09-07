@@ -65,11 +65,14 @@
             <Grid
                 x:Name="BottomControlBar"
                 Grid.Row="1"
-                Height="120"
+                MinHeight="120"
                 Margin="10,0,10,10"
-                Visibility="{x:Bind NavigationViewControl.Visibility, Mode=OneWay}"
-                RowDefinitions="Auto,*">
-                <Grid Grid.Row="0" Margin="0" ColumnDefinitions="*,Auto">
+                RowDefinitions="Auto,*"
+                Visibility="{x:Bind NavigationViewControl.Visibility, Mode=OneWay}">
+                <Grid
+                    Grid.Row="0"
+                    Margin="0"
+                    ColumnDefinitions="*,Auto">
                     <Slider
                         x:Name="ProgressSlider"
                         Grid.Column="0"
@@ -90,19 +93,23 @@
                         Text="{x:Bind ViewModel.AppViewModel.PlayTimeText, Mode=OneWay}" />
                 </Grid>
 
-                <Grid Grid.Row="1" Margin="0" ColumnDefinitions="*,Auto,*">
+                <Grid
+                    Grid.Row="1"
+                    Margin="0"
+                    ColumnDefinitions="*,Auto,*">
                     <Grid
                         x:Name="AlbumCoverAuthorTitleModel"
                         Grid.Column="0"
                         Margin="0"
-                        ColumnDefinitions="Auto,*"
                         VerticalAlignment="Center"
+                        ColumnDefinitions="Auto,*"
                         Visibility="Visible">
                         <Button
                             x:Name="AlbumCoverImageBtn"
+                            Grid.Column="0"
                             Margin="5,0,5,0"
                             Padding="0"
-                            Grid.Column="0"
+                            VerticalAlignment="Center"
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
@@ -111,12 +118,12 @@
                             IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource SimpleHoverButtonStyle}">
                             <Grid RowDefinitions="auto">
-                                <Grid x:Name="AlbumCoverImageGrid" Grid.Row="0">
-                                    <Grid
-                                        x:Name="AlbumCoverImage"
-                                        Width="80"
-                                        Height="80"
-                                        Canvas.ZIndex="1">
+                                <Grid
+                                    x:Name="AlbumCoverImageGrid"
+                                    Grid.Row="0"
+                                    Width="{x:Bind tools:BindUtils.GetAlbumCoverSize(TextScale.TextScaleFactor), Mode=OneWay}"
+                                    Height="{x:Bind tools:BindUtils.GetAlbumCoverSize(TextScale.TextScaleFactor), Mode=OneWay}">
+                                    <Grid x:Name="AlbumCoverImage" Canvas.ZIndex="1">
                                         <Image
                                             HorizontalAlignment="Center"
                                             VerticalAlignment="Center"
@@ -126,14 +133,10 @@
                                             </interactivity:Interaction.Behaviors>
                                         </Image>
                                     </Grid>
-                                    <Grid
-                                        Width="80"
-                                        Height="80"
-                                        Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                                        Canvas.ZIndex="0">
+                                    <Grid Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}" Canvas.ZIndex="0">
                                         <FontIcon
                                             Canvas.ZIndex="0"
-                                            FontSize="40"
+                                            FontSize="{x:Bind tools:BindUtils.GetAlbumCoverIconSize(TextScale.TextScaleFactor), Mode=OneWay}"
                                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                             Glyph="&#xE93C;" />
                                     </Grid>
@@ -148,8 +151,8 @@
                         </Button>
                         <Grid
                             Grid.Column="1"
+                            MinHeight="80"
                             HorizontalAlignment="Stretch"
-                            Height="80"
                             RowDefinitions="Auto,*,*,Auto">
                             <dev:AutoScrollView
                                 Grid.Row="0"
@@ -216,13 +219,17 @@
                                     </dev:AutoScrollView>
                                 </Button.Content>
                             </Button>
-                            <Grid Grid.Row="3" VerticalAlignment="Bottom" ColumnDefinitions="Auto,Auto">
+                            <Grid
+                                Grid.Row="3"
+                                VerticalAlignment="Bottom"
+                                ColumnDefinitions="Auto,Auto">
                                 <TextBlock
                                     x:Name="MusicInfoTextBlock"
                                     Grid.Column="0"
                                     Margin="10,0,10,0"
                                     FontSize="12"
-                                    Text="{x:Bind ViewModel.AppViewModel.MusicInfo, Mode=OneWay}" />
+                                    Text="{x:Bind ViewModel.AppViewModel.MusicInfo, Mode=OneWay}"
+                                    TextTrimming="CharacterEllipsis" />
                                 <Border
                                     x:Name="HRImage"
                                     Grid.Column="1"
@@ -535,9 +542,9 @@
             Padding="0"
             VerticalAlignment="Top"
             Background="Transparent"
+            ColumnDefinitions="Auto,*,Auto"
             PointerEntered="AppTitleBar_PointerEntered"
-            PointerExited="AppTitleBar_PointerExited"
-            ColumnDefinitions="Auto,*,Auto">
+            PointerExited="AppTitleBar_PointerExited">
             <Grid.OpacityTransition>
                 <ScalarTransition />
             </Grid.OpacityTransition>

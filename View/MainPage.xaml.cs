@@ -41,6 +41,8 @@ namespace WinUIMusicPlayer.View
         public EqualizerDialog EqualizerDialog { get; set; }
         public SettingsDialog SettingsDialog { get; set; }
         public AddPlayListDialog AddPlayListDialog { get; set; }
+        /// <summary>系统文本缩放绑定根：ActualHeight 无变更通知，经此 INPC 服务随系统设置联动。</summary>
+        public TextScaleService TextScale => TextScaleService.Instance;
         private readonly INavigationService _playingNavigation;
         private bool _isPageTransitioning = false;
 
