@@ -198,7 +198,11 @@ internal sealed class Session : IRenderSource, IDisposable
                     _pcmRing!.MarkInputEnded();
                     break;
                 }
-                if (!_pcmRing!.Push(_decodeScratchF, frames, Cancelled)) break;
+                if (!_pcmRing!.Push(_decodeScratchF, frames, Cancelled))
+                {
+                    if (_cancelled) break;
+                    continue; // 会话被 seek 重置：回循环顶处理待决 seek，从新位置继续
+                }
             }
         }
         catch { _pcmRing?.MarkInputEnded(); }
@@ -209,7 +213,7 @@ internal sealed class Session : IRenderSource, IDisposable
         try
         {
             while (!_cancelled)
-        {
+            {
                 HandleSeek();
                 int bytes = _dsd!.ReadInterleaved(_decodeScratchB);
                 if (bytes <= 0)
@@ -223,25 +227,31 @@ internal sealed class Session : IRenderSource, IDisposable
                     _dopRing!.MarkInputEnded();
                     break;
                 }
+
+                bool pushed;
                 if (_dsdLeftoverBytes > 0)
                 {
                     // 拼接上一个包的残留字节帧（解码线程冷路径，允许分配）
                     var merged = new byte[_dsdLeftoverBytes + bytes];
                     _dsdLeftover.AsSpan(0, _dsdLeftoverBytes).CopyTo(merged);
                     _decodeScratchB.AsSpan(0, bytes).CopyTo(merged.AsSpan(_dsdLeftoverBytes));
-                    PushDop(merged);
+                    pushed = PushDop(merged);
                 }
                 else
                 {
-                    PushDop(_decodeScratchB.AsSpan(0, bytes));
+                    pushed = PushDop(_decodeScratchB.AsSpan(0, bytes));
                 }
+
+                if (!pushed && !_cancelled)
+                    continue; // 会话被 seek 重置：回循环顶处理待决 seek，从新位置继续
             }
         }
         catch { _dopRing?.MarkInputEnded(); }
     }
 
-    /// <summary>把交织 DSD 字节（每帧每声道 1 字节）装配为 DoP uint 采样并推送。</summary>
-    private void PushDop(ReadOnlySpan<byte> interleaved)
+    /// <summary>把交织 DSD 字节（每帧每声道 1 字节）装配为 DoP uint 采样并推送。
+    /// 返回 false = 会话被 seek 重置（旧数据已丢弃，调用方应回循环处理待决 seek）。</summary>
+    private bool PushDop(ReadOnlySpan<byte> interleaved)
     {
         int ch = _channels;
         int byteFrames = interleaved.Length / ch;
@@ -256,9 +266,9 @@ internal sealed class Session : IRenderSource, IDisposable
             int base0 = (f * 2) * ch;
             int base1 = (f * 2 + 1) * ch;
             for (int c = 0; c < ch; c++)
-                _dopPackBuffer[f * ch + c] = (uint)(interleaved[base0 + c] | (interleaved[base1 + c] << 8));
+                _dopPackBuffer[f * ch + c] = (uint)((interleaved[base0 + c] << 8) | interleaved[base1 + c]);
         }
-        if (!_dopRing!.Push(_dopPackBuffer, dopFrames, Cancelled)) return;
+        if (!_dopRing!.Push(_dopPackBuffer, dopFrames, Cancelled)) return false;
 
         if (leftoverFrames > 0)
         {
@@ -266,6 +276,7 @@ internal sealed class Session : IRenderSource, IDisposable
             _dsdLeftoverBytes = ch;
         }
         else _dsdLeftoverBytes = 0;
+        return true;
     }
 
     private void DsdDecodeProc()
@@ -282,7 +293,11 @@ internal sealed class Session : IRenderSource, IDisposable
                     break;
                 }
                 int frames = bytes / _channels;
-                if (frames > 0 && !_dsdRing!.Push(_decodeScratchB, frames, Cancelled)) break;
+                if (frames > 0 && !_dsdRing!.Push(_decodeScratchB, frames, Cancelled))
+                {
+                    if (_cancelled) break;
+                    continue; // 会话被 seek 重置：回循环顶处理待决 seek
+                }
             }
         }
         catch { _dsdRing?.MarkInputEnded(); }

@@ -139,13 +139,17 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
             return false;
         }
 
-        // 校验声道采样类型
+        // 校验声道采样类型（失败必须 DisposeBuffers，否则缓冲残留导致后续候选全部失败）
         var channelInfos = new AsioChannelInfo[bufferArray.Length];
         for (int i = 0; i < bufferArray.Length; i++)
         {
             channelInfos[i] = new AsioChannelInfo { Channel = bufferArray[i].ChannelNum, IsInput = bufferArray[i].IsInput };
-            if (_driver.GetChannelInfo(ref channelInfos[i]) != AsioConstants.AseOk) return false;
-            if (bufferArray[i].IsInput == 0 && !SampleTypeSupported(channelInfos[i].Type, _source.Kind)) return false;
+            if (_driver.GetChannelInfo(ref channelInfos[i]) != AsioConstants.AseOk
+                || (bufferArray[i].IsInput == 0 && !SampleTypeSupported(channelInfos[i].Type, _source.Kind)))
+            {
+                try { _driver.DisposeBuffers(); } catch { }
+                return false;
+            }
         }
 
         _bufferInfos = bufferArray;
@@ -241,19 +245,8 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
             actualRate = ReadRateOr(pivotObserved);
             return false;
         }
-        actualRate = WaitForRate(requested, pivotObserved, 35, 20);
+        actualRate = WaitForRate(requested, 35, 20);
         return RateMatches(actualRate, requested);
-    }
-
-    private double WaitForRate(double requested, double fallback, int attempts, int sleepMs)
-    {
-        double observed = ReadRateOr(fallback);
-        for (int i = 0; i < attempts && !RateMatches(observed, requested); i++)
-        {
-            Thread.Sleep(Math.Max(1, sleepMs));
-            observed = ReadRateOr(observed);
-        }
-        return observed;
     }
 
     private static bool RateMatches(double a, double b) => Math.Abs(a - b) < 0.5;

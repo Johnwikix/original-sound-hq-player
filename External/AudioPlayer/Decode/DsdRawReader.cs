@@ -94,9 +94,6 @@ internal sealed unsafe class DsdRawReader : IDisposable
         return true;
     }
 
-    /// <summary>当前包的起点（每声道字节域，用于 seek 后锚点精化）。</summary>
-    public long CurrentPacketBytePos => _pkt != null && _pkt->pts >= 0 ? _pkt->pts : -1;
-
     /// <summary>
     /// 读一个包并 repack 为「MSB 优先交织」DSD 字节（每帧每声道 1 字节）。
     /// 返回写入的字节数；0 = EOF。dest 需 ≥ packet size。
@@ -149,7 +146,8 @@ internal sealed unsafe class DsdRawReader : IDisposable
         }
 
         ffmpeg.av_packet_unref(_pkt);
-        return outBytes;
+        // 防御：超大包被截断时按实际写入量返回（调用方按返回值消费 scratch）
+        return Math.Min(outBytes, dest.Length);
     }
 
     public void Dispose()

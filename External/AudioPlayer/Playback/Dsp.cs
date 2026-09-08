@@ -87,7 +87,11 @@ internal sealed class Equalizer
         _snapshot = bands;
     }
 
-    /// <summary>就地处理交织 float 块（≤2 声道，逐声道独立状态）。</summary>
+    /// <summary>
+    /// 就地处理交织 float 块（≤2 声道，逐声道独立状态）。
+    /// &gt;2 声道静默直通：共享模式会话被强制到混音 2ch 不触发；
+    /// 仅独占/ASIO 播放多声道文件时出现（与 bass 的 PeakEQ 行为一致）。
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Process(Span<float> interleaved, int frames, int channels)
     {

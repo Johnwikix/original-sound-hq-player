@@ -150,11 +150,11 @@ public sealed class PlaybackEngine : IDisposable
             Console.WriteLine("[engine] primary output failed, fallback to shared");
             DisposeSession();
             _session = OpenSession(MusicUrl!, forceSharedFormat: true);
-            if (_session == null) { IsPlaying = false; return; }
+            if (_session == null) { IsPlaying = false; _ipc.PlayStateUpdate(false); return; }
             output = CreateSharedOutput(_session);
-            if (output == null) { IsPlaying = false; return; }
+            if (output == null) { IsPlaying = false; _ipc.PlayStateUpdate(false); return; }
         }
-        if (output == null) { IsPlaying = false; return; }
+        if (output == null) { IsPlaying = false; _ipc.PlayStateUpdate(false); return; }
         _output = output;
         ApplyEqToSession();
         ApplyVolumeToOutput();
@@ -492,6 +492,21 @@ public sealed class PlaybackEngine : IDisposable
             var session = _session;
             var output = _output;
             if (session == null) return;
+            if (output is { IsFailed: true })
+            {
+                // 设备中途失效（拔出/独占被抢占）：按暂停停机并告知——
+                // 区别于自然结束（PlayEnded 会触发应用自动切歌，失效时切了也播不出）
+                lock (_streamLock)
+                {
+                    if (IsPlaying && ReferenceEquals(output, _output) && output.IsFailed)
+                    {
+                        try { output.Pause(); } catch { }
+                        IsPlaying = false;
+                        _ipc.PlayStateUpdate(false);
+                    }
+                }
+                return;
+            }
             if (session.IsDrained)
             {
                 lock (_streamLock)

@@ -34,4 +34,7 @@ internal interface IAudioOutput : IDisposable
 
     /// <summary>端点缓冲深度（毫秒）：渲染领先可闻播放的量。淡出后需等它排空再停，否则尾段被硬裁。</summary>
     int LatencyMs { get; }
+
+    /// <summary>渲染是否已失败（设备拔出/独占被抢占等）——引擎看门狗据此停机并通知。</summary>
+    bool IsFailed { get; }
 }

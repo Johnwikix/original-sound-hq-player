@@ -18,7 +18,7 @@ internal abstract class FrameRingBase<T> where T : unmanaged
     private readonly int _prebufferTimeoutMs;
     private long _prebufferDeadlineTicks;
     private bool _prebuffering;
-    private long _stopVersion; // 生产者唤醒用（虚假唤醒无害）
+    private long _epoch; // 会话代数：BeginSession 递增，Push 据此丢弃 seek 前的旧数据
 
     protected readonly int Channels;
     private bool _sessionHasAudio;
@@ -46,6 +46,7 @@ internal abstract class FrameRingBase<T> where T : unmanaged
     {
         lock (_gate)
         {
+            _epoch++;
             _head = _tail = 0;
             _sessionHasAudio = false;
             InputEnded = false;
@@ -60,19 +61,29 @@ internal abstract class FrameRingBase<T> where T : unmanaged
 
     public void MarkInputEnded() => InputEnded = true;
 
-    /// <summary>唤醒可能在等待的生产者（配合 StopRequested 取消推送）。</summary>
-    public void WakeProducer() { lock (_gate) { _stopVersion++; Monitor.Pulse(_gate); } }
+    /// <summary>唤醒可能在等待的生产者（seek 重置/销毁时调用）。</summary>
+    public void WakeProducer() { lock (_gate) { Monitor.Pulse(_gate); } }
 
-    /// <summary>生产者推送 frameCount 帧（interleaved）。可被取消唤醒打断。</summary>
+    /// <summary>
+    /// 生产者推送 frameCount 帧（interleaved）。返回 false = 会话已重置（seek）或已取消，
+    /// 调用方应回循环处理待决 seek / 退出。seek 竞态防护：阻塞在满环上的生产者被
+    /// BeginSession 唤醒后，凭代数比对丢弃 seek 前的旧数据而非写入新会话。
+    /// </summary>
     public bool Push(ReadOnlySpan<T> source, int frameCount, Func<bool> cancelled)
     {
-        if (frameCount > 0) lock (_gate) { _sessionHasAudio = true; }
+        long epoch;
+        lock (_gate)
+        {
+            epoch = _epoch;
+            if (frameCount > 0) _sessionHasAudio = true;
+        }
 
         int written = 0;
         while (written < frameCount)
         {
             lock (_gate)
             {
+                if (epoch != _epoch) return false;
                 int free = CapacityFrames - (int)(_head - _tail);
                 if (free > 0)
                 {
@@ -84,7 +95,6 @@ internal abstract class FrameRingBase<T> where T : unmanaged
                         CopyIn(source, written + first, 0, take - first);
                     _head += take;
                     written += take;
-                    Monitor.Pulse(_gate);
                     continue;
                 }
                 Monitor.Wait(_gate, 4);

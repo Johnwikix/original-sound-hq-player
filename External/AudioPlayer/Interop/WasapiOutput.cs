@@ -28,6 +28,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
     private Thread? _thread;
     private int _failed;
     private volatile bool _pausedFlag; // 渲染线程暂停门控：暂停期间不得消费环形缓冲
+    private volatile bool _initTimedOut; // Initialize 超时：worker 仍持有 client，Dispose 不得再触碰（墓园语义）
 
     private uint _bufferFrames;
     private uint _channels;
@@ -159,7 +160,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
 
         int hr = InitializeNativeWithTimeout(WasapiTypes.ShareModeShared,
             WasapiTypes.StreamFlagsEventCallback | WasapiTypes.StreamFlagsNoPersist,
-            3000000 /* 300ms 固定 */, 0, mix, mix);
+            3000000 /* 300ms 固定 */, 0, mix);
         if (hr != 0)
         {
             Console.WriteLine($"[wasapi] shared Initialize(mix) hr=0x{hr:X8} rate={mix->nSamplesPerSec} ch={mix->nChannels} bits={mix->wBitsPerSample}");
@@ -196,7 +197,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
 
     /// <summary>共享模式：直接用原生 GetMixFormat 指针初始化（驱动持有期间指针有效）。</summary>
     private int InitializeNativeWithTimeout(int shareMode, int flags, long bufferDuration, long periodicity,
-        WAVEFORMATEX* format, WAVEFORMATEX* toFree)
+        WAVEFORMATEX* format)
     {
         var client = _client;
         if (client == null) return unchecked((int)0x80004005);
@@ -211,6 +212,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
         bool ok = worker.Join(3000);
         if (ok) return Volatile.Read(ref hr);
         // 超时：泄漏格式内存与线程（进程退出回收）
+        _initTimedOut = true;
         return WasapiTypes.EPending;
     }
 
@@ -488,11 +490,20 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
     {
         if (_stopEvent != IntPtr.Zero) Win32.SetEvent(_stopEvent);
         try { _thread?.Join(2000); } catch { }
-        try { _client?.Stop(); } catch { }
-        try { _client?.Reset(); } catch { }
-        if (_renderPtr != IntPtr.Zero) { Marshal.Release(_renderPtr); _renderPtr = IntPtr.Zero; }
-        if (_sessionVolumePtr != IntPtr.Zero) { Marshal.Release(_sessionVolumePtr); _sessionVolumePtr = IntPtr.Zero; }
-        if (_clientPtr != IntPtr.Zero) { Marshal.Release(_clientPtr); _clientPtr = IntPtr.Zero; }
+        if (_initTimedOut)
+        {
+            // 墓园语义（ECHO future-graveyard）：Initialize worker 可能仍阻塞在驱动内部并持有
+            // 该 client，任何 Stop/Reset/Release 都会与挂死线程并发使用同一 COM 对象 → 有意泄漏，
+            // 交给进程退出回收。渲染/会话音量指针在成功初始化前不会取得，无需处理。
+        }
+        else
+        {
+            try { _client?.Stop(); } catch { }
+            try { _client?.Reset(); } catch { }
+            if (_renderPtr != IntPtr.Zero) { Marshal.Release(_renderPtr); _renderPtr = IntPtr.Zero; }
+            if (_sessionVolumePtr != IntPtr.Zero) { Marshal.Release(_sessionVolumePtr); _sessionVolumePtr = IntPtr.Zero; }
+            if (_clientPtr != IntPtr.Zero) { Marshal.Release(_clientPtr); _clientPtr = IntPtr.Zero; }
+        }
         if (_devicePtr != IntPtr.Zero) { Marshal.Release(_devicePtr); _devicePtr = IntPtr.Zero; }
         if (_renderEvent != IntPtr.Zero) { Win32.CloseHandle(_renderEvent); _renderEvent = IntPtr.Zero; }
         if (_stopEvent != IntPtr.Zero) { Win32.CloseHandle(_stopEvent); _stopEvent = IntPtr.Zero; }
