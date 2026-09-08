@@ -104,6 +104,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="External\**" />
+    <Compile Remove="_tools\**" />
     <EmbeddedResource Remove="External\**" />
     <None Remove="External\**" />
     <Page Remove="External\**" />

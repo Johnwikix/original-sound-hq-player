@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <!-- 拼装名与旧进程一致：AOT 产物可直接改名替换 Player\BassPlayerSharp.exe -->
+    <AssemblyName>BassPlayerSharp</AssemblyName>
+    <RootNamespace>AudioPlayer</RootNamespace>
+    <TargetFramework>net11.0</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <Platforms>x64</Platforms>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FFmpeg.AutoGen" Version="9.0.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 与主程序共用同一套 IPC 契约（信封/序列化/常量），保证协议逐字节兼容 -->
+    <ProjectReference Include="..\BassPlayerIpc.Shared\BassPlayerIpc.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
