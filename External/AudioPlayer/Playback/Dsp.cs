@@ -182,12 +182,13 @@ internal sealed class GainRamp
         }
         float g = _current;
         float target = _target;
-        int total = frames * channels;
-        for (int i = 0; i < total; i++)
+        // 斜坡按【帧】推进：交织流逐样本推进会让左右声道错位、且立体声下时长减半
+        for (int f = 0; f < frames; f++)
         {
             g += step;
             if ((step > 0f && g > target) || (step < 0f && g < target)) { g = target; _perSampleStep = 0f; }
-            interleaved[i] *= g;
+            int b = f * channels;
+            for (int c = 0; c < channels; c++) interleaved[b + c] *= g;
         }
         _current = g;
     }

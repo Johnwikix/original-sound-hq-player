@@ -81,20 +81,20 @@ public sealed class PlaybackEngine : IDisposable
             if (IsFadingEnabled && IsPlaying && _session is { Kind: RenderKind.Pcm } && _output != null)
             {
                 var (curMs, totalMs) = GetTimeProgress();
-                MusicFadeOut(musicUrl, isSettingChanged, curMs, totalMs);
+                MusicFadeOut(musicUrl, curMs, totalMs);
             }
             else
             {
-                SwitchTo(musicUrl, isSettingChanged);
+                SwitchTo(musicUrl);
             }
         }
     }
 
-    private void SwitchTo(string musicUrl, bool isSettingChanged)
+    private void SwitchTo(string musicUrl)
     {
         DisposeSession();
         _session = OpenSession(musicUrl);
-        if (_session != null) StartOutputAndPlay(isSettingChanged);
+        if (_session != null) StartOutputAndPlay();
     }
 
     private Session? OpenSession(string url, bool forceSharedFormat = false)
@@ -135,7 +135,7 @@ public sealed class PlaybackEngine : IDisposable
     }
 
     /// <summary>创建输出并开始播放；首选输出失败回退 WASAPI 共享（对应 bass 回退 DirectSound）。</summary>
-    private void StartOutputAndPlay(bool resumeFadeIn)
+    private void StartOutputAndPlay()
     {
         var session = _session!;
         IAudioOutput? output = CreateOutput(session);
@@ -151,13 +151,15 @@ public sealed class PlaybackEngine : IDisposable
         }
         if (output == null) { IsPlaying = false; return; }
         _output = output;
-        ApplyVolumeToOutput();
         ApplyEqToSession();
-        var gainSession = _session!;
-        if (IsFadingEnabled && resumeFadeIn && gainSession is { Kind: RenderKind.Pcm, Gain: not null })
+        ApplyVolumeToOutput();
+        if (IsFadingEnabled && _session is { Kind: RenderKind.Pcm, Gain: not null })
         {
-            gainSession.Gain.SetImmediately(0f);
-            gainSession.Gain.RampTo(Volume, 500);
+            // 淡入（bass 语义：每次起播/换曲都生效）。必须在 ApplyVolumeToOutput 之后：
+            // 音量同步会 RampTo(Volume,20)，随后归零并铺 500ms 斜坡。
+            // 预缓冲静音段不推进斜坡（见 Session.FillPcm），出声即从 0 起
+            _session.Gain.SetImmediately(0f);
+            _session.Gain.RampTo(Volume, 500);
         }
         IsPlaying = true;
         _ipc.PlayStateUpdate(IsPlaying);
@@ -239,7 +241,7 @@ public sealed class PlaybackEngine : IDisposable
                 {
                     if (!string.IsNullOrWhiteSpace(MusicUrl))
                     {
-                        SwitchTo(MusicUrl, false);
+                        SwitchTo(MusicUrl);
                         return;
                     }
                 }
@@ -256,7 +258,7 @@ public sealed class PlaybackEngine : IDisposable
     }
 
     /// <summary>换曲淡出（bass 规则：剩余&lt;3s 或时长未知跳过；时长 min(剩余/2,500)ms）。</summary>
-    private async void MusicFadeOut(string newMusicUrl, bool isSettingChanged, long curMs, long totalMs)
+    private async void MusicFadeOut(string newMusicUrl, long curMs, long totalMs)
     {
         if (Interlocked.CompareExchange(ref _fadeBusy, 1, 0) != 0) return;
         try
@@ -264,7 +266,7 @@ public sealed class PlaybackEngine : IDisposable
             long remainingMs = totalMs - curMs;
             if (remainingMs < 3000 || totalMs <= 0)
             {
-                SwitchTo(newMusicUrl, isSettingChanged);
+                lock (_streamLock) SwitchTo(newMusicUrl);
                 return;
             }
             int fadeMs = (int)Math.Min(remainingMs / 2, 500);
@@ -273,7 +275,7 @@ public sealed class PlaybackEngine : IDisposable
             await Task.Delay(fadeMs + 30);
             lock (_streamLock)
             {
-                SwitchTo(newMusicUrl, isSettingChanged);
+                SwitchTo(newMusicUrl);
             }
         }
         catch { }
@@ -414,7 +416,7 @@ public sealed class PlaybackEngine : IDisposable
                 if (_session != null)
                 {
                     _session.RequestSeek(curMs);
-                    if (wasPlaying || IsPlaying) StartOutputAndPlay(false);
+                    if (wasPlaying || IsPlaying) StartOutputAndPlay();
                 }
                 else IsPlaying = false;
             }

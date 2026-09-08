@@ -293,9 +293,10 @@ internal sealed class Session : IRenderSource, IDisposable
     public void FillPcm(Span<float> buffer, int frames)
     {
         if (_pcmRing == null || Gain == null) { buffer[..(frames * _channels)].Clear(); return; }
-        _pcmRing.Render(buffer, frames);
-        Eq.Process(buffer, frames, _channels);
-        Gain.Apply(buffer, frames, _channels);
+        int audible = _pcmRing.Render(buffer, frames);
+        if (audible <= 0) return; // 预缓冲/欠载静音段：不推进 EQ 与增益斜坡（淡入淡出按出声时长走）
+        Eq.Process(buffer, audible, _channels);
+        Gain.Apply(buffer, audible, _channels);
     }
 
     public void FillDop(Span<uint> buffer, int frames)
