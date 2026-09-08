@@ -51,7 +51,7 @@ namespace WinUIMusicPlayer.Model.Stats
             }
             if (list.Count == 0) return;
 
-            list.Sort((a, b) => PinyinStringComparer.Compare(a.Album, b.Album));
+            list.Sort((a, b) => CjkStringComparer.Compare(a.Album, b.Album));
             app.SequentialPlayingList = new BulkObservableCollection<Music>(list);
             await services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(list[0], IsChangeList: true);
         }
