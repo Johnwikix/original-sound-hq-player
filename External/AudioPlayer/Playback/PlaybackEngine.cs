@@ -25,6 +25,8 @@ public sealed class PlaybackEngine : IDisposable
     private IAudioOutput? _output;
     private Timer? _endedWatchdog;
     private int _fadeBusy; // Interlocked：换曲淡出进行中
+    private volatile bool _pauseFadeActive; // 暂停淡出进行中（音量同步让路）
+    private int _pauseFadeToken; // 暂停淡出令牌：期间再次按下播放则取消本次停机
 
     public bool IsPlaying;
     public string OutputMode = "DirectSound";
@@ -120,6 +122,9 @@ public sealed class PlaybackEngine : IDisposable
         return session;
     }
 
+    /// <summary>淡出后等待端点缓冲排空的余量（渲染领先可闻播放 LatencyMs）。</summary>
+    private int FadeDrainMs => Math.Min(1500, (_output?.LatencyMs ?? 0) + 100);
+
     private static bool IsSharedMode(string mode) => mode is not ("WasapiExclusivePush" or "WasapiExclusiveEvent" or "ASIO");
     private static bool IsSharedDeviceIndexed(string mode) => mode == "WasapiShared";
 
@@ -213,18 +218,23 @@ public sealed class PlaybackEngine : IDisposable
             {
                 if (IsFadingEnabled && _session is { Kind: RenderKind.Pcm, Gain: not null })
                 {
+                    // 淡出（bass：按下即通知，音频在后台淡完）。渲染领先可闻播放一个端点缓冲，
+                    // 必须等斜坡"排空到喇叭"再 Stop，否则尾段被硬裁
                     _session.Gain.RampTo(0f, 500);
+                    IsPlaying = false;
+                    _ipc.PlayStateUpdate(IsPlaying);
+                    int token = ++_pauseFadeToken;
+                    _pauseFadeActive = true;
                     Task.Run(async () =>
                     {
-                        await Task.Delay(520);
+                        await Task.Delay(500 + FadeDrainMs);
                         lock (_streamLock)
                         {
-                            if (IsPlaying && _session != null && Math.Abs(_session.Gain!.Target) < 0.001f)
+                            if (token == _pauseFadeToken && _session != null)
                             {
                                 _output?.Pause();
-                                IsPlaying = false;
-                                _ipc.PlayStateUpdate(IsPlaying);
                             }
+                            _pauseFadeActive = false;
                         }
                     });
                 }
@@ -271,10 +281,12 @@ public sealed class PlaybackEngine : IDisposable
             }
             int fadeMs = (int)Math.Min(remainingMs / 2, 500);
             var gain = _session?.Gain;
+            int drain = FadeDrainMs;
             gain?.RampTo(0f, fadeMs);
-            await Task.Delay(fadeMs + 30);
+            await Task.Delay(fadeMs + drain);
             lock (_streamLock)
             {
+                if (!IsPlaying) return; // 淡出期间用户已暂停：无需再切（下次 Play 会切）
                 SwitchTo(newMusicUrl);
             }
         }
@@ -293,17 +305,17 @@ public sealed class PlaybackEngine : IDisposable
             if (_session is { Kind: RenderKind.Pcm, Gain: not null })
             {
                 _session.Gain.RampTo(0f, 500);
+                IsPlaying = false;
+                _ipc.PlayStateUpdate(IsPlaying);
+                int token = ++_pauseFadeToken;
+                _pauseFadeActive = true;
                 Task.Run(async () =>
                 {
-                    await Task.Delay(520);
+                    await Task.Delay(500 + FadeDrainMs);
                     lock (_streamLock)
                     {
-                        if (IsPlaying)
-                        {
-                            _output?.Pause();
-                            IsPlaying = false;
-                            _ipc.PlayStateUpdate(IsPlaying);
-                        }
+                        if (token == _pauseFadeToken && _session != null) _output?.Pause();
+                        _pauseFadeActive = false;
                     }
                 });
             }
@@ -354,6 +366,7 @@ public sealed class PlaybackEngine : IDisposable
     /// <summary>按模式施加音量：共享=会话音量；DirectSound/独占/ASIO(PCM)=软件斜坡；位流=无增益。</summary>
     private void ApplyVolumeToOutput()
     {
+        if (_pauseFadeActive) return; // 暂停淡出进行中：音量同步会让淡出斜坡跳回，等暂停完成后再说
         var session = _session;
         var output = _output;
         if (session == null || output == null) return;

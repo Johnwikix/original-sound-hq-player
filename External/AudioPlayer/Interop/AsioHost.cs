@@ -102,6 +102,8 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
 
     public bool IsFailed => Volatile.Read(ref _failed) != 0;
 
+    public int LatencyMs { get; private set; }
+
     // ─────────────── 初始化细节（ECHO 移植） ───────────────
 
     private bool TryCreateBuffers(int bufferSize, bool includeInputs)
@@ -149,6 +151,7 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
         _bufferInfos = bufferArray;
         _channelInfos = channelInfos;
         _bufferSize = bufferSize;
+        LatencyMs = (int)(_bufferSize * 2L * 1000 / Math.Max(1, _source.SampleRate)); // 双缓冲
         _postOutput = true; // 直接调用，驱动不支持时返回错误码无害
         return true;
     }

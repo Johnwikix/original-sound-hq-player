@@ -31,4 +31,7 @@ internal interface IAudioOutput : IDisposable
 {
     void Pause();
     void Resume();
+
+    /// <summary>端点缓冲深度（毫秒）：渲染领先可闻播放的量。淡出后需等它排空再停，否则尾段被硬裁。</summary>
+    int LatencyMs { get; }
 }

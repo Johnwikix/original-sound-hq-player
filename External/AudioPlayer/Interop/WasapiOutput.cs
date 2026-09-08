@@ -38,6 +38,8 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
 
     public bool IsFailed => Volatile.Read(ref _failed) != 0;
 
+    public int LatencyMs { get; private set; }
+
     public WasapiOutput(bool exclusive, bool pushMode)
     {
         _exclusive = exclusive;
@@ -94,6 +96,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
 
             _pcmScratch = new float[_bufferFrames * source.Channels];
             _dopScratch = new uint[_bufferFrames * source.Channels];
+            LatencyMs = (int)(_bufferFrames * 1000L / Math.Max(1, source.SampleRate));
 
             if (!_pushMode && _client.SetEventHandle(_renderEvent) != 0) return false;
 

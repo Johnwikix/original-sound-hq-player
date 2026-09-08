@@ -185,6 +185,21 @@ if (t == MessageTypeId.WasapiDevices)
     }
 }
 
+// 换曲测试：播放 1.5s 后对另一文件发 Play（触发换曲淡出：淡出→排空→切换→淡入）
+if (args.Contains("--trackchange"))
+{
+    Thread.Sleep(1500);
+    Span<byte> playBuf2 = new byte[BinarySerializer.PlayRequestSize];
+    BinarySerializer.WritePlayRequest(playBuf2, new PlayRequest { Url = mediaPath });
+    Send(CommandId.Play, playBuf2, out _);
+    Console.WriteLine("[smoke] 换曲 Play 已发送");
+    for (int i = 0; i < 8; i++) { Thread.Sleep(400); t = Send(CommandId.GetTimeProgress, ReadOnlySpan<byte>.Empty, out var pr); if (t == MessageTypeId.TimeProgress) { var (c, tt) = BinarySerializer.ReadTimeProgress(pr); Console.WriteLine($"[smoke] 换曲后进度 {c / 1000.0:F1}s / {tt / 1000.0:F1}s"); } PumpNotifications(); }
+    Send(CommandId.MusicEnd, ReadOnlySpan<byte>.Empty, out _);
+    server.Kill(); server.WaitForExit(2000);
+    Console.WriteLine("[smoke] 换曲测试完成");
+    return 0;
+}
+
 // 轮询进度
 long lastCur = -1;
 for (int i = 0; i < runSeconds * 4; i++)
