@@ -129,6 +129,19 @@ int setLen = BinarySerializer.WriteIpcSetting(setBuf, new IpcSetting
 t = Send(CommandId.UpdateSettings, setBuf[..setLen], out _);
 Console.WriteLine($"[smoke] UpdateSettings → {t}");
 
+if (args.Contains("--devices-first"))
+{
+    Span<byte> devReq0 = new byte[1];
+    BinarySerializer.WriteGetDevicesRequest(devReq0, new GetDevicesRequest { Page = 0 });
+    var t0 = Send(CommandId.GetWasapiDevices, devReq0, out var devPage0);
+    if (t0 == MessageTypeId.WasapiDevices)
+    {
+        var (page0, totalPages0, count0) = BinarySerializer.ReadDeviceListPageHeader(devPage0);
+        Console.WriteLine($"[smoke] 播放前 WasapiDevices → 页{page0}/{totalPages0} 共{count0}台");
+    }
+    else Console.WriteLine($"[smoke] 播放前 WasapiDevices → {t0}");
+}
+
 Span<byte> playBuf = new byte[BinarySerializer.PlayRequestSize];
 BinarySerializer.WritePlayRequest(playBuf, new PlayRequest { Url = mediaPath });
 t = Send(CommandId.Play, playBuf, out _);

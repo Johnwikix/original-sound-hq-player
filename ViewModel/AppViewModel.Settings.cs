@@ -82,9 +82,14 @@ namespace WinUIMusicPlayer.ViewModel
         } = AnimatedWin2dControls.BackgroundShaderMode.FluidBackground;
         public int BackgroundShaderIndex
         {
-            get => (int)BackgroundShader;
-            set => BackgroundShader = (AnimatedWin2dControls.BackgroundShaderMode)value;
+            // 历史保存值可能越界（枚举成员增删/实验构建残留），越界索引直塞
+            // SelectedIndex 会抛 E_INVALIDARG 并在 x:Bind 初始化时崩掉整个对话框
+            get => Math.Clamp((int)BackgroundShader, 0, MaxBackgroundShaderIndex);
+            set => BackgroundShader = (AnimatedWin2dControls.BackgroundShaderMode)Math.Clamp(value, 0, MaxBackgroundShaderIndex);
         }
+
+        private static readonly int MaxBackgroundShaderIndex =
+            (int)AnimatedWin2dControls.BackgroundShaderMode.ChromaticResonance; // 枚举尾成员=最大合法索引
         public int CoverSize
         {
             get => field;
@@ -1246,9 +1251,11 @@ namespace WinUIMusicPlayer.ViewModel
         } = EasingType.Sine;
         public int ScrollEasingTypeIndex
         {
-            get => (int)ScrollEasingType;
-            set => ScrollEasingType = (EasingType)value;
+            get => Math.Clamp((int)ScrollEasingType, 0, MaxEasingTypeIndex);
+            set => ScrollEasingType = (EasingType)Math.Clamp(value, 0, MaxEasingTypeIndex);
         }
+
+        private static readonly int MaxEasingTypeIndex = (int)EasingType.Bounce; // 枚举尾成员
 
         public EaseMode ScrollEasingMode
         {
@@ -1268,9 +1275,11 @@ namespace WinUIMusicPlayer.ViewModel
         } = EaseMode.Continuous;
         public int ScrollEasingModeIndex
         {
-            get => (int)ScrollEasingMode;
-            set => ScrollEasingMode = (EaseMode)value;
+            get => Math.Clamp((int)ScrollEasingMode, 0, MaxEaseModeIndex);
+            set => ScrollEasingMode = (EaseMode)Math.Clamp(value, 0, MaxEaseModeIndex);
         }
+
+        private static readonly int MaxEaseModeIndex = (int)EaseMode.Continuous; // 枚举尾成员
 
         public bool EnableGlobalHotKey
         {
