@@ -28,6 +28,8 @@ public sealed class PlaybackEngine : IDisposable
     private volatile bool _pauseFadeActive; // 暂停淡出进行中（音量同步让路）
     private int _pauseFadeToken; // 暂停淡出令牌：期间再次按下播放则取消本次停机
     private long _playGen; // 用户操作代数（切歌/换设置/停止递增）：使在途失效恢复计划作废
+    private long _outputStartedTick; // 当前输出生效时刻：用于识别"重建后秒挂"的设备抖动
+    private int _fastFailStreak; // 连续快速失败（重建后 <4s 又挂）：达 2 次停止自动恢复
 
     /// <summary>输出失效后的自动恢复计划（系统改输出格式/设备重启是暂态：重建会话保进度）。</summary>
     private sealed class RecoveryPlan
@@ -208,6 +210,7 @@ public sealed class PlaybackEngine : IDisposable
             _session.Gain.RampTo(Volume, 500);
         }
         IsPlaying = true;
+        _outputStartedTick = Environment.TickCount64;
         _ipc.PlayStateUpdate(IsPlaying);
     }
 
@@ -560,6 +563,14 @@ public sealed class PlaybackEngine : IDisposable
                         try { output.Pause(); } catch { }
                         IsPlaying = false;
                         _ipc.PlayStateUpdate(false);
+                        // 重建后 4 秒内又挂 = 设备抖动：连续两次后交还用户，避免播放/暂停每秒抖动
+                        bool fastFail = Environment.TickCount64 - _outputStartedTick < 4000;
+                        _fastFailStreak = fastFail ? _fastFailStreak + 1 : 0;
+                        if (_fastFailStreak >= 2)
+                        {
+                            Console.WriteLine("[engine] output keeps failing fast, auto-recovery suspended");
+                            return;
+                        }
                         _recovery = new RecoveryPlan
                         {
                             Gen = Volatile.Read(ref _playGen),
@@ -599,7 +610,11 @@ public sealed class PlaybackEngine : IDisposable
             if (Volatile.Read(ref _playGen) != plan.Gen) { _recovery = null; return; }
             plan.Attempts++;
             Console.WriteLine($"[engine] output recovery attempt {plan.Attempts}");
-            if (TryRebuildOutput(plan.PositionMs)) return; // 成功：StartOutputAndPlay 已发 PlayState(true)
+            if (TryRebuildOutput(plan.PositionMs))
+            {
+                _recovery = null; // 必须清除：否则下次 tick 计划时间已过 → 无限销毁刚建的会话再重建
+                return;
+            }
             if (plan.Attempts >= 3) { _recovery = null; return; } // 放弃：等用户手动操作
             plan.NextTickMs = Environment.TickCount64 + (plan.Attempts == 1 ? 2000 : 4000);
         }
