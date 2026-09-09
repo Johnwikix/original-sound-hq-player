@@ -152,6 +152,92 @@ internal static unsafe class Program
             int gc = getChannels(drv, &inCh, &outCh);
             Console.WriteLine($"[probe] getChannels hr={gc} in={inCh} out={outCh}");
         }
+
+        if (_mode == "D") ProbeExtended(drv, vtbl);
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    struct ChannelInfoFixed
+    {
+        public int Channel, IsInput, IsActive, ChannelGroup, Type;
+        public fixed byte Name[32];
+    }
+
+    // D 模式：修正结构后的通道信息 + DSD 扩展探测（正确魔数 selector）
+    static void ProbeExtended(IntPtr drv, void** vtbl)
+    {
+        var getChannelInfo = (delegate* unmanaged[Stdcall]<IntPtr, ChannelInfoFixed*, int>)vtbl[18];
+        var future = (delegate* unmanaged[Stdcall]<IntPtr, int, void*, int>)vtbl[22];
+        var canRate = (delegate* unmanaged[Stdcall]<IntPtr, double, int>)vtbl[12];
+        var getRate = (delegate* unmanaged[Stdcall]<IntPtr, double*, int>)vtbl[13];
+        var getBufSize = (delegate* unmanaged[Stdcall]<IntPtr, int*, int*, int*, int*, int>)vtbl[11];
+        const int kAsioSetIoFormat = 0x23111961, kAsioCanDoIoFormat = 0x23112004;
+
+        void DumpChannel(int ch, bool isInput, string tag)
+        {
+            var info = new ChannelInfoFixed { Channel = ch, IsInput = isInput ? 1 : 0 };
+            int r = getChannelInfo(drv, &info);
+            // info 因取址已是不可移动局部，无需 fixed 直接取缓冲指针
+            byte* np = info.Name;
+            int nl = 0; while (nl < 32 && np[nl] != 0) nl++;
+            string name = nl > 0 ? System.Text.Encoding.ASCII.GetString(np, nl) : "";
+            Console.WriteLine($"[probe D] {tag} ch{ch}: hr={r} type={info.Type} group={info.ChannelGroup} active={info.IsActive} name=\"{name}\"");
+        }
+        DumpChannel(0, false, "pcm");
+        DumpChannel(1, false, "pcm");
+        {
+            int mn = 0, mx = 0, pf = 0, gr = 0;
+            Console.WriteLine($"[probe D] getBufferSize hr={getBufSize(drv, &mn, &mx, &pf, &gr)} min={mn} max={mx} pref={pf} gran={gr}");
+            double cur = 0;
+            Console.WriteLine($"[probe D] getSampleRate hr={getRate(drv, &cur)} current={cur}");
+            foreach (double r in new[] { 44100, 48000, 88200, 96000, 176400, 192000, 352800, 384000, 705600, 768000, 2822400 })
+                Console.WriteLine($"[probe D] canSampleRate({r:0}) -> {canRate(drv, r)}");
+        }
+
+        // DSD 扩展（512 字节 ASIOIoFormat）。注意：FiiO/Thesycon 的 CanDo 返回私有魔数
+        // 0x3F4847A0（非 ASE_SUCCESS）——SDK 语义"支持则 FormatType 不变"才是判据，
+        // 切换是否真生效以通道类型变为 DSD(32/33/40) 为准
+        byte* fmt = stackalloc byte[512];
+        for (int i = 0; i < 512; i++) fmt[i] = 0;
+        *(int*)fmt = 1; // kASIODSDFormat
+        int can = future(drv, kAsioCanDoIoFormat, fmt);
+        Console.WriteLine($"[probe D] CanDoIoFormat(DSD) -> 0x{can:X8} FormatType={*(int*)fmt}");
+        if (*(int*)fmt == 1) // 未被改为 -1 = 驱动声明支持
+        {
+            for (int i = 0; i < 512; i++) fmt[i] = 0;
+            *(int*)fmt = 1;
+            int set = future(drv, kAsioSetIoFormat, fmt);
+            Console.WriteLine($"[probe D] SetIoFormat(DSD) -> 0x{set:X8} FormatType={*(int*)fmt}");
+            if (set == 0 || set == unchecked((int)0x3f489015) || set > 0)
+            {
+                DumpChannel(0, false, "dsd-after-set");
+                {
+                    var getChannels = (delegate* unmanaged[Stdcall]<IntPtr, int*, int*, int>)vtbl[9];
+                    int inCh = 0, outCh = 0;
+                    Console.WriteLine($"[probe D] dsd getChannels hr={getChannels(drv, &inCh, &outCh)} in={inCh} out={outCh}");
+                }
+                {
+                    int mn = 0, mx = 0, pf = 0, gr = 0;
+                    Console.WriteLine($"[probe D] dsd getBufferSize hr={getBufSize(drv, &mn, &mx, &pf, &gr)} min={mn} max={mx} pref={pf} gran={gr}");
+                }
+                double cur = 0;
+                Console.WriteLine($"[probe D] dsd getSampleRate hr={getRate(drv, &cur)} current={cur}");
+                foreach (double r in new[] { 44100, 88200, 176400, 352800, 705600, 2822400, 5644800 })
+                    Console.WriteLine($"[probe D] dsd canSampleRate({r:0}) -> {canRate(drv, r)}");
+
+                // Thesycon 惯例：用采样率选择 DSD 速率。切换后再看通道类型
+                var setRate = (delegate* unmanaged[Stdcall]<IntPtr, double, int>)vtbl[14];
+                int sr = setRate(drv, 2822400);
+                double now = 0;
+                getRate(drv, &now);
+                Console.WriteLine($"[probe D] dsd setSampleRate(2822400) -> {sr} now={now}");
+                DumpChannel(0, false, "dsd-after-rate");
+                {
+                    int mn = 0, mx = 0, pf = 0, gr = 0;
+                    Console.WriteLine($"[probe D] dsd2 getBufferSize hr={getBufSize(drv, &mn, &mx, &pf, &gr)} min={mn} max={mx} pref={pf} gran={gr}");
+                }
+            }
+        }
     }
 
     static void RunOnSta(Action body)

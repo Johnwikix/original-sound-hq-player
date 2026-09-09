@@ -369,6 +369,8 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                 try
                 {
                     FillEndpoint(dst, frames);
+                    if (Diagnostics.BufferDump.Enabled)
+                        Diagnostics.BufferDump.Write(dst, (int)(frames * _channels * BytesPerSample(_endpointKind)));
                 }
                 catch
                 {

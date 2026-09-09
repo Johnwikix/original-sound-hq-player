@@ -16,7 +16,7 @@ internal static class AsioConstants
     public const int AseOk = 0;
     public const int AseSuccess = 0x3f489015;
 
-    // 采样类型（asio.h ASIOSampleType）
+    // 采样类型（asio.h ASIOSampleType，逐值对照过 ECHO 所带官方 SDK 头）
     public const int AsioStInt16Msb = 0;
     public const int AsioStInt24Msb = 1;
     public const int AsioStInt32Msb = 2;
@@ -31,13 +31,13 @@ internal static class AsioConstants
     public const int AsioStInt32Lsb = 18;
     public const int AsioStFloat32Lsb = 19;
     public const int AsioStFloat64Lsb = 20;
-    public const int AsioStInt32Lsb16 = 32;
-    public const int AsioStInt32Lsb18 = 33;
-    public const int AsioStInt32Lsb20 = 34;
-    public const int AsioStInt32Lsb24 = 35;
-    public const int AsioStDsdInt8Lsb1 = 40;
-    public const int AsioStDsdInt8Msb1 = 41;
-    public const int AsioStDsdInt8Ner8 = 42;
+    public const int AsioStInt32Lsb16 = 24; // 32 位容器 16 位对齐（曾误写 32，与 DSD 类型值冲突）
+    public const int AsioStInt32Lsb18 = 25;
+    public const int AsioStInt32Lsb20 = 26;
+    public const int AsioStInt32Lsb24 = 27;
+    public const int AsioStDsdInt8Lsb1 = 32; // DSD：首采样在最低位
+    public const int AsioStDsdInt8Msb1 = 33; // DSD：首采样在最高位
+    public const int AsioStDsdInt8Ner8 = 40; // DSD：每字节 1 个采样
 
     // asioMessage selector
     public const int KAsioSelectorSupported = 1;
@@ -50,10 +50,11 @@ internal static class AsioConstants
     public const int KAsioSupportsTimeCode = 8;
     public const int KAsioSupportsInputMonitor = 10;
 
-    // ASIOFuture selector
-    public const int KAsioSetIoFormat = 12;
-    public const int KAsioGetIoFormat = 13;
-    public const int KAsioCanDoIoFormat = 14;
+    // ASIOFuture selector（asio.h：DSD 扩展是魔数，不是小整数——曾误写 12/13/14 导致
+    // 支持 native DSD 的驱动被误判为不支持而回退）
+    public const int KAsioSetIoFormat = 0x23111961;
+    public const int KAsioGetIoFormat = 0x23111983;
+    public const int KAsioCanDoIoFormat = 0x23112004;
 
     public const int KAsioPcmFormat = 0;
     public const int KAsioDsdFormat = 1;
@@ -76,6 +77,8 @@ internal unsafe struct AsioChannelInfo
 {
     public int Channel;
     public int IsInput;
+    public int IsActive;      // SDK 还有这两个字段（曾漏掉导致 Type 读到 channelGroup，
+    public int ChannelGroup;  // 输出通道组=1 被当成 Int24MSB → 按 3 字节写 4 字节缓冲 → 全噪声）
     public int Type;
     public fixed byte Name[32];
 }

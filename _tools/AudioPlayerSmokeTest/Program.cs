@@ -116,6 +116,9 @@ Span<byte> setBuf = new byte[1024];
 int devIdx = -1;
 var devArg = args.FirstOrDefault(a => a.StartsWith("--dev="));
 if (devArg != null) int.TryParse(devArg[6..], out devIdx);
+float vol = 1f;
+var volArg = args.FirstOrDefault(a => a.StartsWith("--vol="));
+if (volArg != null && float.TryParse(volArg[6..], out var v)) vol = v;
 int setLen = BinarySerializer.WriteIpcSetting(setBuf, new IpcSetting
 {
     OutputMode = outputMode,
@@ -125,7 +128,7 @@ int setLen = BinarySerializer.WriteIpcSetting(setBuf, new IpcSetting
     DsdGain = 6,
     DsdPcmFreq = 88200,
     IsEqualizerEnabled = false,
-    Volume = 0.15f,
+    Volume = vol,
     IsSettingChanged = false,
     IsFadeEnabled = false,
 });
@@ -160,16 +163,19 @@ if (!args.Contains("--no-toggle"))
     PumpNotifications();
 }
 
-// EQ 全 +10dB（验证 EqState 双向）
-Span<byte> eqBuf = new byte[BinarySerializer.UpdateEqRequestSize];
-BinarySerializer.WriteUpdateEqRequest(eqBuf, new UpdateEqRequest
+// EQ 全 +10dB（验证 EqState 双向；--no-eq 跳过——格式验证需要干净信号）
+if (!args.Contains("--no-eq"))
 {
-    IsEnabled = true,
-    Band0 = 10, Band1 = 8, Band2 = 6, Band3 = 4, Band4 = 2,
-    Band5 = 0, Band6 = -2, Band7 = -4, Band8 = -6, Band9 = -8,
-});
-t = Send(CommandId.UpdateEq, eqBuf, out var eq);
-Console.WriteLine($"[smoke] UpdateEq → {t} len={eq.Length}" + (eq.Length >= 2 ? $" enabled={eq[0]} active={eq[1]}" : " (载荷异常)"));
+    Span<byte> eqBuf = new byte[BinarySerializer.UpdateEqRequestSize];
+    BinarySerializer.WriteUpdateEqRequest(eqBuf, new UpdateEqRequest
+    {
+        IsEnabled = true,
+        Band0 = 10, Band1 = 8, Band2 = 6, Band3 = 4, Band4 = 2,
+        Band5 = 0, Band6 = -2, Band7 = -4, Band8 = -6, Band9 = -8,
+    });
+    t = Send(CommandId.UpdateEq, eqBuf, out var eq);
+    Console.WriteLine($"[smoke] UpdateEq → {t} len={eq.Length}" + (eq.Length >= 2 ? $" enabled={eq[0]} active={eq[1]}" : " (载荷异常)"));
+}
 
 // 设备枚举（分页第 0 页）
 Span<byte> devReq = new byte[1];

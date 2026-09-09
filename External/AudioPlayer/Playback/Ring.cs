@@ -57,7 +57,11 @@ internal abstract class FrameRingBase<T> where T : unmanaged
         Interlocked.Exchange(ref _framesPlayed, 0);
         Interlocked.Exchange(ref _underrunCallbacks, 0);
         Interlocked.Exchange(ref _underrunFrames, 0);
+        OnSessionBegin();
     }
+
+    /// <summary>会话开始/seek 重置钩子（DoP 重置标记相位基）。</summary>
+    protected virtual void OnSessionBegin() { }
 
     public void MarkInputEnded() => InputEnded = true;
 
@@ -111,7 +115,8 @@ internal abstract class FrameRingBase<T> where T : unmanaged
     public int Render(Span<T> output, int frameCount)
     {
         if (frameCount <= 0 || output.Length < frameCount * Channels) return 0;
-        FillSilence(output, frameCount);
+        long phaseBase = NextRenderPhase(frameCount);
+        FillSilence(output, frameCount, phaseBase);
         if (HoldForPrebuffer()) return 0;
 
         int readTotal = 0;
@@ -146,7 +151,7 @@ internal abstract class FrameRingBase<T> where T : unmanaged
         if (readTotal > 0)
         {
             Interlocked.Add(ref _framesPlayed, readTotal);
-            PostRender(output, frameCount);
+            PostRender(output, frameCount, phaseBase);
         }
         return readTotal;
     }
@@ -168,11 +173,15 @@ internal abstract class FrameRingBase<T> where T : unmanaged
         }
     }
 
-    /// <summary>整块静音（DoP 覆盖为标记静音）。</summary>
-    protected virtual void FillSilence(Span<T> output, int frameCount) => output[..(frameCount * Channels)].Clear();
+    /// <summary>块渲染前推进并返回相位基（DoP 用全局帧计数保证标记跨块连续；仅渲染线程调用）。</summary>
+    protected virtual long NextRenderPhase(int frameCount) => 0;
 
-    /// <summary>渲染后处理（DoP 在此按输出帧号重盖标记位）。</summary>
-    protected virtual void PostRender(Span<T> output, int frameCount) { }
+    /// <summary>整块静音（DoP 覆盖为标记静音；phaseBase = 本块首帧的全局帧号）。</summary>
+    protected virtual void FillSilence(Span<T> output, int frameCount, long phaseBase)
+        => output[..(frameCount * Channels)].Clear();
+
+    /// <summary>渲染后处理（DoP 在此按全局帧号重盖标记位）。</summary>
+    protected virtual void PostRender(Span<T> output, int frameCount, long phaseBase) { }
 
     private void CopyIn(ReadOnlySpan<T> source, int sourceFrame, int ringFrame, int frames)
         => source.Slice(sourceFrame * Channels, frames * Channels)
@@ -191,31 +200,44 @@ internal sealed class PcmRing : FrameRingBase<float>
 }
 
 /// <summary>
-/// DoP：uint32 采样（低 16 位 DSD 数据，位 16-23 标记）。渲染时按输出帧号重盖
-/// 0x05/0xFA 标记（ECHO normalizeDopMarkers：欠载/回绕后标记相位保持正确）。
+/// DoP：uint32 采样（低 16 位 DSD 数据，位 16-23 标记）。标记按<b>全局</b>渲染帧计数
+/// 交替（0x05 起始）：缓冲帧数为奇数时（如独占事件 6615 帧）按块内帧号交替会在每块
+/// 边界翻转相位 → DAC 无法锁定 → 全程静音（KA13 实测）。静音低 16 位填 0x6969
+/// （DSD 静音字节），避免锁定瞬间全 0 位流的直流跳变。
 /// </summary>
 internal sealed class DopRing : FrameRingBase<uint>
 {
+    private long _renderedFrames; // 渲染线程独占（BeginSession 重置）
+
     public DopRing(int channels, int capacityFrames, int prebufferFrames, int prebufferMs)
         : base(channels, capacityFrames, prebufferFrames, prebufferMs) { }
 
-    protected override void FillSilence(Span<uint> output, int frameCount)
+    protected override void OnSessionBegin() => _renderedFrames = 0;
+
+    protected override long NextRenderPhase(int frameCount)
+    {
+        long b = _renderedFrames;
+        _renderedFrames += frameCount; // 静音块同样推进：相位在任何路径下连续
+        return b;
+    }
+
+    protected override void FillSilence(Span<uint> output, int frameCount, long phaseBase)
     {
         for (int f = 0; f < frameCount; f++)
         {
-            uint sample = (f & 1) == 0 ? 0x050000u : 0xfa0000u;
+            uint sample = (uint)(((phaseBase + f) & 1) == 0 ? 0x05u : 0xfau) << 16 | 0x6969u;
             for (int c = 0; c < Channels; c++)
                 output[f * Channels + c] = sample;
         }
     }
 
-    protected override void PostRender(Span<uint> output, int frameCount)
+    protected override void PostRender(Span<uint> output, int frameCount, long phaseBase)
     {
         for (int f = 0; f < frameCount; f++)
         {
-            uint marker = (f & 1) == 0 ? 0x05u : 0xfau;
+            uint marker = (uint)(((phaseBase + f) & 1) == 0 ? 0x05u : 0xfau) << 16;
             for (int c = 0; c < Channels; c++)
-                output[f * Channels + c] = (output[f * Channels + c] & 0x0000ffffu) | (marker << 16);
+                output[f * Channels + c] = (output[f * Channels + c] & 0x0000ffffu) | marker;
         }
     }
 }
@@ -226,6 +248,6 @@ internal sealed class DsdByteRing : FrameRingBase<byte>
     public DsdByteRing(int channels, int capacityByteFrames, int prebufferFrames, int prebufferMs)
         : base(channels, capacityByteFrames, prebufferFrames, prebufferMs) { }
 
-    protected override void FillSilence(Span<byte> output, int frameCount)
+    protected override void FillSilence(Span<byte> output, int frameCount, long phaseBase)
         => output[..(frameCount * Channels)].Fill((byte)0x69);
 }

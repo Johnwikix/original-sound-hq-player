@@ -99,10 +99,10 @@ public sealed class PlaybackEngine : IDisposable
         if (_session != null) StartOutputAndPlay();
     }
 
-    private Session? OpenSession(string url, bool forceSharedFormat = false)
+    private Session? OpenSession(string url, bool forceSharedFormat = false, RenderKind? kindOverride = null)
     {
         // 回退共享时强制 PCM：位流会话（DoP/NativeDSD）在共享模式必然失败
-        var kind = forceSharedFormat ? RenderKind.Pcm : EffectiveKind;
+        var kind = forceSharedFormat ? RenderKind.Pcm : kindOverride ?? EffectiveKind;
         // 共享模式（DirectSound/WasapiShared，或独占/ASIO 失败回退）会话直接按端点
         // 混音格式构建：swresample 直出混音率/声道，端点格式精确匹配
         // （虚拟声卡常只接受混音格式，Senary 实测 44.1k 全拒）。
@@ -146,6 +146,21 @@ public sealed class PlaybackEngine : IDisposable
     {
         var session = _session!;
         IAudioOutput? output = CreateOutput(session);
+        if (output == null && OutputMode == "ASIO" && session.Kind == RenderKind.NativeDsd)
+        {
+            // ASIO native DSD 协商失败（驱动无 DSD 扩展/采样率域不符）→ 先试 ASIO DoP：
+            // 仍走 ASIO 与位流，优于直接整体退到共享 PCM
+            Console.WriteLine("[engine] asio native dsd failed, retry as dop");
+            long keepMs = session.CurrentMs;
+            DisposeSession();
+            _session = OpenSession(MusicUrl!, kindOverride: RenderKind.Dop);
+            if (_session != null)
+            {
+                _session.RequestSeek(keepMs);
+                session = _session;
+                output = CreateOutput(session);
+            }
+        }
         if (output == null && !IsSharedMode(OutputMode))
         {
             // 独占/ASIO 失败 → 回退共享：会话按混音格式重建（率/声道可能与源不同）

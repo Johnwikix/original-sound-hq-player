@@ -24,6 +24,7 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     private int _bufferSize;
     private bool _postOutput;
     private bool _nativeDsdApplied;
+    private int _dsdRateDomain; // NativeDSD：驱动接受的采样率（位率或字节率，厂商各异）
     private bool _started;
     private int _failed; // Interlocked
 
@@ -130,12 +131,23 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
                 return false;
             }
             Console.WriteLine($"[asio] ch in={inCh} out={outCh} buffer min={minSize} max={maxSize} pref={preferred} gran={granularity} rate={source.SampleRate}");
-            int srr = SetSampleRateAndWait(source.SampleRate);
-            if (srr != AsioConstants.AseOk)
+            // DSD 模式下驱动采样率域没有统一规范（有的收位率 2822400，有的收字节率 352800）：
+            // 依次尝试；失败即放弃（引擎会回退 ASIO DoP / 共享 PCM）
+            double[] rateCandidates = source.Kind == RenderKind.NativeDsd
+                ? new[] { (double)source.SampleRate, source.SampleRate / 8.0 }
+                : new[] { (double)source.SampleRate };
+            int srr = -1;
+            foreach (double rate in rateCandidates)
             {
-                Console.WriteLine($"[asio] SetSampleRate failed ret={srr}");
-                return false;
+                srr = SetSampleRateAndWait(rate);
+                if (srr == AsioConstants.AseOk)
+                {
+                    _dsdRateDomain = (int)Math.Round(rate);
+                    break;
+                }
+                Console.WriteLine($"[asio] SetSampleRate({rate:0.##}) failed ret={srr}");
             }
+            if (srr != AsioConstants.AseOk) return false;
 
             int wanted = requestedBufferFrames > 0 ? requestedBufferFrames : preferred;
             bool created = false;
@@ -162,7 +174,10 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
                 return false;
             }
             _started = true;
-            Console.WriteLine($"[asio] started buffer={_bufferSize} type={(_channelInfos.Length > _outputChannelOffset ? _channelInfos[_outputChannelOffset].Type : -1)} latency={LatencyMs}ms");
+            var firstInfo = _channelInfos.Length > _outputChannelOffset ? (AsioChannelInfo?)_channelInfos[_outputChannelOffset] : null;
+            string chName = firstInfo != null ? FixedName(firstInfo.Value) : "";
+            Console.WriteLine($"[asio] started buffer={_bufferSize} type={(firstInfo != null ? firstInfo.Value.Type : -1)}" +
+                $" group={(firstInfo != null ? firstInfo.Value.ChannelGroup : -1)} name=\"{chName}\" latency={LatencyMs}ms");
             return true;
         }
         catch
@@ -259,15 +274,21 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     private bool EnableNativeDsdFormat()
     {
         if (_driver == null) return false;
-        byte* format = stackalloc byte[64];
-        ZeroMemory(format, 64);
+        // ASIOIoFormat：long FormatType + char future[508]，共 512 字节（驱动可能回写 -1）。
+        // FiiO/Thesycon 的 CanDo/Set 返回私有魔数（0x3F4847A0，非 ASE_SUCCESS）——
+        // 按 SDK 语义判据：ASE 错误为负值；支持则 FormatType 保持不变，失败被改为 -1。
+        // 切换是否真生效由后续通道类型校验兜底（非 DSD 类型 → TryCreateBuffers 失败回退）。
+        byte* format = stackalloc byte[512];
+        ZeroMemory(format, 512);
         *(int*)format = AsioConstants.KAsioDsdFormat;
         int can = _driver.Future(AsioConstants.KAsioCanDoIoFormat, format);
-        if (can != AsioConstants.AseOk && can != AsioConstants.AseSuccess) return false;
-        ZeroMemory(format, 64);
+        Console.WriteLine($"[asio] CanDoIoFormat(DSD) ret=0x{can:X8} FormatType={*(int*)format}");
+        if (can < 0 || *(int*)format != AsioConstants.KAsioDsdFormat) return false;
+        ZeroMemory(format, 512);
         *(int*)format = AsioConstants.KAsioDsdFormat;
         int set = _driver.Future(AsioConstants.KAsioSetIoFormat, format);
-        if (set != AsioConstants.AseOk && set != AsioConstants.AseSuccess) return false;
+        Console.WriteLine($"[asio] SetIoFormat(DSD) ret=0x{set:X8} FormatType={*(int*)format}");
+        if (set < 0 || *(int*)format != AsioConstants.KAsioDsdFormat) return false;
         _nativeDsdApplied = true;
         return true;
     }
@@ -276,6 +297,16 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     private static void ZeroMemory(byte* p, int len)
     {
         for (int i = 0; i < len; i++) p[i] = 0;
+    }
+
+    private static string FixedName(in AsioChannelInfo info)
+    {
+        fixed (byte* p = info.Name)
+        {
+            int len = 0;
+            while (len < 32 && p[len] != 0) len++;
+            return len == 0 ? "" : System.Text.Encoding.ASCII.GetString(p, len);
+        }
     }
 
     private int SetSampleRateAndWait(double requested)
@@ -552,7 +583,29 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
                 break;
             }
         }
+        if (Diagnostics.BufferDump.Enabled && _outputChannelCount > 0)
+        {
+            int idx = _outputChannelOffset;
+            int type = _channelInfos[idx].Type;
+            int samples = _source.Kind == RenderKind.NativeDsd
+                ? (type == AsioConstants.AsioStDsdInt8Ner8 ? _bufferSize : (_bufferSize + 7) / 8) // LSB1/MSB1：位域缓冲
+                : _bufferSize;
+            Diagnostics.BufferDump.Write((byte*)_bufferInfos[idx].GetBuffer(bufferIndex),
+                samples * AsioBytesPerSample(type, _source.Kind));
+        }
         if (_postOutput && _driver != null) _driver.OutputReady();
+    }
+
+    private static int AsioBytesPerSample(int type, RenderKind kind)
+    {
+        if (kind == RenderKind.NativeDsd) return 1; // LSB1/MSB1=字节缓冲（帧域为位）；NER8 逐位输出
+        return type switch
+        {
+            AsioConstants.AsioStInt16Lsb or AsioConstants.AsioStInt16Msb => 2,
+            AsioConstants.AsioStInt24Lsb or AsioConstants.AsioStInt24Msb => 3,
+            AsioConstants.AsioStFloat64Lsb or AsioConstants.AsioStFloat64Msb => 8,
+            _ => 4,
+        };
     }
 
     private void WritePcmChannel(IntPtr buffer, int type, int channel, int frames)
@@ -600,6 +653,14 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
                     for (int f = 0; f < _bufferSize; f++) WriteAsioSample(dst, type, f, 0f);
                     break;
                 case RenderKind.Dop:
+                    if (_dopScratch.Length >= _bufferSize * _source.Channels)
+                    {
+                        // 走环渲染：标记相位由 DopRing 全局帧计数保证连续（静音也不例外）
+                        _dopScratch.AsSpan().Clear();
+                        _source.FillDop(_dopScratch, _bufferSize);
+                        WriteDopChannel(buf, type, ch, _bufferSize);
+                        continue;
+                    }
                     for (int f = 0; f < _bufferSize; f++) WriteAsioDopSample(dst, type, f, (f & 1) == 0 ? 0x050000u : 0xfa0000u);
                     break;
                 default:
@@ -704,22 +765,24 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
         return b;
     }
 
-    /// <summary>原生 DSD 写入（源：交织字节帧，MSB 优先）。ECHO write_asio_native_dsd_samples 移植。</summary>
+    /// <summary>原生 DSD 写入。源：交织字节帧、MSB 优先（DsdRawReader repack 约定，与 DoP 数据一致）。
+    /// 注意与 ECHO 相反：ECHO 源是 LSB-first 故 MSB1 反转；本引擎源是 MSB-first，
+    /// 因此 MSB1（首采样在最高位）直传、LSB1（首采样在最低位）反转。</summary>
     private static void WriteNativeDsd(byte* buffer, int type, int byteFrames, byte[]? source,
         int sourceChannels, int sourceChannel)
     {
         const byte silence = 0x69;
-        bool useMsbBitOrder = type == AsioConstants.AsioStDsdInt8Msb1;
+        bool driverMsbFirst = type == AsioConstants.AsioStDsdInt8Msb1;
 
         if (type == AsioConstants.AsioStDsdInt8Ner8)
         {
-            // NER8：每帧展开 1 位
+            // NER8：每帧 1 位输出
             int frames = byteFrames * 8;
             for (int frame = 0; frame < frames; frame++)
             {
                 byte value = silence;
                 int sourceByteFrame = frame / 8;
-                int sourceBit = useMsbBitOrder ? 7 - frame % 8 : frame % 8;
+                int sourceBit = 7 - frame % 8; // 源 MSB 优先：第 n 个采样在位 7-n
                 if (source != null && sourceChannels > 0 && sourceChannel < sourceChannels && sourceByteFrame < byteFrames)
                     value = source[sourceByteFrame * sourceChannels + sourceChannel];
                 buffer[frame] = (byte)((value >> sourceBit) & 0x01);
@@ -727,13 +790,13 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
             return;
         }
 
-        // LSB1 / MSB1：字节直传（MSB1 驱动要求反位序）
+        // LSB1 / MSB1：按驱动位序直传或反转
         for (int bf = 0; bf < byteFrames; bf++)
         {
             byte value = silence;
             if (source != null && sourceChannels > 0 && sourceChannel < sourceChannels && bf < byteFrames)
                 value = source[bf * sourceChannels + sourceChannel];
-            buffer[bf] = useMsbBitOrder ? ReverseBits(value) : value;
+            buffer[bf] = driverMsbFirst ? value : ReverseBits(value);
         }
     }
 
