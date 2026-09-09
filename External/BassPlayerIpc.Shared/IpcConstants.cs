@@ -2,11 +2,11 @@ namespace BassPlayerIpc.Shared;
 
 public static class IpcConstants
 {
-    public const string MmfName = "BassPlayerSharp_SharedMemory";
-    public const string RequestSemaphoreName = "BassPlayerSharp_RequestReady";
-    public const string ResponseSemaphoreName = "BassPlayerSharp_ResponseReady";
-    public const string NotificationSemaphoreName = "BassPlayerSharp_NotificationReady";
-    public const string MutexName = "BassPlayerSharp_SingleInstanceMutex";
+    public const string MmfName = "AudioPlayer_SharedMemory";
+    public const string RequestSemaphoreName = "AudioPlayer_RequestReady";
+    public const string ResponseSemaphoreName = "AudioPlayer_ResponseReady";
+    public const string NotificationSemaphoreName = "AudioPlayer_NotificationReady";
+    public const string MutexName = "AudioPlayer_SingleInstanceMutex";
     public const string ClientAliveMutexName = "WinUIMusicPlayer_SingleInstanceMutex";
 
     public const int MaxRequestSize = 2048;

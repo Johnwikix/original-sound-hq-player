@@ -93,8 +93,9 @@ internal sealed unsafe class PcmDecoder : IDisposable
             _totalMs = _fmt->duration > 0 ? (long)Math.Round(_fmt->duration / (double)ffmpeg.AV_TIME_BASE * 1000) : 0;
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            Console.WriteLine($"[decode] Open exception: {ex}");
             return false;
         }
     }

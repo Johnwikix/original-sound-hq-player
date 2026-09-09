@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <!-- 拼装名与旧进程一致：AOT 产物可直接改名替换 Player\BassPlayerSharp.exe -->
-    <AssemblyName>BassPlayerSharp</AssemblyName>
+    <!-- 拼装名 = 进程名：发布产物直接部署为 Player\AudioPlayer.exe -->
+    <AssemblyName>AudioPlayer</AssemblyName>
     <RootNamespace>AudioPlayer</RootNamespace>
     <TargetFramework>net11.0</TargetFramework>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
