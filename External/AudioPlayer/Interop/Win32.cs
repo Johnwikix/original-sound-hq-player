@@ -48,7 +48,7 @@ internal static partial class Win32
     [LibraryImport("kernel32")]
     public static partial IntPtr GetModuleHandleW(IntPtr lpModuleName);
 
-    [LibraryImport("kernel32")]
+    [LibraryImport("user32", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
     public static partial bool GetMessageW(out MSG lpMsg, IntPtr hWnd, uint wMsgFilterMin, uint wMsgFilterMax);
 
@@ -87,7 +87,7 @@ internal static partial class Win32
 
     // ─────────────── COM ───────────────
 
-    public const uint COINIT_APARTMENTTHREADED = 0x0;
+    public const uint COINIT_APARTMENTTHREADED = 0x2;
     public const uint COINIT_MULTITHREADED = 0x0;
     public const int CLSCTX_ALL = 23;
 
@@ -135,9 +135,24 @@ internal static partial class Win32
             using var driverKey = baseKey.OpenSubKey(name);
             var clsidText = driverKey?.GetValue("CLSID") as string;
             if (clsidText == null || !Guid.TryParse(clsidText, out var clsid)) continue;
+
             var display = driverKey?.GetValue("Description") as string;
             result.Add((string.IsNullOrEmpty(display) ? name : display!, clsid));
         }
         return result;
+    }
+
+    public static string? ReadInprocServer32(Guid clsid)
+    {
+        try
+        {
+            using var base64 = Microsoft.Win32.RegistryKey.OpenBaseKey(
+                Microsoft.Win32.RegistryHive.LocalMachine, Microsoft.Win32.RegistryView.Registry64);
+            using var key = base64.OpenSubKey(
+                "SOFTWARE\\Classes\\CLSID\\" + clsid.ToString("B") + "\\InprocServer32");
+            var dll = key?.GetValue(null) as string;
+            return string.IsNullOrWhiteSpace(dll) ? null : dll;
+        }
+        catch { return null; }
     }
 }

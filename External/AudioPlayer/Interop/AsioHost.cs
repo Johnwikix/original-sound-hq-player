@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using AudioPlayer.Playback;
@@ -33,6 +34,41 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
 
     private IRenderSource _source = null!;
     private static AsioOutput? _active;
+    private void* _callbacksPtr; // ASIO 回调表（持久非托管内存）
+
+    // ── 驱动线程调度：ASIO 驱动的 Init/Start/Stop 等必须在带消息泵的 STA 线程上
+    //    调用（多数驱动内部建窗/PostMessage 并同步等待；MTA 监听线程直调会卡死）。
+    //    全部驱动交互经 WM_APP 消息路由到窗口线程执行。 ──
+    private const uint WmAppWork = 0x0401;
+    private sealed class WorkItem
+    {
+        public Action Body = () => { };
+        public ManualResetEventSlim Done = new(false);
+        public Exception? Error;
+    }
+    private readonly ConcurrentQueue<WorkItem> _workQueue = new();
+
+    private bool RunOnWindowThread(Action body, int timeoutMs = 10000)
+    {
+        if (_hwnd == IntPtr.Zero) return false;
+        var item = new WorkItem { Body = body };
+        _workQueue.Enqueue(item);
+        bool posted = Win32.PostMessageW(_hwnd, WmAppWork, 0, 0);
+        if (!posted) Console.WriteLine($"[asio] PostMessage failed err={Win32.GetLastError()}");
+        if (!item.Done.Wait(timeoutMs)) return false; // 驱动卡死：按失败处理（调用方自行回退）
+        if (item.Error != null) throw item.Error;
+        return true;
+    }
+
+    private void DrainWorkQueue()
+    {
+        while (_workQueue.TryDequeue(out var w))
+        {
+            try { w.Body(); }
+            catch (Exception ex) { w.Error = ex; }
+            w.Done.Set();
+        }
+    }
 
     // [UnmanagedCallersOnly] 回调（CreateBuffers 注册给驱动）
     private static readonly delegate* unmanaged[Stdcall]<void*, int, int, void*> BufferSwitchTimeInfoPtr = &OnBufferSwitchTimeInfo;
@@ -46,22 +82,60 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
         var drivers = Win32.EnumerateAsioDrivers();
         if (driverIndex < 0 || driverIndex >= drivers.Count) return false;
 
-        Win32.CoInitializeEx(IntPtr.Zero, Win32.COINIT_MULTITHREADED);
+        Console.WriteLine($"[asio] 可用驱动数={drivers.Count}: {string.Join(" | ", drivers.Select(d => d.Name))}");
+        // 驱动调用在调用方线程执行；隐藏窗口线程只做消息服务员：
+        // 驱动 Init/Start 期间会向 hwnd 发消息（FiiO 实测同步等待），
+        // 调用方线程 ≠ 窗口线程时泵才能应答，同线程调用 = 自死锁
+        if (!StartWindowThread()) return false;
+        return StartCore(drivers[driverIndex].Clsid, requestedBufferFrames, source);
+    }
+
+    private bool StartCore(Guid clsid, int requestedBufferFrames, IRenderSource source)
+    {
         try
         {
-            if (!StartWindowThread()) return false;
-            _driver = AsioDriver.Create(drivers[driverIndex].Clsid);
-            if (_driver == null) return false;
-            if (_driver.Init(_hwnd) == 0) return false;
+            if (!RunOnWindowThread(() => _driver = AsioDriver.Create(clsid), 8000))
+            {
+                Console.WriteLine("[asio] Create timed out");
+                return false;
+            }
+            if (_driver == null) { Console.WriteLine("[asio] Create failed"); return false; }
+            Console.WriteLine($"[asio] Create ok on STA");
+            int initRet = -1;
+            var initWorker = new Thread(() => { initRet = _driver!.Init(_hwnd); }, 3 * 1024 * 1024)
+            { IsBackground = true, Name = "asio-init" };
+            initWorker.Start();
+            if (!initWorker.Join(3000))
+            {
+                Console.WriteLine("[asio] Init timed out (驱动挂死或弹出模态框)");
+                _driver.Dispose();
+                _driver = null;
+                return false; // worker 与驱动泄漏给进程退出回收（墓园语义）
+            }
+            if (initRet == 0) { Console.WriteLine("[asio] Init failed"); return false; }
+            Console.WriteLine("[asio] init ok");
 
             if (source.Kind == RenderKind.NativeDsd && !EnableNativeDsdFormat()) return false;
 
-            if (_driver.GetChannels(out int inCh, out int outCh) != AsioConstants.AseOk || outCh <= 0) return false;
+            if (_driver.GetChannels(out int inCh, out int outCh) != AsioConstants.AseOk || outCh <= 0)
+            {
+                Console.WriteLine($"[asio] GetChannels failed in={inCh} out={outCh}");
+                return false;
+            }
             _outputChannelCount = Math.Min(outCh, Math.Max(1, source.Channels));
 
             if (_driver.GetBufferSize(out int minSize, out int maxSize, out int preferred, out int granularity) != AsioConstants.AseOk)
+            {
+                Console.WriteLine("[asio] GetBufferSize failed");
                 return false;
-            if (SetSampleRateAndWait(source.SampleRate) != AsioConstants.AseOk) return false;
+            }
+            Console.WriteLine($"[asio] ch in={inCh} out={outCh} buffer min={minSize} max={maxSize} pref={preferred} gran={granularity} rate={source.SampleRate}");
+            int srr = SetSampleRateAndWait(source.SampleRate);
+            if (srr != AsioConstants.AseOk)
+            {
+                Console.WriteLine($"[asio] SetSampleRate failed ret={srr}");
+                return false;
+            }
 
             int wanted = requestedBufferFrames > 0 ? requestedBufferFrames : preferred;
             bool created = false;
@@ -80,8 +154,15 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
             _active = this;
             WriteSilence(0);
             WriteSilence(1);
-            if (_driver.Start() != AsioConstants.AseOk) { _active = null; return false; }
+            int startRet = _driver.Start();
+            if (startRet != AsioConstants.AseOk)
+            {
+                Console.WriteLine($"[asio] Start failed ret={startRet}");
+                _active = null;
+                return false;
+            }
             _started = true;
+            Console.WriteLine($"[asio] started buffer={_bufferSize} type={(_channelInfos.Length > _outputChannelOffset ? _channelInfos[_outputChannelOffset].Type : -1)} latency={LatencyMs}ms");
             return true;
         }
         catch
@@ -121,17 +202,16 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
             infos.Add(new AsioBufferInfo { IsInput = 0, ChannelNum = i });
 
         var bufferArray = infos.ToArray();
-        var callbacks = new AsioCallbacks
-        {
-            BufferSwitchTimeInfo = (IntPtr)BufferSwitchTimeInfoPtr,
-            AsioMessage = (IntPtr)AsioMessagePtr,
-            SampleRateDidChange = (IntPtr)SampleRateChangedPtr,
-        };
+        // 回调指针表必须放在持久非托管内存：驱动长期持有该地址，栈上 fixed 的地址
+        // 在本方法返回后失效，ASIOStart 后首个 bufferSwitch 回调即跳垃圾地址 → 闪退
+        _callbacksPtr = NativeMemory.Alloc((nuint)sizeof(AsioCallbacks));
+        ((AsioCallbacks*)_callbacksPtr)->BufferSwitchTimeInfo = (IntPtr)BufferSwitchTimeInfoPtr;
+        ((AsioCallbacks*)_callbacksPtr)->AsioMessage = (IntPtr)AsioMessagePtr;
+        ((AsioCallbacks*)_callbacksPtr)->SampleRateDidChange = (IntPtr)SampleRateChangedPtr;
         bool ok;
         fixed (AsioBufferInfo* pInfos = bufferArray)
         {
-            AsioCallbacks* pCallbacks = &callbacks; // 非托管局部：直接取地址
-            ok = _driver.CreateBuffers(pInfos, bufferArray.Length, bufferSize, pCallbacks) == AsioConstants.AseOk;
+            ok = _driver.CreateBuffers(pInfos, bufferArray.Length, bufferSize, (AsioCallbacks*)_callbacksPtr) == AsioConstants.AseOk;
         }
         if (!ok)
         {
@@ -348,9 +428,29 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
             Win32.RegisterClassW(ref wc);
             _hwnd = Win32.CreateWindowExW(0, "AudioPlayerAsioWindow", "AudioPlayer ASIO Host",
                 0, 0, 0, 0, 0, IntPtr.Zero, IntPtr.Zero, wc.hInstance, IntPtr.Zero);
+            Console.WriteLine($"[asio] window created hwnd=0x{_hwnd:X}");
             _windowReady.Set();
             if (_hwnd == IntPtr.Zero) return;
-            while (Win32.GetMessageW(out Win32.MSG msg, IntPtr.Zero, 0, 0)) Win32.DispatchMessageW(ref msg);
+            Console.WriteLine("[asio] pump started");
+            int seen = 0;
+            try
+            {
+                while (true)
+                {
+                    if (!Win32.GetMessageW(out Win32.MSG msg, IntPtr.Zero, 0, 0))
+                    {
+                        Console.WriteLine($"[asio] pump exit (WM_QUIT 或错误) msg={msg.message}");
+                        break;
+                    }
+                    if (seen++ < 10) Console.WriteLine($"[asio] msg {msg.message}");
+                    if (msg.message == WmAppWork) { Console.WriteLine("[asio] work received"); DrainWorkQueue(); }
+                    Win32.DispatchMessageW(ref msg);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[asio] pump crashed: {ex.GetType().Name}: {ex.Message}");
+            }
         }
         catch { }
         finally
@@ -658,6 +758,7 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
             _driver.Dispose();
             _driver = null;
         }
+        if (_callbacksPtr != null) { NativeMemory.Free(_callbacksPtr); _callbacksPtr = null; }
         if (_hwnd != IntPtr.Zero)
         {
             Win32.PostMessageW(_hwnd, 0x0010 /*WM_CLOSE*/, 0, 0); // 窗口线程亲和：经消息泵销毁

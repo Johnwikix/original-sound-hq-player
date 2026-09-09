@@ -381,25 +381,38 @@ internal sealed class WasapiDeviceList
     /// <summary>共享模式端点混音格式摘要。</summary>
     public sealed record SharedMixFormat(int SampleRate, int Channels, int BitsPerSample, bool IsFloat);
 
+    /// <summary>裸虚表 GetId（IMMDevice 槽 5）取端点 ID 字符串（CoTaskMem 释放）。</summary>
+    private static unsafe string? GetDeviceIdRaw(IntPtr device)
+    {
+        void** vtbl = *(void***)device;
+        var getId = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr*, int>)vtbl[5];
+        IntPtr pId = IntPtr.Zero;
+        if (getId(device, &pId) != 0 || pId == IntPtr.Zero) return null;
+        try { return Marshal.PtrToStringUni(pId); }
+        finally { Win32.CoTaskMemFree(pId); }
+    }
+
     /// <summary>
-    /// 查询端点共享模式混音格式（GetMixFormat 裸虚表槽 8）。
+    /// 查询端点共享模式混音格式与设备 ID（GetMixFormat 裸虚表槽 8）。
     /// 本机存在只接受精确混音格式的虚拟声卡（Senary Audio：44.1k 一律 UNSUPPORTED），
     /// 共享模式必须以混音格式初始化，解码器经 swresample 直出混音率/声道。
+    /// 调用方按设备 ID 缓存：默认设备索引 -1 在系统默认输出变更后会解析到不同端点。
     /// </summary>
-    public static unsafe SharedMixFormat? GetSharedMixFormat(int deviceIndex)
+    public static unsafe (SharedMixFormat? Mix, string DeviceId) GetSharedMixFormat(int deviceIndex)
     {
         IntPtr device = ResolveDevicePtr(deviceIndex);
-        if (device == IntPtr.Zero) return null;
+        if (device == IntPtr.Zero) return (null, "");
         try
         {
+            string deviceId = GetDeviceIdRaw(device) ?? "";
             IntPtr clientPtr = ActivateAudioClient(device);
-            if (clientPtr == IntPtr.Zero) return null;
+            if (clientPtr == IntPtr.Zero) return (null, deviceId);
             try
             {
                 void** vtbl = *(void***)clientPtr;
                 var getMix = (delegate* unmanaged[Stdcall]<IntPtr, WAVEFORMATEX**, int>)vtbl[8];
                 WAVEFORMATEX* mix = null;
-                if (getMix(clientPtr, &mix) != 0 || mix == null) return null;
+                if (getMix(clientPtr, &mix) != 0 || mix == null) return (null, deviceId);
                 try
                 {
                     int rate = (int)mix->nSamplesPerSec;
@@ -411,7 +424,7 @@ internal sealed class WasapiDeviceList
                         var ext = (WAVEFORMATEXTENSIBLE*)mix;
                         isFloat = ext->SubFormat == SubFormats.IeeeFloat;
                     }
-                    return new SharedMixFormat(rate, channels, bits, isFloat);
+                    return (new SharedMixFormat(rate, channels, bits, isFloat), deviceId);
                 }
                 finally
                 {
@@ -423,7 +436,7 @@ internal sealed class WasapiDeviceList
                 Marshal.Release(clientPtr);
             }
         }
-        catch { return null; }
+        catch { return (null, ""); }
         finally { Marshal.Release(device); }
     }
 

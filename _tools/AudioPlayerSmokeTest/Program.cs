@@ -113,10 +113,13 @@ PumpNotifications();
 
 // 先发设置（共享 WASAPI、音量 0.15，避免冒烟测试太吵）
 Span<byte> setBuf = new byte[1024];
+int devIdx = -1;
+var devArg = args.FirstOrDefault(a => a.StartsWith("--dev="));
+if (devArg != null) int.TryParse(devArg[6..], out devIdx);
 int setLen = BinarySerializer.WriteIpcSetting(setBuf, new IpcSetting
 {
     OutputMode = outputMode,
-    BassOutputDeviceId = -1,
+    BassOutputDeviceId = devIdx,
     Latency = 300,
     IsDopEnabled = dop,
     DsdGain = 6,

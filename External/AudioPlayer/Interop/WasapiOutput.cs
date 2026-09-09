@@ -245,18 +245,18 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
     /// <summary>带对齐重试的独占初始化（ECHO initialize_exclusive_client 移植）。</summary>
     private int InitializeExclusiveAligned(WAVEFORMATEXTENSIBLE* format, long bufferHns)
     {
-        int hr = InitializeWithTimeout(WasapiTypes.ShareModeExclusive,
-            WasapiTypes.StreamFlagsEventCallback | WasapiTypes.StreamFlagsNoPersist,
-            bufferHns, bufferHns, format);
+        // 推送模式不得带 EVENT_CALLBACK：带标志又不设事件句柄会让 Start 失败
+        // （独占"不是独占"实际是被回退到共享的元凶）
+        int flags = WasapiTypes.StreamFlagsNoPersist
+            | (_pushMode ? 0 : WasapiTypes.StreamFlagsEventCallback);
+        int hr = InitializeWithTimeout(WasapiTypes.ShareModeExclusive, flags, bufferHns, bufferHns, format);
         if (hr == WasapiTypes.AudclntEBufferSizeNotAligned)
         {
             // 对齐重试：GetBufferSize → 换算 hns → 再初始化
             if (_client!.GetBufferSize(out uint aligned) == 0 && aligned > 0)
             {
                 long retry = (long)(10000000.0 * aligned / format->Format.nSamplesPerSec + 0.5);
-                hr = InitializeWithTimeout(WasapiTypes.ShareModeExclusive,
-                    WasapiTypes.StreamFlagsEventCallback | WasapiTypes.StreamFlagsNoPersist,
-                    retry, retry, format);
+                hr = InitializeWithTimeout(WasapiTypes.ShareModeExclusive, flags, retry, retry, format);
             }
         }
         return hr;

@@ -4,8 +4,11 @@ namespace AudioPlayer.Interop;
 
 // ─────────────────────────────────────────────────────────────────
 // ASIO 互操作：IASIO 手动虚表调用（Windows 上 ASIO 的 long=32 位），
-// 驱动经 HKLM\SOFTWARE\ASIO 注册为 COM 组件。虚表序（IUnknown 后 3 槽起）
-// 与 Steinberg SDK iasiodrv.h 一致，方法语义对齐 ECHO asio_host.cpp。
+// 驱动经 HKLM\SOFTWARE\ASIO 注册为 COM 组件。虚表序（IUnknown 后 3..23）：
+// 3=init 4=getDriverName 5=getDriverVersion 6=getErrorMessage 7=start 8=stop
+// 9=getChannels 11=getBufferSize 12=canSampleRate 13=getSampleRate 14=setSampleRate
+// 18=getChannelInfo 19=createBuffers 20=disposeBuffers 22=future 23=outputReady
+// ═══ 曾因漏计 getDriverName/Version/ErrorMessage 三槽整体偏移 3 导致闪退 ═══
 // ─────────────────────────────────────────────────────────────────
 
 internal static class AsioConstants
@@ -87,6 +90,17 @@ internal struct AsioCallbacks
 }
 
 /// <summary>IASIO 驱动包装：手动虚表函数指针调用。</summary>
+internal static class AsioNativeLoad
+{
+    [DllImport("kernel32", CharSet = CharSet.Unicode, SetLastError = true)]
+    public static extern IntPtr LoadLibraryW(string path);
+
+    [DllImport("kernel32", SetLastError = true)]
+    public static extern IntPtr GetProcAddress(IntPtr mod, string name);
+
+    public static readonly Guid IidClassFactory = new("00000001-0000-0000-C000-000000000046");
+}
+
 internal sealed unsafe class AsioDriver : IDisposable
 {
     private IntPtr _self;
@@ -101,43 +115,52 @@ internal sealed unsafe class AsioDriver : IDisposable
 
     public static AsioDriver? Create(Guid clsid)
     {
-        // 先按 IASIO IID 直接创建；失败则退回 IUnknown + QI（部分驱动仅支持后者）
-        var iid = AsioConstants.IidIAsio;
-        int hr = Win32.CoCreateInstance(ref clsid, IntPtr.Zero, 1 /*CLSCTX_INPROC_SERVER*/, ref iid, out IntPtr p);
+        // ── 首选：LoadLibrary + DllGetClassObject 直连工厂（bassasio 等效路径）──
+        // FiiO(Thesycon) 等大量 ASIO 驱动注册为 ThreadingModel=Apartment：经 CoCreateInstance
+        // 激活会拿到代理/错误套间对象（实测 getDriverVersion=6，init 即崩/栈溢出），而直连
+        // 工厂 + CreateInstance(clsid 当 riid) 拿到真对象（实测 version=1354，init 成功）。
+        var dll = Win32.ReadInprocServer32(clsid);
+        if (dll != null && System.IO.File.Exists(dll))
+        {
+            var mod = AsioNativeLoad.LoadLibraryW(dll);
+            if (mod != IntPtr.Zero)
+            {
+                var dgcoPtr = AsioNativeLoad.GetProcAddress(mod, "DllGetClassObject");
+                if (dgcoPtr != IntPtr.Zero)
+                {
+                    var dgco = (delegate* unmanaged[Stdcall]<Guid*, Guid*, IntPtr*, int>)dgcoPtr;
+                    Guid clsidL = clsid, factoryL = AsioNativeLoad.IidClassFactory;
+                    IntPtr factory = IntPtr.Zero;
+                    if (dgco(&clsidL, &factoryL, &factory) == 0 && factory != IntPtr.Zero)
+                    {
+                        var fvt = *(void***)factory;
+                        var createInstance = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr, Guid*, IntPtr*, int>)fvt[3];
+                        Guid wanted = clsid; // CLSID 充当 riid：驱动类对象默认接口即 IASIO
+                        IntPtr drv = IntPtr.Zero;
+                        if (createInstance(factory, IntPtr.Zero, &wanted, &drv) == 0 && drv != IntPtr.Zero)
+                        {
+                            Marshal.Release(factory);
+                            Console.WriteLine($"[asio] loaded via DllGetClassObject: {Path.GetFileName(dll)}");
+                            return new AsioDriver(drv);
+                        }
+                        Marshal.Release(factory);
+                    }
+                }
+            }
+            Console.WriteLine("[asio] DllGetClassObject path failed, falling back to CoCreateInstance");
+        }
+
+        // ── 回退：CoCreateInstance（IASIO 无官方 IID；CLSID 当 riid → IUnknown 直用）──
+        var riid = clsid;
+        int hr = Win32.CoCreateInstance(ref clsid, IntPtr.Zero, 1 /*INPROC*/, ref riid, out IntPtr p);
         if (hr == 0 && p != IntPtr.Zero) return new AsioDriver(p);
-        if (p != IntPtr.Zero) Win32.CoTaskMemFree(p); // 失败时不会写出，防御
+        Console.WriteLine($"[asio] Create(clsid-as-riid) hr=0x{hr:X8}，回退 IUnknown");
 
         var iidUnk = AsioConstants.IidIUnknown;
         hr = Win32.CoCreateInstance(ref clsid, IntPtr.Zero, 1, ref iidUnk, out IntPtr unk);
-        if (hr != 0 || unk == IntPtr.Zero) return null;
-        try
-        {
-            var iidAsio = AsioConstants.IidIAsio;
-            hr = QueryInterfaceRaw(unk, iidAsio, out IntPtr asio);
-            if (hr == 0 && asio != IntPtr.Zero)
-            {
-                Marshal.Release(unk);
-                return new AsioDriver(asio);
-            }
-            // QI 失败：少数驱动把 IASIO 放在默认接口上，直接用 IUnknown 虚表（槽位一致）
-            return new AsioDriver(unk);
-        }
-        catch
-        {
-            Marshal.Release(unk);
-            return null;
-        }
-    }
-
-    private static int QueryInterfaceRaw(IntPtr self, Guid iid, out IntPtr ppv)
-    {
-        var vtbl = *(void***)self;
-        var qi = (delegate* unmanaged[Stdcall]<IntPtr, Guid*, IntPtr*, int>)vtbl[0];
-        Guid* piid = &iid; // 非托管局部：直接取地址
-        IntPtr local = IntPtr.Zero;
-        int hr = qi(self, piid, &local);
-        ppv = local;
-        return hr;
+        if (hr == 0 && unk != IntPtr.Zero) return new AsioDriver(unk);
+        Console.WriteLine($"[asio] Create(IUnknown) hr=0x{hr:X8}");
+        return null;
     }
 
     // ── IASIO 方法（虚表槽位 3..23）──
@@ -145,49 +168,49 @@ internal sealed unsafe class AsioDriver : IDisposable
     public int Init(IntPtr sysHandle) =>
         ((delegate* unmanaged[Stdcall]<IntPtr, void*, int>)_vtbl[3])(_self, (void*)sysHandle);
 
-    public int Start() => ((delegate* unmanaged[Stdcall]<IntPtr, int>)_vtbl[4])(_self);
-    public int Stop() => ((delegate* unmanaged[Stdcall]<IntPtr, int>)_vtbl[5])(_self);
+    public int Start() => ((delegate* unmanaged[Stdcall]<IntPtr, int>)_vtbl[7])(_self);
+    public int Stop() => ((delegate* unmanaged[Stdcall]<IntPtr, int>)_vtbl[8])(_self);
 
     public int GetChannels(out int inputCount, out int outputCount)
     {
         fixed (int* pi = &inputCount, po = &outputCount) // ref/out 参数是可移动变量，需 fixed
-            return ((delegate* unmanaged[Stdcall]<IntPtr, int*, int*, int>)_vtbl[6])(_self, pi, po);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, int*, int*, int>)_vtbl[9])(_self, pi, po);
     }
 
     public int GetBufferSize(out int minSize, out int maxSize, out int preferredSize, out int granularity)
     {
         fixed (int* a = &minSize, b = &maxSize, c = &preferredSize, d = &granularity)
-            return ((delegate* unmanaged[Stdcall]<IntPtr, int*, int*, int*, int*, int>)_vtbl[8])(_self, a, b, c, d);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, int*, int*, int*, int*, int>)_vtbl[11])(_self, a, b, c, d);
     }
 
     public int CanSampleRate(double rate) =>
-        ((delegate* unmanaged[Stdcall]<IntPtr, double, int>)_vtbl[9])(_self, rate);
+        ((delegate* unmanaged[Stdcall]<IntPtr, double, int>)_vtbl[12])(_self, rate);
 
     public int GetSampleRate(out double rate)
     {
         fixed (double* p = &rate)
-            return ((delegate* unmanaged[Stdcall]<IntPtr, double*, int>)_vtbl[10])(_self, p);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, double*, int>)_vtbl[13])(_self, p);
     }
 
     public int SetSampleRate(double rate) =>
-        ((delegate* unmanaged[Stdcall]<IntPtr, double, int>)_vtbl[11])(_self, rate);
+        ((delegate* unmanaged[Stdcall]<IntPtr, double, int>)_vtbl[14])(_self, rate);
 
     public int GetChannelInfo(ref AsioChannelInfo info)
     {
         fixed (AsioChannelInfo* p = &info)
-            return ((delegate* unmanaged[Stdcall]<IntPtr, AsioChannelInfo*, int>)_vtbl[15])(_self, p);
+            return ((delegate* unmanaged[Stdcall]<IntPtr, AsioChannelInfo*, int>)_vtbl[18])(_self, p);
     }
 
     public int CreateBuffers(AsioBufferInfo* bufferInfos, int numChannels, int bufferSize, AsioCallbacks* callbacks)
-        => ((delegate* unmanaged[Stdcall]<IntPtr, AsioBufferInfo*, int, int, AsioCallbacks*, int>)_vtbl[16])(
+        => ((delegate* unmanaged[Stdcall]<IntPtr, AsioBufferInfo*, int, int, AsioCallbacks*, int>)_vtbl[19])(
             _self, bufferInfos, numChannels, bufferSize, callbacks);
 
-    public int DisposeBuffers() => ((delegate* unmanaged[Stdcall]<IntPtr, int>)_vtbl[17])(_self);
+    public int DisposeBuffers() => ((delegate* unmanaged[Stdcall]<IntPtr, int>)_vtbl[20])(_self);
 
     public int Future(int selector, void* opt) =>
-        ((delegate* unmanaged[Stdcall]<IntPtr, int, void*, int>)_vtbl[19])(_self, selector, opt);
+        ((delegate* unmanaged[Stdcall]<IntPtr, int, void*, int>)_vtbl[22])(_self, selector, opt);
 
-    public int OutputReady() => ((delegate* unmanaged[Stdcall]<IntPtr, int>)_vtbl[20])(_self);
+    public int OutputReady() => ((delegate* unmanaged[Stdcall]<IntPtr, int>)_vtbl[23])(_self);
 
     public void Dispose()
     {

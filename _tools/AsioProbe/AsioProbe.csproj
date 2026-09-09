@@ -4,9 +4,7 @@
     <TargetFramework>net11.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Platforms>AnyCPU</Platforms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\External\BassPlayerIpc.Shared\BassPlayerIpc.Shared.csproj" />
-  </ItemGroup>
 </Project>

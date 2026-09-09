@@ -129,13 +129,15 @@ public sealed class PlaybackEngine : IDisposable
     private static bool IsSharedDeviceIndexed(string mode) => mode == "WasapiShared";
 
     private static WasapiDeviceList.SharedMixFormat? _cachedMix;
-    private static int _cachedMixDevice = int.MinValue;
+    private static string? _cachedMixKey; // 按设备 ID 缓存而非索引：默认设备变更后 -1 会解析到
+                                           // 新端点，索引键命中旧设备混音率 → 会话强制错率 → 慢放
 
     private static WasapiDeviceList.SharedMixFormat? GetMixFormatCached(int deviceIndex)
     {
-        if (_cachedMixDevice == deviceIndex && _cachedMix != null) return _cachedMix;
-        _cachedMix = WasapiDeviceList.GetSharedMixFormat(deviceIndex);
-        _cachedMixDevice = deviceIndex;
+        var (mix, deviceId) = WasapiDeviceList.GetSharedMixFormat(deviceIndex);
+        if (_cachedMixKey == deviceId && _cachedMix != null) return _cachedMix;
+        _cachedMix = mix;
+        _cachedMixKey = deviceId;
         return _cachedMix;
     }
 
@@ -148,9 +150,11 @@ public sealed class PlaybackEngine : IDisposable
         {
             // 独占/ASIO 失败 → 回退共享：会话按混音格式重建（率/声道可能与源不同）
             Console.WriteLine("[engine] primary output failed, fallback to shared");
+            long keepMs = session.CurrentMs; // 回退重建会话必须保留位置（否则从头播放）
             DisposeSession();
             _session = OpenSession(MusicUrl!, forceSharedFormat: true);
             if (_session == null) { IsPlaying = false; _ipc.PlayStateUpdate(false); return; }
+            _session.RequestSeek(keepMs);
             output = CreateSharedOutput(_session);
             if (output == null) { IsPlaying = false; _ipc.PlayStateUpdate(false); return; }
         }
