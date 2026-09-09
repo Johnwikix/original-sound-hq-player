@@ -67,14 +67,16 @@
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
   <ItemGroup>
-	<None Include="Player\**\*">
+	<!-- 独立播放进程（AOT 单文件，仓库内为发布产物暂存）：与应用主程序、ffmpeg DLL 同铺应用根，
+	     AutoGen 默认按 exe 目录定位 DLL，无需任何路径适配 -->
+	<None Include="Player\AudioPlayer.exe">
 		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-		<Link>Player\%(RecursiveDir)%(Filename)%(Extension)</Link>
+		<Link>%(Filename)%(Extension)</Link>
 	</None>
   </ItemGroup>
   <ItemGroup>
-	<!-- FFmpeg 9.0.1 shared DLL（单套分发，全程序唯一样本）：主程序进程内转码使用；
-	     独立播放进程 AudioPlayer（Player\ 子目录）启动时 SetDllDirectory 指向应用根目录复用同一套。
+	<!-- FFmpeg 9.0.1 shared DLL（单套分发，全程序唯一样本）：主程序进程内转码与独立播放进程
+	     AudioPlayer（应用根目录，紧邻 DLL）共用这一套。
 	     仅拷贝音频管线实际依赖的四个库：avformat→avcodec→avutil、swresample→avutil；
 	     avdevice/avfilter/swscale（设备采集/滤镜/视频缩放）未使用，不随包分发。 -->
 	<None Include="Libraries\FFmpeg\x64\avcodec-63.dll" Condition="'$(Platform)' == 'x64' or '$(Platform)' == 'ARM64'">
