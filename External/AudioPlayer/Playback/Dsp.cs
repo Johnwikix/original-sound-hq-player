@@ -8,7 +8,8 @@ namespace AudioPlayer.Playback;
 /// RBJ cookbook 峰值滤波器（Direct Form 1），系数与滤波器状态全程 double
 /// （float64）计算与存储：长块级联下累积舍入噪声比 float32 低 ~40dB，
 /// 高 Q/低频段（32Hz@44.1kHz，w0→0）系数敏感度最高，double 消除系数量化失真。
-/// 系数仅在参数变化时重算并原子换快照，渲染线程只读快照，无锁无分配。
+/// 系数仅在参数变化时重算并原子换快照（持续激活的带继承滤波器状态，调 EQ 不产生状态跳变），
+/// 渲染线程只读快照，无锁无分配。
 /// </summary>
 internal sealed class Equalizer
 {
@@ -28,6 +29,7 @@ internal sealed class Equalizer
     private readonly double[] _gains = new double[10];
     private volatile bool _enabled;
     private int _sampleRate;
+    private int _snapshotRate; // 上次快照的采样率：一致才继承滤波器状态
 
     public bool Enabled => _enabled;
     public bool Active => _enabled && HasActiveBand(_snapshot);
@@ -68,6 +70,7 @@ internal sealed class Equalizer
     private void RebuildSnapshot()
     {
         var rate = _sampleRate;
+        var old = _snapshot;
         var bands = new Band[10];
         for (int i = 0; i < 10; i++)
         {
@@ -75,6 +78,15 @@ internal sealed class Equalizer
             double db = _gains[i];
             b.Active = _enabled && Math.Abs(db) >= 0.01 && rate > 0;
             if (!b.Active) continue;
+            // 状态连续性：带持续激活且采样率未变时继承旧快照的滤波器状态，
+            // 系数热更新不产生状态跳变（播放中调 EQ 的爆音）；新激活/换率从零起步
+            if (old[i].Active && rate == _snapshotRate)
+            {
+                b.X1_0 = old[i].X1_0; b.X2_0 = old[i].X2_0;
+                b.Y1_0 = old[i].Y1_0; b.Y2_0 = old[i].Y2_0;
+                b.X1_1 = old[i].X1_1; b.X2_1 = old[i].X2_1;
+                b.Y1_1 = old[i].Y1_1; b.Y2_1 = old[i].Y2_1;
+            }
             // RBJ 峰值滤波器（带宽形式），全程 double
             double a = Math.Pow(10.0, db / 40.0);
             double w0 = 2.0 * Math.PI * Frequencies[i] / rate;
@@ -87,6 +99,7 @@ internal sealed class Equalizer
             b.A1 = (-2.0 * cosW) / a0;
             b.A2 = (1.0 - alpha / a) / a0;
         }
+        _snapshotRate = rate;
         _snapshot = bands;
     }
 

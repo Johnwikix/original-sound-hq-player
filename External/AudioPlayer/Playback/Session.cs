@@ -20,14 +20,15 @@ internal sealed class Session : IRenderSource, IDisposable
     private long _pendingSeekMs = long.MinValue; // long.MinValue = 无请求
     private readonly long _pendingSeekSentinel = long.MinValue;
 
-    private readonly double[] _decodeScratchF;
-    private readonly byte[] _decodeScratchB;
-    private readonly uint[] _dopScratch;
+    // 解码 scratch（按渲染种类在构造时分配实配，未用种类保持空数组：这些缓冲均超
+    // 85KB 直接进 LOH，按需分配避免每会话 ~0.46MB 无谓流失）
+    private readonly double[] _decodeScratchF = [];
+    private readonly byte[] _decodeScratchB = [];
+    private readonly uint[] _dopScratch = [];
+    private readonly uint[] _dopPackBuffer = [];
     private readonly byte[] _dsdLeftover = new byte[64];
+    private readonly byte[] _dsdMergeBuffer = []; // DoP 残留字节帧拼接（预分配，解码路径零分配）
     private int _dsdLeftoverBytes;
-
-    // DoP 装配后的 uint 采样复用缓冲
-    private readonly uint[] _dopPackBuffer;
 
     private PcmRing? _pcmRing;
     private DopRing? _dopRing;
@@ -56,10 +57,22 @@ internal sealed class Session : IRenderSource, IDisposable
         SampleRate = deviceRate;
         TotalMs = totalMs;
         Gain = kind == RenderKind.Pcm && gainRampRate > 0 ? new GainRamp(gainRampRate) : null;
-        _decodeScratchF = new double[16384 * Math.Max(1, channels)];
-        _decodeScratchB = new byte[65536 * Math.Max(1, channels)];
-        _dopScratch = new uint[8192 * Math.Max(1, channels)];
-        _dopPackBuffer = new uint[32768 * Math.Max(1, channels)];
+        int ch = Math.Max(1, channels);
+        if (kind == RenderKind.Pcm)
+        {
+            _decodeScratchF = new double[16384 * ch];
+        }
+        else if (kind == RenderKind.Dop)
+        {
+            _decodeScratchB = new byte[65536 * ch];
+            _dopScratch = new uint[8192 * ch];
+            _dopPackBuffer = new uint[32768 * ch];
+            _dsdMergeBuffer = new byte[65536 * ch + 64];
+        }
+        else // NativeDsd
+        {
+            _decodeScratchB = new byte[65536 * ch];
+        }
     }
 
     // ─────────────── 工厂 ───────────────
@@ -142,7 +155,7 @@ internal sealed class Session : IRenderSource, IDisposable
     /// <summary>seek：立即重置环与锚点（进度条即时响应），解码线程随后转到新位置。</summary>
     public void RequestSeek(long targetMs)
     {
-        AnchorFrames = MsToFrames(targetMs);
+        Volatile.Write(ref AnchorFrames, MsToFrames(targetMs)); // 与 CurrentMs 的 Volatile.Read 对称
         _pcmRing?.BeginSession();
         _dopRing?.BeginSession();
         _dsdRing?.BeginSession();
@@ -231,10 +244,11 @@ internal sealed class Session : IRenderSource, IDisposable
                 bool pushed;
                 if (_dsdLeftoverBytes > 0)
                 {
-                    // 拼接上一个包的残留字节帧（解码线程冷路径，允许分配）
-                    var merged = new byte[_dsdLeftoverBytes + bytes];
+                    // 拼接上一个包的残留字节帧：预分配缓冲复用，解码路径零分配
+                    //（标准 DSF/DFF 块为偶数帧不走这里；块对齐为奇数的文件会逐包走到）
+                    var merged = _dsdMergeBuffer.AsSpan(0, _dsdLeftoverBytes + bytes);
                     _dsdLeftover.AsSpan(0, _dsdLeftoverBytes).CopyTo(merged);
-                    _decodeScratchB.AsSpan(0, bytes).CopyTo(merged.AsSpan(_dsdLeftoverBytes));
+                    _decodeScratchB.AsSpan(0, bytes).CopyTo(merged[_dsdLeftoverBytes..]);
                     pushed = PushDop(merged);
                 }
                 else

@@ -161,7 +161,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
 
         int hr = InitializeNativeWithTimeout(WasapiTypes.ShareModeShared,
             WasapiTypes.StreamFlagsEventCallback | WasapiTypes.StreamFlagsNoPersist,
-            3000000 /* 300ms 固定 */, 0, mix);
+            3000000 /* 300ms 固定：共享模式不随 Latency 设置（有意设计） */, 0, mix);
         if (hr != 0)
         {
             Console.WriteLine($"[wasapi] shared Initialize(mix) hr=0x{hr:X8} rate={mix->nSamplesPerSec} ch={mix->nChannels} bits={mix->wBitsPerSample}");
@@ -342,26 +342,33 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                 }
                 else
                 {
-                    int wait = Win32.WaitForSingleObject(_renderEvent, 2000);
-                    if (wait != 0)
+                    // 双事件等待（stopEvent 在前：双触发优先停机）。暂停期间 client 已 Stop、
+                    // 渲染事件不再触发，Dispose 置位 stopEvent 也能立即唤醒退出，
+                    // 避免 Join 超时后与在途渲染并发释放 COM 对象
+                    uint wait = Win32.WaitForMultipleObjects(2, [_stopEvent, _renderEvent], false, 2000);
+                    if (wait == 0) break; // stopEvent：停机
+                    if (wait == 1)
                     {
-                        if (Win32.WaitForSingleObject(_stopEvent, 0) == 0) break;
+                        if (_pausedFlag) continue; // 等待期间进入暂停：醒来后本轮不消费
+                        if (_exclusive)
+                        {
+                            frames = _bufferFrames; // 独占事件模式：每周期整块可用
+                        }
+                        else
+                        {
+                            // 共享事件：按实际空闲量写
+                            if (_client!.GetCurrentPadding(out uint pad2) != 0) { Fail(); break; }
+                            frames = _bufferFrames - pad2;
+                            if (frames == 0) continue;
+                        }
+                    }
+                    else
+                    {
+                        // 超时/失败唤醒：健康检查——事件 2s 未到且端点缓冲仍有空位 = 渲染停滞
                         if (_pausedFlag) continue; // 暂停后的超时唤醒：不消费
                         if (_client!.GetCurrentPadding(out uint pad) == 0 && _bufferFrames - pad == 0) continue;
                         Fail();
                         break;
-                    }
-                    if (_pausedFlag) continue; // 等待期间进入暂停：醒来后本轮不消费
-                    if (_exclusive)
-                    {
-                        frames = _bufferFrames; // 独占事件模式：每周期整块可用
-                    }
-                    else
-                    {
-                        // 共享事件：按实际空闲量写
-                        if (_client!.GetCurrentPadding(out uint pad2) != 0) { Fail(); break; }
-                        frames = _bufferFrames - pad2;
-                        if (frames == 0) continue;
                     }
                 }
 
@@ -396,16 +403,15 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
 
     private void FillEndpoint(byte* dst, uint frames)
     {
+        // 环渲染对整块先写静音再填数据（预缓冲/欠载也不例外），无需外部清零
         long total = frames * _channels;
         switch (_source.Kind)
         {
             case RenderKind.Dop:
-                _dopScratch.AsSpan(0, (int)total).Clear();
                 _source.FillDop(_dopScratch, (int)frames);
                 ConvertDopToEndpoint(_dopScratch, dst, (int)total, _endpointKind);
                 break;
             default:
-                _pcmScratch.AsSpan(0, (int)total).Clear();
                 _source.FillPcm(_pcmScratch, (int)frames);
                 ConvertDoubleToEndpoint(_pcmScratch, dst, (int)total, _endpointKind);
                 break;

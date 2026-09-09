@@ -239,6 +239,7 @@ public sealed class PlaybackEngine : IDisposable
         }
     }
 
+    // ASIO 请求缓冲固定 300ms，不随 Latency 设置（有意设计）
     private static int ExclusiveBufferFrames(Session session) => (int)((long)session.SampleRate * 300 / 8000);
 
     private IAudioOutput? CreateSharedOutput(Session session, int deviceIndex = -1)

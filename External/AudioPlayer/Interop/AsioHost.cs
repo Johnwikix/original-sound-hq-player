@@ -37,9 +37,10 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     private static AsioOutput? _active;
     private void* _callbacksPtr; // ASIO 回调表（持久非托管内存）
 
-    // ── 驱动线程调度：ASIO 驱动的 Init/Start/Stop 等必须在带消息泵的 STA 线程上
-    //    调用（多数驱动内部建窗/PostMessage 并同步等待；MTA 监听线程直调会卡死）。
-    //    全部驱动交互经 WM_APP 消息路由到窗口线程执行。 ──
+    // ── 驱动线程调度：隐藏窗口线程只做消息服务员（泵）；驱动调用（Init/Start/Stop 等）
+    //    一律在调用方线程直接执行——多数驱动内部会向 hwnd PostMessage 并同步等待
+    //    （FiiO 实测），调用方线程 ≠ 窗口线程时泵才空闲应答；若把驱动调用经 WM_APP
+    //    路由到窗口线程执行，泵被自身占用 = 自死锁。 ──
     private const uint WmAppWork = 0x0401;
     private sealed class WorkItem
     {
@@ -49,6 +50,7 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     }
     private readonly ConcurrentQueue<WorkItem> _workQueue = new();
 
+    // 仅用于驱动对象创建：此刻驱动尚未拿到 hwnd（Init 才传入），不会同步等待窗口消息
     private bool RunOnWindowThread(Action body, int timeoutMs = 10000)
     {
         if (_hwnd == IntPtr.Zero) return false;
@@ -103,15 +105,17 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
             if (_driver == null) { Console.WriteLine("[asio] Create failed"); return false; }
             Console.WriteLine($"[asio] Create ok on STA");
             int initRet = -1;
-            var initWorker = new Thread(() => { initRet = _driver!.Init(_hwnd); }, 3 * 1024 * 1024)
+            var driver = _driver; // 固定本地引用：超时后字段被置 null，worker 仍持有原对象
+            var initWorker = new Thread(() => { initRet = driver!.Init(_hwnd); }, 3 * 1024 * 1024)
             { IsBackground = true, Name = "asio-init" };
             initWorker.Start();
             if (!initWorker.Join(3000))
             {
                 Console.WriteLine("[asio] Init timed out (驱动挂死或弹出模态框)");
-                _driver.Dispose();
+                // 墓园语义：worker 可能仍阻塞在驱动内部，Release 在途使用的 COM 对象会
+                // use-after-free（WASAPI _initTimedOut 同款）。只丢引用，泄漏给进程退出回收
                 _driver = null;
-                return false; // worker 与驱动泄漏给进程退出回收（墓园语义）
+                return false;
             }
             if (initRet == 0) { Console.WriteLine("[asio] Init failed"); return false; }
             Console.WriteLine("[asio] init ok");
@@ -188,6 +192,8 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
 
     public void Pause()
     {
+        // 直调（调用方线程）是有意的：窗口线程必须保持空闲以应答驱动 Stop 期间的
+        // 同步等待（见类头“驱动线程调度”），路由到窗口线程反而自死锁
         if (_started && _driver != null) { try { _driver.Stop(); } catch { } }
     }
 
@@ -549,8 +555,7 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
         {
             case RenderKind.Pcm:
             {
-                _pcmScratch.AsSpan().Clear();
-                _source.FillPcm(_pcmScratch, _bufferSize);
+                _source.FillPcm(_pcmScratch, _bufferSize); // 环渲染先写整块静音，无需外部清零
                 for (int ch = 0; ch < _outputChannelCount; ch++)
                 {
                     int idx = _outputChannelOffset + ch;
@@ -560,7 +565,6 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
             }
             case RenderKind.Dop:
             {
-                _dopScratch.AsSpan().Clear();
                 _source.FillDop(_dopScratch, _bufferSize);
                 for (int ch = 0; ch < _outputChannelCount; ch++)
                 {
@@ -572,7 +576,6 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
             default:
             {
                 int byteFrames = (_bufferSize + 7) / 8;
-                _dsdScratch.AsSpan()[..(byteFrames * _source.Channels)].Fill((byte)0x69);
                 _source.FillDsdBytes(_dsdScratch, byteFrames);
                 for (int ch = 0; ch < _outputChannelCount; ch++)
                 {
@@ -656,7 +659,6 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
                     if (_dopScratch.Length >= _bufferSize * _source.Channels)
                     {
                         // 走环渲染：标记相位由 DopRing 全局帧计数保证连续（静音也不例外）
-                        _dopScratch.AsSpan().Clear();
                         _source.FillDop(_dopScratch, _bufferSize);
                         WriteDopChannel(buf, type, ch, _bufferSize);
                         continue;

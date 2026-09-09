@@ -22,6 +22,10 @@ internal static partial class Win32
     [LibraryImport("kernel32", SetLastError = true)]
     public static partial int WaitForSingleObject(IntPtr hHandle, int dwMilliseconds);
 
+    [LibraryImport("kernel32", SetLastError = true)]
+    public static partial uint WaitForMultipleObjects(uint nCount, ReadOnlySpan<IntPtr> lpHandles,
+        [MarshalAs(UnmanagedType.Bool)] bool bWaitAll, int dwMilliseconds);
+
     // WNDCLASSW 含字符串成员，源生成封送不支持 → 用经典 DllImport（AOT 安全）
     [DllImport("user32", SetLastError = true, CharSet = CharSet.Unicode)]
     public static extern ushort RegisterClassW(ref WNDCLASSW lpWndClass);
