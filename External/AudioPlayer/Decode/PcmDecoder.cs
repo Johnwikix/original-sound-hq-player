@@ -4,7 +4,9 @@ using FFmpeg.AutoGen;
 namespace AudioPlayer.Decode;
 
 /// <summary>
-/// FFmpeg PCM 解码层：avformat → avcodec → swresample → float32 交织。
+/// FFmpeg PCM 解码层：avformat → avcodec → swresample → float64（double）交织。
+/// swr 以 AV_SAMPLE_FMT_DBL 输出：重采样（共享模式改率）与 DSD→PCM 增益全程
+/// double 域，下游 EQ/增益/输出转换吃满 float64 管线。
 /// DSD 源（dsf/dff 的 DSD_* 编码，以及 bits_per_raw_sample==1 的 WavPack-DSD，
 /// 后者按决策降级为 PCM 播放）经解码器内置 DSD→PCM（输出率 = DSD 率/8）后再
 /// 重采样到 dsdPcmFreq 并施加 DSD 增益——与库内 FFmpegAudioConverter 同一套套路。
@@ -20,7 +22,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
 
     private int _streamIndex = -1;
     private bool _dsdSource;
-    private float _dsdGainLinear = 1f;
+    private double _dsdGainLinear = 1.0;
     private long _totalMs;
     private bool _eof;
 
@@ -60,7 +62,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
             bool dsdContainer = Array.IndexOf(DsdCodecIds, par->codec_id) >= 0;
             bool wvDsd = par->codec_id == AVCodecID.AV_CODEC_ID_WAVPACK && par->bits_per_raw_sample == 1;
             _dsdSource = dsdContainer || wvDsd;
-            _dsdGainLinear = _dsdSource && dsdGainDb != 0 ? MathF.Pow(10f, dsdGainDb / 20f) : 1f;
+            _dsdGainLinear = _dsdSource && dsdGainDb != 0 ? Math.Pow(10.0, dsdGainDb / 20.0) : 1.0;
 
             AVCodec* decoder = ffmpeg.avcodec_find_decoder(par->codec_id);
             if (decoder == null) { Console.WriteLine($"[decode] no decoder codec={par->codec_id}"); return false; }
@@ -81,7 +83,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
             AVChannelLayout outLayout = default;
             ffmpeg.av_channel_layout_default(&outLayout, Channels);
             SwrContext* swr = null;
-            ffmpeg.swr_alloc_set_opts2(&swr, &outLayout, AVSampleFormat.AV_SAMPLE_FMT_FLT, SampleRate,
+            ffmpeg.swr_alloc_set_opts2(&swr, &outLayout, AVSampleFormat.AV_SAMPLE_FMT_DBL, SampleRate,
                 &_dec->ch_layout, _dec->sample_fmt, _dec->sample_rate, 0, null);
             ffmpeg.av_channel_layout_uninit(&outLayout);
             _swr = swr;
@@ -111,8 +113,8 @@ internal sealed unsafe class PcmDecoder : IDisposable
         return true;
     }
 
-    /// <summary>读取交织 float 块。返回帧数；0 = 本位置流结束（EOF 后恒 0）。</summary>
-    public int Read(Span<float> buffer)
+    /// <summary>读取交织 double 块。返回帧数；0 = 本位置流结束（EOF 后恒 0）。</summary>
+    public int Read(Span<double> buffer)
     {
         if (_fmt == null || _dec == null) return 0;
         int maxFrames = buffer.Length / Math.Max(1, Channels);
@@ -130,7 +132,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
             int ret = ffmpeg.avcodec_receive_frame(_dec, _frame);
             if (ret == 0)
             {
-                fixed (float* p = buffer)
+                fixed (double* p = buffer)
                 {
                     got = ffmpeg.swr_convert(_swr, (byte**)&p, maxFrames,
                         _frame->extended_data, _frame->nb_samples);
@@ -163,10 +165,10 @@ internal sealed unsafe class PcmDecoder : IDisposable
         }
     }
 
-    private int ConvertOut(Span<float> buffer, int frames)
+    private int ConvertOut(Span<double> buffer, int frames)
     {
         int got;
-        fixed (float* p = buffer)
+        fixed (double* p = buffer)
         {
             got = ffmpeg.swr_convert(_swr, (byte**)&p, frames, null, 0);
         }
@@ -174,7 +176,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private int FinishRead(Span<float> buffer, int frames)
+    private int FinishRead(Span<double> buffer, int frames)
     {
         if (_dsdGainLinear != 1f)
         {

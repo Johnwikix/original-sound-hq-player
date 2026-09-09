@@ -29,7 +29,7 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     private int _failed; // Interlocked
 
     // 渲染 scratch（预分配，渲染线程独占）
-    private float[] _pcmScratch = [];
+    private double[] _pcmScratch = [];
     private uint[] _dopScratch = [];
     private byte[] _dsdScratch = [];
 
@@ -159,7 +159,7 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
             if (!created) return false;
 
             // 渲染资源
-            if (source.Kind == RenderKind.Pcm) _pcmScratch = new float[_bufferSize * source.Channels];
+            if (source.Kind == RenderKind.Pcm) _pcmScratch = new double[_bufferSize * source.Channels];
             else if (source.Kind == RenderKind.Dop) _dopScratch = new uint[_bufferSize * source.Channels];
             else _dsdScratch = new byte[((_bufferSize + 7) / 8 + 1) * source.Channels];
 
@@ -614,7 +614,7 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
         byte* dst = (byte*)buffer;
         for (int f = 0; f < frames; f++)
         {
-            float sample = _pcmScratch[f * channels + Math.Min(channel, channels - 1)];
+            double sample = _pcmScratch[f * channels + Math.Min(channel, channels - 1)];
             WriteAsioSample(dst, type, f, sample);
         }
     }
@@ -650,7 +650,7 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
             switch (_source.Kind)
             {
                 case RenderKind.Pcm:
-                    for (int f = 0; f < _bufferSize; f++) WriteAsioSample(dst, type, f, 0f);
+                    for (int f = 0; f < _bufferSize; f++) WriteAsioSample(dst, type, f, 0.0);
                     break;
                 case RenderKind.Dop:
                     if (_dopScratch.Length >= _bufferSize * _source.Channels)
@@ -678,21 +678,21 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     private static void WriteU24Le(byte* p, int v) { p[0] = (byte)(v & 0xff); p[1] = (byte)((v >> 8) & 0xff); p[2] = (byte)((v >> 16) & 0xff); }
     private static void WriteU32Be(byte* p, uint v) { p[0] = (byte)(v >> 24); p[1] = (byte)(v >> 16); p[2] = (byte)(v >> 8); p[3] = (byte)v; }
 
-    private static float ClampSample(float s) => s > 1f ? 1f : s < -1f ? -1f : s;
+    private static double ClampSample(double s) => s > 1.0 ? 1.0 : s < -1.0 ? -1.0 : s;
 
-    private static int ScaledInt(float sample, int bits)
+    private static int ScaledInt(double sample, int bits)
     {
-        float max = bits switch { 16 => 32767f, 24 => 8388607f, _ => 2147483647f };
+        double max = bits switch { 16 => 32767.0, 24 => 8388607.0, _ => 2147483647.0 };
         return (int)(ClampSample(sample) * max);
     }
 
-    private static int AlignedI32(float sample, int validBits)
+    private static int AlignedI32(double sample, int validBits)
     {
         int v = ScaledInt(sample, validBits);
         return validBits == 32 ? v : v << (32 - validBits);
     }
 
-    private static void WriteAsioSample(byte* buffer, int type, int frame, float sample)
+    private static void WriteAsioSample(byte* buffer, int type, int frame, double sample)
     {
         switch (type)
         {
@@ -710,9 +710,9 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
             case AsioConstants.AsioStInt32Msb18: WriteU32Be(buffer + frame * 4, (uint)AlignedI32(sample, 18)); break;
             case AsioConstants.AsioStInt32Msb20: WriteU32Be(buffer + frame * 4, (uint)AlignedI32(sample, 20)); break;
             case AsioConstants.AsioStInt32Msb24: WriteU32Be(buffer + frame * 4, (uint)AlignedI32(sample, 24)); break;
-            case AsioConstants.AsioStFloat32Lsb: ((float*)buffer)[frame] = ClampSample(sample); break;
+            case AsioConstants.AsioStFloat32Lsb: ((float*)buffer)[frame] = (float)ClampSample(sample); break;
             case AsioConstants.AsioStFloat32Msb:
-                float f = ClampSample(sample);
+                float f = (float)ClampSample(sample);
                 WriteU32Be(buffer + frame * 4, *(uint*)&f);
                 break;
             case AsioConstants.AsioStFloat64Lsb: ((double*)buffer)[frame] = ClampSample(sample); break;

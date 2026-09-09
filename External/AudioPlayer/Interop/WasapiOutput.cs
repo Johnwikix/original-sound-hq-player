@@ -5,10 +5,11 @@ namespace AudioPlayer.Interop;
 
 /// <summary>
 /// WASAPI 输出（ECHO wasapi_exclusive/wasapi_shared 移植）：
-/// - 共享：源格式 float32 直接 Initialize（引擎自动重采样），事件驱动渲染，会话音量；
+/// - 共享：按端点混音格式 Initialize（引擎自动重采样），事件驱动渲染，会话音量；
 /// - 独占 Push/Event：候选格式协商（PCM: float32→24in32→16→32；DoP: 24packed→24in32→32）、
 ///   缓冲对齐重试（AUDCLNT_E_BUFFER_SIZE_NOT_ALIGNED）、MMCSS Pro Audio 渲染线程；
 /// - DoP：uint32 采样位精确透传（24packed 取低 24 位、24in32/32 左移 8 位）。
+/// 管线内部 float64：渲染拉取 double，出口按端点格式转换（float32 端点为 double→float 截断）。
 /// Initialize 走 3 秒超时包装（驱动死锁时放弃而非挂死整个进程，ECHO future-graveyard 语义）。
 /// </summary>
 internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
@@ -34,7 +35,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
     private uint _channels;
     private int _endpointKind; // FormatKind
     private IRenderSource _source = null!;
-    private float[] _pcmScratch = [];
+    private double[] _pcmScratch = [];
     private uint[] _dopScratch = [];
 
     public bool IsFailed => Volatile.Read(ref _failed) != 0;
@@ -95,7 +96,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
             _stopEvent = Win32.CreateEventW(IntPtr.Zero, true, false, null);
             if (_renderEvent == IntPtr.Zero || _stopEvent == IntPtr.Zero) return false;
 
-            _pcmScratch = new float[_bufferFrames * source.Channels];
+            _pcmScratch = new double[_bufferFrames * source.Channels];
             _dopScratch = new uint[_bufferFrames * source.Channels];
             LatencyMs = (int)(_bufferFrames * 1000L / Math.Max(1, source.SampleRate));
 
@@ -406,27 +407,31 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
             default:
                 _pcmScratch.AsSpan(0, (int)total).Clear();
                 _source.FillPcm(_pcmScratch, (int)frames);
-                ConvertFloatToEndpoint(_pcmScratch, dst, (int)total, _endpointKind);
+                ConvertDoubleToEndpoint(_pcmScratch, dst, (int)total, _endpointKind);
                 break;
         }
     }
 
-    private static void ConvertFloatToEndpoint(float[] src, byte* dst, int total, int kind)
+    private static void ConvertDoubleToEndpoint(double[] src, byte* dst, int total, int kind)
     {
-        fixed (float* p = src)
+        fixed (double* p = src)
         {
             switch (kind)
             {
                 case FormatKind.Float32:
-                    Buffer.MemoryCopy(p, dst, total * 4, total * 4);
-                    break;
+                    {
+                        float* d = (float*)dst;
+                        for (int i = 0; i < total; i++)
+                            d[i] = (float)ClampSample(p[i]);
+                        break;
+                    }
                 case FormatKind.Pcm24In32:
                     {
                         int* d = (int*)dst;
                         for (int i = 0; i < total; i++)
                         {
-                            float s = ClampSample(p[i]);
-                            d[i] = (int)(s * 8388607f) << 8;
+                            double s = ClampSample(p[i]);
+                            d[i] = (int)(s * 8388607.0) << 8;
                         }
                         break;
                     }
@@ -434,8 +439,8 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                     {
                         for (int i = 0; i < total; i++)
                         {
-                            float s = ClampSample(p[i]);
-                            int v = (int)(s * 8388607f);
+                            double s = ClampSample(p[i]);
+                            int v = (int)(s * 8388607.0);
                             dst[i * 3] = (byte)(v & 0xff);
                             dst[i * 3 + 1] = (byte)((v >> 8) & 0xff);
                             dst[i * 3 + 2] = (byte)((v >> 16) & 0xff);
@@ -446,14 +451,14 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                     {
                         int* d = (int*)dst;
                         for (int i = 0; i < total; i++)
-                            d[i] = (int)(ClampSample(p[i]) * 2147483647f);
+                            d[i] = (int)(ClampSample(p[i]) * 2147483647.0);
                         break;
                     }
                 case FormatKind.Pcm16:
                     {
                         short* d = (short*)dst;
                         for (int i = 0; i < total; i++)
-                            d[i] = (short)(ClampSample(p[i]) * 32767f);
+                            d[i] = (short)(ClampSample(p[i]) * 32767.0);
                         break;
                     }
             }
@@ -487,7 +492,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
         }
     }
 
-    private static float ClampSample(float s) => s > 1f ? 1f : s < -1f ? -1f : s;
+    private static double ClampSample(double s) => s > 1.0 ? 1.0 : s < -1.0 ? -1.0 : s;
 
     public void Dispose()
     {

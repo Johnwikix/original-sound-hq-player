@@ -20,7 +20,7 @@ internal sealed class Session : IRenderSource, IDisposable
     private long _pendingSeekMs = long.MinValue; // long.MinValue = 无请求
     private readonly long _pendingSeekSentinel = long.MinValue;
 
-    private readonly float[] _decodeScratchF;
+    private readonly double[] _decodeScratchF;
     private readonly byte[] _decodeScratchB;
     private readonly uint[] _dopScratch;
     private readonly byte[] _dsdLeftover = new byte[64];
@@ -56,7 +56,7 @@ internal sealed class Session : IRenderSource, IDisposable
         SampleRate = deviceRate;
         TotalMs = totalMs;
         Gain = kind == RenderKind.Pcm && gainRampRate > 0 ? new GainRamp(gainRampRate) : null;
-        _decodeScratchF = new float[16384 * Math.Max(1, channels)];
+        _decodeScratchF = new double[16384 * Math.Max(1, channels)];
         _decodeScratchB = new byte[65536 * Math.Max(1, channels)];
         _dopScratch = new uint[8192 * Math.Max(1, channels)];
         _dopPackBuffer = new uint[32768 * Math.Max(1, channels)];
@@ -305,7 +305,7 @@ internal sealed class Session : IRenderSource, IDisposable
 
     // ─────────────── IRenderSource（输出渲染线程调用） ───────────────
 
-    public void FillPcm(Span<float> buffer, int frames)
+    public void FillPcm(Span<double> buffer, int frames)
     {
         if (_pcmRing == null || Gain == null) { buffer[..(frames * _channels)].Clear(); return; }
         int audible = _pcmRing.Render(buffer, frames);

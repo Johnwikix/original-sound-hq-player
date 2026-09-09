@@ -5,6 +5,7 @@ import sys, struct, math
 dump = sys.argv[1]
 bps = int(sys.argv[2])
 fmt = sys.argv[3] if len(sys.argv) > 3 else "signed"
+rate = int(sys.argv[4]) if len(sys.argv) > 4 else 44100
 
 raw = open(dump, "rb").read()
 n = len(raw) // bps
@@ -35,7 +36,7 @@ seg = min(n - start, 44100 // 3)  # 只分析数据起点后 0.3s（避开后续
 
 # Goertzel 检测 440Hz
 samples = [get(start + i) for i in range(seg)]
-k = 440 * seg / 44100
+k = 440 * seg / rate
 w = 2 * math.pi * k / seg
 c, s = math.cos(w), math.sin(w)
 g1 = g2 = 0.0
@@ -53,8 +54,8 @@ zc = 0
 for i in range(1, seg):
     if samples[i - 1] <= 0 < samples[i]:
         zc += 1
-est_hz = zc / (seg / 44100)
+est_hz = zc / (seg / rate)
 
-print(f"samples={n} start={start} rms={rms:.4f} peak={peak:.4f} goertzel440_ampl={ampl441:.4f} zcr_est={est_hz:.1f}Hz")
+print(f"samples={n} start={start} rate={rate} rms={rms:.4f} peak={peak:.4f} goertzel440_ampl={ampl441:.4f} zcr_est={est_hz:.1f}Hz")
 ok = 0.30 < rms < 0.50 and 0.40 < ampl441 < 0.60 and abs(est_hz - 440) < 6
 print("RESULT:", "PASS" if ok else "CHECK", "(期望 rms≈0.354=0.5/√2、440Hz 幅度≈0.5、过零≈440)")

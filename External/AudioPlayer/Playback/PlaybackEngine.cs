@@ -72,10 +72,11 @@ public sealed class PlaybackEngine : IDisposable
             || ext.Equals(DffExtension, StringComparison.OrdinalIgnoreCase);
     }
 
-    /// <summary>当前曲目是否为位流路径（DoP / NativeDSD）。</summary>
+    /// <summary>当前曲目是否为位流路径（DoP / NativeDSD）。
+    /// 模式判定与 IsSharedMode 同一精确集合：裸 "WasapiExclusive"（非法串）若被
+    /// Contains 放行，会建出位流会话却落共享输出（无位流转换路径）→ 全程静音。</summary>
     private bool IsBitstreamActive(string? url) =>
-        IsDopEnabled && IsRawDsdContainer(url)
-        && (OutputMode.Contains("WasapiExclusive") || OutputMode == "ASIO");
+        IsDopEnabled && IsRawDsdContainer(url) && !IsSharedMode(OutputMode);
 
     /// <summary>当前会话实际渲染种类（无会话时按设置预判）。</summary>
     private RenderKind EffectiveKind =>

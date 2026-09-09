@@ -192,8 +192,8 @@ internal abstract class FrameRingBase<T> where T : unmanaged
             .CopyTo(output.Slice(outFrame * Channels, frames * Channels));
 }
 
-/// <summary>PCM：float 交织。</summary>
-internal sealed class PcmRing : FrameRingBase<float>
+/// <summary>PCM：float64（double）交织。</summary>
+internal sealed class PcmRing : FrameRingBase<double>
 {
     public PcmRing(int channels, int capacityFrames, int prebufferFrames, int prebufferMs)
         : base(channels, capacityFrames, prebufferFrames, prebufferMs) { }

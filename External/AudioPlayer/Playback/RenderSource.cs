@@ -18,8 +18,8 @@ internal interface IRenderSource
     /// <summary>设备侧速率：PCM=采样率；DoP=DoP 帧率(DSD/16)；NativeDsd=DSD 位率。</summary>
     int SampleRate { get; }
     int Channels { get; }
-    /// <summary>PCM：读 frames 帧交织 float（含 EQ 与增益），不足补静音。</summary>
-    void FillPcm(Span<float> buffer, int frames);
+    /// <summary>PCM：读 frames 帧交织 double（float64 管线，含 EQ 与增益），不足补静音。</summary>
+    void FillPcm(Span<double> buffer, int frames);
     /// <summary>DoP：读 frames 帧 uint32 采样（标记位已在环内归一化）。</summary>
     void FillDop(Span<uint> buffer, int frames);
     /// <summary>NativeDSD：读 byteFrames 个字节帧（每帧每声道 1 字节 MSB 优先）。</summary>
