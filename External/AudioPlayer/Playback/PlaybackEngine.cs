@@ -27,6 +27,14 @@ public sealed class PlaybackEngine : IDisposable
     private int _fadeBusy; // Interlocked：换曲淡出进行中
     private volatile bool _pauseFadeActive; // 暂停淡出进行中（音量同步让路）
     private int _pauseFadeToken; // 暂停淡出令牌：期间再次按下播放则取消本次停机
+    private long _playGen; // 用户操作代数（切歌/换设置/停止递增）：使在途失效恢复计划作废
+
+    /// <summary>输出失效后的自动恢复计划（系统改输出格式/设备重启是暂态：重建会话保进度）。</summary>
+    private sealed class RecoveryPlan
+    {
+        public long Gen; public long PositionMs; public int Attempts; public long NextTickMs;
+    }
+    private RecoveryPlan? _recovery;
 
     public bool IsPlaying;
     public string OutputMode = "DirectSound";
@@ -94,9 +102,24 @@ public sealed class PlaybackEngine : IDisposable
 
     private void SwitchTo(string musicUrl)
     {
+        Interlocked.Increment(ref _playGen);
+        _recovery = null;
         DisposeSession();
         _session = OpenSession(musicUrl);
         if (_session != null) StartOutputAndPlay();
+    }
+
+    /// <summary>输出失效后的重建（保进度）。调用方持有 _streamLock。恢复计划由调用方管理。</summary>
+    private bool TryRebuildOutput(long positionMs)
+    {
+        var url = MusicUrl;
+        if (string.IsNullOrWhiteSpace(url)) return false;
+        DisposeSession();
+        _session = OpenSession(url);
+        if (_session == null) { IsPlaying = false; _ipc.PlayStateUpdate(false); return false; }
+        if (positionMs > 0) _session.RequestSeek(positionMs);
+        StartOutputAndPlay(); // 内部按成败发 PlayStateUpdate
+        return IsPlaying && _output != null;
     }
 
     private Session? OpenSession(string url, bool forceSharedFormat = false, RenderKind? kindOverride = null)
@@ -110,11 +133,18 @@ public sealed class PlaybackEngine : IDisposable
         int? forcedChannels = null;
         if (kind == RenderKind.Pcm && (forceSharedFormat || IsSharedMode(OutputMode)))
         {
-            var mix = GetMixFormatCached(IsSharedDeviceIndexed(OutputMode) ? BassOutputDeviceId : -1);
+            var mix = GetEndpointMixFormat(IsSharedDeviceIndexed(OutputMode) ? BassOutputDeviceId : -1);
             if (mix != null)
             {
                 forcedRate = mix.SampleRate;
                 forcedChannels = mix.Channels;
+            }
+            else
+            {
+                // 共享模式会话必须与端点混音率一致；查询失败（设备重启/格式切换中）
+                // 直接失败，交给恢复计划稍后重试——按文件率硬开会导致变速变声
+                Console.WriteLine("[engine] mix format unavailable (device restarting?)");
+                return null;
             }
         }
         var session = Session.Open(this, url, kind, DsdPcmFreq, DsdGain, Latency, forcedRate, forcedChannels);
@@ -128,18 +158,10 @@ public sealed class PlaybackEngine : IDisposable
     private static bool IsSharedMode(string mode) => mode is not ("WasapiExclusivePush" or "WasapiExclusiveEvent" or "ASIO");
     private static bool IsSharedDeviceIndexed(string mode) => mode == "WasapiShared";
 
-    private static WasapiDeviceList.SharedMixFormat? _cachedMix;
-    private static string? _cachedMixKey; // 按设备 ID 缓存而非索引：默认设备变更后 -1 会解析到
-                                           // 新端点，索引键命中旧设备混音率 → 会话强制错率 → 慢放
-
-    private static WasapiDeviceList.SharedMixFormat? GetMixFormatCached(int deviceIndex)
-    {
-        var (mix, deviceId) = WasapiDeviceList.GetSharedMixFormat(deviceIndex);
-        if (_cachedMixKey == deviceId && _cachedMix != null) return _cachedMix;
-        _cachedMix = mix;
-        _cachedMixKey = deviceId;
-        return _cachedMix;
-    }
+    // 不缓存混音格式：系统改“输出音频格式”会变更混音格式而设备 ID 不变，陈旧缓存
+    // 会让会话按旧率构建、端点按新率初始化 → 速率错配（变声）。每次现查（毫秒级）。
+    private static WasapiDeviceList.SharedMixFormat? GetEndpointMixFormat(int deviceIndex)
+        => WasapiDeviceList.GetSharedMixFormat(deviceIndex).Mix;
 
     /// <summary>创建输出并开始播放；首选输出失败回退 WASAPI 共享（对应 bass 回退 DirectSound）。</summary>
     private void StartOutputAndPlay()
@@ -276,6 +298,13 @@ public sealed class PlaybackEngine : IDisposable
                 }
                 else
                 {
+                    if (_output is { IsFailed: true })
+                    {
+                        // 输出已死（设备格式切换/失效）：Resume 无意义，保进度重建
+                        Interlocked.Increment(ref _playGen);
+                        TryRebuildOutput(_session.CurrentMs);
+                        return;
+                    }
                     _output?.Resume();
                     if (IsFadingEnabled && _session is { Kind: RenderKind.Pcm, Gain: not null })
                         _session.Gain.RampTo(Volume, 500);
@@ -351,6 +380,8 @@ public sealed class PlaybackEngine : IDisposable
     {
         lock (_streamLock)
         {
+            Interlocked.Increment(ref _playGen);
+            _recovery = null; // 用户停止：取消自动恢复
             try
             {
                 _output?.Pause();
@@ -370,6 +401,8 @@ public sealed class PlaybackEngine : IDisposable
         {
             try { _session?.RequestSeek(Math.Max(0, positionMs)); }
             catch { }
+            var plan = _recovery; // 失效暂停期间手动 seek：恢复时落到新位置
+            if (plan != null) plan.PositionMs = Math.Max(0, positionMs);
         }
     }
 
@@ -439,6 +472,8 @@ public sealed class PlaybackEngine : IDisposable
         {
             lock (_streamLock)
             {
+                Interlocked.Increment(ref _playGen);
+                _recovery = null; // 用户改设置：接管恢复
                 var (curMs, _) = GetTimeProgress();
                 bool wasPlaying = IsPlaying;
                 DisposeSession();
@@ -507,13 +542,16 @@ public sealed class PlaybackEngine : IDisposable
     {
         try
         {
+            var plan = _recovery;
+            if (plan != null) { TickRecovery(plan); return; }
             if (!IsPlaying) return;
             var session = _session;
             var output = _output;
             if (session == null) return;
             if (output is { IsFailed: true })
             {
-                // 设备中途失效（拔出/独占被抢占）：按暂停停机并告知——
+                // 设备中途失效（拔出/独占被抢占/系统改输出格式）：先按暂停停机告知，
+                // 再计划自动恢复——格式切换/设备重启多为暂态，重建会话保进度续播；
                 // 区别于自然结束（PlayEnded 会触发应用自动切歌，失效时切了也播不出）
                 lock (_streamLock)
                 {
@@ -522,6 +560,14 @@ public sealed class PlaybackEngine : IDisposable
                         try { output.Pause(); } catch { }
                         IsPlaying = false;
                         _ipc.PlayStateUpdate(false);
+                        _recovery = new RecoveryPlan
+                        {
+                            Gen = Volatile.Read(ref _playGen),
+                            PositionMs = session.CurrentMs,
+                            Attempts = 0,
+                            NextTickMs = Environment.TickCount64 + 1000,
+                        };
+                        Console.WriteLine("[engine] output failed, recovery scheduled");
                     }
                 }
                 return;
@@ -540,6 +586,23 @@ public sealed class PlaybackEngine : IDisposable
             }
         }
         catch { }
+    }
+
+    /// <summary>自动恢复节拍：+1s/+3s/+7s 三次重建；用户操作（代数变化）即作废。</summary>
+    private void TickRecovery(RecoveryPlan plan)
+    {
+        if (Volatile.Read(ref _playGen) != plan.Gen) { _recovery = null; return; }
+        if (Environment.TickCount64 < plan.NextTickMs) return;
+        lock (_streamLock)
+        {
+            if (!ReferenceEquals(plan, _recovery)) return;
+            if (Volatile.Read(ref _playGen) != plan.Gen) { _recovery = null; return; }
+            plan.Attempts++;
+            Console.WriteLine($"[engine] output recovery attempt {plan.Attempts}");
+            if (TryRebuildOutput(plan.PositionMs)) return; // 成功：StartOutputAndPlay 已发 PlayState(true)
+            if (plan.Attempts >= 3) { _recovery = null; return; } // 放弃：等用户手动操作
+            plan.NextTickMs = Environment.TickCount64 + (plan.Attempts == 1 ? 2000 : 4000);
+        }
     }
 
     // ─────────────── 释放 ───────────────

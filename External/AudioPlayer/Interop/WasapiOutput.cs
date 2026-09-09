@@ -183,6 +183,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                 _ => FormatKind.Pcm32,
             };
         _channels = mix->nChannels;
+        int mix2Rate = (int)mix->nSamplesPerSec; // 释放前留存：诊断混音率是否随系统设置变化
         Win32.CoTaskMemFree((IntPtr)mix);
 
         int gbr = _client!.GetBufferSize(out _bufferFrames);
@@ -191,7 +192,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
             Console.WriteLine($"[wasapi] GetBufferSize hr=0x{gbr:X8}");
             return false;
         }
-        Console.WriteLine($"[wasapi] shared mix-initialized buffer={_bufferFrames} kind={_endpointKind} ch={_channels}");
+        Console.WriteLine($"[wasapi] shared mix-initialized rate={_source.SampleRate} endpoint-rate={mix2Rate} buffer={_bufferFrames} kind={_endpointKind} ch={_channels}");
         return true;
     }
 
