@@ -5,7 +5,9 @@ namespace AudioPlayer.Interop;
 
 /// <summary>
 /// WASAPI 输出（ECHO wasapi_exclusive/wasapi_shared 移植）：
-/// - 共享：按端点混音格式 Initialize（引擎自动重采样），事件驱动渲染，会话音量；
+/// - 共享：AUTOCONVERTPCM 直传源格式（float32@源率/声道），采样率转换与声道矩阵交给音频引擎
+///   ——DirectSound 的"全自动"语义：系统改输出格式、换默认设备都不需要会话重建；事件驱动渲染，会话音量。
+///   引擎拒绝直传（罕见）时回退为端点混音格式精确初始化（虚拟声卡兼容路径）；
 /// - 独占 Push/Event：候选格式协商（PCM: float32→24in32→16→32；DoP: 24packed→24in32→32）、
 ///   缓冲对齐重试（AUDCLNT_E_BUFFER_SIZE_NOT_ALIGNED）、MMCSS Pro Audio 渲染线程；
 /// - DoP：uint32 采样位精确透传（24packed 取低 24 位、24in32/32 左移 8 位）。
@@ -42,6 +44,13 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
 
     public int LatencyMs { get; private set; }
 
+    public string? DeviceId { get; private set; }
+
+    public bool FollowsDefaultDevice { get; private set; }
+
+    /// <summary>共享模式直传被拒且源格式≠混音格式：引擎需按混音格式重建会话后重试（回退路径）。</summary>
+    public bool NeedsMixFormatSession { get; private set; }
+
     public WasapiOutput(bool exclusive, bool pushMode)
     {
         _exclusive = exclusive;
@@ -54,8 +63,10 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
         Win32.CoInitializeEx(IntPtr.Zero, Win32.COINIT_MULTITHREADED);
         try
         {
-            _devicePtr = WasapiDeviceList.ResolveDevicePtr(deviceIndex);
+            _devicePtr = WasapiDeviceList.ResolveDevicePtr(deviceIndex, out bool isDefault);
             if (_devicePtr == IntPtr.Zero) { Console.WriteLine("[wasapi] ResolveDevice failed"); return false; }
+            FollowsDefaultDevice = isDefault;
+            DeviceId = WasapiDeviceList.GetDeviceIdRaw(_devicePtr);
             _clientPtr = WasapiDeviceList.ActivateAudioClient(_devicePtr);
             if (_clientPtr == IntPtr.Zero) return false;
             _client = new RawAudioClient(_clientPtr);
@@ -148,8 +159,28 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
 
     private bool InitializeShared(IRenderSource source, int requestedBufferFrames)
     {
-        // 用端点混音格式初始化：虚拟声卡可能只接受精确混音格式（Senary 实测）。
-        // 引擎侧已保证会话按混音率/声道重建，这里直接采用 GetMixFormat 原始指针。
+        // ① 直传源格式：AUTOCONVERTPCM + SRC_DEFAULT_QUALITY 让音频引擎自行做采样率转换与声道矩阵。
+        //    会话不再与端点格式绑定——系统改"输出音频格式"/换默认设备时只需换输出，解码环原地续播。
+        //    缓冲 300ms 固定：共享模式不随 Latency 设置（有意设计）
+        var direct = WAVEFORMATEXTENSIBLE.Create((uint)source.SampleRate, (ushort)source.Channels, 32, 32, SubFormats.IeeeFloat);
+        int hr = InitializeWithTimeout(WasapiTypes.ShareModeShared,
+            WasapiTypes.StreamFlagsEventCallback | WasapiTypes.StreamFlagsNoPersist
+            | WasapiTypes.StreamFlagsAutoConvertPcm | WasapiTypes.StreamFlagsSrcDefaultQuality,
+            3000000, 0, &direct);
+        if (hr == 0)
+        {
+            int gbr0 = _client!.GetBufferSize(out _bufferFrames);
+            if (gbr0 != 0) { Console.WriteLine($"[wasapi] GetBufferSize hr=0x{gbr0:X8}"); return false; }
+            _endpointKind = FormatKind.Float32;
+            _channels = (uint)source.Channels;
+            Console.WriteLine($"[wasapi] shared autoconvert rate={source.SampleRate} ch={source.Channels} buffer={_bufferFrames}");
+            return true;
+        }
+        Console.WriteLine($"[wasapi] shared Initialize(autoconvert) hr=0x{hr:X8} rate={source.SampleRate} ch={source.Channels}");
+        if (hr == WasapiTypes.EPending) return false; // 超时墓园：client 归 worker，不得复用
+
+        // ② 回退：端点混音格式精确初始化（只接受混音格式的虚拟声卡）。源格式与混音不一致时
+        //    无法直接用（会变速变声），告知引擎按混音格式重建会话后重试
         void** vtbl = *(void***)_clientPtr;
         var getMix = (delegate* unmanaged[Stdcall]<IntPtr, WAVEFORMATEX**, int>)vtbl[8];
         WAVEFORMATEX* mix = null;
@@ -158,10 +189,17 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
             Console.WriteLine("[wasapi] GetMixFormat failed");
             return false;
         }
+        if (mix->nSamplesPerSec != (uint)source.SampleRate || mix->nChannels != source.Channels)
+        {
+            NeedsMixFormatSession = true;
+            Console.WriteLine($"[wasapi] fallback needs mix-format session rate={mix->nSamplesPerSec} ch={mix->nChannels}");
+            Win32.CoTaskMemFree((IntPtr)mix);
+            return false;
+        }
 
-        int hr = InitializeNativeWithTimeout(WasapiTypes.ShareModeShared,
+        hr = InitializeNativeWithTimeout(WasapiTypes.ShareModeShared,
             WasapiTypes.StreamFlagsEventCallback | WasapiTypes.StreamFlagsNoPersist,
-            3000000 /* 300ms 固定：共享模式不随 Latency 设置（有意设计） */, 0, mix);
+            3000000, 0, mix);
         if (hr != 0)
         {
             Console.WriteLine($"[wasapi] shared Initialize(mix) hr=0x{hr:X8} rate={mix->nSamplesPerSec} ch={mix->nChannels} bits={mix->wBitsPerSample}");
@@ -184,7 +222,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                 _ => FormatKind.Pcm32,
             };
         _channels = mix->nChannels;
-        int mix2Rate = (int)mix->nSamplesPerSec; // 释放前留存：诊断混音率是否随系统设置变化
+        int mix2Rate = (int)mix->nSamplesPerSec;
         Win32.CoTaskMemFree((IntPtr)mix);
 
         int gbr = _client!.GetBufferSize(out _bufferFrames);
@@ -344,8 +382,10 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                 {
                     // 双事件等待（stopEvent 在前：双触发优先停机）。暂停期间 client 已 Stop、
                     // 渲染事件不再触发，Dispose 置位 stopEvent 也能立即唤醒退出，
-                    // 避免 Join 超时后与在途渲染并发释放 COM 对象
-                    uint wait = Win32.WaitForMultipleObjects(2, [_stopEvent, _renderEvent], false, 2000);
+                    // 避免 Join 超时后与在途渲染并发释放 COM 对象。
+                    // 共享模式事件周期 10ms，1s 无事件即判失效（端点失效时事件停发，靠超时兜底，
+                    // 主动通知由 EndpointNotifications 提前给到引擎）；独占大缓冲保留 2s
+                    uint wait = Win32.WaitForMultipleObjects(2, [_stopEvent, _renderEvent], false, _exclusive ? 2000 : 1000);
                     if (wait == 0) break; // stopEvent：停机
                     if (wait == 1)
                     {

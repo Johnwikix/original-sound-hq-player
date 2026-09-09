@@ -78,14 +78,15 @@ internal sealed class Session : IRenderSource, IDisposable
     // ─────────────── 工厂 ───────────────
 
     public static Session? Open(PlaybackEngine engine, string path, RenderKind kind,
-        int dsdPcmFreq, int dsdGainDb, int latencyMs, int? forcedRate = null, int? forcedChannels = null)
+        int dsdPcmFreq, int dsdGainDb, int latencyMs, int? forcedRate = null, int? forcedChannels = null,
+        int? maxChannels = null)
     {
         switch (kind)
         {
             case RenderKind.Pcm:
             {
                 var dec = new PcmDecoder();
-                if (!dec.Open(path, dsdPcmFreq, dsdGainDb, forcedRate, forcedChannels)) { dec.Dispose(); return null; }
+                if (!dec.Open(path, dsdPcmFreq, dsdGainDb, forcedRate, forcedChannels, maxChannels)) { dec.Dispose(); return null; }
                 int rate = dec.SampleRate;
                 int channels = dec.Channels;
                 int ringFrames = RingCapacity(rate, latencyMs);

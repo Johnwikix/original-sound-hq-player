@@ -232,8 +232,17 @@ internal static class WasapiTypes
 
     public const int StreamFlagsEventCallback = 0x00040000;
     public const int StreamFlagsNoPersist = 0x00080000;
+    // 共享模式"直传 PCM"：音频引擎按需插入采样率转换器与声道矩阵，把任意 PCM 格式转成端点混音格式
+    //（DirectSound / miniaudio 共享输出在底层就是靠这两个标志把格式交给系统的）
+    public const int StreamFlagsAutoConvertPcm = unchecked((int)0x80000000);
+    public const int StreamFlagsSrcDefaultQuality = 0x08000000;
 
     public const int BufferFlagsSilent = 0x2;
+
+    // ERole（默认设备角色）
+    public const int RoleConsole = 0;
+    public const int RoleMultimedia = 1;
+    public const int RoleCommunications = 2;
 
     // HRESULT
     public const int SOk = 0;
@@ -338,8 +347,12 @@ internal sealed class WasapiDeviceList
     /// 按索引解析端点，返回原生 IMMDevice 指针（调用方负责 Release）。
     /// 索引&lt;0 或越界 → 默认端点。裸虚表调用（枚举器虚表：4=GetDefaultAudioEndpoint，5=GetDevice）。
     /// </summary>
-    public static unsafe IntPtr ResolveDevicePtr(int index)
+    public static IntPtr ResolveDevicePtr(int index) => ResolveDevicePtr(index, out _);
+
+    /// <summary>同上；isDefault = 最终落到了系统默认端点（显式索引解析失败也算跟随默认）。</summary>
+    public static unsafe IntPtr ResolveDevicePtr(int index, out bool isDefault)
     {
+        isDefault = true;
         int hr = Win32.CoCreateInstance(ref Unsafe.AsRef(in WasapiTypes.ClsidMmDeviceEnumerator), IntPtr.Zero,
             Win32.CLSCTX_ALL, ref Unsafe.AsRef(in WasapiTypes.IidIMMDeviceEnumerator), out IntPtr enumPtr);
         if (hr != 0 || enumPtr == IntPtr.Zero) return IntPtr.Zero;
@@ -361,10 +374,12 @@ internal sealed class WasapiDeviceList
                         hr = getDevice(enumPtr, pId, &dev);
                     }
                     if (hr != 0) dev = IntPtr.Zero;
+                    else isDefault = false;
                 }
             }
             if (dev == IntPtr.Zero)
             {
+                isDefault = true;
                 hr = getDefault(enumPtr, WasapiTypes.ERender, WasapiTypes.EConsole, &dev);
                 if (hr != 0)
                 {
@@ -382,8 +397,9 @@ internal sealed class WasapiDeviceList
     public sealed record SharedMixFormat(int SampleRate, int Channels, int BitsPerSample, bool IsFloat);
 
     /// <summary>裸虚表 GetId（IMMDevice 槽 5）取端点 ID 字符串（CoTaskMem 释放）。</summary>
-    private static unsafe string? GetDeviceIdRaw(IntPtr device)
+    public static unsafe string? GetDeviceIdRaw(IntPtr device)
     {
+        if (device == IntPtr.Zero) return null;
         void** vtbl = *(void***)device;
         var getId = (delegate* unmanaged[Stdcall]<IntPtr, IntPtr*, int>)vtbl[5];
         IntPtr pId = IntPtr.Zero;
@@ -455,5 +471,222 @@ internal sealed class WasapiDeviceList
             return IntPtr.Zero;
         }
         return client;
+    }
+}
+
+/// <summary>端点事件种类（引擎侧只关心"当前输出所在端点是否还能用"）。</summary>
+internal enum EndpointEventKind : byte
+{
+    /// <summary>设备状态变化（newState ≠ ACTIVE 才投递：禁用/拔出/不存在）。</summary>
+    StateChanged,
+    /// <summary>设备被移除。</summary>
+    Removed,
+    /// <summary>端点格式属性（PKEY_AudioEngine_DeviceFormat）变化：系统"输出音频格式"被改。</summary>
+    FormatChanged,
+}
+
+/// <summary>
+/// IMMNotificationClient 裸虚表实现（ECHO wasapi_shared DeviceWatcher 对等；AOT 安全，不依赖生成封送器）。
+/// "DirectSound 全自动"的设备侧支撑：默认渲染设备变更 / 当前端点被禁用或拔出 / 系统改输出格式
+/// 时由 MMDevice 主动通知，引擎据此静默换输出——不再靠渲染线程超时探测（最坏 2s 静音）。
+/// 回调发生在 MMDevice 的 RPC 线程：这里只记录事件，重建一律在引擎看门狗线程做
+/// （回调内持引擎锁做驱动调用会与 Initialize/Stop 死锁）。对象为进程生命周期静态单例，Release 不释放。
+/// </summary>
+internal static unsafe class EndpointNotifications
+{
+    private const int ENoInterface = unchecked((int)0x80004002);
+    private const int EPointer = unchecked((int)0x80004003);
+    private const int DeviceStateActive = 0x1;
+
+    private static readonly Guid IidIUnknown = new("00000000-0000-0000-C000-000000000046");
+    private static readonly Guid IidIMMNotificationClient = new("7991EEC9-7E89-4D85-8390-6C703CEC60C0");
+    /// <summary>PKEY_AudioEngine_DeviceFormat（fmtid，pid=0）：端点混音格式。</summary>
+    private static readonly Guid FmtidAudioEngineDeviceFormat = new("F19F064D-082C-4E27-BC73-6882A1BB8E4C");
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Instance
+    {
+        public void** Vtbl;
+        public int RefCount;
+    }
+
+    private static readonly object Gate = new();
+    private static IntPtr _enumerator; // 注册期间必须持有（Unregister 需同一实例）
+    private static Instance* _instance;
+    private static void** _vtbl;
+
+    // 事件投递：默认设备 ID 只保留最新（连续切换只需落到最终设备），其余事件排队由看门狗一次性消费
+    private static string? _defaultRenderId;
+    private static int _defaultChanged;
+    private static readonly System.Collections.Concurrent.ConcurrentQueue<(EndpointEventKind Kind, string DeviceId)> Pending = new();
+
+    // 函数指针须在静态字段中固定：驱动/系统长期持有虚表地址
+    private static readonly delegate* unmanaged[Stdcall]<void*, Guid*, void**, int> QueryInterfacePtr = &QueryInterface;
+    private static readonly delegate* unmanaged[Stdcall]<void*, uint> AddRefPtr = &AddRef;
+    private static readonly delegate* unmanaged[Stdcall]<void*, uint> ReleasePtr = &Release;
+    private static readonly delegate* unmanaged[Stdcall]<void*, char*, uint, int> OnDeviceStateChangedPtr = &OnDeviceStateChanged;
+    private static readonly delegate* unmanaged[Stdcall]<void*, char*, int> OnDeviceAddedPtr = &OnDeviceAdded;
+    private static readonly delegate* unmanaged[Stdcall]<void*, char*, int> OnDeviceRemovedPtr = &OnDeviceRemoved;
+    private static readonly delegate* unmanaged[Stdcall]<void*, int, int, char*, int> OnDefaultDeviceChangedPtr = &OnDefaultDeviceChanged;
+    private static readonly delegate* unmanaged[Stdcall]<void*, char*, PropertyKey*, int> OnPropertyValueChangedPtr = &OnPropertyValueChanged;
+
+    public static bool IsActive => _enumerator != IntPtr.Zero;
+
+    /// <summary>向系统注册端点通知。幂等；失败返回 false（引擎退化为仅靠渲染失效探测）。</summary>
+    public static bool Start()
+    {
+        lock (Gate)
+        {
+            if (_enumerator != IntPtr.Zero) return true;
+            Win32.CoInitializeEx(IntPtr.Zero, Win32.COINIT_MULTITHREADED); // 已初始化返回 S_FALSE/CHANGED_MODE，均无害
+            int hr = Win32.CoCreateInstance(ref Unsafe.AsRef(in WasapiTypes.ClsidMmDeviceEnumerator), IntPtr.Zero,
+                Win32.CLSCTX_ALL, ref Unsafe.AsRef(in WasapiTypes.IidIMMDeviceEnumerator), out IntPtr enumPtr);
+            if (hr != 0 || enumPtr == IntPtr.Zero)
+            {
+                Console.WriteLine($"[wasapi] notification enumerator hr=0x{hr:X8}");
+                return false;
+            }
+
+            _vtbl = (void**)NativeMemory.Alloc((nuint)(8 * sizeof(void*)));
+            _vtbl[0] = (void*)QueryInterfacePtr;
+            _vtbl[1] = (void*)AddRefPtr;
+            _vtbl[2] = (void*)ReleasePtr;
+            _vtbl[3] = (void*)OnDeviceStateChangedPtr;
+            _vtbl[4] = (void*)OnDeviceAddedPtr;
+            _vtbl[5] = (void*)OnDeviceRemovedPtr;
+            _vtbl[6] = (void*)OnDefaultDeviceChangedPtr;
+            _vtbl[7] = (void*)OnPropertyValueChangedPtr;
+            _instance = (Instance*)NativeMemory.Alloc((nuint)sizeof(Instance));
+            _instance->Vtbl = _vtbl;
+            _instance->RefCount = 1;
+
+            // IMMDeviceEnumerator 虚表：6=RegisterEndpointNotificationCallback 7=Unregister
+            var register = (delegate* unmanaged[Stdcall]<IntPtr, void*, int>)(*(void***)enumPtr)[6];
+            hr = register(enumPtr, _instance);
+            if (hr != 0)
+            {
+                Console.WriteLine($"[wasapi] RegisterEndpointNotificationCallback hr=0x{hr:X8}");
+                Marshal.Release(enumPtr);
+                NativeMemory.Free(_instance); _instance = null;
+                NativeMemory.Free(_vtbl); _vtbl = null;
+                return false;
+            }
+            _enumerator = enumPtr;
+            Console.WriteLine("[wasapi] endpoint notifications registered");
+            return true;
+        }
+    }
+
+    public static void Stop()
+    {
+        lock (Gate)
+        {
+            if (_enumerator == IntPtr.Zero) return;
+            try
+            {
+                var unregister = (delegate* unmanaged[Stdcall]<IntPtr, void*, int>)(*(void***)_enumerator)[7];
+                unregister(_enumerator, _instance);
+            }
+            catch { }
+            Marshal.Release(_enumerator);
+            _enumerator = IntPtr.Zero;
+            // 实例/虚表有意不释放：系统侧可能仍有在途回调引用（进程退出回收）
+        }
+    }
+
+    /// <summary>
+    /// 取走自上次以来的全部事件。defaultRenderId = 最新默认渲染端点（未变更为 null；变更为"无设备"时为空串）。
+    /// </summary>
+    public static bool TryDrain(out string? defaultRenderId, out List<(EndpointEventKind Kind, string DeviceId)> events)
+    {
+        defaultRenderId = null;
+        if (Interlocked.Exchange(ref _defaultChanged, 0) != 0)
+            defaultRenderId = Volatile.Read(ref _defaultRenderId) ?? "";
+        events = [];
+        while (Pending.TryDequeue(out var e)) events.Add(e);
+        return defaultRenderId != null || events.Count > 0;
+    }
+
+    // ─────────────── IUnknown ───────────────
+
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    private static int QueryInterface(void* self, Guid* riid, void** ppv)
+    {
+        if (ppv == null) return EPointer;
+        if (riid != null && (*riid == IidIUnknown || *riid == IidIMMNotificationClient))
+        {
+            *ppv = self;
+            Interlocked.Increment(ref ((Instance*)self)->RefCount);
+            return 0;
+        }
+        *ppv = null;
+        return ENoInterface;
+    }
+
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    private static uint AddRef(void* self) => (uint)Interlocked.Increment(ref ((Instance*)self)->RefCount);
+
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    private static uint Release(void* self)
+    {
+        int n = Interlocked.Decrement(ref ((Instance*)self)->RefCount);
+        return (uint)Math.Max(0, n); // 静态单例：归零也不释放
+    }
+
+    // ─────────────── IMMNotificationClient ───────────────
+
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    private static int OnDeviceStateChanged(void* self, char* deviceId, uint newState)
+    {
+        try
+        {
+            if (newState != DeviceStateActive && deviceId != null)
+                Pending.Enqueue((EndpointEventKind.StateChanged, new string(deviceId)));
+        }
+        catch { }
+        return 0;
+    }
+
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    private static int OnDeviceAdded(void* self, char* deviceId) => 0;
+
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    private static int OnDeviceRemoved(void* self, char* deviceId)
+    {
+        try
+        {
+            if (deviceId != null) Pending.Enqueue((EndpointEventKind.Removed, new string(deviceId)));
+        }
+        catch { }
+        return 0;
+    }
+
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    private static int OnDefaultDeviceChanged(void* self, int flow, int role, char* defaultDeviceId)
+    {
+        try
+        {
+            // 只关心渲染方向的 console/multimedia 默认设备（通话设备变更与播放无关）
+            if (flow == WasapiTypes.ERender && role != WasapiTypes.RoleCommunications)
+            {
+                Volatile.Write(ref _defaultRenderId, defaultDeviceId == null ? "" : new string(defaultDeviceId));
+                Interlocked.Exchange(ref _defaultChanged, 1);
+            }
+        }
+        catch { }
+        return 0;
+    }
+
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    private static int OnPropertyValueChanged(void* self, char* deviceId, PropertyKey* key)
+    {
+        try
+        {
+            // PROPERTYKEY 20 字节按值传递：x64/ARM64 ABI 均以指针传入调用方副本
+            if (deviceId != null && key != null && key->pid == 0 && key->fmtid == FmtidAudioEngineDeviceFormat)
+                Pending.Enqueue((EndpointEventKind.FormatChanged, new string(deviceId)));
+        }
+        catch { }
+        return 0;
     }
 }

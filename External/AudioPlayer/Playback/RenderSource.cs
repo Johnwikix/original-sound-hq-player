@@ -37,4 +37,10 @@ internal interface IAudioOutput : IDisposable
 
     /// <summary>渲染是否已失败（设备拔出/独占被抢占等）——引擎看门狗据此停机并通知。</summary>
     bool IsFailed { get; }
+
+    /// <summary>输出所在端点 ID（MMDevice ID 字符串；ASIO/无法取得为 null）。用于匹配端点通知。</summary>
+    string? DeviceId => null;
+
+    /// <summary>是否跟随系统默认设备（DirectSound / 默认设备的 WASAPI 共享）：默认设备变更时应换端点。</summary>
+    bool FollowsDefaultDevice => false;
 }

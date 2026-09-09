@@ -42,7 +42,11 @@ internal sealed unsafe class PcmDecoder : IDisposable
 
     private static readonly int EAgain = ffmpeg.AVERROR(ffmpeg.EAGAIN);
 
-    public bool Open(string path, int dsdPcmFreq, int dsdGainDb, int? forceRate = null, int? forceChannels = null)
+    /// <param name="forceRate">强制输出采样率（独占/ASIO 回退共享时按混音率）；null = 源率。</param>
+    /// <param name="forceChannels">强制输出声道数；null = 源声道数（受 maxChannels 上限约束）。</param>
+    /// <param name="maxChannels">声道上限（共享直传时压到 2：EQ 仅处理 ≤2 声道，多声道由 swresample 下混）。</param>
+    public bool Open(string path, int dsdPcmFreq, int dsdGainDb, int? forceRate = null, int? forceChannels = null,
+        int? maxChannels = null)
     {
         try
         {
@@ -78,7 +82,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
 
             int inRate = _dec->sample_rate != 0 ? _dec->sample_rate : 48000;
             SampleRate = forceRate ?? (_dsdSource && dsdPcmFreq > 0 ? dsdPcmFreq : inRate);
-            Channels = forceChannels ?? channels;
+            Channels = forceChannels ?? (maxChannels is > 0 ? Math.Min(channels, maxChannels.Value) : channels);
 
             AVChannelLayout outLayout = default;
             ffmpeg.av_channel_layout_default(&outLayout, Channels);
