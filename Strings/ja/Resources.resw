@@ -719,7 +719,7 @@
     <value>ボーカル</value>
   </data>
   <data name="EqSavePresetToolTip" xml:space="preserve">
-    <value>プリセットとして保存（カスタムプリセット選択時は上書き）</value>
+    <value>選択したカスタムプリセットに変更を保存</value>
   </data>
   <data name="EqDeletePresetToolTip" xml:space="preserve">
     <value>選択したカスタムプリセットを削除</value>
@@ -744,6 +744,36 @@
   </data>
   <data name="EqExportFailed" xml:space="preserve">
     <value>エクスポート失敗</value>
+  </data>
+  <data name="EqAddPresetToolTip" xml:space="preserve">
+    <value>プリセットを追加：現在のイコライザーを新しいカスタムプリセットとして保存</value>
+  </data>
+  <data name="EqOverwritePreset" xml:space="preserve">
+    <value>同名のプリセットが既に存在します。上書きしますか？</value>
+  </data>
+  <data name="EqPresetCustom" xml:space="preserve">
+    <value>カスタム</value>
+  </data>
+  <data name="EqPresetFlat" xml:space="preserve">
+    <value>フラット</value>
+  </data>
+  <data name="EqPresetRock" xml:space="preserve">
+    <value>ロック</value>
+  </data>
+  <data name="EqPresetPop" xml:space="preserve">
+    <value>ポップ</value>
+  </data>
+  <data name="EqPresetJazz" xml:space="preserve">
+    <value>ジャズ</value>
+  </data>
+  <data name="EqPresetClassical" xml:space="preserve">
+    <value>クラシック</value>
+  </data>
+  <data name="EqPresetElectronic" xml:space="preserve">
+    <value>エレクトロニック</value>
+  </data>
+  <data name="EqPresetVocal" xml:space="preserve">
+    <value>ボーカル</value>
   </data>
   <data name="CoverSize.Text" xml:space="preserve">
     <value>表紙サムネイルサイズ</value>

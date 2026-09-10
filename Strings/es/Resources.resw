@@ -719,7 +719,7 @@
     <value>Vocal</value>
   </data>
   <data name="EqSavePresetToolTip" xml:space="preserve">
-    <value>Guardar como preajuste (sobrescribe si hay un preajuste personalizado seleccionado)</value>
+    <value>Guardar los cambios en el preajuste personalizado seleccionado</value>
   </data>
   <data name="EqDeletePresetToolTip" xml:space="preserve">
     <value>Eliminar el preajuste personalizado seleccionado</value>
@@ -744,6 +744,36 @@
   </data>
   <data name="EqExportFailed" xml:space="preserve">
     <value>Error al exportar</value>
+  </data>
+  <data name="EqAddPresetToolTip" xml:space="preserve">
+    <value>Añadir preajuste: guarda el ecualizador actual como un nuevo preajuste personalizado</value>
+  </data>
+  <data name="EqOverwritePreset" xml:space="preserve">
+    <value>Ya existe un preajuste con este nombre. ¿Sobrescribirlo?</value>
+  </data>
+  <data name="EqPresetCustom" xml:space="preserve">
+    <value>Personalizado</value>
+  </data>
+  <data name="EqPresetFlat" xml:space="preserve">
+    <value>Plano</value>
+  </data>
+  <data name="EqPresetRock" xml:space="preserve">
+    <value>Rock</value>
+  </data>
+  <data name="EqPresetPop" xml:space="preserve">
+    <value>Pop</value>
+  </data>
+  <data name="EqPresetJazz" xml:space="preserve">
+    <value>Jazz</value>
+  </data>
+  <data name="EqPresetClassical" xml:space="preserve">
+    <value>Clásica</value>
+  </data>
+  <data name="EqPresetElectronic" xml:space="preserve">
+    <value>Electrónica</value>
+  </data>
+  <data name="EqPresetVocal" xml:space="preserve">
+    <value>Vocal</value>
   </data>
   <data name="CoverSize.Text" xml:space="preserve">
     <value>Tamaño de la miniatura de la portada</value>

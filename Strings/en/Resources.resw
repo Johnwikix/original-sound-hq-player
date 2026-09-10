@@ -719,7 +719,7 @@
     <value>Vocal</value>
   </data>
   <data name="EqSavePresetToolTip" xml:space="preserve">
-    <value>Save as preset (overwrites when a custom preset is selected)</value>
+    <value>Save changes to the selected custom preset</value>
   </data>
   <data name="EqDeletePresetToolTip" xml:space="preserve">
     <value>Delete the selected custom preset</value>
@@ -744,6 +744,36 @@
   </data>
   <data name="EqExportFailed" xml:space="preserve">
     <value>Export failed</value>
+  </data>
+  <data name="EqAddPresetToolTip" xml:space="preserve">
+    <value>Add preset: save the current equalizer as a new custom preset</value>
+  </data>
+  <data name="EqOverwritePreset" xml:space="preserve">
+    <value>A preset with this name already exists. Overwrite?</value>
+  </data>
+  <data name="EqPresetCustom" xml:space="preserve">
+    <value>Custom</value>
+  </data>
+  <data name="EqPresetFlat" xml:space="preserve">
+    <value>Flat</value>
+  </data>
+  <data name="EqPresetRock" xml:space="preserve">
+    <value>Rock</value>
+  </data>
+  <data name="EqPresetPop" xml:space="preserve">
+    <value>Pop</value>
+  </data>
+  <data name="EqPresetJazz" xml:space="preserve">
+    <value>Jazz</value>
+  </data>
+  <data name="EqPresetClassical" xml:space="preserve">
+    <value>Classical</value>
+  </data>
+  <data name="EqPresetElectronic" xml:space="preserve">
+    <value>Electronic</value>
+  </data>
+  <data name="EqPresetVocal" xml:space="preserve">
+    <value>Vocal</value>
   </data>
   <data name="CoverSize.Text" xml:space="preserve">
     <value>Cover Thumbnail Size</value>

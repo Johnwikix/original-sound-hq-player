@@ -15,7 +15,8 @@
             <Setter Property="Minimum" Value="-12" />
             <Setter Property="Maximum" Value="12" />
             <Setter Property="StepFrequency" Value="0.1" />
-            <Setter Property="TickPlacement" Value="None" />
+            <Setter Property="TickPlacement" Value="Outside" />
+            <Setter Property="TickFrequency" Value="3" />
             <Setter Property="Margin" Value="3,0" />
         </Style>
         <Style x:Key="EqGainLabelStyle" TargetType="TextBlock">
@@ -32,7 +33,7 @@
         <Style x:Key="EqScaleLabelStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="10" />
             <Setter Property="Foreground" Value="{ThemeResource TextFillColorTertiaryBrush}" />
-            <Setter Property="Width" Value="30" />
+            <Setter Property="Width" Value="22" />
             <Setter Property="Height" Value="14" />
             <Setter Property="TextAlignment" Value="Right" />
         </Style>
@@ -46,9 +47,9 @@
     </UserControl.Resources>
 
     <Grid ColumnDefinitions="Auto,*">
-        <!--  dB 刻度列：与右侧滑条区第 1 行（滑条行程 200px）垂直对齐  -->
+        <!--  dB 刻度列：紧贴滑条，与右侧滑条区第 1 行（滑条行程 200px）垂直对齐  -->
         <Grid Grid.Column="0" RowDefinitions="22,200,*">
-            <Canvas Grid.Row="1" x:Name="DbScaleCanvas" Width="30" Margin="0,0,6,0" />
+            <Canvas Grid.Row="1" x:Name="DbScaleCanvas" Width="22" Margin="0,0,2,0" />
         </Grid>
 
         <!--  频段滑条区  -->
@@ -58,7 +59,7 @@
             VerticalScrollBarVisibility="Disabled"
             VerticalScrollMode="Disabled"
             ZoomMode="Disabled">
-            <StackPanel x:Name="BandsPanel" HorizontalAlignment="Center" Orientation="Horizontal" />
+            <StackPanel x:Name="BandsPanel" HorizontalAlignment="Left" Orientation="Horizontal" />
         </ScrollViewer>
     </Grid>
 </UserControl>

@@ -719,7 +719,7 @@
     <value>Вокал</value>
   </data>
   <data name="EqSavePresetToolTip" xml:space="preserve">
-    <value>Сохранить как пресет (перезаписывает выбранный пользовательский пресет)</value>
+    <value>Сохранить изменения в выбранный пользовательский пресет</value>
   </data>
   <data name="EqDeletePresetToolTip" xml:space="preserve">
     <value>Удалить выбранный пользовательский пресет</value>
@@ -744,6 +744,36 @@
   </data>
   <data name="EqExportFailed" xml:space="preserve">
     <value>Не удалось экспортировать</value>
+  </data>
+  <data name="EqAddPresetToolTip" xml:space="preserve">
+    <value>Добавить пресет: сохранить текущий эквалайзер как новый пользовательский пресет</value>
+  </data>
+  <data name="EqOverwritePreset" xml:space="preserve">
+    <value>Пресет с таким именем уже существует. Перезаписать?</value>
+  </data>
+  <data name="EqPresetCustom" xml:space="preserve">
+    <value>Пользовательский</value>
+  </data>
+  <data name="EqPresetFlat" xml:space="preserve">
+    <value>Плоский</value>
+  </data>
+  <data name="EqPresetRock" xml:space="preserve">
+    <value>Рок</value>
+  </data>
+  <data name="EqPresetPop" xml:space="preserve">
+    <value>Поп</value>
+  </data>
+  <data name="EqPresetJazz" xml:space="preserve">
+    <value>Джаз</value>
+  </data>
+  <data name="EqPresetClassical" xml:space="preserve">
+    <value>Классика</value>
+  </data>
+  <data name="EqPresetElectronic" xml:space="preserve">
+    <value>Электроника</value>
+  </data>
+  <data name="EqPresetVocal" xml:space="preserve">
+    <value>Вокал</value>
   </data>
   <data name="CoverSize.Text" xml:space="preserve">
     <value>Размер миниатюры обложки</value>

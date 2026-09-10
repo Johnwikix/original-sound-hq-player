@@ -719,7 +719,7 @@
     <value>Gesang</value>
   </data>
   <data name="EqSavePresetToolTip" xml:space="preserve">
-    <value>Als Voreinstellung speichern (überschreibt bei ausgewählter benutzerdefinierter Voreinstellung)</value>
+    <value>Änderungen in der ausgewählten benutzerdefinierten Voreinstellung speichern</value>
   </data>
   <data name="EqDeletePresetToolTip" xml:space="preserve">
     <value>Ausgewählte benutzerdefinierte Voreinstellung löschen</value>
@@ -744,6 +744,36 @@
   </data>
   <data name="EqExportFailed" xml:space="preserve">
     <value>Export fehlgeschlagen</value>
+  </data>
+  <data name="EqAddPresetToolTip" xml:space="preserve">
+    <value>Voreinstellung hinzufügen: aktuellen Equalizer als neue benutzerdefinierte Voreinstellung speichern</value>
+  </data>
+  <data name="EqOverwritePreset" xml:space="preserve">
+    <value>Eine Voreinstellung mit diesem Namen existiert bereits. Überschreiben?</value>
+  </data>
+  <data name="EqPresetCustom" xml:space="preserve">
+    <value>Benutzerdefiniert</value>
+  </data>
+  <data name="EqPresetFlat" xml:space="preserve">
+    <value>Linear</value>
+  </data>
+  <data name="EqPresetRock" xml:space="preserve">
+    <value>Rock</value>
+  </data>
+  <data name="EqPresetPop" xml:space="preserve">
+    <value>Pop</value>
+  </data>
+  <data name="EqPresetJazz" xml:space="preserve">
+    <value>Jazz</value>
+  </data>
+  <data name="EqPresetClassical" xml:space="preserve">
+    <value>Klassik</value>
+  </data>
+  <data name="EqPresetElectronic" xml:space="preserve">
+    <value>Electronic</value>
+  </data>
+  <data name="EqPresetVocal" xml:space="preserve">
+    <value>Gesang</value>
   </data>
   <data name="CoverSize.Text" xml:space="preserve">
     <value>Größe der Cover-Vorschau</value>

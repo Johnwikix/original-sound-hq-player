@@ -16,6 +16,9 @@
             <Setter Property="BorderThickness" Value="0" />
             <Setter Property="Padding" Value="6" />
         </Style>
+        <!--  收紧对话框留白，让均衡器区域更紧凑  -->
+        <Thickness x:Key="ContentDialogPadding">16</Thickness>
+        <Thickness x:Key="ContentDialogContentMargin">0</Thickness>
     </ContentDialog.Resources>
 
     <Grid RowDefinitions="Auto,*">
@@ -43,7 +46,14 @@
                     IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}"
                     SelectionChanged="ComboBoxPresets_SelectionChanged" />
                 <Button
+                    x:Name="AddPresetButton"
+                    Style="{StaticResource EqIconButtonStyle}"
+                    Click="AddPresetButton_Click">
+                    <FontIcon FontSize="14" Glyph="&#xE710;" />
+                </Button>
+                <Button
                     x:Name="SavePresetButton"
+                    IsEnabled="False"
                     Style="{StaticResource EqIconButtonStyle}"
                     Click="SavePresetButton_Click">
                     <FontIcon FontSize="14" Glyph="&#xE74E;" />

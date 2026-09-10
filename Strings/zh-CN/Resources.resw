@@ -718,7 +718,7 @@
     <value>人声</value>
   </data>
   <data name="EqSavePresetToolTip" xml:space="preserve">
-    <value>保存为预设（选中自定义预设时直接覆盖保存）</value>
+    <value>保存修改到选中的自定义预设</value>
   </data>
   <data name="EqDeletePresetToolTip" xml:space="preserve">
     <value>删除选中的自定义预设</value>
@@ -743,6 +743,36 @@
   </data>
   <data name="EqExportFailed" xml:space="preserve">
     <value>导出失败</value>
+  </data>
+  <data name="EqAddPresetToolTip" xml:space="preserve">
+    <value>新增预设：把当前均衡器保存为新的自定义预设</value>
+  </data>
+  <data name="EqOverwritePreset" xml:space="preserve">
+    <value>同名预设已存在，是否覆盖？</value>
+  </data>
+  <data name="EqPresetCustom" xml:space="preserve">
+    <value>自定义</value>
+  </data>
+  <data name="EqPresetFlat" xml:space="preserve">
+    <value>平调</value>
+  </data>
+  <data name="EqPresetRock" xml:space="preserve">
+    <value>摇滚</value>
+  </data>
+  <data name="EqPresetPop" xml:space="preserve">
+    <value>流行</value>
+  </data>
+  <data name="EqPresetJazz" xml:space="preserve">
+    <value>爵士</value>
+  </data>
+  <data name="EqPresetClassical" xml:space="preserve">
+    <value>古典</value>
+  </data>
+  <data name="EqPresetElectronic" xml:space="preserve">
+    <value>电子</value>
+  </data>
+  <data name="EqPresetVocal" xml:space="preserve">
+    <value>人声</value>
   </data>
   <data name="CoverSize.Text" xml:space="preserve">
     <value>封面缩略图尺寸</value>

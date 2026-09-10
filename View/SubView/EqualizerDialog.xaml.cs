@@ -29,13 +29,13 @@ namespace WinUIMusicPlayer.View.SubView
 
         private static readonly Dictionary<string, string> BuiltInResourceKeys = new()
         {
-            ["Flat"] = "EqFlat.Content",
-            ["Rock"] = "EqRock.Content",
-            ["Pop"] = "EqPop.Content",
-            ["Jazz"] = "EqJazz.Content",
-            ["Classical"] = "EqClassical.Content",
-            ["Electronic"] = "EqElectronic.Content",
-            ["Vocal"] = "EqVocal.Content"
+            ["Flat"] = "EqPresetFlat",
+            ["Rock"] = "EqPresetRock",
+            ["Pop"] = "EqPresetPop",
+            ["Jazz"] = "EqPresetJazz",
+            ["Classical"] = "EqPresetClassical",
+            ["Electronic"] = "EqPresetElectronic",
+            ["Vocal"] = "EqPresetVocal"
         };
 
         private readonly IReadOnlyDictionary<string, EqPreset> _builtIns = EqualizerHelper.CreateBuiltInPresets();
@@ -50,6 +50,7 @@ namespace WinUIMusicPlayer.View.SubView
         public EqualizerDialog()
         {
             InitializeComponent();
+            ToolTipService.SetToolTip(AddPresetButton, ToolUtils.GetString("EqAddPresetToolTip"));
             ToolTipService.SetToolTip(SavePresetButton, ToolUtils.GetString("EqSavePresetToolTip"));
             ToolTipService.SetToolTip(DeletePresetButton, ToolUtils.GetString("EqDeletePresetToolTip"));
             ToolTipService.SetToolTip(MoreOptionsButton, ToolUtils.GetString("EqMoreOptionsToolTip"));
@@ -81,9 +82,9 @@ namespace WinUIMusicPlayer.View.SubView
             }
             Equalizer.SetBands(AppSettings.EqualizerBands);
             RebuildPresetItems();
-            UpdateDeleteButtonState();
             ToggleSwitchEqualizer.IsOn = AppSettings.IsEqualizerEnabled;
             _isLoaded = true;
+            UpdatePresetButtonState();
         }
 
         #region 预设下拉
@@ -94,7 +95,7 @@ namespace WinUIMusicPlayer.View.SubView
             try
             {
                 ComboBoxPresets.Items.Clear();
-                ComboBoxPresets.Items.Add(MakeComboItem(TagCustom, ToolUtils.GetString("EqCustom.Content")));
+                ComboBoxPresets.Items.Add(MakeComboItem(TagCustom, ToolUtils.GetString("EqPresetCustom")));
                 foreach (string key in EqualizerHelper.BuiltInKeys)
                 {
                     ComboBoxPresets.Items.Add(MakeComboItem(key, ToolUtils.GetString(BuiltInResourceKeys[key])));
@@ -170,16 +171,18 @@ namespace WinUIMusicPlayer.View.SubView
             return _customPresets.FirstOrDefault(p => p.Id == id);
         }
 
-        private void UpdateDeleteButtonState()
+        private void UpdatePresetButtonState()
         {
-            DeletePresetButton.IsEnabled = _isLoaded && TryParseIdTag(GetSelectedTag(), out _);
+            bool isCustomSelected = _isLoaded && TryParseIdTag(GetSelectedTag(), out _);
+            SavePresetButton.IsEnabled = isCustomSelected;
+            DeletePresetButton.IsEnabled = isCustomSelected;
         }
 
         private async void ComboBoxPresets_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_isSyncingUi || !_isLoaded) return;
             string tag = GetSelectedTag();
-            UpdateDeleteButtonState();
+            UpdatePresetButtonState();
             if (tag == TagCustom) return; // “自定义”仅表示手动调整中，不改动当前增益
 
             _isSyncingUi = true;
@@ -235,7 +238,7 @@ namespace WinUIMusicPlayer.View.SubView
                 AppSettings.EqualizerPreset = TagCustom;
                 _isSyncingUi = true;
                 SelectTag(TagCustom);
-                UpdateDeleteButtonState();
+                UpdatePresetButtonState();
                 _isSyncingUi = false;
             }
             _commitTimer.Stop();
@@ -278,27 +281,19 @@ namespace WinUIMusicPlayer.View.SubView
 
         #region 自定义预设增删
 
-        private async void SavePresetButton_Click(object sender, RoutedEventArgs e)
+        /// <summary>新增：把当前均衡器另存为一个新的自定义预设（同名时询问覆盖）。</summary>
+        private async void AddPresetButton_Click(object sender, RoutedEventArgs e)
         {
             if (!_isLoaded) return;
-            var db = App.Services.GetRequiredService<MusicDatabaseService>();
-
-            // 当前选中的是自定义预设 → 覆盖保存
-            if (TryParseIdTag(GetSelectedTag(), out int id) && FindCustom(id) is { } row)
-            {
-                row.EqualizerStr = SerializeCurrent(row.Name);
-                await db.UpdateEqualizerPreset(row);
-                return;
-            }
-
-            // 内置/自定义态 → 输入名称另存
             string name = await DialogHelper.ShowInputAsync(XamlRoot, "EqPresetNameTitle", BuildDefaultNewName());
             if (string.IsNullOrWhiteSpace(name)) return;
             name = name.Trim();
 
+            var db = App.Services.GetRequiredService<MusicDatabaseService>();
             SaveEqualizerPreset? target = _customPresets.FirstOrDefault(p => p.Name == name);
             if (target is not null)
             {
+                if (!await DialogHelper.ShowConfirmAsync(XamlRoot, "EqOverwritePreset")) return;
                 target.EqualizerStr = SerializeCurrent(name);
                 await db.UpdateEqualizerPreset(target);
             }
@@ -310,15 +305,24 @@ namespace WinUIMusicPlayer.View.SubView
             }
             AppSettings.EqualizerPreset = name;
             RebuildPresetItems(IdTag(target.Id));
-            UpdateDeleteButtonState();
+            UpdatePresetButtonState();
             CommitChanges();
+        }
+
+        /// <summary>保存：覆盖写入当前选中的自定义预设（仅选中自定义预设时可用）。</summary>
+        private async void SavePresetButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_isLoaded) return;
+            if (!TryParseIdTag(GetSelectedTag(), out int id) || FindCustom(id) is not { } row) return;
+            row.EqualizerStr = SerializeCurrent(row.Name);
+            await App.Services.GetRequiredService<MusicDatabaseService>().UpdateEqualizerPreset(row);
         }
 
         private string BuildDefaultNewName()
         {
             return ComboBoxPresets.SelectedItem is ComboBoxItem { Content: string display } && !string.IsNullOrWhiteSpace(display)
                 ? display
-                : ToolUtils.GetString("EqCustom.Content");
+                : ToolUtils.GetString("EqPresetCustom");
         }
 
         private async void DeletePresetButton_Click(object sender, RoutedEventArgs e)
@@ -333,7 +337,7 @@ namespace WinUIMusicPlayer.View.SubView
             ApplyPreset(_builtIns["Flat"]);
             AppSettings.EqualizerPreset = "Flat";
             RebuildPresetItems("Flat");
-            UpdateDeleteButtonState();
+            UpdatePresetButtonState();
             CommitChanges();
         }
 
@@ -361,7 +365,7 @@ namespace WinUIMusicPlayer.View.SubView
                 }
 
                 string name = string.IsNullOrWhiteSpace(preset.Name) ? fallbackName : preset.Name.Trim();
-                if (name.Length == 0) name = ToolUtils.GetString("EqCustom.Content");
+                if (name.Length == 0) name = ToolUtils.GetString("EqPresetCustom");
 
                 var db = App.Services.GetRequiredService<MusicDatabaseService>();
                 SaveEqualizerPreset? target = _customPresets.FirstOrDefault(p => p.Name == name);
@@ -380,7 +384,7 @@ namespace WinUIMusicPlayer.View.SubView
                 ApplyPreset(preset);
                 AppSettings.EqualizerPreset = name;
                 RebuildPresetItems(IdTag(target.Id));
-                UpdateDeleteButtonState();
+                UpdatePresetButtonState();
                 CommitChanges();
             }
             catch
@@ -395,7 +399,7 @@ namespace WinUIMusicPlayer.View.SubView
             try
             {
                 string name = AppSettings.EqualizerPreset == TagCustom
-                    ? ToolUtils.GetString("EqCustom.Content")
+                    ? ToolUtils.GetString("EqPresetCustom")
                     : AppSettings.EqualizerPreset;
                 var picker = new FileSavePicker(App.MainWindow.AppWindow.Id)
                 {
