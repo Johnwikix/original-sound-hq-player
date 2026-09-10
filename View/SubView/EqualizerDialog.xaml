@@ -21,10 +21,11 @@
         <Thickness x:Key="ContentDialogContentMargin">0</Thickness>
     </ContentDialog.Resources>
 
-    <Grid RowDefinitions="Auto,*">
+    <!--  注意：对话框打开期间不能再叠加 ContentDialog，名称输入/确认一律用 Flyout，错误提示用 InfoBar  -->
+    <Grid RowDefinitions="Auto,Auto,Auto,*">
 
-        <!--  标题区域  -->
-        <Grid Grid.Row="0" Margin="0,0,0,8" ColumnDefinitions="Auto,*,Auto">
+        <!--  标题行  -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto">
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock
                     x:Uid="EqualizerDialogTitle"
@@ -34,56 +35,108 @@
                     Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
                 <ToggleSwitch
                     x:Name="ToggleSwitchEqualizer"
-                    Margin="8,0,0,0"
+                    Margin="12,0,0,0"
+                    MinWidth="0"
                     VerticalAlignment="Center"
                     Toggled="ToggleSwitchEqualizer_Toggled" />
             </StackPanel>
-
-            <StackPanel Grid.Column="2" HorizontalAlignment="Right" Orientation="Horizontal" VerticalAlignment="Center" Spacing="4">
-                <ComboBox
-                    x:Name="ComboBoxPresets"
-                    Width="160"
-                    IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}"
-                    SelectionChanged="ComboBoxPresets_SelectionChanged" />
-                <Button
-                    x:Name="AddPresetButton"
-                    Style="{StaticResource EqIconButtonStyle}"
-                    Click="AddPresetButton_Click">
-                    <FontIcon FontSize="14" Glyph="&#xE710;" />
-                </Button>
-                <Button
-                    x:Name="SavePresetButton"
-                    IsEnabled="False"
-                    Style="{StaticResource EqIconButtonStyle}"
-                    Click="SavePresetButton_Click">
-                    <FontIcon FontSize="14" Glyph="&#xE74E;" />
-                </Button>
-                <Button
-                    x:Name="DeletePresetButton"
-                    IsEnabled="False"
-                    Style="{StaticResource EqIconButtonStyle}"
-                    Click="DeletePresetButton_Click">
-                    <FontIcon FontSize="14" Glyph="&#xE74D;" />
-                </Button>
-                <Button x:Name="MoreOptionsButton" Style="{StaticResource EqIconButtonStyle}">
-                    <FontIcon FontSize="14" Glyph="&#xE712;" />
-                    <Button.Flyout>
-                        <MenuFlyout>
-                            <MenuFlyoutItem x:Uid="EqImportItem" Click="ImportPresetItem_Click" />
-                            <MenuFlyoutItem x:Uid="EqExportItem" Click="ExportPresetItem_Click" />
-                        </MenuFlyout>
-                    </Button.Flyout>
-                </Button>
-                <Button
-                    x:Name="CloseButton"
-                    Style="{StaticResource EqIconButtonStyle}"
-                    Click="CloseButton_Click">
-                    <FontIcon Glyph="&#xE894;" />
-                </Button>
-            </StackPanel>
+            <Button
+                x:Name="CloseButton"
+                Grid.Column="2"
+                VerticalAlignment="Center"
+                Style="{StaticResource EqIconButtonStyle}"
+                Click="CloseButton_Click">
+                <FontIcon Glyph="&#xE894;" />
+            </Button>
         </Grid>
 
+        <!--  预设管理行  -->
+        <StackPanel Grid.Row="1" Margin="0,4,0,0" Orientation="Horizontal" Spacing="4">
+            <ComboBox
+                x:Name="ComboBoxPresets"
+                Width="170"
+                VerticalAlignment="Center"
+                IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}"
+                SelectionChanged="ComboBoxPresets_SelectionChanged" />
+            <Button x:Name="AddPresetButton" Style="{StaticResource EqIconButtonStyle}">
+                <FontIcon FontSize="14" Glyph="&#xE710;" />
+                <Button.Flyout>
+                    <Flyout x:Name="AddPresetFlyout" Opening="AddPresetFlyout_Opening" Placement="Bottom">
+                        <StackPanel Width="240" Spacing="8">
+                            <TextBlock x:Name="AddPresetFlyoutTitle" FontSize="14" FontWeight="SemiBold" />
+                            <TextBox
+                                x:Name="AddPresetNameBox"
+                                KeyDown="AddPresetNameBox_KeyDown"
+                                TextChanged="AddPresetNameBox_TextChanged" />
+                            <TextBlock
+                                x:Name="AddPresetOverwriteHint"
+                                FontSize="12"
+                                Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                TextWrapping="Wrap"
+                                Visibility="Collapsed" />
+                            <Button
+                                x:Name="AddPresetConfirmButton"
+                                HorizontalAlignment="Right"
+                                Style="{StaticResource AccentButtonStyle}"
+                                Click="AddPresetConfirmButton_Click" />
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+            <Button
+                x:Name="SavePresetButton"
+                IsEnabled="False"
+                Style="{StaticResource EqIconButtonStyle}"
+                Click="SavePresetButton_Click">
+                <FontIcon FontSize="14" Glyph="&#xE74E;" />
+            </Button>
+            <Button
+                x:Name="DeletePresetButton"
+                IsEnabled="False"
+                Style="{StaticResource EqIconButtonStyle}">
+                <FontIcon FontSize="14" Glyph="&#xE74D;" />
+                <Button.Flyout>
+                    <Flyout x:Name="DeletePresetFlyout" Opening="DeletePresetFlyout_Opening" Placement="Bottom">
+                        <StackPanel Width="240" Spacing="8">
+                            <TextBlock
+                                x:Name="DeletePresetTargetText"
+                                FontSize="14"
+                                FontWeight="SemiBold"
+                                TextWrapping="Wrap" />
+                            <TextBlock
+                                x:Name="DeletePresetConfirmText"
+                                FontSize="12"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                TextWrapping="Wrap" />
+                            <Button
+                                x:Name="DeletePresetConfirmButton"
+                                HorizontalAlignment="Right"
+                                Click="DeletePresetConfirmButton_Click" />
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
+            <Button x:Name="MoreOptionsButton" Style="{StaticResource EqIconButtonStyle}">
+                <FontIcon FontSize="14" Glyph="&#xE712;" />
+                <Button.Flyout>
+                    <MenuFlyout>
+                        <MenuFlyoutItem x:Uid="EqImportItem" Click="ImportPresetItem_Click" />
+                        <MenuFlyoutItem x:Uid="EqExportItem" Click="ExportPresetItem_Click" />
+                    </MenuFlyout>
+                </Button.Flyout>
+            </Button>
+        </StackPanel>
+
+        <!--  错误提示（导入/导出失败等）  -->
+        <InfoBar
+            x:Name="EqNotifyBar"
+            Grid.Row="2"
+            Margin="0,4,0,0"
+            IsClosable="True"
+            IsOpen="False"
+            Severity="Error" />
+
         <!--  均衡器编辑区（dB 刻度 + 频段滑条）  -->
-        <controls:EqualizerControl x:Name="Equalizer" Grid.Row="1" Margin="4,8,4,8" IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}" />
+        <controls:EqualizerControl x:Name="Equalizer" Grid.Row="3" Margin="4,8,4,8" IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}" />
     </Grid>
 </ContentDialog>

@@ -121,43 +121,22 @@ namespace WinUIMusicPlayer.Utils
             return JsonSerializer.Serialize(preset, AppJsonSerializerContextHelper.Default.EqPreset);
         }
 
-        /// <summary>解析预设 JSON，接受 v1 结构与旧版频段字典（自动迁移，旧文件无 Q 值）。</summary>
+        /// <summary>解析 EqPreset v1 预设 JSON；旧版频段字典格式不迁移，返回 null 由调用方重置默认。</summary>
         public static EqPreset? Parse(string? json, string fallbackName = "")
         {
             if (string.IsNullOrWhiteSpace(json)) return null;
+            EqPreset? preset;
             try
             {
-                var preset = JsonSerializer.Deserialize(json, AppJsonSerializerContextHelper.Default.EqPreset);
-                if (preset is { Bands.Count: > 0 })
-                {
-                    preset.Name = string.IsNullOrWhiteSpace(preset.Name) ? fallbackName : preset.Name;
-                    return Normalize(preset);
-                }
-            }
-            catch (JsonException)
-            {
-                // 非新格式，尝试旧版频段字典
-            }
-            try
-            {
-                var legacy = JsonSerializer.Deserialize(json, AppJsonSerializerContextHelper.Default.DictionaryStringDouble);
-                if (legacy is not { Count: > 0 }) return null;
-                var gains = new double[StandardFrequencies.Length];
-                for (int i = 0; i < StandardFrequencies.Length; i++)
-                {
-                    gains[i] = legacy.TryGetValue(ToLegacyKey(StandardFrequencies[i]), out var v) ? v : 0;
-                }
-                return CreatePreset(fallbackName, gains);
+                preset = JsonSerializer.Deserialize(json, AppJsonSerializerContextHelper.Default.EqPreset);
             }
             catch (JsonException)
             {
                 return null;
             }
-        }
-
-        private static string ToLegacyKey(double frequencyHz)
-        {
-            return frequencyHz >= 1000 ? $"{frequencyHz / 1000:0.#}kHz" : $"{frequencyHz:0.#}Hz";
+            if (preset is not { Bands.Count: > 0 }) return null;
+            preset.Name = string.IsNullOrWhiteSpace(preset.Name) ? fallbackName : preset.Name;
+            return Normalize(preset);
         }
 
         /// <summary>内置预设（与旧版对话框中的增益表一致）。</summary>

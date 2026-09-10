@@ -775,6 +775,9 @@
   <data name="EqPresetVocal" xml:space="preserve">
     <value>Вокал</value>
   </data>
+  <data name="EqDeleteAction" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
   <data name="CoverSize.Text" xml:space="preserve">
     <value>Размер миниатюры обложки</value>
   </data>

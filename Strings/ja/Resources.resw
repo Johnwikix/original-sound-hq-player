@@ -775,6 +775,9 @@
   <data name="EqPresetVocal" xml:space="preserve">
     <value>ボーカル</value>
   </data>
+  <data name="EqDeleteAction" xml:space="preserve">
+    <value>削除</value>
+  </data>
   <data name="CoverSize.Text" xml:space="preserve">
     <value>表紙サムネイルサイズ</value>
   </data>

@@ -775,10 +775,11 @@ namespace WinUIMusicPlayer.Services
             return await _dbConnection.Table<SaveEqualizerPreset>().OrderBy(p => p.Id).ToListAsync();
         }
 
-        /// <summary>插入自定义预设，返回自增主键。</summary>
-        public async Task<int> InsertEqualizerPreset(SaveEqualizerPreset preset)
+        /// <summary>插入自定义预设。注意：InsertAsync 返回的是受影响行数而非主键，
+        /// sqlite-net 会自动把自增 Id 回填到实体对象上，调用方不要用返回值覆盖 Id。</summary>
+        public async Task InsertEqualizerPreset(SaveEqualizerPreset preset)
         {
-            return await _dbConnection.InsertAsync(preset);
+            await _dbConnection.InsertAsync(preset);
         }
 
         public async Task UpdateEqualizerPreset(SaveEqualizerPreset preset)
@@ -992,7 +993,7 @@ namespace WinUIMusicPlayer.Services
             {
                 AppSettings.IsEqualizerEnabled = equalizerSettings.IsEqualizerEnabled;
                 AppSettings.EqualizerPreset = equalizerSettings.EqualizerPreset;
-                // Parse 兼容旧版频段字典格式，自动迁移为 EqPreset v1 结构
+                // 只认 EqPreset v1 结构；旧版频段字典数据不迁移，直接重置为默认增益
                 var preset = EqualizerHelper.Parse(equalizerSettings.EqualizerStr, equalizerSettings.EqualizerPreset)
                              ?? EqualizerHelper.Normalize(null);
                 AppSettings.EqualizerBands = preset.Bands.ToArray();
@@ -1170,7 +1171,8 @@ namespace WinUIMusicPlayer.Services
         public async Task SaveEqualizerSettingAsync()
         {
             SaveEqualizer equalizerSettings = await GetEqualizer();
-            SaveEqualizer newEqualizer = SaveEqualizeSettings(new SaveEqualizer(), equalizerSettings.EqualizerStr);
+            // 必须取 AppSettings.EqualizerStr（当前状态），传入旧行值会导致增益永远写不进去
+            SaveEqualizer newEqualizer = SaveEqualizeSettings(new SaveEqualizer());
             if (equalizerSettings is null)
             {
                 await InsertEqualizer(newEqualizer);

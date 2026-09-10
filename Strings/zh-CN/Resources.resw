@@ -774,6 +774,9 @@
   <data name="EqPresetVocal" xml:space="preserve">
     <value>人声</value>
   </data>
+  <data name="EqDeleteAction" xml:space="preserve">
+    <value>删除</value>
+  </data>
   <data name="CoverSize.Text" xml:space="preserve">
     <value>封面缩略图尺寸</value>
   </data>

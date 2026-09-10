@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.Windows.Storage.Pickers;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,6 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Controls.Equalizer;
-using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -23,7 +23,6 @@ namespace WinUIMusicPlayer.View.SubView
     /// </summary>
     public sealed partial class EqualizerDialog : ContentDialog
     {
-        private const string TagCustom = "Custom";
         private const string TagIdPrefix = "id:";
         private const int CommitDebounceMs = 250;
 
@@ -43,6 +42,8 @@ namespace WinUIMusicPlayer.View.SubView
         private List<SaveEqualizerPreset> _customPresets = new();
         private bool _isSyncingUi;
         private bool _isLoaded;
+        /// <summary>滑条修改待写回的自定义预设 Id（防抖提交时落盘）。</summary>
+        private int? _pendingDirtyCustomId;
 
         /// <summary>均衡器状态变更（防抖后）提交完成：订阅方负责 IPC 全量同步。</summary>
         public event EventHandler? EqualizerCommitted;
@@ -54,6 +55,13 @@ namespace WinUIMusicPlayer.View.SubView
             ToolTipService.SetToolTip(SavePresetButton, ToolUtils.GetString("EqSavePresetToolTip"));
             ToolTipService.SetToolTip(DeletePresetButton, ToolUtils.GetString("EqDeletePresetToolTip"));
             ToolTipService.SetToolTip(MoreOptionsButton, ToolUtils.GetString("EqMoreOptionsToolTip"));
+
+            // Flyout 内文案（GetString 不支持 x:Uid 的属性后缀键，统一代码赋值）
+            AddPresetFlyoutTitle.Text = ToolUtils.GetString("EqPresetNameTitle");
+            AddPresetOverwriteHint.Text = ToolUtils.GetString("EqOverwritePreset");
+            AddPresetConfirmButton.Content = ToolUtils.GetString("PrimaryButton");
+            DeletePresetConfirmText.Text = ToolUtils.GetString("EqDeletePresetConfirm");
+            DeletePresetConfirmButton.Content = ToolUtils.GetString("EqDeleteAction");
 
             _commitTimer = DispatcherQueue.CreateTimer();
             _commitTimer.Interval = TimeSpan.FromMilliseconds(CommitDebounceMs);
@@ -95,7 +103,6 @@ namespace WinUIMusicPlayer.View.SubView
             try
             {
                 ComboBoxPresets.Items.Clear();
-                ComboBoxPresets.Items.Add(MakeComboItem(TagCustom, ToolUtils.GetString("EqPresetCustom")));
                 foreach (string key in EqualizerHelper.BuiltInKeys)
                 {
                     ComboBoxPresets.Items.Add(MakeComboItem(key, ToolUtils.GetString(BuiltInResourceKeys[key])));
@@ -131,14 +138,14 @@ namespace WinUIMusicPlayer.View.SubView
 
         private string GetSelectedTag()
         {
-            return ComboBoxPresets.SelectedItem is ComboBoxItem item ? item.Tag?.ToString() ?? TagCustom : TagCustom;
+            return ComboBoxPresets.SelectedItem is ComboBoxItem item ? item.Tag?.ToString() ?? "Flat" : "Flat";
         }
 
         /// <summary>由持久化的预设名（AppSettings.EqualizerPreset）反查下拉项 Tag。</summary>
         private string ResolveTagFromStateName()
         {
             string name = AppSettings.EqualizerPreset;
-            if (string.IsNullOrEmpty(name) || name == TagCustom) return TagCustom;
+            if (string.IsNullOrEmpty(name)) return "Flat";
             foreach (SaveEqualizerPreset row in _customPresets)
             {
                 if (row.Name == name) return IdTag(row.Id);
@@ -152,7 +159,6 @@ namespace WinUIMusicPlayer.View.SubView
 
         private string ResolveStateName(string tag)
         {
-            if (tag == TagCustom) return TagCustom;
             if (TryParseIdTag(tag, out int id) && FindCustom(id) is { } row) return row.Name;
             return BuiltInResourceKeys.ContainsKey(tag) ? tag : "Flat";
         }
@@ -183,7 +189,6 @@ namespace WinUIMusicPlayer.View.SubView
             if (_isSyncingUi || !_isLoaded) return;
             string tag = GetSelectedTag();
             UpdatePresetButtonState();
-            if (tag == TagCustom) return; // “自定义”仅表示手动调整中，不改动当前增益
 
             _isSyncingUi = true;
             try
@@ -211,6 +216,8 @@ namespace WinUIMusicPlayer.View.SubView
         /// <summary>把预设增益写入运行时频段状态并刷新滑条（数组引用不变，IPC 侧始终读同一状态）。</summary>
         private void ApplyPreset(EqPreset preset)
         {
+            // 唯一会用新预设覆盖增益的入口：先把挂起的自定义预设修改落盘，防止串写
+            FlushPendingCustomEdit();
             EqBand[] bands = AppSettings.EqualizerBands;
             for (int i = 0; i < bands.Length && i < preset.Bands.Count; i++)
             {
@@ -232,14 +239,12 @@ namespace WinUIMusicPlayer.View.SubView
         private void OnGainEdited(object? sender, int bandIndex)
         {
             if (!_isLoaded || _isSyncingUi) return;
-            if (AppSettings.EqualizerPreset != TagCustom)
+
+            // 选中的是自定义预设：修改自动写回该预设（防抖落盘），下拉选项保持不变；
+            // 选中的是内置预设：仅更新当前状态，内置预设不被隐式覆盖
+            if (TryParseIdTag(GetSelectedTag(), out int id) && FindCustom(id) is not null)
             {
-                // 拖动即脱离预设：切到“自定义”项（不改动增益），防抖结束后统一提交
-                AppSettings.EqualizerPreset = TagCustom;
-                _isSyncingUi = true;
-                SelectTag(TagCustom);
-                UpdatePresetButtonState();
-                _isSyncingUi = false;
+                _pendingDirtyCustomId = id;
             }
             _commitTimer.Stop();
             _commitTimer.Start();
@@ -248,10 +253,31 @@ namespace WinUIMusicPlayer.View.SubView
         /// <summary>提交当前均衡器状态：持久化 + 通知订阅方做 IPC 全量同步。</summary>
         private void CommitChanges()
         {
-            AppSettings.EqualizerStr = SerializeCurrent(AppSettings.EqualizerPreset);
-            _ = App.Services.GetRequiredService<MusicDatabaseService>().SaveEqualizerSettingAsync();
+            PersistAll();
             AppSettings.OnEqUpdated();
             EqualizerCommitted?.Invoke(this, EventArgs.Empty);
+        }
+
+        /// <summary>持久化：状态行（SaveEqualizer）+ 挂起的自定义预设行自动写回。</summary>
+        private void PersistAll()
+        {
+            AppSettings.EqualizerStr = SerializeCurrent(AppSettings.EqualizerPreset);
+            _ = App.Services.GetRequiredService<MusicDatabaseService>().SaveEqualizerSettingAsync();
+            FlushPendingCustomEdit();
+        }
+
+        /// <summary>把挂起的滑条修改写回来源自定义预设行（以当前增益为准）。</summary>
+        private void FlushPendingCustomEdit()
+        {
+            if (_pendingDirtyCustomId is int id)
+            {
+                _pendingDirtyCustomId = null;
+                if (FindCustom(id) is { } row)
+                {
+                    row.EqualizerStr = SerializeCurrent(row.Name);
+                    _ = App.Services.GetRequiredService<MusicDatabaseService>().UpdateEqualizerPreset(row);
+                }
+            }
         }
 
         private async void ToggleSwitchEqualizer_Toggled(object sender, RoutedEventArgs e)
@@ -273,7 +299,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             if (_isLoaded)
             {
-                _ = App.Services.GetRequiredService<MusicDatabaseService>().SaveEqualizerSettingAsync();
+                PersistAll();
             }
         }
 
@@ -281,26 +307,63 @@ namespace WinUIMusicPlayer.View.SubView
 
         #region 自定义预设增删
 
-        /// <summary>新增：把当前均衡器另存为一个新的自定义预设（同名时询问覆盖）。</summary>
-        private async void AddPresetButton_Click(object sender, RoutedEventArgs e)
+        #region 新增（Flyout 输入名称：对话框打开期间不能再叠加 ContentDialog）
+
+        private void AddPresetFlyout_Opening(object? sender, object e)
         {
-            if (!_isLoaded) return;
-            string name = await DialogHelper.ShowInputAsync(XamlRoot, "EqPresetNameTitle", BuildDefaultNewName());
-            if (string.IsNullOrWhiteSpace(name)) return;
-            name = name.Trim();
+            AddPresetNameBox.Text = BuildDefaultNewName();
+            UpdateAddPresetHint();
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                AddPresetNameBox.Focus(FocusState.Programmatic);
+                AddPresetNameBox.SelectAll();
+            });
+        }
+
+        private void AddPresetNameBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            UpdateAddPresetHint();
+        }
+
+        private void UpdateAddPresetHint()
+        {
+            string name = AddPresetNameBox.Text.Trim();
+            bool exists = name.Length > 0 && _customPresets.Any(p => p.Name == name);
+            AddPresetOverwriteHint.Visibility = exists ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void AddPresetNameBox_KeyDown(object sender, KeyRoutedEventArgs e)
+        {
+            if (e.Key == Windows.System.VirtualKey.Enter)
+            {
+                e.Handled = true;
+                _ = CommitAddPresetFromFlyout();
+            }
+        }
+
+        private async void AddPresetConfirmButton_Click(object sender, RoutedEventArgs e)
+        {
+            await CommitAddPresetFromFlyout();
+        }
+
+        private async Task CommitAddPresetFromFlyout()
+        {
+            string name = AddPresetNameBox.Text.Trim();
+            if (name.Length == 0) return;
+            AddPresetFlyout.Hide();
 
             var db = App.Services.GetRequiredService<MusicDatabaseService>();
             SaveEqualizerPreset? target = _customPresets.FirstOrDefault(p => p.Name == name);
             if (target is not null)
             {
-                if (!await DialogHelper.ShowConfirmAsync(XamlRoot, "EqOverwritePreset")) return;
                 target.EqualizerStr = SerializeCurrent(name);
                 await db.UpdateEqualizerPreset(target);
             }
             else
             {
                 target = new SaveEqualizerPreset { Name = name, EqualizerStr = SerializeCurrent(name) };
-                target.Id = await db.InsertEqualizerPreset(target);
+                // sqlite-net 插入后自动回填自增 Id，不能用 InsertAsync 的返回值（受影响行数）覆盖
+                await db.InsertEqualizerPreset(target);
                 _customPresets.Add(target);
             }
             AppSettings.EqualizerPreset = name;
@@ -308,6 +371,8 @@ namespace WinUIMusicPlayer.View.SubView
             UpdatePresetButtonState();
             CommitChanges();
         }
+
+        #endregion
 
         /// <summary>保存：覆盖写入当前选中的自定义预设（仅选中自定义预设时可用）。</summary>
         private async void SavePresetButton_Click(object sender, RoutedEventArgs e)
@@ -325,11 +390,20 @@ namespace WinUIMusicPlayer.View.SubView
                 : ToolUtils.GetString("EqPresetCustom");
         }
 
-        private async void DeletePresetButton_Click(object sender, RoutedEventArgs e)
+        #region 删除（Flyout 确认）
+
+        private void DeletePresetFlyout_Opening(object? sender, object e)
+        {
+            DeletePresetTargetText.Text = TryParseIdTag(GetSelectedTag(), out int id) && FindCustom(id) is { } row
+                ? row.Name
+                : string.Empty;
+        }
+
+        private async void DeletePresetConfirmButton_Click(object sender, RoutedEventArgs e)
         {
             if (!_isLoaded) return;
             if (!TryParseIdTag(GetSelectedTag(), out int id) || FindCustom(id) is not { } row) return;
-            if (!await DialogHelper.ShowConfirmAsync(XamlRoot, "EqDeletePresetConfirm")) return;
+            DeletePresetFlyout.Hide();
 
             await App.Services.GetRequiredService<MusicDatabaseService>().DeleteEqualizerPreset(row.Id);
             _customPresets.Remove(row);
@@ -340,6 +414,8 @@ namespace WinUIMusicPlayer.View.SubView
             UpdatePresetButtonState();
             CommitChanges();
         }
+
+        #endregion
 
         #endregion
 
@@ -360,7 +436,7 @@ namespace WinUIMusicPlayer.View.SubView
                 EqPreset? preset = EqualizerHelper.Parse(json, fallbackName);
                 if (preset is null)
                 {
-                    await DialogHelper.ShowConfirmAsync(XamlRoot, "EqImportFailed");
+                    ShowEqError("EqImportFailed");
                     return;
                 }
 
@@ -377,7 +453,8 @@ namespace WinUIMusicPlayer.View.SubView
                 else
                 {
                     target = new SaveEqualizerPreset { Name = name, EqualizerStr = EqualizerHelper.Serialize(preset) };
-                    target.Id = await db.InsertEqualizerPreset(target);
+                    // sqlite-net 插入后自动回填自增 Id，不能用 InsertAsync 的返回值（受影响行数）覆盖
+                    await db.InsertEqualizerPreset(target);
                     _customPresets.Add(target);
                 }
 
@@ -389,7 +466,7 @@ namespace WinUIMusicPlayer.View.SubView
             }
             catch
             {
-                await DialogHelper.ShowConfirmAsync(XamlRoot, "EqImportFailed");
+                ShowEqError("EqImportFailed");
             }
         }
 
@@ -398,9 +475,8 @@ namespace WinUIMusicPlayer.View.SubView
             if (!_isLoaded) return;
             try
             {
-                string name = AppSettings.EqualizerPreset == TagCustom
-                    ? ToolUtils.GetString("EqPresetCustom")
-                    : AppSettings.EqualizerPreset;
+                string name = AppSettings.EqualizerPreset;
+                if (string.IsNullOrEmpty(name)) name = ToolUtils.GetString("EqPresetCustom");
                 var picker = new FileSavePicker(App.MainWindow.AppWindow.Id)
                 {
                     SuggestedFileName = SanitizeFileName(name)
@@ -413,8 +489,15 @@ namespace WinUIMusicPlayer.View.SubView
             }
             catch
             {
-                await DialogHelper.ShowConfirmAsync(XamlRoot, "EqExportFailed");
+                ShowEqError("EqExportFailed");
             }
+        }
+
+        /// <summary>对话框内错误提示（InfoBar）——打开期间无法弹出第二个 ContentDialog。</summary>
+        private void ShowEqError(string messageKey)
+        {
+            EqNotifyBar.Title = ToolUtils.GetString(messageKey);
+            EqNotifyBar.IsOpen = true;
         }
 
         private static string SanitizeFileName(string name)
