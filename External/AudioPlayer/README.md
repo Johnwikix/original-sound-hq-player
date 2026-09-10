@@ -1,3 +1,5 @@
+中文 | **[English](README.en.md)**
+
 # AudioPlayer — 独立音频播放进程
 
 原音 HQ 播放器的播放引擎，一个独立于 UI 的 AOT 单文件进程：FFmpeg 解码 +
@@ -124,7 +126,7 @@ Int32LSB 与 Native DSD（MSB1）位流逐字节精确。
 
 ## 参考
 
-- ECHO（`D:\code\node\ECHO\native`）：WASAPI 独占协商、DoP 打包与标记相位归一、
+- [ECHO](https://github.com/Moekotori/ECHO/)：WASAPI 独占协商、DoP 打包与标记相位归一、
   ASIO 采样率中转/缓冲候选/原生 DSD 扩展、预缓冲环形缓冲语义的参考实现。
 - 与 bass 的功能映射（历史对照）：
 
