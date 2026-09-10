@@ -84,12 +84,12 @@ endpoint disable/unplug, and system format changes — silently swaps the
 output during playback (decode ring and position preserved); while paused,
 the old output is discarded and the new device is acquired on resume.
 
-**Exclusive track-switch reuse** (ASIO and WASAPI exclusive, PCM↔PCM same
-device): the live output is kept and only the render source is swapped — zero
-device interaction, seamless handover for same-format switches; ASIO rate
-change does Stop→SetSampleRate→Start (buffers not rebuilt); WASAPI exclusive
-format change keeps the device pointer / render thread and renegotiates.
-Bitstream / device changes still trigger a full rebuild.
+**Exclusive track-switch reuse** (ASIO and WASAPI exclusive): PCM switches with
+the same device, output mode, sample rate, and channel count only replace the
+render source. Rate, channel, bitstream format, or device changes stop and dispose
+the old output before negotiating a new driver format and buffers. New sessions
+select PCM / DoP / Native DSD from the new file and current settings, independently
+of the previous session's format or fallback result.
 
 **Watchdog auto-recovery**: output failures trigger an auto-rebuild plan at
 +1s/+3s/+7s (preserving position); user operations immediately invalidate
@@ -146,6 +146,7 @@ and post-format-change auto-recovery are both verified.
 | Tool | Purpose |
 |---|---|
 | `AudioPlayerSmokeTest` | IPC smoke client: `dotnet run -- <exe> <audio> [sec] [--mode=mode] [--dop] [--dev=N] [--vol=F] [--no-toggle] [--no-eq] [--devices-first] [--trackchange]` |
+| `PlaybackSwitchRegression` | Device-free regressions using the real sessions, decoders, and output interop: PCM rates, PCM↔DSD, reuse boundaries, and concurrent WASAPI release. From the repository root: `dotnet run --project _tools/PlaybackSwitchRegression`; see the tool README |
 | `analysis/*.py` | Dump verifiers: `gen_sine.py` (standard sine source), `verify_sine.py` (Goertzel + rms + zero-crossing), `verify_dop.py` (DoP marker phase + payload diff), `verify_dsd.py` (DSD bitstream diff) |
 | `AsioProbe` | Driver-level IASIO probe (channel types / DSD extension / sample-rate domain) |
 | `RawWasapiProbe` | WASAPI shared format probe (which formats the sound card accepts) |

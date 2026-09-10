@@ -67,10 +67,10 @@ DoP、DSD 位流）。中间处理噪声低于 -140dBFS，24bit 源全链路位�
 **端点跟随**（共享模式）：监听默认设备切换/端点禁用拔出/系统格式变化，
 播放中静默换输出（保解码环与进度），暂停中丢弃旧输出待恢复时落新设备。
 
-**独占换曲复用**（ASIO 与 WASAPI 独占，PCM↔PCM 同设备）：保活输出只换渲染
-源——同格式零设备交互无缝交接；ASIO 换率 Stop→SetSampleRate→Start（缓冲不
-重建）；WASAPI 独占换格式保设备指针/渲染线程重激活重协商。位流/设备变化仍
-全量重建。
+**独占换曲复用**（ASIO 与 WASAPI 独占）：同设备、同输出模式、同采样率、同声道的
+PCM 换曲只替换渲染源。采样率、声道、位流格式或设备变化时先停止并释放旧输出，
+再重新协商驱动格式与缓冲。新会话按新文件和当前设置选择 PCM / DoP / Native DSD，
+不继承旧会话的格式或回退结果。
 
 **看门狗自愈**：输出失效按 +1s/+3s/+7s 计划自动重建会话（保进度），用户操作
 即刻作废未决计划；连续 <4s 快速失败两次即暂停自愈（防错误循环刷屏），UI
@@ -116,6 +116,7 @@ Int32LSB 与 Native DSD（MSB1）位流逐字节精确。
 | 工具 | 用途 |
 |---|---|
 | `AudioPlayerSmokeTest` | IPC 冒烟客户端：`dotnet run -- <exe> <音频> [秒] [--mode=输出模式] [--dop] [--dev=N] [--vol=F] [--no-toggle] [--no-eq] [--devices-first] [--trackchange]` |
+| `PlaybackSwitchRegression` | 无需声卡的换曲回归：真实会话/解码器/输出互操作，覆盖 PCM 换率、PCM↔DSD、复用边界及 WASAPI 并发释放；仓库根目录执行 `dotnet run --project _tools/PlaybackSwitchRegression`，详见工具 README |
 | `analysis/*.py` | 转储验证器：`gen_sine.py`（标准正弦源）、`verify_sine.py`（Goertzel+rms+过零）、`verify_dop.py`（DoP 标记相位+载荷比对）、`verify_dsd.py`（DSD 位流比对） |
 | `AsioProbe` | 驱动级 IASIO 探针（通道类型/DSD 扩展/采样率域） |
 | `RawWasapiProbe` | WASAPI 共享格式探针（声卡接受哪些格式） |

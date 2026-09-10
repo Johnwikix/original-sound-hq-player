@@ -25,9 +25,8 @@ namespace AudioPlayer.Playback;
 /// - 换曲淡出单飞行任务 + 最新优先：淡出期间的新 PlayMusic 只更新 MusicUrl，到期切最新，
 ///   不再被重入保护丢弃；淡出期间被暂停则备好新会话不起播（PlayButton 直接续播新曲）；
 /// - 斜坡 300ms（原 500ms）；WasapiShared 模式增益稳态回 1（音量由会话音量承担，不叠加）。
-/// 独占换曲复用（ASIO 与 WASAPI 独占，PCM↔PCM 同设备）：保活输出只换渲染源——同格式零设备交互
-/// （无缝交接）；ASIO 换率 Stop→SetSampleRate→Start（缓冲按样本数计不重建）、WASAPI 独占换格式
-/// 保设备指针/渲染线程重激活重协商；位流/设备变化仍全量重建。
+/// 独占换曲复用（ASIO 与 WASAPI 独占）：仅同设备、同采样率、同声道的 PCM 换源。
+/// 采样率/声道/位流格式变化先停止并释放旧输出，再为新会话协商驱动格式和缓冲。
 /// </summary>
 public sealed class PlaybackEngine : IDisposable
 {
@@ -166,33 +165,30 @@ public sealed class PlaybackEngine : IDisposable
     }
 
     /// <summary>
-    /// 独占输出换曲复用（PCM↔PCM、同设备）：保活输出只换渲染源。
-    /// ASIO：同率纯引用替换（零驱动交互），换率 Stop→SetSampleRate→Start（缓冲按样本数计不重建）；
-    /// WASAPI 独占：同格式纯引用替换，率/声道变化走 ReinitializeFor（保设备指针/事件/渲染线程，
-    /// 仅重激活 client 重新协商）。位流↔PCM、设备变更、输出失效仍全量重建。调用方持锁。
+    /// 独占输出仅复用同设备、同格式 PCM。格式变化返回 false，由调用方先 Dispose 旧输出
+    /// 再创建新输出：ASIO 需重新协商缓冲/通道类型；WASAPI 需先退出渲染线程再释放 client，
+    /// 不得在它仍使用旧格式/指针时原地重初始化。调用方持锁。
     /// </summary>
     private bool TryReuseExclusiveOutput(Session next)
     {
         if (IsSharedMode(OutputMode) || next.Kind != RenderKind.Pcm) return false;
-        if (_output is AsioOutput asio && !asio.IsFailed)
+        if (OutputMode == "ASIO" && _output is AsioOutput asio && !asio.IsFailed)
         {
             if (asio.SourceKind != RenderKind.Pcm) return false;
             if (asio.SourceChannels != next.Channels || asio.DeviceIndex != BassASIODeviceId) return false;
-            return asio.SourceSampleRate == next.SampleRate
-                ? asio.AttachSource(next)
-                : asio.ChangeSourceAndRate(next);
+            return asio.AttachSource(next);
         }
-        if (_output is WasapiOutput wasapi && wasapi.IsExclusive && !wasapi.IsFailed)
+        if (OutputMode is "WasapiExclusivePush" or "WasapiExclusiveEvent"
+            && _output is WasapiOutput wasapi && wasapi.IsExclusive && !wasapi.IsFailed)
         {
             if (wasapi.SourceKind != RenderKind.Pcm) return false;
+            if (wasapi.IsPushMode != (OutputMode == "WasapiExclusivePush")) return false;
             if (wasapi.DeviceIndex != BassOutputDeviceId) return false;
             // 跟随默认设备的输出：系统默认已变更则不复用（重建时会解析到新默认）
             if (wasapi.FollowsDefaultDevice && _lastDefaultDeviceId != null
                 && !string.Equals(_lastDefaultDeviceId, wasapi.DeviceId ?? "", StringComparison.OrdinalIgnoreCase))
                 return false;
-            return wasapi.SourceSampleRate == next.SampleRate && wasapi.SourceChannels == next.Channels
-                ? wasapi.AttachSource(next)
-                : wasapi.ReinitializeFor(next);
+            return wasapi.AttachSource(next);
         }
         return false;
     }
@@ -239,7 +235,12 @@ public sealed class PlaybackEngine : IDisposable
     private Session? OpenSession(string url, bool forceSharedFormat = false, RenderKind? kindOverride = null)
     {
         // 回退共享时强制 PCM：位流会话（DoP/NativeDSD）在共享模式必然失败
-        var kind = forceSharedFormat ? RenderKind.Pcm : kindOverride ?? EffectiveKind;
+        // 换曲复用会在旧会话仍存活时打开新会话。EffectiveKind 表示旧会话的实际格式
+        //（可能已回退为 PCM/DoP），不能拿它决定新文件的解码/位流路径。
+        var kind = forceSharedFormat ? RenderKind.Pcm : kindOverride
+            ?? (IsBitstreamActive(url)
+                ? (OutputMode == "ASIO" ? RenderKind.NativeDsd : RenderKind.Dop)
+                : RenderKind.Pcm);
         int? forcedRate = null;
         int? forcedChannels = null;
         int? maxChannels = null;

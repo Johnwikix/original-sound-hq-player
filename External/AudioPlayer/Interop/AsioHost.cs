@@ -221,38 +221,10 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     /// 新环预缓冲期回静音，交接间隙自然被盖住。</summary>
     public bool AttachSource(IRenderSource source)
     {
-        if (_driver == null || _source == null) return false;
+        if (_driver == null || _source == null || IsFailed) return false;
+        if (source.Kind != RenderKind.Pcm || _source.Kind != RenderKind.Pcm) return false;
         if (source.SampleRate != _source.SampleRate || source.Channels != _source.Channels) return false;
         _source = source;
-        return true;
-    }
-
-    /// <summary>换率换源（PCM↔PCM 复用）：保活驱动与缓冲（ASIO 缓冲按样本数计、与采样率无关，
-    /// 不必重建），Stop → SetSampleRate（含 pivot 等待）→ 换源 → Start。失败返回 false
-    /// （输出已停），调用方走全量重建。</summary>
-    public bool ChangeSourceAndRate(IRenderSource source)
-    {
-        var driver = _driver;
-        if (driver == null || _source == null) return false;
-        try { if (_started) driver.Stop(); } catch { }
-        _started = false;
-        if (SetSampleRateAndWait(source.SampleRate) != AsioConstants.AseOk)
-        {
-            Console.WriteLine($"[asio] rate change to {source.SampleRate} failed, rebuild required");
-            return false;
-        }
-        _source = source;
-        LatencyMs = (int)(_bufferSize * 2L * 1000 / Math.Max(1, source.SampleRate));
-        WriteSilence(0);
-        WriteSilence(1);
-        int startRet = driver.Start();
-        if (startRet != AsioConstants.AseOk)
-        {
-            Console.WriteLine($"[asio] restart after rate change failed ret={startRet}");
-            return false;
-        }
-        _started = true;
-        Console.WriteLine($"[asio] source switched, rate={source.SampleRate} buffer={_bufferSize} latency={LatencyMs}ms");
         return true;
     }
 
