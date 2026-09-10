@@ -21,15 +21,11 @@
                     <RepositionThemeTransition IsStaggeringEnabled="True" />
                 </StackPanel.ChildrenTransitions>
 
-                <TextBlock
-                    x:Uid="SettingOutput"
-                    Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+                <TextBlock x:Uid="SettingOutput" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="SettingOutputDevice"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="SettingOutputDevice" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <ComboBox
                         x:Name="OutputDeviceComboBox"
@@ -46,9 +42,7 @@
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="SettingBufferSize"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="SettingBufferSize" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <NumberBox
                         x:Name="LatencyNumberBox"
@@ -63,9 +57,7 @@
 
                 <controls:SettingsCard IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.AppViewModel.IsDopEnabled), Mode=OneWay}">
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="DSD2PCMFreq"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="DSD2PCMFreq" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <ComboBox
                         Width="300"
@@ -75,9 +67,7 @@
 
                 <controls:SettingsCard IsEnabled="{x:Bind tools:BindUtils.BoolToBoolReConverter(ViewModel.AppViewModel.IsDopEnabled), Mode=OneWay}">
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="SettingDSDGain"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="SettingDSDGain" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <NumberBox
                         x:Name="DSDGainNumberBox"
@@ -88,34 +78,22 @@
                         Value="{x:Bind ViewModel.AppViewModel.DsdGain, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
-                <controls:SettingsCard
-                    Description="{x:Bind tool:ToolUtils.GetString('DsdDopDescription'), Mode=OneWay}"
-                    Header="DSD Dop / DSD Native">
-                    <ToggleSwitch
-                        MinWidth="0"
-                        IsOn="{x:Bind ViewModel.AppViewModel.IsDopEnabled, Mode=TwoWay}" />
+                <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('DsdDopDescription'), Mode=OneWay}" Header="DSD Dop / DSD Native">
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsDopEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
-
-                <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('FadeInOutDescription'), Mode=OneWay}">
-                    <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="FadeInOut"
-                            TextWrapping="Wrap" />
-                    </controls:SettingsCard.Header>
-                    <ToggleSwitch
-                        MinWidth="0"
-                        IsOn="{x:Bind ViewModel.AppViewModel.IsFadeEnabled, Mode=TwoWay}" />
-                </controls:SettingsCard>
-
-                <TextBlock
-                    x:Uid="SettingInterface"
-                    Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="DefaultEntryInterface"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="FadeInOut" TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsFadeEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <TextBlock x:Uid="SettingInterface" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock x:Uid="DefaultEntryInterface" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <ComboBox
                         Width="300"
@@ -129,9 +107,7 @@
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="DefaultMusicEntryInterface"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="DefaultMusicEntryInterface" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <ComboBox
                         Width="300"
@@ -147,9 +123,7 @@
 
                 <controls:SettingsExpander>
                     <controls:SettingsExpander.Header>
-                        <TextBlock
-                            x:Uid="CloseButtonFunction"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="CloseButtonFunction" TextWrapping="Wrap" />
                     </controls:SettingsExpander.Header>
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard ContentAlignment="Left">
@@ -171,26 +145,18 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
 
-                <TextBlock
-                    x:Uid="Appearance"
-                    Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+                <TextBlock x:Uid="Appearance" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
                 <controls:SettingsExpander>
                     <controls:SettingsExpander.Header>
-                        <TextBlock
-                            x:Uid="AppStyle"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="AppStyle" TextWrapping="Wrap" />
                     </controls:SettingsExpander.Header>
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard>
                             <controls:SettingsCard.Header>
-                                <TextBlock
-                                    x:Uid="IsUpdateBackDrop"
-                                    TextWrapping="Wrap" />
+                                <TextBlock x:Uid="IsUpdateBackDrop" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
-                            <ToggleSwitch
-                                MinWidth="0"
-                                IsOn="{x:Bind ViewModel.AppViewModel.IsUpdateBackDrop, Mode=TwoWay}" />
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsUpdateBackDrop, Mode=TwoWay}" />
                         </controls:SettingsCard>
 
                         <controls:SettingsCard ContentAlignment="Left">
@@ -237,9 +203,7 @@
                                 Tag="TransparentAcrylic" />
                         </controls:SettingsCard>
 
-                        <controls:SettingsCard
-                            ContentAlignment="Left"
-                            Visibility="{x:Bind ViewModel.CheckSystemVersion()}">
+                        <controls:SettingsCard ContentAlignment="Left" Visibility="{x:Bind ViewModel.CheckSystemVersion()}">
                             <RadioButton
                                 x:Name="CustomAcrylicStyleRadioButton"
                                 x:Uid="CustomAcrylicStyle"
@@ -252,9 +216,7 @@
 
                         <controls:SettingsCard Visibility="{x:Bind ViewModel.AppViewModel.IsColorPickerVisible, Mode=OneWay}">
                             <controls:SettingsCard.Header>
-                                <TextBlock
-                                    x:Uid="CustomOpacity"
-                                    TextWrapping="Wrap" />
+                                <TextBlock x:Uid="CustomOpacity" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
                             <Slider
                                 Width="245"
@@ -263,9 +225,7 @@
                                 Value="{x:Bind ViewModel.AppViewModel.CustomOpacity, Mode=TwoWay}" />
                         </controls:SettingsCard>
 
-                        <controls:SettingsCard
-                            ContentAlignment="Left"
-                            Visibility="{x:Bind ViewModel.AppViewModel.IsColorPickerVisible, Mode=OneWay}">
+                        <controls:SettingsCard ContentAlignment="Left" Visibility="{x:Bind ViewModel.AppViewModel.IsColorPickerVisible, Mode=OneWay}">
                             <ColorPicker
                                 ColorSpectrumShape="Ring"
                                 IsAlphaEnabled="True"
@@ -282,20 +242,14 @@
 
                 <controls:SettingsExpander>
                     <controls:SettingsExpander.Header>
-                        <TextBlock
-                            x:Uid="ThemeStyle"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="ThemeStyle" TextWrapping="Wrap" />
                     </controls:SettingsExpander.Header>
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneWay}">
                             <controls:SettingsCard.Header>
-                                <TextBlock
-                                    x:Uid="UseImageDominantTheme"
-                                    TextWrapping="Wrap" />
+                                <TextBlock x:Uid="UseImageDominantTheme" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
-                            <ToggleSwitch
-                                MinWidth="0"
-                                IsOn="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=TwoWay}" />
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=TwoWay}" />
                         </controls:SettingsCard>
 
                         <controls:SettingsCard ContentAlignment="Left">
@@ -333,19 +287,13 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
 
-                <TextBlock
-                    x:Uid="Advanced"
-                    Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+                <TextBlock x:Uid="Advanced" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="FolderWatchEnabled"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="FolderWatchEnabled" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
-                    <ToggleSwitch
-                        MinWidth="0"
-                        IsOn="{x:Bind ViewModel.AppViewModel.IsFolderWatchEnabled, Mode=TwoWay}" />
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsFolderWatchEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard>
@@ -353,13 +301,9 @@
                         <TextBlock x:Uid="TrimOnHide" />
                     </controls:SettingsCard.Header>
                     <controls:SettingsCard.Description>
-                        <TextBlock
-                            x:Uid="TrimOnHideDescription"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="TrimOnHideDescription" TextWrapping="Wrap" />
                     </controls:SettingsCard.Description>
-                    <ToggleSwitch
-                        MinWidth="0"
-                        IsOn="{x:Bind ViewModel.AppViewModel.IsTrimOnHideEnabled, Mode=TwoWay}" />
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsTrimOnHideEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard>
@@ -367,13 +311,9 @@
                         <TextBlock x:Uid="TrimAfterPlayback" />
                     </controls:SettingsCard.Header>
                     <controls:SettingsCard.Description>
-                        <TextBlock
-                            x:Uid="TrimAfterPlaybackDescription"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="TrimAfterPlaybackDescription" TextWrapping="Wrap" />
                     </controls:SettingsCard.Description>
-                    <ToggleSwitch
-                        MinWidth="0"
-                        IsOn="{x:Bind ViewModel.AppViewModel.IsTrimAfterPlaybackEnabled, Mode=TwoWay}" />
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsTrimAfterPlaybackEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard>
@@ -381,20 +321,14 @@
                         <TextBlock x:Uid="ArtistSplitSymbols" />
                     </controls:SettingsCard.Header>
                     <controls:SettingsCard.Description>
-                        <TextBlock
-                            x:Uid="ArtistSplitSymbolsDescription"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="ArtistSplitSymbolsDescription" TextWrapping="Wrap" />
                     </controls:SettingsCard.Description>
-                    <TextBox
-                        Width="240"
-                        Text="{x:Bind ViewModel.AppViewModel.ArtistSplitSymbols, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
+                    <TextBox Width="240" Text="{x:Bind ViewModel.AppViewModel.ArtistSplitSymbols, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="TrimNowLabel"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="TrimNowLabel" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <Button Command="{x:Bind ViewModel.AppViewModel.TrimNowCommand, Mode=OneWay}">
                         <Button.Content>
@@ -405,14 +339,10 @@
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="WindowBoundsDescription"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="WindowBoundsDescription" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <controls:SettingsCard.Description>
-                        <TextBlock
-                            x:Uid="WindowBoundsHint"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="WindowBoundsHint" TextWrapping="Wrap" />
                     </controls:SettingsCard.Description>
                     <Button
                         x:Uid="ResetWindowBounds"

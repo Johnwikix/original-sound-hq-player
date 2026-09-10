@@ -222,7 +222,7 @@
                             <Grid
                                 Grid.Row="3"
                                 VerticalAlignment="Bottom"
-                                ColumnDefinitions="*,Auto">
+                                ColumnDefinitions="Auto,Auto,*">
                                 <TextBlock
                                     x:Name="MusicInfoTextBlock"
                                     Grid.Column="0"
