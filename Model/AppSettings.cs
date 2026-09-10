@@ -11,7 +11,6 @@ namespace WinUIMusicPlayer.Model
         public static event EventHandler? OutputSettingsChanged;
         public static event EventHandler? OutputSettingsUpdated;
         public static event EventHandler? EqUpdated;
-        public static event EventHandler<Dictionary<string, double>>? EqualizerChangedEvent;
         public static void OnOutputSettingsChanged()
         {
             OutputSettingsChanged?.Invoke(null, EventArgs.Empty);
@@ -24,10 +23,6 @@ namespace WinUIMusicPlayer.Model
         public static void OnEqUpdated()
         {
             EqUpdated?.Invoke(null, EventArgs.Empty);
-        }
-        public static void EqualizerChanged()
-        {
-            EqualizerChangedEvent?.Invoke(null, Equalizer);
         }
         public static string OutputMode { get; set; } = "DirectSound";
         public static int BassOutputDeviceId { get; set; } = -1;
@@ -64,21 +59,12 @@ namespace WinUIMusicPlayer.Model
         public static int DesktopLyricsFontWeight { get; set; } = 400;
         public static int LyricsFontWeight { get; set; } = 700;
         public static bool IsAutoCoverEnabled { get; set; } = true;
+        /// <summary>当前均衡器状态的 JSON 快照（EqPreset v1 结构，持久化用）。</summary>
         public static string EqualizerStr { get; set; } = string.Empty;
-        public static Dictionary<string, double> Equalizer { get; set; } = new()
-        {
-            {"32Hz", 0},   // 32Hz 初始增益 0dB
-            {"64Hz", 0},   // 64Hz 初始增益 0dB
-            {"125Hz", 0},  // 125Hz 初始增益 0dB
-            {"250Hz", 0},  // 250Hz 初始增益 0dB
-            {"500Hz", 0},  // 500Hz 初始增益 0dB
-            {"1kHz", 0},   // 1kHz 初始增益 0dB
-            {"2kHz", 0},   // 2kHz 初始增益 0dB
-            {"4kHz", 0},   // 4kHz 初始增益 0dB
-            {"8kHz", 0},   // 8kHz 初始增益 0dB
-            {"16kHz", 0}   // 16kHz 初始增益 0dB
-        };
+        /// <summary>运行时 10 段均衡器状态（含预留 Q 值），UI 与 IPC 的唯一数据源。</summary>
+        public static EqBand[] EqualizerBands { get; set; } = EqualizerHelper.CreateDefaultBands();
         public static bool IsEqualizerEnabled { get; set; } = false;
+        /// <summary>当前预设名：内置预设键、自定义预设名，或 "Custom"（手动调整中）。</summary>
         public static string EqualizerPreset { get; set; } = "Flat";
         public static bool IsCustomAppSize { get; set; } = false;
         public static int AppWidth { get; set; } = 1280;

@@ -408,7 +408,7 @@ namespace WinUIMusicPlayer.Services
         /// <summary>Fire-and-forget full equalizer state sync (slider drags, startup).</summary>
         public void UpdateEq()
         {
-            var req = ConvertDictToUpdateEqRequest(AppSettings.Equalizer);
+            var req = ConvertBandsToUpdateEqRequest();
             var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.UpdateEqRequestSize);
             BinarySerializer.WriteUpdateEqRequest(buf, req);
             _ = SendOnly(CommandId.UpdateEq, buf, BinarySerializer.UpdateEqRequestSize);
@@ -422,7 +422,7 @@ namespace WinUIMusicPlayer.Services
         /// </summary>
         public async Task<bool?> UpdateEqAsync()
         {
-            var req = ConvertDictToUpdateEqRequest(AppSettings.Equalizer);
+            var req = ConvertBandsToUpdateEqRequest();
             var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.UpdateEqRequestSize);
             try
             {
@@ -437,21 +437,26 @@ namespace WinUIMusicPlayer.Services
             finally { ArrayPool<byte>.Shared.Return(buf); }
         }
 
-        private static UpdateEqRequest ConvertDictToUpdateEqRequest(Dictionary<string, double> dict)
+        /// <summary>
+        /// 频段数组 → IPC 请求。协议当前只传 10 段增益（float32），
+        /// EqBand.Q 为预留字段，待协议扩展后在此接入。
+        /// </summary>
+        private static UpdateEqRequest ConvertBandsToUpdateEqRequest()
         {
+            var bands = AppSettings.EqualizerBands;
             return new UpdateEqRequest
             {
                 IsEnabled = AppSettings.IsEqualizerEnabled,
-                Band0 = (float)(dict.TryGetValue("32Hz", out var v) ? v : 0),
-                Band1 = (float)(dict.TryGetValue("64Hz", out v) ? v : 0),
-                Band2 = (float)(dict.TryGetValue("125Hz", out v) ? v : 0),
-                Band3 = (float)(dict.TryGetValue("250Hz", out v) ? v : 0),
-                Band4 = (float)(dict.TryGetValue("500Hz", out v) ? v : 0),
-                Band5 = (float)(dict.TryGetValue("1kHz", out v) ? v : 0),
-                Band6 = (float)(dict.TryGetValue("2kHz", out v) ? v : 0),
-                Band7 = (float)(dict.TryGetValue("4kHz", out v) ? v : 0),
-                Band8 = (float)(dict.TryGetValue("8kHz", out v) ? v : 0),
-                Band9 = (float)(dict.TryGetValue("16kHz", out v) ? v : 0),
+                Band0 = (float)bands[0].GainDb,
+                Band1 = (float)bands[1].GainDb,
+                Band2 = (float)bands[2].GainDb,
+                Band3 = (float)bands[3].GainDb,
+                Band4 = (float)bands[4].GainDb,
+                Band5 = (float)bands[5].GainDb,
+                Band6 = (float)bands[6].GainDb,
+                Band7 = (float)bands[7].GainDb,
+                Band8 = (float)bands[8].GainDb,
+                Band9 = (float)bands[9].GainDb,
             };
         }
 

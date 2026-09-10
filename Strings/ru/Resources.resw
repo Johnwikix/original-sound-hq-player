@@ -718,6 +718,33 @@
   <data name="EqVocal.Content" xml:space="preserve">
     <value>Вокал</value>
   </data>
+  <data name="EqSavePresetToolTip" xml:space="preserve">
+    <value>Сохранить как пресет (перезаписывает выбранный пользовательский пресет)</value>
+  </data>
+  <data name="EqDeletePresetToolTip" xml:space="preserve">
+    <value>Удалить выбранный пользовательский пресет</value>
+  </data>
+  <data name="EqMoreOptionsToolTip" xml:space="preserve">
+    <value>Импорт / Экспорт</value>
+  </data>
+  <data name="EqImportItem.Text" xml:space="preserve">
+    <value>Импортировать пресет</value>
+  </data>
+  <data name="EqExportItem.Text" xml:space="preserve">
+    <value>Экспортировать пресет</value>
+  </data>
+  <data name="EqPresetNameTitle" xml:space="preserve">
+    <value>Введите имя пресета</value>
+  </data>
+  <data name="EqDeletePresetConfirm" xml:space="preserve">
+    <value>Удалить выбранный пользовательский пресет?</value>
+  </data>
+  <data name="EqImportFailed" xml:space="preserve">
+    <value>Не удалось импортировать: файл не является допустимым пресетом эквалайзера</value>
+  </data>
+  <data name="EqExportFailed" xml:space="preserve">
+    <value>Не удалось экспортировать</value>
+  </data>
   <data name="CoverSize.Text" xml:space="preserve">
     <value>Размер миниатюры обложки</value>
   </data>

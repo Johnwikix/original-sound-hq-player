@@ -718,6 +718,33 @@
   <data name="EqVocal.Content" xml:space="preserve">
     <value>ボーカル</value>
   </data>
+  <data name="EqSavePresetToolTip" xml:space="preserve">
+    <value>プリセットとして保存（カスタムプリセット選択時は上書き）</value>
+  </data>
+  <data name="EqDeletePresetToolTip" xml:space="preserve">
+    <value>選択したカスタムプリセットを削除</value>
+  </data>
+  <data name="EqMoreOptionsToolTip" xml:space="preserve">
+    <value>インポート / エクスポート</value>
+  </data>
+  <data name="EqImportItem.Text" xml:space="preserve">
+    <value>プリセットをインポート</value>
+  </data>
+  <data name="EqExportItem.Text" xml:space="preserve">
+    <value>プリセットをエクスポート</value>
+  </data>
+  <data name="EqPresetNameTitle" xml:space="preserve">
+    <value>プリセット名を入力</value>
+  </data>
+  <data name="EqDeletePresetConfirm" xml:space="preserve">
+    <value>選択したカスタムプリセットを削除しますか？</value>
+  </data>
+  <data name="EqImportFailed" xml:space="preserve">
+    <value>インポート失敗：有効なイコライザープリセットファイルではありません</value>
+  </data>
+  <data name="EqExportFailed" xml:space="preserve">
+    <value>エクスポート失敗</value>
+  </data>
   <data name="CoverSize.Text" xml:space="preserve">
     <value>表紙サムネイルサイズ</value>
   </data>

@@ -1,109 +1,259 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.Windows.Storage.Pickers;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
+using WinUIMusicPlayer.Controls.Equalizer;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 
-// To learn more about WinUI, the WinUI project structure,
-// and more about our project templates, see: http://aka.ms/winui-project-info.
-
 namespace WinUIMusicPlayer.View.SubView
 {
+    /// <summary>
+    /// 均衡器对话框：预设下拉（内置 + 任意数量自定义）、保存/删除自定义预设、
+    /// 导入/导出（.json，EqPreset v1 结构含预留 Q 值）。滑条编辑走 250ms 防抖提交
+    /// （持久化 + IPC 全量同步），拖动过程不产生中间 IO。
+    /// </summary>
     public sealed partial class EqualizerDialog : ContentDialog
     {
-        private Dictionary<string, double[]> _presets;
-        private List<Slider> _sliders;
-        private bool _isInitializedSliderValue = false;
-        private bool _isSyncingToggle = false;
-        public EventHandler<string> EqualizerGainChanged { get; set; }
+        private const string TagCustom = "Custom";
+        private const string TagIdPrefix = "id:";
+        private const int CommitDebounceMs = 250;
+
+        private static readonly Dictionary<string, string> BuiltInResourceKeys = new()
+        {
+            ["Flat"] = "EqFlat.Content",
+            ["Rock"] = "EqRock.Content",
+            ["Pop"] = "EqPop.Content",
+            ["Jazz"] = "EqJazz.Content",
+            ["Classical"] = "EqClassical.Content",
+            ["Electronic"] = "EqElectronic.Content",
+            ["Vocal"] = "EqVocal.Content"
+        };
+
+        private readonly IReadOnlyDictionary<string, EqPreset> _builtIns = EqualizerHelper.CreateBuiltInPresets();
+        private readonly DispatcherQueueTimer _commitTimer;
+        private List<SaveEqualizerPreset> _customPresets = new();
+        private bool _isSyncingUi;
+        private bool _isLoaded;
+
+        /// <summary>均衡器状态变更（防抖后）提交完成：订阅方负责 IPC 全量同步。</summary>
+        public event EventHandler? EqualizerCommitted;
 
         public EqualizerDialog()
         {
-            _isInitializedSliderValue = false;
-            this.InitializeComponent();
-            InitializePresets();
-            InitializingSettings();
-            InitializeSilderAttach();
-            _isInitializedSliderValue = true;
+            InitializeComponent();
+            ToolTipService.SetToolTip(SavePresetButton, ToolUtils.GetString("EqSavePresetToolTip"));
+            ToolTipService.SetToolTip(DeletePresetButton, ToolUtils.GetString("EqDeletePresetToolTip"));
+            ToolTipService.SetToolTip(MoreOptionsButton, ToolUtils.GetString("EqMoreOptionsToolTip"));
+
+            _commitTimer = DispatcherQueue.CreateTimer();
+            _commitTimer.Interval = TimeSpan.FromMilliseconds(CommitDebounceMs);
+            _commitTimer.IsRepeating = false;
+            _commitTimer.Tick += (_, _) => CommitChanges();
+
+            // Esc/系统关闭同样走持久化，防止挂起的调整丢失
+            Closing += (_, _) =>
+            {
+                _commitTimer.Stop();
+                if (_isLoaded) CommitChanges();
+            };
+            Equalizer.GainEdited += OnGainEdited;
+            _ = InitializeAsync();
         }
 
-        private void InitializingSettings()
+        private async Task InitializeAsync()
         {
-            _sliders = new List<Slider>
+            try
             {
-                Slider32Hz, Slider64Hz, Slider125Hz, Slider250Hz, Slider500Hz,
-                Slider1kHz, Slider2kHz, Slider4kHz, Slider8kHz, Slider16kHz
-            };
-            foreach (ComboBoxItem item in ComboBoxPresets.Items)
-            {
-                if (item.Tag?.ToString() == AppSettings.EqualizerPreset)
-                {
-                    ComboBoxPresets.SelectedItem = item;
-                    break;
-                }
+                _customPresets = await App.Services.GetRequiredService<MusicDatabaseService>().GetEqualizerPresets();
             }
-            InitializeSliders();
+            catch
+            {
+                _customPresets = new List<SaveEqualizerPreset>();
+            }
+            Equalizer.SetBands(AppSettings.EqualizerBands);
+            RebuildPresetItems();
+            UpdateDeleteButtonState();
             ToggleSwitchEqualizer.IsOn = AppSettings.IsEqualizerEnabled;
+            _isLoaded = true;
         }
 
-        private void InitializeSliders()
-        {
-            // ��ʼ�������б�
-            Slider32Hz.Value = AppSettings.Equalizer["32Hz"];
-            Slider64Hz.Value = AppSettings.Equalizer["64Hz"];
-            Slider125Hz.Value = AppSettings.Equalizer["125Hz"];
-            Slider250Hz.Value = AppSettings.Equalizer["250Hz"];
-            Slider500Hz.Value = AppSettings.Equalizer["500Hz"];
-            Slider1kHz.Value = AppSettings.Equalizer["1kHz"];
-            Slider2kHz.Value = AppSettings.Equalizer["2kHz"];
-            Slider4kHz.Value = AppSettings.Equalizer["4kHz"];
-            Slider8kHz.Value = AppSettings.Equalizer["8kHz"];
-            Slider16kHz.Value = AppSettings.Equalizer["16kHz"];
-        }
+        #region 预设下拉
 
-        private void InitializePresets()
+        private void RebuildPresetItems(string? selectTag = null)
         {
-            _presets = new Dictionary<string, double[]>
+            _isSyncingUi = true;
+            try
             {
-                ["Flat"] = new double[] { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-                ["Pop"] = new double[] { -1, -0.5, 0, 2, 4, 4, 2, 0, -1, -2 },
-                ["Rock"] = new double[] { 4, 3, 2, 1, -0.5, -1, 0, 2, 4, 5 },
-                ["Jazz"] = new double[] { 2, 1, 0, 1, 2, 2, 1, 1, 2, 3 },
-                ["Classical"] = new double[] { 3, 2, 1, 0, 0, 0, -1, -1, 1, 2 },
-                ["Electronic"] = new double[] { 3, 2, 0, -1, -0.5, 1, 2, 3, 4, 5 },
-                ["Vocal"] = new double[] { -2, -1, 0, 1, 3, 4, 4, 3, 1, 0 }
-            };
-        }
-
-        private async void OnSliderValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
-        {
-            if (sender is Slider slider)
-            {
-                if (ComboBoxPresets.SelectedItem is ComboBoxItem selectedItem)
+                ComboBoxPresets.Items.Clear();
+                ComboBoxPresets.Items.Add(MakeComboItem(TagCustom, ToolUtils.GetString("EqCustom.Content")));
+                foreach (string key in EqualizerHelper.BuiltInKeys)
                 {
-                    string frequency = slider.Tag?.ToString() ?? string.Empty;
-                    if (!string.IsNullOrEmpty(frequency))
-                    {
-                        double value = Math.Round(slider.Value, 1);
-                        AppSettings.Equalizer[frequency] = value;
-                        string? presetName = selectedItem.Tag.ToString();
-                        if (presetName == "Custom" && _isInitializedSliderValue)
-                        {
-                            await App.Services.GetRequiredService<MusicDatabaseService>().UpdateEqualizerSettings(ToolUtils.ConvertToJson(AppSettings.Equalizer), AppSettings.IsEqualizerEnabled);
-                        }
-                        AppSettings.EqualizerStr = ToolUtils.ConvertToJson(AppSettings.Equalizer);
-                        EqualizerGainChanged?.Invoke(this, frequency);
-                    }
+                    ComboBoxPresets.Items.Add(MakeComboItem(key, ToolUtils.GetString(BuiltInResourceKeys[key])));
+                }
+                foreach (SaveEqualizerPreset row in _customPresets)
+                {
+                    ComboBoxPresets.Items.Add(MakeComboItem(IdTag(row.Id), row.Name));
+                }
+                SelectTag(selectTag ?? ResolveTagFromStateName());
+            }
+            finally
+            {
+                _isSyncingUi = false;
+            }
+        }
+
+        private static ComboBoxItem MakeComboItem(string tag, string content)
+        {
+            return new ComboBoxItem { Tag = tag, Content = content };
+        }
+
+        private void SelectTag(string tag)
+        {
+            foreach (object item in ComboBoxPresets.Items)
+            {
+                if (item is ComboBoxItem comboItem && comboItem.Tag?.ToString() == tag)
+                {
+                    ComboBoxPresets.SelectedItem = comboItem;
+                    return;
                 }
             }
+        }
+
+        private string GetSelectedTag()
+        {
+            return ComboBoxPresets.SelectedItem is ComboBoxItem item ? item.Tag?.ToString() ?? TagCustom : TagCustom;
+        }
+
+        /// <summary>由持久化的预设名（AppSettings.EqualizerPreset）反查下拉项 Tag。</summary>
+        private string ResolveTagFromStateName()
+        {
+            string name = AppSettings.EqualizerPreset;
+            if (string.IsNullOrEmpty(name) || name == TagCustom) return TagCustom;
+            foreach (SaveEqualizerPreset row in _customPresets)
+            {
+                if (row.Name == name) return IdTag(row.Id);
+            }
+            foreach (string key in EqualizerHelper.BuiltInKeys)
+            {
+                if (key == name) return key;
+            }
+            return "Flat";
+        }
+
+        private string ResolveStateName(string tag)
+        {
+            if (tag == TagCustom) return TagCustom;
+            if (TryParseIdTag(tag, out int id) && FindCustom(id) is { } row) return row.Name;
+            return BuiltInResourceKeys.ContainsKey(tag) ? tag : "Flat";
+        }
+
+        private static string IdTag(int id) => $"{TagIdPrefix}{id}";
+
+        private static bool TryParseIdTag(string tag, out int id)
+        {
+            id = 0;
+            return tag.StartsWith(TagIdPrefix, StringComparison.Ordinal)
+                && int.TryParse(tag.AsSpan(TagIdPrefix.Length), out id);
+        }
+
+        private SaveEqualizerPreset? FindCustom(int id)
+        {
+            return _customPresets.FirstOrDefault(p => p.Id == id);
+        }
+
+        private void UpdateDeleteButtonState()
+        {
+            DeletePresetButton.IsEnabled = _isLoaded && TryParseIdTag(GetSelectedTag(), out _);
+        }
+
+        private async void ComboBoxPresets_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_isSyncingUi || !_isLoaded) return;
+            string tag = GetSelectedTag();
+            UpdateDeleteButtonState();
+            if (tag == TagCustom) return; // “自定义”仅表示手动调整中，不改动当前增益
+
+            _isSyncingUi = true;
+            try
+            {
+                EqPreset preset;
+                if (TryParseIdTag(tag, out int presetId))
+                {
+                    if (FindCustom(presetId) is not { } row) return;
+                    preset = EqualizerHelper.Parse(row.EqualizerStr, row.Name) ?? EqualizerHelper.Normalize(null);
+                }
+                else
+                {
+                    preset = _builtIns.TryGetValue(tag, out EqPreset? builtIn) ? builtIn : EqualizerHelper.Normalize(null);
+                }
+                ApplyPreset(preset);
+                AppSettings.EqualizerPreset = ResolveStateName(tag);
+                CommitChanges();
+            }
+            finally
+            {
+                _isSyncingUi = false;
+            }
+        }
+
+        /// <summary>把预设增益写入运行时频段状态并刷新滑条（数组引用不变，IPC 侧始终读同一状态）。</summary>
+        private void ApplyPreset(EqPreset preset)
+        {
+            EqBand[] bands = AppSettings.EqualizerBands;
+            for (int i = 0; i < bands.Length && i < preset.Bands.Count; i++)
+            {
+                bands[i].GainDb = preset.Bands[i].GainDb;
+                bands[i].Q = preset.Bands[i].Q;
+            }
+            Equalizer.SetBands(bands);
+        }
+
+        private string SerializeCurrent(string name)
+        {
+            return EqualizerHelper.Serialize(EqualizerHelper.Snapshot(name, AppSettings.EqualizerBands));
+        }
+
+        #endregion
+
+        #region 编辑与提交（防抖）
+
+        private void OnGainEdited(object? sender, int bandIndex)
+        {
+            if (!_isLoaded || _isSyncingUi) return;
+            if (AppSettings.EqualizerPreset != TagCustom)
+            {
+                // 拖动即脱离预设：切到“自定义”项（不改动增益），防抖结束后统一提交
+                AppSettings.EqualizerPreset = TagCustom;
+                _isSyncingUi = true;
+                SelectTag(TagCustom);
+                UpdateDeleteButtonState();
+                _isSyncingUi = false;
+            }
+            _commitTimer.Stop();
+            _commitTimer.Start();
+        }
+
+        /// <summary>提交当前均衡器状态：持久化 + 通知订阅方做 IPC 全量同步。</summary>
+        private void CommitChanges()
+        {
+            AppSettings.EqualizerStr = SerializeCurrent(AppSettings.EqualizerPreset);
+            _ = App.Services.GetRequiredService<MusicDatabaseService>().SaveEqualizerSettingAsync();
+            AppSettings.OnEqUpdated();
+            EqualizerCommitted?.Invoke(this, EventArgs.Empty);
         }
 
         private async void ToggleSwitchEqualizer_Toggled(object sender, RoutedEventArgs e)
         {
-            if (_isSyncingToggle) return;
+            if (_isSyncingUi) return;
 
             AppSettings.IsEqualizerEnabled = ToggleSwitchEqualizer.IsOn;
 
@@ -114,87 +264,169 @@ namespace WinUIMusicPlayer.View.SubView
             if (real is bool r && r != AppSettings.IsEqualizerEnabled)
             {
                 AppSettings.IsEqualizerEnabled = r;
-                _isSyncingToggle = true;
+                _isSyncingUi = true;
                 ToggleSwitchEqualizer.IsOn = r;
-                _isSyncingToggle = false;
+                _isSyncingUi = false;
+            }
+            if (_isLoaded)
+            {
+                _ = App.Services.GetRequiredService<MusicDatabaseService>().SaveEqualizerSettingAsync();
             }
         }
 
-        private async void CloseButton_Click(object sender, RoutedEventArgs e)
+        #endregion
+
+        #region 自定义预设增删
+
+        private async void SavePresetButton_Click(object sender, RoutedEventArgs e)
         {
-            SaveEqualizer equalizer = await App.Services.GetRequiredService<MusicDatabaseService>().GetEqualizer();
-            if (equalizer is not null)
+            if (!_isLoaded) return;
+            var db = App.Services.GetRequiredService<MusicDatabaseService>();
+
+            // 当前选中的是自定义预设 → 覆盖保存
+            if (TryParseIdTag(GetSelectedTag(), out int id) && FindCustom(id) is { } row)
             {
-                equalizer.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
-                equalizer.EqualizerPreset = AppSettings.EqualizerPreset;
-                await App.Services.GetRequiredService<MusicDatabaseService>().UpdateEqualizer(equalizer);
+                row.EqualizerStr = SerializeCurrent(row.Name);
+                await db.UpdateEqualizerPreset(row);
+                return;
             }
-            this.Hide();
-        }
 
-        private async void ComboBoxPresets_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            _isInitializedSliderValue = false;
-            if (ComboBoxPresets.SelectedItem is ComboBoxItem selectedItem)
+            // 内置/自定义态 → 输入名称另存
+            string name = await DialogHelper.ShowInputAsync(XamlRoot, "EqPresetNameTitle", BuildDefaultNewName());
+            if (string.IsNullOrWhiteSpace(name)) return;
+            name = name.Trim();
+
+            SaveEqualizerPreset? target = _customPresets.FirstOrDefault(p => p.Name == name);
+            if (target is not null)
             {
-                string? presetName = selectedItem.Tag.ToString();
-                AppSettings.EqualizerPreset = presetName ?? "Flat";
-                if (_presets.ContainsKey(presetName))
-                {
-                    var presetValues = _presets[presetName];
-                    for (int i = 0; i < _sliders.Count; i++)
-                    {
-                        _sliders[i].Value = presetValues[i];
-                        string frequency = _sliders[i].Tag?.ToString() ?? "Unknown";
-                        AppSettings.Equalizer[frequency] = presetValues[i];
-                    }
-                }
-                else if (presetName == "Custom")
-                {
-                    SaveEqualizer equalizer = await App.Services.GetRequiredService<MusicDatabaseService>().GetEqualizer();
-                    AppSettings.Equalizer = ToolUtils.ConvertToDictionary(equalizer?.EqualizerStr);
-                    InitializeSliders();
-                }
-                AppSettings.EqualizerStr = ToolUtils.ConvertToJson(AppSettings.Equalizer);
-                AppSettings.OnEqUpdated();
+                target.EqualizerStr = SerializeCurrent(name);
+                await db.UpdateEqualizerPreset(target);
             }
-            _isInitializedSliderValue = true;
-        }
-
-        private void InitializeSilderAttach()
-        {
-            AttachMouseWheelToSlider(Slider32Hz);
-            AttachMouseWheelToSlider(Slider64Hz);
-            AttachMouseWheelToSlider(Slider125Hz);
-            AttachMouseWheelToSlider(Slider250Hz);
-            AttachMouseWheelToSlider(Slider500Hz);
-            AttachMouseWheelToSlider(Slider1kHz);
-            AttachMouseWheelToSlider(Slider2kHz);
-            AttachMouseWheelToSlider(Slider4kHz);
-            AttachMouseWheelToSlider(Slider8kHz);
-            AttachMouseWheelToSlider(Slider16kHz);
-        }
-
-        private void AttachMouseWheelToSlider(Slider slider)
-        {
-            slider.PointerWheelChanged += (sender, e) =>
+            else
             {
-                if (!slider.IsEnabled) return;
+                target = new SaveEqualizerPreset { Name = name, EqualizerStr = SerializeCurrent(name) };
+                target.Id = await db.InsertEqualizerPreset(target);
+                _customPresets.Add(target);
+            }
+            AppSettings.EqualizerPreset = name;
+            RebuildPresetItems(IdTag(target.Id));
+            UpdateDeleteButtonState();
+            CommitChanges();
+        }
 
-                var delta = e.GetCurrentPoint(slider).Properties.MouseWheelDelta;
-                var step = slider.StepFrequency; // ʹ��0.1��Ϊ����ֵ
+        private string BuildDefaultNewName()
+        {
+            return ComboBoxPresets.SelectedItem is ComboBoxItem { Content: string display } && !string.IsNullOrWhiteSpace(display)
+                ? display
+                : ToolUtils.GetString("EqCustom.Content");
+        }
 
-                if (delta > 0)
+        private async void DeletePresetButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_isLoaded) return;
+            if (!TryParseIdTag(GetSelectedTag(), out int id) || FindCustom(id) is not { } row) return;
+            if (!await DialogHelper.ShowConfirmAsync(XamlRoot, "EqDeletePresetConfirm")) return;
+
+            await App.Services.GetRequiredService<MusicDatabaseService>().DeleteEqualizerPreset(row.Id);
+            _customPresets.Remove(row);
+
+            ApplyPreset(_builtIns["Flat"]);
+            AppSettings.EqualizerPreset = "Flat";
+            RebuildPresetItems("Flat");
+            UpdateDeleteButtonState();
+            CommitChanges();
+        }
+
+        #endregion
+
+        #region 导入 / 导出
+
+        private async void ImportPresetItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_isLoaded) return;
+            try
+            {
+                var picker = new FileOpenPicker(App.MainWindow.AppWindow.Id);
+                picker.FileTypeFilter.Add(".json");
+                var picked = await picker.PickSingleFileAsync();
+                if (picked is null) return;
+
+                string json = await File.ReadAllTextAsync(picked.Path);
+                string fallbackName = Path.GetFileNameWithoutExtension(picked.Path);
+                EqPreset? preset = EqualizerHelper.Parse(json, fallbackName);
+                if (preset is null)
                 {
-                    slider.Value = Math.Min(slider.Maximum, slider.Value + step);
-                }
-                else if (delta < 0)
-                {
-                    slider.Value = Math.Max(slider.Minimum, slider.Value - step);
+                    await DialogHelper.ShowConfirmAsync(XamlRoot, "EqImportFailed");
+                    return;
                 }
 
-                e.Handled = true;
-            };
+                string name = string.IsNullOrWhiteSpace(preset.Name) ? fallbackName : preset.Name.Trim();
+                if (name.Length == 0) name = ToolUtils.GetString("EqCustom.Content");
+
+                var db = App.Services.GetRequiredService<MusicDatabaseService>();
+                SaveEqualizerPreset? target = _customPresets.FirstOrDefault(p => p.Name == name);
+                if (target is not null)
+                {
+                    target.EqualizerStr = EqualizerHelper.Serialize(preset);
+                    await db.UpdateEqualizerPreset(target);
+                }
+                else
+                {
+                    target = new SaveEqualizerPreset { Name = name, EqualizerStr = EqualizerHelper.Serialize(preset) };
+                    target.Id = await db.InsertEqualizerPreset(target);
+                    _customPresets.Add(target);
+                }
+
+                ApplyPreset(preset);
+                AppSettings.EqualizerPreset = name;
+                RebuildPresetItems(IdTag(target.Id));
+                UpdateDeleteButtonState();
+                CommitChanges();
+            }
+            catch
+            {
+                await DialogHelper.ShowConfirmAsync(XamlRoot, "EqImportFailed");
+            }
+        }
+
+        private async void ExportPresetItem_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_isLoaded) return;
+            try
+            {
+                string name = AppSettings.EqualizerPreset == TagCustom
+                    ? ToolUtils.GetString("EqCustom.Content")
+                    : AppSettings.EqualizerPreset;
+                var picker = new FileSavePicker(App.MainWindow.AppWindow.Id)
+                {
+                    SuggestedFileName = SanitizeFileName(name)
+                };
+                picker.FileTypeChoices.Add("JSON", new List<string> { ".json" });
+                var picked = await picker.PickSaveFileAsync();
+                if (picked is null) return;
+
+                await File.WriteAllTextAsync(picked.Path, SerializeCurrent(name));
+            }
+            catch
+            {
+                await DialogHelper.ShowConfirmAsync(XamlRoot, "EqExportFailed");
+            }
+        }
+
+        private static string SanitizeFileName(string name)
+        {
+            foreach (char c in Path.GetInvalidFileNameChars())
+            {
+                name = name.Replace(c, '_');
+            }
+            return name;
+        }
+
+        #endregion
+
+        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        {
+            Hide();
         }
     }
 }

@@ -202,10 +202,10 @@ namespace WinUIMusicPlayer.View
             if (EqualizerDialog is null)
             {
                 EqualizerDialog = new EqualizerDialog();
-                EqualizerDialog.EqualizerGainChanged += (s, frequency) =>
+                EqualizerDialog.EqualizerCommitted += (s, e) =>
                 {
-                    // Fire-and-forget full state sync: idempotent, latest state wins,
-                    // so rapid slider drags can never lose the final gain values.
+                    // Fire-and-forget full state sync: idempotent, latest state wins;
+                    // the dialog already debounces rapid slider drags before committing.
                     ViewModel.PlayerCommandService.EqUpdate();
                 };
             }

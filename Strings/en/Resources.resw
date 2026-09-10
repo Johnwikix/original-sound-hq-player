@@ -718,6 +718,33 @@
   <data name="EqVocal.Content" xml:space="preserve">
     <value>Vocal</value>
   </data>
+  <data name="EqSavePresetToolTip" xml:space="preserve">
+    <value>Save as preset (overwrites when a custom preset is selected)</value>
+  </data>
+  <data name="EqDeletePresetToolTip" xml:space="preserve">
+    <value>Delete the selected custom preset</value>
+  </data>
+  <data name="EqMoreOptionsToolTip" xml:space="preserve">
+    <value>Import / Export</value>
+  </data>
+  <data name="EqImportItem.Text" xml:space="preserve">
+    <value>Import preset</value>
+  </data>
+  <data name="EqExportItem.Text" xml:space="preserve">
+    <value>Export preset</value>
+  </data>
+  <data name="EqPresetNameTitle" xml:space="preserve">
+    <value>Enter preset name</value>
+  </data>
+  <data name="EqDeletePresetConfirm" xml:space="preserve">
+    <value>Delete the selected custom preset?</value>
+  </data>
+  <data name="EqImportFailed" xml:space="preserve">
+    <value>Import failed: not a valid equalizer preset file</value>
+  </data>
+  <data name="EqExportFailed" xml:space="preserve">
+    <value>Export failed</value>
+  </data>
   <data name="CoverSize.Text" xml:space="preserve">
     <value>Cover Thumbnail Size</value>
   </data>

@@ -67,6 +67,7 @@ namespace WinUIMusicPlayer.Services
                 await _dbConnection.CreateTableAsync<MusicLyrics>();
                 await _dbConnection.CreateTableAsync<Folder>();
                 await _dbConnection.CreateTableAsync<SaveEqualizer>();
+                await _dbConnection.CreateTableAsync<SaveEqualizerPreset>();
                 await _dbConnection.CreateTableAsync<PlayList>();
                 await _dbConnection.CreateTableAsync<PlayListMusic>();
                 await _dbConnection.CreateTableAsync<LastPlayListState>();
@@ -769,13 +770,25 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.UpdateAsync(equalizer);
         }
 
-        public async Task UpdateEqualizerSettings(string equalizerStr, bool isEnabled)
+        public async Task<List<SaveEqualizerPreset>> GetEqualizerPresets()
         {
-            await _dbConnection.ExecuteAsync(
-                "UPDATE SaveEqualizer SET EqualizerStr = ?, IsEqualizerEnabled = ? WHERE Id = 1",
-                equalizerStr,
-                isEnabled
-            );
+            return await _dbConnection.Table<SaveEqualizerPreset>().OrderBy(p => p.Id).ToListAsync();
+        }
+
+        /// <summary>插入自定义预设，返回自增主键。</summary>
+        public async Task<int> InsertEqualizerPreset(SaveEqualizerPreset preset)
+        {
+            return await _dbConnection.InsertAsync(preset);
+        }
+
+        public async Task UpdateEqualizerPreset(SaveEqualizerPreset preset)
+        {
+            await _dbConnection.UpdateAsync(preset);
+        }
+
+        public async Task DeleteEqualizerPreset(int presetId)
+        {
+            await _dbConnection.DeleteAsync<SaveEqualizerPreset>(presetId);
         }
 
         public async Task GetPlayListMusic()
@@ -978,9 +991,12 @@ namespace WinUIMusicPlayer.Services
             if (equalizerSettings is not null)
             {
                 AppSettings.IsEqualizerEnabled = equalizerSettings.IsEqualizerEnabled;
-                AppSettings.EqualizerStr = equalizerSettings.EqualizerStr;
-                AppSettings.Equalizer = ToolUtils.ConvertToDictionary(equalizerSettings.EqualizerStr);
                 AppSettings.EqualizerPreset = equalizerSettings.EqualizerPreset;
+                // Parse 兼容旧版频段字典格式，自动迁移为 EqPreset v1 结构
+                var preset = EqualizerHelper.Parse(equalizerSettings.EqualizerStr, equalizerSettings.EqualizerPreset)
+                             ?? EqualizerHelper.Normalize(null);
+                AppSettings.EqualizerBands = preset.Bands.ToArray();
+                AppSettings.EqualizerStr = EqualizerHelper.Serialize(preset);
             }
         }
 

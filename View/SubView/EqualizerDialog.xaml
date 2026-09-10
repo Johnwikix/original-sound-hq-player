@@ -3,213 +3,77 @@
     x:Class="WinUIMusicPlayer.View.SubView.EqualizerDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:WinUIMusicPlayer.Controls.Equalizer"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:WinUIMusicPlayer.View.SubView"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:model="using:WinUIMusicPlayer.Model"
     CornerRadius="10"
     mc:Ignorable="d">
 
     <ContentDialog.Resources>
-        <Style x:Key="FrequencyLabelStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="12" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="0,8,0,0" />
-        </Style>
-
-        <Style x:Key="GainLabelStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="11" />
-            <Setter Property="Foreground" Value="{ThemeResource TextFillColorTertiaryBrush}" />
-            <Setter Property="HorizontalAlignment" Value="Right" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="0,0,8,0" />
-        </Style>
-
-        <Style x:Key="EqualizerSliderStyle" TargetType="Slider">
-            <Setter Property="Orientation" Value="Vertical" />
-            <Setter Property="Height" Value="200" />
-            <Setter Property="Width" Value="40" />
-            <Setter Property="Minimum" Value="-12" />
-            <Setter Property="Maximum" Value="12" />
-            <Setter Property="Value" Value="0" />
-            <Setter Property="TickPlacement" Value="Outside" />
-            <Setter Property="TickFrequency" Value="3" />
-            <Setter Property="StepFrequency" Value="0.1" />
-            <Setter Property="Margin" Value="2,0" />
+        <Style x:Key="EqIconButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="6" />
         </Style>
     </ContentDialog.Resources>
 
-    <Grid RowDefinitions="Auto,*,Auto,Auto">
+    <Grid RowDefinitions="Auto,*">
 
         <!--  标题区域  -->
-        <Grid Grid.Row="0" Margin="0,0,0,16">
-            <StackPanel HorizontalAlignment="Left" Orientation="Horizontal">
+        <Grid Grid.Row="0" Margin="0,0,0,8" ColumnDefinitions="Auto,*,Auto">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <TextBlock
                     x:Uid="EqualizerDialogTitle"
                     VerticalAlignment="Center"
                     FontSize="20"
                     FontWeight="SemiBold"
                     Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
-                <ComboBox
-                    x:Name="ComboBoxPresets"
-                    Width="100"
-                    Margin="0,8,0,0"
-                    IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}"
-                    SelectionChanged="ComboBoxPresets_SelectionChanged">
-                    <ComboBoxItem x:Uid="EqCustom" Tag="Custom" />
-                    <ComboBoxItem x:Uid="EqFlat" Tag="Flat" />
-                    <ComboBoxItem x:Uid="EqRock" Tag="Rock" />
-                    <ComboBoxItem x:Uid="EqPop" Tag="Pop" />
-                    <ComboBoxItem x:Uid="EqJazz" Tag="Jazz" />
-                    <ComboBoxItem x:Uid="EqClassical" Tag="Classical" />
-                    <ComboBoxItem x:Uid="EqElectronic" Tag="Electronic" />
-                    <ComboBoxItem x:Uid="EqVocal" Tag="Vocal" />
-                </ComboBox>
                 <ToggleSwitch
                     x:Name="ToggleSwitchEqualizer"
-                    Margin="8,5,0,0"
+                    Margin="8,0,0,0"
                     VerticalAlignment="Center"
                     Toggled="ToggleSwitchEqualizer_Toggled" />
             </StackPanel>
 
-            <!--  右上角关闭按钮  -->
-            <Button
-                x:Name="CloseButton"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Top"
-                Background="Transparent"
-                BorderThickness="0"
-                Click="CloseButton_Click">
-                <FontIcon Glyph="&#xE894;" />
-            </Button>
+            <StackPanel Grid.Column="2" HorizontalAlignment="Right" Orientation="Horizontal" VerticalAlignment="Center" Spacing="4">
+                <ComboBox
+                    x:Name="ComboBoxPresets"
+                    Width="160"
+                    IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}"
+                    SelectionChanged="ComboBoxPresets_SelectionChanged" />
+                <Button
+                    x:Name="SavePresetButton"
+                    Style="{StaticResource EqIconButtonStyle}"
+                    Click="SavePresetButton_Click">
+                    <FontIcon FontSize="14" Glyph="&#xE74E;" />
+                </Button>
+                <Button
+                    x:Name="DeletePresetButton"
+                    IsEnabled="False"
+                    Style="{StaticResource EqIconButtonStyle}"
+                    Click="DeletePresetButton_Click">
+                    <FontIcon FontSize="14" Glyph="&#xE74D;" />
+                </Button>
+                <Button x:Name="MoreOptionsButton" Style="{StaticResource EqIconButtonStyle}">
+                    <FontIcon FontSize="14" Glyph="&#xE712;" />
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem x:Uid="EqImportItem" Click="ImportPresetItem_Click" />
+                            <MenuFlyoutItem x:Uid="EqExportItem" Click="ExportPresetItem_Click" />
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
+                <Button
+                    x:Name="CloseButton"
+                    Style="{StaticResource EqIconButtonStyle}"
+                    Click="CloseButton_Click">
+                    <FontIcon Glyph="&#xE894;" />
+                </Button>
+            </StackPanel>
         </Grid>
 
-        <!--  均衡器滑块区域  -->
-        <Border Grid.Row="1" Margin="0">
-            <Grid ColumnDefinitions="Auto,*">
-
-                <!--  滑块区域  -->
-                <ScrollViewer
-                    Grid.Column="1"
-                    Margin="0,16"
-                    HorizontalScrollBarVisibility="Auto"
-                    VerticalScrollBarVisibility="Disabled"
-                    ZoomMode="Disabled">
-                    <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
-                        <!--  32Hz  -->
-                        <StackPanel Margin="1,0">
-                            <Slider
-                                x:Name="Slider32Hz"
-                                IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}"
-                                Style="{StaticResource EqualizerSliderStyle}"
-                                Tag="32Hz"
-                                ValueChanged="OnSliderValueChanged" />
-                            <TextBlock Style="{StaticResource FrequencyLabelStyle}" Text="32Hz" />
-                        </StackPanel>
-
-                        <!--  64Hz  -->
-                        <StackPanel Margin="1,0">
-                            <Slider
-                                x:Name="Slider64Hz"
-                                IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}"
-                                Style="{StaticResource EqualizerSliderStyle}"
-                                Tag="64Hz"
-                                ValueChanged="OnSliderValueChanged" />
-                            <TextBlock Style="{StaticResource FrequencyLabelStyle}" Text="64Hz" />
-                        </StackPanel>
-
-                        <!--  125Hz  -->
-                        <StackPanel Margin="1,0">
-                            <Slider
-                                x:Name="Slider125Hz"
-                                IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}"
-                                Style="{StaticResource EqualizerSliderStyle}"
-                                Tag="125Hz"
-                                ValueChanged="OnSliderValueChanged" />
-                            <TextBlock Style="{StaticResource FrequencyLabelStyle}" Text="125Hz" />
-                        </StackPanel>
-
-                        <!--  250Hz  -->
-                        <StackPanel Margin="1,0">
-                            <Slider
-                                x:Name="Slider250Hz"
-                                IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}"
-                                Style="{StaticResource EqualizerSliderStyle}"
-                                Tag="250Hz"
-                                ValueChanged="OnSliderValueChanged" />
-                            <TextBlock Style="{StaticResource FrequencyLabelStyle}" Text="250Hz" />
-                        </StackPanel>
-
-                        <!--  500Hz  -->
-                        <StackPanel Margin="1,0">
-                            <Slider
-                                x:Name="Slider500Hz"
-                                IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}"
-                                Style="{StaticResource EqualizerSliderStyle}"
-                                Tag="500Hz"
-                                ValueChanged="OnSliderValueChanged" />
-                            <TextBlock Style="{StaticResource FrequencyLabelStyle}" Text="500Hz" />
-                        </StackPanel>
-
-                        <!--  1kHz  -->
-                        <StackPanel Margin="1,0">
-                            <Slider
-                                x:Name="Slider1kHz"
-                                IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}"
-                                Style="{StaticResource EqualizerSliderStyle}"
-                                Tag="1kHz"
-                                ValueChanged="OnSliderValueChanged" />
-                            <TextBlock Style="{StaticResource FrequencyLabelStyle}" Text="1kHz" />
-                        </StackPanel>
-
-                        <!--  2kHz  -->
-                        <StackPanel Margin="1,0">
-                            <Slider
-                                x:Name="Slider2kHz"
-                                IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}"
-                                Style="{StaticResource EqualizerSliderStyle}"
-                                Tag="2kHz"
-                                ValueChanged="OnSliderValueChanged" />
-                            <TextBlock Style="{StaticResource FrequencyLabelStyle}" Text="2kHz" />
-                        </StackPanel>
-
-                        <!--  4kHz  -->
-                        <StackPanel Margin="1,0">
-                            <Slider
-                                x:Name="Slider4kHz"
-                                IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}"
-                                Style="{StaticResource EqualizerSliderStyle}"
-                                Tag="4kHz"
-                                ValueChanged="OnSliderValueChanged" />
-                            <TextBlock Style="{StaticResource FrequencyLabelStyle}" Text="4kHz" />
-                        </StackPanel>
-
-                        <!--  8kHz  -->
-                        <StackPanel Margin="1,0">
-                            <Slider
-                                x:Name="Slider8kHz"
-                                IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}"
-                                Style="{StaticResource EqualizerSliderStyle}"
-                                Tag="8kHz"
-                                ValueChanged="OnSliderValueChanged" />
-                            <TextBlock Style="{StaticResource FrequencyLabelStyle}" Text="8kHz" />
-                        </StackPanel>
-
-                        <!--  16kHz  -->
-                        <StackPanel Margin="1,0">
-                            <Slider
-                                x:Name="Slider16kHz"
-                                IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}"
-                                Style="{StaticResource EqualizerSliderStyle}"
-                                Tag="16kHz"
-                                ValueChanged="OnSliderValueChanged" />
-                            <TextBlock Style="{StaticResource FrequencyLabelStyle}" Text="16kHz" />
-                        </StackPanel>
-                    </StackPanel>
-                </ScrollViewer>
-            </Grid>
-        </Border>
+        <!--  均衡器编辑区（dB 刻度 + 频段滑条）  -->
+        <controls:EqualizerControl x:Name="Equalizer" Grid.Row="1" Margin="4,8,4,8" IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}" />
     </Grid>
 </ContentDialog>

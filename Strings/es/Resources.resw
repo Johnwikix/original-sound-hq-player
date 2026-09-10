@@ -718,6 +718,33 @@
   <data name="EqVocal.Content" xml:space="preserve">
     <value>Vocal</value>
   </data>
+  <data name="EqSavePresetToolTip" xml:space="preserve">
+    <value>Guardar como preajuste (sobrescribe si hay un preajuste personalizado seleccionado)</value>
+  </data>
+  <data name="EqDeletePresetToolTip" xml:space="preserve">
+    <value>Eliminar el preajuste personalizado seleccionado</value>
+  </data>
+  <data name="EqMoreOptionsToolTip" xml:space="preserve">
+    <value>Importar / Exportar</value>
+  </data>
+  <data name="EqImportItem.Text" xml:space="preserve">
+    <value>Importar preajuste</value>
+  </data>
+  <data name="EqExportItem.Text" xml:space="preserve">
+    <value>Exportar preajuste</value>
+  </data>
+  <data name="EqPresetNameTitle" xml:space="preserve">
+    <value>Escriba el nombre del preajuste</value>
+  </data>
+  <data name="EqDeletePresetConfirm" xml:space="preserve">
+    <value>¿Eliminar el preajuste personalizado seleccionado?</value>
+  </data>
+  <data name="EqImportFailed" xml:space="preserve">
+    <value>Error al importar: no es un archivo de preajuste de ecualizador válido</value>
+  </data>
+  <data name="EqExportFailed" xml:space="preserve">
+    <value>Error al exportar</value>
+  </data>
   <data name="CoverSize.Text" xml:space="preserve">
     <value>Tamaño de la miniatura de la portada</value>
   </data>

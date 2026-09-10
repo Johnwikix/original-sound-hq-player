@@ -717,6 +717,33 @@
   <data name="EqVocal.Content" xml:space="preserve">
     <value>人声</value>
   </data>
+  <data name="EqSavePresetToolTip" xml:space="preserve">
+    <value>保存为预设（选中自定义预设时直接覆盖保存）</value>
+  </data>
+  <data name="EqDeletePresetToolTip" xml:space="preserve">
+    <value>删除选中的自定义预设</value>
+  </data>
+  <data name="EqMoreOptionsToolTip" xml:space="preserve">
+    <value>导入 / 导出</value>
+  </data>
+  <data name="EqImportItem.Text" xml:space="preserve">
+    <value>导入预设</value>
+  </data>
+  <data name="EqExportItem.Text" xml:space="preserve">
+    <value>导出预设</value>
+  </data>
+  <data name="EqPresetNameTitle" xml:space="preserve">
+    <value>输入预设名称</value>
+  </data>
+  <data name="EqDeletePresetConfirm" xml:space="preserve">
+    <value>确定删除选中的自定义预设吗？</value>
+  </data>
+  <data name="EqImportFailed" xml:space="preserve">
+    <value>导入失败：不是有效的均衡器预设文件</value>
+  </data>
+  <data name="EqExportFailed" xml:space="preserve">
+    <value>导出失败</value>
+  </data>
   <data name="CoverSize.Text" xml:space="preserve">
     <value>封面缩略图尺寸</value>
   </data>
