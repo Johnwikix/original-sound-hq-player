@@ -48,6 +48,17 @@ public struct UpdateEqRequest
     public float Band7;
     public float Band8;
     public float Band9;
+    public float Q0;
+    public float Q1;
+    public float Q2;
+    public float Q3;
+    public float Q4;
+    public float Q5;
+    public float Q6;
+    public float Q7;
+    public float Q8;
+    public float Q9;
+
 }
 
 // Response payloads

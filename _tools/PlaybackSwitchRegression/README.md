@@ -51,3 +51,9 @@ AsioNotificationTests.cs 另行覆盖真实回调表通知、切歌拒绝旧输�
 dotnet publish _tools/PlaybackSwitchRegression -c Release -r win-x64 -p:PublishAot=true -o artifacts/WavPack-regression-aot
 .\artifacts\WavPack-regression-aot\PlaybackSwitchRegression.exe
 ```
+
+## 每频段 Q
+
+EqualizerQTests.cs 覆盖 81 字节 IPC 往返、旧 41 字节请求、截断请求、
+Q 独立预设保存与缺失值回退、增益中心不变而带宽随 Q 改变、仅修改 Q 的播放端
+更新、升降增益抵消，以及非法 Q 和低采样率的稳定性。完整套件 110 项。

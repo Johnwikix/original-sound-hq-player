@@ -4,8 +4,7 @@ using System.Collections.Generic;
 namespace WinUIMusicPlayer.Model
 {
     /// <summary>
-    /// 单个均衡器频段。Q 值为预留字段：播放端与 IPC 协议目前只传输增益，
-    /// 后续协议升级后无需再改预设结构。
+    /// 单个均衡器频段：增益和 Q 值均参与播放端滤波器计算。
     /// </summary>
     public sealed class EqBand
     {
@@ -20,8 +19,10 @@ namespace WinUIMusicPlayer.Model
     public sealed class EqPreset
     {
         public const int CurrentVersion = 1;
-        /// <summary>与播放端当前 1.0 倍频程带宽等效的 Q 值（预留默认）。</summary>
-        public const double DefaultQ = 1.414;
+        /// <summary>峰值滤波器默认 Q，低频近似一倍频程带宽。</summary>
+        public const double DefaultQ = BassPlayerIpc.Shared.EqParameters.DefaultQ;
+        public const double MinQ = BassPlayerIpc.Shared.EqParameters.MinQ;
+        public const double MaxQ = BassPlayerIpc.Shared.EqParameters.MaxQ;
         public const double MinGainDb = -12;
         public const double MaxGainDb = 12;
 

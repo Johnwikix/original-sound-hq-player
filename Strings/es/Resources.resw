@@ -1630,6 +1630,9 @@
   <data name="AreUSureClearCoverCache" xml:space="preserve">
     <value>¿Vaciar la caché de portadas?</value>
   </data>
+  <data name="EqQDescription" xml:space="preserve">
+    <value>Un Q mayor estrecha la banda; uno menor la amplía. Rango: 0,1–20. Predeterminado: 1,414.</value>
+  </data>
 </root>
 
 

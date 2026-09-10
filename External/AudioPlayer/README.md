@@ -54,7 +54,7 @@ DoP、DSD 位流）。中间处理噪声低于 -140dBFS，24bit 源全链路位�
   私有返回值如 FiiO 0x3F4847A0 按 SDK 语义判定），LSB1/MSB1/NER8 写法全支持，
   采样率域自动尝试位率/字节率两种
 
-**EQ**：RBJ 峰值滤波器（带宽 1.0 倍频程，中心 32Hz~16kHz），系数与滤波器状态
+**EQ**：RBJ 峰值滤波器（每段独立 Q，中心 32Hz~16kHz），系数与滤波器状态
 全程 double，参数变化时重算并原子换快照（渲染线程无锁只读）；位流会话
 （DoP/NativeDSD）拒绝 EQ（EqState 回滚语义）。**增益斜坡**：采样精确线性
 300ms（音量变化防 zipper + 淡入淡出），WasapiShared 稳态增益回 1（音量由
@@ -160,3 +160,14 @@ seek、文件尾补齐和模式选择；真实 DAC 的 WV-DSD 出声仍需实机
 | bassasio | `Interop\AsioInterop/AsioHost`：裸虚表 + 缓冲候选 + 采样率中转 + 消息窗口 |
 | bass_fx PeakEQ | `Playback\Dsp.Equalizer`：RBJ double，原子快照无锁渲染 |
 | DirectSound 输出 | 映射为共享直传路径（DirectSound 本就是共享 WASAPI 的封装） |
+
+### 每频段 Q
+
+UI、预设和播放端统一使用 Q=0.1～20，默认 1.414。Q 越大，峰值作用范围越窄。
+Q 编辑与增益共用 250ms 防抖提交，随当前配置及自定义预设保存、导入和导出。
+IPC 在旧 41 字节（开关+增益）后追加 10 个 float32 Q，现为 81 字节；
+新播放端接受旧 41 字节请求并补默认 Q，截断的扩展请求拒绝处理。
+预设继续使用已有 v1 Q 字段；现在该字段实际参与计算。默认 Q 与此前固定
+一倍频程公式只在低频近似等效，高频响应不保证与旧版完全一致。
+滤波器采用 [RBJ Q 形式](https://www.w3.org/TR/audio-eq-cookbook/)，
+超过奈奎斯特频率的频段不启用，非法 Q 在预设及播放边界归一化。

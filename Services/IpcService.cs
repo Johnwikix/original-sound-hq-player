@@ -1,4 +1,4 @@
-﻿using BassPlayerIpc.Shared;
+using BassPlayerIpc.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
@@ -438,8 +438,7 @@ namespace WinUIMusicPlayer.Services
         }
 
         /// <summary>
-        /// 频段数组 → IPC 请求。协议当前只传 10 段增益（float32），
-        /// EqBand.Q 为预留字段，待协议扩展后在此接入。
+        /// 频段数组 → IPC 请求。协议传输每段增益和 Q（float32）。
         /// </summary>
         private static UpdateEqRequest ConvertBandsToUpdateEqRequest()
         {
@@ -457,6 +456,17 @@ namespace WinUIMusicPlayer.Services
                 Band7 = (float)bands[7].GainDb,
                 Band8 = (float)bands[8].GainDb,
                 Band9 = (float)bands[9].GainDb,
+                Q0 = (float)EqParameters.NormalizeQ(bands[0].Q),
+                Q1 = (float)EqParameters.NormalizeQ(bands[1].Q),
+                Q2 = (float)EqParameters.NormalizeQ(bands[2].Q),
+                Q3 = (float)EqParameters.NormalizeQ(bands[3].Q),
+                Q4 = (float)EqParameters.NormalizeQ(bands[4].Q),
+                Q5 = (float)EqParameters.NormalizeQ(bands[5].Q),
+                Q6 = (float)EqParameters.NormalizeQ(bands[6].Q),
+                Q7 = (float)EqParameters.NormalizeQ(bands[7].Q),
+                Q8 = (float)EqParameters.NormalizeQ(bands[8].Q),
+                Q9 = (float)EqParameters.NormalizeQ(bands[9].Q),
+
             };
         }
 

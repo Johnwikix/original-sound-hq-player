@@ -18,7 +18,7 @@ namespace WinUIMusicPlayer.View.SubView
 {
     /// <summary>
     /// 均衡器对话框：预设下拉（内置 + 任意数量自定义）、保存/删除自定义预设、
-    /// 导入/导出（.json，EqPreset v1 结构含预留 Q 值）。滑条编辑走 250ms 防抖提交
+    /// 导入/导出（.json，EqPreset v1 结构含每段 Q 值）。增益/Q 编辑走 250ms 防抖提交
     /// （持久化 + IPC 全量同步），拖动过程不产生中间 IO。
     /// </summary>
     public sealed partial class EqualizerDialog : ContentDialog
@@ -74,7 +74,7 @@ namespace WinUIMusicPlayer.View.SubView
                 _commitTimer.Stop();
                 if (_isLoaded) CommitChanges();
             };
-            Equalizer.GainEdited += OnGainEdited;
+            Equalizer.BandEdited += OnBandEdited;
             _ = InitializeAsync();
         }
 
@@ -236,7 +236,7 @@ namespace WinUIMusicPlayer.View.SubView
 
         #region 编辑与提交（防抖）
 
-        private void OnGainEdited(object? sender, int bandIndex)
+        private void OnBandEdited(object? sender, int bandIndex)
         {
             if (!_isLoaded || _isSyncingUi) return;
 

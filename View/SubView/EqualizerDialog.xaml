@@ -19,6 +19,7 @@
         <!--  收紧对话框留白，让均衡器区域更紧凑  -->
         <Thickness x:Key="ContentDialogPadding">16</Thickness>
         <Thickness x:Key="ContentDialogContentMargin">0</Thickness>
+        <x:Double x:Key="ContentDialogMaxWidth">880</x:Double>
     </ContentDialog.Resources>
 
     <!--  注意：对话框打开期间不能再叠加 ContentDialog，名称输入/确认一律用 Flyout，错误提示用 InfoBar  -->

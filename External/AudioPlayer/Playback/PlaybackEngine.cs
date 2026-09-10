@@ -68,6 +68,7 @@ public sealed class PlaybackEngine : IDisposable
     public float Volume = 0.5f;
 
     public readonly float[] EqGains = new float[10];
+    public readonly float[] EqQ = Enumerable.Repeat(EqParameters.DefaultQ, 10).ToArray();
 
     private static readonly string DsfExtension = ".dsf";
     private static readonly string DffExtension = ".dff";
@@ -713,6 +714,17 @@ public sealed class PlaybackEngine : IDisposable
             EqGains[7] = req.Band7;
             EqGains[8] = req.Band8;
             EqGains[9] = req.Band9;
+            EqQ[0] = (float)EqParameters.NormalizeQ(req.Q0);
+            EqQ[1] = (float)EqParameters.NormalizeQ(req.Q1);
+            EqQ[2] = (float)EqParameters.NormalizeQ(req.Q2);
+            EqQ[3] = (float)EqParameters.NormalizeQ(req.Q3);
+            EqQ[4] = (float)EqParameters.NormalizeQ(req.Q4);
+            EqQ[5] = (float)EqParameters.NormalizeQ(req.Q5);
+            EqQ[6] = (float)EqParameters.NormalizeQ(req.Q6);
+            EqQ[7] = (float)EqParameters.NormalizeQ(req.Q7);
+            EqQ[8] = (float)EqParameters.NormalizeQ(req.Q8);
+            EqQ[9] = (float)EqParameters.NormalizeQ(req.Q9);
+
 
             bool requested = req.IsEnabled;
             // 位流模式（DoP/NativeDSD）拒绝 EQ —— 与 bass ToggleEqualizer 拒绝条件对齐
@@ -728,7 +740,7 @@ public sealed class PlaybackEngine : IDisposable
     {
         var session = _session;
         if (session == null || session.Kind != RenderKind.Pcm) return;
-        session.Eq.Configure(session.SampleRate, IsEqualizerEnabled, EqGains);
+        session.Eq.Configure(session.SampleRate, IsEqualizerEnabled, EqGains, EqQ);
     }
 
     // ─────────────── 设备枚举（IPC 面） ───────────────

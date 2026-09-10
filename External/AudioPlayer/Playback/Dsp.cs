@@ -1,10 +1,11 @@
 using System.Runtime.CompilerServices;
 using System.Threading;
+using BassPlayerIpc.Shared;
 
 namespace AudioPlayer.Playback;
 
 /// <summary>
-/// 10 段峰值 EQ（与 bass_fx PeakEQ 同参：中心频率 32Hz~16kHz，带宽 1.0 倍频程）。
+/// 10 段峰值 EQ（中心频率 32Hz~16kHz，每段独立 Q，范围 0.1~20）。
 /// RBJ cookbook 峰值滤波器（Direct Form 1），系数与滤波器状态全程 double
 /// （float64）计算与存储：长块级联下累积舍入噪声比 float32 低 ~40dB，
 /// 高 Q/低频段（32Hz@44.1kHz，w0→0）系数敏感度最高，double 消除系数量化失真。
@@ -14,7 +15,6 @@ namespace AudioPlayer.Playback;
 internal sealed class Equalizer
 {
     public static readonly double[] Frequencies = { 32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 };
-    private const double BandwidthOctaves = 1.0;
 
     private struct Band
     {
@@ -27,6 +27,7 @@ internal sealed class Equalizer
     // 渲染线程读取的不可变快照（引用原子替换）
     private volatile Band[] _snapshot = CreateEmptySnapshot();
     private readonly double[] _gains = new double[10];
+    private readonly double[] _q = new double[10];
     private volatile bool _enabled;
     private int _sampleRate;
     private int _snapshotRate; // 上次快照的采样率：一致才继承滤波器状态
@@ -47,11 +48,15 @@ internal sealed class Equalizer
     }
 
     /// <summary>增益来自 IPC 协议（float32，UI 只有一档小数），系数计算在 double 域进行。</summary>
-    public void Configure(int sampleRate, bool enabled, ReadOnlySpan<float> gainsDb)
+    public void Configure(int sampleRate, bool enabled, ReadOnlySpan<float> gainsDb, ReadOnlySpan<float> qValues = default)
     {
         _sampleRate = sampleRate;
         _enabled = enabled;
-        for (int i = 0; i < 10; i++) _gains[i] = gainsDb[i];
+        for (int i = 0; i < 10; i++)
+        {
+            _gains[i] = float.IsFinite(gainsDb[i]) ? Math.Clamp(gainsDb[i], -12, 12) : 0;
+            _q[i] = EqParameters.NormalizeQ(i < qValues.Length ? qValues[i] : EqParameters.DefaultQ);
+        }
         RebuildSnapshot();
     }
 
@@ -76,7 +81,7 @@ internal sealed class Equalizer
         {
             ref var b = ref bands[i];
             double db = _gains[i];
-            b.Active = _enabled && Math.Abs(db) >= 0.01 && rate > 0;
+            b.Active = _enabled && Math.Abs(db) >= 0.01 && rate > 0 && Frequencies[i] < rate * 0.5;
             if (!b.Active) continue;
             // 状态连续性：带持续激活且采样率未变时继承旧快照的滤波器状态，
             // 系数热更新不产生状态跳变（播放中调 EQ 的爆音）；新激活/换率从零起步
@@ -87,11 +92,11 @@ internal sealed class Equalizer
                 b.X1_1 = old[i].X1_1; b.X2_1 = old[i].X2_1;
                 b.Y1_1 = old[i].Y1_1; b.Y2_1 = old[i].Y2_1;
             }
-            // RBJ 峰值滤波器（带宽形式），全程 double
+            // RBJ 峰值滤波器（Q 形式）：Q 越大，峰值作用范围越窄。
             double a = Math.Pow(10.0, db / 40.0);
             double w0 = 2.0 * Math.PI * Frequencies[i] / rate;
             double sinW = Math.Sin(w0), cosW = Math.Cos(w0);
-            double alpha = sinW * Math.Sinh(Math.Log(2.0) * 0.5 * BandwidthOctaves * w0 / Math.Max(sinW, 1e-9));
+            double alpha = sinW / (2.0 * _q[i]);
             double a0 = 1.0 + alpha / a;
             b.B0 = (1.0 + alpha * a) / a0;
             b.B1 = (-2.0 * cosW) / a0;

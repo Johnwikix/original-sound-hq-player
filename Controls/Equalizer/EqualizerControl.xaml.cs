@@ -3,6 +3,9 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Shapes;
+using Microsoft.UI.Xaml.Automation;
+using Microsoft.UI.Xaml.Media;
+using Windows.Globalization.NumberFormatting;
 using System;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
@@ -11,7 +14,7 @@ namespace WinUIMusicPlayer.Controls.Equalizer
 {
     /// <summary>
     /// 10 段均衡器编辑控件：左侧 dB 刻度（+12 ~ -12，按滑块行程对齐），
-    /// 右侧频段滑条 + 实时增益读数 + 频率标签，0 dB 中线贯穿滑条区。
+    /// 右侧频段滑条、实时增益读数、频率标签和独立 Q 数值输入。
     /// 编辑去抖由宿主（EqualizerDialog）负责。
     /// </summary>
     public sealed partial class EqualizerControl : UserControl
@@ -24,11 +27,12 @@ namespace WinUIMusicPlayer.Controls.Equalizer
 
         private readonly Slider[] _sliders = new Slider[BandCount];
         private readonly TextBlock[] _gainLabels = new TextBlock[BandCount];
+        private readonly NumberBox[] _qBoxes = new NumberBox[BandCount];
         private EqBand[] _bands = Array.Empty<EqBand>();
         private bool _isSyncing;
 
-        /// <summary>用户编辑某频段增益后触发（编程赋值不触发），参数为频段索引；增益已写回 <see cref="EqBand"/>。</summary>
-        public event EventHandler<int>? GainEdited;
+        /// <summary>用户编辑某频段增益或 Q 后触发（编程赋值不触发），参数为频段索引；参数已写回 <see cref="EqBand"/>。</summary>
+        public event EventHandler<int>? BandEdited;
 
         public EqualizerControl()
         {
@@ -48,6 +52,7 @@ namespace WinUIMusicPlayer.Controls.Equalizer
                 double gain = i < _bands.Length ? _bands[i].GainDb : 0;
                 _sliders[i].Value = gain;
                 _gainLabels[i].Text = EqualizerHelper.FormatGain(gain);
+                _qBoxes[i].Value = i < _bands.Length ? EqualizerHelper.ClampQ(_bands[i].Q) : EqPreset.DefaultQ;
             }
             _isSyncing = false;
         }
@@ -65,7 +70,25 @@ namespace WinUIMusicPlayer.Controls.Equalizer
                 _sliders[i] = slider;
                 _gainLabels[i] = gainLabel;
 
-                var band = new StackPanel { Spacing = 0 };
+                var qBox = new NumberBox
+                {
+                    Tag = i, Width = 72, MinWidth = 0, Height = 32,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    Minimum = EqPreset.MinQ, Maximum = EqPreset.MaxQ,
+                    Value = EqPreset.DefaultQ, SmallChange = 0.1, LargeChange = 1,
+                    SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Hidden,
+                    NumberFormatter = new DecimalFormatter { IntegerDigits = 1, FractionDigits = 0,
+                        NumberRounder = new IncrementNumberRounder { Increment = 0.001 } },
+                    Margin = new Thickness(0, 4, 0, 0), Padding = new Thickness(6, 0, 6, 0), FontSize = 12,
+                };
+                AutomationProperties.SetName(qBox, $"{frequency:0} Hz Q");
+                AutomationProperties.SetAutomationId(qBox, $"EqQ{i}");
+                ToolTipService.SetToolTip(qBox, ToolUtils.GetString("EqQDescription"));
+                qBox.ValueChanged += OnQValueChanged;
+                qBox.Loaded += OnQBoxLoaded;
+                _qBoxes[i] = qBox;
+                AutomationProperties.SetName(slider, $"{frequency:0} Hz dB");
+                var band = new StackPanel { Spacing = 0, Width = 78 };
                 band.Children.Add(new Border { Child = gainLabel, Height = 18, Margin = new Thickness(0, 0, 0, 4) });
                 band.Children.Add(slider);
                 band.Children.Add(new TextBlock
@@ -74,6 +97,12 @@ namespace WinUIMusicPlayer.Controls.Equalizer
                     Text = EqualizerHelper.GetBandLabel(frequency),
                     Margin = new Thickness(0, 2, 0, 0)
                 });
+                band.Children.Add(new TextBlock
+                {
+                    Style = (Style)Resources["EqGainLabelStyle"],
+                    Text = "Q", Margin = new Thickness(0, 6, 0, 0),
+                });
+                band.Children.Add(qBox);
                 BandsPanel.Children.Add(band);
             }
         }
@@ -85,7 +114,44 @@ namespace WinUIMusicPlayer.Controls.Equalizer
             double gain = Math.Round(slider.Value, 1);
             if (index < _bands.Length) _bands[index].GainDb = gain;
             _gainLabels[index].Text = EqualizerHelper.FormatGain(gain);
-            if (!_isSyncing) GainEdited?.Invoke(this, index);
+            if (!_isSyncing) BandEdited?.Invoke(this, index);
+        }
+
+        private void OnQValueChanged(NumberBox sender, NumberBoxValueChangedEventArgs args)
+        {
+            if (_isSyncing || sender.Tag is not int index || index >= _bands.Length) return;
+            double q = double.IsFinite(args.NewValue) ? EqualizerHelper.ClampQ(args.NewValue) : _bands[index].Q;
+            q = Math.Round(q, 3);
+            _isSyncing = true;
+            sender.Value = q;
+            _isSyncing = false;
+            if (_bands[index].Q == q) return;
+            _bands[index].Q = q;
+            BandEdited?.Invoke(this, index);
+        }
+
+        private static void OnQBoxLoaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is not NumberBox numberBox) return;
+            numberBox.ApplyTemplate();
+            // 使用原生 NumberBox，避免派生类型在 WinRT 样式匹配时退化为 Control。
+            // 默认模板不转发 VerticalContentAlignment，待模板创建后调整内部文本框。
+            if (FindQInput(numberBox) is TextBox input)
+            {
+                input.VerticalContentAlignment = VerticalAlignment.Center;
+                input.TextAlignment = TextAlignment.Center;
+            }
+        }
+
+        private static TextBox? FindQInput(DependencyObject parent)
+        {
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is TextBox { Name: "InputBox" } input) return input;
+                if (FindQInput(child) is TextBox nested) return nested;
+            }
+            return null;
         }
 
         private void OnSliderPointerWheel(object sender, PointerRoutedEventArgs e)

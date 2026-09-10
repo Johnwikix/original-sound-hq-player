@@ -8,7 +8,7 @@ namespace WinUIMusicPlayer.Utils
 {
     /// <summary>
     /// 均衡器数据结构（EqPreset/EqBand）的序列化、解析与归一化。
-    /// 解析兼容两个版本：v1（bands 数组，含预留 Q 值）与旧版（{"32Hz":0,...} 频段字典，自动迁移）。
+    /// 解析 v1 bands 数组（增益与 Q）；缺少 Q 使用默认值，旧频段字典由调用方回退默认预设。
     /// </summary>
     public static class EqualizerHelper
     {
@@ -51,7 +51,7 @@ namespace WinUIMusicPlayer.Utils
                 {
                     FrequencyHz = StandardFrequencies[i],
                     GainDb = i < gains.Count ? ClampGain(gains[i]) : 0,
-                    Q = q
+                    Q = ClampQ(q)
                 });
             }
             return preset;
@@ -67,7 +67,7 @@ namespace WinUIMusicPlayer.Utils
                 {
                     FrequencyHz = band.FrequencyHz,
                     GainDb = ClampGain(band.GainDb),
-                    Q = band.Q
+                    Q = ClampQ(band.Q)
                 });
             }
             return preset;
@@ -96,8 +96,7 @@ namespace WinUIMusicPlayer.Utils
                 {
                     FrequencyHz = freq,
                     GainDb = ClampGain(match?.GainDb ?? 0),
-                    // Q 预留：非法值回退默认，避免外部文件污染结构
-                    Q = match is { Q: > 0 } ? match.Q : EqPreset.DefaultQ
+                    Q = ClampQ(match?.Q ?? EqPreset.DefaultQ)
                 });
             }
             preset.Bands = normalized;
@@ -108,6 +107,8 @@ namespace WinUIMusicPlayer.Utils
         {
             return Math.Clamp(gainDb, EqPreset.MinGainDb, EqPreset.MaxGainDb);
         }
+
+        public static double ClampQ(double q) => BassPlayerIpc.Shared.EqParameters.NormalizeQ(q);
 
         public static double[] GetGains(EqPreset preset)
         {

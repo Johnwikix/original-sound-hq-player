@@ -16,7 +16,7 @@ public static class BinarySerializer
     public const int ChangePositionRequestSize = 8;
     public const int ChangeVolumeRequestSize = 8;
     public const int IpcSettingSize = StringHeaderSize + MaxStringBytes + 4 + 4 + 4 + 1 + 4 + 4 + 1 + 4 + 1 + 1;
-    public const int UpdateEqRequestSize = 1 + 40; // IsEnabled + 10 bands
+    public const int UpdateEqRequestSize = 1 + 40 + 40; // IsEnabled + 10 gains + 10 Q values (legacy payload: 41 bytes)
     public const int FailedResponseSize = 2;
     public const int PlayStateResponseSize = 1;
     public const int EqStateResponseSize = 2; // IsEnabled + IsActive
@@ -134,11 +134,23 @@ public static class BinarySerializer
         BinaryPrimitives.WriteSingleLittleEndian(dest[offset..], req.Band7); offset += 4;
         BinaryPrimitives.WriteSingleLittleEndian(dest[offset..], req.Band8); offset += 4;
         BinaryPrimitives.WriteSingleLittleEndian(dest[offset..], req.Band9); offset += 4;
+        BinaryPrimitives.WriteSingleLittleEndian(dest[offset..], req.Q0); offset += 4;
+        BinaryPrimitives.WriteSingleLittleEndian(dest[offset..], req.Q1); offset += 4;
+        BinaryPrimitives.WriteSingleLittleEndian(dest[offset..], req.Q2); offset += 4;
+        BinaryPrimitives.WriteSingleLittleEndian(dest[offset..], req.Q3); offset += 4;
+        BinaryPrimitives.WriteSingleLittleEndian(dest[offset..], req.Q4); offset += 4;
+        BinaryPrimitives.WriteSingleLittleEndian(dest[offset..], req.Q5); offset += 4;
+        BinaryPrimitives.WriteSingleLittleEndian(dest[offset..], req.Q6); offset += 4;
+        BinaryPrimitives.WriteSingleLittleEndian(dest[offset..], req.Q7); offset += 4;
+        BinaryPrimitives.WriteSingleLittleEndian(dest[offset..], req.Q8); offset += 4;
+        BinaryPrimitives.WriteSingleLittleEndian(dest[offset..], req.Q9); offset += 4;
         return offset;
     }
 
     public static UpdateEqRequest ReadUpdateEqRequest(ReadOnlySpan<byte> src)
     {
+        if (src.Length != 41 && src.Length != UpdateEqRequestSize)
+            throw new ArgumentException("Invalid EQ payload length", nameof(src));
         return new()
         {
             IsEnabled = src[0] != 0,
@@ -152,6 +164,17 @@ public static class BinarySerializer
             Band7 = BinaryPrimitives.ReadSingleLittleEndian(src[29..]),
             Band8 = BinaryPrimitives.ReadSingleLittleEndian(src[33..]),
             Band9 = BinaryPrimitives.ReadSingleLittleEndian(src[37..]),
+            Q0 = src.Length == 41 ? EqParameters.DefaultQ : BinaryPrimitives.ReadSingleLittleEndian(src[41..]),
+            Q1 = src.Length == 41 ? EqParameters.DefaultQ : BinaryPrimitives.ReadSingleLittleEndian(src[45..]),
+            Q2 = src.Length == 41 ? EqParameters.DefaultQ : BinaryPrimitives.ReadSingleLittleEndian(src[49..]),
+            Q3 = src.Length == 41 ? EqParameters.DefaultQ : BinaryPrimitives.ReadSingleLittleEndian(src[53..]),
+            Q4 = src.Length == 41 ? EqParameters.DefaultQ : BinaryPrimitives.ReadSingleLittleEndian(src[57..]),
+            Q5 = src.Length == 41 ? EqParameters.DefaultQ : BinaryPrimitives.ReadSingleLittleEndian(src[61..]),
+            Q6 = src.Length == 41 ? EqParameters.DefaultQ : BinaryPrimitives.ReadSingleLittleEndian(src[65..]),
+            Q7 = src.Length == 41 ? EqParameters.DefaultQ : BinaryPrimitives.ReadSingleLittleEndian(src[69..]),
+            Q8 = src.Length == 41 ? EqParameters.DefaultQ : BinaryPrimitives.ReadSingleLittleEndian(src[73..]),
+            Q9 = src.Length == 41 ? EqParameters.DefaultQ : BinaryPrimitives.ReadSingleLittleEndian(src[77..]),
+
         };
     }
 

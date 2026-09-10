@@ -1630,6 +1630,9 @@
   <data name="AreUSureClearCoverCache" xml:space="preserve">
     <value>カバーキャッシュをクリアしますか？</value>
   </data>
+  <data name="EqQDescription" xml:space="preserve">
+    <value>Q が大きいほど帯域が狭く、小さいほど広くなります。範囲: 0.1～20、既定値: 1.414。</value>
+  </data>
 </root>
 
 

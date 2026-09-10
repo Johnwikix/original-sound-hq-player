@@ -1630,6 +1630,9 @@
   <data name="AreUSureClearCoverCache" xml:space="preserve">
     <value>Очистить кэш обложек?</value>
   </data>
+  <data name="EqQDescription" xml:space="preserve">
+    <value>Чем выше Q, тем уже полоса; чем ниже — тем шире. Диапазон: 0,1–20. По умолчанию: 1,414.</value>
+  </data>
 </root>
 
 

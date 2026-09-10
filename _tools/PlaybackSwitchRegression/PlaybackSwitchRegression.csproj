@@ -9,6 +9,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="*.cs" />
+    <Compile Include="../../Model/EqualizerModel.cs" />
+    <Compile Include="../../Utils/EqualizerHelper.cs" />
     <!-- Exercise the shipping engine/decoder/interop without starting IPC or a real device. -->
     <Compile Include="../../External/AudioPlayer/**/*.cs"
              Exclude="../../External/AudioPlayer/Program.cs;../../External/AudioPlayer/obj/**/*.cs;../../External/AudioPlayer/bin/**/*.cs" />

@@ -32,6 +32,7 @@ internal static unsafe partial class Program
         RunWavPackTests();
         RunBufferPolicyTests();
         RunAsioNotificationTests();
+        RunEqualizerQTests();
         foreach (string mode in new[] { "ASIO", "WasapiExclusivePush", "WasapiExclusiveEvent" })
         {
             Run($"{mode}: PCM -> DSD selects new file format", () =>

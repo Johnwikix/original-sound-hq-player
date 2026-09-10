@@ -1632,4 +1632,7 @@
   <data name="AreUSureClearCoverCache" xml:space="preserve">
     <value>确定清空封面缓存吗？</value>
   </data>
+  <data name="EqQDescription" xml:space="preserve">
+    <value>Q 值越大，频段越窄；越小，频段越宽。范围 0.1–20，默认 1.414。</value>
+  </data>
 </root>

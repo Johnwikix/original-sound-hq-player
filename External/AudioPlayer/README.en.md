@@ -64,7 +64,7 @@ bit-transparent across the entire chain.
   LSB1/MSB1/NER8 paths fully implemented; sample-rate domain auto-tries both
   bit-rate and byte-rate
 
-**EQ**: RBJ peaking filter (bandwidth 1.0 octave, centers 32 Hz–16 kHz);
+**EQ**: RBJ peaking filter (independent Q per band, centers 32 Hz–16 kHz);
 coefficients and filter state all in double; recomputed on parameter change and
 atomically swapped via snapshot (render thread is lock-free read-only).
 Bitstream sessions (DoP/NativeDSD) refuse EQ (EqState rolls back).
