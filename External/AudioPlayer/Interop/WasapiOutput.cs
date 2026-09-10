@@ -34,6 +34,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
     private int _failed;
     private volatile bool _pausedFlag; // 渲染线程暂停门控：暂停期间不得消费环形缓冲
     private volatile bool _initTimedOut; // Initialize 超时：worker 仍持有 client，Dispose 不得再触碰（墓园语义）
+    private int _renderCycles; // 渲染线程完成的整写周期数：Start 起播消费验证用
 
     private uint _bufferFrames;
     private uint _channels;
@@ -147,8 +148,22 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
             };
             _thread.Start();
             int started = _client.Start();
-            if (started != 0) Console.WriteLine($"[wasapi] Start hr=0x{started:X8}");
-            return started == 0;
+            if (started != 0)
+            {
+                Console.WriteLine($"[wasapi] Start hr=0x{started:X8}");
+                return false;
+            }
+
+            // 起播消费验证：部分驱动接受 Initialize/Start 却从不推进消费（Senary 独占 DoP 实测：
+            // padding 恒满、静默无声）。渲染线程须在 1.5s 内跑出渲染周期，否则按失败处理，
+            // 交由引擎"独占失败→回退共享"链路兜底（成功路径首个周期 ~10ms 内即返回）
+            for (int i = 0; i < 75; i++)
+            {
+                Thread.Sleep(20);
+                if (Volatile.Read(ref _renderCycles) >= 2) return true;
+            }
+            Console.WriteLine("[wasapi] 起播后无渲染周期（驱动未消费该格式）→ 按失败处理");
+            return false;
         }
         catch (Exception ex)
         {
@@ -527,6 +542,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                     }
 
                     if (_render.ReleaseBuffer(frames, 0) != 0) { Fail(); break; }
+                    Interlocked.Increment(ref _renderCycles); // 成功写满一块 = 设备侧在消费/驱动事件在推进
                 }
                 finally
                 {

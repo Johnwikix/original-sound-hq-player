@@ -248,7 +248,9 @@ internal static class WasapiTypes
     public const int SOk = 0;
     public const int SFalse = 1;
     public const int EPending = unchecked((int)0x8000000A);
-    public const int AudclntEBufferSizeNotAligned = unchecked((int)0x88890023);
+    // SDK audioclient.h：AUDCLNT_E_BUFFER_SIZE_NOT_ALIGNED = 0x88890019。旧值 0x88890023
+    // 实为 OUT_OF_OFFLOAD_RESOURCES，导致对齐重试从不触发——Senary 事件独占实测被 0x19 拒绝
+    public const int AudclntEBufferSizeNotAligned = unchecked((int)0x88890019);
     public const int AudclntEUnsupportedFormat = unchecked((int)0x88890008);
     public const int AudclntEDeviceInUse = unchecked((int)0x8889000A);
     public const int AudclntEExclusiveModeNotAllowed = unchecked((int)0x8889000E);
