@@ -136,20 +136,39 @@ namespace WinUIMusicPlayer.Controls.Equalizer
             numberBox.ApplyTemplate();
             // 使用原生 NumberBox，避免派生类型在 WinRT 样式匹配时退化为 Control。
             // 默认模板不转发 VerticalContentAlignment，待模板创建后调整内部文本框。
-            if (FindQInput(numberBox) is TextBox input)
+            if (FindTemplatePart<TextBox>(numberBox, "InputBox") is TextBox input)
             {
+                input.ApplyTemplate();
                 input.VerticalContentAlignment = VerticalAlignment.Center;
                 input.TextAlignment = TextAlignment.Center;
+                // NumberBoxTextBoxStyle 的 ContentElement 不绑定 VerticalContentAlignment。
+                if (FindTemplatePart<ScrollViewer>(input, "ContentElement") is ScrollViewer content)
+                {
+                    content.VerticalAlignment = VerticalAlignment.Center;
+                    content.VerticalContentAlignment = VerticalAlignment.Center;
+                }
+                if (FindTemplatePart<Button>(input, "DeleteButton") is Button clearButton)
+                {
+                    clearButton.Visibility = Visibility.Collapsed;
+                    clearButton.Opacity = 0;
+                    // 焦点状态会用动画将 Visibility 改回 Visible；同时约束宽度，避免占列。
+                    clearButton.MinWidth = 0;
+                    clearButton.MaxWidth = 0;
+                    clearButton.Width = 0;
+                    clearButton.Padding = new Thickness(0);
+                    clearButton.IsHitTestVisible = false;
+                    clearButton.IsTabStop = false;
+                }
             }
         }
 
-        private static TextBox? FindQInput(DependencyObject parent)
+        private static T? FindTemplatePart<T>(DependencyObject parent, string name) where T : FrameworkElement
         {
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
                 var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is TextBox { Name: "InputBox" } input) return input;
-                if (FindQInput(child) is TextBox nested) return nested;
+                if (child is T element && element.Name == name) return element;
+                if (FindTemplatePart<T>(child, name) is T nested) return nested;
             }
             return null;
         }
