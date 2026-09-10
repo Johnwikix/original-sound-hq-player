@@ -91,8 +91,8 @@ values request 1ms); the audio engine determines the actual frame count. ASIO
 reads the driver's preferred size after PCM/DSD and sample-rate negotiation on
 each initialization, tries it first, and logs any fallback to a compatible size.
 `Latency` still affects decode-ring capacity, but does not select ASIO device
-buffers. Automatic rebuilding after live driver-panel buffer changes is not yet
-wired up; see the [recovery investigation](ASIO-buffer-recovery.md) (Chinese).
+buffers. Driver configuration notifications invalidate the old output and schedule a rebuild
+outside the callback; see [recovery and validation](ASIO-buffer-recovery.md) (Chinese).
 
 **Exclusive track-switch reuse** (ASIO and WASAPI exclusive): PCM switches with
 the same device, output mode, sample rate, and channel count only replace the

@@ -226,8 +226,9 @@ public sealed class PlaybackEngine : IDisposable
     {
         var url = MusicUrl;
         if (string.IsNullOrWhiteSpace(url)) return false;
+        var kind = _session?.Kind;
         DisposeSession();
-        _session = OpenSession(url);
+        _session = OpenSession(url, kindOverride: kind);
         if (_session == null) { if (IsPlaying) { IsPlaying = false; _ipc.PlayStateUpdate(false); } return false; }
         if (positionMs > 0) _session.RequestSeek(positionMs);
         StartOutputAndPlay(); // 内部按成败发 PlayStateUpdate（仅在状态变化时）
@@ -424,8 +425,9 @@ public sealed class PlaybackEngine : IDisposable
         if (session.Kind == RenderKind.Pcm && IsSharedMode(OutputMode)) return SwapSharedOutput();
         var url = MusicUrl;
         if (string.IsNullOrWhiteSpace(url)) return false;
+        var kind = session.Kind;
         DisposeSession();
-        _session = OpenSession(url);
+        _session = OpenSession(url, kindOverride: kind);
         if (_session == null) return false;
         if (positionMs > 0) _session.RequestSeek(positionMs);
         StartOutputAndPlay();
@@ -755,12 +757,14 @@ public sealed class PlaybackEngine : IDisposable
             if (session == null) return;
             if (output is { IsFailed: true })
             {
+                if (output is AsioOutput { IsRestartPending: true, IsRestartReady: false }) return;
                 lock (_streamLock)
                 {
                     if (IsPlaying && ReferenceEquals(output, _output) && output.IsFailed)
                     {
                         // 重建后 4 秒内又挂 = 设备抖动：连续两次后交还用户，避免播放/暂停每秒抖动
-                        bool fastFail = Environment.TickCount64 - _outputStartedTick < 4000;
+                        bool driverReconfigured = output is AsioOutput { IsRestartPending: true };
+                        bool fastFail = !driverReconfigured && Environment.TickCount64 - _outputStartedTick < 4000;
                         _fastFailStreak = fastFail ? _fastFailStreak + 1 : 0;
                         if (_fastFailStreak >= 2)
                         {
@@ -769,7 +773,22 @@ public sealed class PlaybackEngine : IDisposable
                             return;
                         }
                         long pos = session.CurrentMs;
-                        Console.WriteLine("[engine] output failed, silent recovery");
+                        Console.WriteLine(driverReconfigured
+                            ? "[engine] ASIO driver configuration changed, rebuilding output"
+                            : "[engine] output failed or callbacks stalled, silent recovery");
+                        if (driverReconfigured)
+                        {
+                            // 主动改驱动设置不算设备故障。先释放旧输出，给驱动短暂稳定时间；
+                            // 解码会话/进度保留，用户暂停或换曲会取消这份计划。
+                            output.Dispose();
+                            _output = null;
+                            _recovery = new RecoveryPlan
+                            {
+                                Gen = Volatile.Read(ref _playGen), PositionMs = pos,
+                                NextTickMs = Environment.TickCount64 + 250, Silent = true,
+                            };
+                            return;
+                        }
                         // 先静默快速恢复（不改动播放状态，UI 不闪烁）；失败再计划延迟静默重试，
                         // 重试穷尽才如实停机——格式切换/设备重启等暂态对用户完全透明
                         if (TryRecoverSilently(pos))
@@ -898,7 +917,7 @@ public sealed class PlaybackEngine : IDisposable
                     StopAndNotifyLocked();
                     return;
                 }
-                plan.NextTickMs = Environment.TickCount64 + plan.Attempts switch { 1 => 500, 2 => 1000, _ => 2000 };
+                plan.NextTickMs = Environment.TickCount64 + (plan.Attempts switch { 1 => 500, 2 => 1000, _ => 2000 });
                 return;
             }
             if (plan.Attempts >= 3) { _recovery = null; return; } // 放弃：等用户手动操作

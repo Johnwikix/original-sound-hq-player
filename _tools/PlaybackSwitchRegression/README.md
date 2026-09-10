@@ -33,7 +33,8 @@ dotnet run --project _tools/PlaybackSwitchRegression
 `BufferPolicyTests.cs` 检查 ASIO 首选大小优先级，以及 WASAPI 共享直传/混音回退
 两条路径传到原生 `IAudioClient.Initialize` 的缓冲时长（25/100/700ms）。
 缓冲策略修复前新增用例中 8 项失败，修复后完整套件 92/92 通过。
-这些用例不验证驱动面板通知后的自动重建；该功能仍处于调研阶段。
+AsioNotificationTests.cs 另行覆盖真实回调表通知、切歌拒绝旧输出、看门狗排队恢复、
+暂停、取消过期计划、普通回调、停滞检测和释放竞争；完整套件现为 103 项。
 
 ## WavPack DSD
 

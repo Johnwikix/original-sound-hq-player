@@ -27,6 +27,23 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     private int _dsdRateDomain; // NativeDSD：驱动接受的采样率（位率或字节率，厂商各异）
     private bool _started;
     private int _failed; // Interlocked
+    private int _running;
+    private long _lastCallbackTick;
+    private int _restartReason;
+    private long _restartTick;
+    private int _closing;
+    private int _renderUsers;
+    private int _disposed;
+
+    public bool IsRestartPending => Volatile.Read(ref _restartReason) != 0;
+    public bool IsRestartReady => Environment.TickCount64 - Volatile.Read(ref _restartTick) >= 300;
+
+    private void RequestRestart(int reason)
+    {
+        if (Volatile.Read(ref _closing) != 0) return;
+        Volatile.Write(ref _restartTick, Environment.TickCount64);
+        Interlocked.Exchange(ref _restartReason, reason);
+    }
 
     // 渲染 scratch（预分配，渲染线程独占）
     private double[] _pcmScratch = [];
@@ -173,11 +190,14 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
             _active = this;
             WriteSilence(0);
             WriteSilence(1);
+            Volatile.Write(ref _lastCallbackTick, Environment.TickCount64);
+            Volatile.Write(ref _running, 1);
             int startRet = _driver.Start();
             if (startRet != AsioConstants.AseOk)
             {
                 Console.WriteLine($"[asio] Start failed ret={startRet}");
                 _active = null;
+                Volatile.Write(ref _running, 0);
                 return false;
             }
             _started = true;
@@ -197,15 +217,28 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     {
         // 直调（调用方线程）是有意的：窗口线程必须保持空闲以应答驱动 Stop 期间的
         // 同步等待（见类头“驱动线程调度”），路由到窗口线程反而自死锁
+        Volatile.Write(ref _running, 0);
         if (_started && _driver != null) { try { _driver.Stop(); } catch { } }
     }
 
     public void Resume()
     {
-        if (_started && _driver != null) { try { _driver.Start(); } catch { } }
+        if (IsFailed || Volatile.Read(ref _running) != 0) return;
+        if (_started && _driver != null)
+        {
+            Volatile.Write(ref _lastCallbackTick, Environment.TickCount64);
+            Volatile.Write(ref _running, 1);
+            try
+            {
+                if (_driver.Start() != AsioConstants.AseOk) Interlocked.Exchange(ref _failed, 1);
+            }
+            catch { Interlocked.Exchange(ref _failed, 1); }
+        }
     }
 
-    public bool IsFailed => Volatile.Read(ref _failed) != 0;
+    public bool IsFailed => Volatile.Read(ref _failed) != 0 || IsRestartPending
+        || (Volatile.Read(ref _running) != 0
+            && Environment.TickCount64 - Volatile.Read(ref _lastCallbackTick) > Math.Max(2000L, LatencyMs * 4L));
 
     public int LatencyMs { get; private set; }
 
@@ -249,7 +282,8 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
         var bufferArray = infos.ToArray();
         // 回调指针表必须放在持久非托管内存：驱动长期持有该地址，栈上 fixed 的地址
         // 在本方法返回后失效，ASIOStart 后首个 bufferSwitch 回调即跳垃圾地址 → 闪退
-        _callbacksPtr = NativeMemory.Alloc((nuint)sizeof(AsioCallbacks));
+        if (_callbacksPtr == null) _callbacksPtr = NativeMemory.AllocZeroed((nuint)sizeof(AsioCallbacks));
+        ((AsioCallbacks*)_callbacksPtr)->BufferSwitch = (IntPtr)(delegate* unmanaged[Stdcall]<int, int, void>)&OnBufferSwitch;
         ((AsioCallbacks*)_callbacksPtr)->BufferSwitchTimeInfo = (IntPtr)BufferSwitchTimeInfoPtr;
         ((AsioCallbacks*)_callbacksPtr)->AsioMessage = (IntPtr)AsioMessagePtr;
         ((AsioCallbacks*)_callbacksPtr)->SampleRateDidChange = (IntPtr)SampleRateChangedPtr;
@@ -529,6 +563,9 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     // ─────────────── 驱动回调 ───────────────
 
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+    private static void OnBufferSwitch(int bufferIndex, int directProcess) => RenderSafely(bufferIndex);
+
+    [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
     private static void* OnBufferSwitchTimeInfo(void* timeInfo, int bufferIndex, int directProcess)
     {
         RenderSafely(bufferIndex);
@@ -536,19 +573,28 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     }
 
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
-    private static void OnSampleRateChanged(double sampleRate) { }
+    private static void OnSampleRateChanged(double sampleRate)
+    {
+        var host = Volatile.Read(ref _active);
+        // _active 仅在格式协商和缓冲准备完毕后设置；同率通知不触发重建循环。
+        if (host != null && !RateMatches(sampleRate, host._dsdRateDomain)) host.RequestRestart(-1);
+    }
 
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
     private static int OnAsioMessage(int selector, int value, void* message, double* opt)
     {
+        if (selector is AsioConstants.KAsioResetRequest or AsioConstants.KAsioBufferSizeChange or AsioConstants.KAsioResyncRequest)
+        {
+            Volatile.Read(ref _active)?.RequestRestart(selector);
+            return 1;
+        }
         return selector switch
         {
             AsioConstants.KAsioSelectorSupported => value is AsioConstants.KAsioResetRequest
-                or AsioConstants.KAsioEngineVersion or AsioConstants.KAsioResyncRequest
+                or AsioConstants.KAsioBufferSizeChange or AsioConstants.KAsioEngineVersion or AsioConstants.KAsioResyncRequest
                 or AsioConstants.KAsioLatenciesChanged or AsioConstants.KAsioSupportsTimeInfo
-                or AsioConstants.KAsioSupportsTimeCode or AsioConstants.KAsioSupportsInputMonitor ? 1 : 0,
-            AsioConstants.KAsioResetRequest or AsioConstants.KAsioResyncRequest
-                or AsioConstants.KAsioLatenciesChanged => 1,
+                ? 1 : 0,
+            AsioConstants.KAsioLatenciesChanged => 1,
             AsioConstants.KAsioEngineVersion => 2,
             AsioConstants.KAsioSupportsTimeInfo => 1,
             _ => 0,
@@ -559,8 +605,12 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     {
         var host = Volatile.Read(ref _active);
         if (host == null) return;
+        Interlocked.Increment(ref host._renderUsers);
         try
         {
+            if (Volatile.Read(ref host._closing) != 0 || host.IsRestartPending) return;
+            Volatile.Write(ref host._lastCallbackTick, Environment.TickCount64);
+            if ((uint)bufferIndex > 1) { Interlocked.Exchange(ref host._failed, 1); return; }
             host.Render(bufferIndex);
         }
         catch
@@ -568,6 +618,7 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
             Interlocked.Exchange(ref host._failed, 1);
             try { host.WriteSilence(bufferIndex); } catch { }
         }
+        finally { Interlocked.Decrement(ref host._renderUsers); }
     }
 
     // ─────────────── 渲染 ───────────────
@@ -826,7 +877,17 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
 
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+        Volatile.Write(ref _closing, 1);
+        Volatile.Write(ref _running, 0);
         if (_active == this) Volatile.Write(ref _active, null);
+        // 先拒绝新渲染，再等待已取得旧 host 引用的回调退出；不在驱动回调里 Stop/释放。
+        // 超时不释放在途指针，避免驱动和渲染线程 use-after-free。
+        if (!SpinWait.SpinUntil(() => Volatile.Read(ref _renderUsers) == 0, 3000))
+        {
+            Console.WriteLine("[asio] callback drain timed out; retaining driver resources");
+            return;
+        }
         if (_driver != null)
         {
             try
