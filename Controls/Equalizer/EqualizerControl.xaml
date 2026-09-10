@@ -34,7 +34,6 @@
             <Setter Property="FontSize" Value="10" />
             <Setter Property="Foreground" Value="{ThemeResource TextFillColorTertiaryBrush}" />
             <Setter Property="Width" Value="22" />
-            <Setter Property="Height" Value="14" />
             <Setter Property="TextAlignment" Value="Right" />
         </Style>
         <Style

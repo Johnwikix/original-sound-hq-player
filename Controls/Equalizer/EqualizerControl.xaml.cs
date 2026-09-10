@@ -20,9 +20,6 @@ namespace WinUIMusicPlayer.Controls.Equalizer
     public sealed partial class EqualizerControl : UserControl
     {
         private const int BandCount = 10;
-        /// <summary>WinUI 默认滑块直径：dB 刻度按“滑块中心行程”对齐（值域端点位于滑块中心）。</summary>
-        private const double ThumbSize = 20;
-        private const double ScaleLabelHeight = 14;
         private const double WheelStepDb = 1.0;
 
         private readonly Slider[] _sliders = new Slider[BandCount];
@@ -40,6 +37,7 @@ namespace WinUIMusicPlayer.Controls.Equalizer
             BuildBands();
             DbScaleCanvas.SizeChanged += (_, _) => RebuildDbScale();
             Loaded += (_, _) => RebuildDbScale();
+            _sliders[0].Loaded += OnScaleSliderLoaded;
         }
 
         /// <summary>绑定运行时频段状态并刷新滑条（保存数组引用，用户编辑直接写回该数组）。</summary>
@@ -183,12 +181,36 @@ namespace WinUIMusicPlayer.Controls.Equalizer
             e.Handled = true;
         }
 
-        /// <summary>重建 dB 刻度：+12 ~ -12 每 3 dB 一档，纵坐标按滑块中心行程线性映射。</summary>
+        private void OnScaleSliderLoaded(object sender, RoutedEventArgs e)
+        {
+            var slider = _sliders[0];
+            slider.ApplyTemplate();
+            if (FindTemplatePart<FrameworkElement>(slider, "VerticalTemplate") is FrameworkElement track)
+            {
+                track.SizeChanged -= OnScaleGeometryChanged;
+                track.SizeChanged += OnScaleGeometryChanged;
+            }
+            if (FindTemplatePart<Thumb>(slider, "VerticalThumb") is Thumb thumb)
+            {
+                thumb.SizeChanged -= OnScaleGeometryChanged;
+                thumb.SizeChanged += OnScaleGeometryChanged;
+            }
+            RebuildDbScale();
+        }
+
+        private void OnScaleGeometryChanged(object sender, SizeChangedEventArgs e) => RebuildDbScale();
+
+        /// <summary>按真实模板的轨道和滑块中心行程定位刻度，不假设滑块高度或控件偏移。</summary>
         private void RebuildDbScale()
         {
+            var slider = _sliders[0];
+            if (slider == null || !slider.IsLoaded || !DbScaleCanvas.IsLoaded) return;
+            var track = FindTemplatePart<FrameworkElement>(slider, "VerticalTemplate");
+            var thumb = FindTemplatePart<Thumb>(slider, "VerticalThumb");
+            if (track == null || thumb == null || thumb.ActualHeight <= 0 || track.ActualHeight <= thumb.ActualHeight) return;
+            double top = track.TransformToVisual(DbScaleCanvas).TransformPoint(new Windows.Foundation.Point()).Y;
+            double travel = track.ActualHeight - thumb.ActualHeight;
             DbScaleCanvas.Children.Clear();
-            double height = DbScaleCanvas.ActualHeight;
-            if (height <= ThumbSize) return;
 
             for (int db = 12; db >= -12; db -= 3)
             {
@@ -197,9 +219,9 @@ namespace WinUIMusicPlayer.Controls.Equalizer
                     Style = (Style)Resources[db == 0 ? "EqScaleLabelZeroStyle" : "EqScaleLabelStyle"],
                     Text = db > 0 ? $"+{db}" : db.ToString()
                 };
-                double travel = height - ThumbSize;
-                double y = ThumbSize / 2 + (12 - db) / 24.0 * travel;
-                Canvas.SetTop(label, y - ScaleLabelHeight / 2);
+                label.Measure(new Windows.Foundation.Size(double.PositiveInfinity, double.PositiveInfinity));
+                double y = top + thumb.ActualHeight / 2 + (slider.Maximum - db) / (slider.Maximum - slider.Minimum) * travel;
+                Canvas.SetTop(label, y - label.DesiredSize.Height / 2);
                 Canvas.SetLeft(label, 0);
                 DbScaleCanvas.Children.Add(label);
             }
