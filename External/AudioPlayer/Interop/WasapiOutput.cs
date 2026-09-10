@@ -10,6 +10,8 @@ namespace AudioPlayer.Interop;
 ///   引擎拒绝直传（罕见）时回退为端点混音格式精确初始化（虚拟声卡兼容路径）；
 /// - 独占 Push/Event：候选格式协商（PCM: float32→24in32→16→32；DoP: 24packed→24in32→32）、
 ///   缓冲对齐重试（AUDCLNT_E_BUFFER_SIZE_NOT_ALIGNED）、MMCSS Pro Audio 渲染线程；
+///   独占换曲复用：同格式纯换源；格式变化保设备指针/事件/渲染线程，仅重激活 client 重新协商
+///   （ReinitializeFor，免掉重建链路里的端点枚举与 COM 激活两大头）；
 /// - DoP：uint32 采样位精确透传（24packed 取低 24 位、24in32/32 左移 8 位）。
 /// 管线内部 float64：渲染拉取 double，出口按端点格式转换（float32 端点为 double→float 截断）。
 /// Initialize 走 3 秒超时包装（驱动死锁时放弃而非挂死整个进程，ECHO future-graveyard 语义）。
@@ -36,7 +38,9 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
     private uint _bufferFrames;
     private uint _channels;
     private int _endpointKind; // FormatKind
-    private IRenderSource _source = null!;
+    private volatile IRenderSource _source = null!; // 换曲复用会被引擎线程原子替换；渲染块每次只认一份快照
+    private int _latencyMs; // Start 时留存：换格式重初始化按它换算请求缓冲
+    private volatile int _inRender; // 渲染临界区哨兵（GetBuffer..ReleaseBuffer）：换格式重初始化前等它归零
     private double[] _pcmScratch = [];
     private uint[] _dopScratch = [];
 
@@ -55,11 +59,27 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
     {
         _exclusive = exclusive;
         _pushMode = pushMode;
+        IsExclusive = exclusive;
     }
+
+    // ── 换曲复用面（引擎持 _streamLock 调用；渲染块经 _source 快照隔离）──
+
+    /// <summary>独占输出（共享输出不参与换曲复用）。</summary>
+    public bool IsExclusive { get; }
+
+    /// <summary>当前渲染源种类/声道/速率（Start 成功后有效）。</summary>
+    public RenderKind SourceKind => _source.Kind;
+    public int SourceChannels => _source.Channels;
+    public int SourceSampleRate => _source.SampleRate;
+
+    /// <summary>创建本输出时绑定的设备索引（-1 = 系统默认；设备变更须重建）。</summary>
+    public int DeviceIndex { get; private set; } = -1;
 
     public bool Start(int deviceIndex, int latencyMs, IRenderSource source)
     {
         _source = source;
+        DeviceIndex = deviceIndex;
+        _latencyMs = latencyMs;
         Win32.CoInitializeEx(IntPtr.Zero, Win32.COINIT_MULTITHREADED);
         try
         {
@@ -153,6 +173,79 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
     public void SetSessionVolume(float volume)
     {
         try { _sessionVolume?.SetMasterVolume(Math.Clamp(volume, 0f, 1f)); } catch { }
+    }
+
+    /// <summary>同格式换源（独占 PCM 换曲复用）：纯引用替换，零设备交互。
+    /// 新环预缓冲期回静音，交接间隙自然被盖住。</summary>
+    public bool AttachSource(IRenderSource source)
+    {
+        if (_client == null || _source == null) return false;
+        if (source.SampleRate != _source.SampleRate || source.Channels != _source.Channels) return false;
+        _source = source;
+        return true;
+    }
+
+    /// <summary>
+    /// 换格式换源（独占 PCM 换曲复用：率/声道变化）。独占端点格式在 Initialize 时定死，
+    /// 无法像 ASIO 那样原地改率；二次 Initialize 也不可靠（AUDCLNT_E_ALREADY_INITIALIZED），
+    /// 但不必整链路重建：保住设备指针（免端点枚举）、事件句柄与渲染线程，
+    /// 仅重新 Activate IAudioClient + 候选协商 + GetService。
+    /// 失败返回 false（输出已停），调用方走全量重建（Dispose 会 Join 渲染线程，安全）。
+    /// </summary>
+    public bool ReinitializeFor(IRenderSource source)
+    {
+        if (!_exclusive || _client == null || _render == null || _devicePtr == IntPtr.Zero) return false;
+        if (source.Kind != RenderKind.Pcm) return false;
+
+        _pausedFlag = true; // 门控：渲染线程暂停消费
+        // 等在途渲染块（GetBuffer..ReleaseBuffer）落地后再释放旧 client 族指针
+        for (int i = 0; _inRender != 0 && i < 100; i++) Thread.Sleep(5);
+        if (_inRender != 0) return false;
+
+        try { _client.Stop(); } catch { }
+        if (_renderPtr != IntPtr.Zero) { Marshal.Release(_renderPtr); _renderPtr = IntPtr.Zero; _render = null; }
+        if (_clientPtr != IntPtr.Zero) { Marshal.Release(_clientPtr); _clientPtr = IntPtr.Zero; _client = null; }
+
+        // 同一端点指针重新激活（设备枚举与设备指针获取是重建链路里最贵的一段，此处全免）
+        _clientPtr = WasapiDeviceList.ActivateAudioClient(_devicePtr);
+        if (_clientPtr == IntPtr.Zero) { Console.WriteLine("[wasapi] reinit Activate failed"); return false; }
+        _client = new RawAudioClient(_clientPtr);
+
+        int bufferFramesWanted = (int)((long)source.SampleRate * Math.Max(10, _latencyMs) / 8000);
+        if (!InitializeExclusive(source, bufferFramesWanted))
+        {
+            Console.WriteLine($"[wasapi] reinit exclusive failed rate={source.SampleRate} ch={source.Channels}");
+            return false;
+        }
+
+        Guid iidRender = WasapiTypes.IidIAudioRenderClient;
+        int gsr = _client.GetService(&iidRender, out IntPtr renderPtr);
+        if (gsr != 0) { Console.WriteLine($"[wasapi] reinit GetService hr=0x{gsr:X8}"); return false; }
+        _renderPtr = renderPtr;
+        _render = new RawRenderClient(renderPtr);
+        if (!_pushMode && _client.SetEventHandle(_renderEvent) != 0) return false;
+
+        _pcmScratch = new double[_bufferFrames * source.Channels];
+        _dopScratch = new uint[_bufferFrames * source.Channels];
+        LatencyMs = (int)(_bufferFrames * 1000L / Math.Max(1, source.SampleRate));
+
+        // 预置静音整块（client 停止态 + 渲染线程被门控，无并发 GetBuffer）
+        if (_render.GetBuffer(_bufferFrames, out byte* pre) == 0)
+        {
+            new Span<byte>(pre, (int)(_bufferFrames * _channels * BytesPerSample(_endpointKind))).Clear();
+            _render.ReleaseBuffer(_bufferFrames, WasapiTypes.BufferFlagsSilent);
+        }
+
+        _source = source;
+        int started = _client.Start();
+        if (started != 0)
+        {
+            Console.WriteLine($"[wasapi] reinit Start hr=0x{started:X8}");
+            return false;
+        }
+        _pausedFlag = false;
+        Console.WriteLine($"[wasapi] exclusive reinit ok rate={source.SampleRate} ch={source.Channels} buffer={_bufferFrames}");
+        return true;
     }
 
     // ─────────────── 初始化与协商 ───────────────
@@ -412,24 +505,33 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                     }
                 }
 
-                int hr = _render!.GetBuffer(frames, out byte* dst);
-                if (hr != 0) { Fail(); break; }
-
+                // 临界区哨兵：换格式重初始化（ReinitializeFor）须等本段落地才能释放旧 COM 指针
+                Volatile.Write(ref _inRender, 1);
                 try
                 {
-                    FillEndpoint(dst, frames);
-                    if (Diagnostics.BufferDump.Enabled)
-                        Diagnostics.BufferDump.Write(dst, (int)(frames * _channels * BytesPerSample(_endpointKind)));
-                }
-                catch
-                {
-                    new Span<byte>(dst, (int)(frames * _channels * BytesPerSample(_endpointKind))).Clear();
-                    Fail();
-                    _render.ReleaseBuffer(frames, WasapiTypes.BufferFlagsSilent);
-                    break;
-                }
+                    int hr = _render!.GetBuffer(frames, out byte* dst);
+                    if (hr != 0) { Fail(); break; }
 
-                if (_render.ReleaseBuffer(frames, 0) != 0) { Fail(); break; }
+                    try
+                    {
+                        FillEndpoint(dst, frames);
+                        if (Diagnostics.BufferDump.Enabled)
+                            Diagnostics.BufferDump.Write(dst, (int)(frames * _channels * BytesPerSample(_endpointKind)));
+                    }
+                    catch
+                    {
+                        new Span<byte>(dst, (int)(frames * _channels * BytesPerSample(_endpointKind))).Clear();
+                        Fail();
+                        _render.ReleaseBuffer(frames, WasapiTypes.BufferFlagsSilent);
+                        break;
+                    }
+
+                    if (_render.ReleaseBuffer(frames, 0) != 0) { Fail(); break; }
+                }
+                finally
+                {
+                    Volatile.Write(ref _inRender, 0);
+                }
             }
         }
         finally
@@ -443,16 +545,18 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
 
     private void FillEndpoint(byte* dst, uint frames)
     {
+        // 整块只认一份源快照：换曲复用会在引擎线程原子替换 _source。
         // 环渲染对整块先写静音再填数据（预缓冲/欠载也不例外），无需外部清零
+        var source = _source;
         long total = frames * _channels;
-        switch (_source.Kind)
+        switch (source.Kind)
         {
             case RenderKind.Dop:
-                _source.FillDop(_dopScratch, (int)frames);
+                source.FillDop(_dopScratch, (int)frames);
                 ConvertDopToEndpoint(_dopScratch, dst, (int)total, _endpointKind);
                 break;
             default:
-                _source.FillPcm(_pcmScratch, (int)frames);
+                source.FillPcm(_pcmScratch, (int)frames);
                 ConvertDoubleToEndpoint(_pcmScratch, dst, (int)total, _endpointKind);
                 break;
         }

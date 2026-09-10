@@ -25,6 +25,9 @@ namespace AudioPlayer.Playback;
 /// - 换曲淡出单飞行任务 + 最新优先：淡出期间的新 PlayMusic 只更新 MusicUrl，到期切最新，
 ///   不再被重入保护丢弃；淡出期间被暂停则备好新会话不起播（PlayButton 直接续播新曲）；
 /// - 斜坡 300ms（原 500ms）；WasapiShared 模式增益稳态回 1（音量由会话音量承担，不叠加）。
+/// 独占换曲复用（ASIO 与 WASAPI 独占，PCM↔PCM 同设备）：保活输出只换渲染源——同格式零设备交互
+/// （无缝交接）；ASIO 换率 Stop→SetSampleRate→Start（缓冲按样本数计不重建）、WASAPI 独占换格式
+/// 保设备指针/渲染线程重激活重协商；位流/设备变化仍全量重建。
 /// </summary>
 public sealed class PlaybackEngine : IDisposable
 {
@@ -42,6 +45,7 @@ public sealed class PlaybackEngine : IDisposable
     private long _playGen; // 用户操作代数（切歌/换设置/停止递增）：使在途失效恢复计划作废
     private long _outputStartedTick; // 当前输出生效时刻：用于识别"重建后秒挂"的设备抖动
     private int _fastFailStreak; // 连续快速失败（重建后 <4s 又挂）：达 2 次停止自动恢复
+    private volatile string? _lastDefaultDeviceId; // 端点通知报告的系统默认设备 ID：独占复用门判断默认设备是否已变
 
     /// <summary>输出失效后的自动恢复计划。Silent=不改动播放状态与 UI（共享直传的暂态多数可静默恢复）。</summary>
     private sealed class RecoveryPlan
@@ -126,8 +130,17 @@ public sealed class PlaybackEngine : IDisposable
     {
         Interlocked.Increment(ref _playGen);
         _recovery = null;
+        var next = OpenSession(musicUrl); // 先开新会话：复用时旧会话须存活到源替换完成
+        if (next != null && TryReuseExclusiveOutput(next))
+        {
+            var old = _session;
+            _session = next;
+            old?.Dispose(); // 输出已指向新源（回调整周期只认旧快照），旧会话安全释放
+            AfterAttachToLiveOutput(resumeIfStopped: true);
+            return;
+        }
         DisposeSession();
-        _session = OpenSession(musicUrl);
+        _session = next;
         if (_session != null) StartOutputAndPlay();
         else if (IsPlaying) { IsPlaying = false; _ipc.PlayStateUpdate(false); }
     }
@@ -137,9 +150,77 @@ public sealed class PlaybackEngine : IDisposable
     {
         Interlocked.Increment(ref _playGen);
         _recovery = null;
+        var next = OpenSession(url);
+        if (next != null && TryReuseExclusiveOutput(next))
+        {
+            var old = _session;
+            _session = next;
+            old?.Dispose();
+            next.RequestSeek(0);
+            AfterAttachToLiveOutput(resumeIfStopped: false);
+            return;
+        }
         DisposeSession();
-        _session = OpenSession(url);
+        _session = next;
         if (_session != null) _session.RequestSeek(0);
+    }
+
+    /// <summary>
+    /// 独占输出换曲复用（PCM↔PCM、同设备）：保活输出只换渲染源。
+    /// ASIO：同率纯引用替换（零驱动交互），换率 Stop→SetSampleRate→Start（缓冲按样本数计不重建）；
+    /// WASAPI 独占：同格式纯引用替换，率/声道变化走 ReinitializeFor（保设备指针/事件/渲染线程，
+    /// 仅重激活 client 重新协商）。位流↔PCM、设备变更、输出失效仍全量重建。调用方持锁。
+    /// </summary>
+    private bool TryReuseExclusiveOutput(Session next)
+    {
+        if (IsSharedMode(OutputMode) || next.Kind != RenderKind.Pcm) return false;
+        if (_output is AsioOutput asio && !asio.IsFailed)
+        {
+            if (asio.SourceKind != RenderKind.Pcm) return false;
+            if (asio.SourceChannels != next.Channels || asio.DeviceIndex != BassASIODeviceId) return false;
+            return asio.SourceSampleRate == next.SampleRate
+                ? asio.AttachSource(next)
+                : asio.ChangeSourceAndRate(next);
+        }
+        if (_output is WasapiOutput wasapi && wasapi.IsExclusive && !wasapi.IsFailed)
+        {
+            if (wasapi.SourceKind != RenderKind.Pcm) return false;
+            if (wasapi.DeviceIndex != BassOutputDeviceId) return false;
+            // 跟随默认设备的输出：系统默认已变更则不复用（重建时会解析到新默认）
+            if (wasapi.FollowsDefaultDevice && _lastDefaultDeviceId != null
+                && !string.Equals(_lastDefaultDeviceId, wasapi.DeviceId ?? "", StringComparison.OrdinalIgnoreCase))
+                return false;
+            return wasapi.SourceSampleRate == next.SampleRate && wasapi.SourceChannels == next.Channels
+                ? wasapi.AttachSource(next)
+                : wasapi.ReinitializeFor(next);
+        }
+        return false;
+    }
+
+    /// <summary>复用输出接上新会话后的收尾（StartOutputAndPlay 尾段对等）：
+    /// 播放态/EQ/音量/淡入/抖动计时。<paramref name="resumeIfStopped"/>：SwitchTo 传入 true——
+    /// 自然结束（PlayEnded 已停机）后切歌也要照常起播，与 StartOutputAndPlay 的
+    /// "无会话起播即置播放态"语义对齐；PrepareNext（备播）传 false 保持停机。
+    /// 驱动侧可能在排空/暂停时被 Stop：播放态下补一次 Resume（运行中重复 Start 返回错误码，无害）。</summary>
+    private void AfterAttachToLiveOutput(bool resumeIfStopped)
+    {
+        if (resumeIfStopped && !IsPlaying)
+        {
+            IsPlaying = true;
+            _ipc.PlayStateUpdate(true);
+        }
+        if (IsPlaying) _output?.Resume();
+        ApplyEqToSession();
+        ApplyVolumeToOutput();
+        if (IsFadingEnabled && _session is { Kind: RenderKind.Pcm, Gain: not null })
+        {
+            // 与 StartOutputAndPlay 同序：ApplyVolumeToOutput 先 RampTo，随后归零铺斜坡。
+            // 预缓冲静音段不推进斜坡，出声即从 0 起（见 Session.FillPcm）
+            _session.Gain.SetImmediately(0f);
+            if (IsPlaying) _session.Gain.RampTo(GainVolumeTarget, FadeMs);
+            // 备播（换曲淡出期间被暂停）：归零静默待命，ResumeCore 的 RampTo 承担可闻淡入
+        }
+        _outputStartedTick = Environment.TickCount64;
     }
 
     /// <summary>输出失效后的重建（保进度）。调用方持有 _streamLock。恢复计划由调用方管理。</summary>
@@ -733,6 +814,7 @@ public sealed class PlaybackEngine : IDisposable
     private void HandleEndpointEvents()
     {
         if (!EndpointNotifications.TryDrain(out var defaultId, out var events)) return;
+        if (defaultId != null) _lastDefaultDeviceId = defaultId;
         lock (_streamLock)
         {
             if (_output is not WasapiOutput wasapi || _session == null) return;

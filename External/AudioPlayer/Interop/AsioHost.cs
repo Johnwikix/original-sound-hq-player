@@ -33,7 +33,7 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     private uint[] _dopScratch = [];
     private byte[] _dsdScratch = [];
 
-    private IRenderSource _source = null!;
+    private volatile IRenderSource _source = null!; // 换曲复用会被引擎线程原子替换；渲染回调每次只认一份快照
     private static AsioOutput? _active;
     private void* _callbacksPtr; // ASIO 回调表（持久非托管内存）
 
@@ -82,6 +82,7 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     public bool Start(int driverIndex, int requestedBufferFrames, IRenderSource source)
     {
         _source = source;
+        DeviceIndex = driverIndex;
         var drivers = Win32.EnumerateAsioDrivers();
         if (driverIndex < 0 || driverIndex >= drivers.Count) return false;
 
@@ -205,6 +206,55 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     public bool IsFailed => Volatile.Read(ref _failed) != 0;
 
     public int LatencyMs { get; private set; }
+
+    // ── 换曲复用面（引擎持 _streamLock 调用；与渲染回调经 _source 快照隔离）──
+
+    /// <summary>当前渲染源种类/声道/速率（Start 成功后有效）。</summary>
+    public RenderKind SourceKind => _source.Kind;
+    public int SourceChannels => _source.Channels;
+    public int SourceSampleRate => _source.SampleRate;
+
+    /// <summary>创建本输出时绑定的 ASIO 设备索引（设备变更须重建）。</summary>
+    public int DeviceIndex { get; private set; } = -1;
+
+    /// <summary>同率换源（PCM↔PCM 复用）：纯引用替换，零驱动交互。
+    /// 新环预缓冲期回静音，交接间隙自然被盖住。</summary>
+    public bool AttachSource(IRenderSource source)
+    {
+        if (_driver == null || _source == null) return false;
+        if (source.SampleRate != _source.SampleRate || source.Channels != _source.Channels) return false;
+        _source = source;
+        return true;
+    }
+
+    /// <summary>换率换源（PCM↔PCM 复用）：保活驱动与缓冲（ASIO 缓冲按样本数计、与采样率无关，
+    /// 不必重建），Stop → SetSampleRate（含 pivot 等待）→ 换源 → Start。失败返回 false
+    /// （输出已停），调用方走全量重建。</summary>
+    public bool ChangeSourceAndRate(IRenderSource source)
+    {
+        var driver = _driver;
+        if (driver == null || _source == null) return false;
+        try { if (_started) driver.Stop(); } catch { }
+        _started = false;
+        if (SetSampleRateAndWait(source.SampleRate) != AsioConstants.AseOk)
+        {
+            Console.WriteLine($"[asio] rate change to {source.SampleRate} failed, rebuild required");
+            return false;
+        }
+        _source = source;
+        LatencyMs = (int)(_bufferSize * 2L * 1000 / Math.Max(1, source.SampleRate));
+        WriteSilence(0);
+        WriteSilence(1);
+        int startRet = driver.Start();
+        if (startRet != AsioConstants.AseOk)
+        {
+            Console.WriteLine($"[asio] restart after rate change failed ret={startRet}");
+            return false;
+        }
+        _started = true;
+        Console.WriteLine($"[asio] source switched, rate={source.SampleRate} buffer={_bufferSize} latency={LatencyMs}ms");
+        return true;
+    }
 
     // ─────────────── 初始化细节（ECHO 移植） ───────────────
 
@@ -551,37 +601,39 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
 
     private void Render(int bufferIndex)
     {
-        switch (_source.Kind)
+        // 驱动线程整回调只认一份源快照：换曲复用会在引擎线程原子替换 _source
+        var source = _source;
+        switch (source.Kind)
         {
             case RenderKind.Pcm:
             {
-                _source.FillPcm(_pcmScratch, _bufferSize); // 环渲染先写整块静音，无需外部清零
+                source.FillPcm(_pcmScratch, _bufferSize); // 环渲染先写整块静音，无需外部清零
                 for (int ch = 0; ch < _outputChannelCount; ch++)
                 {
                     int idx = _outputChannelOffset + ch;
-                    WritePcmChannel(_bufferInfos[idx].GetBuffer(bufferIndex), _channelInfos[idx].Type, ch, _bufferSize);
+                    WritePcmChannel(_bufferInfos[idx].GetBuffer(bufferIndex), _channelInfos[idx].Type, ch, _bufferSize, source.Channels);
                 }
                 break;
             }
             case RenderKind.Dop:
             {
-                _source.FillDop(_dopScratch, _bufferSize);
+                source.FillDop(_dopScratch, _bufferSize);
                 for (int ch = 0; ch < _outputChannelCount; ch++)
                 {
                     int idx = _outputChannelOffset + ch;
-                    WriteDopChannel(_bufferInfos[idx].GetBuffer(bufferIndex), _channelInfos[idx].Type, ch, _bufferSize);
+                    WriteDopChannel(_bufferInfos[idx].GetBuffer(bufferIndex), _channelInfos[idx].Type, ch, _bufferSize, source.Channels);
                 }
                 break;
             }
             default:
             {
                 int byteFrames = (_bufferSize + 7) / 8;
-                _source.FillDsdBytes(_dsdScratch, byteFrames);
+                source.FillDsdBytes(_dsdScratch, byteFrames);
                 for (int ch = 0; ch < _outputChannelCount; ch++)
                 {
                     int idx = _outputChannelOffset + ch;
                     WriteNativeDsdChannel(_bufferInfos[idx].GetBuffer(bufferIndex), _channelInfos[idx].Type,
-                        byteFrames, ch);
+                        byteFrames, ch, source.Channels);
                 }
                 break;
             }
@@ -590,11 +642,11 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
         {
             int idx = _outputChannelOffset;
             int type = _channelInfos[idx].Type;
-            int samples = _source.Kind == RenderKind.NativeDsd
+            int samples = source.Kind == RenderKind.NativeDsd
                 ? (type == AsioConstants.AsioStDsdInt8Ner8 ? _bufferSize : (_bufferSize + 7) / 8) // LSB1/MSB1：位域缓冲
                 : _bufferSize;
             Diagnostics.BufferDump.Write((byte*)_bufferInfos[idx].GetBuffer(bufferIndex),
-                samples * AsioBytesPerSample(type, _source.Kind));
+                samples * AsioBytesPerSample(type, source.Kind));
         }
         if (_postOutput && _driver != null) _driver.OutputReady();
     }
@@ -611,9 +663,8 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
         };
     }
 
-    private void WritePcmChannel(IntPtr buffer, int type, int channel, int frames)
+    private void WritePcmChannel(IntPtr buffer, int type, int channel, int frames, int channels)
     {
-        int channels = _source.Channels;
         byte* dst = (byte*)buffer;
         for (int f = 0; f < frames; f++)
         {
@@ -622,9 +673,8 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
         }
     }
 
-    private void WriteDopChannel(IntPtr buffer, int type, int channel, int frames)
+    private void WriteDopChannel(IntPtr buffer, int type, int channel, int frames, int channels)
     {
-        int channels = _source.Channels;
         byte* dst = (byte*)buffer;
         for (int f = 0; f < frames; f++)
         {
@@ -633,9 +683,8 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
         }
     }
 
-    private void WriteNativeDsdChannel(IntPtr buffer, int type, int byteFrames, int channel)
+    private void WriteNativeDsdChannel(IntPtr buffer, int type, int byteFrames, int channel, int channels)
     {
-        int channels = _source.Channels;
         int srcChannel = Math.Min(channel, channels - 1);
         byte* dst = (byte*)buffer;
         WriteNativeDsd(dst, type, byteFrames, _dsdScratch, channels, srcChannel);
@@ -660,7 +709,7 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
                     {
                         // 走环渲染：标记相位由 DopRing 全局帧计数保证连续（静音也不例外）
                         _source.FillDop(_dopScratch, _bufferSize);
-                        WriteDopChannel(buf, type, ch, _bufferSize);
+                        WriteDopChannel(buf, type, ch, _bufferSize, _source.Channels);
                         continue;
                     }
                     for (int f = 0; f < _bufferSize; f++) WriteAsioDopSample(dst, type, f, (f & 1) == 0 ? 0x050000u : 0xfa0000u);
