@@ -63,6 +63,7 @@
   - 支持 DSD、FLAC、WAV、MP3 等 12 种以上音乐格式
   - 音频转换：WAV、MP3、FLAC、OGG、OPUS
   - 内置自定义十段均衡器与多种预设
+  - 全程 float64 高精度音频管线，24bit 源位透明处理
 
 - 📝 **音乐信息与歌词**
   - 实时展示歌曲标题、创作者、专辑名、时长、采样率、码率、文件类型
@@ -88,19 +89,25 @@
 
 针对不同音质需求提供多种专业音频输出方案：
 
-- **WASAPI 模式**
-  - 独占模式（支持推送/事件）减少系统干扰，降低延迟
-  - 共享模式可与其他应用共享音频设备
+- **WASAPI 独占模式**
+  - 推送/事件两种驱动方式，绕过系统混音，降低延迟与干扰
+  - 独占格式自动协商与缓冲对齐重试
+  - 同格式换曲零设备交互，无缝交接
 
-- **DirectSound 模式**
-  - 具备硬件加速能力，提升复杂音频或多声道音频播放效率
+- **WASAPI 共享 / DirectSound 模式**
+  - 源格式直传，采样率与声道转换交给音频引擎
+  - 跟随系统默认设备切换、输出格式变更与设备拔插，播放中静默换输出不中断
 
 - **DSD 输出**
-  - DSD DoP（封装为 PCM 帧）
-  - DSD Native（通过 ASIO 原始输出）
+  - DSD DoP（独占模式下封装为 PCM 帧输出）
+  - DSD Native（通过 ASIO 原生位流输出）
 
 - **ASIO 支持**
-  - 原生支持 ASIO 输出，适配专业音频设备
+  - 原生 ASIO 输出，自动枚举驱动并协商缓冲与采样率
+  - 支持 ASIO 原生 DSD 扩展（LSB1/MSB1/NER8）
+
+- **可靠性**
+  - 输出失效看门狗自动恢复（保持播放进度），设备热插拔/格式变更不中断聆听
 
 ## 🖼️ 软件截图
 
@@ -118,7 +125,7 @@
 
 **前置条件**
 
-- [.NET 11 SDK](https://dotnet.microsoft.com/)
+- [.NET 11 SDK](https://dotnet.microsoft.com/)（仓库 `global.json` 锁定 11.0 RC1 系列，需允许安装预览版 SDK）
 - Windows 10 19041 或更高版本
 - Visual Studio 2026 及以上，需安装 WinUI 工作负载
 
@@ -132,6 +139,11 @@
 3. 按 `Ctrl+Shift+B` 构建解决方案
 4. 按 `Ctrl+F5` 启动调试
 
+> **架构提示**：音频播放由独立进程 `External\AudioPlayer`（FFmpeg + 自研
+> WASAPI/ASIO 互操作，NativeAOT 单文件，仓库内 `Player\AudioPlayer.exe` 为发布
+> 产物暂存）承担，与主程序经共享内存 IPC 通信。引擎细节见
+> [External/AudioPlayer/README.md](External/AudioPlayer/README.md)。
+
 ## 💖 依赖与致谢
 
 ### 第三方库
@@ -142,8 +154,9 @@
 | [WinUIEx](https://github.com/dotMorten/WinUIEx) | WinUI 窗口功能扩展 | MIT |
 | [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) | MVVM 框架 | MIT |
 | [DevWinUI](https://github.com/ghost1372/DevWinUI) | WinUI 扩展组件 | MIT |
-| [atldotnet](https://github.com/Zeugma440/atldotnet) | 多种音频格式元数据读取 | MIT |
-| [BASS](https://www.un4seen.com/) / [ManagedBass](https://github.com/ManagedBass/ManagedBass) | 音频播放引擎 | Non-Commercial |
+| [atldotnet（z440.atl.core）](https://github.com/Zeugma440/atldotnet) | 多种音频格式元数据读取 | MIT |
+| [FFmpeg](https://ffmpeg.org/)（9.0.1 音频最小化构建） | 音频解码/重采样/转码（主程序与播放进程共用同一套 DLL） | LGPL-2.1+ |
+| [FFmpeg.AutoGen](https://github.com/FFmpeg/FFmpeg.AutoGen) | FFmpeg 的 .NET 绑定 | MIT |
 | [Lyricify.Lyrics.Helper](https://github.com/WXRIW/Lyricify-Lyrics-Helper) | 歌词搜索与解析 | MIT |
 | [Isolation](https://github.com/Storyteller-Studios/Isolation) | 着色器流体背景 | MIT |
 | [Microsoft.PinYinConverter](https://github.com/stanzhai/MsPinyinConverter) | 拼音转换 | MIT |

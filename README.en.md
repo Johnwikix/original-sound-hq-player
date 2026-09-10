@@ -63,6 +63,7 @@
   - Supports 12+ audio formats including DSD, FLAC, WAV, MP3
   - Audio conversion: WAV, MP3, FLAC, OGG, OPUS
   - Built-in 10-band equalizer with multiple presets
+  - Full float64 high-precision audio pipeline with bit-transparent handling of 24-bit sources
 
 - 📝 **Music Info & Lyrics**
   - Real-time display of title, artist, album, duration, sample rate, bitrate, file type
@@ -88,19 +89,25 @@
 
 Professional audio output options to match different quality needs:
 
-- **WASAPI Mode**
-  - Exclusive mode (push/event) reduces system interference and lowers latency
-  - Shared mode allows sharing the audio device with other apps
+- **WASAPI Exclusive Mode**
+  - Push/event driven modes that bypass system mixing for lower latency and interference
+  - Automatic format negotiation with buffer alignment retry
+  - Same-format track switches hand over seamlessly with zero device interaction
 
-- **DirectSound Mode**
-  - Hardware-accelerated playback for complex or multi-channel audio
+- **WASAPI Shared / DirectSound Mode**
+  - Source-format pass-through; sample rate and channel conversion handled by the audio engine
+  - Follows default device switches, output format changes, and hot-unplug — output switches silently during playback
 
 - **DSD Output**
-  - DSD DoP (encapsulated into PCM frames)
-  - DSD Native (raw output via ASIO)
+  - DSD DoP (encapsulated into PCM frames in exclusive mode)
+  - DSD Native (raw bitstream via ASIO)
 
 - **ASIO Support**
-  - Native ASIO output for professional audio devices
+  - Native ASIO output with automatic driver enumeration and buffer/rate negotiation
+  - ASIO native DSD extension support (LSB1/MSB1/NER8)
+
+- **Reliability**
+  - Watchdog auto-recovery on output failure (playback position preserved) — device hotplug or format changes won't interrupt listening
 
 ## 🖼️ Screenshots
 
@@ -118,7 +125,7 @@ Issues and Pull Requests are welcome.
 
 **Prerequisites**
 
-- [.NET 11 SDK](https://dotnet.microsoft.com/)
+- [.NET 11 SDK](https://dotnet.microsoft.com/) (pinned to the 11.0 RC1 series by `global.json`; prerelease SDKs must be allowed)
 - Windows 10 19041 or later
 - Visual Studio 2026 or later with the WinUI workload
 
@@ -132,6 +139,13 @@ Issues and Pull Requests are welcome.
 3. Press `Ctrl+Shift+B` to build the solution
 4. Press `Ctrl+F5` to launch without debugging
 
+> **Architecture note**: audio playback runs in a standalone process,
+> `External\AudioPlayer` (FFmpeg + self-developed WASAPI/ASIO interop, published
+> as a single-file NativeAOT binary; `Player\AudioPlayer.exe` in the repo is the
+> staged build artifact), communicating with the main app over shared-memory
+> IPC. See [External/AudioPlayer/README.md](External/AudioPlayer/README.md) for
+> engine details.
+
 ## 💖 Dependencies & Credits
 
 ### Third-Party Libraries
@@ -142,8 +156,9 @@ Issues and Pull Requests are welcome.
 | [WinUIEx](https://github.com/dotMorten/WinUIEx) | WinUI window extensions | MIT |
 | [CommunityToolkit.Mvvm](https://github.com/CommunityToolkit/dotnet) | MVVM framework | MIT |
 | [DevWinUI](https://github.com/ghost1372/DevWinUI) | WinUI extension components | MIT |
-| [atldotnet](https://github.com/Zeugma440/atldotnet) | Audio format metadata reading | MIT |
-| [BASS](https://www.un4seen.com/) / [ManagedBass](https://github.com/ManagedBass/ManagedBass) | Audio playback engine | Non-Commercial |
+| [atldotnet (z440.atl.core)](https://github.com/Zeugma440/atldotnet) | Audio format metadata reading | MIT |
+| [FFmpeg](https://ffmpeg.org/) (9.0.1 minimal audio build) | Audio decoding/resampling/conversion (one shared DLL set for both processes) | LGPL-2.1+ |
+| [FFmpeg.AutoGen](https://github.com/FFmpeg/FFmpeg.AutoGen) | .NET bindings for FFmpeg | MIT |
 | [Lyricify.Lyrics.Helper](https://github.com/WXRIW/Lyricify-Lyrics-Helper) | Lyrics search and parsing | MIT |
 | [Isolation](https://github.com/Storyteller-Studios/Isolation) | Shader fluid background | MIT |
 | [Microsoft.PinYinConverter](https://github.com/stanzhai/MsPinyinConverter) | Pinyin conversion | MIT |
