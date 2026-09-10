@@ -100,8 +100,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
             }
             else
             {
-                int bufferFramesWanted = (int)((long)source.SampleRate * Math.Max(50, latencyMs) / 1000);
-                if (!InitializeShared(source, bufferFramesWanted)) return false;
+                if (!InitializeShared(source, latencyMs)) return false;
             }
 
             Guid iidRender = WasapiTypes.IidIAudioRenderClient;
@@ -200,16 +199,17 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
 
     // ─────────────── 初始化与协商 ───────────────
 
-    private bool InitializeShared(IRenderSource source, int requestedBufferFrames)
+    private bool InitializeShared(IRenderSource source, int latencyMs)
     {
         // ① 直传源格式：AUTOCONVERTPCM + SRC_DEFAULT_QUALITY 让音频引擎自行做采样率转换与声道矩阵。
         //    会话不再与端点格式绑定——系统改"输出音频格式"/换默认设备时只需换输出，解码环原地续播。
-        //    缓冲 300ms 固定：共享模式不随 Latency 设置（有意设计）
+        //    Latency 是请求的缓冲时长；实际大小由音频引擎决定，用 GetBufferSize 读取。
+        long bufferDuration = Math.Max(1, latencyMs) * 10000L;
         var direct = WAVEFORMATEXTENSIBLE.Create((uint)source.SampleRate, (ushort)source.Channels, 32, 32, SubFormats.IeeeFloat);
         int hr = InitializeWithTimeout(WasapiTypes.ShareModeShared,
             WasapiTypes.StreamFlagsEventCallback | WasapiTypes.StreamFlagsNoPersist
             | WasapiTypes.StreamFlagsAutoConvertPcm | WasapiTypes.StreamFlagsSrcDefaultQuality,
-            3000000, 0, &direct);
+            bufferDuration, 0, &direct);
         if (hr == 0)
         {
             int gbr0 = _client!.GetBufferSize(out _bufferFrames);
@@ -242,7 +242,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
 
         hr = InitializeNativeWithTimeout(WasapiTypes.ShareModeShared,
             WasapiTypes.StreamFlagsEventCallback | WasapiTypes.StreamFlagsNoPersist,
-            3000000, 0, mix);
+            bufferDuration, 0, mix);
         if (hr != 0)
         {
             Console.WriteLine($"[wasapi] shared Initialize(mix) hr=0x{hr:X8} rate={mix->nSamplesPerSec} ch={mix->nChannels} bits={mix->wBitsPerSample}");

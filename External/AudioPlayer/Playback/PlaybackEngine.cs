@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using AudioPlayer.Decode;
 using AudioPlayer.Interop;
 using BassPlayerIpc.Shared;
 
@@ -86,14 +87,15 @@ public sealed class PlaybackEngine : IDisposable
         if (string.IsNullOrEmpty(path) || path.Length < 4) return false;
         var ext = Path.GetExtension(path);
         return ext.Equals(DsfExtension, StringComparison.OrdinalIgnoreCase)
-            || ext.Equals(DffExtension, StringComparison.OrdinalIgnoreCase);
+            || ext.Equals(DffExtension, StringComparison.OrdinalIgnoreCase)
+            || (ext.Equals(".wv", StringComparison.OrdinalIgnoreCase) && WavPackDsdReader.IsDsdFile(path));
     }
 
     /// <summary>当前曲目是否为位流路径（DoP / NativeDSD）。
     /// 模式判定与 IsSharedMode 同一精确集合：裸 "WasapiExclusive"（非法串）若被
     /// Contains 放行，会建出位流会话却落共享输出（无位流转换路径）→ 全程静音。</summary>
     private bool IsBitstreamActive(string? url) =>
-        IsDopEnabled && IsRawDsdContainer(url) && !IsSharedMode(OutputMode);
+        IsDopEnabled && !IsSharedMode(OutputMode) && IsRawDsdContainer(url);
 
     /// <summary>当前会话实际渲染种类（无会话时按设置预判）。</summary>
     private RenderKind EffectiveKind =>
@@ -354,7 +356,7 @@ public sealed class PlaybackEngine : IDisposable
             case "ASIO":
             {
                 var output = new AsioOutput();
-                if (output.Start(BassASIODeviceId, ExclusiveBufferFrames(session), session)) return output;
+                if (output.Start(BassASIODeviceId, session)) return output;
                 output.Dispose();
                 return null;
             }
@@ -363,8 +365,6 @@ public sealed class PlaybackEngine : IDisposable
         }
     }
 
-    // ASIO 请求缓冲固定 300ms，不随 Latency 设置（有意设计）
-    private static int ExclusiveBufferFrames(Session session) => (int)((long)session.SampleRate * 300 / 8000);
 
     private IAudioOutput? CreateSharedOutput(Session session, int deviceIndex = -1)
     {

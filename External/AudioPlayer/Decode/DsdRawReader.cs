@@ -4,6 +4,7 @@ namespace AudioPlayer.Decode;
 
 /// <summary>
 /// 原始 DSD 位流读取器（DoP / Native DSD 透传用）。
+/// WV-DSD 由 libwavpack 解压为原始位流；DSF/DFF 走下面的 FFmpeg 解复用路径。
 /// 只用 libavformat 解复用，不经解码器：镜像 FFmpeg DSD 解码器 repack() 的输入模型——
 /// dsf/dff demuxer 输出的包是纯 DSD 字节（DSF=每声道平面块拼接，DSDIFF=交织），
 /// repack 为「MSB 优先、每帧每声道 1 字节」的交织字节流。
@@ -15,6 +16,7 @@ internal sealed unsafe class DsdRawReader : IDisposable
     private AVFormatContext* _fmt;
     private AVPacket* _pkt;
     private int _streamIndex = -1;
+    private WavPackDsdReader? _wavpack;
 
     /// <summary>每声道每秒 DSD 字节数（= FFmpeg 上报的 sample_rate，即 DSD 位率/8）。</summary>
     public int ByteRatePerChannel { get; private set; }
@@ -27,8 +29,18 @@ internal sealed unsafe class DsdRawReader : IDisposable
 
     public bool Open(string path)
     {
+        Dispose();
         try
         {
+            if (Path.GetExtension(path).Equals(".wv", StringComparison.OrdinalIgnoreCase))
+            {
+                _wavpack = new WavPackDsdReader();
+                if (!_wavpack.Open(path)) return false;
+                ByteRatePerChannel = _wavpack.ByteRatePerChannel;
+                Channels = _wavpack.Channels;
+                TotalMs = _wavpack.TotalMs;
+                return true;
+            }
             AVFormatContext* fmt = null;
             if (ffmpeg.avformat_open_input(&fmt, path, null, null) < 0 || fmt == null) return false;
             _fmt = fmt;
@@ -39,7 +51,7 @@ internal sealed unsafe class DsdRawReader : IDisposable
             _streamIndex = si;
             AVCodecParameters* par = _fmt->streams[si]->codecpar;
 
-            if (!IsRawDsdCodec(par->codec_id)) return false; // wv-DSD 由 PCM 路径兜底
+            if (!IsRawDsdCodec(par->codec_id)) return false;
 
             ByteRatePerChannel = par->sample_rate > 0 ? par->sample_rate : 0;
             Channels = par->ch_layout.nb_channels > 0 ? par->ch_layout.nb_channels : 2;
@@ -86,6 +98,7 @@ internal sealed unsafe class DsdRawReader : IDisposable
     /// <summary>seek 到目标毫秒（流时基单位 = 每声道字节，包粒度对齐）。仅解码线程调用。</summary>
     public bool SeekToMs(long ms)
     {
+        if (_wavpack != null) return _wavpack.SeekToMs(ms);
         if (_fmt == null) return false;
         double seconds = ms / 1000.0;
         long target = (long)Math.Round(seconds * ByteRatePerChannel); // 每声道字节位置 = pts
@@ -100,6 +113,7 @@ internal sealed unsafe class DsdRawReader : IDisposable
     /// </summary>
     public int ReadInterleaved(Span<byte> dest)
     {
+        if (_wavpack != null) return _wavpack.ReadInterleaved(dest);
         if (_fmt == null) return 0;
         while (true)
         {
@@ -152,6 +166,8 @@ internal sealed unsafe class DsdRawReader : IDisposable
 
     public void Dispose()
     {
+        _wavpack?.Dispose();
+        _wavpack = null;
         if (_pkt != null) { AVPacket* p = _pkt; _pkt = null; ffmpeg.av_packet_free(&p); }
         if (_fmt != null) { AVFormatContext* f = _fmt; _fmt = null; ffmpeg.avformat_close_input(&f); }
     }

@@ -21,7 +21,8 @@ AudioPlayer.exe（NativeAOT 单文件，win-x64）
 ├── Decode/
 │   ├── PcmDecoder.cs         FFmpeg 解码 → swresample → float64 交织
 │   │                         （PCM 与 DSD→PCM 统一路径；DSD 输出率 = DSD/8，可重采样到 DsdPcmFreq）
-│   └── DsdRawReader.cs       DSDIFF/DSF 原始位流读取（DoP / Native DSD 用）
+│   ├── DsdRawReader.cs       DSDIFF/DSF 解复用与 WV-DSD 读取入口（DoP / Native DSD 用）
+│   └── WavPackDsdReader.cs   libwavpack 原始 DSD 解压、64 位 seek、MSB 交织字节
 ├── Playback/
 │   ├── PlaybackEngine.cs     引擎：会话生命周期、输出模式、看门狗自愈、独占换曲复用
 │   ├── Session.cs            播放会话：解码线程 + 环形缓冲 + EQ/增益（IRenderSource）
@@ -44,6 +45,9 @@ EQ/音量/淡入淡出（double 域）→ 出口按设备格式转换（float32/
 DoP、DSD 位流）。中间处理噪声低于 -140dBFS，24bit 源全链路位透明。
 
 - **PCM**：FFmpeg 解码，采样精确进度（anchor + 环已播帧）
+- **WV-DSD**：按 WavPack 内容识别（普通 WV 仍为 PCM），开启位流后通过
+  `wavpackdll.dll` 的 `OPEN_DSD_NATIVE` 无损解压原始 DSD；ASIO 优先 Native DSD，
+  协商失败尝试 ASIO DoP；WASAPI 独占 Push/Event 使用 DoP。共享/关闭位流时走 FFmpeg DSD→PCM。
 - **DoP**：`DsdRawReader` 原始位流 → uint32 采样，0x05/0xFA 标记按**全局渲染帧
   计数**交替（奇数缓冲边界不翻相），静音 payload 0x6969
 - **Native DSD**：ASIO future 扩展（kAsioSetIoFormat 0x23111961 系魔数；厂商
@@ -66,6 +70,12 @@ DoP、DSD 位流）。中间处理噪声低于 -140dBFS，24bit 源全链路位�
 
 **端点跟随**（共享模式）：监听默认设备切换/端点禁用拔出/系统格式变化，
 播放中静默换输出（保解码环与进度），暂停中丢弃旧输出待恢复时落新设备。
+
+**缓冲策略**：DirectSound / WASAPI 共享在直传和混音格式回退路径均使用传入的
+`Latency`（毫秒，非正值按 1ms 请求），实际帧数由音频引擎决定。ASIO 每次初始化在
+PCM/DSD 格式与采样率协商后读取驱动的首选缓冲大小，优先尝试该大小；驱动拒绝时才
+尝试兼容候选，并记录回退日志。ASIO 设备缓冲不受 `Latency` 控制，解码环仍使用该设置。
+播放中从驱动面板改缓冲的自动重建尚未接入，参见[调研与实施条件](ASIO-buffer-recovery.md)。
 
 **独占换曲复用**（ASIO 与 WASAPI 独占）：同设备、同输出模式、同采样率、同声道的
 PCM 换曲只替换渲染源。采样率、声道、位流格式或设备变化时先停止并释放旧输出，
@@ -91,6 +101,9 @@ dotnet publish -c Release -p:Platform=x64
 
 运行依赖与 exe 同目录的 FFmpeg DLL（`avcodec-63 / avformat-63 / avutil-61 /
 swresample-7`）——FFmpeg.AutoGen 默认按 exe 所在目录定位，无需任何路径适配。
+WV-DSD 位流另依赖同目录的 `wavpackdll.dll`（官方 5.9.0 x64，约 247.5 KiB，BSD-3-Clause）；
+构建/发布 AudioPlayer 时自动复制 DLL 和 `Licenses/WavPack.txt`。来源、哈希见
+`Libraries/WavPack/BUILD_INFO.txt`。
 
 ## 部署布局
 
@@ -100,6 +113,8 @@ swresample-7`）——FFmpeg.AutoGen 默认按 exe 所在目录定位，无需�
 - 仓库内 `Player\AudioPlayer.exe` 是发布产物暂存（发布时 `-o Player` 覆盖）；
 - 主工程 csproj 把 `Player\*.exe`（及 `*.dll`）与 `Libraries\FFmpeg\x64\*.dll`
   经 `<Link>%(Filename)%(Extension)</Link>` 映射到输出根目录，构建即部署。
+- `Libraries/WavPack/x64/wavpackdll.dll` 同样部署到应用根目录；BSD 声明随包部署到
+  `Licenses/WavPack.txt`。若 `-o Player` 产生暂存 DLL，主工程排除该副本以避免重复打包。
 
 ## 验证状态
 
@@ -110,6 +125,9 @@ Int32LSB 与 Native DSD（MSB1）位流逐字节精确。
 
 真实硬件（FiiO KA13）：ASIO/独占 DoP/原生 DSD 出声、系统格式变更后自动恢复
 均已实测。
+
+WV-DSD 扩展由 `PlaybackSwitchRegression` 验证解压位流、Native DSD/DoP 会话载荷、
+seek、文件尾补齐和模式选择；真实 DAC 的 WV-DSD 出声仍需实机复测。
 
 ## 工具（`_tools\`）
 

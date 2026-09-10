@@ -79,7 +79,7 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     private static readonly delegate* unmanaged[Stdcall]<double, void> SampleRateChangedPtr = &OnSampleRateChanged;
     private static readonly delegate* unmanaged[Stdcall]<IntPtr, uint, nuint, nint, nint> WndProcPtr = &WndProc;
 
-    public bool Start(int driverIndex, int requestedBufferFrames, IRenderSource source)
+    public bool Start(int driverIndex, IRenderSource source)
     {
         _source = source;
         DeviceIndex = driverIndex;
@@ -91,10 +91,10 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
         // 驱动 Init/Start 期间会向 hwnd 发消息（FiiO 实测同步等待），
         // 调用方线程 ≠ 窗口线程时泵才能应答，同线程调用 = 自死锁
         if (!StartWindowThread()) return false;
-        return StartCore(drivers[driverIndex].Clsid, requestedBufferFrames, source);
+        return StartCore(drivers[driverIndex].Clsid, source);
     }
 
-    private bool StartCore(Guid clsid, int requestedBufferFrames, IRenderSource source)
+    private bool StartCore(Guid clsid, IRenderSource source)
     {
         try
         {
@@ -130,12 +130,6 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
             }
             _outputChannelCount = Math.Min(outCh, Math.Max(1, source.Channels));
 
-            if (_driver.GetBufferSize(out int minSize, out int maxSize, out int preferred, out int granularity) != AsioConstants.AseOk)
-            {
-                Console.WriteLine("[asio] GetBufferSize failed");
-                return false;
-            }
-            Console.WriteLine($"[asio] ch in={inCh} out={outCh} buffer min={minSize} max={maxSize} pref={preferred} gran={granularity} rate={source.SampleRate}");
             // DSD 模式下驱动采样率域没有统一规范（有的收位率 2822400，有的收字节率 352800）：
             // 依次尝试；失败即放弃（引擎会回退 ASIO DoP / 共享 PCM）
             double[] rateCandidates = source.Kind == RenderKind.NativeDsd
@@ -154,14 +148,22 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
             }
             if (srr != AsioConstants.AseOk) return false;
 
-            int wanted = requestedBufferFrames > 0 ? requestedBufferFrames : preferred;
+            // 采样率和 PCM/DSD 格式会改变驱动允许的范围及首选大小，必须在协商后查询。
+            if (_driver.GetBufferSize(out int minSize, out int maxSize, out int preferred, out int granularity) != AsioConstants.AseOk)
+            {
+                Console.WriteLine("[asio] GetBufferSize failed");
+                return false;
+            }
+            Console.WriteLine($"[asio] ch in={inCh} out={outCh} buffer min={minSize} max={maxSize} pref={preferred} gran={granularity} rate={source.SampleRate}");
             bool created = false;
-            foreach (int candidate in BuildBufferCandidates(minSize, maxSize, preferred, granularity, wanted))
+            foreach (int candidate in BuildBufferCandidates(minSize, maxSize, preferred, granularity))
             {
                 if (TryCreateBuffers(candidate, includeInputs: false)) { created = true; break; }
                 if (TryCreateBuffers(candidate, includeInputs: true)) { created = true; break; }
             }
             if (!created) return false;
+            if (_bufferSize != preferred)
+                Console.WriteLine($"[asio] preferred buffer={preferred} unavailable, using fallback={_bufferSize}");
 
             // 渲染资源
             if (source.Kind == RenderKind.Pcm) _pcmScratch = new double[_bufferSize * source.Channels];
@@ -452,10 +454,9 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
         }
     }
 
-    private static int[] BuildBufferCandidates(int min, int max, int preferred, int granularity, int requested)
+    private static int[] BuildBufferCandidates(int min, int max, int preferred, int granularity)
     {
         var list = new List<int>();
-        if (requested > 0) AddNearestCandidates(list, requested, min, max, preferred, granularity);
         AddCandidate(list, preferred, min, max, preferred, granularity);
         foreach (int size in new[] { 512, 1024, 2048, 4096, 8192, 256 })
             AddNearestCandidates(list, size, min, max, preferred, granularity);

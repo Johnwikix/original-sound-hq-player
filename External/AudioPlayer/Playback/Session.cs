@@ -19,6 +19,7 @@ internal sealed class Session : IRenderSource, IDisposable
     private volatile bool _cancelled;
     private long _pendingSeekMs = long.MinValue; // long.MinValue = 无请求
     private readonly long _pendingSeekSentinel = long.MinValue;
+    private readonly object _decodeEndGate = new();
 
     // 解码 scratch（按渲染种类在构造时分配实配，未用种类保持空数组：这些缓冲均超
     // 85KB 直接进 LOH，按需分配避免每会话 ~0.46MB 无谓流失）
@@ -26,7 +27,7 @@ internal sealed class Session : IRenderSource, IDisposable
     private readonly byte[] _decodeScratchB = [];
     private readonly uint[] _dopScratch = [];
     private readonly uint[] _dopPackBuffer = [];
-    private readonly byte[] _dsdLeftover = new byte[64];
+    private readonly byte[] _dsdLeftover = [];
     private readonly byte[] _dsdMergeBuffer = []; // DoP 残留字节帧拼接（预分配，解码路径零分配）
     private int _dsdLeftoverBytes;
 
@@ -64,10 +65,11 @@ internal sealed class Session : IRenderSource, IDisposable
         }
         else if (kind == RenderKind.Dop)
         {
+            _dsdLeftover = new byte[ch * 2]; // last byte frame plus one silence frame at EOF
             _decodeScratchB = new byte[65536 * ch];
             _dopScratch = new uint[8192 * ch];
             _dopPackBuffer = new uint[32768 * ch];
-            _dsdMergeBuffer = new byte[65536 * ch + 64];
+            _dsdMergeBuffer = new byte[65536 * ch + ch];
         }
         else // NativeDsd
         {
@@ -169,6 +171,7 @@ internal sealed class Session : IRenderSource, IDisposable
         _pcmRing?.WakeProducer();
         _dopRing?.WakeProducer();
         _dsdRing?.WakeProducer();
+        lock (_decodeEndGate) Monitor.PulseAll(_decodeEndGate);
     }
 
     public long CurrentMs => FramesToMs(Volatile.Read(ref AnchorFrames) + FramesPlayed);
@@ -198,6 +201,18 @@ internal sealed class Session : IRenderSource, IDisposable
     }
 
     private bool Cancelled() => _cancelled;
+
+    private bool WaitForSeekAfterEnd()
+    {
+        // Keep the bitstream reader alive after EOF: the device may still be draining,
+        // and RequestSeek must be able to restart decoding without replacing the session.
+        lock (_decodeEndGate)
+        {
+            while (!_cancelled && Interlocked.Read(ref _pendingSeekMs) == _pendingSeekSentinel)
+                Monitor.Wait(_decodeEndGate);
+            return !_cancelled;
+        }
+    }
 
     private void PcmDecodeProc()
     {
@@ -235,10 +250,12 @@ internal sealed class Session : IRenderSource, IDisposable
                     // 收尾：残留奇数字节帧补一个静音字节凑对
                     if (_dsdLeftoverBytes > 0 && _dopRing != null)
                     {
-                        PushDop(_dsdLeftover.AsSpan(0, _channels));
+                        _dsdLeftover.AsSpan(_channels, _channels).Fill(0x69);
+                        if (!PushDop(_dsdLeftover.AsSpan(0, _channels * 2))) continue;
                         _dsdLeftoverBytes = 0;
                     }
                     _dopRing!.MarkInputEnded();
+                    if (WaitForSeekAfterEnd()) continue;
                     break;
                 }
 
@@ -305,6 +322,7 @@ internal sealed class Session : IRenderSource, IDisposable
                 if (bytes <= 0)
                 {
                     _dsdRing!.MarkInputEnded();
+                    if (WaitForSeekAfterEnd()) continue;
                     break;
                 }
                 int frames = bytes / _channels;

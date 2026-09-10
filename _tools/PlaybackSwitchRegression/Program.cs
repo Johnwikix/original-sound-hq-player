@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using AudioPlayer.Interop;
@@ -8,7 +9,7 @@ using AudioPlayer.Playback;
 
 // No physical output: real session selection and reuse paths, with controlled native vtables.
 // Run from the repository root: dotnet run --project _tools/PlaybackSwitchRegression
-internal static unsafe class Program
+internal static unsafe partial class Program
 {
     private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
     private static readonly ManualResetEventSlim PaddingEntered = new(false);
@@ -17,11 +18,19 @@ internal static unsafe class Program
     private static double _rate;
     private static int _failures, _tests;
 
+    // Test-only reflection seams also need metadata when validating NativeAOT interop.
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(PlaybackEngine))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(Session))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(AsioOutput))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(AsioDriver))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(WasapiOutput))]
     private static int Main(string[] args)
     {
         string root = args.Length > 0 ? Path.GetFullPath(args[0]) : Directory.GetCurrentDirectory();
         FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
         WriteDsfFixture();
+        RunWavPackTests();
+        RunBufferPolicyTests();
         foreach (string mode in new[] { "ASIO", "WasapiExclusivePush", "WasapiExclusiveEvent" })
         {
             Run($"{mode}: PCM -> DSD selects new file format", () =>

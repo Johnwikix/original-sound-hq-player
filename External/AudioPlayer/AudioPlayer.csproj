@@ -19,6 +19,10 @@
 
   <ItemGroup>
     <Content Include="Assets\icon.ico" />
+    <None Include="..\..\Libraries\WavPack\x64\wavpackdll.dll" Link="wavpackdll.dll"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\..\Libraries\WavPack\LICENSE.txt" Link="Licenses\WavPack.txt"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

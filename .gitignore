@@ -26,6 +26,8 @@ x86/
 # FFmpeg shared DLLs shipped with the app (in-process conversion engine)
 !Libraries/FFmpeg/x64/
 !Libraries/FFmpeg/x64/**
+!Libraries/WavPack/x64/
+!Libraries/WavPack/x64/wavpackdll.dll
 [Ww][Ii][Nn]32/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/

@@ -1,0 +1,11 @@
+WavPack 5.9.0, official Windows x64 DLL (253440 bytes).
+Source / binary release: https://github.com/dbry/WavPack/releases/tag/5.9.0
+Archive: https://github.com/dbry/WavPack/releases/download/5.9.0/wavpack-5.9.0-dll.zip
+Archive member: x64/wavpackdll.dll
+SHA256: 5C7AFDDB49AD5FE3C9738D7753D1EEB9801CD4BF3241BDEAA9F153F3A90146A3
+License: BSD-3-Clause; see LICENSE.txt (copied from the official archive).
+Imports: KERNEL32.dll, msvcrt.dll (Windows system libraries).
+
+Only the DLL and license are deployed; no CLI tools, import libraries or development PDFs.
+AudioPlayer uses OPEN_DSD_NATIVE to decode WavPack DSD into MSB-first interleaved bytes.
+PCM WavPack and DSD-to-PCM playback continue to use FFmpeg.

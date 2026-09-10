@@ -72,7 +72,7 @@
 	<None Include="Player\*.exe"
 	      CopyToOutputDirectory="PreserveNewest"
 	      Link="%(Filename)%(Extension)" />
-	<None Include="Player\*.dll"
+	<None Include="Player\*.dll" Exclude="Player\wavpackdll.dll"
 		  CopyToOutputDirectory="PreserveNewest"
 		  Link="%(Filename)%(Extension)" />
 
@@ -85,6 +85,13 @@
 	      Condition="'$(Platform)' == 'x64'"
 	      CopyToOutputDirectory="PreserveNewest"
 	      Link="%(Filename)%(Extension)" />
+    <None Include="Libraries\WavPack\x64\wavpackdll.dll"
+          Condition="'$(Platform)' == 'x64'"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest"
+          Link="wavpackdll.dll" />
+    <None Include="Libraries\WavPack\LICENSE.txt"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest"
+          Link="Licenses\WavPack.txt" />
   </ItemGroup>
 
   <!--

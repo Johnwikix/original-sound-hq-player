@@ -29,3 +29,24 @@ dotnet run --project _tools/PlaybackSwitchRegression
 沿完整输出生命周期重建，同时按新 URL 选择解码路径。
 
 这些检查可锁定软件回归，不能替代真实 DAC 对 ASIO / WASAPI 独占的出声测试。
+
+`BufferPolicyTests.cs` 检查 ASIO 首选大小优先级，以及 WASAPI 共享直传/混音回退
+两条路径传到原生 `IAudioClient.Initialize` 的缓冲时长（25/100/700ms）。
+缓冲策略修复前新增用例中 8 项失败，修复后完整套件 92/92 通过。
+这些用例不验证驱动面板通知后的自动重建；该功能仍处于调研阶段。
+
+## WavPack DSD
+
+`WavPackTests.cs` 使用官方 DLL 的编码 API 在输出目录生成确定性的 WV 测试文件，
+不依赖下载音频或额外的编码器程序。覆盖 DSD64/128、单/双声道、中文路径、LSBF 来源、
+原始字节逐一比对、短缓冲完整帧读取、seek/EOF/重新打开、DoP 标记连续性及最后奇数字节帧。
+同一文件还会通过真实 Session 验证 Native DSD / DoP 输出载荷、进度和 EOF 后 seek，
+并检查 ASIO、WASAPI 独占、共享、关闭位流及 ASIO DoP 回退的路径选择。
+普通 PCM WV 和损坏文件不会被识别为原始 DSD。
+
+同一套回归也可发布为 NativeAOT，验证发布形态下的 DLL 加载和 C ABI：
+
+```powershell
+dotnet publish _tools/PlaybackSwitchRegression -c Release -r win-x64 -p:PublishAot=true -o artifacts/WavPack-regression-aot
+.\artifacts\WavPack-regression-aot\PlaybackSwitchRegression.exe
+```

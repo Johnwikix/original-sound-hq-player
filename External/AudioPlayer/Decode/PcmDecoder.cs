@@ -8,7 +8,7 @@ namespace AudioPlayer.Decode;
 /// swr 以 AV_SAMPLE_FMT_DBL 输出：重采样（共享模式改率）与 DSD→PCM 增益全程
 /// double 域，下游 EQ/增益/输出转换吃满 float64 管线。
 /// DSD 源（dsf/dff 的 DSD_* 编码，以及 bits_per_raw_sample==1 的 WavPack-DSD，
-/// 后者按决策降级为 PCM 播放）经解码器内置 DSD→PCM（输出率 = DSD 率/8）后再
+/// 共享输出/关闭位流/输出失败回退时）经解码器内置 DSD→PCM（输出率 = DSD 率/8）后再
 /// 重采样到 dsdPcmFreq 并施加 DSD 增益——与库内 FFmpegAudioConverter 同一套套路。
 /// 非托管资源只由所属解码线程访问（Open/Seek/Read 序列化调用）。
 /// </summary>

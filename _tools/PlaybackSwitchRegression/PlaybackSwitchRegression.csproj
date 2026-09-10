@@ -8,12 +8,14 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="*.cs" />
     <!-- Exercise the shipping engine/decoder/interop without starting IPC or a real device. -->
     <Compile Include="../../External/AudioPlayer/**/*.cs"
              Exclude="../../External/AudioPlayer/Program.cs;../../External/AudioPlayer/obj/**/*.cs;../../External/AudioPlayer/bin/**/*.cs" />
     <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
     <PackageReference Include="FFmpeg.AutoGen" Version="9.0.1.1" />
     <None Include="../../Libraries/FFmpeg/x64/*.dll" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../Libraries/WavPack/x64/wavpackdll.dll" Link="wavpackdll.dll" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="../../Libraries/WavPack/LICENSE.txt" Link="Licenses/WavPack.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

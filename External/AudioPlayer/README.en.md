@@ -26,7 +26,8 @@ AudioPlayer.exe (NativeAOT single file, win-x64)
 │   ├── PcmDecoder.cs         FFmpeg decode → swresample → float64 interleaved
 │   │                         (unified path for PCM and DSD→PCM; DSD output rate = DSD/8,
 │   │                         resampleable to DsdPcmFreq)
-│   └── DsdRawReader.cs       DSDIFF/DSF raw bitstream reader (DoP / Native DSD)
+│   ├── DsdRawReader.cs       DSDIFF/DSF demuxing and WV-DSD reader entry point
+│   └── WavPackDsdReader.cs   libwavpack native DSD decompression and 64-bit seek
 ├── Playback/
 │   ├── PlaybackEngine.cs     Engine: session lifecycle, output mode, watchdog recovery,
 │   │                         exclusive track-switch reuse
@@ -84,6 +85,15 @@ endpoint disable/unplug, and system format changes — silently swaps the
 output during playback (decode ring and position preserved); while paused,
 the old output is discarded and the new device is acquired on resume.
 
+**Buffer policy**: DirectSound / WASAPI shared use the supplied `Latency` in
+milliseconds for both source-format and mix-format initialization (nonpositive
+values request 1ms); the audio engine determines the actual frame count. ASIO
+reads the driver's preferred size after PCM/DSD and sample-rate negotiation on
+each initialization, tries it first, and logs any fallback to a compatible size.
+`Latency` still affects decode-ring capacity, but does not select ASIO device
+buffers. Automatic rebuilding after live driver-panel buffer changes is not yet
+wired up; see the [recovery investigation](ASIO-buffer-recovery.md) (Chinese).
+
 **Exclusive track-switch reuse** (ASIO and WASAPI exclusive): PCM switches with
 the same device, output mode, sample rate, and channel count only replace the
 render source. Rate, channel, bitstream format, or device changes stop and dispose
@@ -115,6 +125,13 @@ Runtime dependencies: FFmpeg DLLs in the same directory as the exe
 (`avcodec-63 / avformat-63 / avutil-61 / swresample-7`). FFmpeg.AutoGen
 locates them via the exe's directory by default — no path adaptation needed.
 
+WV-DSD bitstream playback also uses `wavpackdll.dll` (official 5.9.0 x64, 247.5 KiB,
+BSD-3-Clause). AudioPlayer build/publish copies it and `Licenses/WavPack.txt` automatically.
+See `Libraries/WavPack/BUILD_INFO.txt` for provenance and the binary hash.
+WavPack content identifies DSD; regular PCM WV stays on the FFmpeg path. With bitstream
+enabled, `OPEN_DSD_NATIVE` feeds ASIO Native DSD (with ASIO DoP fallback), or WASAPI
+exclusive Push/Event DoP. Shared output or disabled bitstream uses FFmpeg DSD-to-PCM.
+
 ## Deployment Layout
 
 Flat application root: the main app exe, `AudioPlayer.exe`, and a single set
@@ -125,8 +142,15 @@ of FFmpeg DLLs all sit side-by-side (one copy shared by both processes).
 - The main project csproj maps `Player\*.exe` and `Player\*.dll` plus
   `Libraries\FFmpeg\x64\*.dll` to the output root via
   `<Link>%(Filename)%(Extension)</Link>` — building deploys.
+- `Libraries/WavPack/x64/wavpackdll.dll` goes to the application root and its BSD
+  notice goes to `Licenses/WavPack.txt`. Any duplicate DLL staged by `-o Player`
+  is excluded from the main app's wildcard to avoid duplicate packaging.
 
 ## Verification Status
+
+The WV-DSD extension has device-free regression coverage for byte-exact decompression,
+Native DSD/DoP session payloads, seek, odd EOF padding and output-mode selection.
+WV-DSD audible playback still requires verification on a real DAC.
 
 Full smoke chain (`AudioPlayerSmokeTest`) + endpoint byte-dump math
 verification (`_tools\analysis`) is green:
