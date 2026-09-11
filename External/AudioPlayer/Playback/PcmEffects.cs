@@ -89,7 +89,7 @@ internal sealed class PcmEffects : IDisposable
 
     private void Publish()
     {
-        double normalization = 0;
+        double normalization = NormalizationGainDb;
         if (_settings.IsEnabled && _settings.NormalizeLoudness && _measurement != null)
         {
             normalization = _measurement.GainDb(_settings.TargetLufs);
@@ -100,11 +100,15 @@ internal sealed class PcmEffects : IDisposable
             ? Math.Pow(10, (normalization + _settings.HeadroomDb) / 20) : 1));
     }
 
+    /// <summary>未知响度采用固定保守衰减；失败时保持衰减，避免突然回到原始音量。</summary>
+    private double NormalizationGainDb => !_settings.IsEnabled || !_settings.NormalizeLoudness ? 0
+        : _measurement?.GainDb(_settings.TargetLufs) ?? Math.Min(-12, _settings.TargetLufs + 6);
+
     internal DspState GetState(byte kind, bool eq)
     {
         lock (_control)
             return new(kind, eq, _channels, _status,
-                _settings.IsEnabled && _settings.NormalizeLoudness && _measurement != null ? _measurement.GainDb(_settings.TargetLufs) : 0,
+                NormalizationGainDb,
                 _measurement?.IntegratedLufs ?? double.NaN, _settings.IsEnabled);
     }
 
@@ -134,7 +138,9 @@ internal sealed class PcmEffects : IDisposable
                 _swap = target.Settings.SwapChannels ? 1 : 0;
             }
             _renderTarget = target;
-            _gainFrames = Math.Max(1, _rate); // 整曲分析完成或设置改变时仅过渡一次，绝不跟踪短时响度。
+            // 降低增益在 50ms 内完成，抬升用 1s，避免分析完成时突然变响。
+            // .NET 11 渲染路径只更新标量，不分配、不锁定、不跟踪短时响度。
+            _gainFrames = Math.Max(1, target.Gain < _gain ? _rate / 20 : _rate);
             _gainStep = (target.Gain - _gain) / _gainFrames;
         }
         int reset = Volatile.Read(ref _resetVersion);

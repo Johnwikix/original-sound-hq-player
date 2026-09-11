@@ -1,0 +1,7 @@
+PCM EOF: drained=True, decoderAlive=False
+PCM seek after EOF: ready=0, decoderAlive=False, drained=False
+WASAPI blocked Initialize: result=0x8000000A, initTimedOut=False, Stop/Reset calls while worker active=2
+Resample 44100: durationMs=6000, frames=264600, expectedFromDuration=264600
+Resample 48000: durationMs=6000, frames=287983, expectedFromDuration=288000
+Resample 96000: durationMs=6000, frames=575966, expectedFromDuration=576000
+Mailbox after three publishes before reader scheduled: version=3, command=UpdateDsp

@@ -1718,7 +1718,7 @@
     <value>Kanal-/Kopfhörereffekte benötigen Stereo; EQ und Lautheitsanalyse unterstützen Mono und Stereo.</value>
   </data>
   <data name="DspAnalyzing" xml:space="preserve">
-    <value>Aktueller Titel wird im Hintergrund analysiert; Verstärkung wird sanft angewendet und gespeichert.</value>
+    <value>Titel wird analysiert; vorläufig mit vorsichtiger Absenkung. Der gemessene Pegel wird sanft angewendet und gespeichert.</value>
   </data>
   <data name="DspApplied" xml:space="preserve">
     <value>Integrierte Lautheit {0:F1} LUFS · Feste Verstärkung {1:+0.0;-0.0;0.0} dB</value>
@@ -1727,10 +1727,10 @@
     <value>Integriert {0:F1} LUFS · Verstärkung {1:+0.0;-0.0;0.0} dB; durch Spitzenreserve oder Verstärkungsgrenze begrenzt, Dynamik bleibt erhalten.</value>
   </data>
   <data name="DspAnalysisUnavailable" xml:space="preserve">
-    <value>Analyse nicht verfügbar (z. B. Mehrkanal, Stille oder zu kurzer Ausschnitt); Originallautheit bleibt erhalten.</value>
+    <value>Analyse nicht verfügbar (z. B. Mehrkanal, Stille oder zu kurzer Ausschnitt); vorsichtige Absenkung bleibt aktiv.</value>
   </data>
   <data name="DspAnalysisFailed" xml:space="preserve">
-    <value>Lautheitsanalyse fehlgeschlagen; Originallautheit bleibt erhalten. Zum Wiederholen aus- und einschalten.</value>
+    <value>Lautheitsanalyse fehlgeschlagen; vorsichtige Absenkung bleibt aktiv. Zum Wiederholen aus- und einschalten.</value>
   </data>
   <data name="DspAnalysisOff" xml:space="preserve">
     <value>Normalisierung ist aus oder kein PCM-Titel geöffnet.</value>

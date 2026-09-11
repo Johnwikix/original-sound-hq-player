@@ -49,8 +49,12 @@ namespace WinUIMusicPlayer.Services
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
                     AppViewModel.IsPlaying = false;
+                    AppViewModel.StopProgressTimer();
+                    var (_, total) = AppViewModel.GetTimeProgressCache();
+                    AppViewModel.SetTimeProgressCache(total, total);
+                    AppViewModel.UpdateProgressTimerUI();
+                    _ = AutoPlayNextTrack();
                 });
-                _ = AutoPlayNextTrack();
             }
             else if (typeId == MessageTypeId.VolumeWriteBack)
             {
@@ -203,6 +207,9 @@ namespace WinUIMusicPlayer.Services
         {
             IpcService.FadeOut();
         }
+
+        /// <summary>获取用于持久化与设置传输的稳定 WASAPI 端点 ID。</summary>
+        public string? GetWasapiEndpointId(int id) => IpcService.GetWasapiEndpointId(id);
 
         public Task<List<(int id, string name)>> GetWasapiDevices()
             => IpcService.GetWasapiDevices();

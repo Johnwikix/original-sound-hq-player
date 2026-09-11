@@ -159,6 +159,15 @@ internal sealed unsafe class RawAudioClient
             return ((delegate* unmanaged[Stdcall]<IntPtr, uint*, int>)_vtbl[4])(_self, p);
     }
 
+    /// <summary>读取初始化后固定的最大流延迟，单位为 100ns。</summary>
+    public int GetStreamLatency(out long latency)
+    {
+        latency = 0;
+        if (_vtbl[5] == null) return unchecked((int)0x80004001);
+        fixed (long* p = &latency)
+            return ((delegate* unmanaged[Stdcall]<IntPtr, long*, int>)_vtbl[5])(_self, p);
+    }
+
     public int GetCurrentPadding(out uint padding)
     {
         fixed (uint* p = &padding)
@@ -295,9 +304,10 @@ internal sealed class WasapiDeviceList
     public static WasapiDeviceList Enumerate()
     {
         var list = new WasapiDeviceList();
+        int apartment = Win32.CoInitializeEx(IntPtr.Zero, Win32.COINIT_MULTITHREADED);
         int hr = Win32.CoCreateInstance(ref Unsafe.AsRef(in WasapiTypes.ClsidMmDeviceEnumerator), IntPtr.Zero,
             Win32.CLSCTX_ALL, ref Unsafe.AsRef(in WasapiTypes.IidIMMDeviceEnumerator), out IntPtr enumPtr);
-        if (hr != 0 || enumPtr == IntPtr.Zero) return list;
+        if (hr != 0 || enumPtr == IntPtr.Zero) { if (apartment >= 0) Win32.CoUninitialize(); return list; }
         try
         {
             var enumerator = WrapAlive<IMMDeviceEnumerator>(enumPtr);
@@ -329,6 +339,7 @@ internal sealed class WasapiDeviceList
         finally
         {
             Marshal.Release(enumPtr);
+            if (apartment >= 0) Win32.CoUninitialize();
         }
         return list;
     }
@@ -352,12 +363,13 @@ internal sealed class WasapiDeviceList
     public static IntPtr ResolveDevicePtr(int index) => ResolveDevicePtr(index, out _);
 
     /// <summary>同上；isDefault = 最终落到了系统默认端点（显式索引解析失败也算跟随默认）。</summary>
-    public static unsafe IntPtr ResolveDevicePtr(int index, out bool isDefault)
+    public static unsafe IntPtr ResolveDevicePtr(int index, out bool isDefault, string? endpointId = null)
     {
         isDefault = true;
+        int apartment = Win32.CoInitializeEx(IntPtr.Zero, Win32.COINIT_MULTITHREADED);
         int hr = Win32.CoCreateInstance(ref Unsafe.AsRef(in WasapiTypes.ClsidMmDeviceEnumerator), IntPtr.Zero,
             Win32.CLSCTX_ALL, ref Unsafe.AsRef(in WasapiTypes.IidIMMDeviceEnumerator), out IntPtr enumPtr);
-        if (hr != 0 || enumPtr == IntPtr.Zero) return IntPtr.Zero;
+        if (hr != 0 || enumPtr == IntPtr.Zero) { if (apartment >= 0) Win32.CoUninitialize(); return IntPtr.Zero; }
         try
         {
             void** vtbl = *(void***)enumPtr;
@@ -365,6 +377,12 @@ internal sealed class WasapiDeviceList
             var getDevice = (delegate* unmanaged[Stdcall]<IntPtr, char*, IntPtr*, int>)vtbl[5];
 
             IntPtr dev = IntPtr.Zero;
+            if (!string.IsNullOrEmpty(endpointId))
+            {
+                fixed (char* pId = endpointId) hr = getDevice(enumPtr, pId, &dev);
+                isDefault = false;
+                return hr == 0 ? dev : IntPtr.Zero;
+            }
             if (index >= 0)
             {
                 var list = Enumerate();
@@ -392,7 +410,7 @@ internal sealed class WasapiDeviceList
             return dev;
         }
         catch { return IntPtr.Zero; }
-        finally { Marshal.Release(enumPtr); }
+        finally { Marshal.Release(enumPtr); if (apartment >= 0) Win32.CoUninitialize(); }
     }
 
     /// <summary>共享模式端点混音格式摘要。</summary>
@@ -416,9 +434,9 @@ internal sealed class WasapiDeviceList
     /// 共享模式必须以混音格式初始化，解码器经 swresample 直出混音率/声道。
     /// 调用方按设备 ID 缓存：默认设备索引 -1 在系统默认输出变更后会解析到不同端点。
     /// </summary>
-    public static unsafe (SharedMixFormat? Mix, string DeviceId) GetSharedMixFormat(int deviceIndex)
+    public static unsafe (SharedMixFormat? Mix, string DeviceId) GetSharedMixFormat(int deviceIndex, string? endpointId = null)
     {
-        IntPtr device = ResolveDevicePtr(deviceIndex);
+        IntPtr device = ResolveDevicePtr(deviceIndex, out _, endpointId);
         if (device == IntPtr.Zero) return (null, "");
         try
         {

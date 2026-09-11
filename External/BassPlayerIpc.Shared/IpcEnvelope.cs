@@ -45,8 +45,7 @@ public static class IpcEnvelope
 
         if (totalLen > maxSize)
         {
-            payloadLen = maxSize - IpcConstants.EnvelopeHeaderSize;
-            if (payloadLen < 0) payloadLen = 0;
+            throw new ArgumentOutOfRangeException(nameof(payload), "IPC payload exceeds mailbox capacity");
         }
 
         accessor.Write(offset, typeId);
@@ -101,7 +100,7 @@ public static class IpcEnvelope
     {
         short payloadLen = accessor.ReadInt16(offset + 2);
         if (payloadLen < 0 || payloadLen > maxPayloadSize || payloadLen > buffer.Length)
-            return 0;
+            return -1;
 
         accessor.ReadArray(offset + IpcConstants.EnvelopeHeaderSize, buffer, 0, payloadLen);
         return payloadLen;

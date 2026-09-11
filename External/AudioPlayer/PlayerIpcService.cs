@@ -25,17 +25,17 @@ public class PlayerIpcService : IDisposable
     private CancellationTokenSource? _cancellationTokenSource;
     private Task? _listenerTask;
     private Task? _clientMonitorTask;
+    private int _disposeStarted;
 
     private readonly byte[] _requestBuffer;
     private readonly object _notificationLock = new();
 
     private int _lastRequestVersion;
-    private int _responseVersion;
     private int _notificationVersion;
 
     // 设备分页缓存：首次请求枚举，后续页取缓存（bass 同款）
-    private (int id, string name)[]? _cachedWasapiDevices;
-    private (int id, string name)[]? _cachedAsioDevices;
+    private (int id, string name, string endpoint)[]? _cachedWasapiDevices;
+    private (int id, string name, string endpoint)[]? _cachedAsioDevices;
 
     private static Mutex? _instanceMutex;
 
@@ -64,7 +64,8 @@ public class PlayerIpcService : IDisposable
 
             Console.WriteLine($"Server ready. MMF: {IpcConstants.MmfName}");
             _engine = new PlaybackEngine(this);
-            _listenerTask = Task.Run(() => ListenForRequestsAsync(_cancellationTokenSource!.Token));
+            _listenerTask = Task.Factory.StartNew(() => ListenForRequests(_cancellationTokenSource!.Token),
+                CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
             _clientMonitorTask = Task.Run(() => MonitorClientAliveAsync(_cancellationTokenSource!.Token));
             await Task.WhenAny(_listenerTask, _clientMonitorTask);
         }
@@ -74,6 +75,8 @@ public class PlayerIpcService : IDisposable
         }
         finally
         {
+            _cancellationTokenSource?.Cancel();
+            try { await Task.WhenAll(_listenerTask ?? Task.CompletedTask, _clientMonitorTask ?? Task.CompletedTask); } catch (OperationCanceledException) { }
             Dispose();
             Console.WriteLine("Server stopped.");
         }
@@ -134,18 +137,18 @@ public class PlayerIpcService : IDisposable
     public void Stop()
     {
         _cancellationTokenSource?.Cancel();
-        try { _listenerTask?.Wait(100); } catch { }
-        Dispose();
+
     }
 
-    private async Task ListenForRequestsAsync(CancellationToken cancellationToken)
+    private void ListenForRequests(CancellationToken cancellationToken)
     {
         Console.WriteLine("Listening for requests...");
+        WaitHandle[] waits = [cancellationToken.WaitHandle, _requestReadySemaphore!];
         while (!cancellationToken.IsCancellationRequested)
         {
             try
             {
-                await Task.Run(() => _requestReadySemaphore!.WaitOne(500), cancellationToken);
+                if (WaitHandle.WaitAny(waits) == 0) break;
                 if (cancellationToken.IsCancellationRequested) break;
                 if (_accessor == null) continue;
 
@@ -174,21 +177,14 @@ public class PlayerIpcService : IDisposable
             catch (Exception ex)
             {
                 Console.WriteLine($"Request loop error: {ex.Message}");
-                try { await Task.Delay(500, cancellationToken); }
-                catch (OperationCanceledException) { break; }
+                if (cancellationToken.WaitHandle.WaitOne(500)) break;
             }
         }
     }
 
-    private static bool IsSendOnlyCommand(CommandId commandId)
-    {
-        return commandId is CommandId.Play or CommandId.ChangePosition or CommandId.ChangeVolume
-            or CommandId.MusicEnd or CommandId.FadeOut or CommandId.UpdateSettings or CommandId.UpdateDsp;
-    }
-
     private void HandleCommand(CommandId commandId, ReadOnlySpan<byte> payload, byte sequenceId)
     {
-        bool sendOnly = IsSendOnlyCommand(commandId);
+        WriteEmptyResponse(MessageTypeId.Success, sequenceId);
         try
         {
             switch (commandId)
@@ -264,34 +260,34 @@ public class PlayerIpcService : IDisposable
                     break;
                 case CommandId.GetAsioDevices:
                     HandleGetDevices(MessageTypeId.AsioDevices, ref _cachedAsioDevices,
-                        () => _engine!.GetAsioDevices(), payload, sequenceId);
+                        () => _engine!.GetAsioDevices().Select(d => (d.id, d.name, string.Empty)).ToArray(), payload, sequenceId);
                     break;
                 default:
-                    if (!sendOnly) WriteErrorResponse(ErrorCode.InvalidCommand, sequenceId);
+                    WriteErrorResponse(ErrorCode.InvalidCommand, sequenceId);
                     break;
             }
         }
         catch (Exception ex)
         {
-            if (sendOnly) Console.WriteLine($"Command {commandId} failed: {ex.Message}");
-            else WriteErrorResponse(ErrorCode.Unknown, sequenceId);
+            Console.WriteLine($"Command {commandId} failed: {ex.Message}");
+            WriteErrorResponse(ex is ArgumentException ? ErrorCode.InvalidPayload : ErrorCode.Unknown, sequenceId);
         }
-        if (!sendOnly) SignalResponseReady();
+        SignalResponseReady();
     }
 
     private void HandleGetDevices(
         MessageTypeId typeId,
-        ref (int id, string name)[]? cache,
-        Func<(int id, string name)[]> enumerate,
+        ref (int id, string name, string endpoint)[]? cache,
+        Func<(int id, string name, string endpoint)[]> enumerate,
         ReadOnlySpan<byte> payload,
         byte sequenceId)
     {
         var req = BinarySerializer.ReadGetDevicesRequest(payload);
-        cache ??= enumerate();
+        if (req.Page == 0 || cache == null) cache = enumerate();
         var devices = cache;
 
         int total = devices.Length;
-        int perPage = MaxDevicesPerResponse();
+        int perPage = 1;
         int totalPages = total == 0 ? 1 : (total + perPage - 1) / perPage;
         if (req.Page >= totalPages) req.Page = 0;
 
@@ -305,17 +301,16 @@ public class PlayerIpcService : IDisposable
         for (int i = start; i < end; i++)
         {
             var span = buf[offset..];
-            offset += BinarySerializer.WriteDeviceEntry(span, devices[i].id, devices[i].name);
+            offset += BinarySerializer.WriteDeviceEntry(span[..Math.Min(134, span.Length)], devices[i].id, devices[i].name);
+            if (typeId == MessageTypeId.WasapiDevices)
+            {
+                // 设备身份不能截断；超长 ID 应明确失败，而非选择到错误端点。
+                if (System.Text.Encoding.UTF8.GetByteCount(devices[i].endpoint) > buf.Length - offset - BinarySerializer.DeviceEntryBaseSize)
+                    throw new ArgumentException("Endpoint identity exceeds response capacity");
+                offset += BinarySerializer.WriteDeviceEntry(buf[offset..], devices[i].id, devices[i].endpoint);
+            }
         }
         IpcEnvelope.WriteResponse(_accessor!, IpcConstants.ResponseBufferOffset, typeId, sequenceId, buf[..offset], IpcConstants.MaxResponseSize);
-    }
-
-    private static int MaxDevicesPerResponse()
-    {
-        int maxPayload = IpcConstants.MaxResponseSize - IpcConstants.EnvelopeHeaderSize;
-        int perEntry = BinarySerializer.MaxDeviceEntrySize(64);
-        int afterHeader = maxPayload - BinarySerializer.DeviceListPageHeaderSize;
-        return Math.Max(1, afterHeader / perEntry);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -361,7 +356,7 @@ public class PlayerIpcService : IDisposable
     private void SignalResponseReady()
     {
         if (_accessor == null) return;
-        int version = ++_responseVersion;
+        int version = _lastRequestVersion; // 完整请求版本作为执行确认，避免 byte 序号回绕歧义。
         IpcEnvelope.PublishVersion(_accessor, IpcConstants.ResponseVersionOffset, version);
         try { _responseReadySemaphore!.Release(); }
         catch (SemaphoreFullException) { }
@@ -405,12 +400,15 @@ public class PlayerIpcService : IDisposable
 
     public void Dispose()
     {
-        _engine?.Dispose();
+        if (Interlocked.Exchange(ref _disposeStarted, 1) != 0) return;
         _cancellationTokenSource?.Cancel();
+        _listenerTask?.GetAwaiter().GetResult();
+        _engine?.Dispose();
         _accessor?.Dispose();
         _mmf?.Dispose();
         _requestReadySemaphore?.Dispose();
         _responseReadySemaphore?.Dispose();
         _notificationReadySemaphore?.Dispose();
+        _cancellationTokenSource?.Dispose();
     }
 }

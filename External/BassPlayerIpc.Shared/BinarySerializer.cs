@@ -15,7 +15,7 @@ public static class BinarySerializer
     public const int SetMusicUrlRequestSize = StringHeaderSize + MaxStringBytes;
     public const int ChangePositionRequestSize = 8;
     public const int ChangeVolumeRequestSize = 8;
-    public const int IpcSettingSize = StringHeaderSize + MaxStringBytes + 4 + 4 + 4 + 1 + 4 + 4 + 1 + 4 + 1 + 1;
+    public const int IpcSettingSize = 2 * (StringHeaderSize + MaxStringBytes) + 4 + 4 + 4 + 1 + 4 + 4 + 1 + 4 + 1 + 1;
     public const int UpdateEqRequestSize = 1 + 40 + 40; // IsEnabled + 10 gains + 10 Q values (legacy payload: 41 bytes)
     public const int FailedResponseSize = 2;
     public const int PlayStateResponseSize = 1;
@@ -34,8 +34,9 @@ public static class BinarySerializer
             return 2;
         }
         int maxData = Math.Min(dest.Length - 2, MaxStringBytes);
-        int byteCount = Encoding.UTF8.GetBytes(value.AsSpan(), dest[2..]);
-        if (byteCount > maxData) byteCount = maxData;
+        int byteCount = Encoding.UTF8.GetByteCount(value);
+        if (byteCount > maxData) throw new ArgumentException("IPC string exceeds payload capacity", nameof(value));
+        Encoding.UTF8.GetBytes(value.AsSpan(), dest[2..]);
         BinaryPrimitives.WriteUInt16LittleEndian(dest, (ushort)byteCount);
         return 2 + byteCount;
     }
@@ -43,10 +44,11 @@ public static class BinarySerializer
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static string ReadString(ReadOnlySpan<byte> src, out int bytesRead)
     {
-        if (src.Length < 2) { bytesRead = 0; return string.Empty; }
+        if (src.Length < 2) throw new ArgumentException("Truncated IPC string", nameof(src));
         ushort len = BinaryPrimitives.ReadUInt16LittleEndian(src);
         if (len == 0) { bytesRead = 2; return string.Empty; }
-        int readLen = Math.Min(len, src.Length - 2);
+        if (len > src.Length - 2) throw new ArgumentException("Truncated IPC string", nameof(src));
+        int readLen = len;
         var result = Encoding.UTF8.GetString(src.Slice(2, readLen));
         bytesRead = 2 + len;
         return result;
@@ -97,6 +99,7 @@ public static class BinarySerializer
         BinaryPrimitives.WriteSingleLittleEndian(dest[offset..], s.Volume); offset += 4;
         dest[offset++] = s.IsSettingChanged ? (byte)1 : (byte)0;
         dest[offset++] = s.IsFadeEnabled ? (byte)1 : (byte)0;
+        offset += WriteString(dest[offset..], s.WasapiEndpointId);
         return offset;
     }
 
@@ -115,6 +118,7 @@ public static class BinarySerializer
         s.Volume = BinaryPrimitives.ReadSingleLittleEndian(src[offset..]); offset += 4;
         s.IsSettingChanged = src[offset++] != 0;
         s.IsFadeEnabled = src[offset++] != 0;
+        s.WasapiEndpointId = offset < src.Length ? ReadString(src[offset..], out _) : null;
         return s;
     }
 
@@ -287,8 +291,10 @@ public static class BinarySerializer
             return 6;
         }
         int maxName = Math.Min(dest.Length - 6, MaxStringBytes);
-        nameBytes = Encoding.UTF8.GetBytes(name.AsSpan(), dest[6..]);
-        if (nameBytes > maxName) nameBytes = maxName;
+        var chars = name.AsSpan();
+        while (Encoding.UTF8.GetByteCount(chars) > maxName) chars = chars[..^1];
+        if (!chars.IsEmpty && char.IsHighSurrogate(chars[^1])) chars = chars[..^1];
+        nameBytes = Encoding.UTF8.GetBytes(chars, dest[6..]);
         BinaryPrimitives.WriteUInt16LittleEndian(dest[4..], (ushort)nameBytes);
         return 6 + nameBytes;
     }
@@ -300,7 +306,8 @@ public static class BinarySerializer
         int id = BinaryPrimitives.ReadInt32LittleEndian(src);
         ushort nameLen = BinaryPrimitives.ReadUInt16LittleEndian(src[4..]);
         if (nameLen == 0) return (id, string.Empty, 6);
-        int readLen = Math.Min(nameLen, src.Length - 6);
+        if (nameLen > src.Length - 6) throw new ArgumentException("Truncated device entry", nameof(src));
+        int readLen = nameLen;
         var name = Encoding.UTF8.GetString(src.Slice(6, readLen));
         return (id, name, 6 + nameLen);
     }

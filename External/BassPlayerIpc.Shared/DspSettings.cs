@@ -25,14 +25,18 @@ public sealed record DspSettings
     public double StereoWidth { get; init; } = 1;
 
     /// <summary>返回经过有限值和范围校验的设置快照。</summary>
-    public DspSettings Sanitize() => this with
+    public DspSettings Sanitize()
     {
-        TargetLufs = Finite(TargetLufs, -24, -12, -18),
-        HeadroomDb = Finite(HeadroomDb, -24, 0, 0),
-        Balance = Finite(Balance, -1, 1, 0),
-        Crossfeed = Finite(Crossfeed, 0, 0.5, 0),
-        StereoWidth = Finite(StereoWidth, 0, 1.5, 1)
-    };
+        double target = Finite(TargetLufs, -24, -12, -18);
+        double headroom = Finite(HeadroomDb, -24, 0, 0);
+        double balance = Finite(Balance, -1, 1, 0);
+        double crossfeed = Finite(Crossfeed, 0, 0.5, 0);
+        double width = Finite(StereoWidth, 0, 1.5, 1);
+        if (TargetLufs == target && HeadroomDb == headroom && Balance == balance
+            && Crossfeed == crossfeed && StereoWidth == width) return this;
+        return this with { TargetLufs = target, HeadroomDb = headroom, Balance = balance,
+            Crossfeed = crossfeed, StereoWidth = width };
+    }
 
     private static double Finite(double value, double min, double max, double fallback) =>
         double.IsFinite(value) ? Math.Clamp(value, min, max) : fallback;
@@ -51,7 +55,7 @@ public enum LoudnessStatus : byte
     PeakLimited,
     /// <summary>格式、声道布局或内容不支持分析。</summary>
     Unavailable,
-    /// <summary>分析失败，继续原始增益播放。</summary>
+    /// <summary>分析失败，保持保守衰减播放。</summary>
     Failed
 }
 

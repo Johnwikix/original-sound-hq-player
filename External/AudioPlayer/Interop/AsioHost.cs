@@ -22,6 +22,7 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     private int _outputChannelOffset;
     private int _outputChannelCount;
     private int _bufferSize;
+    private int _pipelineFrames;
     private bool _postOutput;
     private bool _nativeDsdApplied;
     private int _dsdRateDomain; // NativeDSD：驱动接受的采样率（位率或字节率，厂商各异）
@@ -34,6 +35,9 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     private int _closing;
     private int _renderUsers;
     private int _disposed;
+    private readonly OutputDrainTracker _drain = new();
+    public long PendingAudioMs => (long)Math.Ceiling(_drain.PendingFrames * 1000.0 / Math.Max(1, _source.SampleRate));
+    public bool IsDrained => Volatile.Read(ref _renderUsers) == 0 && _drain.IsDrained;
 
     public bool IsRestartPending => Volatile.Read(ref _restartReason) != 0;
     public bool IsRestartReady => Environment.TickCount64 - Volatile.Read(ref _restartTick) >= 300;
@@ -181,6 +185,12 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
             if (!created) return false;
             if (_bufferSize != preferred)
                 Console.WriteLine($"[asio] preferred buffer={preferred} unavailable, using fallback={_bufferSize}");
+
+            _pipelineFrames = _bufferSize * 2;
+            if (source.Kind != RenderKind.NativeDsd && _driver.GetLatencies(out _, out int outputLatency) == AsioConstants.AseOk
+                && outputLatency >= 0 && outputLatency <= source.SampleRate * 10L)
+                _pipelineFrames = Math.Max(_pipelineFrames, outputLatency + _bufferSize);
+            LatencyMs = (int)Math.Ceiling(_pipelineFrames * 1000.0 / Math.Max(1, source.SampleRate));
 
             // 渲染资源
             if (source.Kind == RenderKind.Pcm) _pcmScratch = new double[_bufferSize * source.Channels];
@@ -627,6 +637,8 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     {
         // 驱动线程整回调只认一份源快照：换曲复用会在引擎线程原子替换 _source
         var source = _source;
+        _drain.BeginBlock();
+        long before = source.SubmittedFrames;
         switch (source.Kind)
         {
             case RenderKind.Pcm:
@@ -673,6 +685,9 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
                 samples * AsioBytesPerSample(type, source.Kind));
         }
         if (_postOutput && _driver != null) _driver.OutputReady();
+        long submitted = Math.Max(0, source.SubmittedFrames - before);
+        if (source.Kind == RenderKind.NativeDsd) submitted *= 8;
+        _drain.CompleteBlock(_bufferSize, submitted, Math.Max(_pipelineFrames, _bufferSize * 2));
     }
 
     private static int AsioBytesPerSample(int type, RenderKind kind)

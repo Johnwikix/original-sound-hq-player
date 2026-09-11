@@ -25,7 +25,7 @@ using var server = System.Diagnostics.Process.Start(new System.Diagnostics.Proce
 {
     FileName = exePath,
     UseShellExecute = false,
-    CreateNoWindow = false,
+    CreateNoWindow = true,
     WorkingDirectory = Path.GetDirectoryName(exePath)!,
 })!;
 Console.WriteLine($"[smoke] server pid={server.Id}");
@@ -54,45 +54,15 @@ using var responseReady = Semaphore.OpenExisting(IpcConstants.ResponseSemaphoreN
 using var notificationReady = Semaphore.OpenExisting(IpcConstants.NotificationSemaphoreName);
 Console.WriteLine("[smoke] IPC 握手完成");
 
-byte seq = 0;
-int requestVersion = accessor.ReadInt32(IpcConstants.RequestVersionOffset);
 int lastNotificationVersion = accessor.ReadInt32(IpcConstants.NotificationVersionOffset);
-
-bool IsSendOnly(CommandId cmd) => cmd is CommandId.Play or CommandId.ChangePosition
-    or CommandId.ChangeVolume or CommandId.MusicEnd or CommandId.FadeOut or CommandId.UpdateSettings;
+using var transport = new MailboxClient(accessor, requestReady, responseReady);
+byte[] responseBuffer = new byte[IpcConstants.MaxResponseSize];
 
 MessageTypeId Send(CommandId cmd, ReadOnlySpan<byte> payload, out ReadOnlySpan<byte> respPayload)
 {
-    seq++;
-    IpcEnvelope.WriteCommand(accessor, IpcConstants.RequestBufferOffset, cmd, seq, payload);
-    requestVersion++;
-    IpcEnvelope.PublishVersion(accessor, IpcConstants.RequestVersionOffset, requestVersion);
-    requestReady.WaitOne(0); // 清掉可能残留的计数（服务端忙于上一条时不会等待）
-    requestReady.Release();
-    if (IsSendOnly(cmd))
-    {
-        respPayload = default;
-        PumpNotificationsQuiet();
-        return MessageTypeId.Success; // send-only：与主程序一致，不等待
-    }
-    if (!responseReady.WaitOne(5000))
-    {
-        respPayload = default;
-        return MessageTypeId.Failed;
-    }
-    var typeId = IpcEnvelope.ReadMessageTypeId(accessor, IpcConstants.ResponseBufferOffset);
-    byte rspSeq = IpcEnvelope.ReadSequenceId(accessor, IpcConstants.ResponseBufferOffset);
-    int len = IpcEnvelope.ReadPayloadLength(accessor, IpcConstants.ResponseBufferOffset);
-    byte[] buf = new byte[len];
-    if (len > 0) accessor.ReadArray(IpcConstants.ResponseBufferOffset + IpcConstants.EnvelopeHeaderSize, buf, 0, len);
-    respPayload = buf;
-    return rspSeq == seq ? typeId : MessageTypeId.Failed;
-}
-
-void PumpNotificationsQuiet()
-{
-    int v = accessor.ReadInt32(IpcConstants.NotificationVersionOffset);
-    if (v != lastNotificationVersion) lastNotificationVersion = v;
+    var (type, length) = transport.RequestAsync(cmd, payload, responseBuffer, timeoutMs: 5000).GetAwaiter().GetResult();
+    respPayload = responseBuffer.AsSpan(0, Math.Max(0, length));
+    return type;
 }
 
 void PumpNotifications()
@@ -151,8 +121,8 @@ if (args.Contains("--devices-first"))
 Span<byte> playBuf = new byte[BinarySerializer.PlayRequestSize];
 BinarySerializer.WritePlayRequest(playBuf, new PlayRequest { Url = mediaPath });
 t = Send(CommandId.Play, playBuf, out _);
-Console.WriteLine($"[smoke] Play(send-only) → {t}（send-only 无响应为正常）");
-Thread.Sleep(400); // 给服务端完成会话建立（邮箱协议按版本取最新，连发会跳过中间命令）
+Console.WriteLine($"[smoke] Play(confirmed) → {t}（已收到执行确认）");
+Thread.Sleep(400); // 观察首段输出与通知
 PumpNotifications();
 
 // 播放按钮确认状态（--no-toggle 时跳过，观察连续播放进度）
@@ -237,18 +207,35 @@ if (t == MessageTypeId.TimeProgress)
     Console.WriteLine($"[smoke] seek 后进度 {curMs2 / 1000.0:F1}s / {totalMs2 / 1000.0:F1}s");
 }
 
-// 暂停→恢复
-t = Send(CommandId.PlayButton, ReadOnlySpan<byte>.Empty, out var ps2);
-Console.WriteLine($"[smoke] PlayButton(暂停) → {t}" + (ps2.Length >= 1 ? $" payload={ps2[0]}（0=已暂停）" : " (载荷异常)"));
-Thread.Sleep(600);
-t = Send(CommandId.GetTimeProgress, ReadOnlySpan<byte>.Empty, out var prog3);
-if (t == MessageTypeId.TimeProgress)
+// EOF 后 seek 仍处于停止状态；根据返回状态确认已暂停，再验证冻结与恢复。
+bool TogglePlayback()
 {
-    var (curMs3, _) = BinarySerializer.ReadTimeProgress(prog3);
-    Console.WriteLine($"[smoke] 暂停期间进度 {curMs3 / 1000.0:F1}s（应冻结）");
+    var type = Send(CommandId.PlayButton, ReadOnlySpan<byte>.Empty, out var state);
+    if (type != MessageTypeId.PlayState || state.Length < 1)
+        throw new InvalidOperationException($"PlayButton 返回异常: {type}");
+    return state[0] != 0;
 }
-t = Send(CommandId.PlayButton, ReadOnlySpan<byte>.Empty, out var ps3);
-Console.WriteLine($"[smoke] PlayButton(恢复) → {t}" + (ps3.Length >= 1 ? $" payload={ps3[0]}（1=播放中）" : " (载荷异常)"));
+long ReadPosition()
+{
+    var type = Send(CommandId.GetTimeProgress, ReadOnlySpan<byte>.Empty, out var progress);
+    if (type != MessageTypeId.TimeProgress)
+        throw new InvalidOperationException($"进度返回异常: {type}");
+    return BinarySerializer.ReadTimeProgress(progress).Item1;
+}
+if (TogglePlayback() && TogglePlayback())
+    throw new InvalidOperationException("无法暂停播放");
+long pausedPosition = ReadPosition();
+Thread.Sleep(600);
+long frozenPosition = ReadPosition();
+if (frozenPosition != pausedPosition)
+    throw new InvalidOperationException($"暂停进度未冻结: {pausedPosition} → {frozenPosition}");
+Console.WriteLine($"[smoke] 暂停冻结验证通过: {frozenPosition}ms");
+if (!TogglePlayback()) throw new InvalidOperationException("无法恢复播放");
+Thread.Sleep(800);
+long resumedPosition = ReadPosition();
+if (resumedPosition <= frozenPosition)
+    throw new InvalidOperationException($"恢复后进度未推进: {frozenPosition} → {resumedPosition}");
+Console.WriteLine($"[smoke] 恢复推进验证通过: {frozenPosition} → {resumedPosition}ms");
 
 // 收尾
 t = Send(CommandId.MusicEnd, ReadOnlySpan<byte>.Empty, out _);

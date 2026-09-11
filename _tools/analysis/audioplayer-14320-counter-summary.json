@@ -1,0 +1,263 @@
+{
+  "dotnet.process.memory.working_set (By)": {
+    "samples": 45,
+    "first": 26779648.0,
+    "last": 28528640.0,
+    "min": 26779648.0,
+    "max": 28528640.0,
+    "mean": 27714810.31111111,
+    "sum": 1247166464.0
+  },
+  "dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2]": {
+    "samples": 45,
+    "first": 0.0,
+    "last": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "mean": 0.0,
+    "sum": 0.0
+  },
+  "dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh]": {
+    "samples": 45,
+    "first": 0.0,
+    "last": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "mean": 0.0,
+    "sum": 0.0
+  },
+  "dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh]": {
+    "samples": 45,
+    "first": 2974536.0,
+    "last": 2974536.0,
+    "min": 2974536.0,
+    "max": 2974536.0,
+    "mean": 2974536.0,
+    "sum": 133854120.0
+  },
+  "dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1]": {
+    "samples": 45,
+    "first": 192.0,
+    "last": 192.0,
+    "min": 192.0,
+    "max": 192.0,
+    "mean": 192.0,
+    "sum": 8640.0
+  },
+  "dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0]": {
+    "samples": 45,
+    "first": 0.0,
+    "last": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "mean": 0.0,
+    "sum": 0.0
+  },
+  "dotnet.gc.last_collection.memory.committed_size (By)": {
+    "samples": 45,
+    "first": 6365184.0,
+    "last": 6365184.0,
+    "min": 6365184.0,
+    "max": 6365184.0,
+    "mean": 6365184.0,
+    "sum": 286433280.0
+  },
+  "dotnet.timer.count ({timer})": {
+    "samples": 45,
+    "first": 2.0,
+    "last": 2.0,
+    "min": 2.0,
+    "max": 2.0,
+    "mean": 2.0,
+    "sum": 90.0
+  },
+  "dotnet.thread_pool.thread.count ({thread})": {
+    "samples": 45,
+    "first": 3.0,
+    "last": 3.0,
+    "min": 3.0,
+    "max": 3.0,
+    "mean": 3.0,
+    "sum": 135.0
+  },
+  "dotnet.assembly.count ({assembly})": {
+    "samples": 45,
+    "first": 14.0,
+    "last": 14.0,
+    "min": 14.0,
+    "max": 14.0,
+    "mean": 14.0,
+    "sum": 630.0
+  },
+  "dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2]": {
+    "samples": 45,
+    "first": 298304.0,
+    "last": 298304.0,
+    "min": 298304.0,
+    "max": 298304.0,
+    "mean": 298304.0,
+    "sum": 13423680.0
+  },
+  "dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh]": {
+    "samples": 45,
+    "first": 31584.0,
+    "last": 31584.0,
+    "min": 31584.0,
+    "max": 31584.0,
+    "mean": 31584.0,
+    "sum": 1421280.0
+  },
+  "dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh]": {
+    "samples": 45,
+    "first": 4113864.0,
+    "last": 4113864.0,
+    "min": 4113864.0,
+    "max": 4113864.0,
+    "mean": 4113864.0,
+    "sum": 185123880.0
+  },
+  "dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1]": {
+    "samples": 45,
+    "first": 9072.0,
+    "last": 9072.0,
+    "min": 9072.0,
+    "max": 9072.0,
+    "mean": 9072.0,
+    "sum": 408240.0
+  },
+  "dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0]": {
+    "samples": 45,
+    "first": 0.0,
+    "last": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "mean": 0.0,
+    "sum": 0.0
+  },
+  "dotnet.process.cpu.count ({cpu})": {
+    "samples": 45,
+    "first": 16.0,
+    "last": 16.0,
+    "min": 16.0,
+    "max": 16.0,
+    "mean": 16.0,
+    "sum": 720.0
+  },
+  "dotnet.thread_pool.queue.length ({work_item})": {
+    "samples": 45,
+    "first": 0.0,
+    "last": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "mean": 0.0,
+    "sum": 0.0
+  },
+  "dotnet.gc.pause.time (s / 1 sec)": {
+    "samples": 44,
+    "first": 0.0,
+    "last": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "mean": 0.0,
+    "sum": 0.0
+  },
+  "dotnet.gc.heap.total_allocated (By / 1 sec)": {
+    "samples": 44,
+    "first": 32712.0,
+    "last": 24560.0,
+    "min": 16320.0,
+    "max": 40944.0,
+    "mean": 27587.272727272728,
+    "sum": 1213840.0
+  },
+  "dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system]": {
+    "samples": 44,
+    "first": 0.0,
+    "last": 0.0,
+    "min": 0.0,
+    "max": 0.046875,
+    "mean": 0.006036931818181818,
+    "sum": 0.265625
+  },
+  "dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user]": {
+    "samples": 44,
+    "first": 0.015625,
+    "last": 0.0,
+    "min": 0.0,
+    "max": 0.046875,
+    "mean": 0.009232954545454546,
+    "sum": 0.40625
+  },
+  "dotnet.monitor.lock_contentions ({contention} / 1 sec)": {
+    "samples": 44,
+    "first": 0.0,
+    "last": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "mean": 0.0,
+    "sum": 0.0
+  },
+  "dotnet.jit.compiled_il.size (By / 1 sec)": {
+    "samples": 44,
+    "first": 0.0,
+    "last": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "mean": 0.0,
+    "sum": 0.0
+  },
+  "dotnet.jit.compilation.time (s / 1 sec)": {
+    "samples": 44,
+    "first": 0.0,
+    "last": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "mean": 0.0,
+    "sum": 0.0
+  },
+  "dotnet.jit.compiled_methods ({method} / 1 sec)": {
+    "samples": 44,
+    "first": 0.0,
+    "last": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "mean": 0.0,
+    "sum": 0.0
+  },
+  "dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2]": {
+    "samples": 44,
+    "first": 0.0,
+    "last": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "mean": 0.0,
+    "sum": 0.0
+  },
+  "dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1]": {
+    "samples": 44,
+    "first": 0.0,
+    "last": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "mean": 0.0,
+    "sum": 0.0
+  },
+  "dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0]": {
+    "samples": 44,
+    "first": 0.0,
+    "last": 0.0,
+    "min": 0.0,
+    "max": 0.0,
+    "mean": 0.0,
+    "sum": 0.0
+  },
+  "dotnet.thread_pool.work_item.count ({work_item} / 1 sec)": {
+    "samples": 44,
+    "first": 33.0,
+    "last": 33.0,
+    "min": 32.0,
+    "max": 33.0,
+    "mean": 32.77272727272727,
+    "sum": 1442.0
+  }
+}

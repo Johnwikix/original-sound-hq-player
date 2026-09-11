@@ -1,4 +1,4 @@
-using BassPlayerIpc.Shared;
+﻿using BassPlayerIpc.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
@@ -22,15 +22,11 @@ namespace WinUIMusicPlayer.Services
         private Semaphore? _responseReadySemaphore;
         private Semaphore? _notificationReadySemaphore;
 
-        private readonly SemaphoreSlim _sendLock = new(1, 1);
-        private bool _isConnected = false;
-
-        // Versioned mailbox state: the shared-memory version ints are the source of
-        // truth; the semaphores are only wakeup hints, so timeouts and stale signals
-        // can never permanently desynchronize the request/response protocol.
-        private int _requestVersionCounter;
-        private int _lastResponseVersion;
-        private int _lastNotificationVersion;
+        private readonly Dictionary<int, string> _wasapiEndpoints = new();
+        /// <summary>获取本次枚举中设备索引对应的稳定端点 ID。</summary>
+        public string? GetWasapiEndpointId(int id) => _wasapiEndpoints.GetValueOrDefault(id);
+        private MailboxClient? _transport;
+        private int _disposed;
 
         private CancellationTokenSource? _notificationCts;
         private Task? _notificationListenerTask;
@@ -39,10 +35,7 @@ namespace WinUIMusicPlayer.Services
         private readonly ILogger<IpcService> _logger;
         private AppViewModel AppViewModel { get; }
 
-        private readonly byte[] _responseBuffer = new byte[IpcConstants.MaxResponseSize];
-        private readonly byte[] _timeProgressBuf = new byte[BinarySerializer.TimeProgressSize];
-        private readonly byte[] _playStateBuf = new byte[BinarySerializer.PlayStateResponseSize];
-        private readonly byte[] _eqStateBuf = new byte[BinarySerializer.EqStateResponseSize];
+        private int _lastNotificationVersion;
         private readonly byte[] _notificationBuffer = new byte[IpcConstants.MaxNotificationSize];
 
         /// <summary>
@@ -70,23 +63,44 @@ namespace WinUIMusicPlayer.Services
                     _requestReadySemaphore = Semaphore.OpenExisting(IpcConstants.RequestSemaphoreName);
                     _responseReadySemaphore = Semaphore.OpenExisting(IpcConstants.ResponseSemaphoreName);
                     _notificationReadySemaphore = Semaphore.OpenExisting(IpcConstants.NotificationSemaphoreName);
-                    _isConnected = true;
+                    _transport = new MailboxClient(_accessor, _requestReadySemaphore, _responseReadySemaphore);
+                    _transport.CommandFailed += command => _logger.LogWarning("Audio command {Command} was rejected", command);
+                    _transport.Faulted += exception => _logger.LogError(exception, "Audio IPC transport stopped");
                     StartNotificationListener();
                     StartServerMonitor();
                     return;
                 }
                 catch
                 {
+                    _transport?.Dispose(); _transport = null;
+                    _accessor?.Dispose(); _accessor = null;
+                    _mmf?.Dispose(); _mmf = null;
+                    _requestReadySemaphore?.Dispose(); _requestReadySemaphore = null;
+                    _responseReadySemaphore?.Dispose(); _responseReadySemaphore = null;
+                    _notificationReadySemaphore?.Dispose(); _notificationReadySemaphore = null;
                     await Task.Delay(100);
                 }
             }
             _logger.LogCritical("IPC connection failed after retries - core process unavailable, exiting.");
             ShutdownApp();
-            _isConnected = false;
         }
 
         public async Task InitializeMusic(Music? music)
         {
+            // 将旧版名称/索引迁移为稳定 ID，避免用户尚未打开设置页时选错端点。
+            if (string.IsNullOrEmpty(AppSettings.WasapiEndpointId) && AppSettings.OutputMode.StartsWith("Wasapi", StringComparison.Ordinal))
+            {
+                var devices = await GetWasapiDevices();
+                int matches = 0, selectedId = -1;
+                foreach (var device in devices)
+                {
+                    if (device.name != AppSettings.DeviceName) continue;
+                    matches++; selectedId = device.id;
+                }
+                AppSettings.BassOutputDeviceId = matches == 1 ? selectedId : -1;
+                if (matches == 1) AppSettings.WasapiEndpointId = GetWasapiEndpointId(selectedId);
+                else _logger.LogWarning("Saved WASAPI device is missing or ambiguous; using default endpoint");
+            }
             if (music is not null)
                 await SetMusicUrl(music.Path);
             UpdateEq();
@@ -97,7 +111,8 @@ namespace WinUIMusicPlayer.Services
         private void StartNotificationListener()
         {
             _notificationCts = new CancellationTokenSource();
-            _notificationListenerTask = Task.Run(() => ListenForNotificationsAsync(_notificationCts.Token));
+            _notificationListenerTask = Task.Factory.StartNew(() => ListenForNotifications(_notificationCts.Token),
+                CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
         }
 
         /// <summary>
@@ -171,16 +186,14 @@ namespace WinUIMusicPlayer.Services
             _ = App.Current_Exit();
         }
 
-        private async Task ListenForNotificationsAsync(CancellationToken cancellationToken)
+        private void ListenForNotifications(CancellationToken cancellationToken)
         {
+            WaitHandle[] waits = [cancellationToken.WaitHandle, _notificationReadySemaphore!];
             while (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
-                    bool hasNotification = await Task.Run(() =>
-                        _notificationReadySemaphore!.WaitOne(1000), cancellationToken);
-                    if (cancellationToken.IsCancellationRequested) break;
-                    if (!hasNotification) continue;
+                    if (WaitHandle.WaitAny(waits, 1000) == 0) break;
 
                     int version = IpcEnvelope.ReadVersion(_accessor!, IpcConstants.NotificationVersionOffset);
                     if (version == _lastNotificationVersion) continue;
@@ -201,6 +214,7 @@ namespace WinUIMusicPlayer.Services
 
                     _lastNotificationVersion = version;
 
+                    if (payloadLen < 0) continue;
                     if (payloadLen > 0)
                     {
                         var mem = new ReadOnlyMemory<byte>(_notificationBuffer, 0, payloadLen);
@@ -215,8 +229,7 @@ namespace WinUIMusicPlayer.Services
                 catch (Exception ex)
                 {
                     _logger.LogWarning(ex, "Notification listener error");
-                    try { await Task.Delay(500, cancellationToken); }
-                    catch (OperationCanceledException) { break; }
+                    if (cancellationToken.WaitHandle.WaitOne(500)) break;
                 }
             }
         }
@@ -228,138 +241,18 @@ namespace WinUIMusicPlayer.Services
             return (await SendWithResponseAsync(commandId, payload, Array.Empty<byte>())).Type;
         }
 
-        public async Task<(MessageTypeId Type, int ResponseLen)> SendWithResponseAsync(
+        public Task<(MessageTypeId Type, int ResponseLen)> SendWithResponseAsync(
             CommandId commandId, ReadOnlyMemory<byte> payload, byte[] responseBuffer,
             int timeoutMs = 1000, bool skipIfBusy = false)
+            => _transport?.RequestAsync(commandId, payload.Span, responseBuffer, timeoutMs, skipIfBusy)
+                ?? Task.FromResult((MessageTypeId.Failed, 0));
+
+        /// <summary>同步复制到发送队列；同类高频状态在有序屏障内合并。</summary>
+        private void Publish(CommandId commandId, ReadOnlySpan<byte> payload)
         {
-            if (!_isConnected)
-            {
-                _logger.LogWarning("IPC not connected");
-                return (MessageTypeId.Failed, 0);
-            }
-
-            if (skipIfBusy)
-            {
-                if (!await _sendLock.WaitAsync(0)) return (MessageTypeId.Failed, 0);
-            }
-            else
-            {
-                await _sendLock.WaitAsync();
-            }
-
-            try
-            {
-                int requestVersion = ++_requestVersionCounter;
-                IpcEnvelope.WriteCommand(_accessor!, IpcConstants.RequestBufferOffset, commandId, (byte)requestVersion, payload.Span);
-                IpcEnvelope.PublishVersion(_accessor!, IpcConstants.RequestVersionOffset, requestVersion);
-                try { _requestReadySemaphore!.Release(); }
-                catch (SemaphoreFullException) { }
-
-                bool responded = await WaitForResponseAsync((byte)requestVersion, timeoutMs);
-                if (!responded) return (MessageTypeId.Failed, 0);
-
-                var typeId = IpcEnvelope.ReadMessageTypeId(_accessor!, IpcConstants.ResponseBufferOffset);
-                int respLen = IpcEnvelope.ReadPayload(
-                    _accessor!, IpcConstants.ResponseBufferOffset,
-                    _responseBuffer,
-                    IpcConstants.MaxResponseSize - IpcConstants.EnvelopeHeaderSize);
-
-                if (respLen > 0 && responseBuffer.Length >= respLen)
-                    _responseBuffer.AsSpan(0, respLen).CopyTo(responseBuffer);
-                return (typeId, respLen);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "SendCommandAsync error");
-                return (MessageTypeId.Failed, 0);
-            }
-            finally
-            {
-                _sendLock.Release();
-            }
-        }
-
-        /// <summary>
-        /// Waits until a response with the expected sequence id arrives. The server echoes
-        /// the request's sequence id in the response envelope, so a late response to a
-        /// previously timed-out request is recognized and skipped - the protocol can
-        /// never get permanently desynchronized by a timeout.
-        /// </summary>
-        private async Task<bool> WaitForResponseAsync(byte expectedSeq, int timeoutMs)
-        {
-            int step = Math.Min(50, timeoutMs);
-            int lastVersion = _lastResponseVersion;
-            int elapsed = 0;
-            while (elapsed < timeoutMs)
-            {
-                bool signaled = await Task.Run(() => _responseReadySemaphore!.WaitOne(step));
-                if (signaled)
-                {
-                    int version = IpcEnvelope.ReadVersion(_accessor!, IpcConstants.ResponseVersionOffset);
-                    if (version == lastVersion) continue;
-                    lastVersion = version;
-                    _lastResponseVersion = version;
-
-                    byte respSeq = IpcEnvelope.ReadSequenceId(_accessor!, IpcConstants.ResponseBufferOffset);
-                    if (respSeq == expectedSeq) return true;
-                }
-                elapsed += step;
-            }
-            return false;
-        }
-
-        /// <summary>Fire-and-forget: sends command, returns rented buffer to pool after completion.</summary>
-        private async Task FireCommand(CommandId commandId, byte[] pooledBuf, int len)
-        {
-            try
-            {
-                await SendCommandAsync(commandId, new ReadOnlyMemory<byte>(pooledBuf, 0, len));
-            }
-            finally
-            {
-                if (pooledBuf.Length > 0)
-                    ArrayPool<byte>.Shared.Return(pooledBuf);
-            }
-        }
-
-        private void FireCommand(CommandId commandId)
-        {
-            _ = SendCommandAsync(commandId, ReadOnlyMemory<byte>.Empty);
-        }
-
-        // ──────────────── Send-only path ────────────────
-
-        /// <summary>
-        /// Publishes a command without waiting for a response. Still serialized through
-        /// <see cref="_sendLock"/> so the shared request slot always contains exactly one
-        /// unread command - commands are never overwritten, only delayed while the server
-        /// processes a long-running request. The server responds to every command; a
-        /// fire-and-forget response is simply skipped by the seq matching of a later wait.
-        /// </summary>
-        private async Task SendOnly(CommandId commandId, ReadOnlyMemory<byte> payload)
-        {
-            if (!_isConnected) return;
-            await _sendLock.WaitAsync();
-            try
-            {
-                int requestVersion = ++_requestVersionCounter;
-                IpcEnvelope.WriteCommand(_accessor!, IpcConstants.RequestBufferOffset, commandId, (byte)requestVersion, payload.Span);
-                IpcEnvelope.PublishVersion(_accessor!, IpcConstants.RequestVersionOffset, requestVersion);
-                try { _requestReadySemaphore!.Release(); }
-                catch (SemaphoreFullException) { }
-            }
-            finally { _sendLock.Release(); }
-        }
-
-        private async Task SendOnly(CommandId commandId, byte[] pooledBuf, int len)
-        {
-            try { await SendOnly(commandId, new ReadOnlyMemory<byte>(pooledBuf, 0, len)); }
-            finally { if (pooledBuf.Length > 0) ArrayPool<byte>.Shared.Return(pooledBuf); }
-        }
-
-        private void SendOnly(CommandId commandId)
-        {
-            _ = SendOnly(commandId, ReadOnlyMemory<byte>.Empty);
+            bool coalesce = commandId is CommandId.ChangeVolume or CommandId.UpdateEq or CommandId.UpdateDsp;
+            if (_transport?.Publish(commandId, payload, coalesce) != true)
+                _logger.LogWarning("Audio command {Command} could not be queued", commandId);
         }
 
         // ──────────────── Public API ────────────────
@@ -367,9 +260,9 @@ namespace WinUIMusicPlayer.Services
         public void Play(string musicUrl)
         {
             var req = new PlayRequest { Url = musicUrl };
-            var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.PlayRequestSize);
+            Span<byte> buf = stackalloc byte[BinarySerializer.PlayRequestSize];
             int len = BinarySerializer.WritePlayRequest(buf, req);
-            _ = SendOnly(CommandId.Play, buf, len);
+            Publish(CommandId.Play, buf[..len]);
         }
 
         /// <summary>
@@ -379,10 +272,14 @@ namespace WinUIMusicPlayer.Services
         /// </summary>
         public async Task<bool?> PlayButton()
         {
-            var (resType, _) = await SendWithResponseAsync(CommandId.PlayButton, ReadOnlyMemory<byte>.Empty, _playStateBuf);
-            return resType == MessageTypeId.PlayState
-                ? BinarySerializer.ReadPlayStateResponse(_playStateBuf).IsPlaying
-                : null;
+            var buffer = ArrayPool<byte>.Shared.Rent(BinarySerializer.PlayStateResponseSize);
+            try
+            {
+                var (type, length) = await SendWithResponseAsync(CommandId.PlayButton, ReadOnlyMemory<byte>.Empty, buffer);
+                return type == MessageTypeId.PlayState && length == BinarySerializer.PlayStateResponseSize
+                    ? BinarySerializer.ReadPlayStateResponse(buffer).IsPlaying : null;
+            }
+            finally { ArrayPool<byte>.Shared.Return(buffer); }
         }
 
         public void UpdateSettings(bool isSettingChanged = false)
@@ -391,6 +288,7 @@ namespace WinUIMusicPlayer.Services
             {
                 OutputMode = AppSettings.OutputMode,
                 BassOutputDeviceId = AppSettings.BassOutputDeviceId,
+                WasapiEndpointId = AppSettings.WasapiEndpointId,
                 BassASIODeviceId = AppSettings.BassASIODeviceId,
                 Latency = AppViewModel.Latency,
                 IsDopEnabled = AppViewModel.IsDopEnabled,
@@ -401,17 +299,17 @@ namespace WinUIMusicPlayer.Services
                 IsSettingChanged = isSettingChanged,
                 IsFadeEnabled = AppViewModel.IsFadeEnabled,
             };
-            var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.IpcSettingSize);
+            Span<byte> buf = stackalloc byte[BinarySerializer.IpcSettingSize];
             int len = BinarySerializer.WriteIpcSetting(buf, settings);
-            _ = SendOnly(CommandId.UpdateSettings, buf, len);
+            Publish(CommandId.UpdateSettings, buf[..len]);
         }
 
         /// <summary>发送音效快照，不触发输出设备重建。</summary>
         public void UpdateDsp()
         {
-            var buffer = ArrayPool<byte>.Shared.Rent(DspProtocol.SettingsSize);
+            Span<byte> buffer = stackalloc byte[DspProtocol.SettingsSize];
             DspProtocol.WriteSettings(buffer, AppSettings.Dsp);
-            _ = SendOnly(CommandId.UpdateDsp, buffer, DspProtocol.SettingsSize);
+            Publish(CommandId.UpdateDsp, buffer);
         }
 
         /// <summary>读取实际输出和音效状态；每次请求独占响应缓冲，允许不同界面并发刷新。</summary>
@@ -432,9 +330,9 @@ namespace WinUIMusicPlayer.Services
         public void UpdateEq()
         {
             var req = ConvertBandsToUpdateEqRequest();
-            var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.UpdateEqRequestSize);
+            Span<byte> buf = stackalloc byte[BinarySerializer.UpdateEqRequestSize];
             BinarySerializer.WriteUpdateEqRequest(buf, req);
-            _ = SendOnly(CommandId.UpdateEq, buf, BinarySerializer.UpdateEqRequestSize);
+            Publish(CommandId.UpdateEq, buf);
         }
 
         /// <summary>
@@ -447,17 +345,18 @@ namespace WinUIMusicPlayer.Services
         {
             var req = ConvertBandsToUpdateEqRequest();
             var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.UpdateEqRequestSize);
+            var response = ArrayPool<byte>.Shared.Rent(BinarySerializer.EqStateResponseSize);
             try
             {
                 BinarySerializer.WriteUpdateEqRequest(buf, req);
-                var (resType, _) = await SendWithResponseAsync(CommandId.UpdateEq,
+                var (resType, length) = await SendWithResponseAsync(CommandId.UpdateEq,
                     new ReadOnlyMemory<byte>(buf, 0, BinarySerializer.UpdateEqRequestSize),
-                    _eqStateBuf, timeoutMs: 1000);
-                return resType == MessageTypeId.EqState
-                    ? BinarySerializer.ReadEqStateResponse(_eqStateBuf).IsEnabled
+                    response, timeoutMs: 1000);
+                return resType == MessageTypeId.EqState && length == BinarySerializer.EqStateResponseSize
+                    ? BinarySerializer.ReadEqStateResponse(response).IsEnabled
                     : null;
             }
-            finally { ArrayPool<byte>.Shared.Return(buf); }
+            finally { ArrayPool<byte>.Shared.Return(buf); ArrayPool<byte>.Shared.Return(response); }
         }
 
         /// <summary>
@@ -511,42 +410,41 @@ namespace WinUIMusicPlayer.Services
         /// </summary>
         public async Task<(long currentMs, long totalMs)?> GetTimeProgress()
         {
-            // skipIfBusy: drop this tick if the previous progress request is still in
-            // flight, so a slow server cannot queue up stale progress polls.
-            var (resType, _) = await SendWithResponseAsync(CommandId.GetTimeProgress,
-                ReadOnlyMemory<byte>.Empty, _timeProgressBuf, timeoutMs: 300, skipIfBusy: true);
-            if (resType == MessageTypeId.TimeProgress)
+            var buffer = ArrayPool<byte>.Shared.Rent(BinarySerializer.TimeProgressSize);
+            try
             {
-                var (curMs, totalMs) = BinarySerializer.ReadTimeProgress(_timeProgressBuf);
-                return (curMs, totalMs);
+                var (type, length) = await SendWithResponseAsync(CommandId.GetTimeProgress,
+                    ReadOnlyMemory<byte>.Empty, buffer, timeoutMs: 300, skipIfBusy: true);
+                return type == MessageTypeId.TimeProgress && length == BinarySerializer.TimeProgressSize
+                    ? BinarySerializer.ReadTimeProgress(buffer) : null;
             }
-            return null;
+            finally { ArrayPool<byte>.Shared.Return(buffer); }
         }
 
         public void SetPosition(long positionMs)
         {
             var req = new ChangePositionRequest { PositionMs = positionMs };
-            var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.ChangePositionRequestSize);
+            Span<byte> buf = stackalloc byte[BinarySerializer.ChangePositionRequestSize];
             BinarySerializer.WriteChangePositionRequest(buf, req);
-            _ = SendOnly(CommandId.ChangePosition, buf, BinarySerializer.ChangePositionRequestSize);
+            Publish(CommandId.ChangePosition, buf);
         }
 
         public void ChangeVolume(double volume)
         {
             var req = new ChangeVolumeRequest { Volume = volume };
-            var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.ChangeVolumeRequestSize);
+            Span<byte> buf = stackalloc byte[BinarySerializer.ChangeVolumeRequestSize];
             BinarySerializer.WriteChangeVolumeRequest(buf, req);
-            _ = SendOnly(CommandId.ChangeVolume, buf, BinarySerializer.ChangeVolumeRequestSize);
+            Publish(CommandId.ChangeVolume, buf);
         }
 
         public void MusicEnd()
         {
-            SendOnly(CommandId.MusicEnd);
+            Publish(CommandId.MusicEnd, []);
         }
 
         public void FadeOut()
         {
-            SendOnly(CommandId.FadeOut);
+            Publish(CommandId.FadeOut, []);
         }
 
         // ──────────────── Device enumeration ────────────────
@@ -579,6 +477,13 @@ namespace WinUIMusicPlayer.Services
                             if (bytesRead <= 0) break;
                             result.Add((id, name));
                             off += bytesRead;
+                            if (expectedResponse == MessageTypeId.WasapiDevices)
+                            {
+                                var (_, endpoint, identityBytes) = BinarySerializer.ReadDeviceEntry(resp[off..]);
+                                if (identityBytes <= 0) throw new InvalidOperationException("Missing endpoint identity");
+                                _wasapiEndpoints[id] = endpoint;
+                                off += identityBytes;
+                            }
                         }
                         page++;
                         if (page >= totalPages) break;
@@ -598,14 +503,19 @@ namespace WinUIMusicPlayer.Services
 
         public void Dispose()
         {
+            if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
             _notificationCts?.Cancel();
             _serverMonitorCts?.Cancel();
+            _transport?.Dispose();
+            _notificationListenerTask?.GetAwaiter().GetResult();
+            _serverMonitorTask?.GetAwaiter().GetResult();
+            _notificationCts?.Dispose();
+            _serverMonitorCts?.Dispose();
             _accessor?.Dispose();
             _mmf?.Dispose();
             _requestReadySemaphore?.Dispose();
             _responseReadySemaphore?.Dispose();
-            _sendLock?.Dispose();
-            _isConnected = false;
+            _notificationReadySemaphore?.Dispose();
             GC.SuppressFinalize(this);
         }
     }

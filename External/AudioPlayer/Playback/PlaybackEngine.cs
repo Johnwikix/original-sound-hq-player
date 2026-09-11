@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using AudioPlayer.Decode;
 using AudioPlayer.Interop;
 using BassPlayerIpc.Shared;
@@ -14,7 +13,7 @@ namespace AudioPlayer.Playback;
 /// - 换设备/模式（IsSettingChanged）保进度重建会话；
 /// - DoP/NativeDSD 位流旁路全部 DSP，保存用户偏好并向 UI 提供实际会话状态；
 /// - 自然结束只发 PlayEnded（不发 PlayState，与 bass SyncFlags.End 一致）；
-/// - 进度为采样精确（anchor + played），非旧的字节比例估算。
+/// - 进度由提交帧减去设备待播管线估算，精度受输出回调周期约束。
 /// "DirectSound 全自动"语义（共享直传 + 端点通知）：
 /// - 共享会话（DirectSound/WasapiShared）按源格式直传（AUTOCONVERTPCM），采样率/声道转换
 ///   交给音频引擎——系统改"输出音频格式"不再需要会话重建；
@@ -39,6 +38,7 @@ public sealed class PlaybackEngine : IDisposable
     private Session? _session;
     private IAudioOutput? _output;
     private Timer? _endedWatchdog;
+    private int _disposed;
     private int _fadeBusy; // Interlocked：换曲淡出任务单飞行（在途时新请求只更新 MusicUrl）
     private volatile bool _pauseFadeActive; // 暂停淡出进行中（音量同步让路）
     private int _pauseFadeToken; // 暂停淡出停机令牌：恢复播放/再次暂停递增，使在途延迟停机作废
@@ -57,6 +57,7 @@ public sealed class PlaybackEngine : IDisposable
     public bool IsPlaying;
     public string OutputMode = "DirectSound";
     public int BassOutputDeviceId = -1;
+    public string? WasapiEndpointId;
     public int BassASIODeviceId = 0;
     public int Latency = 300;
     public bool IsDopEnabled;
@@ -111,7 +112,7 @@ public sealed class PlaybackEngine : IDisposable
 
     // ─────────────── 播放控制（IPC 面） ───────────────
 
-    public void PlayMusic(string musicUrl, bool isSettingChanged = false)
+    public void PlayMusic(string musicUrl)
     {
         lock (_streamLock)
         {
@@ -188,6 +189,7 @@ public sealed class PlaybackEngine : IDisposable
             if (wasapi.SourceKind != RenderKind.Pcm) return false;
             if (wasapi.IsPushMode != (OutputMode == "WasapiExclusivePush")) return false;
             if (wasapi.DeviceIndex != BassOutputDeviceId) return false;
+            if (!string.IsNullOrEmpty(WasapiEndpointId) && !string.Equals(wasapi.DeviceId, WasapiEndpointId, StringComparison.OrdinalIgnoreCase)) return false;
             // 跟随默认设备的输出：系统默认已变更则不复用（重建时会解析到新默认）
             if (wasapi.FollowsDefaultDevice && _lastDefaultDeviceId != null
                 && !string.Equals(_lastDefaultDeviceId, wasapi.DeviceId ?? "", StringComparison.OrdinalIgnoreCase))
@@ -212,14 +214,6 @@ public sealed class PlaybackEngine : IDisposable
         if (IsPlaying) _output?.Resume();
         ApplyEqToSession();
         ApplyVolumeToOutput();
-        if (IsFadingEnabled && _session is { Kind: RenderKind.Pcm, Gain: not null })
-        {
-            // 与 StartOutputAndPlay 同序：ApplyVolumeToOutput 先 RampTo，随后归零铺斜坡。
-            // 预缓冲静音段不推进斜坡，出声即从 0 起（见 Session.FillPcm）
-            _session.Gain.SetImmediately(0f);
-            if (IsPlaying) _session.Gain.RampTo(GainVolumeTarget, FadeMs);
-            // 备播（换曲淡出期间被暂停）：归零静默待命，ResumeCore 的 RampTo 承担可闻淡入
-        }
         _outputStartedTick = Environment.TickCount64;
     }
 
@@ -255,7 +249,7 @@ public sealed class PlaybackEngine : IDisposable
             {
                 // 独占/ASIO 失败回退共享的旧路径：会话精确按端点混音格式构建
                 //（虚拟声卡常只接受混音格式，Senary 实测 44.1k 全拒）
-                var mix = GetEndpointMixFormat(IsSharedDeviceIndexed(OutputMode) ? BassOutputDeviceId : -1);
+                var mix = GetEndpointMixFormat(OutputMode == "DirectSound" || OutputMode == "ASIO" ? -1 : BassOutputDeviceId);
                 if (mix != null)
                 {
                     forcedRate = mix.SampleRate;
@@ -279,6 +273,11 @@ public sealed class PlaybackEngine : IDisposable
         if (session != null)
         {
             session.ConfigureDsp(_dspSettings ?? new DspSettings());
+            if (session.Gain != null)
+            {
+                session.Gain.SetImmediately(IsFadingEnabled ? 0 : GainVolumeTarget);
+                if (IsFadingEnabled) session.Gain.RampTo(GainVolumeTarget, FadeMs);
+            }
             if (session.Kind == RenderKind.Pcm)
                 session.Eq.Configure(session.SampleRate, IsEqualizerEnabled, EqGains, EqQ);
         }
@@ -290,12 +289,11 @@ public sealed class PlaybackEngine : IDisposable
     private int FadeDrainMs => Math.Min(1500, (_output?.LatencyMs ?? 0) + 100);
 
     private static bool IsSharedMode(string mode) => mode is not ("WasapiExclusivePush" or "WasapiExclusiveEvent" or "ASIO");
-    private static bool IsSharedDeviceIndexed(string mode) => mode == "WasapiShared";
 
     // 不缓存混音格式：系统改"输出音频格式"会变更混音格式而设备 ID 不变，陈旧缓存
     // 会让会话按旧率构建、端点按新率初始化 → 速率错配（变声）。每次现查（毫秒级）。
-    private static WasapiDeviceList.SharedMixFormat? GetEndpointMixFormat(int deviceIndex)
-        => WasapiDeviceList.GetSharedMixFormat(deviceIndex).Mix;
+    private WasapiDeviceList.SharedMixFormat? GetEndpointMixFormat(int deviceIndex)
+        => WasapiDeviceList.GetSharedMixFormat(deviceIndex, OutputMode is "DirectSound" or "ASIO" ? null : WasapiEndpointId).Mix;
 
     /// <summary>创建输出并开始播放；首选输出失败回退 WASAPI 共享（对应 bass 回退 DirectSound）。
     /// 播放状态只在变化时通知：静默恢复路径（设备切换/失效重建）不打扰 UI。</summary>
@@ -334,14 +332,6 @@ public sealed class PlaybackEngine : IDisposable
         _output = output;
         ApplyEqToSession();
         ApplyVolumeToOutput();
-        if (IsFadingEnabled && _session is { Kind: RenderKind.Pcm, Gain: not null })
-        {
-            // 淡入（bass 语义：每次起播/换曲都生效）。必须在 ApplyVolumeToOutput 之后：
-            // 音量同步会先 RampTo，随后归零并铺 300ms 斜坡。
-            // 预缓冲静音段不推进斜坡（见 Session.FillPcm），出声即从 0 起
-            _session.Gain.SetImmediately(0f);
-            _session.Gain.RampTo(GainVolumeTarget, FadeMs);
-        }
         _outputStartedTick = Environment.TickCount64;
         if (!IsPlaying)
         {
@@ -358,7 +348,7 @@ public sealed class PlaybackEngine : IDisposable
             case "WasapiExclusiveEvent":
             {
                 var output = new WasapiOutput(true, OutputMode == "WasapiExclusivePush");
-                if (output.Start(BassOutputDeviceId, Latency, session)) return output;
+                if (output.Start(BassOutputDeviceId, Latency, session, 1, WasapiEndpointId)) return output;
                 output.Dispose();
                 return null;
             }
@@ -380,7 +370,7 @@ public sealed class PlaybackEngine : IDisposable
         try
         {
             var output = new WasapiOutput(false, false);
-            if (output.Start(deviceIndex, Latency, session)) return output;
+            if (output.Start(deviceIndex, Latency, session, OutputMode == "WasapiShared" ? Volume : 1, OutputMode is "DirectSound" or "ASIO" ? null : WasapiEndpointId)) return output;
             if (!output.NeedsMixFormatSession)
             {
                 output.Dispose();
@@ -397,7 +387,10 @@ public sealed class PlaybackEngine : IDisposable
             if (_session == null) return null;
             _session.RequestSeek(keepMs);
             var retry = new WasapiOutput(false, false);
-            return retry.Start(deviceIndex, Latency, _session) ? retry : null;
+            if (retry.Start(deviceIndex, Latency, _session, OutputMode == "WasapiShared" ? Volume : 1,
+                OutputMode is "DirectSound" or "ASIO" ? null : WasapiEndpointId)) return retry;
+            retry.Dispose();
+            return null;
         }
         catch (Exception ex)
         {
@@ -532,7 +525,7 @@ public sealed class PlaybackEngine : IDisposable
     /// 会被重入保护直接丢弃，造成"UI 显示新曲、实际继续播旧曲"；② 淡出期间被暂停时备好
     /// 新会话不起播，PlayButton 直接续播新曲。
     /// </summary>
-    private async void FadeOutAndSwitchAsync()
+    private async Task FadeOutAndSwitchAsync()
     {
         try
         {
@@ -624,7 +617,7 @@ public sealed class PlaybackEngine : IDisposable
     {
         lock (_streamLock)
         {
-            Volume = (float)volume;
+            Volume = double.IsFinite(volume) ? (float)Math.Clamp(volume, 0, 1) : 0;
             ApplyVolumeToOutput();
         }
     }
@@ -657,7 +650,9 @@ public sealed class PlaybackEngine : IDisposable
         var session = _session;
         if (session == null) return (0, 0);
         long total = session.TotalMs;
-        long cur = Math.Min(session.CurrentMs, total > 0 ? total : long.MaxValue);
+        long anchor = session.FramesToMs(Volatile.Read(ref session.AnchorFrames));
+        long cur = Math.Min(Math.Max(anchor, session.CurrentMs - (_output?.PendingAudioMs ?? 0)),
+            total > 0 ? total : long.MaxValue);
         return (cur, total);
     }
 
@@ -665,16 +660,25 @@ public sealed class PlaybackEngine : IDisposable
     {
         lock (_streamLock)
         {
+            if (s.OutputMode is not (null or "DirectSound" or "WasapiShared" or "WasapiExclusivePush" or "WasapiExclusiveEvent" or "ASIO"))
+                throw new ArgumentException("Unknown audio output mode", nameof(s));
+            bool rebuild = OutputMode != (s.OutputMode ?? "DirectSound") || BassOutputDeviceId != s.BassOutputDeviceId
+                || WasapiEndpointId != s.WasapiEndpointId || BassASIODeviceId != s.BassASIODeviceId
+                || Latency != Math.Clamp(s.Latency, 10, 2000) || IsDopEnabled != s.IsDopEnabled
+                || DsdGain != Math.Clamp(s.DsdGain, -24, 24) || DsdPcmFreq != Math.Clamp(s.DsdPcmFreq, 8000, 768000);
             OutputMode = s.OutputMode ?? "DirectSound";
             BassOutputDeviceId = s.BassOutputDeviceId;
+            WasapiEndpointId = s.WasapiEndpointId;
             BassASIODeviceId = s.BassASIODeviceId;
-            Latency = s.Latency;
+            Latency = Math.Clamp(s.Latency, 10, 2000);
             IsDopEnabled = s.IsDopEnabled;
-            DsdGain = s.DsdGain;
-            DsdPcmFreq = s.DsdPcmFreq;
-            Volume = s.Volume;
+            DsdGain = Math.Clamp(s.DsdGain, -24, 24);
+            DsdPcmFreq = Math.Clamp(s.DsdPcmFreq, 8000, 768000);
+            Volume = float.IsFinite(s.Volume) ? Math.Clamp(s.Volume, 0, 1) : 0;
             IsFadingEnabled = s.IsFadeEnabled;
-            if (s.IsSettingChanged) ChangingSetting();
+            IsEqualizerEnabled = s.IsEqualizerEnabled;
+            ApplyEqToSession();
+            if (s.IsSettingChanged || (rebuild && _session != null)) ChangingSetting();
             else ApplyVolumeToOutput(); // 常规设置同步也刷新音量（与 bass UpdateSettings 一致）
         }
     }
@@ -699,10 +703,20 @@ public sealed class PlaybackEngine : IDisposable
                     _session.RequestSeek(curMs);
                     if (wasPlaying || IsPlaying) StartOutputAndPlay();
                 }
-                else StopAndNotifyLocked();
+                else
+                {
+                    StopAndNotifyLocked();
+                    throw new InvalidOperationException("Audio session could not apply output settings");
+                }
+                if (wasPlaying && _output == null)
+                    throw new InvalidOperationException("Audio output could not restart after settings change");
             }
         }
-        catch { }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[engine] settings change failed: {ex.Message}");
+            throw;
+        }
     }
 
     // ─────────────── EQ（IPC 面） ───────────────
@@ -756,7 +770,9 @@ public sealed class PlaybackEngine : IDisposable
     {
         lock (_streamLock)
         {
-            _dspSettings = settings.Sanitize();
+            var normalized = settings.Sanitize();
+            if (_dspSettings == normalized) return;
+            _dspSettings = normalized;
             _session?.ConfigureDsp(_dspSettings);
         }
     }
@@ -776,10 +792,10 @@ public sealed class PlaybackEngine : IDisposable
 
     // ─────────────── 设备枚举（IPC 面） ───────────────
 
-    public (int id, string name)[] GetWasapiDevices()
+    public (int id, string name, string endpoint)[] GetWasapiDevices()
     {
         var list = WasapiDeviceList.Enumerate();
-        return list.Devices.Select(d => (d.Index, d.FriendlyName)).ToArray();
+        return list.Devices.Select(d => (d.Index, d.FriendlyName, d.Id)).ToArray();
     }
 
     public (int id, string name)[] GetAsioDevices()
@@ -791,6 +807,7 @@ public sealed class PlaybackEngine : IDisposable
     {
         try
         {
+            if (Volatile.Read(ref _disposed) != 0) return;
             var plan = _recovery;
             if (plan != null) { TickRecovery(plan); return; }
             HandleEndpointEvents();
@@ -855,7 +872,8 @@ public sealed class PlaybackEngine : IDisposable
             {
                 lock (_streamLock)
                 {
-                    if (IsPlaying && session.IsDrained)
+                    if (Volatile.Read(ref _disposed) == 0 && IsPlaying && ReferenceEquals(session, _session)
+                        && ReferenceEquals(output, _output) && session.IsDrained && output is { IsDrained: true })
                     {
                         output?.Pause();
                         IsPlaying = false;
@@ -939,7 +957,7 @@ public sealed class PlaybackEngine : IDisposable
         if (Environment.TickCount64 < plan.NextTickMs) return;
         lock (_streamLock)
         {
-            if (!ReferenceEquals(plan, _recovery)) return;
+            if (Volatile.Read(ref _disposed) != 0 || !ReferenceEquals(plan, _recovery)) return;
             if (Volatile.Read(ref _playGen) != plan.Gen) { _recovery = null; return; }
             plan.Attempts++;
             Console.WriteLine($"[engine] output recovery attempt {plan.Attempts}{(plan.Silent ? " (silent)" : "")}");
@@ -980,8 +998,19 @@ public sealed class PlaybackEngine : IDisposable
 
     public void Dispose()
     {
-        _endedWatchdog?.Dispose();
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+        if (_endedWatchdog != null)
+        {
+            using var stopped = new ManualResetEvent(false);
+            if (_endedWatchdog.Dispose(stopped)) stopped.WaitOne();
+        }
         EndpointNotifications.Stop();
-        lock (_streamLock) DisposeSession();
+        lock (_streamLock)
+        {
+            Interlocked.Increment(ref _playGen);
+            _recovery = null;
+            IsPlaying = false;
+            DisposeSession();
+        }
     }
 }

@@ -1,4 +1,4 @@
-using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Messages;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -503,14 +503,16 @@ namespace WinUIMusicPlayer.ViewModel
                 _progressTimer.IsRepeating = true;
                 _progressTimer.Tick += OnProgressTick;
             }
-            if (_progressPollingCts is null || _progressPollingCts.IsCancellationRequested)
+            bool newPollingGeneration = _progressPollingCts is null || _progressPollingCts.IsCancellationRequested;
+            if (newPollingGeneration)
             {
                 _progressPollingCts?.Dispose();
                 _progressPollingCts = new CancellationTokenSource();
             }
-            if (_progressPollingTask is null || _progressPollingTask.IsCompleted)
+            if (newPollingGeneration || _progressPollingTask is null || _progressPollingTask.IsCompleted)
             {
-                _progressPollingTask = Task.Run(() => PollProgressLoopAsync(_progressPollingCts!.Token));
+                var token = _progressPollingCts!.Token;
+                _progressPollingTask = Task.Run(() => PollProgressLoopAsync(token));
             }
             _progressTimer.Start();
         }
@@ -554,7 +556,7 @@ namespace WinUIMusicPlayer.ViewModel
                         var result = await svc.GetTimeProgress();
                         // null = round-trip failed (server busy/timeout); keep the last
                         // known value instead of storing (0, 0) and jumping the UI.
-                        if (result is { } p) _cache.Store(p.currentMs, p.totalMs);
+                        if (!ct.IsCancellationRequested && result is { } p) _cache.Store(p.currentMs, p.totalMs);
                     }
                     catch (Exception ex)
                     {

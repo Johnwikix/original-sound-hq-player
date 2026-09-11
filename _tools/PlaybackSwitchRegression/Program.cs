@@ -19,13 +19,18 @@ internal static unsafe partial class Program
     private static int _failures, _tests;
 
     // Test-only reflection seams also need metadata when validating NativeAOT interop.
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(AudioPlayer.PlayerIpcService))]
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(PlaybackEngine))]
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(Session))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(PcmEffects))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(LoudnessScanner))]
+    [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(Equalizer))]
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(AsioOutput))]
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(AsioDriver))]
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(WasapiOutput))]
     private static int Main(string[] args)
     {
+        if (args.Length == 2 && args[0] == "--ipc-server") return IpcBenchmarkServer(args[1]);
         if (args.Length == 1 && args[0] == "--benchmark-loudness") return BenchmarkLoudness();
         string root = args.Length > 0 ? Path.GetFullPath(args[0]) : Directory.GetCurrentDirectory();
         FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
@@ -35,6 +40,7 @@ internal static unsafe partial class Program
         RunAsioNotificationTests();
         RunEqualizerQTests();
         RunDspTests();
+        RunReviewFixTests(root);
         foreach (string mode in new[] { "ASIO", "WasapiExclusivePush", "WasapiExclusiveEvent" })
         {
             Run($"{mode}: PCM -> DSD selects new file format", () =>

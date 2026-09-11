@@ -1721,7 +1721,7 @@
     <value>Channel/headphone effects require stereo; EQ and loudness analysis support mono and stereo.</value>
   </data>
   <data name="DspAnalyzing" xml:space="preserve">
-    <value>Analyzing the current track in the background; gain will be applied smoothly and cached.</value>
+    <value>Analyzing this track; playing with conservative attenuation until the measured gain is smoothly applied and cached.</value>
   </data>
   <data name="DspApplied" xml:space="preserve">
     <value>Integrated loudness {0:F1} LUFS · Fixed gain {1:+0.0;-0.0;0.0} dB</value>
@@ -1730,10 +1730,10 @@
     <value>Integrated {0:F1} LUFS · Fixed gain {1:+0.0;-0.0;0.0} dB; boost constrained by peak headroom or gain cap to preserve dynamics.</value>
   </data>
   <data name="DspAnalysisUnavailable" xml:space="preserve">
-    <value>Analysis unavailable for this track (e.g. multichannel, silence or a very short clip); original loudness retained.</value>
+    <value>Analysis unavailable (e.g. multichannel, silence or a very short clip); conservative attenuation remains active.</value>
   </data>
   <data name="DspAnalysisFailed" xml:space="preserve">
-    <value>Loudness analysis failed; original loudness retained. Toggle normalization off and on to retry.</value>
+    <value>Loudness analysis failed; conservative attenuation remains active. Toggle normalization off and on to retry.</value>
   </data>
   <data name="DspAnalysisOff" xml:space="preserve">
     <value>Normalization is off or no PCM track is open.</value>

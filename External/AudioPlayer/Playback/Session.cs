@@ -5,12 +5,11 @@ namespace AudioPlayer.Playback;
 
 /// <summary>
 /// 一次播放会话：解码线程 + 环形缓冲 +（PCM 时）EQ/增益，实现 IRenderSource
-/// 供输出层拉取。位置 = 锚点帧 + 环已播帧（采样精确）。
+/// 供输出层拉取。提交位置 = 锚点帧 + 环已读帧；引擎另扣设备待播管线。
 /// 解码器归解码线程独占；seek 请求经标志位投递、解码线程执行，天然免锁。
 /// </summary>
 internal sealed class Session : IRenderSource, IDisposable
 {
-    private readonly PlaybackEngine _engine;
     private readonly int _positionRate; // 环帧域的每秒帧数（用于 ms 换算）
 
     private PcmDecoder? _pcm;
@@ -18,14 +17,17 @@ internal sealed class Session : IRenderSource, IDisposable
     private Thread? _thread;
     private volatile bool _cancelled;
     private long _pendingSeekMs = long.MinValue; // long.MinValue = 无请求
-    private readonly long _pendingSeekSentinel = long.MinValue;
+    private const long _pendingSeekSentinel = long.MinValue;
+    private readonly object _seekGate = new();
+    private readonly Func<bool> _isCancelled;
+    private long _decodeEpoch;
+    private int _disposed;
     private readonly object _decodeEndGate = new();
 
     // 解码 scratch（按渲染种类在构造时分配实配，未用种类保持空数组：这些缓冲均超
     // 85KB 直接进 LOH，按需分配避免每会话 ~0.46MB 无谓流失）
     private readonly double[] _decodeScratchF = [];
     private readonly byte[] _decodeScratchB = [];
-    private readonly uint[] _dopScratch = [];
     private readonly uint[] _dopPackBuffer = [];
     private readonly byte[] _dsdLeftover = [];
     private readonly byte[] _dsdMergeBuffer = []; // DoP 残留字节帧拼接（预分配，解码路径零分配）
@@ -55,7 +57,6 @@ internal sealed class Session : IRenderSource, IDisposable
     public int Channels { get; }
     public long TotalMs { get; }
     public long AnchorFrames; // 引擎线程写、渲染线程不读（位置在引擎侧合成）
-    public bool GainActive => Gain != null;
 
     private readonly int _channels;
 
@@ -64,7 +65,7 @@ internal sealed class Session : IRenderSource, IDisposable
     private Session(PlaybackEngine engine, RenderKind kind, int channels, int positionRate,
         int deviceRate, long totalMs, int gainRampRate)
     {
-        _engine = engine;
+        _isCancelled = Cancelled;
         Kind = kind;
         _channels = Channels = channels;
         _positionRate = positionRate;
@@ -81,7 +82,6 @@ internal sealed class Session : IRenderSource, IDisposable
         {
             _dsdLeftover = new byte[ch * 2]; // last byte frame plus one silence frame at EOF
             _decodeScratchB = new byte[65536 * ch];
-            _dopScratch = new uint[8192 * ch];
             _dopPackBuffer = new uint[32768 * ch];
             _dsdMergeBuffer = new byte[65536 * ch + ch];
         }
@@ -151,8 +151,8 @@ internal sealed class Session : IRenderSource, IDisposable
     private static int RingCapacity(int framesPerSecond, int latencyMs)
     {
         // 环 ≥ 2× 设备缓冲，且夹在 [0.5s, 2s] 之间（ECHO 量级）
-        int byLatency = framesPerSecond * Math.Max(50, latencyMs) * 2 / 1000;
-        return Math.Clamp(byLatency, framesPerSecond / 2, framesPerSecond * 2);
+        long byLatency = (long)framesPerSecond * Math.Clamp(latencyMs, 50, 2000) * 2 / 1000;
+        return (int)Math.Clamp(byLatency, framesPerSecond / 2, Math.Min(int.MaxValue, (long)framesPerSecond * 2));
     }
 
     private static int PrebufferFrames(int framesPerSecond)
@@ -166,6 +166,7 @@ internal sealed class Session : IRenderSource, IDisposable
 
     // ─────────────── 引擎侧控制 ───────────────
 
+    public long SubmittedFrames => FramesPlayed;
     public long FramesPlayed => _pcmRing?.FramesPlayed ?? _dopRing?.FramesPlayed ?? _dsdRing?.FramesPlayed ?? 0;
     public int ReadyFrames => _pcmRing?.ReadyFrames ?? _dopRing?.ReadyFrames ?? _dsdRing?.ReadyFrames ?? 0;
     public bool IsDrained => _pcmRing?.IsDrained ?? _dopRing?.IsDrained ?? _dsdRing?.IsDrained ?? false;
@@ -173,12 +174,16 @@ internal sealed class Session : IRenderSource, IDisposable
     /// <summary>seek：立即重置环与锚点（进度条即时响应），解码线程随后转到新位置。</summary>
     public void RequestSeek(long targetMs)
     {
-        Effects?.RequestReset();
-        Volatile.Write(ref AnchorFrames, MsToFrames(targetMs)); // 与 CurrentMs 的 Volatile.Read 对称
-        _pcmRing?.BeginSession();
-        _dopRing?.BeginSession();
-        _dsdRing?.BeginSession();
-        Interlocked.Exchange(ref _pendingSeekMs, targetMs);
+        lock (_seekGate)
+        {
+            Effects?.RequestReset();
+            Interlocked.Increment(ref _dspResetVersion);
+            Volatile.Write(ref AnchorFrames, MsToFrames(targetMs));
+            _pcmRing?.BeginSession();
+            _dopRing?.BeginSession();
+            _dsdRing?.BeginSession();
+            Interlocked.Exchange(ref _pendingSeekMs, targetMs);
+        }
         WakeProducer();
     }
 
@@ -207,20 +212,32 @@ internal sealed class Session : IRenderSource, IDisposable
         return true;
     }
 
-    private bool HandleSeek()
+    private void HandleSeek()
     {
-        if (!TakeSeek(out long ms)) return false;
-        _pcm?.SeekToMs(ms);
-        _dsd?.SeekToMs(ms);
-        _dsdLeftoverBytes = 0;
-        return true;
+        lock (_seekGate)
+        {
+            if (TakeSeek(out long ms))
+            {
+                bool ok = _pcm?.SeekToMs(ms) ?? _dsd?.SeekToMs(ms) ?? false;
+                if (!ok) Console.WriteLine($"[decode] seek failed: {ms}ms");
+                _dsdLeftoverBytes = 0;
+            }
+            _decodeEpoch = _pcmRing?.Epoch ?? _dopRing?.Epoch ?? _dsdRing?.Epoch ?? 0;
+        }
+    }
+
+    private void DisposeDecoder()
+    {
+        // 解码线程独占原生资源；控制线程等待超时后仍会在这里最终归还。
+        _pcm?.Dispose(); _dsd?.Dispose();
+        _pcm = null; _dsd = null;
     }
 
     private bool Cancelled() => _cancelled;
 
     private bool WaitForSeekAfterEnd()
     {
-        // Keep the bitstream reader alive after EOF: the device may still be draining,
+        // Keep the decoder/bitstream reader alive after EOF: the device may still be draining,
         // and RequestSeek must be able to restart decoding without replacing the session.
         lock (_decodeEndGate)
         {
@@ -240,17 +257,19 @@ internal sealed class Session : IRenderSource, IDisposable
                 int frames = _pcm!.Read(_decodeScratchF);
                 if (frames <= 0)
                 {
-                    _pcmRing!.MarkInputEnded();
+                    if (!_pcmRing!.MarkInputEnded(_decodeEpoch)) continue;
+                    if (WaitForSeekAfterEnd()) continue;
                     break;
                 }
-                if (!_pcmRing!.Push(_decodeScratchF, frames, Cancelled))
+                if (!_pcmRing!.Push(_decodeScratchF, frames, _isCancelled, _decodeEpoch))
                 {
                     if (_cancelled) break;
                     continue; // 会话被 seek 重置：回循环顶处理待决 seek，从新位置继续
                 }
             }
         }
-        catch { _pcmRing?.MarkInputEnded(); }
+        catch (Exception ex) { Console.WriteLine($"[decode] {ex.Message}"); _pcmRing?.MarkInputEnded(_decodeEpoch); }
+        finally { DisposeDecoder(); }
     }
 
     private void DopDecodeProc()
@@ -270,7 +289,7 @@ internal sealed class Session : IRenderSource, IDisposable
                         if (!PushDop(_dsdLeftover.AsSpan(0, _channels * 2))) continue;
                         _dsdLeftoverBytes = 0;
                     }
-                    _dopRing!.MarkInputEnded();
+                    if (!_dopRing!.MarkInputEnded(_decodeEpoch)) continue;
                     if (WaitForSeekAfterEnd()) continue;
                     break;
                 }
@@ -294,7 +313,8 @@ internal sealed class Session : IRenderSource, IDisposable
                     continue; // 会话被 seek 重置：回循环顶处理待决 seek，从新位置继续
             }
         }
-        catch { _dopRing?.MarkInputEnded(); }
+        catch (Exception ex) { Console.WriteLine($"[decode] {ex.Message}"); _dopRing?.MarkInputEnded(_decodeEpoch); }
+        finally { DisposeDecoder(); }
     }
 
     /// <summary>把交织 DSD 字节（每帧每声道 1 字节）装配为 DoP uint 采样并推送。
@@ -316,7 +336,7 @@ internal sealed class Session : IRenderSource, IDisposable
             for (int c = 0; c < ch; c++)
                 _dopPackBuffer[f * ch + c] = (uint)((interleaved[base0 + c] << 8) | interleaved[base1 + c]);
         }
-        if (!_dopRing!.Push(_dopPackBuffer, dopFrames, Cancelled)) return false;
+        if (!_dopRing!.Push(_dopPackBuffer, dopFrames, _isCancelled, _decodeEpoch)) return false;
 
         if (leftoverFrames > 0)
         {
@@ -337,19 +357,20 @@ internal sealed class Session : IRenderSource, IDisposable
                 int bytes = _dsd!.ReadInterleaved(_decodeScratchB);
                 if (bytes <= 0)
                 {
-                    _dsdRing!.MarkInputEnded();
+                    if (!_dsdRing!.MarkInputEnded(_decodeEpoch)) continue;
                     if (WaitForSeekAfterEnd()) continue;
                     break;
                 }
                 int frames = bytes / _channels;
-                if (frames > 0 && !_dsdRing!.Push(_decodeScratchB, frames, Cancelled))
+                if (frames > 0 && !_dsdRing!.Push(_decodeScratchB, frames, _isCancelled, _decodeEpoch))
                 {
                     if (_cancelled) break;
                     continue; // 会话被 seek 重置：回循环顶处理待决 seek
                 }
             }
         }
-        catch { _dsdRing?.MarkInputEnded(); }
+        catch (Exception ex) { Console.WriteLine($"[decode] {ex.Message}"); _dsdRing?.MarkInputEnded(_decodeEpoch); }
+        finally { DisposeDecoder(); }
     }
 
     // ─────────────── IRenderSource（输出渲染线程调用） ───────────────
@@ -383,17 +404,12 @@ internal sealed class Session : IRenderSource, IDisposable
 
     public void Dispose()
     {
-        Effects?.Dispose();
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         _cancelled = true;
         WakeProducer();
-        try { _thread?.Join(1000); } catch { }
-        if (_thread is { IsAlive: true })
-        {
-            // 解码线程卡在 FFmpeg 内部 IO：放弃解码器交给进程退出回收，避免析构竞争
-            if (_pcm != null) { var d = _pcm; _pcm = null; _ = d; }
-            if (_dsd != null) { var d = _dsd; _dsd = null; _ = d; }
-        }
-        _pcm?.Dispose();
-        _dsd?.Dispose();
+        Effects?.Dispose();
+        if (_thread == null) DisposeDecoder();
+        else if (!_thread.Join(1000))
+            Console.WriteLine("[decode] shutdown pending; decoder thread retains resource ownership");
     }
 }

@@ -24,6 +24,7 @@ public struct IpcSetting
 {
     public string? OutputMode;
     public int BassOutputDeviceId;
+    public string? WasapiEndpointId;
     public int BassASIODeviceId;
     public int Latency;
     public bool IsDopEnabled;

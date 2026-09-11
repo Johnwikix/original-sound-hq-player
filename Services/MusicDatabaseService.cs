@@ -1019,6 +1019,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.OutputMode = settings.OutputMode;
                 AppSettings.DeviceName = settings.DeviceFriendlyName;
                 AppSettings.BassOutputDeviceId = settings.BassOutputDeviceId;
+                AppSettings.WasapiEndpointId = settings.WasapiEndpointId;
                 AppSettings.BassASIODeviceId = settings.BassASIODeviceId;
                 AppViewModel.DefaultEntryComboBoxTag = settings.DefaultEntry;
                 AppViewModel.DefaultPlayListComboBoxTag = settings.DefaultPlayList;
@@ -1199,6 +1200,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.OutputMode = AppSettings.OutputMode;
             newSettings.DeviceFriendlyName = AppSettings.DeviceName;
             newSettings.BassOutputDeviceId = AppSettings.BassOutputDeviceId;
+            newSettings.WasapiEndpointId = AppSettings.WasapiEndpointId;
             newSettings.BassASIODeviceId = AppSettings.BassASIODeviceId;
             newSettings.Latency = AppViewModel.Latency;
             newSettings.DefaultEntry = AppViewModel.DefaultEntryComboBoxTag;

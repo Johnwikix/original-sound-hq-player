@@ -1,0 +1,1294 @@
+Timestamp,Provider,Counter Name,Counter Type,Mean/Increment
+09/11/2026 14:43:36,System.Runtime,dotnet.process.memory.working_set (By),Metric,26779648
+09/11/2026 14:43:36,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:36,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:36,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:36,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:36,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:36,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:36,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:36,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:36,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:36,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:36,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:36,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:36,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:36,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:36,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:36,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:37,System.Runtime,dotnet.process.memory.working_set (By),Metric,26890240
+09/11/2026 14:43:37,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:37,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:37,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:37,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:37,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:37,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:37,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:37,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,32712
+09/11/2026 14:43:37,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:37,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:43:37,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0.015625
+09/11/2026 14:43:37,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:37,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:37,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:37,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:37,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:37,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:37,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:37,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:37,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:37,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:37,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:37,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:37,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:37,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:37,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:37,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:37,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:43:38,System.Runtime,dotnet.process.memory.working_set (By),Metric,27013120
+09/11/2026 14:43:38,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:38,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:38,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:38,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:38,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:38,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:38,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:38,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,24304
+09/11/2026 14:43:38,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:38,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0.015625
+09/11/2026 14:43:38,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:43:38,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:38,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:38,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:38,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:38,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:38,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:38,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:38,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:38,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:38,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:38,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:38,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:38,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:38,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:38,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:38,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:38,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,32
+09/11/2026 14:43:39,System.Runtime,dotnet.process.memory.working_set (By),Metric,26927104
+09/11/2026 14:43:39,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:39,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:39,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:39,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:39,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:39,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:39,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:39,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,40888
+09/11/2026 14:43:39,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:39,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:43:39,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0.015625
+09/11/2026 14:43:39,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:39,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:39,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:39,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:39,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:39,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:39,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:39,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:39,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:39,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:39,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:39,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:39,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:39,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:39,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:39,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:39,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,32
+09/11/2026 14:43:40,System.Runtime,dotnet.process.memory.working_set (By),Metric,26963968
+09/11/2026 14:43:40,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:40,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:40,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:40,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:40,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:40,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:40,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:40,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,16400
+09/11/2026 14:43:40,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:40,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:43:40,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:43:40,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:40,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:40,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:40,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:40,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:40,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:40,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:40,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:40,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:40,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:40,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:40,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:40,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:40,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:40,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:40,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:40,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:43:41,System.Runtime,dotnet.process.memory.working_set (By),Metric,26935296
+09/11/2026 14:43:41,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:41,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:41,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:41,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:41,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:41,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:41,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:41,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,24256
+09/11/2026 14:43:41,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:41,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0.015625
+09/11/2026 14:43:41,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0.015625
+09/11/2026 14:43:41,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:41,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:41,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:41,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:41,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:41,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:41,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:41,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:41,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:41,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:41,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:41,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:41,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:41,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:41,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:41,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:41,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:43:42,System.Runtime,dotnet.process.memory.working_set (By),Metric,26951680
+09/11/2026 14:43:42,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:42,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:42,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:42,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:42,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:42,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:42,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:42,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,32416
+09/11/2026 14:43:42,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:42,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:43:42,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:43:42,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:42,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:42,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:42,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:42,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:42,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:42,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:42,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:42,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:42,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:42,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:42,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:42,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:42,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:42,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:42,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:42,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:43:43,System.Runtime,dotnet.process.memory.working_set (By),Metric,26968064
+09/11/2026 14:43:43,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:43,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:43,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:43,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:43,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:43,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:43,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:43,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,32472
+09/11/2026 14:43:43,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:43,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0.015625
+09/11/2026 14:43:43,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:43:43,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:43,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:43,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:43,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:43,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:43,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:43,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:43,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:43,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:43,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:43,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:43,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:43,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:43,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:43,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:43,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:43,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:43:44,System.Runtime,dotnet.process.memory.working_set (By),Metric,26984448
+09/11/2026 14:43:44,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:44,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:44,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:44,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:44,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:44,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:44,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:44,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,16360
+09/11/2026 14:43:44,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:44,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:43:44,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:43:44,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:44,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:44,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:44,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:44,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:44,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:44,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:44,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:44,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:44,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:44,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:44,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:44,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:44,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:44,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:44,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:44,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:43:45,System.Runtime,dotnet.process.memory.working_set (By),Metric,26927104
+09/11/2026 14:43:45,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:45,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:45,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:45,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:45,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:45,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:45,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:45,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,32480
+09/11/2026 14:43:45,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:45,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0.015625
+09/11/2026 14:43:45,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0.03125
+09/11/2026 14:43:45,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:45,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:45,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:45,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:45,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:45,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:45,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:45,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:45,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:45,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:45,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:45,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:45,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:45,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:45,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:45,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:45,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,32
+09/11/2026 14:43:46,System.Runtime,dotnet.process.memory.working_set (By),Metric,27381760
+09/11/2026 14:43:46,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:46,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:46,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:46,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:46,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:46,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:46,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:46,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,32656
+09/11/2026 14:43:46,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:46,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:43:46,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:43:46,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:46,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:46,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:46,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:46,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:46,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:46,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:46,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:46,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:46,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:46,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:46,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:46,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:46,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:46,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:46,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:46,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,32
+09/11/2026 14:43:47,System.Runtime,dotnet.process.memory.working_set (By),Metric,27271168
+09/11/2026 14:43:47,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:47,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:47,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:47,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:47,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:47,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:47,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:47,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,24544
+09/11/2026 14:43:47,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:47,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0.015625
+09/11/2026 14:43:47,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:43:47,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:47,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:47,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:47,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:47,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:47,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:47,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:47,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:47,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:47,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:47,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:47,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:47,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:47,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:47,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:47,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:47,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:43:48,System.Runtime,dotnet.process.memory.working_set (By),Metric,27295744
+09/11/2026 14:43:48,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:48,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:48,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:48,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:48,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:48,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:48,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:48,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,24336
+09/11/2026 14:43:48,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:48,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:43:48,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0.015625
+09/11/2026 14:43:48,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:48,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:48,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:48,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:48,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:48,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:48,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:48,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:48,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:48,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:48,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:48,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:48,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:48,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:48,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:48,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:48,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:43:49,System.Runtime,dotnet.process.memory.working_set (By),Metric,27656192
+09/11/2026 14:43:49,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:49,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:49,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:49,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:49,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:49,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:49,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:49,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,32720
+09/11/2026 14:43:49,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:49,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0.015625
+09/11/2026 14:43:49,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0.015625
+09/11/2026 14:43:49,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:49,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:49,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:49,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:49,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:49,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:49,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:49,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:49,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:49,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:49,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:49,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:49,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:49,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:49,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:49,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:49,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:43:50,System.Runtime,dotnet.process.memory.working_set (By),Metric,27697152
+09/11/2026 14:43:50,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:50,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:50,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:50,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:50,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:50,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:50,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:50,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,24200
+09/11/2026 14:43:50,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:50,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:43:50,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0.015625
+09/11/2026 14:43:50,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:50,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:50,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:50,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:50,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:50,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:50,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:50,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:50,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:50,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:50,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:50,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:50,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:50,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:50,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:50,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:50,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,32
+09/11/2026 14:43:51,System.Runtime,dotnet.process.memory.working_set (By),Metric,27648000
+09/11/2026 14:43:51,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:51,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:51,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:51,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:51,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:51,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:51,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:51,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,24592
+09/11/2026 14:43:51,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:51,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:43:51,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:43:51,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:51,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:51,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:51,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:51,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:51,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:51,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:51,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:51,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:51,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:51,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:51,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:51,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:51,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:51,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:51,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:51,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:43:52,System.Runtime,dotnet.process.memory.working_set (By),Metric,27742208
+09/11/2026 14:43:52,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:52,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:52,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:52,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:52,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:52,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:52,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:52,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,24456
+09/11/2026 14:43:52,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:52,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:43:52,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0.015625
+09/11/2026 14:43:52,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:52,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:52,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:52,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:52,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:52,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:52,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:52,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:52,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:52,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:52,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:52,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:52,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:52,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:52,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:52,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:52,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:43:53,System.Runtime,dotnet.process.memory.working_set (By),Metric,27705344
+09/11/2026 14:43:53,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:53,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:53,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:53,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:53,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:53,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:53,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:53,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,32280
+09/11/2026 14:43:53,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:53,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:43:53,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:43:53,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:53,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:53,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:53,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:53,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:53,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:53,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:53,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:53,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:53,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:53,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:53,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:53,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:53,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:53,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:53,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:53,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:43:54,System.Runtime,dotnet.process.memory.working_set (By),Metric,27664384
+09/11/2026 14:43:54,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:54,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:54,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:54,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:54,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:54,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:54,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:54,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,24528
+09/11/2026 14:43:54,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:54,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:43:54,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0.015625
+09/11/2026 14:43:54,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:54,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:54,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:54,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:54,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:54,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:54,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:54,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:54,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:54,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:54,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:54,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:54,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:54,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:54,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:54,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:54,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,32
+09/11/2026 14:43:55,System.Runtime,dotnet.process.memory.working_set (By),Metric,27684864
+09/11/2026 14:43:55,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:55,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:55,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:55,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:55,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:55,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:55,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:55,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,32488
+09/11/2026 14:43:55,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:55,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:43:55,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0.03125
+09/11/2026 14:43:55,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:55,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:55,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:55,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:55,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:55,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:55,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:55,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:55,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:55,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:55,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:55,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:55,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:55,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:55,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:55,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:55,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:43:56,System.Runtime,dotnet.process.memory.working_set (By),Metric,27709440
+09/11/2026 14:43:56,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:56,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:56,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:56,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:56,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:56,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:56,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:56,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,24536
+09/11/2026 14:43:56,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:56,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:43:56,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:43:56,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:56,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:56,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:56,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:56,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:56,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:56,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:56,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:56,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:56,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:56,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:56,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:56,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:56,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:56,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:56,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:56,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:43:57,System.Runtime,dotnet.process.memory.working_set (By),Metric,27824128
+09/11/2026 14:43:57,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:57,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:57,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:57,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:57,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:57,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:57,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:57,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,24296
+09/11/2026 14:43:57,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:57,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0.046875
+09/11/2026 14:43:57,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:43:57,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:57,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:57,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:57,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:57,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:57,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:57,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:57,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:57,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:57,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:57,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:57,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:57,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:57,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:57,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:57,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:57,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:43:58,System.Runtime,dotnet.process.memory.working_set (By),Metric,27848704
+09/11/2026 14:43:58,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:58,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:58,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:58,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:58,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:58,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:58,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:58,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,32776
+09/11/2026 14:43:58,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:58,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:43:58,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:43:58,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:58,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:58,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:58,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:58,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:58,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:58,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:58,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:58,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:58,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:58,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:58,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:58,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:58,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:58,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:58,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:58,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:43:59,System.Runtime,dotnet.process.memory.working_set (By),Metric,27934720
+09/11/2026 14:43:59,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:43:59,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:43:59,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:43:59,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:43:59,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:59,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:43:59,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:43:59,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,24496
+09/11/2026 14:43:59,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:43:59,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:43:59,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:43:59,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:43:59,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:43:59,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:43:59,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:43:59,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:43:59,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:43:59,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:43:59,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:43:59,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:43:59,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:43:59,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:43:59,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:43:59,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:43:59,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:43:59,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:43:59,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:43:59,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,32
+09/11/2026 14:44:00,System.Runtime,dotnet.process.memory.working_set (By),Metric,27787264
+09/11/2026 14:44:00,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:00,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:00,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:00,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:00,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:00,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:00,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:00,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,32504
+09/11/2026 14:44:00,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:00,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:44:00,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0.015625
+09/11/2026 14:44:00,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:00,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:00,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:00,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:00,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:00,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:00,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:00,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:00,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:00,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:00,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:00,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:00,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:00,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:00,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:00,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:00,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:44:01,System.Runtime,dotnet.process.memory.working_set (By),Metric,27860992
+09/11/2026 14:44:01,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:01,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:01,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:01,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:01,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:01,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:01,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:01,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,16400
+09/11/2026 14:44:01,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:01,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:44:01,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0.015625
+09/11/2026 14:44:01,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:01,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:01,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:01,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:01,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:01,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:01,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:01,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:01,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:01,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:01,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:01,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:01,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:01,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:01,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:01,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:01,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:44:02,System.Runtime,dotnet.process.memory.working_set (By),Metric,27926528
+09/11/2026 14:44:02,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:02,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:02,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:02,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:02,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:02,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:02,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:02,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,24328
+09/11/2026 14:44:02,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:02,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0.015625
+09/11/2026 14:44:02,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0.03125
+09/11/2026 14:44:02,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:02,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:02,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:02,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:02,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:02,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:02,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:02,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:02,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:02,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:02,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:02,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:02,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:02,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:02,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:02,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:02,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:44:03,System.Runtime,dotnet.process.memory.working_set (By),Metric,28004352
+09/11/2026 14:44:03,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:03,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:03,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:03,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:03,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:03,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:03,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:03,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,40944
+09/11/2026 14:44:03,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:03,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:44:03,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:44:03,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:03,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:03,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:03,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:03,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:03,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:03,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:03,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:03,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:03,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:03,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:03,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:03,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:03,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:03,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:03,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:03,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:44:04,System.Runtime,dotnet.process.memory.working_set (By),Metric,27832320
+09/11/2026 14:44:04,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:04,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:04,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:04,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:04,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:04,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:04,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:04,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,24088
+09/11/2026 14:44:04,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:04,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0.015625
+09/11/2026 14:44:04,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0.015625
+09/11/2026 14:44:04,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:04,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:04,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:04,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:04,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:04,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:04,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:04,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:04,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:04,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:04,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:04,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:04,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:04,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:04,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:04,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:04,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:44:05,System.Runtime,dotnet.process.memory.working_set (By),Metric,27922432
+09/11/2026 14:44:05,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:05,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:05,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:05,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:05,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:05,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:05,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:05,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,24560
+09/11/2026 14:44:05,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:05,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0.015625
+09/11/2026 14:44:05,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0.015625
+09/11/2026 14:44:05,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:05,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:05,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:05,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:05,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:05,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:05,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:05,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:05,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:05,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:05,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:05,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:05,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:05,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:05,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:05,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:05,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:44:06,System.Runtime,dotnet.process.memory.working_set (By),Metric,27992064
+09/11/2026 14:44:06,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:06,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:06,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:06,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:06,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:06,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:06,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:06,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,32656
+09/11/2026 14:44:06,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:06,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0.015625
+09/11/2026 14:44:06,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:44:06,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:06,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:06,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:06,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:06,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:06,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:06,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:06,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:06,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:06,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:06,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:06,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:06,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:06,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:06,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:06,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:06,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:44:07,System.Runtime,dotnet.process.memory.working_set (By),Metric,28012544
+09/11/2026 14:44:07,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:07,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:07,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:07,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:07,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:07,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:07,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:07,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,24248
+09/11/2026 14:44:07,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:07,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:44:07,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0.015625
+09/11/2026 14:44:07,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:07,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:07,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:07,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:07,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:07,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:07,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:07,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:07,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:07,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:07,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:07,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:07,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:07,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:07,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:07,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:07,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:44:08,System.Runtime,dotnet.process.memory.working_set (By),Metric,28020736
+09/11/2026 14:44:08,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:08,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:08,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:08,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:08,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:08,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:08,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:08,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,32784
+09/11/2026 14:44:08,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:08,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:44:08,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:44:08,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:08,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:08,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:08,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:08,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:08,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:08,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:08,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:08,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:08,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:08,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:08,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:08,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:08,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:08,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:08,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:08,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,32
+09/11/2026 14:44:09,System.Runtime,dotnet.process.memory.working_set (By),Metric,27959296
+09/11/2026 14:44:09,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:09,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:09,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:09,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:09,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:09,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:09,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:09,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,24328
+09/11/2026 14:44:09,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:09,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:44:09,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0.03125
+09/11/2026 14:44:09,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:09,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:09,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:09,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:09,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:09,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:09,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:09,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:09,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:09,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:09,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:09,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:09,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:09,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:09,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:09,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:09,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,32
+09/11/2026 14:44:10,System.Runtime,dotnet.process.memory.working_set (By),Metric,28160000
+09/11/2026 14:44:10,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:10,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:10,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:10,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:10,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:10,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:10,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:10,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,24520
+09/11/2026 14:44:10,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:10,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:44:10,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:44:10,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:10,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:10,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:10,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:10,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:10,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:10,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:10,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:10,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:10,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:10,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:10,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:10,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:10,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:10,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:10,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:10,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:44:11,System.Runtime,dotnet.process.memory.working_set (By),Metric,28139520
+09/11/2026 14:44:11,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:11,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:11,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:11,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:11,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:11,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:11,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:11,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,32488
+09/11/2026 14:44:11,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:11,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:44:11,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:44:11,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:11,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:11,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:11,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:11,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:11,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:11,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:11,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:11,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:11,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:11,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:11,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:11,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:11,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:11,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:11,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:11,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:44:12,System.Runtime,dotnet.process.memory.working_set (By),Metric,28192768
+09/11/2026 14:44:12,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:12,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:12,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:12,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:12,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:12,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:12,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:12,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,16320
+09/11/2026 14:44:12,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:12,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:44:12,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:44:12,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:12,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:12,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:12,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:12,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:12,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:12,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:12,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:12,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:12,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:12,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:12,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:12,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:12,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:12,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:12,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:12,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:44:13,System.Runtime,dotnet.process.memory.working_set (By),Metric,28262400
+09/11/2026 14:44:13,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:13,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:13,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:13,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:13,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:13,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:13,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:13,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,32752
+09/11/2026 14:44:13,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:13,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:44:13,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:44:13,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:13,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:13,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:13,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:13,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:13,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:13,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:13,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:13,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:13,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:13,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:13,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:13,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:13,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:13,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:13,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:13,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:44:14,System.Runtime,dotnet.process.memory.working_set (By),Metric,28372992
+09/11/2026 14:44:14,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:14,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:14,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:14,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:14,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:14,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:14,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:14,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,32504
+09/11/2026 14:44:14,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:14,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:44:14,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:44:14,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:14,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:14,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:14,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:14,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:14,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:14,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:14,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:14,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:14,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:14,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:14,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:14,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:14,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:14,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:14,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:14,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,32
+09/11/2026 14:44:15,System.Runtime,dotnet.process.memory.working_set (By),Metric,28352512
+09/11/2026 14:44:15,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:15,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:15,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:15,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:15,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:15,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:15,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:15,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,16400
+09/11/2026 14:44:15,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:15,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:44:15,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0.046875
+09/11/2026 14:44:15,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:15,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:15,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:15,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:15,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:15,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:15,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:15,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:15,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:15,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:15,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:15,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:15,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:15,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:15,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:15,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:15,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:44:16,System.Runtime,dotnet.process.memory.working_set (By),Metric,28409856
+09/11/2026 14:44:16,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:16,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:16,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:16,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:16,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:16,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:16,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:16,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,40624
+09/11/2026 14:44:16,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:16,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:44:16,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:44:16,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:16,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:16,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:16,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:16,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:16,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:16,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:16,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:16,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:16,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:16,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:16,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:16,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:16,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:16,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:16,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:16,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:44:17,System.Runtime,dotnet.process.memory.working_set (By),Metric,28274688
+09/11/2026 14:44:17,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:17,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:17,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:17,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:17,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:17,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:17,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:17,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,24552
+09/11/2026 14:44:17,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:17,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0.015625
+09/11/2026 14:44:17,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:44:17,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:17,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:17,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:17,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:17,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:17,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:17,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:17,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:17,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:17,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:17,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:17,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:17,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:17,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:17,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:17,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:17,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:44:18,System.Runtime,dotnet.process.memory.working_set (By),Metric,28336128
+09/11/2026 14:44:18,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:18,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:18,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:18,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:18,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:18,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:18,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:18,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,16392
+09/11/2026 14:44:18,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:18,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0.015625
+09/11/2026 14:44:18,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0.03125
+09/11/2026 14:44:18,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:18,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:18,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:18,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:18,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:18,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:18,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:18,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:18,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:18,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:18,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:18,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:18,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:18,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:18,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:18,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:18,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:44:19,System.Runtime,dotnet.process.memory.working_set (By),Metric,28413952
+09/11/2026 14:44:19,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:19,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:19,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:19,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:19,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:19,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:19,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:19,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,40696
+09/11/2026 14:44:19,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:19,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0.03125
+09/11/2026 14:44:19,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:44:19,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:19,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:19,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:19,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:19,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:19,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:19,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:19,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:19,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:19,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:19,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:19,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:19,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:19,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:19,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:19,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:19,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33
+09/11/2026 14:44:20,System.Runtime,dotnet.process.memory.working_set (By),Metric,28528640
+09/11/2026 14:44:20,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen2],Metric,0
+09/11/2026 14:44:20,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=poh],Metric,0
+09/11/2026 14:44:20,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=loh],Metric,2974536
+09/11/2026 14:44:20,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen1],Metric,192
+09/11/2026 14:44:20,System.Runtime,dotnet.gc.last_collection.heap.fragmentation.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:20,System.Runtime,dotnet.gc.pause.time (s / 1 sec),Rate,0
+09/11/2026 14:44:20,System.Runtime,dotnet.gc.last_collection.memory.committed_size (By),Metric,6365184
+09/11/2026 14:44:20,System.Runtime,dotnet.gc.heap.total_allocated (By / 1 sec),Rate,24560
+09/11/2026 14:44:20,System.Runtime,dotnet.timer.count ({timer}),Metric,2
+09/11/2026 14:44:20,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=system],Rate,0
+09/11/2026 14:44:20,System.Runtime,dotnet.process.cpu.time (s / 1 sec)[cpu.mode=user],Rate,0
+09/11/2026 14:44:20,System.Runtime,dotnet.thread_pool.thread.count ({thread}),Metric,3
+09/11/2026 14:44:20,System.Runtime,dotnet.monitor.lock_contentions ({contention} / 1 sec),Rate,0
+09/11/2026 14:44:20,System.Runtime,dotnet.jit.compiled_il.size (By / 1 sec),Rate,0
+09/11/2026 14:44:20,System.Runtime,dotnet.assembly.count ({assembly}),Metric,14
+09/11/2026 14:44:20,System.Runtime,dotnet.jit.compilation.time (s / 1 sec),Rate,0
+09/11/2026 14:44:20,System.Runtime,dotnet.jit.compiled_methods ({method} / 1 sec),Rate,0
+09/11/2026 14:44:20,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen2],Metric,298304
+09/11/2026 14:44:20,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=poh],Metric,31584
+09/11/2026 14:44:20,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=loh],Metric,4113864
+09/11/2026 14:44:20,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen1],Metric,9072
+09/11/2026 14:44:20,System.Runtime,dotnet.gc.last_collection.heap.size (By)[gc.heap.generation=gen0],Metric,0
+09/11/2026 14:44:20,System.Runtime,dotnet.process.cpu.count ({cpu}),Metric,16
+09/11/2026 14:44:20,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen2],Rate,0
+09/11/2026 14:44:20,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen1],Rate,0
+09/11/2026 14:44:20,System.Runtime,dotnet.gc.collections ({collection} / 1 sec)[gc.heap.generation=gen0],Rate,0
+09/11/2026 14:44:20,System.Runtime,dotnet.thread_pool.queue.length ({work_item}),Metric,0
+09/11/2026 14:44:20,System.Runtime,dotnet.thread_pool.work_item.count ({work_item} / 1 sec),Rate,33

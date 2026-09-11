@@ -329,6 +329,7 @@ namespace WinUIMusicPlayer.ViewModel
                                 if (value.OutputMode != "ASIO")
                                 {
                                     AppSettings.BassOutputDeviceId = value.Id;
+                                    AppSettings.WasapiEndpointId = value.EndpointId;
                                 }
                                 else
                                 {
@@ -1809,13 +1810,14 @@ namespace WinUIMusicPlayer.ViewModel
                 var wasapiDevices = await cmd.GetWasapiDevices();
                 foreach (var (id, name) in wasapiDevices)
                 {
-                    if (!BassOutputDevices.AsValueEnumerable().Any(d => d.Name == name))
+                    if (!BassOutputDevices.AsValueEnumerable().Any(d => d.EndpointId == cmd.GetWasapiEndpointId(id) && d.OutputMode == "WasapiShared"))
                     {
                         BassOutputDevices.Add(new BassOutputDevice
                         {
                             Name = name,
                             Tag = $"{name} [{ToolUtils.GetString("WasapiSharedText")}]",
                             Id = id,
+                            EndpointId = cmd.GetWasapiEndpointId(id),
                             OutputMode = "WasapiShared"
                         });
                         BassOutputDevices.Add(new BassOutputDevice
@@ -1823,6 +1825,7 @@ namespace WinUIMusicPlayer.ViewModel
                             Name = name,
                             Tag = $"{name} [{ToolUtils.GetString("WasapiExclusivePushText")}]",
                             Id = id,
+                            EndpointId = cmd.GetWasapiEndpointId(id),
                             OutputMode = "WasapiExclusivePush"
                         });
                         BassOutputDevices.Add(new BassOutputDevice
@@ -1830,18 +1833,21 @@ namespace WinUIMusicPlayer.ViewModel
                             Name = name,
                             Tag = $"{name} [{ToolUtils.GetString("WasapiExclusiveEventText")}]",
                             Id = id,
+                            EndpointId = cmd.GetWasapiEndpointId(id),
                             OutputMode = "WasapiExclusiveEvent"
                         });
                     }
                 }
 
-                var device = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == AppSettings.DeviceName && d.OutputMode == AppSettings.OutputMode);
+                var device = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.OutputMode == AppSettings.OutputMode && (string.IsNullOrEmpty(AppSettings.WasapiEndpointId)
+                    || d.OutputMode == "ASIO" || d.OutputMode == "DirectSound" ? d.Name == AppSettings.DeviceName : d.EndpointId == AppSettings.WasapiEndpointId));
                 if (device is null)
                 {
                     // 枚举不到已保存设备（未上电/驱动未就绪等瞬时原因）时只回退内存状态到默认设备，
                     // 不触发落盘，避免把用户保存的输出设备设置永久重置（下次启动设备在位时自动恢复）
                     AppSettings.OutputMode = "DirectSound";
                     AppSettings.BassOutputDeviceId = -1;
+                    AppSettings.WasapiEndpointId = null;
                     AppSettings.DeviceName = "DefaultDevice";
                     IsRealDevceChange = false;
                     SelectedDevice = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == "DefaultDevice" && d.OutputMode == "DirectSound");
@@ -1853,6 +1859,11 @@ namespace WinUIMusicPlayer.ViewModel
                     // 但保留输出重配事件以维持原有启动初始化行为
                     IsRealDevceChange = false;
                     SelectedDevice = device;
+                    if (device.OutputMode.StartsWith("Wasapi", StringComparison.Ordinal))
+                    {
+                        AppSettings.BassOutputDeviceId = device.Id;
+                        AppSettings.WasapiEndpointId = device.EndpointId;
+                    }
                 }
             }
             finally { _isLoadingDevices = false; }

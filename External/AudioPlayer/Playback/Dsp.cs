@@ -19,9 +19,14 @@ internal sealed class Equalizer
     private struct Band
     {
         public double B0, B1, B2, A1, A2; // a0 已归一化（double 全程）
-        public double X1_0, X2_0, Y1_0, Y2_0; // ch0 状态
-        public double X1_1, X2_1, Y1_1, Y2_1; // ch1 状态
         public bool Active;
+        public int Rate;
+    }
+
+    private struct History
+    {
+        public double X1_0, X2_0, Y1_0, Y2_0;
+        public double X1_1, X2_1, Y1_1, Y2_1;
     }
 
     // 渲染线程读取的不可变快照（引用原子替换）
@@ -30,19 +35,13 @@ internal sealed class Equalizer
     private readonly double[] _q = new double[10];
     private volatile bool _enabled;
     private int _sampleRate;
-    private int _snapshotRate; // 上次快照的采样率：一致才继承滤波器状态
-
-    public bool Enabled => _enabled;
-    public bool Active => _enabled && HasActiveBand(_snapshot);
+    private readonly History[] _history = new History[10];
+    private Band[]? _renderSnapshot;
 
     /// <summary>仅由渲染线程清除历史样本，重新启用总开关时避免旧 EQ 尾音泄漏。</summary>
     internal void ResetHistory()
     {
-        foreach (ref var band in _snapshot.AsSpan())
-        {
-            band.X1_0 = band.X2_0 = band.Y1_0 = band.Y2_0 = 0;
-            band.X1_1 = band.X2_1 = band.Y1_1 = band.Y2_1 = 0;
-        }
+        _history.AsSpan().Clear();
     }
 
     private static Band[] CreateEmptySnapshot()
@@ -51,57 +50,33 @@ internal sealed class Equalizer
         return bands;
     }
 
-    private static bool HasActiveBand(Band[] bands)
-    {
-        foreach (var b in bands) if (b.Active) return true;
-        return false;
-    }
-
     /// <summary>增益来自 IPC 协议（float32，UI 只有一档小数），系数计算在 double 域进行。</summary>
     public void Configure(int sampleRate, bool enabled, ReadOnlySpan<float> gainsDb, ReadOnlySpan<float> qValues = default)
     {
+        bool changed = _sampleRate != sampleRate || _enabled != enabled;
         _sampleRate = sampleRate;
         _enabled = enabled;
         for (int i = 0; i < 10; i++)
         {
-            _gains[i] = float.IsFinite(gainsDb[i]) ? Math.Clamp(gainsDb[i], -12, 12) : 0;
-            _q[i] = EqParameters.NormalizeQ(i < qValues.Length ? qValues[i] : EqParameters.DefaultQ);
+            double gain = float.IsFinite(gainsDb[i]) ? Math.Clamp(gainsDb[i], -12, 12) : 0;
+            double q = EqParameters.NormalizeQ(i < qValues.Length ? qValues[i] : EqParameters.DefaultQ);
+            changed |= _gains[i] != gain || _q[i] != q;
+            _gains[i] = gain; _q[i] = q;
         }
-        RebuildSnapshot();
-    }
-
-    public void SetEnabled(bool enabled)
-    {
-        _enabled = enabled;
-        RebuildSnapshot();
-    }
-
-    public void UpdateGains(ReadOnlySpan<float> gainsDb)
-    {
-        for (int i = 0; i <10; i++) _gains[i] = gainsDb[i];
-        RebuildSnapshot();
+        if (changed) RebuildSnapshot();
     }
 
     private void RebuildSnapshot()
     {
         var rate = _sampleRate;
-        var old = _snapshot;
         var bands = new Band[10];
         for (int i = 0; i < 10; i++)
         {
             ref var b = ref bands[i];
+            b.Rate = rate;
             double db = _gains[i];
             b.Active = _enabled && Math.Abs(db) >= 0.01 && rate > 0 && Frequencies[i] < rate * 0.5;
             if (!b.Active) continue;
-            // 状态连续性：带持续激活且采样率未变时继承旧快照的滤波器状态，
-            // 系数热更新不产生状态跳变（播放中调 EQ 的爆音）；新激活/换率从零起步
-            if (old[i].Active && rate == _snapshotRate)
-            {
-                b.X1_0 = old[i].X1_0; b.X2_0 = old[i].X2_0;
-                b.Y1_0 = old[i].Y1_0; b.Y2_0 = old[i].Y2_0;
-                b.X1_1 = old[i].X1_1; b.X2_1 = old[i].X2_1;
-                b.Y1_1 = old[i].Y1_1; b.Y2_1 = old[i].Y2_1;
-            }
             // RBJ 峰值滤波器（Q 形式）：Q 越大，峰值作用范围越窄。
             double a = Math.Pow(10.0, db / 40.0);
             double w0 = 2.0 * Math.PI * Frequencies[i] / rate;
@@ -114,7 +89,6 @@ internal sealed class Equalizer
             b.A1 = (-2.0 * cosW) / a0;
             b.A2 = (1.0 - alpha / a) / a0;
         }
-        _snapshotRate = rate;
         _snapshot = bands;
     }
 
@@ -128,18 +102,23 @@ internal sealed class Equalizer
     {
         var bands = _snapshot;
         if (bands == null || channels is < 1 or > 2) return;
-        foreach (ref var band in bands.AsSpan()) // struct 数组可 ref 遍历
+        for (int index = 0; index < bands.Length; index++)
         {
+            ref readonly var band = ref bands[index];
+            ref var history = ref _history[index];
+            if (!ReferenceEquals(bands, _renderSnapshot)
+                && (_renderSnapshot == null || !band.Active || !_renderSnapshot[index].Active
+                    || band.Rate != _renderSnapshot[index].Rate)) history = default;
             if (!band.Active) continue;
             if (channels == 1)
             {
                 for (int f = 0; f < frames; f++)
                 {
                     double x = interleaved[f];
-                    double y = band.B0 * x + band.B1 * band.X1_0 + band.B2 * band.X2_0
-                               - band.A1 * band.Y1_0 - band.A2 * band.Y2_0;
-                    band.X2_0 = band.X1_0; band.X1_0 = x;
-                    band.Y2_0 = band.Y1_0; band.Y1_0 = y;
+                    double y = band.B0 * x + band.B1 * history.X1_0 + band.B2 * history.X2_0
+                               - band.A1 * history.Y1_0 - band.A2 * history.Y2_0;
+                    history.X2_0 = history.X1_0; history.X1_0 = x;
+                    history.Y2_0 = history.Y1_0; history.Y1_0 = y;
                     interleaved[f] = y;
                 }
             }
@@ -149,91 +128,94 @@ internal sealed class Equalizer
                 {
                     int i = f * 2;
                     double xl = interleaved[i], xr = interleaved[i + 1];
-                    double yl = band.B0 * xl + band.B1 * band.X1_0 + band.B2 * band.X2_0
-                                - band.A1 * band.Y1_0 - band.A2 * band.Y2_0;
-                    double yr = band.B0 * xr + band.B1 * band.X1_1 + band.B2 * band.X2_1
-                                - band.A1 * band.Y1_1 - band.A2 * band.Y2_1;
-                    band.X2_0 = band.X1_0; band.X1_0 = xl;
-                    band.Y2_0 = band.Y1_0; band.Y1_0 = yl;
-                    band.X2_1 = band.X1_1; band.X1_1 = xr;
-                    band.Y2_1 = band.Y1_1; band.Y1_1 = yr;
+                    double yl = band.B0 * xl + band.B1 * history.X1_0 + band.B2 * history.X2_0
+                                - band.A1 * history.Y1_0 - band.A2 * history.Y2_0;
+                    double yr = band.B0 * xr + band.B1 * history.X1_1 + band.B2 * history.X2_1
+                                - band.A1 * history.Y1_1 - band.A2 * history.Y2_1;
+                    history.X2_0 = history.X1_0; history.X1_0 = xl;
+                    history.Y2_0 = history.Y1_0; history.Y1_0 = yl;
+                    history.X2_1 = history.X1_1; history.X1_1 = xr;
+                    history.Y2_1 = history.Y1_1; history.Y1_1 = yr;
                     interleaved[i] = yl;
                     interleaved[i + 1] = yr;
                 }
             }
         }
+        _renderSnapshot = bands;
     }
 }
 
-/// <summary>
-/// 采样精确的线性增益斜坡：音量变化走短斜坡（防 zipper），淡入淡出走长斜坡。
-/// 增益与斜率全程 double。渲染线程每样本推进；目标/斜率的更新只写字段
-/// （宽松一致性即可，误差一帧块）；double/long 不可 volatile 修饰，
-/// 用 Volatile.Read/Write 保证跨线程可见性。
-/// </summary>
+/// <summary>控制线程原子发布增益目标；渲染线程独占当前值、步长与剩余帧数。</summary>
 internal sealed class GainRamp
 {
-    private double _current = 1.0;
-    private double _target = 1.0;
-    private double _perSampleStep = 0.0;
+    private sealed record TargetState(double Gain, int Frames, long ResetVersion, double ResetGain);
+    private readonly object _control = new();
     private readonly int _sampleRate;
+    private TargetState _target;
+    private TargetState? _renderTarget;
+    private long _appliedReset;
+    private double _current, _step;
+    private int _remaining;
 
-    public GainRamp(int sampleRate, double initial = 1.0)
+    public GainRamp(int sampleRate, double initial = 1)
     {
         _sampleRate = Math.Max(1, sampleRate);
         _current = initial;
-        _target = initial;
+        _target = new(initial, 0, 0, initial);
     }
 
-    public double Target => Volatile.Read(ref _target);
+    public double Target => Volatile.Read(ref _target).Gain;
 
-    /// <summary>立即生效（用于会话起始，避免新会话从旧增益斜坡起步）。</summary>
+    /// <summary>在下一渲染块安装初值；随后 RampTo 不会丢失尚未消费的初值。</summary>
     public void SetImmediately(double gain)
     {
-        Volatile.Write(ref _target, gain);
-        Volatile.Write(ref _perSampleStep, 0.0);
-        _current = gain;
+        gain = double.IsFinite(gain) ? Math.Clamp(gain, 0, 1) : 0;
+        lock (_control)
+        {
+            var previous = _target;
+            Volatile.Write(ref _target, new(gain, 0, previous.ResetVersion + 1, gain));
+        }
     }
 
-    /// <summary>在 durationMs 内线性过渡到目标增益。</summary>
     public void RampTo(double gain, int durationMs)
     {
-        Volatile.Write(ref _target, gain);
-        int frames = Math.Max(1, (int)((long)durationMs * _sampleRate / 1000));
-        double step = (gain - _current) / frames;
-        if (Math.Abs(step) < 1e-12) step = 0.0;
-        Volatile.Write(ref _perSampleStep, step);
+        gain = double.IsFinite(gain) ? Math.Clamp(gain, 0, 1) : 0;
+        lock (_control)
+        {
+            var previous = _target;
+            if (previous.Gain == gain && previous.Frames > 0) return;
+            int frames = (int)Math.Clamp((long)durationMs * _sampleRate / 1000, 1, int.MaxValue);
+            Volatile.Write(ref _target, new(gain, frames, previous.ResetVersion, previous.ResetGain));
+        }
     }
 
-    /// <summary>就地应用（交织，全部声道同增益）。gain==1 且无斜坡时零成本通过。</summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    /// <summary>.NET 11 Span 热路径无锁无分配；旧渲染块不回写控制端目标。</summary>
     public void Apply(Span<double> interleaved, int frames, int channels)
     {
-        double step = Volatile.Read(ref _perSampleStep);
-        double target = Volatile.Read(ref _target);
-        if (step == 0.0 && _current == target)
+        var target = Volatile.Read(ref _target);
+        if (!ReferenceEquals(target, _renderTarget))
         {
-            if (_current == 1.0) return;
-            double gain = _current;
-            if (gain == 0.0) { interleaved[..(frames * channels)].Clear(); return; }
-            Multiply(interleaved, frames * channels, gain);
-            return;
+            if (_appliedReset != target.ResetVersion)
+            {
+                _current = target.ResetGain;
+                _appliedReset = target.ResetVersion;
+            }
+            _renderTarget = target;
+            _remaining = target.Frames;
+            _step = _remaining > 0 ? (target.Gain - _current) / _remaining : 0;
+            if (_remaining == 0) _current = target.Gain;
         }
-        double g = _current;
-        // 斜坡按【帧】推进：交织流逐样本推进会让左右声道错位、且立体声下时长减半
-        for (int f = 0; f < frames; f++)
+        if (_remaining == 0 && _current == 1) return;
+        if (_remaining == 0 && _current == 0) { interleaved[..(frames * channels)].Clear(); return; }
+        for (int frame = 0; frame < frames; frame++)
         {
-            g += step;
-            if ((step > 0.0 && g > target) || (step < 0.0 && g < target)) { g = target; Volatile.Write(ref _perSampleStep, 0.0); }
-            int b = f * channels;
-            for (int c = 0; c < channels; c++) interleaved[b + c] *= g;
+            if (_remaining > 0)
+            {
+                _current += _step;
+                if (--_remaining == 0) _current = target.Gain;
+            }
+            for (int channel = 0; channel < channels; channel++)
+                interleaved[frame * channels + channel] *= _current;
         }
-        _current = g;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void Multiply(Span<double> span, int count, double gain)
-    {
-        for (int i = 0; i < count; i++) span[i] *= gain;
     }
 }

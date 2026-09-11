@@ -1718,7 +1718,7 @@
     <value>Los efectos de canal/auriculares requieren estéreo; EQ y análisis admiten mono y estéreo.</value>
   </data>
   <data name="DspAnalyzing" xml:space="preserve">
-    <value>Analizando la pista actual en segundo plano; la ganancia se aplicará suavemente y se guardará.</value>
+    <value>Analizando la pista; se reproduce con una atenuación conservadora hasta aplicar suavemente y guardar la ganancia medida.</value>
   </data>
   <data name="DspApplied" xml:space="preserve">
     <value>Sonoridad integrada {0:F1} LUFS · Ganancia fija {1:+0.0;-0.0;0.0} dB</value>
@@ -1727,10 +1727,10 @@
     <value>Integrada {0:F1} LUFS · Ganancia {1:+0.0;-0.0;0.0} dB; limitada por margen de picos o ganancia máxima para conservar la dinámica.</value>
   </data>
   <data name="DspAnalysisUnavailable" xml:space="preserve">
-    <value>Análisis no disponible (p. ej., multicanal, silencio o fragmento muy corto); se conserva la sonoridad original.</value>
+    <value>Análisis no disponible (p. ej., multicanal, silencio o fragmento muy corto); se mantiene la atenuación conservadora.</value>
   </data>
   <data name="DspAnalysisFailed" xml:space="preserve">
-    <value>Error al analizar; se conserva la sonoridad original. Desactiva y activa para reintentar.</value>
+    <value>Error al analizar; se mantiene la atenuación conservadora. Desactiva y activa la normalización para reintentar.</value>
   </data>
   <data name="DspAnalysisOff" xml:space="preserve">
     <value>Normalización desactivada o ninguna pista PCM abierta.</value>

@@ -15,6 +15,8 @@ namespace WinUIMusicPlayer.Model
         public string OutputMode { get; set; } = "DirectSound";
         public int Latency { get; set; } = 300;
         public int BassOutputDeviceId { get; set; } = -1;
+        /// <summary>获取或设置稳定的 WASAPI 端点 ID。</summary>
+        public string? WasapiEndpointId { get; set; }
         public int BassASIODeviceId { get; set; } = 0;
         public bool IsFadeEnabled { get; set; } = false;
         public string DeviceFriendlyName { get; set; } = ToolUtils.GetString("DefaultDevice");

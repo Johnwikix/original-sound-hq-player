@@ -28,6 +28,8 @@ namespace WinUIMusicPlayer.Model
         }
         public static string OutputMode { get; set; } = "DirectSound";
         public static int BassOutputDeviceId { get; set; } = -1;
+        /// <summary>获取或设置稳定的 WASAPI 端点 ID；null 表示默认设备或旧设置。</summary>
+        public static string? WasapiEndpointId { get; set; }
         public static int BassASIODeviceId { get; set; } = 0;
         public static string DeviceName { get; set; } = ToolUtils.GetString("DefaultDevice");
         //public static double LyricsBlurAmount { get; set; } = 4;

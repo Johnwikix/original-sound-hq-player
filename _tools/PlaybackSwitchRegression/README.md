@@ -6,13 +6,17 @@
 dotnet run --project _tools/PlaybackSwitchRegression
 ```
 
-工具使用项目的 .NET 11 SDK、FFmpeg 包及仓库内 FFmpeg DLL，不打开真实声卡或启动 IPC。
+工具使用项目的 .NET 11 SDK、FFmpeg 包及仓库内 FFmpeg DLL。音频测试使用受控输出；IPC 测试启动独立测试进程，使用随机命名的共享内存和信号量。
 失败返回退出码 1。DSD64 立体声静音 DSF 在工具输出目录自动生成；PCM 使用 `_tools` 下
 44.1 / 48 / 96 kHz WAV。现有 `_tools/test_tone.dsf` 缺少头部 metadata pointer，不能作为
 解码回归输入，因此此工具不依赖它。
 
 测试编译真实 `PlaybackEngine`、`Session`、解码器和 WASAPI / ASIO 互操作代码。反射仅用于
 避开引擎构造时的端点监听、看门狗，以及注入可控的原生虚表；格式选择和音源切换执行生产代码。
+
+`ReviewFixTests.cs` 补充 PCM EOF/seek、陈旧解码块与 EOF 拒绝、满环唤醒、设备排空、
+起播静音、Gain 并发与零分配、EQ 去重、稳定 endpoint ID、WASAPI 两类超时回收、
+IPC 有序合并/超时恢复及跨进程延迟。另验证响度未知时的首块衰减、测量增益平滑和忙时缓存读取；当前 JIT/NativeAOT 均为 140 项。
 
 覆盖：
 

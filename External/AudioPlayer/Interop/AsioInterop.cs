@@ -180,6 +180,15 @@ internal sealed unsafe class AsioDriver : IDisposable
             return ((delegate* unmanaged[Stdcall]<IntPtr, int*, int*, int>)_vtbl[9])(_self, pi, po);
     }
 
+    /// <summary>读取驱动报告的输入/输出延迟，单位为驱动采样帧。</summary>
+    public int GetLatencies(out int input, out int output)
+    {
+        input = output = 0;
+        if (_vtbl[10] == null) return -1;
+        fixed (int* pi = &input, po = &output)
+            return ((delegate* unmanaged[Stdcall]<IntPtr, int*, int*, int>)_vtbl[10])(_self, pi, po);
+    }
+
     public int GetBufferSize(out int minSize, out int maxSize, out int preferredSize, out int granularity)
     {
         fixed (int* a = &minSize, b = &maxSize, c = &preferredSize, d = &granularity)

@@ -10,18 +10,11 @@ internal static class LoudnessScanner
 {
     private static readonly SemaphoreSlim Gate = new(1, 1);
 
-    internal static async Task<LoudnessMeasurement?> ScanAsync(string path, int rate, int channels,
+    internal static Task<LoudnessMeasurement?> ScanAsync(string path, int rate, int channels,
         int dsdRate, int dsdGain, CancellationToken token, string? cacheDirectory = null)
-    {
-        await Gate.WaitAsync(token).ConfigureAwait(false);
-        try
-        {
-            return await Task.Run(() => Scan(path, rate, channels, dsdRate, dsdGain, token, cacheDirectory), token).ConfigureAwait(false);
-        }
-        finally { Gate.Release(); }
-    }
+        => Task.Run(() => ScanCoreAsync(path, rate, channels, dsdRate, dsdGain, token, cacheDirectory), token);
 
-    private static LoudnessMeasurement? Scan(string path, int rate, int channels, int dsdRate, int dsdGain,
+    private static async Task<LoudnessMeasurement?> ScanCoreAsync(string path, int rate, int channels, int dsdRate, int dsdGain,
         CancellationToken token, string? cacheDirectory)
     {
         token.ThrowIfCancellationRequested();
@@ -45,44 +38,51 @@ internal static class LoudnessScanner
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
 
-        using var decoder = new PcmDecoder();
-        if (!decoder.Open(path, dsdRate, dsdGain, rate, channels)) return null;
-        var meter = new LoudnessMeter(rate, channels);
-        double[] scratch = ArrayPool<double>.Shared.Rent(16384 * channels);
-        long frames = 0;
+        // 缓存读取不排在整曲扫描之后；仅实际解码分析串行，避免命中缓存仍长时间衰减。
+        await Gate.WaitAsync(token).ConfigureAwait(false);
         try
         {
-            while (true)
+            using var decoder = new PcmDecoder();
+            if (!decoder.Open(path, dsdRate, dsdGain, rate, channels)) return null;
+            var meter = new LoudnessMeter(rate, channels);
+            double[] scratch = ArrayPool<double>.Shared.Rent(16384 * channels);
+            long frames = 0;
+            try
             {
-                token.ThrowIfCancellationRequested();
-                int count = decoder.Read(scratch.AsSpan(0, 16384 * channels));
-                if (count <= 0) break;
-                frames += count;
-                meter.Add(scratch.AsSpan(0, count * channels));
-                // 限制损坏/异常超长输入；取消在每个解码块检查。
-                if (frames > (long)rate * 24 * 60 * 60) return null;
+                while (true)
+                {
+                    token.ThrowIfCancellationRequested();
+                    int count = decoder.Read(scratch.AsSpan(0, 16384 * channels));
+                    if (count <= 0) break;
+                    frames += count;
+                    meter.Add(scratch.AsSpan(0, count * channels));
+                    // 限制损坏/异常超长输入；取消在每个解码块检查。
+                    if (frames > (long)rate * 24 * 60 * 60) return null;
+                }
             }
-        }
-        finally { ArrayPool<double>.Shared.Return(scratch); }
-        token.ThrowIfCancellationRequested();
-        // 解码器在错误时也可能返回 EOF，不把明显不完整的测量写入缓存。
-        if (decoder.TotalMs > 0 && frames * 1000.0 / rate < decoder.TotalMs - 2000) return null;
-        file.Refresh();
-        if (!file.Exists || file.Length != length || file.LastWriteTimeUtc.Ticks != modified) return null;
-        var result = meter.Finish();
-        if (result is null) return null;
-        try
-        {
-            Directory.CreateDirectory(directory);
-            string temporary = cache + ".tmp";
-            using (var output = new BinaryWriter(File.Create(temporary)))
+            finally { ArrayPool<double>.Shared.Return(scratch); }
+            token.ThrowIfCancellationRequested();
+            // 解码器在错误时也可能返回 EOF，不把明显不完整的测量写入缓存。
+            if (decoder.TotalMs > 0 && frames * 1000.0 / rate < decoder.TotalMs - 2000) return null;
+            file.Refresh();
+            if (!file.Exists || file.Length != length || file.LastWriteTimeUtc.Ticks != modified) return null;
+            var result = meter.Finish();
+            if (result is null) return null;
+            try
             {
-                output.Write(1); output.Write(result.IntegratedLufs); output.Write(result.SamplePeak);
+                Directory.CreateDirectory(directory);
+                string temporary = cache + ".tmp";
+                using (var output = new BinaryWriter(File.Create(temporary)))
+                {
+                    output.Write(1); output.Write(result.IntegratedLufs); output.Write(result.SamplePeak);
+                }
+                File.Move(temporary, cache, true);
             }
-            File.Move(temporary, cache, true);
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+            return result;
         }
-        catch (IOException) { }
-        catch (UnauthorizedAccessException) { }
-        return result;
+        finally { Gate.Release(); }
+
     }
 }

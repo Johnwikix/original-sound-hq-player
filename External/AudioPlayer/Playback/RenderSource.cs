@@ -18,6 +18,8 @@ internal interface IRenderSource
     /// <summary>设备侧速率：PCM=采样率；DoP=DoP 帧率(DSD/16)；NativeDsd=DSD 位率。</summary>
     int SampleRate { get; }
     int Channels { get; }
+    /// <summary>累计提交音频帧数；Native DSD 使用字节帧。</summary>
+    long SubmittedFrames => 0;
     /// <summary>PCM：读 frames 帧交织 double（float64 管线，含 EQ 与增益），不足补静音。</summary>
     void FillPcm(Span<double> buffer, int frames);
     /// <summary>DoP：读 frames 帧 uint32 采样（标记位已在环内归一化）。</summary>
@@ -31,6 +33,10 @@ internal interface IAudioOutput : IDisposable
 {
     void Pause();
     void Resume();
+    /// <summary>最后音频帧是否已通过设备输出管线。</summary>
+    bool IsDrained => true;
+    /// <summary>设备管线中尚未消费的音频时长，按回调周期估算。</summary>
+    long PendingAudioMs => 0;
 
     /// <summary>端点缓冲深度（毫秒）：渲染领先可闻播放的量。淡出后需等它排空再停，否则尾段被硬裁。</summary>
     int LatencyMs { get; }

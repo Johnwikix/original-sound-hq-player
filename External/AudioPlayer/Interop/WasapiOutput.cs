@@ -30,12 +30,19 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
     private IntPtr _renderEvent;
     private IntPtr _stopEvent;
     private Thread? _thread;
+    private Thread? _initWorker;
+    private IntPtr _retainedFormat;
+    private int _disposed;
+    private readonly OutputDrainTracker _drain = new();
+    public long PendingAudioMs => (long)Math.Ceiling(_drain.PendingFrames * 1000.0 / Math.Max(1, _source.SampleRate));
+    public bool IsDrained => _drain.IsDrained;
     private int _failed;
     private volatile bool _pausedFlag; // 渲染线程暂停门控：暂停期间不得消费环形缓冲
     private volatile bool _initTimedOut; // Initialize 超时：worker 仍持有 client，Dispose 不得再触碰（墓园语义）
     private int _renderCycles; // 渲染线程完成的整写周期数：Start 起播消费验证用
 
     private uint _bufferFrames;
+    private int _pipelineFrames;
     private uint _channels;
     private int _endpointKind; // FormatKind
     private volatile IRenderSource _source = null!; // 换曲复用会被引擎线程原子替换；渲染块每次只认一份快照
@@ -74,14 +81,14 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
     /// <summary>创建本输出时绑定的设备索引（-1 = 系统默认；设备变更须重建）。</summary>
     public int DeviceIndex { get; private set; } = -1;
 
-    public bool Start(int deviceIndex, int latencyMs, IRenderSource source)
+    public bool Start(int deviceIndex, int latencyMs, IRenderSource source, float sessionVolume = 1, string? endpointId = null)
     {
         _source = source;
         DeviceIndex = deviceIndex;
-        Win32.CoInitializeEx(IntPtr.Zero, Win32.COINIT_MULTITHREADED);
+        int apartment = Win32.CoInitializeEx(IntPtr.Zero, Win32.COINIT_MULTITHREADED);
         try
         {
-            _devicePtr = WasapiDeviceList.ResolveDevicePtr(deviceIndex, out bool isDefault);
+            _devicePtr = WasapiDeviceList.ResolveDevicePtr(deviceIndex, out bool isDefault, endpointId);
             if (_devicePtr == IntPtr.Zero) { Console.WriteLine("[wasapi] ResolveDevice failed"); return false; }
             FollowsDefaultDevice = isDefault;
             DeviceId = WasapiDeviceList.GetDeviceIdRaw(_devicePtr);
@@ -117,6 +124,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                 {
                     _sessionVolumePtr = volPtr;
                     _sessionVolume = new RawSessionVolume(volPtr);
+                    SetSessionVolume(sessionVolume);
                 }
             }
 
@@ -124,9 +132,12 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
             _stopEvent = Win32.CreateEventW(IntPtr.Zero, true, false, null);
             if (_renderEvent == IntPtr.Zero || _stopEvent == IntPtr.Zero) return false;
 
-            _pcmScratch = new double[_bufferFrames * source.Channels];
-            _dopScratch = new uint[_bufferFrames * source.Channels];
-            LatencyMs = (int)(_bufferFrames * 1000L / Math.Max(1, source.SampleRate));
+            if (source.Kind == RenderKind.Pcm) _pcmScratch = new double[_bufferFrames * source.Channels];
+            else _dopScratch = new uint[_bufferFrames * source.Channels];
+            _pipelineFrames = (int)_bufferFrames;
+            if (_client.GetStreamLatency(out long latency) == 0 && latency is > 0 and < 100000000)
+                _pipelineFrames = Math.Max(_pipelineFrames, (int)Math.Ceiling(latency * source.SampleRate / 10000000.0));
+            LatencyMs = (int)Math.Ceiling(_pipelineFrames * 1000.0 / Math.Max(1, source.SampleRate));
 
             if (!_pushMode && _client.SetEventHandle(_renderEvent) != 0) return false;
 
@@ -166,6 +177,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
             Console.WriteLine($"[wasapi] Start exception: {ex.Message}");
             return false;
         }
+        finally { if (apartment >= 0) Win32.CoUninitialize(); }
     }
 
     public void Pause()
@@ -291,11 +303,13 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
             catch { hr = unchecked((int)0x80004005); }
         })
         { IsBackground = true, Name = "wasapi-init" };
+        _initWorker = worker;
         worker.Start();
         bool ok = worker.Join(3000);
         if (ok) return Volatile.Read(ref hr);
         // 超时：泄漏格式内存与线程（进程退出回收）
         _initTimedOut = true;
+        _retainedFormat = (IntPtr)format;
         return WasapiTypes.EPending;
     }
 
@@ -368,8 +382,11 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
             NativeMemory.Free(pFmt); // 只有 worker 持有；完成后即释放
         })
         { IsBackground = true, Name = "wasapi-init" };
+        _initWorker = worker;
         worker.Start();
-        return worker.Join(3000) ? Volatile.Read(ref hr) : WasapiTypes.EPending;
+        if (worker.Join(3000)) return Volatile.Read(ref hr);
+        _initTimedOut = true;
+        return WasapiTypes.EPending;
     }
 
     private static WAVEFORMATEXTENSIBLE MakeFormat(IRenderSource source, int kind) => kind switch
@@ -490,6 +507,8 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
         // 整块只认一份源快照：换曲复用会在引擎线程原子替换 _source。
         // 环渲染对整块先写静音再填数据（预缓冲/欠载也不例外），无需外部清零
         var source = _source;
+        _drain.BeginBlock();
+        long before = source.SubmittedFrames;
         long total = frames * _channels;
         switch (source.Kind)
         {
@@ -502,6 +521,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                 ConvertDoubleToEndpoint(_pcmScratch, dst, (int)total, _endpointKind);
                 break;
         }
+        _drain.CompleteBlock((int)frames, Math.Max(0, source.SubmittedFrames - before), Math.Max(_pipelineFrames, (int)_bufferFrames));
     }
 
     private static void ConvertDoubleToEndpoint(double[] src, byte* dst, int total, int kind)
@@ -588,23 +608,32 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
 
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         if (_stopEvent != IntPtr.Zero) Win32.SetEvent(_stopEvent);
-        try { _thread?.Join(2000); } catch { }
-        if (_initTimedOut)
+        bool renderedStopped = _thread == null || _thread.Join(2000);
+        if (!renderedStopped || (_initTimedOut && _initWorker is { IsAlive: true }))
         {
-            // 墓园语义（ECHO future-graveyard）：Initialize worker 可能仍阻塞在驱动内部并持有
-            // 该 client，任何 Stop/Reset/Release 都会与挂死线程并发使用同一 COM 对象 → 有意泄漏，
-            // 交给进程退出回收。渲染/会话音量指针在成功初始化前不会取得，无需处理。
+            // 隔离在途原生调用；最终完成后再归还，控制线程不 Stop/Release 同一 client。
+            new Thread(() =>
+            {
+                _initWorker?.Join();
+                _thread?.Join();
+                ReleaseResources();
+            }) { IsBackground = true, Name = "wasapi-retire" }.Start();
+            return;
         }
-        else
-        {
-            try { _client?.Stop(); } catch { }
-            try { _client?.Reset(); } catch { }
-            if (_renderPtr != IntPtr.Zero) { Marshal.Release(_renderPtr); _renderPtr = IntPtr.Zero; }
-            if (_sessionVolumePtr != IntPtr.Zero) { Marshal.Release(_sessionVolumePtr); _sessionVolumePtr = IntPtr.Zero; }
-            if (_clientPtr != IntPtr.Zero) { Marshal.Release(_clientPtr); _clientPtr = IntPtr.Zero; }
-        }
+        ReleaseResources();
+    }
+
+    private void ReleaseResources()
+    {
+        try { _client?.Stop(); } catch { }
+        try { _client?.Reset(); } catch { }
+        if (_renderPtr != IntPtr.Zero) { Marshal.Release(_renderPtr); _renderPtr = IntPtr.Zero; }
+        if (_sessionVolumePtr != IntPtr.Zero) { Marshal.Release(_sessionVolumePtr); _sessionVolumePtr = IntPtr.Zero; }
+        if (_clientPtr != IntPtr.Zero) { Marshal.Release(_clientPtr); _clientPtr = IntPtr.Zero; }
         if (_devicePtr != IntPtr.Zero) { Marshal.Release(_devicePtr); _devicePtr = IntPtr.Zero; }
+        if (_retainedFormat != IntPtr.Zero) { Win32.CoTaskMemFree(_retainedFormat); _retainedFormat = IntPtr.Zero; }
         if (_renderEvent != IntPtr.Zero) { Win32.CloseHandle(_renderEvent); _renderEvent = IntPtr.Zero; }
         if (_stopEvent != IntPtr.Zero) { Win32.CloseHandle(_stopEvent); _stopEvent = IntPtr.Zero; }
     }

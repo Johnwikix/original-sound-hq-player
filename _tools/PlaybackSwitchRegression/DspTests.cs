@@ -65,7 +65,7 @@ internal static unsafe partial class Program
             session.FillPcm(buffer, 4);
             Require(!buffer.AsSpan().SequenceEqual(source), "Effects never became active");
 
-            var eqField = typeof(Equalizer).GetField("_snapshot", Private)!;
+            var eqField = typeof(Equalizer).GetField("_history", Private)!;
             var history = (Array)((Array)eqField.GetValue(session.Eq)!).Clone();
             engine.UpdateDsp(settings with { IsEnabled = false });
             ring.Push(source, 4, static () => false);

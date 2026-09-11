@@ -15,9 +15,8 @@ public static class IpcConstants
 
     public const int EnvelopeHeaderSize = 5; // int16 + int16 + byte(seq)
 
-    // Versioned mailbox layout: each region is guarded by a monotonically increasing
-    // version int that is published AFTER the payload write completes, so a reader
-    // observing a version change can safely read the full payload without tearing.
+    // 单请求在途：响应版本回显完整请求版本，确认前禁止复用请求槽。
+    // 版本在载荷之后发布；通知槽为独立的最新状态双缓冲。
     public const long RequestVersionOffset = 0;
     public const long RequestBufferOffset = 4;
     public const long ResponseVersionOffset = RequestBufferOffset + MaxRequestSize;

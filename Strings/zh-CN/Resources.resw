@@ -1720,7 +1720,7 @@
     <value>声道与耳机效果仅支持双声道；EQ 和响度分析支持单声道与双声道。</value>
   </data>
   <data name="DspAnalyzing" xml:space="preserve">
-    <value>正在后台分析当前歌曲；完成后平滑应用，之后复用缓存。</value>
+    <value>正在后台分析当前歌曲；暂以保守衰减播放，完成后平滑调整并缓存。</value>
   </data>
   <data name="DspApplied" xml:space="preserve">
     <value>综合响度 {0:F1} LUFS · 固定增益 {1:+0.0;-0.0;0.0} dB</value>
@@ -1729,10 +1729,10 @@
     <value>综合响度 {0:F1} LUFS · 固定增益 {1:+0.0;-0.0;0.0} dB；受峰值余量或增益上限约束，保留动态。</value>
   </data>
   <data name="DspAnalysisUnavailable" xml:space="preserve">
-    <value>此曲暂无法分析（例如多声道、静音或片段过短）；保持原始响度。</value>
+    <value>此曲暂无法分析（例如多声道、静音或片段过短）；保持保守衰减。</value>
   </data>
   <data name="DspAnalysisFailed" xml:space="preserve">
-    <value>响度分析失败，保持原始响度。重新启用可重试。</value>
+    <value>响度分析失败，保持保守衰减。重新启用可重试。</value>
   </data>
   <data name="DspAnalysisOff" xml:space="preserve">
     <value>响度均一化未启用或尚未打开 PCM 曲目。</value>

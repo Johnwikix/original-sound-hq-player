@@ -4,7 +4,7 @@ namespace AudioPlayer.Playback;
 
 /// <summary>
 /// ECHO 语义的单生产者/单消费者帧环形缓冲：
-/// 生产者满时 4ms 步进等待；消费者在预缓冲门槛未到或欠载时输出静音并计数；
+/// 生产者满时等待消费/seek/取消通知；消费者在预缓冲门槛未到或欠载时输出静音并计数；
 /// 计数器（FramesPlayed/欠载）只在 beginSession/Reset 时清零。
 /// </summary>
 internal abstract class FrameRingBase<T> where T : unmanaged
@@ -34,7 +34,10 @@ internal abstract class FrameRingBase<T> where T : unmanaged
         _buffer = new T[Math.Max(1, capacityFrames) * Channels];
         _prebufferFrames = Math.Max(0, prebufferFrames);
         _prebufferTimeoutMs = Math.Max(0, prebufferTimeoutMs);
+        BeginSession();
     }
+
+    public long Epoch { get { lock (_gate) return _epoch; } }
 
     public int CapacityFrames => _buffer.Length / Channels;
     public long FramesPlayed => Interlocked.Read(ref _framesPlayed);
@@ -53,17 +56,23 @@ internal abstract class FrameRingBase<T> where T : unmanaged
             _prebuffering = _prebufferFrames > 0;
             _prebufferDeadlineTicks = Stopwatch.GetTimestamp()
                 + Math.Max(1, _prebufferTimeoutMs) * Stopwatch.Frequency / 1000;
+            Interlocked.Exchange(ref _framesPlayed, 0);
+            Interlocked.Exchange(ref _underrunCallbacks, 0);
+            Interlocked.Exchange(ref _underrunFrames, 0);
+            Monitor.PulseAll(_gate);
         }
-        Interlocked.Exchange(ref _framesPlayed, 0);
-        Interlocked.Exchange(ref _underrunCallbacks, 0);
-        Interlocked.Exchange(ref _underrunFrames, 0);
-        OnSessionBegin();
     }
 
-    /// <summary>会话开始/seek 重置钩子（DoP 重置标记相位基）。</summary>
-    protected virtual void OnSessionBegin() { }
-
-    public void MarkInputEnded() => InputEnded = true;
+    public void MarkInputEnded() { lock (_gate) InputEnded = true; }
+    public bool MarkInputEnded(long epoch)
+    {
+        lock (_gate)
+        {
+            if (epoch != _epoch) return false;
+            InputEnded = true;
+            return true;
+        }
+    }
 
     /// <summary>唤醒可能在等待的生产者（seek 重置/销毁时调用）。</summary>
     public void WakeProducer() { lock (_gate) { Monitor.Pulse(_gate); } }
@@ -75,19 +84,19 @@ internal abstract class FrameRingBase<T> where T : unmanaged
     /// </summary>
     public bool Push(ReadOnlySpan<T> source, int frameCount, Func<bool> cancelled)
     {
-        long epoch;
-        lock (_gate)
-        {
-            epoch = _epoch;
-            if (frameCount > 0) _sessionHasAudio = true;
-        }
+        return Push(source, frameCount, cancelled, Epoch);
+    }
 
+    /// <summary>验证解码前捕获的代数，拒绝 seek 前仍在解码的旧块。</summary>
+    public bool Push(ReadOnlySpan<T> source, int frameCount, Func<bool> cancelled, long epoch)
+    {
         int written = 0;
         while (written < frameCount)
         {
             lock (_gate)
             {
-                if (epoch != _epoch) return false;
+                if (epoch != _epoch || cancelled()) return false;
+                if (frameCount > 0) _sessionHasAudio = true;
                 int free = CapacityFrames - (int)(_head - _tail);
                 if (free > 0)
                 {
@@ -101,7 +110,7 @@ internal abstract class FrameRingBase<T> where T : unmanaged
                     written += take;
                     continue;
                 }
-                Monitor.Wait(_gate, 4);
+                Monitor.Wait(_gate);
             }
             if (cancelled()) return false;
         }
@@ -147,10 +156,14 @@ internal abstract class FrameRingBase<T> where T : unmanaged
                 outFrame += take;
                 needed -= take;
             }
+            if (readTotal > 0)
+            {
+                Interlocked.Add(ref _framesPlayed, readTotal);
+                Monitor.PulseAll(_gate);
+            }
         }
         if (readTotal > 0)
         {
-            Interlocked.Add(ref _framesPlayed, readTotal);
             PostRender(output, frameCount, phaseBase);
         }
         return readTotal;
@@ -211,8 +224,6 @@ internal sealed class DopRing : FrameRingBase<uint>
 
     public DopRing(int channels, int capacityFrames, int prebufferFrames, int prebufferMs)
         : base(channels, capacityFrames, prebufferFrames, prebufferMs) { }
-
-    protected override void OnSessionBegin() => _renderedFrames = 0;
 
     protected override long NextRenderPhase(int frameCount)
     {

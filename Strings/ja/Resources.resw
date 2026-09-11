@@ -1718,7 +1718,7 @@
     <value>チャンネル・ヘッドホン効果はステレオ専用です。EQ とラウドネス解析はモノラルとステレオに対応します。</value>
   </data>
   <data name="DspAnalyzing" xml:space="preserve">
-    <value>現在の曲をバックグラウンドで解析中です。完了後に滑らかに適用し、キャッシュします。</value>
+    <value>曲を解析中です。完了までは控えめに減衰して再生し、測定したゲインへ滑らかに移行して保存します。</value>
   </data>
   <data name="DspApplied" xml:space="preserve">
     <value>統合ラウドネス {0:F1} LUFS · 固定ゲイン {1:+0.0;-0.0;0.0} dB</value>
@@ -1727,10 +1727,10 @@
     <value>統合 {0:F1} LUFS · ゲイン {1:+0.0;-0.0;0.0} dB。ピークの余裕またはゲイン上限により増幅を抑え、ダイナミクスを維持します。</value>
   </data>
   <data name="DspAnalysisUnavailable" xml:space="preserve">
-    <value>解析できません（マルチチャンネル、無音、短すぎる音声など）。元のラウドネスを保持します。</value>
+    <value>解析できません（マルチチャンネル、無音、短すぎる音声など）。控えめな減衰を維持します。</value>
   </data>
   <data name="DspAnalysisFailed" xml:space="preserve">
-    <value>解析に失敗しました。元のラウドネスを保持します。再度有効にすると再試行します。</value>
+    <value>解析に失敗しました。控えめな減衰を維持します。再度有効にすると再試行します。</value>
   </data>
   <data name="DspAnalysisOff" xml:space="preserve">
     <value>正規化がオフ、または PCM の曲が開かれていません。</value>

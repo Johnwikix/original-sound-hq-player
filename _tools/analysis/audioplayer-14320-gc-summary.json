@@ -1,0 +1,26 @@
+{
+  "pid": 14320,
+  "durationMs": 45118.2199,
+  "gcByGeneration": [
+    0,
+    0,
+    0
+  ],
+  "suspensionCount": 0,
+  "totalSuspensionMs": 0,
+  "maxSuspensionMs": 0,
+  "sampledAllocatedBytes": 955560,
+  "lastHeapBytes": null,
+  "allocationTypes": [
+    {
+      "Key": "(type unavailable)",
+      "Value": 955560
+    }
+  ],
+  "events": {
+    "GC": 6,
+    "ProcessInfo": 2,
+    "Task(0bcd91db-f943-454a-a662-6edbcfbb76d2)": 2,
+    "EventID(154)": 1
+  }
+}
