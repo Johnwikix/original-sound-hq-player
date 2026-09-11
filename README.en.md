@@ -193,7 +193,7 @@ This project is licensed under the [GNU AGPL-3.0 License](LICENSE).
 Application data is stored at:
 
 - User data: `%userprofile%\documents\OriginalSoundPlayer`
-- Loudness analysis cache: `%LOCALAPPDATA%\WinUIMusicPlayer\LoudnessCache`
+- Loudness analysis cache: `%LOCALAPPDATA%\WinUIMusicPlayer\LoudnessCache` (redirected by MSIX filesystem virtualization to the same folder under `%LOCALAPPDATA%\Packages\<PackageFamilyName>\LocalCache\Local\` when installed from the Store)
 
 ---
 

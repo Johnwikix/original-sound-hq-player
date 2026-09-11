@@ -191,7 +191,7 @@
 应用程序数据存储位置：
 
 - 用户数据：`%userprofile%\documents\OriginalSoundPlayer`
-- 响度分析缓存：`%LOCALAPPDATA%\WinUIMusicPlayer\LoudnessCache`
+- 响度分析缓存：`%LOCALAPPDATA%\WinUIMusicPlayer\LoudnessCache`（Store 打包安装时经 MSIX 虚拟化重定向至 `%LOCALAPPDATA%\Packages\<包家族名>\LocalCache\Local\` 下的同名目录）
 
 ---
 
