@@ -16,7 +16,7 @@ dotnet run --project _tools/PlaybackSwitchRegression
 
 `ReviewFixTests.cs` 补充 PCM EOF/seek、陈旧解码块与 EOF 拒绝、满环唤醒、设备排空、
 起播静音、Gain 并发与零分配、EQ 去重、稳定 endpoint ID、WASAPI 两类超时回收、
-IPC 有序合并/超时恢复及跨进程延迟。另验证响度未知时的首块衰减、测量增益平滑和忙时缓存读取；当前 JIT/NativeAOT 均为 140 项。
+IPC 有序合并/超时恢复及跨进程延迟。另验证响度未知时的首块衰减、测量增益平滑和忙时缓存读取；当前 JIT/NativeAOT 均为 150 项。
 
 覆盖：
 
@@ -61,3 +61,5 @@ dotnet publish _tools/PlaybackSwitchRegression -c Release -r win-x64 -p:PublishA
 EqualizerQTests.cs 覆盖 81 字节 IPC 往返、旧 41 字节请求、截断请求、
 Q 独立预设保存与缺失值回退、增益中心不变而带宽随 Q 改变、仅修改 Q 的播放端
 更新、升降增益抵消，以及非法 Q 和低采样率的稳定性。完整套件 110 项。
+
+`WasapiStallTests.cs` 使用受控原生虚表，验证运行中不重复 Start、恢复前开放渲染门控、Start/Stop 失败上报、三种 WASAPI 模式的停滞检测、正常暂停和恢复窗口，以及初始化对齐/格式失败后释放并重新激活客户端。

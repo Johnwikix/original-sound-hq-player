@@ -39,6 +39,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
     private int _failed;
     private volatile bool _pausedFlag; // 渲染线程暂停门控：暂停期间不得消费环形缓冲
     private volatile bool _initTimedOut; // Initialize 超时：worker 仍持有 client，Dispose 不得再触碰（墓园语义）
+    private long _lastRenderTick; // 最近成功提交/恢复的单调时钟，满缓冲不能证明设备仍在消费
     private int _renderCycles; // 渲染线程完成的整写周期数：Start 起播消费验证用
 
     private uint _bufferFrames;
@@ -182,14 +183,31 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
 
     public void Pause()
     {
+        if (_pausedFlag || Volatile.Read(ref _disposed) != 0) return;
         _pausedFlag = true;
-        try { _client?.Stop(); } catch { }
+        try
+        {
+            if (_client is { } client)
+            {
+                int hr = client.Stop();
+                if (hr < 0) Fail("Stop", hr);
+            }
+        }
+        catch (Exception ex) { Fail("Stop: " + ex.Message); }
     }
 
     public void Resume()
     {
-        try { _client?.Start(); } catch { }
+        if (!_pausedFlag || IsFailed || Volatile.Read(ref _disposed) != 0 || _client == null) return;
+        // Start 可以立刻唤醒渲染线程；必须先开放门控，避免丢掉第一个事件。
+        Volatile.Write(ref _lastRenderTick, Environment.TickCount64);
         _pausedFlag = false;
+        try
+        {
+            int hr = _client.Start();
+            if (hr < 0) { _pausedFlag = true; Fail("Resume/Start", hr); }
+        }
+        catch (Exception ex) { _pausedFlag = true; Fail("Resume/Start: " + ex.Message); }
     }
 
     /// <summary>共享模式会话音量（0..1）。</summary>
@@ -319,8 +337,11 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
             ? new[] { FormatKind.Pcm24Packed, FormatKind.Pcm24In32, FormatKind.Pcm32 }
             : new[] { FormatKind.Float32, FormatKind.Pcm24In32, FormatKind.Pcm16, FormatKind.Pcm32 };
 
+        bool firstAttempt = true;
         foreach (int kind in kinds)
         {
+            if (!firstAttempt && !ReplaceClientForInitialize()) return false;
+            firstAttempt = false;
             var format = MakeFormat(source, kind);
             long hns = (long)(10000000.0 * requestedBufferFrames / source.SampleRate + 0.5);
             int hr = InitializeExclusiveAligned(&format, hns);
@@ -353,10 +374,25 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
             if (_client!.GetBufferSize(out uint aligned) == 0 && aligned > 0)
             {
                 long retry = (long)(10000000.0 * aligned / format->Format.nSamplesPerSec + 0.5);
+                if (!ReplaceClientForInitialize()) return unchecked((int)0x80004005);
                 hr = InitializeWithTimeout(WasapiTypes.ShareModeExclusive, flags, retry, retry, format);
             }
         }
         return hr;
+    }
+
+    /// <summary>初始化失败后释放旧客户端，再激活新实例；不得重用部分初始化的驱动状态。</summary>
+    private bool ReplaceClientForInitialize()
+    {
+        if (_initTimedOut || _initWorker is { IsAlive: true } || _devicePtr == IntPtr.Zero) return false;
+        _client = null;
+        IntPtr previous = _clientPtr;
+        _clientPtr = IntPtr.Zero;
+        if (previous != IntPtr.Zero) Marshal.Release(previous);
+        _clientPtr = WasapiDeviceList.ActivateAudioClient(_devicePtr);
+        if (_clientPtr == IntPtr.Zero) return false;
+        _client = new RawAudioClient(_clientPtr);
+        return true;
     }
 
     /// <summary>
@@ -422,6 +458,9 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
         Win32.CoInitializeEx(IntPtr.Zero, Win32.COINIT_MULTITHREADED);
         uint mmcssIndex = 0;
         IntPtr avrt = Win32.AvSetMmThreadCharacteristicsW("Pro Audio", ref mmcssIndex);
+        // 事件句柄固定；数组在线程入口分配一次，避免每个渲染周期产生托管垃圾。
+        IntPtr[] waitHandles = [_stopEvent, _renderEvent];
+        Volatile.Write(ref _lastRenderTick, Environment.TickCount64);
         try
         {
             while (Win32.WaitForSingleObject(_stopEvent, 0) != 0)
@@ -435,8 +474,14 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                 if (_pushMode)
                 {
                     if (_client!.GetCurrentPadding(out uint padding) != 0) { Fail(); break; }
+                    if (_pausedFlag) continue;
+                    if (padding > _bufferFrames) { Fail("Invalid padding"); break; }
                     frames = _bufferFrames - padding;
-                    if (frames == 0) { Thread.Sleep(2); continue; }
+                    if (frames == 0)
+                    {
+                        if (RenderStalled()) { Fail("No buffer consumption"); break; }
+                        Thread.Sleep(2); continue;
+                    }
                 }
                 else
                 {
@@ -445,7 +490,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                     // 避免 Join 超时后与在途渲染并发释放 COM 对象。
                     // 共享模式事件周期 10ms，1s 无事件即判失效（端点失效时事件停发，靠超时兜底，
                     // 主动通知由 EndpointNotifications 提前给到引擎）；独占大缓冲保留 2s
-                    uint wait = Win32.WaitForMultipleObjects(2, [_stopEvent, _renderEvent], false, _exclusive ? 2000 : 1000);
+                    uint wait = Win32.WaitForMultipleObjects(2, waitHandles, false, RenderStallTimeoutMs);
                     if (wait == 0) break; // stopEvent：停机
                     if (wait == 1)
                     {
@@ -464,16 +509,17 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                     }
                     else
                     {
-                        // 超时/失败唤醒：健康检查——事件 2s 未到且端点缓冲仍有空位 = 渲染停滞
-                        if (_pausedFlag) continue; // 暂停后的超时唤醒：不消费
-                        if (_client!.GetCurrentPadding(out uint pad) == 0 && _bufferFrames - pad == 0) continue;
-                        Fail();
+                        if (_pausedFlag) continue;
+                        // 满缓冲也可能是驱动停止消费；不能据此无限忽略事件超时。
+                        // Resume 恰好发生在旧等待到期前时，给予完整的新恢复窗口。
+                        if (wait == 0x102 && !RenderStalled()) continue;
+                        Fail("Render event wait", unchecked((int)wait));
                         break;
                     }
                 }
 
                 int hr = _render!.GetBuffer(frames, out byte* dst);
-                if (hr != 0) { Fail(); break; }
+                if (hr != 0) { Fail("GetBuffer", hr); break; }
 
                 try
                 {
@@ -489,7 +535,9 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                     break;
                 }
 
-                if (_render.ReleaseBuffer(frames, 0) != 0) { Fail(); break; }
+                int released = _render.ReleaseBuffer(frames, 0);
+                if (released != 0) { Fail("ReleaseBuffer", released); break; }
+                Volatile.Write(ref _lastRenderTick, Environment.TickCount64);
                 Interlocked.Increment(ref _renderCycles); // 成功写满一块 = 设备侧在消费/驱动事件在推进
             }
         }
@@ -500,7 +548,15 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
         }
     }
 
-    private void Fail() => Interlocked.Exchange(ref _failed, 1);
+    private int RenderStallTimeoutMs => _exclusive ? 2000 : 1000;
+
+    private bool RenderStalled() => Environment.TickCount64 - Volatile.Read(ref _lastRenderTick) >= RenderStallTimeoutMs;
+
+    private void Fail(string? operation = null, int hr = 0)
+    {
+        if (Interlocked.Exchange(ref _failed, 1) == 0 && operation != null)
+            Console.WriteLine($"[wasapi] {operation} failed/stalled hr=0x{hr:X8}");
+    }
 
     private void FillEndpoint(byte* dst, uint frames)
     {

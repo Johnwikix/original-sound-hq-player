@@ -203,7 +203,7 @@ public sealed class PlaybackEngine : IDisposable
     /// 播放态/EQ/音量/淡入/抖动计时。<paramref name="resumeIfStopped"/>：SwitchTo 传入 true——
     /// 自然结束（PlayEnded 已停机）后切歌也要照常起播，与 StartOutputAndPlay 的
     /// "无会话起播即置播放态"语义对齐；PrepareNext（备播）传 false 保持停机。
-    /// 驱动侧可能在排空/暂停时被 Stop：播放态下补一次 Resume（运行中重复 Start 返回错误码，无害）。</summary>
+    /// 驱动侧可能在排空/暂停时被 Stop：播放态下调用幂等 Resume，运行中的客户端不重复 Start。</summary>
     private void AfterAttachToLiveOutput(bool resumeIfStopped)
     {
         if (resumeIfStopped && !IsPlaying)
