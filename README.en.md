@@ -62,7 +62,10 @@
 - 🔊 **Professional Audio Processing**
   - Supports 12+ audio formats including DSD, FLAC, WAV, MP3
   - Audio conversion: WAV, MP3, FLAC, OGG, OPUS
-  - Built-in 10-band equalizer with multiple presets
+  - Built-in 10-band equalizer (per-band gain and Q) with multiple presets
+  - Loudness normalization: background EBU R128 analysis per track, smooth fixed gain applied once complete and cached — files untouched, dynamics uncompressed (target −24 to −12 LUFS, default −18)
+  - Channel & headphone effects: balance, L/R swap, mono mixdown, headphone crossfeed, stereo width
+  - One-tap DSP master switch bypasses all effects; DoP / Native DSD bitstream playback bypasses them automatically with settings preserved
   - Full float64 high-precision audio pipeline with bit-transparent handling of 24-bit sources
 
 - 📝 **Music Info & Lyrics**
@@ -108,6 +111,8 @@ Professional audio output options to match different quality needs:
 
 - **Reliability**
   - Watchdog auto-recovery on output failure (playback position preserved) — device hotplug or format changes won't interrupt listening
+  - End-of-track waits for the device pipeline to fully drain and progress nets out buffered audio — no clipped tails, no premature track switching
+  - Device selection uses stable endpoint IDs, so replugged devices never resolve to the wrong output
 
 ## 🖼️ Screenshots
 
@@ -188,6 +193,7 @@ This project is licensed under the [GNU AGPL-3.0 License](LICENSE).
 Application data is stored at:
 
 - User data: `%userprofile%\documents\OriginalSoundPlayer`
+- Loudness analysis cache: `%LOCALAPPDATA%\WinUIMusicPlayer\LoudnessCache`
 
 ---
 

@@ -12,6 +12,10 @@ IPC 契约通信（信封/序列化逐字节兼容；命名对象 `AudioPlayer_S
 前身是 bass.dll 系（bass/basswasapi/bassasio/bassdsd/bass_fx），已完全移除；
 架构上仍保留与 bass IPC 面的逐一对应（见文末映射表），便于行为对照。
 
+命令链路经共享库的 `MailboxClient`：单后台发送线程串行投递，服务端回显请求
+版本作为执行确认，确认前不复用请求槽；音量/EQ/DSP 等高频可合并命令仅保留
+最新值，Play/Seek/设备设置与响应型请求构成有序屏障。
+
 ## 架构
 
 ```
@@ -28,12 +32,17 @@ AudioPlayer.exe（NativeAOT 单文件，win-x64）
 │   ├── Session.cs            播放会话：解码线程 + 环形缓冲 + EQ/增益（IRenderSource）
 │   ├── Ring.cs               SPSC 帧环（会话代数防 seek 串音；PcmRing/DopRing/DsdByteRing）
 │   ├── Dsp.cs                十段峰值 EQ（RBJ，全 double）+ 采样精确增益斜坡
+│   ├── PcmEffects.cs         PCM 音效链：响度增益/前置衰减 → EQ → 平衡/互换/单声道/Crossfeed/宽度
+│   ├── LoudnessMeter.cs      BS.1770 K 加权综合响度与峰值测量（Vector128 双声道 SIMD，标量回退）
+│   ├── LoudnessScanner.cs    整曲响度后台分析与缓存（进程内单任务串行）
+│   ├── OutputDrainTracker.cs 设备管线排空跟踪：曲尾结束判定与进度扣算（WASAPI padding/流延迟、ASIO 双缓冲）
 │   └── RenderSource.cs       渲染接口与输出模式定义
 ├── Interop/
-│   ├── WasapiInterop.cs      裸 COM 虚表 WASAPI/设备枚举/端点通知
+│   ├── WasapiInterop.cs      裸 COM 虚表 WASAPI/设备枚举/端点通知（稳定 endpoint ID 解析）
 │   ├── WasapiOutput.cs       共享（AUTOCONVERTPCM 直传）与独占 Push/Event
 │   ├── AsioInterop.cs        IASIO 裸虚表 + SDK 结构
 │   ├── AsioHost.cs           ASIO 宿主：缓冲候选/采样率中转/隐藏消息窗口/原生 DSD
+│   ├── WavPackNative.cs      wavpackdll.dll P/Invoke（OPEN_DSD_NATIVE）
 │   └── Win32.cs              内核对象/注册表/窗口等 P/Invoke
 └── Diagnostics/BufferDump.cs AP_DUMP 环境变量门控的端点字节转储（64MB 上限）
 ```
@@ -143,6 +152,8 @@ seek、文件尾补齐和模式选择；真实 DAC 的 WV-DSD 出声仍需实机
 | `RawWasapiProbe` | WASAPI 共享格式探针（声卡接受哪些格式） |
 | `WasapiPushProbe` | 独占 Push 模式行为探针 |
 | `FormatSwitch` | 系统输出格式读写（验证格式变更自愈） |
+| `AudioPlayerReviewProbe` | 无声卡诊断探针：真实 Session/Decoder/共享邮箱 + 受控 WASAPI 虚表，不启动播放器服务、不用物理输出 |
+| `GcTraceSummary` | EventPipe GC 事件摘要：单独统计运行时 suspend/restart 区间，避免把后台 GC 总时长误算为 STW |
 
 转储开关：设 `AP_DUMP=<路径>` 启用端点字节转储（`AP_DUMP_MAX` 上限字节）。
 
