@@ -91,6 +91,7 @@ namespace WinUIMusicPlayer.Services
                 await SetMusicUrl(music.Path);
             UpdateEq();
             UpdateSettings();
+            UpdateDsp();
         }
 
         private void StartNotificationListener()
@@ -403,6 +404,28 @@ namespace WinUIMusicPlayer.Services
             var buf = ArrayPool<byte>.Shared.Rent(BinarySerializer.IpcSettingSize);
             int len = BinarySerializer.WriteIpcSetting(buf, settings);
             _ = SendOnly(CommandId.UpdateSettings, buf, len);
+        }
+
+        /// <summary>发送音效快照，不触发输出设备重建。</summary>
+        public void UpdateDsp()
+        {
+            var buffer = ArrayPool<byte>.Shared.Rent(DspProtocol.SettingsSize);
+            DspProtocol.WriteSettings(buffer, AppSettings.Dsp);
+            _ = SendOnly(CommandId.UpdateDsp, buffer, DspProtocol.SettingsSize);
+        }
+
+        /// <summary>读取实际输出和音效状态；每次请求独占响应缓冲，允许不同界面并发刷新。</summary>
+        public async Task<DspState?> GetDspStateAsync()
+        {
+            var buffer = ArrayPool<byte>.Shared.Rent(DspProtocol.StateSize);
+            try
+            {
+                var (type, length) = await SendWithResponseAsync(CommandId.GetDspState,
+                    ReadOnlyMemory<byte>.Empty, buffer, timeoutMs: 1000);
+                return type == MessageTypeId.DspState && length == DspProtocol.StateSize
+                    ? DspProtocol.ReadState(buffer.AsSpan(0, length)) : null;
+            }
+            finally { ArrayPool<byte>.Shared.Return(buffer); }
         }
 
         /// <summary>Fire-and-forget full equalizer state sync (slider drags, startup).</summary>

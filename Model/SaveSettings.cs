@@ -10,6 +10,8 @@ namespace WinUIMusicPlayer.Model
 {
     public class SaveSettings
     {
+        /// <summary>获取或设置 PCM 音效偏好，旧配置使用默认直通值。</summary>
+        public BassPlayerIpc.Shared.DspSettings Dsp { get; set; } = new();
         public string OutputMode { get; set; } = "DirectSound";
         public int Latency { get; set; } = 300;
         public int BassOutputDeviceId { get; set; } = -1;

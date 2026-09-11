@@ -1636,6 +1636,108 @@
   <data name="EqQDescription" xml:space="preserve">
     <value>Higher Q narrows the band; lower Q widens it. Range: 0.1–20. Default: 1.414.</value>
   </data>
+  <data name="SettingsSectionDsp.Text" xml:space="preserve">
+    <value>Audio effects</value>
+  </data>
+  <data name="DspSection.Text" xml:space="preserve">
+    <value>Audio effects (DSP)</value>
+  </data>
+  <data name="DspIntro.Text" xml:space="preserve">
+    <value>Effects apply to PCM only. DoP / Native DSD bypasses all effects and keeps your preferences.</value>
+  </data>
+  <data name="DspEqualizer" xml:space="preserve">
+    <value>Equalizer</value>
+  </data>
+  <data name="DspEqualizerDescription" xml:space="preserve">
+    <value>Adjust the 10-band EQ and presets.</value>
+  </data>
+  <data name="DspOpenEqualizer.Content" xml:space="preserve">
+    <value>Open equalizer</value>
+  </data>
+  <data name="DspNormalize" xml:space="preserve">
+    <value>Loudness normalization</value>
+  </data>
+  <data name="DspNormalizeDescription" xml:space="preserve">
+    <value>Analyze the current track in the background, then smoothly apply a fixed gain and cache the result. No file changes or dynamic compression.</value>
+  </data>
+  <data name="DspTarget" xml:space="preserve">
+    <value>Target loudness (LUFS)</value>
+  </data>
+  <data name="DspTargetDescription" xml:space="preserve">
+    <value>Default: −18. Reduce the boost when peak headroom is insufficient to preserve dynamics.</value>
+  </data>
+  <data name="DspHeadroom" xml:space="preserve">
+    <value>Preamp attenuation (dB)</value>
+  </data>
+  <data name="DspHeadroomDescription" xml:space="preserve">
+    <value>Reserve peak headroom for EQ and other effects. 0 means no attenuation; normalization's peak protection does not include subsequent EQ boosts.</value>
+  </data>
+  <data name="DspChannels.Text" xml:space="preserve">
+    <value>Channels and headphones</value>
+  </data>
+  <data name="DspBalance" xml:space="preserve">
+    <value>Left/right balance</value>
+  </data>
+  <data name="DspBalanceDescription" xml:space="preserve">
+    <value>−100: left; 0: center; 100: right.</value>
+  </data>
+  <data name="DspSwap" xml:space="preserve">
+    <value>Swap left and right</value>
+  </data>
+  <data name="DspMono" xml:space="preserve">
+    <value>Mix to mono</value>
+  </data>
+  <data name="DspCrossfeed" xml:space="preserve">
+    <value>Headphone crossfeed</value>
+  </data>
+  <data name="DspCrossfeedDescription" xml:space="preserve">
+    <value>Blend a little low-frequency audio into the opposite channel to soften extreme stereo separation.</value>
+  </data>
+  <data name="DspCrossfeedOff.Content" xml:space="preserve">
+    <value>Off</value>
+  </data>
+  <data name="DspCrossfeedLight.Content" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="DspCrossfeedMedium.Content" xml:space="preserve">
+    <value>Moderate</value>
+  </data>
+  <data name="DspWidth" xml:space="preserve">
+    <value>Stereo width (%)</value>
+  </data>
+  <data name="DspWidthDescription" xml:space="preserve">
+    <value>100 is the original width; 0 is mono. Widening includes attenuation for peak headroom.</value>
+  </data>
+  <data name="DspReset.Content" xml:space="preserve">
+    <value>Reset effects on this page</value>
+  </data>
+  <data name="DspBitstreamBypass" xml:space="preserve">
+    <value>Playing DoP / Native DSD: all DSP is bypassed. Preferences are retained and resume with PCM.</value>
+  </data>
+  <data name="DspStateUnavailable" xml:space="preserve">
+    <value>Waiting for playback state. Effect controls are temporarily unavailable.</value>
+  </data>
+  <data name="DspStereoOnly" xml:space="preserve">
+    <value>Channel/headphone effects require stereo; EQ and loudness analysis support mono and stereo.</value>
+  </data>
+  <data name="DspAnalyzing" xml:space="preserve">
+    <value>Analyzing the current track in the background; gain will be applied smoothly and cached.</value>
+  </data>
+  <data name="DspApplied" xml:space="preserve">
+    <value>Integrated loudness {0:F1} LUFS · Fixed gain {1:+0.0;-0.0;0.0} dB</value>
+  </data>
+  <data name="DspPeakLimited" xml:space="preserve">
+    <value>Integrated {0:F1} LUFS · Fixed gain {1:+0.0;-0.0;0.0} dB; boost constrained by peak headroom or gain cap to preserve dynamics.</value>
+  </data>
+  <data name="DspAnalysisUnavailable" xml:space="preserve">
+    <value>Analysis unavailable for this track (e.g. multichannel, silence or a very short clip); original loudness retained.</value>
+  </data>
+  <data name="DspAnalysisFailed" xml:space="preserve">
+    <value>Loudness analysis failed; original loudness retained. Toggle normalization off and on to retry.</value>
+  </data>
+  <data name="DspAnalysisOff" xml:space="preserve">
+    <value>Normalization is off or no PCM track is open.</value>
+  </data>
 </root>
 
 

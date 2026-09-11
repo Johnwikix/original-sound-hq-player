@@ -1633,6 +1633,108 @@
   <data name="EqQDescription" xml:space="preserve">
     <value>Un Q mayor estrecha la banda; uno menor la amplía. Rango: 0,1–20. Predeterminado: 1,414.</value>
   </data>
+  <data name="SettingsSectionDsp.Text" xml:space="preserve">
+    <value>Efectos de audio</value>
+  </data>
+  <data name="DspSection.Text" xml:space="preserve">
+    <value>Efectos de audio (DSP)</value>
+  </data>
+  <data name="DspIntro.Text" xml:space="preserve">
+    <value>Los efectos solo se aplican a PCM. DoP / Native DSD omite todos los efectos y conserva los ajustes.</value>
+  </data>
+  <data name="DspEqualizer" xml:space="preserve">
+    <value>Ecualizador</value>
+  </data>
+  <data name="DspEqualizerDescription" xml:space="preserve">
+    <value>Ajusta el ecualizador de 10 bandas y los preajustes.</value>
+  </data>
+  <data name="DspOpenEqualizer.Content" xml:space="preserve">
+    <value>Abrir ecualizador</value>
+  </data>
+  <data name="DspNormalize" xml:space="preserve">
+    <value>Normalización de sonoridad</value>
+  </data>
+  <data name="DspNormalizeDescription" xml:space="preserve">
+    <value>Analiza la pista actual en segundo plano, aplica suavemente una ganancia fija y guarda el resultado. Sin modificar archivos ni comprimir la dinámica.</value>
+  </data>
+  <data name="DspTarget" xml:space="preserve">
+    <value>Sonoridad objetivo (LUFS)</value>
+  </data>
+  <data name="DspTargetDescription" xml:space="preserve">
+    <value>Predeterminado: −18. Reduce el aumento si falta margen de picos para conservar la dinámica.</value>
+  </data>
+  <data name="DspHeadroom" xml:space="preserve">
+    <value>Atenuación previa (dB)</value>
+  </data>
+  <data name="DspHeadroomDescription" xml:space="preserve">
+    <value>Reserva margen para el EQ y otros efectos. 0 no atenúa; la protección de picos de normalización no incluye aumentos posteriores del EQ.</value>
+  </data>
+  <data name="DspChannels.Text" xml:space="preserve">
+    <value>Canales y auriculares</value>
+  </data>
+  <data name="DspBalance" xml:space="preserve">
+    <value>Balance izquierda/derecha</value>
+  </data>
+  <data name="DspBalanceDescription" xml:space="preserve">
+    <value>−100: izquierda; 0: centro; 100: derecha.</value>
+  </data>
+  <data name="DspSwap" xml:space="preserve">
+    <value>Intercambiar canales</value>
+  </data>
+  <data name="DspMono" xml:space="preserve">
+    <value>Mezclar a mono</value>
+  </data>
+  <data name="DspCrossfeed" xml:space="preserve">
+    <value>Crossfeed para auriculares</value>
+  </data>
+  <data name="DspCrossfeedDescription" xml:space="preserve">
+    <value>Mezcla un poco de audio de baja frecuencia en el canal opuesto para suavizar la separación extrema.</value>
+  </data>
+  <data name="DspCrossfeedOff.Content" xml:space="preserve">
+    <value>Desactivado</value>
+  </data>
+  <data name="DspCrossfeedLight.Content" xml:space="preserve">
+    <value>Suave</value>
+  </data>
+  <data name="DspCrossfeedMedium.Content" xml:space="preserve">
+    <value>Moderado</value>
+  </data>
+  <data name="DspWidth" xml:space="preserve">
+    <value>Amplitud estéreo (%)</value>
+  </data>
+  <data name="DspWidthDescription" xml:space="preserve">
+    <value>100 es la amplitud original; 0 es mono. Al ampliar se atenúa para dejar margen de picos.</value>
+  </data>
+  <data name="DspReset.Content" xml:space="preserve">
+    <value>Restablecer efectos de esta página</value>
+  </data>
+  <data name="DspBitstreamBypass" xml:space="preserve">
+    <value>Reproduciendo DoP / Native DSD: todo el DSP está omitido. Los ajustes se conservan y se restauran con PCM.</value>
+  </data>
+  <data name="DspStateUnavailable" xml:space="preserve">
+    <value>Esperando el estado de reproducción. Los controles están temporalmente deshabilitados.</value>
+  </data>
+  <data name="DspStereoOnly" xml:space="preserve">
+    <value>Los efectos de canal/auriculares requieren estéreo; EQ y análisis admiten mono y estéreo.</value>
+  </data>
+  <data name="DspAnalyzing" xml:space="preserve">
+    <value>Analizando la pista actual en segundo plano; la ganancia se aplicará suavemente y se guardará.</value>
+  </data>
+  <data name="DspApplied" xml:space="preserve">
+    <value>Sonoridad integrada {0:F1} LUFS · Ganancia fija {1:+0.0;-0.0;0.0} dB</value>
+  </data>
+  <data name="DspPeakLimited" xml:space="preserve">
+    <value>Integrada {0:F1} LUFS · Ganancia {1:+0.0;-0.0;0.0} dB; limitada por margen de picos o ganancia máxima para conservar la dinámica.</value>
+  </data>
+  <data name="DspAnalysisUnavailable" xml:space="preserve">
+    <value>Análisis no disponible (p. ej., multicanal, silencio o fragmento muy corto); se conserva la sonoridad original.</value>
+  </data>
+  <data name="DspAnalysisFailed" xml:space="preserve">
+    <value>Error al analizar; se conserva la sonoridad original. Desactiva y activa para reintentar.</value>
+  </data>
+  <data name="DspAnalysisOff" xml:space="preserve">
+    <value>Normalización desactivada o ninguna pista PCM abierta.</value>
+  </data>
 </root>
 
 

@@ -27,6 +27,8 @@ public enum CommandId : short
 
     // Time
     GetTimeProgress = 18,
+    UpdateDsp = 19,
+    GetDspState = 20,
 }
 
 public enum MessageTypeId : short
@@ -45,6 +47,7 @@ public enum MessageTypeId : short
     AsioDevices = 11,
     TimeProgress = 12,
     EqState = 13,
+    DspState = 14,
 }
 
 public enum ErrorCode : short

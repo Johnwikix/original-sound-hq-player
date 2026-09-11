@@ -1633,6 +1633,108 @@
   <data name="EqQDescription" xml:space="preserve">
     <value>Q が大きいほど帯域が狭く、小さいほど広くなります。範囲: 0.1～20、既定値: 1.414。</value>
   </data>
+  <data name="SettingsSectionDsp.Text" xml:space="preserve">
+    <value>音響効果</value>
+  </data>
+  <data name="DspSection.Text" xml:space="preserve">
+    <value>音響効果（DSP）</value>
+  </data>
+  <data name="DspIntro.Text" xml:space="preserve">
+    <value>効果は PCM にのみ適用されます。DoP / Native DSD では設定を保持してすべての効果をバイパスします。</value>
+  </data>
+  <data name="DspEqualizer" xml:space="preserve">
+    <value>イコライザー</value>
+  </data>
+  <data name="DspEqualizerDescription" xml:space="preserve">
+    <value>10 バンド EQ とプリセットを調整します。</value>
+  </data>
+  <data name="DspOpenEqualizer.Content" xml:space="preserve">
+    <value>イコライザーを開く</value>
+  </data>
+  <data name="DspNormalize" xml:space="preserve">
+    <value>ラウドネス正規化</value>
+  </data>
+  <data name="DspNormalizeDescription" xml:space="preserve">
+    <value>再生中の曲をバックグラウンドで解析し、固定ゲインを滑らかに適用して結果をキャッシュします。音楽ファイルやダイナミクスは変更しません。</value>
+  </data>
+  <data name="DspTarget" xml:space="preserve">
+    <value>目標ラウドネス（LUFS）</value>
+  </data>
+  <data name="DspTargetDescription" xml:space="preserve">
+    <value>既定値は −18。ピークの余裕が不足する場合は増幅を抑え、ダイナミクスを維持します。</value>
+  </data>
+  <data name="DspHeadroom" xml:space="preserve">
+    <value>プリゲイン減衰（dB）</value>
+  </data>
+  <data name="DspHeadroomDescription" xml:space="preserve">
+    <value>EQ などのためにピークの余裕を確保します。0 は減衰なし。正規化のピーク保護には後段 EQ の増幅は含まれません。</value>
+  </data>
+  <data name="DspChannels.Text" xml:space="preserve">
+    <value>チャンネルとヘッドホン</value>
+  </data>
+  <data name="DspBalance" xml:space="preserve">
+    <value>左右バランス</value>
+  </data>
+  <data name="DspBalanceDescription" xml:space="preserve">
+    <value>−100：左、0：中央、100：右。</value>
+  </data>
+  <data name="DspSwap" xml:space="preserve">
+    <value>左右チャンネルを交換</value>
+  </data>
+  <data name="DspMono" xml:space="preserve">
+    <value>モノラルに合成</value>
+  </data>
+  <data name="DspCrossfeed" xml:space="preserve">
+    <value>ヘッドホン・クロスフィード</value>
+  </data>
+  <data name="DspCrossfeedDescription" xml:space="preserve">
+    <value>低域を反対側のチャンネルに少量混ぜ、極端な左右分離を和らげます。</value>
+  </data>
+  <data name="DspCrossfeedOff.Content" xml:space="preserve">
+    <value>オフ</value>
+  </data>
+  <data name="DspCrossfeedLight.Content" xml:space="preserve">
+    <value>弱</value>
+  </data>
+  <data name="DspCrossfeedMedium.Content" xml:space="preserve">
+    <value>中</value>
+  </data>
+  <data name="DspWidth" xml:space="preserve">
+    <value>ステレオ幅（%）</value>
+  </data>
+  <data name="DspWidthDescription" xml:space="preserve">
+    <value>100 は元の幅、0 はモノラル。幅を広げるときはピークの余裕を確保するため減衰します。</value>
+  </data>
+  <data name="DspReset.Content" xml:space="preserve">
+    <value>このページの効果をリセット</value>
+  </data>
+  <data name="DspBitstreamBypass" xml:space="preserve">
+    <value>DoP / Native DSD 再生中：すべての DSP をバイパスしています。設定は保持され、PCM に戻ると復元されます。</value>
+  </data>
+  <data name="DspStateUnavailable" xml:space="preserve">
+    <value>再生状態を確認中です。音響効果の操作は一時的に無効です。</value>
+  </data>
+  <data name="DspStereoOnly" xml:space="preserve">
+    <value>チャンネル・ヘッドホン効果はステレオ専用です。EQ とラウドネス解析はモノラルとステレオに対応します。</value>
+  </data>
+  <data name="DspAnalyzing" xml:space="preserve">
+    <value>現在の曲をバックグラウンドで解析中です。完了後に滑らかに適用し、キャッシュします。</value>
+  </data>
+  <data name="DspApplied" xml:space="preserve">
+    <value>統合ラウドネス {0:F1} LUFS · 固定ゲイン {1:+0.0;-0.0;0.0} dB</value>
+  </data>
+  <data name="DspPeakLimited" xml:space="preserve">
+    <value>統合 {0:F1} LUFS · ゲイン {1:+0.0;-0.0;0.0} dB。ピークの余裕またはゲイン上限により増幅を抑え、ダイナミクスを維持します。</value>
+  </data>
+  <data name="DspAnalysisUnavailable" xml:space="preserve">
+    <value>解析できません（マルチチャンネル、無音、短すぎる音声など）。元のラウドネスを保持します。</value>
+  </data>
+  <data name="DspAnalysisFailed" xml:space="preserve">
+    <value>解析に失敗しました。元のラウドネスを保持します。再度有効にすると再試行します。</value>
+  </data>
+  <data name="DspAnalysisOff" xml:space="preserve">
+    <value>正規化がオフ、または PCM の曲が開かれていません。</value>
+  </data>
 </root>
 
 

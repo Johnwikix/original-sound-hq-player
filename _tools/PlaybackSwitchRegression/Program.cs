@@ -33,6 +33,7 @@ internal static unsafe partial class Program
         RunBufferPolicyTests();
         RunAsioNotificationTests();
         RunEqualizerQTests();
+        RunDspTests();
         foreach (string mode in new[] { "ASIO", "WasapiExclusivePush", "WasapiExclusiveEvent" })
         {
             Run($"{mode}: PCM -> DSD selects new file format", () =>
@@ -81,6 +82,8 @@ internal static unsafe partial class Program
         engine.DsdPcmFreq = 88200;
         engine.Latency = 300;
         engine.BassOutputDeviceId = -1;
+        SetPublicArray(engine, "EqGains", new float[10]);
+        SetPublicArray(engine, "EqQ", Enumerable.Repeat(BassPlayerIpc.Shared.EqParameters.DefaultQ, 10).ToArray());
         return engine;
     }
 

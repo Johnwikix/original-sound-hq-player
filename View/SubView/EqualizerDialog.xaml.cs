@@ -39,6 +39,9 @@ namespace WinUIMusicPlayer.View.SubView
 
         private readonly IReadOnlyDictionary<string, EqPreset> _builtIns = EqualizerHelper.CreateBuiltInPresets();
         private readonly DispatcherQueueTimer _commitTimer;
+        private readonly DispatcherQueueTimer _stateTimer;
+        private bool _dialogOpen, _refreshingState, _eqCommitInFlight;
+        private int _stateGeneration;
         private List<SaveEqualizerPreset> _customPresets = new();
         private bool _isSyncingUi;
         private bool _isLoaded;
@@ -67,6 +70,25 @@ namespace WinUIMusicPlayer.View.SubView
             _commitTimer.Interval = TimeSpan.FromMilliseconds(CommitDebounceMs);
             _commitTimer.IsRepeating = false;
             _commitTimer.Tick += (_, _) => CommitChanges();
+            ToggleSwitchEqualizer.IsEnabled = false;
+            _stateTimer = DispatcherQueue.CreateTimer();
+            _stateTimer.Interval = TimeSpan.FromMilliseconds(500);
+            _stateTimer.Tick += async (_, _) => await RefreshPlaybackStateAsync();
+            Opened += async (_, _) =>
+            {
+                _dialogOpen = true;
+                _stateGeneration++;
+                _isLoaded = false;
+                _isSyncingUi = true;
+                ToggleSwitchEqualizer.IsEnabled = false;
+                ToggleSwitchEqualizer.IsOn = false;
+                _isSyncingUi = false;
+                await InitializeAsync();
+                if (!_dialogOpen) return;
+                _stateTimer.Start();
+                await RefreshPlaybackStateAsync();
+            };
+            Closed += (_, _) => { _dialogOpen = false; _stateGeneration++; _stateTimer.Stop(); };
 
             // Esc/系统关闭同样走持久化，防止挂起的调整丢失
             Closing += (_, _) =>
@@ -75,7 +97,6 @@ namespace WinUIMusicPlayer.View.SubView
                 if (_isLoaded) CommitChanges();
             };
             Equalizer.BandEdited += OnBandEdited;
-            _ = InitializeAsync();
         }
 
         private async Task InitializeAsync()
@@ -90,9 +111,30 @@ namespace WinUIMusicPlayer.View.SubView
             }
             Equalizer.SetBands(AppSettings.EqualizerBands);
             RebuildPresetItems();
-            ToggleSwitchEqualizer.IsOn = AppSettings.IsEqualizerEnabled;
             _isLoaded = true;
             UpdatePresetButtonState();
+            await RefreshPlaybackStateAsync();
+        }
+
+        /// <summary>按真实会话刷新显示；旁路仅影响界面，不覆盖保存的 EQ 偏好。</summary>
+        private async Task RefreshPlaybackStateAsync()
+        {
+            if (!_dialogOpen || !_isLoaded || _refreshingState || _eqCommitInFlight) return;
+            _refreshingState = true;
+            int generation = _stateGeneration;
+            try
+            {
+                var state = await App.Services.GetRequiredService<IpcService>().GetDspStateAsync();
+                if (!_dialogOpen || _eqCommitInFlight || generation != _stateGeneration) return;
+                _isSyncingUi = true;
+                bool available = state is { RenderKind: 0, Channels: <= 2 };
+                ToggleSwitchEqualizer.IsEnabled = available;
+                ToggleSwitchEqualizer.IsOn = available && state!.Value.EqualizerActive;
+                DspAvailabilityBar.IsOpen = !available;
+                DspAvailabilityBar.Message = ToolUtils.GetString(state == null ? "DspStateUnavailable"
+                    : state.Value.RenderKind != 0 ? "DspBitstreamBypass" : "DspStereoOnly");
+            }
+            finally { _isSyncingUi = false; _refreshingState = false; }
         }
 
         #region 预设下拉
@@ -282,25 +324,19 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void ToggleSwitchEqualizer_Toggled(object sender, RoutedEventArgs e)
         {
-            if (_isSyncingUi) return;
+            if (_isSyncingUi || !_isLoaded) return;
 
             AppSettings.IsEqualizerEnabled = ToggleSwitchEqualizer.IsOn;
-
-            // Await the server's real applied state: the server rejects the switch in
-            // some modes (e.g. DSD over exclusive output), in which case roll the UI
-            // switch back so the displayed state matches reality.
-            bool? real = await App.Services.GetRequiredService<BassPlayerCommandService>().UpdateEqStateAsync();
-            if (real is bool r && r != AppSettings.IsEqualizerEnabled)
+            _stateGeneration++;
+            _eqCommitInFlight = true;
+            ToggleSwitchEqualizer.IsEnabled = false;
+            try
             {
-                AppSettings.IsEqualizerEnabled = r;
-                _isSyncingUi = true;
-                ToggleSwitchEqualizer.IsOn = r;
-                _isSyncingUi = false;
-            }
-            if (_isLoaded)
-            {
+                await App.Services.GetRequiredService<BassPlayerCommandService>().UpdateEqStateAsync();
                 PersistAll();
             }
+            finally { _eqCommitInFlight = false; }
+            await RefreshPlaybackStateAsync();
         }
 
         #endregion

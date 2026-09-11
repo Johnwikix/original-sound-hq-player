@@ -12,7 +12,7 @@ namespace AudioPlayer.Playback;
 /// 行为对等要点：
 /// - 暂停=冻结（共享/独占 IAudioClient::Stop、ASIO ASIOStop，环内数据保留续播）；
 /// - 换设备/模式（IsSettingChanged）保进度重建会话；
-/// - EQ 在 DoP/NativeDSD 位流下拒绝（EqState 回滚语义）；
+/// - DoP/NativeDSD 位流旁路全部 DSP，保存用户偏好并向 UI 提供实际会话状态；
 /// - 自然结束只发 PlayEnded（不发 PlayState，与 bass SyncFlags.End 一致）；
 /// - 进度为采样精确（anchor + played），非旧的字节比例估算。
 /// "DirectSound 全自动"语义（共享直传 + 端点通知）：
@@ -66,6 +66,7 @@ public sealed class PlaybackEngine : IDisposable
     public bool IsEqualizerEnabled;
     public bool IsFadingEnabled;
     public float Volume = 0.5f;
+    private DspSettings? _dspSettings = new();
 
     public readonly float[] EqGains = new float[10];
     public readonly float[] EqQ = Enumerable.Repeat(EqParameters.DefaultQ, 10).ToArray();
@@ -275,6 +276,12 @@ public sealed class PlaybackEngine : IDisposable
             }
         }
         var session = Session.Open(this, url, kind, DsdPcmFreq, DsdGain, Latency, forcedRate, forcedChannels, maxChannels);
+        if (session != null)
+        {
+            session.Effects?.Configure(_dspSettings ?? new DspSettings());
+            if (session.Kind == RenderKind.Pcm)
+                session.Eq.Configure(session.SampleRate, IsEqualizerEnabled, EqGains, EqQ);
+        }
         if (session == null) Console.WriteLine($"[engine] OpenSession failed: kind={kind} url={url}");
         return session;
     }
@@ -727,9 +734,10 @@ public sealed class PlaybackEngine : IDisposable
 
 
             bool requested = req.IsEnabled;
-            // 位流模式（DoP/NativeDSD）拒绝 EQ —— 与 bass ToggleEqualizer 拒绝条件对齐
-            bool accepted = requested && !IsBitstreamActive(MusicUrl);
-            IsEqualizerEnabled = accepted;
+            // 位流模式（DoP/NativeDSD）不应用 EQ，响应仍报告实际是否可用。
+            bool accepted = requested && EffectiveKind == RenderKind.Pcm;
+            // 保存用户偏好；实际旁路按当前会话判定，回退 PCM 时也能正确恢复。
+            IsEqualizerEnabled = requested;
 
             ApplyEqToSession();
             return new EqStateResponse { IsEnabled = accepted, IsActive = accepted && _session is { Kind: RenderKind.Pcm } };
@@ -741,6 +749,28 @@ public sealed class PlaybackEngine : IDisposable
         var session = _session;
         if (session == null || session.Kind != RenderKind.Pcm) return;
         session.Eq.Configure(session.SampleRate, IsEqualizerEnabled, EqGains, EqQ);
+    }
+
+    /// <summary>更新 PCM 音效；不重建输出，不接触 DoP/Native DSD 位流。</summary>
+    public void UpdateDsp(DspSettings settings)
+    {
+        lock (_streamLock)
+        {
+            _dspSettings = settings.Sanitize();
+            _session?.Effects?.Configure(_dspSettings);
+        }
+    }
+
+    /// <summary>读取实际会话状态，供已打开的音效界面持续同步。</summary>
+    public DspState GetDspState()
+    {
+        lock (_streamLock)
+        {
+            byte kind = (byte)(_session?.Kind ?? RenderKind.Pcm);
+            bool eq = kind == 0 && IsEqualizerEnabled && (_session == null || _session.Channels <= 2);
+            return _session?.Effects?.GetState(kind, eq)
+                ?? new DspState(kind, eq, _session?.Channels ?? 0, LoudnessStatus.Off, 0, double.NaN);
+        }
     }
 
     // ─────────────── 设备枚举（IPC 面） ───────────────

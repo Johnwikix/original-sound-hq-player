@@ -1635,4 +1635,106 @@
   <data name="EqQDescription" xml:space="preserve">
     <value>Q 值越大，频段越窄；越小，频段越宽。范围 0.1–20，默认 1.414。</value>
   </data>
+  <data name="SettingsSectionDsp.Text" xml:space="preserve">
+    <value>音效</value>
+  </data>
+  <data name="DspSection.Text" xml:space="preserve">
+    <value>音效（DSP）</value>
+  </data>
+  <data name="DspIntro.Text" xml:space="preserve">
+    <value>音效设置仅应用于 PCM。DoP / Native DSD 播放时全部旁路，并保留你的设置。</value>
+  </data>
+  <data name="DspEqualizer" xml:space="preserve">
+    <value>均衡器</value>
+  </data>
+  <data name="DspEqualizerDescription" xml:space="preserve">
+    <value>调节十段 EQ 和预设。</value>
+  </data>
+  <data name="DspOpenEqualizer.Content" xml:space="preserve">
+    <value>打开均衡器</value>
+  </data>
+  <data name="DspNormalize" xml:space="preserve">
+    <value>音量均一化</value>
+  </data>
+  <data name="DspNormalizeDescription" xml:space="preserve">
+    <value>播放时后台分析当前歌曲，完成后平滑应用固定增益并缓存。不改音乐文件，不压缩歌曲动态。</value>
+  </data>
+  <data name="DspTarget" xml:space="preserve">
+    <value>目标响度（LUFS）</value>
+  </data>
+  <data name="DspTargetDescription" xml:space="preserve">
+    <value>默认 −18。峰值余量不足时减少提升量，优先保留动态。</value>
+  </data>
+  <data name="DspHeadroom" xml:space="preserve">
+    <value>前置衰减（dB）</value>
+  </data>
+  <data name="DspHeadroomDescription" xml:space="preserve">
+    <value>为 EQ 等效果预留峰值空间。0 表示不衰减；响度均一化的峰值保护不包含后续 EQ 增益。</value>
+  </data>
+  <data name="DspChannels.Text" xml:space="preserve">
+    <value>声道与耳机</value>
+  </data>
+  <data name="DspBalance" xml:space="preserve">
+    <value>左右平衡</value>
+  </data>
+  <data name="DspBalanceDescription" xml:space="preserve">
+    <value>−100：左声道；0：居中；100：右声道。</value>
+  </data>
+  <data name="DspSwap" xml:space="preserve">
+    <value>左右声道互换</value>
+  </data>
+  <data name="DspMono" xml:space="preserve">
+    <value>合并为单声道</value>
+  </data>
+  <data name="DspCrossfeed" xml:space="preserve">
+    <value>耳机交叉馈送（Crossfeed）</value>
+  </data>
+  <data name="DspCrossfeedDescription" xml:space="preserve">
+    <value>将少量低频送入另一声道，缓和左右极端分离的听感。</value>
+  </data>
+  <data name="DspCrossfeedOff.Content" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="DspCrossfeedLight.Content" xml:space="preserve">
+    <value>轻度</value>
+  </data>
+  <data name="DspCrossfeedMedium.Content" xml:space="preserve">
+    <value>适中</value>
+  </data>
+  <data name="DspWidth" xml:space="preserve">
+    <value>立体声宽度（%）</value>
+  </data>
+  <data name="DspWidthDescription" xml:space="preserve">
+    <value>100 为原始宽度，0 为单声道；扩宽时自动衰减以预留峰值空间。</value>
+  </data>
+  <data name="DspReset.Content" xml:space="preserve">
+    <value>重置此页音效</value>
+  </data>
+  <data name="DspBitstreamBypass" xml:space="preserve">
+    <value>正在播放 DoP / Native DSD：所有 DSP 均已旁路，设置已保留，回到 PCM 后恢复。</value>
+  </data>
+  <data name="DspStateUnavailable" xml:space="preserve">
+    <value>正在等待播放端状态，音效控件暂不可用。</value>
+  </data>
+  <data name="DspStereoOnly" xml:space="preserve">
+    <value>声道与耳机效果仅支持双声道；EQ 和响度分析支持单声道与双声道。</value>
+  </data>
+  <data name="DspAnalyzing" xml:space="preserve">
+    <value>正在后台分析当前歌曲；完成后平滑应用，之后复用缓存。</value>
+  </data>
+  <data name="DspApplied" xml:space="preserve">
+    <value>综合响度 {0:F1} LUFS · 固定增益 {1:+0.0;-0.0;0.0} dB</value>
+  </data>
+  <data name="DspPeakLimited" xml:space="preserve">
+    <value>综合响度 {0:F1} LUFS · 固定增益 {1:+0.0;-0.0;0.0} dB；受峰值余量或增益上限约束，保留动态。</value>
+  </data>
+  <data name="DspAnalysisUnavailable" xml:space="preserve">
+    <value>此曲暂无法分析（例如多声道、静音或片段过短）；保持原始响度。</value>
+  </data>
+  <data name="DspAnalysisFailed" xml:space="preserve">
+    <value>响度分析失败，保持原始响度。重新启用可重试。</value>
+  </data>
+  <data name="DspAnalysisOff" xml:space="preserve">
+    <value>响度均一化未启用或尚未打开 PCM 曲目。</value>
+  </data>
 </root>

@@ -1015,6 +1015,7 @@ namespace WinUIMusicPlayer.Services
             _currentSettings = settings;
             if (settings is not null)
             {
+                AppSettings.Dsp = (settings.Dsp ?? new()).Sanitize();
                 AppSettings.OutputMode = settings.OutputMode;
                 AppSettings.DeviceName = settings.DeviceFriendlyName;
                 AppSettings.BassOutputDeviceId = settings.BassOutputDeviceId;
@@ -1194,6 +1195,7 @@ namespace WinUIMusicPlayer.Services
 
         private SaveSettings SaveCurrentSettings(SaveSettings newSettings)
         {
+            newSettings.Dsp = AppSettings.Dsp;
             newSettings.OutputMode = AppSettings.OutputMode;
             newSettings.DeviceFriendlyName = AppSettings.DeviceName;
             newSettings.BassOutputDeviceId = AppSettings.BassOutputDeviceId;

@@ -183,7 +183,7 @@ public class PlayerIpcService : IDisposable
     private static bool IsSendOnlyCommand(CommandId commandId)
     {
         return commandId is CommandId.Play or CommandId.ChangePosition or CommandId.ChangeVolume
-            or CommandId.MusicEnd or CommandId.FadeOut or CommandId.UpdateSettings;
+            or CommandId.MusicEnd or CommandId.FadeOut or CommandId.UpdateSettings or CommandId.UpdateDsp;
     }
 
     private void HandleCommand(CommandId commandId, ReadOnlySpan<byte> payload, byte sequenceId)
@@ -245,6 +245,17 @@ public class PlayerIpcService : IDisposable
                     var req = BinarySerializer.ReadUpdateEqRequest(payload);
                     var resp = _engine!.SetEqualizerState(req);
                     WriteEqStateResponsePayload(resp, sequenceId);
+                    break;
+                }
+                case CommandId.UpdateDsp:
+                    _engine!.UpdateDsp(DspProtocol.ReadSettings(payload));
+                    break;
+                case CommandId.GetDspState:
+                {
+                    Span<byte> state = stackalloc byte[DspProtocol.StateSize];
+                    DspProtocol.WriteState(state, _engine!.GetDspState());
+                    IpcEnvelope.WriteResponse(_accessor!, IpcConstants.ResponseBufferOffset,
+                        MessageTypeId.DspState, sequenceId, state, IpcConstants.MaxResponseSize);
                     break;
                 }
                 case CommandId.GetWasapiDevices:

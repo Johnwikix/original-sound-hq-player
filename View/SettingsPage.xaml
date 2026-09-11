@@ -30,6 +30,7 @@
                         x:Uid="SettingsSectionShortcuts"
                         FontSize="18"
                         Tag="Shortcuts" />
+                    <SelectorBarItem x:Uid="SettingsSectionDsp" FontSize="18" Tag="Dsp" />
                     <SelectorBarItem
                         x:Uid="SettingsSectionCoverBackground"
                         FontSize="18"
@@ -58,6 +59,9 @@
             <!--  功能设置（含音频、外观）  -->
             <controls:Case Value="General">
                 <sub:GeneralSettingsControl />
+            </controls:Case>
+            <controls:Case Value="Dsp">
+                <sub:DspSettingsControl />
             </controls:Case>
 
             <!--  快捷键设置  -->

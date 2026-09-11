@@ -37,6 +37,7 @@ internal sealed class Session : IRenderSource, IDisposable
 
     internal readonly Equalizer Eq = new();
     internal readonly GainRamp? Gain;
+    internal readonly PcmEffects? Effects;
 
     public RenderKind Kind { get; }
     public int Channels { get; }
@@ -58,6 +59,7 @@ internal sealed class Session : IRenderSource, IDisposable
         SampleRate = deviceRate;
         TotalMs = totalMs;
         Gain = kind == RenderKind.Pcm && gainRampRate > 0 ? new GainRamp(gainRampRate) : null;
+        Effects = kind == RenderKind.Pcm ? new PcmEffects(deviceRate, channels) : null;
         int ch = Math.Max(1, channels);
         if (kind == RenderKind.Pcm)
         {
@@ -97,6 +99,7 @@ internal sealed class Session : IRenderSource, IDisposable
                     _pcm = dec,
                     _pcmRing = new PcmRing(channels, ringFrames, PrebufferFrames(rate), 300),
                 };
+                s.Effects!.SetFile(path, dsdPcmFreq, dsdGainDb);
                 s.StartThread(s.PcmDecodeProc);
                 return s;
             }
@@ -158,6 +161,7 @@ internal sealed class Session : IRenderSource, IDisposable
     /// <summary>seek：立即重置环与锚点（进度条即时响应），解码线程随后转到新位置。</summary>
     public void RequestSeek(long targetMs)
     {
+        Effects?.RequestReset();
         Volatile.Write(ref AnchorFrames, MsToFrames(targetMs)); // 与 CurrentMs 的 Volatile.Read 对称
         _pcmRing?.BeginSession();
         _dopRing?.BeginSession();
@@ -343,7 +347,9 @@ internal sealed class Session : IRenderSource, IDisposable
         if (_pcmRing == null || Gain == null) { buffer[..(frames * _channels)].Clear(); return; }
         int audible = _pcmRing.Render(buffer, frames);
         if (audible <= 0) return; // 预缓冲/欠载静音段：不推进 EQ 与增益斜坡（淡入淡出按出声时长走）
+        Effects?.ApplyInput(buffer, audible);
         Eq.Process(buffer, audible, _channels);
+        Effects?.ApplyStereo(buffer, audible);
         Gain.Apply(buffer, audible, _channels);
     }
 
@@ -355,6 +361,7 @@ internal sealed class Session : IRenderSource, IDisposable
 
     public void Dispose()
     {
+        Effects?.Dispose();
         _cancelled = true;
         WakeProducer();
         try { _thread?.Join(1000); } catch { }

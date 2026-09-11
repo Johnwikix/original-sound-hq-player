@@ -1633,6 +1633,108 @@
   <data name="EqQDescription" xml:space="preserve">
     <value>Чем выше Q, тем уже полоса; чем ниже — тем шире. Диапазон: 0,1–20. По умолчанию: 1,414.</value>
   </data>
+  <data name="SettingsSectionDsp.Text" xml:space="preserve">
+    <value>Звуковые эффекты</value>
+  </data>
+  <data name="DspSection.Text" xml:space="preserve">
+    <value>Звуковые эффекты (DSP)</value>
+  </data>
+  <data name="DspIntro.Text" xml:space="preserve">
+    <value>Эффекты применяются только к PCM. DoP / Native DSD обходит все эффекты, сохраняя настройки.</value>
+  </data>
+  <data name="DspEqualizer" xml:space="preserve">
+    <value>Эквалайзер</value>
+  </data>
+  <data name="DspEqualizerDescription" xml:space="preserve">
+    <value>Настройка 10-полосного эквалайзера и пресетов.</value>
+  </data>
+  <data name="DspOpenEqualizer.Content" xml:space="preserve">
+    <value>Открыть эквалайзер</value>
+  </data>
+  <data name="DspNormalize" xml:space="preserve">
+    <value>Нормализация громкости</value>
+  </data>
+  <data name="DspNormalizeDescription" xml:space="preserve">
+    <value>Анализ текущего трека в фоне с плавным применением постоянного усиления и кэшированием. Без изменения файлов и сжатия динамики.</value>
+  </data>
+  <data name="DspTarget" xml:space="preserve">
+    <value>Целевая громкость (LUFS)</value>
+  </data>
+  <data name="DspTargetDescription" xml:space="preserve">
+    <value>По умолчанию −18. При недостаточном запасе пиков усиление ограничивается для сохранения динамики.</value>
+  </data>
+  <data name="DspHeadroom" xml:space="preserve">
+    <value>Предварительное ослабление (дБ)</value>
+  </data>
+  <data name="DspHeadroomDescription" xml:space="preserve">
+    <value>Запас для EQ и других эффектов. 0 — без ослабления; защита пиков нормализации не учитывает последующее усиление EQ.</value>
+  </data>
+  <data name="DspChannels.Text" xml:space="preserve">
+    <value>Каналы и наушники</value>
+  </data>
+  <data name="DspBalance" xml:space="preserve">
+    <value>Баланс каналов</value>
+  </data>
+  <data name="DspBalanceDescription" xml:space="preserve">
+    <value>−100: влево; 0: центр; 100: вправо.</value>
+  </data>
+  <data name="DspSwap" xml:space="preserve">
+    <value>Поменять каналы местами</value>
+  </data>
+  <data name="DspMono" xml:space="preserve">
+    <value>Сведение в моно</value>
+  </data>
+  <data name="DspCrossfeed" xml:space="preserve">
+    <value>Crossfeed для наушников</value>
+  </data>
+  <data name="DspCrossfeedDescription" xml:space="preserve">
+    <value>Небольшое смешивание низких частот между каналами смягчает чрезмерное стереоразделение.</value>
+  </data>
+  <data name="DspCrossfeedOff.Content" xml:space="preserve">
+    <value>Выкл.</value>
+  </data>
+  <data name="DspCrossfeedLight.Content" xml:space="preserve">
+    <value>Слабый</value>
+  </data>
+  <data name="DspCrossfeedMedium.Content" xml:space="preserve">
+    <value>Умеренный</value>
+  </data>
+  <data name="DspWidth" xml:space="preserve">
+    <value>Ширина стерео (%)</value>
+  </data>
+  <data name="DspWidthDescription" xml:space="preserve">
+    <value>100 — исходная ширина, 0 — моно. При расширении добавляется ослабление для запаса пиков.</value>
+  </data>
+  <data name="DspReset.Content" xml:space="preserve">
+    <value>Сбросить эффекты этой страницы</value>
+  </data>
+  <data name="DspBitstreamBypass" xml:space="preserve">
+    <value>Воспроизводится DoP / Native DSD: весь DSP обойдён. Настройки сохраняются и восстанавливаются для PCM.</value>
+  </data>
+  <data name="DspStateUnavailable" xml:space="preserve">
+    <value>Ожидание состояния проигрывателя. Управление эффектами временно недоступно.</value>
+  </data>
+  <data name="DspStereoOnly" xml:space="preserve">
+    <value>Эффекты каналов/наушников требуют стерео; EQ и анализ громкости поддерживают моно и стерео.</value>
+  </data>
+  <data name="DspAnalyzing" xml:space="preserve">
+    <value>Фоновый анализ текущего трека; усиление будет плавно применено и кэшировано.</value>
+  </data>
+  <data name="DspApplied" xml:space="preserve">
+    <value>Интегральная громкость {0:F1} LUFS · Постоянное усиление {1:+0.0;-0.0;0.0} дБ</value>
+  </data>
+  <data name="DspPeakLimited" xml:space="preserve">
+    <value>Громкость {0:F1} LUFS · Усиление {1:+0.0;-0.0;0.0} дБ; ограничено запасом пиков или пределом усиления для сохранения динамики.</value>
+  </data>
+  <data name="DspAnalysisUnavailable" xml:space="preserve">
+    <value>Анализ недоступен (например, многоканальный звук, тишина или слишком короткий фрагмент); исходная громкость сохранена.</value>
+  </data>
+  <data name="DspAnalysisFailed" xml:space="preserve">
+    <value>Анализ не удался; исходная громкость сохранена. Выключите и включите нормализацию для повтора.</value>
+  </data>
+  <data name="DspAnalysisOff" xml:space="preserve">
+    <value>Нормализация выключена или PCM-трек не открыт.</value>
+  </data>
 </root>
 
 

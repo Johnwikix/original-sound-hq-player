@@ -1633,6 +1633,108 @@
   <data name="EqQDescription" xml:space="preserve">
     <value>Höheres Q verengt das Band, niedrigeres Q verbreitert es. Bereich: 0,1–20. Standard: 1,414.</value>
   </data>
+  <data name="SettingsSectionDsp.Text" xml:space="preserve">
+    <value>Klangeffekte</value>
+  </data>
+  <data name="DspSection.Text" xml:space="preserve">
+    <value>Klangeffekte (DSP)</value>
+  </data>
+  <data name="DspIntro.Text" xml:space="preserve">
+    <value>Effekte gelten nur für PCM. DoP / Native DSD umgeht alle Effekte und behält die Einstellungen.</value>
+  </data>
+  <data name="DspEqualizer" xml:space="preserve">
+    <value>Equalizer</value>
+  </data>
+  <data name="DspEqualizerDescription" xml:space="preserve">
+    <value>10-Band-EQ und Presets anpassen.</value>
+  </data>
+  <data name="DspOpenEqualizer.Content" xml:space="preserve">
+    <value>Equalizer öffnen</value>
+  </data>
+  <data name="DspNormalize" xml:space="preserve">
+    <value>Lautheitsnormalisierung</value>
+  </data>
+  <data name="DspNormalizeDescription" xml:space="preserve">
+    <value>Aktuellen Titel im Hintergrund analysieren, dann feste Verstärkung sanft anwenden und Ergebnis speichern. Keine Dateiänderung oder Dynamikkompression.</value>
+  </data>
+  <data name="DspTarget" xml:space="preserve">
+    <value>Ziellautheit (LUFS)</value>
+  </data>
+  <data name="DspTargetDescription" xml:space="preserve">
+    <value>Standard: −18. Bei unzureichender Spitzenreserve weniger verstärken, um die Dynamik zu erhalten.</value>
+  </data>
+  <data name="DspHeadroom" xml:space="preserve">
+    <value>Vorabsenkung (dB)</value>
+  </data>
+  <data name="DspHeadroomDescription" xml:space="preserve">
+    <value>Spitzenreserve für EQ und andere Effekte. 0 bedeutet keine Absenkung; der Spitzenschutz der Normalisierung umfasst keine nachfolgende EQ-Verstärkung.</value>
+  </data>
+  <data name="DspChannels.Text" xml:space="preserve">
+    <value>Kanäle und Kopfhörer</value>
+  </data>
+  <data name="DspBalance" xml:space="preserve">
+    <value>Links-/Rechts-Balance</value>
+  </data>
+  <data name="DspBalanceDescription" xml:space="preserve">
+    <value>−100: links; 0: Mitte; 100: rechts.</value>
+  </data>
+  <data name="DspSwap" xml:space="preserve">
+    <value>Links und rechts tauschen</value>
+  </data>
+  <data name="DspMono" xml:space="preserve">
+    <value>Zu Mono mischen</value>
+  </data>
+  <data name="DspCrossfeed" xml:space="preserve">
+    <value>Kopfhörer-Crossfeed</value>
+  </data>
+  <data name="DspCrossfeedDescription" xml:space="preserve">
+    <value>Etwas Tiefton in den anderen Kanal mischen, um extreme Stereotrennung abzumildern.</value>
+  </data>
+  <data name="DspCrossfeedOff.Content" xml:space="preserve">
+    <value>Aus</value>
+  </data>
+  <data name="DspCrossfeedLight.Content" xml:space="preserve">
+    <value>Leicht</value>
+  </data>
+  <data name="DspCrossfeedMedium.Content" xml:space="preserve">
+    <value>Mittel</value>
+  </data>
+  <data name="DspWidth" xml:space="preserve">
+    <value>Stereobreite (%)</value>
+  </data>
+  <data name="DspWidthDescription" xml:space="preserve">
+    <value>100 ist die Originalbreite, 0 ist Mono. Verbreiterung wird für Spitzenreserve abgesenkt.</value>
+  </data>
+  <data name="DspReset.Content" xml:space="preserve">
+    <value>Effekte dieser Seite zurücksetzen</value>
+  </data>
+  <data name="DspBitstreamBypass" xml:space="preserve">
+    <value>DoP / Native DSD: Alle DSP-Effekte werden umgangen. Einstellungen bleiben erhalten und gelten wieder bei PCM.</value>
+  </data>
+  <data name="DspStateUnavailable" xml:space="preserve">
+    <value>Warten auf Wiedergabestatus. Effektsteuerung vorübergehend nicht verfügbar.</value>
+  </data>
+  <data name="DspStereoOnly" xml:space="preserve">
+    <value>Kanal-/Kopfhörereffekte benötigen Stereo; EQ und Lautheitsanalyse unterstützen Mono und Stereo.</value>
+  </data>
+  <data name="DspAnalyzing" xml:space="preserve">
+    <value>Aktueller Titel wird im Hintergrund analysiert; Verstärkung wird sanft angewendet und gespeichert.</value>
+  </data>
+  <data name="DspApplied" xml:space="preserve">
+    <value>Integrierte Lautheit {0:F1} LUFS · Feste Verstärkung {1:+0.0;-0.0;0.0} dB</value>
+  </data>
+  <data name="DspPeakLimited" xml:space="preserve">
+    <value>Integriert {0:F1} LUFS · Verstärkung {1:+0.0;-0.0;0.0} dB; durch Spitzenreserve oder Verstärkungsgrenze begrenzt, Dynamik bleibt erhalten.</value>
+  </data>
+  <data name="DspAnalysisUnavailable" xml:space="preserve">
+    <value>Analyse nicht verfügbar (z. B. Mehrkanal, Stille oder zu kurzer Ausschnitt); Originallautheit bleibt erhalten.</value>
+  </data>
+  <data name="DspAnalysisFailed" xml:space="preserve">
+    <value>Lautheitsanalyse fehlgeschlagen; Originallautheit bleibt erhalten. Zum Wiederholen aus- und einschalten.</value>
+  </data>
+  <data name="DspAnalysisOff" xml:space="preserve">
+    <value>Normalisierung ist aus oder kein PCM-Titel geöffnet.</value>
+  </data>
 </root>
 
 

@@ -23,7 +23,7 @@
     </ContentDialog.Resources>
 
     <!--  注意：对话框打开期间不能再叠加 ContentDialog，名称输入/确认一律用 Flyout，错误提示用 InfoBar  -->
-    <Grid RowDefinitions="Auto,Auto,Auto,*">
+    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*">
 
         <!--  标题行  -->
         <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto">
@@ -138,6 +138,8 @@
             Severity="Error" />
 
         <!--  均衡器编辑区（dB 刻度 + 频段滑条）  -->
-        <controls:EqualizerControl x:Name="Equalizer" Grid.Row="3" Margin="4,8,4,8" IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}" />
+        <InfoBar x:Name="DspAvailabilityBar" Grid.Row="3" Margin="0,4,0,0"
+                 IsClosable="False" IsOpen="False" Severity="Informational" />
+        <controls:EqualizerControl x:Name="Equalizer" Grid.Row="4" Margin="4,8,4,8" IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}" />
     </Grid>
 </ContentDialog>
