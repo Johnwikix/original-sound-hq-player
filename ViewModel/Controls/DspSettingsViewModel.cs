@@ -10,25 +10,23 @@ using WinUIMusicPlayer.Utils;
 namespace WinUIMusicPlayer.ViewModel.Controls;
 
 /// <summary>音效设置状态源：偏好属性双向绑定控件并写回 AppSettings，
-/// 播放端实际状态由可见时轮询刷新派生属性（可用性、生效、声道支持与响度分析）。</summary>
+/// 播放端实际状态由 IPC 快照通知刷新派生属性（可用性、生效、声道支持与响度分析）。</summary>
 public partial class DspSettingsViewModel : ObservableObject
 {
     private readonly IpcService _ipc;
     private readonly MusicDatabaseService _database;
-    private readonly DispatcherQueueTimer _stateTimer, _commitTimer;
-    private bool _syncing = true, _loaded, _refreshing, _available, _dirty;
+    private readonly DispatcherQueue _queue;
+    private readonly DispatcherQueueTimer _commitTimer;
+    private bool _syncing = true, _loaded, _available, _dirty;
     private DspState? _lastState;
-    private int _settingsGeneration;
+    private long _lastRevision;
 
     public DspSettingsViewModel(IpcService ipc, MusicDatabaseService database)
     {
         _ipc = ipc;
         _database = database;
-        DispatcherQueue queue = DispatcherQueue.GetForCurrentThread();
-        _stateTimer = queue.CreateTimer();
-        _stateTimer.Interval = TimeSpan.FromMilliseconds(500);
-        _stateTimer.Tick += async (_, _) => await RefreshAsync();
-        _commitTimer = queue.CreateTimer();
+        _queue = DispatcherQueue.GetForCurrentThread();
+        _commitTimer = _queue.CreateTimer();
         _commitTimer.Interval = TimeSpan.FromMilliseconds(250);
         _commitTimer.IsRepeating = false;
         _commitTimer.Tick += async (_, _) => await CommitAsync();
@@ -42,13 +40,12 @@ public partial class DspSettingsViewModel : ObservableObject
         {
             if (!SetProperty(ref field, value)) return;
             if (_syncing || !_loaded || !_available) return;
-            _settingsGeneration++;
             AppSettings.Dsp = AppSettings.Dsp with { IsEnabled = value };
             LoadValues();
-            EffectsActive = _available && value;
+            ApplyState(_lastState);
             _dirty = true;
             _commitTimer.Stop();
-            _ = CommitAndRefreshAsync();
+            _ = CommitAsync();
         }
     }
 
@@ -138,20 +135,35 @@ public partial class DspSettingsViewModel : ObservableObject
     public string InfoMessage { get => field; private set => SetProperty(ref field, value); } = "";
     public string AnalysisText { get => field; private set => SetProperty(ref field, value); } = "";
 
-    /// <summary>视图加载：呈现本地偏好并立即查询一次实际状态。</summary>
-    public async Task OnViewLoadedAsync()
+    /// <summary>先订阅再读取缓存，避免首次读取与订阅之间遗漏通知。</summary>
+    public Task OnViewLoadedAsync()
     {
+        if (_loaded) return Task.CompletedTask;
         _loaded = true;
+        _lastRevision = 0;
+        _ipc.DspStateChanged += OnDspStateChanged;
         LoadValues();
-        _stateTimer.Start();
-        await RefreshAsync();
+        ApplyLatestState();
+        return Task.CompletedTask;
     }
 
-    /// <summary>视图卸载：停止轮询并提交未落盘的修改。</summary>
+    private void OnDspStateChanged() => _queue.TryEnqueue(ApplyLatestState);
+
+    private void ApplyLatestState()
+    {
+        if (!_loaded) return;
+        // Read at dispatch time, so delayed UI callbacks cannot roll state backwards.
+        var snapshot = _ipc.CurrentDspState;
+        if (snapshot != null && snapshot.Revision <= _lastRevision) return;
+        _lastRevision = snapshot?.Revision ?? 0;
+        ApplyState(snapshot?.State);
+    }
+
+    /// <summary>视图卸载：取消状态订阅并提交未落盘的修改。</summary>
     public async Task OnViewUnloadedAsync()
     {
         _loaded = false;
-        _stateTimer.Stop();
+        _ipc.DspStateChanged -= OnDspStateChanged;
         _commitTimer.Stop();
         await CommitAsync();
     }
@@ -160,6 +172,7 @@ public partial class DspSettingsViewModel : ObservableObject
     {
         AppSettings.Dsp = new();
         LoadValues();
+        ApplyState(_lastState);
         _dirty = true;
         await CommitAsync();
     }
@@ -182,45 +195,36 @@ public partial class DspSettingsViewModel : ObservableObject
         _syncing = false;
     }
 
-    /// <summary>轮询播放端实际状态；可用性或总开关变化时重载呈现，其余仅刷新派生属性。</summary>
-    private async Task RefreshAsync()
+    /// <summary>应用播放端确认的完整快照；仅刷新派生状态，不覆盖本地编辑偏好。</summary>
+    private void ApplyState(DspState? state)
     {
-        if (!_loaded || _refreshing) return;
-        _refreshing = true;
-        int generation = _settingsGeneration;
-        try
+        bool available = state is { RenderKind: 0 };
+        bool reload = _available != available || _lastState == null || _lastState.Value.IsEnabled != state?.IsEnabled;
+        // 先更新可用性再重载，否则 LoadValues 读到旧的 _available，会把总开关误显示为关
+        _available = available;
+        _lastState = state;
+        if (reload)
+            LoadValues();
+        MasterAvailable = available;
+        bool effectsActive = available && state!.Value.IsEnabled && AppSettings.Dsp.IsEnabled;
+        EffectsActive = effectsActive;
+        StereoSupported = available && state!.Value.Channels is 0 or 2;
+        bool unsupported = available && state!.Value.Channels != 0 && state.Value.Channels != 2;
+        InfoOpen = !effectsActive || unsupported;
+        InfoMessage = ToolUtils.GetString(state == null ? "DspStateUnavailable"
+            : !available ? "DspBitstreamBypass" : !effectsActive ? "DspMasterBypass" : "DspStereoOnly");
+        string key = state?.Loudness switch
         {
-            var state = await _ipc.GetDspStateAsync();
-            if (!_loaded || generation != _settingsGeneration) return;
-            bool available = state is { RenderKind: 0 };
-            bool reload = _available != available || _lastState == null || _lastState.Value.IsEnabled != state?.IsEnabled;
-            // 先更新可用性再重载，否则 LoadValues 读到旧的 _available，会把总开关误显示为关
-            _available = available;
-            _lastState = state;
-            if (reload)
-                LoadValues();
-            MasterAvailable = available;
-            bool effectsActive = available && state!.Value.IsEnabled && AppSettings.Dsp.IsEnabled;
-            EffectsActive = effectsActive;
-            StereoSupported = available && state!.Value.Channels is 0 or 2;
-            bool unsupported = available && state!.Value.Channels != 0 && state.Value.Channels != 2;
-            InfoOpen = !effectsActive || unsupported;
-            InfoMessage = ToolUtils.GetString(state == null ? "DspStateUnavailable"
-                : !available ? "DspBitstreamBypass" : !effectsActive ? "DspMasterBypass" : "DspStereoOnly");
-            string key = state?.Loudness switch
-            {
-                LoudnessStatus.Analyzing => "DspAnalyzing",
-                LoudnessStatus.Applied => "DspApplied",
-                LoudnessStatus.PeakLimited => "DspPeakLimited",
-                LoudnessStatus.Unavailable => "DspAnalysisUnavailable",
-                LoudnessStatus.Failed => "DspAnalysisFailed",
-                _ => "DspAnalysisOff"
-            };
-            AnalysisText = state is { Loudness: LoudnessStatus.Applied or LoudnessStatus.PeakLimited } value
-                ? string.Format(ToolUtils.GetString(key), value.IntegratedLufs, value.GainDb)
-                : ToolUtils.GetString(key);
-        }
-        finally { _refreshing = false; }
+            LoudnessStatus.Analyzing => "DspAnalyzing",
+            LoudnessStatus.Applied => "DspApplied",
+            LoudnessStatus.PeakLimited => "DspPeakLimited",
+            LoudnessStatus.Unavailable => "DspAnalysisUnavailable",
+            LoudnessStatus.Failed => "DspAnalysisFailed",
+            _ => "DspAnalysisOff"
+        };
+        AnalysisText = state is { Loudness: LoudnessStatus.Applied or LoudnessStatus.PeakLimited } value
+            ? string.Format(ToolUtils.GetString(key), value.IntegratedLufs, value.GainDb)
+            : ToolUtils.GetString(key);
     }
 
     /// <summary>将编辑属性写回本地偏好（250ms 防抖提交，拖动滑条不产生中间 IO）。</summary>
@@ -240,12 +244,6 @@ public partial class DspSettingsViewModel : ObservableObject
         _dirty = true;
         _commitTimer.Stop();
         _commitTimer.Start();
-    }
-
-    private async Task CommitAndRefreshAsync()
-    {
-        await CommitAsync();
-        await RefreshAsync();
     }
 
     private async Task CommitAsync()

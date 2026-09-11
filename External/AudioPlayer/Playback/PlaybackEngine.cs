@@ -36,6 +36,34 @@ public sealed class PlaybackEngine : IDisposable
 
     private readonly object _streamLock = new();
     private Session? _session;
+    private int _dspPublishQueued;
+
+    // All session assignments use this hook, including fallback and device recovery.
+    private void SetSession(Session? session)
+    {
+        if (_session?.Effects is { } oldEffects) oldEffects.StateChanged -= QueueDspState;
+        _session = session;
+        if (session?.Effects is { } effects) effects.StateChanged += QueueDspState;
+        QueueDspState();
+    }
+
+    private void QueueDspState()
+    {
+        if (_ipc is null || Volatile.Read(ref _disposed) != 0 || Interlocked.Exchange(ref _dspPublishQueued, 1) != 0) return;
+        ThreadPool.QueueUserWorkItem(static engine =>
+        {
+            lock (engine._streamLock)
+            {
+                Interlocked.Exchange(ref engine._dspPublishQueued, 0);
+                if (Volatile.Read(ref engine._disposed) != 0) return;
+                // Read only after the mutation's stream lock has been released. Serializing
+                // read + publish also prevents a late worker from publishing an older state.
+                try { engine._ipc?.PublishDspState(engine.GetDspState()); }
+                catch (Exception ex) { Console.WriteLine($"DSP state publication failed: {ex.Message}"); }
+            }
+        }, this, preferLocal: false);
+    }
+
     private IAudioOutput? _output;
     private Timer? _endedWatchdog;
     private int _disposed;
@@ -138,13 +166,13 @@ public sealed class PlaybackEngine : IDisposable
         if (next != null && TryReuseExclusiveOutput(next))
         {
             var old = _session;
-            _session = next;
+            SetSession(next);
             old?.Dispose(); // 输出已指向新源（回调整周期只认旧快照），旧会话安全释放
             AfterAttachToLiveOutput(resumeIfStopped: true);
             return;
         }
         DisposeSession();
-        _session = next;
+        SetSession(next);
         if (_session != null) StartOutputAndPlay();
         else if (IsPlaying) { IsPlaying = false; _ipc.PlayStateUpdate(false); }
     }
@@ -158,14 +186,14 @@ public sealed class PlaybackEngine : IDisposable
         if (next != null && TryReuseExclusiveOutput(next))
         {
             var old = _session;
-            _session = next;
+            SetSession(next);
             old?.Dispose();
             next.RequestSeek(0);
             AfterAttachToLiveOutput(resumeIfStopped: false);
             return;
         }
         DisposeSession();
-        _session = next;
+        SetSession(next);
         if (_session != null) _session.RequestSeek(0);
     }
 
@@ -224,7 +252,7 @@ public sealed class PlaybackEngine : IDisposable
         if (string.IsNullOrWhiteSpace(url)) return false;
         var kind = _session?.Kind;
         DisposeSession();
-        _session = OpenSession(url, kindOverride: kind);
+        SetSession(OpenSession(url, kindOverride: kind));
         if (_session == null) { if (IsPlaying) { IsPlaying = false; _ipc.PlayStateUpdate(false); } return false; }
         if (positionMs > 0) _session.RequestSeek(positionMs);
         StartOutputAndPlay(); // 内部按成败发 PlayStateUpdate（仅在状态变化时）
@@ -308,7 +336,7 @@ public sealed class PlaybackEngine : IDisposable
             Console.WriteLine("[engine] asio native dsd failed, retry as dop");
             long keepMs = session.CurrentMs;
             DisposeSession();
-            _session = OpenSession(MusicUrl!, kindOverride: RenderKind.Dop);
+            SetSession(OpenSession(MusicUrl!, kindOverride: RenderKind.Dop));
             if (_session != null)
             {
                 _session.RequestSeek(keepMs);
@@ -322,7 +350,7 @@ public sealed class PlaybackEngine : IDisposable
             Console.WriteLine("[engine] primary output failed, fallback to shared");
             long keepMs = session.CurrentMs; // 回退重建会话必须保留位置（否则从头播放）
             DisposeSession();
-            _session = OpenSession(MusicUrl!, forceSharedFormat: true);
+            SetSession(OpenSession(MusicUrl!, forceSharedFormat: true));
             if (_session == null) { if (IsPlaying) { IsPlaying = false; _ipc.PlayStateUpdate(false); } return; }
             _session.RequestSeek(keepMs);
             output = CreateSharedOutput(_session);
@@ -383,7 +411,7 @@ public sealed class PlaybackEngine : IDisposable
             output.Dispose();
             if (string.IsNullOrWhiteSpace(url)) return null;
             DisposeSession();
-            _session = OpenSession(url, forceSharedFormat: true);
+            SetSession(OpenSession(url, forceSharedFormat: true));
             if (_session == null) return null;
             _session.RequestSeek(keepMs);
             var retry = new WasapiOutput(false, false);
@@ -428,7 +456,7 @@ public sealed class PlaybackEngine : IDisposable
         if (string.IsNullOrWhiteSpace(url)) return false;
         var kind = session.Kind;
         DisposeSession();
-        _session = OpenSession(url, kindOverride: kind);
+        SetSession(OpenSession(url, kindOverride: kind));
         if (_session == null) return false;
         if (positionMs > 0) _session.RequestSeek(positionMs);
         StartOutputAndPlay();
@@ -697,7 +725,7 @@ public sealed class PlaybackEngine : IDisposable
                 DisposeSession();
                 var url = MusicUrl;
                 if (url == null) return;
-                _session = OpenSession(url);
+                SetSession(OpenSession(url));
                 if (_session != null)
                 {
                     _session.RequestSeek(curMs);
@@ -752,6 +780,7 @@ public sealed class PlaybackEngine : IDisposable
             bool accepted = requested && (_dspSettings?.IsEnabled ?? true) && EffectiveKind == RenderKind.Pcm;
             // 保存用户偏好；实际旁路按当前会话判定，回退 PCM 时也能正确恢复。
             IsEqualizerEnabled = requested;
+            QueueDspState();
 
             ApplyEqToSession();
             return new EqStateResponse { IsEnabled = accepted, IsActive = accepted && _session is { Kind: RenderKind.Pcm } };
@@ -774,6 +803,7 @@ public sealed class PlaybackEngine : IDisposable
             if (_dspSettings == normalized) return;
             _dspSettings = normalized;
             _session?.ConfigureDsp(_dspSettings);
+            QueueDspState();
         }
     }
 
@@ -993,7 +1023,7 @@ public sealed class PlaybackEngine : IDisposable
         _output?.Dispose();
         _output = null;
         _session?.Dispose();
-        _session = null;
+        SetSession(null);
     }
 
     public void Dispose()

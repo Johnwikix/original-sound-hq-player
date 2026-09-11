@@ -12,6 +12,7 @@ namespace AudioPlayer;
 public class PlayerIpcService : IDisposable
 {
     private PlaybackEngine? _engine;
+    private DspStateMailbox? _dspMailbox;
 
     private static readonly long MmfSize = IpcConstants.MmfSize;
 
@@ -63,7 +64,9 @@ public class PlayerIpcService : IDisposable
             _notificationReadySemaphore = new Semaphore(0, 1, IpcConstants.NotificationSemaphoreName, out _);
 
             Console.WriteLine($"Server ready. MMF: {IpcConstants.MmfName}");
+            _dspMailbox = new DspStateMailbox(create: true);
             _engine = new PlaybackEngine(this);
+            PublishDspState(_engine.GetDspState());
             _listenerTask = Task.Factory.StartNew(() => ListenForRequests(_cancellationTokenSource!.Token),
                 CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
             _clientMonitorTask = Task.Run(() => MonitorClientAliveAsync(_cancellationTokenSource!.Token));
@@ -362,6 +365,8 @@ public class PlayerIpcService : IDisposable
         catch (SemaphoreFullException) { }
     }
 
+    internal void PublishDspState(DspState state) => _dspMailbox?.Publish(state);
+
     public void SendNotification(MessageTypeId typeId, scoped ReadOnlySpan<byte> payload)
     {
         if (_accessor == null) return;
@@ -404,6 +409,7 @@ public class PlayerIpcService : IDisposable
         _cancellationTokenSource?.Cancel();
         _listenerTask?.GetAwaiter().GetResult();
         _engine?.Dispose();
+        _dspMailbox?.Dispose();
         _accessor?.Dispose();
         _mmf?.Dispose();
         _requestReadySemaphore?.Dispose();

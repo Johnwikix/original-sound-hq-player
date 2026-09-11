@@ -1,4 +1,4 @@
-﻿using BassPlayerIpc.Shared;
+using BassPlayerIpc.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
@@ -15,6 +15,15 @@ namespace WinUIMusicPlayer.Services
     public class IpcService : IDisposable
     {
         private static readonly long MmfSize = IpcConstants.MmfSize;
+
+        private DspStateMailbox? _dspMailbox;
+        private Task? _dspListenerTask;
+        private DspStateSnapshot? _dspSnapshot;
+
+        /// <summary>连接内最新完整 DSP 状态；不可变快照可跨线程读取。</summary>
+        public DspStateSnapshot? CurrentDspState => Volatile.Read(ref _dspSnapshot);
+        /// <summary>在监听线程触发；UI 订阅者必须调度到 DispatcherQueue。</summary>
+        public event Action? DspStateChanged;
 
         private MemoryMappedFile? _mmf;
         private MemoryMappedViewAccessor? _accessor;
@@ -66,12 +75,16 @@ namespace WinUIMusicPlayer.Services
                     _transport = new MailboxClient(_accessor, _requestReadySemaphore, _responseReadySemaphore);
                     _transport.CommandFailed += command => _logger.LogWarning("Audio command {Command} was rejected", command);
                     _transport.Faulted += exception => _logger.LogError(exception, "Audio IPC transport stopped");
+                    _dspMailbox = new DspStateMailbox(create: false);
                     StartNotificationListener();
+                    _dspListenerTask = Task.Factory.StartNew(() => ListenForDspState(_notificationCts!.Token),
+                        CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
                     StartServerMonitor();
                     return;
                 }
                 catch
                 {
+                    _dspMailbox?.Dispose(); _dspMailbox = null;
                     _transport?.Dispose(); _transport = null;
                     _accessor?.Dispose(); _accessor = null;
                     _mmf?.Dispose(); _mmf = null;
@@ -106,6 +119,41 @@ namespace WinUIMusicPlayer.Services
             UpdateEq();
             UpdateSettings();
             UpdateDsp();
+        }
+
+        private void NotifyDspStateChanged()
+        {
+            if (DspStateChanged is not { } handlers) return;
+            foreach (Action handler in handlers.GetInvocationList())
+            {
+                try { handler(); }
+                catch (Exception ex) { _logger.LogWarning(ex, "DSP state subscriber failed"); }
+            }
+        }
+
+        private void ListenForDspState(CancellationToken cancellationToken)
+        {
+            WaitHandle[] waits = [cancellationToken.WaitHandle, _dspMailbox!.Changed];
+            try
+            {
+                // Read before waiting: the initial publication may precede this connection.
+                do
+                {
+                    if (cancellationToken.IsCancellationRequested) return;
+                    var snapshot = _dspMailbox.Read();
+                    if (snapshot != null && snapshot.Revision > (CurrentDspState?.Revision ?? 0))
+                    {
+                        Volatile.Write(ref _dspSnapshot, snapshot);
+                        NotifyDspStateChanged();
+                    }
+                } while (WaitHandle.WaitAny(waits) != 0);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DSP state channel failed");
+                Volatile.Write(ref _dspSnapshot, null);
+                NotifyDspStateChanged();
+            }
         }
 
         private void StartNotificationListener()
@@ -508,9 +556,11 @@ namespace WinUIMusicPlayer.Services
             _serverMonitorCts?.Cancel();
             _transport?.Dispose();
             _notificationListenerTask?.GetAwaiter().GetResult();
+            _dspListenerTask?.GetAwaiter().GetResult();
             _serverMonitorTask?.GetAwaiter().GetResult();
             _notificationCts?.Dispose();
             _serverMonitorCts?.Dispose();
+            _dspMailbox?.Dispose();
             _accessor?.Dispose();
             _mmf?.Dispose();
             _requestReadySemaphore?.Dispose();

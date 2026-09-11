@@ -5,6 +5,8 @@ namespace AudioPlayer.Playback;
 /// <summary>PCM 音效链：控制线程发布不可变目标，渲染线程独占平滑值和滤波历史。</summary>
 internal sealed class PcmEffects : IDisposable
 {
+    internal event Action? StateChanged;
+
     private sealed record Target(DspSettings Settings, double Gain);
     private readonly object _control = new();
     private readonly int _rate, _channels;
@@ -62,12 +64,13 @@ internal sealed class PcmEffects : IDisposable
             }
             Publish();
         }
+        StateChanged?.Invoke();
     }
 
     private async Task AnalyzeAsync(CancellationTokenSource scan)
     {
         LoudnessMeasurement? result = null;
-        bool failed = false;
+        bool failed = false, changed = false;
         try
         {
             result = await LoudnessScanner.ScanAsync(_path!, _rate, _channels, _dsdRate, _dsdGain, scan.Token).ConfigureAwait(false);
@@ -82,9 +85,11 @@ internal sealed class PcmEffects : IDisposable
                 _status = result != null ? LoudnessStatus.Applied : failed ? LoudnessStatus.Failed : LoudnessStatus.Unavailable;
                 _scan = null;
                 Publish();
+                changed = true;
             }
         }
         scan.Dispose();
+        if (changed) StateChanged?.Invoke();
     }
 
     private void Publish()

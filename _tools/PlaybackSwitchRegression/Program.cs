@@ -30,6 +30,12 @@ internal static unsafe partial class Program
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(WasapiOutput))]
     private static int Main(string[] args)
     {
+        if (args.Length == 2 && args[0] == "--dsp-writer") return DspWriter(args[1]);
+        if (args.Length == 1 && args[0] == "--test-dsp-notifications")
+        {
+            RunDspNotificationTests();
+            return _failures == 0 ? 0 : 1;
+        }
         if (args.Length == 2 && args[0] == "--ipc-server") return IpcBenchmarkServer(args[1]);
         if (args.Length == 1 && args[0] == "--benchmark-loudness") return BenchmarkLoudness();
         string root = args.Length > 0 ? Path.GetFullPath(args[0]) : Directory.GetCurrentDirectory();
@@ -40,6 +46,7 @@ internal static unsafe partial class Program
         RunAsioNotificationTests();
         RunEqualizerQTests();
         RunDspTests();
+        RunDspNotificationTests();
         RunReviewFixTests(root);
         RunWasapiStallTests();
         foreach (string mode in new[] { "ASIO", "WasapiExclusivePush", "WasapiExclusiveEvent" })
