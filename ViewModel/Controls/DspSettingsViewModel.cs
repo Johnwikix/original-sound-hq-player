@@ -193,10 +193,12 @@ public partial class DspSettingsViewModel : ObservableObject
             var state = await _ipc.GetDspStateAsync();
             if (!_loaded || generation != _settingsGeneration) return;
             bool available = state is { RenderKind: 0 };
-            if (_available != available || _lastState == null || _lastState.Value.IsEnabled != state?.IsEnabled)
-                LoadValues();
+            bool reload = _available != available || _lastState == null || _lastState.Value.IsEnabled != state?.IsEnabled;
+            // 先更新可用性再重载，否则 LoadValues 读到旧的 _available，会把总开关误显示为关
             _available = available;
             _lastState = state;
+            if (reload)
+                LoadValues();
             MasterAvailable = available;
             bool effectsActive = available && state!.Value.IsEnabled && AppSettings.Dsp.IsEnabled;
             EffectsActive = effectsActive;
