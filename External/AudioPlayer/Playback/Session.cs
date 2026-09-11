@@ -38,6 +38,18 @@ internal sealed class Session : IRenderSource, IDisposable
     internal readonly Equalizer Eq = new();
     internal readonly GainRamp? Gain;
     internal readonly PcmEffects? Effects;
+    private bool _dspEnabled = true;
+    private int _dspResetVersion, _renderDspResetVersion;
+
+    /// <summary>发布音效设置；总开关关闭时音频块跳过整条效果链。</summary>
+    internal void ConfigureDsp(BassPlayerIpc.Shared.DspSettings settings)
+    {
+        bool wasEnabled = Volatile.Read(ref _dspEnabled);
+        if (!settings.IsEnabled) Volatile.Write(ref _dspEnabled, false);
+        Effects?.Configure(settings);
+        if (wasEnabled != settings.IsEnabled) Interlocked.Increment(ref _dspResetVersion);
+        if (settings.IsEnabled) Volatile.Write(ref _dspEnabled, true);
+    }
 
     public RenderKind Kind { get; }
     public int Channels { get; }
@@ -347,9 +359,19 @@ internal sealed class Session : IRenderSource, IDisposable
         if (_pcmRing == null || Gain == null) { buffer[..(frames * _channels)].Clear(); return; }
         int audible = _pcmRing.Render(buffer, frames);
         if (audible <= 0) return; // 预缓冲/欠载静音段：不推进 EQ 与增益斜坡（淡入淡出按出声时长走）
-        Effects?.ApplyInput(buffer, audible);
-        Eq.Process(buffer, audible, _channels);
-        Effects?.ApplyStereo(buffer, audible);
+        if (Volatile.Read(ref _dspEnabled))
+        {
+            int resetVersion = Volatile.Read(ref _dspResetVersion);
+            if (resetVersion != _renderDspResetVersion)
+            {
+                Eq.ResetHistory();
+                Effects?.ResetRenderState();
+                _renderDspResetVersion = resetVersion;
+            }
+            Effects?.ApplyInput(buffer, audible);
+            Eq.Process(buffer, audible, _channels);
+            Effects?.ApplyStereo(buffer, audible);
+        }
         Gain.Apply(buffer, audible, _channels);
     }
 

@@ -1735,6 +1735,15 @@
   <data name="DspAnalysisOff" xml:space="preserve">
     <value>Normalisierung ist aus oder kein PCM-Titel geöffnet.</value>
   </data>
+  <data name="DspMaster" xml:space="preserve">
+    <value>DSP aktivieren</value>
+  </data>
+  <data name="DspMasterDescription" xml:space="preserve">
+    <value>Im ausgeschalteten Zustand Normalisierung, Vorabsenkung, EQ und Kanaleffekte umgehen; Einstellungen bleiben erhalten.</value>
+  </data>
+  <data name="DspMasterBypass" xml:space="preserve">
+    <value>DSP ist aus: Alle Effekte werden umgangen, die Einstellungen bleiben erhalten. Unter Einstellungen → Klangeffekte aktivieren.</value>
+  </data>
 </root>
 
 

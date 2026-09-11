@@ -1,10 +1,113 @@
 using AudioPlayer.Playback;
 using BassPlayerIpc.Shared;
+using System.Reflection;
 
 internal static unsafe partial class Program
 {
     private static void RunDspTests()
     {
+        Run("Loudness SIMD: matches scalar across sample rates, gates and block boundaries", () =>
+        {
+            foreach (int rate in new[] { 44100, 48000, 96000, 192000 })
+            {
+                var scalar = new LoudnessMeter(rate, 2, useSimd: false);
+                var vector = new LoudnessMeter(rate, 2);
+                var random = new Random(91);
+                double[] samples = new double[rate * 2 * 3];
+                for (int frame = 0; frame < rate * 3; frame++)
+                {
+                    double level = frame < rate / 2 ? 0 : frame < rate ? 0.0001 : 0.3;
+                    samples[frame * 2] = (random.NextDouble() * 2 - 1) * level;
+                    samples[frame * 2 + 1] = (random.NextDouble() * 2 - 1) * level * 0.4;
+                }
+                for (int offset = 0; offset < samples.Length;)
+                {
+                    int count = Math.Min((offset % 29 + 1) * 26, samples.Length - offset);
+                    scalar.Add(samples.AsSpan(offset, count));
+                    vector.Add(samples.AsSpan(offset, count));
+                    offset += count;
+                }
+                var expected = scalar.Finish()!;
+                var actual = vector.Finish()!;
+                Require(expected != null && actual != null && Math.Abs(expected.IntegratedLufs - actual.IntegratedLufs) < 1e-10
+                    && expected.SamplePeak == actual.SamplePeak, $"Scalar/SIMD mismatch at {rate} Hz");
+            }
+        });
+        Run("Loudness SIMD: rejects invalid samples and incomplete stereo frames", () =>
+        {
+            foreach (double invalid in new[] { double.NaN, double.PositiveInfinity, double.NegativeInfinity })
+            {
+                var meter = new LoudnessMeter(48000, 2);
+                meter.Add([0.1, invalid]);
+                meter.Add(new double[48000]);
+                Require(meter.Finish() == null, "SIMD accepted invalid audio");
+            }
+            bool rejected = false;
+            try { new LoudnessMeter(48000, 2).Add([0.1]); } catch (ArgumentException) { rejected = true; }
+            Require(rejected, "Incomplete vector load allowed");
+        });
+        Run("DSP master: active EQ and effects are bypassed bit-for-bit, then restored without old tails", () =>
+        {
+            var engine = Engine("WasapiShared");
+            Set(engine, "_streamLock", new object());
+            using var session = Source(engine, RenderKind.Pcm, 48000);
+            Set(engine, "_session", session);
+            var ring = new PcmRing(2, 1024, 0, 0);
+            Set(session, "_pcmRing", ring);
+            var settings = new DspSettings { NormalizeLoudness = true, HeadroomDb = -3,
+                Crossfeed = 0.4, Mono = true, SwapChannels = true, Balance = 0.5, StereoWidth = 1.5 };
+            Set(session.Effects!, "_measurement", new LoudnessMeasurement(-24, 0.1));
+            engine.UpdateDsp(settings);
+            engine.SetEqualizerState(new UpdateEqRequest { IsEnabled = true, Band5 = 6, Q5 = 1.414f });
+            double[] source = [0.25, -0.1, 0.125, -0.05, 0.0625, -0.025, 0.0, -0.0];
+            double[] buffer = new double[source.Length];
+            ring.Push(source, 4, static () => false);
+            session.FillPcm(buffer, 4);
+            Require(!buffer.AsSpan().SequenceEqual(source), "Effects never became active");
+
+            var eqField = typeof(Equalizer).GetField("_snapshot", Private)!;
+            var history = (Array)((Array)eqField.GetValue(session.Eq)!).Clone();
+            engine.UpdateDsp(settings with { IsEnabled = false });
+            ring.Push(source, 4, static () => false);
+            session.FillPcm(buffer, 4);
+            Require(System.Runtime.InteropServices.MemoryMarshal.AsBytes(buffer.AsSpan())
+                .SequenceEqual(System.Runtime.InteropServices.MemoryMarshal.AsBytes(source.AsSpan())),
+                "Master bypass changed PCM bits");
+            var unchanged = (Array)eqField.GetValue(session.Eq)!;
+            for (int i = 0; i < history.Length; i++)
+                Require(history.GetValue(i)!.Equals(unchanged.GetValue(i)), "EQ advanced while bypassed");
+            var state = engine.GetDspState();
+            Require(!state.IsEnabled && !state.EqualizerActive && state.Loudness == LoudnessStatus.Off && state.GainDb == 0,
+                "Bypass status still claims effects are active");
+            Require(engine.IsEqualizerEnabled, "EQ preference was lost");
+
+            engine.UpdateDsp(settings);
+            Array.Clear(source);
+            ring.Push(source, 4, static () => false);
+            session.FillPcm(buffer, 4);
+            Require(buffer.All(static sample => sample == 0), "Old EQ/Crossfeed tail leaked after re-enabling");
+            Require(engine.GetDspState() is { IsEnabled: true, EqualizerActive: true, Loudness: LoudnessStatus.Applied },
+                "Saved effects weren't restored");
+        });
+        Run("DSP master: disabling cancels queued analysis without clearing preferences", () =>
+        {
+            var gate = (SemaphoreSlim)typeof(LoudnessScanner).GetField("Gate", BindingFlags.Static | BindingFlags.NonPublic)!.GetValue(null)!;
+            gate.Wait();
+            try
+            {
+                using var effects = new PcmEffects(48000, 2);
+                effects.SetFile("not-opened-while-gate-is-held.wav", 88200, 6);
+                var settings = new DspSettings { NormalizeLoudness = true, HeadroomDb = -6 };
+                effects.Configure(settings);
+                Require(effects.GetState(0, false).Loudness == LoudnessStatus.Analyzing, "Analysis wasn't queued");
+                effects.Configure(settings with { IsEnabled = false });
+                Require(effects.GetState(0, false) is { IsEnabled: false, Loudness: LoudnessStatus.Off }, "Analysis wasn't stopped");
+                Require(typeof(PcmEffects).GetField("_scan", Private)!.GetValue(effects) == null, "Pending scan survived bypass");
+                var saved = (DspSettings)typeof(PcmEffects).GetField("_settings", Private)!.GetValue(effects)!;
+                Require(saved.NormalizeLoudness && saved.HeadroomDb == -6, "Per-effect preferences were cleared");
+            }
+            finally { gate.Release(); }
+        });
         Run("DSP: defaults bypass PCM bit-for-bit and allocate nothing on render", () =>
         {
             using var effects = new PcmEffects(48000, 2);
@@ -126,19 +229,28 @@ internal static unsafe partial class Program
         Run("DSP IPC: round-trip, version checks and finite parameter bounds", () =>
         {
             Span<byte> bytes = stackalloc byte[DspProtocol.SettingsSize];
-            var settings = new DspSettings { NormalizeLoudness = true, HeadroomDb = -3, Balance = -0.5,
+            var settings = new DspSettings { IsEnabled = false, NormalizeLoudness = true, HeadroomDb = -3, Balance = -0.5,
                 TargetLufs = -20, Crossfeed = 0.4, StereoWidth = 1.3, SwapChannels = true, Mono = true };
             DspProtocol.WriteSettings(bytes, settings);
             Require(DspProtocol.ReadSettings(bytes) == settings, "Settings round-trip");
             bool rejected = false;
             try { DspProtocol.ReadSettings(bytes[..^1]); } catch (ArgumentException) { rejected = true; }
             Require(rejected, "Truncated payload accepted");
+            bytes[0] = 1;
+            Require(DspProtocol.ReadSettings(bytes[..44]) == settings with { IsEnabled = true }, "Legacy settings must keep DSP enabled");
+            bytes[0] = 2;
+            bytes[44] = 2;
+            rejected = false;
+            try { DspProtocol.ReadSettings(bytes); } catch (ArgumentException) { rejected = true; }
+            Require(rejected, "Invalid master flag accepted");
             var invalid = new DspSettings { TargetLufs = double.NaN, Crossfeed = 10, HeadroomDb = double.PositiveInfinity }.Sanitize();
             Require(invalid.TargetLufs == -18 && invalid.Crossfeed == 0.5 && invalid.HeadroomDb == 0, "Invalid settings not normalized");
             Span<byte> stateBytes = stackalloc byte[DspProtocol.StateSize];
-            var state = new DspState(2, false, 2, LoudnessStatus.Off, 0, double.NaN);
+            var state = new DspState(2, false, 2, LoudnessStatus.Off, 0, double.NaN, false);
             DspProtocol.WriteState(stateBytes, state);
             Require(DspProtocol.ReadState(stateBytes) == state, "State round-trip");
+            stateBytes[3] = 1;
+            Require(DspProtocol.ReadState(stateBytes[..24]).IsEnabled, "Legacy state must default to enabled");
         });
         Run("DSP: actual DSD session bypasses EQ and all effects, PCM restores preference", () =>
         {
@@ -190,5 +302,35 @@ internal static unsafe partial class Program
             float sample = amplitude * (float)Math.Sin(2 * Math.PI * 1000 * frame / 48000);
             writer.Write(sample); writer.Write(sample);
         }
+    }
+
+    private static int BenchmarkLoudness()
+    {
+        const int rate = 48000;
+        double[] samples = new double[rate * 2 * 10];
+        var random = new Random(21);
+        for (int i = 0; i < samples.Length; i++) samples[i] = (random.NextDouble() - 0.5) * 0.4;
+        double Measure(bool simd)
+        {
+            var meter = new LoudnessMeter(rate, 2, simd);
+            long start = System.Diagnostics.Stopwatch.GetTimestamp();
+            for (int i = 0; i < samples.Length; i += 32768)
+                meter.Add(samples.AsSpan(i, Math.Min(32768, samples.Length - i)));
+            double elapsed = System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMilliseconds;
+            GC.KeepAlive(meter.Finish());
+            return elapsed;
+        }
+        for (int i = 0; i < 5; i++) { Measure(false); Measure(true); }
+        double[] scalar = new double[9], vector = new double[9];
+        for (int i = 0; i < scalar.Length; i++)
+        {
+            if (i % 2 == 0) { scalar[i] = Measure(false); vector[i] = Measure(true); }
+            else { vector[i] = Measure(true); scalar[i] = Measure(false); }
+        }
+        Array.Sort(scalar); Array.Sort(vector);
+        Console.WriteLine($"Vector128 hardware accelerated: {System.Runtime.Intrinsics.Vector128.IsHardwareAccelerated}");
+        Console.WriteLine($"48 kHz stereo, 10 seconds, 9-run median: scalar={scalar[4]:F3} ms; SIMD={vector[4]:F3} ms; speedup={scalar[4] / vector[4]:F2}x");
+        Console.WriteLine("Measures loudness calculation only; excludes file I/O and decoding.");
+        return 0;
     }
 }

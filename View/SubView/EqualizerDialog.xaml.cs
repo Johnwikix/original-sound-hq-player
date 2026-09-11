@@ -127,12 +127,13 @@ namespace WinUIMusicPlayer.View.SubView
                 var state = await App.Services.GetRequiredService<IpcService>().GetDspStateAsync();
                 if (!_dialogOpen || _eqCommitInFlight || generation != _stateGeneration) return;
                 _isSyncingUi = true;
-                bool available = state is { RenderKind: 0, Channels: <= 2 };
+                bool available = state is { RenderKind: 0, Channels: <= 2, IsEnabled: true };
                 ToggleSwitchEqualizer.IsEnabled = available;
                 ToggleSwitchEqualizer.IsOn = available && state!.Value.EqualizerActive;
                 DspAvailabilityBar.IsOpen = !available;
                 DspAvailabilityBar.Message = ToolUtils.GetString(state == null ? "DspStateUnavailable"
-                    : state.Value.RenderKind != 0 ? "DspBitstreamBypass" : "DspStereoOnly");
+                    : state.Value.RenderKind != 0 ? "DspBitstreamBypass"
+                    : !state.Value.IsEnabled ? "DspMasterBypass" : "DspStereoOnly");
             }
             finally { _isSyncingUi = false; _refreshingState = false; }
         }

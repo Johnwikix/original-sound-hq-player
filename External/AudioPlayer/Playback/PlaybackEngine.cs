@@ -278,7 +278,7 @@ public sealed class PlaybackEngine : IDisposable
         var session = Session.Open(this, url, kind, DsdPcmFreq, DsdGain, Latency, forcedRate, forcedChannels, maxChannels);
         if (session != null)
         {
-            session.Effects?.Configure(_dspSettings ?? new DspSettings());
+            session.ConfigureDsp(_dspSettings ?? new DspSettings());
             if (session.Kind == RenderKind.Pcm)
                 session.Eq.Configure(session.SampleRate, IsEqualizerEnabled, EqGains, EqQ);
         }
@@ -735,7 +735,7 @@ public sealed class PlaybackEngine : IDisposable
 
             bool requested = req.IsEnabled;
             // 位流模式（DoP/NativeDSD）不应用 EQ，响应仍报告实际是否可用。
-            bool accepted = requested && EffectiveKind == RenderKind.Pcm;
+            bool accepted = requested && (_dspSettings?.IsEnabled ?? true) && EffectiveKind == RenderKind.Pcm;
             // 保存用户偏好；实际旁路按当前会话判定，回退 PCM 时也能正确恢复。
             IsEqualizerEnabled = requested;
 
@@ -757,7 +757,7 @@ public sealed class PlaybackEngine : IDisposable
         lock (_streamLock)
         {
             _dspSettings = settings.Sanitize();
-            _session?.Effects?.Configure(_dspSettings);
+            _session?.ConfigureDsp(_dspSettings);
         }
     }
 
@@ -767,9 +767,10 @@ public sealed class PlaybackEngine : IDisposable
         lock (_streamLock)
         {
             byte kind = (byte)(_session?.Kind ?? RenderKind.Pcm);
-            bool eq = kind == 0 && IsEqualizerEnabled && (_session == null || _session.Channels <= 2);
+            bool enabled = _dspSettings?.IsEnabled ?? true;
+            bool eq = enabled && kind == 0 && IsEqualizerEnabled && (_session == null || _session.Channels <= 2);
             return _session?.Effects?.GetState(kind, eq)
-                ?? new DspState(kind, eq, _session?.Channels ?? 0, LoudnessStatus.Off, 0, double.NaN);
+                ?? new DspState(kind, eq, _session?.Channels ?? 0, LoudnessStatus.Off, 0, double.NaN, enabled);
         }
     }
 

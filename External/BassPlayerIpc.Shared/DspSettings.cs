@@ -5,6 +5,8 @@ namespace BassPlayerIpc.Shared;
 /// <summary>保存 PCM 音效的用户偏好；位流旁路不修改这些偏好。</summary>
 public sealed record DspSettings
 {
+    /// <summary>获取或设置 DSP 总开关；默认开启以保留旧版音效偏好。</summary>
+    public bool IsEnabled { get; init; } = true;
     /// <summary>获取或设置是否按整曲响度应用固定增益。</summary>
     public bool NormalizeLoudness { get; init; }
     /// <summary>获取或设置目标综合响度，单位 LUFS。</summary>
@@ -55,20 +57,20 @@ public enum LoudnessStatus : byte
 
 /// <summary>提供播放端当前实际的 PCM/位流及音效状态。</summary>
 public readonly record struct DspState(byte RenderKind, bool EqualizerActive, int Channels,
-    LoudnessStatus Loudness, double GainDb, double IntegratedLufs);
+    LoudnessStatus Loudness, double GainDb, double IntegratedLufs, bool IsEnabled = true);
 
 /// <summary>提供版本化 DSP 协议；独立命令保持旧设置和 EQ 载荷兼容。</summary>
 public static class DspProtocol
 {
     /// <summary>设置载荷字节数。</summary>
-    public const int SettingsSize = 44;
+    public const int SettingsSize = 45;
     /// <summary>状态载荷字节数。</summary>
-    public const int StateSize = 24;
+    public const int StateSize = 25;
 
     /// <summary>写入 DSP 设置。</summary>
     public static void WriteSettings(Span<byte> data, DspSettings settings)
     {
-        data[0] = 1;
+        data[0] = 2;
         data[1] = settings.NormalizeLoudness ? (byte)1 : (byte)0;
         data[2] = settings.SwapChannels ? (byte)1 : (byte)0;
         data[3] = settings.Mono ? (byte)1 : (byte)0;
@@ -77,15 +79,19 @@ public static class DspProtocol
         BinaryPrimitives.WriteDoubleLittleEndian(data[20..], settings.Balance);
         BinaryPrimitives.WriteDoubleLittleEndian(data[28..], settings.Crossfeed);
         BinaryPrimitives.WriteDoubleLittleEndian(data[36..], settings.StereoWidth);
+        data[44] = settings.IsEnabled ? (byte)1 : (byte)0;
     }
 
     /// <summary>读取并校验 DSP 设置。</summary>
     public static DspSettings ReadSettings(ReadOnlySpan<byte> data)
     {
-        if (data.Length != SettingsSize || data[0] != 1 || data[1] > 1 || data[2] > 1 || data[3] > 1)
+        bool legacy = data.Length == 44 && data[0] == 1;
+        if ((!legacy && (data.Length != SettingsSize || data[0] != 2 || data[44] > 1))
+            || data[1] > 1 || data[2] > 1 || data[3] > 1)
             throw new ArgumentException("Invalid DSP settings payload.");
         return new DspSettings
         {
+            IsEnabled = legacy || data[44] != 0,
             NormalizeLoudness = data[1] != 0, SwapChannels = data[2] != 0, Mono = data[3] != 0,
             TargetLufs = BinaryPrimitives.ReadDoubleLittleEndian(data[4..]),
             HeadroomDb = BinaryPrimitives.ReadDoubleLittleEndian(data[12..]),
@@ -101,18 +107,21 @@ public static class DspProtocol
         data[0] = state.RenderKind;
         data[1] = state.EqualizerActive ? (byte)1 : (byte)0;
         data[2] = (byte)state.Loudness;
-        data[3] = 1;
+        data[3] = 2;
         BinaryPrimitives.WriteInt32LittleEndian(data[4..], state.Channels);
         BinaryPrimitives.WriteDoubleLittleEndian(data[8..], state.GainDb);
         BinaryPrimitives.WriteDoubleLittleEndian(data[16..], state.IntegratedLufs);
+        data[24] = state.IsEnabled ? (byte)1 : (byte)0;
     }
 
     /// <summary>读取播放端状态。</summary>
     public static DspState ReadState(ReadOnlySpan<byte> data)
     {
-        if (data.Length != StateSize || data[3] != 1) throw new ArgumentException("Invalid DSP state payload.");
+        bool legacy = data.Length == 24 && data[3] == 1;
+        if (!legacy && (data.Length != StateSize || data[3] != 2 || data[24] > 1))
+            throw new ArgumentException("Invalid DSP state payload.");
         return new(data[0], data[1] != 0, BinaryPrimitives.ReadInt32LittleEndian(data[4..]),
             (LoudnessStatus)data[2], BinaryPrimitives.ReadDoubleLittleEndian(data[8..]),
-            BinaryPrimitives.ReadDoubleLittleEndian(data[16..]));
+            BinaryPrimitives.ReadDoubleLittleEndian(data[16..]), legacy || data[24] != 0);
     }
 }

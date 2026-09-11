@@ -1735,6 +1735,15 @@
   <data name="DspAnalysisOff" xml:space="preserve">
     <value>Normalización desactivada o ninguna pista PCM abierta.</value>
   </data>
+  <data name="DspMaster" xml:space="preserve">
+    <value>Activar DSP</value>
+  </data>
+  <data name="DspMasterDescription" xml:space="preserve">
+    <value>Al desactivar, omite normalización, atenuación previa, EQ y efectos de canal, conservando sus ajustes.</value>
+  </data>
+  <data name="DspMasterBypass" xml:space="preserve">
+    <value>DSP desactivado: se omiten los efectos y se conservan sus ajustes. Actívalo en Ajustes → Efectos de audio.</value>
+  </data>
 </root>
 
 

@@ -26,6 +26,7 @@ internal static unsafe partial class Program
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(WasapiOutput))]
     private static int Main(string[] args)
     {
+        if (args.Length == 1 && args[0] == "--benchmark-loudness") return BenchmarkLoudness();
         string root = args.Length > 0 ? Path.GetFullPath(args[0]) : Directory.GetCurrentDirectory();
         FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
         WriteDsfFixture();

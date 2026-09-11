@@ -18,6 +18,7 @@ public sealed partial class DspSettingsControl : UserControl
     private readonly DispatcherQueueTimer _stateTimer, _commitTimer;
     private bool _syncing = true, _loaded, _refreshing, _available, _dirty;
     private DspState? _lastState;
+    private int _settingsGeneration;
 
     /// <summary>初始化音效设置和仅在可见时工作的状态轮询。</summary>
     public DspSettingsControl()
@@ -54,15 +55,17 @@ public sealed partial class DspSettingsControl : UserControl
     {
         _syncing = true;
         DspSettings settings = AppSettings.Dsp;
-        NormalizeToggle.IsOn = available && settings.NormalizeLoudness;
+        MasterToggle.IsOn = available && settings.IsEnabled;
+        bool effectsActive = available && settings.IsEnabled;
+        NormalizeToggle.IsOn = effectsActive && settings.NormalizeLoudness;
         TargetBox.Value = settings.TargetLufs;
         HeadroomBox.Value = settings.HeadroomDb;
         BalanceSlider.Value = settings.Balance * 100;
-        SwapToggle.IsOn = available && settings.SwapChannels;
-        MonoToggle.IsOn = available && settings.Mono;
-        CrossfeedCombo.SelectedIndex = !available || settings.Crossfeed == 0 ? 0 : settings.Crossfeed <= 0.2 ? 1 : 2;
+        SwapToggle.IsOn = effectsActive && settings.SwapChannels;
+        MonoToggle.IsOn = effectsActive && settings.Mono;
+        CrossfeedCombo.SelectedIndex = !effectsActive || settings.Crossfeed == 0 ? 0 : settings.Crossfeed <= 0.2 ? 1 : 2;
         WidthSlider.Value = settings.StereoWidth * 100;
-        TargetBox.IsEnabled = available && settings.NormalizeLoudness;
+        TargetBox.IsEnabled = effectsActive && settings.NormalizeLoudness;
         _syncing = false;
     }
 
@@ -70,20 +73,24 @@ public sealed partial class DspSettingsControl : UserControl
     {
         if (!_loaded || _refreshing) return;
         _refreshing = true;
+        int generation = _settingsGeneration;
         try
         {
             var state = await App.Services.GetRequiredService<IpcService>().GetDspStateAsync();
-            if (!_loaded) return;
+            if (!_loaded || generation != _settingsGeneration) return;
             bool available = state is { RenderKind: 0 };
-            if (_available != available || _lastState == null) LoadValues(available);
+            if (_available != available || _lastState == null || _lastState.Value.IsEnabled != state?.IsEnabled)
+                LoadValues(available);
             _available = available;
             _lastState = state;
-            PcmSettings.IsEnabled = available;
+            MasterToggle.IsEnabled = available;
+            bool effectsActive = available && state!.Value.IsEnabled && AppSettings.Dsp.IsEnabled;
+            PcmSettings.IsEnabled = effectsActive;
             StereoSettings.IsEnabled = available && state!.Value.Channels is 0 or 2;
             bool unsupported = available && state!.Value.Channels != 0 && state.Value.Channels != 2;
-            AvailabilityBar.IsOpen = !available || unsupported;
+            AvailabilityBar.IsOpen = !effectsActive || unsupported;
             AvailabilityBar.Message = ToolUtils.GetString(state == null ? "DspStateUnavailable"
-                : !available ? "DspBitstreamBypass" : "DspStereoOnly");
+                : !available ? "DspBitstreamBypass" : !effectsActive ? "DspMasterBypass" : "DspStereoOnly");
             string key = state?.Loudness switch
             {
                 LoudnessStatus.Analyzing => "DspAnalyzing",
@@ -105,11 +112,25 @@ public sealed partial class DspSettingsControl : UserControl
     private void Slider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e) => Changed();
     private void Crossfeed_SelectionChanged(object sender, SelectionChangedEventArgs e) => Changed();
 
-    private void Changed()
+    private async void Master_Toggled(object sender, RoutedEventArgs e)
     {
         if (_syncing || !_loaded || !_available) return;
+        _settingsGeneration++;
+        AppSettings.Dsp = AppSettings.Dsp with { IsEnabled = MasterToggle.IsOn };
+        LoadValues(_available);
+        PcmSettings.IsEnabled = _available && AppSettings.Dsp.IsEnabled;
+        _dirty = true;
+        _commitTimer.Stop();
+        await CommitAsync();
+        await RefreshAsync();
+    }
+
+    private void Changed()
+    {
+        if (_syncing || !_loaded || !_available || !AppSettings.Dsp.IsEnabled) return;
         AppSettings.Dsp = new DspSettings
         {
+            IsEnabled = AppSettings.Dsp.IsEnabled,
             NormalizeLoudness = NormalizeToggle.IsOn,
             TargetLufs = double.IsFinite(TargetBox.Value) ? TargetBox.Value : AppSettings.Dsp.TargetLufs,
             HeadroomDb = double.IsFinite(HeadroomBox.Value) ? HeadroomBox.Value : AppSettings.Dsp.HeadroomDb,

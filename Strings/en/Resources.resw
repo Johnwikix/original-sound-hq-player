@@ -1738,6 +1738,15 @@
   <data name="DspAnalysisOff" xml:space="preserve">
     <value>Normalization is off or no PCM track is open.</value>
   </data>
+  <data name="DspMaster" xml:space="preserve">
+    <value>Enable DSP</value>
+  </data>
+  <data name="DspMasterDescription" xml:space="preserve">
+    <value>When off, bypass normalization, preamp attenuation, EQ and channel effects while keeping their settings.</value>
+  </data>
+  <data name="DspMasterBypass" xml:space="preserve">
+    <value>DSP is off: all effects are bypassed and their settings are retained. Enable it in Settings → Audio effects.</value>
+  </data>
 </root>
 
 

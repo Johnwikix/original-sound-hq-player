@@ -1735,6 +1735,15 @@
   <data name="DspAnalysisOff" xml:space="preserve">
     <value>Нормализация выключена или PCM-трек не открыт.</value>
   </data>
+  <data name="DspMaster" xml:space="preserve">
+    <value>Включить DSP</value>
+  </data>
+  <data name="DspMasterDescription" xml:space="preserve">
+    <value>При выключении обходит нормализацию, предварительное ослабление, EQ и эффекты каналов, сохраняя настройки.</value>
+  </data>
+  <data name="DspMasterBypass" xml:space="preserve">
+    <value>DSP выключен: эффекты обойдены, настройки сохранены. Включите его в «Настройки → Звуковые эффекты».</value>
+  </data>
 </root>
 
 

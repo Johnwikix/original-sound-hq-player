@@ -1735,6 +1735,15 @@
   <data name="DspAnalysisOff" xml:space="preserve">
     <value>正規化がオフ、または PCM の曲が開かれていません。</value>
   </data>
+  <data name="DspMaster" xml:space="preserve">
+    <value>DSP を有効にする</value>
+  </data>
+  <data name="DspMasterDescription" xml:space="preserve">
+    <value>オフにすると正規化、プリゲイン減衰、EQ、チャンネル効果をバイパスし、設定を保持します。</value>
+  </data>
+  <data name="DspMasterBypass" xml:space="preserve">
+    <value>DSP はオフです。すべての効果をバイパスし、設定を保持しています。「設定 → 音響効果」で有効にできます。</value>
+  </data>
 </root>
 
 

@@ -42,7 +42,7 @@ internal sealed class PcmEffects : IDisposable
         {
             if (_disposed) return;
             _settings = settings;
-            if (!settings.NormalizeLoudness)
+            if (!settings.IsEnabled || !settings.NormalizeLoudness)
             {
                 _scan?.Cancel();
                 _scan = null;
@@ -90,25 +90,35 @@ internal sealed class PcmEffects : IDisposable
     private void Publish()
     {
         double normalization = 0;
-        if (_settings.NormalizeLoudness && _measurement != null)
+        if (_settings.IsEnabled && _settings.NormalizeLoudness && _measurement != null)
         {
             normalization = _measurement.GainDb(_settings.TargetLufs);
             _status = normalization < _settings.TargetLufs - _measurement.IntegratedLufs - 0.01
                 ? LoudnessStatus.PeakLimited : LoudnessStatus.Applied;
         }
-        Volatile.Write(ref _target, new Target(_settings, Math.Pow(10, (normalization + _settings.HeadroomDb) / 20)));
+        Volatile.Write(ref _target, new Target(_settings, _settings.IsEnabled
+            ? Math.Pow(10, (normalization + _settings.HeadroomDb) / 20) : 1));
     }
 
     internal DspState GetState(byte kind, bool eq)
     {
         lock (_control)
             return new(kind, eq, _channels, _status,
-                _settings.NormalizeLoudness && _measurement != null ? _measurement.GainDb(_settings.TargetLufs) : 0,
-                _measurement?.IntegratedLufs ?? double.NaN);
+                _settings.IsEnabled && _settings.NormalizeLoudness && _measurement != null ? _measurement.GainDb(_settings.TargetLufs) : 0,
+                _measurement?.IntegratedLufs ?? double.NaN, _settings.IsEnabled);
     }
 
     /// <summary>seek 仅投递代数，滤波历史由渲染线程在下一块清空。</summary>
     internal void RequestReset() => Interlocked.Increment(ref _resetVersion);
+
+    /// <summary>仅由渲染线程在重新启用 DSP 时调用，丢弃旁路前的平滑值和尾音。</summary>
+    internal void ResetRenderState()
+    {
+        _renderTarget = null;
+        _gainFrames = 0;
+        _gain = 1;
+        _gainStep = _lowLeft = _lowRight = 0;
+    }
 
     /// <summary>先施加固定响度增益和前置衰减；.NET 11 Span 热路径无锁、无分配。</summary>
     internal void ApplyInput(Span<double> samples, int frames)

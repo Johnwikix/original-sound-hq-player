@@ -35,6 +35,16 @@ internal sealed class Equalizer
     public bool Enabled => _enabled;
     public bool Active => _enabled && HasActiveBand(_snapshot);
 
+    /// <summary>仅由渲染线程清除历史样本，重新启用总开关时避免旧 EQ 尾音泄漏。</summary>
+    internal void ResetHistory()
+    {
+        foreach (ref var band in _snapshot.AsSpan())
+        {
+            band.X1_0 = band.X2_0 = band.Y1_0 = band.Y2_0 = 0;
+            band.X1_1 = band.X2_1 = band.Y1_1 = band.Y2_1 = 0;
+        }
+    }
+
     private static Band[] CreateEmptySnapshot()
     {
         var bands = new Band[10];

@@ -11,6 +11,10 @@
                 <TextBlock x:Uid="DspSection" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
                 <InfoBar x:Name="AvailabilityBar" IsOpen="False" IsClosable="False" Severity="Informational" />
                 <TextBlock x:Uid="DspIntro" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspMaster')}"
+                    Description="{x:Bind tool:ToolUtils.GetString('DspMasterDescription')}">
+                    <ToggleSwitch x:Name="MasterToggle" MinWidth="0" IsEnabled="False" Toggled="Master_Toggled" />
+                </controls:SettingsCard>
                 <ContentControl x:Name="PcmSettings" IsEnabled="False" HorizontalContentAlignment="Stretch">
                   <StackPanel Spacing="{StaticResource SettingsCardSpacing}">
                     <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspEqualizer')}"
@@ -37,8 +41,12 @@
                         <TextBlock x:Uid="DspChannels" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
                         <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspBalance')}"
                             Description="{x:Bind tool:ToolUtils.GetString('DspBalanceDescription')}">
-                            <Slider x:Name="BalanceSlider" Width="220" Minimum="-100" Maximum="100" StepFrequency="1"
-                                ValueChanged="Slider_ValueChanged" />
+                            <Grid Width="300" ColumnDefinitions="100,*">
+                                <TextBlock Grid.Column="0" Margin="5,0" VerticalAlignment="Center"
+                                    Text="{x:Bind tool:BindUtils.FormatF0(BalanceSlider.Value), Mode=OneWay}" />
+                                <Slider x:Name="BalanceSlider" Grid.Column="1" Minimum="-100" Maximum="100" StepFrequency="1"
+                                    ValueChanged="Slider_ValueChanged" />
+                            </Grid>
                         </controls:SettingsCard>
                         <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspSwap')}">
                             <ToggleSwitch x:Name="SwapToggle" MinWidth="0" Toggled="Setting_Toggled" />
@@ -56,8 +64,12 @@
                         </controls:SettingsCard>
                         <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspWidth')}"
                             Description="{x:Bind tool:ToolUtils.GetString('DspWidthDescription')}">
-                            <Slider x:Name="WidthSlider" Width="220" Minimum="0" Maximum="150" StepFrequency="1"
-                                ValueChanged="Slider_ValueChanged" />
+                            <Grid Width="300" ColumnDefinitions="100,*">
+                                <TextBlock Grid.Column="0" Margin="5,0" VerticalAlignment="Center"
+                                    Text="{x:Bind tool:BindUtils.FormatPercent(WidthSlider.Value), Mode=OneWay}" />
+                                <Slider x:Name="WidthSlider" Grid.Column="1" Minimum="0" Maximum="150" StepFrequency="1"
+                                    ValueChanged="Slider_ValueChanged" />
+                            </Grid>
                         </controls:SettingsCard>
                       </StackPanel>
                     </ContentControl>

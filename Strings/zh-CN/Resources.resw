@@ -1737,4 +1737,13 @@
   <data name="DspAnalysisOff" xml:space="preserve">
     <value>响度均一化未启用或尚未打开 PCM 曲目。</value>
   </data>
+  <data name="DspMaster" xml:space="preserve">
+    <value>DSP 总开关</value>
+  </data>
+  <data name="DspMasterDescription" xml:space="preserve">
+    <value>关闭后直接旁路均一化、前置衰减、EQ 和声道效果，并保留各项设置。</value>
+  </data>
+  <data name="DspMasterBypass" xml:space="preserve">
+    <value>DSP 总开关已关闭：所有音效已旁路，设置已保留。可在「设置 → 音效」重新开启。</value>
+  </data>
 </root>
