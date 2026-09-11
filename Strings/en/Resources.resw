@@ -1658,13 +1658,13 @@
     <value>Loudness normalization</value>
   </data>
   <data name="DspNormalizeDescription" xml:space="preserve">
-    <value>Analyze the current track in the background, then smoothly apply a fixed gain and cache the result. No file changes or dynamic compression.</value>
+    <value>Analyze the current track in the background, then smoothly apply a fixed gain and cache the result.</value>
   </data>
   <data name="DspTarget" xml:space="preserve">
     <value>Target loudness (LUFS)</value>
   </data>
   <data name="DspTargetDescription" xml:space="preserve">
-    <value>Default: −18. Reduce the boost when peak headroom is insufficient to preserve dynamics.</value>
+    <value>Default: −12. Reduce the boost when peak headroom is insufficient to preserve dynamics.</value>
   </data>
   <data name="DspHeadroom" xml:space="preserve">
     <value>Preamp attenuation (dB)</value>

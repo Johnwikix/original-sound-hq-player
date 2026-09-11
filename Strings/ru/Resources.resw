@@ -1655,13 +1655,13 @@
     <value>Нормализация громкости</value>
   </data>
   <data name="DspNormalizeDescription" xml:space="preserve">
-    <value>Анализ текущего трека в фоне с плавным применением постоянного усиления и кэшированием. Без изменения файлов и сжатия динамики.</value>
+    <value>Анализ текущего трека в фоне с плавным применением постоянного усиления и кэшированием.</value>
   </data>
   <data name="DspTarget" xml:space="preserve">
     <value>Целевая громкость (LUFS)</value>
   </data>
   <data name="DspTargetDescription" xml:space="preserve">
-    <value>По умолчанию −18. При недостаточном запасе пиков усиление ограничивается для сохранения динамики.</value>
+    <value>По умолчанию −12. При недостаточном запасе пиков усиление ограничивается для сохранения динамики.</value>
   </data>
   <data name="DspHeadroom" xml:space="preserve">
     <value>Предварительное ослабление (дБ)</value>

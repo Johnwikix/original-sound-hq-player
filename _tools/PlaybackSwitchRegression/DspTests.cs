@@ -244,7 +244,7 @@ internal static unsafe partial class Program
             try { DspProtocol.ReadSettings(bytes); } catch (ArgumentException) { rejected = true; }
             Require(rejected, "Invalid master flag accepted");
             var invalid = new DspSettings { TargetLufs = double.NaN, Crossfeed = 10, HeadroomDb = double.PositiveInfinity }.Sanitize();
-            Require(invalid.TargetLufs == -18 && invalid.Crossfeed == 0.5 && invalid.HeadroomDb == 0, "Invalid settings not normalized");
+            Require(invalid.TargetLufs == -12 && invalid.Crossfeed == 0.5 && invalid.HeadroomDb == 0, "Invalid settings not normalized");
             Span<byte> stateBytes = stackalloc byte[DspProtocol.StateSize];
             var state = new DspState(2, false, 2, LoudnessStatus.Off, 0, double.NaN, false);
             DspProtocol.WriteState(stateBytes, state);

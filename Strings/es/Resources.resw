@@ -1655,13 +1655,13 @@
     <value>Normalización de sonoridad</value>
   </data>
   <data name="DspNormalizeDescription" xml:space="preserve">
-    <value>Analiza la pista actual en segundo plano, aplica suavemente una ganancia fija y guarda el resultado. Sin modificar archivos ni comprimir la dinámica.</value>
+    <value>Analiza la pista actual en segundo plano, aplica suavemente una ganancia fija y guarda el resultado.</value>
   </data>
   <data name="DspTarget" xml:space="preserve">
     <value>Sonoridad objetivo (LUFS)</value>
   </data>
   <data name="DspTargetDescription" xml:space="preserve">
-    <value>Predeterminado: −18. Reduce el aumento si falta margen de picos para conservar la dinámica.</value>
+    <value>Predeterminado: −12. Reduce el aumento si falta margen de picos para conservar la dinámica.</value>
   </data>
   <data name="DspHeadroom" xml:space="preserve">
     <value>Atenuación previa (dB)</value>

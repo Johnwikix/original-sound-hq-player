@@ -1657,13 +1657,13 @@
     <value>音量均一化</value>
   </data>
   <data name="DspNormalizeDescription" xml:space="preserve">
-    <value>播放时后台分析当前歌曲，完成后平滑应用固定增益并缓存。不改音乐文件，不压缩歌曲动态。</value>
+    <value>播放时后台分析当前歌曲，完成后平滑应用固定增益并缓存。</value>
   </data>
   <data name="DspTarget" xml:space="preserve">
     <value>目标响度（LUFS）</value>
   </data>
   <data name="DspTargetDescription" xml:space="preserve">
-    <value>默认 −18。峰值余量不足时减少提升量，优先保留动态。</value>
+    <value>默认 −12。峰值余量不足时减少提升量，优先保留动态。</value>
   </data>
   <data name="DspHeadroom" xml:space="preserve">
     <value>前置衰减（dB）</value>

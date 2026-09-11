@@ -83,6 +83,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<DesktopLyricsViewModel>();
                  services.AddSingleton<AddFolderViewModel>();
                  services.AddSingleton<SettingsViewModel>();
+                services.AddTransient<DspSettingsViewModel>();
                  services.AddSingleton<AlbumViewModel>();
                  services.AddSingleton<FavouritePlayListViewModel>();
                  services.AddSingleton<ArtistViewModel>();

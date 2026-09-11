@@ -1655,13 +1655,13 @@
     <value>Lautheitsnormalisierung</value>
   </data>
   <data name="DspNormalizeDescription" xml:space="preserve">
-    <value>Aktuellen Titel im Hintergrund analysieren, dann feste Verstärkung sanft anwenden und Ergebnis speichern. Keine Dateiänderung oder Dynamikkompression.</value>
+    <value>Aktuellen Titel im Hintergrund analysieren, dann feste Verstärkung sanft anwenden und Ergebnis speichern.</value>
   </data>
   <data name="DspTarget" xml:space="preserve">
     <value>Ziellautheit (LUFS)</value>
   </data>
   <data name="DspTargetDescription" xml:space="preserve">
-    <value>Standard: −18. Bei unzureichender Spitzenreserve weniger verstärken, um die Dynamik zu erhalten.</value>
+    <value>Standard: −12. Bei unzureichender Spitzenreserve weniger verstärken, um die Dynamik zu erhalten.</value>
   </data>
   <data name="DspHeadroom" xml:space="preserve">
     <value>Vorabsenkung (dB)</value>

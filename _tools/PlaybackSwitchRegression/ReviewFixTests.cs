@@ -33,7 +33,7 @@ internal static unsafe partial class Program
         Run("Loudness: measured gain rises smoothly and attenuation settles in 50ms", () =>
         {
             using var effects = new PcmEffects(48000, 2);
-            effects.Configure(new DspSettings { NormalizeLoudness = true });
+            effects.Configure(new DspSettings { NormalizeLoudness = true, TargetLufs = -18 });
             var samples = new double[48000 * 2]; samples.AsSpan().Fill(1);
             effects.ApplyInput(samples.AsSpan(0, 2), 1);
             Set(effects, "_measurement", new LoudnessMeasurement(-24, 0.1));

@@ -10,7 +10,7 @@ public sealed record DspSettings
     /// <summary>获取或设置是否按整曲响度应用固定增益。</summary>
     public bool NormalizeLoudness { get; init; }
     /// <summary>获取或设置目标综合响度，单位 LUFS。</summary>
-    public double TargetLufs { get; init; } = -18;
+    public double TargetLufs { get; init; } = -12;
     /// <summary>获取或设置 DSP 前置衰减，单位 dB。</summary>
     public double HeadroomDb { get; init; }
     /// <summary>获取或设置左右平衡，-1 为左，1 为右。</summary>
@@ -27,7 +27,7 @@ public sealed record DspSettings
     /// <summary>返回经过有限值和范围校验的设置快照。</summary>
     public DspSettings Sanitize()
     {
-        double target = Finite(TargetLufs, -24, -12, -18);
+        double target = Finite(TargetLufs, -24, -8, -12);
         double headroom = Finite(HeadroomDb, -24, 0, 0);
         double balance = Finite(Balance, -1, 1, 0);
         double crossfeed = Finite(Crossfeed, 0, 0.5, 0);

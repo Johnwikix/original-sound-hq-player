@@ -1655,13 +1655,13 @@
     <value>ラウドネス正規化</value>
   </data>
   <data name="DspNormalizeDescription" xml:space="preserve">
-    <value>再生中の曲をバックグラウンドで解析し、固定ゲインを滑らかに適用して結果をキャッシュします。音楽ファイルやダイナミクスは変更しません。</value>
+    <value>再生中の曲をバックグラウンドで解析し、固定ゲインを滑らかに適用して結果をキャッシュします。</value>
   </data>
   <data name="DspTarget" xml:space="preserve">
     <value>目標ラウドネス（LUFS）</value>
   </data>
   <data name="DspTargetDescription" xml:space="preserve">
-    <value>既定値は −18。ピークの余裕が不足する場合は増幅を抑え、ダイナミクスを維持します。</value>
+    <value>既定値は −12。ピークの余裕が不足する場合は増幅を抑え、ダイナミクスを維持します。</value>
   </data>
   <data name="DspHeadroom" xml:space="preserve">
     <value>プリゲイン減衰（dB）</value>
