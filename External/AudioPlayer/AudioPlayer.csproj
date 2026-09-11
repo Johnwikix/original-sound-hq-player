@@ -11,8 +11,8 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PublishAot>true</PublishAot>
-    <!-- NativeAOT 保留 EventPipe，允许运行中采样 GC；未连接时不启用事件采集。 -->
-    <EventSourceSupport>true</EventSourceSupport>
+    <!-- 发布版不包含 EventPipe 诊断组件；需要采样时单独构建诊断版本。 -->
+    <EventSourceSupport>false</EventSourceSupport>
     <InvariantGlobalization>true</InvariantGlobalization>
     <Platforms>x64</Platforms>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
