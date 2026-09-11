@@ -57,11 +57,7 @@ public partial class DspSettingsViewModel : ObservableObject
         get => field;
         set
         {
-            if (SetProperty(ref field, value))
-            {
-                OnPropertyChanged(nameof(TargetEditable));
-                SettingChanged();
-            }
+            if (SetProperty(ref field, value)) SettingChanged();
         }
     }
 
@@ -135,21 +131,12 @@ public partial class DspSettingsViewModel : ObservableObject
     /// <summary>播放端在线且为 PCM 渲染，总开关仅此时可操作。</summary>
     public bool MasterAvailable { get => field; private set => SetProperty(ref field, value); }
     /// <summary>播放端已确认 DSP 生效，PCM 子设置仅此时可编辑。</summary>
-    public bool EffectsActive
-    {
-        get => field;
-        private set
-        {
-            if (SetProperty(ref field, value)) OnPropertyChanged(nameof(TargetEditable));
-        }
-    }
-    /// <summary>当前输出为立体声（或空闲未知），声道与耳机设置仅此时可编辑。</summary>
+    public bool EffectsActive { get => field; private set => SetProperty(ref field, value); }
+    /// <summary>当前输出为立体声（或空闲未知）。</summary>
     public bool StereoSupported { get => field; private set => SetProperty(ref field, value); }
     public bool InfoOpen { get => field; private set => SetProperty(ref field, value); }
     public string InfoMessage { get => field; private set => SetProperty(ref field, value); } = "";
     public string AnalysisText { get => field; private set => SetProperty(ref field, value); } = "";
-    /// <summary>目标响度需总开关与均一化同时生效才可编辑。</summary>
-    public bool TargetEditable => EffectsActive && NormalizeLoudness;
 
     /// <summary>视图加载：呈现本地偏好并立即查询一次实际状态。</summary>
     public async Task OnViewLoadedAsync()
@@ -192,7 +179,6 @@ public partial class DspSettingsViewModel : ObservableObject
         Mono = effectsActive && settings.Mono;
         CrossfeedIndex = !effectsActive || settings.Crossfeed == 0 ? 0 : settings.Crossfeed <= 0.2 ? 1 : 2;
         StereoWidth = settings.StereoWidth * 100;
-        OnPropertyChanged(nameof(TargetEditable));
         _syncing = false;
     }
 

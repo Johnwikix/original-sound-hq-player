@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <UserControl
     x:Class="WinUIMusicPlayer.View.SubView.Settings.DspSettingsControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -8,83 +8,132 @@
     <ScrollViewer Style="{StaticResource SettingsScrollViewerStyle}">
         <Grid Style="{StaticResource SettingsGridStyle}">
             <StackPanel Spacing="{StaticResource SettingsCardSpacing}">
+                <StackPanel.ChildrenTransitions>
+                    <RepositionThemeTransition IsStaggeringEnabled="True" />
+                </StackPanel.ChildrenTransitions>
                 <TextBlock x:Uid="DspSection" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
-                <InfoBar IsClosable="False" Severity="Informational"
+                <InfoBar
+                    IsClosable="False"
                     IsOpen="{x:Bind ViewModel.InfoOpen, Mode=OneWay}"
-                    Message="{x:Bind ViewModel.InfoMessage, Mode=OneWay}" />
-                <TextBlock x:Uid="DspIntro" TextWrapping="Wrap" Margin="2,0,0,0"
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspMaster')}"
-                    Description="{x:Bind tool:ToolUtils.GetString('DspMasterDescription')}">
-                    <ToggleSwitch MinWidth="0"
+                    Message="{x:Bind ViewModel.InfoMessage, Mode=OneWay}"
+                    Severity="Informational" />
+                <TextBlock
+                    x:Uid="DspIntro"
+                    Margin="2,0,0,0"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    TextWrapping="Wrap" />
+                <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('DspMasterDescription')}" Header="{x:Bind tool:ToolUtils.GetString('DspMaster')}">
+                    <ToggleSwitch
+                        MinWidth="0"
                         IsEnabled="{x:Bind ViewModel.MasterAvailable, Mode=OneWay}"
                         IsOn="{x:Bind ViewModel.MasterEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
-                <ContentControl IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}" HorizontalContentAlignment="Stretch">
-                  <StackPanel Spacing="{StaticResource SettingsCardSpacing}">
-                    <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspEqualizer')}"
-                        Description="{x:Bind tool:ToolUtils.GetString('DspEqualizerDescription')}">
-                        <Button x:Uid="DspOpenEqualizer" Click="OpenEqualizer_Click" />
-                    </controls:SettingsCard>
-                    <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspNormalize')}"
-                        Description="{x:Bind tool:ToolUtils.GetString('DspNormalizeDescription')}">
-                        <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.NormalizeLoudness, Mode=TwoWay}" />
-                    </controls:SettingsCard>
-                    <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspTarget')}"
-                        Description="{x:Bind tool:ToolUtils.GetString('DspTargetDescription')}">
-                        <NumberBox Width="220" Minimum="-24" Maximum="-8" SmallChange="1"
-                            SpinButtonPlacementMode="Inline"
-                            IsEnabled="{x:Bind ViewModel.TargetEditable, Mode=OneWay}"
-                            Value="{x:Bind ViewModel.TargetLufs, Mode=TwoWay}" />
-                    </controls:SettingsCard>
-                    <TextBlock Text="{x:Bind ViewModel.AnalysisText, Mode=OneWay}" TextWrapping="Wrap" Margin="2,0,0,0"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                    <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspHeadroom')}"
-                        Description="{x:Bind tool:ToolUtils.GetString('DspHeadroomDescription')}">
-                        <NumberBox Width="220" Minimum="-24" Maximum="0" SmallChange="1"
-                            SpinButtonPlacementMode="Inline"
-                            Value="{x:Bind ViewModel.HeadroomDb, Mode=TwoWay}" />
-                    </controls:SettingsCard>
-                    <ContentControl IsEnabled="{x:Bind ViewModel.StereoSupported, Mode=OneWay}" HorizontalContentAlignment="Stretch">
-                      <StackPanel Spacing="{StaticResource SettingsCardSpacing}">
-                        <TextBlock x:Uid="DspChannels" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
-                        <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspBalance')}"
-                            Description="{x:Bind tool:ToolUtils.GetString('DspBalanceDescription')}">
-                            <Grid Width="300" ColumnDefinitions="100,*">
-                                <TextBlock Grid.Column="0" Margin="5,0" VerticalAlignment="Center"
-                                    Text="{x:Bind tool:BindUtils.FormatF0(BalanceSlider.Value), Mode=OneWay}" />
-                                <Slider x:Name="BalanceSlider" Grid.Column="1" Minimum="-100" Maximum="100" StepFrequency="1"
-                                    Value="{x:Bind ViewModel.Balance, Mode=TwoWay}" />
-                            </Grid>
-                        </controls:SettingsCard>
-                        <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspSwap')}">
-                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.SwapChannels, Mode=TwoWay}" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspMono')}">
-                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.Mono, Mode=TwoWay}" />
-                        </controls:SettingsCard>
-                        <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspCrossfeed')}"
-                            Description="{x:Bind tool:ToolUtils.GetString('DspCrossfeedDescription')}">
-                            <ComboBox Width="220" SelectedIndex="{x:Bind ViewModel.CrossfeedIndex, Mode=TwoWay}">
-                                <ComboBoxItem x:Uid="DspCrossfeedOff" />
-                                <ComboBoxItem x:Uid="DspCrossfeedLight" />
-                                <ComboBoxItem x:Uid="DspCrossfeedMedium" />
-                            </ComboBox>
-                        </controls:SettingsCard>
-                        <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspWidth')}"
-                            Description="{x:Bind tool:ToolUtils.GetString('DspWidthDescription')}">
-                            <Grid Width="300" ColumnDefinitions="100,*">
-                                <TextBlock Grid.Column="0" Margin="5,0" VerticalAlignment="Center"
-                                    Text="{x:Bind tool:BindUtils.FormatPercent(WidthSlider.Value), Mode=OneWay}" />
-                                <Slider x:Name="WidthSlider" Grid.Column="1" Minimum="0" Maximum="150" StepFrequency="1"
-                                    Value="{x:Bind ViewModel.StereoWidth, Mode=TwoWay}" />
-                            </Grid>
-                        </controls:SettingsCard>
-                      </StackPanel>
-                    </ContentControl>
-                    <Button x:Uid="DspReset" HorizontalAlignment="Left" Click="Reset_Click" />
-                  </StackPanel>
-                </ContentControl>
+                <controls:SettingsCard
+                    Description="{x:Bind tool:ToolUtils.GetString('DspEqualizerDescription')}"
+                    Header="{x:Bind tool:ToolUtils.GetString('DspEqualizer')}"
+                    IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}">
+                    <Button x:Uid="DspOpenEqualizer" Click="OpenEqualizer_Click" />
+                </controls:SettingsCard>
+                <controls:SettingsCard
+                    Description="{x:Bind tool:ToolUtils.GetString('DspNormalizeDescription')}"
+                    Header="{x:Bind tool:ToolUtils.GetString('DspNormalize')}"
+                    IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}">
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.NormalizeLoudness, Mode=TwoWay}" />
+                </controls:SettingsCard>
+                <controls:SettingsCard
+                    Description="{x:Bind tool:ToolUtils.GetString('DspTargetDescription')}"
+                    Header="{x:Bind tool:ToolUtils.GetString('DspTarget')}"
+                    IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}">
+                    <NumberBox
+                        Width="220"
+                        IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.EffectsActive, ViewModel.NormalizeLoudness), Mode=OneWay}"
+                        Maximum="-8"
+                        Minimum="-24"
+                        SmallChange="1"
+                        SpinButtonPlacementMode="Inline"
+                        Value="{x:Bind ViewModel.TargetLufs, Mode=TwoWay}" />
+                </controls:SettingsCard>
+                <TextBlock
+                    Margin="2,0,0,0"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="{x:Bind ViewModel.AnalysisText, Mode=OneWay}"
+                    TextWrapping="Wrap" />
+                <controls:SettingsCard
+                    Description="{x:Bind tool:ToolUtils.GetString('DspHeadroomDescription')}"
+                    Header="{x:Bind tool:ToolUtils.GetString('DspHeadroom')}"
+                    IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}">
+                    <NumberBox
+                        Width="220"
+                        Maximum="0"
+                        Minimum="-24"
+                        SmallChange="1"
+                        SpinButtonPlacementMode="Inline"
+                        Value="{x:Bind ViewModel.HeadroomDb, Mode=TwoWay}" />
+                </controls:SettingsCard>
+                <TextBlock x:Uid="DspChannels" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+                <controls:SettingsCard
+                    Description="{x:Bind tool:ToolUtils.GetString('DspBalanceDescription')}"
+                    Header="{x:Bind tool:ToolUtils.GetString('DspBalance')}"
+                    IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.EffectsActive, ViewModel.StereoSupported), Mode=OneWay}">
+                    <Grid Width="300" ColumnDefinitions="100,*">
+                        <TextBlock
+                            Grid.Column="0"
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            Text="{x:Bind tool:BindUtils.FormatF0(BalanceSlider.Value), Mode=OneWay}" />
+                        <Slider
+                            x:Name="BalanceSlider"
+                            Grid.Column="1"
+                            Maximum="100"
+                            Minimum="-100"
+                            StepFrequency="1"
+                            Value="{x:Bind ViewModel.Balance, Mode=TwoWay}" />
+                    </Grid>
+                </controls:SettingsCard>
+                <controls:SettingsCard
+                    Header="{x:Bind tool:ToolUtils.GetString('DspSwap')}"
+                    IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.EffectsActive, ViewModel.StereoSupported), Mode=OneWay}">
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.SwapChannels, Mode=TwoWay}" />
+                </controls:SettingsCard>
+                <controls:SettingsCard
+                    Header="{x:Bind tool:ToolUtils.GetString('DspMono')}"
+                    IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.EffectsActive, ViewModel.StereoSupported), Mode=OneWay}">
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.Mono, Mode=TwoWay}" />
+                </controls:SettingsCard>
+                <controls:SettingsCard
+                    Description="{x:Bind tool:ToolUtils.GetString('DspCrossfeedDescription')}"
+                    Header="{x:Bind tool:ToolUtils.GetString('DspCrossfeed')}"
+                    IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.EffectsActive, ViewModel.StereoSupported), Mode=OneWay}">
+                    <ComboBox Width="220" SelectedIndex="{x:Bind ViewModel.CrossfeedIndex, Mode=TwoWay}">
+                        <ComboBoxItem x:Uid="DspCrossfeedOff" />
+                        <ComboBoxItem x:Uid="DspCrossfeedLight" />
+                        <ComboBoxItem x:Uid="DspCrossfeedMedium" />
+                    </ComboBox>
+                </controls:SettingsCard>
+                <controls:SettingsCard
+                    Description="{x:Bind tool:ToolUtils.GetString('DspWidthDescription')}"
+                    Header="{x:Bind tool:ToolUtils.GetString('DspWidth')}"
+                    IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.EffectsActive, ViewModel.StereoSupported), Mode=OneWay}">
+                    <Grid Width="300" ColumnDefinitions="100,*">
+                        <TextBlock
+                            Grid.Column="0"
+                            Margin="5,0"
+                            VerticalAlignment="Center"
+                            Text="{x:Bind tool:BindUtils.FormatPercent(WidthSlider.Value), Mode=OneWay}" />
+                        <Slider
+                            x:Name="WidthSlider"
+                            Grid.Column="1"
+                            Maximum="150"
+                            Minimum="0"
+                            StepFrequency="1"
+                            Value="{x:Bind ViewModel.StereoWidth, Mode=TwoWay}" />
+                    </Grid>
+                </controls:SettingsCard>
+                <Button
+                    x:Uid="DspReset"
+                    Click="Reset_Click"
+                    IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}"
+                    HorizontalAlignment="Left" />
             </StackPanel>
         </Grid>
     </ScrollViewer>

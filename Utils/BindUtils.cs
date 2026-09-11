@@ -263,6 +263,12 @@ namespace WinUIMusicPlayer.Utils
             return !value;
         }
 
+        /// <summary>两个布尔条件求与，供 x:Bind 函数绑定组合 IsEnabled 门控。</summary>
+        public static bool BoolAndConverter(bool left, bool right)
+        {
+            return left && right;
+        }
+
         public static double HalfConverter(double value)
         {
             return value / 2.0;
