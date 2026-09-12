@@ -1,0 +1,16 @@
+{
+  "runtimeOptions": {
+    "tfm": "net11.0",
+    "includedFrameworks": [
+      {
+        "name": "Microsoft.NETCore.App",
+        "version": "11.0.0-rc.1.26425.128"
+      }
+    ],
+    "configProperties": {
+      "MVVMTOOLKIT_ENABLE_INOTIFYPROPERTYCHANGING_SUPPORT": true,
+      "System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization": false,
+      "CSWINRT_USE_WINDOWS_UI_XAML_PROJECTIONS": false
+    }
+  }
+}

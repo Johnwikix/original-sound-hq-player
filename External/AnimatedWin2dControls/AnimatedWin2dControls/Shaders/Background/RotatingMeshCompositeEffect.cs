@@ -15,16 +15,15 @@ namespace AnimatedWin2dControls.Shaders.Background
     /// </para>
     /// <para>
     /// 输入 1 为 <see cref="RotatingMeshSolveEffect"/> 预求解的网格 uv 场
-    /// （1/4 分辨率 RGBA32F：RG = 网格 uv）。网格变形的逆向求解已前移至该
-    /// 低分辨率 pass——变形场被网格分辨率截断为低频，此处硬件双线性采样
-    /// 重建与逐像素全分辨率求解无可感知差异，而合成 pass 只剩材质处理与抖动。
+    /// （全分辨率 RGBA32F：RG = 最终材质 uv）。折叠和覆盖边界上的 uv 不连续，
+    /// 必须以相同像素尺寸、Point 采样读取，避免跨网格片插值形成锯齿状鬼影。
     /// </para>
     /// </summary>
     [D2DInputCount(2)]
     [D2DInputComplex(0)]
     [D2DInputComplex(1)]
     [D2DInputDescription(0, D2D1Filter.MinMagMipLinear)]
-    [D2DInputDescription(1, D2D1Filter.MinMagMipLinear)]
+    [D2DInputDescription(1, D2D1Filter.MinMagMipPoint)]
     [D2DRequiresScenePosition]
     [D2DShaderProfile(D2D1ShaderProfile.PixelShader50)]
     [D2DGeneratedPixelShaderDescriptor]
@@ -32,23 +31,17 @@ namespace AnimatedWin2dControls.Shaders.Background
         float2 dispatchSize,
         bool isDark,
         float lumaStrength,
-        float ditherStrength,
-        float pinchTextureScale,
-        float pinchTextureOffset) : ID2D1PixelShader
+        float ditherStrength) : ID2D1PixelShader
     {
         public float4 Execute()
         {
             float2 scene = D2D.GetScenePosition().XY;
             float2 uv = scene / dispatchSize;
 
-            // 预求解的网格 uv 场（PinchPixel 的逆），硬件双线性重建。
+            // 同分辨率逐像素 UV；折叠两侧属于不同的网格片，不能插值。
             float2 meshUv = D2D.SampleInput(1, uv).XY;
 
-            float2 textureCoordinate = new float2(
-                meshUv.X * pinchTextureScale + pinchTextureOffset,
-                meshUv.Y * pinchTextureScale + pinchTextureOffset);
-
-            float3 color = SampleTreatedMaterial(textureCoordinate);
+            float3 color = SampleTreatedMaterial(meshUv);
 
             color = FinishMaterial(color, scene);
 
@@ -93,9 +86,9 @@ namespace AnimatedWin2dControls.Shaders.Background
 
         private float3 ApplyTreatedMaterial(float3 color)
         {
-            // 模糊会稀释色度，先做一次温和的饱和度补偿（原 1.4/0.7 双 pass 是
+            // 模糊会稀释色度，先做一次饱和度补偿（原 1.4/0.7 双 pass 是
             // 为配合 scrim 的去饱和而设，改为保色度的亮度轴映射后收敛为单 pass）。
-            color = ApplySaturation(color, 1.3f);
+            color = ApplySaturation(color, 1.6f);
             color = new float3(
                 Hlsl.Clamp(color.X, -0.752941f, 1.25098f),
                 Hlsl.Clamp(color.Y, -0.752941f, 1.25098f),

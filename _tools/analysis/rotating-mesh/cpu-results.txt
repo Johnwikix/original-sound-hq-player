@@ -1,0 +1,10 @@
+Legacy solver, landscape 0: residual > .01 NDC in 10240/11264 samples (90.9%)
+Legacy solver, landscape 1: residual > .01 NDC in 10240/11264 samples (90.9%)
+Legacy solver, landscape 2: residual > .01 NDC in 10240/11264 samples (90.9%)
+Legacy solver, landscape 3: residual > .01 NDC in 10240/11264 samples (90.9%)
+Legacy solver, landscape 4: residual > .01 NDC in 10240/11264 samples (90.9%)
+Legacy solver, portrait 0: residual > .01 NDC in 11264/11264 samples (100.0%)
+Legacy solver, portrait 1: residual > .01 NDC in 11264/11264 samples (100.0%)
+Legacy solver, portrait 2: residual > .01 NDC in 11264/11264 samples (100.0%)
+Legacy solver, portrait 3: residual > .01 NDC in 11264/11264 samples (100.0%)
+PASS: spatial index contains all 382370 tested triangle centroids across 33 phases and all presets.

@@ -1,0 +1,31 @@
+ControlType.Pane||Non Client Input Sink Window|960,398,1903,60
+ControlType.Pane|||960,398,1903,1455
+ControlType.Pane|||960,398,1903,1455
+ControlType.Image|||Empty
+ControlType.Image|||1149,696,573,573
+ControlType.Text|PlayingDetailTitleTextBlock|[THE SORCERY OF NYMPH CIRCE] SUITE-No.5: NDA|1155,1421,561,88
+ControlType.Text|PlayingDetailAlbumTextBlock|『機動戦士ガンダム 閃光のハサウェイ キルケーの魔女』オリジナル・サウンドトラック|1166,1509,541,60
+ControlType.Text|PlayingDetailArtistTextBlock|澤野弘之|1345,1569,180,60
+ControlType.Slider|ProgressSliderPlayingDetail||981,1703,1735,48
+ControlType.Text|PlayTimeTextBlockPlayingDetail|00:00/00:00|2731,1713,108,28
+ControlType.Button|SettingsButton||1007,1777,50,42
+ControlType.Button|||1072,1777,51,42
+ControlType.Button|EqualizerButtonPlayingDetail||1139,1777,51,42
+ControlType.Button|AnimatedPlayBarFavouriteButtonPlayingDetail||1674,1777,51,42
+ControlType.Button|FastBackwardButton||1733,1777,50,42
+ControlType.Button|LastMusicButtonPlayingDetail||1799,1777,51,42
+ControlType.Button|PlayPauseButtonPlayingDetail||1865,1759,78,78
+ControlType.Button|NextMusicButtonPlayingDetail||1958,1777,51,42
+ControlType.Button|FastForwardButton||2024,1777,51,42
+ControlType.Button|StopButton||2090,1777,51,42
+ControlType.Button|CurrentPlayListButtonPlayingDetail||2649,1777,51,42
+ControlType.Window|CurrentPlayListTeachingTipPlayingDetail||Empty
+ControlType.Button|VolumePlayingDetailBtn||2715,1777,51,42
+ControlType.Button|PlayModeButtonPlayingDetail||2781,1777,51,42
+ControlType.Image|AppLogo||983,416,27,27
+ControlType.Text||原音HQ播放器|1033,412,155,32
+ControlType.Button|CancelPlayingDetailButton||960,398,60,51
+ControlType.Button|FullscreenTitleBarButton||2623,398,60,48
+ControlType.Button|MinimizeButton||2683,398,60,48
+ControlType.Button|MaximizeButton||2743,398,60,48
+ControlType.Button|CloseTitleBarButton||2803,398,60,48

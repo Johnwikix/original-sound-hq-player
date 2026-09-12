@@ -1,6 +1,7 @@
 using AnimatedWin2dControls.Impressionist;
 using AnimatedWin2dControls.Shaders.Background;
 using ComputeSharp.D2D1;
+using ComputeSharp.D2D1.Interop;
 using ComputeSharp.D2D1.WinUI;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Effects;
@@ -15,46 +16,14 @@ using System.Threading;
 namespace AnimatedWin2dControls.Renderer.Background
 {
     /// <summary>
-    /// 旋转网格背景渲染器。移植自 Lyricify-Backgrounds（Apache 2.0）经
-    /// ComputeSharpDemo 转写的 compute 版本，适配本项目 D2D1 像素着色器管线：
-    ///
-        /// <list type="number">
-        /// <item><see cref="RotatingMeshRotationEffect"/> —— 三层旋转封面 + aspect-fill
-        /// 兜底，封面经双 CanvasBitmap 输入（RGBA8，线性 + Clamp 描述）注入并可显式
-        /// Dispose，绘制到 1/8 像素密度的中间目标（对应原版 1/7.53 背景面）。</item>
-        /// <item>原生 <see cref="GaussianBlurEffect"/>（Soft 边框）做 77 抽头 σ 可分离
-        /// 高斯模糊的等价实现：premultiplied 软边框模糊 + 合成 pass 内 un-premultiply，
-        /// 与原版"零边框采样 + 覆盖率归一化"逐像素一致。</item>
-        /// <item><see cref="RotatingMeshSolveEffect"/> —— 1/4 像素密度预求解 pinch
-        /// 网格的逆向变形：网格顶点经 CanvasBitmap（RGBA32F，效果输入）注入，解出的
-        /// uv 场写入 RGBA32F 求解目标。变形场被网格分辨率截断为低频，低密度求解 +
-        /// 硬件双线性重建与全分辨率逐像素迭代无可感知差异，而 26 次不动点迭代的
-        /// 成本从全屏像素量降至 1/16（见 <see cref="SolvePixelScale"/>）。</item>
-        /// <item><see cref="RotatingMeshCompositeEffect"/> —— 网格 uv 场双线性重建 +
-        /// 材质处理 + 抖动，输出到全屏。
-        /// 注：ComputeSharp.D2D1 3.2.0 的资源纹理管理器仅适用于无输入的着色器
-        /// （属性槽按声明索引线性映射且只注册 Count 个，与输入占用的寄存器约束冲突），
-        /// 故网格与 uv 场均走效果输入。</item>
-        /// </list>
-    ///
-    /// <para>
-    /// 封面适配：原 demo 从固定路径读图，本渲染器改由 <see cref="SetArtwork"/> 注入
-    /// 缩略图缓存解码出的方形 RGBA8（见 <see cref="ArtworkPixelDecoder"/>）；无封面时
-    /// 退化为调色板四色渐变或默认深色渐变，保证选歌前也有完整视觉。HDR/PQ 编码与
-    /// 频谱缩放、封面交叉淡化（demo 亦未实现）不适用 SDR 画布，予以省略。
-    /// </para>
+    /// Rotating artwork and pinch mesh ported from Lyricify-Backgrounds (Apache 2.0).
+    /// Rotation and blur run at 1/8 resolution. A spatially indexed triangle pass
+    /// reproduces PinchVertex coverage at output resolution; the composite point-samples
+    /// its UV field to preserve overdraw boundaries and applies theme treatment/dither.
     /// </summary>
     public sealed class RotatingMeshBackgroundRenderer : BaseBackgroundRenderer
     {
-        /// <summary>
-        /// 变形求解 pass 的像素密度（1/4）。被求解的 uv 场由 21×21/33×33 网格
-        /// 双线性插值生成，空间频率被网格分辨率截断，1/4 密度下每个网格单元仍有
-        /// 8 个以上采样点，合成 pass 硬件双线性重建与全分辨率逐像素求解无可感知
-        /// 差异；26 次不动点迭代的成本因此从全屏像素量降至 1/16。
-        /// </summary>
-        private const float SolvePixelScale = 1f / 4f;
-
-        /// <summary>中间旋转/模糊层的像素密度（1/8，对应原版 backdropDownsample≈7.53）。</summary>
+        /// <summary>Rotation/blur density, corresponding to the original backdrop downsample.</summary>
         private const float BackdropPixelScale = 1f / 8f;
 
         /// <summary>
@@ -65,10 +34,9 @@ namespace AnimatedWin2dControls.Renderer.Background
 
         /// <summary>
         /// pinch 网格变形的半周期（秒）：phase = acos(sin(t·π/本值))/π，
-        /// from↔to 全往复周期 = 2×本值。原版 5（10s 一轮）肉眼难察，缩到 3.5
-        /// （7s 一轮）让流动可感，同时保留慢速氛围感。
+        /// from↔to 全往复周期 = 10 秒，与原版一致。
         /// </summary>
-        private const float MeshWarpTimeScale = 3.5f;
+        private const float MeshWarpTimeScale = 5f;
         // 主题适配强度：暗色按 luma ×(1-α) 压暗，亮色按 lerp(luma, 1, α) 提亮，
         // 色度向量均不参与混合（见 RotatingMeshCompositeEffect.ShiftLuma）。
         private const float DarkLumaStrength = 0.4f;
@@ -76,14 +44,10 @@ namespace AnimatedWin2dControls.Renderer.Background
         private const float PortraitTextureScale = 1f;
         private const float LandscapeTextureScale = 0.8f;
 
-        /// <summary>pinch 网格位移放大倍数：绕恒等网格线性扩偏移，增强形变可见度。</summary>
-        private const float MeshWarpStrength = 2.6f;
-
         /// <summary>
-        /// 旋转层整体速率倍数：iOS 16.3 原周期 120/70/90s 过缓（模糊色团几乎
-        /// 察觉不到转动），整体提速 60% 至 75/44/56s，三层相对速比保持不变。
+        /// 旋转层整体速率倍数：保留原版 120/70/90 秒周期。
         /// </summary>
-        private const float RotationScale = 1.6f;
+        private const float RotationScale = 1f;
 
         /// <summary>换歌封面交叉淡化时长（秒）。</summary>
         private const float ArtworkTransitionDuration = 0.8f;
@@ -106,7 +70,8 @@ namespace AnimatedWin2dControls.Renderer.Background
         private int _solveWidth;
         private int _solveHeight;
         private float _targetDpi;
-        private float _meshDpi;
+        private float _targetWidthDip;
+        private float _targetHeightDip;
 
         // 双槽封面位图：A/B 各一张（128×128，96 DPI），换歌时新封面写入非活动槽并
         // 交叉淡化。与网格一致走效果输入，可对旧图显式 Dispose（无终结器延迟）。
@@ -114,7 +79,8 @@ namespace AnimatedWin2dControls.Renderer.Background
         private int _activeArtworkSlot;
         private float _artworkTransitionStart;
         private bool _artworkTransitioning;
-        private CanvasBitmap? _meshBitmap;
+        private D2D1ResourceTextureManager? _meshVertices;
+        private D2D1ResourceTextureManager? _meshCells;
         private bool _meshIsPortrait;
         private int _meshRows;
         private int _meshColumns;
@@ -142,8 +108,8 @@ namespace AnimatedWin2dControls.Renderer.Background
                 _blurEffect = null;
                 _scaleEffect?.Dispose();
                 _scaleEffect = null;
-                _meshBitmap?.Dispose();
-                _meshBitmap = null;
+                _meshVertices = null;
+                _meshCells = null;
                 _coverBitmaps[0]?.Dispose();
                 _coverBitmaps[1]?.Dispose();
                 _coverBitmaps[0] = null;
@@ -188,7 +154,7 @@ namespace AnimatedWin2dControls.Renderer.Background
                 int backdropHeight = Math.Max(1, (int)MathF.Round(pixelHeight * BackdropPixelScale));
 
                 EnsureTargets(control, widthDip, heightDip, backdropWidth, backdropHeight);
-                EnsureMeshBitmap(control, backdropHeight > backdropWidth);
+                EnsureMeshResources(backdropHeight > backdropWidth);
                 EnsureCoverBitmaps(control);
                 PushPendingArtwork(control);
 
@@ -226,16 +192,14 @@ namespace AnimatedWin2dControls.Renderer.Background
                     artworkMix = _activeArtworkSlot == 1 ? 1f : 0f;
                 }
 
-                // Pass 0 —— 1/4 分辨率求解 pinch 网格的逆向变形场（RGBA32F：RG = 网格 uv）。
-                // 变形场被网格分辨率截断为低频，低密度求解 + 合成 pass 硬件双线性重建
-                // 与全分辨率逐像素求解无可感知差异，迭代成本降至 1/16（见 SolvePixelScale）。
-                if (_meshBitmap is not null && _solveEffect is not null && _solveTarget is not null)
+                // Pass 0 —— 按三角形覆盖顺序生成全分辨率 UV，折叠区域不做插值。
+                if (_meshVertices is not null && _meshCells is not null && _solveEffect is not null && _solveTarget is not null)
                 {
                     _solveEffect.ConstantBuffer = new RotatingMeshSolveEffect(
                         new float2(_solveWidth, _solveHeight),
                         pinchMix,
                         _meshRows,
-                        _meshColumns);
+                        _meshColumns, pinchTextureScale, pinchTextureOffset);
 
                     // EndDraw 边界①（solve 会话 Dispose）：失败自愈 + 记录，截停本帧，
                     // 阻止异常逃逸出 Draw 被游戏循环转成 stowed exception（0xc000027b）闪退。
@@ -273,6 +237,9 @@ namespace AnimatedWin2dControls.Renderer.Background
                 {
                     using (var blurSession = _blurTarget!.CreateDrawingSession())
                     {
+                        // Soft blur contains partial alpha. Source-over on a reused
+                        // target would accumulate older frames along the border.
+                        blurSession.Clear(Microsoft.UI.Colors.Transparent);
                         blurSession.DrawImage(_blurEffect!);
                     }
                 }
@@ -285,6 +252,7 @@ namespace AnimatedWin2dControls.Renderer.Background
                 {
                     using (var upscaleSession = _upscaledTarget!.CreateDrawingSession())
                     {
+                        upscaleSession.Clear(Microsoft.UI.Colors.Transparent);
                         upscaleSession.DrawImage(_scaleEffect!);
                     }
                 }
@@ -293,7 +261,7 @@ namespace AnimatedWin2dControls.Renderer.Background
                 // Pass 3 —— 材质处理 + pinch 网格 uv 重建 + 抖动，输出全屏。
                 // 网格纹理或求解目标创建彻底失败时跳过合成，直接呈现模糊背景
                 // （保持不透明覆盖）。
-                if (_meshBitmap is not null && _solveTarget is not null)
+                if (_meshVertices is not null && _meshCells is not null && _solveTarget is not null)
                 {
                     // EndDraw 边界⑤（bgCache 会话，含 Flush：上抛本会话内延迟累积的
                     // D2D1 错误，避免漂移到后续渲染器调用点干扰定位）。
@@ -303,9 +271,7 @@ namespace AnimatedWin2dControls.Renderer.Background
                             new float2(pixelWidth, pixelHeight),
                             IsDark,
                             IsDark ? DarkLumaStrength : LightLumaStrength,
-                            ditherStrength: 1f,
-                            pinchTextureScale,
-                            pinchTextureOffset);
+                            ditherStrength: 1f);
 
                         if (Opacity >= 1.0)
                         {
@@ -348,7 +314,6 @@ namespace AnimatedWin2dControls.Renderer.Background
         private void LogPassFailure(string tag, ICanvasAnimatedControl control, CanvasDrawingSession ds, Exception ex)
         {
             _targetDpi = 0f;
-            _meshDpi = 0f;
             #if DEBUG
             Log.ForContext<RotatingMeshBackgroundRenderer>().Error(ex,
                 "[render] {Tag} 失败，已截停本帧并标记整体重建。图状态：{State}", tag, DumpGraphState(control, ds));
@@ -362,18 +327,18 @@ namespace AnimatedWin2dControls.Renderer.Background
             {
                 var sb = new System.Text.StringBuilder();
                 sb.Append($"  control: dpi={control.Dpi:F1} sizeDip={control.Size.Width:F0}x{control.Size.Height:F0} sessionDpi={ds.Dpi:F1}");
-                sb.Append($"\n  fields: targetDpi={_targetDpi:F1} meshDpi={_meshDpi:F1} solve={_solveWidth}x{_solveHeight} time={Time:F2} transitioning={_artworkTransitioning} slot={_activeArtworkSlot} opacity={Opacity:F2}");
+                sb.Append($"\n  fields: targetDpi={_targetDpi:F1} solve={_solveWidth}x{_solveHeight} time={Time:F2} transitioning={_artworkTransitioning} slot={_activeArtworkSlot} opacity={Opacity:F2}");
                 sb.Append("\n  resources:");
                 Describe(sb, " rotationT", _rotationTarget);
                 Describe(sb, " blurT", _blurTarget);
                 Describe(sb, " upscaledT", _upscaledTarget);
                 Describe(sb, " solveT", _solveTarget);
-                Describe(sb, " mesh", _meshBitmap);
+                sb.Append($" meshResources={_meshVertices is not null && _meshCells is not null}");
                 Describe(sb, " coverA", _coverBitmaps[0]);
                 Describe(sb, " coverB", _coverBitmaps[1]);
                 sb.Append("\n  bindings:");
                 sb.Append($" composite[{SourcesOf(_compositeEffect, 0, 1)}]");
-                sb.Append($" solve[{SourcesOf(_solveEffect, 0)}]");
+                sb.Append($" solveResources={_meshVertices is not null && _meshCells is not null}");
                 sb.Append($" rotation[{SourcesOf(_rotationEffect, 0, 1)}]");
                 sb.Append($" blur.src={Name(_blurEffect?.Source)} scale.src={Name(_scaleEffect?.Source)}");
                 return sb.ToString();
@@ -452,7 +417,8 @@ namespace AnimatedWin2dControls.Renderer.Background
             float dpi = control.Dpi;
 
             if (_rotationTarget is not null && _targetWidth == backdropWidth
-                && _targetHeight == backdropHeight && _targetDpi == dpi)
+                && _targetHeight == backdropHeight && _targetDpi == dpi
+                && _targetWidthDip == widthDip && _targetHeightDip == heightDip)
                 return;
 
             // 注意：DPI 变化（窗口跨屏）也必须整体重建，否则中间目标与绘制会话的
@@ -521,12 +487,14 @@ namespace AnimatedWin2dControls.Renderer.Background
                 InterpolationMode = CanvasImageInterpolation.Linear,
             };
 
-            // 求解目标：1/4 像素密度的 RGBA32F（uv 场需要浮点精度）。必须以控制
+            // 求解目标：全像素密度的 RGBA32F（uv 场需要浮点精度）。必须以控制
             // DPI 创建（DIP 尺寸 = 像素数 × 96/dpi），与合成 pass 的绘制会话同
             // DPI——不一致会触发 ComputeSharp 的 DPI 补偿节点，导致图配置错误。
             // RGBA32F 不受支持等异常时留空，Draw 走模糊背景回落，渲染不中断。
-            int solveWidth = Math.Max(1, (int)MathF.Round(widthDip * (dpi / 96f) * SolvePixelScale));
-            int solveHeight = Math.Max(1, (int)MathF.Round(heightDip * (dpi / 96f) * SolvePixelScale));
+            int solveWidth = control.ConvertDipsToPixels(widthDip, CanvasDpiRounding.Round);
+            int solveHeight = control.ConvertDipsToPixels(heightDip, CanvasDpiRounding.Round);
+            solveWidth = Math.Max(1, solveWidth);
+            solveHeight = Math.Max(1, solveHeight);
 
             try
             {
@@ -557,150 +525,59 @@ namespace AnimatedWin2dControls.Renderer.Background
             _targetWidth = backdropWidth;
             _targetHeight = backdropHeight;
             _targetDpi = dpi;
+            _targetWidthDip = widthDip;
+            _targetHeightDip = heightDip;
         }
 
-        private void EnsureMeshBitmap(ICanvasAnimatedControl control, bool isPortrait)
+        private void EnsureMeshResources(bool isPortrait)
         {
-            float dpi = control.Dpi;
-
-            if (_meshBitmap is not null && _meshIsPortrait == isPortrait && _meshDpi == dpi)
+            if (_meshVertices is not null && _meshCells is not null && _meshIsPortrait == isPortrait)
                 return;
 
             RotatingMeshWarp.MeshData mesh = RotatingMeshWarp.Create(
                 isPortrait ? RotatingMeshWarp.ResolvePortraitPreset(_presetSlot) : _presetSlot,
                 isPortrait);
-
-            // 变形强度放大：绕恒等网格线性扩偏移；演示网格位移距恒等较远时
-            // 幅度保守，放大后扭曲更接近该风格的观感。
-            AmplifyMeshWarp(mesh.From, mesh.Rows, mesh.Columns);
-            AmplifyMeshWarp(mesh.To, mesh.Rows, mesh.Columns);
-
-            // 行/列单调性约束：折叠（网格片翻转）是一切求解伪影的根源——
-            // 逐行走 x、逐列走 y 强制非降序后，变形在任何混合相位下都是同胚映射，
-            // 求解器处处收敛，变形全强度呈现且无碎裂。lerp 保序，From/To 分别
-            // 约束即可覆盖所有 pinchMix。
-            EnforceGridMonotonicity(mesh.From, mesh.Rows, mesh.Columns);
-            EnforceGridMonotonicity(mesh.To, mesh.Rows, mesh.Columns);
-
-            // 打包为 RGBA32F：RG = from 网格 NDC 坐标，BA = to 网格 NDC 坐标，
-            // 按数组行序写入（纹理顶行 = 数组 row 0 = NDC 底部）。
-            int vertices = mesh.Rows * mesh.Columns;
-            var packed = new float[vertices * 4];
-            for (int i = 0; i < vertices; i++)
+            var packed = new float[mesh.Rows * mesh.Columns * 4];
+            for (int i = 0; i < mesh.From.Length; i++)
             {
-                packed[i * 4 + 0] = mesh.From[i].X;
+                packed[i * 4] = mesh.From[i].X;
                 packed[i * 4 + 1] = mesh.From[i].Y;
                 packed[i * 4 + 2] = mesh.To[i].X;
                 packed[i * 4 + 3] = mesh.To[i].Y;
             }
-
-            _meshBitmap?.Dispose();
-            _meshBitmap = null;
-
+            var index = RotatingMeshSpatialIndex.Create(mesh);
+            _meshVertices = null;
+            _meshCells = null;
             try
             {
-                // 必须以绘制会话的 DPI 创建：默认 96 DPI 与会话 DPI 不一致时，
-                // ComputeSharp 会插入 DpiCompensation 节点，与自定义效果的
-                // complex 输入组合会被 D2D1 判定为无效图（延迟到 Flush/EndDraw 抛出）。
-                // 本 shader 以归一化 UV 采样网格，DPI 取值不影响采样语义。
-                _meshBitmap = CanvasBitmap.CreateFromBytes(
-                    control,
-                    MemoryMarshal.AsBytes(new ReadOnlySpan<float>(packed)).ToArray(),
-                    mesh.Columns,
-                    mesh.Rows,
-                    DirectXPixelFormat.R32G32B32A32Float,
-                    dpi,
-                    CanvasAlphaMode.Premultiplied);
+                // Data textures have no image-input/DPI/alpha processing. The solve
+                // effect has zero image inputs, so resource registers start at zero.
+                var vertices = CreateMeshResource(packed, mesh.Columns, mesh.Rows);
+                var cells = CreateMeshResource(index.Texels, index.Width,
+                    RotatingMeshSpatialIndex.TileCount * RotatingMeshSpatialIndex.TileCount);
+                _solveEffect!.ResourceTextureManagers[0] = vertices;
+                _solveEffect.ResourceTextureManagers[1] = cells;
+                _meshVertices = vertices;
+                _meshCells = cells;
+                _meshRows = mesh.Rows;
+                _meshColumns = mesh.Columns;
+                _meshIsPortrait = isPortrait;
             }
             catch (Exception ex)
             {
-                // 格式不支持等异常情况下降级为 1×1 零纹理（8-bit 恒受支持）：
-                // 求解 pass 对恒零网格的变形场处处残差超限、回落为未变形 uv，
-                // 合成 pass 即呈现无变形的模糊材质（渲染不中断）。
-                // 源位绝不能为 null，否则效果图为未绑定输入（D2DERR_INVALID_GRAPH_CONFIGURATION）。
-#if DEBUG
-                Log.Error(ex, "网格位图（R32G32B32A32Float）创建失败，降级 1×1 零纹理");
-#endif
+                Log.Error(ex, "Rotating mesh resource creation failed; using blurred artwork");
             }
-
-            if (_meshBitmap is null)
-            {
-                try
-                {
-                    _meshBitmap = CanvasBitmap.CreateFromBytes(
-                        control,
-                        new byte[4],
-                        1,
-                        1,
-                        DirectXPixelFormat.R8G8B8A8UIntNormalized,
-                        dpi,
-                        CanvasAlphaMode.Premultiplied);
-                }
-                catch (Exception) { }
-            }
-
-            // 网格走求解 pass 的效果输入：求解 pass 以控制 DPI 绘制（目标与
-            // 会话同 DPI），网格位图的 DPI 与之一致，不触发 DPI 补偿节点。
-            _solveEffect!.Sources[0] = _meshBitmap;
-            _meshRows = mesh.Rows;
-            _meshColumns = mesh.Columns;
-            _meshIsPortrait = isPortrait;
-            _meshDpi = dpi;
         }
 
-        /// <summary>
-        /// 绕恒等网格线性放大位移：每个顶点相对恒等网格 (u*2-1, v*2-1) 的偏移
-        /// 乘 <see cref="MeshWarpStrength"/>。恒等网格处的线性位移边界可被单调
-        /// 约束吸收到边界外，避免放大后贴边压缩。
-        /// </summary>
-        private static void AmplifyMeshWarp(System.Numerics.Vector2[] grid, int rows, int columns)
+        private static D2D1ResourceTextureManager CreateMeshResource(float[] data, int width, int height)
         {
-            for (int r = 0; r < rows; r++)
-            {
-                float v = 1f - r / (float)(rows - 1);
-                for (int c = 0; c < columns; c++)
-                {
-                    float u = c / (float)(columns - 1);
-                    var identity = new System.Numerics.Vector2(u * 2f - 1f, v * 2f - 1f);
-                    int i = r * columns + c;
-                    grid[i] = identity + (grid[i] - identity) * MeshWarpStrength;
-                }
-            }
+            return new D2D1ResourceTextureManager(
+                new uint[] { (uint)width, (uint)height },
+                D2D1BufferPrecision.Float32, D2D1ChannelDepth.Four,
+                D2D1Filter.MinMagMipPoint,
+                new[] { D2D1ExtendMode.Clamp, D2D1ExtendMode.Clamp },
+                MemoryMarshal.AsBytes(data.AsSpan()), new uint[] { (uint)width * 16 });
         }
-
-        /// <summary>
-        /// 网格行/列单调性约束：逐行走 x、逐列走 y 强制非降序（保留最小间隙），
-        /// 消除网格片翻转（折叠）。仅修正顺序，不限制位移幅度。
-        /// </summary>
-        private static void EnforceGridMonotonicity(System.Numerics.Vector2[] grid, int rows, int columns)
-        {
-            const float MinGap = 0.02f;
-
-            // 逐行：x 沿列索引非降序。
-            for (int r = 0; r < rows; r++)
-            {
-                float lower = grid[r * columns].X;
-                for (int c = 1; c < columns; c++)
-                {
-                    float x = MathF.Max(grid[r * columns + c].X, lower + MinGap);
-                    grid[r * columns + c] = new(x, grid[r * columns + c].Y);
-                    lower = x;
-                }
-            }
-
-            // 逐列：y 沿行索引非降序（NDC y 向上）。
-            for (int c = 0; c < columns; c++)
-            {
-                float lower = grid[c].Y;
-                for (int r = 1; r < rows; r++)
-                {
-                    float y = MathF.Max(grid[r * columns + c].Y, lower + MinGap);
-                    grid[r * columns + c] = new(grid[r * columns + c].X, y);
-                    lower = y;
-                }
-            }
-        }
-
         private void EnsureCoverBitmaps(ICanvasAnimatedControl control)
         {
             if (_coverBitmaps[0] is not null)
@@ -861,11 +738,13 @@ namespace AnimatedWin2dControls.Renderer.Background
                 _coverBitmaps[1]?.Dispose();
                 _coverBitmaps[0] = null;
                 _coverBitmaps[1] = null;
-                _meshBitmap?.Dispose();
-                _meshBitmap = null;
+                _meshVertices = null;
+                _meshCells = null;
                 _pendingArtwork = null;
                 _realArtwork = null;
             }
         }
     }
 }
+
+
