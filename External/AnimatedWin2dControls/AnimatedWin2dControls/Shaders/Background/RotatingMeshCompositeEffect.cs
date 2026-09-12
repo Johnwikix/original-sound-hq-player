@@ -88,7 +88,7 @@ namespace AnimatedWin2dControls.Shaders.Background
         {
             // 模糊会稀释色度，先做一次饱和度补偿（原 1.4/0.7 双 pass 是
             // 为配合 scrim 的去饱和而设，改为保色度的亮度轴映射后收敛为单 pass）。
-            color = ApplySaturation(color, 1.6f);
+            color = ApplySaturation(color, 1.5f);
             color = new float3(
                 Hlsl.Clamp(color.X, -0.752941f, 1.25098f),
                 Hlsl.Clamp(color.Y, -0.752941f, 1.25098f),

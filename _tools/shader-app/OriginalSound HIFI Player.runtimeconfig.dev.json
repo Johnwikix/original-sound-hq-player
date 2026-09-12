@@ -1,8 +1,0 @@
-{
-  "runtimeOptions": {
-    "configProperties": {
-      "System.Reflection.Metadata.MetadataUpdater.IsSupported": true,
-      "System.StartupHookProvider.IsSupported": true
-    }
-  }
-}
