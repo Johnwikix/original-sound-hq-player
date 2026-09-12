@@ -40,7 +40,6 @@ namespace WinUIMusicPlayer.View
         private const double PortraitExitRatio = 1.10;
         private const double PortraitTopVerticalMargin = 20;
         private const double textScale = 1.6;  
-        private const double lyricsScale = 1.6;
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
         {
             AnimatedWin2dControls.Controls.AlbumImgControl.AlbumArtControl.CoverCacheBasePath = AppSettings.MusicCoverCache;
@@ -152,7 +151,7 @@ namespace WinUIMusicPlayer.View
 
             if (portrait)
             { 
-                lyrics = (int)(lyrics * lyricsScale);
+                lyrics = (int)(lyrics * AppViewModel.PortraitLyricsScale);
                 title = (int)(title * textScale);
                 artist = (int)(artist * textScale);
                 info = (int)(info * textScale);

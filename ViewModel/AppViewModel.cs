@@ -1440,7 +1440,8 @@ namespace WinUIMusicPlayer.ViewModel
                 lyricsTextAlignment: LyricsAlignment,
                 isDark: IsDarkMode,
                 scrollSensitivity: 1.0,
-                lyricsBlurAmount: LyricsBlurAmount,
+                // 固定字号模式不随竖屏放大；保留用户设置，只缩放渲染值。
+                lyricsBlurAmount: LyricsBlurAmount * (IsPortraitLayout && !IsGlobalFontSizeEnabled ? PortraitLyricsScale : 1.0),
                 glowAmount: GlowAmount,
                 charFloatAmount: CharFloatAmount,
                 charScaleAmount: CharScaleAmount,

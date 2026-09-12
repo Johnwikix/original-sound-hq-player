@@ -925,6 +925,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = false;
 
+        public const double PortraitLyricsScale = 1.6;
+
         public bool IsPortraitLayout
         {
             get => field;
@@ -933,6 +935,10 @@ namespace WinUIMusicPlayer.ViewModel
                 if (SetProperty(ref field, value))
                 {
                     OnPropertyChanged(nameof(EffectivePlayingDetailAlignment));
+                    if (IsInitialized)
+                    {
+                        SendLyricsSettings();
+                    }
                 }
             }
         }
@@ -969,6 +975,7 @@ namespace WinUIMusicPlayer.ViewModel
                     {
                         _ = _musicDatabaseService.SaveSettingAsync();
                         SendLyricsFontSize();
+                        SendLyricsSettings();
                     }
                 }
             }
