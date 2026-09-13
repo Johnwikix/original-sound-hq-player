@@ -28,7 +28,7 @@
         MaxHeight="700"
         Padding="15,0"
         VerticalScrollBarVisibility="Auto">
-        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto">
 
             <!--  标题行  -->
             <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto">
@@ -46,6 +46,95 @@
                         VerticalAlignment="Center"
                         Toggled="ToggleSwitchEqualizer_Toggled" />
                 </StackPanel>
+                <!--  预设管理行  -->
+                <StackPanel
+                    Grid.Column="1"
+                    Margin="10,4,0,0"
+                    Orientation="Horizontal"
+                    Spacing="4">
+                    <ComboBox
+                        x:Name="ComboBoxPresets"
+                        Width="170"
+                        VerticalAlignment="Center"
+                        IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}"
+                        SelectionChanged="ComboBoxPresets_SelectionChanged" />
+                    <Button x:Name="AddPresetButton" Style="{StaticResource EqIconButtonStyle}">
+                        <FontIcon FontSize="14" Glyph="&#xE710;" />
+                        <Button.Flyout>
+                            <Flyout
+                                x:Name="AddPresetFlyout"
+                                Opening="AddPresetFlyout_Opening"
+                                Placement="Bottom">
+                                <StackPanel Width="240" Spacing="8">
+                                    <TextBlock
+                                        x:Name="AddPresetFlyoutTitle"
+                                        FontSize="14"
+                                        FontWeight="SemiBold" />
+                                    <TextBox
+                                        x:Name="AddPresetNameBox"
+                                        KeyDown="AddPresetNameBox_KeyDown"
+                                        TextChanged="AddPresetNameBox_TextChanged" />
+                                    <TextBlock
+                                        x:Name="AddPresetOverwriteHint"
+                                        FontSize="12"
+                                        Foreground="{ThemeResource SystemFillColorCautionBrush}"
+                                        TextWrapping="Wrap"
+                                        Visibility="Collapsed" />
+                                    <Button
+                                        x:Name="AddPresetConfirmButton"
+                                        HorizontalAlignment="Right"
+                                        Click="AddPresetConfirmButton_Click"
+                                        Style="{StaticResource AccentButtonStyle}" />
+                                </StackPanel>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                    <Button
+                        x:Name="SavePresetButton"
+                        Click="SavePresetButton_Click"
+                        IsEnabled="False"
+                        Style="{StaticResource EqIconButtonStyle}">
+                        <FontIcon FontSize="14" Glyph="&#xE74E;" />
+                    </Button>
+                    <Button
+                        x:Name="DeletePresetButton"
+                        IsEnabled="False"
+                        Style="{StaticResource EqIconButtonStyle}">
+                        <FontIcon FontSize="14" Glyph="&#xE74D;" />
+                        <Button.Flyout>
+                            <Flyout
+                                x:Name="DeletePresetFlyout"
+                                Opening="DeletePresetFlyout_Opening"
+                                Placement="Bottom">
+                                <StackPanel Width="240" Spacing="8">
+                                    <TextBlock
+                                        x:Name="DeletePresetTargetText"
+                                        FontSize="14"
+                                        FontWeight="SemiBold"
+                                        TextWrapping="Wrap" />
+                                    <TextBlock
+                                        x:Name="DeletePresetConfirmText"
+                                        FontSize="12"
+                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                        TextWrapping="Wrap" />
+                                    <Button
+                                        x:Name="DeletePresetConfirmButton"
+                                        HorizontalAlignment="Right"
+                                        Click="DeletePresetConfirmButton_Click" />
+                                </StackPanel>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                    <Button x:Name="MoreOptionsButton" Style="{StaticResource EqIconButtonStyle}">
+                        <FontIcon FontSize="14" Glyph="&#xE712;" />
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem x:Uid="EqImportItem" Click="ImportPresetItem_Click" />
+                                <MenuFlyoutItem x:Uid="EqExportItem" Click="ExportPresetItem_Click" />
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                </StackPanel>
                 <Button
                     x:Name="CloseButton"
                     Grid.Column="2"
@@ -56,100 +145,10 @@
                 </Button>
             </Grid>
 
-            <!--  预设管理行  -->
-            <StackPanel
-                Grid.Row="1"
-                Margin="0,4,0,0"
-                Orientation="Horizontal"
-                Spacing="4">
-                <ComboBox
-                    x:Name="ComboBoxPresets"
-                    Width="170"
-                    VerticalAlignment="Center"
-                    IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}"
-                    SelectionChanged="ComboBoxPresets_SelectionChanged" />
-                <Button x:Name="AddPresetButton" Style="{StaticResource EqIconButtonStyle}">
-                    <FontIcon FontSize="14" Glyph="&#xE710;" />
-                    <Button.Flyout>
-                        <Flyout
-                            x:Name="AddPresetFlyout"
-                            Opening="AddPresetFlyout_Opening"
-                            Placement="Bottom">
-                            <StackPanel Width="240" Spacing="8">
-                                <TextBlock
-                                    x:Name="AddPresetFlyoutTitle"
-                                    FontSize="14"
-                                    FontWeight="SemiBold" />
-                                <TextBox
-                                    x:Name="AddPresetNameBox"
-                                    KeyDown="AddPresetNameBox_KeyDown"
-                                    TextChanged="AddPresetNameBox_TextChanged" />
-                                <TextBlock
-                                    x:Name="AddPresetOverwriteHint"
-                                    FontSize="12"
-                                    Foreground="{ThemeResource SystemFillColorCautionBrush}"
-                                    TextWrapping="Wrap"
-                                    Visibility="Collapsed" />
-                                <Button
-                                    x:Name="AddPresetConfirmButton"
-                                    HorizontalAlignment="Right"
-                                    Click="AddPresetConfirmButton_Click"
-                                    Style="{StaticResource AccentButtonStyle}" />
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-                <Button
-                    x:Name="SavePresetButton"
-                    Click="SavePresetButton_Click"
-                    IsEnabled="False"
-                    Style="{StaticResource EqIconButtonStyle}">
-                    <FontIcon FontSize="14" Glyph="&#xE74E;" />
-                </Button>
-                <Button
-                    x:Name="DeletePresetButton"
-                    IsEnabled="False"
-                    Style="{StaticResource EqIconButtonStyle}">
-                    <FontIcon FontSize="14" Glyph="&#xE74D;" />
-                    <Button.Flyout>
-                        <Flyout
-                            x:Name="DeletePresetFlyout"
-                            Opening="DeletePresetFlyout_Opening"
-                            Placement="Bottom">
-                            <StackPanel Width="240" Spacing="8">
-                                <TextBlock
-                                    x:Name="DeletePresetTargetText"
-                                    FontSize="14"
-                                    FontWeight="SemiBold"
-                                    TextWrapping="Wrap" />
-                                <TextBlock
-                                    x:Name="DeletePresetConfirmText"
-                                    FontSize="12"
-                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    TextWrapping="Wrap" />
-                                <Button
-                                    x:Name="DeletePresetConfirmButton"
-                                    HorizontalAlignment="Right"
-                                    Click="DeletePresetConfirmButton_Click" />
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-                <Button x:Name="MoreOptionsButton" Style="{StaticResource EqIconButtonStyle}">
-                    <FontIcon FontSize="14" Glyph="&#xE712;" />
-                    <Button.Flyout>
-                        <MenuFlyout>
-                            <MenuFlyoutItem x:Uid="EqImportItem" Click="ImportPresetItem_Click" />
-                            <MenuFlyoutItem x:Uid="EqExportItem" Click="ExportPresetItem_Click" />
-                        </MenuFlyout>
-                    </Button.Flyout>
-                </Button>
-            </StackPanel>
-
             <!--  错误提示（导入/导出失败等）  -->
             <InfoBar
                 x:Name="EqNotifyBar"
-                Grid.Row="2"
+                Grid.Row="1"
                 Margin="0,4,0,0"
                 IsClosable="True"
                 IsOpen="False"
@@ -158,18 +157,18 @@
             <!--  均衡器编辑区（dB 刻度 + 频段滑条）  -->
             <InfoBar
                 x:Name="DspAvailabilityBar"
-                Grid.Row="3"
+                Grid.Row="2"
                 Margin="0,4,0,0"
                 IsClosable="False"
                 IsOpen="False"
                 Severity="Informational" />
             <controls:FrequencyResponseControl
                 x:Name="Response"
-                Grid.Row="4"
+                Grid.Row="3"
                 Margin="4,12,4,8" />
             <controls:EqualizerControl
                 x:Name="Equalizer"
-                Grid.Row="5"
+                Grid.Row="4"
                 Margin="4,8,4,8"
                 IsEnabled="{x:Bind ToggleSwitchEqualizer.IsOn, Mode=OneWay}" />
         </Grid>
