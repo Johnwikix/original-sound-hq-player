@@ -36,6 +36,7 @@ public sealed class PlaybackEngine : IDisposable
 
     private readonly object _streamLock = new();
     private Session? _session;
+    private AtmosProbeCache? _atmosProbeCache;
     private int _dspPublishQueued;
 
     // All session assignments use this hook, including fallback and device recovery.
@@ -268,7 +269,8 @@ public sealed class PlaybackEngine : IDisposable
             && OutputMode is "WasapiExclusivePush" or "WasapiExclusiveEvent"
             && kindOverride is null or RenderKind.Eac3)
         {
-            var encoded = Session.Open(this, url, RenderKind.Eac3, DsdPcmFreq, DsdGain, Latency);
+            var encoded = Session.Open(this, url, RenderKind.Eac3, DsdPcmFreq, DsdGain, Latency,
+                atmosProbeCache: _atmosProbeCache ??= new AtmosProbeCache());
             if (encoded != null) return encoded; // Encoded audio bypasses all PCM effects and volume.
             kindOverride = null;
         }
@@ -342,6 +344,11 @@ public sealed class PlaybackEngine : IDisposable
     private void StartOutputAndPlay()
     {
         var session = _session!;
+        if (session.Kind == RenderKind.Eac3 && session.DecodeFailure != null)
+        {
+            if (!RebuildBitstreamAsPcm(session)) { StopAndNotifyLocked(); return; }
+            session = _session!;
+        }
         IAudioOutput? output = CreateOutput(session);
         if (output == null && OutputMode == "ASIO" && session.Kind == RenderKind.NativeDsd)
         {
@@ -380,6 +387,21 @@ public sealed class PlaybackEngine : IDisposable
             IsPlaying = true;
             _ipc.PlayStateUpdate(true);
         }
+    }
+
+    /// <summary>Control-lock only. Retry once as PCM, preserving audible position and user settings.</summary>
+    private bool RebuildBitstreamAsPcm(Session failed)
+    {
+        if (!ReferenceEquals(failed, _session) || failed.Kind != RenderKind.Eac3 || failed.DecodeFailure == null) return false;
+        long positionMs = GetTimeProgress().currentMs;
+        string? url = MusicUrl;
+        Console.WriteLine($"[engine] E-AC-3 transport failed; retry PCM at {positionMs}ms: {failed.DecodeFailure.Message}");
+        DisposeSession(); // Stop the old carrier before decoding or opening any PCM output.
+        if (string.IsNullOrWhiteSpace(url)) return false;
+        SetSession(OpenSession(url, kindOverride: RenderKind.Pcm));
+        if (_session == null) return false;
+        _session.RequestSeek(positionMs);
+        return true;
     }
 
     private IAudioOutput? CreateOutput(Session session)
@@ -887,6 +909,16 @@ public sealed class PlaybackEngine : IDisposable
             var session = _session;
             var output = _output;
             if (session == null) return;
+            if (session.Kind == RenderKind.Eac3 && session.DecodeFailure != null)
+            {
+                lock (_streamLock)
+                {
+                    if (!IsPlaying || !ReferenceEquals(session, _session)) return;
+                    if (RebuildBitstreamAsPcm(session)) StartOutputAndPlay();
+                    else StopAndNotifyLocked();
+                }
+                return; // A transport failure must never emit PlayEnded or advance the playlist.
+            }
             if (output is { IsFailed: true })
             {
                 if (output is AsioOutput { IsRestartPending: true, IsRestartReady: false }) return;

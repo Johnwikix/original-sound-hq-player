@@ -530,13 +530,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void CancelProgressSeek(long seekId) => _cache.CancelSeek(seekId);
         private long ReadPlaybackClock() => _cache.Load().curMs;
 
-        public void SetTimeProgressCache(long curMs, long totalMs) => _cache.Store(curMs, totalMs);
-
-        public void SetTimeProgressCacheCurMs(long curMs)
-        {
-            var (_, oldTot) = _cache.Load();
-            _cache.Store(curMs, oldTot);
-        }
+        public void MarkPlaybackEnded(long totalMs) => _cache.MarkPlaybackEnded(totalMs);
 
         private async Task PollProgressLoopAsync(CancellationToken ct)
         {

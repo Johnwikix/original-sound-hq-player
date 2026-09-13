@@ -328,15 +328,14 @@ namespace WinUIMusicPlayer.View
         private void Thumb_DragCompleted(object sender, DragCompletedEventArgs e)
         {
             ViewModel.AppViewModel.IsUserDraggingProgressSlider = false;
-            _ = Task.Run(() =>
+            var (_, totalMs) = ViewModel.AppViewModel.GetTimeProgressCache();
+            long newPosMs = Math.Max(0, Math.Min((long)(ViewModel.AppViewModel.ProgressSlider * 1000), totalMs));
+            ViewModel.AppViewModel.IsManualSelect = true;
+            try
             {
-                var (_, totalMs) = ViewModel.AppViewModel.GetTimeProgressCache();
-                long newPosMs = Math.Max(0, Math.Min((long)(ViewModel.AppViewModel.ProgressSlider * 1000), totalMs));
-                ViewModel.AppViewModel.IsManualSelect = true;
                 App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime(newPosMs);
-                ViewModel.AppViewModel.SetTimeProgressCache(newPosMs, totalMs);
-                ViewModel.AppViewModel.IsManualSelect = false;
-            });
+            }
+            finally { ViewModel.AppViewModel.IsManualSelect = false; }
         }
 
         private void EqualizerButton_Click(object sender, RoutedEventArgs e)

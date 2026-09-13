@@ -17,14 +17,31 @@ internal sealed unsafe class Eac3BitstreamReader : IDisposable
     public long TotalMs { get; private set; }
     public bool IsAtmos { get; private set; }
     public uint EncodedChannelMask { get; private set; }
+    internal readonly record struct StreamInfo(int Index, long StartTimestamp, long DurationMs, bool Atmos, uint ChannelMask);
+    internal StreamInfo? ProbedInfo { get; private set; }
+    internal bool ProbeCompleted { get; private set; }
 
-    public bool Open(string path)
+    public bool Open(string path, StreamInfo? cachedInfo = null)
     {
         Dispose();
+        ProbeCompleted = false;
+        ProbedInfo = null;
         AVFormatContext* format = null;
         if (ffmpeg.avformat_open_input(&format, path, null, null) < 0) return false;
         _format = format;
+        // Only immutable metadata is cached; each session owns a new demuxer and packet.
+        if (cachedInfo is { } cached && cached.Index >= 0 && cached.Index < format->nb_streams)
+        {
+            _stream = cached.Index;
+            _startTimestamp = cached.StartTimestamp;
+            TotalMs = cached.DurationMs;
+            IsAtmos = cached.Atmos;
+            EncodedChannelMask = cached.ChannelMask;
+            _packet = ffmpeg.av_packet_alloc();
+            return _packet != null;
+        }
         if (ffmpeg.avformat_find_stream_info(format, null) < 0) return false;
+        ProbeCompleted = true;
         _stream = ffmpeg.av_find_best_stream(format, AVMediaType.AVMEDIA_TYPE_AUDIO, -1, -1, null, 0);
         if (_stream < 0) return false;
         var codec = format->streams[_stream]->codecpar;
@@ -38,6 +55,7 @@ internal sealed unsafe class Eac3BitstreamReader : IDisposable
         EncodedChannelMask = codec->ch_layout.order == AVChannelOrder.AV_CHANNEL_ORDER_NATIVE
             && codec->ch_layout.u.mask is 0x3FUL or 0x60FUL ? (uint)codec->ch_layout.u.mask : 0x3F;
         TotalMs = format->duration > 0 ? (long)Math.Round(format->duration * 1000.0 / ffmpeg.AV_TIME_BASE) : 0;
+        ProbedInfo = new(_stream, _startTimestamp, TotalMs, IsAtmos, EncodedChannelMask);
         _packet = ffmpeg.av_packet_alloc();
         return _packet != null;
     }
@@ -48,8 +66,11 @@ internal sealed unsafe class Eac3BitstreamReader : IDisposable
         destination = destination[..BurstBytes];
         destination.Clear();
         int bytes = 0, blocks = 0;
-        while (_format != null && ffmpeg.av_read_frame(_format, _packet) >= 0)
+        if (_format == null || _packet == null) throw new InvalidOperationException("E-AC-3 reader is not open.");
+        while (true)
         {
+            int result = ffmpeg.av_read_frame(_format, _packet);
+            if (IsEndOfInput(result, blocks)) return 0;
             try
             {
                 if (_packet->stream_index != _stream) continue;
@@ -74,7 +95,15 @@ internal sealed unsafe class Eac3BitstreamReader : IDisposable
             }
             finally { ffmpeg.av_packet_unref(_packet); }
         }
-        return 0;
+    }
+
+    internal static bool IsEndOfInput(int result, int pendingBlocks)
+    {
+        if (result >= 0) return false;
+        if (result != ffmpeg.AVERROR_EOF)
+            throw new IOException($"E-AC-3 packet read failed (FFmpeg {result}).");
+        if (pendingBlocks != 0) throw new InvalidDataException("Incomplete E-AC-3 burst at end of input.");
+        return true;
     }
 
     internal static int GetBlocks(ReadOnlySpan<byte> packet)

@@ -17,6 +17,8 @@ internal sealed class Session : IRenderSource, IDisposable
     private PcmDecoder? _pcm;
     private DsdRawReader? _dsd;
     private Eac3BitstreamReader? _eac3;
+    private Exception? _decodeFailure;
+    public Exception? DecodeFailure => Volatile.Read(ref _decodeFailure);
     private Iec61937Ring? _iecRing;
     private Thread? _thread;
     private volatile bool _cancelled;
@@ -107,7 +109,7 @@ internal sealed class Session : IRenderSource, IDisposable
 
     public static Session? Open(PlaybackEngine engine, string path, RenderKind kind,
         int dsdPcmFreq, int dsdGainDb, int latencyMs, int? forcedRate = null, int? forcedChannels = null,
-        int? maxChannels = null, bool experimentalSurround51 = false)
+        int? maxChannels = null, bool experimentalSurround51 = false, AtmosProbeCache? atmosProbeCache = null)
     {
         switch (kind)
         {
@@ -145,8 +147,13 @@ internal sealed class Session : IRenderSource, IDisposable
             }
             case RenderKind.Eac3:
             {
-                var reader = new Eac3BitstreamReader();
-                if (!reader.Open(path)) { reader.Dispose(); return null; }
+                var reader = atmosProbeCache?.TryOpen(path);
+                if (atmosProbeCache == null)
+                {
+                    reader = new Eac3BitstreamReader();
+                    if (!reader.Open(path)) { reader.Dispose(); return null; }
+                }
+                if (reader == null) return null;
                 const int rate = Eac3BitstreamReader.CarrierRate;
                 var s = new Session(engine, kind, 2, rate, rate, reader.TotalMs, 0)
                 {
@@ -197,7 +204,7 @@ internal sealed class Session : IRenderSource, IDisposable
     public long SubmittedFrames => FramesPlayed;
     public long FramesPlayed => _pcmRing?.FramesPlayed ?? _dopRing?.FramesPlayed ?? _dsdRing?.FramesPlayed ?? _iecRing?.FramesPlayed ?? 0;
     public int ReadyFrames => _pcmRing?.ReadyFrames ?? _dopRing?.ReadyFrames ?? _dsdRing?.ReadyFrames ?? _iecRing?.ReadyFrames ?? 0;
-    public bool IsDrained => _pcmRing?.IsDrained ?? _dopRing?.IsDrained ?? _dsdRing?.IsDrained ?? _iecRing?.IsDrained ?? false;
+    public bool IsDrained => DecodeFailure == null && (_pcmRing?.IsDrained ?? _dopRing?.IsDrained ?? _dsdRing?.IsDrained ?? _iecRing?.IsDrained ?? false);
 
     /// <summary>seek：立即重置环与锚点（进度条即时响应），解码线程随后转到新位置。</summary>
     public void RequestSeek(long targetMs)
@@ -424,7 +431,11 @@ internal sealed class Session : IRenderSource, IDisposable
                 if (!_iecRing!.Push(_decodeScratchB, bytes / 4, _isCancelled, _decodeEpoch) && _cancelled) break;
             }
         }
-        catch (Exception ex) { Console.WriteLine($"[decode] E-AC-3 bitstream: {ex.Message}"); _iecRing?.MarkInputEnded(_decodeEpoch); }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[decode] E-AC-3 bitstream: {ex.Message}");
+            Volatile.Write(ref _decodeFailure, ex); // Engine handles failure; never report natural EOF.
+        }
         finally { DisposeDecoder(); }
     }
 

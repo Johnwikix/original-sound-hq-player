@@ -15,6 +15,26 @@ internal static unsafe partial class Program
 
     private static void RunProgressTests()
     {
+        Run("Progress: acknowledged slider seek keeps accepting same-epoch updates", () =>
+        {
+            var clock = new PlaybackTimeline();
+            clock.Apply(new(2, 1, 1000, 60000, 0, false));
+            clock.BeginSeek(10000, 1);
+            Require(clock.Apply(new(4, 2, 10000, 60000, 0, false, 1)), "seek ack rejected");
+            Require(clock.Apply(new(6, 2, 11000, 60000, 0, false, 1)) && clock.ReadAt(0).curMs == 11000,
+                "seek left clock waiting for another epoch");
+        });
+        Run("Progress: track end holds duration while seek and next track can release it", () =>
+        {
+            var clock = new PlaybackTimeline();
+            clock.Apply(new(2, 1, 9000, 10000, 0, false));
+            clock.MarkPlaybackEnded(10000);
+            Require(!clock.Apply(new(4, 1, 9900, 10000, 0, false)) && clock.ReadAt(0).curMs == 10000, "end did not hold");
+            clock.BeginSeek(2000, 1);
+            Require(clock.Apply(new(6, 2, 2000, 10000, 0, false, 1)), "seek could not release ended state");
+            clock.MarkPlaybackEnded(10000);
+            Require(clock.Apply(new(8, 3, 0, 30000, 0, false, 1)) && clock.ReadAt(0) == (0, 30000), "new track did not release end");
+        });
         Run("Progress: delayed updates cannot rewind the lyric clock; stale extrapolation is bounded", () =>
         {
             var clock = new PlaybackTimeline();

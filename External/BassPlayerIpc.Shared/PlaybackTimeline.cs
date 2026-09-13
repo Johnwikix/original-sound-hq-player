@@ -8,7 +8,7 @@ public sealed class PlaybackTimeline
     private readonly object _gate = new();
     private ProgressSnapshot _snapshot;
     private long _displayMs;
-    private bool _pendingPosition, _paused;
+    private bool _awaitingNextEpoch, _paused;
     private long _pendingSeekId;
 
     public bool Apply(ProgressSnapshot snapshot)
@@ -16,10 +16,11 @@ public sealed class PlaybackTimeline
         lock (_gate)
         {
             if (snapshot.Revision <= _snapshot.Revision) return false;
-            if (_pendingPosition && (_pendingSeekId > 0 ? snapshot.SeekId < _pendingSeekId : snapshot.Epoch == _snapshot.Epoch)) return false;
-            bool discontinuity = _pendingPosition || snapshot.Epoch != _snapshot.Epoch;
+            if (_pendingSeekId > 0 && snapshot.SeekId < _pendingSeekId) return false;
+            if (_awaitingNextEpoch && snapshot.Epoch == _snapshot.Epoch) return false;
+            bool discontinuity = _pendingSeekId > 0 || _awaitingNextEpoch || snapshot.Epoch != _snapshot.Epoch;
             _snapshot = snapshot;
-            _pendingPosition = false;
+            _awaitingNextEpoch = false;
             _pendingSeekId = 0;
             if (discontinuity) _displayMs = Math.Max(0, snapshot.CurrentMs);
             return true;
@@ -32,7 +33,7 @@ public sealed class PlaybackTimeline
     {
         lock (_gate)
         {
-            if (!_pendingPosition)
+            if (_pendingSeekId == 0 && !_awaitingNextEpoch)
             {
                 // Bounded extrapolation: stale/busy/stopped engine must not let lyrics run indefinitely.
                 double elapsed = _snapshot.Playing && !_paused
@@ -44,23 +45,25 @@ public sealed class PlaybackTimeline
         }
     }
 
-    /// <summary>Optimistic local seek/end. Ignore the previous epoch until the engine acknowledges a new timeline.</summary>
-    public void Store(long currentMs, long totalMs)
+    /// <summary>Hold the completed track at its duration until a new session or seek epoch arrives.</summary>
+    public void MarkPlaybackEnded(long totalMs)
     {
         lock (_gate)
         {
-            _displayMs = Math.Max(0, currentMs);
+            _displayMs = Math.Max(0, totalMs);
             _snapshot = _snapshot with { TotalMs = totalMs };
-            _pendingPosition = true;
+            _awaitingNextEpoch = true;
             _pendingSeekId = 0;
         }
     }
 
     public void BeginSeek(long currentMs, long seekId)
     {
+        if (seekId <= 0) throw new ArgumentOutOfRangeException(nameof(seekId));
         lock (_gate)
         {
-            Store(currentMs, _snapshot.TotalMs);
+            _displayMs = Math.Max(0, currentMs);
+            _awaitingNextEpoch = false;
             _pendingSeekId = seekId;
         }
     }
@@ -69,8 +72,7 @@ public sealed class PlaybackTimeline
     {
         lock (_gate)
         {
-            if (!_pendingPosition || _pendingSeekId != seekId) return;
-            _pendingPosition = false;
+            if (_pendingSeekId == 0 || _pendingSeekId != seekId) return;
             _pendingSeekId = 0;
             _displayMs = Math.Max(0, _snapshot.CurrentMs);
         }

@@ -51,7 +51,7 @@ namespace WinUIMusicPlayer.Services
                     AppViewModel.IsPlaying = false;
                     AppViewModel.StopProgressTimer();
                     var (_, total) = AppViewModel.GetTimeProgressCache();
-                    AppViewModel.SetTimeProgressCache(total, total);
+                    AppViewModel.MarkPlaybackEnded(total);
                     AppViewModel.UpdateProgressTimerUI();
                     _ = AutoPlayNextTrack();
                 });

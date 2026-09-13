@@ -7,6 +7,7 @@ using AudioPlayer.Decode;
 using AudioPlayer.Interop;
 using AudioPlayer.Playback;
 using BassPlayerIpc.Shared;
+using FFmpeg.AutoGen;
 
 internal static unsafe partial class Program
 {
@@ -38,12 +39,131 @@ internal static unsafe partial class Program
         Require(reader.ReadBurst(burst) == 0, "EOF not stable");
         Require(reader.SeekToMs(0) && reader.ReadBurst(burst) > 0 && burst.AsSpan().SequenceEqual(first), "rewind changed encoded payload");
         Require(reader.SeekToMs(reader.TotalMs / 2) && reader.ReadBurst(burst) > 0, "seek failed");
+        var cache = new AtmosProbeCache();
+        using (var initial = cache.TryOpen(path)) Require(initial != null, "cache warm-up failed");
+        using var cached = cache.TryOpen(path);
+        Require(cached != null && !cached.ProbeCompleted && cached.IsAtmos == reader.IsAtmos, "cached metadata changed");
+        while (cached!.ReadBurst(burst) > 0) hash.AppendData(burst);
+        Require(Convert.ToHexString(hash.GetHashAndReset()) == expectedHash, "cached stream differs from FFmpeg oracle");
         Console.WriteLine($"IEC61937 exact match: {count} bursts, Atmos={reader.IsAtmos}, SHA256={actualHash}");
     }
 
     private static void RunAtmosTests(string root)
     {
         string path = Path.Combine(AppContext.BaseDirectory, "Fixtures", "eac3-5.1.m4a");
+        Run("Atmos cache: supported files reuse metadata without changing IEC bytes", () =>
+        {
+            var cache = new AtmosProbeCache();
+            using (var first = cache.TryOpen(path)) Require(first?.ProbeCompleted == true, "initial probe missing");
+            using var cached = cache.TryOpen(path);
+            Require(cached != null && !cached.ProbeCompleted, "cache repeated stream-info probe");
+            byte[] burst = new byte[Eac3BitstreamReader.BurstBytes];
+            using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+            while (cached!.ReadBurst(burst) > 0) hash.AppendData(burst);
+            Require(Convert.ToHexString(hash.GetHashAndReset()) == Eac3OracleHash, "cached metadata changed packet stream");
+        });
+        Run("Atmos cache: negative results invalidate on length or timestamp changes", () =>
+        {
+            string copy = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".m4a");
+            var cache = new AtmosProbeCache();
+            try
+            {
+                File.Copy(Path.Combine(root, "_tools", "test_tone.wav"), copy);
+                DateTime stamp = File.GetLastWriteTimeUtc(copy);
+                Require(cache.TryOpen(copy) == null && cache.TryOpen(copy) == null, "PCM incorrectly selected");
+                File.Copy(path, copy, true);
+                File.SetLastWriteTimeUtc(copy, stamp); // Only size changes.
+                using (var fresh = cache.TryOpen(copy)) Require(fresh?.ProbeCompleted == true, "length change did not invalidate");
+                File.SetLastWriteTimeUtc(copy, stamp.AddSeconds(10)); // Same bytes and size, new timestamp.
+                using (var fresh = cache.TryOpen(copy)) Require(fresh?.ProbeCompleted == true, "timestamp change did not invalidate");
+                using (var hit = cache.TryOpen(copy)) Require(hit != null && !hit.ProbeCompleted, "new identity not cached");
+            }
+            finally { File.Delete(copy); }
+        });
+        Run("Atmos cache: failed opens are not cached as unsupported formats", () =>
+        {
+            string copy = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".m4a");
+            var cache = new AtmosProbeCache();
+            try
+            {
+                Require(cache.TryOpen(copy) == null, "missing file opened");
+                File.Copy(path, copy);
+                using var reader = cache.TryOpen(copy);
+                Require(reader != null, "missing-file result poisoned cache");
+            }
+            finally { File.Delete(copy); }
+        });
+        Run("Atmos cache: capacity is bounded and eviction keeps recent entries", () =>
+        {
+            var cache = new AtmosProbeCache();
+            string prefix = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+            string last = "";
+            try
+            {
+                for (int i = 0; i <= AtmosProbeCache.Capacity; i++)
+                {
+                    string copy = prefix + i + ".m4a";
+                    File.Copy(path, copy);
+                    try { using var reader = cache.TryOpen(copy); Require(reader != null, "cache fixture failed"); }
+                    finally { if (i < AtmosProbeCache.Capacity) File.Delete(copy); else last = copy; }
+                }
+                var entries = (System.Collections.IDictionary)typeof(AtmosProbeCache).GetField("_entries", Private)!.GetValue(cache)!;
+                Require(entries.Count == AtmosProbeCache.Capacity, "cache exceeded capacity");
+                using var recent = cache.TryOpen(last);
+                Require(recent != null && !recent.ProbeCompleted, "eviction removed recent metadata");
+            }
+            finally { if (last.Length > 0) File.Delete(last); }
+        });
+        Run("Atmos transport: distinguish EOF, read errors and incomplete bursts", () =>
+        {
+            Require(Eac3BitstreamReader.IsEndOfInput(ffmpeg.AVERROR_EOF, 0), "EOF rejected");
+            Require(!Eac3BitstreamReader.IsEndOfInput(0, 0), "successful read treated as EOF");
+            try { Eac3BitstreamReader.IsEndOfInput(-5, 0); throw new Exception("I/O failure treated as EOF"); }
+            catch (IOException) { }
+            try { Eac3BitstreamReader.IsEndOfInput(ffmpeg.AVERROR_EOF, 3); throw new Exception("partial burst treated as EOF"); }
+            catch (InvalidDataException) { }
+        });
+        Run("Atmos transport: malformed access unit reports failure and rebuilds PCM at the same position", () =>
+        {
+            string copy = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".m4a");
+            Session? pcm = null;
+            try
+            {
+                byte[] file = File.ReadAllBytes(path);
+                AVFormatContext* format = null;
+                AVPacket* packet = ffmpeg.av_packet_alloc();
+                try
+                {
+                    Require(ffmpeg.avformat_open_input(&format, path, null, null) == 0, "fixture open failed");
+                    int audio = ffmpeg.av_find_best_stream(format, AVMediaType.AVMEDIA_TYPE_AUDIO, -1, -1, null, 0);
+                    int count = 0;
+                    long offset = -1;
+                    while (ffmpeg.av_read_frame(format, packet) >= 0)
+                    {
+                        if (packet->stream_index == audio && ++count == 3) offset = packet->pos;
+                        ffmpeg.av_packet_unref(packet);
+                        if (offset >= 0) break;
+                    }
+                    Require(offset >= 0 && file[offset] == 0x0B && file[offset + 1] == 0x77, "fixture packet offset missing");
+                    file[offset + 2] |= 0x80; // Converted independent stream type is outside this transport's supported grouping.
+                }
+                finally { ffmpeg.av_packet_free(&packet); ffmpeg.avformat_close_input(&format); }
+                File.WriteAllBytes(copy, file);
+                var engine = Engine("WasapiExclusiveEvent");
+                engine.ExperimentalAtmosPassthrough = true;
+                engine.MusicUrl = copy;
+                using var failed = (Session?)Invoke(engine, "OpenSession", copy, false, null);
+                Require(failed?.Kind == RenderKind.Eac3, "encoded session not selected");
+                Require(SpinWait.SpinUntil(() => failed!.DecodeFailure != null, 2000), "decode failure not published");
+                Require(!failed!.IsDrained, "failure reported as natural EOF");
+                failed.AnchorFrames = failed.MsToFrames(500);
+                Set(engine, "_session", failed);
+                Require((bool)Invoke(engine, "RebuildBitstreamAsPcm", failed)!, "PCM rebuild failed");
+                pcm = (Session)typeof(PlaybackEngine).GetField("_session", Private)!.GetValue(engine)!;
+                Require(pcm.Kind == RenderKind.Pcm && pcm.CurrentMs == 500, "fallback retried Atmos or lost position");
+            }
+            finally { pcm?.Dispose(); File.Delete(copy); }
+        });
         Run("Atmos transport: E-AC-3 bursts equal independent FFmpeg reference", () => CheckAtmosFile(path, Eac3OracleHash));
         Run("Atmos transport: full ring never publishes a partial compressed burst", () =>
         {
