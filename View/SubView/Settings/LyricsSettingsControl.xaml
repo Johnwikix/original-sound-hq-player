@@ -27,26 +27,18 @@
                     <RepositionThemeTransition IsStaggeringEnabled="True" />
                 </StackPanel.ChildrenTransitions>
 
-                <TextBlock
-                    x:Uid="SettingLyrics"
-                    Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+                <TextBlock x:Uid="SettingLyrics" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="AutoLyricMatching"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="AutoLyricMatching" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
-                    <ToggleSwitch
-                        MinWidth="0"
-                        IsOn="{x:Bind ViewModel.AppViewModel.IsAutoLyricsEnabled, Mode=TwoWay}" />
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsAutoLyricsEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="LyricsFontFamily"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="LyricsFontFamily" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <ComboBox
                         x:Name="LyricsFontFamily"
@@ -58,9 +50,7 @@
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="LyricsFontSize"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="LyricsFontSize" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <Grid Width="300" ColumnDefinitions="Auto,*">
                         <ToggleSwitch
@@ -81,13 +71,9 @@
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="LyricsFontWeight"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="LyricsFontWeight" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
-                    <ComboBox
-                        Width="300"
-                        SelectedIndex="{x:Bind ViewModel.AppViewModel.LyricsFontWeightIndex, Mode=TwoWay}">
+                    <ComboBox Width="300" SelectedIndex="{x:Bind ViewModel.AppViewModel.LyricsFontWeightIndex, Mode=TwoWay}">
                         <ComboBoxItem x:Uid="DesktopLyricsWeightNormal" />
                         <ComboBoxItem x:Uid="DesktopLyricsWeightMedium" />
                         <ComboBoxItem x:Uid="DesktopLyricsWeightSemiBold" />
@@ -97,9 +83,7 @@
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="LyricsAlignment"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="LyricsAlignment" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <ComboBox
                         x:Name="LyricsAlignmentComboBox"
@@ -114,9 +98,7 @@
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="LyricsMargin"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="LyricsMargin" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <NumberBox
                         x:Name="LyricsMarginNumberBox"
@@ -130,9 +112,7 @@
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="LyricsBlurAmount"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="LyricsBlurAmount" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <Grid Width="300" ColumnDefinitions="100,*">
                         <TextBlock
@@ -153,9 +133,7 @@
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="PlayingLineTopOffset"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="PlayingLineTopOffset" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <Grid Width="300" ColumnDefinitions="100,*">
                         <TextBlock
@@ -176,9 +154,7 @@
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="UnplayedOpacity"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="UnplayedOpacity" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <Grid Width="300" ColumnDefinitions="100,*">
                         <TextBlock
@@ -199,9 +175,7 @@
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="TranslatedOpacity"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="TranslatedOpacity" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <Grid Width="300" ColumnDefinitions="100,*">
                         <TextBlock
@@ -223,19 +197,13 @@
                 <!--  高级歌词效果:依赖总开关的细项收进二级折叠  -->
                 <controls:SettingsExpander Description="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}">
                     <controls:SettingsExpander.Header>
-                        <TextBlock
-                            x:Uid="EnableAdvancedLyricsEffect"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="EnableAdvancedLyricsEffect" TextWrapping="Wrap" />
                     </controls:SettingsExpander.Header>
-                    <ToggleSwitch
-                        MinWidth="0"
-                        IsOn="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=TwoWay}" />
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=TwoWay}" />
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
                             <controls:SettingsCard.Header>
-                                <TextBlock
-                                    x:Uid="CharFloatAmount"
-                                    TextWrapping="Wrap" />
+                                <TextBlock x:Uid="CharFloatAmount" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
                             <Grid Width="300" ColumnDefinitions="100,*">
                                 <TextBlock
@@ -256,9 +224,7 @@
 
                         <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
                             <controls:SettingsCard.Header>
-                                <TextBlock
-                                    x:Uid="CharScaleAmount"
-                                    TextWrapping="Wrap" />
+                                <TextBlock x:Uid="CharScaleAmount" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
                             <Grid Width="300" ColumnDefinitions="100,*">
                                 <TextBlock
@@ -279,9 +245,7 @@
 
                         <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
                             <controls:SettingsCard.Header>
-                                <TextBlock
-                                    x:Uid="GlowAmount"
-                                    TextWrapping="Wrap" />
+                                <TextBlock x:Uid="GlowAmount" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
                             <Grid Width="300" ColumnDefinitions="100,*">
                                 <TextBlock
@@ -302,9 +266,7 @@
 
                         <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
                             <controls:SettingsCard.Header>
-                                <TextBlock
-                                    x:Uid="LongSyllableThreshold"
-                                    TextWrapping="Wrap" />
+                                <TextBlock x:Uid="LongSyllableThreshold" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
                             <Grid Width="300" ColumnDefinitions="100,*">
                                 <TextBlock
@@ -325,9 +287,7 @@
 
                         <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}">
                             <controls:SettingsCard.Header>
-                                <TextBlock
-                                    x:Uid="TargetFrameRate"
-                                    TextWrapping="Wrap" />
+                                <TextBlock x:Uid="TargetFrameRate" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
                             <ComboBox
                                 Width="300"
@@ -349,9 +309,7 @@
                                 <TextBlock x:Uid="EnableCustomLyricsColor" />
                             </controls:SettingsCard.Header>
                             <controls:SettingsCard.Description>
-                                <TextBlock
-                                    x:Uid="EnableCustomLyricsColorHint"
-                                    TextWrapping="Wrap" />
+                                <TextBlock x:Uid="EnableCustomLyricsColorHint" TextWrapping="Wrap" />
                             </controls:SettingsCard.Description>
                             <Grid Width="300" ColumnDefinitions="Auto,*">
                                 <ToggleSwitch
@@ -372,13 +330,9 @@
                                 <TextBlock x:Uid="ScrollEasingType" />
                             </controls:SettingsCard.Header>
                             <controls:SettingsCard.Description>
-                                <TextBlock
-                                    x:Uid="EasingTypeDescription"
-                                    TextWrapping="Wrap" />
+                                <TextBlock x:Uid="EasingTypeDescription" TextWrapping="Wrap" />
                             </controls:SettingsCard.Description>
-                            <ComboBox
-                                Width="300"
-                                SelectedIndex="{x:Bind ViewModel.AppViewModel.ScrollEasingTypeIndex, Mode=TwoWay}">
+                            <ComboBox Width="300" SelectedIndex="{x:Bind ViewModel.AppViewModel.ScrollEasingTypeIndex, Mode=TwoWay}">
                                 <ComboBoxItem x:Uid="EasingTypeLinear" />
                                 <ComboBoxItem x:Uid="EasingTypeSmoothStep" />
                                 <ComboBoxItem x:Uid="EasingTypeSine" />
@@ -391,6 +345,7 @@
                                 <ComboBoxItem x:Uid="EasingTypeBack" />
                                 <ComboBoxItem x:Uid="EasingTypeElastic" />
                                 <ComboBoxItem x:Uid="EasingTypeBounce" />
+                                <ComboBoxItem x:Uid="EasingTypeFlowWave" />
                             </ComboBox>
                         </controls:SettingsCard>
 
@@ -399,31 +354,24 @@
                                 <TextBlock x:Uid="ScrollEasingMode" />
                             </controls:SettingsCard.Header>
                             <controls:SettingsCard.Description>
-                                <TextBlock
-                                    x:Uid="EaseModeDescription"
-                                    TextWrapping="Wrap" />
+                                <TextBlock x:Uid="EaseModeDescription" TextWrapping="Wrap" />
                             </controls:SettingsCard.Description>
-                            <ComboBox
-                                Width="300"
-                                SelectedIndex="{x:Bind ViewModel.AppViewModel.ScrollEasingModeIndex, Mode=TwoWay}">
+                            <ComboBox Width="300" SelectedIndex="{x:Bind ViewModel.AppViewModel.ScrollEasingModeIndex, Mode=TwoWay}">
                                 <ComboBoxItem x:Uid="EaseModeIn" />
                                 <ComboBoxItem x:Uid="EaseModeOut" />
                                 <ComboBoxItem x:Uid="EaseModeInOut" />
                                 <ComboBoxItem x:Uid="EaseModeContinuous" />
+                                <ComboBoxItem x:Uid="EaseModeFlowWave" />
                             </ComboBox>
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
 
-                <TextBlock
-                    x:Uid="IconDesktopLyrics"
-                    Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+                <TextBlock x:Uid="IconDesktopLyrics" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="DesktopLyricsFontSize"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="DesktopLyricsFontSize" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <NumberBox
                         Width="300"
@@ -437,9 +385,7 @@
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="DesktopLyricsFontFamily"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="DesktopLyricsFontFamily" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <ComboBox
                         Width="300"
@@ -450,13 +396,9 @@
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="DesktopLyricsFontWeight"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="DesktopLyricsFontWeight" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
-                    <ComboBox
-                        Width="300"
-                        SelectedIndex="{x:Bind ViewModel.AppViewModel.DesktopLyricsWeightIndex, Mode=TwoWay}">
+                    <ComboBox Width="300" SelectedIndex="{x:Bind ViewModel.AppViewModel.DesktopLyricsWeightIndex, Mode=TwoWay}">
                         <ComboBoxItem x:Uid="DesktopLyricsWeightNormal" />
                         <ComboBoxItem x:Uid="DesktopLyricsWeightMedium" />
                         <ComboBoxItem x:Uid="DesktopLyricsWeightSemiBold" />
@@ -466,9 +408,7 @@
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="DesktopLyricsCustomColor"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="DesktopLyricsCustomColor" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <Grid Width="300" ColumnDefinitions="Auto,*">
                         <ToggleSwitch
@@ -486,20 +426,14 @@
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="DesktopLyricsTranslation"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="DesktopLyricsTranslation" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
-                    <ToggleSwitch
-                        MinWidth="0"
-                        IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsTranslationEnabled, Mode=TwoWay}" />
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsTranslationEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock
-                            x:Uid="DesktopLyricsShadowAmount"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="DesktopLyricsShadowAmount" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <Grid Width="300" ColumnDefinitions="100,*">
                         <TextBlock
@@ -521,30 +455,20 @@
                 <!--  卡拉OK效果:依赖卡拉OK开关的细项收进二级折叠  -->
                 <controls:SettingsExpander>
                     <controls:SettingsExpander.Header>
-                        <TextBlock
-                            x:Uid="DesktopLyricsKaraoke"
-                            TextWrapping="Wrap" />
+                        <TextBlock x:Uid="DesktopLyricsKaraoke" TextWrapping="Wrap" />
                     </controls:SettingsExpander.Header>
-                    <ToggleSwitch
-                        MinWidth="0"
-                        IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=TwoWay}" />
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=TwoWay}" />
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}">
                             <controls:SettingsCard.Header>
-                                <TextBlock
-                                    x:Uid="DesktopLyricsGlow"
-                                    TextWrapping="Wrap" />
+                                <TextBlock x:Uid="DesktopLyricsGlow" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
-                            <ToggleSwitch
-                                MinWidth="0"
-                                IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsGlowEnabled, Mode=TwoWay}" />
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsGlowEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
 
                         <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}">
                             <controls:SettingsCard.Header>
-                                <TextBlock
-                                    x:Uid="DesktopLyricsGlowAmount"
-                                    TextWrapping="Wrap" />
+                                <TextBlock x:Uid="DesktopLyricsGlowAmount" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
                             <Grid Width="300" ColumnDefinitions="100,*">
                                 <TextBlock
@@ -565,20 +489,14 @@
 
                         <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}">
                             <controls:SettingsCard.Header>
-                                <TextBlock
-                                    x:Uid="DesktopLyricsCharFloat"
-                                    TextWrapping="Wrap" />
+                                <TextBlock x:Uid="DesktopLyricsCharFloat" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
-                            <ToggleSwitch
-                                MinWidth="0"
-                                IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCharFloatEnabled, Mode=TwoWay}" />
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCharFloatEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
 
                         <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}">
                             <controls:SettingsCard.Header>
-                                <TextBlock
-                                    x:Uid="DesktopLyricsCharFloatAmount"
-                                    TextWrapping="Wrap" />
+                                <TextBlock x:Uid="DesktopLyricsCharFloatAmount" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
                             <Grid Width="300" ColumnDefinitions="100,*">
                                 <TextBlock
@@ -599,20 +517,14 @@
 
                         <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}">
                             <controls:SettingsCard.Header>
-                                <TextBlock
-                                    x:Uid="DesktopLyricsCharScale"
-                                    TextWrapping="Wrap" />
+                                <TextBlock x:Uid="DesktopLyricsCharScale" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
-                            <ToggleSwitch
-                                MinWidth="0"
-                                IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCharScaleEnabled, Mode=TwoWay}" />
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsCharScaleEnabled, Mode=TwoWay}" />
                         </controls:SettingsCard>
 
                         <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}">
                             <controls:SettingsCard.Header>
-                                <TextBlock
-                                    x:Uid="DesktopLyricsCharScaleAmount"
-                                    TextWrapping="Wrap" />
+                                <TextBlock x:Uid="DesktopLyricsCharScaleAmount" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
                             <Grid Width="300" ColumnDefinitions="100,*">
                                 <TextBlock
@@ -633,9 +545,7 @@
 
                         <controls:SettingsCard IsEnabled="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsKaraokeEnabled, Mode=OneWay}">
                             <controls:SettingsCard.Header>
-                                <TextBlock
-                                    x:Uid="DesktopLyricsLongSyllableThreshold"
-                                    TextWrapping="Wrap" />
+                                <TextBlock x:Uid="DesktopLyricsLongSyllableThreshold" TextWrapping="Wrap" />
                             </controls:SettingsCard.Header>
                             <Grid Width="300" ColumnDefinitions="100,*">
                                 <TextBlock

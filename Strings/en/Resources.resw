@@ -1809,6 +1809,21 @@
   <data name="CurveCustom" xml:space="preserve"><value>Custom curve</value></data>
   <data name="CurvePresetEmpty" xml:space="preserve"><value>No saved curves</value></data>
   <data name="DspAutoPreamp" xml:space="preserve"><value>Automatic gain/attenuation</value></data>
+  <data name="EasingTypeFlowWave.Content" xml:space="preserve">
+    <value>Flow Wave (spring)</value>
+  </data>
+  <data name="EaseModeFlowWave.Content" xml:space="preserve">
+    <value>Flow Wave (staggered lines)</value>
+  </data>
+  <data name="CurveUpdatePreset.Content" xml:space="preserve">
+    <value>Update selected preset</value>
+  </data>
+  <data name="CurveDeletePreset.Content" xml:space="preserve">
+    <value>Delete preset</value>
+  </data>
+  <data name="CurveDeletePresetConfirmation" xml:space="preserve">
+    <value>Delete preset “{0}”? Your current curve will be kept.</value>
+  </data>
 </root>
 
 

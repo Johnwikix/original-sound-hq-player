@@ -120,9 +120,30 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             double lyricsY,
             double lyricsHeight,
             double canvasHeight,
-            double playingLineTopOffsetFactor)
+            double playingLineTopOffsetFactor,
+            bool independentScroll = false,
+            double mouseScrollOffset = 0)
         {
             if (lines == null || lines.Count == 0) return (-1, -1);
+
+            if (independentScroll)
+            {
+                int first = -1, last = -1;
+                // Staggered rows need not remain sorted during seeks/retargets.
+                for (int i = 0; i < lines.Count; i++)
+                {
+                    var line = lines[i];
+                    double y = lyricsY + lyricsHeight * playingLineTopOffsetFactor
+                        + line.ScrollMotion.Value + mouseScrollOffset;
+                    double scale = line.ScaleTransition.Value;
+                    double top = line.CenterPosition.Y + (line.TopLeftPosition.Y - line.CenterPosition.Y) * scale + y;
+                    double bottom = line.CenterPosition.Y + (line.BottomRightPosition.Y - line.CenterPosition.Y) * scale + y;
+                    if (bottom < 0 || top > canvasHeight) continue;
+                    if (first < 0) first = i;
+                    last = i;
+                }
+                return (first, last);
+            }
 
             double offset = currentScrollOffset + lyricsY + lyricsHeight * playingLineTopOffsetFactor;
 
@@ -141,9 +162,30 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             Point mousePosition,
             double currentScrollOffset,
             double lyricsHeight,
-            double playingLineTopOffsetFactor)
+            double playingLineTopOffsetFactor,
+            bool independentScroll = false,
+            double mouseScrollOffset = 0)
         {
             if (!isMouseInLyricsArea || lines == null || lines.Count == 0) return -1;
+
+            if (independentScroll)
+            {
+                // Reverse draw order selects the topmost rendered row on overlap.
+                for (int i = lines.Count - 1; i >= 0; i--)
+                {
+                    var line = lines[i];
+                    if (line.PrimaryTextLayout == null) continue;
+                    double scale = line.ScaleTransition.Value;
+                    if (scale <= 0) continue;
+                    double y = line.ScrollMotion.Value + mouseScrollOffset + lyricsHeight * playingLineTopOffsetFactor;
+                    double localX = line.CenterPosition.X + (mousePosition.X - line.CenterPosition.X) / scale;
+                    double localY = line.CenterPosition.Y + (mousePosition.Y - y - line.CenterPosition.Y) / scale;
+                    if (localX >= line.TopLeftPosition.X && localX <= line.BottomRightPosition.X
+                        && localY >= line.TopLeftPosition.Y && localY <= line.BottomRightPosition.Y)
+                        return i;
+                }
+                return -1;
+            }
 
             double yOffset = currentScrollOffset + lyricsHeight * playingLineTopOffsetFactor;
 

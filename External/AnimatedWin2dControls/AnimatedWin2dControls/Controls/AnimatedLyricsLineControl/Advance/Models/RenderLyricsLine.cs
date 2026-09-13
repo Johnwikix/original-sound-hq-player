@@ -27,6 +27,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public ValueTransition<double> SecondaryXOffsetTransition { get; set; }
 
         public ValueTransition<double> YOffsetTransition { get; set; }
+        public LyricScrollMotion ScrollMotion { get; } = new();
 
         public CanvasTextLayout? PrimaryTextLayout { get; private set; }
         public CanvasTextLayout? SecondaryTextLayout { get; private set; }

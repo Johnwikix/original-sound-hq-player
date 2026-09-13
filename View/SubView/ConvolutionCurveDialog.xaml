@@ -13,6 +13,16 @@
     <ContentDialog.Resources>
         <x:Double x:Key="ContentDialogMaxWidth">960</x:Double>
     </ContentDialog.Resources>
+    <ContentDialog.CloseButtonStyle>
+        <Style TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+    </ContentDialog.CloseButtonStyle>
+    <ContentDialog.PrimaryButtonStyle>
+        <Style TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
+            <Setter Property="CornerRadius" Value="8" />
+        </Style>
+    </ContentDialog.PrimaryButtonStyle>
     <ScrollViewer
         x:Name="EditorScroll"
         Padding="15,0"
@@ -96,6 +106,7 @@
                     x:Uid="CurvePresets"
                     HorizontalAlignment="Stretch"
                     ItemsSource="{x:Bind ViewModel.Presets}"
+                    IsEnabled="{x:Bind ViewModel.CanSavePreset, Mode=OneWay}"
                     SelectedItem="{x:Bind ViewModel.SelectedPreset, Mode=TwoWay}"
                     PlaceholderText="{x:Bind ViewModel.PresetPlaceholder, Mode=OneWay}">
                     <ComboBox.ItemTemplate>
@@ -104,7 +115,7 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
-                <Button x:Uid="CurveSavePreset" Grid.Column="1">
+                <Button x:Uid="CurveSavePreset" Grid.Column="1" IsEnabled="{x:Bind ViewModel.CanSavePreset, Mode=OneWay}">
                     <Button.Flyout>
                         <Flyout x:Name="SaveFlyout">
                             <StackPanel Width="240" Spacing="8">
@@ -118,6 +129,19 @@
                     </Button.Flyout>
                 </Button>
             </Grid>
+            <StackPanel x:Name="PresetActions" Orientation="Horizontal" Spacing="8">
+                <Button x:Uid="CurveUpdatePreset" Command="{x:Bind ViewModel.UpdatePresetCommand}" />
+                <Button x:Uid="CurveDeletePreset" IsEnabled="{x:Bind ViewModel.CanDeletePreset, Mode=OneWay}">
+                    <Button.Flyout>
+                        <Flyout x:Name="DeleteFlyout">
+                            <StackPanel MaxWidth="280" Spacing="12">
+                                <TextBlock Text="{x:Bind ViewModel.DeletePresetConfirmation, Mode=OneWay}" TextWrapping="Wrap" />
+                                <Button x:Uid="CurveDeletePreset" Command="{x:Bind ViewModel.DeletePresetCommand}" />
+                            </StackPanel>
+                        </Flyout>
+                    </Button.Flyout>
+                </Button>
+            </StackPanel>
             <InfoBar
                 x:Name="Notice"
                 IsClosable="False"

@@ -521,6 +521,7 @@
                         <ComboBoxItem x:Uid="EasingTypeBack" />
                         <ComboBoxItem x:Uid="EasingTypeElastic" />
                         <ComboBoxItem x:Uid="EasingTypeBounce" />
+                        <ComboBoxItem x:Uid="EasingTypeFlowWave" />
                     </ComboBox>
                 </StackPanel>
                 <StackPanel
@@ -546,6 +547,7 @@
                         <ComboBoxItem x:Uid="EaseModeOut" />
                         <ComboBoxItem x:Uid="EaseModeInOut" />
                         <ComboBoxItem x:Uid="EaseModeContinuous" />
+                        <ComboBoxItem x:Uid="EaseModeFlowWave" />
                     </ComboBox>
                 </StackPanel>
                 <!--  Row 7: 流体背景 | 启用高级逐字歌词特效  -->

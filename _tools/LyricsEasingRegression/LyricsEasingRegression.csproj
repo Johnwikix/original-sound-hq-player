@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Model/LyricsEasingJsonConverters.cs" />
+    <Compile Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedLyricsLineControl/Advance/Layout/LyricsLayoutManager.cs" />
+    <Compile Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedLyricsLineControl/Advance/Animation/LyricScrollMotion.cs" />
+    <Compile Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedLyricsLineControl/Advance/Animation/EasingHelper.cs" />
+    <Compile Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedLyricsLineControl/Advance/Enums/EaseMode.cs" />
+    <Compile Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedLyricsLineControl/Advance/Enums/EasingType.cs" />
+  </ItemGroup>
+</Project>

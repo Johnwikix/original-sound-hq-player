@@ -41,6 +41,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     EasingType.Bounce => EaseInBounce,
                     EasingType.SmoothStep => SmoothStep,
                     EasingType.Linear => Linear,
+                    EasingType.FlowWave => EaseInFlowWave,
                     _ => EaseInQuad,
                 };
                 double t = Ease(progress, easingMode, easeInFunc);
@@ -61,6 +62,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 EaseMode.In => easeIn(tt),
                 EaseMode.Out => T.One - easeIn(T.One - tt),
                 EaseMode.Continuous => T.One - easeIn(T.One - tt),
+                EaseMode.FlowWave => T.One - easeIn(T.One - tt),
                 EaseMode.InOut => tt < half
                     ? easeIn(tt * two) / two
                     : T.One - (easeIn((T.One - tt) * two) / two),
@@ -72,6 +74,20 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         public static T EaseInSine<T>(T t) where T : IFloatingPointIeee754<T>
             => T.One - T.Cos((t * T.Pi) / T.CreateChecked(2));
+
+        // Scalar preview of a resting critically damped spring. The lyrics renderer
+        // uses LyricScrollMotion to retain velocity across changing destinations.
+        public static T EaseInFlowWave<T>(T t) where T : IFloatingPointIeee754<T>
+        {
+            if (t <= T.Zero) return T.Zero;
+            if (t >= T.One) return T.One;
+            const double damping = 7.0;
+            const double tail = 0.0009118819655545162; // exp(-7)
+            double reversed = 1.0 - double.CreateChecked(t);
+            double easeOut = (1.0 - (1.0 + damping * reversed) * Math.Exp(-damping * reversed))
+                / (1.0 - (1.0 + damping) * tail);
+            return T.CreateChecked(1.0 - easeOut);
+        }
 
         public static T EaseInQuad<T>(T t) where T : INumber<T> => t * t;
 

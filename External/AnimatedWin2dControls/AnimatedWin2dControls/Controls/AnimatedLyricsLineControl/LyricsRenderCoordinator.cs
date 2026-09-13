@@ -84,6 +84,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private double _internalTimeMs;
         private double _lastExternalTimeMs;
+        private double _lastScrollPositionMs = double.NaN;
         private const double SyncThresholdMs = 250.0;
 
         public double AutoScrollSpeed = 4.0;
@@ -129,8 +130,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private double _cachedTranslatedOpacity = 0.6;
         private double _cachedStrokeWidth;
         private int _cachedFontWeight = 700;
-        private EasingType _cachedScrollEasingType = EasingType.Sine;
-        private EaseMode _cachedScrollEasingMode = EaseMode.Continuous;
+        private EasingType _cachedScrollEasingType = EasingType.FlowWave;
+        private EaseMode _cachedScrollEasingMode = EaseMode.FlowWave;
+        private bool UsesLineScroll => _cachedScrollEasingType == EasingType.FlowWave
+            || _cachedScrollEasingMode == EaseMode.FlowWave;
         private double _cachedScrollDurationMs = 500;
         private double _cachedPlayingLineTopOffset = 0.35;
         private double _cachedTargetFrameRate = 120.0;
@@ -424,8 +427,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
 
             double dt = args.Timing.ElapsedTime.TotalSeconds;
+            bool isScrollSeek = double.IsFinite(_lastScrollPositionMs)
+                && Math.Abs(currentTimeMs - _lastScrollPositionMs - (_cachedIsPlaying ? dt * 1000 : 0)) > SyncThresholdMs;
+            _lastScrollPositionMs = currentTimeMs;
 
-            if (!_userScrolling && _cachedIsPlaying && _currentLineIndex >= 0 && _currentLineIndex < lines.Count)
+            if (!_userScrolling && (_cachedIsPlaying || UsesLineScroll)
+                && _currentLineIndex >= 0 && _currentLineIndex < lines.Count)
             {
                 var targetScroll = LyricsLayoutManager.CalculateTargetScrollOffset(lines, _currentLineIndex);
                 if (targetScroll.HasValue)
@@ -436,7 +443,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                         _targetScrollY = targetScroll.Value;
                         _smoothedScrollY = targetScroll.Value;
                     }
-                    else if (_cachedScrollEasingMode == EaseMode.Continuous)
+                    else if (_cachedScrollEasingMode == EaseMode.Continuous && !UsesLineScroll)
                     {
                         _canvasYScrollTransition.SetDurationMs(300);
                         _canvasYScrollTransition.Start(targetScroll.Value);
@@ -471,8 +478,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             double canvasHeight = RegionH > 0 ? RegionH : 400;
             double playingLineTopOffsetFactor = _cachedPlayingLineTopOffset;
 
+            if (UsesLineScroll)
+                UpdateLineScrolls(dt, canvasHeight, isPrimaryPlayingLineChanged && !isScrollSeek);
+
             var visibleRange = LyricsLayoutManager.CalculateVisibleRange(
-                lines, combinedScroll, 0, canvasHeight, canvasHeight, playingLineTopOffsetFactor);
+                lines, combinedScroll, 0, canvasHeight, canvasHeight, playingLineTopOffsetFactor,
+                UsesLineScroll, _mouseYScrollTransition.Value);
 
             _cachedVisibleStart = visibleRange.Start;
             _cachedVisibleEnd = visibleRange.End;
@@ -524,6 +535,48 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             HandleHoverUpdates(combinedScroll, canvasHeight, playingLineTopOffsetFactor);
         }
 
+        private void UpdateLineScrolls(double seconds, double canvasHeight, bool lineChanged)
+        {
+            double target = _lastTargetScrollY;
+            double duration = Math.Max(0, _cachedScrollDurationMs / 1000.0);
+            bool regularAdvance = lineChanged && _currentLineIndex == _lastCurrentLineIndex + 1
+                && _lastCurrentLineIndex >= 0;
+            // Fast lyrics must not build a queue longer than the next line's entrance.
+            if (regularAdvance && _currentLineIndex + 1 < _renderLines.Count)
+            {
+                double interval = (_renderLines[_currentLineIndex + 1].StartMs
+                    - _renderLines[_currentLineIndex].StartMs) / 1000.0;
+                if (interval > 0) duration = Math.Min(duration, interval * 0.85);
+            }
+            bool stagger = _cachedScrollEasingMode == EaseMode.FlowWave && regularAdvance
+                && !_userScrolling && !_isUserScrollingChanged;
+            int firstVisible = 0;
+            double anchor = canvasHeight * _cachedPlayingLineTopOffset;
+            while (firstVisible < _renderLines.Count - 1
+                && _renderLines[firstVisible].BottomRightPosition.Y + target + anchor < 0)
+                firstVisible++;
+
+            var interpolator = EasingHelper.GetInterpolatorByEasingType<double>(
+                _cachedScrollEasingType, _cachedScrollEasingMode);
+            bool spring = _cachedScrollEasingType == EasingType.FlowWave
+                && _cachedScrollEasingMode != EaseMode.In && _cachedScrollEasingMode != EaseMode.InOut;
+            if (_layoutDirty)
+            {
+                foreach (var line in _renderLines) line.ScrollMotion.JumpTo(target);
+            }
+            for (int i = 0; i < _renderLines.Count; i++)
+            {
+                var motion = _renderLines[i].ScrollMotion;
+                if (!_userScrolling)
+                    motion.Start(target, duration,
+                        stagger ? LyricScrollMotion.StaggerDelay(i, firstVisible, duration) : 0,
+                        spring, interpolator);
+                motion.Update(seconds);
+            }
+            // A stationary pointer can move over a different line while the lines scroll.
+            _hoverDirty = true;
+        }
+
         private void HandleHoverUpdates(double combinedScroll, double canvasHeight, double playingLineTopOffsetFactor)
         {
             if (!_hoverDirty) return;
@@ -537,7 +590,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 var regionLocalMouse = new Point(_lastMousePos.X - RegionX, _lastMousePos.Y - RegionY);
                 var newHovered = LyricsLayoutManager.FindMouseHoverLineIndex(
                     lines, true, regionLocalMouse, combinedScroll,
-                    canvasHeight, playingLineTopOffsetFactor);
+                    canvasHeight, playingLineTopOffsetFactor, UsesLineScroll, _mouseYScrollTransition.Value);
                 _hoveredLineIndex = newHovered;
             }
             else
@@ -598,6 +651,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             int startIdx = Math.Max(0, _cachedVisibleStart - 3);
             int endIdx = Math.Min(lines.Count - 1, _cachedVisibleEnd + 3);
+            if (UsesLineScroll && (_cachedVisibleStart < 0 || _cachedVisibleEnd < 0)) return;
 
             double yOffsetBase = ry + rh * playingLineTopOffsetFactor + combinedScroll;
             double currentTimeMs = _internalTimeMs - _cachedOffsetMs;
@@ -608,7 +662,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 if (line == null || line.PrimaryTextLayout == null) continue;
                 if (line.PrimaryTextLayout.LayoutBounds.Width <= 0) continue;
 
-                double yOffset = yOffsetBase;
+                double yOffset = UsesLineScroll
+                    ? ry + rh * playingLineTopOffsetFactor + line.ScrollMotion.Value + _mouseYScrollTransition.Value
+                    : yOffsetBase;
 
                 bool isPlayingLine = line.GetIsPlaying(currentTimeMs);
 
@@ -729,10 +785,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             double playingLineTopOffsetFactor = _cachedPlayingLineTopOffset;
             double combinedScroll = _smoothedScrollY + _mouseYScrollTransition.Value;
-            var regionLocalMouse = new Point(_lastMousePos.X - RegionX, _lastMousePos.Y - RegionY);
+            var tapPosition = UsesLineScroll ? e.GetPosition(Canvas) : _lastMousePos;
+            if (UsesLineScroll && !IsPointerInLyricsRegion(tapPosition)) return;
+            var regionLocalMouse = new Point(tapPosition.X - RegionX, tapPosition.Y - RegionY);
             int hovered = LyricsLayoutManager.FindMouseHoverLineIndex(
                 _renderLines, true, regionLocalMouse, combinedScroll,
-                RegionH > 0 ? RegionH : (Canvas?.Size.Height ?? 400), playingLineTopOffsetFactor);
+                RegionH > 0 ? RegionH : (Canvas?.Size.Height ?? 400), playingLineTopOffsetFactor,
+                UsesLineScroll, _mouseYScrollTransition.Value);
 
             if (hovered >= 0 && hovered < _renderLines.Count)
             {

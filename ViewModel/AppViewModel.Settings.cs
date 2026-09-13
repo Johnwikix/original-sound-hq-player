@@ -1256,14 +1256,14 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = EasingType.Sine;
+        } = EasingType.FlowWave;
         public int ScrollEasingTypeIndex
         {
             get => Math.Clamp((int)ScrollEasingType, 0, MaxEasingTypeIndex);
             set => ScrollEasingType = (EasingType)Math.Clamp(value, 0, MaxEasingTypeIndex);
         }
 
-        private static readonly int MaxEasingTypeIndex = (int)EasingType.Bounce; // 枚举尾成员
+        private static readonly int MaxEasingTypeIndex = (int)EasingType.FlowWave; // 枚举尾成员
 
         public EaseMode ScrollEasingMode
         {
@@ -1280,14 +1280,14 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = EaseMode.Continuous;
+        } = EaseMode.FlowWave;
         public int ScrollEasingModeIndex
         {
             get => Math.Clamp((int)ScrollEasingMode, 0, MaxEaseModeIndex);
             set => ScrollEasingMode = (EaseMode)Math.Clamp(value, 0, MaxEaseModeIndex);
         }
 
-        private static readonly int MaxEaseModeIndex = (int)EaseMode.Continuous; // 枚举尾成员
+        private static readonly int MaxEaseModeIndex = (int)EaseMode.FlowWave; // 枚举尾成员
 
         public bool EnableGlobalHotKey
         {

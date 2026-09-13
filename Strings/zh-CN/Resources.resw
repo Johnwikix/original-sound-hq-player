@@ -1808,4 +1808,19 @@
   <data name="CurveCustom" xml:space="preserve"><value>自定义曲线</value></data>
   <data name="CurvePresetEmpty" xml:space="preserve"><value>尚无保存的曲线</value></data>
   <data name="DspAutoPreamp" xml:space="preserve"><value>自动增益/衰减</value></data>
+  <data name="EasingTypeFlowWave.Content" xml:space="preserve">
+    <value>流波（弹簧）</value>
+  </data>
+  <data name="EaseModeFlowWave.Content" xml:space="preserve">
+    <value>流波（逐行错峰）</value>
+  </data>
+  <data name="CurveUpdatePreset.Content" xml:space="preserve">
+    <value>更新所选预设</value>
+  </data>
+  <data name="CurveDeletePreset.Content" xml:space="preserve">
+    <value>删除预设</value>
+  </data>
+  <data name="CurveDeletePresetConfirmation" xml:space="preserve">
+    <value>删除预设“{0}”？当前编辑的曲线会保留。</value>
+  </data>
 </root>

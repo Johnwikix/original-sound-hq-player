@@ -18,6 +18,7 @@ public sealed partial class ConvolutionCurveDialog : ContentDialog
         InitializeComponent();
         ViewModel.PreviewChanged += RefreshPreview;
         ViewModel.PresetSaved += () => SaveFlyout.Hide();
+        ViewModel.PresetDeleted += () => DeleteFlyout.Hide();
         Response.PointSelected += index => ViewModel.SelectedNode = index;
         Response.PointMoved += ViewModel.MovePoint;
         Opened += async (_, _) => { ResizeEditor(); XamlRoot.Changed += RootChanged; await ViewModel.OpenAsync(); };
@@ -34,6 +35,7 @@ public sealed partial class ConvolutionCurveDialog : ContentDialog
         EditorPanel.Width = Math.Clamp(XamlRoot.Size.Width - 100, 240, 800);
         EditorScroll.MaxHeight = Math.Max(180, XamlRoot.Size.Height - 190);
         bool narrow = EditorPanel.Width < 500;
+        PresetActions.Orientation = narrow ? Orientation.Vertical : Orientation.Horizontal;
         PointFields.ColumnDefinitions.Clear(); PointFields.RowDefinitions.Clear();
         for (int i = 0; i < (narrow ? 1 : 3); i++) PointFields.ColumnDefinitions.Add(new ColumnDefinition());
         for (int i = 0; i < (narrow ? 3 : 1); i++) PointFields.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });

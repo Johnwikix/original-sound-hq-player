@@ -75,10 +75,10 @@ namespace WinUIMusicPlayer.Model
         public double UnplayedOpacityPercent { get; set; } = 50.0;
         public double TargetFrameRate { get; set; } = 120.0;
         public bool EnableAdvancedLyricsEffect { get; set; } = false;
-        [JsonConverter(typeof(JsonStringEnumConverter<EasingType>))]
-        public EasingType ScrollEasingType { get; set; } = EasingType.Sine;
-        [JsonConverter(typeof(JsonStringEnumConverter<EaseMode>))]
-        public EaseMode ScrollEasingMode { get; set; } = EaseMode.Continuous;
+        [JsonConverter(typeof(LyricsEasingTypeJsonConverter))]
+        public EasingType ScrollEasingType { get; set; } = EasingType.FlowWave;
+        [JsonConverter(typeof(LyricsEaseModeJsonConverter))]
+        public EaseMode ScrollEasingMode { get; set; } = EaseMode.FlowWave;
         public List<string> PlayOrPauseShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "P" };
         public List<string> NextSongShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "Right" };
         public List<string> PreviousSongShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "Left" };

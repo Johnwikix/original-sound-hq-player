@@ -1806,6 +1806,21 @@
   <data name="CurveCustom" xml:space="preserve"><value>Custom curve</value></data>
   <data name="CurvePresetEmpty" xml:space="preserve"><value>No saved curves</value></data>
   <data name="DspAutoPreamp" xml:space="preserve"><value>Automatic gain/attenuation</value></data>
+  <data name="EasingTypeFlowWave.Content" xml:space="preserve">
+    <value>フローウェーブ（ばね）</value>
+  </data>
+  <data name="EaseModeFlowWave.Content" xml:space="preserve">
+    <value>フローウェーブ（行ごとに遅延）</value>
+  </data>
+  <data name="CurveUpdatePreset.Content" xml:space="preserve">
+    <value>選択したプリセットを更新</value>
+  </data>
+  <data name="CurveDeletePreset.Content" xml:space="preserve">
+    <value>プリセットを削除</value>
+  </data>
+  <data name="CurveDeletePresetConfirmation" xml:space="preserve">
+    <value>プリセット「{0}」を削除しますか？編集中のカーブは保持されます。</value>
+  </data>
 </root>
 
 

@@ -14,5 +14,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         Back,
         Elastic,
         Bounce,
+        FlowWave,
     }
 }

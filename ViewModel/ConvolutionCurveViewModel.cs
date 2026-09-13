@@ -24,6 +24,7 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     private bool _syncing, _open;
     public event Action? PreviewChanged;
     public event Action? PresetSaved;
+    public event Action? PresetDeleted;
     public ObservableCollection<string> Nodes { get; } = [];
     public ObservableCollection<CurvePreset> Presets { get; } = [];
     public CurvePoint[] Points => _points.ToArray();
@@ -34,6 +35,15 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     public bool CanAdd => _points.Count < CorrectionCurve.MaxPoints;
     public bool CanRemove => _points.Count > 2;
     public bool ManualGainEnabled => !AutoPreamp;
+    public bool CanSavePreset => !IsPresetBusy;
+    public bool CanDeletePreset => !IsPresetBusy && SelectedPreset != null;
+    public bool CanUpdatePreset => CanDeletePreset && SelectedPreset!.Points != CorrectionCurve.Encode(_points);
+    public bool IsPresetBusy
+    {
+        get => field;
+        private set { if (SetProperty(ref field, value)) NotifyPresetActions(); }
+    }
+    public string DeletePresetConfirmation => string.Format(ToolUtils.GetString("CurveDeletePresetConfirmation"), SelectedPreset?.Name ?? "");
     public int SelectedNode { get => field; set { if (!_syncing && (value < 0 || value >= _points.Count)) return; if (SetProperty(ref field, value) && !_syncing) SyncNodes(); } }
     public double Frequency { get => field; set { if (SetProperty(ref field, value) && !_syncing && double.IsFinite(value)) MovePoint(SelectedNode, value, Gain); } }
     public double Gain { get => field; set { if (SetProperty(ref field, value) && !_syncing && double.IsFinite(value)) MovePoint(SelectedNode, Frequency, value); } }
@@ -49,13 +59,17 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
         get => field;
         set
         {
-            if (!SetProperty(ref field, value) || _syncing || value == null) return;
+            if (!SetProperty(ref field, value)) return;
+            NotifyPresetActions();
+            OnPropertyChanged(nameof(DeletePresetConfirmation));
+            if (_syncing || value == null) return;
             _points.Clear(); _points.AddRange(CorrectionCurve.Parse(value.Points));
             SyncNodes(); Changed();
         }
     }
     public DspSettings Draft => _initial with { ConvolutionSource = ConvolutionSource.Curve,
-        CurvePoints = CorrectionCurve.Encode(_points), CurvePresetName = SelectedPreset?.Name ?? "", ConvolutionEnabled = true,
+        CurvePoints = CorrectionCurve.Encode(_points),
+        CurvePresetName = SelectedPreset?.Points == CorrectionCurve.Encode(_points) ? SelectedPreset.Name : "", ConvolutionEnabled = true,
         AutoPreamp = AutoPreamp, HeadroomDb = double.IsFinite(PreampDb) ? PreampDb : _initial.HeadroomDb };
 
     public ConvolutionCurveViewModel(IpcService ipc, CurvePresetService store)
@@ -72,6 +86,7 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     public async Task OpenAsync()
     {
         _open = true; _ipc.DspStateChanged += PlaybackChanged; PlaybackChanged(); Changed();
+        IsPresetBusy = true;
         try
         {
             var presets = await _store.LoadAsync();
@@ -80,6 +95,7 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
             MatchPreset(); OnPropertyChanged(nameof(PresetPlaceholder));
         }
         catch { if (_open) ErrorMessage = ToolUtils.GetString("CurvePresetError"); }
+        finally { IsPresetBusy = false; }
     }
     public void Close(bool apply)
     {
@@ -119,7 +135,16 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     private void Changed()
     {
         if (_syncing || !_open) return;
-        ErrorMessage = ""; MatchPreset(); PreviewChanged?.Invoke(); _timer.Stop(); _timer.Start();
+        ErrorMessage = ""; NotifyPresetActions(); PreviewChanged?.Invoke(); _timer.Stop(); _timer.Start();
+    }
+    private void NotifyPresetActions()
+    {
+        OnPropertyChanged(nameof(CanSavePreset));
+        OnPropertyChanged(nameof(CanUpdatePreset));
+        OnPropertyChanged(nameof(CanDeletePreset));
+        SavePresetCommand.NotifyCanExecuteChanged();
+        UpdatePresetCommand.NotifyCanExecuteChanged();
+        DeletePresetCommand.NotifyCanExecuteChanged();
     }
     [RelayCommand(CanExecute = nameof(CanAdd))]
     private void AddPoint()
@@ -136,20 +161,70 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     private void RemovePoint() { _points.RemoveAt(SelectedNode); SyncNodes(); Changed(); }
     [RelayCommand]
     private void ResetFlat() { _points.Clear(); _points.AddRange(CorrectionCurve.Parse(CorrectionCurve.Flat)); SyncNodes(); Changed(); }
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanSavePreset))]
     private async Task SavePresetAsync()
     {
+        if (!CanSavePreset) return;
         string name = PresetName.Trim();
         if (name.Length == 0 || name.Length > 80 || Presets.Count >= 100 || Presets.Any(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)))
         { ErrorMessage = ToolUtils.GetString("CurvePresetNameError"); return; }
         var preset = new CurvePreset(name, Draft.CurvePoints);
+        IsPresetBusy = true;
         try
         {
             await _store.SaveAsync([.. Presets, preset]);
             Presets.Add(preset);
             if (Draft.CurvePoints == preset.Points) { _syncing = true; SelectedPreset = preset; _syncing = false; }
+            ErrorMessage = "";
             OnPropertyChanged(nameof(PresetPlaceholder)); PresetSaved?.Invoke();
         }
         catch { ErrorMessage = ToolUtils.GetString("CurvePresetError"); }
+        finally { IsPresetBusy = false; }
+    }
+    [RelayCommand(CanExecute = nameof(CanUpdatePreset))]
+    private async Task UpdatePresetAsync()
+    {
+        if (!CanUpdatePreset) return;
+        var selected = SelectedPreset!;
+        int index = Presets.IndexOf(selected);
+        if (index < 0) return;
+        var updated = selected with { Points = CorrectionCurve.Encode(_points) };
+        var snapshot = Presets.ToList(); snapshot[index] = updated;
+        IsPresetBusy = true;
+        try
+        {
+            await _store.SaveAsync(snapshot);
+            _syncing = true;
+            Presets[index] = updated;
+            SelectedPreset = updated;
+            _syncing = false;
+            Changed();
+            ErrorMessage = "";
+        }
+        catch { ErrorMessage = ToolUtils.GetString("CurvePresetError"); }
+        finally { _syncing = false; IsPresetBusy = false; }
+    }
+    [RelayCommand(CanExecute = nameof(CanDeletePreset))]
+    private async Task DeletePresetAsync()
+    {
+        if (!CanDeletePreset) return;
+        var selected = SelectedPreset!;
+        var snapshot = Presets.Where(p => p != selected).ToList();
+        IsPresetBusy = true;
+        try
+        {
+            await _store.SaveAsync(snapshot);
+            _syncing = true;
+            SelectedPreset = null;
+            Presets.Remove(selected);
+            _syncing = false;
+            // Deleting a stored preset leaves the current draft available as a custom curve.
+            Changed();
+            ErrorMessage = "";
+            OnPropertyChanged(nameof(PresetPlaceholder));
+            PresetDeleted?.Invoke();
+        }
+        catch { ErrorMessage = ToolUtils.GetString("CurvePresetError"); }
+        finally { _syncing = false; IsPresetBusy = false; }
     }
 }
