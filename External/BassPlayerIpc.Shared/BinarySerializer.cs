@@ -13,9 +13,9 @@ public static class BinarySerializer
 
     public const int PlayRequestSize = StringHeaderSize + MaxStringBytes;
     public const int SetMusicUrlRequestSize = StringHeaderSize + MaxStringBytes;
-    public const int ChangePositionRequestSize = 8;
+    public const int ChangePositionRequestSize = 16;
     public const int ChangeVolumeRequestSize = 8;
-    public const int IpcSettingSize = 2 * (StringHeaderSize + MaxStringBytes) + 4 + 4 + 4 + 1 + 4 + 4 + 1 + 4 + 1 + 1;
+    public const int IpcSettingSize = 2 * (StringHeaderSize + MaxStringBytes) + 4 + 4 + 4 + 1 + 4 + 4 + 1 + 4 + 1 + 1 + 1;
     public const int UpdateEqRequestSize = 1 + 40 + 40; // IsEnabled + 10 gains + 10 Q values (legacy payload: 41 bytes)
     public const int FailedResponseSize = 2;
     public const int PlayStateResponseSize = 1;
@@ -65,12 +65,14 @@ public static class BinarySerializer
     public static int WriteChangePositionRequest(Span<byte> dest, ChangePositionRequest req)
     {
         BinaryPrimitives.WriteInt64LittleEndian(dest, req.PositionMs);
-        return 8;
+        BinaryPrimitives.WriteInt64LittleEndian(dest[8..], req.SeekId);
+        return 16;
     }
 
     public static ChangePositionRequest ReadChangePositionRequest(ReadOnlySpan<byte> src)
     {
-        return new() { PositionMs = BinaryPrimitives.ReadInt64LittleEndian(src) };
+        return new() { PositionMs = BinaryPrimitives.ReadInt64LittleEndian(src),
+            SeekId = src.Length >= 16 ? BinaryPrimitives.ReadInt64LittleEndian(src[8..]) : 0 };
     }
 
     public static int WriteChangeVolumeRequest(Span<byte> dest, ChangeVolumeRequest req)
@@ -100,6 +102,7 @@ public static class BinarySerializer
         dest[offset++] = s.IsSettingChanged ? (byte)1 : (byte)0;
         dest[offset++] = s.IsFadeEnabled ? (byte)1 : (byte)0;
         offset += WriteString(dest[offset..], s.WasapiEndpointId);
+        dest[offset++] = s.ExperimentalSurround51 ? (byte)1 : (byte)0;
         return offset;
     }
 
@@ -118,7 +121,12 @@ public static class BinarySerializer
         s.Volume = BinaryPrimitives.ReadSingleLittleEndian(src[offset..]); offset += 4;
         s.IsSettingChanged = src[offset++] != 0;
         s.IsFadeEnabled = src[offset++] != 0;
-        s.WasapiEndpointId = offset < src.Length ? ReadString(src[offset..], out _) : null;
+        if (offset < src.Length)
+        {
+            s.WasapiEndpointId = ReadString(src[offset..], out int length);
+            offset += length;
+        }
+        s.ExperimentalSurround51 = offset < src.Length && src[offset] != 0;
         return s;
     }
 

@@ -1045,6 +1045,19 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        public bool ExperimentalSurround51
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value) && IsInitialized)
+                {
+                    _ = _musicDatabaseService.SaveSettingAsync();
+                    AppSettings.OnOutputSettingsUpdated();
+                }
+            }
+        }
+
         public bool IsFadeEnabled
         {
             get => field;

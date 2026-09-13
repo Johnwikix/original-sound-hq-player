@@ -380,14 +380,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             // 来识别"上一帧不在动画范围内"的行，强制重算距离效果。
             _animationVersion++;
 
-            double externalTimeMs = _cachedCurrentPlayingTimeMs;
+            bool hasPlaybackClock = TimeProgressBus.TryReadClock(out long clockMs);
+            double externalTimeMs = hasPlaybackClock ? clockMs : _cachedCurrentPlayingTimeMs;
 
             bool isPrimaryPlayingLineChanged = false;
             double currentTimeMs = 0;
 
             if (_cachedIsPlaying)
             {
-                if (Math.Abs(externalTimeMs - _lastExternalTimeMs) > SyncThresholdMs)
+                if (hasPlaybackClock || Math.Abs(externalTimeMs - _lastExternalTimeMs) > SyncThresholdMs)
                 {
                     _internalTimeMs = externalTimeMs;
                 }

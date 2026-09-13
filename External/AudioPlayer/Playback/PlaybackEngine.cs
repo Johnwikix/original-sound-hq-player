@@ -89,6 +89,8 @@ public sealed class PlaybackEngine : IDisposable
     public int BassASIODeviceId = 0;
     public int Latency = 300;
     public bool IsDopEnabled;
+    public bool ExperimentalSurround51;
+    private long _lastProgressSeekId;
     public string? MusicUrl;
     public int DsdGain = 6;
     public int DsdPcmFreq = 88200;
@@ -297,7 +299,9 @@ public sealed class PlaybackEngine : IDisposable
                 maxChannels = 2;
             }
         }
-        var session = Session.Open(this, url, kind, DsdPcmFreq, DsdGain, Latency, forcedRate, forcedChannels, maxChannels);
+        bool surround51 = ExperimentalSurround51 && !forceSharedFormat && kind == RenderKind.Pcm
+            && OutputMode is "ASIO" or "WasapiExclusivePush" or "WasapiExclusiveEvent";
+        var session = Session.Open(this, url, kind, DsdPcmFreq, DsdGain, Latency, forcedRate, forcedChannels, maxChannels, surround51);
         if (session != null)
         {
             session.ConfigureDsp(_dspSettings ?? new DspSettings());
@@ -630,7 +634,7 @@ public sealed class PlaybackEngine : IDisposable
         }
     }
 
-    public void ChangeWaveChannelTime(long positionMs)
+    public void ChangeWaveChannelTime(long positionMs, long seekId = 0)
     {
         lock (_streamLock)
         {
@@ -638,6 +642,7 @@ public sealed class PlaybackEngine : IDisposable
             catch { }
             var plan = _recovery; // 失效暂停期间手动 seek：恢复时落到新位置
             if (plan != null) plan.PositionMs = Math.Max(0, positionMs);
+            if (seekId > 0) _lastProgressSeekId = seekId;
         }
     }
 
@@ -684,6 +689,21 @@ public sealed class PlaybackEngine : IDisposable
         return (cur, total);
     }
 
+    // Timer/control thread only. Skip busy device rebuilds instead of delaying commands/rendering.
+    public bool TryCaptureProgress(out ProgressSnapshot snapshot)
+    {
+        snapshot = default;
+        if (!Monitor.TryEnter(_streamLock)) return false;
+        try
+        {
+            var (current, total) = GetTimeProgress();
+            snapshot = new(0, _session?.TimelineEpoch ?? 0, current, total,
+                System.Diagnostics.Stopwatch.GetTimestamp(), IsPlaying && _output is { IsFailed: false }, _lastProgressSeekId);
+            return true;
+        }
+        finally { Monitor.Exit(_streamLock); }
+    }
+
     public void UpdateSettings(IpcSetting s)
     {
         lock (_streamLock)
@@ -693,6 +713,7 @@ public sealed class PlaybackEngine : IDisposable
             bool rebuild = OutputMode != (s.OutputMode ?? "DirectSound") || BassOutputDeviceId != s.BassOutputDeviceId
                 || WasapiEndpointId != s.WasapiEndpointId || BassASIODeviceId != s.BassASIODeviceId
                 || Latency != Math.Clamp(s.Latency, 10, 2000) || IsDopEnabled != s.IsDopEnabled
+                || ExperimentalSurround51 != s.ExperimentalSurround51
                 || DsdGain != Math.Clamp(s.DsdGain, -24, 24) || DsdPcmFreq != Math.Clamp(s.DsdPcmFreq, 8000, 768000);
             OutputMode = s.OutputMode ?? "DirectSound";
             BassOutputDeviceId = s.BassOutputDeviceId;
@@ -700,6 +721,7 @@ public sealed class PlaybackEngine : IDisposable
             BassASIODeviceId = s.BassASIODeviceId;
             Latency = Math.Clamp(s.Latency, 10, 2000);
             IsDopEnabled = s.IsDopEnabled;
+            ExperimentalSurround51 = s.ExperimentalSurround51;
             DsdGain = Math.Clamp(s.DsdGain, -24, 24);
             DsdPcmFreq = Math.Clamp(s.DsdPcmFreq, 8000, 768000);
             Volume = float.IsFinite(s.Volume) ? Math.Clamp(s.Volume, 0, 1) : 0;

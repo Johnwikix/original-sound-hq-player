@@ -17,6 +17,9 @@ namespace WinUIMusicPlayer.Services
         private static readonly long MmfSize = IpcConstants.MmfSize;
 
         private DspStateMailbox? _dspMailbox;
+        private ProgressMailbox? _progressMailbox;
+        private long _nextSeekId;
+        private readonly object _seekPublishGate = new();
         private Task? _dspListenerTask;
         private DspStateSnapshot? _dspSnapshot;
 
@@ -76,6 +79,7 @@ namespace WinUIMusicPlayer.Services
                     _transport.CommandFailed += command => _logger.LogWarning("Audio command {Command} was rejected", command);
                     _transport.Faulted += exception => _logger.LogError(exception, "Audio IPC transport stopped");
                     _dspMailbox = new DspStateMailbox(create: false);
+                    _progressMailbox = new ProgressMailbox(create: false);
                     StartNotificationListener();
                     _dspListenerTask = Task.Factory.StartNew(() => ListenForDspState(_notificationCts!.Token),
                         CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
@@ -85,6 +89,7 @@ namespace WinUIMusicPlayer.Services
                 catch
                 {
                     _dspMailbox?.Dispose(); _dspMailbox = null;
+                    _progressMailbox?.Dispose(); _progressMailbox = null;
                     _transport?.Dispose(); _transport = null;
                     _accessor?.Dispose(); _accessor = null;
                     _mmf?.Dispose(); _mmf = null;
@@ -340,6 +345,7 @@ namespace WinUIMusicPlayer.Services
                 BassASIODeviceId = AppSettings.BassASIODeviceId,
                 Latency = AppViewModel.Latency,
                 IsDopEnabled = AppViewModel.IsDopEnabled,
+                ExperimentalSurround51 = AppViewModel.ExperimentalSurround51,
                 DsdGain = AppViewModel.DsdGain,
                 DsdPcmFreq = AppViewModel.DsdPcmFreq,
                 IsEqualizerEnabled = AppSettings.IsEqualizerEnabled,
@@ -461,28 +467,35 @@ namespace WinUIMusicPlayer.Services
         }
 
         /// <summary>
-        /// Returns null when the round-trip fails, so callers can keep the last known
-        /// value instead of storing a bogus (0, 0).
+        /// Reads latest telemetry without queuing a request. Legacy server command remains for tools.
         /// </summary>
-        public async Task<(long currentMs, long totalMs)?> GetTimeProgress()
+        public Task<(long currentMs, long totalMs)?> GetTimeProgress()
         {
-            var buffer = ArrayPool<byte>.Shared.Rent(BinarySerializer.TimeProgressSize);
-            try
-            {
-                var (type, length) = await SendWithResponseAsync(CommandId.GetTimeProgress,
-                    ReadOnlyMemory<byte>.Empty, buffer, timeoutMs: 300, skipIfBusy: true);
-                return type == MessageTypeId.TimeProgress && length == BinarySerializer.TimeProgressSize
-                    ? BinarySerializer.ReadTimeProgress(buffer) : null;
-            }
-            finally { ArrayPool<byte>.Shared.Return(buffer); }
+            (long, long)? value = TryGetProgressSnapshot(out var snapshot) ? (snapshot.CurrentMs, snapshot.TotalMs) : null;
+            return Task.FromResult(value);
+        }
+
+        public bool TryGetProgressSnapshot(out ProgressSnapshot snapshot)
+        {
+            snapshot = default;
+            return _progressMailbox?.TryRead(out snapshot) == true;
         }
 
         public void SetPosition(long positionMs)
         {
-            var req = new ChangePositionRequest { PositionMs = positionMs };
-            Span<byte> buf = stackalloc byte[BinarySerializer.ChangePositionRequestSize];
-            BinarySerializer.WriteChangePositionRequest(buf, req);
-            Publish(CommandId.ChangePosition, buf);
+            lock (_seekPublishGate)
+            {
+                long seekId = Interlocked.Increment(ref _nextSeekId);
+                AppViewModel.BeginProgressSeek(positionMs, seekId);
+                var req = new ChangePositionRequest { PositionMs = positionMs, SeekId = seekId };
+                Span<byte> buf = stackalloc byte[BinarySerializer.ChangePositionRequestSize];
+                BinarySerializer.WriteChangePositionRequest(buf, req);
+                if (_transport?.Publish(CommandId.ChangePosition, buf, coalesce: false) != true)
+                {
+                    AppViewModel.CancelProgressSeek(seekId);
+                    _logger.LogWarning("Audio seek could not be queued");
+                }
+            }
         }
 
         public void ChangeVolume(double volume)
@@ -569,6 +582,7 @@ namespace WinUIMusicPlayer.Services
             _notificationCts?.Dispose();
             _serverMonitorCts?.Dispose();
             _dspMailbox?.Dispose();
+            _progressMailbox?.Dispose();
             _accessor?.Dispose();
             _mmf?.Dispose();
             _requestReadySemaphore?.Dispose();

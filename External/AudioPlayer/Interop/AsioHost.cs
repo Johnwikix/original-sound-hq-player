@@ -149,7 +149,14 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
                 Console.WriteLine($"[asio] GetChannels failed in={inCh} out={outCh}");
                 return false;
             }
-            _outputChannelCount = Math.Min(outCh, Math.Max(1, source.Channels));
+            // 实验性 5.1 使用驱动输出 0..5：FL, FR, FC, LFE, SL/BL, SR/BR。
+            // 不足六路不能截断后继续播放，交给引擎原有共享回退。
+            _outputChannelCount = SelectOutputChannelCount(source, outCh);
+            if (_outputChannelCount == 0)
+            {
+                Console.WriteLine($"[asio] experimental 5.1 requires 6 outputs; device has {outCh}");
+                return false;
+            }
 
             // DSD 模式下驱动采样率域没有统一规范（有的收位率 2822400，有的收字节率 352800）：
             // 依次尝试；失败即放弃（引擎会回退 ASIO DoP / 共享 PCM）
@@ -257,6 +264,10 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     /// <summary>当前渲染源种类/声道/速率（Start 成功后有效）。</summary>
     public RenderKind SourceKind => _source.Kind;
     public int SourceChannels => _source.Channels;
+
+    internal static int SelectOutputChannelCount(IRenderSource source, int available) =>
+        source.ChannelMask != 0 && source.Channels == 6 && available < 6
+            ? 0 : Math.Min(available, Math.Max(1, source.Channels));
     public int SourceSampleRate => _source.SampleRate;
 
     /// <summary>创建本输出时绑定的 ASIO 设备索引（设备变更须重建）。</summary>
@@ -269,6 +280,7 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
         if (_driver == null || _source == null || IsFailed) return false;
         if (source.Kind != RenderKind.Pcm || _source.Kind != RenderKind.Pcm) return false;
         if (source.SampleRate != _source.SampleRate || source.Channels != _source.Channels) return false;
+        if (source.ChannelMask != _source.ChannelMask) return false;
         _source = source;
         return true;
     }

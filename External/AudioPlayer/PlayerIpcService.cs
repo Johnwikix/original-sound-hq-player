@@ -13,6 +13,8 @@ public class PlayerIpcService : IDisposable
 {
     private PlaybackEngine? _engine;
     private DspStateMailbox? _dspMailbox;
+    private ProgressMailbox? _progressMailbox;
+    private Task? _progressTask;
 
     private static readonly long MmfSize = IpcConstants.MmfSize;
 
@@ -65,7 +67,9 @@ public class PlayerIpcService : IDisposable
 
             Console.WriteLine($"Server ready. MMF: {IpcConstants.MmfName}");
             _dspMailbox = new DspStateMailbox(create: true);
+            _progressMailbox = new ProgressMailbox(create: true);
             _engine = new PlaybackEngine(this);
+            _progressTask = PublishProgressAsync(_cancellationTokenSource!.Token);
             PublishDspState(_engine.GetDspState());
             _listenerTask = Task.Factory.StartNew(() => ListenForRequests(_cancellationTokenSource!.Token),
                 CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
@@ -79,7 +83,7 @@ public class PlayerIpcService : IDisposable
         finally
         {
             _cancellationTokenSource?.Cancel();
-            try { await Task.WhenAll(_listenerTask ?? Task.CompletedTask, _clientMonitorTask ?? Task.CompletedTask); } catch (OperationCanceledException) { }
+            try { await Task.WhenAll(_listenerTask ?? Task.CompletedTask, _clientMonitorTask ?? Task.CompletedTask, _progressTask ?? Task.CompletedTask); } catch (OperationCanceledException) { }
             Dispose();
             Console.WriteLine("Server stopped.");
         }
@@ -141,6 +145,19 @@ public class PlayerIpcService : IDisposable
     {
         _cancellationTokenSource?.Cancel();
 
+    }
+
+    private async Task PublishProgressAsync(CancellationToken token)
+    {
+        using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(50));
+        try
+        {
+            do
+            {
+                if (_engine!.TryCaptureProgress(out var snapshot)) _progressMailbox!.Publish(snapshot);
+            } while (await timer.WaitForNextTickAsync(token));
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
     }
 
     private void ListenForRequests(CancellationToken cancellationToken)
@@ -218,7 +235,7 @@ public class PlayerIpcService : IDisposable
                 case CommandId.ChangePosition:
                 {
                     var req = BinarySerializer.ReadChangePositionRequest(payload);
-                    _engine!.ChangeWaveChannelTime(req.PositionMs);
+                    _engine!.ChangeWaveChannelTime(req.PositionMs, req.SeekId);
                     break;
                 }
                 case CommandId.ChangeVolume:
@@ -408,7 +425,9 @@ public class PlayerIpcService : IDisposable
         if (Interlocked.Exchange(ref _disposeStarted, 1) != 0) return;
         _cancellationTokenSource?.Cancel();
         _listenerTask?.GetAwaiter().GetResult();
+        _progressTask?.GetAwaiter().GetResult();
         _engine?.Dispose();
+        _progressMailbox?.Dispose();
         _dspMailbox?.Dispose();
         _accessor?.Dispose();
         _mmf?.Dispose();

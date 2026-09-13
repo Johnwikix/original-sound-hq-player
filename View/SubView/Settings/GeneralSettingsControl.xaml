@@ -82,6 +82,14 @@
                     <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsDopEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
+                <controls:SettingsCard
+                    Header="{x:Bind tool:ToolUtils.GetString('ExperimentalSurround51Title'), Mode=OneWay}"
+                    Description="{x:Bind tool:ToolUtils.GetString('ExperimentalSurround51Description'), Mode=OneWay}">
+                    <ToggleSwitch MinWidth="0" VerticalAlignment="Center"
+                        AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('ExperimentalSurround51Title'), Mode=OneWay}"
+                        IsOn="{x:Bind ViewModel.AppViewModel.ExperimentalSurround51, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
                         <TextBlock x:Uid="FadeInOut" TextWrapping="Wrap" />

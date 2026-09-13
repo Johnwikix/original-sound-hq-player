@@ -11,6 +11,8 @@ namespace AudioPlayer.Playback;
 internal sealed class Session : IRenderSource, IDisposable
 {
     private readonly int _positionRate; // 环帧域的每秒帧数（用于 ms 换算）
+    private static long _nextTimelineEpoch;
+    public long TimelineEpoch { get; private set; } = Interlocked.Increment(ref _nextTimelineEpoch);
 
     private PcmDecoder? _pcm;
     private DsdRawReader? _dsd;
@@ -55,6 +57,7 @@ internal sealed class Session : IRenderSource, IDisposable
 
     public RenderKind Kind { get; }
     public int Channels { get; }
+    public uint ChannelMask { get; private init; }
     public long TotalMs { get; }
     public long AnchorFrames; // 引擎线程写、渲染线程不读（位置在引擎侧合成）
 
@@ -96,20 +99,21 @@ internal sealed class Session : IRenderSource, IDisposable
 
     public static Session? Open(PlaybackEngine engine, string path, RenderKind kind,
         int dsdPcmFreq, int dsdGainDb, int latencyMs, int? forcedRate = null, int? forcedChannels = null,
-        int? maxChannels = null)
+        int? maxChannels = null, bool experimentalSurround51 = false)
     {
         switch (kind)
         {
             case RenderKind.Pcm:
             {
                 var dec = new PcmDecoder();
-                if (!dec.Open(path, dsdPcmFreq, dsdGainDb, forcedRate, forcedChannels, maxChannels)) { dec.Dispose(); return null; }
+                if (!dec.Open(path, dsdPcmFreq, dsdGainDb, forcedRate, forcedChannels, maxChannels, experimentalSurround51)) { dec.Dispose(); return null; }
                 int rate = dec.SampleRate;
                 int channels = dec.Channels;
                 int ringFrames = RingCapacity(rate, latencyMs);
                 var s = new Session(engine, kind, channels, rate, rate, dec.TotalMs, rate)
                 {
                     _pcm = dec,
+                    ChannelMask = dec.ChannelMask,
                     _pcmRing = new PcmRing(channels, ringFrames, PrebufferFrames(rate), 300),
                 };
                 s.Effects!.SetFile(path, dsdPcmFreq, dsdGainDb);
@@ -184,6 +188,7 @@ internal sealed class Session : IRenderSource, IDisposable
             _dopRing?.BeginSession();
             _dsdRing?.BeginSession();
             Interlocked.Exchange(ref _pendingSeekMs, targetMs);
+            TimelineEpoch = Interlocked.Increment(ref _nextTimelineEpoch);
         }
         WakeProducer();
     }

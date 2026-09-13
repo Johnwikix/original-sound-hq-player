@@ -106,6 +106,9 @@ ASIO 原生 DSD 协商失败 → 先降级 ASIO DoP，再退共享 PCM。
 
 ## 构建
 
+实验性 5.1（默认关闭）及最新进度快照/歌词时钟的范围和验证说明见
+[EXPERIMENTAL-5.1.md](EXPERIMENTAL-5.1.md)。
+
 前置：.NET 11 SDK（仓库 `global.json` 锁定 11.0 RC1 系列）。
 
 ```

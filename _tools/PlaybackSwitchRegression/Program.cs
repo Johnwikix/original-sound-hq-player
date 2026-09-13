@@ -30,6 +30,8 @@ internal static unsafe partial class Program
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(WasapiOutput))]
     private static int Main(string[] args)
     {
+        if (args.Length == 2 && args[0] == "--progress-writer") return ProgressWriter(args[1]);
+        if (args.Length == 1 && args[0] == "--test-progress") { RunProgressTests(); return _failures == 0 ? 0 : 1; }
         if (args.Length == 2 && args[0] == "--test-export-file")
         {
             FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
@@ -58,6 +60,8 @@ internal static unsafe partial class Program
         RunExportTests(Path.Combine(AppContext.BaseDirectory, "Fixtures", "eac3-5.1.m4a"));
         RunExportTests(Path.Combine(root, "_tools", "test_tone.wav"));
         WriteDsfFixture();
+        RunSurroundTests(root);
+        RunProgressTests();
         RunWavPackTests();
         RunBufferPolicyTests();
         RunAsioNotificationTests();

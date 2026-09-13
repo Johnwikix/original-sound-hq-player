@@ -1,5 +1,10 @@
 # Playback switch regressions
 
+`SurroundTests` 覆盖实验性 5.1 开关隔离、侧/后环绕布局、WASAPI 格式、ASIO 路由、
+通道不足和复用边界；不依赖真实声卡。`ProgressTests` 覆盖最新快照跨进程一致性、
+时间戳外推、过期快照、连续 seek 确认、暂停/换曲及旧协议兼容。
+仅运行进度测试：`dotnet run --project _tools/PlaybackSwitchRegression -- --test-progress`。
+
 在 Windows、仓库根目录运行：
 
 ```powershell

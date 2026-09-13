@@ -29,6 +29,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
     // 输出格式（重采样后）
     public int SampleRate { get; private set; }
     public int Channels { get; private set; }
+    public uint ChannelMask { get; private set; }
     public long TotalMs => _totalMs;
     public bool IsDsdSource => _dsdSource;
 
@@ -46,7 +47,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
     /// <param name="forceChannels">强制输出声道数；null = 源声道数（受 maxChannels 上限约束）。</param>
     /// <param name="maxChannels">声道上限（共享直传时压到 2：EQ 仅处理 ≤2 声道，多声道由 swresample 下混）。</param>
     public bool Open(string path, int dsdPcmFreq, int dsdGainDb, int? forceRate = null, int? forceChannels = null,
-        int? maxChannels = null)
+        int? maxChannels = null, bool experimentalSurround51 = false)
     {
         try
         {
@@ -77,15 +78,24 @@ internal sealed unsafe class PcmDecoder : IDisposable
 
             // WAV/PCM 解码器常给 UNSPEC 布局，swr 需规范化（转换器同款注释）
             int channels = Math.Max(1, _dec->ch_layout.nb_channels);
-            ffmpeg.av_channel_layout_uninit(&_dec->ch_layout);
-            ffmpeg.av_channel_layout_default(&_dec->ch_layout, channels);
+            bool surround51 = experimentalSurround51 && !_dsdSource && channels == 6
+                && forceChannels == null && maxChannels == null
+                && _dec->ch_layout.order == AVChannelOrder.AV_CHANNEL_ORDER_NATIVE
+                && _dec->ch_layout.u.mask is 0x3FUL or 0x60FUL;
+            ChannelMask = surround51 ? (uint)_dec->ch_layout.u.mask : 0;
+            if (!surround51)
+            {
+                ffmpeg.av_channel_layout_uninit(&_dec->ch_layout);
+                ffmpeg.av_channel_layout_default(&_dec->ch_layout, channels);
+            }
 
             int inRate = _dec->sample_rate != 0 ? _dec->sample_rate : 48000;
             SampleRate = forceRate ?? (_dsdSource && dsdPcmFreq > 0 ? dsdPcmFreq : inRate);
             Channels = forceChannels ?? (maxChannels is > 0 ? Math.Min(channels, maxChannels.Value) : channels);
 
             AVChannelLayout outLayout = default;
-            ffmpeg.av_channel_layout_default(&outLayout, Channels);
+            if (surround51) ffmpeg.av_channel_layout_copy(&outLayout, &_dec->ch_layout);
+            else ffmpeg.av_channel_layout_default(&outLayout, Channels);
             SwrContext* swr = null;
             ffmpeg.swr_alloc_set_opts2(&swr, &outLayout, AVSampleFormat.AV_SAMPLE_FMT_DBL, SampleRate,
                 &_dec->ch_layout, _dec->sample_fmt, _dec->sample_rate, 0, null);

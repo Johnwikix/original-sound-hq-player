@@ -56,6 +56,13 @@ bitstream). Processing noise floor below -140 dBFS; 24-bit sources remain
 bit-transparent across the entire chain.
 
 - **PCM**: FFmpeg decode with sample-accurate position (anchor + frames played)
+- **Experimental 5.1**: off by default, ASIO and WASAPI exclusive only. Preserves
+  standard back/side surround layouts. ASIO requires six outputs ordered L/R/C/LFE/SL/SR
+  (BL/BR for back surround). Shared output and legacy behavior remain unchanged when disabled.
+  Hardware validation is pending; see [scope and tests](EXPERIMENTAL-5.1.md).
+- **Progress telemetry**: independent latest-only shared memory every 50 ms, with timestamps,
+  timeline epochs and seek acknowledgements. UI and lyrics share one bounded playback clock;
+  the legacy request command remains available for diagnostic tools.
 - **Dolby Digital / Digital Plus files**: bundled AC-3/E-AC-3 decoding supports
   E-AC-3 in M4A/MP4, including the compatible multichannel audio in Atmos/JOC files.
   Shared output uses the existing stereo downmix policy. This pipeline does not

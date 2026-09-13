@@ -13,6 +13,7 @@ public struct SetMusicUrlRequest
 public struct ChangePositionRequest
 {
     public long PositionMs;
+    public long SeekId;
 }
 
 public struct ChangeVolumeRequest
@@ -34,6 +35,7 @@ public struct IpcSetting
     public float Volume;
     public bool IsSettingChanged;
     public bool IsFadeEnabled;
+    public bool ExperimentalSurround51;
 }
 
 public struct UpdateEqRequest

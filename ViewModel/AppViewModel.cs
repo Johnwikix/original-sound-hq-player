@@ -271,7 +271,7 @@ namespace WinUIMusicPlayer.ViewModel
         private TimeSpan TotalTime { get; set; }
         private TimeSpan CurrentTime { get; set; }
         public TimeSpan CurrentPlayingTime { get; set => SetProperty(ref field, value); } = TimeSpan.Zero;
-        private TimeProgressCache _cache;
+        private readonly BassPlayerIpc.Shared.PlaybackTimeline _cache = new();
         private DispatcherQueueTimer? _progressTimer;
         private CancellationTokenSource? _progressPollingCts;
         private Task? _progressPollingTask;
@@ -283,13 +283,6 @@ namespace WinUIMusicPlayer.ViewModel
         public event Action<long>? CurrentPlayingTimeChanged;
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
 
-        private struct TimeProgressCache
-        {
-            private long _currentMs;
-            private long _totalMs;
-            public void Store(long c, long t) { Volatile.Write(ref _totalMs, t); Volatile.Write(ref _currentMs, c); }
-            public (long curMs, long totalMs) Load() => (Volatile.Read(ref _currentMs), Volatile.Read(ref _totalMs));
-        }
 
         // 带有复杂逻辑的属性重构
         public bool UseImageDominantTheme
@@ -470,13 +463,9 @@ namespace WinUIMusicPlayer.ViewModel
                 long newPosMs = (long)(value * 1000);
                 if (Math.Abs(newPosMs - curMs) > 2000)
                 {
-                    _ = Task.Run(() =>
-                    {
-                        IsManualSelect = true;
-                        App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime(newPosMs);
-                        SetTimeProgressCache(newPosMs, totalMs);
-                        IsManualSelect = false;
-                    });
+                    IsManualSelect = true;
+                    App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime(newPosMs);
+                    IsManualSelect = false;
                 }
             }
         }
@@ -496,6 +485,8 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void StartProgressTimerCore()
         {
+            TimeProgressBus.SetClock(ReadPlaybackClock);
+            _cache.SetPaused(false);
             if (_progressTimer is null)
             {
                 _progressTimer = App.MainWindow.DispatcherQueue.CreateTimer();
@@ -524,6 +515,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void StopProgressTimerCore()
         {
+            _cache.SetPaused(true);
             _progressTimer?.Stop();
             _progressPollingCts?.Cancel();
         }
@@ -534,6 +526,9 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         public (long curMs, long totalMs) GetTimeProgressCache() => _cache.Load();
+        public void BeginProgressSeek(long positionMs, long seekId) => _cache.BeginSeek(positionMs, seekId);
+        public void CancelProgressSeek(long seekId) => _cache.CancelSeek(seekId);
+        private long ReadPlaybackClock() => _cache.Load().curMs;
 
         public void SetTimeProgressCache(long curMs, long totalMs) => _cache.Store(curMs, totalMs);
 
@@ -545,18 +540,16 @@ namespace WinUIMusicPlayer.ViewModel
 
         private async Task PollProgressLoopAsync(CancellationToken ct)
         {
-            var svc = App.Services.GetRequiredService<BassPlayerCommandService>();
+            var svc = App.Services.GetRequiredService<IpcService>();
             try
             {
-                using var pt = new PeriodicTimer(TimeSpan.FromMilliseconds(250));
+                using var pt = new PeriodicTimer(TimeSpan.FromMilliseconds(50));
                 while (await pt.WaitForNextTickAsync(ct))
                 {
                     try
                     {
-                        var result = await svc.GetTimeProgress();
-                        // null = round-trip failed (server busy/timeout); keep the last
-                        // known value instead of storing (0, 0) and jumping the UI.
-                        if (!ct.IsCancellationRequested && result is { } p) _cache.Store(p.currentMs, p.totalMs);
+                        if (svc.TryGetProgressSnapshot(out var snapshot) && !ct.IsCancellationRequested)
+                            _cache.Apply(snapshot);
                     }
                     catch (Exception ex)
                     {
@@ -1407,6 +1400,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (dispose)
             {
                 _isDisposed = true;
+                TimeProgressBus.SetClock(null);
                 EnqueueUnlessUIThread(ref _stopTimerHandler, StopProgressTimerCore);
                 _progressPollingCts?.Cancel();
                 _progressPollingCts?.Dispose();
@@ -1520,7 +1514,6 @@ namespace WinUIMusicPlayer.ViewModel
             var (curMs, totalMs) = GetTimeProgressCache();
             long newPosMs = Math.Clamp(curMs + deltaMs, 0, totalMs);
             IsManualSelect = true;
-            SetTimeProgressCache(newPosMs, totalMs);
             ProgressSlider = newPosMs / 1000.0;
             App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime(newPosMs);
             IsManualSelect = false;

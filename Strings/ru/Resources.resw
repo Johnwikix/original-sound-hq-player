@@ -1821,8 +1821,13 @@
   <data name="CurveDeletePresetConfirmation" xml:space="preserve">
     <value>Удалить пресет «{0}»? Текущая кривая сохранится.</value>
   </data>
+  <data name="ExperimentalSurround51Title" xml:space="preserve">
+    <value>Экспериментальный вывод 5.1</value>
+  </data>
+  <data name="ExperimentalSurround51Description" xml:space="preserve">
+    <value>По умолчанию выключен. Только PCM 5.1 через ASIO / WASAPI Exclusive, без Atmos. Выходы ASIO 1–6: L, R, C, LFE, Surround L, Surround R. На оборудовании не проверено.</value>
+  </data>
 </root>
-
 
 
 

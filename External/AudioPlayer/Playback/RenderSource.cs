@@ -18,6 +18,8 @@ internal interface IRenderSource
     /// <summary>设备侧速率：PCM=采样率；DoP=DoP 帧率(DSD/16)；NativeDsd=DSD 位率。</summary>
     int SampleRate { get; }
     int Channels { get; }
+    /// <summary>实验性 5.1 的原生扬声器掩码；0 保留旧输出行为。</summary>
+    uint ChannelMask => 0;
     /// <summary>累计提交音频帧数；Native DSD 使用字节帧。</summary>
     long SubmittedFrames => 0;
     /// <summary>PCM：读 frames 帧交织 double（float64 管线，含 EQ 与增益），不足补静音。</summary>

@@ -511,7 +511,7 @@ namespace WinUIMusicPlayer.View
 
         private void LyricsView_LyricInteracted(object? sender, TimeSpan e)
         {
-            Task.Run(() =>
+            DispatcherQueue.TryEnqueue(() =>
             {
                 AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.LyricLine? lyricLine = ViewModel.AppViewModel.UILyrics.AsValueEnumerable().FirstOrDefault(line => line.StartMs >= e.TotalMilliseconds);
                 ViewModel.AppViewModel.IsManualSelect = true;
@@ -521,7 +521,6 @@ namespace WinUIMusicPlayer.View
                     ViewModel.UpdateLyricsToUI(index);
                 }
                 App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime((long)e.TotalMilliseconds);
-                ViewModel.AppViewModel.SetTimeProgressCacheCurMs((long)e.TotalMilliseconds);
                 ViewModel.AppViewModel.IsManualSelect = false;
             });
         }

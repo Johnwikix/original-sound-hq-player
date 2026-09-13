@@ -1824,7 +1824,12 @@
   <data name="CurveDeletePresetConfirmation" xml:space="preserve">
     <value>Delete preset “{0}”? Your current curve will be kept.</value>
   </data>
+  <data name="ExperimentalSurround51Title" xml:space="preserve">
+    <value>Experimental 5.1 output</value>
+  </data>
+  <data name="ExperimentalSurround51Description" xml:space="preserve">
+    <value>Off by default. 5.1 PCM via ASIO / WASAPI exclusive only; no Atmos. ASIO outputs 1–6 must be L, R, C, LFE, surround L, surround R. Not hardware-verified.</value>
+  </data>
 </root>
-
 
 

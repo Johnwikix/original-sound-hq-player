@@ -223,6 +223,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
         if (!_exclusive || _client == null || _source == null || IsFailed) return false;
         if (source.Kind != RenderKind.Pcm || _source.Kind != RenderKind.Pcm) return false;
         if (source.SampleRate != _source.SampleRate || source.Channels != _source.Channels) return false;
+        if (source.ChannelMask != _source.ChannelMask) return false;
         _source = source;
         return true;
     }
@@ -425,15 +426,20 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
         return WasapiTypes.EPending;
     }
 
-    private static WAVEFORMATEXTENSIBLE MakeFormat(IRenderSource source, int kind) => kind switch
+    internal static WAVEFORMATEXTENSIBLE MakeFormat(IRenderSource source, int kind)
     {
-        FormatKind.Float32 => WAVEFORMATEXTENSIBLE.Create((uint)source.SampleRate, (ushort)source.Channels, 32, 32, SubFormats.IeeeFloat),
-        FormatKind.Pcm24In32 => WAVEFORMATEXTENSIBLE.Create((uint)source.SampleRate, (ushort)source.Channels, 32, 24, SubFormats.Pcm),
-        FormatKind.Pcm32 => WAVEFORMATEXTENSIBLE.Create((uint)source.SampleRate, (ushort)source.Channels, 32, 32, SubFormats.Pcm),
-        FormatKind.Pcm24Packed => WAVEFORMATEXTENSIBLE.Create((uint)source.SampleRate, (ushort)source.Channels, 24, 24, SubFormats.Pcm),
-        FormatKind.Pcm16 => WAVEFORMATEXTENSIBLE.Create((uint)source.SampleRate, (ushort)source.Channels, 16, 16, SubFormats.Pcm),
-        _ => default,
-    };
+        var format = kind switch
+        {
+            FormatKind.Float32 => WAVEFORMATEXTENSIBLE.Create((uint)source.SampleRate, (ushort)source.Channels, 32, 32, SubFormats.IeeeFloat),
+            FormatKind.Pcm24In32 => WAVEFORMATEXTENSIBLE.Create((uint)source.SampleRate, (ushort)source.Channels, 32, 24, SubFormats.Pcm),
+            FormatKind.Pcm32 => WAVEFORMATEXTENSIBLE.Create((uint)source.SampleRate, (ushort)source.Channels, 32, 32, SubFormats.Pcm),
+            FormatKind.Pcm24Packed => WAVEFORMATEXTENSIBLE.Create((uint)source.SampleRate, (ushort)source.Channels, 24, 24, SubFormats.Pcm),
+            FormatKind.Pcm16 => WAVEFORMATEXTENSIBLE.Create((uint)source.SampleRate, (ushort)source.Channels, 16, 16, SubFormats.Pcm),
+            _ => default,
+        };
+        if (source.ChannelMask != 0) format.dwChannelMask = source.ChannelMask;
+        return format;
+    }
 
     private static int BytesPerSample(int kind) => kind switch
     {
