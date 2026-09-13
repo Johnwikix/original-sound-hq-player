@@ -69,29 +69,17 @@
   <ItemGroup>
 	<!-- 独立播放进程（AOT 单文件，仓库内为发布产物暂存）：与应用主程序、ffmpeg DLL 同铺应用根，
 	     AutoGen 默认按 exe 目录定位 DLL，无需任何路径适配 -->
-	<None Include="Player\*.exe"
-	      CopyToOutputDirectory="PreserveNewest"
-	      Link="%(Filename)%(Extension)" />
-	<None Include="Player\*.dll" Exclude="Player\wavpackdll.dll"
-		  CopyToOutputDirectory="PreserveNewest"
-		  Link="%(Filename)%(Extension)" />
+	<None Include="Player\*.exe" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+	<None Include="Player\*.dll" Exclude="Player\wavpackdll.dll" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
 
 	<!-- FFmpeg 9.0.1 shared DLL（单套分发，全程序唯一样本）：主程序进程内转码与独立播放进程
 	     AudioPlayer（应用根目录，紧邻 DLL）共用这一套。
 	     仅拷贝音频管线实际依赖的四个库：avformat→avcodec→avutil、swresample→avutil；
 	     avdevice/avfilter/swscale（设备采集/滤镜/视频缩放）未使用，不随包分发。
 	     注意：目录通配符意味着升级 FFmpeg 解进新 DLL 会被静默带上包，需人工把关。 -->
-	<None Include="Libraries\FFmpeg\x64\*.dll"
-	      Condition="'$(Platform)' == 'x64'"
-	      CopyToOutputDirectory="PreserveNewest"
-	      Link="%(Filename)%(Extension)" />
-    <None Include="Libraries\WavPack\x64\wavpackdll.dll"
-          Condition="'$(Platform)' == 'x64'"
-          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest"
-          Link="wavpackdll.dll" />
-    <None Include="Libraries\WavPack\LICENSE.txt"
-          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest"
-          Link="Licenses\WavPack.txt" />
+	<None Include="Libraries\FFmpeg\x64\*.dll" Condition="'$(Platform)' == 'x64'" CopyToOutputDirectory="PreserveNewest" Link="%(Filename)%(Extension)" />
+    <None Include="Libraries\WavPack\x64\wavpackdll.dll" Condition="'$(Platform)' == 'x64'" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="wavpackdll.dll" />
+    <None Include="Libraries\WavPack\LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Link="Licenses\WavPack.txt" />
   </ItemGroup>
 
   <!--
@@ -307,10 +295,10 @@
 	<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <DefaultLanguage>en</DefaultLanguage>
-    <AppxPackageSigningEnabled>False</AppxPackageSigningEnabled>
+    <AppxPackageSigningEnabled>True</AppxPackageSigningEnabled>
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
-    <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
+    <AppxAutoIncrementPackageRevision>False</AppxAutoIncrementPackageRevision>
     <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
     <GenerateTestArtifacts>True</GenerateTestArtifacts>
     <AppxBundle>Never</AppxBundle>
@@ -325,6 +313,7 @@
     <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
     <UserSecretsId>4aeb06b5-7bbb-4348-aff3-50338e7e8ffd</UserSecretsId>
 	<CETCompat>false</CETCompat>
+	<PackageCertificateThumbprint>0002A085EDBAA55E2DD16A09CF752756DA371596</PackageCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x86'">
     <IsPublishable>True</IsPublishable>
