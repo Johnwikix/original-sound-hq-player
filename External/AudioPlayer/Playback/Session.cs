@@ -391,6 +391,7 @@ internal sealed class Session : IRenderSource, IDisposable
             }
             Effects?.ApplyInput(buffer, audible);
             Eq.Process(buffer, audible, _channels);
+            Effects?.ApplyConvolution(buffer, audible);
             Effects?.ApplyStereo(buffer, audible);
         }
         Gain.Apply(buffer, audible, _channels);

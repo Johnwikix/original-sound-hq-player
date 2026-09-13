@@ -77,6 +77,7 @@ namespace WinUIMusicPlayer.View.SubView
             Opened += async (_, _) =>
             {
                 _dialogOpen = true;
+                EqScroll.MaxHeight = Math.Max(180, XamlRoot.Size.Height - 120);
                 _stateGeneration++;
                 _isLoaded = false;
                 _isSyncingUi = true;
@@ -268,6 +269,7 @@ namespace WinUIMusicPlayer.View.SubView
                 bands[i].Q = preset.Bands[i].Q;
             }
             Equalizer.SetBands(bands);
+            Response.Refresh();
         }
 
         private string SerializeCurrent(string name)
@@ -283,6 +285,7 @@ namespace WinUIMusicPlayer.View.SubView
         {
             if (!_isLoaded || _isSyncingUi) return;
 
+            Response.Refresh();
             // 选中的是自定义预设：修改自动写回该预设（防抖落盘），下拉选项保持不变；
             // 选中的是内置预设：仅更新当前状态，内置预设不被隐式覆盖
             if (TryParseIdTag(GetSelectedTag(), out int id) && FindCustom(id) is not null)
@@ -328,6 +331,7 @@ namespace WinUIMusicPlayer.View.SubView
             if (_isSyncingUi || !_isLoaded) return;
 
             AppSettings.IsEqualizerEnabled = ToggleSwitchEqualizer.IsOn;
+            Response.Refresh();
             _stateGeneration++;
             _eqCommitInFlight = true;
             ToggleSwitchEqualizer.IsEnabled = false;

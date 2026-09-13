@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1746,4 +1746,64 @@
   <data name="DspMasterBypass" xml:space="preserve">
     <value>DSP 总开关已关闭：所有音效已旁路，设置已保留。可在「设置 → 音效」重新开启。</value>
   </data>
+  <data name="DspConvolutionSection.Text" xml:space="preserve"><value>卷积校正</value></data>
+  <data name="DspConvolution" xml:space="preserve"><value>启用卷积校正</value></data>
+  <data name="DspConvolutionToggle.AutomationProperties.Name" xml:space="preserve"><value>启用卷积校正</value></data>
+  <data name="DspIrDescription.Text" xml:space="preserve"><value>导入耳机或房间校正的 WAV 脉冲响应（IR）。支持单声道或双声道，最多 8192 个采样点；会按输出采样率重采样，重采样后也须在此限制内。DSD 位流输出时自动旁路。</value></data>
+  <data name="DspIrFile" xml:space="preserve"><value>脉冲响应文件</value></data>
+  <data name="DspIrImport.Content" xml:space="preserve"><value>导入 WAV…</value></data>
+  <data name="DspIrClear.Content" xml:space="preserve"><value>移除</value></data>
+  <data name="DspIrEmpty" xml:space="preserve"><value>尚未导入 IR</value></data>
+  <data name="DspIrTrim" xml:space="preserve"><value>校正增益（dB）</value></data>
+  <data name="DspIrTrimInput.AutomationProperties.Name" xml:space="preserve"><value>卷积校正增益，单位分贝</value></data>
+  <data name="DspIrTrimDescription" xml:space="preserve"><value>默认 −6 dB，为校正预留峰值余量。若出现失真，请进一步降低增益。</value></data>
+  <data name="DspIrBypass" xml:space="preserve"><value>卷积校正已旁路；已导入的文件和设置会保留。</value></data>
+  <data name="DspIrLoading" xml:space="preserve"><value>正在加载并准备脉冲响应…</value></data>
+  <data name="DspIrActive" xml:space="preserve"><value>卷积校正已生效。</value></data>
+  <data name="DspIrFailed" xml:space="preserve"><value>IR 无法用于当前输出：文件可能丢失、无效，或重采样后超过 8192 点。请重新导入。</value></data>
+  <data name="DspIrUnsupported" xml:space="preserve"><value>卷积校正仅支持单声道和双声道 PCM 输出。</value></data>
+  <data name="DspIrOff" xml:space="preserve"><value>卷积校正未生效。导入 IR 并启用校正后，将在 PCM 播放时应用。</value></data>
+  <data name="DspIrImportError" xml:space="preserve"><value>导入失败。请选择有效的单声道或双声道 WAV（16/24/32 位 PCM 或 32/64 位浮点），最多 8192 点、4 MiB；原有配置已保留。</value></data>
+  <data name="ResponseTitle.Text" xml:space="preserve"><value>合成频响</value></data>
+  <data name="ResponsePlotName" xml:space="preserve"><value>EQ 与卷积合成频响图，横轴频率，纵轴分贝</value></data>
+  <data name="ResponseLeft.Content" xml:space="preserve"><value>左声道</value></data>
+  <data name="ResponseRight.Content" xml:space="preserve"><value>右声道</value></data>
+  <data name="ResponseCombinedLegend.Text" xml:space="preserve"><value>━ 合成</value></data>
+  <data name="ResponseEqLegend.Text" xml:space="preserve"><value>┄ EQ</value></data>
+  <data name="ResponseFirLegend.Text" xml:space="preserve"><value>┈ 卷积</value></data>
+  <data name="ResponsePreparing" xml:space="preserve"><value>正在计算实际滤波响应…</value></data>
+  <data name="ResponseReady" xml:space="preserve"><value>输出 {0:0.##} kHz · 卷积自动衰减 {1:0.0} dB · 稳态响应预览</value></data>
+  <data name="ResponseBypass" xml:space="preserve"><value>当前未应用或处于旁路；按 {0:0.##} kHz 预览已选设置。自动衰减 {1:0.0} dB。</value></data>
+  <data name="ResponseScope.Text" xml:space="preserve"><value>合成 = EQ + 卷积（含校正增益）+ 前置衰减。两者提升会叠加。不含响度均一化、声道混合和主音量；纵轴随响应自动缩放。</value></data>
+  <data name="ResponseFailed" xml:space="preserve"><value>无法计算此 IR 的响应。文件可能不可用，或重采样后超过长度限制；未显示过期曲线。</value></data>
+  <data name="CurveEditorTitle" xml:space="preserve"><value>绘制校正曲线</value></data>
+  <data name="CurveApply" xml:space="preserve"><value>应用</value></data>
+  <data name="CurveCancel" xml:space="preserve"><value>取消</value></data>
+  <data name="CurveIntro.Text" xml:space="preserve"><value>直接调整各频率的增益，自动生成最小相位 FIR。无需 WAV 文件；此功能用于手动调音，不会自动测量耳机或房间。</value></data>
+  <data name="CurveNodeHint.Text" xml:space="preserve"><value>带节点的虚线是设定曲线；“卷积”线是实际 FIR 响应（含增益）。拖动节点或用下面的数值输入编辑。</value></data>
+  <data name="CurveNodePicker.Header" xml:space="preserve"><value>控制点</value></data>
+  <data name="CurveFrequency.Header" xml:space="preserve"><value>频率（Hz）</value></data>
+  <data name="CurveGain.Header" xml:space="preserve"><value>增益（dB）</value></data>
+  <data name="CurveAdd.Content" xml:space="preserve"><value>添加节点</value></data>
+  <data name="CurveRemove.Content" xml:space="preserve"><value>移除节点</value></data>
+  <data name="CurveFlat.Content" xml:space="preserve"><value>恢复平直</value></data>
+  <data name="CurveAutoHeadroom.Content" xml:space="preserve"><value>按 FIR 最大提升自动预留余量</value></data>
+  <data name="CurveAudition.Header" xml:space="preserve"><value>试听卷积</value></data>
+  <data name="CurveTrim.Header" xml:space="preserve"><value>校正增益（dB）</value></data>
+  <data name="CurvePresetHeading.Text" xml:space="preserve"><value>曲线预设</value></data>
+  <data name="CurvePresets.PlaceholderText" xml:space="preserve"><value>选择已保存的曲线</value></data>
+  <data name="CurvePresets.AutomationProperties.Name" xml:space="preserve"><value>曲线预设</value></data>
+  <data name="CurveSavePreset.Content" xml:space="preserve"><value>保存预设…</value></data>
+  <data name="CurvePresetName.Header" xml:space="preserve"><value>预设名称</value></data>
+  <data name="CurveSaveNewPreset.Content" xml:space="preserve"><value>保存新预设</value></data>
+  <data name="CurvePresetError" xml:space="preserve"><value>无法读取或保存曲线预设，请检查文件与写入权限。</value></data>
+  <data name="CurvePresetNameError" xml:space="preserve"><value>请使用非空且不重复的名称，最多保存 100 个预设。</value></data>
+  <data name="CurveSource" xml:space="preserve"><value>校正来源</value></data>
+  <data name="CurveSourceDraw.Content" xml:space="preserve"><value>绘制曲线</value></data>
+  <data name="CurveSourceWave.Content" xml:space="preserve"><value>导入 WAV</value></data>
+  <data name="CurveEditorDescription" xml:space="preserve"><value>无需 IR 文件。编辑频率与增益，并查看与 EQ 叠加后的实际响应。</value></data>
+  <data name="CurveEdit.Content" xml:space="preserve"><value>编辑曲线…</value></data>
+  <data name="ResponseCombinedToggle.Content" xml:space="preserve"><value>━ 合成</value></data>
+  <data name="ResponseEqToggle.Content" xml:space="preserve"><value>┄ EQ</value></data>
+  <data name="ResponseFirToggle.Content" xml:space="preserve"><value>┈ 卷积</value></data>
 </root>

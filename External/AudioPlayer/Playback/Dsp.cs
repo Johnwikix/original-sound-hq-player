@@ -77,17 +77,9 @@ internal sealed class Equalizer
             double db = _gains[i];
             b.Active = _enabled && Math.Abs(db) >= 0.01 && rate > 0 && Frequencies[i] < rate * 0.5;
             if (!b.Active) continue;
-            // RBJ 峰值滤波器（Q 形式）：Q 越大，峰值作用范围越窄。
-            double a = Math.Pow(10.0, db / 40.0);
-            double w0 = 2.0 * Math.PI * Frequencies[i] / rate;
-            double sinW = Math.Sin(w0), cosW = Math.Cos(w0);
-            double alpha = sinW / (2.0 * _q[i]);
-            double a0 = 1.0 + alpha / a;
-            b.B0 = (1.0 + alpha * a) / a0;
-            b.B1 = (-2.0 * cosW) / a0;
-            b.B2 = (1.0 - alpha * a) / a0;
-            b.A1 = (-2.0 * cosW) / a0;
-            b.A2 = (1.0 - alpha / a) / a0;
+            var coefficients = PeakCoefficients.Create(Frequencies[i], db, _q[i], rate);
+            b.B0 = coefficients.B0; b.B1 = coefficients.B1; b.B2 = coefficients.B2;
+            b.A1 = coefficients.A1; b.A2 = coefficients.A2;
         }
         _snapshot = bands;
     }

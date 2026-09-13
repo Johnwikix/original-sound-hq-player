@@ -70,6 +70,41 @@
                         SpinButtonPlacementMode="Inline"
                         Value="{x:Bind ViewModel.HeadroomDb, Mode=TwoWay}" />
                 </controls:SettingsCard>
+                <TextBlock x:Uid="DspConvolutionSection" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('CurveSource')}">
+                    <ComboBox Width="220" SelectedIndex="{x:Bind ViewModel.ConvolutionSourceIndex, Mode=TwoWay}">
+                        <ComboBoxItem x:Uid="CurveSourceDraw" />
+                        <ComboBoxItem x:Uid="CurveSourceWave" />
+                    </ComboBox>
+                </controls:SettingsCard>
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('CurveEditorTitle')}"
+                    Description="{x:Bind tool:ToolUtils.GetString('CurveEditorDescription')}"
+                    Visibility="{x:Bind ToVisibility(ViewModel.CurveMode), Mode=OneWay}">
+                    <Button x:Uid="CurveEdit" Click="EditCurve_Click" />
+                </controls:SettingsCard>
+                <TextBlock Visibility="{x:Bind ToVisibility(ViewModel.WaveMode), Mode=OneWay}" x:Uid="DspIrDescription" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspConvolution')}"
+                    IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}">
+                    <ToggleSwitch x:Uid="DspConvolutionToggle" MinWidth="0" IsOn="{x:Bind ViewModel.ConvolutionEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
+                <controls:SettingsCard Visibility="{x:Bind ToVisibility(ViewModel.WaveMode), Mode=OneWay}" Header="{x:Bind tool:ToolUtils.GetString('DspIrFile')}"
+                    Description="{x:Bind ViewModel.ImpulseName, Mode=OneWay}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button x:Uid="DspIrImport" IsEnabled="{x:Bind ViewModel.ImportAvailable, Mode=OneWay}" Click="ImportImpulse_Click" />
+                        <Button x:Uid="DspIrClear" IsEnabled="{x:Bind ViewModel.ImportAvailable, Mode=OneWay}" Click="ClearImpulse_Click" />
+                    </StackPanel>
+                </controls:SettingsCard>
+                <ProgressRing IsActive="{x:Bind ViewModel.ImportBusy, Mode=OneWay}" Width="24" Height="24" />
+                <InfoBar IsOpen="{x:Bind ViewModel.ImportFailed, Mode=OneWay}" IsClosable="False" Severity="Error"
+                    Message="{x:Bind ViewModel.ImportError, Mode=OneWay}" />
+                <TextBlock Text="{x:Bind ViewModel.ConvolutionText, Mode=OneWay}" TextWrapping="Wrap"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspIrTrim')}"
+                    Description="{x:Bind tool:ToolUtils.GetString('DspIrTrimDescription')}"
+                    IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}">
+                    <NumberBox x:Uid="DspIrTrimInput" Width="220" Minimum="-24" Maximum="0" SmallChange="0.5"
+                        SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.ConvolutionTrimDb, Mode=TwoWay}" />
+                </controls:SettingsCard>
                 <TextBlock x:Uid="DspChannels" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
                 <controls:SettingsCard
                     Description="{x:Bind tool:ToolUtils.GetString('DspBalanceDescription')}"

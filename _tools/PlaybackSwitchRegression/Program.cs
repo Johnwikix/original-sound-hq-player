@@ -30,6 +30,8 @@ internal static unsafe partial class Program
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(WasapiOutput))]
     private static int Main(string[] args)
     {
+        if (args.Length == 1 && args[0] == "--test-curves") { RunCurveTests(); return _failures == 0 ? 0 : 1; }
+        if (args.Length == 1 && args[0] == "--test-convolution") { RunConvolutionTests(); return _failures == 0 ? 0 : 1; }
         if (args.Length == 2 && args[0] == "--dsp-writer") return DspWriter(args[1]);
         if (args.Length == 1 && args[0] == "--test-dsp-notifications")
         {
@@ -46,6 +48,8 @@ internal static unsafe partial class Program
         RunAsioNotificationTests();
         RunEqualizerQTests();
         RunDspTests();
+        RunConvolutionTests();
+        RunCurveTests();
         RunDspNotificationTests();
         RunReviewFixTests(root);
         RunWasapiStallTests();

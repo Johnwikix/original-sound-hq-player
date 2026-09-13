@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1747,6 +1747,66 @@
   <data name="DspMasterBypass" xml:space="preserve">
     <value>DSP is off: all effects are bypassed and their settings are retained. Enable it in Settings → Audio effects.</value>
   </data>
+  <data name="DspConvolutionSection.Text" xml:space="preserve"><value>Convolution correction</value></data>
+  <data name="DspConvolution" xml:space="preserve"><value>Enable convolution correction</value></data>
+  <data name="DspConvolutionToggle.AutomationProperties.Name" xml:space="preserve"><value>Enable convolution correction</value></data>
+  <data name="DspIrDescription.Text" xml:space="preserve"><value>Import a headphone or room correction WAV impulse response (IR). Mono or stereo, up to 8192 samples before and after resampling to the output rate. Automatically bypassed for DSD bitstream output.</value></data>
+  <data name="DspIrFile" xml:space="preserve"><value>Impulse response file</value></data>
+  <data name="DspIrImport.Content" xml:space="preserve"><value>Import WAV…</value></data>
+  <data name="DspIrClear.Content" xml:space="preserve"><value>Remove</value></data>
+  <data name="DspIrEmpty" xml:space="preserve"><value>No IR imported</value></data>
+  <data name="DspIrTrim" xml:space="preserve"><value>Correction gain (dB)</value></data>
+  <data name="DspIrTrimInput.AutomationProperties.Name" xml:space="preserve"><value>Convolution correction gain in decibels</value></data>
+  <data name="DspIrTrimDescription" xml:space="preserve"><value>Defaults to −6 dB to reserve peak headroom. Reduce the gain further if distortion occurs.</value></data>
+  <data name="DspIrBypass" xml:space="preserve"><value>Convolution is bypassed. The imported file and settings are retained.</value></data>
+  <data name="DspIrLoading" xml:space="preserve"><value>Loading and preparing the impulse response…</value></data>
+  <data name="DspIrActive" xml:space="preserve"><value>Convolution correction is active.</value></data>
+  <data name="DspIrFailed" xml:space="preserve"><value>The IR cannot be used for this output: it may be missing, invalid, or exceed 8192 samples after resampling. Import another IR.</value></data>
+  <data name="DspIrUnsupported" xml:space="preserve"><value>Convolution supports mono and stereo PCM output only.</value></data>
+  <data name="DspIrOff" xml:space="preserve"><value>Convolution is inactive. Import an IR and enable correction to apply it during PCM playback.</value></data>
+  <data name="DspIrImportError" xml:space="preserve"><value>Import failed. Choose a valid mono or stereo WAV (16/24/32-bit PCM or 32/64-bit float), up to 8192 samples and 4 MiB. The previous configuration is retained.</value></data>
+  <data name="ResponseTitle.Text" xml:space="preserve"><value>Combined frequency response</value></data>
+  <data name="ResponsePlotName" xml:space="preserve"><value>EQ and convolution frequency response. Frequency in Hz, gain in dB.</value></data>
+  <data name="ResponseLeft.Content" xml:space="preserve"><value>Left</value></data>
+  <data name="ResponseRight.Content" xml:space="preserve"><value>Right</value></data>
+  <data name="ResponseCombinedLegend.Text" xml:space="preserve"><value>━ Combined</value></data>
+  <data name="ResponseEqLegend.Text" xml:space="preserve"><value>┄ EQ</value></data>
+  <data name="ResponseFirLegend.Text" xml:space="preserve"><value>┈ Convolution</value></data>
+  <data name="ResponsePreparing" xml:space="preserve"><value>Calculating the filter response…</value></data>
+  <data name="ResponseReady" xml:space="preserve"><value>Output {0:0.##} kHz · FIR automatic attenuation {1:0.0} dB · Steady-state preview</value></data>
+  <data name="ResponseBypass" xml:space="preserve"><value>Not currently applied or bypassed. Previewing selected settings at {0:0.##} kHz; automatic attenuation {1:0.0} dB.</value></data>
+  <data name="ResponseScope.Text" xml:space="preserve"><value>Combined = EQ + convolution (including correction gain) + preamp. Boosts add together. Excludes loudness normalization, channel mixing and master volume. The gain axis scales with the response.</value></data>
+  <data name="ResponseFailed" xml:space="preserve"><value>Cannot calculate this IR response. The file may be unavailable or exceed the length limit after resampling. No stale response is shown.</value></data>
+  <data name="CurveEditorTitle" xml:space="preserve"><value>Draw correction curve</value></data>
+  <data name="CurveApply" xml:space="preserve"><value>Apply</value></data>
+  <data name="CurveCancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="CurveIntro.Text" xml:space="preserve"><value>Adjust frequency gains to generate a minimum-phase FIR. No WAV file is needed. This is manual tuning, not automatic headphone or room measurement.</value></data>
+  <data name="CurveNodeHint.Text" xml:space="preserve"><value>The dotted line with nodes is the requested curve; Convolution shows the realized FIR including gain. Drag nodes or use the numeric fields below.</value></data>
+  <data name="CurveNodePicker.Header" xml:space="preserve"><value>Control point</value></data>
+  <data name="CurveFrequency.Header" xml:space="preserve"><value>Frequency (Hz)</value></data>
+  <data name="CurveGain.Header" xml:space="preserve"><value>Gain (dB)</value></data>
+  <data name="CurveAdd.Content" xml:space="preserve"><value>Add point</value></data>
+  <data name="CurveRemove.Content" xml:space="preserve"><value>Remove point</value></data>
+  <data name="CurveFlat.Content" xml:space="preserve"><value>Flatten</value></data>
+  <data name="CurveAutoHeadroom.Content" xml:space="preserve"><value>Reserve headroom for the FIR peak boost</value></data>
+  <data name="CurveAudition.Header" xml:space="preserve"><value>Audition convolution</value></data>
+  <data name="CurveTrim.Header" xml:space="preserve"><value>Correction gain (dB)</value></data>
+  <data name="CurvePresetHeading.Text" xml:space="preserve"><value>Curve presets</value></data>
+  <data name="CurvePresets.PlaceholderText" xml:space="preserve"><value>Choose a saved curve</value></data>
+  <data name="CurvePresets.AutomationProperties.Name" xml:space="preserve"><value>Curve presets</value></data>
+  <data name="CurveSavePreset.Content" xml:space="preserve"><value>Save preset…</value></data>
+  <data name="CurvePresetName.Header" xml:space="preserve"><value>Preset name</value></data>
+  <data name="CurveSaveNewPreset.Content" xml:space="preserve"><value>Save new preset</value></data>
+  <data name="CurvePresetError" xml:space="preserve"><value>Could not read or save curve presets. Check the file and write access.</value></data>
+  <data name="CurvePresetNameError" xml:space="preserve"><value>Use a nonempty, unique name. Up to 100 presets can be saved.</value></data>
+  <data name="CurveSource" xml:space="preserve"><value>Correction source</value></data>
+  <data name="CurveSourceDraw.Content" xml:space="preserve"><value>Draw curve</value></data>
+  <data name="CurveSourceWave.Content" xml:space="preserve"><value>Import WAV</value></data>
+  <data name="CurveEditorDescription" xml:space="preserve"><value>No IR file needed. Edit frequency and gain, and preview the response combined with EQ.</value></data>
+  <data name="CurveEdit.Content" xml:space="preserve"><value>Edit curve…</value></data>
+  <data name="ResponseCombinedToggle.Content" xml:space="preserve"><value>━ Combined</value></data>
+  <data name="ResponseEqToggle.Content" xml:space="preserve"><value>┄ EQ</value></data>
+  <data name="ResponseFirToggle.Content" xml:space="preserve"><value>┈ FIR</value></data>
 </root>
 
 

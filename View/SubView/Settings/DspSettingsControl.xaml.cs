@@ -26,6 +26,32 @@ public sealed partial class DspSettingsControl : UserControl
 
     private async void OnUnloaded(object sender, RoutedEventArgs args) => await ViewModel.OnViewUnloadedAsync();
 
+    public Visibility ToVisibility(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
+
+    private async void EditCurve_Click(object sender, RoutedEventArgs args)
+    {
+        var dialog = new ConvolutionCurveDialog { XamlRoot = XamlRoot, RequestedTheme = ActualTheme };
+        try
+        {
+            if (await dialog.ShowAsync() == ContentDialogResult.Primary) await ViewModel.ApplyCurveAsync(dialog.Draft);
+        }
+        finally { App.Services.GetRequiredService<IpcService>().UpdateDsp(); }
+    }
+
+    private async void ImportImpulse_Click(object sender, RoutedEventArgs args)
+    {
+        try
+        {
+            var picker = new Microsoft.Windows.Storage.Pickers.FileOpenPicker(XamlRoot.ContentIslandEnvironment.AppWindowId);
+            picker.FileTypeFilter.Add(".wav");
+            var result = await picker.PickSingleFileAsync();
+            if (result != null) await ViewModel.ImportImpulseAsync(result.Path);
+        }
+        catch (Exception) { ViewModel.ShowImportError(); }
+    }
+
+    private async void ClearImpulse_Click(object sender, RoutedEventArgs args) => await ViewModel.ClearImpulseAsync();
+
     private async void Reset_Click(object sender, RoutedEventArgs args) => await ViewModel.ResetAsync();
 
     private async void OpenEqualizer_Click(object sender, RoutedEventArgs args)

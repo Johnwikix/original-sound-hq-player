@@ -7,7 +7,19 @@ internal sealed class PcmEffects : IDisposable
 {
     internal event Action? StateChanged;
 
-    private sealed record Target(DspSettings Settings, double Gain);
+    private sealed record Target(DspSettings Settings, double Gain, ConvolutionFilter? Filter = null, double ConvolutionGain = 1);
+    private ConvolutionFilter? _filter, _renderFilter;
+    private string? _impulsePath;
+    private string? _curveKey;
+    private bool _autoHeadroom;
+    private double _autoGainDb;
+    private CancellationTokenSource? _prepareCancellation;
+    private ConvolutionFilter? _oldFilter;
+    private readonly double[] _dryConvolution = new double[1024], _oldConvolution = new double[1024];
+    private double _oldMix, _oldGain;
+    private ConvolutionStatus _convolutionStatus;
+    private int _impulseVersion;
+    private double _convolutionMix, _convolutionGain = 1;
     private readonly object _control = new();
     private readonly int _rate, _channels;
     private readonly double _lowPassAlpha, _parameterStep;
@@ -44,6 +56,7 @@ internal sealed class PcmEffects : IDisposable
         {
             if (_disposed) return;
             _settings = settings;
+            ConfigureConvolution();
             if (!settings.IsEnabled || !settings.NormalizeLoudness)
             {
                 _scan?.Cancel();
@@ -65,6 +78,50 @@ internal sealed class PcmEffects : IDisposable
             Publish();
         }
         StateChanged?.Invoke();
+    }
+
+    private void ConfigureConvolution()
+    {
+        bool curve = CorrectionCurve.UsesCurve(_settings);
+        string? curveKey = curve ? _settings.CurvePoints : null;
+        string? path = curve ? null : _settings.ImpulsePath;
+        bool autoHeadroom = curve && _settings.AutoConvolutionHeadroom;
+        if (_impulsePath == path && _curveKey == curveKey && _autoHeadroom == autoHeadroom) return;
+        _impulsePath = path; _curveKey = curveKey; _autoHeadroom = autoHeadroom;
+        _prepareCancellation?.Cancel();
+        _prepareCancellation?.Dispose();
+        var cancellation = new CancellationTokenSource();
+        _prepareCancellation = cancellation;
+        var token = cancellation.Token;
+        int version = ++_impulseVersion;
+        _convolutionStatus = ConvolutionStatus.Off;
+        if (!curve && string.IsNullOrEmpty(path)) { _filter = null; _autoGainDb = 0; return; }
+        if (_channels is < 1 or > 2) { _filter = null; _convolutionStatus = ConvolutionStatus.Unsupported; return; }
+        _convolutionStatus = ConvolutionStatus.Loading;
+        var settings = _settings;
+        _ = Task.Run(() =>
+        {
+            ConvolutionFilter? filter = null;
+            double autoGain = 0;
+            try
+            {
+                var impulse = CorrectionCurve.Prepare(settings, _rate, token);
+                if (autoHeadroom) autoGain = ResponseMath.AutoAttenuationDb(impulse);
+                token.ThrowIfCancellationRequested();
+                filter = new ConvolutionFilter(impulse, _rate, _channels);
+            }
+            catch (OperationCanceledException) { return; }
+            catch (Exception ex) { Console.WriteLine($"[convolution] IR load failed: {ex.Message}"); }
+            lock (_control)
+            {
+                if (_disposed || version != _impulseVersion) return;
+                _filter = filter;
+                _autoGainDb = autoGain;
+                _convolutionStatus = filter != null ? ConvolutionStatus.Active : ConvolutionStatus.Failed;
+                Publish();
+            }
+            StateChanged?.Invoke();
+        });
     }
 
     private async Task AnalyzeAsync(CancellationTokenSource scan)
@@ -102,7 +159,8 @@ internal sealed class PcmEffects : IDisposable
                 ? LoudnessStatus.PeakLimited : LoudnessStatus.Applied;
         }
         Volatile.Write(ref _target, new Target(_settings, _settings.IsEnabled
-            ? Math.Pow(10, (normalization + _settings.HeadroomDb) / 20) : 1));
+            ? Math.Pow(10, (normalization + _settings.HeadroomDb) / 20) : 1,
+            _settings.ConvolutionEnabled ? _filter : null, Math.Pow(10, (_settings.ConvolutionTrimDb + _autoGainDb) / 20)));
     }
 
     /// <summary>未知响度采用固定保守衰减；失败时保持衰减，避免突然回到原始音量。</summary>
@@ -114,7 +172,8 @@ internal sealed class PcmEffects : IDisposable
         lock (_control)
             return new(kind, eq, _channels, _status,
                 NormalizationGainDb,
-                _measurement?.IntegratedLufs ?? double.NaN, _settings.IsEnabled);
+                _measurement?.IntegratedLufs ?? double.NaN, _settings.IsEnabled,
+                !_settings.IsEnabled || !_settings.ConvolutionEnabled ? ConvolutionStatus.Off : _convolutionStatus, _rate);
     }
 
     /// <summary>seek 仅投递代数，滤波历史由渲染线程在下一块清空。</summary>
@@ -124,6 +183,9 @@ internal sealed class PcmEffects : IDisposable
     internal void ResetRenderState()
     {
         _renderTarget = null;
+        _renderFilter?.Reset();
+        _oldFilter = null;
+        _convolutionMix = 0;
         _gainFrames = 0;
         _gain = 1;
         _gainStep = _lowLeft = _lowRight = 0;
@@ -152,6 +214,8 @@ internal sealed class PcmEffects : IDisposable
         if (reset != _renderResetVersion)
         {
             _lowLeft = _lowRight = 0;
+            _renderFilter?.Reset();
+            _oldFilter = null;
             _renderResetVersion = reset;
         }
         if (_gain == target.Gain)
@@ -210,6 +274,40 @@ internal sealed class PcmEffects : IDisposable
         }
     }
 
+    internal void ApplyConvolution(Span<double> samples, int frames)
+    {
+        var filter = _renderTarget?.Filter;
+        if (!ReferenceEquals(filter, _renderFilter))
+        {
+            _oldFilter = _renderFilter;
+            _oldMix = _convolutionMix;
+            _oldGain = _convolutionGain;
+            _renderFilter = filter;
+            filter?.Reset();
+            _convolutionMix = 0;
+            _convolutionGain = _renderTarget?.ConvolutionGain ?? 1;
+        }
+        if (filter == null && _oldFilter == null) return;
+        double gain = _renderTarget?.ConvolutionGain ?? 1;
+        for (int offset = 0; offset < frames; offset += 512)
+        {
+            int count = Math.Min(512, frames - offset);
+            var block = samples.Slice(offset * _channels, count * _channels);
+            if (_oldFilter != null)
+            {
+                block.CopyTo(_dryConvolution);
+                block.CopyTo(_oldConvolution);
+            }
+            filter?.Process(block, count, gain, ref _convolutionMix, ref _convolutionGain, _parameterStep);
+            if (_oldFilter != null)
+            {
+                _oldFilter.Process(_oldConvolution, count, _oldGain, ref _oldMix, ref _oldGain, _parameterStep, false);
+                for (int i = 0; i < block.Length; i++) block[i] += _oldConvolution[i] - _dryConvolution[i];
+                if (_oldMix == 0) _oldFilter = null;
+            }
+        }
+    }
+
     private double Move(double current, double target) => current < target
         ? Math.Min(target, current + _parameterStep) : Math.Max(target, current - _parameterStep);
 
@@ -218,6 +316,9 @@ internal sealed class PcmEffects : IDisposable
         lock (_control)
         {
             _disposed = true;
+            _prepareCancellation?.Cancel();
+            _prepareCancellation?.Dispose();
+            _prepareCancellation = null;
             _scan?.Cancel();
             _scan = null;
         }

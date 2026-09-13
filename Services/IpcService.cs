@@ -360,6 +360,14 @@ namespace WinUIMusicPlayer.Services
             Publish(CommandId.UpdateDsp, buffer);
         }
 
+        /// <summary>试听草稿只发送到播放端，不修改或持久化用户配置。</summary>
+        public void PreviewDsp(DspSettings settings)
+        {
+            Span<byte> buffer = stackalloc byte[DspProtocol.SettingsSize];
+            DspProtocol.WriteSettings(buffer, settings.Sanitize());
+            Publish(CommandId.UpdateDsp, buffer);
+        }
+
         /// <summary>读取实际输出和音效状态；每次请求独占响应缓冲，允许不同界面并发刷新。</summary>
         public async Task<DspState?> GetDspStateAsync()
         {

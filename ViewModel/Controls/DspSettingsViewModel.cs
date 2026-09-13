@@ -2,6 +2,7 @@ using BassPlayerIpc.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.UI.Dispatching;
 using System;
+using System.IO;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -125,6 +126,85 @@ public partial class DspSettingsViewModel : ObservableObject
         }
     }
 
+    public bool CurveMode => ConvolutionSourceIndex == 0;
+    public bool WaveMode => !CurveMode;
+    public int ConvolutionSourceIndex
+    {
+        get => field;
+        set
+        {
+            if (!SetProperty(ref field, value)) return;
+            OnPropertyChanged(nameof(CurveMode)); OnPropertyChanged(nameof(WaveMode));
+            if (_syncing || !_loaded) return;
+            AppSettings.Dsp = AppSettings.Dsp with { ConvolutionSource = value == 0 ? ConvolutionSource.Curve : ConvolutionSource.Wave };
+            _dirty = true; _commitTimer.Stop(); _commitTimer.Start();
+        }
+    }
+    public async Task ApplyCurveAsync(DspSettings draft)
+    {
+        AppSettings.Dsp = draft.Sanitize();
+        LoadValues(); _dirty = true; await CommitAsync();
+    }
+
+    public bool ConvolutionEnabled
+    {
+        get => field;
+        set { if (SetProperty(ref field, value)) SettingChanged(); }
+    }
+    public double ConvolutionTrimDb
+    {
+        get => field;
+        set { if (SetProperty(ref field, value) && double.IsFinite(value)) SettingChanged(); }
+    }
+    public string ImpulseName { get => field; private set => SetProperty(ref field, value); } = "";
+    public string ConvolutionText { get => field; private set => SetProperty(ref field, value); } = "";
+    public string ImportError { get => field; private set => SetProperty(ref field, value); } = "";
+    public bool ImportFailed { get => field; private set => SetProperty(ref field, value); }
+    public bool ImportAvailable => !ImportBusy;
+    public bool ImportBusy { get => field; private set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(ImportAvailable)); } }
+
+    public async Task ImportImpulseAsync(string path)
+    {
+        if (ImportBusy) return;
+        ImportBusy = true;
+        ImportFailed = false;
+        try
+        {
+            string directory = Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "ImpulseResponses", Guid.NewGuid().ToString("N"));
+            string destination = Path.Combine(directory, Path.GetFileName(path));
+            if (System.Text.Encoding.UTF8.GetByteCount(destination) > 1024) throw new IOException("IR path is too long.");
+            await Task.Run(() =>
+            {
+                ImpulseResponse.Read(path);
+                Directory.CreateDirectory(directory);
+                File.Copy(path, destination);
+                try { ImpulseResponse.Read(destination); }
+                catch { File.Delete(destination); throw; }
+            });
+            AppSettings.Dsp = AppSettings.Dsp with { ImpulsePath = destination, ConvolutionSource = ConvolutionSource.Wave, ConvolutionEnabled = true };
+            LoadValues();
+            _dirty = true;
+            await CommitAsync();
+        }
+        catch (Exception) { ShowImportError(); }
+        finally { ImportBusy = false; }
+    }
+
+    public void ShowImportError()
+    {
+        ImportError = ToolUtils.GetString("DspIrImportError");
+        ImportFailed = true;
+    }
+
+    public async Task ClearImpulseAsync()
+    {
+        AppSettings.Dsp = AppSettings.Dsp with { ImpulsePath = "", ConvolutionEnabled = false };
+        ImportFailed = false;
+        LoadValues();
+        _dirty = true;
+        await CommitAsync();
+    }
+
     /// <summary>播放端在线且为 PCM 渲染，总开关仅此时可操作。</summary>
     public bool MasterAvailable { get => field; private set => SetProperty(ref field, value); }
     /// <summary>播放端已确认 DSP 生效，PCM 子设置仅此时可编辑。</summary>
@@ -187,6 +267,10 @@ public partial class DspSettingsViewModel : ObservableObject
         NormalizeLoudness = effectsActive && settings.NormalizeLoudness;
         TargetLufs = settings.TargetLufs;
         HeadroomDb = settings.HeadroomDb;
+        ConvolutionSourceIndex = CorrectionCurve.UsesCurve(settings) ? 0 : 1;
+        ConvolutionEnabled = effectsActive && settings.ConvolutionEnabled;
+        ConvolutionTrimDb = settings.ConvolutionTrimDb;
+        ImpulseName = string.IsNullOrEmpty(settings.ImpulsePath) ? ToolUtils.GetString("DspIrEmpty") : Path.GetFileName(settings.ImpulsePath);
         Balance = settings.Balance * 100;
         SwapChannels = effectsActive && settings.SwapChannels;
         Mono = effectsActive && settings.Mono;
@@ -213,6 +297,14 @@ public partial class DspSettingsViewModel : ObservableObject
         InfoOpen = !effectsActive || unsupported;
         InfoMessage = ToolUtils.GetString(state == null ? "DspStateUnavailable"
             : !available ? "DspBitstreamBypass" : !effectsActive ? "DspMasterBypass" : "DspStereoOnly");
+        ConvolutionText = ToolUtils.GetString(!effectsActive ? "DspIrBypass" : state?.Convolution switch
+        {
+            ConvolutionStatus.Loading => "DspIrLoading",
+            ConvolutionStatus.Active => "DspIrActive",
+            ConvolutionStatus.Failed => "DspIrFailed",
+            ConvolutionStatus.Unsupported => "DspIrUnsupported",
+            _ => "DspIrOff"
+        });
         string key = state?.Loudness switch
         {
             LoudnessStatus.Analyzing => "DspAnalyzing",
@@ -231,8 +323,10 @@ public partial class DspSettingsViewModel : ObservableObject
     private void SettingChanged()
     {
         if (_syncing || !_loaded || !_available || !AppSettings.Dsp.IsEnabled) return;
-        AppSettings.Dsp = new DspSettings
+        AppSettings.Dsp = (AppSettings.Dsp with
         {
+            ConvolutionEnabled = ConvolutionEnabled,
+            ConvolutionTrimDb = double.IsFinite(ConvolutionTrimDb) ? ConvolutionTrimDb : AppSettings.Dsp.ConvolutionTrimDb,
             IsEnabled = AppSettings.Dsp.IsEnabled,
             NormalizeLoudness = NormalizeLoudness,
             TargetLufs = double.IsFinite(TargetLufs) ? TargetLufs : AppSettings.Dsp.TargetLufs,
@@ -240,7 +334,7 @@ public partial class DspSettingsViewModel : ObservableObject
             Balance = Balance / 100, SwapChannels = SwapChannels, Mono = Mono,
             Crossfeed = CrossfeedIndex switch { 1 => 0.2, 2 => 0.4, _ => 0 },
             StereoWidth = StereoWidth / 100
-        }.Sanitize();
+        }).Sanitize();
         _dirty = true;
         _commitTimer.Stop();
         _commitTimer.Start();
