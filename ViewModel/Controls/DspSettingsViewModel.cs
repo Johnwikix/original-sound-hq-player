@@ -151,11 +151,12 @@ public partial class DspSettingsViewModel : ObservableObject
         get => field;
         set { if (SetProperty(ref field, value)) SettingChanged(); }
     }
-    public double ConvolutionTrimDb
+    public bool AutoPreamp
     {
         get => field;
-        set { if (SetProperty(ref field, value) && double.IsFinite(value)) SettingChanged(); }
+        set { if (SetProperty(ref field, value)) { OnPropertyChanged(nameof(ManualGainEnabled)); SettingChanged(); } }
     }
+    public bool ManualGainEnabled => !AutoPreamp;
     public string ImpulseName { get => field; private set => SetProperty(ref field, value); } = "";
     public string ConvolutionText { get => field; private set => SetProperty(ref field, value); } = "";
     public string ImportError { get => field; private set => SetProperty(ref field, value); } = "";
@@ -261,7 +262,7 @@ public partial class DspSettingsViewModel : ObservableObject
     private void LoadValues()
     {
         _syncing = true;
-        DspSettings settings = AppSettings.Dsp;
+        DspSettings settings = AppSettings.Dsp.ToUnifiedGain();
         bool effectsActive = _available && settings.IsEnabled;
         MasterEnabled = _available && settings.IsEnabled;
         NormalizeLoudness = effectsActive && settings.NormalizeLoudness;
@@ -269,7 +270,7 @@ public partial class DspSettingsViewModel : ObservableObject
         HeadroomDb = settings.HeadroomDb;
         ConvolutionSourceIndex = CorrectionCurve.UsesCurve(settings) ? 0 : 1;
         ConvolutionEnabled = effectsActive && settings.ConvolutionEnabled;
-        ConvolutionTrimDb = settings.ConvolutionTrimDb;
+        AutoPreamp = settings.AutoPreamp == true;
         ImpulseName = string.IsNullOrEmpty(settings.ImpulsePath) ? ToolUtils.GetString("DspIrEmpty") : Path.GetFileName(settings.ImpulsePath);
         Balance = settings.Balance * 100;
         SwapChannels = effectsActive && settings.SwapChannels;
@@ -326,7 +327,7 @@ public partial class DspSettingsViewModel : ObservableObject
         AppSettings.Dsp = (AppSettings.Dsp with
         {
             ConvolutionEnabled = ConvolutionEnabled,
-            ConvolutionTrimDb = double.IsFinite(ConvolutionTrimDb) ? ConvolutionTrimDb : AppSettings.Dsp.ConvolutionTrimDb,
+            AutoPreamp = AutoPreamp, ConvolutionTrimDb = 0, AutoConvolutionHeadroom = false,
             IsEnabled = AppSettings.Dsp.IsEnabled,
             NormalizeLoudness = NormalizeLoudness,
             TargetLufs = double.IsFinite(TargetLufs) ? TargetLufs : AppSettings.Dsp.TargetLufs,

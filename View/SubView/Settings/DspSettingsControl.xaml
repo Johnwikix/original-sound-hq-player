@@ -62,13 +62,12 @@
                     Description="{x:Bind tool:ToolUtils.GetString('DspHeadroomDescription')}"
                     Header="{x:Bind tool:ToolUtils.GetString('DspHeadroom')}"
                     IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}">
-                    <NumberBox
-                        Width="220"
-                        Maximum="0"
-                        Minimum="-24"
-                        SmallChange="1"
-                        SpinButtonPlacementMode="Inline"
-                        Value="{x:Bind ViewModel.HeadroomDb, Mode=TwoWay}" />
+                    <StackPanel Spacing="8">
+                        <ToggleSwitch x:Uid="DspAutoPreamp" IsOn="{x:Bind ViewModel.AutoPreamp, Mode=TwoWay}" />
+                        <NumberBox Width="220" Maximum="24" Minimum="-48" SmallChange="0.5"
+                            IsEnabled="{x:Bind ViewModel.ManualGainEnabled, Mode=OneWay}"
+                            SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.HeadroomDb, Mode=TwoWay}" />
+                    </StackPanel>
                 </controls:SettingsCard>
                 <TextBlock x:Uid="DspConvolutionSection" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
                 <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('CurveSource')}">
@@ -99,12 +98,6 @@
                     Message="{x:Bind ViewModel.ImportError, Mode=OneWay}" />
                 <TextBlock Text="{x:Bind ViewModel.ConvolutionText, Mode=OneWay}" TextWrapping="Wrap"
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspIrTrim')}"
-                    Description="{x:Bind tool:ToolUtils.GetString('DspIrTrimDescription')}"
-                    IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}">
-                    <NumberBox x:Uid="DspIrTrimInput" Width="220" Minimum="-24" Maximum="0" SmallChange="0.5"
-                        SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.ConvolutionTrimDb, Mode=TwoWay}" />
-                </controls:SettingsCard>
                 <TextBlock x:Uid="DspChannels" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
                 <controls:SettingsCard
                     Description="{x:Bind tool:ToolUtils.GetString('DspBalanceDescription')}"

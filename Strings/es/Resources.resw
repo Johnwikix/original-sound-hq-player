@@ -1664,10 +1664,10 @@
     <value>Predeterminado: −12. Reduce el aumento si falta margen de picos para conservar la dinámica.</value>
   </data>
   <data name="DspHeadroom" xml:space="preserve">
-    <value>Atenuación previa (dB)</value>
+    <value>Preamp gain (dB)</value>
   </data>
   <data name="DspHeadroomDescription" xml:space="preserve">
-    <value>Reserva margen para el EQ y otros efectos. 0 no atenúa; la protección de picos de normalización no incluye aumentos posteriores del EQ.</value>
+    <value>Shared by EQ and convolution. Auto targets a −1 dB response peak, with up to +24 dB boost; this is not loudness normalization or a limiter.</value>
   </data>
   <data name="DspChannels.Text" xml:space="preserve">
     <value>Canales y auriculares</value>
@@ -1770,9 +1770,9 @@
   <data name="ResponseEqLegend.Text" xml:space="preserve"><value>┄ EQ</value></data>
   <data name="ResponseFirLegend.Text" xml:space="preserve"><value>┈ Convolution</value></data>
   <data name="ResponsePreparing" xml:space="preserve"><value>Calculating the filter response…</value></data>
-  <data name="ResponseReady" xml:space="preserve"><value>Output {0:0.##} kHz · FIR automatic attenuation {1:0.0} dB · Steady-state preview</value></data>
-  <data name="ResponseBypass" xml:space="preserve"><value>Not currently applied or bypassed. Previewing selected settings at {0:0.##} kHz; automatic attenuation {1:0.0} dB.</value></data>
-  <data name="ResponseScope.Text" xml:space="preserve"><value>Combined = EQ + convolution (including correction gain) + preamp. Boosts add together. Excludes loudness normalization, channel mixing and master volume. The gain axis scales with the response.</value></data>
+  <data name="ResponseReady" xml:space="preserve"><value>Output {0:0.##} kHz · Gain compensation {1:+0.0;-0.0;0.0} dB · Steady-state response</value></data>
+  <data name="ResponseBypass" xml:space="preserve"><value>Bypassed or inactive; preview at {0:0.##} kHz. Gain compensation {1:+0.0;-0.0;0.0} dB.</value></data>
+  <data name="ResponseScope.Text" xml:space="preserve"><value>Combined = EQ + convolution + shared preamp. Auto compensation uses their combined peak. Excludes loudness normalization, channel mixing and master volume. The gain axis scales with the response.</value></data>
   <data name="ResponseFailed" xml:space="preserve"><value>Cannot calculate this IR response. The file may be unavailable or exceed the length limit after resampling. No stale response is shown.</value></data>
   <data name="CurveEditorTitle" xml:space="preserve"><value>Draw correction curve</value></data>
   <data name="CurveApply" xml:space="preserve"><value>Apply</value></data>
@@ -1785,11 +1785,10 @@
   <data name="CurveAdd.Content" xml:space="preserve"><value>Add point</value></data>
   <data name="CurveRemove.Content" xml:space="preserve"><value>Remove point</value></data>
   <data name="CurveFlat.Content" xml:space="preserve"><value>Flatten</value></data>
-  <data name="CurveAutoHeadroom.Content" xml:space="preserve"><value>Reserve headroom for the FIR peak boost</value></data>
+  <data name="CurveAutoHeadroom.Content" xml:space="preserve"><value>Automatic gain/attenuation (EQ + convolution, 1 dB margin)</value></data>
   <data name="CurveAudition.Header" xml:space="preserve"><value>Audition convolution</value></data>
-  <data name="CurveTrim.Header" xml:space="preserve"><value>Correction gain (dB)</value></data>
+  <data name="CurveTrim.Header" xml:space="preserve"><value>Shared preamp gain (dB)</value></data>
   <data name="CurvePresetHeading.Text" xml:space="preserve"><value>Curve presets</value></data>
-  <data name="CurvePresets.PlaceholderText" xml:space="preserve"><value>Choose a saved curve</value></data>
   <data name="CurvePresets.AutomationProperties.Name" xml:space="preserve"><value>Curve presets</value></data>
   <data name="CurveSavePreset.Content" xml:space="preserve"><value>Save preset…</value></data>
   <data name="CurvePresetName.Header" xml:space="preserve"><value>Preset name</value></data>
@@ -1804,6 +1803,9 @@
   <data name="ResponseCombinedToggle.Content" xml:space="preserve"><value>━ Combined</value></data>
   <data name="ResponseEqToggle.Content" xml:space="preserve"><value>┄ EQ</value></data>
   <data name="ResponseFirToggle.Content" xml:space="preserve"><value>┈ FIR</value></data>
+  <data name="CurveCustom" xml:space="preserve"><value>Custom curve</value></data>
+  <data name="CurvePresetEmpty" xml:space="preserve"><value>No saved curves</value></data>
+  <data name="DspAutoPreamp.Header" xml:space="preserve"><value>Automatic gain/attenuation</value></data>
 </root>
 
 

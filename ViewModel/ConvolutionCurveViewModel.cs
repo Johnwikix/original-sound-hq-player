@@ -1,0 +1,155 @@
+using BassPlayerIpc.Shared;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using Microsoft.UI.Dispatching;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Linq;
+using System.Threading.Tasks;
+using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Utils;
+
+namespace WinUIMusicPlayer.ViewModel;
+
+public sealed partial class ConvolutionCurveViewModel : ObservableObject
+{
+    private readonly IpcService _ipc;
+    private readonly CurvePresetService _store;
+    private readonly DispatcherQueue _queue;
+    private readonly DispatcherQueueTimer _timer;
+    private readonly DspSettings _initial;
+    private readonly List<CurvePoint> _points;
+    private bool _syncing, _open;
+    public event Action? PreviewChanged;
+    public event Action? PresetSaved;
+    public ObservableCollection<string> Nodes { get; } = [];
+    public ObservableCollection<CurvePreset> Presets { get; } = [];
+    public CurvePoint[] Points => _points.ToArray();
+    public string TitleText => ToolUtils.GetString("CurveEditorTitle");
+    public string ApplyText => ToolUtils.GetString("CurveApply");
+    public string CancelText => ToolUtils.GetString("CurveCancel");
+    public string PresetPlaceholder => ToolUtils.GetString(Presets.Count > 0 ? "CurveCustom" : "CurvePresetEmpty");
+    public bool CanAdd => _points.Count < CorrectionCurve.MaxPoints;
+    public bool CanRemove => _points.Count > 2;
+    public bool ManualGainEnabled => !AutoPreamp;
+    public int SelectedNode { get => field; set { if (!_syncing && (value < 0 || value >= _points.Count)) return; if (SetProperty(ref field, value) && !_syncing) SyncNodes(); } }
+    public double Frequency { get => field; set { if (SetProperty(ref field, value) && !_syncing && double.IsFinite(value)) MovePoint(SelectedNode, value, Gain); } }
+    public double Gain { get => field; set { if (SetProperty(ref field, value) && !_syncing && double.IsFinite(value)) MovePoint(SelectedNode, Frequency, value); } }
+    public double PreampDb { get => field; set { if (SetProperty(ref field, value) && double.IsFinite(value)) Changed(); } }
+    public bool AutoPreamp { get => field; set { if (SetProperty(ref field, value)) { OnPropertyChanged(nameof(ManualGainEnabled)); Changed(); } } }
+    public bool Audition { get => field; set { if (SetProperty(ref field, value)) Changed(); } } = true;
+    public bool CanAudition { get => field; private set => SetProperty(ref field, value); }
+    public string PresetName { get => field; set => SetProperty(ref field, value); } = "";
+    public string ErrorMessage { get => field; private set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(HasError)); } } = "";
+    public bool HasError => ErrorMessage.Length > 0;
+    public CurvePreset? SelectedPreset
+    {
+        get => field;
+        set
+        {
+            if (!SetProperty(ref field, value) || _syncing || value == null) return;
+            _points.Clear(); _points.AddRange(CorrectionCurve.Parse(value.Points));
+            SyncNodes(); Changed();
+        }
+    }
+    public DspSettings Draft => _initial with { ConvolutionSource = ConvolutionSource.Curve,
+        CurvePoints = CorrectionCurve.Encode(_points), CurvePresetName = SelectedPreset?.Name ?? "", ConvolutionEnabled = true,
+        AutoPreamp = AutoPreamp, HeadroomDb = double.IsFinite(PreampDb) ? PreampDb : _initial.HeadroomDb };
+
+    public ConvolutionCurveViewModel(IpcService ipc, CurvePresetService store)
+    {
+        _ipc = ipc; _store = store;
+        _initial = AppSettings.Dsp.ToUnifiedGain();
+        _points = CorrectionCurve.Parse(_initial.CurvePoints).ToList();
+        _syncing = true; AutoPreamp = _initial.AutoPreamp == true; PreampDb = _initial.HeadroomDb; _syncing = false;
+        _queue = DispatcherQueue.GetForCurrentThread();
+        _timer = _queue.CreateTimer(); _timer.Interval = TimeSpan.FromMilliseconds(150); _timer.IsRepeating = false;
+        _timer.Tick += (_, _) => { if (_open) _ipc.PreviewDsp(Audition ? Draft : _initial with { ConvolutionEnabled = false }); };
+        SyncNodes();
+    }
+    public async Task OpenAsync()
+    {
+        _open = true; _ipc.DspStateChanged += PlaybackChanged; PlaybackChanged(); Changed();
+        try
+        {
+            var presets = await _store.LoadAsync();
+            if (!_open) return;
+            Presets.Clear(); foreach (var preset in presets) Presets.Add(preset);
+            MatchPreset(); OnPropertyChanged(nameof(PresetPlaceholder));
+        }
+        catch { if (_open) ErrorMessage = ToolUtils.GetString("CurvePresetError"); }
+    }
+    public void Close(bool apply)
+    {
+        _open = false; _timer.Stop(); _ipc.DspStateChanged -= PlaybackChanged;
+        _ipc.PreviewDsp(apply ? Draft : AppSettings.Dsp);
+    }
+    private void PlaybackChanged() => _queue.TryEnqueue(() => { if (_open) CanAudition = _ipc.CurrentDspState?.State is { RenderKind: 0, IsEnabled: true, Channels: <= 2 }; });
+    private void MatchPreset()
+    {
+        _syncing = true;
+        string encoded = CorrectionCurve.Encode(_points);
+        if (SelectedPreset?.Points != encoded) SelectedPreset = Presets.FirstOrDefault(p => p.Points == encoded && p.Name == _initial.CurvePresetName)
+            ?? Presets.FirstOrDefault(p => p.Points == encoded);
+        _syncing = false;
+    }
+    private void SyncNodes()
+    {
+        _syncing = true;
+        int selected = Math.Clamp(SelectedNode, 0, _points.Count - 1);
+        Nodes.Clear(); for (int i = 0; i < _points.Count; i++) Nodes.Add($"{i + 1} · {_points[i].Frequency:0.#} Hz");
+        SelectedNode = selected; Frequency = _points[selected].Frequency; Gain = _points[selected].GainDb;
+        _syncing = false;
+        OnPropertyChanged(nameof(CanAdd)); OnPropertyChanged(nameof(CanRemove));
+        AddPointCommand.NotifyCanExecuteChanged(); RemovePointCommand.NotifyCanExecuteChanged();
+        PreviewChanged?.Invoke();
+    }
+    public void MovePoint(int index, double frequency, double gain)
+    {
+        if (index < 0 || index >= _points.Count || !double.IsFinite(frequency) || !double.IsFinite(gain)) return;
+        double min = index == 0 ? 20 : _points[index - 1].Frequency + 0.05;
+        double max = index == _points.Count - 1 ? 20000 : _points[index + 1].Frequency - 0.05;
+        if (min > max) return;
+        _points[index] = new(Math.Clamp(Math.Round(frequency, 2), min, max), Math.Round(Math.Clamp(gain, -12, 12), 2));
+        _syncing = true; SelectedNode = index; _syncing = false;
+        SyncNodes(); Changed();
+    }
+    private void Changed()
+    {
+        if (_syncing || !_open) return;
+        ErrorMessage = ""; MatchPreset(); PreviewChanged?.Invoke(); _timer.Stop(); _timer.Start();
+    }
+    [RelayCommand(CanExecute = nameof(CanAdd))]
+    private void AddPoint()
+    {
+        int left = 0;
+        for (int i = 1; i < _points.Count - 1; i++)
+            if (_points[i + 1].Frequency / _points[i].Frequency > _points[left + 1].Frequency / _points[left].Frequency) left = i;
+        double hz = Math.Round(Math.Sqrt(_points[left].Frequency * _points[left + 1].Frequency), 2);
+        if (hz - _points[left].Frequency < 0.02 || _points[left + 1].Frequency - hz < 0.02) return;
+        _points.Insert(left + 1, new(hz, CorrectionCurve.Evaluate(Points, hz)));
+        SelectedNode = left + 1; SyncNodes(); Changed();
+    }
+    [RelayCommand(CanExecute = nameof(CanRemove))]
+    private void RemovePoint() { _points.RemoveAt(SelectedNode); SyncNodes(); Changed(); }
+    [RelayCommand]
+    private void ResetFlat() { _points.Clear(); _points.AddRange(CorrectionCurve.Parse(CorrectionCurve.Flat)); SyncNodes(); Changed(); }
+    [RelayCommand]
+    private async Task SavePresetAsync()
+    {
+        string name = PresetName.Trim();
+        if (name.Length == 0 || name.Length > 80 || Presets.Count >= 100 || Presets.Any(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)))
+        { ErrorMessage = ToolUtils.GetString("CurvePresetNameError"); return; }
+        var preset = new CurvePreset(name, Draft.CurvePoints);
+        try
+        {
+            await _store.SaveAsync([.. Presets, preset]);
+            Presets.Add(preset);
+            if (Draft.CurvePoints == preset.Points) { _syncing = true; SelectedPreset = preset; _syncing = false; }
+            OnPropertyChanged(nameof(PresetPlaceholder)); PresetSaved?.Invoke();
+        }
+        catch { ErrorMessage = ToolUtils.GetString("CurvePresetError"); }
+    }
+}

@@ -6,6 +6,45 @@ internal static unsafe partial class Program
 {
     private static void RunCurveTests()
     {
+        Run("Preamp: EQ and stereo FIR share one response compensation", () =>
+        {
+            PeakCoefficients[] eq = [PeakCoefficients.Create(1000, 6, 20, 48000)];
+            System.Numerics.Complex[][] spectra = [ResponseMath.Spectrum([0.5]), ResponseMath.Spectrum([2])];
+            double gain = ResponseMath.AutoPreampDb(eq, spectra, 48000);
+            Require(Math.Abs(gain - (-1 - 6 - 20 * Math.Log10(2))) < 0.02, "Combined peak or right channel ignored");
+            Require(Math.Abs(ResponseMath.AutoPreampDb([], [ResponseMath.Spectrum([0.5])], 48000) - (20 * Math.Log10(2) - 1)) < 1e-9, "Attenuating filters do not receive automatic boost");
+            Require(ResponseMath.AutoPreampDb([], null, 48000) == -1, "Flat response margin incorrect");
+            Require(ResponseMath.AutoPreampDb([], [ResponseMath.Spectrum([0.0])], 48000) == 24, "Silent filter amplification is unbounded");
+        });
+        Run("Preamp: v5 modes round-trip and separate manual gains migrate once", () =>
+        {
+            foreach (bool? automatic in new bool?[] { null, false, true })
+            {
+                var settings = new DspSettings { AutoPreamp = automatic, HeadroomDb = automatic.HasValue ? 6 : -6 };
+                byte[] payload = new byte[DspProtocol.SettingsSize]; DspProtocol.WriteSettings(payload, settings);
+                Require(DspProtocol.ReadSettings(payload) == settings, "Preamp mode lost through IPC");
+                payload[0] = 4;
+                Require(DspProtocol.ReadSettings(payload.AsSpan(0, 1595)).AutoPreamp == null, "v4 compatibility broken");
+            }
+            var migrated = new DspSettings { HeadroomDb = -3, ConvolutionTrimDb = -6, ConvolutionEnabled = true,
+                AutoConvolutionHeadroom = false }.ToUnifiedGain();
+            Require(migrated.HeadroomDb == -9 && migrated.ConvolutionTrimDb == 0 && migrated.AutoPreamp == false, "Migration changed total manual gain");
+            Require(migrated.ToUnifiedGain() == migrated, "Migration applied twice");
+        });
+        Run("Preamp: player responds to EQ edits and disabling convolution", () =>
+        {
+            using var effects = new PcmEffects(48000, 2);
+            var settings = new DspSettings { AutoPreamp = true, ConvolutionEnabled = true,
+                ConvolutionSource = ConvolutionSource.Curve, CurvePoints = "20,6;20000,6" };
+            effects.ConfigureEqualizer([PeakCoefficients.Create(1000, 3, 1.414, 48000)]);
+            effects.Configure(settings);
+            double Preamp() => (double)typeof(PcmEffects).GetField("_preampDb", Private)!.GetValue(effects)!;
+            Require(SpinWait.SpinUntil(() => Math.Abs(Preamp() + 10) < 0.02, 5000), "EQ + FIR auto gain not applied");
+            effects.ConfigureEqualizer([]);
+            Require(SpinWait.SpinUntil(() => Math.Abs(Preamp() + 7) < 0.02, 5000), "EQ bypass left stale gain");
+            effects.Configure(settings with { ConvolutionEnabled = false });
+            Require(SpinWait.SpinUntil(() => Math.Abs(Preamp() + 1) < 0.02, 5000), "IR bypass left stale gain");
+        });
         Run("Curve: flat FIR is an exact unit impulse at every output rate", () =>
         {
             foreach (int rate in new[] { 8000, 44100, 48000, 96000, 192000, 384000 })

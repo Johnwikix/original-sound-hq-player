@@ -13,6 +13,20 @@ internal sealed class PcmEffects : IDisposable
     private string? _curveKey;
     private bool _autoHeadroom;
     private double _autoGainDb;
+    private System.Numerics.Complex[][]? _spectra;
+    private PeakCoefficients[] _equalizer = [];
+    private double _preampDb = -1;
+    private int _preampVersion;
+
+    internal void ConfigureEqualizer(PeakCoefficients[] coefficients)
+    {
+        lock (_control)
+        {
+            if (_disposed) return;
+            _equalizer = coefficients;
+            Publish();
+        }
+    }
     private CancellationTokenSource? _prepareCancellation;
     private ConvolutionFilter? _oldFilter;
     private readonly double[] _dryConvolution = new double[1024], _oldConvolution = new double[1024];
@@ -85,7 +99,7 @@ internal sealed class PcmEffects : IDisposable
         bool curve = CorrectionCurve.UsesCurve(_settings);
         string? curveKey = curve ? _settings.CurvePoints : null;
         string? path = curve ? null : _settings.ImpulsePath;
-        bool autoHeadroom = curve && _settings.AutoConvolutionHeadroom;
+        bool autoHeadroom = !_settings.AutoPreamp.HasValue && curve && _settings.AutoConvolutionHeadroom;
         if (_impulsePath == path && _curveKey == curveKey && _autoHeadroom == autoHeadroom) return;
         _impulsePath = path; _curveKey = curveKey; _autoHeadroom = autoHeadroom;
         _prepareCancellation?.Cancel();
@@ -95,7 +109,7 @@ internal sealed class PcmEffects : IDisposable
         var token = cancellation.Token;
         int version = ++_impulseVersion;
         _convolutionStatus = ConvolutionStatus.Off;
-        if (!curve && string.IsNullOrEmpty(path)) { _filter = null; _autoGainDb = 0; return; }
+        if (!curve && string.IsNullOrEmpty(path)) { _filter = null; _spectra = null; _autoGainDb = 0; return; }
         if (_channels is < 1 or > 2) { _filter = null; _convolutionStatus = ConvolutionStatus.Unsupported; return; }
         _convolutionStatus = ConvolutionStatus.Loading;
         var settings = _settings;
@@ -103,9 +117,11 @@ internal sealed class PcmEffects : IDisposable
         {
             ConvolutionFilter? filter = null;
             double autoGain = 0;
+            System.Numerics.Complex[][]? spectra = null;
             try
             {
                 var impulse = CorrectionCurve.Prepare(settings, _rate, token);
+                spectra = impulse.Channels.Select(ResponseMath.Spectrum).ToArray();
                 if (autoHeadroom) autoGain = ResponseMath.AutoAttenuationDb(impulse);
                 token.ThrowIfCancellationRequested();
                 filter = new ConvolutionFilter(impulse, _rate, _channels);
@@ -116,6 +132,7 @@ internal sealed class PcmEffects : IDisposable
             {
                 if (_disposed || version != _impulseVersion) return;
                 _filter = filter;
+                _spectra = filter != null ? spectra : null;
                 _autoGainDb = autoGain;
                 _convolutionStatus = filter != null ? ConvolutionStatus.Active : ConvolutionStatus.Failed;
                 Publish();
@@ -151,6 +168,26 @@ internal sealed class PcmEffects : IDisposable
 
     private void Publish()
     {
+        PublishTarget();
+        int version = ++_preampVersion;
+        if (_settings.AutoPreamp != true) return;
+        var eq = _channels <= 2 ? _equalizer : [];
+        var spectra = _settings.ConvolutionEnabled ? _spectra : null;
+        _ = Task.Run(() =>
+        {
+            double gain = ResponseMath.AutoPreampDb(eq, spectra, _rate);
+            lock (_control)
+            {
+                if (_disposed || version != _preampVersion) return;
+                _preampDb = gain;
+                PublishTarget();
+            }
+            StateChanged?.Invoke();
+        });
+    }
+
+    private void PublishTarget()
+    {
         double normalization = NormalizationGainDb;
         if (_settings.IsEnabled && _settings.NormalizeLoudness && _measurement != null)
         {
@@ -159,8 +196,8 @@ internal sealed class PcmEffects : IDisposable
                 ? LoudnessStatus.PeakLimited : LoudnessStatus.Applied;
         }
         Volatile.Write(ref _target, new Target(_settings, _settings.IsEnabled
-            ? Math.Pow(10, (normalization + _settings.HeadroomDb) / 20) : 1,
-            _settings.ConvolutionEnabled ? _filter : null, Math.Pow(10, (_settings.ConvolutionTrimDb + _autoGainDb) / 20)));
+            ? Math.Pow(10, (normalization + (_settings.AutoPreamp == true ? _preampDb : _settings.HeadroomDb)) / 20) : 1,
+            _settings.ConvolutionEnabled ? _filter : null, _settings.AutoPreamp.HasValue ? 1 : Math.Pow(10, (_settings.ConvolutionTrimDb + _autoGainDb) / 20)));
     }
 
     /// <summary>未知响度采用固定保守衰减；失败时保持衰减，避免突然回到原始音量。</summary>

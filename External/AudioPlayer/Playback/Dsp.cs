@@ -14,6 +14,7 @@ namespace AudioPlayer.Playback;
 /// </summary>
 internal sealed class Equalizer
 {
+    internal event Action<PeakCoefficients[]>? ResponseChanged;
     public static readonly double[] Frequencies = { 32, 64, 125, 250, 500, 1000, 2000, 4000, 8000, 16000 };
 
     private struct Band
@@ -82,6 +83,7 @@ internal sealed class Equalizer
             b.A1 = coefficients.A1; b.A2 = coefficients.A2;
         }
         _snapshot = bands;
+        ResponseChanged?.Invoke(bands.Where(b => b.Active).Select(b => new PeakCoefficients(b.B0, b.B1, b.B2, b.A1, b.A2)).ToArray());
     }
 
     /// <summary>

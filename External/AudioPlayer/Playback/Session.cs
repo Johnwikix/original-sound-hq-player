@@ -73,6 +73,7 @@ internal sealed class Session : IRenderSource, IDisposable
         TotalMs = totalMs;
         Gain = kind == RenderKind.Pcm && gainRampRate > 0 ? new GainRamp(gainRampRate) : null;
         Effects = kind == RenderKind.Pcm ? new PcmEffects(deviceRate, channels) : null;
+        if (Effects != null) Eq.ResponseChanged += Effects.ConfigureEqualizer;
         int ch = Math.Max(1, channels);
         if (kind == RenderKind.Pcm)
         {

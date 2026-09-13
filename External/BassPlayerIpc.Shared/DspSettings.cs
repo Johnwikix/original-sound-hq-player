@@ -14,6 +14,15 @@ public sealed record DspSettings
     public double TargetLufs { get; init; } = -12;
     /// <summary>获取或设置 DSP 前置衰减，单位 dB。</summary>
     public double HeadroomDb { get; init; }
+    /// <summary>Null reads legacy separate gain controls; new editors use one manual/automatic preamp.</summary>
+    public bool? AutoPreamp { get; init; }
+
+    public DspSettings ToUnifiedGain() => AutoPreamp.HasValue ? Sanitize() : (this with
+    {
+        AutoPreamp = ConvolutionEnabled && CorrectionCurve.UsesCurve(this) && AutoConvolutionHeadroom,
+        HeadroomDb = HeadroomDb + (ConvolutionEnabled ? ConvolutionTrimDb : 0),
+        ConvolutionTrimDb = 0, AutoConvolutionHeadroom = false
+    }).Sanitize();
     /// <summary>获取或设置左右平衡，-1 为左，1 为右。</summary>
     public double Balance { get; init; }
     /// <summary>获取或设置是否互换左右声道。</summary>
@@ -27,6 +36,8 @@ public sealed record DspSettings
 
     public ConvolutionSource ConvolutionSource { get; init; }
     public string CurvePoints { get; init; } = CorrectionCurve.Flat;
+    /// <summary>UI-only preset identity, persisted locally and intentionally omitted from audio IPC.</summary>
+    public string CurvePresetName { get; init; } = "";
     public bool AutoConvolutionHeadroom { get; init; } = true;
     public bool ConvolutionEnabled { get; init; }
     public string ImpulsePath { get; init; } = "";
@@ -42,7 +53,7 @@ public sealed record DspSettings
         string path = ImpulsePath ?? "";
         if (Encoding.UTF8.GetByteCount(path) > 1024 || path.Contains('\0')) path = "";
         double target = Finite(TargetLufs, -24, -8, -12);
-        double headroom = Finite(HeadroomDb, -24, 0, 0);
+        double headroom = Finite(HeadroomDb, AutoPreamp.HasValue ? -48 : -24, AutoPreamp.HasValue ? 24 : 0, 0);
         double balance = Finite(Balance, -1, 1, 0);
         double crossfeed = Finite(Crossfeed, 0, 0.5, 0);
         double width = Finite(StereoWidth, 0, 1.5, 1);
@@ -81,7 +92,7 @@ public readonly record struct DspState(byte RenderKind, bool EqualizerActive, in
 public static class DspProtocol
 {
     /// <summary>设置载荷字节数。</summary>
-    public const int SettingsSize = 1595;
+    public const int SettingsSize = 1596;
     /// <summary>状态载荷字节数。</summary>
     public const int StateSize = 30;
 
@@ -89,7 +100,8 @@ public static class DspProtocol
     public static void WriteSettings(Span<byte> data, DspSettings settings)
     {
         data[..SettingsSize].Clear();
-        data[0] = 4;
+        data[0] = 5;
+        data[1595] = settings.AutoPreamp switch { true => 2, false => 1, null => 0 };
         data[1] = settings.NormalizeLoudness ? (byte)1 : (byte)0;
         data[2] = settings.SwapChannels ? (byte)1 : (byte)0;
         data[3] = settings.Mono ? (byte)1 : (byte)0;
@@ -120,7 +132,9 @@ public static class DspProtocol
         bool legacy = data.Length == 44 && data[0] == 1;
         bool v2 = data.Length == 45 && data[0] == 2;
         bool v3 = data.Length == 1080 && data[0] == 3;
-        bool v4 = data.Length == SettingsSize && data[0] == 4;
+        bool v5 = data.Length == SettingsSize && data[0] == 5;
+        bool v4 = (data.Length == 1595 && data[0] == 4) || v5;
+        if (v5 && data[1595] > 2) throw new ArgumentException("Invalid preamp mode.");
         bool convolution = v3 || v4;
         if ((!legacy && ((!v2 && !v3 && !v4) || data[44] > 1))
             || data[1] > 1 || data[2] > 1 || data[3] > 1)
@@ -140,6 +154,7 @@ public static class DspProtocol
         }
         return new DspSettings
         {
+            AutoPreamp = v5 ? data[1595] switch { 2 => true, 1 => false, _ => (bool?)null } : null,
             ConvolutionSource = v4 ? (ConvolutionSource)data[1080] : ConvolutionSource.Automatic,
             CurvePoints = curve,
             AutoConvolutionHeadroom = !v4 || data[1081] != 0,

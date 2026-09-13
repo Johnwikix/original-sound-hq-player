@@ -85,6 +85,24 @@ public static class CorrectionCurve
 /// <summary>Shared response math: the UI measures the same prepared FIR that the player consumes.</summary>
 public static class ResponseMath
 {
+    /// <summary>Normalize the maximum combined EQ/FIR magnitude across both channels to -1 dB.
+    /// This is static response compensation, not a signal limiter or loudness normalizer.
+    /// A dense linear grid captures FIR ripples; a logarithmic grid captures low-frequency high-Q EQ.</summary>
+    public static double AutoPreampDb(PeakCoefficients[] eq, Complex[][]? spectra, int rate)
+    {
+        double peak = double.NegativeInfinity;
+        void Measure(double hz)
+        {
+            double equalizer = 0;
+            foreach (var band in eq) equalizer += band.ResponseDb(hz, rate);
+            if (spectra == null) peak = Math.Max(peak, equalizer);
+            else foreach (var channel in spectra) peak = Math.Max(peak, equalizer + MagnitudeDb(channel, rate, hz));
+        }
+        for (int i = 0; i <= 16384; i++) Measure(i * (double)rate / 32768);
+        for (int i = 0; i <= 4096; i++) Measure(10 * Math.Pow(rate / 20.0, i / 4096.0));
+        // An empty/zero IR must never request unbounded amplification.
+        return Math.Clamp(-1 - peak, -120, 24);
+    }
     public static void Fft(Complex[] data, bool inverse)
     {
         int n = data.Length;

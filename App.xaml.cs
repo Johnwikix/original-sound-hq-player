@@ -1,4 +1,4 @@
-﻿using H.NotifyIcon;
+using H.NotifyIcon;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -84,6 +84,8 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<AddFolderViewModel>();
                  services.AddSingleton<SettingsViewModel>();
                 services.AddTransient<DspSettingsViewModel>();
+                services.AddSingleton<CurvePresetService>();
+                services.AddTransient<ConvolutionCurveViewModel>();
                  services.AddSingleton<AlbumViewModel>();
                  services.AddSingleton<FavouritePlayListViewModel>();
                  services.AddSingleton<ArtistViewModel>();
