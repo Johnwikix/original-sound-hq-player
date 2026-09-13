@@ -10,25 +10,71 @@
     </UserControl.Resources>
     <StackPanel Spacing="8">
         <Grid ColumnDefinitions="*,Auto">
-            <TextBlock x:Uid="ResponseTitle" FontWeight="SemiBold" VerticalAlignment="Center" />
-            <ComboBox x:Name="ChannelPicker" Grid.Column="1" SelectedIndex="0" SelectionChanged="ChannelChanged" MinWidth="90">
+            <TextBlock
+                x:Uid="ResponseTitle"
+                VerticalAlignment="Center"
+                FontWeight="SemiBold" />
+            <ComboBox
+                x:Name="ChannelPicker"
+                Grid.Column="1"
+                MinWidth="90"
+                SelectedIndex="0"
+                SelectionChanged="ChannelChanged">
                 <ComboBoxItem x:Uid="ResponseLeft" />
                 <ComboBoxItem x:Uid="ResponseRight" />
             </ComboBox>
         </Grid>
-        <Canvas x:Name="Plot" Height="230" Background="{ThemeResource ControlAltFillColorSecondaryBrush}"
-            SizeChanged="PlotSizeChanged" PointerPressed="PlotPressed" PointerMoved="PlotMoved"
-            PointerReleased="PlotReleased" PointerCanceled="PlotReleased" PointerCaptureLost="PlotReleased"
-            AutomationProperties.Name="{x:Bind PlotName}" />
+        <Border
+            Padding="16"
+            Background="{ThemeResource ControlAltFillColorSecondaryBrush}"
+            CornerRadius="8">
+            <Canvas
+                x:Name="Plot"
+                Height="230"
+                AutomationProperties.Name="{x:Bind PlotName}"
+                Background="Transparent"
+                PointerCanceled="PlotReleased"
+                PointerCaptureLost="PlotReleased"
+                PointerMoved="PlotMoved"
+                PointerPressed="PlotPressed"
+                PointerReleased="PlotReleased"
+                SizeChanged="PlotSizeChanged" />
+        </Border>
         <Grid ColumnDefinitions="*,Auto">
             <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8">
-                <CheckBox MinWidth="0" x:Name="ShowCombined" x:Uid="ResponseCombinedToggle" IsChecked="True" Click="LayerChanged"
-                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" FontWeight="SemiBold" />
-                <CheckBox Grid.Column="1" MinWidth="0" x:Name="ShowEq" x:Uid="ResponseEqToggle" IsChecked="True" Click="LayerChanged" />
-                <CheckBox Grid.Column="2" MinWidth="0" x:Name="ShowFir" x:Uid="ResponseFirToggle" IsChecked="True" Click="LayerChanged" />
+                <CheckBox
+                    x:Name="ShowCombined"
+                    x:Uid="ResponseCombinedToggle"
+                    MinWidth="0"
+                    Click="LayerChanged"
+                    FontWeight="SemiBold"
+                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                    IsChecked="True" />
+                <CheckBox
+                    x:Name="ShowEq"
+                    x:Uid="ResponseEqToggle"
+                    Grid.Column="1"
+                    MinWidth="0"
+                    Click="LayerChanged"
+                    IsChecked="True" />
+                <CheckBox
+                    x:Name="ShowFir"
+                    x:Uid="ResponseFirToggle"
+                    Grid.Column="2"
+                    MinWidth="0"
+                    Click="LayerChanged"
+                    IsChecked="True" />
             </Grid>
         </Grid>
-        <TextBlock x:Name="StatusText" Text="{x:Bind ViewModel.Status, Mode=OneWay}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="12" />
-        <TextBlock x:Uid="ResponseScope" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" FontSize="12" />
+        <TextBlock
+            x:Name="StatusText"
+            FontSize="12"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            TextWrapping="Wrap" />
+        <TextBlock
+            x:Uid="ResponseScope"
+            FontSize="12"
+            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+            TextWrapping="Wrap" />
     </StackPanel>
 </UserControl>
