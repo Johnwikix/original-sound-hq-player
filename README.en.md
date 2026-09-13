@@ -63,7 +63,7 @@
   - Supports 12+ audio formats including DSD, FLAC, WAV, MP3
   - Audio conversion: WAV, FLAC, ALAC, MP3, AAC, OGG, OPUS with selectable lossy bitrate
   - Built-in 10-band equalizer (per-band gain and Q) with multiple presets
-  - Convolution correction: draw a correction curve (2–32 draggable control points with named presets) or import a headphone/room-correction WAV impulse response (IR); rendered into a minimum-phase FIR for real-time convolution, resampled to the output rate automatically, with a live combined EQ/convolution response preview in the editor
+  - Convolution correction: draw a correction curve (2–32 draggable control points with named presets that can be updated or deleted in place) or import a headphone/room-correction WAV impulse response (IR); rendered into a minimum-phase FIR for real-time convolution, resampled to the output rate automatically, with a live combined EQ/convolution response preview in the editor
   - Unified preamp: applied to EQ and convolution together — set manually or auto-compensated from the combined response peak (1 dB headroom, normalized to −1 dB) to prevent clipping from correction boosts
   - Loudness normalization: background EBU R128 analysis per track, smooth fixed gain applied once complete and cached — files untouched, dynamics uncompressed (target −24 to −12 LUFS, default −18)
   - Channel & headphone effects: balance, L/R swap, mono mixdown, headphone crossfeed, stereo width
@@ -73,7 +73,7 @@
 - 📝 **Music Info & Lyrics**
   - Real-time display of title, artist, album, duration, sample rate, bitrate, file type
   - Automatic album art and lyrics matching
-  - Advanced per-word animated lyrics with multiple shader background options
+  - Advanced per-word animated lyrics with eased per-line scrolling (FlowWave spring / per-line stagger easing options) and multiple shader background choices
 
 - 📱 **Sony Walkman Support**
   - Transfer music with metadata (including lyrics) to Sony Walkman over USB
