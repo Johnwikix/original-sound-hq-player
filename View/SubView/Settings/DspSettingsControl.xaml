@@ -62,12 +62,24 @@
                     Description="{x:Bind tool:ToolUtils.GetString('DspHeadroomDescription')}"
                     Header="{x:Bind tool:ToolUtils.GetString('DspHeadroom')}"
                     IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}">
-                    <StackPanel Spacing="8">
-                        <ToggleSwitch x:Uid="DspAutoPreamp" IsOn="{x:Bind ViewModel.AutoPreamp, Mode=TwoWay}" />
-                        <NumberBox Width="220" Maximum="24" Minimum="-48" SmallChange="0.5"
+                    <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="12">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Text="{x:Bind tool:ToolUtils.GetString('DspAutoPreamp')}"
+                                TextWrapping="Wrap" />
+                            <ToggleSwitch
+                                Grid.Column="1"
+                                MinWidth="0"
+                                VerticalAlignment="Center"
+                                AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('DspAutoPreamp')}"
+                                OffContent=""
+                                OnContent=""
+                                IsOn="{x:Bind ViewModel.AutoPreamp, Mode=TwoWay}" />
+                        <NumberBox Grid.Column="2" Width="220" Maximum="24" Minimum="-48" SmallChange="0.5"
+                            VerticalAlignment="Center"
                             IsEnabled="{x:Bind ViewModel.ManualGainEnabled, Mode=OneWay}"
                             SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.HeadroomDb, Mode=TwoWay}" />
-                    </StackPanel>
+                    </Grid>
                 </controls:SettingsCard>
                 <TextBlock x:Uid="DspConvolutionSection" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
                 <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('CurveSource')}">

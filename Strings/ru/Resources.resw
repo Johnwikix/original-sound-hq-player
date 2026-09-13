@@ -1805,7 +1805,7 @@
   <data name="ResponseFirToggle.Content" xml:space="preserve"><value>┈ FIR</value></data>
   <data name="CurveCustom" xml:space="preserve"><value>Custom curve</value></data>
   <data name="CurvePresetEmpty" xml:space="preserve"><value>No saved curves</value></data>
-  <data name="DspAutoPreamp.Header" xml:space="preserve"><value>Automatic gain/attenuation</value></data>
+  <data name="DspAutoPreamp" xml:space="preserve"><value>Automatic gain/attenuation</value></data>
 </root>
 
 

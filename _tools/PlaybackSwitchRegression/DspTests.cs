@@ -6,6 +6,34 @@ internal static unsafe partial class Program
 {
     private static void RunDspTests()
     {
+        Run("DSP: preamp offsets normalized output without changing source loudness analysis", () =>
+        {
+            foreach (double amplitude in new[] { 0.05, 0.1 })
+            foreach (bool automatic in new[] { false, true })
+            {
+                var source = MeasureTone(amplitude, 2);
+                using var effects = new PcmEffects(48000, 2);
+                Set(effects, "_measurement", source);
+                effects.Configure(new DspSettings { NormalizeLoudness = true, TargetLufs = -18,
+                    AutoPreamp = automatic, HeadroomDb = -6, ConvolutionEnabled = false });
+                // Flat EQ/FIR in automatic mode reserves 1 dB; manual mode uses exactly -6 dB.
+                double preamp = automatic ? -1 : -6;
+                var output = new LoudnessMeter(48000, 2);
+                double[] samples = new double[9600];
+                for (int block = 0; block < 30; block++)
+                {
+                    for (int frame = 0; frame < 4800; frame++)
+                        samples[frame * 2] = samples[frame * 2 + 1] = amplitude * Math.Sin(2 * Math.PI * 1000 * frame / 48000);
+                    effects.ApplyInput(samples, 4800);
+                    output.Add(samples);
+                }
+                var result = output.Finish()!;
+                Require(Math.Abs(result.IntegratedLufs - (-18 + preamp)) < 0.01, "Preamp was canceled by normalization or applied twice");
+                var state = effects.GetState(0, false);
+                Require(state.IntegratedLufs == source.IntegratedLufs, "Preamp changed the source measurement");
+                Require(Math.Abs(state.GainDb - source.GainDb(-18)) < 1e-12, "Normalization gain includes preamp unexpectedly");
+            }
+        });
         Run("Loudness SIMD: matches scalar across sample rates, gates and block boundaries", () =>
         {
             foreach (int rate in new[] { 44100, 48000, 96000, 192000 })

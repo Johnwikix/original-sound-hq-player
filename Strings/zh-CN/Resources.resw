@@ -1807,5 +1807,5 @@
   <data name="ResponseFirToggle.Content" xml:space="preserve"><value>┈ 卷积</value></data>
   <data name="CurveCustom" xml:space="preserve"><value>自定义曲线</value></data>
   <data name="CurvePresetEmpty" xml:space="preserve"><value>尚无保存的曲线</value></data>
-  <data name="DspAutoPreamp.Header" xml:space="preserve"><value>自动增益/衰减</value></data>
+  <data name="DspAutoPreamp" xml:space="preserve"><value>自动增益/衰减</value></data>
 </root>
