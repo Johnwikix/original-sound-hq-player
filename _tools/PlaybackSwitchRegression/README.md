@@ -7,6 +7,16 @@ dotnet run --project _tools/PlaybackSwitchRegression
 ```
 
 工具使用项目的 .NET 11 SDK、FFmpeg 包及仓库内 FFmpeg DLL。音频测试使用受控输出；IPC 测试启动独立测试进程，使用随机命名的共享内存和信号量。
+
+默认测试包含合成 E-AC-3 5.1 M4A，验证随包 DLL 的实际解码能力、完整 PCM 时长、
+有效样本、稳定 EOF、EOF 后 seek/回到开头，并覆盖原声道/立体声与源率/44.1 kHz。
+用本地实际文件（包括 E-AC-3 Atmos/JOC）执行同一组无声卡测试：
+
+```powershell
+dotnet run --project _tools/PlaybackSwitchRegression -- --test-pcm-file "D:\path\track.m4a"
+```
+
+该测试验证 PCM 兼容播放，不验证 Atmos 空间对象渲染或硬件出声。
 失败返回退出码 1。DSD64 立体声静音 DSF 在工具输出目录自动生成；PCM 使用 `_tools` 下
 44.1 / 48 / 96 kHz WAV。现有 `_tools/test_tone.dsf` 缺少头部 metadata pointer，不能作为
 解码回归输入，因此此工具不依赖它。

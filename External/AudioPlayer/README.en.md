@@ -56,6 +56,10 @@ bitstream). Processing noise floor below -140 dBFS; 24-bit sources remain
 bit-transparent across the entire chain.
 
 - **PCM**: FFmpeg decode with sample-accurate position (anchor + frames played)
+- **Dolby Digital / Digital Plus files**: bundled AC-3/E-AC-3 decoding supports
+  E-AC-3 in M4A/MP4, including the compatible multichannel audio in Atmos/JOC files.
+  Shared output uses the existing stereo downmix policy. This pipeline does not
+  decode Atmos objects, render height channels, or send Dolby compressed HDMI bitstreams.
 - **DoP**: `DsdRawReader` raw bitstream → uint32 samples; 0x05/0xFA markers
   alternate according to a **global render frame counter** (phase does not
   flip at odd buffer boundaries); silence payload 0x6969

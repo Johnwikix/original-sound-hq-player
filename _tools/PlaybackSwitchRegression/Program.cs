@@ -30,6 +30,12 @@ internal static unsafe partial class Program
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(WasapiOutput))]
     private static int Main(string[] args)
     {
+        if (args.Length == 2 && args[0] == "--test-pcm-file")
+        {
+            FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
+            RunPcmFileTests(Path.GetFullPath(args[1]));
+            return _failures == 0 ? 0 : 1;
+        }
         if (args.Length == 1 && args[0] == "--test-curves") { RunCurveTests(); return _failures == 0 ? 0 : 1; }
         if (args.Length == 1 && args[0] == "--test-convolution") { RunConvolutionTests(); return _failures == 0 ? 0 : 1; }
         if (args.Length == 2 && args[0] == "--dsp-writer") return DspWriter(args[1]);
@@ -42,6 +48,7 @@ internal static unsafe partial class Program
         if (args.Length == 1 && args[0] == "--benchmark-loudness") return BenchmarkLoudness();
         string root = args.Length > 0 ? Path.GetFullPath(args[0]) : Directory.GetCurrentDirectory();
         FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
+        RunPcmFileTests(Path.Combine(AppContext.BaseDirectory, "Fixtures", "eac3-5.1.m4a"));
         WriteDsfFixture();
         RunWavPackTests();
         RunBufferPolicyTests();

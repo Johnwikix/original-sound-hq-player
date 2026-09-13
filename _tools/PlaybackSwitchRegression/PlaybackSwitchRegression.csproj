@@ -9,6 +9,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="*.cs" />
+    <None Include="Fixtures/eac3-5.1.m4a" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="../../Model/EqualizerModel.cs" />
     <Compile Include="../../Utils/EqualizerHelper.cs" />
     <!-- Exercise the shipping engine/decoder/interop without starting IPC or a real device. -->

@@ -1,5 +1,15 @@
 FFmpeg n9.0.1 (tag), custom minimal audio-only build, LGPL-2.1-or-later.
-Source: https://github.com/FFmpeg/FFmpeg (tag n9.0.1), build tree G:\SoftwareProject\ffmpeg\src
+Source: https://github.com/FFmpeg/FFmpeg (tag n9.0.1), original source tree G:\SoftwareProject\ffmpeg\src
 Toolchain: MSYS2 UCRT64 gcc (G:\msys64), external codecs statically linked: libmp3lame (LGPL), libvorbis (BSD-3), libopus (BSD-3)
-Configure flags: see G:\SoftwareProject\ffmpeg\src\ffbuild\config.sh (audio-only demuxers/decoders/encoders/muxers for the music player's format converter)
-Corresponding source offer: https://ffmpeg.org / the n9.0.1 tag of the FFmpeg repository plus the configure flags above.
+Configure flags and reproducible build: ../build-audio.sh (MSYS2 UCRT64; clean n9.0.1 source plus separate build directory).
+Adds native AC-3/E-AC-3 decoders and raw demuxers to the existing minimal audio configuration; no GPL/nonfree components enabled.
+E-AC-3 Atmos/JOC files decode to compatible channel-based PCM, not object-based Atmos rendering or HDMI passthrough.
+Corresponding source offer: https://ffmpeg.org / the n9.0.1 tag of the FFmpeg repository plus build-audio.sh.
+Source commit: bf1b838f2ab88b4f8fd83443325c782ea0e0f7fa
+Build output: <build dir>/dist (stripped DLLs; copy all four together to this directory).
+Validation: PlaybackSwitchRegression 177/177; actual E-AC-3 Atmos M4A 8/8 (full PCM decode, stereo downmix, resample, EOF/seek, session progress; no physical output test).
+SHA256:
+7409C09B559EB1596F8E01F9D521CE906CCBDCAC3A0C63B802BF41BEC7248E55  avcodec-63.dll
+AA51B7F4D9A4FF1C0D0BC4821790C856F942D8E37A105815A5EB24A5F2DA670F  avformat-63.dll
+0EA6AC9E01A9211678870D03405FB4F9F8A604CD4690D639AA59F0C4505D42A0  avutil-61.dll
+7FD3CF1A366A10D20388FFAE27197740752271DAA7E55E81BF0757BE9E20D94A  swresample-7.dll
