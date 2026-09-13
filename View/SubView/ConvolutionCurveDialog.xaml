@@ -3,47 +3,117 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:eq="using:WinUIMusicPlayer.Controls.Equalizer"
-    Title="{x:Bind TitleText}" PrimaryButtonText="{x:Bind ApplyText}" CloseButtonText="{x:Bind CancelText}"
-    DefaultButton="Primary">
-    <ContentDialog.Resources><x:Double x:Key="ContentDialogMaxWidth">920</x:Double></ContentDialog.Resources>
-    <ScrollViewer x:Name="EditorScroll" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    Title="{x:Bind TitleText}"
+    CloseButtonText="{x:Bind CancelText}"
+    CornerRadius="10"
+    DefaultButton="Primary"
+    PrimaryButtonText="{x:Bind ApplyText}">
+    <ContentDialog.Resources>
+        <x:Double x:Key="ContentDialogMaxWidth">960</x:Double>
+    </ContentDialog.Resources>
+    <ScrollViewer
+        x:Name="EditorScroll"
+        Padding="15,0"
+        HorizontalScrollBarVisibility="Disabled"
+        VerticalScrollBarVisibility="Auto">
         <StackPanel x:Name="EditorPanel" Spacing="12">
-            <TextBlock x:Uid="CurveIntro" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <TextBlock
+                x:Uid="CurveIntro"
+                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                TextWrapping="Wrap" />
             <eq:FrequencyResponseControl x:Name="Response" />
-            <TextBlock x:Uid="CurveNodeHint" TextWrapping="Wrap" FontSize="12" />
-            <Grid x:Name="PointFields" ColumnDefinitions="*,*,*" ColumnSpacing="12" RowSpacing="8">
-                <ComboBox x:Name="NodePicker" x:Uid="CurveNodePicker" HorizontalAlignment="Stretch" SelectionChanged="NodeSelected" />
-                <NumberBox x:Name="FrequencyInput" x:Uid="CurveFrequency" Grid.Column="1" Minimum="20" Maximum="20000"
-                    SpinButtonPlacementMode="Compact" SmallChange="1" ValueChanged="PointValueChanged" />
-                <NumberBox x:Name="GainInput" x:Uid="CurveGain" Grid.Column="2" Minimum="-12" Maximum="12"
-                    SpinButtonPlacementMode="Compact" SmallChange="0.1" ValueChanged="PointValueChanged" />
+            <TextBlock
+                x:Uid="CurveNodeHint"
+                FontSize="12"
+                TextWrapping="Wrap" />
+            <Grid
+                x:Name="PointFields"
+                ColumnDefinitions="*,*,*"
+                ColumnSpacing="12"
+                RowSpacing="8">
+                <ComboBox
+                    x:Name="NodePicker"
+                    x:Uid="CurveNodePicker"
+                    HorizontalAlignment="Stretch"
+                    SelectionChanged="NodeSelected" />
+                <NumberBox
+                    x:Name="FrequencyInput"
+                    x:Uid="CurveFrequency"
+                    Grid.Column="1"
+                    Maximum="20000"
+                    Minimum="20"
+                    SmallChange="1"
+                    SpinButtonPlacementMode="Compact"
+                    ValueChanged="PointValueChanged" />
+                <NumberBox
+                    x:Name="GainInput"
+                    x:Uid="CurveGain"
+                    Grid.Column="2"
+                    Maximum="12"
+                    Minimum="-12"
+                    SmallChange="0.1"
+                    SpinButtonPlacementMode="Compact"
+                    ValueChanged="PointValueChanged" />
             </Grid>
             <StackPanel Orientation="Horizontal" Spacing="8">
-                <Button x:Name="AddPointButton" x:Uid="CurveAdd" Click="AddPoint" />
-                <Button x:Name="RemovePointButton" x:Uid="CurveRemove" Click="RemovePoint" />
+                <Button
+                    x:Name="AddPointButton"
+                    x:Uid="CurveAdd"
+                    Click="AddPoint" />
+                <Button
+                    x:Name="RemovePointButton"
+                    x:Uid="CurveRemove"
+                    Click="RemovePoint" />
                 <Button x:Uid="CurveFlat" Click="ResetFlat" />
             </StackPanel>
             <StackPanel Spacing="8">
-                <CheckBox x:Name="AutoHeadroom" x:Uid="CurveAutoHeadroom" IsChecked="True" Click="SettingsChanged" />
-                <ToggleSwitch x:Name="Audition" x:Uid="CurveAudition" IsOn="True" Toggled="AuditionChanged" />
+                <CheckBox
+                    x:Name="AutoHeadroom"
+                    x:Uid="CurveAutoHeadroom"
+                    Click="SettingsChanged"
+                    IsChecked="True" />
+                <ToggleSwitch
+                    x:Name="Audition"
+                    x:Uid="CurveAudition"
+                    IsOn="True"
+                    Toggled="AuditionChanged" />
             </StackPanel>
-            <NumberBox x:Name="TrimInput" x:Uid="CurveTrim" Minimum="-24" Maximum="0" Width="220" HorizontalAlignment="Left"
-                SpinButtonPlacementMode="Inline" SmallChange="0.5" ValueChanged="TrimChanged" />
+            <NumberBox
+                x:Name="TrimInput"
+                x:Uid="CurveTrim"
+                Width="220"
+                HorizontalAlignment="Left"
+                Maximum="0"
+                Minimum="-24"
+                SmallChange="0.5"
+                SpinButtonPlacementMode="Inline"
+                ValueChanged="TrimChanged" />
             <TextBlock x:Uid="CurvePresetHeading" FontWeight="SemiBold" />
             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                <ComboBox x:Name="Presets" x:Uid="CurvePresets" HorizontalAlignment="Stretch" SelectionChanged="PresetSelected" />
-                <Button Grid.Column="1" x:Uid="CurveSavePreset">
+                <ComboBox
+                    x:Name="Presets"
+                    x:Uid="CurvePresets"
+                    HorizontalAlignment="Stretch"
+                    SelectionChanged="PresetSelected" />
+                <Button x:Uid="CurveSavePreset" Grid.Column="1">
                     <Button.Flyout>
                         <Flyout x:Name="SaveFlyout">
-                            <StackPanel Spacing="8" Width="240">
-                                <TextBox x:Name="PresetName" x:Uid="CurvePresetName" MaxLength="80" />
+                            <StackPanel Width="240" Spacing="8">
+                                <TextBox
+                                    x:Name="PresetName"
+                                    x:Uid="CurvePresetName"
+                                    MaxLength="80" />
                                 <Button x:Uid="CurveSaveNewPreset" Click="SavePreset" />
                             </StackPanel>
                         </Flyout>
                     </Button.Flyout>
                 </Button>
             </Grid>
-            <InfoBar x:Name="Notice" IsClosable="False" IsOpen="False" Severity="Error" />
+            <InfoBar
+                x:Name="Notice"
+                IsClosable="False"
+                IsOpen="False"
+                Severity="Error" />
         </StackPanel>
     </ScrollViewer>
 </ContentDialog>
