@@ -113,10 +113,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         public static double StaggerDelay(int index, int firstVisibleIndex, double duration)
         {
-            double budget = Math.Min(0.25, Math.Max(0, duration) * 0.4);
+            double budget = Math.Min(0.4, Math.Max(0, duration) * 0.75);
             if (budget <= 0) return 0;
             // Taper the intervals instead of making all distant rows start at the cap.
-            return budget * (1.0 - Math.Exp(-Math.Max(0, index - firstVisibleIndex) * 0.05 / budget));
+            // The leading rows start ~80 ms apart so the cascade stays readable.
+            return budget * (1.0 - Math.Exp(-Math.Max(0, index - firstVisibleIndex) * 0.09 / budget));
         }
     }
 }

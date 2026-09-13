@@ -50,7 +50,8 @@ for (int i = 0; i < rows.Length; i++)
     rows[i].Start(-120, 0.7, LyricScrollMotion.StaggerDelay(i, 0, 0.7), true, apple);
 foreach (var row in rows) row.Update(0.025);
 Check(rows[0].Value < 0 && rows.Skip(1).All(r => r.Value == 0), "Rows must not start together.");
-foreach (var row in rows) row.Update(0.05);
+// Total 0.115 s sits between row 1's (~0.081 s) and row 2's (~0.145 s) stagger delay.
+foreach (var row in rows) row.Update(0.09);
 Check(rows[0].Value < rows[1].Value && rows[1].Value < 0 && rows[2].Value == 0,
     "Movement must propagate down the rows.");
 foreach (var row in rows) row.Update(3);
