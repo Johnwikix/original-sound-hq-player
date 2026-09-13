@@ -9,6 +9,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="*.cs" />
+    <Compile Include="../../AudioConverters/FFmpegAudioConverter.cs" />
+    <Compile Include="../../Model/ConversionMetadata.cs" />
     <None Include="Fixtures/eac3-5.1.m4a" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="../../Model/EqualizerModel.cs" />
     <Compile Include="../../Utils/EqualizerHelper.cs" />

@@ -30,6 +30,12 @@ internal static unsafe partial class Program
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(WasapiOutput))]
     private static int Main(string[] args)
     {
+        if (args.Length == 2 && args[0] == "--test-export-file")
+        {
+            FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
+            RunExportTests(Path.GetFullPath(args[1]));
+            return _failures == 0 ? 0 : 1;
+        }
         if (args.Length == 2 && args[0] == "--test-pcm-file")
         {
             FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
@@ -49,6 +55,8 @@ internal static unsafe partial class Program
         string root = args.Length > 0 ? Path.GetFullPath(args[0]) : Directory.GetCurrentDirectory();
         FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
         RunPcmFileTests(Path.Combine(AppContext.BaseDirectory, "Fixtures", "eac3-5.1.m4a"));
+        RunExportTests(Path.Combine(AppContext.BaseDirectory, "Fixtures", "eac3-5.1.m4a"));
+        RunExportTests(Path.Combine(root, "_tools", "test_tone.wav"));
         WriteDsfFixture();
         RunWavPackTests();
         RunBufferPolicyTests();

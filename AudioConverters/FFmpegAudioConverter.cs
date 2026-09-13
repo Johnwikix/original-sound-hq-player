@@ -82,10 +82,14 @@ namespace WinUIMusicPlayer.AudioConverters
 
                 // WAV/PCM 解码器常给出 UNSPEC 顺序布局；swr_init 会把 UNSPEC 规范化成
                 // 原生默认布局，导致 swr_convert_frame 的配置比较报 INPUT_CHANGED。
-                // 解码帧继承 avctx 布局，这里统一规范化为一劳永逸。
-                int channels = Math.Max(1, decCtx->ch_layout.nb_channels);
-                ffmpeg.av_channel_layout_uninit(&decCtx->ch_layout);
-                ffmpeg.av_channel_layout_default(&decCtx->ch_layout, channels);
+                // 仅补全未知布局；E-AC-3 的 5.1(side) 不能替换成默认 5.1(back)，
+                // 否则重采样器配置与真实解码帧不同，且侧环绕语义会丢失。
+                if (decCtx->ch_layout.order == AVChannelOrder.AV_CHANNEL_ORDER_UNSPEC)
+                {
+                    int channels = Math.Max(1, decCtx->ch_layout.nb_channels);
+                    ffmpeg.av_channel_layout_uninit(&decCtx->ch_layout);
+                    ffmpeg.av_channel_layout_default(&decCtx->ch_layout, channels);
+                }
 
                 int depth = DetectBitDepth(decCtx, isDsd);
                 int inRate = decCtx->sample_rate != 0 ? decCtx->sample_rate : 48000;
@@ -117,6 +121,7 @@ namespace WinUIMusicPlayer.AudioConverters
                 // lame 等编码器只接受原生声道布局；解码器可能是 UNSPEC 顺序，统一规范化
                 ffmpeg.av_channel_layout_uninit(&encCtx->ch_layout);
                 ffmpeg.av_channel_layout_default(&encCtx->ch_layout, Math.Max(1, decCtx->ch_layout.nb_channels));
+                SelectEncoderChannelLayout(encCtx, encoder);
                 // 采样率对齐编码器支持表（lame 最高 48k 等），避免 DSD 高采样率直接失败
                 outRate = SnapRateToEncoder(encCtx, encoder, outRate);
                 encCtx->sample_rate = outRate;
@@ -125,8 +130,9 @@ namespace WinUIMusicPlayer.AudioConverters
                 if ((ofmtCtx->oformat->flags & ffmpeg.AVFMT_GLOBALHEADER) != 0)
                     encCtx->flags |= ffmpeg.AV_CODEC_FLAG_GLOBAL_HEADER;
 
-                if (ffmpeg.avcodec_open2(encCtx, encoder, null) < 0)
-                    throw new InvalidOperationException("编码器打开失败");
+                ret = ffmpeg.avcodec_open2(encCtx, encoder, null);
+                if (ret < 0)
+                    throw CreateException(ret, $"编码器打开失败 ({encCodecId}, {outRate} Hz, {encCtx->ch_layout.nb_channels} 声道)");
 
                 AVStream* outStream = ffmpeg.avformat_new_stream(ofmtCtx, null);
                 outStream->time_base = new AVRational { num = 1, den = outRate };
@@ -165,10 +171,8 @@ namespace WinUIMusicPlayer.AudioConverters
                 bool gainNeedsFloatStage = applyGain && !IsFloatFormat(encFmt);
                 AVSampleFormat primaryFmt = gainNeedsFloatStage ? AVSampleFormat.AV_SAMPLE_FMT_FLT : encFmt;
 
-                AVChannelLayout inLayout = default;
-                ffmpeg.av_channel_layout_copy(&inLayout, &decCtx->ch_layout);
                 ffmpeg.swr_alloc_set_opts2(&swr, &encCtx->ch_layout, primaryFmt, outRate,
-                    &inLayout, decCtx->sample_fmt, decCtx->sample_rate, 0, null);
+                    &decCtx->ch_layout, decCtx->sample_fmt, decCtx->sample_rate, 0, null);
                 if (swr == null) throw new InvalidOperationException("swresample 创建失败");
                 if (ffmpeg.swr_init(swr) < 0) throw new InvalidOperationException("swresample 初始化失败");
 
@@ -557,6 +561,34 @@ namespace WinUIMusicPlayer.AudioConverters
                 }
             }
             return best != 0 ? best : rate;
+        }
+
+        // 优先使用当前布局或同声道数布局；不支持多声道的编码器（如 MP3）
+        // 回退到立体声/单声道，由 swresample 实际下混，不能只改输入帧的标签。
+        private static void SelectEncoderChannelLayout(AVCodecContext* encCtx, AVCodec* encoder)
+        {
+            void* config = null;
+            int count = 0;
+            int ret = ffmpeg.avcodec_get_supported_config(encCtx, encoder,
+                AVCodecConfig.AV_CODEC_CONFIG_CHANNEL_LAYOUT, 0, &config, &count);
+            if (ret < 0) throw CreateException(ret, "查询编码器声道布局失败");
+            if (config == null || count <= 0) return;
+            AVChannelLayout* layouts = (AVChannelLayout*)config;
+            AVChannelLayout* selected = null;
+            int channels = encCtx->ch_layout.nb_channels;
+            for (int i = 0; i < count; i++)
+            {
+                if (ffmpeg.av_channel_layout_compare(&encCtx->ch_layout, &layouts[i]) == 0) return;
+                int candidateChannels = layouts[i].nb_channels;
+                if (candidateChannels == channels ||
+                    (candidateChannels <= Math.Min(2, channels) &&
+                     (selected == null || candidateChannels > selected->nb_channels)))
+                    selected = &layouts[i];
+            }
+            if (selected == null) throw new InvalidOperationException($"编码器不支持 {channels} 声道且没有兼容的下混布局");
+            ffmpeg.av_channel_layout_uninit(&encCtx->ch_layout);
+            ret = ffmpeg.av_channel_layout_copy(&encCtx->ch_layout, selected);
+            if (ret < 0) throw CreateException(ret, "设置编码器声道布局失败");
         }
 
         private static InvalidOperationException CreateException(int errorCode, string message)

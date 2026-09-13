@@ -17,6 +17,17 @@ dotnet run --project _tools/PlaybackSwitchRegression -- --test-pcm-file "D:\path
 ```
 
 该测试验证 PCM 兼容播放，不验证 Atmos 空间对象渲染或硬件出声。
+
+导出回归直接编译生产 `FFmpegAudioConverter`，覆盖 E-AC-3 5.1(side) 与普通
+立体声 WAV 到 WAV/FLAC/MP3/AAC/ALAC/OGG/Opus 的完整转换，再解码输出验证
+声道数、时长、非静音及有限样本。MP3 下混为立体声，其余测试格式保留声道数。
+这锁定了输入布局被改写导致 `Input changed`、MP3 被传入 5.1 导致编码器打开失败的问题。
+
+```powershell
+dotnet run --project _tools/PlaybackSwitchRegression -- --test-export-file "D:\path\track.m4a"
+```
+
+输出位于测试程序目录并在每项测试结束后清理，原文件只读。转换为这些格式不保留 Atmos 对象元数据。
 失败返回退出码 1。DSD64 立体声静音 DSF 在工具输出目录自动生成；PCM 使用 `_tools` 下
 44.1 / 48 / 96 kHz WAV。现有 `_tools/test_tone.dsf` 缺少头部 metadata pointer，不能作为
 解码回归输入，因此此工具不依赖它。
