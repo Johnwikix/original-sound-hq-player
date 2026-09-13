@@ -19,10 +19,10 @@
                 VerticalAlignment="Center"
                 IsActive="True" />
             <TextBlock
+                x:Uid="ProcessingDataHint"
                 Margin="0,180,0,0"
                 HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Text="正在处理数据，请稍候..." />
+                VerticalAlignment="Center" />
         </Grid>
 
         <!--  空状态：新用户首启引导  -->

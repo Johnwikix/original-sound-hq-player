@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1835,6 +1835,15 @@
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>Experimenteller E-AC-3 / Atmos HDMI-Bitstream: App-Lautstärke und alle Effekte werden umgangen. Lautstärke am Receiver regeln. Gespeicherte Einstellungen gelten wieder bei PCM.</value>
+  </data>
+  <data name="ProcessingDataHint.Text" xml:space="preserve">
+    <value>Datenverarbeitung läuft, bitte warten...</value>
+  </data>
+  <data name="SaveConfirm.Text" xml:space="preserve">
+    <value>Möchten Sie die Änderungen speichern?</value>
+  </data>
+  <data name="StarOnGitHub.Text" xml:space="preserve">
+    <value>Wenn dir dieses Projekt gefällt, gib uns einen Stern auf GitHub!</value>
   </data>
 </root>
 

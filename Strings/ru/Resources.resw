@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1835,6 +1835,15 @@
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>Экспериментальный битстрим E-AC-3 / Atmos HDMI: громкость и эффекты приложения обходятся. Регулируйте громкость на ресивере. При возврате к PCM настройки возобновляются.</value>
+  </data>
+  <data name="ProcessingDataHint.Text" xml:space="preserve">
+    <value>Обработка данных, пожалуйста подождите...</value>
+  </data>
+  <data name="SaveConfirm.Text" xml:space="preserve">
+    <value>Сохранить изменения?</value>
+  </data>
+  <data name="StarOnGitHub.Text" xml:space="preserve">
+    <value>Если вам нравится этот проект, поставьте нам звезду на GitHub!</value>
   </data>
 </root>
 

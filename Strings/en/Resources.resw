@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1838,5 +1838,11 @@
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>Experimental E-AC-3 / Atmos HDMI bitstream mode: app volume and all effects are bypassed. Adjust volume on your receiver. Saved settings resume with PCM.</value>
+  </data>
+  <data name="ProcessingDataHint.Text" xml:space="preserve">
+    <value>Processing data, please wait...</value>
+  </data>
+  <data name="SaveConfirm.Text" xml:space="preserve">
+    <value>Do you want to save the changes?</value>
   </data>
 </root>

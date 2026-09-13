@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1835,6 +1835,15 @@
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>実験的な E-AC-3 / Atmos HDMI ビットストリーム：アプリの音量と音響効果は適用されません。アンプで音量を調整してください。PCM に戻ると設定が復元されます。</value>
+  </data>
+  <data name="ProcessingDataHint.Text" xml:space="preserve">
+    <value>データ処理を行っています、しばらくお待ちください...</value>
+  </data>
+  <data name="SaveConfirm.Text" xml:space="preserve">
+    <value>変更を保存しますか？</value>
+  </data>
+  <data name="StarOnGitHub.Text" xml:space="preserve">
+    <value>このプロジェクトを気に入ったら、GitHub でスターをお願いします！</value>
   </data>
 </root>
 

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1837,5 +1837,11 @@
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>实验性 E-AC-3 / Atmos HDMI 位流模式：已绕过应用音量和所有音效，请在功放上调节音量。回到 PCM 后恢复原设置。</value>
+  </data>
+  <data name="ProcessingDataHint.Text" xml:space="preserve">
+    <value>正在处理数据，请稍候...</value>
+  </data>
+  <data name="SaveConfirm.Text" xml:space="preserve">
+    <value>确定要保存修改吗？</value>
   </data>
 </root>

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1835,5 +1835,14 @@
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>Modo bitstream HDMI E-AC-3 / Atmos experimental: se omiten el volumen y los efectos de la app. Ajuste el volumen en el receptor. Los ajustes se restauran al volver a PCM.</value>
+  </data>
+  <data name="ProcessingDataHint.Text" xml:space="preserve">
+    <value>Procesando datos, por favor espere...</value>
+  </data>
+  <data name="SaveConfirm.Text" xml:space="preserve">
+    <value>¿Quieres guardar los cambios?</value>
+  </data>
+  <data name="StarOnGitHub.Text" xml:space="preserve">
+    <value>Si te gusta este proyecto, ¡danos una estrella en GitHub!</value>
   </data>
 </root>
