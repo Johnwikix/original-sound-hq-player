@@ -81,7 +81,7 @@ internal static unsafe partial class Program
             var parsed = EqualizerHelper.Parse(EqualizerHelper.Serialize(EqualizerHelper.Snapshot("Q test", bands)))!;
             Require(parsed.Bands.Select(x => x.Q).SequenceEqual(bands.Select(x => x.Q)), "preset lost Q values");
             var legacy = EqualizerHelper.Parse("{\"Version\":1,\"Bands\":[{\"FrequencyHz\":1000,\"GainDb\":6}]}")!;
-            Require(legacy.Bands[5].GainDb == 6 && Math.Abs(legacy.Bands[5].Q - 1.414) < 1e-5, "legacy preset default Q wrong");
+            Require(legacy.Bands[5].GainDb == 6 && Math.Abs(legacy.Bands[5].Q - 1) < 1e-5, "legacy preset default Q wrong");
             bands[0].Q = double.NaN; bands[1].Q = 100; bands[2].Q = .001;
             var clean = EqualizerHelper.Snapshot("clean", bands);
             Require(clean.Bands[0].Q == EqPreset.DefaultQ && clean.Bands[1].Q == 20 && clean.Bands[2].Q == .1,

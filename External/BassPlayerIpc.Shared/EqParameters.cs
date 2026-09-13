@@ -3,7 +3,7 @@ namespace BassPlayerIpc.Shared;
 /// <summary>UI、预设和播放端共用的 Q 值范围。</summary>
 public static class EqParameters
 {
-    public const float DefaultQ = 1.414f;
+    public const float DefaultQ = 1f;
     public const double MinQ = 0.1;
     public const double MaxQ = 20;
 

@@ -1631,7 +1631,7 @@
     <value>Cover-Cache leeren?</value>
   </data>
   <data name="EqQDescription" xml:space="preserve">
-    <value>Höheres Q verengt das Band, niedrigeres Q verbreitert es. Bereich: 0,1–20. Standard: 1,414.</value>
+    <value>Höheres Q verengt das Band, niedrigeres Q verbreitert es. Bereich: 0,1–20. Standard: 1.</value>
   </data>
   <data name="SettingsSectionDsp.Text" xml:space="preserve">
     <value>Klangeffekte</value>

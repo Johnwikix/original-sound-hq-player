@@ -1634,7 +1634,7 @@
     <value>Clear the cover cache?</value>
   </data>
   <data name="EqQDescription" xml:space="preserve">
-    <value>Higher Q narrows the band; lower Q widens it. Range: 0.1–20. Default: 1.414.</value>
+    <value>Higher Q narrows the band; lower Q widens it. Range: 0.1–20. Default: 1.</value>
   </data>
   <data name="SettingsSectionDsp.Text" xml:space="preserve">
     <value>Audio effects</value>

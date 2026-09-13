@@ -1631,7 +1631,7 @@
     <value>カバーキャッシュをクリアしますか？</value>
   </data>
   <data name="EqQDescription" xml:space="preserve">
-    <value>Q が大きいほど帯域が狭く、小さいほど広くなります。範囲: 0.1～20、既定値: 1.414。</value>
+    <value>Q が大きいほど帯域が狭く、小さいほど広くなります。範囲: 0.1～20、既定値: 1。</value>
   </data>
   <data name="SettingsSectionDsp.Text" xml:space="preserve">
     <value>音響効果</value>
