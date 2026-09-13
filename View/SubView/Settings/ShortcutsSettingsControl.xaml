@@ -28,6 +28,7 @@
                 <InfoBar
                     Title="{x:Bind ViewModel.AppViewModel.GlobalHotKeyConflictTitle, Mode=OneWay}"
                     IsOpen="{x:Bind ViewModel.AppViewModel.HasGlobalHotKeyConflict, Mode=OneWay}"
+                    Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.HasGlobalHotKeyConflict), Mode=OneWay}"
                     Severity="Warning" />
 
                 <controls:SettingsCard>

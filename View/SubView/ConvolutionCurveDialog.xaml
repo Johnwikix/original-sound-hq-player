@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:eq="using:WinUIMusicPlayer.Controls.Equalizer"
     xmlns:model="using:WinUIMusicPlayer.Model"
+    xmlns:tool="using:WinUIMusicPlayer.Utils"
     Title="{x:Bind ViewModel.TitleText}"
     CloseButtonText="{x:Bind ViewModel.CancelText}"
     CornerRadius="10"
@@ -120,7 +121,9 @@
             <InfoBar
                 x:Name="Notice"
                 IsClosable="False"
-                IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}" Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
+                IsOpen="{x:Bind ViewModel.HasError, Mode=OneWay}"
+                Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.HasError), Mode=OneWay}"
+                Message="{x:Bind ViewModel.ErrorMessage, Mode=OneWay}"
                 Severity="Error" />
         </StackPanel>
     </ScrollViewer>

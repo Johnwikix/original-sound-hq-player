@@ -26,8 +26,6 @@ public sealed partial class DspSettingsControl : UserControl
 
     private async void OnUnloaded(object sender, RoutedEventArgs args) => await ViewModel.OnViewUnloadedAsync();
 
-    public Visibility ToVisibility(bool value) => value ? Visibility.Visible : Visibility.Collapsed;
-
     private async void EditCurve_Click(object sender, RoutedEventArgs args)
     {
         var dialog = new ConvolutionCurveDialog { XamlRoot = XamlRoot, RequestedTheme = ActualTheme };
