@@ -56,7 +56,8 @@ DoP、DSD 位流）。中间处理噪声低于 -140dBFS，24bit 源全链路位�
 - **PCM**：FFmpeg 解码，采样精确进度（anchor + 环已播帧）
 - **Dolby Digital / Digital Plus 文件**：内置 AC-3/E-AC-3 解码，支持 M4A/MP4 内的
   E-AC-3（包括 Atmos/JOC 文件的兼容多声道音频）。共享输出按现有策略下混至立体声；
-  本管线不解析 Atmos 对象、不渲染高度声道，也不输出 Dolby HDMI 压缩位流。
+  默认 PCM 管线不解析 Atmos 对象、不渲染高度声道。独立的实验性 Atmos HDMI 选项
+  可在 WASAPI 独占下透传 48 kHz 六声道 E-AC-3/JOC，由兼容功放解码；未经实机验证。
 - **WV-DSD**：按 WavPack 内容识别（普通 WV 仍为 PCM），开启位流后通过
   `wavpackdll.dll` 的 `OPEN_DSD_NATIVE` 无损解压原始 DSD；ASIO 优先 Native DSD，
   协商失败尝试 ASIO DoP；WASAPI 独占 Push/Event 使用 DoP。共享/关闭位流时走 FFmpeg DSD→PCM。

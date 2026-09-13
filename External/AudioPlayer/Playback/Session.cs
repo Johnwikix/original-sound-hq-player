@@ -16,6 +16,8 @@ internal sealed class Session : IRenderSource, IDisposable
 
     private PcmDecoder? _pcm;
     private DsdRawReader? _dsd;
+    private Eac3BitstreamReader? _eac3;
+    private Iec61937Ring? _iecRing;
     private Thread? _thread;
     private volatile bool _cancelled;
     private long _pendingSeekMs = long.MinValue; // long.MinValue = 无请求
@@ -58,6 +60,8 @@ internal sealed class Session : IRenderSource, IDisposable
     public RenderKind Kind { get; }
     public int Channels { get; }
     public uint ChannelMask { get; private init; }
+    public bool IsAtmos { get; private init; }
+    public uint EncodedChannelMask { get; private init; }
     public long TotalMs { get; }
     public long AnchorFrames; // 引擎线程写、渲染线程不读（位置在引擎侧合成）
 
@@ -81,6 +85,10 @@ internal sealed class Session : IRenderSource, IDisposable
         if (kind == RenderKind.Pcm)
         {
             _decodeScratchF = new double[16384 * ch];
+        }
+        else if (kind == RenderKind.Eac3)
+        {
+            _decodeScratchB = new byte[Eac3BitstreamReader.BurstBytes];
         }
         else if (kind == RenderKind.Dop)
         {
@@ -135,6 +143,21 @@ internal sealed class Session : IRenderSource, IDisposable
                 s.StartThread(s.DopDecodeProc);
                 return s;
             }
+            case RenderKind.Eac3:
+            {
+                var reader = new Eac3BitstreamReader();
+                if (!reader.Open(path)) { reader.Dispose(); return null; }
+                const int rate = Eac3BitstreamReader.CarrierRate;
+                var s = new Session(engine, kind, 2, rate, rate, reader.TotalMs, 0)
+                {
+                    _eac3 = reader,
+                    IsAtmos = reader.IsAtmos,
+                    EncodedChannelMask = reader.EncodedChannelMask,
+                    _iecRing = new Iec61937Ring(RingCapacity(rate, latencyMs), PrebufferFrames(rate)),
+                };
+                s.StartThread(s.Eac3DecodeProc);
+                return s;
+            }
             default:
             {
                 var reader = new DsdRawReader();
@@ -172,9 +195,9 @@ internal sealed class Session : IRenderSource, IDisposable
     // ─────────────── 引擎侧控制 ───────────────
 
     public long SubmittedFrames => FramesPlayed;
-    public long FramesPlayed => _pcmRing?.FramesPlayed ?? _dopRing?.FramesPlayed ?? _dsdRing?.FramesPlayed ?? 0;
-    public int ReadyFrames => _pcmRing?.ReadyFrames ?? _dopRing?.ReadyFrames ?? _dsdRing?.ReadyFrames ?? 0;
-    public bool IsDrained => _pcmRing?.IsDrained ?? _dopRing?.IsDrained ?? _dsdRing?.IsDrained ?? false;
+    public long FramesPlayed => _pcmRing?.FramesPlayed ?? _dopRing?.FramesPlayed ?? _dsdRing?.FramesPlayed ?? _iecRing?.FramesPlayed ?? 0;
+    public int ReadyFrames => _pcmRing?.ReadyFrames ?? _dopRing?.ReadyFrames ?? _dsdRing?.ReadyFrames ?? _iecRing?.ReadyFrames ?? 0;
+    public bool IsDrained => _pcmRing?.IsDrained ?? _dopRing?.IsDrained ?? _dsdRing?.IsDrained ?? _iecRing?.IsDrained ?? false;
 
     /// <summary>seek：立即重置环与锚点（进度条即时响应），解码线程随后转到新位置。</summary>
     public void RequestSeek(long targetMs)
@@ -187,6 +210,7 @@ internal sealed class Session : IRenderSource, IDisposable
             _pcmRing?.BeginSession();
             _dopRing?.BeginSession();
             _dsdRing?.BeginSession();
+            _iecRing?.BeginSession();
             Interlocked.Exchange(ref _pendingSeekMs, targetMs);
             TimelineEpoch = Interlocked.Increment(ref _nextTimelineEpoch);
         }
@@ -198,6 +222,7 @@ internal sealed class Session : IRenderSource, IDisposable
         _pcmRing?.WakeProducer();
         _dopRing?.WakeProducer();
         _dsdRing?.WakeProducer();
+        _iecRing?.WakeProducer();
         lock (_decodeEndGate) Monitor.PulseAll(_decodeEndGate);
     }
 
@@ -224,18 +249,19 @@ internal sealed class Session : IRenderSource, IDisposable
         {
             if (TakeSeek(out long ms))
             {
-                bool ok = _pcm?.SeekToMs(ms) ?? _dsd?.SeekToMs(ms) ?? false;
+                bool ok = _pcm?.SeekToMs(ms) ?? _dsd?.SeekToMs(ms) ?? _eac3?.SeekToMs(ms) ?? false;
                 if (!ok) Console.WriteLine($"[decode] seek failed: {ms}ms");
                 _dsdLeftoverBytes = 0;
             }
-            _decodeEpoch = _pcmRing?.Epoch ?? _dopRing?.Epoch ?? _dsdRing?.Epoch ?? 0;
+            _decodeEpoch = _pcmRing?.Epoch ?? _dopRing?.Epoch ?? _dsdRing?.Epoch ?? _iecRing?.Epoch ?? 0;
         }
     }
 
     private void DisposeDecoder()
     {
         // 解码线程独占原生资源；控制线程等待超时后仍会在这里最终归还。
-        _pcm?.Dispose(); _dsd?.Dispose();
+        _pcm?.Dispose(); _dsd?.Dispose(); _eac3?.Dispose();
+        _eac3 = null;
         _pcm = null; _dsd = null;
     }
 
@@ -380,6 +406,29 @@ internal sealed class Session : IRenderSource, IDisposable
     }
 
     // ─────────────── IRenderSource（输出渲染线程调用） ───────────────
+
+    private void Eac3DecodeProc()
+    {
+        try
+        {
+            while (!_cancelled)
+            {
+                HandleSeek();
+                int bytes = _eac3!.ReadBurst(_decodeScratchB);
+                if (bytes == 0)
+                {
+                    if (!_iecRing!.MarkInputEnded(_decodeEpoch)) continue;
+                    if (WaitForSeekAfterEnd()) continue;
+                    break;
+                }
+                if (!_iecRing!.Push(_decodeScratchB, bytes / 4, _isCancelled, _decodeEpoch) && _cancelled) break;
+            }
+        }
+        catch (Exception ex) { Console.WriteLine($"[decode] E-AC-3 bitstream: {ex.Message}"); _iecRing?.MarkInputEnded(_decodeEpoch); }
+        finally { DisposeDecoder(); }
+    }
+
+    public void FillIec61937(Span<byte> buffer, int frames) => _iecRing?.Render(buffer, frames);
 
     public void FillPcm(Span<double> buffer, int frames)
     {

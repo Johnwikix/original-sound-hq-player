@@ -1827,7 +1827,14 @@
   <data name="ExperimentalSurround51Description" xml:space="preserve">
     <value>По умолчанию выключен. Только PCM 5.1 через ASIO / WASAPI Exclusive, без Atmos. Выходы ASIO 1–6: L, R, C, LFE, Surround L, Surround R. На оборудовании не проверено.</value>
   </data>
+  <data name="ExperimentalAtmosTitle" xml:space="preserve">
+    <value>Экспериментальный Atmos HDMI passthrough</value>
+  </data>
+  <data name="ExperimentalAtmosDescription" xml:space="preserve">
+    <value>По умолчанию выключен. Только WASAPI Exclusive: E-AC-3 / Atmos, 48 кГц, 6 каналов. Нужен совместимый HDMI-ресивер; громкость регулируется на нём, настройки громкости и эффекты приложения обходятся. Без ASIO, TrueHD и Atmos для наушников. На оборудовании не проверено.</value>
+  </data>
+  <data name="DspAtmosBitstreamBypass" xml:space="preserve">
+    <value>Экспериментальный битстрим E-AC-3 / Atmos HDMI: громкость и эффекты приложения обходятся. Регулируйте громкость на ресивере. При возврате к PCM настройки возобновляются.</value>
+  </data>
 </root>
-
-
 

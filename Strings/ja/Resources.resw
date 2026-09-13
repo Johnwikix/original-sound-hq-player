@@ -1827,7 +1827,14 @@
   <data name="ExperimentalSurround51Description" xml:space="preserve">
     <value>既定はオフ。ASIO / WASAPI 排他の 5.1 PCM のみ（Atmos 非対応）。ASIO 出力 1～6 は左、右、中央、LFE、左サラウンド、右サラウンドの順。実機未検証。</value>
   </data>
+  <data name="ExperimentalAtmosTitle" xml:space="preserve">
+    <value>実験的な Atmos HDMI パススルー</value>
+  </data>
+  <data name="ExperimentalAtmosDescription" xml:space="preserve">
+    <value>既定はオフ。WASAPI 排他のみ：48 kHz・6 チャンネルの E-AC-3 / Atmos。対応 HDMI アンプが必要です。アプリの音量・音響効果は適用されないため、アンプで音量を調整してください。ASIO、TrueHD、ヘッドホン Atmos は非対応。実機未検証。</value>
+  </data>
+  <data name="DspAtmosBitstreamBypass" xml:space="preserve">
+    <value>実験的な E-AC-3 / Atmos HDMI ビットストリーム：アプリの音量と音響効果は適用されません。アンプで音量を調整してください。PCM に戻ると設定が復元されます。</value>
+  </data>
 </root>
-
-
 

@@ -15,6 +15,7 @@ internal abstract class FrameRingBase<T> where T : unmanaged
     private long _tail; // 总读取帧数
 
     private readonly int _prebufferFrames;
+    private readonly bool _wholeWrites;
     private readonly int _prebufferTimeoutMs;
     private long _prebufferDeadlineTicks;
     private bool _prebuffering;
@@ -28,11 +29,12 @@ internal abstract class FrameRingBase<T> where T : unmanaged
     private long _underrunCallbacks;
     private long _underrunFrames;
 
-    protected FrameRingBase(int channels, int capacityFrames, int prebufferFrames, int prebufferTimeoutMs)
+    protected FrameRingBase(int channels, int capacityFrames, int prebufferFrames, int prebufferTimeoutMs, bool wholeWrites = false)
     {
         Channels = Math.Max(1, channels);
         _buffer = new T[Math.Max(1, capacityFrames) * Channels];
         _prebufferFrames = Math.Max(0, prebufferFrames);
+        _wholeWrites = wholeWrites;
         _prebufferTimeoutMs = Math.Max(0, prebufferTimeoutMs);
         BeginSession();
     }
@@ -90,6 +92,8 @@ internal abstract class FrameRingBase<T> where T : unmanaged
     /// <summary>验证解码前捕获的代数，拒绝 seek 前仍在解码的旧块。</summary>
     public bool Push(ReadOnlySpan<T> source, int frameCount, Func<bool> cancelled, long epoch)
     {
+        if (_wholeWrites && frameCount > CapacityFrames)
+            throw new ArgumentOutOfRangeException(nameof(frameCount));
         int written = 0;
         while (written < frameCount)
         {
@@ -98,7 +102,7 @@ internal abstract class FrameRingBase<T> where T : unmanaged
                 if (epoch != _epoch || cancelled()) return false;
                 if (frameCount > 0) _sessionHasAudio = true;
                 int free = CapacityFrames - (int)(_head - _tail);
-                if (free > 0)
+                if (free > 0 && (!_wholeWrites || free >= frameCount))
                 {
                     int take = Math.Min(free, frameCount - written);
                     long headLocal = _head % CapacityFrames;
@@ -261,4 +265,12 @@ internal sealed class DsdByteRing : FrameRingBase<byte>
 
     protected override void FillSilence(Span<byte> output, int frameCount, long phaseBase)
         => output[..(frameCount * Channels)].Fill((byte)0x69);
+}
+
+internal sealed class Iec61937Ring(int capacityFrames, int prebufferFrames)
+    : FrameRingBase<byte>(4, capacityFrames, prebufferFrames, 300, wholeWrites: true)
+{
+    // Publish complete IEC bursts so an underrun cannot insert silence inside a payload.
+    protected override void FillSilence(Span<byte> output, int frameCount, long phaseBase)
+        => output[..(frameCount * 4)].Clear();
 }

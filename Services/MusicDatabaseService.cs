@@ -1095,6 +1095,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.MusicCoverCache = string.IsNullOrEmpty(settings.MusicCoverCache) ? Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicCoverCache") : settings.MusicCoverCache;
                 AppViewModel.IsDopEnabled = settings.IsDopEnabled;
                 AppViewModel.ExperimentalSurround51 = settings.ExperimentalSurround51;
+                AppViewModel.ExperimentalAtmosPassthrough = settings.ExperimentalAtmosPassthrough;
                 AppViewModel.IsFadeEnabled = settings.IsFadeEnabled;
                 AppViewModel.LyricsBlurAmount = settings.LyricsBlurAmount;
                 AppViewModel.UseImageDominantTheme = settings.UseImageDominantTheme;
@@ -1236,6 +1237,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.MusicCoverCache = AppViewModel.MusicCoverCache;
             newSettings.IsDopEnabled = AppViewModel.IsDopEnabled;
             newSettings.ExperimentalSurround51 = AppViewModel.ExperimentalSurround51;
+            newSettings.ExperimentalAtmosPassthrough = AppViewModel.ExperimentalAtmosPassthrough;
             newSettings.DsdPcmFreq = AppViewModel.DsdPcmFreq;
             newSettings.IsFadeEnabled = AppViewModel.IsFadeEnabled;
             newSettings.LyricsBlurAmount = AppViewModel.LyricsBlurAmount;

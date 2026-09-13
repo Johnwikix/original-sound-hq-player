@@ -297,6 +297,7 @@ public partial class DspSettingsViewModel : ObservableObject
         bool unsupported = available && state!.Value.Channels != 0 && state.Value.Channels != 2;
         InfoOpen = !effectsActive || unsupported;
         InfoMessage = ToolUtils.GetString(state == null ? "DspStateUnavailable"
+            : state.Value.RenderKind == 3 ? "DspAtmosBitstreamBypass"
             : !available ? "DspBitstreamBypass" : !effectsActive ? "DspMasterBypass" : "DspStereoOnly");
         ConvolutionText = ToolUtils.GetString(!effectsActive ? "DspIrBypass" : state?.Convolution switch
         {

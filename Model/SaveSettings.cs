@@ -36,6 +36,7 @@ namespace WinUIMusicPlayer.Model
         public bool IsAutoCoverEnabled { get; set; } = true;
         public bool IsDopEnabled { get; set; } = false;
         public bool ExperimentalSurround51 { get; set; } = false;
+        public bool ExperimentalAtmosPassthrough { get; set; } = false;
         public int DsdGain { get; set; } = 6;
         public int DsdPcmFreq { get; set; } = 88200;
         public bool IsPlayDetailBtnVisible { get; set; } = true;

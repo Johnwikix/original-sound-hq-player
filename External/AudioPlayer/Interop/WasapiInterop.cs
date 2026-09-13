@@ -73,6 +73,24 @@ internal static class SubFormats
     public static readonly Guid IeeeFloat = new(0x00000003, 0x0000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
 }
 
+[StructLayout(LayoutKind.Sequential, Pack = 2)]
+internal struct WAVEFORMATEXTENSIBLE_IEC61937
+{
+    public WAVEFORMATEXTENSIBLE FormatExt;
+    public uint EncodedSamplesPerSec;
+    public uint EncodedChannelCount;
+    public uint AverageBytesPerSec;
+
+    internal static WAVEFORMATEXTENSIBLE_IEC61937 Eac3(uint mask, bool atmos)
+    {
+        var format = WAVEFORMATEXTENSIBLE.Create(192000, 2, 16, 16,
+            new Guid(atmos ? 0x0000010a : 0x0000000a, 0x0cea, 0x0010, 0x80, 0, 0, 0xaa, 0, 0x38, 0x9b, 0x71));
+        format.Format.cbSize = 34;
+        format.dwChannelMask = mask;
+        return new() { FormatExt = format, EncodedSamplesPerSec = 48000, EncodedChannelCount = 6 };
+    }
+}
+
 [GeneratedComInterface]
 [Guid("A95664D2-9614-4F35-A746-DE8DB63617E6")]
 internal unsafe partial interface IMMDeviceEnumerator

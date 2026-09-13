@@ -1829,4 +1829,13 @@
   <data name="ExperimentalSurround51Description" xml:space="preserve">
     <value>默认关闭，仅用于 ASIO / WASAPI 独占的 5.1 PCM，不含 Atmos。ASIO 前六路须为左、右、中置、低音、左环绕、右环绕。未经实机验证。</value>
   </data>
+  <data name="ExperimentalAtmosTitle" xml:space="preserve">
+    <value>实验性 Atmos HDMI 直通</value>
+  </data>
+  <data name="ExperimentalAtmosDescription" xml:space="preserve">
+    <value>默认关闭。仅 WASAPI 独占，支持 48 kHz 六声道 E-AC-3 / Atmos；需要兼容的 HDMI 功放。绕过音量和音效，请在功放调节音量。非 ASIO、TrueHD 或耳机 Atmos。未经实机验证。</value>
+  </data>
+  <data name="DspAtmosBitstreamBypass" xml:space="preserve">
+    <value>实验性 E-AC-3 / Atmos HDMI 位流模式：已绕过应用音量和所有音效，请在功放上调节音量。回到 PCM 后恢复原设置。</value>
+  </data>
 </root>

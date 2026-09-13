@@ -90,6 +90,14 @@
                         IsOn="{x:Bind ViewModel.AppViewModel.ExperimentalSurround51, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
+                <controls:SettingsCard
+                    Header="{x:Bind tool:ToolUtils.GetString('ExperimentalAtmosTitle'), Mode=OneWay}"
+                    Description="{x:Bind tool:ToolUtils.GetString('ExperimentalAtmosDescription'), Mode=OneWay}">
+                    <ToggleSwitch MinWidth="0" VerticalAlignment="Center"
+                        AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('ExperimentalAtmosTitle'), Mode=OneWay}"
+                        IsOn="{x:Bind ViewModel.AppViewModel.ExperimentalAtmosPassthrough, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
                         <TextBlock x:Uid="FadeInOut" TextWrapping="Wrap" />

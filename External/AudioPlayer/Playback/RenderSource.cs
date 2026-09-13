@@ -6,6 +6,7 @@ internal enum RenderKind
     Pcm,
     Dop,
     NativeDsd,
+    Eac3,
 }
 
 /// <summary>
@@ -20,6 +21,9 @@ internal interface IRenderSource
     int Channels { get; }
     /// <summary>实验性 5.1 的原生扬声器掩码；0 保留旧输出行为。</summary>
     uint ChannelMask => 0;
+    bool IsAtmos => false;
+    uint EncodedChannelMask => 0x3F;
+    void FillIec61937(Span<byte> buffer, int frames) => throw new NotSupportedException();
     /// <summary>累计提交音频帧数；Native DSD 使用字节帧。</summary>
     long SubmittedFrames => 0;
     /// <summary>PCM：读 frames 帧交织 double（float64 管线，含 EQ 与增益），不足补静音。</summary>

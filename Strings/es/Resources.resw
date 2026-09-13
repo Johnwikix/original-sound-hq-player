@@ -1827,6 +1827,13 @@
   <data name="ExperimentalSurround51Description" xml:space="preserve">
     <value>Desactivada por defecto. Solo PCM 5.1 con ASIO / WASAPI exclusivo, sin Atmos. Salidas ASIO 1–6: L, R, C, LFE, surround L, surround R. Sin verificar en hardware.</value>
   </data>
+  <data name="ExperimentalAtmosTitle" xml:space="preserve">
+    <value>Passthrough Atmos HDMI experimental</value>
+  </data>
+  <data name="ExperimentalAtmosDescription" xml:space="preserve">
+    <value>Desactivado por defecto. Solo WASAPI exclusivo: E-AC-3 / Atmos de 48 kHz y 6 canales. Requiere receptor HDMI compatible; ajuste allí el volumen, pues se omiten volumen y efectos de la app. Sin ASIO, TrueHD ni Atmos para auriculares. No verificado en hardware.</value>
+  </data>
+  <data name="DspAtmosBitstreamBypass" xml:space="preserve">
+    <value>Modo bitstream HDMI E-AC-3 / Atmos experimental: se omiten el volumen y los efectos de la app. Ajuste el volumen en el receptor. Los ajustes se restauran al volver a PCM.</value>
+  </data>
 </root>
-
-

@@ -84,6 +84,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
 
     public bool Start(int deviceIndex, int latencyMs, IRenderSource source, float sessionVolume = 1, string? endpointId = null)
     {
+        if (source.Kind == RenderKind.Eac3 && !_exclusive) return false;
         _source = source;
         DeviceIndex = deviceIndex;
         int apartment = Win32.CoInitializeEx(IntPtr.Zero, Win32.COINIT_MULTITHREADED);
@@ -134,7 +135,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
             if (_renderEvent == IntPtr.Zero || _stopEvent == IntPtr.Zero) return false;
 
             if (source.Kind == RenderKind.Pcm) _pcmScratch = new double[_bufferFrames * source.Channels];
-            else _dopScratch = new uint[_bufferFrames * source.Channels];
+            else if (source.Kind == RenderKind.Dop) _dopScratch = new uint[_bufferFrames * source.Channels];
             _pipelineFrames = (int)_bufferFrames;
             if (_client.GetStreamLatency(out long latency) == 0 && latency is > 0 and < 100000000)
                 _pipelineFrames = Math.Max(_pipelineFrames, (int)Math.Ceiling(latency * source.SampleRate / 10000000.0));
@@ -334,6 +335,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
 
     private bool InitializeExclusive(IRenderSource source, int requestedBufferFrames)
     {
+        if (source.Kind == RenderKind.Eac3) return InitializeEac3(source, requestedBufferFrames);
         int[] kinds = source.Kind == RenderKind.Dop
             ? new[] { FormatKind.Pcm24Packed, FormatKind.Pcm24In32, FormatKind.Pcm32 }
             : new[] { FormatKind.Float32, FormatKind.Pcm24In32, FormatKind.Pcm16, FormatKind.Pcm32 };
@@ -357,6 +359,29 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                 Console.WriteLine($"[wasapi] exclusive candidate kind={kind} hr=0x{hr:X8}");
             if (hr != WasapiTypes.AudclntEUnsupportedFormat && hr != WasapiTypes.AudclntEBufferSizeNotAligned)
                 return false; // 设备占用/独占被拒等：换格式无意义
+        }
+        return false;
+    }
+
+    private bool InitializeEac3(IRenderSource source, int requestedFrames)
+    {
+        // Never negotiate PCM for compressed bytes. Generic DD+ also carries unchanged JOC metadata.
+        int attempts = source.IsAtmos ? 2 : 1;
+        int frames = Math.Max(6144, (requestedFrames + 6143) / 6144 * 6144);
+        for (int attempt = 0; attempt < attempts; attempt++)
+        {
+            if (attempt > 0 && !ReplaceClientForInitialize()) return false;
+            var format = WAVEFORMATEXTENSIBLE_IEC61937.Eac3(source.EncodedChannelMask, source.IsAtmos && attempt == 0);
+            int hr = InitializeExclusiveAligned(&format.FormatExt, (long)Math.Round(frames * 10000000.0 / 192000));
+            if (hr == 0 && _client!.GetBufferSize(out _bufferFrames) == 0)
+            {
+                _endpointKind = FormatKind.Pcm16; // Carrier storage only; FillEndpoint bypasses PCM conversion.
+                _channels = 2;
+                Console.WriteLine($"[wasapi] experimental E-AC-3 HDMI passthrough Atmos={source.IsAtmos} buffer={_bufferFrames}");
+                return true;
+            }
+            Console.WriteLine($"[wasapi] E-AC-3 IEC61937 rejected hr=0x{hr:X8}");
+            if (hr != WasapiTypes.AudclntEUnsupportedFormat) return false;
         }
         return false;
     }
@@ -406,8 +431,9 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
     {
         // 格式放非托管内存：worker 线程持有指针；超时则泄漏（进程退出回收）。
         // （GCHandle.AddrOfPinnedObject 对装箱结构返回的是对象头，不可用。）
-        var pFmt = (WAVEFORMATEXTENSIBLE*)NativeMemory.Alloc((nuint)sizeof(WAVEFORMATEXTENSIBLE));
-        *pFmt = *format;
+        nuint formatBytes = (nuint)(sizeof(WAVEFORMATEX) + format->Format.cbSize);
+        var pFmt = (WAVEFORMATEXTENSIBLE*)NativeMemory.Alloc(formatBytes);
+        NativeMemory.Copy(format, pFmt, formatBytes);
         var client = _client;
         if (client == null) { NativeMemory.Free(pFmt); return unchecked((int)0x80004005); }
 
@@ -574,6 +600,9 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
         long total = frames * _channels;
         switch (source.Kind)
         {
+            case RenderKind.Eac3:
+                source.FillIec61937(new Span<byte>(dst, checked((int)frames * 4)), (int)frames);
+                break;
             case RenderKind.Dop:
                 source.FillDop(_dopScratch, (int)frames);
                 ConvertDopToEndpoint(_dopScratch, dst, (int)total, _endpointKind);

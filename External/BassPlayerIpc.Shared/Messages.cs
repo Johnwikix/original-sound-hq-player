@@ -36,6 +36,7 @@ public struct IpcSetting
     public bool IsSettingChanged;
     public bool IsFadeEnabled;
     public bool ExperimentalSurround51;
+    public bool ExperimentalAtmosPassthrough;
 }
 
 public struct UpdateEqRequest

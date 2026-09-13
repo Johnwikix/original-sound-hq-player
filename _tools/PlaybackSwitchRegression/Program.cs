@@ -30,6 +30,13 @@ internal static unsafe partial class Program
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(WasapiOutput))]
     private static int Main(string[] args)
     {
+        if (args.Length == 3 && args[0] == "--test-atmos-file")
+        {
+            FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
+            using var reference = File.OpenRead(args[2]);
+            Run("Real Atmos IEC61937 byte comparison", () => CheckAtmosFile(args[1], Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(reference))));
+            return _failures == 0 ? 0 : 1;
+        }
         if (args.Length == 2 && args[0] == "--progress-writer") return ProgressWriter(args[1]);
         if (args.Length == 1 && args[0] == "--test-progress") { RunProgressTests(); return _failures == 0 ? 0 : 1; }
         if (args.Length == 2 && args[0] == "--test-export-file")
@@ -61,6 +68,7 @@ internal static unsafe partial class Program
         RunExportTests(Path.Combine(root, "_tools", "test_tone.wav"));
         WriteDsfFixture();
         RunSurroundTests(root);
+        RunAtmosTests(root);
         RunProgressTests();
         RunWavPackTests();
         RunBufferPolicyTests();

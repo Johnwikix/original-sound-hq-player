@@ -90,6 +90,7 @@ public sealed class PlaybackEngine : IDisposable
     public int Latency = 300;
     public bool IsDopEnabled;
     public bool ExperimentalSurround51;
+    public bool ExperimentalAtmosPassthrough;
     private long _lastProgressSeekId;
     public string? MusicUrl;
     public int DsdGain = 6;
@@ -263,6 +264,15 @@ public sealed class PlaybackEngine : IDisposable
 
     private Session? OpenSession(string url, bool forceSharedFormat = false, RenderKind? kindOverride = null)
     {
+        if (ExperimentalAtmosPassthrough && !forceSharedFormat
+            && OutputMode is "WasapiExclusivePush" or "WasapiExclusiveEvent"
+            && kindOverride is null or RenderKind.Eac3)
+        {
+            var encoded = Session.Open(this, url, RenderKind.Eac3, DsdPcmFreq, DsdGain, Latency);
+            if (encoded != null) return encoded; // Encoded audio bypasses all PCM effects and volume.
+            kindOverride = null;
+        }
+        if (kindOverride == RenderKind.Eac3) kindOverride = RenderKind.Pcm;
         // 回退共享时强制 PCM：位流会话（DoP/NativeDSD）在共享模式必然失败
         // 换曲复用会在旧会话仍存活时打开新会话。EffectiveKind 表示旧会话的实际格式
         //（可能已回退为 PCM/DoP），不能拿它决定新文件的解码/位流路径。
@@ -627,6 +637,7 @@ public sealed class PlaybackEngine : IDisposable
                 // Stop 后可能仍有一个在途渲染周期（已置位的事件 + 整拍缓冲），
                 // 等它落地后再复位，否则进度会停在 ~1 拍而非 0
                 Thread.Sleep(40);
+                if (_session?.Kind == RenderKind.Eac3) { _output?.Dispose(); _output = null; }
                 _session?.RequestSeek(0);
             }
             catch { }
@@ -638,7 +649,14 @@ public sealed class PlaybackEngine : IDisposable
     {
         lock (_streamLock)
         {
-            try { _session?.RequestSeek(Math.Max(0, positionMs)); }
+            try
+            {
+                bool restartCarrier = _session?.Kind == RenderKind.Eac3 && _output != null;
+                if (restartCarrier) { _output!.Dispose(); _output = null; }
+                _session?.RequestSeek(Math.Max(0, positionMs));
+                // Flush the old receiver carrier before starting a different burst sequence.
+                if (restartCarrier && IsPlaying) StartOutputAndPlay();
+            }
             catch { }
             var plan = _recovery; // 失效暂停期间手动 seek：恢复时落到新位置
             if (plan != null) plan.PositionMs = Math.Max(0, positionMs);
@@ -714,6 +732,7 @@ public sealed class PlaybackEngine : IDisposable
                 || WasapiEndpointId != s.WasapiEndpointId || BassASIODeviceId != s.BassASIODeviceId
                 || Latency != Math.Clamp(s.Latency, 10, 2000) || IsDopEnabled != s.IsDopEnabled
                 || ExperimentalSurround51 != s.ExperimentalSurround51
+                || ExperimentalAtmosPassthrough != s.ExperimentalAtmosPassthrough
                 || DsdGain != Math.Clamp(s.DsdGain, -24, 24) || DsdPcmFreq != Math.Clamp(s.DsdPcmFreq, 8000, 768000);
             OutputMode = s.OutputMode ?? "DirectSound";
             BassOutputDeviceId = s.BassOutputDeviceId;
@@ -722,6 +741,7 @@ public sealed class PlaybackEngine : IDisposable
             Latency = Math.Clamp(s.Latency, 10, 2000);
             IsDopEnabled = s.IsDopEnabled;
             ExperimentalSurround51 = s.ExperimentalSurround51;
+            ExperimentalAtmosPassthrough = s.ExperimentalAtmosPassthrough;
             DsdGain = Math.Clamp(s.DsdGain, -24, 24);
             DsdPcmFreq = Math.Clamp(s.DsdPcmFreq, 8000, 768000);
             Volume = float.IsFinite(s.Volume) ? Math.Clamp(s.Volume, 0, 1) : 0;

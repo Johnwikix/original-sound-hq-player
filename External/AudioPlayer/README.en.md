@@ -66,7 +66,9 @@ bit-transparent across the entire chain.
 - **Dolby Digital / Digital Plus files**: bundled AC-3/E-AC-3 decoding supports
   E-AC-3 in M4A/MP4, including the compatible multichannel audio in Atmos/JOC files.
   Shared output uses the existing stereo downmix policy. This pipeline does not
-  decode Atmos objects, render height channels, or send Dolby compressed HDMI bitstreams.
+  decode Atmos objects or render height channels. A separate, default-off experimental
+  Atmos HDMI option passes 48 kHz six-channel E-AC-3/JOC through WASAPI exclusive to a
+  compatible receiver. App volume/effects are bypassed; hardware validation is pending.
 - **DoP**: `DsdRawReader` raw bitstream → uint32 samples; 0x05/0xFA markers
   alternate according to a **global render frame counter** (phase does not
   flip at odd buffer boundaries); silence payload 0x6969

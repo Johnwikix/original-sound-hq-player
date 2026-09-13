@@ -15,7 +15,7 @@ public static class BinarySerializer
     public const int SetMusicUrlRequestSize = StringHeaderSize + MaxStringBytes;
     public const int ChangePositionRequestSize = 16;
     public const int ChangeVolumeRequestSize = 8;
-    public const int IpcSettingSize = 2 * (StringHeaderSize + MaxStringBytes) + 4 + 4 + 4 + 1 + 4 + 4 + 1 + 4 + 1 + 1 + 1;
+    public const int IpcSettingSize = 2 * (StringHeaderSize + MaxStringBytes) + 4 + 4 + 4 + 1 + 4 + 4 + 1 + 4 + 1 + 1 + 2;
     public const int UpdateEqRequestSize = 1 + 40 + 40; // IsEnabled + 10 gains + 10 Q values (legacy payload: 41 bytes)
     public const int FailedResponseSize = 2;
     public const int PlayStateResponseSize = 1;
@@ -103,6 +103,7 @@ public static class BinarySerializer
         dest[offset++] = s.IsFadeEnabled ? (byte)1 : (byte)0;
         offset += WriteString(dest[offset..], s.WasapiEndpointId);
         dest[offset++] = s.ExperimentalSurround51 ? (byte)1 : (byte)0;
+        dest[offset++] = s.ExperimentalAtmosPassthrough ? (byte)1 : (byte)0;
         return offset;
     }
 
@@ -126,7 +127,8 @@ public static class BinarySerializer
             s.WasapiEndpointId = ReadString(src[offset..], out int length);
             offset += length;
         }
-        s.ExperimentalSurround51 = offset < src.Length && src[offset] != 0;
+        s.ExperimentalSurround51 = offset < src.Length && src[offset++] != 0;
+        s.ExperimentalAtmosPassthrough = offset < src.Length && src[offset] != 0;
         return s;
     }
 

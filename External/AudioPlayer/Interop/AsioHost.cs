@@ -266,6 +266,7 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     public int SourceChannels => _source.Channels;
 
     internal static int SelectOutputChannelCount(IRenderSource source, int available) =>
+        source.Kind == RenderKind.Eac3 ? 0 :
         source.ChannelMask != 0 && source.Channels == 6 && available < 6
             ? 0 : Math.Min(available, Math.Max(1, source.Channels));
     public int SourceSampleRate => _source.SampleRate;

@@ -1058,6 +1058,19 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        public bool ExperimentalAtmosPassthrough
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value) && IsInitialized)
+                {
+                    _ = _musicDatabaseService.SaveSettingAsync();
+                    AppSettings.OnOutputSettingsUpdated();
+                }
+            }
+        }
+
         public bool IsFadeEnabled
         {
             get => field;

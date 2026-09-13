@@ -346,6 +346,7 @@ namespace WinUIMusicPlayer.Services
                 Latency = AppViewModel.Latency,
                 IsDopEnabled = AppViewModel.IsDopEnabled,
                 ExperimentalSurround51 = AppViewModel.ExperimentalSurround51,
+                ExperimentalAtmosPassthrough = AppViewModel.ExperimentalAtmosPassthrough,
                 DsdGain = AppViewModel.DsdGain,
                 DsdPcmFreq = AppViewModel.DsdPcmFreq,
                 IsEqualizerEnabled = AppSettings.IsEqualizerEnabled,
