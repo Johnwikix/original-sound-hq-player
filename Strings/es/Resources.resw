@@ -1839,9 +1839,6 @@
   <data name="ProcessingDataHint.Text" xml:space="preserve">
     <value>Procesando datos, por favor espere...</value>
   </data>
-  <data name="SaveConfirm.Text" xml:space="preserve">
-    <value>¿Quieres guardar los cambios?</value>
-  </data>
   <data name="StarOnGitHub.Text" xml:space="preserve">
     <value>Si te gusta este proyecto, ¡danos una estrella en GitHub!</value>
   </data>

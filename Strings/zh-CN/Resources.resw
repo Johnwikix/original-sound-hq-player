@@ -1841,7 +1841,4 @@
   <data name="ProcessingDataHint.Text" xml:space="preserve">
     <value>正在处理数据，请稍候...</value>
   </data>
-  <data name="SaveConfirm.Text" xml:space="preserve">
-    <value>确定要保存修改吗？</value>
-  </data>
 </root>

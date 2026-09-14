@@ -1839,9 +1839,6 @@
   <data name="ProcessingDataHint.Text" xml:space="preserve">
     <value>Обработка данных, пожалуйста подождите...</value>
   </data>
-  <data name="SaveConfirm.Text" xml:space="preserve">
-    <value>Сохранить изменения?</value>
-  </data>
   <data name="StarOnGitHub.Text" xml:space="preserve">
     <value>Если вам нравится этот проект, поставьте нам звезду на GitHub!</value>
   </data>

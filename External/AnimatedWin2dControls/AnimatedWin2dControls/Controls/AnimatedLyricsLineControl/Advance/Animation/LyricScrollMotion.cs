@@ -111,6 +111,28 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             }
         }
 
+        /// <summary>
+        /// Shares the next line's time budget between propagation and tween response.
+        /// The active row and earlier rows follow immediately; short lines lose stagger smoothly.
+        /// Springs keep their configured response: shrinking it to each short line creates
+        /// repeated acceleration pulses. Only propagation is shortened for springs.
+        /// </summary>
+        public static (double Duration, double Delay) FlowWaveTiming(
+            int index, int currentLineIndex, double duration, double interval,
+            bool spring = false)
+        {
+            // 值元组和标量运算：逐帧调用无堆分配，沿用项目现有 .NET 版本。
+            duration = Math.Max(0, duration);
+            double configuredDuration = duration;
+            bool hasInterval = double.IsFinite(interval) && interval > 0;
+            if (hasInterval) duration = Math.Min(duration, interval * 0.85);
+            double strength = hasInterval ? Math.Clamp((interval - 0.25) / 0.25, 0, 1) : 1;
+            strength = strength * strength * (3 - 2 * strength);
+            double delay = StaggerDelay(index, currentLineIndex, duration) * strength;
+            if (hasInterval) duration = Math.Min(duration, interval * 0.9 - delay);
+            return (spring ? configuredDuration : duration, delay);
+        }
+
         public static double StaggerDelay(int index, int firstVisibleIndex, double duration)
         {
             double budget = Math.Min(0.4, Math.Max(0, duration) * 0.75);

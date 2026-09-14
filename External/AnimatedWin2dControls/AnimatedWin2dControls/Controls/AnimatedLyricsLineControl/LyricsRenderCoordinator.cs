@@ -540,27 +540,22 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             double target = _lastTargetScrollY;
             double duration = Math.Max(0, _cachedScrollDurationMs / 1000.0);
+            bool spring = _cachedScrollEasingType == EasingType.FlowWave
+                && _cachedScrollEasingMode != EaseMode.In && _cachedScrollEasingMode != EaseMode.InOut;
             bool regularAdvance = lineChanged && _currentLineIndex == _lastCurrentLineIndex + 1
                 && _lastCurrentLineIndex >= 0;
-            // Fast lyrics must not build a queue longer than the next line's entrance.
+            double interval = 0;
+            // Tweens fit the next entrance; springs keep stable stiffness across short lines.
             if (regularAdvance && _currentLineIndex + 1 < _renderLines.Count)
             {
-                double interval = (_renderLines[_currentLineIndex + 1].StartMs
+                interval = (_renderLines[_currentLineIndex + 1].StartMs
                     - _renderLines[_currentLineIndex].StartMs) / 1000.0;
-                if (interval > 0) duration = Math.Min(duration, interval * 0.85);
+                if (!spring && interval > 0) duration = Math.Min(duration, interval * 0.85);
             }
             bool stagger = _cachedScrollEasingMode == EaseMode.FlowWave && regularAdvance
                 && !_userScrolling && !_isUserScrollingChanged;
-            int firstVisible = 0;
-            double anchor = canvasHeight * _cachedPlayingLineTopOffset;
-            while (firstVisible < _renderLines.Count - 1
-                && _renderLines[firstVisible].BottomRightPosition.Y + target + anchor < 0)
-                firstVisible++;
-
             var interpolator = EasingHelper.GetInterpolatorByEasingType<double>(
                 _cachedScrollEasingType, _cachedScrollEasingMode);
-            bool spring = _cachedScrollEasingType == EasingType.FlowWave
-                && _cachedScrollEasingMode != EaseMode.In && _cachedScrollEasingMode != EaseMode.InOut;
             if (_layoutDirty)
             {
                 foreach (var line in _renderLines) line.ScrollMotion.JumpTo(target);
@@ -569,9 +564,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             {
                 var motion = _renderLines[i].ScrollMotion;
                 if (!_userScrolling)
-                    motion.Start(target, duration,
-                        stagger ? LyricScrollMotion.StaggerDelay(i, firstVisible, duration) : 0,
-                        spring, interpolator);
+                {
+                    var timing = stagger
+                        ? LyricScrollMotion.FlowWaveTiming(i, _currentLineIndex, duration, interval, spring)
+                        : (Duration: duration, Delay: 0.0);
+                    motion.Start(target, timing.Duration, timing.Delay, spring, interpolator);
+                }
                 motion.Update(seconds);
             }
             // A stationary pointer can move over a different line while the lines scroll.

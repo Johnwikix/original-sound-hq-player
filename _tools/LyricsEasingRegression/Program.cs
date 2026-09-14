@@ -107,6 +107,104 @@ Check(tween.Value == 0, "Other curves must also support stagger.");
 tween.Update(1);
 Check(tween.Value == -100, "Other curves must finish after stagger.");
 
+// Tweens share a deadline; springs retain their configured response across all cadences.
+foreach (double interval in new[] { 0.15, 0.25, 0.3, 0.4, 0.5, 0.8 })
+{
+    for (int index = 0; index < 30; index++)
+    {
+        var timing = LyricScrollMotion.FlowWaveTiming(index, 3, 0.7, interval);
+        var springTiming = LyricScrollMotion.FlowWaveTiming(index, 3, 0.7, interval, true);
+        Check(springTiming.Duration == 0.7 && springTiming.Delay == timing.Delay,
+            "Short lines must reduce propagation without stiffening the spring.");
+        Check(timing.Duration >= 0 && timing.Delay >= 0
+            && timing.Duration + timing.Delay <= interval * 0.9 + 1e-12,
+            $"Shared response deadline: {interval}, row {index}");
+        if (index <= 3 || interval <= 0.25)
+            Check(timing.Delay == 0, "Focus and very short lines must not wait.");
+    }
+}
+foreach (double boundary in new[] { 0.25, 0.5 })
+{
+    var before = LyricScrollMotion.FlowWaveTiming(8, 3, 0.7, boundary - 1e-6);
+    var after = LyricScrollMotion.FlowWaveTiming(8, 3, 0.7, boundary + 1e-6);
+    Check(Math.Abs(before.Delay - after.Delay) < 1e-5
+        && Math.Abs(before.Duration - after.Duration) < 1e-5, "Timing thresholds must be continuous.");
+}
+Check(LyricScrollMotion.FlowWaveTiming(8, 3, 0, 0.3) == (0, 0), "Zero duration disables stagger.");
+Check(LyricScrollMotion.FlowWaveTiming(8, 3, 0.7, 0).Duration == 0.7,
+    "Missing next timestamp retains configured duration.");
+
+foreach (int fps in new[] { 30, 60, 120, 144 })
+foreach (double[] intervals in new[] {
+    Enumerable.Repeat(0.15, 12).ToArray(), Enumerable.Repeat(0.25, 12).ToArray(),
+    Enumerable.Repeat(0.4, 12).ToArray(), new[] { 0.8, 0.15, 0.4, 0.25, 0.8, 0.15 } })
+{
+    var rapidRows = Enumerable.Range(0, 20).Select(_ => new LyricScrollMotion()).ToArray();
+    for (int current = 0; current < intervals.Length; current++)
+    {
+        double interval = intervals[current], target = -120 * (current + 1);
+        for (int row = 0; row < rapidRows.Length; row++)
+        {
+            var timing = LyricScrollMotion.FlowWaveTiming(row, current, 0.7, interval, true);
+            double oldPosition = rapidRows[row].Value, oldVelocity = rapidRows[row].Velocity;
+            rapidRows[row].Start(target, timing.Duration, timing.Delay, true, apple);
+            Check(rapidRows[row].Value == oldPosition && rapidRows[row].Velocity == oldVelocity,
+                "Rapid retargeting preserves position and velocity.");
+        }
+        double remaining = interval;
+        while (remaining > 1e-10)
+        {
+            double step = Math.Min(1.0 / fps, remaining);
+            foreach (var row in rapidRows) row.Update(step);
+            remaining -= step;
+        }
+        Check(Math.Abs(rapidRows[current].Value - target) < 120,
+            $"Focus tracking lag must stay below one row: {fps}, {interval}");
+        Check(rapidRows.All(row => Math.Abs(row.Value - target) < 240),
+            $"Trailing rows must not accumulate lag: {fps}, {interval}");
+    }
+}
+var promoted = new LyricScrollMotion();
+promoted.Start(-120, 0.7, 0.2, true, apple);
+promoted.Update(0.05);
+var focusTiming = LyricScrollMotion.FlowWaveTiming(2, 2, 0.7, 0.15, true);
+promoted.Start(-240, focusTiming.Duration, focusTiming.Delay, true, apple);
+promoted.Update(0.01);
+Check(promoted.Value < 0, "A queued row becoming active must start immediately.");
+promoted.Update(3);
+Check(promoted.Value == -240, "Promotion must discard the stale pending destination.");
+
+// Compare the visible speed pulse against the former per-line stiffening at steady cadence.
+foreach (double interval in new[] { 0.15, 0.25, 0.4 })
+{
+    var stable = new LyricScrollMotion();
+    var compressed = new LyricScrollMotion();
+    double stableMin = double.PositiveInfinity, stableMax = 0;
+    double compressedMin = double.PositiveInfinity, compressedMax = 0;
+    for (int current = 0; current < 20; current++)
+    {
+        var timing = LyricScrollMotion.FlowWaveTiming(current, current, 0.7, interval, true);
+        stable.Start(-120 * (current + 1), timing.Duration, timing.Delay, true, apple);
+        compressed.Start(-120 * (current + 1), interval * 0.85, 0, true, apple);
+        for (int frame = 0; frame < 100; frame++)
+        {
+            stable.Update(interval / 100);
+            compressed.Update(interval / 100);
+            Check(stable.Velocity <= 0, "Forward cadence must not bounce backwards.");
+            if (current < 10) continue;
+            stableMin = Math.Min(stableMin, -stable.Velocity);
+            stableMax = Math.Max(stableMax, -stable.Velocity);
+            compressedMin = Math.Min(compressedMin, -compressed.Velocity);
+            compressedMax = Math.Max(compressedMax, -compressed.Velocity);
+        }
+    }
+    Check(stableMax - stableMin < (compressedMax - compressedMin) * 0.8,
+        $"Stable response must reduce speed ripple by at least 20%: {interval}");
+    Console.WriteLine($"Cadence {interval * 1000:F0}ms: speed ripple {compressedMax - compressedMin:F1} -> {stableMax - stableMin:F1} px/s");
+    stable.Update(4);
+    Check(stable.Value == -2400 && stable.Velocity == 0, "Continuous tracking must settle after the last line.");
+}
+
 var layoutRows = Enumerable.Range(0, 3).Select(i => new RenderLyricsLine
 {
     TopLeftPosition = new Vector2(20, i * 100),

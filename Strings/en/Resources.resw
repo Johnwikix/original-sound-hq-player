@@ -1842,7 +1842,4 @@
   <data name="ProcessingDataHint.Text" xml:space="preserve">
     <value>Processing data, please wait...</value>
   </data>
-  <data name="SaveConfirm.Text" xml:space="preserve">
-    <value>Do you want to save the changes?</value>
-  </data>
 </root>
