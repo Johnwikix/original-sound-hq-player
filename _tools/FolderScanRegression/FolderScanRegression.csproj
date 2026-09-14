@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Services/AddFolderService.cs" />
+    <Compile Include="../../Services/ScanPipeline.cs" />
+    <Compile Include="../../Services/LibraryOperationGate.cs" />
+    <Compile Include="../../Services/LibraryPath.cs" />
+    <Compile Include="../../Services/MusicDatabaseService.Scanning.cs" />
+    <Compile Include="../../Services/FolderCommands.cs" />
+    <Compile Include="../../ViewModel/Pages/AddFolderViewModel.cs" />
+    <Compile Include="../../Model/Folder.cs" />
+    <Compile Include="../../Model/SubFolder.cs" />
+    <Compile Include="../../Model/MusicLyrics.cs" />
+    <Compile Include="../../AudioConverters/FFmpegMetadataProbe.cs" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />
+    <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
+    <PackageReference Include="FFmpeg.AutoGen" Version="9.0.1.1" />
+  </ItemGroup>
+</Project>

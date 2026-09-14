@@ -1243,6 +1243,25 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        /// <summary>
+        /// UI-thread scan publication. Append only the new items; keep the existing viewport and selection.
+        /// Sorting/grouping are reconciled once on completion (or when the user explicitly changes the view).
+        /// </summary>
+        public void AppendSongsBatch(IReadOnlyList<Music> batch)
+        {
+            if (batch.Count == 0) return;
+            SongsSource.AddRange(batch);
+            _indexDirty = true;
+            LibraryEmptyVisibility = Visibility.Collapsed;
+            foreach (var music in batch)
+            {
+                // WinUI ListView does not support multi-item Add notifications. Bounded per-item Add
+                // avoids Reset/re-sorting the entire library every 500 ms and preserves realized rows.
+                if (string.IsNullOrWhiteSpace(SearchText) || MusicMatchesSearch(music, SearchText))
+                    ListSongs.Add(music);
+            }
+        }
+
         public void RemoveFromSongsSource(Music music)
         {
             SongsSource.Remove(music);

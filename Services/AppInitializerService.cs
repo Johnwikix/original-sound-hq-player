@@ -98,6 +98,7 @@ namespace WinUIMusicPlayer.Services
 
         private static async Task RunLongOpsAsync(MusicDatabaseService db, CancellationToken ct)
         {
+            using var lease = await LibraryOperationGate.EnterAsync(ct);
             await InitialFileScan.InitialScan();
             await db.LoadMusicList();
             await db.GetPlayStateAsync();

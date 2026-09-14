@@ -87,6 +87,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 _ = StartWatchingFileFolder();
             }
+            WireAddFolderScanGuard();
         }
 
         // 批量转换聚合进度：总进度 = (已完成文件数 + 当前文件内部进度) / 总数。
@@ -465,35 +466,36 @@ namespace WinUIMusicPlayer.ViewModel
             MainPage = mainPage;
         }
 
-        // 空音乐库占位交互：复用 AddFolderViewModel 的添加/拖入流程，期间用顶部 ProgressRing 提示。
-        // AddFolderViewModel 自身的 LoadingVisibility 只渲染在 AddFolderPage 上，这里需要单独的反馈。
-        [RelayCommand]
+        // 空音乐库占位交互：复用 AddFolderViewModel 的渐进上架流程——文件夹行先出现、
+        // 歌曲按批次出现在当前页（首批到达时占位自动让位），不再借用顶部 ProgressRing；
+        // 该环只归 USB 传输与文件监视自动重扫使用。扫描进行中禁用入口。
+        [RelayCommand(CanExecute = nameof(CanStartFolderScan))]
         private async Task EmptyAddFolderAsync()
         {
-            AppViewModel.ProcessRingVisibility = Visibility.Visible;
-            try
-            {
-                await App.Services.GetRequiredService<AddFolderViewModel>().AddFolderWithLoadingAsync();
-            }
-            finally
-            {
-                AppViewModel.ProcessRingVisibility = Visibility.Collapsed;
-            }
+            await App.Services.GetRequiredService<AddFolderViewModel>().AddFolderWithLoadingAsync();
         }
 
-        [RelayCommand]
+        [RelayCommand(CanExecute = nameof(CanStartFolderScan))]
         private async Task DropFoldersFromEmptyAsync(IReadOnlyList<Windows.Storage.IStorageItem> folders)
         {
             if (folders is null || folders.Count == 0) return;
-            AppViewModel.ProcessRingVisibility = Visibility.Visible;
-            try
+            await App.Services.GetRequiredService<AddFolderViewModel>().DropFoldersAsync(folders);
+        }
+
+        private bool CanStartFolderScan => !App.Services.GetRequiredService<AddFolderViewModel>().IsScanning;
+
+        // 与 AddFolderPage 添加按钮同步：IsScanning 翻转时刷新占位按钮可用态
+        private void WireAddFolderScanGuard()
+        {
+            var addFolderVm = App.Services.GetRequiredService<AddFolderViewModel>();
+            addFolderVm.PropertyChanged += (_, e) =>
             {
-                await App.Services.GetRequiredService<AddFolderViewModel>().DropFoldersAsync(folders);
-            }
-            finally
-            {
-                AppViewModel.ProcessRingVisibility = Visibility.Collapsed;
-            }
+                if (e.PropertyName == nameof(AddFolderViewModel.IsScanning))
+                {
+                    EmptyAddFolderCommand.NotifyCanExecuteChanged();
+                    DropFoldersFromEmptyCommand.NotifyCanExecuteChanged();
+                }
+            };
         }
 
         [RelayCommand]

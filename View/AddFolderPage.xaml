@@ -143,7 +143,7 @@
                 x:Name="FolderListView"
                 Grid.Row="1"
                 Margin="16,10"
-                ItemsSource="{x:Bind ViewModel.FolderList, Mode=TwoWay}"
+                ItemsSource="{x:Bind ViewModel.FolderList, Mode=OneWay}"
                 SelectionMode="None">
                 <ListView.ItemContainerStyle>
                     <Style BasedOn="{StaticResource DefaultListViewItemStyle}" TargetType="ListViewItem">
@@ -206,7 +206,7 @@
                                     <TextBlock
                                         FontSize="12"
                                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Text="{x:Bind SongCount}" />
+                                        Text="{x:Bind SongCount, Mode=OneWay}" />
                                     <TextBlock
                                         x:Uid="FolderNumberOfSongs"
                                         Margin="3,0,0,0"

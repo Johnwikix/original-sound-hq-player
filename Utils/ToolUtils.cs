@@ -494,47 +494,61 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        public static async Task<AudioFileInfo> GetAudioInfo(StorageFile file)
+        public static Task<AudioFileInfo> GetAudioInfo(StorageFile file)
+            => GetAudioInfoCoreAsync(file, null, readAtl: true);
+
+        private static async Task<AudioFileInfo> GetAudioInfoCoreAsync(StorageFile file, Track? track, bool readAtl)
         {
-            AudioFileInfo fileInfo = new();
-            Track? track = null;
-            try { track = RetryOnFileBusy(() => new Track(file.Path), file.Path); }
-            catch (Exception ex) { _logger.LogWarning(ex, $"GetAudioInfo ATL 读取失败: {file.Path}"); }
+            if (readAtl)
+            {
+                try { track = new Track(file.Path); }
+                catch (Exception ex) { _logger.LogWarning(ex, "ATL 读取失败: {Path}", file.Path); }
+            }
+            var info = new AudioFileInfo
+            {
+                Title = string.IsNullOrWhiteSpace(track?.Title) ? Path.GetFileNameWithoutExtension(file.Path) : track.Title,
+                Artist = string.IsNullOrWhiteSpace(track?.Artist) ? "未知艺术家" : track.Artist,
+                Album = string.IsNullOrWhiteSpace(track?.Album) ? "未知专辑" : track.Album,
+                Year = track?.Year ?? 0,
+                TrackNumber = track?.TrackNumber ?? 0,
+                DiskNumber = track?.DiscNumber ?? 0,
+                SampleRate = (int)(track?.SampleRate ?? 0),
+                ChannelCount = track?.ChannelsArrangement?.NbChannels ?? 0,
+                BitDepth = IsDsdExtension(file.Path) ? 1 : Math.Max(0, track?.BitDepth ?? 0),
+                BitRate = Math.Max(0, track?.Bitrate ?? 0),
+                Duration = track is not null && double.IsFinite(track.DurationMs) && track.DurationMs > 0
+                    ? TimeSpan.FromMilliseconds(track.DurationMs) : TimeSpan.Zero,
+                Lyrics = track?.Lyrics?.Count > 0 ? ParseLyrics(track.Lyrics[0].SynchronizedLyrics) : string.Empty
+            };
             try
             {
                 var props = await file.Properties.RetrievePropertiesAsync(AudioInfoProps);
-                fileInfo.SampleRate = GetPropertyValue(props, "System.Audio.SampleRate", 0);
-                fileInfo.ChannelCount = GetPropertyValue(props, "System.Audio.ChannelCount", 0);
-                int bitDepth = GetPropertyValue(props, "System.Audio.SampleSize", 0);
-                // DSD 位深语义与旧版保持一致（1 = DSD 单比特流）
-                fileInfo.BitDepth = IsDsdExtension(file.Path) ? 1 : bitDepth;
-                int bitRateRaw = GetPropertyValue(props, "System.Audio.EncodingBitrate", 0);
-                fileInfo.BitRate = bitRateRaw > 0 ? bitRateRaw / 1000 : 0;
-                ulong duration100ns = GetPropertyValue(props, "System.Media.Duration", 0UL);
-                if (duration100ns > 0)
-                    fileInfo.Duration = TimeSpan.FromMilliseconds(duration100ns / 10000.0);
+                if (info.SampleRate <= 0) info.SampleRate = GetPropertyValue(props, "System.Audio.SampleRate", 0);
+                if (info.ChannelCount <= 0) info.ChannelCount = GetPropertyValue(props, "System.Audio.ChannelCount", 0);
+                if (info.BitDepth <= 0) info.BitDepth = GetPropertyValue(props, "System.Audio.SampleSize", 0);
+                if (info.BitRate <= 0) info.BitRate = GetPropertyValue(props, "System.Audio.EncodingBitrate", 0) / 1000;
+                if (info.Duration <= TimeSpan.Zero)
+                {
+                    ulong ticks = GetPropertyValue(props, "System.Media.Duration", 0UL);
+                    if (ticks > 0 && ticks <= long.MaxValue) info.Duration = TimeSpan.FromTicks((long)ticks);
+                }
+            }
+            catch (Exception ex) { _logger.LogWarning(ex, "Windows 音频属性读取失败: {Path}", file.Path); }
 
-                fileInfo.Title = string.IsNullOrWhiteSpace(track?.Title) ? Path.GetFileNameWithoutExtension(file.Path) : track!.Title;
-                fileInfo.Album = string.IsNullOrWhiteSpace(track?.Album) ? "未知专辑" : track!.Album;
-                fileInfo.Artist = string.IsNullOrWhiteSpace(track?.Artist) ? "未知艺术家" : track!.Artist;
-                fileInfo.Year = track?.Year ?? 0;
-                fileInfo.TrackNumber = track?.TrackNumber ?? 0;
-                fileInfo.DiskNumber = track?.DiscNumber ?? 0;
-                if (track?.Bitrate > 0 && fileInfo.BitRate == 0)
-                    fileInfo.BitRate = track!.Bitrate;
-                if (track != null && track.DurationMs > 0 && fileInfo.Duration <= TimeSpan.Zero)
-                    fileInfo.Duration = TimeSpan.FromMilliseconds(track.DurationMs);
-                fileInfo.Lyrics = track?.Lyrics?.AsValueEnumerable().Count() > 0
-                    ? ParseLyrics(track.Lyrics[0].SynchronizedLyrics)
-                    : string.Empty;
-                return fileInfo;
-            }
-            catch (Exception ex)
+            // Independent fallback: Windows property-handler failure must not bypass FFmpeg.
+            if (info.Duration <= TimeSpan.Zero || info.SampleRate <= 0 || info.ChannelCount <= 0 || info.BitRate <= 0 || info.BitDepth <= 0)
             {
-                _logger.LogError(ex, $"GetAudioInfo 获取音频信息失败: {ex.Message}");
-                fileInfo.Title = Path.GetFileNameWithoutExtension(file.Path);
-                return fileInfo;
+                if (AudioConverters.FFmpegMetadataProbe.TryProbe(file.Path, out var probe))
+                {
+                    if (info.Duration <= TimeSpan.Zero && probe.DurationMs > 0)
+                        info.Duration = TimeSpan.FromMilliseconds(probe.DurationMs);
+                    if (info.SampleRate <= 0) info.SampleRate = probe.SampleRate;
+                    if (info.ChannelCount <= 0) info.ChannelCount = probe.Channels;
+                    if (info.BitRate <= 0) info.BitRate = probe.BitRateKbps;
+                    if (info.BitDepth <= 0) info.BitDepth = probe.BitDepth;
+                }
             }
+            return info;
         }
 
         private static bool IsDsdExtension(string path)
@@ -923,11 +937,11 @@ namespace WinUIMusicPlayer.Utils
         public static async Task<(Music? Music, string? Lyrics)> GetMusicInfo(StorageFile file)
         {
             string lastLevelDirectory = Path.GetDirectoryName(file.Path);
-            DirectoryInfo directoryInfo = new DirectoryInfo(lastLevelDirectory);
-            string lastLevelFolderPath = directoryInfo.Name;
+            string lastLevelFolderPath = Path.GetFileName(Path.TrimEndingDirectorySeparator(lastLevelDirectory));
+            Track? track = null;
             try
             {
-                Track track = RetryOnFileBusy(() => new Track(file.Path), file.Path);
+                track = RetryOnFileBusy(() => new Track(file.Path), file.Path);
                 string title = "未知标题";
                 string artist = "未知艺术家";
                 string album = "未知专辑";
@@ -994,7 +1008,7 @@ namespace WinUIMusicPlayer.Utils
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"GetMusicInfo 读取音乐信息失败: {ex.Message}");
-                AudioFileInfo wavFileInfo = await ToolUtils.GetAudioInfo(file);
+                AudioFileInfo wavFileInfo = await GetAudioInfoCoreAsync(file, track, readAtl: false);
                 try
                 {
                     var music = new Music

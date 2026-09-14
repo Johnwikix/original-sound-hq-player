@@ -2,143 +2,36 @@
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.IO;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Utils;
-using ZLinq;
 
-namespace WinUIMusicPlayer.Services
+namespace WinUIMusicPlayer.Services;
+
+public class InitialFileScan
 {
-    public class InitialFileScan
+    public static async Task InitialScan()
     {
-        private static ILogger<InitialFileScan> _logger = App.GetLogger<InitialFileScan>();
-
-        public static async Task InitialScan()
+        var database = App.Services.GetRequiredService<MusicDatabaseService>();
+        foreach (var folder in await database.GetFolders())
         {
-            List<Music> MusicsToUpdate = [];
-            List<Music> MusicsToAdd = [];
-            List<Music> MusicsToDelete = [];
-            IEnumerable<Music> allSongsCache = await App.Services.GetRequiredService<MusicDatabaseService>().GetMusicListAsync();
-            HashSet<string> allScannedFilePaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            var folderList = await App.Services.GetRequiredService<MusicDatabaseService>().GetFolders();
-            Stopwatch totalSw = Stopwatch.StartNew();
-
-            foreach (var folder in folderList)
-            {
-                if (!string.IsNullOrEmpty(folder.Path))
-                {
-                    ScanSingleFolder(folder.Path, allScannedFilePaths, MusicsToUpdate, MusicsToAdd, allSongsCache);
-                }
-            }
-
-            foreach (Music knownMusic in allSongsCache)
-            {
-                if (!allScannedFilePaths.Contains(knownMusic.Path))
-                {
-                    MusicsToDelete.Add(knownMusic);
-                }
-            }
-
-            totalSw.Stop();
-            await App.Services.GetRequiredService<MusicDatabaseService>().AddMusicList(MusicsToAdd);
-            await App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicList(MusicsToUpdate);
-            await App.Services.GetRequiredService<MusicDatabaseService>().DeletedMusicList(MusicsToDelete);
-            await Deduplication();
-        }
-
-        public static async Task Deduplication()
-        {
-            var allSongs = await App.Services.GetRequiredService<MusicDatabaseService>().GetMusicListAsync();
-            IEnumerable<Music> songsToDelete = allSongs.AsValueEnumerable().GroupBy(song => song.Path)
-                        .Where(group => group.AsValueEnumerable().Count() > 1)
-                        .SelectMany(group => group.AsValueEnumerable().Skip(1))
-                        .ToList();
-            await App.Services.GetRequiredService<MusicDatabaseService>().DeletedMusicList(songsToDelete);
-        }
-
-        public static void ScanSingleFolder(string rootDirectory, HashSet<string> allScannedFilePaths, List<Music> MusicsToUpdate, List<Music> MusicsToAdd, IEnumerable<Music> allSongsCache)
-        {
-            if (!Directory.Exists(rootDirectory))
-            {
-                return;
-            }
-
-            try
-            {
-                IEnumerable<string> filePaths = Directory.EnumerateFiles(
-                    rootDirectory,
-                    "*.*",
-                    SearchOption.AllDirectories
-                );
-
-                foreach (string filePath in filePaths)
-                {
-                    try
-                    {
-                        if (!IsMusicExtension(filePath))
-                        {
-                            continue;
-                        }
-
-                        allScannedFilePaths.Add(filePath);
-
-                        FileInfo fileInfo = new FileInfo(filePath);
-                        DateTime lastModifiedDate = fileInfo.LastWriteTime;
-
-                        Music music = allSongsCache.AsValueEnumerable().FirstOrDefault(m => m.Path.Equals(filePath, StringComparison.OrdinalIgnoreCase));
-
-                        if (music != null)
-                        {
-                            if (music.UpdateTime != lastModifiedDate)
-                            {
-                                MusicsToUpdate.Add(music);
-                            }
-                        }
-                        else
-                        {
-                            MusicsToAdd.Add(new Music { Path = filePath, UpdateTime = lastModifiedDate });
-                        }
-                    }
-                    catch (UnauthorizedAccessException ex)
-                    {
-                        _logger.LogWarning(ex, $"ScanSingleFolder 访问被拒绝: {filePath}");
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, $"ScanSingleFolder 处理文件错误: {filePath}");
-                    }
-                }
-            }
+            if (string.IsNullOrEmpty(folder.Path)) continue;
+            try { await database.ScanChangedFolderAsync(folder.Path); }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"ScanSingleFolder 意外错误: {ex.Message}");
+                // A missing drive or inaccessible subtree is not evidence that its music was deleted.
+                App.GetLogger<InitialFileScan>().LogWarning(ex, "启动扫描未完成，保留旧记录: {Path}", folder.Path);
             }
         }
+        await Deduplication();
+    }
 
-        private static bool IsMusicExtension(string filePath)
-        {
-            ReadOnlySpan<char> span = filePath;
-            int dot = span.LastIndexOf('.');
-            if (dot < 0) return false;
-            ReadOnlySpan<char> ext = span[dot..];
-            return MemoryExtensions.Equals(ext, ".mp3".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
-                   MemoryExtensions.Equals(ext, ".wav".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
-                   MemoryExtensions.Equals(ext, ".flac".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
-                   MemoryExtensions.Equals(ext, ".wma".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
-                   MemoryExtensions.Equals(ext, ".aac".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
-                   MemoryExtensions.Equals(ext, ".ogg".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
-                   MemoryExtensions.Equals(ext, ".oga".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
-                   MemoryExtensions.Equals(ext, ".aiff".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
-                   MemoryExtensions.Equals(ext, ".aif".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
-                   MemoryExtensions.Equals(ext, ".m4a".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
-                   MemoryExtensions.Equals(ext, ".dsf".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
-                   MemoryExtensions.Equals(ext, ".dff".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
-                   MemoryExtensions.Equals(ext, ".ape".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
-                   MemoryExtensions.Equals(ext, ".opus".AsSpan(), StringComparison.OrdinalIgnoreCase) ||
-                   MemoryExtensions.Equals(ext, ".wv".AsSpan(), StringComparison.OrdinalIgnoreCase);
-        }
+    public static async Task Deduplication()
+    {
+        var database = App.Services.GetRequiredService<MusicDatabaseService>();
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var duplicates = new List<Music>();
+        foreach (var music in await database.GetMusicListAsync())
+            if (!seen.Add(music.Path)) duplicates.Add(music);
+        await database.DeletedMusicList(duplicates);
     }
 }

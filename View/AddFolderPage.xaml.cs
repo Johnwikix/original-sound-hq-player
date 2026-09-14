@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -32,7 +32,7 @@ namespace WinUIMusicPlayer.View
 
         private void Grid_DragOver(object sender, DragEventArgs e)
         {
-            if (e.DataView.Contains(StandardDataFormats.StorageItems))
+            if (!ViewModel.IsScanning && e.DataView.Contains(StandardDataFormats.StorageItems))
             {
                 e.AcceptedOperation = DataPackageOperation.Link;
                 DropOverlay.Visibility = Visibility.Visible;
@@ -57,7 +57,7 @@ namespace WinUIMusicPlayer.View
         private async void Grid_Drop(object sender, DragEventArgs e)
         {
             DropOverlay.Visibility = Visibility.Collapsed;
-            if (e.DataView.Contains(StandardDataFormats.StorageItems))
+            if (!ViewModel.IsScanning && e.DataView.Contains(StandardDataFormats.StorageItems))
             {
                 try
                 {

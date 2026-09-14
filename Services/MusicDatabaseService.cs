@@ -5,7 +5,6 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using SQLite;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
@@ -13,7 +12,6 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading;
-using System.Threading.Channels;
 using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.UI;
@@ -27,7 +25,7 @@ using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Services
 {
-    public class MusicDatabaseService
+    public partial class MusicDatabaseService
     {
         private SQLiteAsyncConnection _dbConnection;
         private string DbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
@@ -64,6 +62,7 @@ namespace WinUIMusicPlayer.Services
             {
                 _dbConnection = new SQLiteAsyncConnection(DbPath);
                 await _dbConnection.CreateTableAsync<Music>();
+                await _dbConnection.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Music_Path_NoCase ON Music(Path COLLATE NOCASE)");
                 await _dbConnection.CreateTableAsync<MusicLyrics>();
                 await _dbConnection.CreateTableAsync<Folder>();
                 await _dbConnection.CreateTableAsync<SaveEqualizer>();
@@ -286,13 +285,8 @@ namespace WinUIMusicPlayer.Services
 
         public async Task DeleteSubFolderByPath(string subFolderPath)
         {
-            var musicToDelete = await _dbConnection.Table<Music>()
-                                              .Where(m => m.Path.Contains(subFolderPath))
-                                              .ToListAsync();
-            foreach (var music in musicToDelete)
-            {
-                await _dbConnection.DeleteAsync(music);
-            }
+            // The caller already enumerated the complete directory tree; remove this exact directory only.
+            await DeletedMusicList(await GetSongsInFolderAsync(subFolderPath, false));
         }
 
         public async Task DeleteAllSubFolder()
@@ -1380,106 +1374,6 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public async Task<List<Music>> GetMusicListByFolder(StorageFolder folder)
-        {
-            var musicFiles = new List<(Music Music, string Lyrics)>();
-            await addFolderService.GetMusicFilesRecursive(folder, musicFiles);
-            return musicFiles.AsValueEnumerable().Select(r => r.Music).ToList();
-        }
-
-        public async Task ScanFolderAsync(StorageFolder folder, int folderId)
-        {
-            var musicFiles = new List<(Music Music, string Lyrics)>();
-            List<SubFolder> subFolders = AutoRescanService.RecordInitialFolderTimes(folder.Path, folderId);
-            await InsertSubFolders(subFolders);
-            await addFolderService.GetMusicFilesRecursive(folder, musicFiles);
-            var existingMusicPaths = await _dbConnection.Table<Music>()
-                .ToListAsync()
-                .ContinueWith(t => t.Result.Select(m => m.Path).ToHashSet(StringComparer.OrdinalIgnoreCase));
-
-            // 优化9: 用 HashSet 做路径查重，O(1) 代替 O(n)
-            var newMusicFiles = musicFiles.AsValueEnumerable()
-                .Where(r => !existingMusicPaths.Contains(r.Music.Path))
-                .ToList();
-
-            if (newMusicFiles.Count != 0)
-            {
-                await _dbConnection.InsertAllAsync(newMusicFiles.AsValueEnumerable().Select(r => r.Music).ToList());
-                await SaveEmbeddedLyricsAsync(newMusicFiles);
-            }
-        }
-
-        public async Task RemoveFolder(int folderId)
-        {
-            var folderToRemove = await _dbConnection.Table<Folder>().Where(f => f.Id == folderId).FirstOrDefaultAsync();
-            if (folderToRemove is not null)
-            {
-                var musicFilesToRemove = await _dbConnection.Table<Music>()
-                    .Where(m => m.FolderPath.StartsWith(folderToRemove.Path))
-                    .ToListAsync();
-
-                foreach (var musicFile in musicFilesToRemove)
-                {
-                    await _dbConnection.DeleteAsync(musicFile);
-                    await _dbConnection.DeleteAsync<MusicLyrics>(musicFile.Id);
-                }
-
-                var subfoldersToRemove = await _dbConnection.Table<SubFolder>()
-                    .Where(sf => sf.Path.StartsWith(folderToRemove.Path))
-                    .ToListAsync();
-                foreach (var subfolder in subfoldersToRemove)
-                {
-                    await _dbConnection.DeleteAsync(subfolder);
-                }
-
-                await _dbConnection.DeleteAsync(folderToRemove);
-            }
-        }
-
-        public async Task<Folder> GetFolder(int folderId)
-        {
-            return await _dbConnection.Table<Folder>().Where(f => f.Id == folderId).FirstOrDefaultAsync();
-        }
-
-        public async Task CheckFolderBeforeAdd(StorageFolder folder)
-        {
-            var existingFolders = await _dbConnection.Table<Folder>().ToListAsync();
-
-            bool folderAlreadyExists = existingFolders.AsValueEnumerable().Any(f =>
-                folder.Path.StartsWith(f.Path) || f.Path.StartsWith(folder.Path));
-
-            if (!folderAlreadyExists)
-            {
-                var foldersToRemove = existingFolders.AsValueEnumerable()
-                    .Where(f => folder.Path.StartsWith(f.Path))
-                    .ToList();
-
-                foreach (var folderToRemove in foldersToRemove)
-                {
-                    var musicFilesToRemove = await _dbConnection.Table<Music>()
-                        .Where(m => m.FolderPath.StartsWith(folderToRemove.Path))
-                        .ToListAsync();
-
-                    foreach (var musicFile in musicFilesToRemove)
-                    {
-                        await _dbConnection.DeleteAsync(musicFile);
-                        await _dbConnection.DeleteAsync<MusicLyrics>(musicFile.Id);
-                    }
-
-                    await _dbConnection.DeleteAsync(folderToRemove);
-                }
-
-                var newFolder = new Folder
-                {
-                    Name = folder.Name,
-                    Path = folder.Path,
-                    Type = "本地"
-                };
-                await _dbConnection.InsertAsync(newFolder);
-                await ScanFolderAsync(folder, newFolder.Id);
-            }
-        }
-
         public async Task<List<StorageFile>> GetAllFilesInFolderAndSubfolders(StorageFolder folder)
         {
             var allFiles = new List<StorageFile>();
@@ -1503,205 +1397,6 @@ namespace WinUIMusicPlayer.Services
             return allFiles;
         }
 
-        private async Task<(Music Music, string Lyrics)> UpdateMusic(Music music)
-        {
-            StorageFile storageFile = await StorageFile.GetFileFromPathAsync(music.Path);
-            var (newMusic, lyrics) = await ToolUtils.GetMusicInfo(storageFile);
-            if (newMusic is null) return (music, "");
-            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-            {
-                music.Title = newMusic.Title;
-                music.Author = newMusic.Author;
-                music.Duration = newMusic.Duration;
-                music.Album = newMusic.Album;
-                music.FolderPath = newMusic.FolderPath;
-                music.LastLevelFolderPath = newMusic.LastLevelFolderPath;
-                music.BitDepth = newMusic.BitDepth;
-                music.BitRate = newMusic.BitRate;
-                music.SampleRate = newMusic.SampleRate;
-                music.Channel = newMusic.Channel;
-                music.TrackNumber = newMusic.TrackNumber;
-                music.DiskNumber = newMusic.DiskNumber;
-                music.Year = newMusic.Year;
-                music.UpdateTime = newMusic.UpdateTime;
-                music.CreateTime = newMusic.CreateTime;
-            });
-            return (music, lyrics ?? "");
-        }
-
-        public async Task RescanFolder(int folderId)
-        {
-            var folderToRescan = await _dbConnection.Table<Folder>().Where(f => f.Id == folderId).FirstOrDefaultAsync();
-            if (folderToRescan is not null)
-            {
-                try
-                {
-                    await RescanFolderByPath(folderToRescan.Path);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"RescanFolder 重新扫描文件夹时出错: {ex.Message}");
-                }
-            }
-        }
-
-        public async Task RescanFolderByPath(string folderPath, bool isUpdate = true, bool isSingleFolder = false)
-        {
-            var musicPaths = await Task.Run(() =>
-                isSingleFolder ? EnumerateMusicFilesInDirectory(folderPath) : EnumerateAllMusicFiles(folderPath));
-
-            var filePaths = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
-            foreach (var path in musicPaths)
-                filePaths.TryAdd(path, true);
-
-            List<Music> musicFilesInFolder;
-            if (isSingleFolder)
-            {
-                musicFilesInFolder = await _dbConnection.Table<Music>()
-                    .Where(m => m.FolderPath == folderPath)
-                    .ToListAsync();
-            }
-            else
-            {
-                musicFilesInFolder = await _dbConnection.Table<Music>()
-                   .Where(m => m.FolderPath.Contains(folderPath))
-                   .ToListAsync();
-            }
-
-            // 优化13: 并行检查改预分配数组
-            var checkTasks = new Task[musicFilesInFolder.Count];
-            // 优化14: toDelete/toUpdate 在并行中使用 ConcurrentBag（局部），安全且无共享状态
-            var toDeleteBag = new ConcurrentBag<Music>();
-            var toUpdateBag = new ConcurrentBag<Music>();
-            for (int i = 0; i < musicFilesInFolder.Count; i++)
-            {
-                var music = musicFilesInFolder[i];
-                checkTasks[i] = CheckMusicExistsAsync(music, filePaths, toDeleteBag, toUpdateBag);
-            }
-            await Task.WhenAll(checkTasks);
-
-            // 优化15: 批量删除，预分配数组
-            var deleteList = toDeleteBag.ToList();
-            var deleteTasks = new Task[deleteList.Count];
-            for (int i = 0; i < deleteList.Count; i++)
-            {
-                var music = deleteList[i];
-                deleteTasks[i] = DeleteMusicAsync(music);
-            }
-            await Task.WhenAll(deleteTasks);
-
-            // 优化16: 批量更新，预分配数组
-            var updateList = toUpdateBag.ToList();
-            var updateTasks = new Task<(Music Music, string Lyrics)>[updateList.Count];
-            for (int i = 0; i < updateList.Count; i++)
-            {
-                var music = updateList[i];
-                updateTasks[i] = UpdateMusicWithSemaphoreAsync(music);
-            }
-            var results = await Task.WhenAll(updateTasks);
-            var validResults = results.AsValueEnumerable().Where(r => r.Music is not null).ToList();
-            if (validResults.Count != 0)
-            {
-                await _dbConnection.UpdateAllAsync(validResults.AsValueEnumerable().Select(r => r.Music).ToList());
-                await SaveEmbeddedLyricsAsync(validResults);
-            }
-
-            // 优化17: 新增文件批量处理，预分配数组
-            var filePathKeys = filePaths.Keys.ToList();
-            var addTasks = new Task<(Music? Music, string Lyrics)>[filePathKeys.Count];
-            for (int i = 0; i < filePathKeys.Count; i++)
-            {
-                var path = filePathKeys[i];
-                addTasks[i] = AddNewMusicAsync(path);
-            }
-            var addResults = await Task.WhenAll(addTasks);
-            var validMusic = addResults.AsValueEnumerable().Where(r => r.Music is not null).ToList();
-            if (validMusic.Count != 0)
-            {
-                await _dbConnection.InsertAllAsync(validMusic.AsValueEnumerable().Select(r => r.Music!).ToList());
-                await SaveEmbeddedLyricsAsync(validMusic);
-            }
-
-            if (isUpdate)
-            {
-                await App.Services.GetRequiredService<AppViewModel>().RefreshSongsSourceAsync();
-            }
-        }
-
-        // 优化18: 提取具名私有方法，编译器可生成 struct 状态机（相比 async lambda 减少堆分配）
-        private async Task AddFilePathAsync(StorageFile file, ConcurrentDictionary<string, bool> filePaths)
-        {
-            await _rescanfolderSemaphore.WaitAsync();
-            try
-            {
-                if (ToolUtils.IsMusicFile(file.FileType))
-                {
-                    filePaths.TryAdd(file.Path, true);
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"AddFilePathAsync 添加文件路径时出错: {ex.Message}");
-            }
-            finally
-            {
-                _rescanfolderSemaphore.Release();
-            }
-        }
-
-        private async Task CheckMusicExistsAsync(Music music, ConcurrentDictionary<string, bool> filePaths,
-            ConcurrentBag<Music> toDelete, ConcurrentBag<Music> toUpdate)
-        {
-            await _rescanfolderSemaphore.WaitAsync();
-            try
-            {
-                if (!filePaths.ContainsKey(music.Path))
-                {
-                    toDelete.Add(music);
-                }
-                else
-                {
-                    toUpdate.Add(music);
-                    filePaths.TryRemove(music.Path, out _);
-                }
-            }
-            finally
-            {
-                _rescanfolderSemaphore.Release();
-            }
-        }
-
-        private async Task DeleteMusicAsync(Music music)
-        {
-            await _rescanfolderSemaphore.WaitAsync();
-            try
-            {
-                await _dbConnection.DeleteAsync(music);
-                await _dbConnection.DeleteAsync<MusicLyrics>(music.Id);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"DeleteMusicAsync 删除音乐文件时出错: {ex.Message}");
-            }
-            finally
-            {
-                _rescanfolderSemaphore.Release();
-            }
-        }
-
-        private async Task<(Music Music, string Lyrics)> UpdateMusicWithSemaphoreAsync(Music music)
-        {
-            await _rescanfolderSemaphore.WaitAsync();
-            try
-            {
-                return await UpdateMusic(music);
-            }
-            finally
-            {
-                _rescanfolderSemaphore.Release();
-            }
-        }
-
         /// <summary>
         /// 转换产物主动入库：转换流程写完文件与标签后（仍持有写入门时）立即调用。
         /// 直接走入库核心，不经过写入门检查——门正是转换流程自己持有的，
@@ -1716,32 +1411,12 @@ namespace WinUIMusicPlayer.Services
                 var result = await AddMusicFileCoreAsync(path);
                 if (result.Music is not null)
                 {
-                    await _dbConnection.InsertAsync(result.Music);
-                    await SaveEmbeddedLyricsAsync([result]);
+                    await CommitScanBatchAsync([result], null);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"AddConvertedFileAsync 转换产物入库失败: {path}: {ex.Message}");
-            }
-            finally
-            {
-                _rescanfolderSemaphore.Release();
-            }
-        }
-
-        /// <summary>扫描路径入库：跳过写入门登记中的文件（写入方自己负责入库）。</summary>
-        private async Task<(Music? Music, string Lyrics)> AddNewMusicAsync(string path)
-        {
-            await _rescanfolderSemaphore.WaitAsync();
-            try
-            {
-                // 正在被本应用写入（转换中/写标签中）的文件由写入方主动入库，扫描路径跳过，
-                // 避免 ATL(FileShare.Read) 与标签重写句柄互斥导致的占用失败
-                if (AudioFileWriteGate.IsBeingWritten(path))
-                    return (null, "");
-
-                return await AddMusicFileCoreAsync(path);
             }
             finally
             {
@@ -1767,209 +1442,6 @@ namespace WinUIMusicPlayer.Services
             {
                 _logger.LogError(ex, $"AddMusicFileCoreAsync 添加新音乐文件时出错: {ex.Message}");
                 return (null, "");
-            }
-        }
-
-        public async Task<int> RescanFolderWithOutUpdateAll(string folderPath, bool isSingleFolder = false)
-        {
-            var toDelete = new ConcurrentBag<Music>();
-
-            var musicPaths = await Task.Run(() =>
-                isSingleFolder ? EnumerateMusicFilesInDirectory(folderPath) : EnumerateAllMusicFiles(folderPath));
-
-            var filePaths = new ConcurrentDictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
-            foreach (var path in musicPaths)
-                filePaths.TryAdd(path, true);
-
-            List<Music> musicFilesInFolder;
-            if (isSingleFolder)
-            {
-                musicFilesInFolder = await _dbConnection.Table<Music>()
-                    .Where(m => m.FolderPath == folderPath)
-                    .ToListAsync();
-            }
-            else
-            {
-                musicFilesInFolder = await _dbConnection.Table<Music>()
-                   .Where(m => m.FolderPath.Contains(folderPath))
-                   .ToListAsync();
-            }
-
-            var checkTasks = new Task[musicFilesInFolder.Count];
-            for (int i = 0; i < musicFilesInFolder.Count; i++)
-            {
-                var music = musicFilesInFolder[i];
-                checkTasks[i] = CheckMusicExistsForRescanAsync(music, filePaths, toDelete);
-            }
-            await Task.WhenAll(checkTasks);
-
-            var deleteList = toDelete.ToList();
-            var deleteTasks = new Task[deleteList.Count];
-            for (int i = 0; i < deleteList.Count; i++)
-            {
-                var music = deleteList[i];
-                deleteTasks[i] = DeleteMusicAsync(music);
-            }
-            await Task.WhenAll(deleteTasks);
-
-            var filePathKeys = filePaths.Keys.ToList();
-            var addTasks = new Task<(Music? Music, string Lyrics)>[filePathKeys.Count];
-            for (int i = 0; i < filePathKeys.Count; i++)
-            {
-                var path = filePathKeys[i];
-                addTasks[i] = AddNewMusicAsync(path);
-            }
-            var addResults = await Task.WhenAll(addTasks);
-            var validMusic = addResults.AsValueEnumerable().Where(r => r.Music is not null).ToList();
-            if (validMusic.Count != 0)
-            {
-                await _dbConnection.InsertAllAsync(validMusic.AsValueEnumerable().Select(r => r.Music!).ToList());
-                await SaveEmbeddedLyricsAsync(validMusic);
-            }
-
-            return validMusic.Count;
-        }
-
-        private async Task CheckMusicExistsForRescanAsync(Music music, ConcurrentDictionary<string, bool> filePaths, ConcurrentBag<Music> toDelete)
-        {
-            await _rescanfolderSemaphore.WaitAsync();
-            try
-            {
-                if (!filePaths.ContainsKey(music.Path))
-                {
-                    toDelete.Add(music);
-                }
-                else
-                {
-                    filePaths.TryRemove(music.Path, out _);
-                }
-            }
-            finally
-            {
-                _rescanfolderSemaphore.Release();
-            }
-        }
-
-        public async Task AddMusicList(IEnumerable<Music> _toAdd)
-        {
-            var toAddList = _toAdd is ICollection<Music> c ? new List<Music>(c) : _toAdd.ToList();
-            if (toAddList.Count == 0) return;
-
-            var validMusic = new List<(Music Music, string Lyrics)>();
-            var channel = Channel.CreateUnbounded<Music>();
-            int workerCount = Math.Min(4, toAddList.Count);
-            var workers = new Task[workerCount];
-
-            for (int i = 0; i < workerCount; i++)
-                workers[i] = WorkerLoop(channel.Reader);
-
-            foreach (var m in toAddList)
-                channel.Writer.TryWrite(m);
-            channel.Writer.Complete();
-
-            await Task.WhenAll(workers);
-
-            if (validMusic.Count != 0)
-                await _dbConnection.InsertAllAsync(validMusic.AsValueEnumerable().Select(r => r.Music).ToList());
-            await SaveEmbeddedLyricsAsync(validMusic);
-
-            async Task WorkerLoop(ChannelReader<Music> reader)
-            {
-                while (await reader.WaitToReadAsync().ConfigureAwait(false))
-                {
-                    while (reader.TryRead(out var m))
-                    {
-                        var (music, lyrics) = await AddMusicFromPathAsync(m.Path);
-                        if (music is not null)
-                            lock (validMusic) validMusic.Add((music, lyrics));
-                    }
-                }
-            }
-        }
-
-        private async Task<(Music? Music, string Lyrics)> AddMusicFromPathAsync(string path)
-        {
-            await _rescanfolderSemaphore.WaitAsync();
-            try
-            {
-                StorageFile storageFile = await StorageFile.GetFileFromPathAsync(path);
-                var (music, lyrics) = await ToolUtils.GetMusicInfo(storageFile);
-                return (music, lyrics ?? "");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"AddMusicFromPathAsync 添加新音乐文件时出错: {ex.Message}");
-                return (null, "");
-            }
-            finally
-            {
-                _rescanfolderSemaphore.Release();
-            }
-        }
-
-        public async Task UpdateMusicList(IEnumerable<Music> _toUpdate)
-        {
-            var toUpdateList = _toUpdate is ICollection<Music> c ? new List<Music>(c) : _toUpdate.ToList();
-            if (toUpdateList.Count == 0) return;
-
-            var validResults = new List<(Music Music, string Lyrics)>();
-            var channel = Channel.CreateUnbounded<Music>();
-            int workerCount = Math.Min(4, toUpdateList.Count);
-            var workers = new Task[workerCount];
-
-            for (int i = 0; i < workerCount; i++)
-                workers[i] = WorkerLoop(channel.Reader);
-
-            foreach (var music in toUpdateList)
-                channel.Writer.TryWrite(music);
-            channel.Writer.Complete();
-
-            await Task.WhenAll(workers);
-
-            if (validResults.Count != 0)
-                await _dbConnection.UpdateAllAsync(validResults.AsValueEnumerable().Select(r => r.Music).ToList());
-            await SaveEmbeddedLyricsAsync(validResults);
-
-            async Task WorkerLoop(ChannelReader<Music> reader)
-            {
-                while (await reader.WaitToReadAsync().ConfigureAwait(false))
-                {
-                    while (reader.TryRead(out var music))
-                    {
-                        var result = await UpdateMusicWithSemaphoreAsync(music);
-                        lock (validResults) validResults.Add(result);
-                    }
-                }
-            }
-        }
-
-        public async Task DeletedMusicList(IEnumerable<Music> toDelete)
-        {
-            var toDeleteList = toDelete is ICollection<Music> c ? new List<Music>(c) : toDelete.ToList();
-            if (toDeleteList.Count == 0) return;
-
-            var channel = Channel.CreateUnbounded<Music>();
-            int workerCount = Math.Min(4, toDeleteList.Count);
-            var workers = new Task[workerCount];
-
-            for (int i = 0; i < workerCount; i++)
-                workers[i] = WorkerLoop(channel.Reader);
-
-            foreach (var music in toDeleteList)
-                channel.Writer.TryWrite(music);
-            channel.Writer.Complete();
-
-            await Task.WhenAll(workers);
-
-            async Task WorkerLoop(ChannelReader<Music> reader)
-            {
-                while (await reader.WaitToReadAsync().ConfigureAwait(false))
-                {
-                    while (reader.TryRead(out var music))
-                    {
-                        await DeleteMusicAsync(music);
-                    }
-                }
             }
         }
 

@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.Input;
+﻿using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
@@ -13,8 +13,16 @@ namespace WinUIMusicPlayer.Services
     public static class FolderCommands
     {
         public static IRelayCommand<Folder> OpenFolderCommand { get; } = new RelayCommand<Folder>(OpenFolder);
-        public static IAsyncRelayCommand<Folder> RescanFolderCommand { get; } = new AsyncRelayCommand<Folder>(RescanFolderAsync);
-        public static IAsyncRelayCommand<Folder> RemoveFolderCommand { get; } = new AsyncRelayCommand<Folder>(RemoveFolderAsync);
+        public static IAsyncRelayCommand<Folder> RescanFolderCommand { get; } = new AsyncRelayCommand<Folder>(RescanFolderAsync, CanModify);
+        public static IAsyncRelayCommand<Folder> RemoveFolderCommand { get; } = new AsyncRelayCommand<Folder>(RemoveFolderAsync, CanModify);
+
+        private static bool CanModify(Folder? folder) => folder is not null && !LibraryOperationGate.IsBusy;
+
+        internal static void NotifyCanExecuteChanged()
+        {
+            RescanFolderCommand.NotifyCanExecuteChanged();
+            RemoveFolderCommand.NotifyCanExecuteChanged();
+        }
 
         private static void OpenFolder(Folder? folder)
         {
