@@ -303,6 +303,12 @@
   <data name="MusicBrowsePageTitle.Text" xml:space="preserve">
     <value>音楽</value>
   </data>
+  <data name="MusicBrowseEmptyTitle.Text" xml:space="preserve">
+    <value>ライブラリはまだ空です</value>
+  </data>
+  <data name="MusicBrowseEmptySubtitle.Text" xml:space="preserve">
+    <value>ローカルの音楽フォルダーを追加して、ライブラリを構築しましょう。</value>
+  </data>
   <data name="PlayListsCombox.Content" xml:space="preserve">
     <value>再生リスト</value>
   </data>

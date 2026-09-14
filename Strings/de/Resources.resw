@@ -303,6 +303,12 @@
   <data name="MusicBrowsePageTitle.Text" xml:space="preserve">
     <value>Musik</value>
   </data>
+  <data name="MusicBrowseEmptyTitle.Text" xml:space="preserve">
+    <value>Deine Bibliothek ist leer</value>
+  </data>
+  <data name="MusicBrowseEmptySubtitle.Text" xml:space="preserve">
+    <value>Füge einen lokalen Musikordner hinzu, um deine Bibliothek aufzubauen.</value>
+  </data>
   <data name="PlayListsCombox.Content" xml:space="preserve">
     <value>Wiedergabelisten</value>
   </data>

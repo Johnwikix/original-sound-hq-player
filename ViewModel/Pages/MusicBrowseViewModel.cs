@@ -465,6 +465,37 @@ namespace WinUIMusicPlayer.ViewModel
             MainPage = mainPage;
         }
 
+        // 空音乐库占位交互：复用 AddFolderViewModel 的添加/拖入流程，期间用顶部 ProgressRing 提示。
+        // AddFolderViewModel 自身的 LoadingVisibility 只渲染在 AddFolderPage 上，这里需要单独的反馈。
+        [RelayCommand]
+        private async Task EmptyAddFolderAsync()
+        {
+            AppViewModel.ProcessRingVisibility = Visibility.Visible;
+            try
+            {
+                await App.Services.GetRequiredService<AddFolderViewModel>().AddFolderWithLoadingAsync();
+            }
+            finally
+            {
+                AppViewModel.ProcessRingVisibility = Visibility.Collapsed;
+            }
+        }
+
+        [RelayCommand]
+        private async Task DropFoldersFromEmptyAsync(IReadOnlyList<Windows.Storage.IStorageItem> folders)
+        {
+            if (folders is null || folders.Count == 0) return;
+            AppViewModel.ProcessRingVisibility = Visibility.Visible;
+            try
+            {
+                await App.Services.GetRequiredService<AddFolderViewModel>().DropFoldersAsync(folders);
+            }
+            finally
+            {
+                AppViewModel.ProcessRingVisibility = Visibility.Collapsed;
+            }
+        }
+
         [RelayCommand]
         public void OnPlayModeChanged()
         {

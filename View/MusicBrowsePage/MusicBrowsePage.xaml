@@ -139,11 +139,82 @@
             IsOpen="{x:Bind ViewModel.AppViewModel.InfoBarIsOpen, Mode=TwoWay}"
             Message="{x:Bind ViewModel.AppViewModel.InfoBarMessage, Mode=OneWay}"
             Severity="Informational" />
-        <Frame
-            x:Name="ContentFrame"
-            Grid.Row="2"
-            Margin="6,6,0,0"
-            IsNavigationStackEnabled="False"
-            Visibility="Visible" />
+        <Grid Grid.Row="2">
+            <Frame
+                x:Name="ContentFrame"
+                Margin="6,6,0,0"
+                IsNavigationStackEnabled="False"
+                Visibility="{x:Bind local:MusicBrowsePage.InvertVisibility(ViewModel.AppViewModel.EmptyLibraryVisibility), Mode=OneWay}" />
+
+            <!--  空音乐库占位：整个库无任何歌曲时覆盖内容区，顶栏标签保留  -->
+            <Grid
+                x:Name="EmptyLibraryGrid"
+                AllowDrop="True"
+                DragOver="EmptyLibraryGrid_DragOver"
+                Drop="EmptyLibraryGrid_Drop"
+                Visibility="{x:Bind ViewModel.AppViewModel.EmptyLibraryVisibility, Mode=OneWay}">
+                <StackPanel
+                    MaxWidth="520"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center">
+                    <Border
+                        Width="96"
+                        Height="96"
+                        HorizontalAlignment="Center"
+                        Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                        CornerRadius="28">
+                        <FontIcon
+                            FontSize="44"
+                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                            Glyph="&#xE8D6;" />
+                    </Border>
+                    <TextBlock
+                        x:Uid="MusicBrowseEmptyTitle"
+                        Margin="0,24,0,0"
+                        HorizontalAlignment="Center"
+                        FontSize="28"
+                        FontWeight="SemiBold"
+                        TextAlignment="Center" />
+                    <TextBlock
+                        x:Uid="MusicBrowseEmptySubtitle"
+                        Margin="0,8,0,0"
+                        HorizontalAlignment="Center"
+                        FontSize="14"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        TextAlignment="Center"
+                        TextWrapping="Wrap" />
+                    <Button
+                        Margin="0,32,0,0"
+                        HorizontalAlignment="Center"
+                        Command="{x:Bind ViewModel.EmptyAddFolderCommand}"
+                        Style="{StaticResource AccentButtonStyle}">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon Glyph="&#xE8B7;" />
+                            <TextBlock
+                                x:Uid="AddFolder"
+                                Margin="8,0,0,0"
+                                VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <StackPanel
+                        Margin="0,20,0,0"
+                        HorizontalAlignment="Center"
+                        Opacity="0.6"
+                        Orientation="Horizontal">
+                        <FontIcon
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Glyph="&#xE8B7;" />
+                        <TextBlock
+                            x:Uid="AddFolderPageDragHint"
+                            Margin="6,0,0,0"
+                            VerticalAlignment="Center"
+                            FontSize="12"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </Grid>
     </Grid>
 </Page>

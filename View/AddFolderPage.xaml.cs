@@ -3,12 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
-using System.Threading.Tasks;
 using Windows.ApplicationModel.DataTransfer;
-using WinUIMusicPlayer.Helper;
-using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 using ZLinq;
 
@@ -24,97 +19,17 @@ namespace WinUIMusicPlayer.View
     {
         private static ILogger<AddFolderPage> _logger = App.GetLogger<AddFolderPage>();
         public AddFolderViewModel ViewModel { get; }
-        private MusicDatabaseService _musicDatabaseService { get; }
+
         public AddFolderPage()
         {
             InitializeComponent();
             ViewModel = App.Services.GetRequiredService<AddFolderViewModel>();
             DataContext = this;
-            _musicDatabaseService = App.Services.GetRequiredService<MusicDatabaseService>();
-            ViewModel.FoldersLoaded += OnFoldersLoaded;
             NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
         }
 
-        private void OnFoldersLoaded()
-        {
-            if (DispatcherQueue is not null)
-            {
-                DispatcherQueue.TryEnqueue(UpdateState);
-            }
-            else
-            {
-                UpdateState();
-            }
-        }
-
-        private void UpdateState()
-        {
-            bool hasFolders = ViewModel.FolderList.Count > 0;
-            EmptyGrid.Visibility = hasFolders ? Visibility.Collapsed : Visibility.Visible;
-            AddFolderGrid.Visibility = hasFolders ? Visibility.Visible : Visibility.Collapsed;
-        }
-
-        private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
-        {
-            var button = sender as Button;
-            if (button is not null && button.Tag is string folderPath)
-            {
-                ViewModel.OpenFolderButton_Click(folderPath);
-            }
-        }
-
-
-        private async void AddFolderButton_Click(object sender, RoutedEventArgs e)
-        {
-            ShowLoading();
-            await ViewModel.AddFolderButton_Click();
-            HideLoading();
-        }
-
-
-        private async void RescanFolderButton_Click(object sender, RoutedEventArgs e)
-        {
-            ShowLoading();
-            var button = sender as Button;
-            if (button is not null && button.Tag is int folderId)
-            {
-                await Task.Run(() => _musicDatabaseService.RescanFolder(folderId));
-            }
-            HideLoading();
-        }
-
-        private async void RemoveFolderButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (await DialogHelper.ShowConfirmAsync(this.XamlRoot, "RemoveFolderTitle"))
-            {
-                var button = sender as Button;
-                if (button is not null && button.Tag is int folderId)
-                {
-                    _ = RemoveFolder(folderId);
-                }
-            }
-        }
-
-        private async Task RemoveFolder(int folderId)
-        {
-            ShowLoading();
-            await ViewModel.RemoveFolderButton_Click(folderId);
-            HideLoading();
-        }
-
-        private void ShowLoading()
-        {
-            LoadingGrid.Visibility = Visibility.Visible;
-            AddFolderGrid.Visibility = Visibility.Collapsed;
-            EmptyGrid.Visibility = Visibility.Collapsed;
-            DropOverlay.Visibility = Visibility.Collapsed;
-        }
-
-        private void HideLoading()
-        {
-            LoadingGrid.Visibility = Visibility.Collapsed;
-            UpdateState();
-        }
+        // 拖放属视图层交互：DragOver/DragLeave 只驱动 DropOverlay 瞬时反馈，
+        // Drop 提取文件夹后转发 ViewModel.DropFoldersAsync（含 Loading 状态与入库逻辑）。
 
         private void Grid_DragOver(object sender, DragEventArgs e)
         {
@@ -149,13 +64,11 @@ namespace WinUIMusicPlayer.View
                 {
                     var items = await e.DataView.GetStorageItemsAsync();
                     // 筛选出文件夹
-                    var folders = items.AsValueEnumerable().Where(item => item.IsOfType(Windows.Storage.StorageItemTypes.Folder));
+                    var folders = items.AsValueEnumerable().Where(item => item.IsOfType(Windows.Storage.StorageItemTypes.Folder)).ToList();
 
-                    if (folders.Any())
+                    if (folders.Count > 0)
                     {
-                        ShowLoading();
-                        await ViewModel.Grid_Drop(folders.ToList());
-                        HideLoading();
+                        await ViewModel.DropFoldersAsync(folders);
                     }
                 }
                 catch (Exception ex)

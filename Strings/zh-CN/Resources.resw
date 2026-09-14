@@ -303,6 +303,12 @@
   <data name="MusicBrowsePageTitle.Text" xml:space="preserve">
     <value>音乐</value>
   </data>
+  <data name="MusicBrowseEmptyTitle.Text" xml:space="preserve">
+    <value>音乐库还是空的</value>
+  </data>
+  <data name="MusicBrowseEmptySubtitle.Text" xml:space="preserve">
+    <value>添加本地音乐文件夹，即可开始构建你的音乐库。</value>
+  </data>
   <data name="PlayListsCombox.Content" xml:space="preserve">
     <value>播放列表</value>
   </data>

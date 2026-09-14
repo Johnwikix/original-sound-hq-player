@@ -218,6 +218,8 @@ namespace WinUIMusicPlayer.ViewModel
         public bool IsInitialized { get; set; } = false;
         public Visibility UsbDeviceVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
         public Visibility ProcessRingVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
+        // 空音乐库占位（MusicBrowsePage 内容区）。初始 Collapsed，待首次 NotifySongsSourceChanged（DB 加载完成）后才置 Visible，避免启动加载期闪现。
+        public Visibility EmptyLibraryVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
         public bool IsFullScreen
         {
             get => field;
@@ -737,6 +739,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void NotifySongsSourceChanged()
         {
             _indexDirty = true;
+            EmptyLibraryVisibility = _songsSource.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
             if (IsInitialized)
             {
                 RefreshAllViews();

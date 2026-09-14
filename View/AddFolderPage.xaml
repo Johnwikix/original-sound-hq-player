@@ -11,7 +11,7 @@
 
     <Grid>
         <!--  Loading 界面  -->
-        <Grid x:Name="LoadingGrid" Visibility="Collapsed">
+        <Grid x:Name="LoadingGrid" Visibility="{x:Bind ViewModel.LoadingVisibility, Mode=OneWay}">
             <ProgressRing
                 Width="100"
                 Height="100"
@@ -32,7 +32,7 @@
             DragLeave="Grid_DragLeave"
             DragOver="Grid_DragOver"
             Drop="Grid_Drop"
-            Visibility="Collapsed">
+            Visibility="{x:Bind ViewModel.EmptyVisibility, Mode=OneWay}">
             <StackPanel
                 MaxWidth="520"
                 HorizontalAlignment="Center"
@@ -67,7 +67,7 @@
                     x:Name="EmptyAddFolderButton"
                     Margin="0,32,0,0"
                     HorizontalAlignment="Center"
-                    Click="AddFolderButton_Click"
+                    Command="{x:Bind ViewModel.AddFolderCommand}"
                     Style="{StaticResource AccentButtonStyle}">
                     <StackPanel Orientation="Horizontal">
                         <FontIcon Glyph="&#xE8B7;" />
@@ -104,7 +104,8 @@
             DragLeave="Grid_DragLeave"
             DragOver="Grid_DragOver"
             Drop="Grid_Drop"
-            RowDefinitions="Auto,*">
+            RowDefinitions="Auto,*"
+            Visibility="{x:Bind ViewModel.ListVisibility, Mode=OneWay}">
             <Grid Margin="16,10,16,10" ColumnDefinitions="*,Auto">
                 <StackPanel VerticalAlignment="Center">
                     <TextBlock
@@ -127,7 +128,7 @@
                     x:Name="AddFolderButton"
                     Grid.Column="1"
                     VerticalAlignment="Center"
-                    Click="AddFolderButton_Click"
+                    Command="{x:Bind ViewModel.AddFolderCommand}"
                     Style="{StaticResource AccentButtonStyle}">
                     <StackPanel Orientation="Horizontal">
                         <FontIcon Glyph="&#xE8B7;" />
@@ -165,10 +166,10 @@
                                 Background="{ThemeResource SubtleFillColorSecondaryBrush}"
                                 BorderBrush="Transparent"
                                 BorderThickness="0"
-                                Click="OpenFolderButton_Click"
+                                Command="{x:Bind OpenFolderCommand}"
+                                CommandParameter="{x:Bind}"
                                 CornerRadius="10"
-                                Style="{StaticResource MenuButtonStyle}"
-                                Tag="{x:Bind Path}">
+                                Style="{StaticResource MenuButtonStyle}">
                                 <FontIcon
                                     FontSize="18"
                                     Foreground="{ThemeResource TextFillColorPrimaryBrush}"
@@ -219,9 +220,9 @@
                                     Background="Transparent"
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
-                                    Click="RescanFolderButton_Click"
-                                    Style="{StaticResource MenuButtonStyle}"
-                                    Tag="{x:Bind Id}">
+                                    Command="{x:Bind RescanFolderCommand}"
+                                    CommandParameter="{x:Bind}"
+                                    Style="{StaticResource MenuButtonStyle}">
                                     <FontIcon Glyph="&#xE72C;" />
                                     <ToolTipService.ToolTip>
                                         <ToolTip x:Uid="RescanFolderToolTip" />
@@ -234,9 +235,9 @@
                                     Background="Transparent"
                                     BorderBrush="Transparent"
                                     BorderThickness="0"
-                                    Click="RemoveFolderButton_Click"
-                                    Style="{StaticResource MenuButtonStyle}"
-                                    Tag="{x:Bind Id}">
+                                    Command="{x:Bind RemoveFolderCommand}"
+                                    CommandParameter="{x:Bind}"
+                                    Style="{StaticResource MenuButtonStyle}">
                                     <FontIcon Glyph="&#xECC9;" />
                                     <ToolTipService.ToolTip>
                                         <ToolTip x:Uid="RemoveFolderToolTip" />

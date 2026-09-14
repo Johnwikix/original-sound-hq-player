@@ -1,5 +1,6 @@
 using DevWinUI;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -10,6 +11,7 @@ using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Windows.ApplicationModel.DataTransfer;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
@@ -28,6 +30,11 @@ namespace WinUIMusicPlayer.View
     public sealed partial class MusicBrowsePage : Page
     {
         public MusicBrowseViewModel ViewModel { get; }
+
+        // x:Bind 函数绑定用：空库占位可见时隐藏内容 Frame（空子页可能残留表头/滚动条）
+        public static Visibility InvertVisibility(Visibility value) =>
+            value == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
+
         public MusicBrowsePage()
         {
             InitializeComponent();
@@ -163,6 +170,33 @@ namespace WinUIMusicPlayer.View
 
         // USB 设备选择由 ComboBox SelectedItem 双向绑定 UsbDeviceService.SelectedDevice 完成，
         // 台账加载与扫描在服务内触发，此处无需代码后置逻辑。
+
+        private void EmptyLibraryGrid_DragOver(object sender, DragEventArgs e)
+        {
+            e.AcceptedOperation = e.DataView.Contains(StandardDataFormats.StorageItems)
+                ? DataPackageOperation.Link
+                : DataPackageOperation.None;
+        }
+
+        private async void EmptyLibraryGrid_Drop(object sender, DragEventArgs e)
+        {
+            if (!e.DataView.Contains(StandardDataFormats.StorageItems)) return;
+            try
+            {
+                var items = await e.DataView.GetStorageItemsAsync();
+                var folders = items.AsValueEnumerable()
+                    .Where(item => item.IsOfType(Windows.Storage.StorageItemTypes.Folder))
+                    .ToList();
+                if (folders.Count > 0)
+                {
+                    await ViewModel.DropFoldersFromEmptyCommand.ExecuteAsync(folders);
+                }
+            }
+            catch (Exception ex)
+            {
+                App.GetLogger<MusicBrowsePage>().LogError(ex, $"EmptyLibraryGrid_Drop 拖放文件夹失败: {ex.Message}");
+            }
+        }
 
         public void SelectBarAlbum(string Album)
         {
