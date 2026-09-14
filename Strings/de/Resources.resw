@@ -1825,13 +1825,13 @@
     <value>Experimentelle 5.1-Ausgabe</value>
   </data>
   <data name="ExperimentalSurround51Description" xml:space="preserve">
-    <value>Standardmäßig aus. Nur 5.1-PCM über ASIO / WASAPI exklusiv, kein Atmos. ASIO-Ausgänge 1–6: L, R, C, LFE, Surround L, Surround R. Nicht mit Hardware geprüft.</value>
+    <value>Standardmäßig aus. Nur 5.1-PCM über ASIO / WASAPI exklusiv, kein Atmos. ASIO-Ausgänge 1–6: L, R, C, LFE, Surround L, Surround R.</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
     <value>Experimentelles Atmos HDMI-Passthrough</value>
   </data>
   <data name="ExperimentalAtmosDescription" xml:space="preserve">
-    <value>Standardmäßig aus. Nur WASAPI exklusiv: E-AC-3 / Atmos mit 48 kHz und 6 Kanälen. Kompatibler HDMI-Receiver erforderlich; Lautstärke dort regeln, App-Lautstärke und Effekte werden umgangen. Kein ASIO, TrueHD oder Kopfhörer-Atmos. Nicht mit Hardware geprüft.</value>
+    <value>Standardmäßig aus. Nur WASAPI exklusiv: E-AC-3 / Atmos mit 48 kHz und 6 Kanälen. Kompatibler HDMI-Receiver erforderlich; Lautstärke dort regeln, App-Lautstärke und Effekte werden umgangen. Kein ASIO, TrueHD oder Kopfhörer-Atmos.</value>
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>Experimenteller E-AC-3 / Atmos HDMI-Bitstream: App-Lautstärke und alle Effekte werden umgangen. Lautstärke am Receiver regeln. Gespeicherte Einstellungen gelten wieder bei PCM.</value>

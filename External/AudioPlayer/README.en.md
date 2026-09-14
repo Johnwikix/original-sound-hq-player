@@ -59,7 +59,7 @@ bit-transparent across the entire chain.
 - **Experimental 5.1**: off by default, ASIO and WASAPI exclusive only. Preserves
   standard back/side surround layouts. ASIO requires six outputs ordered L/R/C/LFE/SL/SR
   (BL/BR for back surround). Shared output and legacy behavior remain unchanged when disabled.
-  Hardware validation is pending; see [scope and tests](EXPERIMENTAL-5.1.md).
+  See [scope and tests](EXPERIMENTAL-5.1.md).
 - **Progress telemetry**: independent latest-only shared memory every 50 ms, with timestamps,
   timeline epochs and seek acknowledgements. UI and lyrics share one bounded playback clock;
   the legacy request command remains available for diagnostic tools.
@@ -68,7 +68,7 @@ bit-transparent across the entire chain.
   Shared output uses the existing stereo downmix policy. This pipeline does not
   decode Atmos objects or render height channels. A separate, default-off experimental
   Atmos HDMI option passes 48 kHz six-channel E-AC-3/JOC through WASAPI exclusive to a
-  compatible receiver. App volume/effects are bypassed; hardware validation is pending.
+  compatible receiver. App volume/effects are bypassed.
 - **DoP**: `DsdRawReader` raw bitstream → uint32 samples; 0x05/0xFA markers
   alternate according to a **global render frame counter** (phase does not
   flip at odd buffer boundaries); silence payload 0x6969
