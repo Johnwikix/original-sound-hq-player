@@ -213,6 +213,12 @@
   <data name="FavouriteTab.Text" xml:space="preserve">
     <value>最爱</value>
   </data>
+  <data name="FavouritePlayListPageEmptyTitle.Text" xml:space="preserve">
+    <value>还没有收藏的音乐</value>
+  </data>
+  <data name="FavouritePlayListPageEmptySubtitle.Text" xml:space="preserve">
+    <value>播放或浏览时点击歌曲旁的心形图标，喜欢的歌就会出现在这里。</value>
+  </data>
   <data name="PlaylistTab.Text" xml:space="preserve">
     <value>播放列表</value>
   </data>

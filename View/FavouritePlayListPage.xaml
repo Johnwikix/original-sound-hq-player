@@ -28,17 +28,18 @@
             </Setter>
         </Style>
     </Page.Resources>
-    <ListView
-        x:Name="MusicListView"
-        AllowDrop="True"
-        CanDragItems="True"
-        CanReorderItems="True"
-        DoubleTapped="MusicListView_DoubleTapped"
-        ItemContainerStyle="{StaticResource ListViewItemStyle}"
-        ItemsSource="{x:Bind ViewModel.AppViewModel.FavoriteSongs, Mode=TwoWay}"
-        RightTapped="MusicListView_RightTapped"
-        SelectedItem="{x:Bind ViewModel.SelectedMusic, Mode=TwoWay}"
-        SelectionMode="Extended">
+    <Grid>
+        <ListView
+            x:Name="MusicListView"
+            AllowDrop="True"
+            CanDragItems="True"
+            CanReorderItems="True"
+            DoubleTapped="MusicListView_DoubleTapped"
+            ItemContainerStyle="{StaticResource ListViewItemStyle}"
+            ItemsSource="{x:Bind ViewModel.AppViewModel.FavoriteSongs, Mode=TwoWay}"
+            RightTapped="MusicListView_RightTapped"
+            SelectedItem="{x:Bind ViewModel.SelectedMusic, Mode=TwoWay}"
+            SelectionMode="Extended">
         <ListView.ItemTemplate>
             <DataTemplate x:DataType="model:Music">
                 <Grid ColumnDefinitions="Auto,Auto,3*,1.5*,3*,0.5*,70,Auto,50">
@@ -189,5 +190,43 @@
                 </Grid>
             </DataTemplate>
         </ListView.ItemTemplate>
-    </ListView>
+        </ListView>
+
+        <!--  空状态：库非空但没有任何收藏（搜索过滤导致的空列表不显示）  -->
+        <Grid
+            x:Name="FavoriteEmptyGrid"
+            Visibility="{x:Bind ViewModel.AppViewModel.FavoriteEmptyVisibility, Mode=OneWay}">
+            <StackPanel
+                MaxWidth="520"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+                <Border
+                    Width="96"
+                    Height="96"
+                    HorizontalAlignment="Center"
+                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                    CornerRadius="28">
+                    <FontIcon
+                        FontSize="44"
+                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                        Glyph="&#xEB51;" />
+                </Border>
+                <TextBlock
+                    x:Uid="FavouritePlayListPageEmptyTitle"
+                    Margin="0,24,0,0"
+                    HorizontalAlignment="Center"
+                    FontSize="28"
+                    FontWeight="SemiBold"
+                    TextAlignment="Center" />
+                <TextBlock
+                    x:Uid="FavouritePlayListPageEmptySubtitle"
+                    Margin="0,8,0,0"
+                    HorizontalAlignment="Center"
+                    FontSize="14"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    TextAlignment="Center"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+        </Grid>
+    </Grid>
 </Page>

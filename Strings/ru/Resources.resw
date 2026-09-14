@@ -213,6 +213,12 @@
   <data name="FavouriteTab.Text" xml:space="preserve">
     <value>Избранное</value>
   </data>
+  <data name="FavouritePlayListPageEmptyTitle.Text" xml:space="preserve">
+    <value>В избранном пока пусто</value>
+  </data>
+  <data name="FavouritePlayListPageEmptySubtitle.Text" xml:space="preserve">
+    <value>Нажмите на значок сердца рядом с песней во время прослушивания или просмотра — и она появится здесь.</value>
+  </data>
   <data name="PlaylistTab.Text" xml:space="preserve">
     <value>Плейлисты</value>
   </data>

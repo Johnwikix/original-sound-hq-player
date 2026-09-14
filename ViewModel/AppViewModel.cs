@@ -220,6 +220,8 @@ namespace WinUIMusicPlayer.ViewModel
         public Visibility ProcessRingVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
         // 空音乐库占位（MusicBrowsePage 内容区）。初始 Collapsed，待首次 NotifySongsSourceChanged（DB 加载完成）后才置 Visible，避免启动加载期闪现。
         public Visibility EmptyLibraryVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
+        // 最爱页占位：库非空但没有任何收藏时显示（FavouritePlayListPage）；搜索过滤导致的空列表不显示。
+        public Visibility FavoriteEmptyVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
         public bool IsFullScreen
         {
             get => field;
@@ -445,6 +447,7 @@ namespace WinUIMusicPlayer.ViewModel
             usbDeviceService.DevicesChanged += (_, _) => UpDateUsbDeviceMenuflyout();
             usbDeviceService.DeviceMusicChanged += (_, _) => RefreshUsbDeviceMusicList();
             AllPlayList.CollectionChanged += AllPlayList_CollectionChanged;
+            FavoriteSongs.CollectionChanged += FavoriteSongs_CollectionChanged;
             _progressPollingCts = new CancellationTokenSource();
             LyricsSyncRequestBus.Requested += SendFullLyricsSync;
         }
@@ -1205,6 +1208,15 @@ namespace WinUIMusicPlayer.ViewModel
         public void RemoveFromFavoriteSongs(Music music)
         {
             FavoriteSongs.Remove(music);
+        }
+
+        // FavoriteSongs 的所有变更（FillFrom 整表刷新 / 单首增删）都会经过 CollectionChanged，
+        // 这里是"最爱页是否为空"的唯一汇聚点；FillFrom 无条件触发 Reset，空->空 也会重新求值。
+        private void FavoriteSongs_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
+        {
+            FavoriteEmptyVisibility = FavoriteSongs.Count == 0 && string.IsNullOrWhiteSpace(SearchText)
+                ? Visibility.Visible
+                : Visibility.Collapsed;
         }
 
         public async Task RefreshSongsSourceAsync()

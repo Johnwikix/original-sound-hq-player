@@ -213,6 +213,12 @@
   <data name="FavouriteTab.Text" xml:space="preserve">
     <value>お気に入り</value>
   </data>
+  <data name="FavouritePlayListPageEmptyTitle.Text" xml:space="preserve">
+    <value>お気に入りはまだありません</value>
+  </data>
+  <data name="FavouritePlayListPageEmptySubtitle.Text" xml:space="preserve">
+    <value>再生中や一覧で曲の横にあるハートアイコンをタップすると、ここに表示されます。</value>
+  </data>
   <data name="PlaylistTab.Text" xml:space="preserve">
     <value>再生リスト</value>
   </data>

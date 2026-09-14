@@ -213,6 +213,12 @@
   <data name="FavouriteTab.Text" xml:space="preserve">
     <value>Favourites</value>
   </data>
+  <data name="FavouritePlayListPageEmptyTitle.Text" xml:space="preserve">
+    <value>No favourites yet</value>
+  </data>
+  <data name="FavouritePlayListPageEmptySubtitle.Text" xml:space="preserve">
+    <value>Tap the heart icon next to a song while playing or browsing, and it will appear here.</value>
+  </data>
   <data name="PlaylistTab.Text" xml:space="preserve">
     <value>Playlists</value>
   </data>
