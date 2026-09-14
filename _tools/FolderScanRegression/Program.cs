@@ -28,6 +28,12 @@ try
     await RegressionSuite.RunAsync(root);
 }
 
+finally
+{
+    ToolUtils.SlowFile.TrySetResult();
+    Directory.Delete(root, true);
+}
+
 // Captured legacy ordering: directory-wide WhenAll precedes the first batch.
 static async Task LegacyScanAsync(StorageFolder folder,
     Func<IReadOnlyList<(WinUIMusicPlayer.Model.Music Music, string Lyrics)>, Task> consume)
@@ -42,9 +48,4 @@ static async Task LegacyScanAsync(StorageFolder folder,
     var results = await Task.WhenAll(tasks);
     foreach (var batch in results.Chunk(100))
         await consume(batch.Select(r => (r.Item1!, r.Item2 ?? "")).ToArray());
-}
-finally
-{
-    ToolUtils.SlowFile.TrySetResult();
-    Directory.Delete(root, true);
 }

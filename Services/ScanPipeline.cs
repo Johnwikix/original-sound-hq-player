@@ -31,16 +31,38 @@ internal static class ScanPipeline
         {
             try
             {
-                await Parallel.ForEachAsync(source, new ParallelOptions
-                {
-                    MaxDegreeOfParallelism = WorkerCount,
-                    CancellationToken = stop.Token
-                }, async (item, token) =>
-                {
-                    var result = await read(item, token).ConfigureAwait(false);
-                    await channel.Writer.WriteAsync(result, token).ConfigureAwait(false);
-                }).ConfigureAwait(false);
+                using var enumerator = source.GetEnumerator();
+                var enumerationLock = new object();
+                var workers = new Task[WorkerCount];
+                for (int i = 0; i < workers.Length; i++)
+                    workers[i] = Task.Run(ReadWorkerAsync, CancellationToken.None);
+                await Task.WhenAll(workers).ConfigureAwait(false);
                 channel.Writer.TryComplete();
+
+                async Task ReadWorkerAsync()
+                {
+                    try
+                    {
+                        while (true)
+                        {
+                            stop.Token.ThrowIfCancellationRequested();
+                            TInput item;
+                            lock (enumerationLock)
+                            {
+                                if (!enumerator.MoveNext()) return;
+                                item = enumerator.Current;
+                            }
+                            var result = await read(item, stop.Token).ConfigureAwait(false);
+                            await channel.Writer.WriteAsync(result, stop.Token).ConfigureAwait(false);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        // Wake the consumer immediately; its finally cancels and joins the other workers.
+                        channel.Writer.TryComplete(ex);
+                        throw;
+                    }
+                }
             }
             catch (Exception ex)
             {

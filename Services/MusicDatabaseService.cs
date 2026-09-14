@@ -392,22 +392,6 @@ namespace WinUIMusicPlayer.Services
             });
         }
 
-        private async Task SaveEmbeddedLyricsAsync(IEnumerable<(Music Music, string Lyrics)> results)
-        {
-            foreach (var (music, lyrics) in results)
-            {
-                if (string.IsNullOrWhiteSpace(lyrics)) continue;
-                var existing = await _dbConnection.FindAsync<MusicLyrics>(music.Id);
-                if (existing is not null &&
-                    !(string.IsNullOrWhiteSpace(existing.Lyrics) && string.IsNullOrWhiteSpace(existing.TranslatedLyrics) &&
-                      string.IsNullOrWhiteSpace(existing.Krc) && string.IsNullOrWhiteSpace(existing.TKrc)))
-                {
-                    continue;
-                }
-                await SaveLyricsAsync(music.Id, lyrics, null, null, null);
-            }
-        }
-
         public IEnumerable<PlayListMusicItem> GetMusicByPlayListIdFromMem(int playListId, string search = null)
         {
             var plmSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(AppData.AllPlayListMusics);

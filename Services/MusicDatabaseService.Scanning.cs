@@ -12,6 +12,28 @@ namespace WinUIMusicPlayer.Services;
 
 public partial class MusicDatabaseService
 {
+        private sealed class DirectorySongCount
+        {
+            public string Path { get; set; } = "";
+            public int SongCount { get; set; }
+        }
+
+        public async Task<List<Folder>> GetFoldersWithSongCountsAsync()
+        {
+            var folders = await GetFolders();
+            // The persisted Folder.SongCount can be stale in older databases. Count actual songs,
+            // grouping once by directory rather than materializing every Music or relying on UI startup order.
+            var counts = await _dbConnection.QueryAsync<DirectorySongCount>(
+                "SELECT FolderPath AS Path, COUNT(*) AS SongCount FROM Music GROUP BY FolderPath COLLATE NOCASE");
+            foreach (var folder in folders)
+            {
+                folder.SongCount = 0;
+                foreach (var count in counts)
+                    if (LibraryPath.IsWithin(count.Path, folder.Path)) folder.SongCount += count.SongCount;
+            }
+            return folders;
+        }
+
         public async Task ScanFolderAsync(StorageFolder folder, int folderId,
             Func<IReadOnlyList<Music>, Task>? onBatchInserted = null)
         {
@@ -175,17 +197,20 @@ public partial class MusicDatabaseService
             }, onBatchInserted is null ? TimeSpan.Zero : TimeSpan.FromMilliseconds(500));
 
             // An inaccessible/disconnected directory throws before this point. Keep its database rows intact.
-            if (remaining.Count > 0)
+            var missing = new List<Music>();
+            foreach (var music in remaining.Values)
+                if (LibraryPath.IsConfirmedMissing(music.Path, folderPath)) missing.Add(music);
+            if (missing.Count > 0)
             {
                 await _dbConnection.RunInTransactionAsync(db =>
                 {
-                    foreach (var music in remaining.Values)
+                    foreach (var music in missing)
                     {
                         db.Delete<Music>(music.Id);
                         db.Delete<MusicLyrics>(music.Id);
                     }
                 });
-                changes += remaining.Count;
+                changes += missing.Count;
             }
             return changes;
         }

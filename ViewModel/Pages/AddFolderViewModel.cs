@@ -32,6 +32,7 @@ public partial class AddFolderViewModel : ObservableObject
     private readonly ILogger<AddFolderViewModel> _logger;
     private readonly Task _initialLoad;
     private bool _needsReconcile;
+    private int _folderLoadVersion;
 
     public AddFolderViewModel(MusicDatabaseService database, AppViewModel appViewModel, ILogger<AddFolderViewModel> logger)
     {
@@ -44,7 +45,8 @@ public partial class AddFolderViewModel : ObservableObject
 
     private void OnOperationChanged()
     {
-        var dispatcher = App.MainWindow.DispatcherQueue;
+        var dispatcher = App.MainWindow?.DispatcherQueue;
+        if (dispatcher is null) return;
         if (dispatcher.HasThreadAccess) NotifyCommands();
         else dispatcher.TryEnqueue(NotifyCommands);
     }
@@ -54,20 +56,20 @@ public partial class AddFolderViewModel : ObservableObject
         OnPropertyChanged(nameof(IsScanning));
         AddFolderCommand.NotifyCanExecuteChanged();
         FolderCommands.NotifyCanExecuteChanged();
+        if (IsScanning) _folderLoadVersion++;
+        else _ = LoadFoldersAsync(); // Includes startup and watcher scans, which do not call this VM.
     }
 
     private async Task LoadFoldersAsync()
     {
         try
         {
-            var folders = await _database.GetFolders();
+            int version = ++_folderLoadVersion;
+            var folders = await _database.GetFoldersWithSongCountsAsync();
+            if (version != _folderLoadVersion) return;
             FolderList.Clear();
             foreach (var folder in folders)
             {
-                int count = 0;
-                foreach (var music in _appViewModel.SongsSource)
-                    if (LibraryPath.IsWithin(music.Path, folder.Path)) count++;
-                folder.SongCount = count;
                 FolderList.Add(folder);
             }
             SetVisualState(false);

@@ -517,6 +517,7 @@ namespace WinUIMusicPlayer.Utils
                 BitDepth = IsDsdExtension(file.Path) ? 1 : Math.Max(0, track?.BitDepth ?? 0),
                 BitRate = Math.Max(0, track?.Bitrate ?? 0),
                 Duration = track is not null && double.IsFinite(track.DurationMs) && track.DurationMs > 0
+                    && track.DurationMs < TimeSpan.MaxValue.TotalMilliseconds
                     ? TimeSpan.FromMilliseconds(track.DurationMs) : TimeSpan.Zero,
                 Lyrics = track?.Lyrics?.Count > 0 ? ParseLyrics(track.Lyrics[0].SynchronizedLyrics) : string.Empty
             };
