@@ -144,7 +144,7 @@
                 x:Name="ContentFrame"
                 Margin="6,6,0,0"
                 IsNavigationStackEnabled="False"
-                Visibility="{x:Bind local:MusicBrowsePage.InvertVisibility(ViewModel.AppViewModel.EmptyLibraryVisibility), Mode=OneWay}" />
+                Visibility="{x:Bind local:MusicBrowsePage.InvertVisibility(ViewModel.AppViewModel.LibraryEmptyVisibility), Mode=OneWay}" />
 
             <!--  空音乐库占位：整个库无任何歌曲时覆盖内容区，顶栏标签保留  -->
             <Grid
@@ -152,7 +152,7 @@
                 AllowDrop="True"
                 DragOver="EmptyLibraryGrid_DragOver"
                 Drop="EmptyLibraryGrid_Drop"
-                Visibility="{x:Bind ViewModel.AppViewModel.EmptyLibraryVisibility, Mode=OneWay}">
+                Visibility="{x:Bind ViewModel.AppViewModel.LibraryEmptyVisibility, Mode=OneWay}">
                 <StackPanel
                     MaxWidth="520"
                     HorizontalAlignment="Center"

@@ -24,7 +24,6 @@ namespace WinUIMusicPlayer.View
         {
             InitializeComponent();
             ViewModel = App.Services.GetRequiredService<AddFolderViewModel>();
-            DataContext = this;
             NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
         }
 

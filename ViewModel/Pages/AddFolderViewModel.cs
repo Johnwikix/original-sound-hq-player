@@ -148,7 +148,12 @@ namespace WinUIMusicPlayer.ViewModel
         public async Task RemoveFolderWithLoadingAsync(int folderId)
         {
             var xamlRoot = App.Services.GetRequiredService<MainPage>().XamlRoot;
-            if (xamlRoot is null) return;
+            if (xamlRoot is null)
+            {
+                // MainPage 尚未加载完成时理论上不可达；记日志防将来 DI/启动顺序变更导致的无声失效
+                _logger.LogWarning("RemoveFolderWithLoadingAsync 取消：MainPage.XamlRoot 不可用，folderId={FolderId}", folderId);
+                return;
+            }
             if (!await DialogHelper.ShowConfirmAsync(xamlRoot, "RemoveFolderTitle")) return;
             SetVisualStateOnUi(isLoading: true);
             try
