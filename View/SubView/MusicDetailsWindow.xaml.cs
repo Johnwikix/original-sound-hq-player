@@ -264,20 +264,11 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async Task UpdateFile(DateTime updateTime)
         {
-            try
-            {
-                IsLoading = true;
-                ToolUtils.SaveMetaData(MusicDetail, MusicDetail.Path, AlbumCoverData, LyricsText, KrcText);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"UpdateFile 更新文件失败: {ex.Message}");
-                NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
-            }
+            IsLoading = true;
             MusicDetail.UpdateTime = updateTime;
             var dbUpdate = App.Services.GetRequiredService<MusicDatabaseService>();
-            await dbUpdate.SaveLyricsAsync(MusicDetail.Id, LyricsText, TranslatedLyricsText, KrcText, TKrcText);
-            await dbUpdate.UpdateMusicInfo(MusicDetail);
+            await dbUpdate.QueueMetadataWriteAsync(MusicDetail, AlbumCoverData, LyricsText, KrcText, TranslatedLyricsText, TKrcText);
+            NotificationService.SendNotification(MusicDetail.Title, ToolUtils.GetString("MetadataWriteQueued"));
         }
 
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)
@@ -287,13 +278,14 @@ namespace WinUIMusicPlayer.View.SubView
             {
                 DateTime newModificationTime = DateTime.Now;
                 await UpdateFile(newModificationTime);
+                this.Close();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"SaveToDataBaseButton_Click 保存数据库信息失败: {ex.Message}");
                 NotificationService.SendNotification(ToolUtils.GetString("Error"), ex.Message);
             }
-            this.Close();
+            finally { IsLoading = false; }
         }
 
         private async void GetImageFromNet_Click(object sender, RoutedEventArgs e)

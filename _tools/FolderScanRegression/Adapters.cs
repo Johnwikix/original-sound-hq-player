@@ -88,6 +88,7 @@ namespace WinUIMusicPlayer.Services
     }
     public partial class MusicDatabaseService
     {
+        private readonly Microsoft.Extensions.Logging.ILogger<MusicDatabaseService> _logger = Microsoft.Extensions.Logging.Abstractions.NullLogger<MusicDatabaseService>.Instance;
         public SQLite.SQLiteAsyncConnection Connection => _dbConnection;
         private readonly SQLite.SQLiteAsyncConnection _dbConnection;
         private readonly AddFolderService addFolderService = new();
@@ -95,6 +96,7 @@ namespace WinUIMusicPlayer.Services
         public async Task InitializeAsync()
         {
             await _dbConnection.CreateTableAsync<Music>();
+            await _dbConnection.CreateTableAsync<PendingMetadataWrite>();
             await _dbConnection.CreateTableAsync<Folder>();
             await _dbConnection.CreateTableAsync<SubFolder>();
             await _dbConnection.CreateTableAsync<MusicLyrics>();
@@ -103,5 +105,14 @@ namespace WinUIMusicPlayer.Services
         public Task<List<Folder>> GetFolders() => _dbConnection.Table<Folder>().ToListAsync();
         public Task<List<Music>> GetMusicListAsync() => _dbConnection.Table<Music>().ToListAsync();
         public Task InsertSubFolders(List<SubFolder> folders) => _dbConnection.InsertAllAsync(folders);
+    }
+}
+
+namespace WinUIMusicPlayer.Services
+{
+    public sealed class NotificationService
+    {
+        public static int Count;
+        public void SendNotification(string title, string message) => Count++;
     }
 }

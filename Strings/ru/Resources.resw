@@ -1854,5 +1854,6 @@
   <data name="StarOnGitHub.Text" xml:space="preserve">
     <value>Если вам нравится этот проект, поставьте нам звезду на GitHub!</value>
   </data>
+  <data name="MetadataWriteQueued" xml:space="preserve"><value>Изменения сохранены. Теги будут записаны, когда файл станет доступен для записи. Незавершённые операции продолжатся при следующем запуске.</value></data>
 </root>
 

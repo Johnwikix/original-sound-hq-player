@@ -266,7 +266,7 @@ namespace WinUIMusicPlayer.Utils
             });
         }
 
-        public static void SaveMetaData(Music music, string filePath, byte[] pic, string? lyricsText = null, string? krcText = null)
+        public static void SaveMetaData(Music music, string filePath, byte[]? pic, string? lyricsText = null, string? krcText = null)
         {
             Settings.FileBufferSize = 1024 * 256;
             Track theTrack = new(filePath)
@@ -278,8 +278,11 @@ namespace WinUIMusicPlayer.Utils
                 DiscNumber = music.DiskNumber,
                 Year = music.Year
             };
-            theTrack.EmbeddedPictures.Clear();
-            theTrack.EmbeddedPictures.Add(PictureInfo.fromBinaryData(pic));
+            if (pic is not null)
+            {
+                theTrack.EmbeddedPictures.Clear();
+                theTrack.EmbeddedPictures.Add(PictureInfo.fromBinaryData(pic));
+            }
             string[] lines = (lyricsText ?? "").Split([Environment.NewLine], StringSplitOptions.None);
             if (lines.Length == 0)
             {
@@ -290,7 +293,8 @@ namespace WinUIMusicPlayer.Utils
             {
                 theTrack.Lyrics.Add(new LyricsInfo { UnsynchronizedLyrics = line });
             }
-            theTrack.Save();
+            if (!theTrack.Save())
+                throw new IOException("Metadata save failed: " + filePath);
         }
 
         public static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject

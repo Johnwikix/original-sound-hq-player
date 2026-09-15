@@ -26,6 +26,7 @@ try
     if (count != 151) throw new Exception($"FAIL: expected 151 songs, got {count}.");
     Console.WriteLine("PASS: first batch arrives before slow file completes; all 151 songs delivered.");
     await RegressionSuite.RunAsync(root);
+    await MetadataRegression.RunAsync(root);
 }
 
 finally

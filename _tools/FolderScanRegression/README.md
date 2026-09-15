@@ -16,3 +16,5 @@ dotnet restore _tools/FolderScanRegression --disable-build-servers -p:NuGetAudit
 ```
 
 调度分配测量使用合成输入，不代表实际音频扫描吞吐、完整应用内存或 WinUI 帧时间。
+
+标签延迟写入回归链接生产队列代码，使用真实 SQLite 和 Windows 文件共享锁，覆盖占用/释放、快照、重复保存、重新打开数据库、扫描保护及失败恢复。标签写入器用文本写入替身隔离，因此不验证 ATL 各音频格式或真实播放器的句柄释放时机。

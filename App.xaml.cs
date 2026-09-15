@@ -72,6 +72,7 @@ namespace WinUIMusicPlayer
              .ConfigureServices((context, services) =>
              {
                  services.AddHostedService<AppInitializerService>();
+                 services.AddHostedService<MetadataWriteService>();
                  services.AddTransient<INavigationService, NavigationService>();
                  services.AddSingleton<INavigationServiceFactory, NavigationServiceFactory>();
                  services.AddSingleton<MainWindow>();

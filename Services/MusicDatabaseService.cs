@@ -62,6 +62,7 @@ namespace WinUIMusicPlayer.Services
             {
                 _dbConnection = new SQLiteAsyncConnection(DbPath);
                 await _dbConnection.CreateTableAsync<Music>();
+                await _dbConnection.CreateTableAsync<PendingMetadataWrite>();
                 await _dbConnection.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Music_Path_NoCase ON Music(Path COLLATE NOCASE)");
                 await _dbConnection.CreateTableAsync<MusicLyrics>();
                 await _dbConnection.CreateTableAsync<Folder>();

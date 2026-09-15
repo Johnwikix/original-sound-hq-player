@@ -56,6 +56,9 @@ public partial class MusicDatabaseService
                 foreach (var (music, lyrics) in batch)
                 {
                     if (music is null) continue;
+                    // 延迟写入期间文件仍是旧标签，不能覆盖用户已保存的编辑。
+                    if (db.ExecuteScalar<int>("SELECT COUNT(*) FROM PendingMetadataWrite WHERE Path = ? COLLATE NOCASE", music.Path) != 0)
+                        continue;
                     if (music.Id == 0)
                     {
                         // Recheck under the transaction: conversions can publish files independently.

@@ -1854,5 +1854,6 @@
   <data name="StarOnGitHub.Text" xml:space="preserve">
     <value>Wenn dir dieses Projekt gefällt, gib uns einen Stern auf GitHub!</value>
   </data>
+  <data name="MetadataWriteQueued" xml:space="preserve"><value>Änderungen gespeichert. Tags werden geschrieben, sobald die Datei beschreibbar ist. Ausstehende Vorgänge werden beim nächsten Start fortgesetzt.</value></data>
 </root>
 

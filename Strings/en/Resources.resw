@@ -1854,4 +1854,5 @@
   <data name="ProcessingDataHint.Text" xml:space="preserve">
     <value>Processing data, please wait...</value>
   </data>
+  <data name="MetadataWriteQueued" xml:space="preserve"><value>Edits saved. Tags will be written when the file is writable. Unfinished writes resume on next launch.</value></data>
 </root>

@@ -12,6 +12,9 @@
     <Compile Include="../../Services/LibraryOperationGate.cs" />
     <Compile Include="../../Services/LibraryPath.cs" />
     <Compile Include="../../Services/MusicDatabaseService.Scanning.cs" />
+    <Compile Include="../../Services/MusicDatabaseService.Metadata.cs" />
+    <Compile Include="../../Services/AudioFileWriteGate.cs" />
+    <Compile Include="../../Model/PendingMetadataWrite.cs" />
     <Compile Include="../../Services/FolderCommands.cs" />
     <Compile Include="../../ViewModel/Pages/AddFolderViewModel.cs" />
     <Compile Include="../../Model/Folder.cs" />

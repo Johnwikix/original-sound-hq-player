@@ -1854,5 +1854,6 @@
   <data name="StarOnGitHub.Text" xml:space="preserve">
     <value>このプロジェクトを気に入ったら、GitHub でスターをお願いします！</value>
   </data>
+  <data name="MetadataWriteQueued" xml:space="preserve"><value>編集内容を保存しました。ファイルが書き込み可能になったらタグを自動保存します。未完了の処理は次回起動時に再開します。</value></data>
 </root>
 
