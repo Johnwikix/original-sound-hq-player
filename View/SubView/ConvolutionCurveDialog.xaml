@@ -142,6 +142,7 @@
                     </Button.Flyout>
                 </Button>
             </StackPanel>
+            <ContentPresenter x:Name="DeviceBindingsHost" />
             <InfoBar
                 x:Name="Notice"
                 IsClosable="False"

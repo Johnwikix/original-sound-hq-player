@@ -22,6 +22,9 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     private readonly DspSettings _initial;
     private readonly List<CurvePoint> _points;
     private bool _syncing, _open;
+    private string? _editorOutputId;
+    private bool _deviceMode;
+    private string _preferredPresetName = "";
     public event Action? PreviewChanged;
     public event Action? PresetSaved;
     public event Action? PresetDeleted;
@@ -76,6 +79,7 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     {
         _ipc = ipc; _store = store;
         _initial = AppSettings.Dsp.ToUnifiedGain();
+        _preferredPresetName = _initial.CurvePresetName;
         _points = CorrectionCurve.Parse(_initial.CurvePoints).ToList();
         _syncing = true; AutoPreamp = _initial.AutoPreamp == true; PreampDb = _initial.HeadroomDb; _syncing = false;
         _queue = DispatcherQueue.GetForCurrentThread();
@@ -85,7 +89,8 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     }
     public async Task OpenAsync()
     {
-        _open = true; _ipc.DspStateChanged += PlaybackChanged; PlaybackChanged(); Changed();
+        _open = true; _ipc.DspStateChanged += PlaybackChanged; ApplyPlaybackState(force: true);
+        if (!AppSettings.DeviceCorrections.Enabled) Changed();
         IsPresetBusy = true;
         try
         {
@@ -97,17 +102,61 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
         catch { if (_open) ErrorMessage = ToolUtils.GetString("CurvePresetError"); }
         finally { IsPresetBusy = false; }
     }
+    /// <summary>将设备绑定载入当前编辑草稿，保留全局设置直到用户应用。</summary>
+    public void LoadCorrectionDraft(DspSettings settings) => LoadCorrectionDraft(settings, preview: true);
+
+    private void LoadCorrectionDraft(DspSettings settings, bool preview)
+    {
+        if (!CorrectionCurve.UsesCurve(settings)) return;
+        _points.Clear();
+        _points.AddRange(CorrectionCurve.Parse(settings.CurvePoints));
+        _preferredPresetName = settings.CurvePresetName;
+        _syncing = true;
+        SelectedPreset = Presets.FirstOrDefault(p => p.Name == settings.CurvePresetName && p.Points == settings.CurvePoints)
+            ?? Presets.FirstOrDefault(p => p.Points == settings.CurvePoints);
+        _syncing = false;
+        SyncNodes();
+        if (preview) Changed();
+        else NotifyPresetActions();
+    }
+
     public void Close(bool apply)
     {
         _open = false; _timer.Stop(); _ipc.DspStateChanged -= PlaybackChanged;
         _ipc.PreviewDsp(apply ? Draft : AppSettings.Dsp);
     }
-    private void PlaybackChanged() => _queue.TryEnqueue(() => { if (_open) CanAudition = _ipc.CurrentDspState?.State is { RenderKind: 0, IsEnabled: true, Channels: <= 2 }; });
+    private void PlaybackChanged() => _queue.TryEnqueue(() => ApplyPlaybackState());
+
+    /// <summary>设备模式变化时立即同步；普通响度状态通知不会覆盖用户正在编辑的草稿。</summary>
+    public void RefreshOutputCorrection() => ApplyPlaybackState(force: true);
+
+    private void ApplyPlaybackState(bool force = false)
+    {
+        if (!_open) return;
+        var state = _ipc.CurrentDspState?.State;
+        CanAudition = state is { RenderKind: 0, IsEnabled: true, Channels: <= 2 };
+        string id = state?.OutputDeviceId ?? "";
+        bool mode = AppSettings.DeviceCorrections.Enabled;
+        bool changed = force || id != _editorOutputId || mode != _deviceMode;
+        _editorOutputId = id;
+        _deviceMode = mode;
+        if (!changed) return;
+        // 自动跟随时停止旧草稿试听，保持内核按实际端点应用绑定；不写回全局草稿。
+        _timer.Stop();
+        _ipc.UpdateDsp();
+        if (!mode) return;
+        var binding = AppSettings.DeviceCorrections.Find(id);
+        if (binding != null && CorrectionCurve.UsesCurve(binding.Settings))
+            LoadCorrectionDraft(binding.Settings, preview: false);
+        else
+            LoadCorrectionDraft(new DspSettings { ConvolutionSource = ConvolutionSource.Curve,
+                CurvePoints = CorrectionCurve.Flat }, preview: false);
+    }
     private void MatchPreset()
     {
         _syncing = true;
         string encoded = CorrectionCurve.Encode(_points);
-        if (SelectedPreset?.Points != encoded) SelectedPreset = Presets.FirstOrDefault(p => p.Points == encoded && p.Name == _initial.CurvePresetName)
+        if (SelectedPreset?.Points != encoded) SelectedPreset = Presets.FirstOrDefault(p => p.Points == encoded && p.Name == _preferredPresetName)
             ?? Presets.FirstOrDefault(p => p.Points == encoded);
         _syncing = false;
     }

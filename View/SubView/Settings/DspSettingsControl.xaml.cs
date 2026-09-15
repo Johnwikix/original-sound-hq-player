@@ -28,12 +28,24 @@ public sealed partial class DspSettingsControl : UserControl
 
     private async void EditCurve_Click(object sender, RoutedEventArgs args)
     {
-        var dialog = new ConvolutionCurveDialog { XamlRoot = XamlRoot, RequestedTheme = ActualTheme };
+        var dialog = new ConvolutionCurveDialog(ViewModel) { XamlRoot = XamlRoot, RequestedTheme = ActualTheme };
         try
         {
             if (await dialog.ShowAsync() == ContentDialogResult.Primary) await ViewModel.ApplyCurveAsync(dialog.Draft);
         }
-        finally { App.Services.GetRequiredService<IpcService>().UpdateDsp(); }
+        finally { ViewModel.EndCorrectionEditing(); App.Services.GetRequiredService<IpcService>().UpdateDsp(); }
+    }
+
+    private async void ManageDeviceBindings_Click(object sender, RoutedEventArgs args)
+    {
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot, RequestedTheme = ActualTheme,
+            Title = Utils.ToolUtils.GetString("DspDeviceTarget"),
+            CloseButtonText = Utils.ToolUtils.GetString("CloseButton"),
+            Content = new DspDeviceBindingsControl(ViewModel)
+        };
+        await dialog.ShowAsync();
     }
 
     private async void ImportImpulse_Click(object sender, RoutedEventArgs args)

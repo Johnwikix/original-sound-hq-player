@@ -102,6 +102,7 @@ public sealed class PlaybackEngine : IDisposable
     private DspSettings? _dspSettings = new();
     private DeviceCorrections _deviceCorrections = new();
     private string? _previewDeviceId;
+    private DspSettings? _previewSettings;
 
     public readonly float[] EqGains = new float[10];
     public readonly float[] EqQ = Enumerable.Repeat(EqParameters.DefaultQ, 10).ToArray();
@@ -872,8 +873,17 @@ public sealed class PlaybackEngine : IDisposable
         lock (_streamLock)
         {
             var normalized = settings.Sanitize();
-            _previewDeviceId = preview ? _previewDeviceId ?? _output?.DeviceId : null;
-            _dspSettings = normalized;
+            if (preview)
+            {
+                _previewDeviceId ??= _output?.DeviceId;
+                _previewSettings = normalized;
+            }
+            else
+            {
+                _previewDeviceId = null;
+                _previewSettings = null;
+                _dspSettings = normalized;
+            }
             _session?.ConfigureDsp(ResolveDsp(_output?.DeviceId));
             QueueDspState();
         }
@@ -887,6 +897,7 @@ public sealed class PlaybackEngine : IDisposable
         {
             _deviceCorrections = validated;
             _previewDeviceId = null;
+            _previewSettings = null;
             _session?.ConfigureDsp(ResolveDsp(_output?.DeviceId));
             QueueDspState();
         }
@@ -901,8 +912,8 @@ public sealed class PlaybackEngine : IDisposable
     private DspSettings ResolveDsp(string? deviceId)
     {
         var global = _dspSettings ?? new DspSettings();
-        return _previewDeviceId != null && string.Equals(_previewDeviceId, deviceId, StringComparison.OrdinalIgnoreCase)
-            ? global : _deviceCorrections.Resolve(global, deviceId);
+        return _previewSettings != null && _previewDeviceId != null && string.Equals(_previewDeviceId, deviceId, StringComparison.OrdinalIgnoreCase)
+            ? _previewSettings : _deviceCorrections.Resolve(global, deviceId);
     }
 
     /// <summary>读取实际会话状态，供已打开的音效界面持续同步。</summary>

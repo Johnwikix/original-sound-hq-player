@@ -73,6 +73,10 @@ internal static unsafe partial class Program
             engine.OutputMode = "ASIO";
             Require(Resolve("asio:driver-guid").CurvePoints == "20,-9;20000,-9", "ASIO binding failed");
             Require(Resolve("endpoint-b").ImpulsePath == "speaker.wav", "ASIO fallback used requested driver correction");
+            engine.UpdateDsp(global with { ConvolutionEnabled = false, HeadroomDb = -35 }, preview: true);
+            Require(!Resolve("endpoint-b").ConvolutionEnabled, "audition bypass did not apply to the audition device");
+            Require(Resolve("endpoint-a").ConvolutionEnabled && Resolve("endpoint-a").HeadroomDb == global.HeadroomDb,
+                "audition bypass or gain leaked into the next physical output");
             engine.UpdateDsp(global, preview: true);
             Require(Resolve("endpoint-b").CurvePoints == global.CurvePoints, "preview did not override binding");
             Require(Resolve("endpoint-a").CurvePoints == "20,-6;20000,-6", "preview leaked to another device");

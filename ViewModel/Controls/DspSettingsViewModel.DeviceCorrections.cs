@@ -13,6 +13,26 @@ public partial class DspSettingsViewModel
 {
     public ObservableCollection<BassOutputDevice> CorrectionDevices { get; } = [];
     private string? _actualCorrectionDeviceId;
+    private Func<DspSettings>? _correctionDraft;
+    private Action<DspSettings>? _loadCorrectionDraft;
+    private Action? _refreshCorrectionDraft;
+
+    /// <summary>绑定命令读取弹窗最新草稿，包括尚未应用的预设切换。</summary>
+    public void BeginCorrectionEditing(Func<DspSettings> draft, Action<DspSettings> load, Action? refresh = null)
+    {
+        _correctionDraft = draft;
+        _loadCorrectionDraft = load;
+        _refreshCorrectionDraft = refresh;
+        RefreshCorrectionState();
+    }
+
+    public void EndCorrectionEditing()
+    {
+        _correctionDraft = null;
+        _loadCorrectionDraft = null;
+        _refreshCorrectionDraft = null;
+        RefreshCorrectionState();
+    }
 
     /// <summary>空端点选项表示正在使用的实际输出；保存时始终转换为具体稳定 ID。</summary>
     public BassOutputDevice? SelectedCorrectionDevice
@@ -31,6 +51,7 @@ public partial class DspSettingsViewModel
             OnPropertyChanged();
             RefreshCorrectionState();
             _ = SaveCorrectionsAsync();
+            _refreshCorrectionDraft?.Invoke();
         }
     }
 
@@ -44,6 +65,9 @@ public partial class DspSettingsViewModel
     private bool CanBindCorrection() => !CorrectionBusy && !string.IsNullOrEmpty(CorrectionDeviceId)
         && (AppSettings.DeviceCorrections.Find(CorrectionDeviceId) != null || AppSettings.DeviceCorrections.Bindings.Length < 64);
     private bool HasCorrection() => !CorrectionBusy && AppSettings.DeviceCorrections.Find(CorrectionDeviceId) != null;
+
+    private bool CanLoadCorrection() => HasCorrection() && (_loadCorrectionDraft == null
+        || CorrectionCurve.UsesCurve(AppSettings.DeviceCorrections.Find(CorrectionDeviceId)!.Settings));
 
     private string CorrectionDeviceName(string? id)
     {
@@ -102,7 +126,7 @@ public partial class DspSettingsViewModel
         string? id = CorrectionDeviceId;
         if (string.IsNullOrEmpty(id)) return;
         var bindings = AppSettings.DeviceCorrections.Bindings.ToList();
-        var snapshot = new DeviceCorrection { DeviceId = id, DeviceName = CorrectionDeviceName(id), Settings = AppSettings.Dsp.ToUnifiedGain() };
+        var snapshot = new DeviceCorrection { DeviceId = id, DeviceName = CorrectionDeviceName(id), Settings = (_correctionDraft?.Invoke() ?? AppSettings.Dsp).ToUnifiedGain() };
         int index = bindings.FindIndex(b => string.Equals(b.DeviceId, id, StringComparison.OrdinalIgnoreCase));
         if (index >= 0) bindings[index] = snapshot;
         else bindings.Add(snapshot);
@@ -110,10 +134,15 @@ public partial class DspSettingsViewModel
         await SaveCorrectionsAsync();
     }
 
-    [RelayCommand(CanExecute = nameof(HasCorrection))]
+    [RelayCommand(CanExecute = nameof(CanLoadCorrection))]
     private async Task LoadCorrectionAsync()
     {
         if (AppSettings.DeviceCorrections.Find(CorrectionDeviceId) is not { } binding) return;
+        if (_loadCorrectionDraft != null)
+        {
+            _loadCorrectionDraft(binding.Settings);
+            return;
+        }
         AppSettings.Dsp = binding.Apply(AppSettings.Dsp.ToUnifiedGain());
         LoadValues();
         _dirty = true;

@@ -4,6 +4,8 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
 using WinUIMusicPlayer.ViewModel;
+using WinUIMusicPlayer.ViewModel.Controls;
+using WinUIMusicPlayer.View.SubView.Settings;
 
 namespace WinUIMusicPlayer.View.SubView;
 
@@ -12,17 +14,19 @@ public sealed partial class ConvolutionCurveDialog : ContentDialog
 {
     public ConvolutionCurveViewModel ViewModel { get; }
     public DspSettings Draft => ViewModel.Draft;
-    public ConvolutionCurveDialog()
+    public ConvolutionCurveDialog(DspSettingsViewModel bindings)
     {
         ViewModel = App.Services.GetRequiredService<ConvolutionCurveViewModel>();
         InitializeComponent();
+        DeviceBindingsHost.Content = new DspDeviceBindingsControl(bindings);
+        bindings.BeginCorrectionEditing(() => ViewModel.Draft, ViewModel.LoadCorrectionDraft, ViewModel.RefreshOutputCorrection);
         ViewModel.PreviewChanged += RefreshPreview;
         ViewModel.PresetSaved += () => SaveFlyout.Hide();
         ViewModel.PresetDeleted += () => DeleteFlyout.Hide();
         Response.PointSelected += index => ViewModel.SelectedNode = index;
         Response.PointMoved += ViewModel.MovePoint;
         Opened += async (_, _) => { ResizeEditor(); XamlRoot.Changed += RootChanged; await ViewModel.OpenAsync(); };
-        Closing += (_, args) => { XamlRoot.Changed -= RootChanged; ViewModel.Close(args.Result == ContentDialogResult.Primary); };
+        Closing += (_, args) => { XamlRoot.Changed -= RootChanged; ViewModel.Close(args.Result == ContentDialogResult.Primary); bindings.EndCorrectionEditing(); };
     }
     private void RefreshPreview()
     {

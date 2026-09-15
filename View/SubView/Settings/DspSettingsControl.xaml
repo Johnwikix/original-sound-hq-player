@@ -83,24 +83,9 @@
                     </Grid>
                 </controls:SettingsCard>
                 <TextBlock x:Uid="DspConvolutionSection" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
-                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspDeviceMode')}"
-                    Description="{x:Bind tool:ToolUtils.GetString('DspDeviceDescription')}">
-                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.DeviceCorrectionEnabled, Mode=TwoWay}" />
-                </controls:SettingsCard>
-                <TextBlock Text="{x:Bind ViewModel.ActualCorrectionOutput, Mode=OneWay}" TextWrapping="Wrap" />
-                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspDeviceTarget')}"
-                    Description="{x:Bind ViewModel.CorrectionBindingStatus, Mode=OneWay}">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <ComboBox Width="240" ItemsSource="{x:Bind ViewModel.CorrectionDevices}"
-                            DisplayMemberPath="Name" SelectedItem="{x:Bind ViewModel.SelectedCorrectionDevice, Mode=TwoWay}" />
-                        <Button Content="{x:Bind tool:ToolUtils.GetString('DspDeviceRefresh')}" Command="{x:Bind ViewModel.RefreshCorrectionDevicesCommand}" />
-                    </StackPanel>
-                </controls:SettingsCard>
-                <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-                    <Button Content="{x:Bind tool:ToolUtils.GetString('DspDeviceLoad')}" Command="{x:Bind ViewModel.LoadCorrectionCommand}" />
-                    <Button Content="{x:Bind ViewModel.SaveCorrectionLabel, Mode=OneWay}" Command="{x:Bind ViewModel.BindCorrectionCommand}" />
-                    <Button Content="{x:Bind tool:ToolUtils.GetString('DspDeviceRemove')}" Command="{x:Bind ViewModel.RemoveCorrectionCommand}" />
-                </StackPanel>
+                <Button Content="{x:Bind tool:ToolUtils.GetString('DspDeviceTarget')}"
+                    HorizontalAlignment="Right" Click="ManageDeviceBindings_Click"
+                    Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.WaveMode), Mode=OneWay}" />
                 <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('CurveSource')}">
                     <ComboBox Width="220" SelectedIndex="{x:Bind ViewModel.ConvolutionSourceIndex, Mode=TwoWay}">
                         <ComboBoxItem x:Uid="CurveSourceDraw" />

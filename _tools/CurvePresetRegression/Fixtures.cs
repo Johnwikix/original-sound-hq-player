@@ -23,7 +23,7 @@ namespace WinUIMusicPlayer.Model
 }
 namespace WinUIMusicPlayer.Utils
 {
-    public static class AppSettings { public static DspSettings Dsp { get; set; } = new(); }
+    public static class AppSettings { public static DspSettings Dsp { get; set; } = new(); public static DeviceCorrections DeviceCorrections { get; set; } = new(); }
     public static class ToolUtils { public static string GetString(string key) => key; }
 }
 namespace WinUIMusicPlayer.Services
@@ -43,12 +43,15 @@ namespace WinUIMusicPlayer.Services
             Saved = presets.ToList();
         }
     }
-    public record PlaybackFixture(int RenderKind = 0, bool IsEnabled = true, int Channels = 2);
+    public record PlaybackFixture(int RenderKind = 0, bool IsEnabled = true, int Channels = 2, string OutputDeviceId = "");
     public record DspFixture(PlaybackFixture State);
     public class IpcService
     {
-        public event Action? DspStateChanged { add { } remove { } }
-        public DspFixture? CurrentDspState => new(new());
+        public event Action? DspStateChanged;
+        public DspFixture? CurrentDspState { get; private set; } = new(new());
+        public void ChangeOutput(string id) { CurrentDspState = new(new(OutputDeviceId: id)); DspStateChanged?.Invoke(); }
+        public int Restores { get; private set; }
+        public void UpdateDsp() { Restores++; LastPreview = null; }
         public DspSettings? LastPreview { get; private set; }
         public void PreviewDsp(DspSettings draft) => LastPreview = draft;
     }
