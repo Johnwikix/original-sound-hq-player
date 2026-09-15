@@ -102,8 +102,7 @@
                         Grid.Column="0"
                         Margin="0"
                         VerticalAlignment="Center"
-                        ColumnDefinitions="Auto,*"
-                        Visibility="Visible">
+                        ColumnDefinitions="Auto,*">
                         <Button
                             x:Name="AlbumCoverImageBtn"
                             Grid.Column="0"
@@ -153,7 +152,8 @@
                             Grid.Column="1"
                             MinHeight="80"
                             HorizontalAlignment="Stretch"
-                            RowDefinitions="Auto,*,*,Auto">
+                            RowDefinitions="Auto,*,*,Auto"
+                            Visibility="{x:Bind tools:BindUtils.GetMusicVisibility(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}">
                             <dev:AutoScrollView
                                 Grid.Row="0"
                                 Margin="10,0,10,0"

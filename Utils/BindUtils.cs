@@ -202,6 +202,9 @@ namespace WinUIMusicPlayer.Utils
             return true;
         }
 
+        public static Visibility GetMusicVisibility(Music current)
+            => current is null ? Visibility.Collapsed : Visibility.Visible;
+
         public static bool IsCurrentPlayListExist(IEnumerable<Music> playList)
         {
             if (playList is null || !playList.Any()) return false;
