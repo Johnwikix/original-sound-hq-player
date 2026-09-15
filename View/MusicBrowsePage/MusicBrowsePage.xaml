@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="WinUIMusicPlayer.View.MusicBrowsePage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -150,8 +150,11 @@
             <Grid
                 x:Name="EmptyLibraryGrid"
                 AllowDrop="True"
+                Background="Transparent"
+                DragLeave="EmptyLibraryGrid_DragLeave"
                 DragOver="EmptyLibraryGrid_DragOver"
                 Drop="EmptyLibraryGrid_Drop"
+                Unloaded="EmptyLibraryGrid_Unloaded"
                 Visibility="{x:Bind ViewModel.AppViewModel.LibraryEmptyVisibility, Mode=OneWay}">
                 <StackPanel
                     MaxWidth="520"
@@ -214,6 +217,41 @@
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     </StackPanel>
                 </StackPanel>
+                <!--  拖放反馈层（置于最上层，不拦截拖放事件）  -->
+                <Grid
+                    x:Name="DropOverlay"
+                    Margin="12"
+                    IsHitTestVisible="False"
+                    Visibility="Collapsed">
+                    <Border
+                        Background="{ThemeResource AccentFillColorSecondaryBrush}"
+                        CornerRadius="12"
+                        Opacity="0.35" />
+                    <Rectangle
+                        Margin="2"
+                        RadiusX="10"
+                        RadiusY="10"
+                        Stroke="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                        StrokeDashArray="4,4"
+                        StrokeThickness="2" />
+                    <StackPanel
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal">
+                        <FontIcon
+                            VerticalAlignment="Center"
+                            FontSize="16"
+                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                            Glyph="&#xE8B7;" />
+                        <TextBlock
+                            x:Uid="AddFolderPageDropOverlayText"
+                            Margin="8,0,0,0"
+                            VerticalAlignment="Center"
+                            FontSize="16"
+                            FontWeight="SemiBold"
+                            Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                    </StackPanel>
+                </Grid>
             </Grid>
         </Grid>
     </Grid>

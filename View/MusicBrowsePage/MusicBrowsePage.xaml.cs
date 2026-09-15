@@ -173,14 +173,30 @@ namespace WinUIMusicPlayer.View
 
         private void EmptyLibraryGrid_DragOver(object sender, DragEventArgs e)
         {
-            e.AcceptedOperation = e.DataView.Contains(StandardDataFormats.StorageItems)
+            bool canDrop = ViewModel.DropFoldersFromEmptyCommand.CanExecute(null)
+                && e.DataView.Contains(StandardDataFormats.StorageItems);
+            e.AcceptedOperation = canDrop
                 ? DataPackageOperation.Link
                 : DataPackageOperation.None;
+            DropOverlay.Visibility = canDrop ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void EmptyLibraryGrid_DragLeave(object sender, DragEventArgs e)
+        {
+            DropOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private void EmptyLibraryGrid_Unloaded(object sender, RoutedEventArgs e)
+        {
+            // 页面会缓存，卸载时清理瞬时拖放反馈。
+            DropOverlay.Visibility = Visibility.Collapsed;
         }
 
         private async void EmptyLibraryGrid_Drop(object sender, DragEventArgs e)
         {
-            if (!e.DataView.Contains(StandardDataFormats.StorageItems)) return;
+            DropOverlay.Visibility = Visibility.Collapsed;
+            if (!ViewModel.DropFoldersFromEmptyCommand.CanExecute(null)
+                || !e.DataView.Contains(StandardDataFormats.StorageItems)) return;
             try
             {
                 var items = await e.DataView.GetStorageItemsAsync();

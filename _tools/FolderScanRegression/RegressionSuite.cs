@@ -14,6 +14,12 @@ using Windows.Storage;
 
 internal static class RegressionSuite
 {
+    // 模拟拖放返回的接口包装对象，不假定它的 CLR 类型是 StorageFolder。
+    private sealed class DroppedFolderItem(string path) : IStorageItem
+    {
+        public string Path => path;
+    }
+
     private static void Check(bool condition, string message)
     {
         if (!condition) throw new Exception("FAIL: " + message);
@@ -199,6 +205,16 @@ internal static class RegressionSuite
                 Check(!(await database.GetMusicListAsync()).Any(m => m.Path == rejected), "song survived failed lyrics transaction");
             }
             finally { await database.Connection.ExecuteAsync("DROP TRIGGER RejectLyrics"); }
+            string droppedRoot = Path.Combine(root, "DroppedInterfaceFolder");
+            Directory.CreateDirectory(droppedRoot);
+            string droppedSong = Path.Combine(droppedRoot, "dropped.mp3");
+            File.WriteAllText(droppedSong, "");
+            await vm.DropFoldersAsync([new DroppedFolderItem(droppedRoot)]).WaitAsync(TimeSpan.FromSeconds(5));
+            Check((await database.GetFolders()).Any(f => f.Path == droppedRoot),
+                "interface-only dropped folder was silently skipped before scanning");
+            Check(appVm.SongsSource.Any(m => m.Path == droppedSong), "dropped folder did not scan/publish songs");
+            Check(!vm.IsScanning, "drop did not release operation gate");
+            Console.WriteLine("PASS: interface-only dropped folder is inserted, scanned and published.");
             Console.WriteLine("PASS: real SQLite + VM/commands: old DB counts, progressive commits, all guards, picker/dialog races, dedup, user state, startup diff and safe deletion.");
         }
         finally { await database.Connection.CloseAsync(); }

@@ -107,7 +107,11 @@ public partial class AddFolderViewModel : ObservableObject
     public Task DropFoldersAsync(IReadOnlyList<IStorageItem> folders) => RunOperationAsync(async () =>
     {
         foreach (var item in folders)
-            if (item is StorageFolder folder) await AddFolderMusicAsync(folder);
+        {
+            // 视图已按 IsOfType(Folder) 筛选；WinRT 接口包装对象不保证能通过 CLR 类型判断。
+            // 按路径解析，与选择器入口一致，避免发布后静默跳过文件夹。
+            await AddFolderMusicAsync(await StorageFolder.GetFolderFromPathAsync(item.Path));
+        }
     });
 
     public Task RescanFolderWithLoadingAsync(int folderId) => RunOperationAsync(async () =>

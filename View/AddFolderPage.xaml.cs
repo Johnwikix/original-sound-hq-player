@@ -46,12 +46,13 @@ namespace WinUIMusicPlayer.View
 
         private void Grid_DragLeave(object sender, DragEventArgs e)
         {
-            var position = e.GetPosition(this);
-            if (position.X < 0 || position.Y < 0 ||
-                position.X > ActualWidth || position.Y > ActualHeight)
-            {
-                DropOverlay.Visibility = Visibility.Collapsed;
-            }
+            // DragLeave 已表示离开目标；不再用页面坐标二次判断，避免提示残留。
+            DropOverlay.Visibility = Visibility.Collapsed;
+        }
+
+        private void DropTarget_Unloaded(object sender, RoutedEventArgs e)
+        {
+            DropOverlay.Visibility = Visibility.Collapsed;
         }
 
         private async void Grid_Drop(object sender, DragEventArgs e)

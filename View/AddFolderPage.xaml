@@ -9,7 +9,13 @@
     xmlns:model="using:WinUIMusicPlayer.Model"
     mc:Ignorable="d">
 
-    <Grid>
+    <Grid
+        AllowDrop="True"
+        Background="Transparent"
+        DragLeave="Grid_DragLeave"
+        DragOver="Grid_DragOver"
+        Drop="Grid_Drop"
+        Unloaded="DropTarget_Unloaded">
         <!--  Loading 界面  -->
         <Grid x:Name="LoadingGrid" Visibility="{x:Bind ViewModel.LoadingVisibility, Mode=OneWay}">
             <ProgressRing
@@ -28,10 +34,6 @@
         <!--  空状态：新用户首启引导  -->
         <Grid
             x:Name="EmptyGrid"
-            AllowDrop="True"
-            DragLeave="Grid_DragLeave"
-            DragOver="Grid_DragOver"
-            Drop="Grid_Drop"
             Visibility="{x:Bind ViewModel.EmptyVisibility, Mode=OneWay}">
             <StackPanel
                 MaxWidth="520"
@@ -100,10 +102,6 @@
         <!--  列表状态  -->
         <Grid
             x:Name="AddFolderGrid"
-            AllowDrop="True"
-            DragLeave="Grid_DragLeave"
-            DragOver="Grid_DragOver"
-            Drop="Grid_Drop"
             RowDefinitions="Auto,*"
             Visibility="{x:Bind ViewModel.ListVisibility, Mode=OneWay}">
             <Grid Margin="16,10,16,10" ColumnDefinitions="*,Auto">
