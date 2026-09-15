@@ -1787,7 +1787,7 @@
   <data name="ResponseScope.Text" xml:space="preserve"><value>Combined = EQ + convolution + shared preamp. Auto compensation uses their combined peak. Excludes loudness normalization, channel mixing and master volume. The gain axis scales with the response.</value></data>
   <data name="ResponseFailed" xml:space="preserve"><value>Cannot calculate this IR response. The file may be unavailable or exceed the length limit after resampling. No stale response is shown.</value></data>
   <data name="CurveEditorTitle" xml:space="preserve"><value>Draw correction curve</value></data>
-  <data name="CurveIntro.Text" xml:space="preserve"><value>Änderungen werden automatisch wirksam und gespeichert. Im Gerätemodus wird die Korrektur des aktuellen Ausgabegeräts aktualisiert. Adjust frequency gains to generate a minimum-phase FIR. No WAV file is needed. This is manual tuning, not automatic headphone or room measurement.</value></data>
+  <data name="CurveIntro.Text" xml:space="preserve"><value>Änderungen werden automatisch wirksam. Globale Änderungen werden automatisch gespeichert; im Gerätemodus erfolgt das Speichern über Zuordnen / Zuordnung aktualisieren. Beim Ausgabegerätewechsel wird die gespeicherte Zuordnung geladen. Frequenzverstärkungen erzeugen einen minimalphasigen FIR ohne WAV-Datei; Kopfhörer und Räume werden nicht gemessen.</value></data>
   <data name="CurveNodeHint.Text" xml:space="preserve"><value>The dotted line with nodes is the requested curve; Convolution shows the realized FIR including gain. Drag nodes or use the numeric fields below.</value></data>
   <data name="CurveNodePicker.Header" xml:space="preserve"><value>Control point</value></data>
   <data name="CurveFrequency.Header" xml:space="preserve"><value>Frequency (Hz)</value></data>
@@ -1853,7 +1853,7 @@
   </data>
   <data name="MetadataWriteQueued" xml:space="preserve"><value>Änderungen gespeichert. Tags werden geschrieben, sobald die Datei beschreibbar ist. Ausstehende Vorgänge werden beim nächsten Start fortgesetzt.</value></data>
   <data name="DspDeviceMode" xml:space="preserve"><value>Korrektur pro Ausgabegerät</value></data>
-  <data name="DspDeviceDescription" xml:space="preserve"><value>Ohne Zuordnung wird die Faltung umgangen. Kurve / WAV laden oder bearbeiten und zuordnen. Faltungsschalter und Vorverstärkung bleiben global.</value></data>
+  <data name="DspDeviceDescription" xml:space="preserve"><value>Im Gerätemodus ändern Bearbeitungen und Voreinstellungen nur die aktuelle Wiedergabe. Speichern Sie mit Zuordnen / Zuordnung aktualisieren oder stellen Sie die gespeicherte Korrektur wieder her. Geräte ohne Zuordnung umgehen die Faltung standardmäßig. Faltungsschalter und Vorverstärkung bleiben global.</value></data>
   <data name="DspDeviceTarget" xml:space="preserve"><value>Ausgabegerät zuordnen</value></data>
   <data name="DspDeviceCurrent" xml:space="preserve"><value>Aktuelle tatsächliche Ausgabe (automatisch)</value></data>
   <data name="DspDeviceActual" xml:space="preserve"><value>Tatsächliche Ausgabe: {0}</value></data>
@@ -1862,13 +1862,14 @@
   <data name="DspDeviceBound" xml:space="preserve"><value>Zugeordnet: {0} (nach Bearbeitung aktualisieren)</value></data>
   <data name="DspDeviceBind" xml:space="preserve"><value>Aktuelle Korrektur zuordnen</value></data>
   <data name="DspDeviceUpdate" xml:space="preserve"><value>Zuordnung aktualisieren</value></data>
-  <data name="DspDeviceLoad" xml:space="preserve"><value>Korrektur laden</value></data>
+  <data name="DspDeviceLoad" xml:space="preserve"><value>Gespeicherte Korrektur laden</value></data>
   <data name="DspDeviceRemove" xml:space="preserve"><value>Zuordnung entfernen</value></data>
   <data name="DspDeviceRefresh" xml:space="preserve"><value>Aktualisieren</value></data>
   <data name="DspDeviceError" xml:space="preserve"><value>Gerätekorrekturen konnten nicht gespeichert oder gelesen werden. Erneut versuchen.</value></data>
-  <data name="DspDeviceRetry" xml:space="preserve"><value>Speichern / Anwenden wiederholen</value></data>
+  <data name="DspDeviceRetry" xml:space="preserve"><value>Speichern / Synchronisieren wiederholen</value></data>
   <data name="DspDeviceApplyError" xml:space="preserve"><value>Die Synchronisierung der Korrektur wurde nicht bestätigt. Erneut versuchen.</value></data>
   <data name="DspDeviceSaveError" xml:space="preserve"><value>Korrektur konnte nicht gespeichert werden. Vorhandene Zuordnungen bleiben erhalten.</value></data>
   <data name="CurveLiveSaveError" xml:space="preserve"><value>Die Korrektur konnte nicht gespeichert werden. Prüfen Sie den Speicher und schließen Sie erneut, um es noch einmal zu versuchen.</value></data>
+  <data name="CurveApplyPreset.Content" xml:space="preserve"><value>Voreinstellung anwenden</value></data>
 </root>
 

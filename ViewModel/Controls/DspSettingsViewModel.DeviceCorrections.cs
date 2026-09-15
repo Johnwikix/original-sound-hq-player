@@ -18,7 +18,11 @@ public partial class DspSettingsViewModel
     private Action<DspSettings>? _loadCorrectionDraft;
     private Action? _refreshCorrectionDraft;
     public string CorrectionError { get => field; private set => SetProperty(ref field, value); } = "";
-    public bool CorrectionFailed { get => field; private set => SetProperty(ref field, value); }
+    public bool CorrectionFailed
+    {
+        get => field;
+        private set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(ShowRetryCorrection)); }
+    }
     private bool _correctionApplyError;
 
     private void OnCorrectionSyncChanged() => _queue.TryEnqueue(RefreshCorrectionSyncState);
@@ -40,6 +44,7 @@ public partial class DspSettingsViewModel
             _correctionApplyError = false;
         }
         OnPropertyChanged(nameof(CanRetryCorrection));
+        OnPropertyChanged(nameof(ShowRetryCorrection));
         RetryCorrectionCommand.NotifyCanExecuteChanged();
     }
 
@@ -81,7 +86,7 @@ public partial class DspSettingsViewModel
     public string CorrectionBindingStatus { get => field; private set => SetProperty(ref field, value); } = "";
     public string SaveCorrectionLabel { get => field; private set => SetProperty(ref field, value); } = "";
     public bool CanChangeCorrectionMode => !CorrectionBusy;
-    public bool CorrectionBusy { get => field; private set { if (SetProperty(ref field, value)) { OnPropertyChanged(nameof(CanChangeCorrectionMode)); RetryCorrectionCommand.NotifyCanExecuteChanged(); RefreshCorrectionState(); } } }
+    public bool CorrectionBusy { get => field; private set { if (SetProperty(ref field, value)) { OnPropertyChanged(nameof(CanChangeCorrectionMode)); OnPropertyChanged(nameof(CanRetryCorrection)); RetryCorrectionCommand.NotifyCanExecuteChanged(); RefreshCorrectionState(); } } }
 
     private string? CorrectionDeviceId => string.IsNullOrEmpty(SelectedCorrectionDevice?.EndpointId)
         ? _actualCorrectionDeviceId : SelectedCorrectionDevice.EndpointId;
@@ -153,7 +158,9 @@ public partial class DspSettingsViewModel
         string? id = CorrectionDeviceId;
         if (string.IsNullOrEmpty(id)) return;
         var bindings = AppSettings.DeviceCorrections.Bindings.ToList();
-        var snapshot = new DeviceCorrection { DeviceId = id, DeviceName = CorrectionDeviceName(id), Settings = (_correctionDraft?.Invoke() ?? AppSettings.Dsp).ToUnifiedGain() };
+        var state = _ipc.CurrentDspState?.State;
+        var current = _correctionDraft?.Invoke() ?? AppSettings.ResolveResponseSettings(state?.OutputDeviceId, state?.OutputGeneration ?? 0);
+        var snapshot = new DeviceCorrection { DeviceId = id, DeviceName = CorrectionDeviceName(id), Settings = current.ToUnifiedGain() };
         int index = bindings.FindIndex(b => string.Equals(b.DeviceId, id, StringComparison.OrdinalIgnoreCase));
         if (index >= 0) bindings[index] = snapshot;
         else bindings.Add(snapshot);
@@ -169,7 +176,11 @@ public partial class DspSettingsViewModel
             _loadCorrectionDraft(binding.Settings);
             return;
         }
-        AppSettings.Dsp = binding.Apply(AppSettings.Dsp.ToUnifiedGain());
+        var settings = binding.Apply(AppSettings.Dsp.ToUnifiedGain());
+        if (AppSettings.DeviceCorrections.Enabled && _ipc.CurrentDspState?.State is { OutputDeviceId.Length: > 0 } state)
+            AppSettings.SetLiveCorrection(state.OutputDeviceId, state.OutputGeneration, settings);
+        else
+            AppSettings.Dsp = settings;
         LoadValues();
         _dirty = true;
         await CommitAsync();
@@ -188,6 +199,7 @@ public partial class DspSettingsViewModel
 
     private DeviceCorrections? _pendingCorrection;
     public bool CanRetryCorrection => !CorrectionBusy && (_pendingCorrection != null || _ipc.CorrectionSyncFailed);
+    public bool ShowRetryCorrection => CorrectionFailed && (_pendingCorrection != null || _ipc.CorrectionSyncFailed);
 
     [RelayCommand(CanExecute = nameof(CanRetryCorrection))]
     private Task RetryCorrectionAsync() => SaveCorrectionsAsync(AppSettings.DeviceCorrections);
@@ -228,6 +240,7 @@ public partial class DspSettingsViewModel
             CorrectionBusy = false;
             OnPropertyChanged(nameof(DeviceCorrectionEnabled));
             OnPropertyChanged(nameof(CanRetryCorrection));
+            OnPropertyChanged(nameof(ShowRetryCorrection));
         }
     }
 

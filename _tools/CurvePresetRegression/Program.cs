@@ -3,6 +3,7 @@ using BassPlayerIpc.Shared;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.ViewModel;
+using WinUIMusicPlayer.ViewModel.Controls;
 
 static void Check(bool condition, string message)
 {
@@ -25,6 +26,18 @@ Check(AppSettings.Dsp.CurvePoints == vm.Draft.CurvePoints && AppSettings.Dsp.Con
     "Curve edits must immediately update the shared DSP settings without Apply.");
 Check(vm.SelectedPreset == original && vm.CanUpdatePreset, "Editing must retain the overwrite target.");
 Check(vm.Draft.CurvePresetName == "", "Modified draft must not claim the saved preset still matches.");
+Check(vm.CanApplyPreset, "A modified selected preset must be available for reapplication.");
+vm.AutoPreamp = false;
+vm.PreampDb = -4;
+await vm.ApplyPresetCommand.ExecuteAsync(null);
+Check(vm.Draft.CurvePoints == original.Points && AppSettings.Dsp.CurvePoints == original.Points
+    && database.SavedDsp!.CurvePoints == original.Points && store.Saved[0] == original,
+    "Apply preset must restore and publish stored points without overwriting the preset.");
+Check(vm.PreampDb == -4 && !vm.AutoPreamp && !vm.CanApplyPreset && !vm.CanUpdatePreset,
+    "Apply preset preserves preamp settings and disables redundant restore/update actions.");
+Microsoft.UI.Dispatching.DispatcherQueueTimer.FirePending();
+Check(AppSettings.Dsp.CurvePoints == original.Points, "Pending drag must not overwrite the restored preset.");
+vm.MovePoint(0, 20, 3);
 await vm.UpdatePresetCommand.ExecuteAsync(null);
 Check(store.Saved.Count == 1 && store.Saved[0].Name == "Reference"
     && store.Saved[0].Points == vm.Draft.CurvePoints && !vm.CanUpdatePreset, "Update must replace, not append.");
@@ -41,6 +54,7 @@ store.FailSave = false;
 store.SaveGate = new();
 var update = vm.UpdatePresetCommand.ExecuteAsync(null);
 Check(vm.IsPresetBusy && !vm.CanSavePreset && !vm.CanDeletePreset, "Serialize preset mutations.");
+Check(!vm.CanApplyPreset, "Restore must be unavailable while the preset is being overwritten.");
 store.SaveGate.SetResult();
 await update;
 store.SaveGate = null;
@@ -49,6 +63,7 @@ await vm.DeletePresetCommand.ExecuteAsync(null);
 Check(store.Saved.Count == 0 && vm.Presets.Count == 0 && vm.SelectedPreset == null,
     "Delete must persist and remove selection.");
 Check(vm.Draft.CurvePoints == draft && vm.Draft.CurvePresetName == "", "Delete must retain the working curve.");
+Check(!vm.CanApplyPreset, "A deleted preset cannot be reapplied.");
 vm.PresetName = "New";
 await vm.SavePresetCommand.ExecuteAsync(null);
 Check(vm.Presets.Count == 1 && vm.SelectedPreset?.Name == "New", "Save new preset still works.");
@@ -71,26 +86,58 @@ ipc.ChangeOutput("a");
 var following = new ConvolutionCurveViewModel(ipc, store, database);
 await following.OpenAsync();
 Check(following.Draft.CurvePoints == a.Points, "Open on actual binding.");
-following.MovePoint(0, 20, -4);
-var editedA = AppSettings.DeviceCorrections.Find("a")!.Settings;
-ipc.ChangeOutput("b");
-Check(following.Draft.CurvePoints == b.Points, "Switch to B's binding.");
-following.MovePoint(0, 20, 5);
-var editedB = AppSettings.DeviceCorrections.Find("b")!.Settings;
+DspSettings Effective() => AppSettings.ResolveResponseSettings(ipc.CurrentDspState?.State.OutputDeviceId,
+    ipc.CurrentDspState?.State.OutputGeneration ?? 0);
+var bindingsVm = new DspSettingsViewModel(ipc, database);
+bindingsVm.BeginCorrectionEditing(() => following.Draft, following.LoadCorrectionDraft, following.RefreshOutputCorrection);
+following.SelectedPreset = following.Presets.First(p => p.Name == b.Name);
+Check(Effective().CurvePoints == b.Points && AppSettings.DeviceCorrections.Find("a")!.Settings.CurvePoints == a.Points,
+    "Switching presets must play the new curve without overwriting A's saved binding.");
 await following.FlushAsync();
-Check(database.SavedCorrections!.Find("a")!.Settings == editedA
-    && database.SavedCorrections.Find("b")!.Settings == editedB, "Rapid switching must save both endpoints.");
+Check(ipc.LastPreview!.CurvePoints == b.Points, "Live correction must reach playback.");
+await bindingsVm.LoadCorrectionCommand.ExecuteAsync(null);
+Check(Effective().CurvePoints == a.Points && following.SelectedPreset?.Name == a.Name,
+    "Load correction must restore the saved A curve after manually selecting B's preset.");
+following.MovePoint(0, 20, -4);
+var editedA = Effective();
+Check(AppSettings.DeviceCorrections.Find("a")!.Settings.CurvePoints == a.Points,
+    "Dragging must not overwrite the saved correction.");
+await bindingsVm.BindCorrectionCommand.ExecuteAsync(null);
+Check(AppSettings.DeviceCorrections.Find("a")!.Settings.CurvePoints == editedA.CurvePoints
+    && database.SavedCorrections!.Find("a")!.Settings.CurvePoints == editedA.CurvePoints,
+    "Explicit Update binding must persist the live curve.");
+following.MovePoint(0, 20, -9);
+await bindingsVm.LoadCorrectionCommand.ExecuteAsync(null);
+Check(Effective().CurvePoints == editedA.CurvePoints, "Load must restore the explicitly updated binding.");
+ipc.ChangeOutput("b");
+Check(following.Draft.CurvePoints == b.Points, "Switch to B's saved binding.");
+following.MovePoint(0, 20, 5);
+await following.ApplyPresetCommand.ExecuteAsync(null);
+Check(Effective().CurvePoints == b.Points && AppSettings.DeviceCorrections.Find("a")!.Settings.CurvePoints == editedA.CurvePoints,
+    "Apply preset restores only the current curve, without changing another device's binding.");
+following.MovePoint(0, 20, 5);
+await following.FlushAsync();
+Check(await following.CloseAsync() && Effective().CurvePoints == following.Draft.CurvePoints,
+    "Closing must keep the live curve active without saving the binding.");
+following = new ConvolutionCurveViewModel(ipc, store, database);
+await following.OpenAsync();
+Check(following.Draft.CurvePoints == Effective().CurvePoints && following.Draft.CurvePoints != b.Points,
+    "Reopening the editor must show the still-active live curve.");
 ipc.ChangeOutput("a");
-Check(following.Draft.CurvePoints == editedA.CurvePoints, "A -> B -> A must retain A edits without Apply.");
+Check(following.Draft.CurvePoints == editedA.CurvePoints, "A -> B -> A must restore A's saved binding.");
+ipc.ChangeOutput("b");
+Check(following.Draft.CurvePoints == b.Points, "Returning to B discards its unbound live changes.");
+following.MovePoint(0, 20, 8);
+ipc.ChangeOutput("b", 100);
+Check(following.Draft.CurvePoints == b.Points, "A rebuilt output must not reuse an old-generation live correction.");
 Check(AppSettings.Dsp.CurvePoints == global.CurvePoints, "Device editing must retain the global curve.");
 ipc.ChangeOutput("unbound");
-Check(!AppSettings.ResolveResponseSettings("unbound").ConvolutionEnabled,
-    "Unbound output bypasses convolution until the user edits it.");
+Check(!Effective().ConvolutionEnabled, "Unbound output initially bypasses convolution.");
 following.MovePoint(0, 20, -2);
-Check(AppSettings.DeviceCorrections.Find("unbound")!.Settings.CurvePoints == following.Draft.CurvePoints,
-    "Editing an unbound output creates its own live binding.");
+Check(AppSettings.DeviceCorrections.Find("unbound") == null && Effective().CurvePoints == following.Draft.CurvePoints,
+    "Unbound-device editing is live only and must not create a saved binding.");
 ipc.ChangeOutput("");
-Check(!following.CanEdit, "No endpoint must not write a device binding.");
+Check(!following.CanEdit, "No endpoint must not accept a device correction.");
 AppSettings.DeviceCorrections = AppSettings.DeviceCorrections with { Enabled = false };
 Check(following.Draft.CurvePoints == global.CurvePoints, "Leaving device mode restores global settings.");
 following.MovePoint(0, 20, 7);
@@ -99,7 +146,22 @@ ipc.ChangeOutput("b");
 Check(following.Draft.CurvePoints == globalEdit.CurvePoints, "Global edits survive output switching.");
 await following.CloseAsync();
 Check(database.SavedDsp == globalEdit, "Close persists the final global edit.");
-Console.WriteLine("PASS: immediate device bindings, A/B/A switching, unbound/no output and global mode.");
+Console.WriteLine("PASS: load/update binding commands, live-only device edits, reopen, output generations and global mode.");
+
+// Retry is an error recovery action, not an ordinary Apply button.
+bindingsVm.EndCorrectionEditing();
+Check(!bindingsVm.ShowRetryCorrection && !bindingsVm.CanRetryCorrection, "Healthy bindings must hide Retry.");
+database.FailSave = true;
+await bindingsVm.BindCorrectionCommand.ExecuteAsync(null);
+Check(bindingsVm.ShowRetryCorrection && bindingsVm.CanRetryCorrection, "A failed binding save must expose Retry.");
+database.FailSave = false;
+await bindingsVm.RetryCorrectionCommand.ExecuteAsync(null);
+Check(!bindingsVm.ShowRetryCorrection && !bindingsVm.CanRetryCorrection, "A successful save retry must hide Retry.");
+ipc.SetSyncFailed(true);
+Check(bindingsVm.ShowRetryCorrection && bindingsVm.CanRetryCorrection, "An IPC failure must expose Retry.");
+await bindingsVm.RetryCorrectionCommand.ExecuteAsync(null);
+Check(!bindingsVm.ShowRetryCorrection && !bindingsVm.CanRetryCorrection, "Successful synchronization hides Retry.");
+Console.WriteLine("PASS: retry visibility and actual retry commands for save/synchronization failures.");
 
 // Exercise both production response VMs, with real FIR and EQ math.
 var eqResponse = new FrequencyResponseViewModel();
@@ -142,6 +204,22 @@ AppSettings.DeviceCorrections = AppSettings.DeviceCorrections with { Enabled = t
 ipc.ChangeOutput("a");
 await CheckResponses("device A");
 Check(AppSettings.ResolveResponseSettings("a").CurvePoints == editedA.CurvePoints, "Response uses A's binding.");
+before = eqResponse.Current!.Combined[0].ToArray();
+live.MovePoint(0, 20, -10);
+await CheckResponses("live device correction");
+Check(!before.SequenceEqual(eqResponse.Current!.Combined[0])
+    && AppSettings.DeviceCorrections.Find("a")!.Settings.CurvePoints == editedA.CurvePoints,
+    "Both response VMs must show live device edits while the saved binding remains intact.");
+await live.CloseAsync();
+await CheckResponses("closed live device editor");
+Check(Effective().CurvePoints != editedA.CurvePoints, "Closing must retain the audible live curve for EQ.");
+live = new ConvolutionCurveViewModel(ipc, store, database);
+await live.OpenAsync();
+live.LoadCorrectionDraft(AppSettings.DeviceCorrections.Find("a")!.Settings);
+await live.FlushAsync();
+await CheckResponses("reload saved device correction");
+Check(Effective().CurvePoints == editedA.CurvePoints && ipc.LastPreview!.CurvePoints == editedA.CurvePoints,
+    "Loading the saved binding updates both plots and playback.");
 ipc.ChangeOutput("missing");
 await CheckResponses("unbound bypass");
 Check(eqResponse.Current!.Fir.SelectMany(x => x).All(x => x == 0), "Unbound response must have no FIR contribution.");
@@ -178,3 +256,30 @@ Check(await offline.CloseAsync() && database.SavedDsp!.CurvePoints == offline.Dr
     "Offline playback must not prevent saving or closing; IPC owns synchronization retries.");
 ipc.FailPublish = false;
 Console.WriteLine("PASS: offline playback still saves live edits and permits closing.");
+
+// A delayed preset overwrite must not steal selection from the newly active device.
+await store.SaveAsync([a, b]);
+AppSettings.DeviceCorrections = new DeviceCorrections { Enabled = true, Bindings = [
+    new DeviceCorrection { DeviceId = "a", Settings = AppSettings.Dsp with { CurvePoints = a.Points, CurvePresetName = a.Name } },
+    new DeviceCorrection { DeviceId = "b", Settings = AppSettings.Dsp with { CurvePoints = b.Points, CurvePresetName = b.Name } }
+] };
+ipc.ChangeOutput("a");
+var switching = new ConvolutionCurveViewModel(ipc, store, database);
+await switching.OpenAsync();
+switching.MovePoint(0, 20, -8);
+store.SaveGate = new();
+var overwrite = switching.UpdatePresetCommand.ExecuteAsync(null);
+ipc.ChangeOutput("b");
+switching.MovePoint(0, 20, 9);
+store.SaveGate.SetResult();
+await overwrite;
+store.SaveGate = null;
+Check(switching.SelectedPreset?.Name == b.Name && switching.CanApplyPreset,
+    "A delayed overwrite on A must preserve B's preset selection and restore action.");
+var preservedA = AppSettings.DeviceCorrections.Find("a")!.Settings;
+await switching.ApplyPresetCommand.ExecuteAsync(null);
+Check(Effective().CurvePoints == b.Points
+    && AppSettings.DeviceCorrections.Find("a")!.Settings == preservedA,
+    "After the delayed save, Apply must restore B, never A's preset.");
+await switching.CloseAsync();
+Console.WriteLine("PASS: delayed preset saves cannot change the active device's restore target.");

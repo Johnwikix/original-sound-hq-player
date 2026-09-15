@@ -42,6 +42,7 @@ public sealed partial class ConvolutionCurveDialog : ContentDialog
         Response.Refresh();
     }
     private void RootChanged(XamlRoot sender, XamlRootChangedEventArgs args) => ResizeEditor();
+    private void CloseButton_Click(object sender, RoutedEventArgs args) => Hide();
     private void ResizeEditor()
     {
         EditorPanel.Width = Math.Clamp(XamlRoot.Size.Width - 100, 240, 800);

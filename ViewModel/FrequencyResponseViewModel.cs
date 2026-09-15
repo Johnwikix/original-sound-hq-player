@@ -56,7 +56,7 @@ public sealed class FrequencyResponseViewModel : ObservableObject
         var state = App.Services.GetRequiredService<IpcService>().CurrentDspState?.State;
         int rate = state is { SampleRate: >= 8000 } value ? value.SampleRate : 48000;
         _rate = rate;
-        var dsp = AppSettings.ResolveResponseSettings(state?.OutputDeviceId);
+        var dsp = AppSettings.ResolveResponseSettings(state?.OutputDeviceId, state?.OutputGeneration ?? 0);
         bool eqEnabled = AppSettings.IsEqualizerEnabled;
         var eq = AppSettings.EqualizerBands.Select(b => PeakCoefficients.Create(b.FrequencyHz, (float)b.GainDb, (float)b.Q, rate)).ToArray();
         string key = rate + ":" + (CorrectionCurve.UsesCurve(dsp) ? "curve:" + dsp.CurvePoints : "wave:" + dsp.ImpulsePath);

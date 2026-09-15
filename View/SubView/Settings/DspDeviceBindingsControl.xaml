@@ -25,7 +25,8 @@
             <Button Content="{x:Bind ViewModel.SaveCorrectionLabel, Mode=OneWay}" Command="{x:Bind ViewModel.BindCorrectionCommand}" />
             <Button Content="{x:Bind tool:ToolUtils.GetString('DspDeviceRemove')}" Command="{x:Bind ViewModel.RemoveCorrectionCommand}" />
         </StackPanel>
-        <Button Content="{x:Bind tool:ToolUtils.GetString('DspDeviceRetry')}" Command="{x:Bind ViewModel.RetryCorrectionCommand}" />
+        <Button Content="{x:Bind tool:ToolUtils.GetString('DspDeviceRetry')}" Command="{x:Bind ViewModel.RetryCorrectionCommand}"
+            Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.ShowRetryCorrection), Mode=OneWay}" />
         <InfoBar IsOpen="{x:Bind ViewModel.CorrectionFailed, Mode=OneWay}" IsClosable="False" Severity="Error"
             Message="{x:Bind ViewModel.CorrectionError, Mode=OneWay}" />
     </StackPanel>

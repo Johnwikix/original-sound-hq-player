@@ -1787,7 +1787,7 @@
   <data name="ResponseScope.Text" xml:space="preserve"><value>Combined = EQ + convolution + shared preamp. Auto compensation uses their combined peak. Excludes loudness normalization, channel mixing and master volume. The gain axis scales with the response.</value></data>
   <data name="ResponseFailed" xml:space="preserve"><value>Cannot calculate this IR response. The file may be unavailable or exceed the length limit after resampling. No stale response is shown.</value></data>
   <data name="CurveEditorTitle" xml:space="preserve"><value>Draw correction curve</value></data>
-  <data name="CurveIntro.Text" xml:space="preserve"><value>Изменения применяются и сохраняются автоматически. В режиме устройства обновляется коррекция текущего устройства вывода. Adjust frequency gains to generate a minimum-phase FIR. No WAV file is needed. This is manual tuning, not automatic headphone or room measurement.</value></data>
+  <data name="CurveIntro.Text" xml:space="preserve"><value>Изменения применяются автоматически. Глобальные изменения сохраняются автоматически; в режиме устройства используйте привязку или её обновление для сохранения коррекции. При смене выхода восстанавливается сохранённая привязка. Усиление частот задаёт минимально-фазовый FIR без WAV; измерение наушников или комнаты не выполняется.</value></data>
   <data name="CurveNodeHint.Text" xml:space="preserve"><value>The dotted line with nodes is the requested curve; Convolution shows the realized FIR including gain. Drag nodes or use the numeric fields below.</value></data>
   <data name="CurveNodePicker.Header" xml:space="preserve"><value>Control point</value></data>
   <data name="CurveFrequency.Header" xml:space="preserve"><value>Frequency (Hz)</value></data>
@@ -1853,7 +1853,7 @@
   </data>
   <data name="MetadataWriteQueued" xml:space="preserve"><value>Изменения сохранены. Теги будут записаны, когда файл станет доступен для записи. Незавершённые операции продолжатся при следующем запуске.</value></data>
   <data name="DspDeviceMode" xml:space="preserve"><value>Коррекция для каждого устройства</value></data>
-  <data name="DspDeviceDescription" xml:space="preserve"><value>Для устройств без привязки свёртка отключена. Загрузите или измените кривую / WAV и сохраните привязку. Переключатель свёртки и предусиление остаются общими.</value></data>
+  <data name="DspDeviceDescription" xml:space="preserve"><value>В режиме устройства редактирование и выбор пресета меняют только текущую обработку звука. Сохраните коррекцию через привязку или её обновление; загрузка сохранённой коррекции восстанавливает снимок устройства. Без привязки свёртка по умолчанию отключена. Включение свёртки и предусиление остаются глобальными.</value></data>
   <data name="DspDeviceTarget" xml:space="preserve"><value>Привязать к устройству вывода</value></data>
   <data name="DspDeviceCurrent" xml:space="preserve"><value>Текущий фактический выход (автоматически)</value></data>
   <data name="DspDeviceActual" xml:space="preserve"><value>Фактический выход: {0}</value></data>
@@ -1862,13 +1862,14 @@
   <data name="DspDeviceBound" xml:space="preserve"><value>Привязано: {0} (обновите после редактирования)</value></data>
   <data name="DspDeviceBind" xml:space="preserve"><value>Привязать текущую коррекцию</value></data>
   <data name="DspDeviceUpdate" xml:space="preserve"><value>Обновить привязку</value></data>
-  <data name="DspDeviceLoad" xml:space="preserve"><value>Загрузить коррекцию</value></data>
+  <data name="DspDeviceLoad" xml:space="preserve"><value>Загрузить сохранённую коррекцию</value></data>
   <data name="DspDeviceRemove" xml:space="preserve"><value>Удалить привязку</value></data>
   <data name="DspDeviceRefresh" xml:space="preserve"><value>Обновить</value></data>
   <data name="DspDeviceError" xml:space="preserve"><value>Не удалось сохранить или прочитать коррекции. Повторите попытку.</value></data>
-  <data name="DspDeviceRetry" xml:space="preserve"><value>Повторить сохранение / применение</value></data>
+  <data name="DspDeviceRetry" xml:space="preserve"><value>Повторить сохранение / синхронизацию</value></data>
   <data name="DspDeviceApplyError" xml:space="preserve"><value>Синхронизация коррекции не подтверждена. Повторите попытку.</value></data>
   <data name="DspDeviceSaveError" xml:space="preserve"><value>Не удалось сохранить коррекцию. Существующие привязки не изменены.</value></data>
   <data name="CurveLiveSaveError" xml:space="preserve"><value>Не удалось сохранить коррекцию. Проверьте хранилище, затем закройте окно ещё раз для повторной попытки.</value></data>
+  <data name="CurveApplyPreset.Content" xml:space="preserve"><value>Применить пресет</value></data>
 </root>
 

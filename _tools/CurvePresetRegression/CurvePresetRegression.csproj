@@ -13,5 +13,7 @@
     <Compile Include="../../ViewModel/FrequencyResponseViewModel.cs" />
     <Compile Include="../../Model/AppSettings.AudioResponse.cs" />
     <Compile Include="../../Model/EqualizerModel.cs" />
+    <Compile Include="../../Model/BassOutputDevice.cs" />
+    <Compile Include="../../ViewModel/Controls/DspSettingsViewModel.DeviceCorrections.cs" />
   </ItemGroup>
 </Project>

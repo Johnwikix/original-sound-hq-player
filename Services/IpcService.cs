@@ -418,6 +418,7 @@ namespace WinUIMusicPlayer.Services
                 var result = await SendCommandAsync(CommandId.UpdateDeviceCorrections, ReadOnlyMemory<byte>.Empty);
                 if (result != MessageTypeId.Success) throw new InvalidOperationException("Audio correction acknowledgement failed.");
                 _appliedCorrections = snapshot;
+                PublishLiveCorrection();
                 SetCorrectionSyncFailed(false);
             }
             catch
@@ -436,9 +437,18 @@ namespace WinUIMusicPlayer.Services
             Span<byte> buffer = stackalloc byte[DspProtocol.SettingsSize];
             DspProtocol.WriteSettings(buffer, AppSettings.Dsp);
             Publish(CommandId.UpdateDsp, buffer);
+            PublishLiveCorrection();
         }
 
-        /// <summary>试听草稿只发送到播放端，不修改或持久化用户配置。</summary>
+        private void PublishLiveCorrection()
+        {
+            var state = CurrentDspState?.State;
+            if (state is { } current && AppSettings.TryGetLiveCorrection(current.OutputDeviceId,
+                current.OutputGeneration, out var settings))
+                PreviewDsp(settings, current.OutputDeviceId, current.OutputGeneration);
+        }
+
+        /// <summary>输出代数限定的实时校正，仅发送到播放端，不覆盖设备保存的绑定。</summary>
         private long _previewSequence = DateTime.UtcNow.Ticks;
         public void PreviewDsp(DspSettings settings, string deviceId, long generation)
         {
