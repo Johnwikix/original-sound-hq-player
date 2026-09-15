@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1855,4 +1855,18 @@
     <value>Processing data, please wait...</value>
   </data>
   <data name="MetadataWriteQueued" xml:space="preserve"><value>Edits saved. Tags will be written when the file is writable. Unfinished writes resume on next launch.</value></data>
+  <data name="DspDeviceMode" xml:space="preserve"><value>Apply correction per output device</value></data>
+  <data name="DspDeviceDescription" xml:space="preserve"><value>Unbound devices bypass convolution when enabled. Load or edit a curve / WAV, then save the binding. Convolution enable and preamp remain global.</value></data>
+  <data name="DspDeviceTarget" xml:space="preserve"><value>Bind to output device</value></data>
+  <data name="DspDeviceCurrent" xml:space="preserve"><value>Current actual output (automatic)</value></data>
+  <data name="DspDeviceActual" xml:space="preserve"><value>Actual output: {0}</value></data>
+  <data name="DspDeviceNoOutput" xml:space="preserve"><value>No active output. Start playback or select a specific device.</value></data>
+  <data name="DspDeviceUnbound" xml:space="preserve"><value>Unbound; convolution is bypassed in device mode.</value></data>
+  <data name="DspDeviceBound" xml:space="preserve"><value>Bound: {0} (update the binding after editing)</value></data>
+  <data name="DspDeviceBind" xml:space="preserve"><value>Bind current correction</value></data>
+  <data name="DspDeviceUpdate" xml:space="preserve"><value>Update binding</value></data>
+  <data name="DspDeviceLoad" xml:space="preserve"><value>Load correction</value></data>
+  <data name="DspDeviceRemove" xml:space="preserve"><value>Remove binding</value></data>
+  <data name="DspDeviceRefresh" xml:space="preserve"><value>Refresh</value></data>
+  <data name="DspDeviceError" xml:space="preserve"><value>Could not save or read device corrections. Please retry.</value></data>
 </root>

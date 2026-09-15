@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1854,4 +1854,18 @@
     <value>正在处理数据，请稍候...</value>
   </data>
   <data name="MetadataWriteQueued" xml:space="preserve"><value>已保存编辑，标签将在文件可写时自动写入；未完成任务会在下次启动继续。</value></data>
+  <data name="DspDeviceMode" xml:space="preserve"><value>按输出设备应用校正</value></data>
+  <data name="DspDeviceDescription" xml:space="preserve"><value>开启后，未绑定设备不应用卷积。先载入或编辑曲线 / WAV，再保存绑定；卷积开关和前置增益仍全局生效。</value></data>
+  <data name="DspDeviceTarget" xml:space="preserve"><value>绑定到输出设备</value></data>
+  <data name="DspDeviceCurrent" xml:space="preserve"><value>当前实际输出（自动识别）</value></data>
+  <data name="DspDeviceActual" xml:space="preserve"><value>实际输出：{0}</value></data>
+  <data name="DspDeviceNoOutput" xml:space="preserve"><value>尚无实际输出，请开始播放或选择具体设备。</value></data>
+  <data name="DspDeviceUnbound" xml:space="preserve"><value>未绑定；设备模式下旁路卷积。</value></data>
+  <data name="DspDeviceBound" xml:space="preserve"><value>已绑定：{0}（编辑后需更新绑定）</value></data>
+  <data name="DspDeviceBind" xml:space="preserve"><value>绑定当前校正</value></data>
+  <data name="DspDeviceUpdate" xml:space="preserve"><value>更新绑定</value></data>
+  <data name="DspDeviceLoad" xml:space="preserve"><value>载入校正</value></data>
+  <data name="DspDeviceRemove" xml:space="preserve"><value>解除绑定</value></data>
+  <data name="DspDeviceRefresh" xml:space="preserve"><value>刷新</value></data>
+  <data name="DspDeviceError" xml:space="preserve"><value>无法保存或读取设备校正，请重试。</value></data>
 </root>

@@ -51,6 +51,7 @@ internal static unsafe partial class Program
             RunPcmFileTests(Path.GetFullPath(args[1]));
             return _failures == 0 ? 0 : 1;
         }
+        if (args.Length == 1 && args[0] == "--test-device-corrections") { RunDeviceCorrectionTests(); return _failures == 0 ? 0 : 1; }
         if (args.Length == 1 && args[0] == "--test-curves") { RunCurveTests(); return _failures == 0 ? 0 : 1; }
         if (args.Length == 1 && args[0] == "--test-convolution") { RunConvolutionTests(); return _failures == 0 ? 0 : 1; }
         if (args.Length == 2 && args[0] == "--dsp-writer") return DspWriter(args[1]);
@@ -76,6 +77,7 @@ internal static unsafe partial class Program
         RunEqualizerQTests();
         RunDspTests();
         RunConvolutionTests();
+        RunDeviceCorrectionTests();
         RunCurveTests();
         RunDspNotificationTests();
         RunReviewFixTests(root);
@@ -127,6 +129,7 @@ internal static unsafe partial class Program
         engine.IsDopEnabled = true;
         engine.DsdPcmFreq = 88200;
         engine.Latency = 300;
+        Set(engine, "_deviceCorrections", new BassPlayerIpc.Shared.DeviceCorrections());
         engine.BassOutputDeviceId = -1;
         SetPublicArray(engine, "EqGains", new float[10]);
         SetPublicArray(engine, "EqQ", Enumerable.Repeat(BassPlayerIpc.Shared.EqParameters.DefaultQ, 10).ToArray());

@@ -1,4 +1,4 @@
-﻿using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using WinUIMusicPlayer.Controls;
@@ -10,6 +10,7 @@ namespace WinUIMusicPlayer.Model
     {
         /// <summary>保存 PCM 音效偏好；DSD 旁路时仍保留。</summary>
         public static BassPlayerIpc.Shared.DspSettings Dsp { get; set; } = new();
+        public static BassPlayerIpc.Shared.DeviceCorrections DeviceCorrections { get; set; } = new();
         public static event EventHandler? OutputSettingsChanged;
         public static event EventHandler? OutputSettingsUpdated;
         public static event EventHandler? EqUpdated;

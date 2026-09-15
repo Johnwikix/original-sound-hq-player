@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1855,5 +1855,19 @@
     <value>このプロジェクトを気に入ったら、GitHub でスターをお願いします！</value>
   </data>
   <data name="MetadataWriteQueued" xml:space="preserve"><value>編集内容を保存しました。ファイルが書き込み可能になったらタグを自動保存します。未完了の処理は次回起動時に再開します。</value></data>
+  <data name="DspDeviceMode" xml:space="preserve"><value>出力デバイスごとに補正を適用</value></data>
+  <data name="DspDeviceDescription" xml:space="preserve"><value>有効時、未登録デバイスでは畳み込みを適用しません。曲線 / WAV を読み込み・編集してから登録してください。畳み込みスイッチとプリアンプは共通です。</value></data>
+  <data name="DspDeviceTarget" xml:space="preserve"><value>出力デバイスに登録</value></data>
+  <data name="DspDeviceCurrent" xml:space="preserve"><value>現在の実際の出力（自動検出）</value></data>
+  <data name="DspDeviceActual" xml:space="preserve"><value>実際の出力：{0}</value></data>
+  <data name="DspDeviceNoOutput" xml:space="preserve"><value>実際の出力がありません。再生するかデバイスを選択してください。</value></data>
+  <data name="DspDeviceUnbound" xml:space="preserve"><value>未登録：デバイスモードでは畳み込みをバイパスします。</value></data>
+  <data name="DspDeviceBound" xml:space="preserve"><value>登録済み：{0}（編集後に登録を更新）</value></data>
+  <data name="DspDeviceBind" xml:space="preserve"><value>現在の補正を登録</value></data>
+  <data name="DspDeviceUpdate" xml:space="preserve"><value>登録を更新</value></data>
+  <data name="DspDeviceLoad" xml:space="preserve"><value>補正を読み込む</value></data>
+  <data name="DspDeviceRemove" xml:space="preserve"><value>登録を解除</value></data>
+  <data name="DspDeviceRefresh" xml:space="preserve"><value>更新</value></data>
+  <data name="DspDeviceError" xml:space="preserve"><value>デバイス補正を保存または読み込めませんでした。再試行してください。</value></data>
 </root>
 

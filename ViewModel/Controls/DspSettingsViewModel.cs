@@ -225,7 +225,7 @@ public partial class DspSettingsViewModel : ObservableObject
         _ipc.DspStateChanged += OnDspStateChanged;
         LoadValues();
         ApplyLatestState();
-        return Task.CompletedTask;
+        return RefreshCorrectionDevicesAsync();
     }
 
     private void OnDspStateChanged() => _queue.TryEnqueue(ApplyLatestState);
@@ -288,6 +288,11 @@ public partial class DspSettingsViewModel : ObservableObject
         // 先更新可用性再重载，否则 LoadValues 读到旧的 _available，会把总开关误显示为关
         _available = available;
         _lastState = state;
+        bool outputChanged = _actualCorrectionDeviceId != state?.OutputDeviceId;
+        _actualCorrectionDeviceId = state?.OutputDeviceId;
+        RefreshCorrectionState();
+        if (outputChanged && _loaded && !string.IsNullOrEmpty(_actualCorrectionDeviceId) && !CorrectionBusy)
+            _ = RefreshCorrectionDevicesAsync();
         if (reload)
             LoadValues();
         MasterAvailable = available;

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1855,5 +1855,19 @@
     <value>Если вам нравится этот проект, поставьте нам звезду на GitHub!</value>
   </data>
   <data name="MetadataWriteQueued" xml:space="preserve"><value>Изменения сохранены. Теги будут записаны, когда файл станет доступен для записи. Незавершённые операции продолжатся при следующем запуске.</value></data>
+  <data name="DspDeviceMode" xml:space="preserve"><value>Коррекция для каждого устройства</value></data>
+  <data name="DspDeviceDescription" xml:space="preserve"><value>Для устройств без привязки свёртка отключена. Загрузите или измените кривую / WAV и сохраните привязку. Переключатель свёртки и предусиление остаются общими.</value></data>
+  <data name="DspDeviceTarget" xml:space="preserve"><value>Привязать к устройству вывода</value></data>
+  <data name="DspDeviceCurrent" xml:space="preserve"><value>Текущий фактический выход (автоматически)</value></data>
+  <data name="DspDeviceActual" xml:space="preserve"><value>Фактический выход: {0}</value></data>
+  <data name="DspDeviceNoOutput" xml:space="preserve"><value>Нет активного выхода. Начните воспроизведение или выберите устройство.</value></data>
+  <data name="DspDeviceUnbound" xml:space="preserve"><value>Нет привязки; свёртка отключена в режиме устройств.</value></data>
+  <data name="DspDeviceBound" xml:space="preserve"><value>Привязано: {0} (обновите после редактирования)</value></data>
+  <data name="DspDeviceBind" xml:space="preserve"><value>Привязать текущую коррекцию</value></data>
+  <data name="DspDeviceUpdate" xml:space="preserve"><value>Обновить привязку</value></data>
+  <data name="DspDeviceLoad" xml:space="preserve"><value>Загрузить коррекцию</value></data>
+  <data name="DspDeviceRemove" xml:space="preserve"><value>Удалить привязку</value></data>
+  <data name="DspDeviceRefresh" xml:space="preserve"><value>Обновить</value></data>
+  <data name="DspDeviceError" xml:space="preserve"><value>Не удалось сохранить или прочитать коррекции. Повторите попытку.</value></data>
 </root>
 

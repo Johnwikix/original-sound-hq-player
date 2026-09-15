@@ -100,6 +100,8 @@ public sealed class PlaybackEngine : IDisposable
     public bool IsFadingEnabled;
     public float Volume = 0.5f;
     private DspSettings? _dspSettings = new();
+    private DeviceCorrections _deviceCorrections = new();
+    private string? _previewDeviceId;
 
     public readonly float[] EqGains = new float[10];
     public readonly float[] EqQ = Enumerable.Repeat(EqParameters.DefaultQ, 10).ToArray();
@@ -213,6 +215,7 @@ public sealed class PlaybackEngine : IDisposable
         {
             if (asio.SourceKind != RenderKind.Pcm) return false;
             if (asio.SourceChannels != next.Channels || asio.DeviceIndex != BassASIODeviceId) return false;
+            next.ConfigureDsp(ResolveDsp(asio.DeviceId));
             return asio.AttachSource(next);
         }
         if (OutputMode is "WasapiExclusivePush" or "WasapiExclusiveEvent"
@@ -226,6 +229,7 @@ public sealed class PlaybackEngine : IDisposable
             if (wasapi.FollowsDefaultDevice && _lastDefaultDeviceId != null
                 && !string.Equals(_lastDefaultDeviceId, wasapi.DeviceId ?? "", StringComparison.OrdinalIgnoreCase))
                 return false;
+            next.ConfigureDsp(ResolveDsp(wasapi.DeviceId));
             return wasapi.AttachSource(next);
         }
         return false;
@@ -316,7 +320,7 @@ public sealed class PlaybackEngine : IDisposable
         var session = Session.Open(this, url, kind, DsdPcmFreq, DsdGain, Latency, forcedRate, forcedChannels, maxChannels, surround51);
         if (session != null)
         {
-            session.ConfigureDsp(_dspSettings ?? new DspSettings());
+            session.ConfigureDsp(ResolveDsp(_output?.DeviceId));
             if (session.Gain != null)
             {
                 session.Gain.SetImmediately(IsFadingEnabled ? 0 : GainVolumeTarget);
@@ -379,6 +383,7 @@ public sealed class PlaybackEngine : IDisposable
         }
         if (output == null) { if (IsPlaying) { IsPlaying = false; _ipc.PlayStateUpdate(false); } return; }
         _output = output;
+        QueueDspState();
         ApplyEqToSession();
         ApplyVolumeToOutput();
         _outputStartedTick = Environment.TickCount64;
@@ -412,14 +417,14 @@ public sealed class PlaybackEngine : IDisposable
             case "WasapiExclusiveEvent":
             {
                 var output = new WasapiOutput(true, OutputMode == "WasapiExclusivePush");
-                if (output.Start(BassOutputDeviceId, Latency, session, 1, WasapiEndpointId)) return output;
+                if (output.Start(BassOutputDeviceId, Latency, session, 1, WasapiEndpointId, id => PrepareOutputDsp(session, id))) return output;
                 output.Dispose();
                 return null;
             }
             case "ASIO":
             {
                 var output = new AsioOutput();
-                if (output.Start(BassASIODeviceId, session)) return output;
+                if (output.Start(BassASIODeviceId, session, id => PrepareOutputDsp(session, id))) return output;
                 output.Dispose();
                 return null;
             }
@@ -434,7 +439,8 @@ public sealed class PlaybackEngine : IDisposable
         try
         {
             var output = new WasapiOutput(false, false);
-            if (output.Start(deviceIndex, Latency, session, OutputMode == "WasapiShared" ? Volume : 1, OutputMode is "DirectSound" or "ASIO" ? null : WasapiEndpointId)) return output;
+            if (output.Start(deviceIndex, Latency, session, OutputMode == "WasapiShared" ? Volume : 1, OutputMode is "DirectSound" or "ASIO" ? null : WasapiEndpointId,
+                id => PrepareOutputDsp(session, id))) return output;
             if (!output.NeedsMixFormatSession)
             {
                 output.Dispose();
@@ -452,7 +458,8 @@ public sealed class PlaybackEngine : IDisposable
             _session.RequestSeek(keepMs);
             var retry = new WasapiOutput(false, false);
             if (retry.Start(deviceIndex, Latency, _session, OutputMode == "WasapiShared" ? Volume : 1,
-                OutputMode is "DirectSound" or "ASIO" ? null : WasapiEndpointId)) return retry;
+                OutputMode is "DirectSound" or "ASIO" ? null : WasapiEndpointId,
+                id => PrepareOutputDsp(_session, id))) return retry;
             retry.Dispose();
             return null;
         }
@@ -474,6 +481,7 @@ public sealed class PlaybackEngine : IDisposable
         var output = CreateSharedOutput(session);
         if (output == null) return false;
         _output = output;
+        QueueDspState();
         ApplyEqToSession();
         ApplyVolumeToOutput();
         return true;
@@ -859,16 +867,42 @@ public sealed class PlaybackEngine : IDisposable
     }
 
     /// <summary>更新 PCM 音效；不重建输出，不接触 DoP/Native DSD 位流。</summary>
-    public void UpdateDsp(DspSettings settings)
+    public void UpdateDsp(DspSettings settings, bool preview = false)
     {
         lock (_streamLock)
         {
             var normalized = settings.Sanitize();
-            if (_dspSettings == normalized) return;
+            _previewDeviceId = preview ? _previewDeviceId ?? _output?.DeviceId : null;
             _dspSettings = normalized;
-            _session?.ConfigureDsp(_dspSettings);
+            _session?.ConfigureDsp(ResolveDsp(_output?.DeviceId));
             QueueDspState();
         }
+    }
+
+    /// <summary>原子替换校正集合；不改变其他音效和输出设备。</summary>
+    public void UpdateDeviceCorrections(DeviceCorrections settings)
+    {
+        var validated = settings.Validate();
+        lock (_streamLock)
+        {
+            _deviceCorrections = validated;
+            _previewDeviceId = null;
+            _session?.ConfigureDsp(ResolveDsp(_output?.DeviceId));
+            QueueDspState();
+        }
+    }
+
+    private void PrepareOutputDsp(Session session, string? deviceId)
+    {
+        if (_deviceCorrections.Enabled) session.Effects?.ResetForOutput();
+        session.ConfigureDsp(ResolveDsp(deviceId));
+    }
+
+    private DspSettings ResolveDsp(string? deviceId)
+    {
+        var global = _dspSettings ?? new DspSettings();
+        return _previewDeviceId != null && string.Equals(_previewDeviceId, deviceId, StringComparison.OrdinalIgnoreCase)
+            ? global : _deviceCorrections.Resolve(global, deviceId);
     }
 
     /// <summary>读取实际会话状态，供已打开的音效界面持续同步。</summary>
@@ -879,8 +913,9 @@ public sealed class PlaybackEngine : IDisposable
             byte kind = (byte)(_session?.Kind ?? RenderKind.Pcm);
             bool enabled = _dspSettings?.IsEnabled ?? true;
             bool eq = enabled && kind == 0 && IsEqualizerEnabled && (_session == null || _session.Channels <= 2);
-            return _session?.Effects?.GetState(kind, eq)
+            var state = _session?.Effects?.GetState(kind, eq)
                 ?? new DspState(kind, eq, _session?.Channels ?? 0, LoudnessStatus.Off, 0, double.NaN, enabled);
+            return state with { OutputDeviceId = _output is { IsFailed: false } output ? output.DeviceId ?? "" : "" };
         }
     }
 
@@ -892,8 +927,8 @@ public sealed class PlaybackEngine : IDisposable
         return list.Devices.Select(d => (d.Index, d.FriendlyName, d.Id)).ToArray();
     }
 
-    public (int id, string name)[] GetAsioDevices()
-        => Win32.EnumerateAsioDrivers().Select((d, i) => (i, d.Name)).ToArray();
+    public (int id, string name, string endpoint)[] GetAsioDevices()
+        => Win32.EnumerateAsioDrivers().Select((d, i) => (i, d.Name, "asio:" + d.Clsid.ToString("D"))).ToArray();
 
     // ─────────────── 结束看门狗 ───────────────
 
@@ -992,8 +1027,8 @@ public sealed class PlaybackEngine : IDisposable
     /// <summary>
     /// 端点通知消费（共享模式的"全自动"设备侧，ECHO DeviceWatcher 对等）：
     /// 默认设备切换 → 跟随换输出；当前端点被禁用/拔出/系统改输出格式 → 换输出。
-    /// 仅共享 PCM 且事件与当前输出相关时行动；位流/独占/ASIO 的会话与设备绑定，
-    /// 仍走失效→重建路径。播放中静默换输出（保解码环与进度，UI 无感）；
+    /// PCM 在事件与当前输出相关时行动；共享模式保留解码会话，独占模式保进度重建。
+    /// 位流仍走失效→重建路径。播放中静默换输出；
     /// 暂停中只丢弃旧输出，PlayButton 恢复时按新设备起播。
     /// </summary>
     private void HandleEndpointEvents()
@@ -1013,11 +1048,12 @@ public sealed class PlaybackEngine : IDisposable
                 if (kind != EndpointEventKind.StateChanged) relevant = true; // Removed / FormatChanged
             }
             if (!relevant) return;
-            if (_session.Kind != RenderKind.Pcm || !IsSharedMode(OutputMode)) return;
+            if (_session.Kind != RenderKind.Pcm) return;
             if (IsPlaying)
             {
                 Console.WriteLine("[engine] endpoint changed, silent output swap");
-                if (SwapSharedOutput())
+                long positionMs = _session.CurrentMs;
+                if (IsSharedMode(OutputMode) ? SwapSharedOutput() : TryRebuildOutput(positionMs))
                 {
                     _outputStartedTick = Environment.TickCount64;
                     _fastFailStreak = 0;
@@ -1026,7 +1062,7 @@ public sealed class PlaybackEngine : IDisposable
                 _recovery = new RecoveryPlan
                 {
                     Gen = Volatile.Read(ref _playGen),
-                    PositionMs = _session.CurrentMs,
+                    PositionMs = positionMs,
                     Attempts = 0,
                     NextTickMs = Environment.TickCount64 + 250,
                     Silent = true,
@@ -1036,6 +1072,7 @@ public sealed class PlaybackEngine : IDisposable
             {
                 _output?.Dispose();
                 _output = null; // 暂停中：PlayButton 恢复时按当前默认设备重新起播
+                QueueDspState();
             }
         }
     }

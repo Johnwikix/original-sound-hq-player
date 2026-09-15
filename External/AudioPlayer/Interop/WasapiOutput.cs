@@ -82,7 +82,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
     /// <summary>创建本输出时绑定的设备索引（-1 = 系统默认；设备变更须重建）。</summary>
     public int DeviceIndex { get; private set; } = -1;
 
-    public bool Start(int deviceIndex, int latencyMs, IRenderSource source, float sessionVolume = 1, string? endpointId = null)
+    public bool Start(int deviceIndex, int latencyMs, IRenderSource source, float sessionVolume = 1, string? endpointId = null, Action<string?>? prepareSource = null)
     {
         if (source.Kind == RenderKind.Eac3 && !_exclusive) return false;
         _source = source;
@@ -94,6 +94,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
             if (_devicePtr == IntPtr.Zero) { Console.WriteLine("[wasapi] ResolveDevice failed"); return false; }
             FollowsDefaultDevice = isDefault;
             DeviceId = WasapiDeviceList.GetDeviceIdRaw(_devicePtr);
+            prepareSource?.Invoke(DeviceId);
             _clientPtr = WasapiDeviceList.ActivateAudioClient(_devicePtr);
             if (_clientPtr == IntPtr.Zero) return false;
             _client = new RawAudioClient(_clientPtr);

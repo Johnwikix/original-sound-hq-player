@@ -266,6 +266,13 @@ public class PlayerIpcService : IDisposable
                 case CommandId.UpdateDsp:
                     _engine!.UpdateDsp(DspProtocol.ReadSettings(payload));
                     break;
+                case CommandId.UpdateDeviceCorrections:
+                    using (var corrections = new DeviceCorrectionMailbox())
+                        _engine!.UpdateDeviceCorrections(corrections.Read());
+                    break;
+                case CommandId.PreviewDsp:
+                    _engine!.UpdateDsp(DspProtocol.ReadSettings(payload), preview: true);
+                    break;
                 case CommandId.GetDspState:
                 {
                     Span<byte> state = stackalloc byte[DspProtocol.StateSize];
@@ -280,7 +287,7 @@ public class PlayerIpcService : IDisposable
                     break;
                 case CommandId.GetAsioDevices:
                     HandleGetDevices(MessageTypeId.AsioDevices, ref _cachedAsioDevices,
-                        () => _engine!.GetAsioDevices().Select(d => (d.id, d.name, string.Empty)).ToArray(), payload, sequenceId);
+                        () => _engine!.GetAsioDevices(), payload, sequenceId);
                     break;
                 default:
                     WriteErrorResponse(ErrorCode.InvalidCommand, sequenceId);
@@ -322,7 +329,7 @@ public class PlayerIpcService : IDisposable
         {
             var span = buf[offset..];
             offset += BinarySerializer.WriteDeviceEntry(span[..Math.Min(134, span.Length)], devices[i].id, devices[i].name);
-            if (typeId == MessageTypeId.WasapiDevices)
+            if (typeId is MessageTypeId.WasapiDevices or MessageTypeId.AsioDevices)
             {
                 // 设备身份不能截断；超长 ID 应明确失败，而非选择到错误端点。
                 if (System.Text.Encoding.UTF8.GetByteCount(devices[i].endpoint) > buf.Length - offset - BinarySerializer.DeviceEntryBaseSize)

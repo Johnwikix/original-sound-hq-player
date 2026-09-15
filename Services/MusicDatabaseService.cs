@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.WinUI;
+using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
@@ -995,6 +995,8 @@ namespace WinUIMusicPlayer.Services
             if (settings is not null)
             {
                 AppSettings.Dsp = (settings.Dsp ?? new()).Sanitize();
+                try { AppSettings.DeviceCorrections = (settings.DeviceCorrections ?? new()).Validate(); }
+                catch (ArgumentException) { AppSettings.DeviceCorrections = new(); }
                 AppSettings.OutputMode = settings.OutputMode;
                 AppSettings.DeviceName = settings.DeviceFriendlyName;
                 AppSettings.BassOutputDeviceId = settings.BassOutputDeviceId;
@@ -1178,6 +1180,7 @@ namespace WinUIMusicPlayer.Services
         private SaveSettings SaveCurrentSettings(SaveSettings newSettings)
         {
             newSettings.Dsp = AppSettings.Dsp;
+            newSettings.DeviceCorrections = AppSettings.DeviceCorrections;
             newSettings.OutputMode = AppSettings.OutputMode;
             newSettings.DeviceFriendlyName = AppSettings.DeviceName;
             newSettings.BassOutputDeviceId = AppSettings.BassOutputDeviceId;

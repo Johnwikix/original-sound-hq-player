@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1855,5 +1855,19 @@
     <value>Wenn dir dieses Projekt gefällt, gib uns einen Stern auf GitHub!</value>
   </data>
   <data name="MetadataWriteQueued" xml:space="preserve"><value>Änderungen gespeichert. Tags werden geschrieben, sobald die Datei beschreibbar ist. Ausstehende Vorgänge werden beim nächsten Start fortgesetzt.</value></data>
+  <data name="DspDeviceMode" xml:space="preserve"><value>Korrektur pro Ausgabegerät</value></data>
+  <data name="DspDeviceDescription" xml:space="preserve"><value>Ohne Zuordnung wird die Faltung umgangen. Kurve / WAV laden oder bearbeiten und zuordnen. Faltungsschalter und Vorverstärkung bleiben global.</value></data>
+  <data name="DspDeviceTarget" xml:space="preserve"><value>Ausgabegerät zuordnen</value></data>
+  <data name="DspDeviceCurrent" xml:space="preserve"><value>Aktuelle tatsächliche Ausgabe (automatisch)</value></data>
+  <data name="DspDeviceActual" xml:space="preserve"><value>Tatsächliche Ausgabe: {0}</value></data>
+  <data name="DspDeviceNoOutput" xml:space="preserve"><value>Keine aktive Ausgabe. Wiedergabe starten oder ein Gerät auswählen.</value></data>
+  <data name="DspDeviceUnbound" xml:space="preserve"><value>Nicht zugeordnet; Faltung im Gerätemodus umgangen.</value></data>
+  <data name="DspDeviceBound" xml:space="preserve"><value>Zugeordnet: {0} (nach Bearbeitung aktualisieren)</value></data>
+  <data name="DspDeviceBind" xml:space="preserve"><value>Aktuelle Korrektur zuordnen</value></data>
+  <data name="DspDeviceUpdate" xml:space="preserve"><value>Zuordnung aktualisieren</value></data>
+  <data name="DspDeviceLoad" xml:space="preserve"><value>Korrektur laden</value></data>
+  <data name="DspDeviceRemove" xml:space="preserve"><value>Zuordnung entfernen</value></data>
+  <data name="DspDeviceRefresh" xml:space="preserve"><value>Aktualisieren</value></data>
+  <data name="DspDeviceError" xml:space="preserve"><value>Gerätekorrekturen konnten nicht gespeichert oder gelesen werden. Erneut versuchen.</value></data>
 </root>
 

@@ -100,12 +100,14 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     private static readonly delegate* unmanaged[Stdcall]<double, void> SampleRateChangedPtr = &OnSampleRateChanged;
     private static readonly delegate* unmanaged[Stdcall]<IntPtr, uint, nuint, nint, nint> WndProcPtr = &WndProc;
 
-    public bool Start(int driverIndex, IRenderSource source)
+    public bool Start(int driverIndex, IRenderSource source, Action<string?>? prepareSource = null)
     {
         _source = source;
         DeviceIndex = driverIndex;
         var drivers = Win32.EnumerateAsioDrivers();
         if (driverIndex < 0 || driverIndex >= drivers.Count) return false;
+        DeviceId = "asio:" + drivers[driverIndex].Clsid.ToString("D");
+        prepareSource?.Invoke(DeviceId);
 
         Console.WriteLine($"[asio] 可用驱动数={drivers.Count}: {string.Join(" | ", drivers.Select(d => d.Name))}");
         // 驱动调用在调用方线程执行；隐藏窗口线程只做消息服务员：
@@ -273,6 +275,8 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
 
     /// <summary>创建本输出时绑定的 ASIO 设备索引（设备变更须重建）。</summary>
     public int DeviceIndex { get; private set; } = -1;
+    /// <summary>稳定的 ASIO 驱动标识，不使用枚举索引匹配校正。</summary>
+    public string? DeviceId { get; private set; }
 
     /// <summary>同率换源（PCM↔PCM 复用）：纯引用替换，零驱动交互。
     /// 新环预缓冲期回静音，交接间隙自然被盖住。</summary>

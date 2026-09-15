@@ -29,6 +29,8 @@ public enum CommandId : short
     GetTimeProgress = 18,
     UpdateDsp = 19,
     GetDspState = 20,
+    UpdateDeviceCorrections = 21,
+    PreviewDsp = 22,
 }
 
 public enum MessageTypeId : short

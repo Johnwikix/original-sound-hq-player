@@ -17,6 +17,7 @@ namespace WinUIMusicPlayer.Services
         private static readonly long MmfSize = IpcConstants.MmfSize;
 
         private DspStateMailbox? _dspMailbox;
+        private DeviceCorrectionMailbox? _correctionMailbox;
         private ProgressMailbox? _progressMailbox;
         private long _nextSeekId;
         private readonly object _seekPublishGate = new();
@@ -35,6 +36,8 @@ namespace WinUIMusicPlayer.Services
         private Semaphore? _notificationReadySemaphore;
 
         private readonly Dictionary<int, string> _wasapiEndpoints = new();
+        private readonly Dictionary<int, string> _asioEndpoints = new();
+        public string? GetAsioEndpointId(int id) => _asioEndpoints.GetValueOrDefault(id);
         /// <summary>获取本次枚举中设备索引对应的稳定端点 ID。</summary>
         public string? GetWasapiEndpointId(int id) => _wasapiEndpoints.GetValueOrDefault(id);
         private MailboxClient? _transport;
@@ -119,6 +122,7 @@ namespace WinUIMusicPlayer.Services
                 if (matches == 1) AppSettings.WasapiEndpointId = GetWasapiEndpointId(selectedId);
                 else _logger.LogWarning("Saved WASAPI device is missing or ambiguous; using default endpoint");
             }
+            UpdateDeviceCorrections();
             if (music is not null)
                 await SetMusicUrl(music.Path);
             UpdateEq();
@@ -359,6 +363,13 @@ namespace WinUIMusicPlayer.Services
             Publish(CommandId.UpdateSettings, buf[..len]);
         }
 
+        /// <summary>发布完整绑定集合，再通知播放端原子采用最新集合。</summary>
+        public void UpdateDeviceCorrections()
+        {
+            (_correctionMailbox ??= new DeviceCorrectionMailbox()).Publish(AppSettings.DeviceCorrections);
+            Publish(CommandId.UpdateDeviceCorrections, []);
+        }
+
         /// <summary>发送音效快照，不触发输出设备重建。</summary>
         public void UpdateDsp()
         {
@@ -372,7 +383,7 @@ namespace WinUIMusicPlayer.Services
         {
             Span<byte> buffer = stackalloc byte[DspProtocol.SettingsSize];
             DspProtocol.WriteSettings(buffer, settings.Sanitize());
-            Publish(CommandId.UpdateDsp, buffer);
+            Publish(CommandId.PreviewDsp, buffer);
         }
 
         /// <summary>读取实际输出和音效状态；每次请求独占响应缓冲，允许不同界面并发刷新。</summary>
@@ -547,11 +558,11 @@ namespace WinUIMusicPlayer.Services
                             if (bytesRead <= 0) break;
                             result.Add((id, name));
                             off += bytesRead;
-                            if (expectedResponse == MessageTypeId.WasapiDevices)
+                            if (expectedResponse is MessageTypeId.WasapiDevices or MessageTypeId.AsioDevices)
                             {
                                 var (_, endpoint, identityBytes) = BinarySerializer.ReadDeviceEntry(resp[off..]);
                                 if (identityBytes <= 0) throw new InvalidOperationException("Missing endpoint identity");
-                                _wasapiEndpoints[id] = endpoint;
+                                (expectedResponse == MessageTypeId.WasapiDevices ? _wasapiEndpoints : _asioEndpoints)[id] = endpoint;
                                 off += identityBytes;
                             }
                         }
@@ -583,6 +594,7 @@ namespace WinUIMusicPlayer.Services
             _notificationCts?.Dispose();
             _serverMonitorCts?.Dispose();
             _dspMailbox?.Dispose();
+            _correctionMailbox?.Dispose();
             _progressMailbox?.Dispose();
             _accessor?.Dispose();
             _mmf?.Dispose();

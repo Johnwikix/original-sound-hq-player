@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1855,4 +1855,18 @@
     <value>Si te gusta este proyecto, ¡danos una estrella en GitHub!</value>
   </data>
   <data name="MetadataWriteQueued" xml:space="preserve"><value>Cambios guardados. Las etiquetas se escribirán cuando el archivo esté disponible. Las escrituras pendientes continuarán al reiniciar.</value></data>
+  <data name="DspDeviceMode" xml:space="preserve"><value>Aplicar corrección por dispositivo</value></data>
+  <data name="DspDeviceDescription" xml:space="preserve"><value>Los dispositivos sin asociación omiten la convolución. Carga o edita una curva / WAV y guarda la asociación. El interruptor de convolución y la preamplificación siguen siendo globales.</value></data>
+  <data name="DspDeviceTarget" xml:space="preserve"><value>Asociar a dispositivo de salida</value></data>
+  <data name="DspDeviceCurrent" xml:space="preserve"><value>Salida real actual (automática)</value></data>
+  <data name="DspDeviceActual" xml:space="preserve"><value>Salida real: {0}</value></data>
+  <data name="DspDeviceNoOutput" xml:space="preserve"><value>No hay salida activa. Inicia la reproducción o selecciona un dispositivo.</value></data>
+  <data name="DspDeviceUnbound" xml:space="preserve"><value>Sin asociación; convolución omitida en modo por dispositivo.</value></data>
+  <data name="DspDeviceBound" xml:space="preserve"><value>Asociado: {0} (actualiza tras editar)</value></data>
+  <data name="DspDeviceBind" xml:space="preserve"><value>Asociar corrección actual</value></data>
+  <data name="DspDeviceUpdate" xml:space="preserve"><value>Actualizar asociación</value></data>
+  <data name="DspDeviceLoad" xml:space="preserve"><value>Cargar corrección</value></data>
+  <data name="DspDeviceRemove" xml:space="preserve"><value>Eliminar asociación</value></data>
+  <data name="DspDeviceRefresh" xml:space="preserve"><value>Actualizar</value></data>
+  <data name="DspDeviceError" xml:space="preserve"><value>No se pudieron guardar o leer las correcciones. Inténtalo de nuevo.</value></data>
 </root>

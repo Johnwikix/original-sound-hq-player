@@ -94,6 +94,21 @@ internal sealed class PcmEffects : IDisposable
         StateChanged?.Invoke();
     }
 
+    /// <summary>仅在旧输出已停止、新输出尚未启动时调用，禁止旧设备曲线和尾音进入新设备。</summary>
+    internal void ResetForOutput()
+    {
+        lock (_control)
+        {
+            _prepareCancellation?.Cancel();
+            ++_impulseVersion;
+            _impulsePath = _curveKey = null;
+            _filter = _renderFilter = _oldFilter = null;
+            _spectra = null;
+            _autoGainDb = 0;
+            ResetRenderState();
+        }
+    }
+
     private void ConfigureConvolution()
     {
         bool curve = CorrectionCurve.UsesCurve(_settings);
