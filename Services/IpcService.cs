@@ -122,7 +122,7 @@ namespace WinUIMusicPlayer.Services
                 if (matches == 1) AppSettings.WasapiEndpointId = GetWasapiEndpointId(selectedId);
                 else _logger.LogWarning("Saved WASAPI device is missing or ambiguous; using default endpoint");
             }
-            UpdateDeviceCorrections();
+            await UpdateDeviceCorrectionsAsync(force: true);
             if (music is not null)
                 await SetMusicUrl(music.Path);
             UpdateEq();
@@ -364,10 +364,21 @@ namespace WinUIMusicPlayer.Services
         }
 
         /// <summary>发布完整绑定集合，再通知播放端原子采用最新集合。</summary>
-        public void UpdateDeviceCorrections()
+        private readonly SemaphoreSlim _correctionPublishGate = new(1, 1);
+        private DeviceCorrections? _appliedCorrections;
+        public async Task UpdateDeviceCorrectionsAsync(bool force = false)
         {
-            (_correctionMailbox ??= new DeviceCorrectionMailbox()).Publish(AppSettings.DeviceCorrections);
-            Publish(CommandId.UpdateDeviceCorrections, []);
+            var snapshot = AppSettings.DeviceCorrections;
+            await _correctionPublishGate.WaitAsync();
+            try
+            {
+                if (!force && ReferenceEquals(snapshot, _appliedCorrections)) return;
+                await Task.Run(() => (_correctionMailbox ??= new DeviceCorrectionMailbox()).Publish(snapshot));
+                var result = await SendCommandAsync(CommandId.UpdateDeviceCorrections, ReadOnlyMemory<byte>.Empty);
+                if (result != MessageTypeId.Success) throw new InvalidOperationException("Audio correction acknowledgement failed.");
+                _appliedCorrections = snapshot;
+            }
+            finally { _correctionPublishGate.Release(); }
         }
 
         /// <summary>发送音效快照，不触发输出设备重建。</summary>
@@ -379,10 +390,18 @@ namespace WinUIMusicPlayer.Services
         }
 
         /// <summary>试听草稿只发送到播放端，不修改或持久化用户配置。</summary>
-        public void PreviewDsp(DspSettings settings)
+        private long _previewSequence = DateTime.UtcNow.Ticks;
+        public void PreviewDsp(DspSettings settings, string deviceId, long generation)
         {
-            Span<byte> buffer = stackalloc byte[DspProtocol.SettingsSize];
-            DspProtocol.WriteSettings(buffer, settings.Sanitize());
+            Span<byte> buffer = stackalloc byte[DspPreview.Size];
+            new DspPreview(Interlocked.Increment(ref _previewSequence), generation, deviceId, false, settings).Write(buffer);
+            Publish(CommandId.PreviewDsp, buffer);
+        }
+
+        public void EndDspPreview()
+        {
+            Span<byte> buffer = stackalloc byte[DspPreview.Size];
+            new DspPreview(Interlocked.Increment(ref _previewSequence), 0, "", true, new()).Write(buffer);
             Publish(CommandId.PreviewDsp, buffer);
         }
 

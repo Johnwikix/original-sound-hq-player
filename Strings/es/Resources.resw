@@ -1869,4 +1869,7 @@
   <data name="DspDeviceRemove" xml:space="preserve"><value>Eliminar asociación</value></data>
   <data name="DspDeviceRefresh" xml:space="preserve"><value>Actualizar</value></data>
   <data name="DspDeviceError" xml:space="preserve"><value>No se pudieron guardar o leer las correcciones. Inténtalo de nuevo.</value></data>
+  <data name="DspDeviceRetry" xml:space="preserve"><value>Reintentar guardar / aplicar</value></data>
+  <data name="DspDeviceApplyError" xml:space="preserve"><value>Corrección guardada, pero el reproductor no ha confirmado su aplicación. Reinténtalo.</value></data>
+  <data name="DspDeviceSaveError" xml:space="preserve"><value>No se pudo guardar la corrección. Las asignaciones existentes no han cambiado.</value></data>
 </root>

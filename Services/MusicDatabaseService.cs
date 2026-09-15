@@ -29,7 +29,8 @@ namespace WinUIMusicPlayer.Services
     {
         private SQLiteAsyncConnection _dbConnection;
         private string DbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
-        private string SettingsPath => GetSettingsFilePath();
+        private string? _settingsPath;
+        private string SettingsPath => _settingsPath ??= GetSettingsFilePath();
         private string PlayStatePath => GetPlayStateFilePath();
         private string VersionRecordPath => GetVersionRecordFilePath();
         private readonly AddFolderService addFolderService = new();
@@ -37,6 +38,7 @@ namespace WinUIMusicPlayer.Services
         public SaveSettings CurrentSettings => _currentSettings;
         // 设置文件读写互斥：写不并发（避免 IOException 丢更新），读不撞写（避免读到半截 JSON）
         private readonly SemaphoreSlim _settingsIoGate = new(1, 1);
+        private readonly SemaphoreSlim _settingsSaveGate = new(1, 1);
         // 播放状态文件同一套互斥（同步读写路径用 Wait() 阻塞进入，临界区仅一次小文件 IO）
         private readonly SemaphoreSlim _playStateIoGate = new(1, 1);
         // 桌面歌词窗口状态文件仅同步读写，用 lock 即可
@@ -609,32 +611,59 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.UpdateAllAsync(musicList);
         }
 
+        private BassPlayerIpc.Shared.AudioCorrectionStore? _audioCorrectionStore;
+        private bool _settingsReadFailed;
+        private byte[]? _lastSettingsBytes;
+        private bool _correctionsMigrated;
+
+        public async Task SaveDeviceCorrectionsAsync(BassPlayerIpc.Shared.DeviceCorrections candidate)
+        {
+            var store = _audioCorrectionStore ?? throw new InvalidOperationException("Correction store unavailable.");
+            var saved = await Task.Run(() => store.SaveAsync(candidate));
+            AppSettings.DeviceCorrections = saved;
+        }
+
         public async Task<SaveSettings> GetSettings()
         {
             string path = SettingsPath;
-            if (!File.Exists(path))
+            if (!File.Exists(path) && !File.Exists(path + ".bak"))
             {
                 return new SaveSettings();
             }
             await _settingsIoGate.WaitAsync();
             try
             {
-                string json = await File.ReadAllTextAsync(path);
-                return JsonSerializer.Deserialize(json, SettingsJsonContext.Default.SaveSettings)
-                       ?? new SaveSettings();
+                SaveSettings result;
+                try
+                {
+                    string json = await File.ReadAllTextAsync(path);
+                    result = JsonSerializer.Deserialize(json, SettingsJsonContext.Default.SaveSettings)
+                        ?? throw new JsonException("Empty settings.");
+                }
+                catch (Exception ex) when (ex is JsonException or FileNotFoundException)
+                {
+                    string backup = await File.ReadAllTextAsync(path + ".bak");
+                    result = JsonSerializer.Deserialize(backup, SettingsJsonContext.Default.SaveSettings)
+                        ?? throw new JsonException("Empty settings backup.");
+                    if (!TryBackupCorruptFile(path)) throw new IOException("Cannot preserve corrupt settings; refusing writes.");
+                }
+                _settingsReadFailed = false;
+                _lastSettingsBytes = JsonSerializer.SerializeToUtf8Bytes(result, SettingsJsonContext.Default.SaveSettings);
+                return result;
             }
             catch (JsonException ex)
             {
-                // 文件损坏：把坏文件改名留底后按默认值继续，避免之后一次全量保存把事故固化成永久丢失
-                _logger.LogError(ex, $"Settings.json 解析失败，备份损坏文件后按默认值继续: {ex.Message}");
-                TryBackupCorruptFile(path);
-                return new SaveSettings();
+                // 主文件和备份均无效：保留现场，禁用后续覆盖。
+                _logger.LogError(ex, $"Settings.json 及备份无法恢复，禁止覆盖: {ex.Message}");
+                _settingsReadFailed = true;
+                return _currentSettings ?? new SaveSettings();
             }
             catch (Exception ex)
             {
-                // 文件被占用等瞬时 IO 错误：按默认值继续，但不删不动原文件
+                // 读取失败期间禁止覆盖已有配置。
                 _logger.LogError(ex, ex.Message, ex.StackTrace);
-                return new SaveSettings();
+                _settingsReadFailed = true;
+                return _currentSettings ?? new SaveSettings();
             }
             finally
             {
@@ -642,17 +671,20 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        private void TryBackupCorruptFile(string path)
+        private bool TryBackupCorruptFile(string path)
         {
             try
             {
+                if (!File.Exists(path)) return true;
                 string backupPath = $"{path}.corrupt-{DateTime.Now:yyyyMMdd-HHmmss}.bak";
                 File.Move(path, backupPath);
                 _logger.LogInformation($"损坏的 JSON 文件已备份为: {backupPath}");
+                return true;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"备份损坏的 JSON 文件失败: {ex.Message}");
+                return false;
             }
         }
 
@@ -671,9 +703,13 @@ namespace WinUIMusicPlayer.Services
             await _settingsIoGate.WaitAsync();
             try
             {
-                string json = JsonSerializer.Serialize(settings, SettingsJsonContext.Default.SaveSettings);
-                await File.WriteAllTextAsync(SettingsPath, json);
-                _currentSettings = settings;
+                if (_settingsReadFailed) throw new IOException("Settings read failed; refusing to overwrite the file.");
+                byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(settings, SettingsJsonContext.Default.SaveSettings);
+                if (_lastSettingsBytes != null && bytes.AsSpan().SequenceEqual(_lastSettingsBytes) && File.Exists(SettingsPath)) return;
+                var snapshot = JsonSerializer.Deserialize(bytes, SettingsJsonContext.Default.SaveSettings)!;
+                await BassPlayerIpc.Shared.AtomicSettingsFile.WriteAsync(SettingsPath, bytes);
+                _currentSettings = snapshot;
+                _lastSettingsBytes = bytes;
             }
             catch (Exception ex)
             {
@@ -994,17 +1030,25 @@ namespace WinUIMusicPlayer.Services
             _currentSettings = settings;
             if (settings is not null)
             {
-                AppSettings.Dsp = (settings.Dsp ?? new()).Sanitize();
-                try { AppSettings.DeviceCorrections = (settings.DeviceCorrections ?? new()).Validate(); }
-                catch (ArgumentException) { AppSettings.DeviceCorrections = new(); }
-                AppSettings.OutputMode = settings.OutputMode;
-                AppSettings.DeviceName = settings.DeviceFriendlyName;
-                AppSettings.BassOutputDeviceId = settings.BassOutputDeviceId;
-                AppSettings.WasapiEndpointId = settings.WasapiEndpointId;
-                AppSettings.BassASIODeviceId = settings.BassASIODeviceId;
+                var audio = await LoadAudioPreferencesAsync(settings);
+                AppSettings.Dsp = audio.Dsp;
+                _audioCorrectionStore = new BassPlayerIpc.Shared.AudioCorrectionStore(Path.Combine(Path.GetDirectoryName(SettingsPath)!, "AudioCorrections.json"));
+                try
+                {
+                    if (_settingsReadFailed && !File.Exists(Path.Combine(Path.GetDirectoryName(SettingsPath)!, "AudioCorrections.json")))
+                        throw new IOException("Cannot migrate corrections from unreadable settings.");
+                    AppSettings.DeviceCorrections = await Task.Run(() => _audioCorrectionStore.LoadAsync(settings.DeviceCorrections));
+                    _correctionsMigrated = true;
+                }
+                catch (Exception ex) { _logger.LogError(ex, "Audio correction configuration could not be loaded; writes remain disabled."); }
+                AppSettings.OutputMode = audio.OutputMode;
+                AppSettings.DeviceName = string.IsNullOrEmpty(audio.DeviceFriendlyName) ? ToolUtils.GetString("DefaultDevice") : audio.DeviceFriendlyName;
+                AppSettings.BassOutputDeviceId = audio.BassOutputDeviceId;
+                AppSettings.WasapiEndpointId = audio.WasapiEndpointId;
+                AppSettings.BassASIODeviceId = audio.BassASIODeviceId;
                 AppViewModel.DefaultEntryComboBoxTag = settings.DefaultEntry;
                 AppViewModel.DefaultPlayListComboBoxTag = settings.DefaultPlayList;
-                AppViewModel.Latency = settings.Latency;
+                AppViewModel.Latency = audio.Latency;
                 AppViewModel.BackdropType = settings.AppStyle;
                 AppViewModel.ThemeType = settings.AppTheme;
                 AppViewModel.IsRunningBackend = settings.IsRunningBackend;
@@ -1020,8 +1064,8 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.LyricsFontWeight = settings.LyricsFontWeight;
                 AppViewModel.IsAutoLyricsEnabled = settings.IsAutoLyricsEnabled;
                 AppViewModel.IsAutoCoverEnabled = settings.IsAutoCoverEnabled;
-                AppViewModel.DsdGain = settings.DsdGain;
-                AppViewModel.DsdPcmFreq = settings.DsdPcmFreq;
+                AppViewModel.DsdGain = audio.DsdGain;
+                AppViewModel.DsdPcmFreq = audio.DsdPcmFreq;
                 AppViewModel.CoverSize = settings.CoverSize;
                 AppViewModel.IsFluidBackgroundEnabled = settings.IsFluidBackgroundEnabled;
                 AppViewModel.BackgroundShader = (AnimatedWin2dControls.BackgroundShaderMode)settings.BackgroundShader;
@@ -1074,10 +1118,10 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.GlobalFontSize = settings.GlobalFontSize;
                 AppViewModel.IsGlobalFontSizeEnabled = settings.IsGlobalFontSizeEnabled;
                 AppViewModel.MusicCoverCache = string.IsNullOrEmpty(settings.MusicCoverCache) ? Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicCoverCache") : settings.MusicCoverCache;
-                AppViewModel.IsDopEnabled = settings.IsDopEnabled;
-                AppViewModel.ExperimentalSurround51 = settings.ExperimentalSurround51;
-                AppViewModel.ExperimentalAtmosPassthrough = settings.ExperimentalAtmosPassthrough;
-                AppViewModel.IsFadeEnabled = settings.IsFadeEnabled;
+                AppViewModel.IsDopEnabled = audio.IsDopEnabled;
+                AppViewModel.ExperimentalSurround51 = audio.ExperimentalSurround51;
+                AppViewModel.ExperimentalAtmosPassthrough = audio.ExperimentalAtmosPassthrough;
+                AppViewModel.IsFadeEnabled = audio.IsFadeEnabled;
                 AppViewModel.LyricsBlurAmount = settings.LyricsBlurAmount;
                 AppViewModel.UseImageDominantTheme = settings.UseImageDominantTheme;
                 AppViewModel.EnableLightWave = settings.EnableLightWave;
@@ -1120,6 +1164,15 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.UsePlayingDetailAlignmentInPortrait = settings.UsePlayingDetailAlignmentInPortrait;
                 AppViewModel.IsMusicInfoVisible = settings.IsMusicInfoVisible;
                 LoadSettingsToAppViewModel();
+                if ((_audioSettingsMigrated && settings.HasLegacyAudioPreferences())
+                    || (_correctionsMigrated && settings.DeviceCorrections != null))
+                {
+                    var migrated = JsonSerializer.Deserialize(JsonSerializer.SerializeToUtf8Bytes(settings,
+                        SettingsJsonContext.Default.SaveSettings), SettingsJsonContext.Default.SaveSettings)!;
+                    if (_audioSettingsMigrated) migrated.ClearLegacyAudioPreferences();
+                    if (_correctionsMigrated) migrated.DeviceCorrections = null;
+                    await WriteSettingsToJson(migrated);
+                }
             }
         }
 
@@ -1143,9 +1196,19 @@ namespace WinUIMusicPlayer.Services
             {
                 // 以最后一次已知的磁盘状态为基底合并写盘：未被 SaveCurrentSettings 覆盖的字段
                 // 不会被默认值冲掉；快照构建的异常也不再静默吞掉（此前 fire-and-forget 会丢掉整次保存）。
-                SaveSettings merged = _currentSettings ?? await GetSettings();
+                SaveSettings baseline = _currentSettings ?? await GetSettings();
+                SaveSettings merged = JsonSerializer.Deserialize(JsonSerializer.SerializeToUtf8Bytes(baseline, SettingsJsonContext.Default.SaveSettings), SettingsJsonContext.Default.SaveSettings)!;
                 SaveCurrentSettings(merged);
-                await WriteSettingsToJson(merged);
+                var audio = CaptureAudioPreferences();
+                // 在 UI 调用顺序上排队，再派发后台任务，防止线程池调度反转保存顺序。
+                await _settingsSaveGate.WaitAsync();
+                try
+                {
+                    if (_audioSettingsMigrated)
+                        await Task.Run(() => _audioSettingsStore!.SaveAsync(audio));
+                    await WriteSettingsToJson(merged);
+                }
+                finally { _settingsSaveGate.Release(); }
             }
             catch (Exception ex)
             {
@@ -1179,14 +1242,8 @@ namespace WinUIMusicPlayer.Services
 
         private SaveSettings SaveCurrentSettings(SaveSettings newSettings)
         {
-            newSettings.Dsp = AppSettings.Dsp;
-            newSettings.DeviceCorrections = AppSettings.DeviceCorrections;
-            newSettings.OutputMode = AppSettings.OutputMode;
-            newSettings.DeviceFriendlyName = AppSettings.DeviceName;
-            newSettings.BassOutputDeviceId = AppSettings.BassOutputDeviceId;
-            newSettings.WasapiEndpointId = AppSettings.WasapiEndpointId;
-            newSettings.BassASIODeviceId = AppSettings.BassASIODeviceId;
-            newSettings.Latency = AppViewModel.Latency;
+            if (_audioSettingsMigrated) newSettings.ClearLegacyAudioPreferences();
+            if (_correctionsMigrated) newSettings.DeviceCorrections = null;
             newSettings.DefaultEntry = AppViewModel.DefaultEntryComboBoxTag;
             newSettings.DefaultPlayList = AppViewModel.DefaultPlayListComboBoxTag;
             newSettings.AppStyle = AppViewModel.BackdropType;
@@ -1194,7 +1251,6 @@ namespace WinUIMusicPlayer.Services
             newSettings.IsRunningBackend = AppViewModel.IsRunningBackend;
             newSettings.IsAutoLyricsEnabled = AppViewModel.IsAutoLyricsEnabled;
             newSettings.IsAutoCoverEnabled = AppViewModel.IsAutoCoverEnabled;
-            newSettings.DsdGain = AppViewModel.DsdGain;
             newSettings.CoverSize = AppViewModel.CoverSize;
             newSettings.Win2dTextEffectType = AppViewModel.Win2dTextEffectType.Value;
             newSettings.IsFluidBackgroundEnabled = AppViewModel.IsFluidBackgroundEnabled;
@@ -1217,11 +1273,6 @@ namespace WinUIMusicPlayer.Services
             newSettings.GlobalFontSize = AppViewModel.GlobalFontSize;
             newSettings.IsGlobalFontSizeEnabled = AppViewModel.IsGlobalFontSizeEnabled;
             newSettings.MusicCoverCache = AppViewModel.MusicCoverCache;
-            newSettings.IsDopEnabled = AppViewModel.IsDopEnabled;
-            newSettings.ExperimentalSurround51 = AppViewModel.ExperimentalSurround51;
-            newSettings.ExperimentalAtmosPassthrough = AppViewModel.ExperimentalAtmosPassthrough;
-            newSettings.DsdPcmFreq = AppViewModel.DsdPcmFreq;
-            newSettings.IsFadeEnabled = AppViewModel.IsFadeEnabled;
             newSettings.LyricsBlurAmount = AppViewModel.LyricsBlurAmount;
             newSettings.UseImageDominantTheme = AppViewModel.UseImageDominantTheme;
             newSettings.EnableLightWave = AppViewModel.EnableLightWave;

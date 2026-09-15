@@ -19,11 +19,11 @@ internal static unsafe partial class Program
             NormalizeLoudness = true, HeadroomDb = -3, CurvePoints = "20,1;20000,1" };
         var bindings = new DeviceCorrections { Enabled = true, Bindings = [
             new() { DeviceId = "endpoint-a", DeviceName = "Same name", Settings = new() {
-                AutoPreamp = false, ConvolutionSource = ConvolutionSource.Curve, CurvePoints = "20,-6;20000,-6" } },
+                ConvolutionSource = ConvolutionSource.Curve, CurvePoints = "20,-6;20000,-6" } },
             new() { DeviceId = "endpoint-b", DeviceName = "Same name", Settings = new() {
-                AutoPreamp = false, ConvolutionSource = ConvolutionSource.Wave, ImpulsePath = "speaker.wav" } },
+                ConvolutionSource = ConvolutionSource.Wave, ImpulsePath = "speaker.wav" } },
             new() { DeviceId = "asio:driver-guid", DeviceName = "ASIO", Settings = new() {
-                AutoPreamp = false, CurvePoints = "20,-9;20000,-9" } }
+                CurvePoints = "20,-9;20000,-9" } }
         ] }.Validate();
 
         Run("Device correction: stable identity, global controls, unbound bypass and opt-out", () =>
@@ -73,20 +73,107 @@ internal static unsafe partial class Program
             engine.OutputMode = "ASIO";
             Require(Resolve("asio:driver-guid").CurvePoints == "20,-9;20000,-9", "ASIO binding failed");
             Require(Resolve("endpoint-b").ImpulsePath == "speaker.wav", "ASIO fallback used requested driver correction");
-            engine.UpdateDsp(global with { ConvolutionEnabled = false, HeadroomDb = -35 }, preview: true);
+            engine.PreviewDsp(new(1, 0, "endpoint-b", false, global with { ConvolutionEnabled = false, HeadroomDb = -35 }));
             Require(!Resolve("endpoint-b").ConvolutionEnabled, "audition bypass did not apply to the audition device");
             Require(Resolve("endpoint-a").ConvolutionEnabled && Resolve("endpoint-a").HeadroomDb == global.HeadroomDb,
                 "audition bypass or gain leaked into the next physical output");
-            engine.UpdateDsp(global, preview: true);
+            engine.PreviewDsp(new(2, 0, "endpoint-b", false, global));
             Require(Resolve("endpoint-b").CurvePoints == global.CurvePoints, "preview did not override binding");
             Require(Resolve("endpoint-a").CurvePoints == "20,-6;20000,-6", "preview leaked to another device");
             Set(engine, "_output", new CorrectionOutput("endpoint-a"));
-            engine.UpdateDsp(global, preview: true);
+            engine.PreviewDsp(new(3, 0, "endpoint-b", false, global));
             Require(Resolve("endpoint-a").CurvePoints == "20,-6;20000,-6", "subsequent preview followed new device");
             engine.UpdateDsp(global);
             Require(Resolve("endpoint-b").ImpulsePath == "speaker.wav", "preview cancellation failed to restore binding");
             engine.UpdateDeviceCorrections(bindings with { Bindings = [] });
             Require(!Resolve("endpoint-b").ConvolutionEnabled, "unbinding left correction active");
+        });
+
+        Run("Device correction: late preview, A-B-A generation and closed preview rejection", () =>
+        {
+            var engine = Engine("DirectSound");
+            Set(engine, "_streamLock", new object());
+            engine.UpdateDsp(global);
+            engine.UpdateDeviceCorrections(bindings);
+            Set(engine, "_output", new CorrectionOutput("endpoint-a"));
+            Set(engine, "_outputGeneration", 3L);
+            DspSettings Resolve() => (DspSettings)Invoke(engine, "ResolveDsp", "endpoint-a")!;
+            engine.PreviewDsp(new(1, 1, "endpoint-a", false, global));
+            Require(Resolve().CurvePoints == bindings.Bindings[0].Settings.CurvePoints, "A-B-A accepted old A generation");
+            engine.PreviewDsp(new(2, 3, "endpoint-b", false, global));
+            Require(Resolve().CurvePoints != global.CurvePoints, "late B preview applied to A");
+            var preview = new DspPreview(3, 3, "endpoint-a", false, global);
+            byte[] bytes = new byte[DspPreview.Size]; preview.Write(bytes);
+            engine.PreviewDsp(DspPreview.Read(bytes));
+            Require(Resolve().CurvePoints == global.CurvePoints, "current target preview rejected");
+            engine.PreviewDsp(new(5, 0, "", true, global));
+            engine.PreviewDsp(preview with { Sequence = 4 });
+            Require(Resolve().CurvePoints != global.CurvePoints, "closed preview resurrected");
+        });
+
+        Run("Device correction: atomic migration, backup recovery, write failure and invalid schema", () =>
+        {
+            string directory = Path.Combine(Path.GetTempPath(), "correction-store-" + Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(directory);
+            string path = Path.Combine(directory, "AudioCorrections.json");
+            try
+            {
+                var store = new AudioCorrectionStore(path);
+                var migrated = store.LoadAsync(bindings).GetAwaiter().GetResult();
+                Require(migrated.Bindings.Length == 3, "legacy migration lost bindings");
+                var json = File.ReadAllText(path);
+                Require(!json.Contains("NormalizeLoudness") && !json.Contains("HeadroomDb"), "device file contains global DSP preferences");
+                File.WriteAllText(path + ".bak", json);
+                var second = new AudioCorrectionStore(path);
+                Require(second.LoadAsync(new()).GetAwaiter().GetResult().Bindings.Length == 3, "migration ran twice");
+                Require(!File.Exists(path + ".bak"), "valid main file did not retire legacy backup");
+                using (var locked = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
+                {
+                    try { store.SaveAsync(bindings with { Enabled = false }).GetAwaiter().GetResult(); throw new Exception("locked write succeeded"); }
+                    catch (IOException) { }
+                }
+                Require(File.ReadAllText(path) == json, "failed write changed committed file");
+                store.SaveAsync(bindings with { Enabled = false }).GetAwaiter().GetResult();
+                Require(!File.Exists(path + ".bak"), "correction save created an unwanted backup");
+                // Simulate a backup produced by the previous app version.
+                File.WriteAllText(path + ".bak", json);
+                File.WriteAllText(path, "{broken");
+                var recovery = new AudioCorrectionStore(path);
+                Require(recovery.LoadAsync(new()).GetAwaiter().GetResult().Enabled, "valid backup was not recovered");
+                Require(!File.Exists(path + ".bak"), "legacy backup not removed after recovery");
+                recovery.SaveAsync(bindings).GetAwaiter().GetResult();
+                Require(new AudioCorrectionStore(path).LoadAsync(new()).GetAwaiter().GetResult().Bindings.Length == 3, "recovery save failed");
+                File.WriteAllText(path, "{\"SchemaVersion\":2,\"Revision\":1,\"Corrections\":{}}");
+                try { new AudioCorrectionStore(path).LoadAsync(new()).GetAwaiter().GetResult(); throw new Exception("unknown schema overwritten"); }
+                catch (NotSupportedException) { }
+                File.WriteAllText(path, "{}"); File.WriteAllText(path + ".bak", "{}");
+                var invalid = new AudioCorrectionStore(path);
+                try { invalid.LoadAsync(bindings).GetAwaiter().GetResult(); throw new Exception("corrupt files remigrated"); }
+                catch (System.Text.Json.JsonException) { }
+                try { invalid.SaveAsync(bindings).GetAwaiter().GetResult(); throw new Exception("failed load permitted save"); }
+                catch (InvalidOperationException) { }
+            }
+            finally
+            {
+                foreach (string file in Directory.GetFiles(directory)) File.Delete(file);
+                Directory.Delete(directory);
+            }
+        });
+
+        Run("Device correction: prepared coefficients reuse without sharing render history", () =>
+        {
+            var settings = global with { ConvolutionSource = ConvolutionSource.Curve };
+            var first = PreparedCorrectionCache.Get(settings, 48000, 2, default);
+            var second = PreparedCorrectionCache.Get(settings, 48000, 2, default);
+            Require(ReferenceEquals(first, second), "same curve was prepared twice");
+            var a = new ConvolutionFilter(first.Coefficients);
+            var b = new ConvolutionFilter(second.Coefficients);
+            double mix = 1, gain = 1;
+            var samples = new double[1024]; samples[0] = samples[1] = 1;
+            a.Process(samples, 512, 1, ref mix, ref gain, 1);
+            Array.Clear(samples);
+            b.Process(samples, 512, 1, ref mix, ref gain, 1);
+            Require(samples.All(x => x == 0), "coefficient reuse shared history");
         });
 
         Run("Device correction: old filter cannot leak into a newly opened output", () =>
@@ -96,6 +183,11 @@ internal static unsafe partial class Program
                 ConvolutionSource = ConvolutionSource.Curve, CurvePoints = "20,-12;20000,-12" };
             effects.Configure(a);
             Require(SpinWait.SpinUntil(() => effects.GetState(0, false).Convolution == ConvolutionStatus.Active, 5000), "curve load timeout");
+            var filterField = typeof(PcmEffects).GetField("_filter", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+            var preparedFilter = filterField.GetValue(effects);
+            effects.ResetForOutput(a);
+            effects.Configure(a);
+            Require(ReferenceEquals(preparedFilter, filterField.GetValue(effects)), "same-profile output reset rebuilt the filter");
             var samples = new double[4096]; samples.AsSpan().Fill(1);
             effects.ApplyInput(samples, 2048); effects.ApplyConvolution(samples, 2048);
             effects.ResetForOutput();
@@ -107,7 +199,7 @@ internal static unsafe partial class Program
 
         Run("Device correction: output identity state roundtrip and legacy state decoding", () =>
         {
-            var state = new DspState(0, false, 2, LoudnessStatus.Off, 0, 0, OutputDeviceId: "endpoint-a");
+            var state = new DspState(0, false, 2, LoudnessStatus.Off, 0, 0, OutputDeviceId: "endpoint-a", OutputGeneration: 77);
             byte[] data = new byte[DspProtocol.StateSize];
             DspProtocol.WriteState(data, state);
             Require(DspProtocol.ReadState(data) == state, "identity lost over IPC");

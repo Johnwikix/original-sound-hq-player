@@ -7,6 +7,7 @@
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
             <TextBlock Text="{x:Bind tool:ToolUtils.GetString('DspDeviceMode')}" VerticalAlignment="Center" TextWrapping="Wrap" />
             <ToggleSwitch Grid.Column="1" MinWidth="0" VerticalAlignment="Center"
+                IsEnabled="{x:Bind ViewModel.CanChangeCorrectionMode, Mode=OneWay}"
                 IsOn="{x:Bind ViewModel.DeviceCorrectionEnabled, Mode=TwoWay}" />
         </Grid>
         <TextBlock Text="{x:Bind tool:ToolUtils.GetString('DspDeviceDescription')}" TextWrapping="Wrap" />
@@ -24,6 +25,7 @@
             <Button Content="{x:Bind ViewModel.SaveCorrectionLabel, Mode=OneWay}" Command="{x:Bind ViewModel.BindCorrectionCommand}" />
             <Button Content="{x:Bind tool:ToolUtils.GetString('DspDeviceRemove')}" Command="{x:Bind ViewModel.RemoveCorrectionCommand}" />
         </StackPanel>
+        <Button Content="{x:Bind tool:ToolUtils.GetString('DspDeviceRetry')}" Command="{x:Bind ViewModel.RetryCorrectionCommand}" />
         <InfoBar IsOpen="{x:Bind ViewModel.ImportFailed, Mode=OneWay}" IsClosable="False" Severity="Error"
             Message="{x:Bind ViewModel.ImportError, Mode=OneWay}" />
     </StackPanel>

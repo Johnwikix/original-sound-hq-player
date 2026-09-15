@@ -91,5 +91,36 @@ Check(following.Draft.CurvePoints == CorrectionCurve.Flat && following.SelectedP
     "Unbound output must not display the previous device curve.");
 AppSettings.DeviceCorrections = AppSettings.DeviceCorrections with { Enabled = false };
 following.RefreshOutputCorrection();
+Check(following.Draft.CurvePoints == AppSettings.Dsp.CurvePoints, "Leaving device mode must restore the global curve.");
 following.Close(false);
 Console.WriteLine("PASS: dialog opens on actual binding, hotplug switches curve/preset, same-device edits survive, and old audition is cancelled.");
+
+// Global custom edits must survive removal, fallback and reopening the same physical endpoint.
+ipc.ChangeOutput("a");
+var globalEditor = new ConvolutionCurveViewModel(ipc, store);
+await globalEditor.OpenAsync();
+globalEditor.SelectedPreset = globalEditor.Presets[0];
+globalEditor.MovePoint(0, 20, -4);
+globalEditor.PreampDb = -7;
+globalEditor.PresetName = "Unsaved custom name";
+var custom = globalEditor.Draft;
+foreach (var output in new[] { "", "b", "a" })
+{
+    ipc.ChangeOutput(output);
+    Check(globalEditor.Draft == custom && globalEditor.PresetName == "Unsaved custom name", "Global unsaved draft was reset by hotplug.");
+    Microsoft.UI.Dispatching.DispatcherQueueTimer.FirePending();
+    if (output.Length > 0)
+        Check(ipc.LastPreview == custom && ipc.PreviewDeviceId == output, "Global draft did not resume audition on the new output.");
+}
+ipc.ChangeOutput("a", 100);
+Microsoft.UI.Dispatching.DispatcherQueueTimer.FirePending();
+Check(globalEditor.Draft == custom && ipc.PreviewGeneration == 100, "Same-endpoint rebuild reset or mistargeted the draft.");
+AppSettings.DeviceCorrections = AppSettings.DeviceCorrections with { Enabled = true };
+globalEditor.RefreshOutputCorrection();
+AppSettings.DeviceCorrections = AppSettings.DeviceCorrections with { Enabled = false };
+globalEditor.RefreshOutputCorrection();
+Check(globalEditor.Draft == custom, "Mode toggle lost the in-progress global curve.");
+globalEditor.Close(false);
+Microsoft.UI.Dispatching.DispatcherQueueTimer.FirePending();
+Check(ipc.LastPreview == null && AppSettings.Dsp == globalBeforeLoad, "Closing global editor committed or restarted an audition.");
+Console.WriteLine("PASS: unsaved global curves survive hotplug, same-endpoint rebuild and mode toggles; audition follows the new target.");

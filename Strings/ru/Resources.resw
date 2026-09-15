@@ -1869,5 +1869,8 @@
   <data name="DspDeviceRemove" xml:space="preserve"><value>Удалить привязку</value></data>
   <data name="DspDeviceRefresh" xml:space="preserve"><value>Обновить</value></data>
   <data name="DspDeviceError" xml:space="preserve"><value>Не удалось сохранить или прочитать коррекции. Повторите попытку.</value></data>
+  <data name="DspDeviceRetry" xml:space="preserve"><value>Повторить сохранение / применение</value></data>
+  <data name="DspDeviceApplyError" xml:space="preserve"><value>Коррекция сохранена, но проигрыватель не подтвердил применение. Повторите попытку.</value></data>
+  <data name="DspDeviceSaveError" xml:space="preserve"><value>Не удалось сохранить коррекцию. Существующие привязки не изменены.</value></data>
 </root>
 

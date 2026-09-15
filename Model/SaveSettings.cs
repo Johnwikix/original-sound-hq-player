@@ -8,19 +8,28 @@ using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Model
 {
-    public class SaveSettings
+    public partial class SaveSettings
     {
-        /// <summary>获取或设置 PCM 音效偏好，旧配置使用默认直通值。</summary>
-        public BassPlayerIpc.Shared.DspSettings Dsp { get; set; } = new();
-        public BassPlayerIpc.Shared.DeviceCorrections DeviceCorrections { get; set; } = new();
-        public string OutputMode { get; set; } = "DirectSound";
-        public int Latency { get; set; } = 300;
-        public int BassOutputDeviceId { get; set; } = -1;
+        /// <summary>兼容旧 Settings.json 的音频字段；迁移成功后写出时清空。</summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public BassPlayerIpc.Shared.DspSettings? Dsp { get; set; }
+        [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+        public BassPlayerIpc.Shared.DeviceCorrections? DeviceCorrections { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? OutputMode { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? Latency { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? BassOutputDeviceId { get; set; }
         /// <summary>获取或设置稳定的 WASAPI 端点 ID。</summary>
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public string? WasapiEndpointId { get; set; }
-        public int BassASIODeviceId { get; set; } = 0;
-        public bool IsFadeEnabled { get; set; } = false;
-        public string DeviceFriendlyName { get; set; } = ToolUtils.GetString("DefaultDevice");
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? BassASIODeviceId { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? IsFadeEnabled { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public string? DeviceFriendlyName { get; set; }
         [JsonPropertyName("DefualtEntry")]
         public string DefaultEntry { get; set; } = "AddFolder";
         [JsonPropertyName("DefualtPlayList")]
@@ -35,11 +44,16 @@ namespace WinUIMusicPlayer.Model
         public bool IsRunningBackend { get; set; } = true;
         public bool IsAutoLyricsEnabled { get; set; } = true;
         public bool IsAutoCoverEnabled { get; set; } = true;
-        public bool IsDopEnabled { get; set; } = false;
-        public bool ExperimentalSurround51 { get; set; } = false;
-        public bool ExperimentalAtmosPassthrough { get; set; } = false;
-        public int DsdGain { get; set; } = 6;
-        public int DsdPcmFreq { get; set; } = 88200;
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? IsDopEnabled { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? ExperimentalSurround51 { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? ExperimentalAtmosPassthrough { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? DsdGain { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public int? DsdPcmFreq { get; set; }
         public bool IsPlayDetailBtnVisible { get; set; } = true;
         public int CoverSize { get; set; } = 150;
         public AnimatedTextEffect Win2dTextEffectType { get; set; } = AnimatedTextEffect.TextDefaultEffect;

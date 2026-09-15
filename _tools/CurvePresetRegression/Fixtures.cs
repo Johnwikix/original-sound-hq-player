@@ -12,9 +12,17 @@ namespace Microsoft.UI.Dispatching
     {
         public TimeSpan Interval { get; set; }
         public bool IsRepeating { get; set; }
-        public event Action<object, object>? Tick { add { } remove { } }
-        public void Start() { }
-        public void Stop() { }
+        private static readonly List<DispatcherQueueTimer> Timers = [];
+        private bool _pending;
+        public DispatcherQueueTimer() => Timers.Add(this);
+        public event Action<object, object>? Tick;
+        public void Start() => _pending = true;
+        public void Stop() => _pending = false;
+        public static void FirePending()
+        {
+            foreach (var timer in Timers)
+                if (timer._pending) { timer._pending = false; timer.Tick?.Invoke(timer, timer); }
+        }
     }
 }
 namespace WinUIMusicPlayer.Model
@@ -43,16 +51,25 @@ namespace WinUIMusicPlayer.Services
             Saved = presets.ToList();
         }
     }
-    public record PlaybackFixture(int RenderKind = 0, bool IsEnabled = true, int Channels = 2, string OutputDeviceId = "");
+    public record PlaybackFixture(int RenderKind = 0, bool IsEnabled = true, int Channels = 2, string OutputDeviceId = "", long OutputGeneration = 0);
     public record DspFixture(PlaybackFixture State);
     public class IpcService
     {
         public event Action? DspStateChanged;
         public DspFixture? CurrentDspState { get; private set; } = new(new());
-        public void ChangeOutput(string id) { CurrentDspState = new(new(OutputDeviceId: id)); DspStateChanged?.Invoke(); }
+        public void ChangeOutput(string id, long? generation = null)
+        {
+            long next = generation ?? ((CurrentDspState?.State.OutputGeneration ?? 0) + (CurrentDspState?.State.OutputDeviceId == id ? 0 : 1));
+            CurrentDspState = new(new(OutputDeviceId: id, OutputGeneration: next));
+            DspStateChanged?.Invoke();
+        }
         public int Restores { get; private set; }
         public void UpdateDsp() { Restores++; LastPreview = null; }
         public DspSettings? LastPreview { get; private set; }
-        public void PreviewDsp(DspSettings draft) => LastPreview = draft;
+        public void EndDspPreview() => UpdateDsp();
+        public string? PreviewDeviceId { get; private set; }
+        public long PreviewGeneration { get; private set; }
+        public void PreviewDsp(DspSettings draft, string deviceId, long generation)
+        { LastPreview = draft; PreviewDeviceId = deviceId; PreviewGeneration = generation; }
     }
 }

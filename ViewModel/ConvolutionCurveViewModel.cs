@@ -20,9 +20,11 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     private readonly DispatcherQueue _queue;
     private readonly DispatcherQueueTimer _timer;
     private readonly DspSettings _initial;
+    private DspSettings _globalDraft;
     private readonly List<CurvePoint> _points;
     private bool _syncing, _open;
     private string? _editorOutputId;
+    private long _editorOutputGeneration;
     private bool _deviceMode;
     private string _preferredPresetName = "";
     public event Action? PreviewChanged;
@@ -79,12 +81,13 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     {
         _ipc = ipc; _store = store;
         _initial = AppSettings.Dsp.ToUnifiedGain();
+        _globalDraft = _initial;
         _preferredPresetName = _initial.CurvePresetName;
         _points = CorrectionCurve.Parse(_initial.CurvePoints).ToList();
         _syncing = true; AutoPreamp = _initial.AutoPreamp == true; PreampDb = _initial.HeadroomDb; _syncing = false;
         _queue = DispatcherQueue.GetForCurrentThread();
         _timer = _queue.CreateTimer(); _timer.Interval = TimeSpan.FromMilliseconds(150); _timer.IsRepeating = false;
-        _timer.Tick += (_, _) => { if (_open) _ipc.PreviewDsp(Audition ? Draft : _initial with { ConvolutionEnabled = false }); };
+        _timer.Tick += (_, _) => { if (_open) _ipc.PreviewDsp(Audition ? Draft : _initial with { ConvolutionEnabled = false }, _editorOutputId ?? "", _editorOutputGeneration); };
         SyncNodes();
     }
     public async Task OpenAsync()
@@ -123,7 +126,7 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     public void Close(bool apply)
     {
         _open = false; _timer.Stop(); _ipc.DspStateChanged -= PlaybackChanged;
-        _ipc.PreviewDsp(apply ? Draft : AppSettings.Dsp);
+        _ipc.EndDspPreview();
     }
     private void PlaybackChanged() => _queue.TryEnqueue(() => ApplyPlaybackState());
 
@@ -134,17 +137,26 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     {
         if (!_open) return;
         var state = _ipc.CurrentDspState?.State;
-        CanAudition = state is { RenderKind: 0, IsEnabled: true, Channels: <= 2 };
+        CanAudition = state is { RenderKind: 0, IsEnabled: true, Channels: > 0 and <= 2 };
         string id = state?.OutputDeviceId ?? "";
         bool mode = AppSettings.DeviceCorrections.Enabled;
-        bool changed = force || id != _editorOutputId || mode != _deviceMode;
+        bool modeChanged = mode != _deviceMode;
+        bool changed = force || id != _editorOutputId || modeChanged || state?.OutputGeneration != _editorOutputGeneration;
+        if (modeChanged && mode) _globalDraft = Draft;
         _editorOutputId = id;
+        _editorOutputGeneration = state?.OutputGeneration ?? 0;
         _deviceMode = mode;
         if (!changed) return;
         // 自动跟随时停止旧草稿试听，保持内核按实际端点应用绑定；不写回全局草稿。
         _timer.Stop();
-        _ipc.UpdateDsp();
-        if (!mode) return;
+        _ipc.EndDspPreview();
+        if (!mode)
+        {
+            // 全局草稿属于编辑会话。输出切换只重新定向试听，不重新载入已保存曲线。
+            if (modeChanged) LoadCorrectionDraft(_globalDraft, preview: false);
+            if (CanAudition && id.Length > 0) Changed();
+            return;
+        }
         var binding = AppSettings.DeviceCorrections.Find(id);
         if (binding != null && CorrectionCurve.UsesCurve(binding.Settings))
             LoadCorrectionDraft(binding.Settings, preview: false);

@@ -19,54 +19,64 @@ internal sealed class ConvolutionFilter
     private int _blockPosition, _spectrumPosition;
     private int _position;
 
+    /// <summary>共享只读系数；任何输入历史和 FFT 工作区均属于单个滤波器。</summary>
+    internal sealed record Coefficients(double[][] Taps, double[][][] Kernels, int Length, int Partitions);
+    internal Coefficients Prepared { get; }
+
     internal ConvolutionFilter(ImpulseResponse impulse, int rate, int channels, bool useSimd = true)
+        : this(Prepare(impulse, rate, channels), useSimd) { }
+
+    internal ConvolutionFilter(Coefficients prepared, bool useSimd = true)
+    {
+        Prepared = prepared;
+        _taps = prepared.Taps; _kernels = prepared.Kernels;
+        _length = prepared.Length; _partitions = prepared.Partitions;
+        _channels = _taps.Length;
+        _useSimd = useSimd && Vector.IsHardwareAccelerated;
+        _history = new double[_channels][];
+        _spectra = new double[_channels][][];
+        _input = new Complex[_channels][]; _work = new Complex[_channels][];
+        _tail = new double[_channels][]; _sum = new double[_channels][];
+        for (int ch = 0; ch < _channels; ch++)
+        {
+            _history[ch] = new double[_length * 2];
+            _spectra[ch] = new double[_partitions][];
+            for (int p = 0; p < _partitions; p++) _spectra[ch][p] = new double[FftSize * 2];
+            _input[ch] = new Complex[FftSize]; _work[ch] = new Complex[FftSize];
+            _tail[ch] = new double[FftSize]; _sum[ch] = new double[FftSize * 2];
+        }
+    }
+
+    internal static Coefficients Prepare(ImpulseResponse impulse, int rate, int channels)
     {
         if (channels is < 1 or > 2) throw new InvalidDataException("Unsupported output channels.");
         impulse = impulse.AtRate(rate);
-        _channels = channels;
-        _useSimd = useSimd && Vector.IsHardwareAccelerated;
-        int count = checked((int)Math.Ceiling(impulse.Channels[0].Length * (double)rate / impulse.SampleRate));
+        int count = impulse.Channels[0].Length;
         if (count > ImpulseResponse.MaxTaps) throw new InvalidDataException("Resampled IR exceeds 8192 taps.");
-        _length = (Math.Min(count, Block) + Vector<double>.Count - 1) / Vector<double>.Count * Vector<double>.Count;
-        _partitions = (Math.Max(0, count - Block) + Block - 1) / Block;
-        _taps = new double[channels][];
-        _history = new double[channels][];
-        _kernels = new double[channels][][];
-        _spectra = new double[channels][][];
-        _input = new Complex[channels][];
-        _work = new Complex[channels][];
-        _tail = new double[channels][];
-        _sum = new double[channels][];
+        int length = (Math.Min(count, Block) + Vector<double>.Count - 1) / Vector<double>.Count * Vector<double>.Count;
+        int partitions = (Math.Max(0, count - Block) + Block - 1) / Block;
+        var taps = new double[channels][];
+        var kernels = new double[channels][][];
+        var work = new Complex[FftSize];
         for (int ch = 0; ch < channels; ch++)
         {
-            _taps[ch] = new double[_length];
-            _history[ch] = new double[_length * 2];
-            _kernels[ch] = new double[_partitions][];
-            _spectra[ch] = new double[_partitions][];
-            _input[ch] = new Complex[FftSize];
-            _work[ch] = new Complex[FftSize];
-            _tail[ch] = new double[FftSize];
-            _sum[ch] = new double[FftSize * 2];
-            for (int p = 0; p < _partitions; p++)
-            {
-                _kernels[ch][p] = new double[FftSize * 2];
-                _spectra[ch][p] = new double[FftSize * 2];
-            }
+            taps[ch] = new double[length];
+            kernels[ch] = new double[partitions][];
+            for (int p = 0; p < partitions; p++) kernels[ch][p] = new double[FftSize * 2];
             double[] source = impulse.Channels[Math.Min(ch, impulse.Channels.Length - 1)];
             for (int i = 0; i < count; i++)
             {
-                double value = source[i];
-                if (i < Block) _taps[ch][_length - 1 - i] = value;
-                else _kernels[ch][(i - Block) / Block][i % Block] = value;
+                if (i < Block) taps[ch][length - 1 - i] = source[i];
+                else kernels[ch][(i - Block) / Block][i % Block] = source[i];
             }
-            foreach (var kernel in _kernels[ch])
+            foreach (var kernel in kernels[ch])
             {
-                var work = _work[ch];
                 for (int i = 0; i < FftSize; i++) work[i] = new Complex(kernel[i], 0);
                 Transform(work, false);
                 Pack(work, kernel);
             }
         }
+        return new(taps, kernels, length, partitions);
     }
 
     internal void Reset()

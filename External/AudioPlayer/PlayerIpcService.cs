@@ -271,7 +271,7 @@ public class PlayerIpcService : IDisposable
                         _engine!.UpdateDeviceCorrections(corrections.Read());
                     break;
                 case CommandId.PreviewDsp:
-                    _engine!.UpdateDsp(DspProtocol.ReadSettings(payload), preview: true);
+                    _engine!.PreviewDsp(DspPreview.Read(payload));
                     break;
                 case CommandId.GetDspState:
                 {

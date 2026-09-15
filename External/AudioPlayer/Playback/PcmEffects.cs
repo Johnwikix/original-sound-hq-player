@@ -95,10 +95,20 @@ internal sealed class PcmEffects : IDisposable
     }
 
     /// <summary>仅在旧输出已停止、新输出尚未启动时调用，禁止旧设备曲线和尾音进入新设备。</summary>
-    internal void ResetForOutput()
+    internal void ResetForOutput(DspSettings? next = null)
     {
         lock (_control)
         {
+            bool curve = next != null && CorrectionCurve.UsesCurve(next);
+            if (next != null && _filter != null
+                && _curveKey == (curve ? next.CurvePoints : null)
+                && _impulsePath == (curve ? null : next.ImpulsePath)
+                && _autoHeadroom == (!next.AutoPreamp.HasValue && curve && next.AutoConvolutionHeadroom))
+            {
+                _filter.Reset();
+                ResetRenderState();
+                return;
+            }
             _prepareCancellation?.Cancel();
             ++_impulseVersion;
             _impulsePath = _curveKey = null;
@@ -111,6 +121,8 @@ internal sealed class PcmEffects : IDisposable
 
     private void ConfigureConvolution()
     {
+        // 旁路时保留已准备系数，但不为未使用的曲线启动后台计算。
+        if (!_settings.ConvolutionEnabled) return;
         bool curve = CorrectionCurve.UsesCurve(_settings);
         string? curveKey = curve ? _settings.CurvePoints : null;
         string? path = curve ? null : _settings.ImpulsePath;
@@ -135,11 +147,11 @@ internal sealed class PcmEffects : IDisposable
             System.Numerics.Complex[][]? spectra = null;
             try
             {
-                var impulse = CorrectionCurve.Prepare(settings, _rate, token);
-                spectra = impulse.Channels.Select(ResponseMath.Spectrum).ToArray();
-                if (autoHeadroom) autoGain = ResponseMath.AutoAttenuationDb(impulse);
+                var prepared = PreparedCorrectionCache.Get(settings, _rate, _channels, token);
+                spectra = prepared.Spectra;
+                if (autoHeadroom) autoGain = prepared.AutoGainDb;
                 token.ThrowIfCancellationRequested();
-                filter = new ConvolutionFilter(impulse, _rate, _channels);
+                filter = new ConvolutionFilter(prepared.Coefficients);
             }
             catch (OperationCanceledException) { return; }
             catch (Exception ex) { Console.WriteLine($"[convolution] IR load failed: {ex.Message}"); }

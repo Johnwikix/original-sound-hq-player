@@ -1868,4 +1868,7 @@
   <data name="DspDeviceRemove" xml:space="preserve"><value>解除绑定</value></data>
   <data name="DspDeviceRefresh" xml:space="preserve"><value>刷新</value></data>
   <data name="DspDeviceError" xml:space="preserve"><value>无法保存或读取设备校正，请重试。</value></data>
+  <data name="DspDeviceRetry" xml:space="preserve"><value>重试保存 / 应用</value></data>
+  <data name="DspDeviceApplyError" xml:space="preserve"><value>校正已保存，但播放端尚未确认应用。请重试。</value></data>
+  <data name="DspDeviceSaveError" xml:space="preserve"><value>校正保存失败，原有绑定未改变。请重试。</value></data>
 </root>

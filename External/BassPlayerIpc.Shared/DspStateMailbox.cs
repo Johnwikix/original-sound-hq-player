@@ -11,7 +11,7 @@ public sealed record DspStateSnapshot(long Revision, DspState State);
 /// </summary>
 public sealed class DspStateMailbox : IDisposable
 {
-    public const string Name = "AudioPlayer_DspState_v4";
+    public const string Name = "AudioPlayer_DspState_v5";
     private const int Size = sizeof(long) + DspProtocol.StateSize;
     private readonly MemoryMappedFile _memory;
     private readonly MemoryMappedViewAccessor _view;

@@ -1869,5 +1869,8 @@
   <data name="DspDeviceRemove" xml:space="preserve"><value>Zuordnung entfernen</value></data>
   <data name="DspDeviceRefresh" xml:space="preserve"><value>Aktualisieren</value></data>
   <data name="DspDeviceError" xml:space="preserve"><value>Gerätekorrekturen konnten nicht gespeichert oder gelesen werden. Erneut versuchen.</value></data>
+  <data name="DspDeviceRetry" xml:space="preserve"><value>Speichern / Anwenden wiederholen</value></data>
+  <data name="DspDeviceApplyError" xml:space="preserve"><value>Korrektur gespeichert, aber die Anwendung durch die Wiedergabe wurde nicht bestätigt. Erneut versuchen.</value></data>
+  <data name="DspDeviceSaveError" xml:space="preserve"><value>Korrektur konnte nicht gespeichert werden. Vorhandene Zuordnungen bleiben erhalten.</value></data>
 </root>
 

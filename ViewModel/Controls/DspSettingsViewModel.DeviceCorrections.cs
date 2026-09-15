@@ -46,19 +46,16 @@ public partial class DspSettingsViewModel
         get => AppSettings.DeviceCorrections.Enabled;
         set
         {
-            if (value == DeviceCorrectionEnabled) return;
-            AppSettings.DeviceCorrections = AppSettings.DeviceCorrections with { Enabled = value };
-            OnPropertyChanged();
-            RefreshCorrectionState();
-            _ = SaveCorrectionsAsync();
-            _refreshCorrectionDraft?.Invoke();
+            if (value == DeviceCorrectionEnabled || CorrectionBusy) return;
+            _ = SaveCorrectionsAsync(AppSettings.DeviceCorrections with { Enabled = value });
         }
     }
 
     public string ActualCorrectionOutput { get => field; private set => SetProperty(ref field, value); } = "";
     public string CorrectionBindingStatus { get => field; private set => SetProperty(ref field, value); } = "";
     public string SaveCorrectionLabel { get => field; private set => SetProperty(ref field, value); } = "";
-    public bool CorrectionBusy { get => field; private set { if (SetProperty(ref field, value)) RefreshCorrectionState(); } }
+    public bool CanChangeCorrectionMode => !CorrectionBusy;
+    public bool CorrectionBusy { get => field; private set { if (SetProperty(ref field, value)) { OnPropertyChanged(nameof(CanChangeCorrectionMode)); RetryCorrectionCommand.NotifyCanExecuteChanged(); RefreshCorrectionState(); } } }
 
     private string? CorrectionDeviceId => string.IsNullOrEmpty(SelectedCorrectionDevice?.EndpointId)
         ? _actualCorrectionDeviceId : SelectedCorrectionDevice.EndpointId;
@@ -130,8 +127,7 @@ public partial class DspSettingsViewModel
         int index = bindings.FindIndex(b => string.Equals(b.DeviceId, id, StringComparison.OrdinalIgnoreCase));
         if (index >= 0) bindings[index] = snapshot;
         else bindings.Add(snapshot);
-        AppSettings.DeviceCorrections = AppSettings.DeviceCorrections with { Bindings = bindings.ToArray() };
-        await SaveCorrectionsAsync();
+        await SaveCorrectionsAsync(AppSettings.DeviceCorrections with { Bindings = bindings.ToArray() });
     }
 
     [RelayCommand(CanExecute = nameof(CanLoadCorrection))]
@@ -153,23 +149,48 @@ public partial class DspSettingsViewModel
     private async Task RemoveCorrectionAsync()
     {
         string? id = CorrectionDeviceId;
-        AppSettings.DeviceCorrections = AppSettings.DeviceCorrections with
+        var candidate = AppSettings.DeviceCorrections with
         {
             Bindings = AppSettings.DeviceCorrections.Bindings.Where(b => !string.Equals(b.DeviceId, id, StringComparison.OrdinalIgnoreCase)).ToArray()
         };
-        await SaveCorrectionsAsync();
+        await SaveCorrectionsAsync(candidate);
     }
 
-    private async Task SaveCorrectionsAsync()
+    private DeviceCorrections? _pendingCorrection;
+    public bool CanRetryCorrection => !CorrectionBusy && _pendingCorrection != null;
+
+    [RelayCommand(CanExecute = nameof(CanRetryCorrection))]
+    private Task RetryCorrectionAsync() => SaveCorrectionsAsync(_pendingCorrection!);
+
+    private async Task SaveCorrectionsAsync(DeviceCorrections candidate)
     {
+        if (CorrectionBusy) return;
+        CorrectionBusy = true;
+        _pendingCorrection = candidate;
         try
         {
             ImportFailed = false;
-            _ipc.UpdateDeviceCorrections();
-            await _database.SaveSettingAsync();
+            if (!ReferenceEquals(candidate, AppSettings.DeviceCorrections))
+                await _database.SaveDeviceCorrectionsAsync(candidate);
+            _pendingCorrection = AppSettings.DeviceCorrections;
+            _refreshCorrectionDraft?.Invoke();
+            await _ipc.UpdateDeviceCorrectionsAsync();
+            _pendingCorrection = null;
         }
-        catch (Exception) { ShowCorrectionError(); }
-        RefreshCorrectionState();
+        catch (Exception)
+        {
+            ImportError = ToolUtils.GetString(ReferenceEquals(_pendingCorrection, AppSettings.DeviceCorrections)
+                ? "DspDeviceApplyError" : "DspDeviceSaveError");
+            ImportFailed = true;
+        }
+        finally
+        {
+            CorrectionBusy = false;
+            OnPropertyChanged(nameof(DeviceCorrectionEnabled));
+            OnPropertyChanged(nameof(CanRetryCorrection));
+            RetryCorrectionCommand.NotifyCanExecuteChanged();
+            RefreshCorrectionState();
+        }
     }
 
     private void ShowCorrectionError()

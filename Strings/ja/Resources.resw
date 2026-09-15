@@ -1869,5 +1869,8 @@
   <data name="DspDeviceRemove" xml:space="preserve"><value>登録を解除</value></data>
   <data name="DspDeviceRefresh" xml:space="preserve"><value>更新</value></data>
   <data name="DspDeviceError" xml:space="preserve"><value>デバイス補正を保存または読み込めませんでした。再試行してください。</value></data>
+  <data name="DspDeviceRetry" xml:space="preserve"><value>保存 / 適用を再試行</value></data>
+  <data name="DspDeviceApplyError" xml:space="preserve"><value>校正は保存されましたが、再生側での適用が確認できません。再試行してください。</value></data>
+  <data name="DspDeviceSaveError" xml:space="preserve"><value>校正を保存できませんでした。既存の割り当ては変更されていません。</value></data>
 </root>
 

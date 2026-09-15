@@ -101,6 +101,8 @@ public sealed class PlaybackEngine : IDisposable
     public float Volume = 0.5f;
     private DspSettings? _dspSettings = new();
     private DeviceCorrections _deviceCorrections = new();
+    private long _outputGeneration;
+    private long _previewSequence;
     private string? _previewDeviceId;
     private DspSettings? _previewSettings;
 
@@ -321,7 +323,9 @@ public sealed class PlaybackEngine : IDisposable
         var session = Session.Open(this, url, kind, DsdPcmFreq, DsdGain, Latency, forcedRate, forcedChannels, maxChannels, surround51);
         if (session != null)
         {
-            session.ConfigureDsp(ResolveDsp(_output?.DeviceId));
+            session.ConfigureDsp(_deviceCorrections.Enabled
+                ? (_dspSettings ?? new DspSettings()) with { ConvolutionEnabled = false }
+                : ResolveDsp(_output?.DeviceId));
             if (session.Gain != null)
             {
                 session.Gain.SetImmediately(IsFadingEnabled ? 0 : GainVolumeTarget);
@@ -868,21 +872,38 @@ public sealed class PlaybackEngine : IDisposable
     }
 
     /// <summary>更新 PCM 音效；不重建输出，不接触 DoP/Native DSD 位流。</summary>
-    public void UpdateDsp(DspSettings settings, bool preview = false)
+    public void UpdateDsp(DspSettings settings)
+    {
+        var normalized = settings.Sanitize();
+        lock (_streamLock)
+        {
+            _previewDeviceId = null;
+            _previewSettings = null;
+            _dspSettings = normalized;
+            _session?.ConfigureDsp(ResolveDsp(_output?.DeviceId));
+            QueueDspState();
+        }
+    }
+
+    /// <summary>拒绝输出重建前或已结束试听之前的延迟命令。</summary>
+    public void PreviewDsp(DspPreview request)
     {
         lock (_streamLock)
         {
-            var normalized = settings.Sanitize();
-            if (preview)
+            if (request.Sequence <= _previewSequence) return;
+            _previewSequence = request.Sequence;
+            if (request.End)
             {
-                _previewDeviceId ??= _output?.DeviceId;
-                _previewSettings = normalized;
+                _previewSettings = null;
+                _previewDeviceId = null;
             }
             else
             {
-                _previewDeviceId = null;
-                _previewSettings = null;
-                _dspSettings = normalized;
+                if (_output is not { IsFailed: false } output || request.Generation != _outputGeneration
+                    || string.IsNullOrEmpty(request.DeviceId)
+                    || !string.Equals(request.DeviceId, output.DeviceId, StringComparison.OrdinalIgnoreCase)) return;
+                _previewDeviceId = request.DeviceId;
+                _previewSettings = request.Settings.Sanitize();
             }
             _session?.ConfigureDsp(ResolveDsp(_output?.DeviceId));
             QueueDspState();
@@ -905,7 +926,10 @@ public sealed class PlaybackEngine : IDisposable
 
     private void PrepareOutputDsp(Session session, string? deviceId)
     {
-        if (_deviceCorrections.Enabled) session.Effects?.ResetForOutput();
+        _outputGeneration = Math.Max(_outputGeneration + 1, DateTime.UtcNow.Ticks);
+        _previewSettings = null;
+        _previewDeviceId = null;
+        if (_deviceCorrections.Enabled) session.Effects?.ResetForOutput(ResolveDsp(deviceId));
         session.ConfigureDsp(ResolveDsp(deviceId));
     }
 
@@ -926,7 +950,7 @@ public sealed class PlaybackEngine : IDisposable
             bool eq = enabled && kind == 0 && IsEqualizerEnabled && (_session == null || _session.Channels <= 2);
             var state = _session?.Effects?.GetState(kind, eq)
                 ?? new DspState(kind, eq, _session?.Channels ?? 0, LoudnessStatus.Off, 0, double.NaN, enabled);
-            return state with { OutputDeviceId = _output is { IsFailed: false } output ? output.DeviceId ?? "" : "" };
+            return state with { OutputGeneration = _outputGeneration, OutputDeviceId = _output is { IsFailed: false } output ? output.DeviceId ?? "" : "" };
         }
     }
 

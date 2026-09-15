@@ -9,7 +9,7 @@ public sealed record DeviceCorrection
 {
     public string DeviceId { get; init; } = "";
     public string DeviceName { get; init; } = "";
-    public DspSettings Settings { get; init; } = new();
+    public CorrectionSettings Settings { get; init; } = new();
 
     public DspSettings Apply(DspSettings global) => global with
     {
@@ -104,17 +104,18 @@ public sealed class DeviceCorrectionMailbox : IDisposable
 
     public DeviceCorrections Read()
     {
+        byte[] bytes;
         Enter();
         try
         {
             int length = _view.ReadInt32(0);
             if (length <= 0 || length > Capacity) throw new InvalidDataException("Invalid correction mailbox.");
-            byte[] bytes = new byte[length];
+            bytes = new byte[length];
             _view.ReadArray(sizeof(int), bytes, 0, length);
-            return (JsonSerializer.Deserialize(bytes, DeviceCorrectionJsonContext.Default.DeviceCorrections)
-                ?? throw new InvalidDataException()).Validate();
         }
         finally { _mutex.ReleaseMutex(); }
+        return JsonSerializer.Deserialize(bytes, DeviceCorrectionJsonContext.Default.DeviceCorrections)
+            ?? throw new InvalidDataException();
     }
 
     public void Dispose() { _mutex.Dispose(); _view.Dispose(); _memory.Dispose(); }
