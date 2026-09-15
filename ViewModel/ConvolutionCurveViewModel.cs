@@ -72,10 +72,18 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
             SyncNodes(); Changed();
         }
     }
-    public DspSettings Draft => _initial with { ConvolutionSource = ConvolutionSource.Curve,
-        CurvePoints = CorrectionCurve.Encode(_points),
-        CurvePresetName = SelectedPreset?.Points == CorrectionCurve.Encode(_points) ? SelectedPreset.Name : "", ConvolutionEnabled = true,
-        AutoPreamp = AutoPreamp, HeadroomDb = double.IsFinite(PreampDb) ? PreampDb : _initial.HeadroomDb };
+    public DspSettings Draft
+    {
+        get
+        {
+            // 每次草稿只编码一次，避免防抖试听重复分配相同字符串。
+            string points = CorrectionCurve.Encode(_points);
+            return _initial with { ConvolutionSource = ConvolutionSource.Curve,
+                CurvePoints = points,
+                CurvePresetName = SelectedPreset?.Points == points ? SelectedPreset.Name : "", ConvolutionEnabled = true,
+                AutoPreamp = AutoPreamp, HeadroomDb = double.IsFinite(PreampDb) ? PreampDb : _initial.HeadroomDb };
+        }
+    }
 
     public ConvolutionCurveViewModel(IpcService ipc, CurvePresetService store)
     {

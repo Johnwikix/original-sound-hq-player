@@ -192,8 +192,8 @@ namespace WinUIMusicPlayer.Services
                 catch (JsonException ex)
                 {
                     // 损坏文件留底后按默认值继续，避免之后一次写入把事故固化成永久丢失
-                    _logger.LogError(ex, $"DesktopLyricsState.json 解析失败，备份损坏文件后按默认值继续: {ex.Message}");
-                    TryBackupCorruptFile(path);
+                    _logger.LogError(ex, $"DesktopLyricsState.json 解析失败，隔离损坏文件后按默认值继续: {ex.Message}");
+                    TryPreserveCorruptFile(path);
                     return new SaveDesktopLyricsState();
                 }
                 catch (Exception ex)
@@ -626,42 +626,20 @@ namespace WinUIMusicPlayer.Services
         public async Task<SaveSettings> GetSettings()
         {
             string path = SettingsPath;
-            if (!File.Exists(path) && !File.Exists(path + ".bak"))
-            {
-                return new SaveSettings();
-            }
             await _settingsIoGate.WaitAsync();
             try
             {
-                SaveSettings result;
-                try
-                {
-                    string json = await File.ReadAllTextAsync(path);
-                    result = JsonSerializer.Deserialize(json, SettingsJsonContext.Default.SaveSettings)
-                        ?? throw new JsonException("Empty settings.");
-                }
-                catch (Exception ex) when (ex is JsonException or FileNotFoundException)
-                {
-                    string backup = await File.ReadAllTextAsync(path + ".bak");
-                    result = JsonSerializer.Deserialize(backup, SettingsJsonContext.Default.SaveSettings)
-                        ?? throw new JsonException("Empty settings backup.");
-                    if (!TryBackupCorruptFile(path)) throw new IOException("Cannot preserve corrupt settings; refusing writes.");
-                }
+                var result = await BassPlayerIpc.Shared.AtomicSettingsFile.LoadAsync(path,
+                    SettingsJsonContext.Default.SaveSettings, static () => new(), static () => new(),
+                    onReset: preserved => _logger.LogWarning("Settings.json 已恢复默认值，损坏文件保留在 {Path}", preserved));
                 _settingsReadFailed = false;
                 _lastSettingsBytes = JsonSerializer.SerializeToUtf8Bytes(result, SettingsJsonContext.Default.SaveSettings);
                 return result;
             }
-            catch (JsonException ex)
-            {
-                // 主文件和备份均无效：保留现场，禁用后续覆盖。
-                _logger.LogError(ex, $"Settings.json 及备份无法恢复，禁止覆盖: {ex.Message}");
-                _settingsReadFailed = true;
-                return _currentSettings ?? new SaveSettings();
-            }
             catch (Exception ex)
             {
                 // 读取失败期间禁止覆盖已有配置。
-                _logger.LogError(ex, ex.Message, ex.StackTrace);
+                _logger.LogError(ex, "读取配置失败：{Path}", path);
                 _settingsReadFailed = true;
                 return _currentSettings ?? new SaveSettings();
             }
@@ -671,14 +649,14 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        private bool TryBackupCorruptFile(string path)
+        private bool TryPreserveCorruptFile(string path)
         {
             try
             {
                 if (!File.Exists(path)) return true;
-                string backupPath = $"{path}.corrupt-{DateTime.Now:yyyyMMdd-HHmmss}.bak";
+                string backupPath = $"{path}.corrupt-{Guid.NewGuid():N}";
                 File.Move(path, backupPath);
-                _logger.LogInformation($"损坏的 JSON 文件已备份为: {backupPath}");
+                _logger.LogInformation($"损坏的 JSON 文件已隔离为: {backupPath}");
                 return true;
             }
             catch (Exception ex)
@@ -737,13 +715,13 @@ namespace WinUIMusicPlayer.Services
             catch (JsonException ex)
             {
                 // 损坏文件留底后按无状态继续，避免之后一次写入把事故固化成永久丢失
-                _logger.LogError(ex, $"PlayState.json 解析失败，备份损坏文件后按空状态继续: {ex.Message}");
-                TryBackupCorruptFile(path);
+                _logger.LogError(ex, $"PlayState.json 解析失败，隔离损坏文件后按空状态继续: {ex.Message}");
+                TryPreserveCorruptFile(path);
                 return null;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, ex.Message, ex.StackTrace);
+                _logger.LogError(ex, "读取配置失败：{Path}", path);
                 return null;
             }
             finally
@@ -981,8 +959,8 @@ namespace WinUIMusicPlayer.Services
             }
             catch (JsonException ex)
             {
-                _logger.LogError(ex, $"PlayState.json 解析失败，备份损坏文件后按空状态继续: {ex.Message}");
-                TryBackupCorruptFile(path);
+                _logger.LogError(ex, $"PlayState.json 解析失败，隔离损坏文件后按空状态继续: {ex.Message}");
+                TryPreserveCorruptFile(path);
                 _currentPlayState = new SavePlayState();
             }
             catch (Exception ex)
@@ -1038,6 +1016,8 @@ namespace WinUIMusicPlayer.Services
                     if (_settingsReadFailed && !File.Exists(Path.Combine(Path.GetDirectoryName(SettingsPath)!, "AudioCorrections.json")))
                         throw new IOException("Cannot migrate corrections from unreadable settings.");
                     AppSettings.DeviceCorrections = await Task.Run(() => _audioCorrectionStore.LoadAsync(settings.DeviceCorrections));
+                    if (_audioCorrectionStore.ResetToDefaults)
+                        _logger.LogWarning("AudioCorrections.json 已损坏，已隔离原文件并恢复默认设备校正设置");
                     _correctionsMigrated = true;
                 }
                 catch (Exception ex) { _logger.LogError(ex, "Audio correction configuration could not be loaded; writes remain disabled."); }
@@ -1657,8 +1637,8 @@ namespace WinUIMusicPlayer.Services
             catch (JsonException ex)
             {
                 // 损坏文件留底后按未记录处理：最坏情况只是更新日志弹窗多弹一次
-                _logger.LogError(ex, $"VersionRecord.json 解析失败，备份损坏文件后按未记录继续: {ex.Message}");
-                TryBackupCorruptFile(path);
+                _logger.LogError(ex, $"VersionRecord.json 解析失败，隔离损坏文件后按未记录继续: {ex.Message}");
+                TryPreserveCorruptFile(path);
                 return null;
             }
             catch (Exception ex)

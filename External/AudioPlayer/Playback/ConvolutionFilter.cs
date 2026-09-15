@@ -19,7 +19,7 @@ internal sealed class ConvolutionFilter
     private int _blockPosition, _spectrumPosition;
     private int _position;
 
-    /// <summary>共享只读系数；任何输入历史和 FFT 工作区均属于单个滤波器。</summary>
+    /// <summary>共享只读系数，发布后禁止修改任何层级的数组或元素；输入历史和 FFT 工作区属于单个滤波器。</summary>
     internal sealed record Coefficients(double[][] Taps, double[][][] Kernels, int Length, int Partitions);
     internal Coefficients Prepared { get; }
 

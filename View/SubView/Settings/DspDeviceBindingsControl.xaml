@@ -26,7 +26,7 @@
             <Button Content="{x:Bind tool:ToolUtils.GetString('DspDeviceRemove')}" Command="{x:Bind ViewModel.RemoveCorrectionCommand}" />
         </StackPanel>
         <Button Content="{x:Bind tool:ToolUtils.GetString('DspDeviceRetry')}" Command="{x:Bind ViewModel.RetryCorrectionCommand}" />
-        <InfoBar IsOpen="{x:Bind ViewModel.ImportFailed, Mode=OneWay}" IsClosable="False" Severity="Error"
-            Message="{x:Bind ViewModel.ImportError, Mode=OneWay}" />
+        <InfoBar IsOpen="{x:Bind ViewModel.CorrectionFailed, Mode=OneWay}" IsClosable="False" Severity="Error"
+            Message="{x:Bind ViewModel.CorrectionError, Mode=OneWay}" />
     </StackPanel>
 </UserControl>

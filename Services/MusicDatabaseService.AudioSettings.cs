@@ -24,6 +24,8 @@ public partial class MusicDatabaseService
             if (_settingsReadFailed && !File.Exists(path))
                 throw new IOException("Cannot migrate audio preferences from unreadable settings.");
             var audio = await Task.Run(() => _audioSettingsStore.LoadAsync(legacy));
+            if (_audioSettingsStore.ResetToDefaults)
+                _logger.LogWarning("AudioSettings.json 已损坏，已隔离原文件并恢复默认音频设置");
             _audioSettingsMigrated = true;
             return audio;
         }

@@ -24,5 +24,11 @@ public sealed record CorrectionSettings
         ConvolutionTrimDb = value.ConvolutionTrimDb, AutoConvolutionHeadroom = value.AutoConvolutionHeadroom
     };
 
-    public CorrectionSettings ToUnifiedGain() => (CorrectionSettings)((DspSettings)this).Sanitize();
+    public CorrectionSettings ToUnifiedGain()
+    {
+        // 复用 DSP 的校正字段校验规则，转回时仅保留设备专属字段。
+        DspSettings settings = this;
+        DspSettings normalized = settings.Sanitize();
+        return normalized;
+    }
 }

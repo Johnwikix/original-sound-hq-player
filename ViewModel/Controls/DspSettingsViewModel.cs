@@ -223,6 +223,8 @@ public partial class DspSettingsViewModel : ObservableObject
         _loaded = true;
         _lastRevision = 0;
         _ipc.DspStateChanged += OnDspStateChanged;
+        _ipc.CorrectionSyncChanged += OnCorrectionSyncChanged;
+        RefreshCorrectionSyncState();
         LoadValues();
         ApplyLatestState();
         return RefreshCorrectionDevicesAsync();
@@ -245,6 +247,7 @@ public partial class DspSettingsViewModel : ObservableObject
     {
         _loaded = false;
         _ipc.DspStateChanged -= OnDspStateChanged;
+        _ipc.CorrectionSyncChanged -= OnCorrectionSyncChanged;
         _commitTimer.Stop();
         await CommitAsync();
     }

@@ -122,7 +122,11 @@ namespace WinUIMusicPlayer.Services
                 if (matches == 1) AppSettings.WasapiEndpointId = GetWasapiEndpointId(selectedId);
                 else _logger.LogWarning("Saved WASAPI device is missing or ambiguous; using default endpoint");
             }
-            await UpdateDeviceCorrectionsAsync(force: true);
+            try { await UpdateDeviceCorrectionsAsync(force: true); }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Startup correction synchronization was not confirmed; initialization will continue");
+            }
             if (music is not null)
                 await SetMusicUrl(music.Path);
             UpdateEq();
@@ -366,17 +370,62 @@ namespace WinUIMusicPlayer.Services
         /// <summary>发布完整绑定集合，再通知播放端原子采用最新集合。</summary>
         private readonly SemaphoreSlim _correctionPublishGate = new(1, 1);
         private DeviceCorrections? _appliedCorrections;
+        private readonly CancellationTokenSource _correctionRetryCts = new();
+        /// <summary>校正同步未确认；设置页可在启动失败后继续重试。</summary>
+        public bool CorrectionSyncFailed { get; private set; }
+        public event Action? CorrectionSyncChanged;
+
+        private void SetCorrectionSyncFailed(bool failed)
+        {
+            if (CorrectionSyncFailed == failed) return;
+            CorrectionSyncFailed = failed;
+            if (CorrectionSyncChanged is not { } handlers) return;
+            foreach (Action handler in handlers.GetInvocationList())
+            {
+                try { handler(); }
+                catch (Exception ex) { _logger.LogWarning(ex, "Correction sync subscriber failed"); }
+            }
+        }
+
+        /// <summary>主页初始化后有限重试，每次发送最新配置；退出取消等待。</summary>
+        public async Task RetryStartupCorrectionsAsync()
+        {
+            if (Volatile.Read(ref _disposed) != 0) return;
+            var token = _correctionRetryCts.Token;
+            try
+            {
+                for (int attempt = 1; attempt <= 2 && CorrectionSyncFailed; attempt++)
+                {
+                    await Task.Delay(TimeSpan.FromSeconds(attempt), token);
+                    if (!CorrectionSyncFailed || Volatile.Read(ref _disposed) != 0) return;
+                    try { await UpdateDeviceCorrectionsAsync(); }
+                    catch (Exception ex) { _logger.LogWarning(ex, "Correction synchronization retry {Attempt} was not confirmed", attempt); }
+                }
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        }
+
         public async Task UpdateDeviceCorrectionsAsync(bool force = false)
         {
-            var snapshot = AppSettings.DeviceCorrections;
             await _correctionPublishGate.WaitAsync();
             try
             {
+                ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+                // 在串行入口内取最新快照，避免排队期间旧配置覆盖新配置。
+                var snapshot = AppSettings.DeviceCorrections;
                 if (!force && ReferenceEquals(snapshot, _appliedCorrections)) return;
                 await Task.Run(() => (_correctionMailbox ??= new DeviceCorrectionMailbox()).Publish(snapshot));
                 var result = await SendCommandAsync(CommandId.UpdateDeviceCorrections, ReadOnlyMemory<byte>.Empty);
                 if (result != MessageTypeId.Success) throw new InvalidOperationException("Audio correction acknowledgement failed.");
                 _appliedCorrections = snapshot;
+                SetCorrectionSyncFailed(false);
+            }
+            catch
+            {
+                // 确认失败时播放端状态未知，不能再用旧的成功快照跳过重发。
+                _appliedCorrections = null;
+                SetCorrectionSyncFailed(true);
+                throw;
             }
             finally { _correctionPublishGate.Release(); }
         }
@@ -604,6 +653,8 @@ namespace WinUIMusicPlayer.Services
         public void Dispose()
         {
             if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+            _correctionRetryCts.Cancel();
+            _correctionRetryCts.Dispose();
             _notificationCts?.Cancel();
             _serverMonitorCts?.Cancel();
             _transport?.Dispose();

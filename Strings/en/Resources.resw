@@ -1870,6 +1870,6 @@
   <data name="DspDeviceRefresh" xml:space="preserve"><value>Refresh</value></data>
   <data name="DspDeviceError" xml:space="preserve"><value>Could not save or read device corrections. Please retry.</value></data>
   <data name="DspDeviceRetry" xml:space="preserve"><value>Retry save / apply</value></data>
-  <data name="DspDeviceApplyError" xml:space="preserve"><value>Correction saved, but playback has not confirmed applying it. Retry.</value></data>
+  <data name="DspDeviceApplyError" xml:space="preserve"><value>Correction synchronization has not been confirmed. Retry.</value></data>
   <data name="DspDeviceSaveError" xml:space="preserve"><value>Correction could not be saved. Existing bindings are unchanged. Retry.</value></data>
 </root>

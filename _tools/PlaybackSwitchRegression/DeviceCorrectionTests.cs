@@ -111,7 +111,7 @@ internal static unsafe partial class Program
             Require(Resolve().CurvePoints != global.CurvePoints, "closed preview resurrected");
         });
 
-        Run("Device correction: atomic migration, backup recovery, write failure and invalid schema", () =>
+        Run("Device correction: no-backup migration, default recovery, write failure and invalid schema", () =>
         {
             string directory = Path.Combine(Path.GetTempPath(), "correction-store-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(directory);
@@ -123,10 +123,9 @@ internal static unsafe partial class Program
                 Require(migrated.Bindings.Length == 3, "legacy migration lost bindings");
                 var json = File.ReadAllText(path);
                 Require(!json.Contains("NormalizeLoudness") && !json.Contains("HeadroomDb"), "device file contains global DSP preferences");
-                File.WriteAllText(path + ".bak", json);
                 var second = new AudioCorrectionStore(path);
                 Require(second.LoadAsync(new()).GetAwaiter().GetResult().Bindings.Length == 3, "migration ran twice");
-                Require(!File.Exists(path + ".bak"), "valid main file did not retire legacy backup");
+                Require(!File.Exists(path + ".bak"), "loading generated a backup");
                 using (var locked = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
                 {
                     try { store.SaveAsync(bindings with { Enabled = false }).GetAwaiter().GetResult(); throw new Exception("locked write succeeded"); }
@@ -135,23 +134,23 @@ internal static unsafe partial class Program
                 Require(File.ReadAllText(path) == json, "failed write changed committed file");
                 store.SaveAsync(bindings with { Enabled = false }).GetAwaiter().GetResult();
                 Require(!File.Exists(path + ".bak"), "correction save created an unwanted backup");
-                // Simulate a backup produced by the previous app version.
+                // An obsolete backup is not a source of current configuration.
                 File.WriteAllText(path + ".bak", json);
                 File.WriteAllText(path, "{broken");
                 var recovery = new AudioCorrectionStore(path);
-                Require(recovery.LoadAsync(new()).GetAwaiter().GetResult().Enabled, "valid backup was not recovered");
-                Require(!File.Exists(path + ".bak"), "legacy backup not removed after recovery");
+                var defaults = recovery.LoadAsync(bindings).GetAwaiter().GetResult();
+                Require(!defaults.Enabled && defaults.Bindings.Length == 0 && recovery.ResetToDefaults, "corruption revived legacy bindings instead of defaults");
+                Require(Directory.GetFiles(directory, "AudioCorrections.json.corrupt-*").Any(p => File.ReadAllText(p) == "{broken"), "corrupt input was not isolated");
                 recovery.SaveAsync(bindings).GetAwaiter().GetResult();
                 Require(new AudioCorrectionStore(path).LoadAsync(new()).GetAwaiter().GetResult().Bindings.Length == 3, "recovery save failed");
-                File.WriteAllText(path, "{\"SchemaVersion\":2,\"Revision\":1,\"Corrections\":{}}");
+                File.WriteAllText(path, "{\"SchemaVersion\":2}");
                 try { new AudioCorrectionStore(path).LoadAsync(new()).GetAwaiter().GetResult(); throw new Exception("unknown schema overwritten"); }
                 catch (NotSupportedException) { }
                 File.WriteAllText(path, "{}"); File.WriteAllText(path + ".bak", "{}");
                 var invalid = new AudioCorrectionStore(path);
-                try { invalid.LoadAsync(bindings).GetAwaiter().GetResult(); throw new Exception("corrupt files remigrated"); }
-                catch (System.Text.Json.JsonException) { }
-                try { invalid.SaveAsync(bindings).GetAwaiter().GetResult(); throw new Exception("failed load permitted save"); }
-                catch (InvalidOperationException) { }
+                Require(invalid.LoadAsync(bindings).GetAwaiter().GetResult().Bindings.Length == 0, "invalid document did not reset");
+                invalid.SaveAsync(bindings).GetAwaiter().GetResult();
+                Require(new AudioCorrectionStore(path).LoadAsync(new()).GetAwaiter().GetResult().Bindings.Length == 3, "reset store remained read-only");
             }
             finally
             {
@@ -174,6 +173,22 @@ internal static unsafe partial class Program
             Array.Clear(samples);
             b.Process(samples, 512, 1, ref mix, ref gain, 1);
             Require(samples.All(x => x == 0), "coefficient reuse shared history");
+        });
+
+        Run("Device correction: cache retains recently used coefficients when full", () =>
+        {
+            DspSettings Curve(int gain) => global with { ConvolutionSource = ConvolutionSource.Curve,
+                CurvePoints = $"20,{gain};20000,{gain}" };
+            var a = PreparedCorrectionCache.Get(Curve(-1), 44100, 1, default);
+            var b = PreparedCorrectionCache.Get(Curve(-2), 44100, 1, default);
+            var c = PreparedCorrectionCache.Get(Curve(-3), 44100, 1, default);
+            var d = PreparedCorrectionCache.Get(Curve(-4), 44100, 1, default);
+            Require(ReferenceEquals(a, PreparedCorrectionCache.Get(Curve(-1), 44100, 1, default)), "cache hit rebuilt A");
+            PreparedCorrectionCache.Get(Curve(-5), 44100, 1, default);
+            Require(ReferenceEquals(a, PreparedCorrectionCache.Get(Curve(-1), 44100, 1, default)), "recently used A was evicted");
+            Require(ReferenceEquals(c, PreparedCorrectionCache.Get(Curve(-3), 44100, 1, default)), "C was unexpectedly evicted");
+            Require(ReferenceEquals(d, PreparedCorrectionCache.Get(Curve(-4), 44100, 1, default)), "D was unexpectedly evicted");
+            Require(!ReferenceEquals(b, PreparedCorrectionCache.Get(Curve(-2), 44100, 1, default)), "least recently used B was retained");
         });
 
         Run("Device correction: old filter cannot leak into a newly opened output", () =>

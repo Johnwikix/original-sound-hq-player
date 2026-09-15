@@ -1,5 +1,6 @@
 using BassPlayerIpc.Shared;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -16,6 +17,31 @@ public partial class DspSettingsViewModel
     private Func<DspSettings>? _correctionDraft;
     private Action<DspSettings>? _loadCorrectionDraft;
     private Action? _refreshCorrectionDraft;
+    public string CorrectionError { get => field; private set => SetProperty(ref field, value); } = "";
+    public bool CorrectionFailed { get => field; private set => SetProperty(ref field, value); }
+    private bool _correctionApplyError;
+
+    private void OnCorrectionSyncChanged() => _queue.TryEnqueue(RefreshCorrectionSyncState);
+
+    private void RefreshCorrectionSyncState()
+    {
+        if (!_loaded || CorrectionBusy) return;
+        if (_ipc.CorrectionSyncFailed && _pendingCorrection == null)
+        {
+            CorrectionError = ToolUtils.GetString("DspDeviceApplyError");
+            CorrectionFailed = true;
+            _correctionApplyError = true;
+        }
+        else if (!_ipc.CorrectionSyncFailed && _correctionApplyError
+            && (_pendingCorrection == null || ReferenceEquals(_pendingCorrection, AppSettings.DeviceCorrections)))
+        {
+            _pendingCorrection = null;
+            CorrectionFailed = false;
+            _correctionApplyError = false;
+        }
+        OnPropertyChanged(nameof(CanRetryCorrection));
+        RetryCorrectionCommand.NotifyCanExecuteChanged();
+    }
 
     /// <summary>绑定命令读取弹窗最新草稿，包括尚未应用的预设切换。</summary>
     public void BeginCorrectionEditing(Func<DspSettings> draft, Action<DspSettings> load, Action? refresh = null)
@@ -112,8 +138,12 @@ public partial class DspSettingsViewModel
                     CorrectionDevices.Add(new() { Name = binding.DeviceName, EndpointId = binding.DeviceId });
             SelectedCorrectionDevice = CorrectionDevices.FirstOrDefault(d => d.EndpointId == selected) ?? CorrectionDevices[0];
         }
-        catch (Exception) { ShowCorrectionError(); }
-        finally { CorrectionBusy = false; }
+        catch (Exception ex)
+        {
+            App.GetLogger<DspSettingsViewModel>().LogWarning(ex, "Correction device enumeration failed");
+            ShowCorrectionError();
+        }
+        finally { CorrectionBusy = false; RefreshCorrectionSyncState(); }
     }
 
     /// <summary>显式保存编辑器快照；以后修改草稿不会隐式覆盖其他设备。</summary>
@@ -157,10 +187,10 @@ public partial class DspSettingsViewModel
     }
 
     private DeviceCorrections? _pendingCorrection;
-    public bool CanRetryCorrection => !CorrectionBusy && _pendingCorrection != null;
+    public bool CanRetryCorrection => !CorrectionBusy && (_pendingCorrection != null || _ipc.CorrectionSyncFailed);
 
     [RelayCommand(CanExecute = nameof(CanRetryCorrection))]
-    private Task RetryCorrectionAsync() => SaveCorrectionsAsync(_pendingCorrection!);
+    private Task RetryCorrectionAsync() => SaveCorrectionsAsync(_pendingCorrection ?? AppSettings.DeviceCorrections);
 
     private async Task SaveCorrectionsAsync(DeviceCorrections candidate)
     {
@@ -169,7 +199,8 @@ public partial class DspSettingsViewModel
         _pendingCorrection = candidate;
         try
         {
-            ImportFailed = false;
+            CorrectionFailed = false;
+            _correctionApplyError = false;
             if (!ReferenceEquals(candidate, AppSettings.DeviceCorrections))
                 await _database.SaveDeviceCorrectionsAsync(candidate);
             _pendingCorrection = AppSettings.DeviceCorrections;
@@ -177,25 +208,28 @@ public partial class DspSettingsViewModel
             await _ipc.UpdateDeviceCorrectionsAsync();
             _pendingCorrection = null;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
-            ImportError = ToolUtils.GetString(ReferenceEquals(_pendingCorrection, AppSettings.DeviceCorrections)
+            _correctionApplyError = ReferenceEquals(_pendingCorrection, AppSettings.DeviceCorrections);
+            App.GetLogger<DspSettingsViewModel>().LogWarning(ex,
+                "Correction {Operation} failed for device {DeviceId}; binding count {BindingCount}",
+                _correctionApplyError ? "synchronization" : "save", CorrectionDeviceId, candidate.Bindings.Length);
+            CorrectionError = ToolUtils.GetString(_correctionApplyError
                 ? "DspDeviceApplyError" : "DspDeviceSaveError");
-            ImportFailed = true;
+            CorrectionFailed = true;
         }
         finally
         {
             CorrectionBusy = false;
             OnPropertyChanged(nameof(DeviceCorrectionEnabled));
             OnPropertyChanged(nameof(CanRetryCorrection));
-            RetryCorrectionCommand.NotifyCanExecuteChanged();
-            RefreshCorrectionState();
         }
     }
 
     private void ShowCorrectionError()
     {
-        ImportError = ToolUtils.GetString("DspDeviceError");
-        ImportFailed = true;
+        _correctionApplyError = false;
+        CorrectionError = ToolUtils.GetString("DspDeviceError");
+        CorrectionFailed = true;
     }
 }

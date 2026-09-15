@@ -72,13 +72,55 @@ try
 
     await File.WriteAllTextAsync(path, "{broken");
     var invalid = new AudioSettingsStore(path);
-    await Reject<JsonException>(() => invalid.LoadAsync(legacy));
-    await Reject<InvalidOperationException>(() => invalid.SaveAsync(legacy));
-    Check(await File.ReadAllTextAsync(path) == "{broken", "Corrupt file was overwritten with legacy defaults.");
-    await File.WriteAllTextAsync(path, "{\"SchemaVersion\":2,\"Revision\":1,\"Preferences\":{}}");
+    Check(await invalid.LoadAsync(legacy) == new AudioPreferences(), "Corrupt file remigrated legacy preferences instead of defaults.");
+    Check(invalid.ResetToDefaults && Directory.GetFiles(directory, "AudioSettings.json.corrupt-*").Any(p => File.ReadAllText(p) == "{broken"), "Corrupt input was not preserved.");
+    await invalid.SaveAsync(legacy with { Latency = 450 });
+    Check((await new AudioSettingsStore(path).LoadAsync(new())).Latency == 450, "Recovered store remained read-only across restart.");
+    Check(!File.Exists(path + ".bak"), "Recovery produced a routine backup.");
+
+    // Future schemas must be preserved even when their shape omits current required fields.
+    const string future = "{\"SchemaVersion\":2}";
+    await File.WriteAllTextAsync(path, future);
     await Reject<NotSupportedException>(() => invalid.LoadAsync(legacy));
     await Reject<InvalidOperationException>(() => invalid.SaveAsync(legacy));
-    Console.WriteLine("PASS: corrupt and unknown-version files are preserved, with subsequent writes blocked.");
+    Check(await File.ReadAllTextAsync(path) == future, "Future schema was reset.");
+    Console.WriteLine("PASS: corruption resets to writable defaults; future schemas remain protected.");
+
+    await File.WriteAllTextAsync(path, "{broken");
+    using (var locked = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+    {
+        await Reject<IOException>(() => invalid.LoadAsync(legacy));
+        await Reject<InvalidOperationException>(() => invalid.SaveAsync(legacy));
+        Check(await File.ReadAllTextAsync(path) == "{broken", "Failed default commit removed the source and permitted remigration.");
+    }
+    Check(await invalid.LoadAsync(legacy) == new AudioPreferences(), "Retry did not recover defaults.");
+    using (var locked = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
+    {
+        await Reject<IOException>(() => invalid.LoadAsync(legacy));
+        await Reject<InvalidOperationException>(() => invalid.SaveAsync(legacy));
+    }
+    Check(await invalid.LoadAsync(legacy) == new AudioPreferences(), "Read retry after unlocking changed preferences.");
+    Task<AudioPreferences> retryRead;
+    using (var transientLock = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
+    {
+        retryRead = invalid.LoadAsync(legacy);
+        Check(!retryRead.IsCompleted, "Sharing violation was not given a retry window.");
+    }
+    Check(await retryRead == new AudioPreferences(), "Transient sharing violation did not recover on the same load.");
+    Console.WriteLine("PASS: failed recovery and persistent IO locks preserve the source; later reload succeeds.");
+
+    string settingsPath = Path.Combine(directory, "Settings.json");
+    async Task<SaveSettings> LoadGeneral() => await AtomicSettingsFile.LoadAsync(settingsPath,
+        SettingsJsonContext.Default.SaveSettings, static () => new(), static () => new());
+    await LoadGeneral();
+    await AtomicSettingsFile.WriteAsync(settingsPath, JsonSerializer.SerializeToUtf8Bytes(general, SettingsJsonContext.Default.SaveSettings));
+    Check(!File.Exists(settingsPath + ".bak"), "General settings still produce backups.");
+    await File.WriteAllTextAsync(settingsPath + ".bak", legacyJson);
+    await File.WriteAllTextAsync(settingsPath, "{broken");
+    Check((await LoadGeneral()).AppTheme == new SaveSettings().AppTheme, "General settings read a stale backup instead of defaults.");
+    await AtomicSettingsFile.WriteAsync(settingsPath, JsonSerializer.SerializeToUtf8Bytes(general, SettingsJsonContext.Default.SaveSettings));
+    Check((await LoadGeneral()).AppTheme == "Dark", "General settings did not become writable after recovery.");
+    Console.WriteLine("PASS: general settings use the same no-backup recovery path and ignore legacy backups.");
 }
 finally
 {

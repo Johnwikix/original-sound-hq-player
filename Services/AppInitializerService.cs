@@ -45,6 +45,7 @@ namespace WinUIMusicPlayer.Services
             appViewModel.IsInitialized = true;
             DesktopLyricsManager.RestoreFromSettings();
             appViewModel.InitHotKeys();
+            _ = ipcService.RetryStartupCorrectionsAsync();
             await CheckVersionUpdateAsync();
         }
 
