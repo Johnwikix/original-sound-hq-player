@@ -1787,9 +1787,7 @@
   <data name="ResponseScope.Text" xml:space="preserve"><value>Combined = EQ + convolution + shared preamp. Auto compensation uses their combined peak. Excludes loudness normalization, channel mixing and master volume. The gain axis scales with the response.</value></data>
   <data name="ResponseFailed" xml:space="preserve"><value>Cannot calculate this IR response. The file may be unavailable or exceed the length limit after resampling. No stale response is shown.</value></data>
   <data name="CurveEditorTitle" xml:space="preserve"><value>Draw correction curve</value></data>
-  <data name="CurveApply" xml:space="preserve"><value>Apply</value></data>
-  <data name="CurveCancel" xml:space="preserve"><value>Cancel</value></data>
-  <data name="CurveIntro.Text" xml:space="preserve"><value>Adjust frequency gains to generate a minimum-phase FIR. No WAV file is needed. This is manual tuning, not automatic headphone or room measurement.</value></data>
+  <data name="CurveIntro.Text" xml:space="preserve"><value>変更は自動的に適用・保存されます。デバイスモードでは、現在の出力デバイスの補正を更新します。 Adjust frequency gains to generate a minimum-phase FIR. No WAV file is needed. This is manual tuning, not automatic headphone or room measurement.</value></data>
   <data name="CurveNodeHint.Text" xml:space="preserve"><value>The dotted line with nodes is the requested curve; Convolution shows the realized FIR including gain. Drag nodes or use the numeric fields below.</value></data>
   <data name="CurveNodePicker.Header" xml:space="preserve"><value>Control point</value></data>
   <data name="CurveFrequency.Header" xml:space="preserve"><value>Frequency (Hz)</value></data>
@@ -1798,7 +1796,6 @@
   <data name="CurveRemove.Content" xml:space="preserve"><value>Remove point</value></data>
   <data name="CurveFlat.Content" xml:space="preserve"><value>Flatten</value></data>
   <data name="CurveAutoHeadroom.Content" xml:space="preserve"><value>Automatic gain/attenuation (EQ + convolution, 1 dB margin)</value></data>
-  <data name="CurveAudition.Header" xml:space="preserve"><value>Audition convolution</value></data>
   <data name="CurveTrim.Header" xml:space="preserve"><value>Shared preamp gain (dB)</value></data>
   <data name="CurvePresetHeading.Text" xml:space="preserve"><value>Curve presets</value></data>
   <data name="CurvePresets.AutomationProperties.Name" xml:space="preserve"><value>Curve presets</value></data>
@@ -1872,5 +1869,6 @@
   <data name="DspDeviceRetry" xml:space="preserve"><value>保存 / 適用を再試行</value></data>
   <data name="DspDeviceApplyError" xml:space="preserve"><value>校正の同期が確認できません。再試行してください。</value></data>
   <data name="DspDeviceSaveError" xml:space="preserve"><value>校正を保存できませんでした。既存の割り当ては変更されていません。</value></data>
+  <data name="CurveLiveSaveError" xml:space="preserve"><value>補正を保存できませんでした。ストレージを確認し、もう一度閉じて再試行してください。</value></data>
 </root>
 

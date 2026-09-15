@@ -47,7 +47,7 @@ public sealed partial class FrequencyResponseControl : UserControl
         ActualThemeChanged += (_, _) => Draw();
     }
     public void SetPoints(CurvePoint[] points, int selected) { _points = points; _selected = selected; Draw(); }
-    public void Refresh(DspSettings? settings = null) => ViewModel.Refresh(settings);
+    public void Refresh() => ViewModel.Refresh();
 
     private Brush Brush(string key) => key switch
     {

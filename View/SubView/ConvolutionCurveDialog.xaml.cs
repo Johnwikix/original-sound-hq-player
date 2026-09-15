@@ -13,7 +13,6 @@ namespace WinUIMusicPlayer.View.SubView;
 public sealed partial class ConvolutionCurveDialog : ContentDialog
 {
     public ConvolutionCurveViewModel ViewModel { get; }
-    public DspSettings Draft => ViewModel.Draft;
     public ConvolutionCurveDialog(DspSettingsViewModel bindings)
     {
         ViewModel = App.Services.GetRequiredService<ConvolutionCurveViewModel>();
@@ -26,12 +25,21 @@ public sealed partial class ConvolutionCurveDialog : ContentDialog
         Response.PointSelected += index => ViewModel.SelectedNode = index;
         Response.PointMoved += ViewModel.MovePoint;
         Opened += async (_, _) => { ResizeEditor(); XamlRoot.Changed += RootChanged; await ViewModel.OpenAsync(); };
-        Closing += (_, args) => { XamlRoot.Changed -= RootChanged; ViewModel.Close(args.Result == ContentDialogResult.Primary); bindings.EndCorrectionEditing(); };
+        Closing += async (_, args) =>
+        {
+            var deferral = args.GetDeferral();
+            try
+            {
+                args.Cancel = !await ViewModel.CloseAsync();
+                if (!args.Cancel) { XamlRoot.Changed -= RootChanged; bindings.EndCorrectionEditing(); }
+            }
+            finally { deferral.Complete(); }
+        };
     }
     private void RefreshPreview()
     {
         Response.SetPoints(ViewModel.Points, ViewModel.SelectedNode);
-        Response.Refresh(ViewModel.Draft);
+        Response.Refresh();
     }
     private void RootChanged(XamlRoot sender, XamlRootChangedEventArgs args) => ResizeEditor();
     private void ResizeEditor()

@@ -140,11 +140,7 @@ public partial class DspSettingsViewModel : ObservableObject
             _dirty = true; _commitTimer.Stop(); _commitTimer.Start();
         }
     }
-    public async Task ApplyCurveAsync(DspSettings draft)
-    {
-        AppSettings.Dsp = draft.Sanitize();
-        LoadValues(); _dirty = true; await CommitAsync();
-    }
+    public void RefreshValues() => LoadValues();
 
     public bool ConvolutionEnabled
     {

@@ -31,9 +31,9 @@ public sealed partial class DspSettingsControl : UserControl
         var dialog = new ConvolutionCurveDialog(ViewModel) { XamlRoot = XamlRoot, RequestedTheme = ActualTheme };
         try
         {
-            if (await dialog.ShowAsync() == ContentDialogResult.Primary) await ViewModel.ApplyCurveAsync(dialog.Draft);
+            await dialog.ShowAsync();
         }
-        finally { ViewModel.EndCorrectionEditing(); App.Services.GetRequiredService<IpcService>().UpdateDsp(); }
+        finally { ViewModel.EndCorrectionEditing(); ViewModel.RefreshValues(); }
     }
 
     private async void ManageDeviceBindings_Click(object sender, RoutedEventArgs args)

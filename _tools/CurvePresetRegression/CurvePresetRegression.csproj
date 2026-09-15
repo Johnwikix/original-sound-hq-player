@@ -10,5 +10,8 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
     <Compile Include="../../ViewModel/ConvolutionCurveViewModel.cs" />
+    <Compile Include="../../ViewModel/FrequencyResponseViewModel.cs" />
+    <Compile Include="../../Model/AppSettings.AudioResponse.cs" />
+    <Compile Include="../../Model/EqualizerModel.cs" />
   </ItemGroup>
 </Project>

@@ -28,11 +28,28 @@ namespace Microsoft.UI.Dispatching
 namespace WinUIMusicPlayer.Model
 {
     public sealed record CurvePreset(string Name, string Points, bool AutoHeadroom = true, double TrimDb = 0);
+    public static partial class AppSettings
+    {
+        public static bool IsEqualizerEnabled { get; set; }
+        public static EqBand[] EqualizerBands { get; set; } = [new() { FrequencyHz = 1000 }];
+        public static event EventHandler? EqUpdated;
+        public static void OnEqUpdated() => EqUpdated?.Invoke(null, EventArgs.Empty);
+    }
 }
 namespace WinUIMusicPlayer.Utils
 {
-    public static class AppSettings { public static DspSettings Dsp { get; set; } = new(); public static DeviceCorrections DeviceCorrections { get; set; } = new(); }
     public static class ToolUtils { public static string GetString(string key) => key; }
+}
+namespace WinUIMusicPlayer
+{
+    public static class App { public static object Services { get; set; } = null!; }
+}
+namespace Microsoft.Extensions.DependencyInjection
+{
+    public static class FixtureServices
+    {
+        public static T GetRequiredService<T>(this object services) => (T)services;
+    }
 }
 namespace WinUIMusicPlayer.Services
 {
@@ -51,20 +68,46 @@ namespace WinUIMusicPlayer.Services
             Saved = presets.ToList();
         }
     }
-    public record PlaybackFixture(int RenderKind = 0, bool IsEnabled = true, int Channels = 2, string OutputDeviceId = "", long OutputGeneration = 0);
-    public record DspFixture(PlaybackFixture State);
+    public class MusicDatabaseService
+    {
+        public bool FailSave { get; set; }
+        public TaskCompletionSource? SaveGate { get; set; }
+        public DspSettings? SavedDsp { get; private set; }
+        public DeviceCorrections? SavedCorrections { get; private set; }
+        public async Task SaveSettingAsync(bool throwOnError = false)
+        {
+            var snapshot = AppSettings.Dsp;
+            if (SaveGate != null) await SaveGate.Task;
+            if (FailSave) throw new IOException("Simulated settings save failure");
+            SavedDsp = snapshot;
+        }
+        public Task SaveCurrentDeviceCorrectionsAsync()
+        {
+            if (FailSave) throw new IOException("Simulated correction save failure");
+            SavedCorrections = AppSettings.DeviceCorrections;
+            return Task.CompletedTask;
+        }
+    }
     public class IpcService
     {
         public event Action? DspStateChanged;
-        public DspFixture? CurrentDspState { get; private set; } = new(new());
+        public DspStateSnapshot? CurrentDspState { get; private set; }
         public void ChangeOutput(string id, long? generation = null)
         {
             long next = generation ?? ((CurrentDspState?.State.OutputGeneration ?? 0) + (CurrentDspState?.State.OutputDeviceId == id ? 0 : 1));
-            CurrentDspState = new(new(OutputDeviceId: id, OutputGeneration: next));
+            CurrentDspState = new(1, new(0, true, 2, default, 0, 0, SampleRate: 48000, OutputDeviceId: id, OutputGeneration: next));
             DspStateChanged?.Invoke();
         }
         public int Restores { get; private set; }
         public void UpdateDsp() { Restores++; LastPreview = null; }
+        public bool FailPublish { get; set; }
+        public DeviceCorrections? PublishedCorrections { get; private set; }
+        public Task UpdateDeviceCorrectionsAsync()
+        {
+            if (FailPublish) throw new IOException("Simulated IPC failure");
+            PublishedCorrections = AppSettings.DeviceCorrections;
+            return Task.CompletedTask;
+        }
         public DspSettings? LastPreview { get; private set; }
         public void EndDspPreview() => UpdateDsp();
         public string? PreviewDeviceId { get; private set; }

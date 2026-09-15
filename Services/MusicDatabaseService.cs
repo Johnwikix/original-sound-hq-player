@@ -616,11 +616,25 @@ namespace WinUIMusicPlayer.Services
         private byte[]? _lastSettingsBytes;
         private bool _correctionsMigrated;
 
-        public async Task SaveDeviceCorrectionsAsync(BassPlayerIpc.Shared.DeviceCorrections candidate)
+        private readonly System.Threading.SemaphoreSlim _correctionSaveGate = new(1, 1);
+
+        public Task SaveDeviceCorrectionsAsync(BassPlayerIpc.Shared.DeviceCorrections candidate)
         {
-            var store = _audioCorrectionStore ?? throw new InvalidOperationException("Correction store unavailable.");
-            var saved = await Task.Run(() => store.SaveAsync(candidate));
-            AppSettings.DeviceCorrections = saved;
+            AppSettings.DeviceCorrections = candidate.Validate();
+            return SaveCurrentDeviceCorrectionsAsync();
+        }
+
+        public async Task SaveCurrentDeviceCorrectionsAsync()
+        {
+            await _correctionSaveGate.WaitAsync();
+            try
+            {
+                var store = _audioCorrectionStore ?? throw new InvalidOperationException("Correction store unavailable.");
+                var snapshot = AppSettings.DeviceCorrections;
+                await Task.Run(() => store.SaveAsync(snapshot));
+                // Saving an older snapshot must never roll back edits made while IO was in flight.
+            }
+            finally { _correctionSaveGate.Release(); }
         }
 
         public async Task<SaveSettings> GetSettings()
@@ -1170,7 +1184,7 @@ namespace WinUIMusicPlayer.Services
             _ = AppViewModel.GetWasapiDeviceAsync();
         }
 
-        public async Task SaveSettingAsync()
+        public async Task SaveSettingAsync(bool throwOnError = false)
         {
             try
             {
@@ -1193,6 +1207,7 @@ namespace WinUIMusicPlayer.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"SaveSettingAsync 保存设置失败: {ex.Message}");
+                if (throwOnError) throw;
             }
         }
 

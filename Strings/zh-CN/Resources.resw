@@ -1789,9 +1789,7 @@
   <data name="ResponseScope.Text" xml:space="preserve"><value>合成 = EQ + 卷积 + 统一前级增益。自动模式按两者的合成峰值计算补偿。不含响度均一化、声道混合和主音量；纵轴随响应自动缩放。</value></data>
   <data name="ResponseFailed" xml:space="preserve"><value>无法计算此 IR 的响应。文件可能不可用，或重采样后超过长度限制；未显示过期曲线。</value></data>
   <data name="CurveEditorTitle" xml:space="preserve"><value>绘制校正曲线</value></data>
-  <data name="CurveApply" xml:space="preserve"><value>应用</value></data>
-  <data name="CurveCancel" xml:space="preserve"><value>取消</value></data>
-  <data name="CurveIntro.Text" xml:space="preserve"><value>直接调整各频率的增益，自动生成最小相位 FIR。无需 WAV 文件；此功能用于手动调音，不会自动测量耳机或房间。</value></data>
+  <data name="CurveIntro.Text" xml:space="preserve"><value>修改会自动生效并保存；设备模式下更新当前输出设备的校正。 直接调整各频率的增益，自动生成最小相位 FIR。无需 WAV 文件；此功能用于手动调音，不会自动测量耳机或房间。</value></data>
   <data name="CurveNodeHint.Text" xml:space="preserve"><value>带节点的虚线是设定曲线；“卷积”线是实际 FIR 响应（含增益）。拖动节点或用下面的数值输入编辑。</value></data>
   <data name="CurveNodePicker.Header" xml:space="preserve"><value>控制点</value></data>
   <data name="CurveFrequency.Header" xml:space="preserve"><value>频率（Hz）</value></data>
@@ -1800,7 +1798,6 @@
   <data name="CurveRemove.Content" xml:space="preserve"><value>移除节点</value></data>
   <data name="CurveFlat.Content" xml:space="preserve"><value>恢复平直</value></data>
   <data name="CurveAutoHeadroom.Content" xml:space="preserve"><value>自动增益/衰减（EQ＋卷积，预留 1 dB）</value></data>
-  <data name="CurveAudition.Header" xml:space="preserve"><value>试听卷积</value></data>
   <data name="CurveTrim.Header" xml:space="preserve"><value>统一前级增益（dB）</value></data>
   <data name="CurvePresetHeading.Text" xml:space="preserve"><value>曲线预设</value></data>
   <data name="CurvePresets.AutomationProperties.Name" xml:space="preserve"><value>曲线预设</value></data>
@@ -1871,4 +1868,5 @@
   <data name="DspDeviceRetry" xml:space="preserve"><value>重试保存 / 应用</value></data>
   <data name="DspDeviceApplyError" xml:space="preserve"><value>校正同步尚未确认。请重试。</value></data>
   <data name="DspDeviceSaveError" xml:space="preserve"><value>校正保存失败，原有绑定未改变。请重试。</value></data>
+  <data name="CurveLiveSaveError" xml:space="preserve"><value>校正未能保存。请检查存储，然后再次关闭以重试。</value></data>
 </root>

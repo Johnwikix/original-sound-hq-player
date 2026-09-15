@@ -19,7 +19,6 @@ public sealed class FrequencyResponseViewModel : ObservableObject
     private Preview? _preview;
     public Preview? Current => _preview;
     private CancellationTokenSource? _cancellation;
-    private DspSettings? _settingsOverride;
     private bool _loaded;
     private int _rate = 48000;
     private string? _cacheKey;
@@ -30,23 +29,25 @@ public sealed class FrequencyResponseViewModel : ObservableObject
     public event Action? Updated;
     public void Load()
     {
+        if (_loaded) return;
         _loaded = true;
         App.Services.GetRequiredService<IpcService>().DspStateChanged += StateChanged;
         AppSettings.EqUpdated += EqChanged;
-        Refresh(_settingsOverride);
+        AppSettings.AudioResponseChanged += EqChanged;
+        Refresh();
     }
     public void Unload()
     {
         _loaded = false;
         App.Services.GetRequiredService<IpcService>().DspStateChanged -= StateChanged;
         AppSettings.EqUpdated -= EqChanged;
+        AppSettings.AudioResponseChanged -= EqChanged;
         _cancellation?.Cancel(); _cancellation?.Dispose(); _cancellation = null;
     }
-    private void EqChanged(object? sender, EventArgs e) => Refresh(_settingsOverride);
-    private void StateChanged() => _queue.TryEnqueue(() => { if (_loaded) Refresh(_settingsOverride); });
-    public async void Refresh(DspSettings? settings = null)
+    private void EqChanged(object? sender, EventArgs e) => StateChanged();
+    private void StateChanged() => _queue.TryEnqueue(() => { if (_loaded) Refresh(); });
+    public async void Refresh()
     {
-        _settingsOverride = settings;
         if (!_loaded) return;
         _cancellation?.Cancel(); _cancellation?.Dispose();
         var cancellation = new CancellationTokenSource();
@@ -55,7 +56,7 @@ public sealed class FrequencyResponseViewModel : ObservableObject
         var state = App.Services.GetRequiredService<IpcService>().CurrentDspState?.State;
         int rate = state is { SampleRate: >= 8000 } value ? value.SampleRate : 48000;
         _rate = rate;
-        var dsp = (settings ?? AppSettings.Dsp).Sanitize();
+        var dsp = AppSettings.ResolveResponseSettings(state?.OutputDeviceId);
         bool eqEnabled = AppSettings.IsEqualizerEnabled;
         var eq = AppSettings.EqualizerBands.Select(b => PeakCoefficients.Create(b.FrequencyHz, (float)b.GainDb, (float)b.Q, rate)).ToArray();
         string key = rate + ":" + (CorrectionCurve.UsesCurve(dsp) ? "curve:" + dsp.CurvePoints : "wave:" + dsp.ImpulsePath);

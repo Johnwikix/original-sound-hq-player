@@ -43,7 +43,7 @@ public partial class DspSettingsViewModel
         RetryCorrectionCommand.NotifyCanExecuteChanged();
     }
 
-    /// <summary>绑定命令读取弹窗最新草稿，包括尚未应用的预设切换。</summary>
+    /// <summary>绑定命令读取编辑器当前曲线。</summary>
     public void BeginCorrectionEditing(Func<DspSettings> draft, Action<DspSettings> load, Action? refresh = null)
     {
         _correctionDraft = draft;
@@ -190,19 +190,23 @@ public partial class DspSettingsViewModel
     public bool CanRetryCorrection => !CorrectionBusy && (_pendingCorrection != null || _ipc.CorrectionSyncFailed);
 
     [RelayCommand(CanExecute = nameof(CanRetryCorrection))]
-    private Task RetryCorrectionAsync() => SaveCorrectionsAsync(_pendingCorrection ?? AppSettings.DeviceCorrections);
+    private Task RetryCorrectionAsync() => SaveCorrectionsAsync(AppSettings.DeviceCorrections);
 
     private async Task SaveCorrectionsAsync(DeviceCorrections candidate)
     {
         if (CorrectionBusy) return;
         CorrectionBusy = true;
         _pendingCorrection = candidate;
+        bool saved = false;
         try
         {
             CorrectionFailed = false;
             _correctionApplyError = false;
             if (!ReferenceEquals(candidate, AppSettings.DeviceCorrections))
                 await _database.SaveDeviceCorrectionsAsync(candidate);
+            else
+                await _database.SaveCurrentDeviceCorrectionsAsync();
+            saved = true;
             _pendingCorrection = AppSettings.DeviceCorrections;
             _refreshCorrectionDraft?.Invoke();
             await _ipc.UpdateDeviceCorrectionsAsync();
@@ -210,7 +214,8 @@ public partial class DspSettingsViewModel
         }
         catch (Exception ex)
         {
-            _correctionApplyError = ReferenceEquals(_pendingCorrection, AppSettings.DeviceCorrections);
+            _pendingCorrection = AppSettings.DeviceCorrections;
+            _correctionApplyError = saved;
             App.GetLogger<DspSettingsViewModel>().LogWarning(ex,
                 "Correction {Operation} failed for device {DeviceId}; binding count {BindingCount}",
                 _correctionApplyError ? "synchronization" : "save", CorrectionDeviceId, candidate.Bindings.Length);
