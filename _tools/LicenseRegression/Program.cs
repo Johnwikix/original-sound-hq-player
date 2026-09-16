@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using BassPlayerIpc.Shared;
 using Microsoft.UI.Dispatching;
 using Windows.ApplicationModel;
 using Windows.Services.Store;
@@ -29,6 +30,13 @@ static async Task RunTestsAsync()
         notifications++;
     };
     await service.InitializeAsync();
+    var preferences = new IpcSetting { IsDopEnabled = true, ExperimentalSurround51 = true,
+        ExperimentalAtmosPassthrough = true, IsEqualizerEnabled = true, Volume = 0.75f,
+        OutputMode = "WasapiExclusiveEvent" };
+    var effective = preferences;
+    service.ApplyOutputRestrictions(ref effective);
+    Check(effective.IsDopEnabled && effective.ExperimentalSurround51 && effective.ExperimentalAtmosPassthrough,
+        "Active trial restricted advanced output");
     Check(context.WindowInitialized && context.Queries == 1, "First query did not use initialized context");
     Check(service.CanPurchase && !service.IsRestricted && service.TrialRemainingDays == 3, "Trial purchase eligibility");
     await service.RefreshAsync();
@@ -49,11 +57,23 @@ static async Task RunTestsAsync()
     freshQuery.SetResult(full);
     await Task.WhenAll(backgroundRefresh, purchase);
     Check(service.State == AppLicenseState.FullLicense && !service.CanPurchase && !service.IsRestricted, "Purchase retained stale restriction");
+    effective = preferences;
+    service.ApplyOutputRestrictions(ref effective);
+    Check(effective.IsDopEnabled && effective.ExperimentalSurround51 && effective.ExperimentalAtmosPassthrough,
+        "Purchase did not restore all advanced output preferences");
     Console.WriteLine("PASS: in-flight old license + Store event + purchase coalesce, await fresh result and unlock.");
 
     context.Query = () => Task.FromResult(inactive);
     await Task.Run(service.RefreshAsync);
     Check(service.IsRestricted && service.CanPurchase, "Background refresh or inactive license failed");
+    effective = preferences;
+    service.ApplyOutputRestrictions(ref effective);
+    Check(!effective.IsDopEnabled && !effective.ExperimentalSurround51 && !effective.ExperimentalAtmosPassthrough,
+        "Inactive license did not gate all advanced output modes");
+    Check(preferences.IsDopEnabled && preferences.ExperimentalSurround51 && preferences.ExperimentalAtmosPassthrough
+        && effective.IsEqualizerEnabled && effective.Volume == preferences.Volume && effective.OutputMode == preferences.OutputMode,
+        "Output gate changed saved preferences or unrelated playback settings");
+    Console.WriteLine("PASS: DSD/5.1/Atmos output gate, full/trial restoration and preference preservation.");
     context.Query = () => throw new IOException("Store unavailable");
     await service.RefreshAsync();
     Check(service.IsRestricted, "Query failure changed known restriction");

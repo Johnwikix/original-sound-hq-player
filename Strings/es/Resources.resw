@@ -1872,7 +1872,7 @@
   <data name="CurveLiveSaveError" xml:space="preserve"><value>No se pudo guardar la corrección. Comprueba el almacenamiento y vuelve a cerrar para reintentar.</value></data>
   <data name="CurveApplyPreset.Content" xml:space="preserve"><value>Aplicar preajuste</value></data>
   <data name="LicenseRestrictedDsp" xml:space="preserve">
-    <value>Sin licencia activa: los efectos DSP, excepto el ecualizador, y la transmisión DSD DoP/Native están bloqueados. Compra la versión completa para desbloquearlos</value>
+    <value>Sin licencia activa: los efectos DSP excepto el ecualizador, DSD DoP/Native, la salida 5.1 y el paso directo Atmos por HDMI están bloqueados. Compra la versión completa para desbloquearlos</value>
   </data>
   <data name="LicenseTrialRemaining" xml:space="preserve">
     <value>Quedan {0} días de prueba</value>
@@ -1883,4 +1883,6 @@
   <data name="LicensePurchase" xml:space="preserve">
     <value>Comprar versión completa</value>
   </data>
+  <data name="LicenseSurround51Locked" xml:space="preserve"><value>Sin licencia activa: la salida 5.1 está bloqueada. Compra la versión completa en Configuración → Acerca de</value></data>
+  <data name="LicenseAtmosLocked" xml:space="preserve"><value>Sin licencia activa: el paso directo Atmos por HDMI está bloqueado. Compra la versión completa en Configuración → Acerca de</value></data>
 </root>

@@ -1056,6 +1056,11 @@ namespace WinUIMusicPlayer.ViewModel
             get => field;
             set
             {
+                if (LicenseRestricted)
+                {
+                    OnPropertyChanged(nameof(ExperimentalSurround51));
+                    return;
+                }
                 if (SetProperty(ref field, value) && IsInitialized)
                 {
                     _ = _musicDatabaseService.SaveSettingAsync();
@@ -1069,6 +1074,11 @@ namespace WinUIMusicPlayer.ViewModel
             get => field;
             set
             {
+                if (LicenseRestricted)
+                {
+                    OnPropertyChanged(nameof(ExperimentalAtmosPassthrough));
+                    return;
+                }
                 if (SetProperty(ref field, value) && IsInitialized)
                 {
                     _ = _musicDatabaseService.SaveSettingAsync();

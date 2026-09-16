@@ -1872,7 +1872,7 @@
   <data name="CurveLiveSaveError" xml:space="preserve"><value>Die Korrektur konnte nicht gespeichert werden. Prüfen Sie den Speicher und schließen Sie erneut, um es noch einmal zu versuchen.</value></data>
   <data name="CurveApplyPreset.Content" xml:space="preserve"><value>Voreinstellung anwenden</value></data>
   <data name="LicenseRestrictedDsp" xml:space="preserve">
-    <value>Keine aktive Lizenz: DSP-Effekte außer dem Equalizer und DSD-DoP/Native-Bitstream sind gesperrt. Vollversion kaufen, um sie freizuschalten</value>
+    <value>Keine aktive Lizenz: DSP-Effekte außer dem Equalizer, DSD DoP/Native, 5.1-Ausgabe und Atmos-HDMI-Passthrough sind gesperrt. Vollversion kaufen, um sie freizuschalten</value>
   </data>
   <data name="LicenseTrialRemaining" xml:space="preserve">
     <value>Noch {0} Tage Testversion</value>
@@ -1883,5 +1883,7 @@
   <data name="LicensePurchase" xml:space="preserve">
     <value>Vollversion kaufen</value>
   </data>
+  <data name="LicenseSurround51Locked" xml:space="preserve"><value>Keine aktive Lizenz: 5.1-Ausgabe ist gesperrt. Vollversion unter Einstellungen → Info kaufen</value></data>
+  <data name="LicenseAtmosLocked" xml:space="preserve"><value>Keine aktive Lizenz: Atmos-HDMI-Passthrough ist gesperrt. Vollversion unter Einstellungen → Info kaufen</value></data>
 </root>
 

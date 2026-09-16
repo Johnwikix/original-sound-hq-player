@@ -86,16 +86,18 @@
 
                 <controls:SettingsCard
                     Header="{x:Bind tool:ToolUtils.GetString('ExperimentalSurround51Title'), Mode=OneWay}"
-                    Description="{x:Bind tool:ToolUtils.GetString('ExperimentalSurround51Description'), Mode=OneWay}">
+                    Description="{x:Bind ViewModel.AppViewModel.Surround51CardDescription, Mode=OneWay}">
                     <ToggleSwitch MinWidth="0" VerticalAlignment="Center"
+                        IsEnabled="{x:Bind ViewModel.AppViewModel.Surround51Allowed, Mode=OneWay}"
                         AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('ExperimentalSurround51Title'), Mode=OneWay}"
                         IsOn="{x:Bind ViewModel.AppViewModel.ExperimentalSurround51, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard
                     Header="{x:Bind tool:ToolUtils.GetString('ExperimentalAtmosTitle'), Mode=OneWay}"
-                    Description="{x:Bind tool:ToolUtils.GetString('ExperimentalAtmosDescription'), Mode=OneWay}">
+                    Description="{x:Bind ViewModel.AppViewModel.AtmosCardDescription, Mode=OneWay}">
                     <ToggleSwitch MinWidth="0" VerticalAlignment="Center"
+                        IsEnabled="{x:Bind ViewModel.AppViewModel.AtmosPassthroughAllowed, Mode=OneWay}"
                         AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('ExperimentalAtmosTitle'), Mode=OneWay}"
                         IsOn="{x:Bind ViewModel.AppViewModel.ExperimentalAtmosPassthrough, Mode=TwoWay}" />
                 </controls:SettingsCard>

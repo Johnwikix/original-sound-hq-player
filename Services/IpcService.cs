@@ -367,8 +367,8 @@ namespace WinUIMusicPlayer.Services
                 IsSettingChanged = isSettingChanged,
                 IsFadeEnabled = AppViewModel.IsFadeEnabled,
             };
-            // 试用受限覆盖：DoP 关闭后引擎按既有逻辑回退 DSD→PCM；有效值变化触发保进度重建。
-            if (_license.IsRestricted) settings.IsDopEnabled = false;
+            // 受限时关闭高级输出，沿用引擎的保进度重建及 PCM/立体声回退。
+            _license.ApplyOutputRestrictions(ref settings);
             Span<byte> buf = stackalloc byte[BinarySerializer.IpcSettingSize];
             int len = BinarySerializer.WriteIpcSetting(buf, settings);
             Publish(CommandId.UpdateSettings, buf[..len]);
