@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.UI.Dispatching;
 using System;
 using System.ComponentModel;
 using System.Collections.Specialized;
@@ -15,6 +16,9 @@ public sealed class PlaybackCommands : IDisposable
     private readonly AppViewModel _state;
     private readonly IServiceProvider _services;
     private bool _toggleInFlight;
+    private bool? _pendingPlaying;
+    private volatile bool _disposed;
+    private readonly DispatcherQueueHandler _refreshAvailability;
     private INotifyCollectionChanged? _listChanges;
     public IAsyncRelayCommand ToggleCommand { get; }
     public IAsyncRelayCommand PlayCommand { get; }
@@ -22,7 +26,7 @@ public sealed class PlaybackCommands : IDisposable
     public IRelayCommand NextCommand { get; }
     public IAsyncRelayCommand PreviousCommand { get; }
     public IRelayCommand<long> SeekCommand { get; }
-    private bool CanPlay => _lifecycle.IsReady && _state.CurrentPlayingMusic is not null;
+    private bool CanPlay => !_disposed && _lifecycle.IsReady && _state.CurrentPlayingMusic is not null;
     private bool CanSwitch => CanPlay && _state.CurrentPlayingList.Count > 0;
     private BassPlayerCommandService Player => _services.GetRequiredService<BassPlayerCommandService>();
 
@@ -31,9 +35,11 @@ public sealed class PlaybackCommands : IDisposable
         _lifecycle = lifecycle;
         _state = state;
         _services = services;
+        _refreshAvailability = RefreshAvailability;
         ToggleCommand = new AsyncRelayCommand(() => ToggleAsync(null), () => CanPlay);
-        PlayCommand = new AsyncRelayCommand(() => ToggleAsync(true), () => CanPlay);
-        PauseCommand = new AsyncRelayCommand(() => ToggleAsync(false), () => CanPlay);
+        // 保持显式命令可用，让 Play -> Pause -> Play 的最后一次意图能够覆盖待执行意图。
+        PlayCommand = new AsyncRelayCommand(() => ToggleAsync(true), () => CanPlay, AsyncRelayCommandOptions.AllowConcurrentExecutions);
+        PauseCommand = new AsyncRelayCommand(() => ToggleAsync(false), () => CanPlay, AsyncRelayCommandOptions.AllowConcurrentExecutions);
         NextCommand = new RelayCommand(Next, () => CanSwitch);
         PreviousCommand = new AsyncRelayCommand(PreviousAsync, () => CanSwitch);
         SeekCommand = new RelayCommand<long>(Seek, _ => CanPlay);
@@ -43,10 +49,30 @@ public sealed class PlaybackCommands : IDisposable
     }
     private async Task ToggleAsync(bool? playing)
     {
-        if (!CanPlay || _toggleInFlight || (playing.HasValue && _state.IsPlaying == playing.Value)) return;
+        if (!CanPlay) return;
+        if (_toggleInFlight)
+        {
+            // 重复 toggle 合并；显式播放/暂停保存最新意图，在后端确认状态后再判断。
+            if (playing.HasValue) _pendingPlaying = playing;
+            return;
+        }
+        if (playing.HasValue && _state.IsPlaying == playing.Value) return;
         _toggleInFlight = true;
-        try { await Player.PlayButton(); }
-        finally { _toggleInFlight = false; }
+        try
+        {
+            do
+            {
+                _pendingPlaying = null;
+                await Player.PlayButton();
+                playing = _pendingPlaying;
+            }
+            while (CanPlay && playing.HasValue && _state.IsPlaying != playing.Value);
+        }
+        finally
+        {
+            _pendingPlaying = null;
+            _toggleInFlight = false;
+        }
     }
     private void Next() { if (CanSwitch) Player.PlayNextTrack(); }
     private async Task PreviousAsync()
@@ -62,11 +88,11 @@ public sealed class PlaybackCommands : IDisposable
     private void Seek(long milliseconds) { if (CanPlay) Player.ChangeWaveChannelTime(Math.Max(0, milliseconds)); }
     private void StateChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(AppViewModel.CurrentPlayingList)) ObserveList();
         if (e.PropertyName is nameof(AppViewModel.CurrentPlayingMusic) or nameof(AppViewModel.CurrentPlayingList)) Changed(sender, EventArgs.Empty);
     }
     private void ObserveList()
     {
+        if (ReferenceEquals(_listChanges, _state.CurrentPlayingList)) return;
         if (_listChanges is not null) _listChanges.CollectionChanged -= ListChanged;
         _listChanges = _state.CurrentPlayingList as INotifyCollectionChanged;
         if (_listChanges is not null) _listChanges.CollectionChanged += ListChanged;
@@ -74,12 +100,27 @@ public sealed class PlaybackCommands : IDisposable
     private void ListChanged(object? sender, NotifyCollectionChangedEventArgs e) => Changed(sender, EventArgs.Empty);
     private void Changed(object? sender, EventArgs e)
     {
-        ToggleCommand.NotifyCanExecuteChanged(); PlayCommand.NotifyCanExecuteChanged(); PauseCommand.NotifyCanExecuteChanged();
-        NextCommand.NotifyCanExecuteChanged(); PreviousCommand.NotifyCanExecuteChanged(); SeekCommand.NotifyCanExecuteChanged();
+        if (_disposed) return;
+        var queue = App.MainWindow.DispatcherQueue;
+        if (queue.HasThreadAccess) RefreshAvailability();
+        else queue.TryEnqueue(_refreshAvailability);
+    }
+    private void RefreshAvailability()
+    {
+        if (_disposed) return;
+        ObserveList();
+        ToggleCommand.NotifyCanExecuteChanged();
+        PlayCommand.NotifyCanExecuteChanged();
+        PauseCommand.NotifyCanExecuteChanged();
+        NextCommand.NotifyCanExecuteChanged();
+        PreviousCommand.NotifyCanExecuteChanged();
+        SeekCommand.NotifyCanExecuteChanged();
     }
     public void Dispose()
     {
-        _lifecycle.Changed -= Changed; _state.PropertyChanged -= StateChanged;
+        _disposed = true;
+        _lifecycle.Changed -= Changed;
+        _state.PropertyChanged -= StateChanged;
         if (_listChanges is not null) _listChanges.CollectionChanged -= ListChanged;
     }
 }

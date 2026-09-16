@@ -851,8 +851,13 @@ namespace WinUIMusicPlayer.Services
             AppViewModel.SongsSource.AddRange(await GetMusicListAsync());
             await InitalPlayListAsync();
             await GetPlayListMusic();
-            AppViewModel.SequentialPlayingList = new(await LoadPlayList(AppViewModel.SongsSource));
-            AppViewModel.NotifySongsSourceChanged();
+            var playlist = await LoadPlayList(AppViewModel.SongsSource);
+            // 集合构造会捕获 DispatcherQueue，创建与绑定通知都必须在 UI 线程完成。
+            await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+            {
+                AppViewModel.SequentialPlayingList = new(playlist);
+                AppViewModel.NotifySongsSourceChanged();
+            });
         }
 
         public async Task<IReadOnlyCollection<Music>> GetMusicListAsync()

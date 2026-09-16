@@ -95,3 +95,4 @@ try
 }
 finally { await watcher.StopAsync(); Directory.Delete(directory, true); }
 Console.WriteLine("PASS: no constructor IO, idempotent watcher start/stop, real file events, no scanning after stop.");
+await ReviewRegression.RunAsync();

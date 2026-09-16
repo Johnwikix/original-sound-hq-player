@@ -1,5 +1,6 @@
 ﻿using BassPlayerIpc.Shared;
 using Microsoft.Extensions.DependencyInjection;
+using CommunityToolkit.WinUI;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -161,7 +162,8 @@ namespace WinUIMusicPlayer.Services
                 bool? state = await IpcService.PlayButton();
                 if (state is bool s)
                 {
-                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                    // 完成任务前发布确认状态，共享命令才能正确处理在途的 Play/Pause 意图。
+                    await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
                     {
                         AppViewModel.IsPlaying = s;
                         if (s) AppViewModel.StartProgressTimer();

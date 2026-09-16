@@ -4,10 +4,10 @@ namespace WinUIMusicPlayer.ViewModel
     public sealed record Music(int Id);
     public sealed class AppViewModel : ObservableObject
     {
-        public Music? CurrentPlayingMusic { get; set; }
-        public System.Collections.ObjectModel.ObservableCollection<Music> CurrentPlayingList { get; set; } = [];
+        public Music? CurrentPlayingMusic { get; set => SetProperty(ref field, value); }
+        public System.Collections.ObjectModel.ObservableCollection<Music> CurrentPlayingList { get; set => SetProperty(ref field, value); } = [];
         public bool IsPlaying { get; set; }
-        public bool IsFolderWatchEnabled { get; set; } = true;
+        public bool IsFolderWatchEnabled { get; set => SetProperty(ref field, value); } = true;
         public Microsoft.UI.Xaml.Visibility ProcessRingVisibility { get; set; }
     }
     public sealed class MusicBrowseViewModel
@@ -32,13 +32,19 @@ namespace WinUIMusicPlayer.Services
     {
         public List<Folder> Folders = [];
         public int Reads;
-        public Task<List<Folder>> GetFolders() { Reads++; return Task.FromResult(Folders); }
+        public TaskCompletionSource<List<Folder>>? Pending;
+        public Task<List<Folder>> GetFolders() { Reads++; return Pending?.Task ?? Task.FromResult(Folders); }
     }
     public static class AudioFileWriteGate { public static bool IsOwnWriteEvent(string path) => false; }
     public static class AutoRescanService
     {
         public static int Scans;
-        public static Task AutoScan(CancellationToken token) { Interlocked.Increment(ref Scans); return Task.CompletedTask; }
+        public static Func<CancellationToken, Task>? Scan;
+        public static Task AutoScan(CancellationToken token)
+        {
+            Interlocked.Increment(ref Scans);
+            return Scan?.Invoke(token) ?? Task.CompletedTask;
+        }
     }
 }
 namespace Microsoft.UI.Xaml { public enum Visibility { Visible, Collapsed } }
@@ -59,8 +65,25 @@ namespace WinUIMusicPlayer
         public void Activate() { }
     }
     public sealed class WindowOptions { public object? Presenter { get; set; } }
-    public sealed class Queue { public bool TryEnqueue(Action action) { action(); return true; } }
+    public sealed class Queue
+    {
+        public int? OwnerThread;
+        private readonly System.Collections.Concurrent.ConcurrentQueue<Microsoft.UI.Dispatching.DispatcherQueueHandler> _pending = new();
+        public bool HasThreadAccess => OwnerThread is null || OwnerThread == Environment.CurrentManagedThreadId;
+        public bool TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueueHandler action)
+        {
+            if (OwnerThread is null) action();
+            else _pending.Enqueue(action);
+            return true;
+        }
+        public void Drain()
+        {
+            if (!HasThreadAccess) throw new Exception("UI queue drained from worker thread");
+            while (_pending.TryDequeue(out var action)) action();
+        }
+    }
 }
+namespace Microsoft.UI.Dispatching { public delegate void DispatcherQueueHandler(); }
 namespace WinUIEx
 {
     public static class Extensions
