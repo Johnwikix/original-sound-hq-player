@@ -1871,5 +1871,17 @@
   <data name="DspDeviceSaveError" xml:space="preserve"><value>校正を保存できませんでした。既存の割り当ては変更されていません。</value></data>
   <data name="CurveLiveSaveError" xml:space="preserve"><value>補正を保存できませんでした。ストレージを確認し、もう一度閉じて再試行してください。</value></data>
   <data name="CurveApplyPreset.Content" xml:space="preserve"><value>プリセットを適用</value></data>
+  <data name="LicenseTrialExpiredDsp" xml:space="preserve">
+    <value>試用期限切れ：イコライザー以外のDSP効果とDSD Dop/Nativeビットストリームはロックされています。フルバージョンを購入すると解放されます</value>
+  </data>
+  <data name="LicenseTrialRemaining" xml:space="preserve">
+    <value>試用期限まで残り {0} 日</value>
+  </data>
+  <data name="LicenseDsdLocked" xml:space="preserve">
+    <value>試用期限切れ：DSD Dop / Native はロックされています。フルバージョンを購入すると解放されます</value>
+  </data>
+  <data name="LicensePurchase" xml:space="preserve">
+    <value>フルバージョンを購入</value>
+  </data>
 </root>
 

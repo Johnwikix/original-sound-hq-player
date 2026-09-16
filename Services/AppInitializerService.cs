@@ -40,6 +40,8 @@ namespace WinUIMusicPlayer.Services
             await Task.Run(() => RunLongOpsAsync(MusicDatabaseService, cancellationToken), cancellationToken);
             ToolUtils.CleanupStaleCacheFiles();
             await musicBrowseViewModel.LoadPlayStateToMusicBrowsePage();
+            // 许可状态必须在首次推送设置前就绪，受限判定才能作用于首推内容。
+            await App.Services.GetRequiredService<LicenseService>().InitializeAsync();
             await ipcService.InitializeMusic(appViewModel.CurrentPlayingMusic);
             App.MainWindow.ShowMainPage();
             appViewModel.IsInitialized = true;

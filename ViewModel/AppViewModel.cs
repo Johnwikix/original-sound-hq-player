@@ -438,12 +438,15 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicDatabaseService _musicDatabaseService { get; }
         private ILogger<AppViewModel> _logger;
 
-        public AppViewModel(MusicDatabaseService musicDatabaseService, SystemMediaControlsService systemMediaControlsService, ILogger<AppViewModel> logger, UsbDeviceService usbDeviceService)
+        public AppViewModel(MusicDatabaseService musicDatabaseService, SystemMediaControlsService systemMediaControlsService, ILogger<AppViewModel> logger, UsbDeviceService usbDeviceService, LicenseService licenseService)
         {
             _musicDatabaseService = musicDatabaseService;
             SystemMediaControlsService = systemMediaControlsService;
             _logger = logger;
             UsbDeviceService = usbDeviceService;
+            _licenseService = licenseService;
+            licenseService.StateChanged += () => EnqueueUnlessUIThread(ref _licenseStateChangedHandler, ApplyLicenseState);
+            ApplyLicenseState();
             usbDeviceService.DevicesChanged += (_, _) => UpDateUsbDeviceMenuflyout();
             usbDeviceService.DeviceMusicChanged += (_, _) => RefreshUsbDeviceMusicList();
             AllPlayList.CollectionChanged += AllPlayList_CollectionChanged;

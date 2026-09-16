@@ -1,6 +1,8 @@
 using BassPlayerIpc.Shared;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Xaml.Controls;
 using System;
 using System.IO;
 using System.Threading.Tasks;
@@ -16,16 +18,22 @@ public partial class DspSettingsViewModel : ObservableObject
 {
     private readonly IpcService _ipc;
     private readonly MusicDatabaseService _database;
+    private readonly LicenseService _license;
     private readonly DispatcherQueue _queue;
     private readonly DispatcherQueueTimer _commitTimer;
     private bool _syncing = true, _loaded, _available, _dirty;
     private DspState? _lastState;
     private long _lastRevision;
 
-    public DspSettingsViewModel(IpcService ipc, MusicDatabaseService database)
+    /// <summary>弹出 Store 购买对话框；完成后许可服务自动刷新并重推设置。</summary>
+    public IAsyncRelayCommand PurchaseCommand { get; }
+
+    public DspSettingsViewModel(IpcService ipc, MusicDatabaseService database, LicenseService license)
     {
         _ipc = ipc;
         _database = database;
+        _license = license;
+        PurchaseCommand = new AsyncRelayCommand(_license.PurchaseAsync);
         _queue = DispatcherQueue.GetForCurrentThread();
         _commitTimer = _queue.CreateTimer();
         _commitTimer.Interval = TimeSpan.FromMilliseconds(250);
@@ -135,7 +143,7 @@ public partial class DspSettingsViewModel : ObservableObject
         {
             if (!SetProperty(ref field, value)) return;
             OnPropertyChanged(nameof(CurveMode)); OnPropertyChanged(nameof(WaveMode));
-            if (_syncing || !_loaded) return;
+            if (_syncing || !_loaded || LicenseRestricted) return;
             AppSettings.Dsp = AppSettings.Dsp with { ConvolutionSource = value == 0 ? ConvolutionSource.Curve : ConvolutionSource.Wave };
             _dirty = true; _commitTimer.Stop(); _commitTimer.Start();
         }
@@ -162,7 +170,7 @@ public partial class DspSettingsViewModel : ObservableObject
 
     public async Task ImportImpulseAsync(string path)
     {
-        if (ImportBusy) return;
+        if (ImportBusy || LicenseRestricted) return;
         ImportBusy = true;
         ImportFailed = false;
         try
@@ -195,6 +203,7 @@ public partial class DspSettingsViewModel : ObservableObject
 
     public async Task ClearImpulseAsync()
     {
+        if (LicenseRestricted) return;
         AppSettings.Dsp = AppSettings.Dsp with { ImpulsePath = "", ConvolutionEnabled = false };
         ImportFailed = false;
         LoadValues();
@@ -206,6 +215,12 @@ public partial class DspSettingsViewModel : ObservableObject
     public bool MasterAvailable { get => field; private set => SetProperty(ref field, value); }
     /// <summary>播放端已确认 DSP 生效，PCM 子设置仅此时可编辑。</summary>
     public bool EffectsActive { get => field; private set => SetProperty(ref field, value); }
+    /// <summary>非 EQ 的 DSP 子设置可编辑：效果已生效且未受许可限制（EQ 入口单独用 EffectsActive）。</summary>
+    public bool EffectsEditable { get => field; private set => SetProperty(ref field, value); }
+    /// <summary>许可受限（试用已到期）：非 EQ 的 DSP 编辑与写入锁定。</summary>
+    public bool LicenseRestricted { get => field; private set => SetProperty(ref field, value); }
+    /// <summary>顶部提示条级别：试用到期升为警告，其余保持信息级。</summary>
+    public InfoBarSeverity InfoSeverity { get => field; private set => SetProperty(ref field, value); } = InfoBarSeverity.Informational;
     /// <summary>当前输出为立体声（或空闲未知）。</summary>
     public bool StereoSupported { get => field; private set => SetProperty(ref field, value); }
     public bool InfoOpen { get => field; private set => SetProperty(ref field, value); }
@@ -220,6 +235,8 @@ public partial class DspSettingsViewModel : ObservableObject
         _lastRevision = 0;
         _ipc.DspStateChanged += OnDspStateChanged;
         _ipc.CorrectionSyncChanged += OnCorrectionSyncChanged;
+        _license.StateChanged += OnLicenseStateChanged;
+        LicenseRestricted = _license.IsRestricted;
         RefreshCorrectionSyncState();
         LoadValues();
         ApplyLatestState();
@@ -227,6 +244,13 @@ public partial class DspSettingsViewModel : ObservableObject
     }
 
     private void OnDspStateChanged() => _queue.TryEnqueue(ApplyLatestState);
+
+    private void OnLicenseStateChanged() => _queue.TryEnqueue(() =>
+    {
+        if (!_loaded) return;
+        LicenseRestricted = _license.IsRestricted;
+        ApplyState(_lastState);
+    });
 
     private void ApplyLatestState()
     {
@@ -244,12 +268,14 @@ public partial class DspSettingsViewModel : ObservableObject
         _loaded = false;
         _ipc.DspStateChanged -= OnDspStateChanged;
         _ipc.CorrectionSyncChanged -= OnCorrectionSyncChanged;
+        _license.StateChanged -= OnLicenseStateChanged;
         _commitTimer.Stop();
         await CommitAsync();
     }
 
     public async Task ResetAsync()
     {
+        if (LicenseRestricted) return;
         AppSettings.Dsp = new();
         LoadValues();
         ApplyState(_lastState);
@@ -282,6 +308,7 @@ public partial class DspSettingsViewModel : ObservableObject
     /// <summary>应用播放端确认的完整快照；仅刷新派生状态，不覆盖本地编辑偏好。</summary>
     private void ApplyState(DspState? state)
     {
+        LicenseRestricted = _license.IsRestricted;
         bool available = state is { RenderKind: 0 };
         bool reload = _available != available || _lastState == null || _lastState.Value.IsEnabled != state?.IsEnabled;
         // 先更新可用性再重载，否则 LoadValues 读到旧的 _available，会把总开关误显示为关
@@ -297,12 +324,30 @@ public partial class DspSettingsViewModel : ObservableObject
         MasterAvailable = available;
         bool effectsActive = available && state!.Value.IsEnabled && AppSettings.Dsp.IsEnabled;
         EffectsActive = effectsActive;
+        EffectsEditable = effectsActive && !LicenseRestricted;
         StereoSupported = available && state!.Value.Channels is 0 or 2;
         bool unsupported = available && state!.Value.Channels != 0 && state.Value.Channels != 2;
-        InfoOpen = !effectsActive || unsupported;
         InfoMessage = ToolUtils.GetString(state == null ? "DspStateUnavailable"
             : state.Value.RenderKind == 3 ? "DspAtmosBitstreamBypass"
             : !available ? "DspBitstreamBypass" : !effectsActive ? "DspMasterBypass" : "DspStereoOnly");
+        bool infoOpen = !effectsActive || unsupported;
+        // 许可优先级最高：试用到期提示覆盖 DSP 状态消息；试用期内仅填补原本关闭的提示条。
+        if (LicenseRestricted)
+        {
+            InfoMessage = ToolUtils.GetString("LicenseTrialExpiredDsp");
+            InfoSeverity = InfoBarSeverity.Warning;
+            infoOpen = true;
+        }
+        else
+        {
+            InfoSeverity = InfoBarSeverity.Informational;
+            if (!infoOpen && _license.TrialRemainingDays is int days)
+            {
+                InfoMessage = string.Format(ToolUtils.GetString("LicenseTrialRemaining"), days);
+                infoOpen = true;
+            }
+        }
+        InfoOpen = infoOpen;
         ConvolutionText = ToolUtils.GetString(!effectsActive ? "DspIrBypass" : state?.Convolution switch
         {
             ConvolutionStatus.Loading => "DspIrLoading",
@@ -328,7 +373,7 @@ public partial class DspSettingsViewModel : ObservableObject
     /// <summary>将编辑属性写回本地偏好（250ms 防抖提交，拖动滑条不产生中间 IO）。</summary>
     private void SettingChanged()
     {
-        if (_syncing || !_loaded || !_available || !AppSettings.Dsp.IsEnabled) return;
+        if (_syncing || !_loaded || !_available || !AppSettings.Dsp.IsEnabled || LicenseRestricted) return;
         AppSettings.Dsp = (AppSettings.Dsp with
         {
             ConvolutionEnabled = ConvolutionEnabled,

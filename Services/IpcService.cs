@@ -48,6 +48,7 @@ namespace WinUIMusicPlayer.Services
         private CancellationTokenSource? _serverMonitorCts;
         private Task? _serverMonitorTask;
         private readonly ILogger<IpcService> _logger;
+        private readonly LicenseService _license;
         private AppViewModel AppViewModel { get; }
 
         private int _lastNotificationVersion;
@@ -61,10 +62,12 @@ namespace WinUIMusicPlayer.Services
         /// </summary>
         public event Action<MessageTypeId, ReadOnlyMemory<byte>>? NotificationReceived;
 
-        public IpcService(AppViewModel appViewModel, ILogger<IpcService> logger)
+        public IpcService(AppViewModel appViewModel, LicenseService license, ILogger<IpcService> logger)
         {
             AppViewModel = appViewModel;
+            _license = license;
             _logger = logger;
+            _license.StateChanged += OnLicenseStateChanged;
         }
 
         public async Task InitializingAsync()
@@ -362,6 +365,8 @@ namespace WinUIMusicPlayer.Services
                 IsSettingChanged = isSettingChanged,
                 IsFadeEnabled = AppViewModel.IsFadeEnabled,
             };
+            // 试用受限覆盖：DoP 关闭后引擎按既有逻辑回退 DSD→PCM；有效值变化触发保进度重建。
+            if (_license.IsRestricted) settings.IsDopEnabled = false;
             Span<byte> buf = stackalloc byte[BinarySerializer.IpcSettingSize];
             int len = BinarySerializer.WriteIpcSetting(buf, settings);
             Publish(CommandId.UpdateSettings, buf[..len]);
@@ -435,9 +440,40 @@ namespace WinUIMusicPlayer.Services
         public void UpdateDsp()
         {
             Span<byte> buffer = stackalloc byte[DspProtocol.SettingsSize];
-            DspProtocol.WriteSettings(buffer, AppSettings.Dsp);
+            DspProtocol.WriteSettings(buffer, _license.IsRestricted ? ApplyLicenseOverlay(AppSettings.Dsp) : AppSettings.Dsp);
             Publish(CommandId.UpdateDsp, buffer);
             PublishLiveCorrection();
+        }
+
+        /// <summary>试用受限时的音效覆盖：保留 EQ 依赖的总开关，其余音效中性化。
+        /// 只覆盖推送内容不落盘，购买后用户原设置自动恢复。设备绑定的卷积开关跟随全局值，同样被覆盖。</summary>
+        private static DspSettings ApplyLicenseOverlay(DspSettings settings) => settings with
+        {
+            NormalizeLoudness = false,
+            AutoPreamp = false,
+            HeadroomDb = 0,
+            Balance = 0,
+            SwapChannels = false,
+            Mono = false,
+            Crossfeed = 0,
+            StereoWidth = 1,
+            ConvolutionEnabled = false
+        };
+
+        /// <summary>许可受限或输出通道未就绪时重推输出与音效设置：
+        /// 受限瞬间 DSD 位流会话当场回退 PCM，购买后原设置即时恢复。</summary>
+        private void OnLicenseStateChanged()
+        {
+            if (Volatile.Read(ref _disposed) != 0 || _transport == null) return;
+            try
+            {
+                UpdateSettings();
+                UpdateDsp();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "许可状态变化后的设置重推失败");
+            }
         }
 
         private void PublishLiveCorrection()
@@ -452,6 +488,7 @@ namespace WinUIMusicPlayer.Services
         private long _previewSequence = DateTime.UtcNow.Ticks;
         public void PreviewDsp(DspSettings settings, string deviceId, long generation)
         {
+            if (_license.IsRestricted) return; // 卷积实时试听属于受限功能
             Span<byte> buffer = stackalloc byte[DspPreview.Size];
             new DspPreview(Interlocked.Increment(ref _previewSequence), generation, deviceId, false, settings).Write(buffer);
             Publish(CommandId.PreviewDsp, buffer);
@@ -663,6 +700,7 @@ namespace WinUIMusicPlayer.Services
         public void Dispose()
         {
             if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+            _license.StateChanged -= OnLicenseStateChanged;
             _correctionRetryCts.Cancel();
             _correctionRetryCts.Dispose();
             _notificationCts?.Cancel();

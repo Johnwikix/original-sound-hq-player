@@ -78,8 +78,10 @@
                         Value="{x:Bind ViewModel.AppViewModel.DsdGain, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
-                <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('DsdDopDescription'), Mode=OneWay}" Header="DSD Dop / DSD Native">
-                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsDopEnabled, Mode=TwoWay}" />
+                <controls:SettingsCard Description="{x:Bind ViewModel.AppViewModel.DsdCardDescription, Mode=OneWay}" Header="DSD Dop / DSD Native">
+                    <ToggleSwitch MinWidth="0"
+                        IsEnabled="{x:Bind ViewModel.AppViewModel.DsdBitstreamAllowed, Mode=OneWay}"
+                        IsOn="{x:Bind ViewModel.AppViewModel.IsDopEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard

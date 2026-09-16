@@ -1871,4 +1871,16 @@
   <data name="DspDeviceSaveError" xml:space="preserve"><value>Correction could not be saved. Existing bindings are unchanged. Retry.</value></data>
   <data name="CurveLiveSaveError" xml:space="preserve"><value>The correction could not be saved. Check storage, then close again to retry.</value></data>
   <data name="CurveApplyPreset.Content" xml:space="preserve"><value>Apply preset</value></data>
+  <data name="LicenseTrialExpiredDsp" xml:space="preserve">
+    <value>Trial expired: DSP effects other than the equalizer and DSD Dop/Native bitstream are locked. Buy the full version to unlock</value>
+  </data>
+  <data name="LicenseTrialRemaining" xml:space="preserve">
+    <value>{0} days left in trial</value>
+  </data>
+  <data name="LicenseDsdLocked" xml:space="preserve">
+    <value>Trial expired: DSD Dop / Native is locked. Buy the full version to unlock</value>
+  </data>
+  <data name="LicensePurchase" xml:space="preserve">
+    <value>Buy full version</value>
+  </data>
 </root>

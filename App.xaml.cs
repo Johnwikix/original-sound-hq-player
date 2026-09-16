@@ -102,6 +102,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<NotificationService>();
                  services.AddSingleton<LyricsRefreshService>();
                  services.AddSingleton<IpcService>();
+                 services.AddSingleton<LicenseService>();
                  services.AddSingleton<BassPlayerCommandService>();
                  services.AddSingleton<PlaybackStatsService>();
                  services.AddSingleton<MusicDatabaseService>();

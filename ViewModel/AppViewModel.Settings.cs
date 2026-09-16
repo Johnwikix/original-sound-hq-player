@@ -1034,6 +1034,12 @@ namespace WinUIMusicPlayer.ViewModel
             get => field;
             set
             {
+                if (LicenseRestricted)
+                {
+                    // 试用受限：拒绝写入并通知绑定回弹，保持用户原有偏好（购买后自动恢复生效）。
+                    OnPropertyChanged(nameof(IsDopEnabled));
+                    return;
+                }
                 if (SetProperty(ref field, value))
                 {
                     if (IsInitialized)
