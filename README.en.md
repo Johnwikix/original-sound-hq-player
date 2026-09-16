@@ -44,6 +44,16 @@
 
 </div>
 
+## 🔒 Free Trial & Full Version
+
+Installing from the Microsoft Store starts a free trial with every feature available (trial length as shown on the Store listing). After the trial ends the player keeps working, with the following full-version features locked:
+
+- **Advanced DSP**: convolution correction, loudness normalization, unified preamp, channel & headphone effects (the 10-band equalizer remains free)
+- **DSD bitstream output**: DoP and DSD Native
+- **Experimental outputs**: 5.1 multichannel PCM output and Atmos (E-AC-3/JOC) HDMI bitstream passthrough (requires a compatible receiver)
+
+While restricted, your existing settings are never modified or erased — complete the purchase from the DSP page banner or the About page and your original settings take effect again automatically. Builds obtained outside the Microsoft Store (including compiling from source) are not subject to these restrictions.
+
 ## 🌟 Features
 
 - 🎵 **Music Library Browsing**
