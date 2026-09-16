@@ -1872,7 +1872,7 @@
   <data name="CurveLiveSaveError" xml:space="preserve"><value>補正を保存できませんでした。ストレージを確認し、もう一度閉じて再試行してください。</value></data>
   <data name="CurveApplyPreset.Content" xml:space="preserve"><value>プリセットを適用</value></data>
   <data name="LicenseRestrictedDsp" xml:space="preserve">
-    <value>有効なライセンスがありません。イコライザー以外の DSP、DSD DoP/Native、5.1 出力、Atmos HDMI パススルーはロックされています。製品版を購入すると解除できます</value>
+    <value>有効なライセンスがありません。イコライザー以外の DSP エフェクトはロックされています。製品版を購入すると解除できます。</value>
   </data>
   <data name="LicenseTrialRemaining" xml:space="preserve">
     <value>試用期限まで残り {0} 日</value>
@@ -1885,5 +1885,6 @@
   </data>
   <data name="LicenseSurround51Locked" xml:space="preserve"><value>有効なライセンスがありません。5.1 出力はロックされています。「設定 → このアプリについて」で製品版を購入すると解除できます</value></data>
   <data name="LicenseAtmosLocked" xml:space="preserve"><value>有効なライセンスがありません。Atmos HDMI パススルーはロックされています。「設定 → このアプリについて」で製品版を購入すると解除できます</value></data>
+  <data name="LicenseRestrictedOutput" xml:space="preserve"><value>有効なライセンスがありません。DSD DoP/Native、5.1 出力、Atmos HDMI パススルーはロックされています。製品版を購入すると解除できます。</value></data>
 </root>
 

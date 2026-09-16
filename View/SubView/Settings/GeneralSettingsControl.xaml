@@ -23,6 +23,19 @@
 
                 <TextBlock x:Uid="SettingOutput" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
+                <InfoBar
+                    IsClosable="False"
+                    IsOpen="{x:Bind ViewModel.AppViewModel.LicenseRestricted, Mode=OneWay}"
+                    Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.LicenseRestricted), Mode=OneWay}"
+                    Message="{x:Bind tool:ToolUtils.GetString('LicenseRestrictedOutput')}"
+                    Severity="Warning">
+                    <InfoBar.ActionButton>
+                        <Button
+                            Content="{x:Bind tool:ToolUtils.GetString('LicensePurchase')}"
+                            Command="{x:Bind ViewModel.AppViewModel.PurchaseLicenseCommand}" />
+                    </InfoBar.ActionButton>
+                </InfoBar>
+
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
                         <TextBlock x:Uid="SettingOutputDevice" TextWrapping="Wrap" />
