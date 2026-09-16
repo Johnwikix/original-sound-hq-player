@@ -13,6 +13,20 @@ using WinUIMusicPlayer.Model;
 namespace WinUIMusicPlayer.WebService
 {
 
+    /// <summary>
+    /// 在线歌词搜索结果分类：区分"确认无结果"与"网络故障"。
+    /// 前者可永久缓存（置 IsLrcSearched/IsKrcSearched），后者属临时失败，应保留重试机会。
+    /// </summary>
+    public enum LyricsSearchStatus
+    {
+        /// <summary>获取到歌词内容</summary>
+        Found,
+        /// <summary>请求成功但确认无歌词（纯音乐、曲库未收录等）</summary>
+        NoResult,
+        /// <summary>网络或服务异常，临时性失败</summary>
+        NetworkError,
+    }
+
     public class LrcService : IDisposable
     {
         private HttpClient _httpClient;
@@ -83,32 +97,17 @@ namespace WinUIMusicPlayer.WebService
                 return null;
             }
         }
-        public async Task<(string, string)> GetMixedLyricsAsync(Music music, CancellationToken cancellationToken = default)
+        public async Task<(string Lyrics, string Trans, LyricsSearchStatus Status)> GetMixedLyricsAsync(Music music, CancellationToken cancellationToken = default)
         {
-            try
-            {
-                var (lyrics, trans) = await GetLyricsAsync(music, Searchers.Netease, cancellationToken);
-                if (string.IsNullOrEmpty(lyrics))
-                {
-                    return await GetLyricsAsync(music, Searchers.QQMusic, cancellationToken);
-                }
-                else
-                {
-                    return (lyrics, trans);
-                }
-            }
-            catch (OperationCanceledException)
-            {
-                return (string.Empty, string.Empty);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"GetMixedLyricsAsync 歌词获取失败: {ex.Message}");
-                return (string.Empty, string.Empty);
-            }
+            var (lyrics, trans, status) = await GetLyricsAsync(music, Searchers.Netease, cancellationToken);
+            if (status == LyricsSearchStatus.NetworkError)
+                return (string.Empty, string.Empty, status);
+            if (string.IsNullOrEmpty(lyrics))
+                return await GetLyricsAsync(music, Searchers.QQMusic, cancellationToken);
+            return (lyrics, trans, status);
         }
 
-        public async Task<(string, string)> GetLyricsAsync(Music music, Searchers searchers = Searchers.QQMusic, CancellationToken cancellationToken = default)
+        public async Task<(string Lyrics, string Trans, LyricsSearchStatus Status)> GetLyricsAsync(Music music, Searchers searchers = Searchers.QQMusic, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -120,32 +119,42 @@ namespace WinUIMusicPlayer.WebService
                     Title = music.Title,
                 }, searchers, CompareHelper.MatchType.Low);
                 cancellationToken.ThrowIfCancellationRequested();
+                string lyrics, trans;
                 if (search is NeteaseSearchResult neteaseSearch)
                 {
                     var res = await ProviderHelper.NeteaseApi.GetLyric(neteaseSearch.Id);
                     cancellationToken.ThrowIfCancellationRequested();
-                    return (res?.Lrc.Lyric ?? string.Empty, (AppData.SystemLanguage.Contains("zh") == true ? res?.Tlyric.Lyric ?? string.Empty : string.Empty));
+                    lyrics = res?.Lrc.Lyric ?? string.Empty;
+                    trans = AppData.SystemLanguage.Contains("zh") == true ? res?.Tlyric.Lyric ?? string.Empty : string.Empty;
                 }
                 else if (search is QQMusicSearchResult qQMusicSearchResult)
                 {
                     var res = await ProviderHelper.QQMusicApi.GetLyric(qQMusicSearchResult.Mid);
                     cancellationToken.ThrowIfCancellationRequested();
-                    return (res?.Lyric ?? string.Empty, (AppData.SystemLanguage.Contains("zh") == true ? res?.Trans ?? string.Empty : string.Empty));
+                    lyrics = res?.Lyric ?? string.Empty;
+                    trans = AppData.SystemLanguage.Contains("zh") == true ? res?.Trans ?? string.Empty : string.Empty;
                 }
-                return (string.Empty, string.Empty);
+                else
+                {
+                    return (string.Empty, string.Empty, LyricsSearchStatus.NoResult);
+                }
+
+                return string.IsNullOrWhiteSpace(lyrics)
+                    ? (string.Empty, string.Empty, LyricsSearchStatus.NoResult)
+                    : (lyrics, trans, LyricsSearchStatus.Found);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                return (string.Empty, string.Empty);
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"GetLyricsAsync 歌词获取失败: {ex.Message}");
-                return (string.Empty, string.Empty);
+                return (string.Empty, string.Empty, LyricsSearchStatus.NetworkError);
             }
         }
 
-        public async Task<(string, string)> GetKrcLyricsAsync(Music music, CancellationToken cancellationToken = default)
+        public async Task<(string Lyrics, string Trans, LyricsSearchStatus Status)> GetKrcLyricsAsync(Music music, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -157,22 +166,26 @@ namespace WinUIMusicPlayer.WebService
                     Title = music.Title,
                 }, Searchers.QQMusic, CompareHelper.MatchType.Medium);
                 cancellationToken.ThrowIfCancellationRequested();
-                if (search is QQMusicSearchResult qQMusicSearchResult)
-                {
-                    var res = await ProviderHelper.QQMusicApi.GetLyricsAsync(qQMusicSearchResult.Id);
-                    cancellationToken.ThrowIfCancellationRequested();
-                    return (res?.Lyrics ?? string.Empty, (AppData.SystemLanguage.Contains("zh") == true ? res?.Trans ?? string.Empty : string.Empty));
-                }
-                return (string.Empty, string.Empty);
+                if (search is not QQMusicSearchResult qQMusicSearchResult)
+                    return (string.Empty, string.Empty, LyricsSearchStatus.NoResult);
+
+                var res = await ProviderHelper.QQMusicApi.GetLyricsAsync(qQMusicSearchResult.Id);
+                cancellationToken.ThrowIfCancellationRequested();
+                var lyrics = res?.Lyrics ?? string.Empty;
+                var trans = AppData.SystemLanguage.Contains("zh") == true ? res?.Trans ?? string.Empty : string.Empty;
+
+                return string.IsNullOrWhiteSpace(lyrics)
+                    ? (string.Empty, string.Empty, LyricsSearchStatus.NoResult)
+                    : (lyrics, trans, LyricsSearchStatus.Found);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
-                return (string.Empty, string.Empty);
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"GetKrcLyricsAsync 歌词获取失败: {ex.Message}");
-                return (string.Empty, string.Empty);
+                return (string.Empty, string.Empty, LyricsSearchStatus.NetworkError);
             }
         }
 

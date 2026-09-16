@@ -904,13 +904,15 @@ namespace WinUIMusicPlayer.Utils
 
         public static async Task<(string, string)> GetLyricsFromNet(Music musicDetail)
         {
-            return await App.Services.GetRequiredService<LrcService>().GetMixedLyricsAsync(musicDetail);
+            var (lyrics, transLrc, _) = await App.Services.GetRequiredService<LrcService>().GetMixedLyricsAsync(musicDetail);
+            return (lyrics, transLrc);
         }
 
         public static async Task<(string, string)> GetKrcFromNet(Music musicDetail)
         {
             //string res = await LrcService.GetLyricsFromHelper(musicDetail.Title, musicDetail.Album, musicDetail.Author, musicDetail.Duration);
-            return await App.Services.GetRequiredService<LrcService>().GetKrcLyricsAsync(musicDetail);
+            var (krc, tKrc, _) = await App.Services.GetRequiredService<LrcService>().GetKrcLyricsAsync(musicDetail);
+            return (krc, tKrc);
         }
 
         public static DateTime GetSafeFileCreateTime(string filePath)

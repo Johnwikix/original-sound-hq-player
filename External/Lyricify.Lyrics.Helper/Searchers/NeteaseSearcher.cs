@@ -31,6 +31,8 @@ namespace Lyricify.Lyrics.Searchers
                     catch
                     {
                         useNewSearchFirst = !useNewSearchFirst;
+                        // 两个接口都失败视为网络/服务故障，向上抛出以便上层与"搜索成功但无结果"区分
+                        throw;
                     }
                 }
             }
@@ -44,9 +46,8 @@ namespace Lyricify.Lyrics.Searchers
                 catch
                 {
                     useNewSearchFirst = !useNewSearchFirst;
-                    // 尝试新接口，可以在外网使用
-                    try { result = await Providers.Web.Providers.NeteaseApi.SearchNew(searchString); }
-                    catch { }
+                    // 尝试新接口，可以在外网使用；接口失败同样向上抛出（网络/服务故障）
+                    result = await Providers.Web.Providers.NeteaseApi.SearchNew(searchString);
                 }
             }
 
