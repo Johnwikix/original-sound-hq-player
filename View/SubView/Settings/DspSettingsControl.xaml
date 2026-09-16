@@ -15,9 +15,9 @@
                 <InfoBar
                     IsClosable="False"
                     IsOpen="{x:Bind ViewModel.InfoOpen, Mode=OneWay}"
-                    Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.InfoOpen), Mode=OneWay}"
                     Message="{x:Bind ViewModel.InfoMessage, Mode=OneWay}"
-                    Severity="{x:Bind ViewModel.InfoSeverity, Mode=OneWay}">
+                    Severity="{x:Bind ViewModel.InfoSeverity, Mode=OneWay}"
+                    Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.InfoOpen), Mode=OneWay}">
                     <InfoBar.ActionButton>
                         <Button
                             Command="{x:Bind ViewModel.PurchaseCommand}"
@@ -71,60 +71,94 @@
                     Header="{x:Bind tool:ToolUtils.GetString('DspHeadroom')}"
                     IsEnabled="{x:Bind ViewModel.EffectsEditable, Mode=OneWay}">
                     <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="12">
-                            <TextBlock
-                                VerticalAlignment="Center"
-                                Text="{x:Bind tool:ToolUtils.GetString('DspAutoPreamp')}"
-                                TextWrapping="Wrap" />
-                            <ToggleSwitch
-                                Grid.Column="1"
-                                MinWidth="0"
-                                VerticalAlignment="Center"
-                                AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('DspAutoPreamp')}"
-                                OffContent=""
-                                OnContent=""
-                                IsOn="{x:Bind ViewModel.AutoPreamp, Mode=TwoWay}" />
-                        <NumberBox Grid.Column="2" Width="220" Maximum="24" Minimum="-48" SmallChange="0.5"
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Text="{x:Bind tool:ToolUtils.GetString('DspAutoPreamp')}"
+                            TextWrapping="Wrap" />
+                        <ToggleSwitch
+                            Grid.Column="1"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('DspAutoPreamp')}"
+                            IsOn="{x:Bind ViewModel.AutoPreamp, Mode=TwoWay}"
+                            OffContent=""
+                            OnContent="" />
+                        <NumberBox
+                            Grid.Column="2"
+                            Width="220"
                             VerticalAlignment="Center"
                             IsEnabled="{x:Bind ViewModel.ManualGainEnabled, Mode=OneWay}"
-                            SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.HeadroomDb, Mode=TwoWay}" />
+                            Maximum="24"
+                            Minimum="-48"
+                            SmallChange="0.5"
+                            SpinButtonPlacementMode="Inline"
+                            Value="{x:Bind ViewModel.HeadroomDb, Mode=TwoWay}" />
                     </Grid>
                 </controls:SettingsCard>
                 <TextBlock x:Uid="DspConvolutionSection" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
-                <Button Content="{x:Bind tool:ToolUtils.GetString('DspDeviceTarget')}"
-                    HorizontalAlignment="Right" Click="ManageDeviceBindings_Click"
+                <Button
+                    HorizontalAlignment="Right"
+                    Click="ManageDeviceBindings_Click"
+                    Content="{x:Bind tool:ToolUtils.GetString('DspDeviceTarget')}"
                     IsEnabled="{x:Bind ViewModel.EffectsEditable, Mode=OneWay}"
                     Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.WaveMode), Mode=OneWay}" />
-                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('CurveSource')}"
-                    IsEnabled="{x:Bind ViewModel.EffectsEditable, Mode=OneWay}">
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('CurveSource')}" IsEnabled="{x:Bind ViewModel.EffectsEditable, Mode=OneWay}">
                     <ComboBox Width="220" SelectedIndex="{x:Bind ViewModel.ConvolutionSourceIndex, Mode=TwoWay}">
                         <ComboBoxItem x:Uid="CurveSourceDraw" />
                         <ComboBoxItem x:Uid="CurveSourceWave" />
                     </ComboBox>
                 </controls:SettingsCard>
-                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('CurveEditorTitle')}"
+                <controls:SettingsCard
                     Description="{x:Bind tool:ToolUtils.GetString('CurveEditorDescription')}"
+                    Header="{x:Bind tool:ToolUtils.GetString('CurveEditorTitle')}"
                     IsEnabled="{x:Bind ViewModel.EffectsEditable, Mode=OneWay}"
                     Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.CurveMode), Mode=OneWay}">
                     <Button x:Uid="CurveEdit" Click="EditCurve_Click" />
                 </controls:SettingsCard>
-                <TextBlock Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.WaveMode), Mode=OneWay}" x:Uid="DspIrDescription" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspConvolution')}"
-                    IsEnabled="{x:Bind ViewModel.EffectsEditable, Mode=OneWay}">
-                    <ToggleSwitch x:Uid="DspConvolutionToggle" MinWidth="0" IsOn="{x:Bind ViewModel.ConvolutionEnabled, Mode=TwoWay}" />
+                <TextBlock
+                    x:Uid="DspIrDescription"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    TextWrapping="Wrap"
+                    Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.WaveMode), Mode=OneWay}" />
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspConvolution')}" IsEnabled="{x:Bind ViewModel.EffectsEditable, Mode=OneWay}">
+                    <ToggleSwitch
+                        x:Uid="DspConvolutionToggle"
+                        MinWidth="0"
+                        IsOn="{x:Bind ViewModel.ConvolutionEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
-                <controls:SettingsCard Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.WaveMode), Mode=OneWay}" Header="{x:Bind tool:ToolUtils.GetString('DspIrFile')}"
+                <controls:SettingsCard
+                    Description="{x:Bind ViewModel.ImpulseName, Mode=OneWay}"
+                    Header="{x:Bind tool:ToolUtils.GetString('DspIrFile')}"
                     IsEnabled="{x:Bind ViewModel.EffectsEditable, Mode=OneWay}"
-                    Description="{x:Bind ViewModel.ImpulseName, Mode=OneWay}">
+                    Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.WaveMode), Mode=OneWay}">
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Button x:Uid="DspIrImport" IsEnabled="{x:Bind ViewModel.ImportAvailable, Mode=OneWay}" Click="ImportImpulse_Click" />
-                        <Button x:Uid="DspIrClear" IsEnabled="{x:Bind ViewModel.ImportAvailable, Mode=OneWay}" Click="ClearImpulse_Click" />
+                        <Button
+                            x:Uid="DspIrImport"
+                            Click="ImportImpulse_Click"
+                            IsEnabled="{x:Bind ViewModel.ImportAvailable, Mode=OneWay}" />
+                        <Button
+                            x:Uid="DspIrClear"
+                            Click="ClearImpulse_Click"
+                            IsEnabled="{x:Bind ViewModel.ImportAvailable, Mode=OneWay}" />
                     </StackPanel>
                 </controls:SettingsCard>
-                <ProgressRing Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.ImportBusy), Mode=OneWay}" IsActive="{x:Bind ViewModel.ImportBusy, Mode=OneWay}" Width="24" Height="24" HorizontalAlignment="Left" />
-                <InfoBar Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.ImportFailed), Mode=OneWay}" IsOpen="{x:Bind ViewModel.ImportFailed, Mode=OneWay}" IsClosable="False" Severity="Error"
-                    Message="{x:Bind ViewModel.ImportError, Mode=OneWay}" />
-                <TextBlock Text="{x:Bind ViewModel.ConvolutionText, Mode=OneWay}" TextWrapping="Wrap"
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                <ProgressRing
+                    Width="24"
+                    Height="24"
+                    HorizontalAlignment="Left"
+                    IsActive="{x:Bind ViewModel.ImportBusy, Mode=OneWay}"
+                    Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.ImportBusy), Mode=OneWay}" />
+                <InfoBar
+                    IsClosable="False"
+                    IsOpen="{x:Bind ViewModel.ImportFailed, Mode=OneWay}"
+                    Message="{x:Bind ViewModel.ImportError, Mode=OneWay}"
+                    Severity="Error"
+                    Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.ImportFailed), Mode=OneWay}" />
+                <TextBlock
+                    Margin="2,0,0,0"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="{x:Bind ViewModel.ConvolutionText, Mode=OneWay}"
+                    TextWrapping="Wrap" />
                 <TextBlock x:Uid="DspChannels" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
                 <controls:SettingsCard
                     Description="{x:Bind tool:ToolUtils.GetString('DspBalanceDescription')}"
@@ -145,14 +179,10 @@
                             Value="{x:Bind ViewModel.Balance, Mode=TwoWay}" />
                     </Grid>
                 </controls:SettingsCard>
-                <controls:SettingsCard
-                    Header="{x:Bind tool:ToolUtils.GetString('DspSwap')}"
-                    IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.EffectsEditable, ViewModel.StereoSupported), Mode=OneWay}">
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspSwap')}" IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.EffectsEditable, ViewModel.StereoSupported), Mode=OneWay}">
                     <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.SwapChannels, Mode=TwoWay}" />
                 </controls:SettingsCard>
-                <controls:SettingsCard
-                    Header="{x:Bind tool:ToolUtils.GetString('DspMono')}"
-                    IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.EffectsEditable, ViewModel.StereoSupported), Mode=OneWay}">
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspMono')}" IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.EffectsEditable, ViewModel.StereoSupported), Mode=OneWay}">
                     <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.Mono, Mode=TwoWay}" />
                 </controls:SettingsCard>
                 <controls:SettingsCard
@@ -186,9 +216,9 @@
                 </controls:SettingsCard>
                 <Button
                     x:Uid="DspReset"
+                    HorizontalAlignment="Left"
                     Click="Reset_Click"
-                    IsEnabled="{x:Bind ViewModel.EffectsEditable, Mode=OneWay}"
-                    HorizontalAlignment="Left" />
+                    IsEnabled="{x:Bind ViewModel.EffectsEditable, Mode=OneWay}" />
             </StackPanel>
         </Grid>
     </ScrollViewer>
