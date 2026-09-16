@@ -1,9 +1,10 @@
-﻿using System;
+using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
+using WinUIMusicPlayer.Services;
 
 namespace WinUIMusicPlayer.Taskbar
 {
@@ -177,7 +178,7 @@ namespace WinUIMusicPlayer.Taskbar
         private bool _isDisposed = false;
         private bool _isCurrentPlaying = false;
 
-        private MusicBrowseViewModel _musicBrowseViewModel;
+        private PlaybackCommands _playback;
 
         // ── 错误事件 ─────────────────────────────────────────────────────────────
         // 所有 catch 块均通过 OnError() 触发此事件，调用方统一订阅处理。
@@ -208,10 +209,12 @@ namespace WinUIMusicPlayer.Taskbar
 
         // ── 构造 ────────────────────────────────────────────────────────────────
 
-        public TaskbarHelper(IntPtr hwnd, MusicBrowseViewModel musicBrowseViewModel)
+        public TaskbarHelper(IntPtr hwnd, PlaybackCommands playback)
         {
             _hwnd = hwnd;
-            _musicBrowseViewModel = musicBrowseViewModel;
+            _playback = playback;
+            playback.ToggleCommand.CanExecuteChanged += PlaybackAvailabilityChanged;
+            playback.NextCommand.CanExecuteChanged += PlaybackAvailabilityChanged;
         }
 
         // ── 公共方法 ─────────────────────────────────────────────────────────────
@@ -290,19 +293,19 @@ namespace WinUIMusicPlayer.Taskbar
                 _nativeButtons[0].dwMask = ThumbButtonMask.Icon | ThumbButtonMask.Tooltip | ThumbButtonMask.THB_FLAGS;
                 _nativeButtons[0].iId = 0;
                 _nativeButtons[0].hIcon = _iconHandles[0];
-                _nativeButtons[0].dwFlags = ThumbButtonFlags.Enabled;
+                _nativeButtons[0].dwFlags = _playback.PreviousCommand.CanExecute(null) ? ThumbButtonFlags.Enabled : ThumbButtonFlags.Disabled;
                 _nativeButtons[0].SetTip(ToolUtils.GetString("LastSong"));
 
                 _nativeButtons[1].dwMask = ThumbButtonMask.Icon | ThumbButtonMask.Tooltip | ThumbButtonMask.THB_FLAGS;
                 _nativeButtons[1].iId = 1;
                 _nativeButtons[1].hIcon = _iconHandles[1];
-                _nativeButtons[1].dwFlags = ThumbButtonFlags.Enabled;
+                _nativeButtons[1].dwFlags = _playback.ToggleCommand.CanExecute(null) ? ThumbButtonFlags.Enabled : ThumbButtonFlags.Disabled;
                 _nativeButtons[1].SetTip(ToolUtils.GetString("PlayNPause"));
 
                 _nativeButtons[2].dwMask = ThumbButtonMask.Icon | ThumbButtonMask.Tooltip | ThumbButtonMask.THB_FLAGS;
                 _nativeButtons[2].iId = 2;
                 _nativeButtons[2].hIcon = _iconHandles[2];
-                _nativeButtons[2].dwFlags = ThumbButtonFlags.Enabled;
+                _nativeButtons[2].dwFlags = _playback.NextCommand.CanExecute(null) ? ThumbButtonFlags.Enabled : ThumbButtonFlags.Disabled;
                 _nativeButtons[2].SetTip(ToolUtils.GetString("NextSong"));
 
                 CallThumbBarAddButtons(_pTaskbarList, _hwnd, _nativeButtons);
@@ -325,6 +328,19 @@ namespace WinUIMusicPlayer.Taskbar
                 OnError(ex, isRecoverable: false);
                 throw;
             }
+        }
+
+        private void PlaybackAvailabilityChanged(object? sender, EventArgs e)
+        {
+            if (_isDisposed || !_buttonsAdded || _pTaskbarList == IntPtr.Zero || _nativeButtons is null) return;
+            try
+            {
+                _nativeButtons[0].dwFlags = _playback.PreviousCommand.CanExecute(null) ? ThumbButtonFlags.Enabled : ThumbButtonFlags.Disabled;
+                _nativeButtons[1].dwFlags = _playback.ToggleCommand.CanExecute(null) ? ThumbButtonFlags.Enabled : ThumbButtonFlags.Disabled;
+                _nativeButtons[2].dwFlags = _playback.NextCommand.CanExecute(null) ? ThumbButtonFlags.Enabled : ThumbButtonFlags.Disabled;
+                CallThumbBarUpdateButtons(_pTaskbarList, _hwnd, _nativeButtons);
+            }
+            catch (Exception ex) { OnError(ex, isRecoverable: true); }
         }
 
         public void UpdateButtonIcon(int buttonId, string iconPath, int size = 32)
@@ -429,9 +445,9 @@ namespace WinUIMusicPlayer.Taskbar
             {
                 switch (buttonId)
                 {
-                    case 0: _musicBrowseViewModel.LastMusicButton_Click(); break;
-                    case 1: _musicBrowseViewModel.PlayButton_Click(); break;
-                    case 2: _musicBrowseViewModel.NextMusicButton_Click(); break;
+                    case 0: _playback.PreviousCommand.Execute(null); break;
+                    case 1: _playback.ToggleCommand.Execute(null); break;
+                    case 2: _playback.NextCommand.Execute(null); break;
                 }
             }
             catch (Exception ex)
@@ -543,6 +559,11 @@ namespace WinUIMusicPlayer.Taskbar
         protected virtual void Dispose(bool disposing)
         {
             if (_isDisposed) return;
+            if (disposing)
+            {
+                _playback.ToggleCommand.CanExecuteChanged -= PlaybackAvailabilityChanged;
+                _playback.NextCommand.CanExecuteChanged -= PlaybackAvailabilityChanged;
+            }
 
             // 缺口⑦：Dispose 路径上任何一步抛出异常都会跳过后续的清理，
             //         导致 GCHandle 泄漏、COM 引用泄漏、图标句柄泄漏。

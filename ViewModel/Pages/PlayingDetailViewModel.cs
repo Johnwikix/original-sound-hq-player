@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -13,13 +13,15 @@ namespace WinUIMusicPlayer.ViewModel.Pages
 {
     public partial class PlayingDetailViewModel : ObservableObject
     {
+        public PlaybackCommands Playback { get; }
         public AppViewModel AppViewModel { get; }
         public double TitleFontSize { get; set => SetProperty(ref field, value); } = 24;
         public double ArtistAlbumFontSize { get => field; set => SetProperty(ref field, value); } = 22;
         public double InfoFontSize { get; set => SetProperty(ref field, value); } = 12;
         private ILogger<PlayingDetailViewModel> _logger;
-        public PlayingDetailViewModel(AppViewModel appViewModel, ILogger<PlayingDetailViewModel> logger)
+        public PlayingDetailViewModel(AppViewModel appViewModel, ILogger<PlayingDetailViewModel> logger, PlaybackCommands playback)
         {
+            Playback = playback;
             AppViewModel = appViewModel;
             _logger = logger;
             AppViewModel.UpdateCover();
@@ -35,7 +37,7 @@ namespace WinUIMusicPlayer.ViewModel.Pages
         {
             // IsPlaying's setter triggers the taskbar/SMTC update automatically, so no
             // manual UpdatePlayPauseButtonIcon here (it would run with stale state).
-            _ = App.Services.GetRequiredService<BassPlayerCommandService>().PlayButton();
+            Playback.ToggleCommand.Execute(null);
         }
 
         [RelayCommand]
@@ -73,7 +75,7 @@ namespace WinUIMusicPlayer.ViewModel.Pages
 
         public void NextMusicButton_Click()
         {
-            App.Services.GetRequiredService<BassPlayerCommandService>().PlayNextTrack();
+            Playback.NextCommand.Execute(null);
         }
 
         public void LastMusicButton_Click()
@@ -81,21 +83,7 @@ namespace WinUIMusicPlayer.ViewModel.Pages
             PlayLastTrack();
         }
 
-        private void PlayLastTrack()
-        {
-            int index = AppViewModel.CurrentPlayingList.AsValueEnumerable()
-                        .Select((music, i) => new { Music = music, Index = i })
-                        .FirstOrDefault(x => x.Music.Id == AppViewModel.CurrentPlayingMusic.Id)
-                        ?.Index ?? -1;
-            if (index > 0)
-            {
-                _ = App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(AppViewModel.CurrentPlayingList[index - 1]);
-            }
-            else if (index == 0 && AppViewModel.CurrentPlayingList.Count > 1)
-            {
-                _ = App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(AppViewModel.CurrentPlayingList[^1]);
-            }
-        }
+        private void PlayLastTrack() => Playback.PreviousCommand.Execute(null);
 
         public void UpdateLyricsToUI(int index)
         {

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><LangVersion>preview</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+    <Compile Include="../../Services/AppLifecycle.cs" />
+    <Compile Include="../../Services/ShutdownCoordinator.cs" />
+    <Compile Include="../../Services/PlaybackCommands.cs" />
+    <Compile Include="../../Services/LibraryWatcherService.cs" />
+    <Compile Include="../../ViewModel/TrayViewModel.cs" />
+  </ItemGroup>
+</Project>

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="WinUIMusicPlayer.View.MainPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -302,7 +302,7 @@
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
-                            Command="{x:Bind ViewModel.MusicBrowseVM.LastMusicButtonChangedCommand, Mode=OneWay}"
+                            Command="{x:Bind ViewModel.MusicBrowseVM.Playback.PreviousCommand, Mode=OneWay}"
                             IsEnabled="{x:Bind tools:BindUtils.IsCurrentPlayListExist(ViewModel.AppViewModel.CurrentPlayingList), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="22" Glyph="&#xF8AC;" />
@@ -317,7 +317,7 @@
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
-                            Command="{x:Bind ViewModel.MusicBrowseVM.PlayButtonChangedCommand, Mode=OneWay}"
+                            Command="{x:Bind ViewModel.MusicBrowseVM.Playback.ToggleCommand, Mode=OneWay}"
                             IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource PlayButtonStyle}">
                             <FontIcon
@@ -336,7 +336,7 @@
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
-                            Command="{x:Bind ViewModel.MusicBrowseVM.NextMusicButtonChangedCommand, Mode=OneWay}"
+                            Command="{x:Bind ViewModel.MusicBrowseVM.Playback.NextCommand, Mode=OneWay}"
                             IsEnabled="{x:Bind tools:BindUtils.IsCurrentPlayListExist(ViewModel.AppViewModel.CurrentPlayingList), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="22" Glyph="&#xF8AD;" />

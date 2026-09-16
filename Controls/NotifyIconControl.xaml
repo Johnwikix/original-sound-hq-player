@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <UserControl
     x:Class="WinUIMusicPlayer.Controls.NotifyIconControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -14,9 +14,9 @@
         x:FieldModifier="public"
         ContextMenuMode="SecondWindow"
         IconSource="ms-appx:///Assets/icon.ico"
-        LeftClickCommand="{x:Bind ShowHideWindowCommand}"
+        LeftClickCommand="{x:Bind ViewModel.ShowWindowCommand}"
         NoLeftClickDelay="True"
-        ToolTipText="{x:Bind tools:BindUtils.MusicToTitleConverter(AppViewModel.CurrentPlayingMusic), Mode=OneWay}">
+        ToolTipText="{x:Bind tools:BindUtils.MusicToTitleConverter(ViewModel.State.CurrentPlayingMusic), Mode=OneWay}">
         <tb:TaskbarIcon.ContextFlyout>
             <MenuFlyout
                 AreOpenCloseAnimationsEnabled="True"
@@ -30,8 +30,8 @@
                 <MenuFlyoutItem
                     MinWidth="200"
                     MaxWidth="400"
-                    Command="{x:Bind ShowPlayingDetailCommand}"
-                    Text="{x:Bind tools:BindUtils.MusicToTitleConverter(AppViewModel.CurrentPlayingMusic), Mode=OneWay}">
+                    Command="{x:Bind ViewModel.ShowPlayingDetailCommand}"
+                    Text="{x:Bind tools:BindUtils.MusicToTitleConverter(ViewModel.State.CurrentPlayingMusic), Mode=OneWay}">
                     <MenuFlyoutItem.Icon>
                         <FontIcon Glyph="&#xE8D6;" />
                     </MenuFlyoutItem.Icon>
@@ -39,110 +39,110 @@
                 <MenuFlyoutSeparator />
                 <MenuFlyoutItem
                     x:Uid="IconLastSong"
-                    Command="{x:Bind MusicBrowseViewModel.LastMusicButtonChangedCommand}">
+                    Command="{x:Bind ViewModel.Playback.PreviousCommand}">
                     <MenuFlyoutItem.Icon>
                         <FontIcon Glyph="&#xF8AC;" />
                     </MenuFlyoutItem.Icon>
                 </MenuFlyoutItem>
                 <MenuFlyoutItem
                     HorizontalAlignment="Stretch"
-                    Command="{x:Bind MusicBrowseViewModel.PlayButtonChangedCommand}"
-                    Text="{x:Bind tools:BindUtils.PlayStatusToTextConverter(MusicBrowseViewModel.AppViewModel.IsPlaying), Mode=OneWay}">
+                    Command="{x:Bind ViewModel.Playback.ToggleCommand}"
+                    Text="{x:Bind tools:BindUtils.PlayStatusToTextConverter(ViewModel.State.IsPlaying), Mode=OneWay}">
                     <MenuFlyoutItem.Icon>
-                        <FontIcon Glyph="{x:Bind tools:BindUtils.PlayStatusToGlyphConverter(MusicBrowseViewModel.AppViewModel.IsPlaying), Mode=OneWay}" />
+                        <FontIcon Glyph="{x:Bind tools:BindUtils.PlayStatusToGlyphConverter(ViewModel.State.IsPlaying), Mode=OneWay}" />
                     </MenuFlyoutItem.Icon>
                 </MenuFlyoutItem>
                 <MenuFlyoutItem
                     x:Uid="IconNextSong"
-                    Command="{x:Bind MusicBrowseViewModel.NextMusicButtonChangedCommand}">
+                    Command="{x:Bind ViewModel.Playback.NextCommand}">
                     <MenuFlyoutItem.Icon>
                         <FontIcon Glyph="&#xF8AD;" />
                     </MenuFlyoutItem.Icon>
                 </MenuFlyoutItem>
-                <MenuFlyoutSubItem
+                <MenuFlyoutSubItem IsEnabled="{x:Bind ViewModel.IsReady, Mode=OneWay}"
                     x:Uid="IconListLoopValue"
-                    Text="{x:Bind tools:BindUtils.PlayModeToTextConverter(AppViewModel.CurrentPlayMode), Mode=OneWay}">
+                    Text="{x:Bind tools:BindUtils.PlayModeToTextConverter(ViewModel.State.CurrentPlayMode), Mode=OneWay}">
                     <MenuFlyoutSubItem.Icon>
-                        <FontIcon Glyph="{x:Bind tools:BindUtils.PlayModeToGlyphConverter(AppViewModel.CurrentPlayMode), Mode=OneWay}" />
+                        <FontIcon Glyph="{x:Bind tools:BindUtils.PlayModeToGlyphConverter(ViewModel.State.CurrentPlayMode), Mode=OneWay}" />
                     </MenuFlyoutSubItem.Icon>
                     <ToggleMenuFlyoutItem
                         x:Uid="IconListLoopValue"
-                        Command="{x:Bind AppViewModel.SetPlayModeCommand}"
+                        Command="{x:Bind ViewModel.State.SetPlayModeCommand}"
                         CommandParameter="ListLoop"
-                        IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(AppViewModel.CurrentPlayMode,'ListLoop'),Mode=OneWay}">
+                        IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(ViewModel.State.CurrentPlayMode,'ListLoop'),Mode=OneWay}">
                         <ToggleMenuFlyoutItem.Icon>
                             <FontIcon Glyph="&#xE8EE;" />
                         </ToggleMenuFlyoutItem.Icon>
                     </ToggleMenuFlyoutItem>
                     <ToggleMenuFlyoutItem
                         x:Uid="IconSingleTuneCirculationValue"
-                        Command="{x:Bind AppViewModel.SetPlayModeCommand}"
+                        Command="{x:Bind ViewModel.State.SetPlayModeCommand}"
                         CommandParameter="SingleLoop"
-                        IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(AppViewModel.CurrentPlayMode,'SingleLoop'),Mode=OneWay}">
+                        IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(ViewModel.State.CurrentPlayMode,'SingleLoop'),Mode=OneWay}">
                         <ToggleMenuFlyoutItem.Icon>
                             <FontIcon Glyph="&#xE8ED;" />
                         </ToggleMenuFlyoutItem.Icon>
                     </ToggleMenuFlyoutItem>
                     <ToggleMenuFlyoutItem
                         x:Uid="IconSinglePlaybackValue"
-                        Command="{x:Bind AppViewModel.SetPlayModeCommand}"
+                        Command="{x:Bind ViewModel.State.SetPlayModeCommand}"
                         CommandParameter="RepeatOff"
-                        IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(AppViewModel.CurrentPlayMode,'RepeatOff'),Mode=OneWay}">
+                        IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(ViewModel.State.CurrentPlayMode,'RepeatOff'),Mode=OneWay}">
                         <ToggleMenuFlyoutItem.Icon>
                             <FontIcon Glyph="&#xF5E7;" />
                         </ToggleMenuFlyoutItem.Icon>
                     </ToggleMenuFlyoutItem>
                     <ToggleMenuFlyoutItem
                         x:Uid="IconRandomLoopValue"
-                        Command="{x:Bind AppViewModel.SetPlayModeCommand}"
+                        Command="{x:Bind ViewModel.State.SetPlayModeCommand}"
                         CommandParameter="RandomLoop"
-                        IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(AppViewModel.CurrentPlayMode,'RandomLoop'),Mode=OneWay}">
+                        IsChecked="{x:Bind tools:BindUtils.PlayModeCheckerConverter(ViewModel.State.CurrentPlayMode,'RandomLoop'),Mode=OneWay}">
                         <ToggleMenuFlyoutItem.Icon>
                             <FontIcon Glyph="&#xE8B1;" />
                         </ToggleMenuFlyoutItem.Icon>
                     </ToggleMenuFlyoutItem>
                 </MenuFlyoutSubItem>
                 <MenuFlyoutSeparator />
-                <MenuFlyoutSubItem x:Uid="IconVolume">
+                <MenuFlyoutSubItem IsEnabled="{x:Bind ViewModel.IsReady, Mode=OneWay}" x:Uid="IconVolume">
                     <MenuFlyoutSubItem.Icon>
-                        <FontIcon Glyph="{x:Bind tools:BindUtils.VolumeToGlyphConverter(AppViewModel.Volume), Mode=OneWay}" />
+                        <FontIcon Glyph="{x:Bind tools:BindUtils.VolumeToGlyphConverter(ViewModel.State.Volume), Mode=OneWay}" />
                     </MenuFlyoutSubItem.Icon>
                     <MenuFlyoutItem
-                        Command="{x:Bind AppViewModel.VolumeUpCommand}"
+                        Command="{x:Bind ViewModel.State.VolumeUpCommand}"
                         Text="+10" />
                     <MenuFlyoutItem
-                        Command="{x:Bind AppViewModel.VolumeDownCommand}"
+                        Command="{x:Bind ViewModel.State.VolumeDownCommand}"
                         Text="-10" />
                 </MenuFlyoutSubItem>
                 <MenuFlyoutSeparator />
-                <MenuFlyoutSubItem x:Uid="IconDesktopLyrics">
+                <MenuFlyoutSubItem IsEnabled="{x:Bind ViewModel.IsReady, Mode=OneWay}" x:Uid="IconDesktopLyrics">
                     <MenuFlyoutSubItem.Icon>
-                        <FontIcon Glyph="{x:Bind tools:BindUtils.DesktopLyricsGlyphConverter(DesktopLyrics.IsEnabled), Mode=OneWay}" />
+                        <FontIcon Glyph="{x:Bind tools:BindUtils.DesktopLyricsGlyphConverter(ViewModel.DesktopLyrics.IsEnabled), Mode=OneWay}" />
                     </MenuFlyoutSubItem.Icon>
                     <MenuFlyoutItem
-                        Command="{x:Bind ToggleDesktopLyricsCommand}"
-                        Text="{x:Bind tools:BindUtils.DesktopLyricsTextConverter(DesktopLyrics.IsEnabled), Mode=OneWay}">
+                        Command="{x:Bind ViewModel.ToggleDesktopLyricsCommand}"
+                        Text="{x:Bind tools:BindUtils.DesktopLyricsTextConverter(ViewModel.DesktopLyrics.IsEnabled), Mode=OneWay}">
                         <MenuFlyoutItem.Icon>
-                            <FontIcon Glyph="{x:Bind tools:BindUtils.DesktopLyricsGlyphConverter(DesktopLyrics.IsEnabled), Mode=OneWay}" />
+                            <FontIcon Glyph="{x:Bind tools:BindUtils.DesktopLyricsGlyphConverter(ViewModel.DesktopLyrics.IsEnabled), Mode=OneWay}" />
                         </MenuFlyoutItem.Icon>
                     </MenuFlyoutItem>
                     <MenuFlyoutItem
-                        Command="{x:Bind ToggleDesktopLyricsKaraokeCommand}"
-                        Text="{x:Bind tools:BindUtils.DesktopLyricsKaraokeTextConverter(DesktopLyrics.IsKaraokeEnabled), Mode=OneWay}">
+                        Command="{x:Bind ViewModel.ToggleDesktopLyricsKaraokeCommand}"
+                        Text="{x:Bind tools:BindUtils.DesktopLyricsKaraokeTextConverter(ViewModel.DesktopLyrics.IsKaraokeEnabled), Mode=OneWay}">
                         <MenuFlyoutItem.Icon>
-                            <FontIcon Glyph="{x:Bind tools:BindUtils.KaraokeGlyphConverter(DesktopLyrics.IsKaraokeEnabled), Mode=OneWay}" />
+                            <FontIcon Glyph="{x:Bind tools:BindUtils.KaraokeGlyphConverter(ViewModel.DesktopLyrics.IsKaraokeEnabled), Mode=OneWay}" />
                         </MenuFlyoutItem.Icon>
                     </MenuFlyoutItem>
                     <MenuFlyoutItem
-                        Command="{x:Bind ToggleDesktopLyricsLockCommand}"
-                        Text="{x:Bind tools:BindUtils.LockDesktopLyricsTextConverter(DesktopLyrics.IsLocked), Mode=OneWay}">
+                        Command="{x:Bind ViewModel.ToggleDesktopLyricsLockCommand}"
+                        Text="{x:Bind tools:BindUtils.LockDesktopLyricsTextConverter(ViewModel.DesktopLyrics.IsLocked), Mode=OneWay}">
                         <MenuFlyoutItem.Icon>
-                            <FontIcon Glyph="{x:Bind tools:BindUtils.LockGlyphConverter(DesktopLyrics.IsLocked), Mode=OneWay}" />
+                            <FontIcon Glyph="{x:Bind tools:BindUtils.LockGlyphConverter(ViewModel.DesktopLyrics.IsLocked), Mode=OneWay}" />
                         </MenuFlyoutItem.Icon>
                     </MenuFlyoutItem>
                     <MenuFlyoutItem
                         x:Uid="IconResetDesktopLyrics"
-                        Command="{x:Bind ResetDesktopLyricsBoundsCommand}">
+                        Command="{x:Bind ViewModel.ResetDesktopLyricsBoundsCommand}">
                         <MenuFlyoutItem.Icon>
                             <FontIcon Glyph="&#xE7A7;" />
                         </MenuFlyoutItem.Icon>
@@ -151,7 +151,7 @@
                 <MenuFlyoutSeparator />
                 <MenuFlyoutItem
                     x:Uid="IconSettings"
-                    Command="{x:Bind OpenSettingsCommand}">
+                    Command="{x:Bind ViewModel.OpenSettingsCommand}">
                     <MenuFlyoutItem.Icon>
                         <FontIcon Glyph="&#xE713;" />
                     </MenuFlyoutItem.Icon>
@@ -159,7 +159,7 @@
                 <MenuFlyoutSeparator />
                 <MenuFlyoutItem
                     x:Uid="IconExit"
-                    Command="{x:Bind ExitApplicationCommand}">
+                    Command="{x:Bind ViewModel.ExitCommand}">
                     <MenuFlyoutItem.Icon>
                         <FontIcon Glyph="&#xE89F;" />
                     </MenuFlyoutItem.Icon>

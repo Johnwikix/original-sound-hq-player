@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <winex:WindowEx
     x:Class="WinUIMusicPlayer.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -30,7 +30,7 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center" />
         </Grid>
-        <!-- 托盘在启动服务完成后由代码显式创建，不能依赖延迟名称查找。 -->
+        <!-- 托盘随主窗口显式创建；命令可用性由生命周期控制。 -->
         <Grid x:Name="TrayHost" />
     </Grid>
 </winex:WindowEx>

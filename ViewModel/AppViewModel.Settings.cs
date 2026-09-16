@@ -1,4 +1,4 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
+using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -1425,7 +1425,7 @@ namespace WinUIMusicPlayer.ViewModel
                         {
                             GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.PlayOrPauseSong, value, () =>
                             {
-                                App.Services.GetRequiredService<MusicBrowseViewModel>().PlayButton_Click();
+                                App.Services.GetRequiredService<PlaybackCommands>().ToggleCommand.Execute(null);
                             });
                         }
                     }
@@ -1447,7 +1447,7 @@ namespace WinUIMusicPlayer.ViewModel
                         {
                             GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.NextSong, value, () =>
                             {
-                                App.Services.GetRequiredService<MusicBrowseViewModel>().NextMusicButton_Click();
+                                App.Services.GetRequiredService<PlaybackCommands>().NextCommand.Execute(null);
                             });
                         }
                     }
@@ -1469,7 +1469,7 @@ namespace WinUIMusicPlayer.ViewModel
                         {
                             GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.PreviousSong, value, () =>
                             {
-                                App.Services.GetRequiredService<MusicBrowseViewModel>().LastMusicButton_Click();
+                                App.Services.GetRequiredService<PlaybackCommands>().PreviousCommand.Execute(null);
                             });
                         }
                     }
@@ -1717,17 +1717,17 @@ namespace WinUIMusicPlayer.ViewModel
 
             GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.PlayOrPauseSong, PlayOrPauseShortcut, () =>
             {
-                App.Services.GetRequiredService<MusicBrowseViewModel>().PlayButton_Click();
+                App.Services.GetRequiredService<PlaybackCommands>().ToggleCommand.Execute(null);
             });
 
             GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.NextSong, NextSongShortcut, () =>
             {
-                App.Services.GetRequiredService<MusicBrowseViewModel>().NextMusicButton_Click();
+                App.Services.GetRequiredService<PlaybackCommands>().NextCommand.Execute(null);
             });
 
             GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.PreviousSong, PreviousSongShortcut, () =>
             {
-                App.Services.GetRequiredService<MusicBrowseViewModel>().LastMusicButton_Click();
+                App.Services.GetRequiredService<PlaybackCommands>().PreviousCommand.Execute(null);
             });
 
             GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.VolumeUp, VolumeUpShortcut, () =>

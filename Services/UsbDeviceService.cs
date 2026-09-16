@@ -29,6 +29,7 @@ namespace WinUIMusicPlayer.Services
         private readonly MusicDatabaseService _musicDatabaseService;
         private readonly ILogger<UsbDeviceService> _logger;
         private DeviceWatcher? _deviceWatcher;
+        private bool _stopped;
         private CancellationTokenSource? _scanCts;
 
         /// <summary>当前枚举到的 USB 存储设备（下拉框数据源）。</summary>
@@ -67,7 +68,7 @@ namespace WinUIMusicPlayer.Services
 
         public void StartWatching()
         {
-            if (_deviceWatcher is not null) return;
+            if (_deviceWatcher is not null || _stopped) return;
             try
             {
                 string deviceSelector = StorageDevice.GetDeviceSelector();
@@ -75,7 +76,7 @@ namespace WinUIMusicPlayer.Services
                 _deviceWatcher.Added += async (_, _) =>
                 {
                     await Task.Delay(1500); // 等待设备挂载稳定
-                    await RefreshDevicesAsync();
+                    if (!_stopped) await RefreshDevicesAsync();
                 };
                 _deviceWatcher.Removed += async (_, _) => await RefreshDevicesAsync();
                 _deviceWatcher.Start();
@@ -86,16 +87,28 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        public void StopWatching()
+        {
+            _stopped = true;
+            if (_deviceWatcher?.Status is DeviceWatcherStatus.Started or DeviceWatcherStatus.EnumerationCompleted)
+                _deviceWatcher.Stop();
+            _deviceWatcher = null;
+            _scanCts?.Cancel();
+        }
+
         /// <summary>重新枚举 USB 存储设备并更新设备列表/可见性；
         /// 无选中或选中设备被移除时自动选中第一项，免去插拔后的手动选择。</summary>
         public async Task RefreshDevicesAsync()
         {
             try
             {
+                if (_stopped) return;
                 var devices = await UsbStorageDeviceReader.GetUsbStorageDevicesAsync();
+                if (_stopped) return;
                 var dq = App.MainWindow.DispatcherQueue;
                 await dq.EnqueueAsync(() =>
                 {
+                    if (_stopped) return;
                     Devices.Clear();
                     foreach (var d in devices) Devices.Add(d);
                     DevicesVisibility = Devices.Count > 0 ? Visibility.Visible : Visibility.Collapsed;

@@ -1,4 +1,4 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Messages;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -215,7 +215,9 @@ namespace WinUIMusicPlayer.ViewModel
         public AnimatedWin2dControls.Impressionist.PaletteResult? LyricPagePalette { get; set => SetProperty(ref field, value); }
         // 当前曲目封面像素（RotatingMesh 背景着色器消费；null 表示无封面，着色器回退调色板渐变）。
         public AnimatedWin2dControls.Impressionist.ArtworkPixelData? LyricPageArtwork { get; set => SetProperty(ref field, value); }
-        public bool IsInitialized { get; set; } = false;
+        // 兼容现有设置持久化守卫；不再拥有可写的第二份就绪状态。
+        public bool IsInitialized => _lifecycle.IsReady;
+        private readonly AppLifecycle _lifecycle;
         public Visibility UsbDeviceVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
         public Visibility ProcessRingVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
         // 空音乐库占位（MusicBrowsePage 内容区）。初始 Collapsed，待首次 NotifySongsSourceChanged（DB 加载完成）后才置 Visible，避免启动加载期闪现。
@@ -446,8 +448,9 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicDatabaseService _musicDatabaseService { get; }
         private ILogger<AppViewModel> _logger;
 
-        public AppViewModel(MusicDatabaseService musicDatabaseService, SystemMediaControlsService systemMediaControlsService, ILogger<AppViewModel> logger, UsbDeviceService usbDeviceService, LicenseService licenseService)
+        public AppViewModel(MusicDatabaseService musicDatabaseService, SystemMediaControlsService systemMediaControlsService, ILogger<AppViewModel> logger, UsbDeviceService usbDeviceService, LicenseService licenseService, AppLifecycle lifecycle)
         {
+            _lifecycle = lifecycle;
             _musicDatabaseService = musicDatabaseService;
             SystemMediaControlsService = systemMediaControlsService;
             _logger = logger;
@@ -481,7 +484,7 @@ namespace WinUIMusicPlayer.ViewModel
                 if (Math.Abs(newPosMs - curMs) > 2000)
                 {
                     IsManualSelect = true;
-                    App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime(newPosMs);
+                    App.Services.GetRequiredService<PlaybackCommands>().SeekCommand.Execute(newPosMs);
                     IsManualSelect = false;
                 }
             }
@@ -1555,7 +1558,7 @@ namespace WinUIMusicPlayer.ViewModel
             long newPosMs = Math.Clamp(curMs + deltaMs, 0, totalMs);
             IsManualSelect = true;
             ProgressSlider = newPosMs / 1000.0;
-            App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime(newPosMs);
+            App.Services.GetRequiredService<PlaybackCommands>().SeekCommand.Execute(newPosMs);
             IsManualSelect = false;
         }
     }

@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,7 +27,7 @@ using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.ViewModel
 {
-    public partial class MusicBrowseViewModel : ObservableObject
+    public partial class MusicBrowseViewModel : ObservableObject, IDisposable
     {
 
         public SelectorBarItem SelectedPage
@@ -42,182 +42,39 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        private ProgressDialog ProgressDialog { get; set; }
-        private int ProgressBarValue { get; set; } = 0;
-        private bool IsMutiFile { get; set; } = false;
-        private AudioConverterService ConverterService { get; set; }
         public int PreviousSelectedIndex { get; set; } = 0;
         public BassPlayerCommandService MusicPlaybackService { get; set; }
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
         private MusicBrowsePage MusicBrowsePage { get; set; }
         private MainPage MainPage { get; set; }
-        private List<FileSystemWatcher> Watchers { get; set; } = [];
-        private readonly SemaphoreSlim scanSemaphore = new(1, 1);
         private CancellationTokenSource? _musicUpdateCts;
         private int _coverUpdateVersion;
         private int _defaultPaletteVersion;
         private Music? _paletteMusic;
         private bool _usesDefaultPalette;
-        private CancellationTokenSource _scanCts;
-        private readonly Lock _scanCtsLock = new();
         private ILogger<MusicBrowseViewModel> _logger;
         private const long MemoryTrimThreshold = 400L * 1024 * 1024;
 
-        private static readonly DispatcherQueueHandler _showProcessRing = static () =>
-            App.Services.GetRequiredService<MusicBrowseViewModel>().AppViewModel.ProcessRingVisibility = Visibility.Visible;
-        private static readonly DispatcherQueueHandler _hideProcessRing = static () =>
-            App.Services.GetRequiredService<MusicBrowseViewModel>().AppViewModel.ProcessRingVisibility = Visibility.Collapsed;
         private static readonly DispatcherQueueHandler _clearUILyrics = static () =>
             App.Services.GetRequiredService<MusicBrowseViewModel>().AppViewModel.UILyrics = [];
+        public PlaybackCommands Playback { get; }
         public AppViewModel AppViewModel { get; }
         private MusicDatabaseService _musicDatabaseService { get; }
-        public MusicBrowseViewModel(BassPlayerCommandService bassPlayerCommand, SystemMediaControlsService systemMediaControlsService, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, AudioConverterService converterService, UsbDeviceService usbDeviceService, ILogger<MusicBrowseViewModel> logger)
+        public MusicBrowseViewModel(BassPlayerCommandService bassPlayerCommand, SystemMediaControlsService systemMediaControlsService, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, UsbDeviceService usbDeviceService, ILogger<MusicBrowseViewModel> logger, PlaybackCommands playback)
         {
+            Playback = playback;
             this.AppViewModel = appViewModel;
             AppViewModel.PropertyChanged += OnCoverSettingsChanged;
             _musicDatabaseService = musicDatabaseService;
-            ConverterService = converterService;
             UsbDeviceService = usbDeviceService;
             MusicPlaybackService = bassPlayerCommand;
             _logger = logger;
-            ProgressDialog = new ProgressDialog(ToolUtils.GetString("Converting"));
-            ProgressDialog.Title = ToolUtils.GetString("Processing");
-            ConverterService.updateProgress += OnConverterProgressUpdated;
             SystemMediaControlsService = systemMediaControlsService;
-            InitializeSystemMediaControls();
-            AppSettings.OutputSettingsChanged += AppSettings_OutputSettingsChanged;
-            AppSettings.OutputSettingsUpdated += AppSettings_OutputSettingsUpdated;
-            AppSettings.EqUpdated += AppSettings_OnEqUpdated;
-            if (AppViewModel.IsFolderWatchEnabled)
-            {
-                _ = StartWatchingFileFolder();
-            }
             WireAddFolderScanGuard();
         }
 
-        // 批量转换聚合进度：总进度 = (已完成文件数 + 当前文件内部进度) / 总数。
-        // 多轮批量转换在每轮 ConvertAudio_Click 里重置。
-        private int _batchTotalFiles;
-        private int _batchCompletedFiles;
-        private double _batchCurrentFilePercent;
-
-        private void OnConverterProgressUpdated(object sender, double progress)
-        {
-            if (ProgressDialog is null) return;
-
-            if (_batchTotalFiles > 0)
-            {
-                ProgressBarValue = (int)Math.Clamp(
-                    (_batchCompletedFiles + _batchCurrentFilePercent / 100.0) * 100.0 / _batchTotalFiles, 0, 100);
-                _ = ProgressDialog.UpdateProgress(ProgressBarValue);
-                return;
-            }
-
-            if (ProgressBarValue < (int)progress)
-            {
-                ProgressBarValue = (int)progress;
-            }
-            _ = ProgressDialog.UpdateProgress(ProgressBarValue);
-        }
-
-        public async Task ConvertAudio_Click(IEnumerable<Music> uniqueSelectedMusics, string? tag)
-        {
-            if (uniqueSelectedMusics is null || tag is null)
-                return;
-
-            // tag 形如 "wav"（无损直转）或 "mp3:320"（有损格式:码率）
-            string[] parts = tag.Split(':');
-            string targetFormat = parts[0].ToLowerInvariant();
-            int bitrate = parts.Length > 1 && int.TryParse(parts[1], out var b) && b > 0 ? b : 320;
-
-            ProgressBarValue = 0;
-            var musicList = uniqueSelectedMusics.AsValueEnumerable().ToList();
-            IsMutiFile = musicList.Count > 1;
-            if (IsMutiFile)
-            {
-                await ConvertMultipleFiles(musicList, targetFormat, bitrate);
-            }
-            else
-            {
-                await ConvertSingleFile(musicList.AsValueEnumerable().FirstOrDefault(), targetFormat, bitrate);
-            }
-        }
-
-        private async Task ConvertMultipleFiles(List<Music> musics, string targetFormat, int bitrate)
-        {
-            await ProgressDialog.UpdateProgress(ProgressBarValue);
-            _ = ProgressDialog.ShowThemedAsync(MusicBrowsePage.XamlRoot);
-
-            _batchTotalFiles = musics.Count;
-            _batchCompletedFiles = 0;
-            bool allSuccess = true;
-            try
-            {
-                foreach (Music music in musics)
-                {
-                    _batchCurrentFilePercent = 0;
-                    if (!await ConverterService.ConvertAudioAsync(music, targetFormat, bitrate))
-                        allSuccess = false;
-                    _batchCompletedFiles++;
-                }
-            }
-            finally
-            {
-                _batchTotalFiles = 0; // 无论成败都退出批量模式，避免污染后续单文件进度
-            }
-            _ = ProgressDialog.UpdateProgress(100);
-            if (!allSuccess)
-                UpdateInfoBar(ToolUtils.GetString("InfoBarMessageConverterFailed"));
-            // 转换产物已主动入库；等写入门清空、watcher 触发的 AutoScan 收尾后统一刷新一次
-            await AudioFileWriteGate.WaitUntilClearAsync();
-            await AutoRescanService.WaitUntilIdleAsync();
-            await AppViewModel.RefreshSongsSourceAsync();
-        }
-
-        private async Task ConvertSingleFile(Music? music, string targetFormat, int bitrate)
-        {
-            if (music is null)
-                return;
-
-            if (music.Extension.Equals(targetFormat, StringComparison.OrdinalIgnoreCase))
-            {
-                UpdateInfoBar(ToolUtils.GetString("InfoBarMessageConverter"));
-                return;
-            }
-
-            _ = ProgressDialog.UpdateProgress(ProgressBarValue);
-            // 先启动转换再决定是否弹出进度对话框（瞬间完成的小文件不闪框）
-            Task<bool> convertTask = ConverterService.ConvertAudioAsync(music, targetFormat, bitrate);
-            if (ProgressBarValue < 100)
-            {
-                _ = ProgressDialog.ShowThemedAsync(MusicBrowsePage.XamlRoot);
-            }
-            if (!await convertTask)
-            {
-                UpdateInfoBar(string.Format(ToolUtils.GetString("InfoBarMessageConverterFailedWithFile"), music.Title));
-            }
-            // 转换产物已主动入库；等写入门清空、watcher 触发的 AutoScan 收尾后统一刷新一次
-            await AudioFileWriteGate.WaitUntilClearAsync();
-            await AutoRescanService.WaitUntilIdleAsync();
-            await AppViewModel.RefreshSongsSourceAsync();
-        }
-
-        private void AppSettings_OnEqUpdated(object? sender, EventArgs e)
-        {
-            MusicPlaybackService.EqUpdate();
-        }
-
-        private void AppSettings_OutputSettingsUpdated(object? sender, EventArgs e)
-        {
-            MusicPlaybackService.UpdateSettings();
-        }
-
-
-
-        private void AppSettings_OutputSettingsChanged(object? sender, EventArgs e)
-        {
-            MusicPlaybackService.ChangingSetting();
-        }
+        public Task ConvertAudio_Click(IEnumerable<Music> music, string? tag) =>
+            App.Services.GetRequiredService<AudioConversionViewModel>().ConvertAsync(music, tag);
 
         public void UpdateDisplayTexts()
         {
@@ -229,138 +86,6 @@ namespace WinUIMusicPlayer.ViewModel
 
         /// <summary>USB 设备生命周期由 UsbDeviceService 收敛管理（含插入后自动选中第一项）。</summary>
         public UsbDeviceService UsbDeviceService { get; }
-
-        public void UpdateInfoBar(string message)
-        {
-            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-            {
-                AppViewModel.InfoBarIsOpen = true;
-                AppViewModel.InfoBarTitle = ToolUtils.GetString("InfoBarTitleConverter");
-                AppViewModel.InfoBarMessage = message;
-            });
-        }
-
-        private async Task StartWatchingFileFolder()
-        {
-            try
-            {
-                List<Folder> folders = await _musicDatabaseService.GetFolders();
-                foreach (var folder in folders)
-                {
-                    if (!string.IsNullOrEmpty(folder.Path))
-                    {
-                        var watcher = new FileSystemWatcher(folder.Path);
-                        watcher.IncludeSubdirectories = true;
-                        watcher.NotifyFilter = NotifyFilters.FileName |
-                            NotifyFilters.DirectoryName |
-                            NotifyFilters.LastWrite;
-
-                        // 订阅事件
-                        watcher.Changed += OnFileChanged;
-                        watcher.Deleted += OnFileChanged;
-
-                        // 开始监听
-                        watcher.EnableRaisingEvents = true;
-
-                        Watchers.Add(watcher);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"启动文件夹监视失败:{ex.Message}");
-            }
-        }
-
-        public async void OnFileChanged(object sender, FileSystemEventArgs e)
-        {
-            if (!AppViewModel.IsFolderWatchEnabled) return;
-
-            // 本应用自己写的文件（转换产物及其目录 mtime 变化）由转换流程负责入库与刷新，
-            // watcher 不再触发扫描——转换后只会有一次刷新，也不与标签重写抢文件
-            if (AudioFileWriteGate.IsOwnWriteEvent(e.FullPath)) return;
-
-            // 取消上一次未执行的扫描，重新计时
-            CancellationTokenSource cts;
-            lock (_scanCtsLock)
-            {
-                _scanCts?.Cancel();
-                _scanCts?.Dispose();
-                _scanCts = new CancellationTokenSource();
-                cts = _scanCts;
-            }
-
-            try
-            {
-                await Task.Delay(1000, cts.Token); // 防抖：等待 1000ms
-            }
-            catch (OperationCanceledException)
-            {
-                return; // 被新事件取消，退出
-            }
-
-            // 防抖通过，尝试获取信号量
-            if (!await scanSemaphore.WaitAsync(0)) return;
-
-            try
-            {
-                App.MainWindow.DispatcherQueue.TryEnqueue(_showProcessRing);
-
-                await AutoRescanService.AutoScan(cts.Token);
-
-                App.MainWindow.DispatcherQueue.TryEnqueue(_hideProcessRing);
-            }
-            catch (OperationCanceledException)
-            {
-                App.MainWindow.DispatcherQueue.TryEnqueue(_hideProcessRing);
-            }
-            finally
-            {
-                scanSemaphore.Release();
-            }
-        }
-
-        private void InitializeSystemMediaControls()
-        {
-
-            // 订阅事件
-            SystemMediaControlsService.PlayRequested += (s, e) =>
-            {
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                {
-                    PlayButton_Click();
-                });
-            };
-
-            SystemMediaControlsService.PauseRequested += (s, e) =>
-            {
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                {
-                    PlayButton_Click();
-                });
-            };
-
-            SystemMediaControlsService.NextTrackRequested += (s, e) =>
-            {
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                {
-                    NextMusicButton_Click();
-                });
-            };
-
-            SystemMediaControlsService.PreviousTrackRequested += (s, e) =>
-            {
-                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                {
-                    LastMusicButton_Click();
-                });
-            };
-        }
-
-        //public void SetMusicService(BassPlayerCommandService musicPlaybackService)
-        //{
-        //    MusicPlaybackService = musicPlaybackService;
-        //}
 
         public async Task LoadPlayStateToMusicBrowsePage()
         {
@@ -539,17 +264,25 @@ namespace WinUIMusicPlayer.ViewModel
         private bool CanStartFolderScan => !App.Services.GetRequiredService<AddFolderViewModel>().IsScanning;
 
         // 与 AddFolderPage 添加按钮同步：IsScanning 翻转时刷新占位按钮可用态
+        private AddFolderViewModel? _addFolderVm;
         private void WireAddFolderScanGuard()
         {
-            var addFolderVm = App.Services.GetRequiredService<AddFolderViewModel>();
-            addFolderVm.PropertyChanged += (_, e) =>
-            {
-                if (e.PropertyName == nameof(AddFolderViewModel.IsScanning))
-                {
-                    EmptyAddFolderCommand.NotifyCanExecuteChanged();
-                    DropFoldersFromEmptyCommand.NotifyCanExecuteChanged();
-                }
-            };
+            _addFolderVm = App.Services.GetRequiredService<AddFolderViewModel>();
+            _addFolderVm.PropertyChanged += FolderScanChanged;
+        }
+        private void FolderScanChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName != nameof(AddFolderViewModel.IsScanning)) return;
+            EmptyAddFolderCommand.NotifyCanExecuteChanged();
+            DropFoldersFromEmptyCommand.NotifyCanExecuteChanged();
+        }
+        public void Dispose()
+        {
+            AppViewModel.PropertyChanged -= OnCoverSettingsChanged;
+            if (_addFolderVm is not null) _addFolderVm.PropertyChanged -= FolderScanChanged;
+            _musicUpdateCts?.Cancel();
+            _musicUpdateCts?.Dispose();
+            _musicUpdateCts = null;
         }
 
         [RelayCommand]
@@ -580,7 +313,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void PlayButton_Click()
         {
-            _ = MusicPlaybackService.PlayButton();
+            Playback.ToggleCommand.Execute(null);
         }
 
         [RelayCommand]
@@ -597,7 +330,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void NextMusicButton_Click()
         {
-            MusicPlaybackService.PlayNextTrack();
+            Playback.NextCommand.Execute(null);
         }
 
         public void LastMusicButton_Click()
@@ -605,22 +338,8 @@ namespace WinUIMusicPlayer.ViewModel
             PlayLastTrack();
         }
 
-        private void PlayLastTrack()
-        {
-            int index = AppViewModel.CurrentPlayingList.AsValueEnumerable()
-                        .Select((music, i) => new { Music = music, Index = i })
-                        .FirstOrDefault(x => x.Music.Id == AppViewModel.CurrentPlayingMusic.Id)
-                        ?.Index ?? -1;
-            if (index > 0)
-            {
-                _ = PlayMusic(AppViewModel.CurrentPlayingList[index - 1]);
-            }
-            else if (index == 0 && AppViewModel.CurrentPlayingList.Count > 1)
-            {
-                _ = PlayMusic(AppViewModel.CurrentPlayingList[AppViewModel.CurrentPlayingList.Count - 1]);
-            }
-        }
-        
+        private void PlayLastTrack() => Playback.PreviousCommand.Execute(null);
+
         [RelayCommand]
         private void OnAlbumCoverImage()
         {

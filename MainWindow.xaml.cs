@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.WinUI;
+using CommunityToolkit.WinUI;
 using H.NotifyIcon;
 using H.NotifyIcon.EfficiencyMode;
 using Microsoft.Extensions.DependencyInjection;
@@ -274,9 +274,8 @@ namespace WinUIMusicPlayer
             }
         }
 
-        public void ShowMainPage()
+        public void InitializeTray()
         {
-            ShellFrame.Content = App.Services.GetRequiredService<MainPage>();
             if (_notifyIconControl is null)
             {
                 _notifyIconControl = new Controls.NotifyIconControl();
@@ -284,6 +283,11 @@ namespace WinUIMusicPlayer
             }
             _notifyIconControl.EnsureCreated();
             _logger.LogInformation("托盘图标已注册");
+        }
+
+        public void ShowMainPage()
+        {
+            ShellFrame.Content = App.Services.GetRequiredService<MainPage>();
             LoadingGrid.Visibility = Visibility.Collapsed;
         }
 
@@ -322,7 +326,7 @@ namespace WinUIMusicPlayer
             {
                 if (_taskbarHelper is null)
                 {
-                    _taskbarHelper = new TaskbarHelper(AppData.HWnd, App.Services.GetRequiredService<MusicBrowseViewModel>());
+                    _taskbarHelper = new TaskbarHelper(AppData.HWnd, App.Services.GetRequiredService<PlaybackCommands>());
                     _taskbarHelper.ErrorOccurred += (_, e) =>
                     {
                         _logger.LogError(e.Exception, "任务栏助手发生错误");

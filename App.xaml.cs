@@ -39,8 +39,6 @@ namespace WinUIMusicPlayer
         public static MainWindow MainWindow { get; set; }
         public static IServiceProvider Services { get; private set; }
         private static ILogger<App> _logger;
-        private static int _isExiting;
-        private static Process? _startupPlayer;
         public static ILogger<T> GetLogger<T>()
         {
             return Services.GetRequiredService<ILogger<T>>();
@@ -73,12 +71,27 @@ namespace WinUIMusicPlayer
              .ConfigureServices((context, services) =>
              {
                  services.AddHostedService<AppInitializerService>();
+                 services.AddSingleton<AppLifecycle>();
+                 services.AddSingleton<StartupCoordinator>();
+                 services.AddSingleton<ShutdownCoordinator>();
+                 services.AddSingleton<AudioProcessService>();
+                 services.AddSingleton<PlaybackStatePersistence>();
+                 services.AddSingleton<PlaybackCommands>();
+                 services.AddSingleton<TrayViewModel>();
+                 services.AddSingleton<LibraryWatcherService>();
+                 services.AddSingleton<AudioSettingsSynchronizer>();
+                 services.AddSingleton<AudioConversionViewModel>();
                  services.AddHostedService<MetadataWriteService>();
                  services.AddTransient<INavigationService, NavigationService>();
                  services.AddSingleton<INavigationServiceFactory, NavigationServiceFactory>();
                  services.AddSingleton<MainWindow>();
                  services.AddSingleton<MainPage>();
-                 services.AddSingleton<PlayingDetailPage>();
+                 services.AddSingleton<PlayingDetailPage>(sp =>
+                 {
+                     var page = new PlayingDetailPage(sp.GetRequiredService<PlayingDetailViewModel>());
+                     sp.GetRequiredService<ShutdownCoordinator>().RegisterCleanup(page.Dispose);
+                     return page;
+                 });
                  services.AddSingleton<MainViewModel>();
                  services.AddSingleton<AppViewModel>();
                  services.AddSingleton<MusicBrowseViewModel>();
@@ -107,7 +120,12 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<BassPlayerCommandService>();
                  services.AddSingleton<PlaybackStatsService>();
                  services.AddSingleton<MusicDatabaseService>();
-                 services.AddSingleton<LrcService>();
+                 services.AddSingleton<LrcService>(sp =>
+                 {
+                     var service = new LrcService(sp.GetRequiredService<ILogger<LrcService>>());
+                     sp.GetRequiredService<ShutdownCoordinator>().RegisterCleanup(service.Dispose);
+                     return service;
+                 });
              }).Build();
 
         /// <summary>
@@ -206,48 +224,22 @@ namespace WinUIMusicPlayer
                     return;
                 }
                 await _host.StartAsync();
-                AppInitializerService.EnableInteraction();
-                _startupPlayer?.Dispose();
-                _startupPlayer = null;
+                if (Services.GetRequiredService<AppLifecycle>().Phase == AppPhase.Stopping) return;
+                Services.GetRequiredService<ShutdownCoordinator>().HostStarted(() => _host.StopAsync());
+                Services.GetRequiredService<StartupCoordinator>().EnableInteraction();
 
             }
+            catch (OperationCanceledException) when (Services.GetRequiredService<AppLifecycle>().Phase == AppPhase.Stopping) { }
             catch (Exception ex)
             {
+                Services.GetRequiredService<AppLifecycle>().TransitionTo(AppPhase.Failed);
                 _logger?.LogCritical(ex, "应用程序启动失败: {Message}", ex.Message);
                 ShowStartupErrorBox(ex);
                 ExitDuringStartup(1);
             }
         }
 
-        internal static void StartAudioPlayer()
-        {
-            var playerPath = Path.Combine(AppContext.BaseDirectory, "AudioPlayer.exe");
-            _startupPlayer = Process.Start(new ProcessStartInfo
-            {
-                FileName = playerPath,
-                WorkingDirectory = Path.GetDirectoryName(playerPath),
-                CreateNoWindow = true,
-                UseShellExecute = false,
-            }) ?? throw new InvalidOperationException("Unable to start audio player");
-        }
-
-        // Startup has not restored playback state: do not overwrite it or stop a host still starting.
-        internal static void ExitDuringStartup(int exitCode = 0)
-        {
-            try
-            {
-                if (_startupPlayer is { HasExited: false }) _startupPlayer.Kill(entireProcessTree: true);
-                _startupPlayer?.Dispose();
-                MainWindow?.Dispose();
-            }
-            catch (Exception ex) { _logger?.LogWarning(ex, "启动退出清理失败"); }
-            finally
-            {
-                try { Log.CloseAndFlush(); } catch { }
-                SingleInstanceHelper.ReleaseMutex();
-                Environment.Exit(exitCode);
-            }
-        }
+        internal static void ExitDuringStartup(int exitCode = 0) => _ = ExitApplicationAsync(exitCode);
 
         private static void ShowStartupErrorBox(Exception ex)
         {
@@ -261,173 +253,14 @@ namespace WinUIMusicPlayer
         [DllImport("user32.dll", EntryPoint = "MessageBoxW", CharSet = CharSet.Unicode)]
         private static extern int Win32MessageBox(IntPtr hWnd, string text, string caption, uint type);
 
-        /// <summary>
-        public static async Task Current_Exit()
+        public static Task Current_Exit() => ExitApplicationAsync(0);
+
+        private static async Task ExitApplicationAsync(int exitCode)
         {
-            if (!Services.GetRequiredService<AppViewModel>().IsInitialized)
-            {
-                ExitDuringStartup();
-                return;
-            }
-            if (Interlocked.CompareExchange(ref _isExiting, 1, 0) != 0) return;
-            try
-            {
-                DesktopLyricsManager.Shutdown();
-                await SavePlayStateAsync();
-                try
-                {
-                    await (Services.GetService<PlaybackStatsService>()?.FlushSessionAsync() ?? Task.CompletedTask);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "退出时结算播放统计失败: {Message}", ex.Message);
-                }
-                Services.GetRequiredService<BassPlayerCommandService>().MusicEnd();
-                MainWindow.Hide();
-                await _host.StopAsync();
-                var ipc = Services.GetService<IpcService>();
-                if (ipc is not null) ipc.Dispose();
-                Services.GetRequiredService<LrcService>().Dispose();
-                var playingDetail = Services.GetService<PlayingDetailPage>();
-                if (playingDetail is { IsLoaded: true }) playingDetail.Dispose();
-                Services.GetRequiredService<AppViewModel>().Dispose();
-                CoverLoadQueue.Shutdown(TimeSpan.FromSeconds(3));
-                //_host.Dispose();
-                MainWindow.Dispose();
-                _logger?.LogInformation("应用程序退出完成");
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "退出应用时出错: {Message}", ex.Message);
-            }
-            finally
-            {
-                try { Log.CloseAndFlush(); } catch { }
-                //Current.Exit();
-                SingleInstanceHelper.ReleaseMutex();
-                Environment.Exit(0);
-            }
-        }
-
-        private static async Task SavePlayStateAsync()
-        {
-            try
-            {
-                var db = Services.GetService<MusicDatabaseService>();
-                var appvm = Services.GetService<AppViewModel>();
-                if (db == null || appvm == null || MainWindow == null) return;
-
-                // 退出时 Presenter 的保存策略:
-                //   OverlappedPresenter (Kind=Overlapped):
-                //     Restored    -> 用当前 bounds 覆盖, IsMaximized=false
-                //     Maximized   -> 沿用旧 bounds 不动, IsMaximized=true
-                //     Minimized   -> 沿用旧 bounds 不动, IsMaximized=false
-                //   FullScreenPresenter (Kind=FullScreen):
-                //     全屏期间 AppWindow.Position/Size 是显示器尺寸, 没有意义 — 不读, 沿用旧 bounds 不动, IsMaximized=false
-                //   presenter 为 null 或其他未知 Kind:
-                //     完全沿用旧存档, IsMaximized 也沿用旧值 (无法判断时不做任何修改)
-                //
-                // 关键: 任何情况下都不能写入 0,0,0,0 覆盖已有正确 bounds; 所有非 Restored 路径都从 db.CurrentPlayState 继承。
-                // 其他字段(PlayMode/Volume/LastPlayedMusicId/SortOrder)无论 presenter 类型/状态都保存。
-                var appWindow = MainWindow.AppWindow;
-                var presenter = appWindow?.Presenter;
-                var existing = db.CurrentPlayState;
-
-                bool hasWindowBounds;
-                bool isMaximized;
-                int x, y, w, h;
-
-                if (presenter is OverlappedPresenter op)
-                {
-                    var state = op.State;
-
-                    if (state == OverlappedPresenterState.Restored)
-                    {
-                        var pos = appWindow!.Position;
-                        var size = appWindow.Size;
-                        x = pos.X;
-                        y = pos.Y;
-                        w = size.Width;
-                        h = size.Height;
-                        hasWindowBounds = true;
-                        isMaximized = false;
-                    }
-                    else if (state == OverlappedPresenterState.Maximized)
-                    {
-                        // 关键修复: 最大化状态下保存本次会话的还原矩形 (含次屏坐标),
-                        // 而不是磁盘旧值, 否则下次启动会错误地恢复到旧显示器.
-                        var tracked = MainWindow.TrackedBounds;
-                        if (MainWindow.HasTrackedBounds
-                            && tracked.Width > 0 && tracked.Height > 0)
-                        {
-                            x = tracked.X;
-                            y = tracked.Y;
-                            w = tracked.Width;
-                            h = tracked.Height;
-                            hasWindowBounds = true;
-                        }
-                        else
-                        {
-                            hasWindowBounds = existing?.HasWindowBounds ?? false;
-                            x = existing?.WindowX ?? 0;
-                            y = existing?.WindowY ?? 0;
-                            w = existing?.WindowWidth ?? 0;
-                            h = existing?.WindowHeight ?? 0;
-                        }
-                        isMaximized = true;
-                    }
-                    else
-                    {
-                        // Minimized
-                        hasWindowBounds = existing?.HasWindowBounds ?? false;
-                        x = existing?.WindowX ?? 0;
-                        y = existing?.WindowY ?? 0;
-                        w = existing?.WindowWidth ?? 0;
-                        h = existing?.WindowHeight ?? 0;
-                        isMaximized = false;
-                    }
-                }
-                else if (presenter?.Kind == AppWindowPresenterKind.FullScreen)
-                {
-                    // FullScreenPresenter 与 OverlappedPresenter 是兄弟类(共享 AppWindowPresenter 基类),
-                    // 在此状态下 AppWindow.Position/Size 返回整个显示器尺寸, 不能用作 bounds.
-                    hasWindowBounds = existing?.HasWindowBounds ?? false;
-                    x = existing?.WindowX ?? 0;
-                    y = existing?.WindowY ?? 0;
-                    w = existing?.WindowWidth ?? 0;
-                    h = existing?.WindowHeight ?? 0;
-                    isMaximized = false;
-                }
-                else
-                {
-                    // presenter 为 null 或未知 Kind: 完全沿用旧存档
-                    hasWindowBounds = existing?.HasWindowBounds ?? false;
-                    x = existing?.WindowX ?? 0;
-                    y = existing?.WindowY ?? 0;
-                    w = existing?.WindowWidth ?? 0;
-                    h = existing?.WindowHeight ?? 0;
-                    isMaximized = existing?.IsMaximized ?? false;
-                }
-
-                var playState = new SavePlayState
-                {
-                    PlayMode = appvm.CurrentPlayMode,
-                    LastPlayedMusicId = appvm.CurrentPlayingMusic?.Id,
-                    Volume = appvm.Volume,
-                    SortOrder = appvm.SelectedSortOption?.Tag?.ToString() ?? "DefaultOrder",
-                    HasWindowBounds = hasWindowBounds,
-                    WindowX = x,
-                    WindowY = y,
-                    WindowWidth = w,
-                    WindowHeight = h,
-                    IsMaximized = isMaximized
-                };
-                await db.SavePlayStateAsync(playState, appvm.SequentialPlayingList);
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "保存播放状态失败: {Message}", ex.Message);
-            }
+            if (!await Services.GetRequiredService<ShutdownCoordinator>().ShutdownAsync()) return;
+            try { Log.CloseAndFlush(); } catch { }
+            SingleInstanceHelper.ReleaseMutex();
+            Environment.Exit(exitCode);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Page
     x:Class="WinUIMusicPlayer.View.PlayingDetailPage"
     xmlns:tools="using:WinUIMusicPlayer.Utils"
@@ -364,7 +364,7 @@
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
-                            Command="{x:Bind ViewModel.LastMusicButtonChangedCommand, Mode=OneWay}"
+                            Command="{x:Bind ViewModel.Playback.PreviousCommand, Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="18" Glyph="&#xF8AC;" />
                         </Button>
@@ -378,7 +378,7 @@
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
-                            Command="{x:Bind ViewModel.PlayButtonChangedCommand, Mode=OneWay}"
+                            Command="{x:Bind ViewModel.Playback.ToggleCommand, Mode=OneWay}"
                             Style="{StaticResource PlayButtonStyle}">
                             <FontIcon
                                 Width="32"
@@ -395,7 +395,7 @@
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
-                            Command="{x:Bind ViewModel.NextMusicButtonChangedCommand, Mode=OneWay}"
+                            Command="{x:Bind ViewModel.Playback.NextCommand, Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="18" Glyph="&#xF8AD;" />
                         </Button>
