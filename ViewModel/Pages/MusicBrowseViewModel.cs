@@ -391,6 +391,17 @@ namespace WinUIMusicPlayer.ViewModel
                         AnimatedWin2dControls.Impressionist.PaletteExtractor
                             .ExtractFromImageBytesAsync(picData, AppViewModel.PaletteAlgorithm, ct: token), token);
                 }
+                // 无封面：按当前主题从默认封面取色，保证着色器背景随之正确切换
+                if (palette is null)
+                {
+                    byte[] defaultCover = await GetDefaultCoverBytesAsync(AppViewModel.IsDarkMode, token);
+                    if (defaultCover.Length > 0)
+                    {
+                        palette = await Task.Run(() =>
+                            AnimatedWin2dControls.Impressionist.PaletteExtractor
+                                .ExtractFromImageBytesAsync(defaultCover, AppViewModel.PaletteAlgorithm, ct: token), token);
+                    }
+                }
 
                 // 封面像素：仅供 RotatingMesh 背景着色器旋转层使用，其它着色器只取色、
                 // 不做封面解码（非 RotatingMesh 模式零新增开销）。无封面时为 null，
@@ -455,6 +466,36 @@ namespace WinUIMusicPlayer.ViewModel
         {
             if (AppViewModel.CurrentPlayingMusic is null) return;
             AppViewModel.UpdateCover();
+        }
+
+        // ── 默认封面字节缓存（按主题各一份，只读一次磁盘） ───────────────────
+
+        private static byte[]? _defaultCoverBytesDark;
+        private static byte[]? _defaultCoverBytesLight;
+
+        /// <summary>读取主题默认封面（Assets/default_cover_black|white.png），带静态缓存；失败返回空数组。</summary>
+        private static async Task<byte[]> GetDefaultCoverBytesAsync(bool isDark, CancellationToken token)
+        {
+            byte[]? cached = isDark ? _defaultCoverBytesDark : _defaultCoverBytesLight;
+            if (cached is not null) return cached;
+
+            string name = isDark ? "default_cover_black.png" : "default_cover_white.png";
+            string path = Path.Combine(AppContext.BaseDirectory, "Assets", name);
+            byte[] loaded = [];
+            try
+            {
+                if (File.Exists(path))
+                    loaded = await File.ReadAllBytesAsync(path, token);
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception) { }
+
+            if (loaded.Length > 0)
+            {
+                if (isDark) _defaultCoverBytesDark = loaded;
+                else _defaultCoverBytesLight = loaded;
+            }
+            return loaded;
         }
         public void SetMusicBrowsePage(MusicBrowsePage musicBrowsePage)
         {

@@ -13,6 +13,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
+using Windows.Storage;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Utils;
 
@@ -68,13 +69,12 @@ namespace WinUIMusicPlayer.Behaviors
             else
             {
                 behavior.Invalidate();
-                string? hash = behavior.ImageHash;
-                if (behavior.AssociatedObject != null && hash is { Length: > 0 })
+                if (behavior.AssociatedObject != null)
                 {
                     behavior._cts?.Cancel();
                     behavior._cts?.Dispose();
                     behavior._cts = new CancellationTokenSource();
-                    _ = behavior.LoadFromCacheAndTransitionAsync(hash, behavior._cts.Token);
+                    _ = behavior.LoadFromCacheAndTransitionAsync(behavior.ImageHash, behavior._cts.Token);
                 }
             }
         }
@@ -89,6 +89,28 @@ namespace WinUIMusicPlayer.Behaviors
             DependencyProperty.Register(nameof(ImageHash), typeof(string), typeof(FadeImageBehavior),
                 new PropertyMetadata(null, OnImageHashChanged));
 
+        public bool IsDark
+        {
+            get => (bool)GetValue(IsDarkProperty);
+            set => SetValue(IsDarkProperty, value);
+        }
+
+        public static readonly DependencyProperty IsDarkProperty =
+            DependencyProperty.Register(nameof(IsDark), typeof(bool), typeof(FadeImageBehavior),
+                new PropertyMetadata(true, OnIsDarkChanged));
+
+        private static void OnIsDarkChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not FadeImageBehavior behavior) return;
+            // 正在显示默认封面（或尚未加载）时随主题换用对应默认封面；真实封面与主题无关
+            if (!behavior.Enable || !string.IsNullOrEmpty(behavior._lastImageHash)) return;
+
+            behavior._cts?.Cancel();
+            behavior._cts?.Dispose();
+            behavior._cts = new CancellationTokenSource();
+            _ = behavior.LoadFromCacheAndTransitionAsync(null, behavior._cts.Token);
+        }
+
         private static async void OnImageHashChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not FadeImageBehavior behavior) return;
@@ -102,16 +124,13 @@ namespace WinUIMusicPlayer.Behaviors
             }
 
             string? newHash = e.NewValue as string;
-            if (newHash is { Length: > 0 } && newHash == behavior._lastImageHash)
-                return;
+            bool hasData = newHash is { Length: > 0 };
 
-            if (newHash is not { Length: > 0 })
-            {
-                behavior._lastImageHash = null;
-                return;
-            }
+            if (hasData && newHash == behavior._lastImageHash) return;
+            // 哨兵空串表示默认封面已在显示；null 仅表示初始状态（首次也需加载）
+            if (!hasData && behavior._lastImageHash is "") return;
 
-            behavior._lastImageHash = newHash;
+            behavior._lastImageHash = hasData ? newHash : "";
 
             behavior._cts?.Cancel();
             behavior._cts?.Dispose();
@@ -135,32 +154,61 @@ namespace WinUIMusicPlayer.Behaviors
             DependencyProperty.Register(nameof(Duration), typeof(Duration), typeof(FadeImageBehavior),
                 new PropertyMetadata(new Duration(TimeSpan.FromMilliseconds(500))));
 
-        private async Task LoadFromCacheAndTransitionAsync(string hash, CancellationToken token)
+        private async Task LoadFromCacheAndTransitionAsync(string? hash, CancellationToken token)
         {
             try
             {
                 ImageSource? source = null;
 
-                string thumbPath = CoverLoadQueue.GetThumbCachePath(hash, CoverLoadQueue.CoverSize);
-                if (File.Exists(thumbPath))
+                if (hash is { Length: > 0 })
                 {
-                    source = await LoadThumbFromCacheAsync(thumbPath, token);
-                }
-
-                if (source is null)
-                {
-                    string rawPath = ToolUtils.GetRawCachePath(hash);
-                    if (File.Exists(rawPath))
+                    string thumbPath = CoverLoadQueue.GetThumbCachePath(hash, CoverLoadQueue.CoverSize);
+                    if (File.Exists(thumbPath))
                     {
-                        byte[] rawBytes = await File.ReadAllBytesAsync(rawPath, token);
-                        source = await ImageHelper.DecodeToBitmapAsync(rawBytes, 150, token);
+                        source = await LoadThumbFromCacheAsync(thumbPath, token);
+                    }
+
+                    if (source is null)
+                    {
+                        string rawPath = ToolUtils.GetRawCachePath(hash);
+                        if (File.Exists(rawPath))
+                        {
+                            byte[] rawBytes = await File.ReadAllBytesAsync(rawPath, token);
+                            source = await ImageHelper.DecodeToBitmapAsync(rawBytes, 150, token);
+                        }
                     }
                 }
+
+                // 无封面或缓存缺失时回退主题默认封面，保证切歌时背景正确切换
+                source ??= await LoadDefaultCoverAsync(token);
 
                 if (!token.IsCancellationRequested)
                     TransitionToNewSource(source);
             }
             catch (OperationCanceledException) { }
+        }
+
+        private async Task<ImageSource?> LoadDefaultCoverAsync(CancellationToken token)
+        {
+            try
+            {
+                string assetName = IsDark ? "default_cover_black.png" : "default_cover_white.png";
+                var file = await StorageFile.GetFileFromApplicationUriAsync(
+                    new Uri($"ms-appx:///Assets/{assetName}"));
+                using var stream = await file.OpenReadAsync();
+
+                if (token.IsCancellationRequested) return null;
+
+                var bitmap = new BitmapImage();
+                await bitmap.SetSourceAsync(stream);
+                return bitmap;
+            }
+            catch (OperationCanceledException) { return null; }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"LoadDefaultCoverAsync 加载默认封面失败: {ex.Message}");
+                return null;
+            }
         }
 
         private static async Task<ImageSource?> LoadThumbFromCacheAsync(string cachePath, CancellationToken token)
@@ -222,14 +270,14 @@ namespace WinUIMusicPlayer.Behaviors
             if (AssociatedObject != null)
             {
                 AssociatedObject.Unloaded += OnUnloaded;
-                if (Enable && ImageHash is { Length: > 0 } hash)
-                    _ = InitAsync(hash);
+                if (Enable)
+                    _ = InitAsync(ImageHash);
                 else
                     SetSource(null);
             }
         }
 
-        private async Task InitAsync(string hash)
+        private async Task InitAsync(string? hash)
         {
             _cts?.Cancel();
             _cts?.Dispose();

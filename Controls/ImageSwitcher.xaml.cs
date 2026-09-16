@@ -95,8 +95,12 @@ namespace WinUIMusicPlayer.Controls
         private static void OnIsDarkChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not ImageSwitcher switcher) return;
-            if (switcher._lastImageHash is null)
+            // 正在显示默认封面（或尚未加载）时随主题换用对应默认封面；真实封面与主题无关
+            if (string.IsNullOrEmpty(switcher._lastImageHash))
+            {
+                switcher._lastImageHash = null; // 强制绕过"已显示默认封面"去重
                 _ = switcher.UpdateSourceAsync();
+            }
         }
 
         private async Task UpdateSourceAsync()
@@ -105,7 +109,8 @@ namespace WinUIMusicPlayer.Controls
             bool hasData = newHash is { Length: > 0 };
 
             if (hasData && newHash == _lastImageHash) return;
-            if (!hasData && _lastImageHash is null) return;
+            // 哨兵空串表示默认封面已在显示；null 仅表示初始状态（首次也需加载默认封面）
+            if (!hasData && _lastImageHash is "") return;
 
             _cts?.Cancel();
             _cts?.Dispose();
@@ -135,7 +140,8 @@ namespace WinUIMusicPlayer.Controls
             if (imageSource == null)
             {
                 imageSource = await LoadDefaultCoverAsync(token);
-                newHash = null;
+                // 默认封面加载成功以空串标记，失败保持 null 以便下次触发时重试
+                newHash = imageSource == null ? null : string.Empty;
             }
 
             if (token.IsCancellationRequested) return;

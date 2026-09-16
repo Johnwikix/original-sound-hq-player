@@ -80,8 +80,8 @@ namespace WinUIMusicPlayer.View
             App.MainWindow.AppWindow.Changed += AppWindow_Changed;
             ViewModel.AppViewModel.PropertyChanged += AppViewModel_PropertyChanged;
             _ = ChangeControlsFontSize();
-            if (ViewModel.AppViewModel.LyricPagePalette is { } palette)
-                NowPlaying?.SetPalette(palette);
+            // 首次进入也下发：null 时着色器回退内置配色，避免沿用其它页面的残留状态
+            NowPlaying?.SetPalette(ViewModel.AppViewModel.LyricPagePalette);
             if (ViewModel.AppViewModel.LyricPageArtwork is { } artwork)
                 NowPlaying?.SetArtwork(artwork);
             UpdateLyricsRegion();
@@ -92,10 +92,8 @@ namespace WinUIMusicPlayer.View
         {
             if (e.PropertyName == nameof(AppViewModel.LyricPagePalette))
             {
-                if (ViewModel.AppViewModel.LyricPagePalette is { } palette)
-                {
-                    NowPlaying?.SetPalette(palette);
-                }
+                // null 也下发：让着色器回退内置配色，避免滞留上一首的调色板
+                NowPlaying?.SetPalette(ViewModel.AppViewModel.LyricPagePalette);
             }
             else if (e.PropertyName == nameof(AppViewModel.LyricPageArtwork))
             {
