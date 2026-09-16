@@ -108,7 +108,10 @@ namespace WinUIMusicPlayer.Services
                 }
             }
             _logger.LogCritical("IPC connection failed after retries - core process unavailable, exiting.");
+            // 并行音乐库扫描可能尚未结束，保留即时退出，不能等 Task.WhenAll 收齐才退出。
             ShutdownApp();
+            // 启动失败必须传播给 Host，不能返回成功后继续恢复播放和启用主界面。
+            throw new InvalidOperationException("Audio IPC connection failed after retries.");
         }
 
         public async Task InitializeMusic(Music? music)

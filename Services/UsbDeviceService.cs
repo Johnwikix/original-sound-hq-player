@@ -63,11 +63,11 @@ namespace WinUIMusicPlayer.Services
         {
             _musicDatabaseService = musicDatabaseService;
             _logger = logger;
-            StartWatching();
         }
 
-        private void StartWatching()
+        public void StartWatching()
         {
+            if (_deviceWatcher is not null) return;
             try
             {
                 string deviceSelector = StorageDevice.GetDeviceSelector();

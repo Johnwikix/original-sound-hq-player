@@ -8,6 +8,7 @@ using Windows.Media;
 using Windows.Media.Playback;
 using Windows.Storage.Streams;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.Services
 {
@@ -36,6 +37,7 @@ namespace WinUIMusicPlayer.Services
                 mediaPlayer.CommandManager.IsEnabled = true;
                 if (SystemMediaControls is not null)
                 {
+                    SystemMediaControls.IsEnabled = false;
                     SystemMediaControls.IsPlayEnabled = true;
                     SystemMediaControls.IsPauseEnabled = true;
                     SystemMediaControls.IsNextEnabled = true;
@@ -59,14 +61,21 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        public void EnableControls()
+        {
+            if (SystemMediaControls is not null) SystemMediaControls.IsEnabled = true;
+        }
+
         // 处理播放位置更改请求
         private void SystemMediaControls_PlaybackPositionChangeRequested(SystemMediaTransportControls sender, PlaybackPositionChangeRequestedEventArgs args)
         {
+            if (!App.Services.GetRequiredService<AppViewModel>().IsInitialized) return;
             App.Services.GetRequiredService<BassPlayerCommandService>().ChangeWaveChannelTime((long)args.RequestedPlaybackPosition.TotalMilliseconds);
         }
 
         private void SystemMediaControls_ButtonPressed(SystemMediaTransportControls sender, SystemMediaTransportControlsButtonPressedEventArgs args)
         {
+            if (!App.Services.GetRequiredService<AppViewModel>().IsInitialized) return;
             switch (args.Button)
             {
                 case SystemMediaTransportControlsButton.Play:

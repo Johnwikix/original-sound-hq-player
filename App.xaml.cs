@@ -40,6 +40,7 @@ namespace WinUIMusicPlayer
         public static IServiceProvider Services { get; private set; }
         private static ILogger<App> _logger;
         private static int _isExiting;
+        private static Process? _startupPlayer;
         public static ILogger<T> GetLogger<T>()
         {
             return Services.GetRequiredService<ILogger<T>>();
@@ -204,24 +205,47 @@ namespace WinUIMusicPlayer
                     Environment.Exit(0);
                     return;
                 }
-                var playerPath = Path.Combine(AppContext.BaseDirectory, "AudioPlayer.exe");
-                Process.StartAndForget(new ProcessStartInfo
-                {
-                    FileName = playerPath,
-                    WorkingDirectory = Path.GetDirectoryName(playerPath),
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                });
                 await _host.StartAsync();
+                AppInitializerService.EnableInteraction();
+                _startupPlayer?.Dispose();
+                _startupPlayer = null;
 
             }
             catch (Exception ex)
             {
                 _logger?.LogCritical(ex, "应用程序启动失败: {Message}", ex.Message);
+                ShowStartupErrorBox(ex);
+                ExitDuringStartup(1);
+            }
+        }
+
+        internal static void StartAudioPlayer()
+        {
+            var playerPath = Path.Combine(AppContext.BaseDirectory, "AudioPlayer.exe");
+            _startupPlayer = Process.Start(new ProcessStartInfo
+            {
+                FileName = playerPath,
+                WorkingDirectory = Path.GetDirectoryName(playerPath),
+                CreateNoWindow = true,
+                UseShellExecute = false,
+            }) ?? throw new InvalidOperationException("Unable to start audio player");
+        }
+
+        // Startup has not restored playback state: do not overwrite it or stop a host still starting.
+        internal static void ExitDuringStartup(int exitCode = 0)
+        {
+            try
+            {
+                if (_startupPlayer is { HasExited: false }) _startupPlayer.Kill(entireProcessTree: true);
+                _startupPlayer?.Dispose();
+                MainWindow?.Dispose();
+            }
+            catch (Exception ex) { _logger?.LogWarning(ex, "启动退出清理失败"); }
+            finally
+            {
                 try { Log.CloseAndFlush(); } catch { }
                 SingleInstanceHelper.ReleaseMutex();
-                ShowStartupErrorBox(ex);
-                Environment.Exit(1);
+                Environment.Exit(exitCode);
             }
         }
 
@@ -240,6 +264,11 @@ namespace WinUIMusicPlayer
         /// <summary>
         public static async Task Current_Exit()
         {
+            if (!Services.GetRequiredService<AppViewModel>().IsInitialized)
+            {
+                ExitDuringStartup();
+                return;
+            }
             if (Interlocked.CompareExchange(ref _isExiting, 1, 0) != 0) return;
             try
             {

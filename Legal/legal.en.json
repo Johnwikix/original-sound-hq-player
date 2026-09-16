@@ -1,0 +1,158 @@
+{
+  "version": "2026-09-16.1",
+  "language": "en",
+  "documents": [
+    {
+      "id": "terms",
+      "title": "User Agreement",
+      "summary": "These terms describe the conditions for using OriginalSound HQ Player. Please read the trial and paid features, third-party and open-source licenses, liability and changes sections carefully. Accepting these terms does not waive your statutory consumer rights.",
+      "sections": [
+        {
+          "title": "1. Scope",
+          "paragraphs": [
+            "OriginalSound HQ Player is a Windows local music player provided by Sennpei Studio. These terms apply to use of the official app and services offered through official channels. Contact: dannypan9709@foxmail.com.",
+            "The first time this version of the terms is presented, the app asks you to accept or exit. Acceptance is recorded only on this device, including the document version, reading language and time. The documents remain accessible from About and the website."
+          ]
+        },
+        {
+          "title": "2. Trial, purchase and features",
+          "important": true,
+          "paragraphs": [
+            "The official Microsoft Store version offers a free trial. Eligibility, duration, price and purchase status are determined by the Store listing and the license information returned by Microsoft. Review them before purchasing. The current full version is unlocked by a one-time purchase; the app does not initiate automatic subscription renewal.",
+            "When the trial expires or the Store license becomes inactive, the current version restricts convolution correction, DSD bitstream output (including Raw / DoP), 5.1 output and Atmos passthrough. Basic local playback, equalization, loudness normalization, preamp and other effects not designated as paid remain available. Saved convolution preferences are retained and can take effect again when a valid license is restored.",
+            "A purchase unlocks the features offered for the current Store product. It does not grant rights to music content or promise free access to future separately sold products or services. Changes affecting purchased features must respect the purchase commitments, platform rules and applicable law; updated terms do not retroactively remove existing rights.",
+            "Purchases, payments, orders and refund requests are handled through Microsoft Store. Refund eligibility is subject to applicable law and platform rules. These terms do not exclude statutory refunds, repairs or other remedies. A temporarily unsuccessful license query is not a permanent grant of a license; later queries may update the status."
+          ]
+        },
+        {
+          "title": "3. Responsible use and files",
+          "paragraphs": [
+            "Only play, edit or process files you are entitled to use. You are responsible for having the necessary rights to imported music, lyrics, artwork and other content. Using the app grants no copyright in that content.",
+            "Tag editing, conversion, and saving lyrics or artwork may modify files or create new ones. Check the destination and back up important content. Uninstalling may leave databases, logs and custom caches in your Documents folder or other selected locations.",
+            "Do not impersonate the developer or official channels, fraudulently sell Store licenses, infringe others' rights or use the app unlawfully. This does not restrict lawful use, modification or redistribution permitted by an applicable open-source license."
+          ]
+        },
+        {
+          "title": "4. Third parties and open-source licenses",
+          "important": true,
+          "paragraphs": [
+            "Code released under AGPL-3.0 in the public repository and its derivatives are governed by that license. Third-party components retain their accompanying licenses. These terms impose no conflicting additional restrictions and do not reduce your existing open-source rights.",
+            "Purchasing the official version does not change open-source licenses. Lawfully building or redistributing the code does not automatically provide Store order benefits or separate services. Names, trademarks and claims of official status must not mislead users; copyright and attribution obligations follow the applicable licenses.",
+            "Third-party services, system components and audio drivers may change or become unavailable. We will reasonably address issues in our app, but cannot guarantee continued third-party interfaces or compatibility with every device."
+          ]
+        },
+        {
+          "title": "5. Privacy and local settings",
+          "paragraphs": [
+            "The separate Privacy Policy explains local data, network connections and available controls. Accepting this agreement does not authorize undisclosed marketing, account registration or other optional data uses.",
+            "Use Settings to manage automatic online features, logs and caches as needed. Information you voluntarily send to support is used to handle that request and legally required matters."
+          ]
+        },
+        {
+          "title": "6. Compatibility, risks and liability",
+          "important": true,
+          "paragraphs": [
+            "Audio results depend on the device, driver, source and settings. Exclusive output, bitstream, spatial audio and correction parameters may not suit every device. Lower the volume before trying them; stop playback and restore safe settings if noise, distortion or other faults occur.",
+            "To the extent permitted by law, the software is provided as is. We do not promise error-free or uninterrupted operation or suitability for every special purpose. Prerelease builds may contain unresolved issues and are not recommended for critical tasks.",
+            "No limitation excludes liability that applicable law does not allow to be excluded, including applicable liability for personal injury, intentional misconduct, gross negligence or fraud. Mandatory consumer rights remain intact. Liability is determined under applicable law and the relevant facts and causal connection."
+          ]
+        },
+        {
+          "title": "7. Changes, ending use and disputes",
+          "important": true,
+          "paragraphs": [
+            "These documents have their own version number. Ordinary app updates do not require renewed acceptance of unchanged terms. Material changes will be prominently notified and consent requested again where needed; silently replacing a webpage does not count as acceptance.",
+            "You may stop using and uninstall the app. Changes affecting existing users, service discontinuation and purchased rights will be handled under applicable law and the valid terms of purchase.",
+            "You may contact us first to seek a resolution. You retain the right to complain to competent authorities or seek remedies in a court with jurisdiction. These terms do not displace mandatory protections that apply to you."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "privacy",
+      "title": "Privacy Policy",
+      "summary": "This policy describes data handling for the app's current features. The app has no developer-operated user accounts, advertising or marketing subscription system, and selling personal data is not its business.",
+      "sections": [
+        {
+          "title": "1. Local files and app data",
+          "paragraphs": [
+            "The app reads music folders and files you select to build your library, play audio and display metadata. File paths, tags, playlists, playback history and statistics, device preferences, effects settings, lyrics and artwork caches are stored locally.",
+            "Editing tags, converting or saving content writes to the destination for that operation. This policy does not describe those local operations as uploading files to the developer.",
+            "Local audio files, the library database and playback history are not automatically uploaded. Online matching sends only the track search information needed for that operation."
+          ]
+        },
+        {
+          "title": "2. Network connections and the Store",
+          "paragraphs": [
+            "Enabling online features, performing online actions or opening external links makes the network requests needed for those functions. The receiving service may obtain connection information such as your IP address. You can disable automatic online features in Settings or avoid the relevant online actions. Local playback does not require registering an account with the developer.",
+            "Microsoft Store handles Store accounts, payments and orders. The app reads the product license, trial expiration and purchase results supplied by the Store to display licensing status and control paid features. The developer does not receive your payment card details or Microsoft account password through this app. The platform's own privacy policy governs its processing."
+          ]
+        },
+        {
+          "title": "3. Logs and voluntary support requests",
+          "paragraphs": [
+            "Runtime and error logs are written locally and may include file paths, track information, device names, exception details and other diagnostic information. The current configuration rolls logs daily and retains up to 30 log files.",
+            "The app does not automatically upload these logs to the developer. The developer receives logs, screenshots or descriptions only when you choose to send them, for example by email. Review and redact them before sending. Support information is used to investigate and reply, not for marketing. Contact us to request access, correction or deletion, subject to legally required retention."
+          ]
+        },
+        {
+          "title": "4. Storage and controls",
+          "paragraphs": [
+            "The main database, settings and logs are under OriginalSoundPlayer in your Documents folder. The cache location can be viewed or changed in Settings. The acceptance record is stored in OriginalSoundPlayer/agreement.json under the local application data directory available to the app; it contains the version, language and UTC acceptance time.",
+            "Manage your library and caches in the app, or exit before backing up or deleting app data. Removing databases or settings loses local lists, statistics or preferences. Removing the acceptance record prompts for acceptance again at the next launch. Uninstalling does not guarantee removal of files in Documents or custom cache folders."
+          ]
+        },
+        {
+          "title": "5. Website and external links",
+          "paragraphs": [
+            "The website is hosted on GitHub Pages, whose operator processes connection information to serve the site. This website's code does not integrate advertising trackers or traffic analytics scripts. When you follow Store, GitHub or other external links, the destination processes the visit under its own policies.",
+            "We take measures appropriate to the app and its processing, but no device, storage or network transmission can be guaranteed completely secure. Protect your Windows account and backups. Minors should use and purchase the app with their guardian's guidance."
+          ]
+        },
+        {
+          "title": "6. Changes and contact",
+          "paragraphs": [
+            "Material changes to data handling will be reflected here with appropriate notice. Uses requiring separate consent will not rely on acceptance of general terms. For privacy questions or information you have voluntarily supplied, contact dannypan9709@foxmail.com."
+          ]
+        }
+      ]
+    },
+    {
+      "id": "disclaimer",
+      "title": "Disclaimer",
+      "summary": "Read these audio and system compatibility notices together with the User Agreement. They do not remove statutory consumer rights or exclude liability that cannot lawfully be excluded.",
+      "sections": [
+        {
+          "title": "1. Audio devices and volume",
+          "important": true,
+          "paragraphs": [
+            "WASAPI exclusive, ASIO, DSD Raw / DoP, multichannel and Atmos output depend on device, driver and source support. Lower the volume before switching outputs, loading impulse responses or changing gain. Stop playback and check settings if noise, distortion or device faults occur.",
+            "Convolution, equalization and automatic gain cannot guarantee an ideal result for every headphone, speaker, room or recording. Assess suitability and avoid listening at excessive levels."
+          ]
+        },
+        {
+          "title": "2. Files and system compatibility",
+          "paragraphs": [
+            "Tag editing, conversion and saving lyrics or artwork can affect files. Back up important files first and avoid bulk writes when the system or storage device is malfunctioning.",
+            "Audio enhancement tools, virtual sound cards, overlays and shell customization software may conflict with the app or drivers. Save local logs and contact the developer for diagnosis; reinstalling the system without diagnosis is not necessary."
+          ]
+        },
+        {
+          "title": "3. Test builds and third parties",
+          "paragraphs": [
+            "Prerelease builds may contain unfinished or insufficiently tested behavior. They are intended for testing and feedback and are not recommended for critical tasks. Third-party drivers, services and components are subject to their providers and applicable terms.",
+            "Open-source rights and obligations are governed by the accompanying licenses. This disclaimer does not override, modify or reduce those rights."
+          ]
+        },
+        {
+          "title": "4. Liability and support",
+          "important": true,
+          "paragraphs": [
+            "To the extent permitted by applicable law, the software is provided as is, without a promise of defect-free operation or compatibility with all devices. No exclusion applies to liability that cannot lawfully be excluded, including applicable liability for personal injury, intentional misconduct, gross negligence or fraud, or reduces statutory refunds or other remedies.",
+            "For app issues contact dannypan9709@foxmail.com. Store purchases and refunds can be addressed through Microsoft Store support."
+          ]
+        }
+      ]
+    }
+  ]
+}

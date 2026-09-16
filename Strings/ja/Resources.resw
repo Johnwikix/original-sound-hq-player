@@ -1897,5 +1897,16 @@
   </data>
   <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>一部の機能には製品版ライセンスが必要です。購入すると解除され、保存済みの設定は保持されます。</value></data>
   <data name="LicenseConvolutionLocked" xml:space="preserve"><value>畳み込み補正には製品版ライセンスが必要です。購入すると解除されます。</value></data>
+  <data name="AgreementTitle" xml:space="preserve"><value>ご利用の前に</value></data>
+  <data name="AgreementAccept" xml:space="preserve"><value>同意して続行</value></data>
+  <data name="AgreementDecline" xml:space="preserve"><value>同意せず終了</value></data>
+  <data name="AgreementIntroduction" xml:space="preserve"><value>以下の文書をお読みください。「同意して続行」を選ぶと、利用規約に同意し、プライバシーポリシーと免責事項を確認したことになります。中国語と英語の全文をオフラインで閲覧できます。</value></data>
+  <data name="AgreementDocument" xml:space="preserve"><value>文書</value></data>
+  <data name="AgreementLanguage" xml:space="preserve"><value>文書の言語</value></data>
+  <data name="AgreementSaveFailed" xml:space="preserve"><value>同意の記録を保存できません。保存先のアクセス権を確認して再試行するか、アプリを終了してください。</value></data>
+  <data name="AgreementImportant" xml:space="preserve"><value>重要な条項</value></data>
+  <data name="LegalTerms" xml:space="preserve"><value>利用規約</value></data>
+  <data name="LegalPrivacy" xml:space="preserve"><value>プライバシーポリシー</value></data>
+  <data name="AgreementOnline" xml:space="preserve"><value>オンラインで読む</value></data>
 </root>
 

@@ -1897,5 +1897,16 @@
   </data>
   <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>Для некоторых функций нужна полная лицензия. Купите её для разблокировки; сохранённые настройки будут сохранены.</value></data>
   <data name="LicenseConvolutionLocked" xml:space="preserve"><value>Для коррекции свёрткой нужна полная лицензия. Купите её для разблокировки.</value></data>
+  <data name="AgreementTitle" xml:space="preserve"><value>Перед началом</value></data>
+  <data name="AgreementAccept" xml:space="preserve"><value>Принять и продолжить</value></data>
+  <data name="AgreementDecline" xml:space="preserve"><value>Отклонить и выйти</value></data>
+  <data name="AgreementIntroduction" xml:space="preserve"><value>Прочитайте документы. Продолжая, вы принимаете пользовательское соглашение и подтверждаете ознакомление с политикой конфиденциальности и ограничением ответственности. Полный текст доступен офлайн на китайском и английском языках.</value></data>
+  <data name="AgreementDocument" xml:space="preserve"><value>Документ</value></data>
+  <data name="AgreementLanguage" xml:space="preserve"><value>Язык документа</value></data>
+  <data name="AgreementSaveFailed" xml:space="preserve"><value>Не удалось сохранить согласие. Проверьте права на запись и повторите попытку или выйдите.</value></data>
+  <data name="AgreementImportant" xml:space="preserve"><value>Важные условия</value></data>
+  <data name="LegalTerms" xml:space="preserve"><value>Пользовательское соглашение</value></data>
+  <data name="LegalPrivacy" xml:space="preserve"><value>Политика конфиденциальности</value></data>
+  <data name="AgreementOnline" xml:space="preserve"><value>Читать онлайн</value></data>
 </root>
 

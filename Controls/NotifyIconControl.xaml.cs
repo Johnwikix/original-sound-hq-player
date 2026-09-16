@@ -27,10 +27,19 @@ namespace WinUIMusicPlayer.Controls
 
         public NotifyIconControl()
         {
-            this.InitializeComponent();
             MusicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             AppViewModel = App.Services.GetRequiredService<AppViewModel>();
             DesktopLyrics = App.Services.GetRequiredService<DesktopLyricsViewModel>();
+            this.InitializeComponent();
+        }
+
+        public void EnsureCreated()
+        {
+            // 先绑定菜单命令与提示，再向 Shell 注册；不等待首次 Loaded，也不启用效率模式。
+            Bindings.Update();
+            if (!NotifyIcon.IsCreated) NotifyIcon.ForceCreate(enablesEfficiencyMode: false);
+            if (!NotifyIcon.IsCreated)
+                throw new InvalidOperationException("Unable to register the notification area icon.");
         }
 
         // ==== 托盘组合命令（窗口激活/导航/桌面歌词） ====

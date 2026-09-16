@@ -1897,4 +1897,15 @@
   </data>
   <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>Some features require the full license. Purchase to unlock them; your saved settings are retained.</value></data>
   <data name="LicenseConvolutionLocked" xml:space="preserve"><value>Convolution correction requires the full license. Purchase to unlock.</value></data>
+  <data name="AgreementTitle" xml:space="preserve"><value>Before you start</value></data>
+  <data name="AgreementAccept" xml:space="preserve"><value>Agree and continue</value></data>
+  <data name="AgreementDecline" xml:space="preserve"><value>Decline and exit</value></data>
+  <data name="AgreementIntroduction" xml:space="preserve"><value>Please read these documents. Agree and continue means you accept the User Agreement and have read the Privacy Policy and Disclaimer. The full text is available offline in Chinese and English.</value></data>
+  <data name="AgreementDocument" xml:space="preserve"><value>Document</value></data>
+  <data name="AgreementLanguage" xml:space="preserve"><value>Document language</value></data>
+  <data name="AgreementSaveFailed" xml:space="preserve"><value>Could not save your acceptance. Check local storage permissions and retry, or exit.</value></data>
+  <data name="AgreementImportant" xml:space="preserve"><value>Important terms</value></data>
+  <data name="LegalTerms" xml:space="preserve"><value>User Agreement</value></data>
+  <data name="LegalPrivacy" xml:space="preserve"><value>Privacy Policy</value></data>
+  <data name="AgreementOnline" xml:space="preserve"><value>Read online</value></data>
 </root>

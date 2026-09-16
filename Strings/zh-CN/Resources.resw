@@ -1896,4 +1896,15 @@
   </data>
   <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>部分功能需要完整许可。购买后可解锁，已保存的设置会保留。</value></data>
   <data name="LicenseConvolutionLocked" xml:space="preserve"><value>卷积校正需要完整许可，购买后可解锁。</value></data>
+  <data name="AgreementTitle" xml:space="preserve"><value>使用前请阅读</value></data>
+  <data name="AgreementAccept" xml:space="preserve"><value>同意并继续</value></data>
+  <data name="AgreementDecline" xml:space="preserve"><value>不同意并退出</value></data>
+  <data name="AgreementIntroduction" xml:space="preserve"><value>请阅读以下文件。选择“同意并继续”表示你接受用户协议，并已阅读隐私政策和免责声明。全文可离线阅读，可切换中文或英文。</value></data>
+  <data name="AgreementDocument" xml:space="preserve"><value>协议文件</value></data>
+  <data name="AgreementLanguage" xml:space="preserve"><value>正文语言</value></data>
+  <data name="AgreementSaveFailed" xml:space="preserve"><value>无法保存同意记录。请检查本地存储权限后重试，或退出应用。</value></data>
+  <data name="AgreementImportant" xml:space="preserve"><value>重要条款</value></data>
+  <data name="LegalTerms" xml:space="preserve"><value>用户协议</value></data>
+  <data name="LegalPrivacy" xml:space="preserve"><value>隐私政策</value></data>
+  <data name="AgreementOnline" xml:space="preserve"><value>在线查看</value></data>
 </root>

@@ -1897,5 +1897,16 @@
   </data>
   <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>Einige Funktionen erfordern die Vollversion. Durch den Kauf werden sie freigeschaltet; gespeicherte Einstellungen bleiben erhalten.</value></data>
   <data name="LicenseConvolutionLocked" xml:space="preserve"><value>Die Faltungskorrektur erfordert die Vollversion. Kaufen Sie diese zum Freischalten.</value></data>
+  <data name="AgreementTitle" xml:space="preserve"><value>Vor dem Start</value></data>
+  <data name="AgreementAccept" xml:space="preserve"><value>Zustimmen und fortfahren</value></data>
+  <data name="AgreementDecline" xml:space="preserve"><value>Ablehnen und beenden</value></data>
+  <data name="AgreementIntroduction" xml:space="preserve"><value>Bitte lesen Sie diese Dokumente. Mit Ihrer Zustimmung akzeptieren Sie die Nutzungsvereinbarung und bestätigen, die Datenschutzerklärung und den Haftungshinweis gelesen zu haben. Der vollständige Text ist offline auf Chinesisch und Englisch verfügbar.</value></data>
+  <data name="AgreementDocument" xml:space="preserve"><value>Dokument</value></data>
+  <data name="AgreementLanguage" xml:space="preserve"><value>Dokumentsprache</value></data>
+  <data name="AgreementSaveFailed" xml:space="preserve"><value>Ihre Zustimmung konnte nicht gespeichert werden. Prüfen Sie die lokalen Schreibrechte und versuchen Sie es erneut, oder beenden Sie die App.</value></data>
+  <data name="AgreementImportant" xml:space="preserve"><value>Wichtige Bestimmungen</value></data>
+  <data name="LegalTerms" xml:space="preserve"><value>Nutzungsvereinbarung</value></data>
+  <data name="LegalPrivacy" xml:space="preserve"><value>Datenschutzerklärung</value></data>
+  <data name="AgreementOnline" xml:space="preserve"><value>Online lesen</value></data>
 </root>
 

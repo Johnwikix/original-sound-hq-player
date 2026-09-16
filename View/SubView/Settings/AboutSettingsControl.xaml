@@ -68,6 +68,14 @@
                         Text="{x:Bind ViewModel.AppViewModel.Version, Mode=OneWay}" />
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard ContentAlignment="Left">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <HyperlinkButton NavigateUri="https://johnwikix.github.io/original-sound-player-page/terms"
+                                    Content="{x:Bind tool:ToolUtils.GetString('LegalTerms')}" />
+                                <HyperlinkButton NavigateUri="https://johnwikix.github.io/original-sound-player-page/privacy"
+                                    Content="{x:Bind tool:ToolUtils.GetString('LegalPrivacy')}" />
+                            </StackPanel>
+                        </controls:SettingsCard>
+                        <controls:SettingsCard ContentAlignment="Left">
                             <StackPanel Orientation="Horizontal">
                                 <HyperlinkButton
                                     x:Name="WebSite"

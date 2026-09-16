@@ -39,8 +39,10 @@ namespace WinUIMusicPlayer
         private IntPtr defaultWndProc;
         private WindowHelper.WndProcDelegate newWndProcDelegate;
         private TaskbarHelper _taskbarHelper;
+        private Controls.NotifyIconControl? _notifyIconControl;
         private ILogger<MainWindow> _logger;
         private readonly object _trimLock = new();
+        internal bool IsForeground { get; private set; }
 
         public MainWindow()
         {
@@ -75,8 +77,10 @@ namespace WinUIMusicPlayer
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
         {
+            IsForeground = args.WindowActivationState != WindowActivationState.Deactivated;
+            if (!App.Services.GetRequiredService<AppViewModel>().IsInitialized) return;
             App.Services.GetRequiredService<DesktopLyrics.DesktopLyricsViewModel>().IsMainWindowForeground =
-                args.WindowActivationState != WindowActivationState.Deactivated;
+                IsForeground;
             InitializeTaskbarHelper();
         }
 
@@ -119,8 +123,9 @@ namespace WinUIMusicPlayer
         private void AppWindow_Changed(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowChangedEventArgs args)
         {
             if (AppWindow == null) return;
-            if ((args.DidVisibilityChange && !sender.IsVisible) ||
-                (sender.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Minimized }))
+            if (App.Services.GetRequiredService<AppViewModel>().IsInitialized &&
+                ((args.DidVisibilityChange && !sender.IsVisible) ||
+                sender.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Minimized }))
                 App.Services.GetRequiredService<DesktopLyrics.DesktopLyricsViewModel>().IsMainWindowForeground = false;
 
             // 状态切换瞬间 DidPositionChange/DidSizeChange 会先于 DidPresenterChange 到达,
@@ -237,9 +242,15 @@ namespace WinUIMusicPlayer
 
         private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, AppWindowClosingEventArgs args)
         {
+            // 退出包含异步持久化；始终取消系统立即销毁窗口，由统一退出流程收尾。
+            args.Cancel = true;
+            if (!App.Services.GetRequiredService<AppViewModel>().IsInitialized)
+            {
+                App.ExitDuringStartup();
+                return;
+            }
             if (AppSettings.IsRunningBackend)
             {
-                args.Cancel = true;
                 this.Hide();
                 if (AppSettings.IsTrimOnHideEnabled)
                     _ = WorkingSetCompressor.TrimSelfAsync();
@@ -266,6 +277,13 @@ namespace WinUIMusicPlayer
         public void ShowMainPage()
         {
             ShellFrame.Content = App.Services.GetRequiredService<MainPage>();
+            if (_notifyIconControl is null)
+            {
+                _notifyIconControl = new Controls.NotifyIconControl();
+                TrayHost.Children.Add(_notifyIconControl);
+            }
+            _notifyIconControl.EnsureCreated();
+            _logger.LogInformation("托盘图标已注册");
             LoadingGrid.Visibility = Visibility.Collapsed;
         }
 
@@ -299,6 +317,7 @@ namespace WinUIMusicPlayer
 
         public void InitializeTaskbarHelper()
         {
+            if (!App.Services.GetRequiredService<AppViewModel>().IsInitialized) return;
             try
             {
                 if (_taskbarHelper is null)
@@ -347,7 +366,7 @@ namespace WinUIMusicPlayer
         {
             if (dispose)
             {
-                AppNotifyIconControl?.Dispose();
+                _notifyIconControl?.Dispose();
                 _taskbarHelper?.Dispose();
             }
         }

@@ -1,7 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using System;
+using System.Diagnostics;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -26,31 +29,82 @@ namespace WinUIMusicPlayer.Services
         // 应用启动时执行初始化
         public async Task StartAsync(CancellationToken cancellationToken)
         {
+            var startup = Stopwatch.StartNew();
+            var logger = App.GetLogger<AppInitializerService>();
             await MusicDatabaseService.Initialize();
-            var ipcService = App.Services.GetRequiredService<IpcService>();
-            var musicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             var appViewModel = App.Services.GetRequiredService<AppViewModel>();
-            await ipcService.InitializingAsync();
             await Task.WhenAll(
                 MusicDatabaseService.GetEqualizerSettingsAsync(),
                 MusicDatabaseService.GetSettingsAsync());
             MusicDatabaseService.LoadWindowState();
             App.MainWindow = App.Services.GetRequiredService<MainWindow>();
             App.MainWindow.Activate();
-            // HWND 已可用；Store 查询与其余启动工作并行，首推设置前再汇合。
+            await WaitForContentLoadedAsync((FrameworkElement)App.MainWindow.Content);
+            logger.LogInformation("启动窗口就绪：{ElapsedMs} ms", startup.ElapsedMilliseconds);
+            var acceptance = AgreementAcceptanceStore.ForCurrentUser();
+            if (!await acceptance.HasAcceptedAsync(AgreementAcceptanceStore.CurrentVersion))
+            {
+                var agreement = await UserAgreementViewModel.LoadAsync(acceptance);
+                var result = await new View.SubView.UserAgreementDialog(agreement)
+                    .ShowThemedAsync(App.MainWindow.Content.XamlRoot);
+                if (result != ContentDialogResult.Primary)
+                {
+                    App.ExitDuringStartup();
+                    return;
+                }
+            }
+            // User reading time is not startup processing time.
+            startup.Restart();
+            cancellationToken.ThrowIfCancellationRequested();
+            var ipcService = App.Services.GetRequiredService<IpcService>();
+            var musicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
+            App.StartAudioPlayer();
+            var ipcInitialization = ipcService.InitializingAsync();
+            // Independent work overlaps; no audio or online startup work runs before agreement.
             var licenseInitialization = App.Services.GetRequiredService<LicenseService>().InitializeAsync();
-            await Task.Run(() => RunLongOpsAsync(MusicDatabaseService, cancellationToken), cancellationToken);
-            ToolUtils.CleanupStaleCacheFiles();
+            var libraryInitialization = Task.Run(async () =>
+            {
+                await RunLongOpsAsync(MusicDatabaseService, cancellationToken);
+                // Keep disk enumeration off the UI thread and before cover restoration.
+                ToolUtils.CleanupStaleCacheFiles();
+            }, cancellationToken);
+            await Task.WhenAll(ipcInitialization, licenseInitialization, libraryInitialization);
             await musicBrowseViewModel.LoadPlayStateToMusicBrowsePage();
             // 许可状态必须在首次推送设置前就绪，受限判定才能作用于首推内容。
-            await licenseInitialization;
             await ipcService.InitializeMusic(appViewModel.CurrentPlayingMusic);
+            logger.LogInformation("协议确认后核心启动完成：{ElapsedMs} ms", startup.ElapsedMilliseconds);
+            // Finish startup dialogs before enabling settings, tray commands and shortcuts.
+            await CheckVersionUpdateAsync();
+        }
+
+        // 由 App.OnLaunched 在 Host.StartAsync 完成后同步调用，无 await 的交互启用阶段。
+        internal static void EnableInteraction()
+        {
+            var appViewModel = App.Services.GetRequiredService<AppViewModel>();
             App.MainWindow.ShowMainPage();
             appViewModel.IsInitialized = true;
+            App.Services.GetRequiredService<DesktopLyricsViewModel>().IsMainWindowForeground =
+                App.MainWindow.IsForeground;
+            App.MainWindow.InitializeTaskbarHelper();
+            App.Services.GetRequiredService<UsbDeviceService>().StartWatching();
+            App.Services.GetRequiredService<SystemMediaControlsService>().EnableControls();
             DesktopLyricsManager.RestoreFromSettings();
             appViewModel.InitHotKeys();
-            _ = ipcService.RetryStartupCorrectionsAsync();
-            await CheckVersionUpdateAsync();
+            _ = App.Services.GetRequiredService<IpcService>().RetryStartupCorrectionsAsync();
+            App.GetLogger<AppInitializerService>().LogInformation("启动完成，主界面与系统交互已启用");
+        }
+
+        private static Task WaitForContentLoadedAsync(FrameworkElement content)
+        {
+            if (content.IsLoaded) return Task.CompletedTask;
+            var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            void Loaded(object sender, RoutedEventArgs args)
+            {
+                content.Loaded -= Loaded;
+                completion.SetResult();
+            }
+            content.Loaded += Loaded;
+            return completion.Task;
         }
 
         // 应用关闭时执行清理

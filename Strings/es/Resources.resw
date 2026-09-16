@@ -1897,4 +1897,15 @@
   </data>
   <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>Algunas funciones requieren la licencia completa. Compra para desbloquearlas; se conservarán tus ajustes guardados.</value></data>
   <data name="LicenseConvolutionLocked" xml:space="preserve"><value>La corrección por convolución requiere la licencia completa. Compra para desbloquearla.</value></data>
+  <data name="AgreementTitle" xml:space="preserve"><value>Antes de comenzar</value></data>
+  <data name="AgreementAccept" xml:space="preserve"><value>Aceptar y continuar</value></data>
+  <data name="AgreementDecline" xml:space="preserve"><value>Rechazar y salir</value></data>
+  <data name="AgreementIntroduction" xml:space="preserve"><value>Lea estos documentos. Al continuar, acepta el Acuerdo de usuario y confirma que ha leído la Política de privacidad y el Aviso de responsabilidad. El texto completo está disponible sin conexión en chino e inglés.</value></data>
+  <data name="AgreementDocument" xml:space="preserve"><value>Documento</value></data>
+  <data name="AgreementLanguage" xml:space="preserve"><value>Idioma del documento</value></data>
+  <data name="AgreementSaveFailed" xml:space="preserve"><value>No se pudo guardar su aceptación. Compruebe los permisos de almacenamiento e inténtelo de nuevo, o salga.</value></data>
+  <data name="AgreementImportant" xml:space="preserve"><value>Condiciones importantes</value></data>
+  <data name="LegalTerms" xml:space="preserve"><value>Acuerdo de usuario</value></data>
+  <data name="LegalPrivacy" xml:space="preserve"><value>Política de privacidad</value></data>
+  <data name="AgreementOnline" xml:space="preserve"><value>Leer en línea</value></data>
 </root>
