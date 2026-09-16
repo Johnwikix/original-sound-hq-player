@@ -24,6 +24,7 @@ public partial class DspSettingsViewModel : ObservableObject
     private bool _syncing = true, _loaded, _available, _dirty;
     private DspState? _lastState;
     private long _lastRevision;
+    private LicenseFeature _lastRestrictedFeatures = (LicenseFeature)(-1);
 
     /// <summary>弹出 Store 购买对话框；完成后许可服务自动刷新并重推设置。</summary>
     public IAsyncRelayCommand PurchaseCommand { get; }
@@ -63,7 +64,7 @@ public partial class DspSettingsViewModel : ObservableObject
         get => field;
         set
         {
-            if (SetProperty(ref field, value)) SettingChanged();
+            if (SetProperty(ref field, value)) SettingChanged(LicenseFeature.LoudnessNormalization);
         }
     }
 
@@ -73,7 +74,7 @@ public partial class DspSettingsViewModel : ObservableObject
         get => field;
         set
         {
-            if (SetProperty(ref field, value) && double.IsFinite(value)) SettingChanged();
+            if (SetProperty(ref field, value) && double.IsFinite(value)) SettingChanged(LicenseFeature.LoudnessNormalization);
         }
     }
 
@@ -82,7 +83,7 @@ public partial class DspSettingsViewModel : ObservableObject
         get => field;
         set
         {
-            if (SetProperty(ref field, value) && double.IsFinite(value)) SettingChanged();
+            if (SetProperty(ref field, value) && double.IsFinite(value)) SettingChanged(LicenseFeature.Preamp);
         }
     }
 
@@ -92,7 +93,7 @@ public partial class DspSettingsViewModel : ObservableObject
         get => field;
         set
         {
-            if (SetProperty(ref field, value)) SettingChanged();
+            if (SetProperty(ref field, value)) SettingChanged(LicenseFeature.Balance);
         }
     }
 
@@ -101,7 +102,7 @@ public partial class DspSettingsViewModel : ObservableObject
         get => field;
         set
         {
-            if (SetProperty(ref field, value)) SettingChanged();
+            if (SetProperty(ref field, value)) SettingChanged(LicenseFeature.ChannelSwap);
         }
     }
 
@@ -110,7 +111,7 @@ public partial class DspSettingsViewModel : ObservableObject
         get => field;
         set
         {
-            if (SetProperty(ref field, value)) SettingChanged();
+            if (SetProperty(ref field, value)) SettingChanged(LicenseFeature.Mono);
         }
     }
 
@@ -120,7 +121,7 @@ public partial class DspSettingsViewModel : ObservableObject
         get => field;
         set
         {
-            if (SetProperty(ref field, value)) SettingChanged();
+            if (SetProperty(ref field, value)) SettingChanged(LicenseFeature.Crossfeed);
         }
     }
 
@@ -130,7 +131,7 @@ public partial class DspSettingsViewModel : ObservableObject
         get => field;
         set
         {
-            if (SetProperty(ref field, value)) SettingChanged();
+            if (SetProperty(ref field, value)) SettingChanged(LicenseFeature.StereoWidth);
         }
     }
 
@@ -143,7 +144,8 @@ public partial class DspSettingsViewModel : ObservableObject
         {
             if (!SetProperty(ref field, value)) return;
             OnPropertyChanged(nameof(CurveMode)); OnPropertyChanged(nameof(WaveMode));
-            if (_syncing || !_loaded || LicenseRestricted) return;
+            if (_syncing || !_loaded) return;
+            if (ConvolutionRestricted) { LoadValues(); return; }
             AppSettings.Dsp = AppSettings.Dsp with { ConvolutionSource = value == 0 ? ConvolutionSource.Curve : ConvolutionSource.Wave };
             _dirty = true; _commitTimer.Stop(); _commitTimer.Start();
         }
@@ -153,12 +155,12 @@ public partial class DspSettingsViewModel : ObservableObject
     public bool ConvolutionEnabled
     {
         get => field;
-        set { if (SetProperty(ref field, value)) SettingChanged(); }
+        set { if (SetProperty(ref field, value)) SettingChanged(LicenseFeature.Convolution); }
     }
     public bool AutoPreamp
     {
         get => field;
-        set { if (SetProperty(ref field, value)) { OnPropertyChanged(nameof(ManualGainEnabled)); SettingChanged(); } }
+        set { if (SetProperty(ref field, value)) { OnPropertyChanged(nameof(ManualGainEnabled)); SettingChanged(LicenseFeature.Preamp); } }
     }
     public bool ManualGainEnabled => !AutoPreamp;
     public string ImpulseName { get => field; private set => SetProperty(ref field, value); } = "";
@@ -170,7 +172,7 @@ public partial class DspSettingsViewModel : ObservableObject
 
     public async Task ImportImpulseAsync(string path)
     {
-        if (ImportBusy || LicenseRestricted) return;
+        if (ImportBusy || ConvolutionRestricted) return;
         ImportBusy = true;
         ImportFailed = false;
         try
@@ -186,6 +188,12 @@ public partial class DspSettingsViewModel : ObservableObject
                 try { ImpulseResponse.Read(destination); }
                 catch { File.Delete(destination); throw; }
             });
+            if (ConvolutionRestricted)
+            {
+                File.Delete(destination);
+                Directory.Delete(directory);
+                return;
+            }
             AppSettings.Dsp = AppSettings.Dsp with { ImpulsePath = destination, ConvolutionSource = ConvolutionSource.Wave, ConvolutionEnabled = true };
             LoadValues();
             _dirty = true;
@@ -203,7 +211,7 @@ public partial class DspSettingsViewModel : ObservableObject
 
     public async Task ClearImpulseAsync()
     {
-        if (LicenseRestricted) return;
+        if (ConvolutionRestricted) return;
         AppSettings.Dsp = AppSettings.Dsp with { ImpulsePath = "", ConvolutionEnabled = false };
         ImportFailed = false;
         LoadValues();
@@ -215,9 +223,16 @@ public partial class DspSettingsViewModel : ObservableObject
     public bool MasterAvailable { get => field; private set => SetProperty(ref field, value); }
     /// <summary>播放端已确认 DSP 生效，PCM 子设置仅此时可编辑。</summary>
     public bool EffectsActive { get => field; private set => SetProperty(ref field, value); }
-    /// <summary>非 EQ 的 DSP 子设置可编辑：效果已生效且未受许可限制（EQ 入口单独用 EffectsActive）。</summary>
-    public bool EffectsEditable { get => field; private set => SetProperty(ref field, value); }
-    /// <summary>许可非活跃：非 EQ 的 DSP 编辑与写入锁定。</summary>
+    public bool ConvolutionRestricted => _license.IsFeatureRestricted(LicenseFeature.Convolution);
+    public bool ConvolutionEditable => EffectsActive && !ConvolutionRestricted;
+    public bool NormalizeEditable => EffectsActive && !_license.IsFeatureRestricted(LicenseFeature.LoudnessNormalization);
+    public bool PreampEditable => EffectsActive && !_license.IsFeatureRestricted(LicenseFeature.Preamp);
+    public bool BalanceEditable => EffectsActive && !_license.IsFeatureRestricted(LicenseFeature.Balance);
+    public bool SwapEditable => EffectsActive && !_license.IsFeatureRestricted(LicenseFeature.ChannelSwap);
+    public bool MonoEditable => EffectsActive && !_license.IsFeatureRestricted(LicenseFeature.Mono);
+    public bool CrossfeedEditable => EffectsActive && !_license.IsFeatureRestricted(LicenseFeature.Crossfeed);
+    public bool WidthEditable => EffectsActive && !_license.IsFeatureRestricted(LicenseFeature.StereoWidth);
+    /// <summary>DSP 页面是否存在被许可锁定的功能。</summary>
     public bool LicenseRestricted { get => field; private set => SetProperty(ref field, value); }
     /// <summary>顶部提示条级别：许可受限升为警告，其余保持信息级。</summary>
     public InfoBarSeverity InfoSeverity { get => field; private set => SetProperty(ref field, value); } = InfoBarSeverity.Informational;
@@ -236,7 +251,7 @@ public partial class DspSettingsViewModel : ObservableObject
         _ipc.DspStateChanged += OnDspStateChanged;
         _ipc.CorrectionSyncChanged += OnCorrectionSyncChanged;
         _license.StateChanged += OnLicenseStateChanged;
-        LicenseRestricted = _license.IsRestricted;
+        LicenseRestricted = _license.IsFeatureRestricted(LicenseFeature.AllDsp);
         RefreshCorrectionSyncState();
         LoadValues();
         ApplyLatestState();
@@ -248,7 +263,7 @@ public partial class DspSettingsViewModel : ObservableObject
     private void OnLicenseStateChanged() => _queue.TryEnqueue(() =>
     {
         if (!_loaded) return;
-        LicenseRestricted = _license.IsRestricted;
+        LicenseRestricted = _license.IsFeatureRestricted(LicenseFeature.AllDsp);
         ApplyState(_lastState);
     });
 
@@ -275,8 +290,7 @@ public partial class DspSettingsViewModel : ObservableObject
 
     public async Task ResetAsync()
     {
-        if (LicenseRestricted) return;
-        AppSettings.Dsp = new();
+        AppSettings.Dsp = LicensePolicy.PreserveRestrictedPreferences(new(), AppSettings.Dsp, _license.RestrictedFeatures);
         LoadValues();
         ApplyState(_lastState);
         _dirty = true;
@@ -308,7 +322,7 @@ public partial class DspSettingsViewModel : ObservableObject
     /// <summary>应用播放端确认的完整快照；仅刷新派生状态，不覆盖本地编辑偏好。</summary>
     private void ApplyState(DspState? state)
     {
-        LicenseRestricted = _license.IsRestricted;
+        LicenseRestricted = _license.IsFeatureRestricted(LicenseFeature.AllDsp);
         bool available = state is { RenderKind: 0 };
         bool reload = _available != available || _lastState == null || _lastState.Value.IsEnabled != state?.IsEnabled;
         // 先更新可用性再重载，否则 LoadValues 读到旧的 _available，会把总开关误显示为关
@@ -323,8 +337,24 @@ public partial class DspSettingsViewModel : ObservableObject
             LoadValues();
         MasterAvailable = available;
         bool effectsActive = available && state!.Value.IsEnabled && AppSettings.Dsp.IsEnabled;
+        bool editabilityChanged = EffectsActive != effectsActive || _lastRestrictedFeatures != _license.RestrictedFeatures;
         EffectsActive = effectsActive;
-        EffectsEditable = effectsActive && !LicenseRestricted;
+        _lastRestrictedFeatures = _license.RestrictedFeatures;
+        if (editabilityChanged)
+        {
+            OnPropertyChanged(nameof(ConvolutionRestricted));
+            OnPropertyChanged(nameof(ConvolutionEditable));
+            OnPropertyChanged(nameof(NormalizeEditable));
+            OnPropertyChanged(nameof(PreampEditable));
+            OnPropertyChanged(nameof(BalanceEditable));
+            OnPropertyChanged(nameof(SwapEditable));
+            OnPropertyChanged(nameof(MonoEditable));
+            OnPropertyChanged(nameof(CrossfeedEditable));
+            OnPropertyChanged(nameof(WidthEditable));
+            OnPropertyChanged(nameof(CanChangeCorrectionMode));
+            OnPropertyChanged(nameof(CanRetryCorrection));
+            RetryCorrectionCommand.NotifyCanExecuteChanged();
+        }
         StereoSupported = available && state!.Value.Channels is 0 or 2;
         bool unsupported = available && state!.Value.Channels != 0 && state.Value.Channels != 2;
         InfoMessage = ToolUtils.GetString(state == null ? "DspStateUnavailable"
@@ -348,7 +378,8 @@ public partial class DspSettingsViewModel : ObservableObject
             }
         }
         InfoOpen = infoOpen;
-        ConvolutionText = ToolUtils.GetString(!effectsActive ? "DspIrBypass" : state?.Convolution switch
+        ConvolutionText = ToolUtils.GetString(ConvolutionRestricted ? "LicenseConvolutionLocked"
+            : !effectsActive ? "DspIrBypass" : state?.Convolution switch
         {
             ConvolutionStatus.Loading => "DspIrLoading",
             ConvolutionStatus.Active => "DspIrActive",
@@ -371,10 +402,12 @@ public partial class DspSettingsViewModel : ObservableObject
     }
 
     /// <summary>将编辑属性写回本地偏好（250ms 防抖提交，拖动滑条不产生中间 IO）。</summary>
-    private void SettingChanged()
+    private void SettingChanged(LicenseFeature feature)
     {
-        if (_syncing || !_loaded || !_available || !AppSettings.Dsp.IsEnabled || LicenseRestricted) return;
-        AppSettings.Dsp = (AppSettings.Dsp with
+        if (_syncing || !_loaded || !_available || !AppSettings.Dsp.IsEnabled) return;
+        if (_license.IsFeatureRestricted(feature)) { LoadValues(); return; }
+        var saved = AppSettings.Dsp;
+        var candidate = (saved with
         {
             ConvolutionEnabled = ConvolutionEnabled,
             AutoPreamp = AutoPreamp, ConvolutionTrimDb = 0, AutoConvolutionHeadroom = false,
@@ -386,6 +419,7 @@ public partial class DspSettingsViewModel : ObservableObject
             Crossfeed = CrossfeedIndex switch { 1 => 0.2, 2 => 0.4, _ => 0 },
             StereoWidth = StereoWidth / 100
         }).Sanitize();
+        AppSettings.Dsp = LicensePolicy.PreserveRestrictedPreferences(candidate, saved, _license.RestrictedFeatures);
         _dirty = true;
         _commitTimer.Stop();
         _commitTimer.Start();

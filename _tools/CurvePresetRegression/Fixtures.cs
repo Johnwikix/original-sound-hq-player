@@ -59,12 +59,19 @@ namespace Microsoft.Extensions.DependencyInjection
 {
     public static class FixtureServices
     {
-        public static T GetRequiredService<T>(this object services) => (T)services;
+        public static T GetRequiredService<T>(this object services) => (T)((Dictionary<Type, object>)services)[typeof(T)];
     }
 }
 namespace WinUIMusicPlayer.Services
 {
     using WinUIMusicPlayer.Model;
+    public sealed class LicenseService
+    {
+        public LicenseFeature RestrictedFeatures { get; private set; }
+        public bool IsFeatureRestricted(LicenseFeature feature) => LicensePolicy.Contains(RestrictedFeatures, feature);
+        public event Action? StateChanged;
+        public void SetRestricted(LicenseFeature features) { RestrictedFeatures = features; StateChanged?.Invoke(); }
+    }
     // Only persistence and IPC are substituted; tests call the production VM and generated commands.
     public class CurvePresetService
     {
@@ -158,6 +165,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         private readonly MusicDatabaseService _database;
         private readonly DispatcherQueue _queue = DispatcherQueue.GetForCurrentThread();
         private bool _loaded = true, _dirty;
+        public bool ConvolutionRestricted { get; set; }
         public DspSettingsViewModel(IpcService ipc, MusicDatabaseService database)
         {
             _ipc = ipc; _database = database;

@@ -19,11 +19,11 @@ public enum AppLicenseState
     FullLicense,
     /// <summary>试用期内。</summary>
     TrialActive,
-    /// <summary>许可非活跃（包含试用到期）：限制非 EQ DSP、DSD 位流、5.1 与 Atmos 直通。</summary>
+    /// <summary>许可非活跃（包含试用到期）：限制 LicensePolicy 中列出的功能。</summary>
     LicenseInactive
 }
 
-/// <summary>Store 许可状态源：非活跃时限制非 EQ DSP、DSD 位流、5.1 与 Atmos 直通；
+/// <summary>Store 许可状态源：非活跃时按 LicensePolicy 限制功能；
 /// 非 Store 渠道和首次查询失败不限制；后续查询失败保持上次确认的状态。</summary>
 public sealed class LicenseService : IDisposable
 {
@@ -45,16 +45,15 @@ public sealed class LicenseService : IDisposable
     public AppLicenseState State { get; private set; } = AppLicenseState.StoreUnavailable;
     /// <summary>试用到期时间；仅 <see cref="AppLicenseState.TrialActive"/> 时有意义。</summary>
     public DateTimeOffset? TrialExpiration { get; private set; }
-    /// <summary>是否限制非 EQ DSP、DSD 位流、5.1 与 Atmos 直通。</summary>
+    /// <summary>许可是否非活跃；具体功能应使用 IsFeatureRestricted 查询。</summary>
     public bool IsRestricted => State == AppLicenseState.LicenseInactive;
+    public LicenseFeature RestrictedFeatures => IsRestricted ? LicensePolicy.RestrictedFeatures : LicenseFeature.None;
+    public bool IsFeatureRestricted(LicenseFeature feature) => LicensePolicy.Contains(RestrictedFeatures, feature);
 
     /// <summary>仅覆盖发往引擎的输出快照，不改写持久化偏好；值类型原地修改不分配堆对象。</summary>
     public void ApplyOutputRestrictions(ref IpcSetting settings)
     {
-        if (!IsRestricted) return;
-        settings.IsDopEnabled = false;
-        settings.ExperimentalSurround51 = false;
-        settings.ExperimentalAtmosPassthrough = false;
+        LicensePolicy.ApplyOutputRestrictions(ref settings, RestrictedFeatures);
     }
     /// <summary>试用期间及许可非活跃时均可购买。</summary>
     public bool CanPurchase => State is AppLicenseState.TrialActive or AppLicenseState.LicenseInactive;
@@ -292,7 +291,7 @@ public sealed class LicenseService : IDisposable
                     previous, expiration, TrialRemainingDays);
                 break;
             case AppLicenseState.LicenseInactive:
-                _logger.LogInformation("许可状态迁移：{Previous} → 许可非活跃，非 EQ DSP、DSD 位流、5.1 与 Atmos 直通已限制", previous);
+                _logger.LogInformation("许可状态迁移：{Previous} → 许可非活跃，受限功能：{Features}", previous, RestrictedFeatures);
                 break;
             default:
                 _logger.LogInformation("许可状态迁移：{Previous} → Store 不可用（fail-open）", previous);

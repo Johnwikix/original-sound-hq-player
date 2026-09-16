@@ -1872,7 +1872,7 @@
   <data name="CurveLiveSaveError" xml:space="preserve"><value>Не удалось сохранить коррекцию. Проверьте хранилище, затем закройте окно ещё раз для повторной попытки.</value></data>
   <data name="CurveApplyPreset.Content" xml:space="preserve"><value>Применить пресет</value></data>
   <data name="LicenseRestrictedDsp" xml:space="preserve">
-    <value>Нет действующей лицензии: эффекты DSP кроме эквалайзера заблокированы. Купите полную версию для разблокировки.</value>
+    <value>Для некоторых звуковых эффектов нужна полная лицензия. Купите её для разблокировки; сохранённые настройки будут сохранены.</value>
   </data>
   <data name="LicenseTrialRemaining" xml:space="preserve">
     <value>До конца пробной версии осталось дней: {0}</value>
@@ -1885,7 +1885,7 @@
   </data>
   <data name="LicenseSurround51Locked" xml:space="preserve"><value>Нет действующей лицензии: вывод 5.1 заблокирован. Купите полную версию в разделе Настройки → О программе</value></data>
   <data name="LicenseAtmosLocked" xml:space="preserve"><value>Нет действующей лицензии: сквозная передача Atmos по HDMI заблокирована. Купите полную версию в разделе Настройки → О программе</value></data>
-  <data name="LicenseRestrictedOutput" xml:space="preserve"><value>Нет действующей лицензии: DSD DoP/Native, вывод 5.1 и сквозная передача Atmos по HDMI заблокированы. Купите полную версию для разблокировки.</value></data>
+  <data name="LicenseRestrictedOutput" xml:space="preserve"><value>Для некоторых расширенных функций вывода нужна полная лицензия. Купите её для разблокировки; сохранённые настройки будут сохранены.</value></data>
   <data name="DesktopLyricsAutoHide.Header" xml:space="preserve">
     <value>Скрывать текст на рабочем столе, когда страница воспроизведения на переднем плане</value>
   </data>
@@ -1895,5 +1895,7 @@
   <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
     <value>Ly</value>
   </data>
+  <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>Для некоторых функций нужна полная лицензия. Купите её для разблокировки; сохранённые настройки будут сохранены.</value></data>
+  <data name="LicenseConvolutionLocked" xml:space="preserve"><value>Для коррекции свёрткой нужна полная лицензия. Купите её для разблокировки.</value></data>
 </root>
 

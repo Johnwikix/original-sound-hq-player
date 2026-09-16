@@ -18,6 +18,7 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     private readonly IpcService _ipc;
     private readonly CurvePresetService _store;
     private readonly MusicDatabaseService _database;
+    private readonly LicenseService _license;
     private readonly DispatcherQueue _queue;
     private readonly DispatcherQueueTimer _timer;
     private readonly List<CurvePoint> _points;
@@ -36,13 +37,15 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     public CurvePoint[] Points => _points.ToArray();
     public string TitleText => ToolUtils.GetString("CurveEditorTitle");
     public string CloseText => ToolUtils.GetString("CloseButton");
-    public bool CanEdit => !_deviceMode || !string.IsNullOrEmpty(_editorOutputId);
+    public bool CanEdit => !_license.IsFeatureRestricted(LicenseFeature.Convolution)
+        && (!_deviceMode || !string.IsNullOrEmpty(_editorOutputId));
     public string PresetPlaceholder => ToolUtils.GetString(Presets.Count > 0 ? "CurveCustom" : "CurvePresetEmpty");
     public bool CanAdd => CanEdit && _points.Count < CorrectionCurve.MaxPoints;
     public bool CanRemove => CanEdit && _points.Count > 2;
-    public bool ManualGainEnabled => CanEdit && !AutoPreamp;
+    public bool PreampEditable => CanEdit && !_license.IsFeatureRestricted(LicenseFeature.Preamp);
+    public bool ManualGainEnabled => PreampEditable && !AutoPreamp;
     public bool CanSavePreset => CanEdit && !IsPresetBusy;
-    public bool CanDeletePreset => !IsPresetBusy && SelectedPreset != null;
+    public bool CanDeletePreset => !_license.IsFeatureRestricted(LicenseFeature.Convolution) && !IsPresetBusy && SelectedPreset != null;
     public bool CanUpdatePreset => CanDeletePreset && SelectedPreset!.Points != CorrectionCurve.Encode(_points);
     public bool CanApplyPreset => CanEdit && CanUpdatePreset;
     public bool IsPresetBusy
@@ -54,8 +57,8 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     public int SelectedNode { get => field; set { if (!_syncing && (value < 0 || value >= _points.Count)) return; if (SetProperty(ref field, value) && !_syncing) SyncNodes(); } }
     public double Frequency { get => field; set { if (SetProperty(ref field, value) && !_syncing && double.IsFinite(value)) MovePoint(SelectedNode, value, Gain); } }
     public double Gain { get => field; set { if (SetProperty(ref field, value) && !_syncing && double.IsFinite(value)) MovePoint(SelectedNode, Frequency, value); } }
-    public double PreampDb { get => field; set { if (SetProperty(ref field, value) && double.IsFinite(value)) Changed(); } }
-    public bool AutoPreamp { get => field; set { if (SetProperty(ref field, value)) { OnPropertyChanged(nameof(ManualGainEnabled)); Changed(); } } }
+    public double PreampDb { get => field; set { if (!_syncing && !PreampEditable) { OnPropertyChanged(); return; } if (SetProperty(ref field, value) && double.IsFinite(value)) Changed(); } }
+    public bool AutoPreamp { get => field; set { if (!_syncing && !PreampEditable) { OnPropertyChanged(); return; } if (SetProperty(ref field, value)) { OnPropertyChanged(nameof(ManualGainEnabled)); Changed(); } } }
     public string PresetName { get => field; set => SetProperty(ref field, value); } = "";
     public string ErrorMessage { get => field; private set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(HasError)); } } = "";
     public bool HasError => ErrorMessage.Length > 0;
@@ -85,9 +88,9 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
         }
     }
 
-    public ConvolutionCurveViewModel(IpcService ipc, CurvePresetService store, MusicDatabaseService database)
+    public ConvolutionCurveViewModel(IpcService ipc, CurvePresetService store, MusicDatabaseService database, LicenseService license)
     {
-        _ipc = ipc; _store = store; _database = database;
+        _ipc = ipc; _store = store; _database = database; _license = license;
         var initial = AppSettings.Dsp.ToUnifiedGain();
         _preferredPresetName = initial.CurvePresetName;
         _points = CorrectionCurve.Parse(initial.CurvePoints).ToList();
@@ -100,6 +103,7 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     public async Task OpenAsync()
     {
         _open = true; _ipc.DspStateChanged += PlaybackChanged;
+        _license.StateChanged += LicenseChanged;
         AppSettings.AudioResponseChanged += SettingsChanged;
         ApplyPlaybackState(force: true);
         IsPresetBusy = true;
@@ -118,6 +122,7 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
 
     private void LoadCorrectionDraft(DspSettings settings, bool commit)
     {
+        if (commit && !CanEdit) return;
         if (!CorrectionCurve.UsesCurve(settings)) return;
         _points.Clear();
         _points.AddRange(CorrectionCurve.Parse(settings.CurvePoints));
@@ -138,10 +143,24 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
         if (_dirty) return false;
         _open = false;
         _ipc.DspStateChanged -= PlaybackChanged;
+        _license.StateChanged -= LicenseChanged;
         AppSettings.AudioResponseChanged -= SettingsChanged;
         return true;
     }
     private void PlaybackChanged() => _queue.TryEnqueue(() => ApplyPlaybackState());
+    private void LicenseChanged() => _queue.TryEnqueue(() =>
+    {
+        if (!_open) return;
+        OnPropertyChanged(nameof(CanEdit));
+        OnPropertyChanged(nameof(CanAdd));
+        OnPropertyChanged(nameof(CanRemove));
+        OnPropertyChanged(nameof(ManualGainEnabled));
+        OnPropertyChanged(nameof(PreampEditable));
+        AddPointCommand.NotifyCanExecuteChanged();
+        RemovePointCommand.NotifyCanExecuteChanged();
+        ResetFlatCommand.NotifyCanExecuteChanged();
+        NotifyPresetActions();
+    });
     private void SettingsChanged(object? sender, EventArgs args)
     {
         if (!_writingSettings) _queue.TryEnqueue(() => ApplyPlaybackState(force: true));
@@ -163,6 +182,7 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
         _editorOutputGeneration = generation;
         _deviceMode = mode;
         OnPropertyChanged(nameof(CanEdit));
+        OnPropertyChanged(nameof(PreampEditable));
         OnPropertyChanged(nameof(ManualGainEnabled));
         if (!changed) return;
         // A new output generation restores its saved binding; closing/reopening keeps the current live curve.
@@ -204,7 +224,7 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     private void Changed()
     {
         if (_syncing || !_open || !CanEdit) return;
-        var draft = Draft.Sanitize();
+        var draft = LicensePolicy.PreserveRestrictedPreferences(Draft.Sanitize(), AppSettings.Dsp, _license.RestrictedFeatures);
         _writingSettings = true;
         try
         {
@@ -282,6 +302,7 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanAdd))]
     private void AddPoint()
     {
+        if (!CanAdd) return;
         int left = 0;
         for (int i = 1; i < _points.Count - 1; i++)
             if (_points[i + 1].Frequency / _points[i].Frequency > _points[left + 1].Frequency / _points[left].Frequency) left = i;
@@ -291,9 +312,9 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
         SelectedNode = left + 1; SyncNodes(); Changed();
     }
     [RelayCommand(CanExecute = nameof(CanRemove))]
-    private void RemovePoint() { _points.RemoveAt(SelectedNode); SyncNodes(); Changed(); }
-    [RelayCommand]
-    private void ResetFlat() { _points.Clear(); _points.AddRange(CorrectionCurve.Parse(CorrectionCurve.Flat)); SyncNodes(); Changed(); }
+    private void RemovePoint() { if (!CanRemove) return; _points.RemoveAt(SelectedNode); SyncNodes(); Changed(); }
+    [RelayCommand(CanExecute = nameof(CanEdit))]
+    private void ResetFlat() { if (!CanEdit) return; _points.Clear(); _points.AddRange(CorrectionCurve.Parse(CorrectionCurve.Flat)); SyncNodes(); Changed(); }
     [RelayCommand(CanExecute = nameof(CanSavePreset))]
     private async Task SavePresetAsync()
     {

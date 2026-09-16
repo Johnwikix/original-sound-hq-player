@@ -1871,7 +1871,7 @@
   <data name="CurveLiveSaveError" xml:space="preserve"><value>校正未能保存。请检查存储，然后再次关闭以重试。</value></data>
   <data name="CurveApplyPreset.Content" xml:space="preserve"><value>应用预设</value></data>
   <data name="LicenseRestrictedDsp" xml:space="preserve">
-    <value>许可未激活：均衡器以外的 DSP 音效已锁定，购买完整版以解锁。</value>
+    <value>部分音效功能需要完整许可。购买后可解锁，已保存的设置会保留。</value>
   </data>
   <data name="LicenseTrialRemaining" xml:space="preserve">
     <value>试用期剩余 {0} 天</value>
@@ -1884,7 +1884,7 @@
   </data>
   <data name="LicenseSurround51Locked" xml:space="preserve"><value>许可未激活：5.1 输出已锁定，请在“设置 → 关于”购买完整版以解锁</value></data>
   <data name="LicenseAtmosLocked" xml:space="preserve"><value>许可未激活：Atmos HDMI 直通已锁定，请在“设置 → 关于”购买完整版以解锁</value></data>
-  <data name="LicenseRestrictedOutput" xml:space="preserve"><value>许可未激活：DSD DoP/Native、5.1 输出及 Atmos HDMI 直通已锁定，购买完整版以解锁。</value></data>
+  <data name="LicenseRestrictedOutput" xml:space="preserve"><value>部分高级输出功能需要完整许可。购买后可解锁，已保存的设置会保留。</value></data>
   <data name="DesktopLyricsAutoHide.Header" xml:space="preserve">
     <value>播放详情页在前台时隐藏桌面歌词</value>
   </data>
@@ -1894,4 +1894,6 @@
   <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
     <value>词</value>
   </data>
+  <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>部分功能需要完整许可。购买后可解锁，已保存的设置会保留。</value></data>
+  <data name="LicenseConvolutionLocked" xml:space="preserve"><value>卷积校正需要完整许可，购买后可解锁。</value></data>
 </root>

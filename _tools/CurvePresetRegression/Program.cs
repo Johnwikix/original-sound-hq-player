@@ -14,8 +14,13 @@ var original = new CurvePreset("Reference", CorrectionCurve.Flat);
 await store.SaveAsync([original]);
 var ipc = new IpcService();
 var database = new MusicDatabaseService();
-WinUIMusicPlayer.App.Services = ipc;
-var vm = new ConvolutionCurveViewModel(ipc, store, database);
+var responseLicense = new LicenseService();
+WinUIMusicPlayer.App.Services = new Dictionary<Type, object>
+{
+    [typeof(IpcService)] = ipc,
+    [typeof(LicenseService)] = responseLicense
+};
+var vm = new ConvolutionCurveViewModel(ipc, store, database, new LicenseService());
 var beforeOpen = AppSettings.Dsp;
 await vm.OpenAsync();
 Check(AppSettings.Dsp == beforeOpen, "Opening must not enable or rewrite convolution.");
@@ -83,7 +88,7 @@ AppSettings.DeviceCorrections = new DeviceCorrections { Enabled = true, Bindings
     new DeviceCorrection { DeviceId = "b", Settings = global with { CurvePoints = b.Points, CurvePresetName = b.Name } }
 ] };
 ipc.ChangeOutput("a");
-var following = new ConvolutionCurveViewModel(ipc, store, database);
+var following = new ConvolutionCurveViewModel(ipc, store, database, new LicenseService());
 await following.OpenAsync();
 Check(following.Draft.CurvePoints == a.Points, "Open on actual binding.");
 DspSettings Effective() => AppSettings.ResolveResponseSettings(ipc.CurrentDspState?.State.OutputDeviceId,
@@ -119,7 +124,7 @@ following.MovePoint(0, 20, 5);
 await following.FlushAsync();
 Check(await following.CloseAsync() && Effective().CurvePoints == following.Draft.CurvePoints,
     "Closing must keep the live curve active without saving the binding.");
-following = new ConvolutionCurveViewModel(ipc, store, database);
+following = new ConvolutionCurveViewModel(ipc, store, database, new LicenseService());
 await following.OpenAsync();
 Check(following.Draft.CurvePoints == Effective().CurvePoints && following.Draft.CurvePoints != b.Points,
     "Reopening the editor must show the still-active live curve.");
@@ -189,7 +194,7 @@ AppSettings.EqualizerBands[0].Q = 3;
 AppSettings.OnEqUpdated();
 await CheckResponses("EQ Q edit");
 Check(!before.SequenceEqual(eqResponse.Current!.Combined[0]), "Q edit must refresh both curves.");
-var live = new ConvolutionCurveViewModel(ipc, store, database);
+var live = new ConvolutionCurveViewModel(ipc, store, database, new LicenseService());
 await live.OpenAsync();
 before = eqResponse.Current!.Combined[0].ToArray();
 live.MovePoint(0, 20, -9);
@@ -210,10 +215,15 @@ await CheckResponses("live device correction");
 Check(!before.SequenceEqual(eqResponse.Current!.Combined[0])
     && AppSettings.DeviceCorrections.Find("a")!.Settings.CurvePoints == editedA.CurvePoints,
     "Both response VMs must show live device edits while the saved binding remains intact.");
+responseLicense.SetRestricted(LicenseFeature.Convolution);
+await CheckResponses("restricted live device correction");
+Check(eqResponse.Current!.Fir.SelectMany(x => x).All(x => x == 0), "A live device correction must not bypass the response license gate.");
+responseLicense.SetRestricted(LicenseFeature.None);
+await CheckResponses("restored live device correction");
 await live.CloseAsync();
 await CheckResponses("closed live device editor");
 Check(Effective().CurvePoints != editedA.CurvePoints, "Closing must retain the audible live curve for EQ.");
-live = new ConvolutionCurveViewModel(ipc, store, database);
+live = new ConvolutionCurveViewModel(ipc, store, database, new LicenseService());
 await live.OpenAsync();
 live.LoadCorrectionDraft(AppSettings.DeviceCorrections.Find("a")!.Settings);
 await live.FlushAsync();
@@ -227,10 +237,47 @@ AppSettings.DeviceCorrections = AppSettings.DeviceCorrections with { Enabled = f
 live.MovePoint(0, 20, 1); live.MovePoint(0, 20, 2); live.MovePoint(0, 20, 3);
 await CheckResponses("latest edit wins");
 await live.CloseAsync();
+await CheckResponses("licensed response before expiration");
+var savedResponseSettings = AppSettings.Dsp;
+var licensedFir = eqResponse.Current!.Fir[0].ToArray();
+Check(licensedFir.Any(x => Math.Abs(x) > 0.01), "Expiration test must start with an audible convolution curve.");
+responseLicense.SetRestricted(LicenseFeature.Convolution);
+await CheckResponses("trial expired with cached convolution");
+Check(eqResponse.Current!.Fir.SelectMany(x => x).All(x => x == 0), "Expired trial must remove cached convolution from both response plots.");
+Check(eqResponse.Current.Eq.Any(x => Math.Abs(x) > 0.01)
+    && eqResponse.Current.Combined[0].Zip(eqResponse.Current.Eq).All(x => Math.Abs(x.First - x.Second - savedResponseSettings.HeadroomDb) < 1e-9),
+    "Expiration must preserve free EQ and manual preamp contributions.");
+Check(AppSettings.Dsp == savedResponseSettings, "Response gating must not overwrite saved preferences.");
 eqResponse.Unload(); convolutionResponse.Unload();
+eqResponse.Load(); convolutionResponse.Load();
+await CheckResponses("open response after expiration");
+Check(eqResponse.Current!.Fir.SelectMany(x => x).All(x => x == 0), "Opening an expired response must keep convolution bypassed.");
+responseLicense.SetRestricted(LicenseFeature.None);
+await CheckResponses("license restored");
+Check(eqResponse.Current!.Fir[0].SequenceEqual(licensedFir), "Restoring a license must restore the saved convolution response.");
+responseLicense.SetRestricted(LicenseFeature.Convolution);
+responseLicense.SetRestricted(LicenseFeature.None);
+responseLicense.SetRestricted(LicenseFeature.Convolution);
+await CheckResponses("rapid license changes");
+Check(eqResponse.Current!.Fir.SelectMany(x => x).All(x => x == 0), "A superseded refresh must not restore restricted convolution.");
+AppSettings.Dsp = savedResponseSettings with { AutoPreamp = true };
+await CheckResponses("restricted automatic preamp");
+var eqOnlyPreamp = ResponseMath.AutoPreampDb(AppSettings.EqualizerBands
+    .Select(b => PeakCoefficients.Create(b.FrequencyHz, (float)b.GainDb, (float)b.Q, eqResponse.Current!.Rate)).ToArray(),
+    null, eqResponse.Current!.Rate);
+Check(Math.Abs(eqResponse.Current.AutoGain - eqOnlyPreamp) < 1e-9,
+    "Automatic preamp must exclude cached restricted FIR and still compensate EQ.");
+AppSettings.Dsp = savedResponseSettings with { AutoPreamp = null, AutoConvolutionHeadroom = true };
+await CheckResponses("restricted legacy convolution headroom");
+Check(eqResponse.Current!.AutoGain == 0, "Legacy automatic convolution headroom must ignore a restricted cached FIR.");
+AppSettings.Dsp = savedResponseSettings;
+await CheckResponses("restore saved preferences");
+eqResponse.Unload(); convolutionResponse.Unload();
+responseLicense.SetRestricted(LicenseFeature.None);
 Console.WriteLine("PASS: both real response VMs refresh on EQ, convolution, device binding and rapid edits.");
+Console.WriteLine("PASS: response license expiration, cached FIR bypass, free EQ/preamp, reopen and license restoration.");
 
-var saving = new ConvolutionCurveViewModel(ipc, store, database);
+var saving = new ConvolutionCurveViewModel(ipc, store, database, new LicenseService());
 await saving.OpenAsync();
 saving.MovePoint(0, 20, 4);
 database.SaveGate = new();
@@ -248,7 +295,7 @@ Check(await saving.CloseAsync() && database.SavedDsp!.CurvePoints == saving.Draf
     "Retry close persists the latest curve.");
 Console.WriteLine("PASS: slow saves preserve newer edits; failed saves can be retried on close.");
 
-var offline = new ConvolutionCurveViewModel(ipc, store, database);
+var offline = new ConvolutionCurveViewModel(ipc, store, database, new LicenseService());
 await offline.OpenAsync();
 offline.MovePoint(0, 20, -7);
 ipc.FailPublish = true;
@@ -264,7 +311,7 @@ AppSettings.DeviceCorrections = new DeviceCorrections { Enabled = true, Bindings
     new DeviceCorrection { DeviceId = "b", Settings = AppSettings.Dsp with { CurvePoints = b.Points, CurvePresetName = b.Name } }
 ] };
 ipc.ChangeOutput("a");
-var switching = new ConvolutionCurveViewModel(ipc, store, database);
+var switching = new ConvolutionCurveViewModel(ipc, store, database, new LicenseService());
 await switching.OpenAsync();
 switching.MovePoint(0, 20, -8);
 store.SaveGate = new();
@@ -283,3 +330,29 @@ Check(Effective().CurvePoints == b.Points
     "After the delayed save, Apply must restore B, never A's preset.");
 await switching.CloseAsync();
 Console.WriteLine("PASS: delayed preset saves cannot change the active device's restore target.");
+
+// An already open editor must follow license changes, not just the entry button.
+var license = new LicenseService();
+var licensedEditor = new ConvolutionCurveViewModel(ipc, store, database, license);
+await licensedEditor.OpenAsync();
+var savedBeforeRestriction = AppSettings.Dsp;
+license.SetRestricted(LicenseFeature.Convolution);
+Check(!licensedEditor.CanEdit && !licensedEditor.CanSavePreset && !licensedEditor.CanDeletePreset
+    && !licensedEditor.AddPointCommand.CanExecute(null), "Open editor did not lock after license change.");
+licensedEditor.MovePoint(0, 20, 11);
+Check(AppSettings.Dsp == savedBeforeRestriction, "Locked editor changed saved preferences.");
+license.SetRestricted(LicenseFeature.None);
+Check(licensedEditor.CanEdit && licensedEditor.AddPointCommand.CanExecute(null), "Editor did not unlock after license recovery.");
+license.SetRestricted(LicenseFeature.Preamp);
+Check(licensedEditor.CanEdit && !licensedEditor.PreampEditable && !licensedEditor.ManualGainEnabled,
+    "Adding only preamp to the policy must leave curve editing available.");
+double preservedGain = AppSettings.Dsp.HeadroomDb;
+licensedEditor.PreampDb = preservedGain + 1;
+Check(AppSettings.Dsp.HeadroomDb == preservedGain, "Curve editor bypassed the configurable preamp gate.");
+await licensedEditor.CloseAsync();
+bindingsVm.ConvolutionRestricted = true;
+bool modeBeforeRestriction = bindingsVm.DeviceCorrectionEnabled;
+bindingsVm.DeviceCorrectionEnabled = !modeBeforeRestriction;
+Check(bindingsVm.DeviceCorrectionEnabled == modeBeforeRestriction && !bindingsVm.CanChangeCorrectionMode
+    && !bindingsVm.BindCorrectionCommand.CanExecute(null), "Device binding bypassed the convolution gate.");
+Console.WriteLine("PASS: live convolution editor and device bindings follow the feature gate without changing saved settings.");

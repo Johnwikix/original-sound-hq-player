@@ -8,5 +8,6 @@
   <ItemGroup>
     <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
     <Compile Include="../../Services/LicenseService.cs" />
+    <Compile Include="../../Services/LicensePolicy.cs" />
   </ItemGroup>
 </Project>

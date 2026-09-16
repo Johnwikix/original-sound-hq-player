@@ -77,7 +77,7 @@ public partial class DspSettingsViewModel
         get => AppSettings.DeviceCorrections.Enabled;
         set
         {
-            if (value == DeviceCorrectionEnabled || CorrectionBusy) return;
+            if (value == DeviceCorrectionEnabled || CorrectionBusy || ConvolutionRestricted) return;
             _ = SaveCorrectionsAsync(AppSettings.DeviceCorrections with { Enabled = value });
         }
     }
@@ -85,14 +85,14 @@ public partial class DspSettingsViewModel
     public string ActualCorrectionOutput { get => field; private set => SetProperty(ref field, value); } = "";
     public string CorrectionBindingStatus { get => field; private set => SetProperty(ref field, value); } = "";
     public string SaveCorrectionLabel { get => field; private set => SetProperty(ref field, value); } = "";
-    public bool CanChangeCorrectionMode => !CorrectionBusy;
+    public bool CanChangeCorrectionMode => !CorrectionBusy && !ConvolutionRestricted;
     public bool CorrectionBusy { get => field; private set { if (SetProperty(ref field, value)) { OnPropertyChanged(nameof(CanChangeCorrectionMode)); OnPropertyChanged(nameof(CanRetryCorrection)); RetryCorrectionCommand.NotifyCanExecuteChanged(); RefreshCorrectionState(); } } }
 
     private string? CorrectionDeviceId => string.IsNullOrEmpty(SelectedCorrectionDevice?.EndpointId)
         ? _actualCorrectionDeviceId : SelectedCorrectionDevice.EndpointId;
-    private bool CanBindCorrection() => !CorrectionBusy && !string.IsNullOrEmpty(CorrectionDeviceId)
+    private bool CanBindCorrection() => !CorrectionBusy && !ConvolutionRestricted && !string.IsNullOrEmpty(CorrectionDeviceId)
         && (AppSettings.DeviceCorrections.Find(CorrectionDeviceId) != null || AppSettings.DeviceCorrections.Bindings.Length < 64);
-    private bool HasCorrection() => !CorrectionBusy && AppSettings.DeviceCorrections.Find(CorrectionDeviceId) != null;
+    private bool HasCorrection() => !CorrectionBusy && !ConvolutionRestricted && AppSettings.DeviceCorrections.Find(CorrectionDeviceId) != null;
 
     private bool CanLoadCorrection() => HasCorrection() && (_loadCorrectionDraft == null
         || CorrectionCurve.UsesCurve(AppSettings.DeviceCorrections.Find(CorrectionDeviceId)!.Settings));
@@ -155,6 +155,7 @@ public partial class DspSettingsViewModel
     [RelayCommand(CanExecute = nameof(CanBindCorrection))]
     private async Task BindCorrectionAsync()
     {
+        if (!CanBindCorrection()) return;
         string? id = CorrectionDeviceId;
         if (string.IsNullOrEmpty(id)) return;
         var bindings = AppSettings.DeviceCorrections.Bindings.ToList();
@@ -170,6 +171,7 @@ public partial class DspSettingsViewModel
     [RelayCommand(CanExecute = nameof(CanLoadCorrection))]
     private async Task LoadCorrectionAsync()
     {
+        if (!CanLoadCorrection()) return;
         if (AppSettings.DeviceCorrections.Find(CorrectionDeviceId) is not { } binding) return;
         if (_loadCorrectionDraft != null)
         {
@@ -189,6 +191,7 @@ public partial class DspSettingsViewModel
     [RelayCommand(CanExecute = nameof(HasCorrection))]
     private async Task RemoveCorrectionAsync()
     {
+        if (!HasCorrection()) return;
         string? id = CorrectionDeviceId;
         var candidate = AppSettings.DeviceCorrections with
         {
@@ -198,7 +201,7 @@ public partial class DspSettingsViewModel
     }
 
     private DeviceCorrections? _pendingCorrection;
-    public bool CanRetryCorrection => !CorrectionBusy && (_pendingCorrection != null || _ipc.CorrectionSyncFailed);
+    public bool CanRetryCorrection => !CorrectionBusy && !ConvolutionRestricted && (_pendingCorrection != null || _ipc.CorrectionSyncFailed);
     public bool ShowRetryCorrection => CorrectionFailed && (_pendingCorrection != null || _ipc.CorrectionSyncFailed);
 
     [RelayCommand(CanExecute = nameof(CanRetryCorrection))]
@@ -206,7 +209,7 @@ public partial class DspSettingsViewModel
 
     private async Task SaveCorrectionsAsync(DeviceCorrections candidate)
     {
-        if (CorrectionBusy) return;
+        if (CorrectionBusy || ConvolutionRestricted) return;
         CorrectionBusy = true;
         _pendingCorrection = candidate;
         bool saved = false;

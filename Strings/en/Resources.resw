@@ -1872,7 +1872,7 @@
   <data name="CurveLiveSaveError" xml:space="preserve"><value>The correction could not be saved. Check storage, then close again to retry.</value></data>
   <data name="CurveApplyPreset.Content" xml:space="preserve"><value>Apply preset</value></data>
   <data name="LicenseRestrictedDsp" xml:space="preserve">
-    <value>No active license: DSP effects other than the equalizer are locked. Buy the full version to unlock.</value>
+    <value>Some audio effects require the full license. Purchase to unlock them; your saved settings are retained.</value>
   </data>
   <data name="LicenseTrialRemaining" xml:space="preserve">
     <value>{0} days left in trial</value>
@@ -1885,7 +1885,7 @@
   </data>
   <data name="LicenseSurround51Locked" xml:space="preserve"><value>No active license: 5.1 output is locked. Buy the full version in Settings → About to unlock</value></data>
   <data name="LicenseAtmosLocked" xml:space="preserve"><value>No active license: Atmos HDMI passthrough is locked. Buy the full version in Settings → About to unlock</value></data>
-  <data name="LicenseRestrictedOutput" xml:space="preserve"><value>No active license: DSD DoP/Native, 5.1 output and Atmos HDMI passthrough are locked. Buy the full version to unlock.</value></data>
+  <data name="LicenseRestrictedOutput" xml:space="preserve"><value>Some advanced output features require the full license. Purchase to unlock them; your saved settings are retained.</value></data>
   <data name="DesktopLyricsAutoHide.Header" xml:space="preserve">
     <value>Hide desktop lyrics while playback details are in the foreground</value>
   </data>
@@ -1895,4 +1895,6 @@
   <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
     <value>Ly</value>
   </data>
+  <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>Some features require the full license. Purchase to unlock them; your saved settings are retained.</value></data>
+  <data name="LicenseConvolutionLocked" xml:space="preserve"><value>Convolution correction requires the full license. Purchase to unlock.</value></data>
 </root>

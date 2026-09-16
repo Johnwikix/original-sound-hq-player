@@ -20,9 +20,9 @@ namespace WinUIMusicPlayer.ViewModel
         /// <summary>关于页显示试用剩余天数或许可受限说明。</summary>
         public string LicenseDescription => _licenseService.TrialRemainingDays is int days
             ? string.Format(ToolUtils.GetString("LicenseTrialRemaining"), days)
-            : LicenseRestricted ? ToolUtils.GetString("LicenseRestrictedDsp") : "";
+            : LicenseRestricted ? ToolUtils.GetString("LicenseRestrictedFeatures") : "";
 
-        /// <summary>许可非活跃：高级输出锁定，DSP 仅保留均衡器。</summary>
+        /// <summary>许可非活跃；具体设置的可用性由 LicensePolicy 决定。</summary>
         public bool LicenseRestricted
         {
             get => field;
@@ -36,26 +36,28 @@ namespace WinUIMusicPlayer.ViewModel
                     OnPropertyChanged(nameof(AtmosPassthroughAllowed));
                     OnPropertyChanged(nameof(Surround51CardDescription));
                     OnPropertyChanged(nameof(AtmosCardDescription));
+                    OnPropertyChanged(nameof(OutputLicenseRestricted));
                 }
             }
         }
 
         /// <summary>DSD Dop/Native 开关可用性：试用受限时锁定。</summary>
-        public bool DsdBitstreamAllowed => !LicenseRestricted;
+        public bool DsdBitstreamAllowed => !_licenseService.IsFeatureRestricted(LicenseFeature.DsdBitstream);
 
         /// <summary>5.1 输出仅在许可不受限时可编辑。</summary>
-        public bool Surround51Allowed => !LicenseRestricted;
+        public bool Surround51Allowed => !_licenseService.IsFeatureRestricted(LicenseFeature.Surround51);
         /// <summary>Atmos HDMI 直通仅在许可不受限时可编辑。</summary>
-        public bool AtmosPassthroughAllowed => !LicenseRestricted;
+        public bool AtmosPassthroughAllowed => !_licenseService.IsFeatureRestricted(LicenseFeature.AtmosPassthrough);
+        public bool OutputLicenseRestricted => _licenseService.IsFeatureRestricted(LicenseFeature.AllOutput);
         /// <summary>5.1 卡片保留正常说明，受限时显示购买提示。</summary>
-        public string Surround51CardDescription => ToolUtils.GetString(LicenseRestricted
+        public string Surround51CardDescription => ToolUtils.GetString(!Surround51Allowed
             ? "LicenseSurround51Locked" : "ExperimentalSurround51Description");
         /// <summary>Atmos 卡片保留兼容性说明，受限时显示购买提示。</summary>
-        public string AtmosCardDescription => ToolUtils.GetString(LicenseRestricted
+        public string AtmosCardDescription => ToolUtils.GetString(!AtmosPassthroughAllowed
             ? "LicenseAtmosLocked" : "ExperimentalAtmosDescription");
 
         /// <summary>DSD 卡片描述：受限时替换为锁定提示。</summary>
-        public string DsdCardDescription => LicenseRestricted
+        public string DsdCardDescription => !DsdBitstreamAllowed
             ? ToolUtils.GetString("LicenseDsdLocked")
             : ToolUtils.GetString("DsdDopDescription");
 

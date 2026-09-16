@@ -96,7 +96,7 @@
             <StackPanel Spacing="8">
                 <CheckBox
                     x:Name="AutoHeadroom"
-                    IsEnabled="{x:Bind ViewModel.CanEdit, Mode=OneWay}"
+                    IsEnabled="{x:Bind ViewModel.PreampEditable, Mode=OneWay}"
                     x:Uid="CurveAutoHeadroom"
                     IsChecked="{x:Bind ViewModel.AutoPreamp, Mode=TwoWay}" />
             </StackPanel>

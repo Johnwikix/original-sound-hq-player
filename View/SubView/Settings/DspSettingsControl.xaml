@@ -45,16 +45,16 @@
                 <controls:SettingsCard
                     Description="{x:Bind tool:ToolUtils.GetString('DspNormalizeDescription')}"
                     Header="{x:Bind tool:ToolUtils.GetString('DspNormalize')}"
-                    IsEnabled="{x:Bind ViewModel.EffectsEditable, Mode=OneWay}">
+                    IsEnabled="{x:Bind ViewModel.NormalizeEditable, Mode=OneWay}">
                     <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.NormalizeLoudness, Mode=TwoWay}" />
                 </controls:SettingsCard>
                 <controls:SettingsCard
                     Description="{x:Bind tool:ToolUtils.GetString('DspTargetDescription')}"
                     Header="{x:Bind tool:ToolUtils.GetString('DspTarget')}"
-                    IsEnabled="{x:Bind ViewModel.EffectsEditable, Mode=OneWay}">
+                    IsEnabled="{x:Bind ViewModel.NormalizeEditable, Mode=OneWay}">
                     <NumberBox
                         Width="220"
-                        IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.EffectsEditable, ViewModel.NormalizeLoudness), Mode=OneWay}"
+                        IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.NormalizeEditable, ViewModel.NormalizeLoudness), Mode=OneWay}"
                         Maximum="-8"
                         Minimum="-24"
                         SmallChange="1"
@@ -69,7 +69,7 @@
                 <controls:SettingsCard
                     Description="{x:Bind tool:ToolUtils.GetString('DspHeadroomDescription')}"
                     Header="{x:Bind tool:ToolUtils.GetString('DspHeadroom')}"
-                    IsEnabled="{x:Bind ViewModel.EffectsEditable, Mode=OneWay}">
+                    IsEnabled="{x:Bind ViewModel.PreampEditable, Mode=OneWay}">
                     <Grid ColumnDefinitions="Auto,Auto,Auto" ColumnSpacing="12">
                         <TextBlock
                             VerticalAlignment="Center"
@@ -100,9 +100,9 @@
                     HorizontalAlignment="Right"
                     Click="ManageDeviceBindings_Click"
                     Content="{x:Bind tool:ToolUtils.GetString('DspDeviceTarget')}"
-                    IsEnabled="{x:Bind ViewModel.EffectsEditable, Mode=OneWay}"
+                    IsEnabled="{x:Bind ViewModel.ConvolutionEditable, Mode=OneWay}"
                     Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.WaveMode), Mode=OneWay}" />
-                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('CurveSource')}" IsEnabled="{x:Bind ViewModel.EffectsEditable, Mode=OneWay}">
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('CurveSource')}" IsEnabled="{x:Bind ViewModel.ConvolutionEditable, Mode=OneWay}">
                     <ComboBox Width="220" SelectedIndex="{x:Bind ViewModel.ConvolutionSourceIndex, Mode=TwoWay}">
                         <ComboBoxItem x:Uid="CurveSourceDraw" />
                         <ComboBoxItem x:Uid="CurveSourceWave" />
@@ -111,7 +111,7 @@
                 <controls:SettingsCard
                     Description="{x:Bind tool:ToolUtils.GetString('CurveEditorDescription')}"
                     Header="{x:Bind tool:ToolUtils.GetString('CurveEditorTitle')}"
-                    IsEnabled="{x:Bind ViewModel.EffectsEditable, Mode=OneWay}"
+                    IsEnabled="{x:Bind ViewModel.ConvolutionEditable, Mode=OneWay}"
                     Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.CurveMode), Mode=OneWay}">
                     <Button x:Uid="CurveEdit" Click="EditCurve_Click" />
                 </controls:SettingsCard>
@@ -120,7 +120,7 @@
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                     TextWrapping="Wrap"
                     Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.WaveMode), Mode=OneWay}" />
-                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspConvolution')}" IsEnabled="{x:Bind ViewModel.EffectsEditable, Mode=OneWay}">
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspConvolution')}" IsEnabled="{x:Bind ViewModel.ConvolutionEditable, Mode=OneWay}">
                     <ToggleSwitch
                         x:Uid="DspConvolutionToggle"
                         MinWidth="0"
@@ -129,7 +129,7 @@
                 <controls:SettingsCard
                     Description="{x:Bind ViewModel.ImpulseName, Mode=OneWay}"
                     Header="{x:Bind tool:ToolUtils.GetString('DspIrFile')}"
-                    IsEnabled="{x:Bind ViewModel.EffectsEditable, Mode=OneWay}"
+                    IsEnabled="{x:Bind ViewModel.ConvolutionEditable, Mode=OneWay}"
                     Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.WaveMode), Mode=OneWay}">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button
@@ -163,7 +163,7 @@
                 <controls:SettingsCard
                     Description="{x:Bind tool:ToolUtils.GetString('DspBalanceDescription')}"
                     Header="{x:Bind tool:ToolUtils.GetString('DspBalance')}"
-                    IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.EffectsEditable, ViewModel.StereoSupported), Mode=OneWay}">
+                    IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.BalanceEditable, ViewModel.StereoSupported), Mode=OneWay}">
                     <Grid Width="300" ColumnDefinitions="100,*">
                         <TextBlock
                             Grid.Column="0"
@@ -179,16 +179,16 @@
                             Value="{x:Bind ViewModel.Balance, Mode=TwoWay}" />
                     </Grid>
                 </controls:SettingsCard>
-                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspSwap')}" IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.EffectsEditable, ViewModel.StereoSupported), Mode=OneWay}">
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspSwap')}" IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.SwapEditable, ViewModel.StereoSupported), Mode=OneWay}">
                     <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.SwapChannels, Mode=TwoWay}" />
                 </controls:SettingsCard>
-                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspMono')}" IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.EffectsEditable, ViewModel.StereoSupported), Mode=OneWay}">
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspMono')}" IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.MonoEditable, ViewModel.StereoSupported), Mode=OneWay}">
                     <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.Mono, Mode=TwoWay}" />
                 </controls:SettingsCard>
                 <controls:SettingsCard
                     Description="{x:Bind tool:ToolUtils.GetString('DspCrossfeedDescription')}"
                     Header="{x:Bind tool:ToolUtils.GetString('DspCrossfeed')}"
-                    IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.EffectsEditable, ViewModel.StereoSupported), Mode=OneWay}">
+                    IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.CrossfeedEditable, ViewModel.StereoSupported), Mode=OneWay}">
                     <ComboBox Width="220" SelectedIndex="{x:Bind ViewModel.CrossfeedIndex, Mode=TwoWay}">
                         <ComboBoxItem x:Uid="DspCrossfeedOff" />
                         <ComboBoxItem x:Uid="DspCrossfeedLight" />
@@ -198,7 +198,7 @@
                 <controls:SettingsCard
                     Description="{x:Bind tool:ToolUtils.GetString('DspWidthDescription')}"
                     Header="{x:Bind tool:ToolUtils.GetString('DspWidth')}"
-                    IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.EffectsEditable, ViewModel.StereoSupported), Mode=OneWay}">
+                    IsEnabled="{x:Bind tool:BindUtils.BoolAndConverter(ViewModel.WidthEditable, ViewModel.StereoSupported), Mode=OneWay}">
                     <Grid Width="300" ColumnDefinitions="100,*">
                         <TextBlock
                             Grid.Column="0"
@@ -218,7 +218,7 @@
                     x:Uid="DspReset"
                     HorizontalAlignment="Left"
                     Click="Reset_Click"
-                    IsEnabled="{x:Bind ViewModel.EffectsEditable, Mode=OneWay}" />
+                    IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}" />
             </StackPanel>
         </Grid>
     </ScrollViewer>

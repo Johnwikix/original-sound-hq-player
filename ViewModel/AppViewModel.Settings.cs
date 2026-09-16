@@ -1034,7 +1034,7 @@ namespace WinUIMusicPlayer.ViewModel
             get => field;
             set
             {
-                if (LicenseRestricted)
+                if (!DsdBitstreamAllowed)
                 {
                     // 试用受限：拒绝写入并通知绑定回弹，保持用户原有偏好（购买后自动恢复生效）。
                     OnPropertyChanged(nameof(IsDopEnabled));
@@ -1056,7 +1056,7 @@ namespace WinUIMusicPlayer.ViewModel
             get => field;
             set
             {
-                if (LicenseRestricted)
+                if (!Surround51Allowed)
                 {
                     OnPropertyChanged(nameof(ExperimentalSurround51));
                     return;
@@ -1074,7 +1074,7 @@ namespace WinUIMusicPlayer.ViewModel
             get => field;
             set
             {
-                if (LicenseRestricted)
+                if (!AtmosPassthroughAllowed)
                 {
                     OnPropertyChanged(nameof(ExperimentalAtmosPassthrough));
                     return;

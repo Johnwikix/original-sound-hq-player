@@ -442,25 +442,10 @@ namespace WinUIMusicPlayer.Services
         public void UpdateDsp()
         {
             Span<byte> buffer = stackalloc byte[DspProtocol.SettingsSize];
-            DspProtocol.WriteSettings(buffer, _license.IsRestricted ? ApplyLicenseOverlay(AppSettings.Dsp) : AppSettings.Dsp);
+            DspProtocol.WriteSettings(buffer, LicensePolicy.ApplyDspRestrictions(AppSettings.Dsp, _license.RestrictedFeatures));
             Publish(CommandId.UpdateDsp, buffer);
             PublishLiveCorrection();
         }
-
-        /// <summary>试用受限时的音效覆盖：保留 EQ 依赖的总开关，其余音效中性化。
-        /// 只覆盖推送内容不落盘，购买后用户原设置自动恢复。设备绑定的卷积开关跟随全局值，同样被覆盖。</summary>
-        private static DspSettings ApplyLicenseOverlay(DspSettings settings) => settings with
-        {
-            NormalizeLoudness = false,
-            AutoPreamp = false,
-            HeadroomDb = 0,
-            Balance = 0,
-            SwapChannels = false,
-            Mono = false,
-            Crossfeed = 0,
-            StereoWidth = 1,
-            ConvolutionEnabled = false
-        };
 
         /// <summary>许可门控变化时重推输出与音效设置；剩余天数变化不触发重推：
         /// 受限瞬间 DSD 位流会话当场回退 PCM，购买后原设置即时恢复。</summary>
@@ -495,9 +480,10 @@ namespace WinUIMusicPlayer.Services
         private long _previewSequence = DateTime.UtcNow.Ticks;
         public void PreviewDsp(DspSettings settings, string deviceId, long generation)
         {
-            if (_license.IsRestricted) return; // 卷积实时试听属于受限功能
+            if (_license.IsFeatureRestricted(LicenseFeature.Convolution)) return;
             Span<byte> buffer = stackalloc byte[DspPreview.Size];
-            new DspPreview(Interlocked.Increment(ref _previewSequence), generation, deviceId, false, settings).Write(buffer);
+            new DspPreview(Interlocked.Increment(ref _previewSequence), generation, deviceId, false,
+                LicensePolicy.ApplyDspRestrictions(settings, _license.RestrictedFeatures)).Write(buffer);
             Publish(CommandId.PreviewDsp, buffer);
         }
 

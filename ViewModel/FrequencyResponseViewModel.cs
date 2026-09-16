@@ -32,6 +32,7 @@ public sealed class FrequencyResponseViewModel : ObservableObject
         if (_loaded) return;
         _loaded = true;
         App.Services.GetRequiredService<IpcService>().DspStateChanged += StateChanged;
+        App.Services.GetRequiredService<LicenseService>().StateChanged += StateChanged;
         AppSettings.EqUpdated += EqChanged;
         AppSettings.AudioResponseChanged += EqChanged;
         Refresh();
@@ -40,6 +41,7 @@ public sealed class FrequencyResponseViewModel : ObservableObject
     {
         _loaded = false;
         App.Services.GetRequiredService<IpcService>().DspStateChanged -= StateChanged;
+        App.Services.GetRequiredService<LicenseService>().StateChanged -= StateChanged;
         AppSettings.EqUpdated -= EqChanged;
         AppSettings.AudioResponseChanged -= EqChanged;
         _cancellation?.Cancel(); _cancellation?.Dispose(); _cancellation = null;
@@ -56,7 +58,10 @@ public sealed class FrequencyResponseViewModel : ObservableObject
         var state = App.Services.GetRequiredService<IpcService>().CurrentDspState?.State;
         int rate = state is { SampleRate: >= 8000 } value ? value.SampleRate : 48000;
         _rate = rate;
-        var dsp = AppSettings.ResolveResponseSettings(state?.OutputDeviceId, state?.OutputGeneration ?? 0);
+        // Apply the playback policy after resolving saved/device/live corrections.
+        var dsp = LicensePolicy.ApplyDspRestrictions(
+            AppSettings.ResolveResponseSettings(state?.OutputDeviceId, state?.OutputGeneration ?? 0),
+            App.Services.GetRequiredService<LicenseService>().RestrictedFeatures);
         bool eqEnabled = AppSettings.IsEqualizerEnabled;
         var eq = AppSettings.EqualizerBands.Select(b => PeakCoefficients.Create(b.FrequencyHz, (float)b.GainDb, (float)b.Q, rate)).ToArray();
         string key = rate + ":" + (CorrectionCurve.UsesCurve(dsp) ? "curve:" + dsp.CurvePoints : "wave:" + dsp.ImpulsePath);
@@ -77,7 +82,7 @@ public sealed class FrequencyResponseViewModel : ObservableObject
                     spectra = impulse.Channels.Select(ResponseMath.Spectrum).ToArray();
                 }
                 token.ThrowIfCancellationRequested();
-                double automatic = !dsp.AutoPreamp.HasValue && dsp.AutoConvolutionHeadroom && CorrectionCurve.UsesCurve(dsp) && spectra != null
+                double automatic = dsp.ConvolutionEnabled && !dsp.AutoPreamp.HasValue && dsp.AutoConvolutionHeadroom && CorrectionCurve.UsesCurve(dsp) && spectra != null
                     ? -20 * Math.Log10(Math.Max(1, spectra.SelectMany(x => x.Take(x.Length / 2 + 1)).Max(x => x.Magnitude))) : 0;
                 double preamp = dsp.AutoPreamp == true ? ResponseMath.AutoPreampDb(eqEnabled ? eq : [], dsp.ConvolutionEnabled ? spectra : null, rate) : dsp.HeadroomDb;
                 double trim = dsp.AutoPreamp.HasValue ? 0 : dsp.ConvolutionTrimDb + automatic;

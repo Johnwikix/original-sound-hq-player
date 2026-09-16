@@ -66,6 +66,30 @@ static async Task RunTestsAsync()
     context.Query = () => Task.FromResult(inactive);
     await Task.Run(service.RefreshAsync);
     Check(service.IsRestricted && service.CanPurchase, "Background refresh or inactive license failed");
+    Check(service.IsFeatureRestricted(LicenseFeature.Convolution)
+        && !service.IsFeatureRestricted(LicenseFeature.LoudnessNormalization | LicenseFeature.Preamp | LicenseFeature.Crossfeed),
+        "Inactive license must only gate convolution within DSP");
+    var dsp = new DspSettings { IsEnabled = true, ConvolutionEnabled = true, ImpulsePath = "saved.wav",
+        CurvePresetName = "saved", NormalizeLoudness = true, TargetLufs = -16, AutoPreamp = true,
+        HeadroomDb = -4, Balance = .3, SwapChannels = true, Mono = true, Crossfeed = .4, StereoWidth = 1.2 };
+    var gatedDsp = LicensePolicy.ApplyDspRestrictions(dsp, service.RestrictedFeatures);
+    Check(gatedDsp == dsp with { ConvolutionEnabled = false }, "Convolution gate changed a free DSP setting");
+    Check(dsp.ConvolutionEnabled && dsp.ImpulsePath == "saved.wav", "Gate overwrote persisted convolution preferences");
+    var reset = LicensePolicy.PreserveRestrictedPreferences(new(), dsp, service.RestrictedFeatures);
+    Check(reset.ConvolutionEnabled && reset.ImpulsePath == dsp.ImpulsePath && reset.CurvePresetName == dsp.CurvePresetName
+        && !reset.NormalizeLoudness && reset.Balance == 0 && reset.StereoWidth == 1,
+        "Reset must reset free effects while retaining locked convolution preferences");
+    Check(ReferenceEquals(dsp, LicensePolicy.ApplyDspRestrictions(dsp, LicenseFeature.None)),
+        "Unlocked DSP should retain its original snapshot");
+    foreach (var feature in new[] { LicenseFeature.LoudnessNormalization, LicenseFeature.Preamp, LicenseFeature.Balance,
+        LicenseFeature.ChannelSwap, LicenseFeature.Mono, LicenseFeature.Crossfeed, LicenseFeature.StereoWidth })
+    {
+        var effectiveDsp = LicensePolicy.ApplyDspRestrictions(dsp, feature);
+        Check(effectiveDsp.ConvolutionEnabled && effectiveDsp != dsp, "Adding a basic DSP feature must not disable convolution");
+        Check(LicensePolicy.PreserveRestrictedPreferences(effectiveDsp, dsp, feature) == dsp,
+            "Every configurable DSP group must preserve its saved values");
+    }
+    Console.WriteLine("PASS: convolution-only DSP overlay, free effects, reset preservation, configurable feature groups.");
     effective = preferences;
     service.ApplyOutputRestrictions(ref effective);
     Check(!effective.IsDopEnabled && !effective.ExperimentalSurround51 && !effective.ExperimentalAtmosPassthrough,
@@ -73,6 +97,10 @@ static async Task RunTestsAsync()
     Check(preferences.IsDopEnabled && preferences.ExperimentalSurround51 && preferences.ExperimentalAtmosPassthrough
         && effective.IsEqualizerEnabled && effective.Volume == preferences.Volume && effective.OutputMode == preferences.OutputMode,
         "Output gate changed saved preferences or unrelated playback settings");
+    var onlyDsd = preferences;
+    LicensePolicy.ApplyOutputRestrictions(ref onlyDsd, LicenseFeature.DsdBitstream);
+    Check(!onlyDsd.IsDopEnabled && onlyDsd.ExperimentalSurround51 && onlyDsd.ExperimentalAtmosPassthrough,
+        "Removing output features from the policy must restore them independently");
     Console.WriteLine("PASS: DSD/5.1/Atmos output gate, full/trial restoration and preference preservation.");
     context.Query = () => throw new IOException("Store unavailable");
     await service.RefreshAsync();
