@@ -153,6 +153,7 @@ namespace WinUIMusicPlayer.Services
                 await _musicDatabaseService.SaveLyricsAsync(music.Id, lrcOut, transOut, krcOut, tKrcOut);
                 await _musicDatabaseService.UpdateMusicInfo(music);
                 FixEndMs(lrcLyrics, music.Duration.TotalMilliseconds);
+                    word.Word = ToolUtils.GetString("LyricsGetFailed");
                 _previousLyrics = lrcLyrics;
                 return lrcLyrics;
             }
