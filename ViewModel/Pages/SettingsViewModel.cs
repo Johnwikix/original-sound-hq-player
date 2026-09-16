@@ -7,10 +7,12 @@ namespace WinUIMusicPlayer.ViewModel
     public partial class SettingsViewModel : ObservableObject
     {
         public AppViewModel AppViewModel { get; }
+        public DesktopLyrics.DesktopLyricsViewModel DesktopLyrics { get; }
 
-        public SettingsViewModel(AppViewModel appViewModel)
+        public SettingsViewModel(AppViewModel appViewModel, DesktopLyrics.DesktopLyricsViewModel desktopLyrics)
         {
             AppViewModel = appViewModel;
+            DesktopLyrics = desktopLyrics;
         }
 
         public Visibility CheckSystemVersion()

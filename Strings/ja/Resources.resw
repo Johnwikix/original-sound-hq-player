@@ -1886,5 +1886,14 @@
   <data name="LicenseSurround51Locked" xml:space="preserve"><value>有効なライセンスがありません。5.1 出力はロックされています。「設定 → このアプリについて」で製品版を購入すると解除できます</value></data>
   <data name="LicenseAtmosLocked" xml:space="preserve"><value>有効なライセンスがありません。Atmos HDMI パススルーはロックされています。「設定 → このアプリについて」で製品版を購入すると解除できます</value></data>
   <data name="LicenseRestrictedOutput" xml:space="preserve"><value>有効なライセンスがありません。DSD DoP/Native、5.1 出力、Atmos HDMI パススルーはロックされています。製品版を購入すると解除できます。</value></data>
+  <data name="DesktopLyricsAutoHide.Header" xml:space="preserve">
+    <value>再生詳細ページが前面にあるときデスクトップ歌詞を隠す</value>
+  </data>
+  <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
+    <value>デスクトップ歌詞が有効な場合のみ適用されます。ページを離れるか、プレーヤーがバックグラウンドになると再表示します。</value>
+  </data>
+  <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
+    <value>词</value>
+  </data>
 </root>
 

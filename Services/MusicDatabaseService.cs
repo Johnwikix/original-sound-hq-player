@@ -1046,6 +1046,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.BackdropType = settings.AppStyle;
                 AppViewModel.ThemeType = settings.AppTheme;
                 AppViewModel.IsRunningBackend = settings.IsRunningBackend;
+                AppSettings.AutoHideDesktopLyricsOnPlayingDetail = settings.AutoHideDesktopLyricsOnPlayingDetail;
                 AppSettings.IsDesktopLyricsEnabled = settings.IsDesktopLyricsEnabled;
                 AppSettings.IsDesktopLyricsLocked = settings.IsDesktopLyricsLocked;
                 AppSettings.IsDesktopLyricsKaraokeEnabled = settings.IsDesktopLyricsKaraokeEnabled;
@@ -1304,6 +1305,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.ArtistSplitSymbols = AppViewModel.ArtistSplitSymbols;
             newSettings.PlayingDetailAlignment = AppViewModel.PlayingDetailAlignment;
             newSettings.UsePlayingDetailAlignmentInPortrait = AppViewModel.UsePlayingDetailAlignmentInPortrait;
+            newSettings.AutoHideDesktopLyricsOnPlayingDetail = AppSettings.AutoHideDesktopLyricsOnPlayingDetail;
             newSettings.IsDesktopLyricsEnabled = AppSettings.IsDesktopLyricsEnabled;
             newSettings.IsDesktopLyricsLocked = AppSettings.IsDesktopLyricsLocked;
             newSettings.IsDesktopLyricsKaraokeEnabled = AppSettings.IsDesktopLyricsKaraokeEnabled;

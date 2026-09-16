@@ -1885,4 +1885,13 @@
   <data name="LicenseSurround51Locked" xml:space="preserve"><value>许可未激活：5.1 输出已锁定，请在“设置 → 关于”购买完整版以解锁</value></data>
   <data name="LicenseAtmosLocked" xml:space="preserve"><value>许可未激活：Atmos HDMI 直通已锁定，请在“设置 → 关于”购买完整版以解锁</value></data>
   <data name="LicenseRestrictedOutput" xml:space="preserve"><value>许可未激活：DSD DoP/Native、5.1 输出及 Atmos HDMI 直通已锁定，购买完整版以解锁。</value></data>
+  <data name="DesktopLyricsAutoHide.Header" xml:space="preserve">
+    <value>播放详情页在前台时隐藏桌面歌词</value>
+  </data>
+  <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
+    <value>仅在桌面歌词已开启时生效；离开播放详情页或播放器进入后台后自动恢复。</value>
+  </data>
+  <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
+    <value>词</value>
+  </data>
 </root>

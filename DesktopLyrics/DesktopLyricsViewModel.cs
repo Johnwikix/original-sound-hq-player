@@ -17,6 +17,54 @@ namespace WinUIMusicPlayer.DesktopLyrics
     public class DesktopLyricsViewModel : ObservableObject
     {
         private bool _isEnabled;
+        private bool _autoHideOnPlayingDetail;
+        private bool _isMainWindowForeground;
+        private bool _isPlayingDetailVisible;
+
+        /// <summary>自动隐藏仅改变窗口显示，不改变用户的桌面歌词总开关。</summary>
+        public bool AutoHideOnPlayingDetail
+        {
+            get => _autoHideOnPlayingDetail;
+            set
+            {
+                if (!SetProperty(ref _autoHideOnPlayingDetail, value)) return;
+                AppSettings.AutoHideDesktopLyricsOnPlayingDetail = value;
+                UpdateWindowVisibility();
+                PersistSettings();
+            }
+        }
+
+        /// <summary>主窗口事件转发的前台状态；仅变化时更新，无轮询、闭包或设置落盘。</summary>
+        public bool IsMainWindowForeground
+        {
+            get => _isMainWindowForeground;
+            set
+            {
+                if (_isMainWindowForeground == value) return;
+                _isMainWindowForeground = value;
+                UpdateWindowVisibility();
+            }
+        }
+
+        /// <summary>由应用 VM 转发实际播放详情页状态。</summary>
+        public bool IsPlayingDetailVisible
+        {
+            get => _isPlayingDetailVisible;
+            set
+            {
+                if (_isPlayingDetailVisible == value) return;
+                _isPlayingDetailVisible = value;
+                UpdateWindowVisibility();
+            }
+        }
+
+        private void UpdateWindowVisibility()
+        {
+            if (!_isEnabled) return;
+            DesktopLyricsManager.SetWindowVisible(
+                !(_autoHideOnPlayingDetail && _isPlayingDetailVisible && _isMainWindowForeground));
+        }
+
         private bool _isLocked = true;
         private bool _isKaraokeEnabled;
         private DesktopLyricsStyle _style;
@@ -32,7 +80,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 {
                     AppSettings.IsDesktopLyricsEnabled = value;
                     EnsureBoundsLoaded();
-                    if (value) DesktopLyricsManager.CreateWindow();
+                    if (value) UpdateWindowVisibility();
                     else DesktopLyricsManager.CloseWindow();
                     PersistSettings();
                 }
@@ -85,7 +133,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
             OnPropertyChanged(nameof(IsLocked));
             _isKaraokeEnabled = AppSettings.IsDesktopLyricsKaraokeEnabled;
             OnPropertyChanged(nameof(IsKaraokeEnabled));
-            if (_isEnabled) DesktopLyricsManager.CreateWindow();
+            _autoHideOnPlayingDetail = AppSettings.AutoHideDesktopLyricsOnPlayingDetail;
+            OnPropertyChanged(nameof(AutoHideOnPlayingDetail));
+            UpdateWindowVisibility();
         }
 
         /// <summary>设置页样式变更提交后调用（防抖定时器合并多次变更）。</summary>

@@ -232,7 +232,15 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = false;
         public bool IsMaximized { get; set => SetProperty(ref field, value); } = false;
-        public bool IsPlayingDetailVisible { get; set => SetProperty(ref field, value); } = false;
+        public bool IsPlayingDetailVisible
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value))
+                    App.Services.GetRequiredService<DesktopLyrics.DesktopLyricsViewModel>().IsPlayingDetailVisible = value;
+            }
+        } = false;
         public bool IsPointerOverTitleBar { get; set => SetProperty(ref field, value); } = true;
 
         public void ToggleFullScreen() => IsFullScreen = !IsFullScreen;

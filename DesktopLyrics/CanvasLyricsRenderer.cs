@@ -152,6 +152,12 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         public void SetOffset(double offsetMs) => _offsetMs = offsetMs;
 
+        public void SetSuspended(bool suspended)
+        {
+            if (!suspended) _timeSyncValid = false;
+            _canvas.Paused = suspended;
+        }
+
         public void SetIsPlaying(bool isPlaying)
         {
             if (_isPlaying == isPlaying) return;

@@ -131,6 +131,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
             ApplyCurrentLine(_lastTotalMs - _offsetMs);
         }
 
+        public void SetSuspended(bool suspended) { } // 文本更新由窗口在隐藏期间拦截。
+
         public void SetIsPlaying(bool isPlaying)
         {
             // 文本渲染无需处理暂停；为未来逐字渲染的时钟暂停预留

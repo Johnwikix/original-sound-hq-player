@@ -25,6 +25,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
         /// </summary>
         Windows.Foundation.Rect? LastTextBounds { get; }
 
+        /// <summary>暂停隐藏窗口的渲染循环，保留资源供恢复时复用。</summary>
+        void SetSuspended(bool suspended);
+
         void SetStyle(DesktopLyricsStyle style);
 
         void SetLyrics(IList<LyricLine>? lyrics);

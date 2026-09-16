@@ -369,6 +369,12 @@
 
                 <TextBlock x:Uid="IconDesktopLyrics" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
+                <controls:SettingsCard x:Uid="DesktopLyricsAutoHide">
+                    <ToggleSwitch
+                        VerticalAlignment="Center"
+                        IsOn="{x:Bind ViewModel.DesktopLyrics.AutoHideOnPlayingDetail, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
                         <TextBlock x:Uid="DesktopLyricsFontSize" TextWrapping="Wrap" />

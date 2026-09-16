@@ -467,10 +467,24 @@
                             BorderThickness="0"
                             Click="DesktopLyricsButton_Click"
                             Style="{StaticResource MenuButtonStyle}">
-                            <FontIcon
+                            <Grid
                                 x:Name="DesktopLyricsIcon"
-                                Glyph="&#xE8C1;"
-                                Opacity="{x:Bind tools:BindUtils.DesktopLyricsButtonOpacity(ViewModel.DesktopLyrics.IsEnabled), Mode=OneWay}" />
+                                Width="24"
+                                Height="24"
+                                Opacity="{x:Bind tools:BindUtils.DesktopLyricsButtonOpacity(ViewModel.DesktopLyrics.IsEnabled), Mode=OneWay}">
+                                <Path
+                                    Data="M3,2.75 H21 Q22.25,2.75 22.25,4 V17 Q22.25,18.25 21,18.25 H3 Q1.75,18.25 1.75,17 V4 Q1.75,2.75 3,2.75 Z M12,18.25 V21.25 M7.75,21.25 H16.25"
+                                    Stroke="{x:Bind DesktopLyricsButton.Foreground, Mode=OneWay}"
+                                    StrokeThickness="1.5" />
+                                <TextBlock
+                                    x:Uid="DesktopLyricsIconLabel"
+                                    Margin="0,1,0,5"
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    FontWeight="SemiBold"
+                                    IsHitTestVisible="False" />
+                            </Grid>
                         </Button>
                         <TeachingTip
                             x:Name="CurrentPlayListTeachingTip"

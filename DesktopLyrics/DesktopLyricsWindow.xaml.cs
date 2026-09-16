@@ -55,6 +55,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private DispatcherQueueTimer? _idleTimer;    // 200ms，锁定态常驻：进窗检测 + 自愈
         private WindowStyle? _originalWindowStyle;   // 首次锁定前缓存的解锁态样式
         private bool _disposed;
+        private bool _isOverlayVisible = true;
 
         private bool _isDragging;
         private WindowHelper.POINT _dragStartCursor;
@@ -99,6 +100,30 @@ namespace WinUIMusicPlayer.DesktopLyrics
             LyricsSyncRequestBus.Request();
         }
 
+        /// <summary>复用窗口和渲染器；隐藏时停止采样、自愈及渲染，恢复时重拉状态。</summary>
+        public void SetOverlayVisible(bool visible)
+        {
+            if (_disposed || _isOverlayVisible == visible) return;
+            _isOverlayVisible = visible;
+            if (!visible)
+            {
+                StopHoverTimer();
+                StopIdleTimer();
+                StopAdaptiveColorTimer();
+                _renderer?.SetSuspended(true);
+                _isDragging = false;
+                RootGrid.ReleasePointerCaptures();
+                AppWindow.Hide();
+                return;
+            }
+
+            LyricsSyncRequestBus.Request();
+            _renderer?.SetSuspended(false);
+            WindowHelper.RestoreOverlay(_hwnd);
+            ApplyLock(ViewModel.IsLocked);
+            UpdateAdaptiveColorMode();
+        }
+
         /// <summary>窗口创建后由 Manager 以 VM 初值调用一次；后续锁定变化经 ViewModel.PropertyChanged 触发（幂等）。</summary>
         public void ApplyLock(bool locked)
         {
@@ -128,6 +153,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
             }
             InvalidatePanelScreenRect();   // 边框样式切换可能改变客户区原点
             UpdateControlPanelVisual();
+            // 切锁定样式会写入 WS_VISIBLE；隐藏策略优先，避免托盘操作意外显示。
+            if (!_isOverlayVisible) AppWindow.Hide();
         }
 
     /// <summary>
@@ -150,7 +177,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
     /// 要等到下一次黑白翻转或渲染器切换才生效（曾表现为阴影滑块拖动无效）。</summary>
     private void UpdateAdaptiveColorMode()
     {
-        if (ViewModel.Style.UseCustomColor)
+        if (!_isOverlayVisible || ViewModel.Style.UseCustomColor)
         {
             StopAdaptiveColorTimer();
             _adaptiveIsDarkBackground = null;
@@ -164,7 +191,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         // 无条件全量推送（幂等、轻量）：自适应模式下颜色由 _lastAdaptiveTextColor 覆盖
         ApplyEffectiveStyle();
 
-        if (!ViewModel.Style.UseCustomColor)
+        if (_isOverlayVisible && !ViewModel.Style.UseCustomColor)
             RefreshAdaptiveColor();
     }
 
@@ -185,7 +212,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
     /// 无文本时回退窗口外圈；经滞回判定黑/白文字色，判定不变则跳过重绘。</summary>
     private void RefreshAdaptiveColor()
     {
-        if (ViewModel.Style.UseCustomColor) return;
+        if (!_isOverlayVisible || ViewModel.Style.UseCustomColor) return;
 
         bool sampled;
         double luminance = 0;
@@ -248,6 +275,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _renderer.Dispose();
         }
         _renderer = karaoke ? new CanvasLyricsRenderer() : new TextBlockLyricsRenderer();
+        _renderer.SetSuspended(!_isOverlayVisible);
         RendererHost.Content = _renderer.Content;
         ApplyEffectiveStyle();
     }
@@ -257,7 +285,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             switch (e.PropertyName)
             {
                 case nameof(DesktopLyricsViewModel.IsLocked):
-                    ApplyLock(ViewModel.IsLocked);
+                    if (_isOverlayVisible) ApplyLock(ViewModel.IsLocked);
                     break;
                 case nameof(DesktopLyricsViewModel.IsKaraokeEnabled):
                     EnsureRenderer(ViewModel.IsKaraokeEnabled);
@@ -331,7 +359,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void UpdateControlPanelVisual()
         {
-            if (_locked)
+            if (_locked && _isOverlayVisible)
             {
                 _cursorOverPanel = false;
                 ControlPanel.Opacity = 0;
@@ -380,7 +408,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         /// <summary>锁定态静默期轮询（200ms）：自愈 + 进窗检测；一旦发现光标悬停窗口即切入 50ms 快轮询。</summary>
         private void OnIdleTimerTick(DispatcherQueueTimer sender, object args)
         {
-            if (!_locked)
+            if (!_locked || !_isOverlayVisible)
             {
                 sender.Stop();
                 return;
@@ -401,7 +429,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private void OnHoverTimerTick(DispatcherQueueTimer sender, object args)
         {
             // 离开窗口：还原按钮组与穿透，停快轮询，回到慢速自愈轮询
-            if (!_locked || !WindowHelper.GetCursorPos(out WindowHelper.POINT cursor) || !IsCursorOverWindow(cursor))
+            if (!_isOverlayVisible || !_locked || !WindowHelper.GetCursorPos(out WindowHelper.POINT cursor) || !IsCursorOverWindow(cursor))
             {
                 sender.Stop();
                 _cursorOverPanel = false;
@@ -506,18 +534,30 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         // ==== 数据总线转发 ====
 
-        private void OnUILyricsChanged(IList<LyricLine>? value) => _renderer?.SetLyrics(value);
+        private void OnUILyricsChanged(IList<LyricLine>? value)
+        {
+            if (_isOverlayVisible) _renderer?.SetLyrics(value);
+        }
 
-        private void OnTimeProgressChanged(long totalMs) => _renderer?.SetPlaybackTime(totalMs);
+        private void OnTimeProgressChanged(long totalMs)
+        {
+            if (_isOverlayVisible) _renderer?.SetPlaybackTime(totalMs);
+        }
 
-        private void OnOffsetChanged(double value) => _renderer?.SetOffset(value);
+        private void OnOffsetChanged(double value)
+        {
+            if (_isOverlayVisible) _renderer?.SetOffset(value);
+        }
 
-        private void OnIsPlayingChanged(bool value) => _renderer?.SetIsPlaying(value);
+        private void OnIsPlayingChanged(bool value)
+        {
+            if (_isOverlayVisible) _renderer?.SetIsPlaying(value);
+        }
 
         private void OnAppWindowChanged(AppWindow sender, AppWindowChangedEventArgs args)
         {
             // z 序变动后若被挤出置顶层（其他置顶窗口切换可致），幂等重申，防"被盖住"表现为消失
-            if (args.DidZOrderChange) WindowHelper.EnsureTopmost(_hwnd);
+            if (_isOverlayVisible && args.DidZOrderChange) WindowHelper.EnsureTopmost(_hwnd);
             if (!args.DidPositionChange && !args.DidSizeChange) return;
             InvalidatePanelScreenRect();
             var bounds = ViewModel.BoundsState;

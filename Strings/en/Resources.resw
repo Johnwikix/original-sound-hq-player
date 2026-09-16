@@ -1886,4 +1886,13 @@
   <data name="LicenseSurround51Locked" xml:space="preserve"><value>No active license: 5.1 output is locked. Buy the full version in Settings → About to unlock</value></data>
   <data name="LicenseAtmosLocked" xml:space="preserve"><value>No active license: Atmos HDMI passthrough is locked. Buy the full version in Settings → About to unlock</value></data>
   <data name="LicenseRestrictedOutput" xml:space="preserve"><value>No active license: DSD DoP/Native, 5.1 output and Atmos HDMI passthrough are locked. Buy the full version to unlock.</value></data>
+  <data name="DesktopLyricsAutoHide.Header" xml:space="preserve">
+    <value>Hide desktop lyrics while playback details are in the foreground</value>
+  </data>
+  <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
+    <value>Applies when desktop lyrics are enabled. Restores them when you leave playback details or the player moves to the background.</value>
+  </data>
+  <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
+    <value>Ly</value>
+  </data>
 </root>

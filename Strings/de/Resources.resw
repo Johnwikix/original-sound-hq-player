@@ -1886,5 +1886,14 @@
   <data name="LicenseSurround51Locked" xml:space="preserve"><value>Keine aktive Lizenz: 5.1-Ausgabe ist gesperrt. Vollversion unter Einstellungen → Info kaufen</value></data>
   <data name="LicenseAtmosLocked" xml:space="preserve"><value>Keine aktive Lizenz: Atmos-HDMI-Passthrough ist gesperrt. Vollversion unter Einstellungen → Info kaufen</value></data>
   <data name="LicenseRestrictedOutput" xml:space="preserve"><value>Keine aktive Lizenz: DSD DoP/Native, 5.1-Ausgabe und Atmos-HDMI-Passthrough sind gesperrt. Kaufen Sie die Vollversion, um sie freizuschalten.</value></data>
+  <data name="DesktopLyricsAutoHide.Header" xml:space="preserve">
+    <value>Desktop-Liedtexte bei Wiedergabedetails im Vordergrund ausblenden</value>
+  </data>
+  <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
+    <value>Gilt bei aktivierten Desktop-Liedtexten. Beim Verlassen der Wiedergabedetails oder Wechsel des Players in den Hintergrund werden sie wieder angezeigt.</value>
+  </data>
+  <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
+    <value>Ly</value>
+  </data>
 </root>
 

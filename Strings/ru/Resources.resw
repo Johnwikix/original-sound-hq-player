@@ -1886,5 +1886,14 @@
   <data name="LicenseSurround51Locked" xml:space="preserve"><value>Нет действующей лицензии: вывод 5.1 заблокирован. Купите полную версию в разделе Настройки → О программе</value></data>
   <data name="LicenseAtmosLocked" xml:space="preserve"><value>Нет действующей лицензии: сквозная передача Atmos по HDMI заблокирована. Купите полную версию в разделе Настройки → О программе</value></data>
   <data name="LicenseRestrictedOutput" xml:space="preserve"><value>Нет действующей лицензии: DSD DoP/Native, вывод 5.1 и сквозная передача Atmos по HDMI заблокированы. Купите полную версию для разблокировки.</value></data>
+  <data name="DesktopLyricsAutoHide.Header" xml:space="preserve">
+    <value>Скрывать текст на рабочем столе, когда страница воспроизведения на переднем плане</value>
+  </data>
+  <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
+    <value>Действует, если текст на рабочем столе включён. Он появится снова при выходе со страницы воспроизведения или переходе плеера в фоновый режим.</value>
+  </data>
+  <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
+    <value>Ly</value>
+  </data>
 </root>
 

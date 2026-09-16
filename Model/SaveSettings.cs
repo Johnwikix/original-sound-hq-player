@@ -113,6 +113,7 @@ namespace WinUIMusicPlayer.Model
         public bool IsTrimOnHideEnabled { get; set; } = false;
         public bool IsTrimAfterPlaybackEnabled { get; set; } = false;
         public string ArtistSplitSymbols { get; set; } = ", ; / 、 & feat. :";
+        public bool AutoHideDesktopLyricsOnPlayingDetail { get; set; } = false;
         public bool IsDesktopLyricsEnabled { get; set; } = false;
         public bool IsDesktopLyricsLocked { get; set; } = false;
         public bool IsDesktopLyricsKaraokeEnabled { get; set; } = false;

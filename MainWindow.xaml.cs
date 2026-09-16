@@ -75,6 +75,8 @@ namespace WinUIMusicPlayer
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
         {
+            App.Services.GetRequiredService<DesktopLyrics.DesktopLyricsViewModel>().IsMainWindowForeground =
+                args.WindowActivationState != WindowActivationState.Deactivated;
             InitializeTaskbarHelper();
         }
 
@@ -117,6 +119,9 @@ namespace WinUIMusicPlayer
         private void AppWindow_Changed(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowChangedEventArgs args)
         {
             if (AppWindow == null) return;
+            if ((args.DidVisibilityChange && !sender.IsVisible) ||
+                (sender.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Minimized }))
+                App.Services.GetRequiredService<DesktopLyrics.DesktopLyricsViewModel>().IsMainWindowForeground = false;
 
             // 状态切换瞬间 DidPositionChange/DidSizeChange 会先于 DidPresenterChange 到达,
             // 此时 op.State 仍是旧值(Restored), 但 AppWindow.Position/Size 已经是新状态
@@ -232,7 +237,6 @@ namespace WinUIMusicPlayer
 
         private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, AppWindowClosingEventArgs args)
         {
-            AppWindow.Changed -= AppWindow_Changed;
             if (AppSettings.IsRunningBackend)
             {
                 args.Cancel = true;

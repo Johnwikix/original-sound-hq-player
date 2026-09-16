@@ -1886,4 +1886,13 @@
   <data name="LicenseSurround51Locked" xml:space="preserve"><value>Sin licencia activa: la salida 5.1 está bloqueada. Compra la versión completa en Configuración → Acerca de</value></data>
   <data name="LicenseAtmosLocked" xml:space="preserve"><value>Sin licencia activa: el paso directo Atmos por HDMI está bloqueado. Compra la versión completa en Configuración → Acerca de</value></data>
   <data name="LicenseRestrictedOutput" xml:space="preserve"><value>Sin licencia activa: DSD DoP/Native, la salida 5.1 y el paso directo Atmos por HDMI están bloqueados. Compra la versión completa para desbloquearlos.</value></data>
+  <data name="DesktopLyricsAutoHide.Header" xml:space="preserve">
+    <value>Ocultar letras de escritorio con los detalles de reproducción en primer plano</value>
+  </data>
+  <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
+    <value>Se aplica si las letras de escritorio están activadas. Se muestran de nuevo al salir de los detalles o cuando el reproductor pasa a segundo plano.</value>
+  </data>
+  <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
+    <value>Ly</value>
+  </data>
 </root>
