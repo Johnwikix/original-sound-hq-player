@@ -252,8 +252,9 @@ namespace Lyricify.Lyrics.Providers.Web.QQMusic
             var resp = await PostAsync("https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg", data);
 
             var result = ResolveRespJson(callBack, resp).ToEntity<LyricResult>();
-
-            return result?.Decode();
+            if (result is null || result.Code != 0 || result.Lyric is null)
+                throw new InvalidOperationException("QQ Music 歌词服务返回失败或不完整的响应。");
+            return result.Decode();
         }
 
         /// <summary>
@@ -275,7 +276,13 @@ namespace Lyricify.Lyrics.Providers.Web.QQMusic
 
             var dict = new Dictionary<string, XmlNode>();
 
-            XmlUtils.RecursionFindElement(XmlUtils.Create(resp), VerbatimXmlMappingDict, dict);
+            var responseXml = XmlUtils.Create(resp);
+            var returnCode = responseXml.SelectSingleNode("//retcode")?.InnerText;
+            if (returnCode is not null && returnCode.Trim() != "0")
+                throw new InvalidOperationException("QQ Music 逐字歌词服务返回失败状态。");
+            XmlUtils.RecursionFindElement(responseXml, VerbatimXmlMappingDict, dict);
+            if (!dict.ContainsKey("orig"))
+                throw new InvalidOperationException("QQ Music 逐字歌词响应缺少原文节点。");
 
             var result = new QqLyricsResponse
             {
@@ -305,13 +312,17 @@ namespace Lyricify.Lyrics.Providers.Web.QQMusic
                     }
                     else
                     {
+                        if (pair.Key == "orig") throw;
                         continue;
                     }
                 }
-                catch
+                catch when (pair.Key != "orig")
                 {
                     continue;
                 }
+
+                if (pair.Key == "orig" && string.IsNullOrWhiteSpace(decompressText))
+                    throw new InvalidOperationException("QQ Music 非空逐字歌词原文解码失败。");
 
                 var s = "";
                 if (decompressText.Contains("<?xml"))
@@ -325,6 +336,12 @@ namespace Lyricify.Lyrics.Providers.Web.QQMusic
                     if (subDict.TryGetValue("lyric", out var d))
                     {
                         s = d.Attributes?["LyricContent"]?.InnerText;
+                        if (s is null && pair.Key == "orig")
+                            throw new InvalidOperationException("QQ Music 逐字歌词缺少 LyricContent 属性。");
+                    }
+                    else if (pair.Key == "orig")
+                    {
+                        throw new InvalidOperationException("QQ Music 逐字歌词原文解码后缺少歌词节点。");
                     }
                 }
                 else
@@ -346,10 +363,7 @@ namespace Lyricify.Lyrics.Providers.Web.QQMusic
                 }
             }
 
-            if (result.Lyrics == "" && result.Trans == "")
-            {
-                return null;
-            }
+            // 有效响应的空原文表示无歌词；协议/解密错误必须抛出，不能伪装为空结果。
             return result;
         }
 

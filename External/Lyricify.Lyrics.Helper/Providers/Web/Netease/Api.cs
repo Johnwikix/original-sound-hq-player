@@ -51,7 +51,10 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
 
             var res = await GetAsync(url);
 
-            return JsonConvert.DeserializeObject<SearchResult>(res);
+            var result = JsonConvert.DeserializeObject<SearchResult>(res);
+            if (result is null || result.Code != 200 || result.NeedLogin || result.Result is null)
+                throw new InvalidOperationException("网易云搜索服务返回失败状态。");
+            return result;
         }
 
         public async Task<SearchResult?> SearchNew(string keyword)
@@ -70,14 +73,17 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
             var raw = await EapiHelper.PostAsync(url, HttpClient, data);
 
             var eapiResult = JsonConvert.DeserializeObject<EapiSearchResult>(raw);
-            if (eapiResult is null) return null;
+            if (eapiResult is null || eapiResult.Code != 200 || eapiResult.NeedLogin || eapiResult.Result is null)
+                throw new InvalidOperationException("网易云搜索服务返回失败状态。");
+            if (eapiResult.Result.Songs is null && eapiResult.Result.SongCount != 0)
+                throw new InvalidOperationException("网易云搜索响应缺少歌曲列表。");
 
             var result = new SearchResult();
             result.Code = eapiResult.Code;
             result.NeedLogin = eapiResult.NeedLogin;
             result.Result = eapiResult.Result;
             var list = new List<Song>();
-            foreach (var song in eapiResult.Result.Songs)
+            foreach (var song in eapiResult.Result.Songs ?? [])
             {
                 list.Add(new()
                 {
@@ -210,7 +216,12 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
 
             var raw = await PostAsync(url, Prepare(JsonConvert.SerializeObject(data)));
 
-            return JsonConvert.DeserializeObject<LyricResult>(raw);
+            var result = JsonConvert.DeserializeObject<LyricResult>(raw);
+            if (result is null || result.Code != 200)
+                throw new InvalidOperationException("网易云歌词服务返回失败状态。");
+            if (result.Lrc is null && !result.Nolyric && !result.Uncollected)
+                throw new InvalidOperationException("网易云歌词响应缺少歌词和无歌词标记。");
+            return result;
         }
 
         /// <summary>

@@ -67,12 +67,13 @@ namespace WinUIMusicPlayer.Controls
             DependencyProperty.Register(nameof(ImageHash), typeof(string), typeof(ImageSwitcher),
                 new PropertyMetadata(null, OnImageHashChanged));
 
-        private string? _lastImageHash;
+        private readonly CoverLoadState _loadState = new();
         private CancellationTokenSource? _cts;
 
         public ImageSwitcher()
         {
             InitializeComponent();
+            Loaded += (_, _) => _ = UpdateSourceAsync();
             Unloaded += OnUnloaded;
         }
 
@@ -81,7 +82,7 @@ namespace WinUIMusicPlayer.Controls
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = null;
-            _lastImageHash = null;
+            _loadState.Reset();
             AlbumArtImage.Source = null;
             LastAlbumArtImage.Source = null;
         }
@@ -95,25 +96,19 @@ namespace WinUIMusicPlayer.Controls
         private static void OnIsDarkChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not ImageSwitcher switcher) return;
-            // 正在显示默认封面（或尚未加载）时随主题换用对应默认封面；真实封面与主题无关
-            if (string.IsNullOrEmpty(switcher._lastImageHash))
-            {
-                switcher._lastImageHash = null; // 强制绕过"已显示默认封面"去重
-                _ = switcher.UpdateSourceAsync();
-            }
+            _ = switcher.UpdateSourceAsync();
         }
 
         private async Task UpdateSourceAsync()
         {
             string? newHash = ImageHash;
             bool hasData = newHash is { Length: > 0 };
-
-            if (hasData && newHash == _lastImageHash) return;
-            // 哨兵空串表示默认封面已在显示；null 仅表示初始状态（首次也需加载默认封面）
-            if (!hasData && _lastImageHash is "") return;
+            bool isDark = IsDark;
 
             _cts?.Cancel();
             _cts?.Dispose();
+            _cts = null;
+            if (!_loadState.Begin(newHash, isDark, out int version)) return;
             var cts = new CancellationTokenSource();
             _cts = cts;
             var token = cts.Token;
@@ -137,16 +132,13 @@ namespace WinUIMusicPlayer.Controls
 
             if (token.IsCancellationRequested) return;
 
-            if (imageSource == null)
+            bool usesDefault = imageSource is null;
+            if (usesDefault)
             {
-                imageSource = await LoadDefaultCoverAsync(token);
-                // 默认封面加载成功以空串标记，失败保持 null 以便下次触发时重试
-                newHash = imageSource == null ? null : string.Empty;
+                imageSource = await LoadDefaultCoverAsync(isDark, token);
             }
 
-            if (token.IsCancellationRequested) return;
-
-            _lastImageHash = newHash;
+            if (token.IsCancellationRequested || !_loadState.IsCurrent(version)) return;
 
             switch (SwitchType)
             {
@@ -160,13 +152,15 @@ namespace WinUIMusicPlayer.Controls
                     UpdateSourceScaleInOut(imageSource);
                     break;
             }
+            if (imageSource is not null) _loadState.Commit(version, newHash, usesDefault, isDark);
+            else _loadState.Reset();
         }
 
-        private async Task<ImageSource?> LoadDefaultCoverAsync(CancellationToken token = default)
+        private async Task<ImageSource?> LoadDefaultCoverAsync(bool isDark, CancellationToken token)
         {
             try
             {
-                string assetName = IsDark ? "default_cover_black.png" : "default_cover_white.png";
+                string assetName = isDark ? "default_cover_black.png" : "default_cover_white.png";
                 var uri = new Uri($"ms-appx:///Assets/{assetName}");
 
                 if (token.IsCancellationRequested) return null;

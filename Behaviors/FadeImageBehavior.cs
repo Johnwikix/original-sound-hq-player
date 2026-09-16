@@ -26,11 +26,11 @@ namespace WinUIMusicPlayer.Behaviors
         private Storyboard _currentTransitionStoryboard;
         private Image _tempOverlayImage;
         private CancellationTokenSource _cts;
-        private string? _lastImageHash;
+        private readonly CoverLoadState _loadState = new();
 
         public void Invalidate()
         {
-            _lastImageHash = null;
+            _loadState.Reset();
         }
 
         public Visibility ImageVisibility
@@ -62,6 +62,7 @@ namespace WinUIMusicPlayer.Behaviors
                 behavior._cts?.Cancel();
                 behavior._cts?.Dispose();
                 behavior._cts = null;
+                behavior.Invalidate();
                 behavior.StopAndCleanup();
                 if (behavior.AssociatedObject != null)
                     behavior.SetSource(null);
@@ -71,10 +72,7 @@ namespace WinUIMusicPlayer.Behaviors
                 behavior.Invalidate();
                 if (behavior.AssociatedObject != null)
                 {
-                    behavior._cts?.Cancel();
-                    behavior._cts?.Dispose();
-                    behavior._cts = new CancellationTokenSource();
-                    _ = behavior.LoadFromCacheAndTransitionAsync(behavior.ImageHash, behavior._cts.Token);
+                    _ = behavior.UpdateSourceAsync();
                 }
             }
         }
@@ -102,46 +100,13 @@ namespace WinUIMusicPlayer.Behaviors
         private static void OnIsDarkChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not FadeImageBehavior behavior) return;
-            // 正在显示默认封面（或尚未加载）时随主题换用对应默认封面；真实封面与主题无关
-            if (!behavior.Enable || !string.IsNullOrEmpty(behavior._lastImageHash)) return;
-
-            behavior._cts?.Cancel();
-            behavior._cts?.Dispose();
-            behavior._cts = new CancellationTokenSource();
-            _ = behavior.LoadFromCacheAndTransitionAsync(null, behavior._cts.Token);
+            _ = behavior.UpdateSourceAsync();
         }
 
-        private static async void OnImageHashChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        private static void OnImageHashChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             if (d is not FadeImageBehavior behavior) return;
-
-            if (!behavior.Enable)
-            {
-                behavior.StopAndCleanup();
-                if (behavior.AssociatedObject != null)
-                    behavior.SetSource(null);
-                return;
-            }
-
-            string? newHash = e.NewValue as string;
-            bool hasData = newHash is { Length: > 0 };
-
-            if (hasData && newHash == behavior._lastImageHash) return;
-            // 哨兵空串表示默认封面已在显示；null 仅表示初始状态（首次也需加载）
-            if (!hasData && behavior._lastImageHash is "") return;
-
-            behavior._lastImageHash = hasData ? newHash : "";
-
-            behavior._cts?.Cancel();
-            behavior._cts?.Dispose();
-            behavior._cts = new CancellationTokenSource();
-            var token = behavior._cts.Token;
-
-            try
-            {
-                await behavior.LoadFromCacheAndTransitionAsync(newHash, token);
-            }
-            catch (OperationCanceledException) { }
+            _ = behavior.UpdateSourceAsync();
         }
 
         public Duration Duration
@@ -154,45 +119,65 @@ namespace WinUIMusicPlayer.Behaviors
             DependencyProperty.Register(nameof(Duration), typeof(Duration), typeof(FadeImageBehavior),
                 new PropertyMetadata(new Duration(TimeSpan.FromMilliseconds(500))));
 
-        private async Task LoadFromCacheAndTransitionAsync(string? hash, CancellationToken token)
+        private async Task UpdateSourceAsync()
         {
+            if (!Enable || AssociatedObject is null) return;
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
+            string? hash = ImageHash;
+            bool isDark = IsDark;
+            if (!_loadState.Begin(hash, isDark, out int version)) return;
+            _cts = new CancellationTokenSource();
+            var token = _cts.Token;
             try
             {
                 ImageSource? source = null;
-
-                if (hash is { Length: > 0 })
+                try
                 {
-                    string thumbPath = CoverLoadQueue.GetThumbCachePath(hash, CoverLoadQueue.CoverSize);
-                    if (File.Exists(thumbPath))
+                    if (hash is { Length: > 0 })
                     {
-                        source = await LoadThumbFromCacheAsync(thumbPath, token);
-                    }
-
-                    if (source is null)
-                    {
-                        string rawPath = ToolUtils.GetRawCachePath(hash);
-                        if (File.Exists(rawPath))
+                        string thumbPath = CoverLoadQueue.GetThumbCachePath(hash, CoverLoadQueue.CoverSize);
+                        if (File.Exists(thumbPath))
                         {
-                            byte[] rawBytes = await File.ReadAllBytesAsync(rawPath, token);
-                            source = await ImageHelper.DecodeToBitmapAsync(rawBytes, 150, token);
+                            source = await LoadThumbFromCacheAsync(thumbPath, token);
+                        }
+
+                        if (source is null)
+                        {
+                            string rawPath = ToolUtils.GetRawCachePath(hash);
+                            if (File.Exists(rawPath))
+                            {
+                                byte[] rawBytes = await File.ReadAllBytesAsync(rawPath, token);
+                                source = await ImageHelper.DecodeToBitmapAsync(rawBytes, 150, token);
+                            }
                         }
                     }
                 }
+                catch (OperationCanceledException) { throw; }
+                catch (Exception ex) { _logger.LogWarning(ex, "封面缓存读取失败，使用默认封面"); }
 
                 // 无封面或缓存缺失时回退主题默认封面，保证切歌时背景正确切换
-                source ??= await LoadDefaultCoverAsync(token);
+                bool usesDefault = source is null;
+                token.ThrowIfCancellationRequested();
+                source ??= await LoadDefaultCoverAsync(isDark, token);
 
-                if (!token.IsCancellationRequested)
+                if (!token.IsCancellationRequested && _loadState.IsCurrent(version))
+                {
                     TransitionToNewSource(source);
+                    if (source is not null) _loadState.Commit(version, hash, usesDefault, isDark);
+                    else _loadState.Reset();
+                }
             }
             catch (OperationCanceledException) { }
+            catch (Exception ex) { _logger.LogError(ex, "封面切换失败"); }
         }
 
-        private async Task<ImageSource?> LoadDefaultCoverAsync(CancellationToken token)
+        private async Task<ImageSource?> LoadDefaultCoverAsync(bool isDark, CancellationToken token)
         {
             try
             {
-                string assetName = IsDark ? "default_cover_black.png" : "default_cover_white.png";
+                string assetName = isDark ? "default_cover_black.png" : "default_cover_white.png";
                 var file = await StorageFile.GetFileFromApplicationUriAsync(
                     new Uri($"ms-appx:///Assets/{assetName}"));
                 using var stream = await file.OpenReadAsync();
@@ -270,28 +255,27 @@ namespace WinUIMusicPlayer.Behaviors
             if (AssociatedObject != null)
             {
                 AssociatedObject.Unloaded += OnUnloaded;
+                AssociatedObject.Loaded += OnLoaded;
                 if (Enable)
-                    _ = InitAsync(ImageHash);
+                    _ = UpdateSourceAsync();
                 else
                     SetSource(null);
             }
         }
 
-        private async Task InitAsync(string? hash)
-        {
-            _cts?.Cancel();
-            _cts?.Dispose();
-            _cts = new CancellationTokenSource();
-            await LoadFromCacheAndTransitionAsync(hash, _cts.Token);
-        }
+        private void OnLoaded(object sender, RoutedEventArgs e) => _ = UpdateSourceAsync();
 
         protected override void OnDetaching()
         {
             if (AssociatedObject != null)
+            {
                 AssociatedObject.Unloaded -= OnUnloaded;
+                AssociatedObject.Loaded -= OnLoaded;
+            }
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = null;
+            Invalidate();
             StopAndCleanup();
             base.OnDetaching();
         }
@@ -301,6 +285,7 @@ namespace WinUIMusicPlayer.Behaviors
             _cts?.Cancel();
             _cts?.Dispose();
             _cts = null;
+            Invalidate();
             StopAndCleanup();
         }
 

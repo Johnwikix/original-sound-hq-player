@@ -54,6 +54,10 @@ namespace WinUIMusicPlayer.ViewModel
         private List<FileSystemWatcher> Watchers { get; set; } = [];
         private readonly SemaphoreSlim scanSemaphore = new(1, 1);
         private CancellationTokenSource? _musicUpdateCts;
+        private int _coverUpdateVersion;
+        private int _defaultPaletteVersion;
+        private Music? _paletteMusic;
+        private bool _usesDefaultPalette;
         private CancellationTokenSource _scanCts;
         private readonly Lock _scanCtsLock = new();
         private ILogger<MusicBrowseViewModel> _logger;
@@ -70,6 +74,7 @@ namespace WinUIMusicPlayer.ViewModel
         public MusicBrowseViewModel(BassPlayerCommandService bassPlayerCommand, SystemMediaControlsService systemMediaControlsService, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, AudioConverterService converterService, UsbDeviceService usbDeviceService, ILogger<MusicBrowseViewModel> logger)
         {
             this.AppViewModel = appViewModel;
+            AppViewModel.PropertyChanged += OnCoverSettingsChanged;
             _musicDatabaseService = musicDatabaseService;
             ConverterService = converterService;
             UsbDeviceService = usbDeviceService;
@@ -369,6 +374,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task UpdatePlayBar(Music music, CancellationToken token = default)
         {
+            int version = Interlocked.Increment(ref _coverUpdateVersion);
             try
             {
                 byte[] picData = await Task.Run(async () =>
@@ -390,17 +396,6 @@ namespace WinUIMusicPlayer.ViewModel
                     palette = await Task.Run(() =>
                         AnimatedWin2dControls.Impressionist.PaletteExtractor
                             .ExtractFromImageBytesAsync(picData, AppViewModel.PaletteAlgorithm, ct: token), token);
-                }
-                // 无封面：按当前主题从默认封面取色，保证着色器背景随之正确切换
-                if (palette is null)
-                {
-                    byte[] defaultCover = await GetDefaultCoverBytesAsync(AppViewModel.IsDarkMode, token);
-                    if (defaultCover.Length > 0)
-                    {
-                        palette = await Task.Run(() =>
-                            AnimatedWin2dControls.Impressionist.PaletteExtractor
-                                .ExtractFromImageBytesAsync(defaultCover, AppViewModel.PaletteAlgorithm, ct: token), token);
-                    }
                 }
 
                 // 封面像素：仅供 RotatingMesh 背景着色器旋转层使用，其它着色器只取色、
@@ -429,10 +424,15 @@ namespace WinUIMusicPlayer.ViewModel
 
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    if (!token.IsCancellationRequested)
+                    if (!token.IsCancellationRequested && version == Volatile.Read(ref _coverUpdateVersion) &&
+                        ReferenceEquals(music, AppViewModel.CurrentPlayingMusic))
                     {
+                        _defaultPaletteVersion++;
+                        _paletteMusic = music;
+                        _usesDefaultPalette = palette is null;
                         AppViewModel.LyricPageBackgroundHash = music.ImageHash ?? "";
                         AppViewModel.LyricPagePalette = palette;
+                        if (_usesDefaultPalette) _ = RefreshDefaultPaletteAsync(token);
                         AppViewModel.LyricPageArtwork = artwork;
                         AppViewModel.MusicInfo = $"{music.Extension} {music.SampleRate}Hz {music.BitDepth}bit {music.BitRate}kbps";
                     }
@@ -442,7 +442,8 @@ namespace WinUIMusicPlayer.ViewModel
                 // 同样在后台运行，避免 SMTC 的 COM 组件调用阻塞 UI
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    if (token.IsCancellationRequested) return;
+                    if (token.IsCancellationRequested || version != Volatile.Read(ref _coverUpdateVersion) ||
+                        !ReferenceEquals(music, AppViewModel.CurrentPlayingMusic)) return;
 
                     SystemMediaControlsService.UpdateSystemMediaControlsState();
                     SystemMediaControlsService.UpdateTimelineProperties(TimeSpan.Zero, music.Duration);
@@ -468,34 +469,46 @@ namespace WinUIMusicPlayer.ViewModel
             AppViewModel.UpdateCover();
         }
 
-        // ── 默认封面字节缓存（按主题各一份，只读一次磁盘） ───────────────────
+        private static readonly DefaultCoverPaletteCache s_defaultPalettes = new(LoadDefaultPaletteAsync);
 
-        private static byte[]? _defaultCoverBytesDark;
-        private static byte[]? _defaultCoverBytesLight;
+        private static Task<AnimatedWin2dControls.Impressionist.PaletteResult?> LoadDefaultPaletteAsync(
+            bool isDark, AnimatedWin2dControls.Impressionist.PaletteAlgorithm algorithm, CancellationToken token) =>
+            Task.Run(async () =>
+            {
+                string name = isDark ? "default_cover_black.png" : "default_cover_white.png";
+                string path = Path.Combine(AppContext.BaseDirectory, "Assets", name);
+                byte[] bytes = await File.ReadAllBytesAsync(path, token);
+                return await AnimatedWin2dControls.Impressionist.PaletteExtractor
+                    .ExtractFromImageBytesAsync(bytes, algorithm, ct: token);
+            }, token);
 
-        /// <summary>读取主题默认封面（Assets/default_cover_black|white.png），带静态缓存；失败返回空数组。</summary>
-        private static async Task<byte[]> GetDefaultCoverBytesAsync(bool isDark, CancellationToken token)
+        private void OnCoverSettingsChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
-            byte[]? cached = isDark ? _defaultCoverBytesDark : _defaultCoverBytesLight;
-            if (cached is not null) return cached;
+            if (e.PropertyName is nameof(AppViewModel.IsDarkMode) or nameof(AppViewModel.PaletteAlgorithm))
+                _ = RefreshDefaultPaletteAsync();
+        }
 
-            string name = isDark ? "default_cover_black.png" : "default_cover_white.png";
-            string path = Path.Combine(AppContext.BaseDirectory, "Assets", name);
-            byte[] loaded = [];
+        // UI 线程捕获状态；解码在后台，发布前再次核对，避免旧主题/旧歌曲覆盖当前结果。
+        private async Task RefreshDefaultPaletteAsync(CancellationToken token = default)
+        {
+            int version = ++_defaultPaletteVersion;
+            var music = _paletteMusic;
+            if (!_usesDefaultPalette || music is null || !ReferenceEquals(music, AppViewModel.CurrentPlayingMusic)) return;
+            bool isDark = AppViewModel.IsDarkMode;
+            var algorithm = AppViewModel.PaletteAlgorithm;
             try
             {
-                if (File.Exists(path))
-                    loaded = await File.ReadAllBytesAsync(path, token);
+                var palette = await s_defaultPalettes.GetAsync(isDark, algorithm, token);
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (!token.IsCancellationRequested && version == _defaultPaletteVersion && _usesDefaultPalette &&
+                        ReferenceEquals(music, AppViewModel.CurrentPlayingMusic) &&
+                        isDark == AppViewModel.IsDarkMode && algorithm == AppViewModel.PaletteAlgorithm)
+                        AppViewModel.LyricPagePalette = palette;
+                });
             }
-            catch (OperationCanceledException) { throw; }
-            catch (Exception) { }
-
-            if (loaded.Length > 0)
-            {
-                if (isDark) _defaultCoverBytesDark = loaded;
-                else _defaultCoverBytesLight = loaded;
-            }
-            return loaded;
+            catch (OperationCanceledException) { }
+            catch (Exception ex) { _logger.LogWarning(ex, "默认封面取色失败"); }
         }
         public void SetMusicBrowsePage(MusicBrowsePage musicBrowsePage)
         {

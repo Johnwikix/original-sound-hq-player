@@ -99,18 +99,23 @@ namespace WinUIMusicPlayer.WebService
         }
         public async Task<(string Lyrics, string Trans, LyricsSearchStatus Status)> GetMixedLyricsAsync(Music music, CancellationToken cancellationToken = default)
         {
-            var (lyrics, trans, status) = await GetLyricsAsync(music, Searchers.Netease, cancellationToken);
-            if (status == LyricsSearchStatus.NetworkError)
-                return (string.Empty, string.Empty, status);
-            if (string.IsNullOrEmpty(lyrics))
-                return await GetLyricsAsync(music, Searchers.QQMusic, cancellationToken);
-            return (lyrics, trans, status);
+            var netease = await GetLyricsAsync(music, Searchers.Netease, cancellationToken);
+            if (netease.Status == LyricsSearchStatus.Found) return netease;
+
+            var qq = await GetLyricsAsync(music, Searchers.QQMusic, cancellationToken);
+            if (qq.Status == LyricsSearchStatus.Found) return qq;
+
+            // 只有两方都确认无结果才能缓存；单个服务故障不阻断其它来源。
+            return (string.Empty, string.Empty,
+                netease.Status == LyricsSearchStatus.NetworkError || qq.Status == LyricsSearchStatus.NetworkError
+                    ? LyricsSearchStatus.NetworkError : LyricsSearchStatus.NoResult);
         }
 
         public async Task<(string Lyrics, string Trans, LyricsSearchStatus Status)> GetLyricsAsync(Music music, Searchers searchers = Searchers.QQMusic, CancellationToken cancellationToken = default)
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var search = await SearchHelper.Search(new TrackMultiArtistMetadata()
                 {
                     Album = music.Album,
@@ -124,8 +129,8 @@ namespace WinUIMusicPlayer.WebService
                 {
                     var res = await ProviderHelper.NeteaseApi.GetLyric(neteaseSearch.Id);
                     cancellationToken.ThrowIfCancellationRequested();
-                    lyrics = res?.Lrc.Lyric ?? string.Empty;
-                    trans = AppData.SystemLanguage.Contains("zh") == true ? res?.Tlyric.Lyric ?? string.Empty : string.Empty;
+                    lyrics = res?.Lrc?.Lyric ?? string.Empty;
+                    trans = AppData.SystemLanguage.Contains("zh") == true ? res?.Tlyric?.Lyric ?? string.Empty : string.Empty;
                 }
                 else if (search is QQMusicSearchResult qQMusicSearchResult)
                 {
@@ -149,6 +154,7 @@ namespace WinUIMusicPlayer.WebService
             }
             catch (Exception ex)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 _logger.LogError(ex, $"GetLyricsAsync 歌词获取失败: {ex.Message}");
                 return (string.Empty, string.Empty, LyricsSearchStatus.NetworkError);
             }
@@ -158,6 +164,7 @@ namespace WinUIMusicPlayer.WebService
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var search = await SearchHelper.Search(new TrackMultiArtistMetadata()
                 {
                     Album = music.Album,
@@ -184,6 +191,7 @@ namespace WinUIMusicPlayer.WebService
             }
             catch (Exception ex)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 _logger.LogError(ex, $"GetKrcLyricsAsync 歌词获取失败: {ex.Message}");
                 return (string.Empty, string.Empty, LyricsSearchStatus.NetworkError);
             }

@@ -47,10 +47,7 @@ namespace WinUIMusicPlayer.Services
         internal static double LineEndOffsetMs = 300;
 
         // 在线搜词断路器：连续网络失败达到阈值后进入冷却，冷却期内跳过在线匹配（进程内，不持久化）
-        private const int NetworkFailureThreshold = 3;
-        private const long NetworkCooldownMs = 10 * 60 * 1000;
-        private static int s_consecutiveNetworkFailures;
-        private static long s_networkCooldownUntilTicks;
+        private static readonly LyricsSearchCircuitBreaker s_searchCircuit = new(3, 10 * 60 * 1000);
 
         private static readonly ConcurrentBag<LyricLine> s_linePool = new();
         private static readonly ConcurrentBag<LyricWord> s_wordPool = new();
@@ -270,33 +267,6 @@ namespace WinUIMusicPlayer.Services
         }
 
         // ──────────────────────────────────────────────────────────────
-        //  在线搜词断路器
-        // ──────────────────────────────────────────────────────────────
-
-        /// <summary>
-        /// 冷却期内跳过在线搜词，避免离线时每首歌都空跑一轮网络请求
-        /// </summary>
-        private static bool IsOnlineSearchSuspended =>
-            Environment.TickCount64 < Volatile.Read(ref s_networkCooldownUntilTicks);
-
-        /// <summary>
-        /// 网络失败连续累计达到阈值即进入冷却；冷却到期后仅放行一次探测，
-        /// 仍失败则立即重新冷却。请求成功或确认无结果都会复位计数
-        /// </summary>
-        private static void ReportSearchOutcome(LyricsSearchStatus status)
-        {
-            if (status == LyricsSearchStatus.NetworkError)
-            {
-                if (Interlocked.Increment(ref s_consecutiveNetworkFailures) >= NetworkFailureThreshold)
-                    Volatile.Write(ref s_networkCooldownUntilTicks, Environment.TickCount64 + NetworkCooldownMs);
-            }
-            else
-            {
-                Interlocked.Exchange(ref s_consecutiveNetworkFailures, 0);
-            }
-        }
-
-        // ──────────────────────────────────────────────────────────────
         //  格式判断与分发
         // ──────────────────────────────────────────────────────────────
 
@@ -342,13 +312,15 @@ namespace WinUIMusicPlayer.Services
         private async Task<(List<LyricLine> lyrics, string? krc, string? tKrc)> TryParseKrcLyricsInternal(
             Music music, string krc, string tKrc, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(krc) && AppSettings.IsAutoLyricsEnabled && !music.IsKrcSearched && !IsOnlineSearchSuspended)
+            if (string.IsNullOrWhiteSpace(krc) && AppSettings.IsAutoLyricsEnabled && !music.IsKrcSearched &&
+                s_searchCircuit.TryBegin(Environment.TickCount64, out int searchGeneration))
             {
+                LyricsSearchStatus? outcome = null;
                 try
                 {
                     var (newKrc, newTKrc, status) = await App.Services.GetRequiredService<LrcService>()
                         .GetKrcLyricsAsync(music, cancellationToken);
-                    ReportSearchOutcome(status);
+                    outcome = status;
                     if (status == LyricsSearchStatus.Found)
                     {
                         krc = newKrc;
@@ -359,6 +331,7 @@ namespace WinUIMusicPlayer.Services
                         music.IsKrcSearched = true;
                 }
                 catch (OperationCanceledException) { }
+                finally { s_searchCircuit.Complete(searchGeneration, outcome, Environment.TickCount64); }
             }
 
             if (string.IsNullOrWhiteSpace(krc)) return ([], krc, tKrc);
@@ -915,13 +888,15 @@ namespace WinUIMusicPlayer.Services
                 lrcContent = providedLrc;
                 transLrcStr = string.IsNullOrWhiteSpace(transLrcStr) ? providedTrans : transLrcStr;
 
-                if (string.IsNullOrWhiteSpace(lrcContent) && AppSettings.IsAutoLyricsEnabled && !music.IsLrcSearched && !IsOnlineSearchSuspended)
+                if (string.IsNullOrWhiteSpace(lrcContent) && AppSettings.IsAutoLyricsEnabled && !music.IsLrcSearched &&
+                    s_searchCircuit.TryBegin(Environment.TickCount64, out int searchGeneration))
                 {
+                    LyricsSearchStatus? outcome = null;
                     try
                     {
                         var (lyric, trans, status) = await App.Services.GetRequiredService<LrcService>()
                             .GetMixedLyricsAsync(music, cancellationToken);
-                        ReportSearchOutcome(status);
+                        outcome = status;
                         if (status == LyricsSearchStatus.Found)
                         {
                             lrcContent = lyric;
@@ -932,6 +907,7 @@ namespace WinUIMusicPlayer.Services
                             music.IsLrcSearched = true;
                     }
                     catch (OperationCanceledException) { }
+                    finally { s_searchCircuit.Complete(searchGeneration, outcome, Environment.TickCount64); }
                 }
             }
 

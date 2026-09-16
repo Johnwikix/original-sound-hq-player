@@ -26,7 +26,6 @@ namespace Lyricify.Lyrics.Searchers
                     try
                     {
                         result = await Providers.Web.Providers.NeteaseApi.Search(searchString, Api.SearchTypeEnum.SONG_ID);
-                        if (result?.Code == -460) throw new Exception();
                     }
                     catch
                     {
@@ -41,7 +40,6 @@ namespace Lyricify.Lyrics.Searchers
                 try
                 {
                     result = await Providers.Web.Providers.NeteaseApi.Search(searchString, Api.SearchTypeEnum.SONG_ID);
-                    if (result?.Code == -460) throw new Exception();
                 }
                 catch
                 {
@@ -51,18 +49,18 @@ namespace Lyricify.Lyrics.Searchers
                 }
             }
 
-            try
+            if (result is null || result.Code != 200 || result.NeedLogin || result.Result is null)
+                throw new InvalidOperationException("网易云搜索服务返回失败状态。");
+
+            var results = result.Result.Songs;
+            if (results is null && result.Result.SongCount != 0)
+                throw new InvalidOperationException("网易云搜索响应缺少歌曲列表。");
+            if (results is not null)
             {
-                var results = result?.Result.Songs;
-                if (results == null) return null;
                 foreach (var track in results)
                 {
                     search.Add(new NeteaseSearchResult(track));
                 }
-            }
-            catch
-            {
-                return null;
             }
 
             return search;
