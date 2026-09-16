@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.WebService;
 
@@ -152,8 +153,15 @@ namespace WinUIMusicPlayer.Services
                 music.PlayCount++;
                 await _musicDatabaseService.SaveLyricsAsync(music.Id, lrcOut, transOut, krcOut, tKrcOut);
                 await _musicDatabaseService.UpdateMusicInfo(music);
+                ct.ThrowIfCancellationRequested();
                 FixEndMs(lrcLyrics, music.Duration.TotalMilliseconds);
+                // 仅在全部获取结束后填充空行；不写入缓存，也不为提示生成模拟逐字时间。
+                if (lrcLyrics.Count == 1 && lrcLyrics[0].Words.Count == 0)
+                {
+                    var word = RentWord();
                     word.Word = ToolUtils.GetString("LyricsGetFailed");
+                    lrcLyrics[0].Words.Add(word);
+                }
                 _previousLyrics = lrcLyrics;
                 return lrcLyrics;
             }

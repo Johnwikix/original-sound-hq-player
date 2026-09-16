@@ -587,7 +587,7 @@
     <value>Album Details</value>
   </data>
   <data name="LyricsGetFailed" xml:space="preserve">
-    <value>No available lyrics</value>
+    <value>Lyrics not found, enjoy the music</value>
   </data>
   <data name="NoRecognizableLyrics" xml:space="preserve">
     <value>No recognizable lyrics</value>

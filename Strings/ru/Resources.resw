@@ -587,7 +587,7 @@
     <value>Сведения об альбоме</value>
   </data>
   <data name="LyricsGetFailed" xml:space="preserve">
-    <value>Без текста</value>
+    <value>Текст не найден, наслаждайтесь музыкой</value>
   </data>
   <data name="NoRecognizableLyrics" xml:space="preserve">
     <value>Текст не распознан</value>

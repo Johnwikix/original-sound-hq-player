@@ -587,7 +587,7 @@
     <value>アルバムの詳細</value>
   </data>
   <data name="LyricsGetFailed" xml:space="preserve">
-    <value>歌詞がありません</value>
+    <value>歌詞が見つかりません、音楽をお楽しみください</value>
   </data>
   <data name="NoRecognizableLyrics" xml:space="preserve">
     <value>認識できる歌詞がありません</value>

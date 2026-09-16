@@ -586,7 +586,7 @@
     <value>专辑详情</value>
   </data>
   <data name="LyricsGetFailed" xml:space="preserve">
-    <value>没有歌词</value>
+    <value>暂无歌词，请欣赏音乐</value>
   </data>
   <data name="NoRecognizableLyrics" xml:space="preserve">
     <value>没有可识别的歌词</value>
