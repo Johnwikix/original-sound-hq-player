@@ -445,6 +445,7 @@ namespace WinUIMusicPlayer.ViewModel
             _logger = logger;
             UsbDeviceService = usbDeviceService;
             _licenseService = licenseService;
+            PurchaseLicenseCommand = new AsyncRelayCommand(licenseService.PurchaseAsync, () => licenseService.CanPurchase);
             licenseService.StateChanged += () => EnqueueUnlessUIThread(ref _licenseStateChangedHandler, ApplyLicenseState);
             ApplyLicenseState();
             usbDeviceService.DevicesChanged += (_, _) => UpDateUsbDeviceMenuflyout();

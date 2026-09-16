@@ -1871,14 +1871,14 @@
   <data name="DspDeviceSaveError" xml:space="preserve"><value>Korrektur konnte nicht gespeichert werden. Vorhandene Zuordnungen bleiben erhalten.</value></data>
   <data name="CurveLiveSaveError" xml:space="preserve"><value>Die Korrektur konnte nicht gespeichert werden. Prüfen Sie den Speicher und schließen Sie erneut, um es noch einmal zu versuchen.</value></data>
   <data name="CurveApplyPreset.Content" xml:space="preserve"><value>Voreinstellung anwenden</value></data>
-  <data name="LicenseTrialExpiredDsp" xml:space="preserve">
-    <value>Testversion abgelaufen: DSP-Effekte außer dem Equalizer und DSD Dop/Native-Bitstream sind gesperrt. Vollversion kaufen zum Entsperren</value>
+  <data name="LicenseRestrictedDsp" xml:space="preserve">
+    <value>Keine aktive Lizenz: DSP-Effekte außer dem Equalizer und DSD-DoP/Native-Bitstream sind gesperrt. Vollversion kaufen, um sie freizuschalten</value>
   </data>
   <data name="LicenseTrialRemaining" xml:space="preserve">
     <value>Noch {0} Tage Testversion</value>
   </data>
   <data name="LicenseDsdLocked" xml:space="preserve">
-    <value>Testversion abgelaufen: DSD Dop / Native ist gesperrt. Vollversion kaufen zum Entsperren</value>
+    <value>Keine aktive Lizenz: DSD DoP / Native ist gesperrt. Vollversion kaufen, um es freizuschalten</value>
   </data>
   <data name="LicensePurchase" xml:space="preserve">
     <value>Vollversion kaufen</value>

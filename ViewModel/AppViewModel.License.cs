@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI.Dispatching;
 using System;
 using WinUIMusicPlayer.Services;
@@ -11,7 +11,18 @@ namespace WinUIMusicPlayer.ViewModel
         private readonly LicenseService _licenseService;
         private DispatcherQueueHandler? _licenseStateChangedHandler;
 
-        /// <summary>许可受限（试用已到期）：DSD 位流锁定，DSP 仅保留均衡器。</summary>
+        /// <summary>关于页与 DSP 提示共用购买命令，防止跨页面重复发起购买。</summary>
+        public IAsyncRelayCommand PurchaseLicenseCommand { get; }
+
+        /// <summary>试用中或许可非活跃时显示购买入口。</summary>
+        public bool CanPurchaseLicense => _licenseService.CanPurchase;
+
+        /// <summary>关于页显示试用剩余天数或许可受限说明。</summary>
+        public string LicenseDescription => _licenseService.TrialRemainingDays is int days
+            ? string.Format(ToolUtils.GetString("LicenseTrialRemaining"), days)
+            : LicenseRestricted ? ToolUtils.GetString("LicenseRestrictedDsp") : "";
+
+        /// <summary>许可非活跃：DSD 位流锁定，DSP 仅保留均衡器。</summary>
         public bool LicenseRestricted
         {
             get => field;
@@ -36,6 +47,9 @@ namespace WinUIMusicPlayer.ViewModel
         private void ApplyLicenseState()
         {
             LicenseRestricted = _licenseService.IsRestricted;
+            OnPropertyChanged(nameof(CanPurchaseLicense));
+            OnPropertyChanged(nameof(LicenseDescription));
+            PurchaseLicenseCommand.NotifyCanExecuteChanged();
         }
     }
 }

@@ -1871,14 +1871,14 @@
   <data name="DspDeviceSaveError" xml:space="preserve"><value>Не удалось сохранить коррекцию. Существующие привязки не изменены.</value></data>
   <data name="CurveLiveSaveError" xml:space="preserve"><value>Не удалось сохранить коррекцию. Проверьте хранилище, затем закройте окно ещё раз для повторной попытки.</value></data>
   <data name="CurveApplyPreset.Content" xml:space="preserve"><value>Применить пресет</value></data>
-  <data name="LicenseTrialExpiredDsp" xml:space="preserve">
-    <value>Срок пробной версии истёк: эффекты DSP, кроме эквалайзера, и битовый поток DSD Dop/Native заблокированы. Купите полную версию, чтобы разблокировать</value>
+  <data name="LicenseRestrictedDsp" xml:space="preserve">
+    <value>Нет действующей лицензии: эффекты DSP, кроме эквалайзера, и битовый поток DSD DoP/Native заблокированы. Купите полную версию для разблокировки</value>
   </data>
   <data name="LicenseTrialRemaining" xml:space="preserve">
     <value>До конца пробной версии осталось дней: {0}</value>
   </data>
   <data name="LicenseDsdLocked" xml:space="preserve">
-    <value>Срок пробной версии истёк: DSD Dop / Native заблокирован. Купите полную версию, чтобы разблокировать</value>
+    <value>Нет действующей лицензии: DSD DoP / Native заблокирован. Купите полную версию для разблокировки</value>
   </data>
   <data name="LicensePurchase" xml:space="preserve">
     <value>Купить полную версию</value>

@@ -37,11 +37,13 @@ namespace WinUIMusicPlayer.Services
             MusicDatabaseService.LoadWindowState();
             App.MainWindow = App.Services.GetRequiredService<MainWindow>();
             App.MainWindow.Activate();
+            // HWND 已可用；Store 查询与其余启动工作并行，首推设置前再汇合。
+            var licenseInitialization = App.Services.GetRequiredService<LicenseService>().InitializeAsync();
             await Task.Run(() => RunLongOpsAsync(MusicDatabaseService, cancellationToken), cancellationToken);
             ToolUtils.CleanupStaleCacheFiles();
             await musicBrowseViewModel.LoadPlayStateToMusicBrowsePage();
             // 许可状态必须在首次推送设置前就绪，受限判定才能作用于首推内容。
-            await App.Services.GetRequiredService<LicenseService>().InitializeAsync();
+            await licenseInitialization;
             await ipcService.InitializeMusic(appViewModel.CurrentPlayingMusic);
             App.MainWindow.ShowMainPage();
             appViewModel.IsInitialized = true;
@@ -54,6 +56,7 @@ namespace WinUIMusicPlayer.Services
         // 应用关闭时执行清理
         public Task StopAsync(CancellationToken cancellationToken)
         {
+            App.Services.GetRequiredService<LicenseService>().Dispose();
             return Task.CompletedTask;
         }
 

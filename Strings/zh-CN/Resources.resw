@@ -1870,14 +1870,14 @@
   <data name="DspDeviceSaveError" xml:space="preserve"><value>校正保存失败，原有绑定未改变。请重试。</value></data>
   <data name="CurveLiveSaveError" xml:space="preserve"><value>校正未能保存。请检查存储，然后再次关闭以重试。</value></data>
   <data name="CurveApplyPreset.Content" xml:space="preserve"><value>应用预设</value></data>
-  <data name="LicenseTrialExpiredDsp" xml:space="preserve">
-    <value>试用已过期：均衡器以外的 DSP 音效与 DSD Dop/Native 位流已锁定，购买完整版以解锁</value>
+  <data name="LicenseRestrictedDsp" xml:space="preserve">
+    <value>许可未激活：均衡器以外的 DSP 音效与 DSD DoP/Native 位流已锁定，购买完整版以解锁</value>
   </data>
   <data name="LicenseTrialRemaining" xml:space="preserve">
     <value>试用期剩余 {0} 天</value>
   </data>
   <data name="LicenseDsdLocked" xml:space="preserve">
-    <value>试用已过期，DSD Dop / DSD Native 已锁定，购买完整版以解锁</value>
+    <value>许可未激活：DSD DoP / Native 已锁定，购买完整版以解锁</value>
   </data>
   <data name="LicensePurchase" xml:space="preserve">
     <value>购买完整版</value>

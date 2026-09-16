@@ -49,6 +49,7 @@ namespace WinUIMusicPlayer.Services
         private Task? _serverMonitorTask;
         private readonly ILogger<IpcService> _logger;
         private readonly LicenseService _license;
+        private bool _lastLicenseRestricted;
         private AppViewModel AppViewModel { get; }
 
         private int _lastNotificationVersion;
@@ -66,6 +67,7 @@ namespace WinUIMusicPlayer.Services
         {
             AppViewModel = appViewModel;
             _license = license;
+            _lastLicenseRestricted = license.IsRestricted;
             _logger = logger;
             _license.StateChanged += OnLicenseStateChanged;
         }
@@ -460,15 +462,20 @@ namespace WinUIMusicPlayer.Services
             ConvolutionEnabled = false
         };
 
-        /// <summary>许可受限或输出通道未就绪时重推输出与音效设置：
+        /// <summary>许可门控变化时重推输出与音效设置；剩余天数变化不触发重推：
         /// 受限瞬间 DSD 位流会话当场回退 PCM，购买后原设置即时恢复。</summary>
         private void OnLicenseStateChanged()
         {
+            // 启动查询与设置加载并行，首推由 InitializeMusic 统一发布完整设置。
+            if (!AppViewModel.IsInitialized) { _lastLicenseRestricted = _license.IsRestricted; return; }
             if (Volatile.Read(ref _disposed) != 0 || _transport == null) return;
+            bool restricted = _license.IsRestricted;
+            if (_lastLicenseRestricted == restricted) return;
             try
             {
                 UpdateSettings();
                 UpdateDsp();
+                _lastLicenseRestricted = restricted;
             }
             catch (Exception ex)
             {

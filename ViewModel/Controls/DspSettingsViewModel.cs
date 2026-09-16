@@ -28,12 +28,12 @@ public partial class DspSettingsViewModel : ObservableObject
     /// <summary>弹出 Store 购买对话框；完成后许可服务自动刷新并重推设置。</summary>
     public IAsyncRelayCommand PurchaseCommand { get; }
 
-    public DspSettingsViewModel(IpcService ipc, MusicDatabaseService database, LicenseService license)
+    public DspSettingsViewModel(IpcService ipc, MusicDatabaseService database, LicenseService license, AppViewModel appViewModel)
     {
         _ipc = ipc;
         _database = database;
         _license = license;
-        PurchaseCommand = new AsyncRelayCommand(_license.PurchaseAsync);
+        PurchaseCommand = appViewModel.PurchaseLicenseCommand;
         _queue = DispatcherQueue.GetForCurrentThread();
         _commitTimer = _queue.CreateTimer();
         _commitTimer.Interval = TimeSpan.FromMilliseconds(250);
@@ -217,9 +217,9 @@ public partial class DspSettingsViewModel : ObservableObject
     public bool EffectsActive { get => field; private set => SetProperty(ref field, value); }
     /// <summary>非 EQ 的 DSP 子设置可编辑：效果已生效且未受许可限制（EQ 入口单独用 EffectsActive）。</summary>
     public bool EffectsEditable { get => field; private set => SetProperty(ref field, value); }
-    /// <summary>许可受限（试用已到期）：非 EQ 的 DSP 编辑与写入锁定。</summary>
+    /// <summary>许可非活跃：非 EQ 的 DSP 编辑与写入锁定。</summary>
     public bool LicenseRestricted { get => field; private set => SetProperty(ref field, value); }
-    /// <summary>顶部提示条级别：试用到期升为警告，其余保持信息级。</summary>
+    /// <summary>顶部提示条级别：许可受限升为警告，其余保持信息级。</summary>
     public InfoBarSeverity InfoSeverity { get => field; private set => SetProperty(ref field, value); } = InfoBarSeverity.Informational;
     /// <summary>当前输出为立体声（或空闲未知）。</summary>
     public bool StereoSupported { get => field; private set => SetProperty(ref field, value); }
@@ -334,7 +334,7 @@ public partial class DspSettingsViewModel : ObservableObject
         // 许可优先级最高：试用到期提示覆盖 DSP 状态消息；试用期内仅填补原本关闭的提示条。
         if (LicenseRestricted)
         {
-            InfoMessage = ToolUtils.GetString("LicenseTrialExpiredDsp");
+            InfoMessage = ToolUtils.GetString("LicenseRestrictedDsp");
             InfoSeverity = InfoBarSeverity.Warning;
             infoOpen = true;
         }

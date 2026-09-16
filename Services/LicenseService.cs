@@ -1,7 +1,7 @@
 using System;
 using System.IO;
-using System.Threading;
 using System.Threading.Tasks;
+using CommunityToolkit.WinUI;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
 using Windows.ApplicationModel;
@@ -9,56 +9,69 @@ using Windows.Services.Store;
 
 namespace WinUIMusicPlayer.Services;
 
-/// <summary>许可状态；受限 = Store 确认试用已到期。</summary>
+/// <summary>许可状态；受限表示 Store 返回非活跃许可，不限定为试用到期。</summary>
 public enum AppLicenseState
 {
-    /// <summary>非 Store 渠道或查询失败：不限制任何功能（fail-open）。</summary>
+    /// <summary>非 Store 渠道或首次查询失败：不限制任何功能（fail-open）。</summary>
     StoreUnavailable,
     /// <summary>已购完整版。</summary>
     FullLicense,
     /// <summary>试用期内。</summary>
     TrialActive,
-    /// <summary>试用已到期：限制非 EQ 的 DSP 与 DSD 位流。</summary>
-    TrialExpired
+    /// <summary>许可非活跃（包含试用到期）：限制非 EQ 的 DSP 与 DSD 位流。</summary>
+    LicenseInactive
 }
 
 /// <summary>Store 试用许可状态源：到期后限制非 EQ 的 DSP 与 DSD 位流；
-/// 非 Store 渠道和查询失败一律 fail-open 不限制，判定与迁移过程全部写入日志。</summary>
-public sealed class LicenseService
+/// 非 Store 渠道和首次查询失败不限制；后续查询失败保持上次确认的状态。</summary>
+public sealed class LicenseService : IDisposable
 {
     private const string ProductId = "9NFW1RPPT999";
     private static readonly TimeSpan RefreshInterval = TimeSpan.FromMinutes(30);
 
     private readonly ILogger<LicenseService> _logger;
-    private readonly DispatcherQueue? _queue;
+    private readonly TimeProvider _timeProvider;
+    private readonly DispatcherQueue _queue;
+    private readonly Func<Task> _refreshOnUi;
     private StoreContext? _context;
     private string? _productStoreId;
-    private Timer? _refreshTimer;
-    private int _refreshing;
+    private DispatcherQueueTimer? _refreshTimer;
+    private DispatcherQueueTimer? _trialClockTimer;
+    private TaskCompletionSource? _refreshCompletion;
+    private bool _refreshPending, _disposed;
+    private int? _lastNotifiedDays;
 
     public AppLicenseState State { get; private set; } = AppLicenseState.StoreUnavailable;
     /// <summary>试用到期时间；仅 <see cref="AppLicenseState.TrialActive"/> 时有意义。</summary>
     public DateTimeOffset? TrialExpiration { get; private set; }
     /// <summary>是否限制非 EQ 的 DSP 与 DSD 位流。</summary>
-    public bool IsRestricted => State == AppLicenseState.TrialExpired;
-    /// <summary>试用剩余天数（不足一天按 1 计）；非试用期内为 null。</summary>
+    public bool IsRestricted => State == AppLicenseState.LicenseInactive;
+    /// <summary>试用期间及许可非活跃时均可购买。</summary>
+    public bool CanPurchase => State is AppLicenseState.TrialActive or AppLicenseState.LicenseInactive;
+    /// <summary>试用剩余天数（不足一天按 1 计，到期为 0）；非试用期内为 null。</summary>
     public int? TrialRemainingDays => State == AppLicenseState.TrialActive && TrialExpiration is { } expiration
-        ? Math.Max(1, (int)Math.Ceiling((expiration - DateTimeOffset.Now).TotalDays))
+        ? Math.Max(0, (int)Math.Ceiling((expiration - _timeProvider.GetUtcNow()).TotalDays))
         : null;
-    /// <summary>许可状态变化后在 UI 线程触发。</summary>
+    /// <summary>许可状态、到期时间或剩余天数变化后在 UI 线程触发。</summary>
     public event Action? StateChanged;
 
-    public LicenseService(ILogger<LicenseService> logger)
+    public LicenseService(ILogger<LicenseService> logger) : this(logger, TimeProvider.System) { }
+
+    internal LicenseService(ILogger<LicenseService> logger, TimeProvider timeProvider)
     {
         _logger = logger;
-        _queue = DispatcherQueue.GetForCurrentThread();
+        _timeProvider = timeProvider;
+        _queue = DispatcherQueue.GetForCurrentThread()
+            ?? throw new InvalidOperationException("LicenseService 必须在 UI 线程创建。");
+        _refreshOnUi = RefreshOnUiAsync;
     }
 
     /// <summary>启动时判定许可状态；必须在首次向播放进程推送设置前完成。</summary>
     public async Task InitializeAsync()
     {
+        if (_disposed || _refreshTimer != null) return;
         #if DEBUG
-        if (TryApplyDebugOverride()) return;
+        if (TryApplyDebugOverride()) { StartTimers(); return; }
         #endif
         if (Package.Current.SignatureKind != PackageSignatureKind.Store)
         {
@@ -67,17 +80,45 @@ public sealed class LicenseService
         }
         try
         {
-            _context = StoreContext.GetDefault();
-            _context.OfflineLicensesChanged += (_, _) => _ = RefreshAsync();
+            EnsureContext();
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "StoreContext 初始化失败，许可门控不生效（fail-open）");
             return;
         }
+        StartTimers();
         await RefreshAsync();
-        // 时间型试用到期依赖本地许可缓存的时间判定：定时重查覆盖应用长期运行的场景。
-        _refreshTimer = new Timer(_ => _ = RefreshAsync(), null, RefreshInterval, RefreshInterval);
+    }
+
+    private StoreContext EnsureContext()
+    {
+        if (_context != null) return _context;
+        var window = App.MainWindow ?? throw new InvalidOperationException("许可初始化需要主窗口。");
+        var context = StoreContext.GetDefault();
+        WinRT.Interop.InitializeWithWindow.Initialize(context, WinRT.Interop.WindowNative.GetWindowHandle(window));
+        context.OfflineLicensesChanged += OnOfflineLicensesChanged;
+        return _context = context;
+    }
+
+    private void StartTimers()
+    {
+        _refreshTimer = _queue.CreateTimer();
+        _refreshTimer.Interval = RefreshInterval;
+        _refreshTimer.Tick += OnRefreshTick;
+        _refreshTimer.Start();
+        // UI 时钟只计算剩余天数，不触发 Store IO；复用方法委托，避免每次 Tick 分配闭包。
+        _trialClockTimer = _queue.CreateTimer();
+        _trialClockTimer.Interval = TimeSpan.FromMinutes(1);
+        _trialClockTimer.Tick += OnTrialClockTick;
+        _trialClockTimer.Start();
+    }
+
+    private void OnOfflineLicensesChanged(StoreContext sender, object args) => _ = RefreshAsync();
+    private void OnRefreshTick(DispatcherQueueTimer sender, object args) => _ = RefreshAsync();
+    private void OnTrialClockTick(DispatcherQueueTimer sender, object args)
+    {
+        if (!_disposed && State == AppLicenseState.TrialActive) ApplyState(State, TrialExpiration);
     }
 
     #if DEBUG
@@ -101,7 +142,7 @@ public sealed class LicenseService
                 return true;
             case "expired":
                 _logger.LogInformation("DEBUG 覆盖许可状态：试用已到期");
-                ApplyState(AppLicenseState.TrialExpired, null);
+                ApplyState(AppLicenseState.LicenseInactive, null);
                 return true;
             default:
                 _logger.LogWarning("DEBUG 许可覆盖值无效：{Value}（可用：full/trial/expired）", source);
@@ -127,37 +168,61 @@ public sealed class LicenseService
     /// <summary>重查许可；失败时记录日志并保持当前状态（初始状态即 fail-open 的 StoreUnavailable）。</summary>
     public async Task RefreshAsync()
     {
-        if (_context == null) return;
-        if (Interlocked.Exchange(ref _refreshing, 1) == 1) return;
+        // Store 回调可能来自后台；查询调度、快照和通知统一由 UI 线程维护。
         try
         {
-            StoreAppLicense license = await _context.GetAppLicenseAsync();
-            if (!license.IsActive)
-            {
-                ApplyState(AppLicenseState.TrialExpired, null);
-                return;
-            }
-            if (license.IsTrial) ApplyState(AppLicenseState.TrialActive, license.ExpirationDate);
-            else ApplyState(AppLicenseState.FullLicense, null);
+            await _queue.EnqueueAsync(_refreshOnUi);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Store 许可查询失败，保持当前状态（{State}，fail-open）", State);
+            _logger.LogWarning(ex, "许可刷新调度失败，保持当前状态");
         }
-        finally
+    }
+
+    private Task RefreshOnUiAsync()
+    {
+        if (_disposed || _context == null) return Task.CompletedTask;
+        _refreshPending = true;
+        if (_refreshCompletion is { } running) return running.Task;
+        // 先发布完成源，再开始查询，兼容 Store 同步返回缓存结果。
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _refreshCompletion = completion;
+        _ = DrainRefreshAsync(completion);
+        return completion.Task;
+    }
+
+    private async Task DrainRefreshAsync(TaskCompletionSource completion)
+    {
+        try
         {
-            Interlocked.Exchange(ref _refreshing, 0);
+            do
+            {
+                _refreshPending = false;
+                try
+                {
+                    StoreAppLicense license = await _context!.GetAppLicenseAsync();
+                    if (_disposed) break;
+                    if (!license.IsActive) ApplyState(AppLicenseState.LicenseInactive, null);
+                    else if (license.IsTrial) ApplyState(AppLicenseState.TrialActive, license.ExpirationDate);
+                    else ApplyState(AppLicenseState.FullLicense, null);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Store 许可查询失败，保持当前状态（{State}）", State);
+                }
+                // 在途查询期间的请求合并为一次补查，所有调用方等待补查完成。
+            } while (_refreshPending && !_disposed);
         }
+        finally { _refreshCompletion = null; completion.TrySetResult(); }
     }
 
     /// <summary>弹出 Store 购买对话框；无法取得 StoreId 时回退打开商店页面。完成后强制刷新许可。</summary>
     public async Task PurchaseAsync()
     {
+        if (_disposed || !CanPurchase) return;
         try
         {
-            var context = _context ??= StoreContext.GetDefault();
-            if (App.MainWindow is { } window)
-                WinRT.Interop.InitializeWithWindow.Initialize(context, WinRT.Interop.WindowNative.GetWindowHandle(window));
+            var context = EnsureContext();
             var storeId = _productStoreId ??= await GetProductStoreIdAsync(context);
             if (storeId == null)
             {
@@ -196,13 +261,17 @@ public sealed class LicenseService
     private void ApplyState(AppLicenseState next, DateTimeOffset? expiration)
     {
         var previous = State;
-        if (next == State)
-        {
-            TrialExpiration = expiration;
-            return;
-        }
+        var previousExpiration = TrialExpiration;
         State = next;
         TrialExpiration = expiration;
+        int? remainingDays = TrialRemainingDays;
+        bool detailsChanged = previousExpiration != expiration || _lastNotifiedDays != remainingDays;
+        _lastNotifiedDays = remainingDays;
+        if (previous == next)
+        {
+            if (detailsChanged) RaiseStateChanged();
+            return;
+        }
         switch (next)
         {
             case AppLicenseState.FullLicense:
@@ -212,8 +281,8 @@ public sealed class LicenseService
                 _logger.LogInformation("许可状态迁移：{Previous} → 试用中，{Expiration} 到期（剩 {Days} 天）",
                     previous, expiration, TrialRemainingDays);
                 break;
-            case AppLicenseState.TrialExpired:
-                _logger.LogInformation("许可状态迁移：{Previous} → 试用已到期，非 EQ 的 DSP 与 DSD 位流已限制", previous);
+            case AppLicenseState.LicenseInactive:
+                _logger.LogInformation("许可状态迁移：{Previous} → 许可非活跃，非 EQ 的 DSP 与 DSD 位流已限制", previous);
                 break;
             default:
                 _logger.LogInformation("许可状态迁移：{Previous} → Store 不可用（fail-open）", previous);
@@ -224,23 +293,22 @@ public sealed class LicenseService
 
     private void RaiseStateChanged()
     {
-        if (StateChanged is not { } handlers) return;
-        if (_queue is { } queue && !queue.HasThreadAccess)
-        {
-            queue.TryEnqueue(() =>
-            {
-                foreach (Action handler in handlers.GetInvocationList())
-                {
-                    try { handler(); }
-                    catch (Exception ex) { _logger.LogWarning(ex, "许可状态订阅者失败"); }
-                }
-            });
-            return;
-        }
-        foreach (Action handler in handlers.GetInvocationList())
+        // .NET 9+ 的枚举器不创建 GetInvocationList 数组，并保留逐订阅者异常隔离。
+        foreach (Action handler in Delegate.EnumerateInvocationList(StateChanged))
         {
             try { handler(); }
             catch (Exception ex) { _logger.LogWarning(ex, "许可状态订阅者失败"); }
         }
+    }
+
+    /// <summary>在 UI 线程停止时钟并解除 Store 订阅；在途查询完成后不再发布状态。</summary>
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+        if (_refreshTimer is { } refresh) { refresh.Stop(); refresh.Tick -= OnRefreshTick; }
+        if (_trialClockTimer is { } clock) { clock.Stop(); clock.Tick -= OnTrialClockTick; }
+        if (_context is { } context) context.OfflineLicensesChanged -= OnOfflineLicensesChanged;
+        StateChanged = null;
     }
 }

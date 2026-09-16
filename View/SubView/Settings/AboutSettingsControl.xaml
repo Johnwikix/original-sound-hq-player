@@ -91,6 +91,15 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
 
+                <controls:SettingsCard
+                    Header="{x:Bind tool:ToolUtils.GetString('LicensePurchase')}"
+                    Description="{x:Bind ViewModel.AppViewModel.LicenseDescription, Mode=OneWay}"
+                    Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.CanPurchaseLicense), Mode=OneWay}">
+                    <Button
+                        Content="{x:Bind tool:ToolUtils.GetString('LicensePurchase')}"
+                        Command="{x:Bind ViewModel.AppViewModel.PurchaseLicenseCommand}" />
+                </controls:SettingsCard>
+
                 <!--  音频可视化  -->
                 <controls:SettingsCard
                     x:Uid="SpectrumVisualization"
