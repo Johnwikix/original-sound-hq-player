@@ -40,6 +40,8 @@ namespace WinUIMusicPlayer.Services
             await Task.WhenAll(
                 MusicDatabaseService.GetEqualizerSettingsAsync(),
                 MusicDatabaseService.GetSettingsAsync());
+            // ThemeType 初始即为 Default，恢复同值不会触发 setter；创建视图前显式解析实际主题。
+            appViewModel.UpdateCover();
             MusicDatabaseService.LoadWindowState();
             App.MainWindow = App.Services.GetRequiredService<MainWindow>();
             var shutdown = App.Services.GetRequiredService<ShutdownCoordinator>();
