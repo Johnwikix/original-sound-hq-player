@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1887,10 +1887,10 @@
   <data name="LicenseAtmosLocked" xml:space="preserve"><value>Нет действующей лицензии: сквозная передача Atmos по HDMI заблокирована. Купите полную версию в разделе Настройки → О программе</value></data>
   <data name="LicenseRestrictedOutput" xml:space="preserve"><value>Для некоторых расширенных функций вывода нужна полная лицензия. Купите её для разблокировки; сохранённые настройки будут сохранены.</value></data>
   <data name="DesktopLyricsAutoHide.Header" xml:space="preserve">
-    <value>Скрывать текст на рабочем столе, когда страница воспроизведения на переднем плане</value>
+    <value>Скрывать текст на рабочем столе на странице воспроизведения</value>
   </data>
   <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
-    <value>Действует, если текст на рабочем столе включён. Он появится снова при выходе со страницы воспроизведения или переходе плеера в фоновый режим.</value>
+    <value>Действует, если текст на рабочем столе включён. Он появится снова при выходе со страницы воспроизведения или при сворачивании плеера в трей.</value>
   </data>
   <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
     <value>Ly</value>

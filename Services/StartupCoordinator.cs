@@ -122,8 +122,8 @@ namespace WinUIMusicPlayer.Services
             var appViewModel = App.Services.GetRequiredService<AppViewModel>();
             App.MainWindow.ShowMainPage();
             App.Services.GetRequiredService<AppLifecycle>().TransitionTo(AppPhase.Ready);
-            App.Services.GetRequiredService<DesktopLyricsViewModel>().IsMainWindowForeground =
-                App.MainWindow.IsForeground;
+            App.Services.GetRequiredService<DesktopLyricsViewModel>().IsMainWindowShown =
+                App.MainWindow.Visible;
             App.MainWindow.InitializeTaskbarHelper();
             var usb = App.Services.GetRequiredService<UsbDeviceService>();
             App.Services.GetRequiredService<ShutdownCoordinator>().RegisterCleanup(usb.StopWatching);

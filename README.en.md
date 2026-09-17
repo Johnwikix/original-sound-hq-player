@@ -46,13 +46,14 @@
 
 ## 🔒 Free Trial & Full Version
 
-Installing from the Microsoft Store starts a free trial with every feature available (trial length as shown on the Store listing). After the trial ends the player keeps working, with the following full-version features locked:
+The app is becoming paid starting with v1.2.3.0 (Microsoft Store channel): installing starts a free trial with every feature available (trial length as shown on the Store listing). After the trial ends the player keeps playing your local music — core playback, the 10-band equalizer, and the remaining DSP effects (loudness normalization, unified preamp, channel & headphone effects) stay free, while the following full-version features are locked:
 
-- **Advanced DSP**: convolution correction, loudness normalization, unified preamp, channel & headphone effects (the 10-band equalizer remains free)
+- **Convolution correction**: curve editor, WAV impulse response (IR) import, per-output-device binding, and preset management
 - **DSD bitstream output**: DoP and DSD Native
-- **Experimental outputs**: 5.1 multichannel PCM output and Atmos (E-AC-3/JOC) HDMI bitstream passthrough (requires a compatible receiver)
+- **5.1 multichannel PCM output**
+- **Atmos (E-AC-3/JOC) HDMI bitstream passthrough** (requires a compatible receiver)
 
-While restricted, your existing settings are never modified or erased — complete the purchase from the DSP page banner or the About page and your original settings take effect again automatically. Builds obtained outside the Microsoft Store (including compiling from source) are not subject to these restrictions.
+While restricted, your existing settings are never modified or erased — complete the purchase from the DSP/general-settings banner or the About page and your original settings take effect again automatically. Builds obtained outside the Microsoft Store (including compiling from source) are not subject to these restrictions.
 
 ## 🌟 Features
 
@@ -73,7 +74,7 @@ While restricted, your existing settings are never modified or erased — comple
   - Supports 12+ audio formats including DSD, FLAC, WAV, MP3
   - Audio conversion: WAV, FLAC, ALAC, MP3, AAC, OGG, OPUS with selectable lossy bitrate
   - Built-in 10-band equalizer (per-band gain and Q) with multiple presets
-  - Convolution correction: draw a correction curve (2–32 draggable control points with named presets that can be updated or deleted in place) or import a headphone/room-correction WAV impulse response (IR); rendered into a minimum-phase FIR for real-time convolution, resampled to the output rate automatically, with a live combined EQ/convolution response preview in the editor
+  - Convolution correction: draw a correction curve (2–32 draggable control points with named presets that can be updated or deleted in place) or import a headphone/room-correction WAV impulse response (IR); rendered into a minimum-phase FIR for real-time convolution, resampled to the output rate automatically; correction curves can be bound per output device and are applied automatically when devices are plugged, removed, or switched; edits take effect instantly with auto-save, and offline editing is supported when no audio output is active; live combined EQ/convolution response preview in the editor
   - Unified preamp: applied to EQ and convolution together — set manually or auto-compensated from the combined response peak (1 dB headroom, normalized to −1 dB) to prevent clipping from correction boosts
   - Loudness normalization: background EBU R128 analysis per track, smooth fixed gain applied once complete and cached — files untouched, dynamics uncompressed (target −24 to −12 LUFS, default −18)
   - Channel & headphone effects: balance, L/R swap, mono mixdown, headphone crossfeed, stereo width

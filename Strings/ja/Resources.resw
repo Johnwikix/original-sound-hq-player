@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1887,10 +1887,10 @@
   <data name="LicenseAtmosLocked" xml:space="preserve"><value>有効なライセンスがありません。Atmos HDMI パススルーはロックされています。「設定 → このアプリについて」で製品版を購入すると解除できます</value></data>
   <data name="LicenseRestrictedOutput" xml:space="preserve"><value>一部の高度な出力機能には製品版ライセンスが必要です。購入すると解除され、保存済みの設定は保持されます。</value></data>
   <data name="DesktopLyricsAutoHide.Header" xml:space="preserve">
-    <value>再生詳細ページが前面にあるときデスクトップ歌詞を隠す</value>
+    <value>再生詳細ページ表示中はデスクトップ歌詞を隠す</value>
   </data>
   <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
-    <value>デスクトップ歌詞が有効な場合のみ適用されます。ページを離れるか、プレーヤーがバックグラウンドになると再表示します。</value>
+    <value>デスクトップ歌詞が有効な場合のみ適用されます。ページを離れるか、プレーヤーをトレイに格納すると再表示します。</value>
   </data>
   <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
     <value>词</value>

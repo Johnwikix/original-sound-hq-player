@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1887,10 +1887,10 @@
   <data name="LicenseAtmosLocked" xml:space="preserve"><value>Keine aktive Lizenz: Atmos-HDMI-Passthrough ist gesperrt. Vollversion unter Einstellungen → Info kaufen</value></data>
   <data name="LicenseRestrictedOutput" xml:space="preserve"><value>Einige erweiterte Ausgabefunktionen erfordern die Vollversion. Durch den Kauf werden sie freigeschaltet; gespeicherte Einstellungen bleiben erhalten.</value></data>
   <data name="DesktopLyricsAutoHide.Header" xml:space="preserve">
-    <value>Desktop-Liedtexte bei Wiedergabedetails im Vordergrund ausblenden</value>
+    <value>Desktop-Liedtexte auf der Wiedergabedetailseite ausblenden</value>
   </data>
   <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
-    <value>Gilt bei aktivierten Desktop-Liedtexten. Beim Verlassen der Wiedergabedetails oder Wechsel des Players in den Hintergrund werden sie wieder angezeigt.</value>
+    <value>Gilt bei aktivierten Desktop-Liedtexten. Beim Verlassen der Wiedergabedetails oder beim Verstecken des Players im Tray werden sie wieder angezeigt.</value>
   </data>
   <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
     <value>Ly</value>

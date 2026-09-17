@@ -18,7 +18,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
     {
         private bool _isEnabled;
         private bool _autoHideOnPlayingDetail;
-        private bool _isMainWindowForeground;
+        private bool _isMainWindowShown;
         private bool _isPlayingDetailVisible;
 
         /// <summary>自动隐藏仅改变窗口显示，不改变用户的桌面歌词总开关。</summary>
@@ -34,14 +34,15 @@ namespace WinUIMusicPlayer.DesktopLyrics
             }
         }
 
-        /// <summary>主窗口事件转发的前台状态；仅变化时更新，无轮询、闭包或设置落盘。</summary>
-        public bool IsMainWindowForeground
+        /// <summary>主窗口事件转发的显示状态：窗口存在（含失焦/最小化）为 true，仅收进托盘后为 false；
+        /// 与激活/焦点无关。仅变化时更新，无轮询、闭包或设置落盘。</summary>
+        public bool IsMainWindowShown
         {
-            get => _isMainWindowForeground;
+            get => _isMainWindowShown;
             set
             {
-                if (_isMainWindowForeground == value) return;
-                _isMainWindowForeground = value;
+                if (_isMainWindowShown == value) return;
+                _isMainWindowShown = value;
                 UpdateWindowVisibility();
             }
         }
@@ -62,7 +63,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             if (!_isEnabled) return;
             DesktopLyricsManager.SetWindowVisible(
-                !(_autoHideOnPlayingDetail && _isPlayingDetailVisible && _isMainWindowForeground));
+                !(_autoHideOnPlayingDetail && _isPlayingDetailVisible && _isMainWindowShown));
         }
 
         private bool _isLocked = true;

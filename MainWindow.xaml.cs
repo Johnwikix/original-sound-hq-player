@@ -42,7 +42,6 @@ namespace WinUIMusicPlayer
         private Controls.NotifyIconControl? _notifyIconControl;
         private ILogger<MainWindow> _logger;
         private readonly object _trimLock = new();
-        internal bool IsForeground { get; private set; }
 
         public MainWindow()
         {
@@ -77,10 +76,8 @@ namespace WinUIMusicPlayer
 
         private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
         {
-            IsForeground = args.WindowActivationState != WindowActivationState.Deactivated;
+            // 桌面歌词的详情页隐藏不看激活/焦点状态，仅由 AppWindow_Changed 的可见性变化驱动。
             if (!App.Services.GetRequiredService<AppViewModel>().IsInitialized) return;
-            App.Services.GetRequiredService<DesktopLyrics.DesktopLyricsViewModel>().IsMainWindowForeground =
-                IsForeground;
             InitializeTaskbarHelper();
         }
 
@@ -123,10 +120,12 @@ namespace WinUIMusicPlayer
         private void AppWindow_Changed(Microsoft.UI.Windowing.AppWindow sender, Microsoft.UI.Windowing.AppWindowChangedEventArgs args)
         {
             if (AppWindow == null) return;
-            if (App.Services.GetRequiredService<AppViewModel>().IsInitialized &&
-                ((args.DidVisibilityChange && !sender.IsVisible) ||
-                sender.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Minimized }))
-                App.Services.GetRequiredService<DesktopLyrics.DesktopLyricsViewModel>().IsMainWindowForeground = false;
+            // 仅窗口可见性（收进/弹出托盘）参与桌面歌词的详情页隐藏判断：
+            // 失焦、最小化到任务栏时窗口仍存在，AppWindow.IsVisible 保持 true，不恢复歌词。
+            // 最小化只改 Presenter 状态不触发 DidVisibilityChange，无需单独处理。
+            if (App.Services.GetRequiredService<AppViewModel>().IsInitialized && args.DidVisibilityChange)
+                App.Services.GetRequiredService<DesktopLyrics.DesktopLyricsViewModel>().IsMainWindowShown =
+                    sender.IsVisible;
 
             // 状态切换瞬间 DidPositionChange/DidSizeChange 会先于 DidPresenterChange 到达,
             // 此时 op.State 仍是旧值(Restored), 但 AppWindow.Position/Size 已经是新状态
