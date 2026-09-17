@@ -6,7 +6,18 @@ namespace Microsoft.UI.Dispatching
     {
         public static DispatcherQueue GetForCurrentThread() => new();
         public DispatcherQueueTimer CreateTimer() => new();
-        public bool TryEnqueue(Action action) { action(); return true; }
+        public static bool DeferCallbacks { get; set; }
+        private static readonly Queue<Action> Pending = new();
+        public bool TryEnqueue(Action action)
+        {
+            if (DeferCallbacks) Pending.Enqueue(action);
+            else action();
+            return true;
+        }
+        public static void Drain()
+        {
+            while (Pending.TryDequeue(out var action)) action();
+        }
     }
     public class DispatcherQueueTimer
     {
@@ -111,15 +122,17 @@ namespace WinUIMusicPlayer.Services
             return SaveCurrentDeviceCorrectionsAsync();
         }
     }
-    public class IpcService
+    public partial class IpcService
     {
         public event Action? DspStateChanged;
         public DspStateSnapshot? CurrentDspState { get; private set; }
         public void ChangeOutput(string id, long? generation = null)
         {
+            var previous = CurrentDspState?.State;
             long next = generation ?? ((CurrentDspState?.State.OutputGeneration ?? 0) + (CurrentDspState?.State.OutputDeviceId == id ? 0 : 1));
             if (CurrentDspState?.State.OutputDeviceId != id || CurrentDspState?.State.OutputGeneration != next) LastPreview = null;
             CurrentDspState = new(1, new(0, true, 2, default, 0, 0, SampleRate: 48000, OutputDeviceId: id, OutputGeneration: next));
+            SynchronizeCorrectionOutput(previous, CurrentDspState.State);
             DspStateChanged?.Invoke();
         }
         public int Restores { get; private set; }
@@ -146,13 +159,10 @@ namespace WinUIMusicPlayer.Services
         public void EndDspPreview() => UpdateDsp();
         public string? PreviewDeviceId { get; private set; }
         public long PreviewGeneration { get; private set; }
+        public int PreviewCount { get; private set; }
         public void PreviewDsp(DspSettings draft, string deviceId, long generation)
-        { LastPreview = draft; PreviewDeviceId = deviceId; PreviewGeneration = generation; }
-        private void PublishLiveCorrection()
-        {
-            if (CurrentDspState?.State is { } state && AppSettings.TryGetLiveCorrection(state.OutputDeviceId,
-                state.OutputGeneration, out var settings)) PreviewDsp(settings, state.OutputDeviceId, state.OutputGeneration);
-        }
+        { PreviewCount++; LastPreview = draft; PreviewDeviceId = deviceId; PreviewGeneration = generation; }
+        private readonly object _logger = new();
     }
 }
 namespace WinUIMusicPlayer.ViewModel.Controls

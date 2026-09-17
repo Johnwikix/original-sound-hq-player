@@ -128,13 +128,15 @@ following = new ConvolutionCurveViewModel(ipc, store, database, new LicenseServi
 await following.OpenAsync();
 Check(following.Draft.CurvePoints == Effective().CurvePoints && following.Draft.CurvePoints != b.Points,
     "Reopening the editor must show the still-active live curve.");
+await following.ApplyPresetCommand.ExecuteAsync(null);
 ipc.ChangeOutput("a");
 Check(following.Draft.CurvePoints == editedA.CurvePoints, "A -> B -> A must restore A's saved binding.");
 ipc.ChangeOutput("b");
 Check(following.Draft.CurvePoints == b.Points, "Returning to B discards its unbound live changes.");
 following.MovePoint(0, 20, 8);
 ipc.ChangeOutput("b", 100);
-Check(following.Draft.CurvePoints == b.Points, "A rebuilt output must not reuse an old-generation live correction.");
+Check(following.Points[0].GainDb == 8 && ipc.LastPreview!.CurvePoints == following.Draft.CurvePoints, "A rebuilt output must receive the custom draft with its new generation.");
+await following.ApplyPresetCommand.ExecuteAsync(null);
 Check(AppSettings.Dsp.CurvePoints == global.CurvePoints, "Device editing must retain the global curve.");
 ipc.ChangeOutput("unbound");
 Check(!Effective().ConvolutionEnabled, "Unbound output initially bypasses convolution.");
@@ -142,7 +144,7 @@ following.MovePoint(0, 20, -2);
 Check(AppSettings.DeviceCorrections.Find("unbound") == null && Effective().CurvePoints == following.Draft.CurvePoints,
     "Unbound-device editing is live only and must not create a saved binding.");
 ipc.ChangeOutput("");
-Check(!following.CanEdit, "No endpoint must not accept a device correction.");
+Check(following.CanEdit && following.IsOfflineEditing, "No endpoint must allow a live session draft.");
 AppSettings.DeviceCorrections = AppSettings.DeviceCorrections with { Enabled = false };
 Check(following.Draft.CurvePoints == global.CurvePoints, "Leaving device mode restores global settings.");
 following.MovePoint(0, 20, 7);
@@ -317,6 +319,7 @@ switching.MovePoint(0, 20, -8);
 store.SaveGate = new();
 var overwrite = switching.UpdatePresetCommand.ExecuteAsync(null);
 ipc.ChangeOutput("b");
+switching.SelectedPreset = switching.Presets.First(p => p.Name == b.Name);
 switching.MovePoint(0, 20, 9);
 store.SaveGate.SetResult();
 await overwrite;
@@ -356,3 +359,143 @@ bindingsVm.DeviceCorrectionEnabled = !modeBeforeRestriction;
 Check(bindingsVm.DeviceCorrectionEnabled == modeBeforeRestriction && !bindingsVm.CanChangeCorrectionMode
     && !bindingsVm.BindCorrectionCommand.CanExecute(null), "Device binding bypassed the convolution gate.");
 Console.WriteLine("PASS: live convolution editor and device bindings follow the feature gate without changing saved settings.");
+
+// Use the production correction output publisher even while no dialog is open.
+AppSettings.DeviceCorrections = AppSettings.DeviceCorrections with { Enabled = false };
+AppSettings.DeviceCorrections = new DeviceCorrections { Enabled = true, Bindings = [
+    new DeviceCorrection { DeviceId = "cold-a", Settings = AppSettings.Dsp with { CurvePoints = a.Points, CurvePresetName = a.Name } },
+    new DeviceCorrection { DeviceId = "cold-b", Settings = AppSettings.Dsp with { CurvePoints = b.Points, CurvePresetName = b.Name } }
+] };
+var coldStore = new CurvePresetService();
+await coldStore.SaveAsync([a, b]);
+var coldIpc = new IpcService();
+var coldDatabase = new MusicDatabaseService();
+var coldLicense = new LicenseService();
+var cold = new ConvolutionCurveViewModel(coldIpc, coldStore, coldDatabase, coldLicense);
+await cold.OpenAsync();
+cold.SelectedPreset = cold.Presets.First(p => p.Name == a.Name);
+cold.MovePoint(0, 20, -11);
+var customCurve = cold.Draft.CurvePoints;
+var globalCurve = AppSettings.Dsp.CurvePoints;
+Check(cold.CanEdit && cold.IsOfflineEditing && AppSettings.IsCustomCorrectionDraft, "Cold start must create a live session draft.");
+await cold.CloseAsync();
+Check((coldDatabase.SavedDsp == null || coldDatabase.SavedDsp.CurvePoints == globalCurve) && coldDatabase.SavedCorrections == null,
+    "Closing must not persist the custom curve as global settings or device bindings.");
+coldIpc.ChangeOutput("cold-a");
+Check(coldIpc.LastPreview?.CurvePoints == customCurve && coldIpc.PreviewDeviceId == "cold-a",
+    "First playback with the dialog closed must publish the unsaved draft.");
+cold = new ConvolutionCurveViewModel(coldIpc, coldStore, coldDatabase, coldLicense);
+await cold.OpenAsync();
+Check(cold.Draft.CurvePoints == customCurve && cold.SelectedPreset?.Name == a.Name && cold.CanApplyPreset,
+    "Reopening after first playback must preserve both draft and its reapply target.");
+Microsoft.UI.Dispatching.DispatcherQueue.DeferCallbacks = true;
+coldIpc.ChangeOutput("cold-b");
+coldIpc.ChangeOutput("cold-a", 500);
+Microsoft.UI.Dispatching.DispatcherQueue.Drain();
+Microsoft.UI.Dispatching.DispatcherQueue.DeferCallbacks = false;
+Check(cold.Draft.CurvePoints == customCurve && coldIpc.LastPreview?.CurvePoints == customCurve
+    && coldIpc.PreviewGeneration == 500 && !cold.IsOfflineEditing,
+    "Custom draft must audition across switches and output rebuilds despite delayed UI notifications.");
+cold.MovePoint(0, 20, -9);
+await cold.FlushAsync();
+Check(coldIpc.LastPreview?.CurvePoints == cold.Draft.CurvePoints && coldIpc.PreviewDeviceId == "cold-a",
+    "Editing after a switch must affect the current audio output.");
+await cold.ApplyPresetCommand.ExecuteAsync(null);
+Check(!AppSettings.IsCustomCorrectionDraft && coldIpc.LastPreview?.CurvePoints == a.Points,
+    "Reapplying the preset must immediately audition it and exit custom mode.");
+coldIpc.ChangeOutput("cold-b");
+Check(cold.Draft.CurvePoints == b.Points && coldIpc.LastPreview == null,
+    "After reapply, switching devices must restore saved bindings without restarting or toggling.");
+cold.MovePoint(0, 20, 7);
+cold.MovePoint(0, 20, 3);
+Check(!cold.CanUpdatePreset && cold.CanApplyPreset, "A draft identical to its preset must still allow exiting custom mode.");
+await cold.ApplyPresetCommand.ExecuteAsync(null);
+coldIpc.ChangeOutput("cold-a");
+Check(cold.Draft.CurvePoints == a.Points, "Reapplying an identical preset must restore automatic binding.");
+cold.MovePoint(0, 20, 9);
+cold.SelectedPreset = cold.Presets.First(p => p.Name == b.Name);
+await cold.FlushAsync();
+Check(!AppSettings.IsCustomCorrectionDraft && coldIpc.LastPreview?.CurvePoints == b.Points,
+    "Selecting another preset also exits custom mode and auditions it immediately.");
+coldIpc.ChangeOutput("cold-b");
+coldIpc.ChangeOutput("cold-a");
+Check(cold.Draft.CurvePoints == a.Points, "Preset selection must leave subsequent automatic binding intact.");
+var coldBindings = new DspSettingsViewModel(coldIpc, coldDatabase);
+coldBindings.BeginCorrectionEditing(() => cold.Draft, cold.LoadCorrectionDraft, cold.RefreshOutputCorrection);
+cold.MovePoint(0, 20, 4);
+coldBindings.SelectedCorrectionDevice = new BassOutputDevice { EndpointId = "cold-b", Name = "Speakers" };
+await coldBindings.BindCorrectionCommand.ExecuteAsync(null);
+Check(AppSettings.IsCustomCorrectionDraft && coldDatabase.SavedCorrections!.Find("cold-b")!.Settings.CurvePoints == cold.Draft.CurvePoints,
+    "Saving a binding stores a snapshot but does not implicitly apply a preset.");
+await coldBindings.LoadCorrectionCommand.ExecuteAsync(null);
+await cold.FlushAsync();
+Check(!AppSettings.IsCustomCorrectionDraft && coldIpc.LastPreview?.CurvePoints == cold.Draft.CurvePoints,
+    "Explicitly loading a saved binding must exit custom mode and audition on the current output.");
+cold.MovePoint(0, 20, 10);
+AppSettings.DeviceCorrections = AppSettings.DeviceCorrections with { Enabled = false };
+AppSettings.DeviceCorrections = AppSettings.DeviceCorrections with { Enabled = true };
+Check(!AppSettings.IsCustomCorrectionDraft && cold.Draft.CurvePoints == a.Points,
+    "Toggling binding mode clears the session draft and restores the actual binding.");
+coldBindings.EndCorrectionEditing();
+await cold.CloseAsync();
+
+// An offline preset applies once to the first output, then follows normal device bindings.
+AppSettings.DeviceCorrections = AppSettings.DeviceCorrections with { Enabled = false };
+AppSettings.DeviceCorrections = AppSettings.DeviceCorrections with { Enabled = true };
+coldIpc.ChangeOutput("");
+cold = new ConvolutionCurveViewModel(coldIpc, coldStore, coldDatabase, coldLicense);
+await cold.OpenAsync();
+cold.SelectedPreset = cold.Presets.First(p => p.Name == b.Name);
+await cold.CloseAsync();
+coldIpc.ChangeOutput("cold-a");
+Check(coldIpc.LastPreview?.CurvePoints == b.Points && !AppSettings.IsCustomCorrectionDraft,
+    "Offline preset must be applied to the first real output without requiring an open editor.");
+coldIpc.ChangeOutput("cold-b");
+coldIpc.ChangeOutput("cold-a");
+Check(AppSettings.ResolveResponseSettings("cold-a", coldIpc.CurrentDspState!.State.OutputGeneration).CurvePoints == a.Points,
+    "Pending offline preset must not become a permanent cross-device override.");
+
+// Every response graph resolves the same audible session draft.
+WinUIMusicPlayer.App.Services = new Dictionary<Type, object>
+{
+    [typeof(IpcService)] = coldIpc,
+    [typeof(LicenseService)] = coldLicense
+};
+var responseA = new FrequencyResponseViewModel();
+var responseB = new FrequencyResponseViewModel();
+AppSettings.SetCustomCorrectionDraft(AppSettings.Dsp with { CurvePoints = "20,8;20000,8", ConvolutionSource = ConvolutionSource.Curve });
+responseA.Load(); responseB.Load();
+async Task WaitForSessionResponses()
+{
+    for (int i = 0; i < 200 && (responseA.Status == "ResponsePreparing" || responseB.Status == "ResponsePreparing"); i++)
+        await Task.Delay(20);
+    Check(responseA.Current != null && responseB.Current != null, "Session response calculation failed.");
+}
+await WaitForSessionResponses();
+Check(responseA.Current!.Fir[0].SequenceEqual(responseB.Current!.Fir[0]) && responseA.Current.Fir[0].Any(v => Math.Abs(v) > 1),
+    "All plots must show the audible custom curve, not a separate detached preview.");
+coldLicense.SetRestricted(LicenseFeature.Convolution);
+await WaitForSessionResponses();
+Check(responseA.Current!.Fir.SelectMany(c => c).All(v => v == 0), "Session drafts must respect license restrictions.");
+responseA.Unload(); responseB.Unload();
+Console.WriteLine("PASS: first playback with closed dialog, session draft live output following, reapply/selection recovery, binding reset and shared response.");
+
+coldLicense.SetRestricted(LicenseFeature.None);
+AppSettings.DeviceCorrections = AppSettings.DeviceCorrections with { Enabled = false };
+AppSettings.DeviceCorrections = AppSettings.DeviceCorrections with { Enabled = true };
+coldIpc.ChangeOutput("");
+var delayedUi = new ConvolutionCurveViewModel(coldIpc, coldStore, coldDatabase, coldLicense);
+await delayedUi.OpenAsync();
+Microsoft.UI.Dispatching.DispatcherQueue.DeferCallbacks = true;
+coldIpc.ChangeOutput("cold-a");
+delayedUi.MovePoint(0, 20, -4);
+await delayedUi.FlushAsync();
+Check(coldIpc.LastPreview?.CurvePoints == delayedUi.Draft.CurvePoints,
+    "A stale no-output UI flag must not suppress audition after the actual output has appeared.");
+Microsoft.UI.Dispatching.DispatcherQueue.Drain();
+Microsoft.UI.Dispatching.DispatcherQueue.DeferCallbacks = false;
+int previewsBeforeFeedback = coldIpc.PreviewCount;
+coldIpc.ChangeOutput("cold-a", coldIpc.CurrentDspState!.State.OutputGeneration);
+Check(coldIpc.PreviewCount == previewsBeforeFeedback, "Ordinary DSP feedback must not create a preview notification loop.");
+await delayedUi.CloseAsync();
+Console.WriteLine("PASS: first-output/UI interleaving and no repeated preview on ordinary DSP notifications.");

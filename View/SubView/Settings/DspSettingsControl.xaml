@@ -100,9 +100,9 @@
                     HorizontalAlignment="Right"
                     Click="ManageDeviceBindings_Click"
                     Content="{x:Bind tool:ToolUtils.GetString('DspDeviceTarget')}"
-                    IsEnabled="{x:Bind ViewModel.ConvolutionEditable, Mode=OneWay}"
+                    IsEnabled="{x:Bind ViewModel.CanEditCorrection, Mode=OneWay}"
                     Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.WaveMode), Mode=OneWay}" />
-                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('CurveSource')}" IsEnabled="{x:Bind ViewModel.ConvolutionEditable, Mode=OneWay}">
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('CurveSource')}" IsEnabled="{x:Bind ViewModel.CanEditCorrection, Mode=OneWay}">
                     <ComboBox Width="220" SelectedIndex="{x:Bind ViewModel.ConvolutionSourceIndex, Mode=TwoWay}">
                         <ComboBoxItem x:Uid="CurveSourceDraw" />
                         <ComboBoxItem x:Uid="CurveSourceWave" />
@@ -111,7 +111,7 @@
                 <controls:SettingsCard
                     Description="{x:Bind tool:ToolUtils.GetString('CurveEditorDescription')}"
                     Header="{x:Bind tool:ToolUtils.GetString('CurveEditorTitle')}"
-                    IsEnabled="{x:Bind ViewModel.ConvolutionEditable, Mode=OneWay}"
+                    IsEnabled="{x:Bind ViewModel.CanEditCorrection, Mode=OneWay}"
                     Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.CurveMode), Mode=OneWay}">
                     <Button x:Uid="CurveEdit" Click="EditCurve_Click" />
                 </controls:SettingsCard>

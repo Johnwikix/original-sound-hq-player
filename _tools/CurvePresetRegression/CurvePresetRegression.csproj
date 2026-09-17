@@ -11,6 +11,7 @@
     <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
     <Compile Include="../../ViewModel/ConvolutionCurveViewModel.cs" />
     <Compile Include="../../Services/LicensePolicy.cs" />
+    <Compile Include="../../Services/IpcService.CorrectionState.cs" />
     <Compile Include="../../ViewModel/FrequencyResponseViewModel.cs" />
     <Compile Include="../../Model/AppSettings.AudioResponse.cs" />
     <Compile Include="../../Model/EqualizerModel.cs" />

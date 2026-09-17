@@ -1908,4 +1908,7 @@
   <data name="LegalTerms" xml:space="preserve"><value>Acuerdo de usuario</value></data>
   <data name="LegalPrivacy" xml:space="preserve"><value>Política de privacidad</value></data>
   <data name="AgreementOnline" xml:space="preserve"><value>Leer en línea</value></data>
+  <data name="CurveOfflineEditing" xml:space="preserve">
+    <value>Aún no hay salida de audio. El borrador se aplicará al iniciar la reproducción y seguirá los cambios de salida. Selecciona o vuelve a aplicar un preajuste para recuperar las asignaciones automáticas por dispositivo. Los borradores sin guardar se pierden al salir.</value>
+  </data>
 </root>

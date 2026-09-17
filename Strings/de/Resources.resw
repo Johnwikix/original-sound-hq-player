@@ -1908,5 +1908,8 @@
   <data name="LegalTerms" xml:space="preserve"><value>Nutzungsvereinbarung</value></data>
   <data name="LegalPrivacy" xml:space="preserve"><value>Datenschutzerklärung</value></data>
   <data name="AgreementOnline" xml:space="preserve"><value>Online lesen</value></data>
+  <data name="CurveOfflineEditing" xml:space="preserve">
+    <value>Noch keine Audioausgabe. Der Kurvenentwurf wird beim Wiedergabestart aktiv und folgt dem Ausgabegerät. Ein Preset auswählen oder erneut anwenden, um automatische Gerätezuordnungen wiederherzustellen. Ungespeicherte Entwürfe verfallen beim Beenden der App.</value>
+  </data>
 </root>
 

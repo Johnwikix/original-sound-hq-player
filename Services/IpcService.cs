@@ -12,7 +12,7 @@ using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.Services
 {
-    public class IpcService : IDisposable
+    public partial class IpcService : IDisposable
     {
         private static readonly long MmfSize = IpcConstants.MmfSize;
 
@@ -164,7 +164,9 @@ namespace WinUIMusicPlayer.Services
                     var snapshot = _dspMailbox.Read();
                     if (snapshot != null && snapshot.Revision > (CurrentDspState?.Revision ?? 0))
                     {
+                        var previous = CurrentDspState?.State;
                         Volatile.Write(ref _dspSnapshot, snapshot);
+                        SynchronizeCorrectionOutput(previous, snapshot.State);
                         NotifyDspStateChanged();
                     }
                 } while (WaitHandle.WaitAny(waits) != 0);
@@ -469,14 +471,6 @@ namespace WinUIMusicPlayer.Services
             {
                 _logger.LogWarning(ex, "许可状态变化后的设置重推失败");
             }
-        }
-
-        private void PublishLiveCorrection()
-        {
-            var state = CurrentDspState?.State;
-            if (state is { } current && AppSettings.TryGetLiveCorrection(current.OutputDeviceId,
-                current.OutputGeneration, out var settings))
-                PreviewDsp(settings, current.OutputDeviceId, current.OutputGeneration);
         }
 
         /// <summary>输出代数限定的实时校正，仅发送到播放端，不覆盖设备保存的绑定。</summary>

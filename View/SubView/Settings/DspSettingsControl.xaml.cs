@@ -28,7 +28,7 @@ public sealed partial class DspSettingsControl : UserControl
 
     private async void EditCurve_Click(object sender, RoutedEventArgs args)
     {
-        if (!ViewModel.ConvolutionEditable) return;
+        if (!ViewModel.CanEditCorrection) return;
         var dialog = new ConvolutionCurveDialog(ViewModel) { XamlRoot = XamlRoot, RequestedTheme = ActualTheme };
         try
         {
@@ -39,7 +39,7 @@ public sealed partial class DspSettingsControl : UserControl
 
     private async void ManageDeviceBindings_Click(object sender, RoutedEventArgs args)
     {
-        if (!ViewModel.ConvolutionEditable) return;
+        if (!ViewModel.CanEditCorrection) return;
         var dialog = new ContentDialog
         {
             XamlRoot = XamlRoot, RequestedTheme = ActualTheme,

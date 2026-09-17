@@ -46,6 +46,12 @@
                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                 TextWrapping="Wrap" />
             <eq:FrequencyResponseControl x:Name="Response" IsEnabled="{x:Bind ViewModel.CanEdit, Mode=OneWay}" />
+            <InfoBar
+                IsClosable="False"
+                IsOpen="{x:Bind ViewModel.IsOfflineEditing, Mode=OneWay}"
+                Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.IsOfflineEditing), Mode=OneWay}"
+                Message="{x:Bind ViewModel.OfflineEditingText}"
+                Severity="Informational" />
             <TextBlock
                 x:Uid="CurveNodeHint"
                 FontSize="12"

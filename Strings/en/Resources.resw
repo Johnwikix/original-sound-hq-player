@@ -1908,4 +1908,7 @@
   <data name="LegalTerms" xml:space="preserve"><value>User Agreement</value></data>
   <data name="LegalPrivacy" xml:space="preserve"><value>Privacy Policy</value></data>
   <data name="AgreementOnline" xml:space="preserve"><value>Read online</value></data>
+  <data name="CurveOfflineEditing" xml:space="preserve">
+    <value>No audio output yet. Your custom curve will apply when playback starts and follow output changes. Select or reapply a preset to resume automatic device bindings. Unsaved drafts expire when the app exits.</value>
+  </data>
 </root>

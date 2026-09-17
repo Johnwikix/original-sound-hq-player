@@ -179,8 +179,11 @@ public partial class DspSettingsViewModel
             return;
         }
         var settings = binding.Apply(AppSettings.Dsp.ToUnifiedGain());
-        if (AppSettings.DeviceCorrections.Enabled && _ipc.CurrentDspState?.State is { OutputDeviceId.Length: > 0 } state)
-            AppSettings.SetLiveCorrection(state.OutputDeviceId, state.OutputGeneration, settings);
+        if (AppSettings.DeviceCorrections.Enabled)
+        {
+            var state = _ipc.CurrentDspState?.State;
+            AppSettings.SetLiveCorrection(state?.OutputDeviceId ?? "", state?.OutputGeneration ?? 0, settings);
+        }
         else
             AppSettings.Dsp = settings;
         LoadValues();

@@ -224,6 +224,8 @@ public partial class DspSettingsViewModel : ObservableObject
     /// <summary>播放端已确认 DSP 生效，PCM 子设置仅此时可编辑。</summary>
     public bool EffectsActive { get => field; private set => SetProperty(ref field, value); }
     public bool ConvolutionRestricted => _license.IsFeatureRestricted(LicenseFeature.Convolution);
+    /// <summary>曲线与绑定配置可离线编辑，独立于播放端的 DSP 生效状态。</summary>
+    public bool CanEditCorrection => !ConvolutionRestricted;
     public bool ConvolutionEditable => EffectsActive && !ConvolutionRestricted;
     public bool NormalizeEditable => EffectsActive && !_license.IsFeatureRestricted(LicenseFeature.LoudnessNormalization);
     public bool PreampEditable => EffectsActive && !_license.IsFeatureRestricted(LicenseFeature.Preamp);
@@ -343,6 +345,7 @@ public partial class DspSettingsViewModel : ObservableObject
         if (editabilityChanged)
         {
             OnPropertyChanged(nameof(ConvolutionRestricted));
+            OnPropertyChanged(nameof(CanEditCorrection));
             OnPropertyChanged(nameof(ConvolutionEditable));
             OnPropertyChanged(nameof(NormalizeEditable));
             OnPropertyChanged(nameof(PreampEditable));

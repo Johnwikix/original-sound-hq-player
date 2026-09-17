@@ -26,6 +26,7 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     private string? _editorOutputId;
     private long _editorOutputGeneration;
     private bool _deviceMode;
+    private bool _offlineEditing;
     private bool _dirty, _writingSettings;
     private Task _commitTask = Task.CompletedTask;
     private string _preferredPresetName = "";
@@ -37,8 +38,9 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     public CurvePoint[] Points => _points.ToArray();
     public string TitleText => ToolUtils.GetString("CurveEditorTitle");
     public string CloseText => ToolUtils.GetString("CloseButton");
-    public bool CanEdit => !_license.IsFeatureRestricted(LicenseFeature.Convolution)
-        && (!_deviceMode || !string.IsNullOrEmpty(_editorOutputId));
+    public bool CanEdit => !_license.IsFeatureRestricted(LicenseFeature.Convolution);
+    public bool IsOfflineEditing => _offlineEditing;
+    public string OfflineEditingText => ToolUtils.GetString("CurveOfflineEditing");
     public string PresetPlaceholder => ToolUtils.GetString(Presets.Count > 0 ? "CurveCustom" : "CurvePresetEmpty");
     public bool CanAdd => CanEdit && _points.Count < CorrectionCurve.MaxPoints;
     public bool CanRemove => CanEdit && _points.Count > 2;
@@ -47,7 +49,7 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     public bool CanSavePreset => CanEdit && !IsPresetBusy;
     public bool CanDeletePreset => !_license.IsFeatureRestricted(LicenseFeature.Convolution) && !IsPresetBusy && SelectedPreset != null;
     public bool CanUpdatePreset => CanDeletePreset && SelectedPreset!.Points != CorrectionCurve.Encode(_points);
-    public bool CanApplyPreset => CanEdit && CanUpdatePreset;
+    public bool CanApplyPreset => CanEdit && CanDeletePreset && (CanUpdatePreset || AppSettings.IsCustomCorrectionDraft);
     public bool IsPresetBusy
     {
         get => field;
@@ -57,8 +59,8 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     public int SelectedNode { get => field; set { if (!_syncing && (value < 0 || value >= _points.Count)) return; if (SetProperty(ref field, value) && !_syncing) SyncNodes(); } }
     public double Frequency { get => field; set { if (SetProperty(ref field, value) && !_syncing && double.IsFinite(value)) MovePoint(SelectedNode, value, Gain); } }
     public double Gain { get => field; set { if (SetProperty(ref field, value) && !_syncing && double.IsFinite(value)) MovePoint(SelectedNode, Frequency, value); } }
-    public double PreampDb { get => field; set { if (!_syncing && !PreampEditable) { OnPropertyChanged(); return; } if (SetProperty(ref field, value) && double.IsFinite(value)) Changed(); } }
-    public bool AutoPreamp { get => field; set { if (!_syncing && !PreampEditable) { OnPropertyChanged(); return; } if (SetProperty(ref field, value)) { OnPropertyChanged(nameof(ManualGainEnabled)); Changed(); } } }
+    public double PreampDb { get => field; set { if (!_syncing && !PreampEditable) { OnPropertyChanged(); return; } if (SetProperty(ref field, value) && double.IsFinite(value)) Changed(custom: AppSettings.IsCustomCorrectionDraft); } }
+    public bool AutoPreamp { get => field; set { if (!_syncing && !PreampEditable) { OnPropertyChanged(); return; } if (SetProperty(ref field, value)) { OnPropertyChanged(nameof(ManualGainEnabled)); Changed(custom: AppSettings.IsCustomCorrectionDraft); } } }
     public string PresetName { get => field; set => SetProperty(ref field, value); } = "";
     public string ErrorMessage { get => field; private set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(HasError)); } } = "";
     public bool HasError => ErrorMessage.Length > 0;
@@ -67,12 +69,13 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
         get => field;
         set
         {
+            if (!_syncing && !CanEdit) return;
             if (!SetProperty(ref field, value)) return;
             NotifyPresetActions();
             OnPropertyChanged(nameof(DeletePresetConfirmation));
             if (_syncing || value == null) return;
             _points.Clear(); _points.AddRange(CorrectionCurve.Parse(value.Points));
-            SyncNodes(); Changed();
+            SyncNodes(); Changed(custom: false);
         }
     }
     public DspSettings Draft
@@ -102,6 +105,8 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     }
     public async Task OpenAsync()
     {
+        _offlineEditing = false;
+        _deviceMode = false;
         _open = true; _ipc.DspStateChanged += PlaybackChanged;
         _license.StateChanged += LicenseChanged;
         AppSettings.AudioResponseChanged += SettingsChanged;
@@ -132,7 +137,7 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
             ?? Presets.FirstOrDefault(p => p.Points == settings.CurvePoints);
         _syncing = false;
         SyncNodes();
-        if (commit) Changed();
+        if (commit) Changed(custom: false);
         else NotifyPresetActions();
     }
 
@@ -176,27 +181,42 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
         string id = state?.OutputDeviceId ?? "";
         bool mode = AppSettings.DeviceCorrections.Enabled;
         long generation = state?.OutputGeneration ?? 0;
-        bool changed = force || !string.Equals(id, _editorOutputId, StringComparison.OrdinalIgnoreCase)
-            || generation != _editorOutputGeneration || mode != _deviceMode;
+        bool outputChanged = !string.Equals(id, _editorOutputId, StringComparison.OrdinalIgnoreCase)
+            || generation != _editorOutputGeneration;
+        bool changed = force || outputChanged || mode != _deviceMode;
         _editorOutputId = id;
         _editorOutputGeneration = generation;
         _deviceMode = mode;
-        OnPropertyChanged(nameof(CanEdit));
-        OnPropertyChanged(nameof(PreampEditable));
-        OnPropertyChanged(nameof(ManualGainEnabled));
+        _offlineEditing = mode && string.IsNullOrEmpty(id);
+        OnPropertyChanged(nameof(IsOfflineEditing));
         if (!changed) return;
-        // A new output generation restores its saved binding; closing/reopening keeps the current live curve.
+
+        // 会话层统一解析：自定义草稿跨输出，显式应用的预设只覆盖当前输出代次。
         var effective = AppSettings.ResolveResponseSettings(id, generation).ToUnifiedGain();
-        _syncing = true; AutoPreamp = effective.AutoPreamp == true; PreampDb = effective.HeadroomDb; _syncing = false;
-        LoadCorrectionDraft(CorrectionCurve.UsesCurve(effective) && (!mode || AppSettings.DeviceCorrections.Find(id) != null
+        _syncing = true;
+        AutoPreamp = effective.AutoPreamp == true;
+        PreampDb = effective.HeadroomDb;
+        _syncing = false;
+        var curve = CorrectionCurve.UsesCurve(effective) && (!mode || AppSettings.DeviceCorrections.Find(id) != null
             || AppSettings.TryGetLiveCorrection(id, generation, out _))
-            ? effective : effective with { ConvolutionSource = ConvolutionSource.Curve, CurvePoints = CorrectionCurve.Flat, CurvePresetName = "" }, commit: false);
+            ? effective : effective with { ConvolutionSource = ConvolutionSource.Curve,
+                CurvePoints = CorrectionCurve.Flat, CurvePresetName = "" };
+        // 普通通知及首播不清除未保存曲线的预设选择，保留显式“重新应用”的目标。
+        if (curve.CurvePoints == CorrectionCurve.Encode(_points) && AppSettings.IsCustomCorrectionDraft)
+        {
+            NotifyPresetActions();
+            PreviewChanged?.Invoke();
+            return;
+        }
+        LoadCorrectionDraft(curve, commit: false);
     }
     private void MatchPreset()
     {
         _syncing = true;
         string encoded = CorrectionCurve.Encode(_points);
-        if (SelectedPreset?.Points != encoded) SelectedPreset = Presets.FirstOrDefault(p => p.Points == encoded && p.Name == _preferredPresetName)
+        if (AppSettings.IsCustomCorrectionDraft && AppSettings.CustomCorrectionPresetName.Length > 0)
+            SelectedPreset = Presets.FirstOrDefault(p => p.Name == AppSettings.CustomCorrectionPresetName);
+        else if (SelectedPreset?.Points != encoded) SelectedPreset = Presets.FirstOrDefault(p => p.Points == encoded && p.Name == _preferredPresetName)
             ?? Presets.FirstOrDefault(p => p.Points == encoded);
         _syncing = false;
     }
@@ -221,24 +241,37 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
         _syncing = true; SelectedNode = index; _syncing = false;
         SyncNodes(); Changed();
     }
-    private void Changed()
+    private void Changed(bool custom = true)
     {
         if (_syncing || !_open || !CanEdit) return;
+        var previous = AppSettings.Dsp;
         var draft = LicensePolicy.PreserveRestrictedPreferences(Draft.Sanitize(), AppSettings.Dsp, _license.RestrictedFeatures);
         _writingSettings = true;
         try
         {
             if (_deviceMode)
             {
-                AppSettings.SetLiveCorrection(_editorOutputId!, _editorOutputGeneration, draft);
+                var state = _ipc.CurrentDspState?.State;
+                if (custom)
+                    AppSettings.SetCustomCorrectionDraft(draft, SelectedPreset?.Name ?? "");
+                else
+                    AppSettings.SetLiveCorrection(state?.OutputDeviceId ?? "", state?.OutputGeneration ?? 0, draft);
                 AppSettings.Dsp = AppSettings.Dsp.ToUnifiedGain() with { ConvolutionEnabled = true,
                     AutoPreamp = draft.AutoPreamp, HeadroomDb = draft.HeadroomDb };
             }
             else AppSettings.Dsp = draft;
         }
         finally { _writingSettings = false; }
-        _dirty = true;
-        ErrorMessage = ""; NotifyPresetActions(); PreviewChanged?.Invoke(); _timer.Stop(); _timer.Start();
+        // 离线拖动仅更新已有草稿，不触发磁盘或 IPC；全局预放大变化仍须保存。
+        if (!_deviceMode || !string.IsNullOrEmpty(_ipc.CurrentDspState?.State.OutputDeviceId) || AppSettings.Dsp != previous)
+        {
+            _dirty = true;
+            _timer.Stop();
+            _timer.Start();
+        }
+        ErrorMessage = "";
+        NotifyPresetActions();
+        PreviewChanged?.Invoke();
     }
 
     /// <summary>Coalesce edits, publish the latest shared state, then save it without restoring stale snapshots.</summary>
@@ -293,7 +326,7 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
         _points.Clear();
         _points.AddRange(CorrectionCurve.Parse(SelectedPreset!.Points));
         SyncNodes();
-        Changed();
+        Changed(custom: false);
         // An explicit restore replaces any pending drag and publishes immediately.
         _timer.Stop();
         await FlushAsync();
@@ -333,7 +366,7 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
             if (IsEditingTarget(outputId, deviceMode) && Draft.CurvePoints == preset.Points)
             {
                 _syncing = true; SelectedPreset = preset; _syncing = false;
-                Changed();
+                Changed(custom: AppSettings.IsCustomCorrectionDraft);
             }
             ErrorMessage = "";
             OnPropertyChanged(nameof(PresetPlaceholder)); PresetSaved?.Invoke();
@@ -361,7 +394,7 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
             Presets[index] = updated;
             if (retainSelection) SelectedPreset = updated;
             _syncing = false;
-            if (retainSelection) Changed();
+            if (retainSelection) Changed(custom: AppSettings.IsCustomCorrectionDraft);
             ErrorMessage = "";
         }
         catch { ErrorMessage = ToolUtils.GetString("CurvePresetError"); }
@@ -383,7 +416,7 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
             Presets.Remove(selected);
             _syncing = false;
             // Deleting a stored preset leaves the current draft available as a custom curve.
-            if (clearSelection) Changed();
+            if (clearSelection) Changed(custom: AppSettings.IsCustomCorrectionDraft);
             ErrorMessage = "";
             OnPropertyChanged(nameof(PresetPlaceholder));
             PresetDeleted?.Invoke();
