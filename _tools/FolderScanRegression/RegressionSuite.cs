@@ -14,6 +14,12 @@ using Windows.Storage;
 
 internal static class RegressionSuite
 {
+    private sealed class ScanProgress : IProgress<int>
+    {
+        public List<int> Values { get; } = [];
+        public void Report(int value) => Values.Add(value);
+    }
+
     // 模拟拖放返回的接口包装对象，不假定它的 CLR 类型是 StorageFolder。
     private sealed class DroppedFolderItem(string path) : IStorageItem
     {
@@ -29,6 +35,8 @@ internal static class RegressionSuite
     {
         await PipelineAsync();
         await DatabaseAsync(root);
+        await StartupCancellationAsync(root);
+        PlaybackSnapshot();
         await BenchmarkAsync();
         ProbeAudio(root);
         Console.WriteLine("PASS: all folder-scan regression checks.");
@@ -218,6 +226,83 @@ internal static class RegressionSuite
             Console.WriteLine("PASS: real SQLite + VM/commands: old DB counts, progressive commits, all guards, picker/dialog races, dedup, user state, startup diff and safe deletion.");
         }
         finally { await database.Connection.CloseAsync(); }
+    }
+
+    private static async Task StartupCancellationAsync(string root)
+    {
+        var database = new MusicDatabaseService(Path.Combine(root, "startup-cancel.db"));
+        await database.InitializeAsync();
+        App.Services = new ServiceCollection().AddSingleton(database).BuildServiceProvider();
+        string directory = Path.Combine(root, "StartupCancel");
+        Directory.CreateDirectory(directory);
+        File.WriteAllText(Path.Combine(directory, "slow.mp3"), "");
+        var missing = new Music { Path = Path.Combine(directory, "missing.mp3"), FolderPath = directory };
+        await database.Connection.InsertAsync(missing);
+        await database.Connection.InsertAsync(new Folder { Path = directory });
+        ToolUtils.SlowFile = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        ToolUtils.SlowFileEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var stop = new CancellationTokenSource();
+        var scan = InitialFileScan.InitialScan(stop.Token);
+        try
+        {
+            await ToolUtils.SlowFileEntered.Task.WaitAsync(TimeSpan.FromSeconds(3));
+            stop.Cancel();
+            await Task.Delay(100);
+            Check(!scan.IsCompleted, "cancellation abandoned an in-flight metadata read");
+            ToolUtils.SlowFile.TrySetResult();
+            try { await scan.WaitAsync(TimeSpan.FromSeconds(3)); throw new Exception("startup swallowed cancellation"); }
+            catch (OperationCanceledException) { }
+            var songs = await database.GetMusicListAsync();
+            Check(songs.Count == 1 && songs[0].Id == missing.Id,
+                "cancelled startup committed late metadata or inferred deletions");
+            await InitialFileScan.InitialScan();
+            songs = await database.GetMusicListAsync();
+            Check(songs.Count == 1 && songs[0].Path.EndsWith("slow.mp3"), "cancelled scan could not retry");
+            string secondDirectory = Path.Combine(root, "StartupProgress");
+            Directory.CreateDirectory(secondDirectory);
+            await database.Connection.InsertAsync(new Folder { Path = secondDirectory });
+            for (int i = 0; i < 9; i++) File.WriteAllText(Path.Combine(secondDirectory, $"{i}.mp3"), "");
+            var progress = new ScanProgress();
+            await InitialFileScan.InitialScan(progress: progress);
+            Check(progress.Values[0] == 0 && progress.Values.Contains(10) && progress.Values[^1] == 99,
+                "file progress did not count unchanged files against the total across folders");
+            Check(progress.Values.Count <= 100 && progress.Values.Zip(progress.Values.Skip(1)).All(p => p.First < p.Second),
+                "scan progress was duplicated, regressed or flooded notifications");
+            Check((await database.GetMusicListAsync()).Count == 10, "progress scanning lost files");
+            Console.WriteLine("PASS: file-weighted progress across folders, unchanged files, monotonic bounded reports.");
+            Console.WriteLine("PASS: startup cancellation joins the active read, avoids late commit/deletion, and permits retry.");
+        }
+        finally
+        {
+            ToolUtils.SlowFile.TrySetResult();
+            try { await scan; } catch (OperationCanceledException) { }
+            await database.Connection.CloseAsync();
+        }
+    }
+
+    private static void PlaybackSnapshot()
+    {
+        var playing = new Music { Id = 1, Title = "playing" };
+        var next = new Music { Id = 2, Title = "old metadata" };
+        var removed = new Music { Id = 3 };
+        var updated = new Music { Id = 2, Title = "new metadata" };
+        var added = new Music { Id = 4 };
+        var songs = new Dictionary<int, Music> { [2] = updated, [4] = added };
+        var queue = new System.Collections.ObjectModel.ObservableCollection<Music> { removed, next, playing };
+        int notifications = 0;
+        queue.CollectionChanged += (_, _) => notifications++;
+        LibraryPlaybackReconciler.Reconcile(queue, songs, playing);
+        Check(queue.Count == 2 && ReferenceEquals(queue[0], updated) && ReferenceEquals(queue[1], playing),
+            "scan reset queue order/current object or inserted unrequested songs");
+        Check(notifications == 2, "queue did not publish replace/remove notifications");
+        LibraryPlaybackReconciler.Reconcile(queue, songs, playing);
+        Check(notifications == 2, "unchanged reconciliation emitted notifications");
+        songs.Clear();
+        LibraryPlaybackReconciler.Reconcile(queue, songs, playing);
+        Check(queue.Count == 1 && ReferenceEquals(queue[0], playing), "deleted active track was interrupted");
+        LibraryPlaybackReconciler.Reconcile(queue, songs, null);
+        Check(queue.Count == 0, "empty library retained stale inactive tracks");
+        Console.WriteLine("PASS: queue reconciliation preserves current object/order and publishes only necessary changes.");
     }
 
     private static async Task BenchmarkAsync()

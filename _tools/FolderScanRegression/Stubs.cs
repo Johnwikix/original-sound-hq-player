@@ -82,11 +82,16 @@ namespace WinUIMusicPlayer.Utils
         public static void SaveMetaData(Model.Music music, string path, byte[]? cover, string? lyrics, string? krc) => WriteMetadata(music, path);
         public static string GetString(string key) => key;
         public static TaskCompletionSource SlowFile = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public static TaskCompletionSource SlowFileEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public static int Reads;
         public static bool IsMusicFile(string extension) => extension == ".mp3";
         public static async Task<(Model.Music?, string?)> GetMusicInfo(Windows.Storage.StorageFile file)
         {
-            if (file.Name.StartsWith("slow")) await SlowFile.Task;
+            if (file.Name.StartsWith("slow"))
+            {
+                SlowFileEntered.TrySetResult();
+                await SlowFile.Task;
+            }
             Interlocked.Increment(ref Reads);
             if (file.Name.StartsWith("broken")) throw new IOException("Test read failure");
             return (new Model.Music

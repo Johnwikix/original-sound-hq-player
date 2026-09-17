@@ -580,6 +580,29 @@
                     IsHitTestVisible="False"
                     IsTextScaleFactorEnabled="False"
                     Style="{StaticResource CaptionTextBlockStyle}" />
+                <StackPanel
+                    Margin="12,0,0,0"
+                    VerticalAlignment="Center"
+                    IsHitTestVisible="False"
+                    Orientation="Horizontal"
+                    Spacing="6"
+                    Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.IsLibraryScanning), Mode=OneWay}">
+                    <ProgressRing
+                        Width="16"
+                        Height="16"
+                        MinWidth="16"
+                        MinHeight="16"
+                        IsActive="{x:Bind ViewModel.AppViewModel.IsLibraryScanning, Mode=OneWay}"
+                        IsIndeterminate="{x:Bind ViewModel.AppViewModel.IsLibraryScanIndeterminate, Mode=OneWay}"
+                        Maximum="100"
+                        Value="{x:Bind ViewModel.AppViewModel.LibraryScanPercent, Mode=OneWay}" />
+                    <TextBlock
+                        MinWidth="34"
+                        VerticalAlignment="Center"
+                        IsTextScaleFactorEnabled="False"
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        Text="{x:Bind ViewModel.AppViewModel.LibraryScanPercentText, Mode=OneWay}" />
+                </StackPanel>
             </StackPanel>
 
             <Button

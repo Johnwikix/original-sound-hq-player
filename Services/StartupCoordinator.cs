@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using CommunityToolkit.WinUI;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
@@ -22,6 +23,7 @@ namespace WinUIMusicPlayer.Services
     {
         private readonly AppViewModel AppViewModel;
         private readonly MusicDatabaseService MusicDatabaseService;
+        private Task? _libraryScan;
         public StartupCoordinator(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
             AppViewModel = appViewModel;
@@ -83,10 +85,6 @@ namespace WinUIMusicPlayer.Services
             var settingsSync = App.Services.GetRequiredService<AudioSettingsSynchronizer>();
             shutdown.RegisterCleanup(settingsSync.Dispose);
             settingsSync.Start();
-            var watcher = App.Services.GetRequiredService<LibraryWatcherService>();
-            shutdown.RegisterCleanup(watcher.StopAsync);
-            await watcher.StartAsync();
-            cancellationToken.ThrowIfCancellationRequested();
             shutdown.RegisterCleanup(App.Services.GetRequiredService<LicenseService>().Dispose);
             var stateStore = App.Services.GetRequiredService<PlaybackStatePersistence>();
             var statistics = App.Services.GetRequiredService<PlaybackStatsService>();
@@ -100,7 +98,7 @@ namespace WinUIMusicPlayer.Services
             var licenseInitialization = App.Services.GetRequiredService<LicenseService>().InitializeAsync();
             var libraryInitialization = Task.Run(async () =>
             {
-                await RunLongOpsAsync(MusicDatabaseService, cancellationToken);
+                await LoadCachedLibraryAsync(MusicDatabaseService, cancellationToken);
                 // Keep disk enumeration off the UI thread and before cover restoration.
                 ToolUtils.CleanupStaleCacheFiles();
             }, cancellationToken);
@@ -108,6 +106,11 @@ namespace WinUIMusicPlayer.Services
             await musicBrowseViewModel.LoadPlayStateToMusicBrowsePage();
             // 许可状态必须在首次推送设置前就绪，受限判定才能作用于首推内容。
             await ipcService.InitializeMusic(appViewModel.CurrentPlayingMusic);
+            // 缓存和播放状态恢复完成后才允许监视器发布音乐库变化。
+            var watcher = App.Services.GetRequiredService<LibraryWatcherService>();
+            shutdown.RegisterCleanup(watcher.StopAsync);
+            await watcher.StartAsync();
+            cancellationToken.ThrowIfCancellationRequested();
             logger.LogInformation("协议确认后核心启动完成：{ElapsedMs} ms", startup.ElapsedMilliseconds);
             // Finish startup dialogs before enabling settings, tray commands and shortcuts.
             await CheckVersionUpdateAsync();
@@ -130,6 +133,7 @@ namespace WinUIMusicPlayer.Services
             DesktopLyricsManager.RestoreFromSettings();
             appViewModel.InitHotKeys();
             _ = App.Services.GetRequiredService<IpcService>().RetryStartupCorrectionsAsync();
+            StartLibraryScan();
             App.GetLogger<StartupCoordinator>().LogInformation("启动完成，主界面与系统交互已启用");
         }
 
@@ -188,11 +192,58 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        private static async Task RunLongOpsAsync(MusicDatabaseService db, CancellationToken ct)
+        private void StartLibraryScan()
+        {
+            if (_libraryScan is not null) return;
+            var token = App.Services.GetRequiredService<AppLifecycle>().StoppingToken;
+            // 退出先取消生命周期 token，再等待真实扫描结束，之后才释放视图和音频依赖。
+            App.Services.GetRequiredService<ShutdownCoordinator>().RegisterCleanup(
+                () => _libraryScan ?? Task.CompletedTask);
+            AppViewModel.LibraryScanPercent = -1;
+            AppViewModel.IsLibraryScanning = true;
+            var progress = new Progress<int>(percent =>
+            {
+                if (AppViewModel.IsLibraryScanning && !token.IsCancellationRequested &&
+                    percent > AppViewModel.LibraryScanPercent)
+                    AppViewModel.LibraryScanPercent = percent;
+            });
+            _libraryScan = Task.Run(() => ScanLibraryAsync(token, progress));
+        }
+
+        private async Task ScanLibraryAsync(CancellationToken token, IProgress<int> progress)
+        {
+            var logger = App.GetLogger<StartupCoordinator>();
+            try
+            {
+                using var lease = await LibraryOperationGate.EnterAsync(token);
+                try
+                {
+                    await InitialFileScan.InitialScan(token, progress);
+                }
+                finally
+                {
+                    // 失败也可能已提交部分批次；只刷新库，不重放启动状态或重建用户的播放队列。
+                    if (!token.IsCancellationRequested)
+                        await AppViewModel.RefreshSongsSourceAsync(token);
+                }
+                logger.LogInformation("启动后台音乐扫描完成");
+            }
+            catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "启动后台音乐扫描失败，保留已加载的音乐库");
+            }
+            finally
+            {
+                await App.MainWindow.DispatcherQueue.EnqueueAsync(() => AppViewModel.IsLibraryScanning = false);
+            }
+        }
+
+        private static async Task LoadCachedLibraryAsync(MusicDatabaseService db, CancellationToken ct)
         {
             using var lease = await LibraryOperationGate.EnterAsync(ct);
-            await InitialFileScan.InitialScan();
             await db.LoadMusicList();
+            ct.ThrowIfCancellationRequested();
             await db.GetPlayStateAsync();
         }
     }

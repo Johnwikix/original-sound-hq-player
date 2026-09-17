@@ -97,22 +97,13 @@ namespace WinUIMusicPlayer.Services
             if (!App.Services.GetRequiredService<AppViewModel>().IsInitialized)
                 return;
 
-            // Music 实体会在后台线程物化（AutoScan/GetMusicListAsync 从 SQLite 反序列化），
-            // setter 副作用随之在线程池触发；OffsetMsBus 的订阅者是 UI 元素（歌词动画、
-            // 桌面歌词渲染器），必须在 UI 线程投递，否则 RPC_E_WRONG_THREAD。
+            // SQLite 在线程池物化对象时也调用 setter，读库不能发布偏移或把半初始化对象写回。
             var window = App.MainWindow;
-            if (window is null) return;
-            var dq = window.DispatcherQueue;
-            if (dq.HasThreadAccess)
-            {
+            if (window is null || !window.DispatcherQueue.HasThreadAccess) return;
+            var app = App.Services.GetRequiredService<AppViewModel>();
+            if (app.CurrentPlayingMusic?.Id == music.Id)
                 OffsetMsBus.Publish(value);
-            }
-            else
-            {
-                dq.TryEnqueue(() => OffsetMsBus.Publish(value));
-            }
-            // 持久化与 UI 无关，留在调用线程（物化路径也不会在读路径上重放写库之外的副作用）
-            _ = App.Services.GetRequiredService<MusicDatabaseService>().UpdateMusicInfo(music);
+            _ = App.Services.GetRequiredService<MusicDatabaseService>().UpdateLyricsOffsetAsync(music.Id, value);
         }
 
         public static async Task RemoveMusicAsync(Music music)

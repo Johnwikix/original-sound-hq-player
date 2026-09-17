@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
 using WinUIMusicPlayer.Model;
@@ -166,8 +167,11 @@ public partial class MusicDatabaseService
         }
 
         private async Task<int> RescanFolderCoreAsync(string folderPath, bool updateExisting, bool singleFolder,
-            Func<IReadOnlyList<Music>, Task>? onBatchInserted = null, bool onlyChanged = false)
+            Func<IReadOnlyList<Music>, Task>? onBatchInserted = null, bool onlyChanged = false,
+            CancellationToken cancellationToken = default, IReadOnlyList<string>? scannedPaths = null,
+            Action<int>? onFilesChecked = null)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var existing = await GetSongsInFolderAsync(folderPath, !singleFolder);
             var remaining = new Dictionary<string, Music>(existing.Count, StringComparer.OrdinalIgnoreCase);
             foreach (var song in existing) remaining.TryAdd(song.Path, song);
@@ -176,11 +180,13 @@ public partial class MusicDatabaseService
             // Only the source enumerator owns remaining; deletion reads it after every worker/consumer completes.
             IEnumerable<(string Path, Music? Existing)> EnumerateWork()
             {
-                foreach (var path in AddFolderService.EnumerateMusicPaths(folderPath, !singleFolder))
+                foreach (var path in scannedPaths ?? AddFolderService.EnumerateMusicPaths(folderPath, !singleFolder))
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     remaining.Remove(path, out var old);
                     if (old is null || (updateExisting && (!onlyChanged || File.GetLastWriteTime(path) != old.UpdateTime)))
                         yield return (path, old);
+                    else onFilesChecked?.Invoke(1);
                 }
             }
 
@@ -192,21 +198,27 @@ public partial class MusicDatabaseService
                 return result;
             }, async batch =>
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 await CommitScanBatchAsync(batch, async added =>
                 {
                     changes += added.Count;
                     if (onBatchInserted is not null) await onBatchInserted(added);
                 });
-            }, onBatchInserted is null ? TimeSpan.Zero : TimeSpan.FromMilliseconds(500));
+                onFilesChecked?.Invoke(batch.Count);
+            }, onBatchInserted is null ? TimeSpan.Zero : TimeSpan.FromMilliseconds(500), cancellationToken);
 
             // An inaccessible/disconnected directory throws before this point. Keep its database rows intact.
             var missing = new List<Music>();
             foreach (var music in remaining.Values)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (LibraryPath.IsConfirmedMissing(music.Path, folderPath)) missing.Add(music);
+            }
             if (missing.Count > 0)
             {
                 await _dbConnection.RunInTransactionAsync(db =>
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     foreach (var music in missing)
                     {
                         db.Delete<Music>(music.Id);
@@ -218,8 +230,10 @@ public partial class MusicDatabaseService
             return changes;
         }
 
-        internal Task<int> ScanChangedFolderAsync(string folderPath)
-            => RescanFolderCoreAsync(folderPath, true, false, onlyChanged: true);
+        internal Task<int> ScanChangedFolderAsync(string folderPath, CancellationToken cancellationToken = default,
+            IReadOnlyList<string>? scannedPaths = null, Action<int>? onFilesChecked = null)
+            => RescanFolderCoreAsync(folderPath, true, false, onlyChanged: true, cancellationToken: cancellationToken,
+                scannedPaths: scannedPaths, onFilesChecked: onFilesChecked);
 
         // Called by AutoScan while its library-operation lease is held. The count includes deletions.
         public Task<int> RescanFolderWithOutUpdateAll(string folderPath, bool isSingleFolder = false)
@@ -236,11 +250,12 @@ public partial class MusicDatabaseService
                 return result;
             }, batch => CommitScanBatchAsync(batch, null), TimeSpan.Zero);
 
-        public async Task DeletedMusicList(IEnumerable<Music> songs)
+        public async Task DeletedMusicList(IEnumerable<Music> songs, CancellationToken cancellationToken = default)
         {
             foreach (var batch in songs.Chunk(ScanPipeline.BatchSize))
                 await _dbConnection.RunInTransactionAsync(db =>
                 {
+                    cancellationToken.ThrowIfCancellationRequested();
                     foreach (var music in batch)
                     {
                         db.Delete<Music>(music.Id);

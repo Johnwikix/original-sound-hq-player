@@ -371,6 +371,9 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.UpdateAsync(music);
         }
 
+        public Task UpdateLyricsOffsetAsync(int musicId, int offset)
+            => _dbConnection.ExecuteAsync("UPDATE Music SET LyricsOffsetMs = ? WHERE Id = ?", offset, musicId);
+
         // 定义接收 pragma_table_info 结果的类
         private class TableColumnInfo
         {
@@ -801,9 +804,12 @@ namespace WinUIMusicPlayer.Services
 
         public async Task GetPlayListMusic()
         {
-            AppData.AllPlayListMusics.Clear();
-            AppData.AllPlayListMusics = await _dbConnection.Table<PlayListMusic>().ToListAsync();
-            RefreshAllPlayListSongCounts();
+            var mappings = await _dbConnection.Table<PlayListMusic>().ToListAsync();
+            await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+            {
+                AppData.AllPlayListMusics = mappings;
+                RefreshAllPlayListSongCounts();
+            });
         }
 
         private void RefreshAllPlayListSongCounts()
@@ -847,11 +853,15 @@ namespace WinUIMusicPlayer.Services
 
         public async Task LoadMusicList()
         {
-            AppViewModel.SongsSource.Clear();
-            AppViewModel.SongsSource.AddRange(await GetMusicListAsync());
+            var songs = await GetMusicListAsync();
+            await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+            {
+                AppViewModel.SongsSource.Clear();
+                AppViewModel.SongsSource.AddRange(songs);
+            });
             await InitalPlayListAsync();
             await GetPlayListMusic();
-            var playlist = await LoadPlayList(AppViewModel.SongsSource);
+            var playlist = await LoadPlayList(songs);
             // 集合构造会捕获 DispatcherQueue，创建与绑定通知都必须在 UI 线程完成。
             await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
             {

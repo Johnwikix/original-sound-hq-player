@@ -9,6 +9,8 @@
   <ItemGroup>
     <Compile Include="../../Services/AddFolderService.cs" />
     <Compile Include="../../Services/ScanPipeline.cs" />
+    <Compile Include="../../Services/InitialFileScan.cs" />
+    <Compile Include="../../Services/LibraryPlaybackReconciler.cs" />
     <Compile Include="../../Services/LibraryOperationGate.cs" />
     <Compile Include="../../Services/LibraryPath.cs" />
     <Compile Include="../../Services/MusicDatabaseService.Scanning.cs" />

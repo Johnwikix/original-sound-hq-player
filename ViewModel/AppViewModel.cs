@@ -220,6 +220,21 @@ namespace WinUIMusicPlayer.ViewModel
         private readonly AppLifecycle _lifecycle;
         public Visibility UsbDeviceVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
         public Visibility ProcessRingVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
+        public bool IsLibraryScanning { get; set => SetProperty(ref field, value); }
+        public int LibraryScanPercent
+        {
+            get;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    OnPropertyChanged(nameof(LibraryScanPercentText));
+                    OnPropertyChanged(nameof(IsLibraryScanIndeterminate));
+                }
+            }
+        } = -1;
+        public string LibraryScanPercentText => LibraryScanPercent < 0 ? "…" : $"{LibraryScanPercent}%";
+        public bool IsLibraryScanIndeterminate => LibraryScanPercent < 0;
         // 空音乐库占位（MusicBrowsePage 内容区）。初始 Collapsed，待首次 NotifySongsSourceChanged（DB 加载完成）后才置 Visible，避免启动加载期闪现。
         public Visibility LibraryEmptyVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
         // 最爱页占位：库非空但没有任何收藏时显示（FavouritePlayListPage）；搜索过滤导致的空列表不显示。
@@ -1234,15 +1249,17 @@ namespace WinUIMusicPlayer.ViewModel
                 : Visibility.Collapsed;
         }
 
-        public async Task RefreshSongsSourceAsync()
+        public async Task RefreshSongsSourceAsync(CancellationToken cancellationToken = default)
         {
             var musicList = await _musicDatabaseService.GetMusicListAsync().ConfigureAwait(false);
 
             var dq = App.MainWindow.DispatcherQueue;
             if (dq.HasThreadAccess)
             {
+                if (cancellationToken.IsCancellationRequested) return;
                 SongsSource.Clear();
                 SongsSource.AddRange(musicList);
+                ReconcilePlaybackLibrary();
                 _indexDirty = true;
                 NotifySongsSourceChanged();
             }
@@ -1250,12 +1267,23 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 await dq.EnqueueAsync(() =>
                 {
+                    if (cancellationToken.IsCancellationRequested) return;
                     SongsSource.Clear();
                     SongsSource.AddRange(musicList);
+                    ReconcilePlaybackLibrary();
                     _indexDirty = true;
                     NotifySongsSourceChanged();
                 });
             }
+        }
+
+        private void ReconcilePlaybackLibrary()
+        {
+            var songs = new Dictionary<int, Music>(SongsSource.Count);
+            foreach (var song in SongsSource) songs.TryAdd(song.Id, song);
+            LibraryPlaybackReconciler.Reconcile(SequentialPlayingList, songs, CurrentPlayingMusic);
+            if (!ReferenceEquals(SequentialPlayingList, CurrentPlayingList))
+                LibraryPlaybackReconciler.Reconcile(CurrentPlayingList, songs, CurrentPlayingMusic);
         }
 
         /// <summary>
