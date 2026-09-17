@@ -105,11 +105,10 @@ ASIO 支持：原生 ASIO 输出，自动枚举驱动并协商缓冲与采样率
 （九）SMTC系统媒体传输控件集成
 专辑原始封面显示，时间轴推送
 （十）高度可自定义设置
-可自定义的应用样式：包含云母、亚克力、透明亚克力三种样式
+可自定义的应用样式：包含云母、亚克力、透明亚克力、自定义亚克力（透明度可调）四种样式
 可自定义的应用主题：包含系统默认、深色、浅色三种主题
-自定义动画时间、自定义进程优先级、自定义初始界面
-（十一）键盘快捷键
-Esc返回上一层，空格播放/暂停，←快退5s，→快进5s，↑上一首，↓下一首，Q音乐详情，F全屏；桌面歌词等操作支持自定义全局快捷键
+（十一）全局快捷键
+内置 13 个全局快捷键，均可在设置中自定义录制：播放/暂停（Ctrl+Alt+P）、下一首（Ctrl+Alt+→）、上一首（Ctrl+Alt+←）、音量增减（Ctrl+Alt+↑/↓）、切换播放详情（Ctrl+Alt+Q）、返回（Ctrl+Alt+B）、显示/隐藏主窗口（Ctrl+Alt+W）、切换全屏（Ctrl+Alt+F），以及桌面歌词显示/隐藏（Ctrl+Alt+D）、锁定/解锁（Ctrl+Alt+L）、逐字卡拉 OK（Ctrl+Alt+K）、重置窗口（Ctrl+Alt+R）
 三、安装与使用
 （一）系统要求
 适配 Windows 10 19041 及以上版本操作系统（推荐 Windows 11），充分利用系统性能优势，确保音乐播放流畅稳定，为用户提供优质的聆听环境。
@@ -120,7 +119,7 @@ Esc返回上一层，空格播放/暂停，←快退5s，→快进5s，↑上一
 四、GitHub
 主程序（含独立音频引擎 AudioPlayer）：https://github.com/Johnwikix/original-sound-hq-player
 五、问题反馈
-问题反馈交流QQ群：1009034363"""
+问题反馈交流QQ群：一群 1009034363，二群 1033738779"""
 
 EN_DESC = """Original Sound HQ Player - Authentic Sound, Boundless Listening
 1. Product Overview
@@ -165,11 +164,10 @@ Custom playlists: easily create, edit, and delete personal playlists to organize
 (9) SMTC Integration
 Original album art display and timeline via System Media Transport Controls.
 (10) Highly Customizable Settings
-App styles: Mica, Acrylic, and transparent Acrylic.
+App styles: Mica, Acrylic, transparent Acrylic, and custom Acrylic with adjustable opacity.
 App themes: system default, dark, and light.
-Custom animation duration, process priority, and start page.
-(11) Keyboard Shortcuts
-Esc back, Space play/pause, ←/→ seek 5 s, ↑/↓ previous/next, Q track details, F fullscreen; desktop lyrics and more support customizable global shortcuts.
+(11) Global Shortcuts
+13 built-in global shortcuts, all re-recordable in settings: play/pause (Ctrl+Alt+P), next track (Ctrl+Alt+→), previous track (Ctrl+Alt+←), volume up/down (Ctrl+Alt+↑/↓), toggle now-playing details (Ctrl+Alt+Q), back (Ctrl+Alt+B), show/hide main window (Ctrl+Alt+W), toggle fullscreen (Ctrl+Alt+F), plus desktop lyrics show/hide (Ctrl+Alt+D), lock/unlock (Ctrl+Alt+L), karaoke mode (Ctrl+Alt+K), and reset window (Ctrl+Alt+R).
 3. Installation & Usage
 (1) System Requirements
 Windows 10 19041 or later (Windows 11 recommended) for smooth, stable playback.
@@ -180,7 +178,7 @@ To add more music, click "Add Folder" and pick a folder to scan. In the playing 
 4. GitHub
 Main program (including the standalone AudioPlayer engine): https://github.com/Johnwikix/original-sound-hq-player
 5. Feedback
-QQ group for feedback and discussion: 1009034363"""
+QQ groups for feedback and discussion: 1009034363 / 1033738779"""
 
 ES_DESC = """Reproductor HQ de Sonido Original - Sonido Auténtico, Escucha Sin Límites
 1. Descripción del Producto
@@ -225,11 +223,10 @@ Listas personalizadas: crea, edita y elimina listas personales con facilidad par
 (9) Integración SMTC
 Portada original del álbum y línea de tiempo con los controles multimedia del sistema.
 (10) Configuración Muy Personalizable
-Estilos de aplicación: Mica, Acrílico y Acrílico transparente.
+Estilos de aplicación: Mica, Acrílico, Acrílico transparente y Acrílico personalizado con opacidad ajustable.
 Temas: sistema, oscuro y claro.
-Duración de animaciones, prioridad del proceso y página de inicio personalizables.
-(11) Atajos de Teclado
-Esc volver, Espacio reproducir/pausar, ←/→ retroceder/avanzar 5 s, ↑/↓ pista anterior/siguiente, Q detalles, F pantalla completa; las letras de escritorio y otras acciones admiten atajos globales personalizables.
+(11) Atajos Globales
+13 atajos globales integrados, todos redefinibles en la configuración: reproducir/pausar (Ctrl+Alt+P), pista siguiente (Ctrl+Alt+→), pista anterior (Ctrl+Alt+←), subir/bajar volumen (Ctrl+Alt+↑/↓), detalles de reproducción (Ctrl+Alt+Q), volver (Ctrl+Alt+B), mostrar/ocultar la ventana principal (Ctrl+Alt+W), pantalla completa (Ctrl+Alt+F), además de mostrar/ocultar las letras de escritorio (Ctrl+Alt+D), bloquear/desbloquear (Ctrl+Alt+L), modo karaoke (Ctrl+Alt+K) y restablecer la ventana (Ctrl+Alt+R).
 3. Instalación y Uso
 (1) Requisitos del Sistema
 Windows 10 19041 o posterior (se recomienda Windows 11) para una reproducción fluida y estable.
@@ -240,19 +237,19 @@ Para añadir más música, pulsa «Añadir carpeta» y elige la carpeta a escane
 4. GitHub
 Programa principal (incluido el motor de audio independiente AudioPlayer): https://github.com/Johnwikix/original-sound-hq-player
 5. Comentarios
-Grupo de QQ para comentarios y soporte: 1009034363"""
+Grupos de QQ para comentarios y soporte: 1009034363 / 1033738779"""
 
 # ------------------------------------------------------------ ShortDescription
 
 ZH_SHORT = ("支持 DSD（DSF/DFF）、FLAC、WAV、MP3、AAC、M4A、OGG、Opus、WMA、AIFF、APE、WavPack 等多种音乐格式，"
             "可转换为 WAV/FLAC/ALAC/MP3/AAC/OGG/Opus；音频输出支持 WASAPI 独占/共享、DirectSound、ASIO 与 DSD DoP/Native。"
-            "免费试用，完整版一次性买断。问题反馈交流QQ群：1009034363")
+            "免费试用，完整版一次性买断。问题反馈交流QQ群：一群 1009034363，二群 1033738779")
 EN_SHORT = ("Supports 12+ music formats including DSD (DSF/DFF), FLAC, WAV, MP3, AAC, M4A, OGG, Opus, WMA, AIFF, APE, and WavPack. "
             "Convert to WAV/FLAC/ALAC/MP3/AAC/OGG/Opus. Output via WASAPI exclusive/shared, DirectSound, ASIO, and DSD DoP/Native. "
-            "Free trial with a one-time full-version purchase. Feedback QQ group: 1009034363")
+            "Free trial with a one-time full-version purchase. Feedback QQ groups: 1009034363 / 1033738779")
 ES_SHORT = ("Admite más de 12 formatos: DSD (DSF/DFF), FLAC, WAV, MP3, AAC, M4A, OGG, Opus, WMA, AIFF, APE y WavPack. "
             "Convierte a WAV/FLAC/ALAC/MP3/AAC/OGG/Opus. Salida por WASAPI exclusivo/compartido, DirectSound, ASIO y DSD DoP/Native. "
-            "Prueba gratuita con compra única de la versión completa. Grupo de QQ: 1009034363")
+            "Prueba gratuita con compra única de la versión completa. Grupos de QQ: 1009034363 / 1033738779")
 
 # ----------------------------------------------------------------------- main
 
