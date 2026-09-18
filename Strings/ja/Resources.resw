@@ -1201,11 +1201,8 @@
   <data name="RebootToApply" xml:space="preserve">
     <value>変更を適用するにはアプリを再起動してください。</value>
   </data>
-  <data name="Win2dCover.Text" xml:space="preserve">
-    <value>Win2D 表紙（実験的）</value>
-  </data>
   <data name="Win2dAnimatedTitle.Text" xml:space="preserve">
-    <value>Win2D アニメーションテキストブロック（実験的）</value>
+    <value>Win2D アニメーションテキストブロック</value>
   </data>
   <data name="TextDefaultEffect" xml:space="preserve">
     <value>デフォルト(GPU 負荷が低い)</value>

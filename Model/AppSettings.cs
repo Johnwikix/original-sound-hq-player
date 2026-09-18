@@ -44,7 +44,7 @@ namespace WinUIMusicPlayer.Model
         public static bool AutoHideDesktopLyricsOnPlayingDetail { get; set; } = false;
         public static bool IsDesktopLyricsEnabled { get; set; } = false;
         public static bool IsDesktopLyricsLocked { get; set; } = false;
-        public static bool IsDesktopLyricsKaraokeEnabled { get; set; } = false;
+        public static bool IsDesktopLyricsKaraokeEnabled { get; set; } = true;
         public static double DesktopLyricsFontSize { get; set; } = 36;
         public static string DesktopLyricsFontFamily { get; set; } = "Segoe UI";
         public static uint DesktopLyricsColorRgb { get; set; } = 0x00FFFFFFu;

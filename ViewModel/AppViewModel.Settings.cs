@@ -106,21 +106,6 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = 0;
 
-        public bool IsWin2dCoverImageControlEnable
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = false;
-
         public bool IsWin2dAnimatedText
         {
             get => field;
@@ -134,7 +119,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = false;
+        } = true;
 
         public int DsdGain
         {
@@ -750,7 +735,7 @@ namespace WinUIMusicPlayer.ViewModel
                     App.Services.GetRequiredService<DesktopLyricsViewModel>().IsKaraokeEnabled = value;
                 }
             }
-        } = false;
+        } = true;
 
         public int DesktopLyricsFontWeight
         {
@@ -1281,7 +1266,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-        } = false;
+        } = true;
 
         public EasingType ScrollEasingType
         {

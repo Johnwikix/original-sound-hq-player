@@ -81,8 +81,7 @@ namespace WinUIMusicPlayer.Model
         public bool UseImageDominantTheme { get; set; } = false;
         public bool EnableLightWave { get; set; } = true;
         public int PaletteAlgorithm { get; set; } = 0;
-        public bool IsWin2dCoverImageControlEnable { get; set; } = false;
-        public bool IsWin2dAnimatedText { get; set; } = false;
+        public bool IsWin2dAnimatedText { get; set; } = true;
         public double CharFloatAmount { get; set; } = 5.0;
         public double CharScaleAmount { get; set; } = 110.0;
         public double GlowAmount { get; set; } = 5.0;
@@ -91,7 +90,7 @@ namespace WinUIMusicPlayer.Model
         public double TranslatedOpacityPercent { get; set; } = 60.0;
         public double UnplayedOpacityPercent { get; set; } = 50.0;
         public double TargetFrameRate { get; set; } = 120.0;
-        public bool EnableAdvancedLyricsEffect { get; set; } = false;
+        public bool EnableAdvancedLyricsEffect { get; set; } = true;
         [JsonConverter(typeof(LyricsEasingTypeJsonConverter))]
         public EasingType ScrollEasingType { get; set; } = EasingType.FlowWave;
         [JsonConverter(typeof(LyricsEaseModeJsonConverter))]
@@ -116,7 +115,7 @@ namespace WinUIMusicPlayer.Model
         public bool AutoHideDesktopLyricsOnPlayingDetail { get; set; } = false;
         public bool IsDesktopLyricsEnabled { get; set; } = false;
         public bool IsDesktopLyricsLocked { get; set; } = false;
-        public bool IsDesktopLyricsKaraokeEnabled { get; set; } = false;
+        public bool IsDesktopLyricsKaraokeEnabled { get; set; } = true;
         public double DesktopLyricsFontSize { get; set; } = 36;
         public string DesktopLyricsFontFamily { get; set; } = "Segoe UI";
         public uint DesktopLyricsColorRgb { get; set; } = 0x00FFFFFFu;

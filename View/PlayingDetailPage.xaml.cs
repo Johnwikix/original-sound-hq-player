@@ -42,7 +42,6 @@ namespace WinUIMusicPlayer.View
         private const double textScale = 1.6;  
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
         {
-            AnimatedWin2dControls.Controls.AlbumImgControl.AlbumArtControl.CoverCacheBasePath = AppSettings.MusicCoverCache;
             this.InitializeComponent();
             ViewModel = viewModel;
             DataContext = this;
@@ -483,7 +482,6 @@ namespace WinUIMusicPlayer.View
                 LyricsView?.LyricInteracted -= LyricsView_LyricInteracted;
                 LyricsView?.ExceptionInteracted -= LyricsView_ExceptionInteracted;
                 LyricsView?.ShutdownLyricsCanvas();
-                AlbumArtControl?.Dispose();
                 NowPlaying?.ExceptionOccurred -= BackGround_ExceptionOccurred;
                 NowPlaying?.Dispose();
             }

@@ -102,7 +102,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         }
 
         /// <summary>逐字效果开关：true = CanvasLyricsRenderer（Win2D 逐字扫光），false = TextBlockLyricsRenderer。
-        /// 窗口监听本属性热切换渲染器；默认关（与主界面 EnableAdvancedLyricsEffect 先例一致）。</summary>
+        /// 窗口监听本属性热切换渲染器；默认开（与主界面 EnableAdvancedLyricsEffect 保持一致）。</summary>
         public bool IsKaraokeEnabled
         {
             get => _isKaraokeEnabled;

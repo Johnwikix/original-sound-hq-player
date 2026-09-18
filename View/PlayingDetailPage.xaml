@@ -4,7 +4,6 @@
     xmlns:tools="using:WinUIMusicPlayer.Utils"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:aic="using:AnimatedWin2dControls.Controls.AlbumImgControl"
     xmlns:atb="using:AnimatedWin2dControls.Controls.AnimatedTextBlock"
     xmlns:awc="using:AnimatedWin2dControls.Controls"
     xmlns:behaviors="using:WinUIMusicPlayer.Behaviors"
@@ -54,8 +53,7 @@
                         x:Name="PlayingDetailAlbumCoverImageGrid"
                         Padding="20"
                         HorizontalAlignment="Center"
-                        VerticalAlignment="Center"
-                        x:Load="{x:Bind tool:BindUtils.BoolToBoolReConverter(ViewModel.AppViewModel.IsWin2dCoverImageControlEnable), Mode=OneTime}">
+                        VerticalAlignment="Center">
                         <uc:ImageSwitcher
                             CornerRadiusAmount="12"
                             ImageHash="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundHash, Mode=OneWay}"
@@ -63,14 +61,6 @@
                             ShadowAmount="16"
                             SwitchType="{x:Bind model:AppSettings.ImageSwitchType, Mode=OneWay}" />
                     </Grid>
-                    <aic:AlbumArtControl
-                        x:Name="AlbumArtControl"
-                        Margin="0"
-                        x:Load="{x:Bind ViewModel.AppViewModel.IsWin2dCoverImageControlEnable, Mode=OneTime}"
-                        ImageHash="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundHash, Mode=OneWay}"
-                        IsActive="{x:Bind ViewModel.AppViewModel.IsWin2dCoverImageControlEnable, Mode=OneTime}"
-                        IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
-                        IsShadowEnabled="True" />
                 </Grid>
                 <Grid
                     x:Name="AnimatedTextBlock"

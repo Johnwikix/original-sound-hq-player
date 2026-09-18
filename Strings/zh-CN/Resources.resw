@@ -1200,11 +1200,8 @@
   <data name="RebootToApply" xml:space="preserve">
     <value>重启应用生效</value>
   </data>
-  <data name="Win2dCover.Text" xml:space="preserve">
-    <value>Win2d封面（实验性）</value>
-  </data>
   <data name="Win2dAnimatedTitle.Text" xml:space="preserve">
-    <value>Win2d动画文本块（实验性）</value>
+    <value>Win2d动画文本块</value>
   </data>
   <data name="TextDefaultEffect" xml:space="preserve">
     <value>默认效果（较低GPU开销）</value>
