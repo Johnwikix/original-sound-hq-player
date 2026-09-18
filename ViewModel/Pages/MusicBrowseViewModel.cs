@@ -430,7 +430,42 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 _logger.LogError(ex, $"播放音乐失败: {ex.Message}");
             }
-        }   
+        }
+
+        /// <summary>
+        /// 外部文件匹配库内条目后的播放入口：播放队列替换为同文件夹曲目（文件夹语义与
+        /// FolderViewModel.Play 一致，按文件夹名聚合、沿用库内顺序），从匹配曲目开始；
+        /// 匹配条目尚未同步进 SongsSource（如同文件夹刚扫描入库）时不替换队列，仅替换当前曲。
+        /// </summary>
+        public void PlayMusicWithFolderQueue(Music music)
+        {
+            if (string.IsNullOrEmpty(music.LastLevelFolderPath))
+            {
+                _ = PlayMusic(music, IsChangeList: true);
+                return;
+            }
+
+            var source = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(AppViewModel.SongsSource);
+            List<Music> folderSongs = [];
+            for (int i = 0; i < source.Length; i++)
+            {
+                var m = source[i];
+                if (m.LastLevelFolderPath is not null
+                    && m.LastLevelFolderPath.Equals(music.LastLevelFolderPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    folderSongs.Add(m);
+                }
+            }
+            if (folderSongs.Count == 0)
+            {
+                _ = PlayMusic(music, IsChangeList: true);
+                return;
+            }
+
+            // SequentialPlayingList 是唯一状态源：赋值后 CurrentPlayingList 自动跟随（随机模式自动洗牌）。
+            AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(folderSongs);
+            _ = PlayMusic(music, IsChangeList: true);
+        }
 
         private void TrimMemory() {
             try

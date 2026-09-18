@@ -211,7 +211,9 @@ public sealed class OneShotPlaybackService : IDisposable
                 // 库内命中时优先用 SongsSource 实例播放，与库内列表/收藏等状态保持同源；
                 // 条目尚未同步进内存索引（如扫描刚入库）时退回数据库行实例。
                 Music target = dbMusic is not null ? (_appViewModel.FindById(dbMusic.Id) ?? dbMusic) : music;
-                _ = App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(target);
+                var browse = App.Services.GetRequiredService<MusicBrowseViewModel>();
+                if (dbMusic is not null) browse.PlayMusicWithFolderQueue(target);
+                else _ = browse.PlayMusic(target);
             });
         }
         catch (Exception ex)

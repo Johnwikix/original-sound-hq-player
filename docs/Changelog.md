@@ -6,8 +6,9 @@
 
 - `Services/MusicDatabaseService.cs`：新增 `FindMusicByPathAsync`——按路径 NOCASE 匹配库内条目（走 `IX_Music_Path_NoCase` 索引）返回完整 Music；数据库在引擎就绪前必已初始化，无需新增启动顺序
 - `Services/OneShotPlaybackService.cs`：播放派发时先按路径查库——命中则播放库内条目（优先取 SongsSource 实例与库内列表/收藏同源，索引未同步时退回数据库行实例），统计、歌词、当前曲存档均为标准库内语义；未命中才等待外部解析走一次性播放（Id=0、不写库不统计）；查询失败按未命中回退
+- `ViewModel/Pages/MusicBrowseViewModel.cs`：新增 `PlayMusicWithFolderQueue`——库内命中时播放队列替换为同文件夹曲目（`LastLevelFolderPath` 聚合，语义与文件夹页播放一致，沿用库内顺序），从匹配曲目开始；随机播放模式经 `SequentialPlayingList` 赋值自动洗牌；同文件夹条目尚未同步进 SongsSource 时不替换队列仅替换当前曲
 - `Services/LyricsRefreshService.cs`：一次性分支只服务纯外部文件（本地 → 内嵌 → OneShotLyricsCache → 在线搜索），移除按路径取库内歌词阶段（匹配文件已改走标准库内链路，该阶段不可达）
-- 行为：匹配文件从资源管理器打开 = 播放库内对应曲目，但不改变当前播放队列；纯外部文件行为不变
+- 行为：匹配文件从资源管理器打开 = 按文件夹页语义播放库内对应曲目（队列换为同文件夹歌曲、曲终接续文件夹顺序）；纯外部文件行为不变
 
 ## 2026-09-18 修复连续切换一次性外部文件时迟到歌词覆盖当前曲目
 
