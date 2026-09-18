@@ -284,17 +284,17 @@ public sealed class LicenseService : IDisposable
         switch (next)
         {
             case AppLicenseState.FullLicense:
-                _logger.LogInformation("许可状态迁移：{Previous} → 完整版", previous);
+                _logger.LogInformation("许可状态迁移：{Previous} → {State}", previous, next);
                 break;
             case AppLicenseState.TrialActive:
-                _logger.LogInformation("许可状态迁移：{Previous} → 试用中，{Expiration} 到期（剩 {Days} 天）",
-                    previous, expiration, TrialRemainingDays);
+                _logger.LogInformation("许可状态迁移：{Previous} → {State}，{Expiration} 到期（剩 {Days} 天）",
+                    previous, next, expiration, TrialRemainingDays);
                 break;
             case AppLicenseState.LicenseInactive:
-                _logger.LogInformation("许可状态迁移：{Previous} → 许可非活跃，受限功能：{Features}", previous, RestrictedFeatures);
+                _logger.LogInformation("许可状态迁移：{Previous} → {State}，受限功能：{Features}", previous, next, RestrictedFeatures);
                 break;
             default:
-                _logger.LogInformation("许可状态迁移：{Previous} → Store 不可用（fail-open）", previous);
+                _logger.LogInformation("许可状态迁移：{Previous} → {State}（fail-open）", previous, next);
                 break;
         }
         RaiseStateChanged();
