@@ -48,7 +48,7 @@ namespace WinUIMusicPlayer.Services
             shutdown.RegisterCleanup(audio.Dispose);
             audio.Start();
             shutdown.RegisterCleanup(ipcService.Dispose);
-            AppViewModel.IsIpcConnecting = true;
+            AppViewModel.Progress.Begin(ProgressCenter.Keys.IpcConnecting, ToolUtils.GetString("ProgressConnecting"));
             var ipcInitialization = ipcService.InitializingAsync();
             await MusicDatabaseService.Initialize();
             var appViewModel = App.Services.GetRequiredService<AppViewModel>();
@@ -104,7 +104,7 @@ namespace WinUIMusicPlayer.Services
             shutdown.RegisterSave(() => { player.MusicEnd(); App.MainWindow.Hide(); return Task.CompletedTask; });
             shutdown.RegisterCleanup(() => CoverLoadQueue.Shutdown(TimeSpan.FromSeconds(3)));
             var licenseInitialization = App.Services.GetRequiredService<LicenseService>().InitializeAsync();
-            AppViewModel.IsLibraryLoading = true;
+            AppViewModel.Progress.Begin(ProgressCenter.Keys.LibraryLoading, ToolUtils.GetString("ProgressLoadingLibrary"));
             var libraryInitialization = Task.Run(async () =>
             {
                 await LoadCachedLibraryAsync(MusicDatabaseService, cancellationToken);
@@ -117,7 +117,7 @@ namespace WinUIMusicPlayer.Services
                 ipcInitialization, licenseInitialization, libraryInitialization, cancellationToken));
             shutdown.RegisterCleanup(() => _engineInitialization ?? Task.CompletedTask);
             await Task.WhenAll(licenseInitialization, libraryInitialization).WaitAsync(cancellationToken);
-            AppViewModel.IsLibraryLoading = false;
+            AppViewModel.Progress.Complete(ProgressCenter.Keys.LibraryLoading);
             await musicBrowseViewModel.LoadPlayStateToMusicBrowsePage();
             // 缓存和播放状态恢复完成后才允许监视器发布音乐库变化。
             var watcher = App.Services.GetRequiredService<LibraryWatcherService>();
@@ -148,8 +148,8 @@ namespace WinUIMusicPlayer.Services
             if (cancellationToken.IsCancellationRequested) return;
             await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
             {
-                // 连接阶段结束即收起标题栏指示；入口可用性由 UpdatePlaybackEngineReady 汇总判定。
-                AppViewModel.IsIpcConnecting = false;
+                // 连接阶段结束即移除进度层任务条目；入口可用性由 UpdatePlaybackEngineReady 汇总判定。
+                AppViewModel.Progress.Complete(ProgressCenter.Keys.IpcConnecting);
                 UpdatePlaybackEngineReady();
             });
             // 校正同步在首推中失败时才需要重试；此时 IPC 已连接，重试可达。
@@ -251,13 +251,11 @@ namespace WinUIMusicPlayer.Services
             // 退出先取消生命周期 token，再等待真实扫描结束，之后才释放视图和音频依赖。
             App.Services.GetRequiredService<ShutdownCoordinator>().RegisterCleanup(
                 () => _libraryScan ?? Task.CompletedTask);
-            AppViewModel.LibraryScanPercent = -1;
-            AppViewModel.IsLibraryScanning = true;
+            AppViewModel.Progress.Begin(ProgressCenter.Keys.LibraryScanning, ToolUtils.GetString("ProgressScanning"));
             var progress = new Progress<int>(percent =>
             {
-                if (AppViewModel.IsLibraryScanning && !token.IsCancellationRequested &&
-                    percent > AppViewModel.LibraryScanPercent)
-                    AppViewModel.LibraryScanPercent = percent;
+                if (!token.IsCancellationRequested)
+                    AppViewModel.Progress.Report(ProgressCenter.Keys.LibraryScanning, percent);
             });
             _libraryScan = Task.Run(() => ScanLibraryAsync(token, progress));
         }
@@ -295,7 +293,8 @@ namespace WinUIMusicPlayer.Services
             }
             finally
             {
-                await App.MainWindow.DispatcherQueue.EnqueueAsync(() => AppViewModel.IsLibraryScanning = false);
+                // ProgressCenter 自带 UI 线程转派，后台线程可直接收尾。
+                AppViewModel.Progress.Complete(ProgressCenter.Keys.LibraryScanning);
             }
         }
 

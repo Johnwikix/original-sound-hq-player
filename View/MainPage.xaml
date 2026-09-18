@@ -580,35 +580,38 @@
                     IsHitTestVisible="False"
                     IsTextScaleFactorEnabled="False"
                     Style="{StaticResource CaptionTextBlockStyle}" />
+                <!--  全局唯一任务指示器：环 + 百分比 + 操作文本横排。单操作显示独立百分比；
+                      多操作横排并列、各带百分比（不做跨操作加权平均，会倒退）。  -->
                 <StackPanel
                     Margin="12,0,0,0"
                     VerticalAlignment="Center"
                     IsHitTestVisible="False"
                     Orientation="Horizontal"
                     Spacing="6"
-                    Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.IsTitleBarTaskActive), Mode=OneWay}">
+                    Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.Progress.IsActive), Mode=OneWay}">
                     <ProgressRing
                         Width="16"
                         Height="16"
                         MinWidth="16"
                         MinHeight="16"
-                        IsActive="{x:Bind ViewModel.AppViewModel.IsTitleBarTaskActive, Mode=OneWay}"
-                        IsIndeterminate="{x:Bind ViewModel.AppViewModel.IsTitleBarTaskIndeterminate, Mode=OneWay}"
+                        IsActive="{x:Bind ViewModel.AppViewModel.Progress.IsActive, Mode=OneWay}"
+                        IsIndeterminate="{x:Bind ViewModel.AppViewModel.Progress.IsIndeterminate, Mode=OneWay}"
                         Maximum="100"
-                        Value="{x:Bind ViewModel.AppViewModel.LibraryScanPercent, Mode=OneWay}" />
-                    <TextBlock
-                        VerticalAlignment="Center"
-                        IsTextScaleFactorEnabled="False"
-                        Style="{StaticResource CaptionTextBlockStyle}"
-                        Text="{x:Bind ViewModel.AppViewModel.TitleBarTaskText, Mode=OneWay}" />
-                    <!--  百分比仅扫描有意义；IPC 连接期不显示  -->
+                        Minimum="0"
+                        Value="{x:Bind ViewModel.AppViewModel.Progress.Percent, Mode=OneWay}" />
+                    <!--  百分比仅单操作确定进度时显示；多操作的百分比在文本内  -->
                     <TextBlock
                         MinWidth="34"
                         VerticalAlignment="Center"
                         IsTextScaleFactorEnabled="False"
                         Style="{StaticResource CaptionTextBlockStyle}"
-                        Text="{x:Bind ViewModel.AppViewModel.LibraryScanPercentText, Mode=OneWay}"
-                        Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.IsLibraryScanning), Mode=OneWay}" />
+                        Text="{x:Bind ViewModel.AppViewModel.Progress.PercentText, Mode=OneWay}"
+                        Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.Progress.IsPercentVisible), Mode=OneWay}" />
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        IsTextScaleFactorEnabled="False"
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        Text="{x:Bind ViewModel.AppViewModel.Progress.DisplayText, Mode=OneWay}" />
                 </StackPanel>
             </StackPanel>
 

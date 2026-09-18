@@ -120,14 +120,20 @@
   <data name="AppTitle.Text" xml:space="preserve">
     <value>Original-Sound HQ Player</value>
   </data>
-  <data name="TitleBarTaskLoadingLibrary" xml:space="preserve">
-    <value>Musikbibliothek wird geladen</value>
-  </data>
-  <data name="TitleBarTaskConnecting" xml:space="preserve">
+  <data name="ProgressConnecting" xml:space="preserve">
     <value>Audiomodul wird verbunden</value>
   </data>
-  <data name="TitleBarTaskScanning" xml:space="preserve">
+  <data name="ProgressLoadingLibrary" xml:space="preserve">
+    <value>Musikbibliothek wird geladen</value>
+  </data>
+  <data name="ProgressScanning" xml:space="preserve">
     <value>Bibliothek wird gescannt</value>
+  </data>
+  <data name="ProgressRescanning" xml:space="preserve">
+    <value>Bibliothek wird neu gescannt</value>
+  </data>
+  <data name="ProgressTransmitting" xml:space="preserve">
+    <value>Übertragung auf USB-Gerät</value>
   </data>
   <data name="SongTab.Text" xml:space="preserve">
     <value>Titel</value>
@@ -242,9 +248,6 @@
   </data>
   <data name="AddPlayList.Text" xml:space="preserve">
     <value>Neue Wiedergabeliste</value>
-  </data>
-  <data name="Transmitting.Text" xml:space="preserve">
-    <value>Übertragung läuft</value>
   </data>
   <data name="USBDevice.PlaceholderText" xml:space="preserve">
     <value>USB-Gerät</value>

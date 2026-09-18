@@ -505,16 +505,6 @@ namespace WinUIMusicPlayer.ViewModel
             MusicBrowsePage?.UpdateViewList();
         }
 
-        public void HideTransmission()
-        {
-            AppViewModel.ProcessRingVisibility = Visibility.Collapsed;
-        }
-
-        public void ShowTransmission()
-        {
-            AppViewModel.ProcessRingVisibility = Visibility.Visible;
-        }
-
         private int GetSelectorBarItemIndex(SelectorBarItem item)
         {
             if (item is null) return -1;

@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.UI.Xaml;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -7,6 +6,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Channels;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.Services;
@@ -122,11 +122,12 @@ public sealed class LibraryWatcherService(MusicDatabaseService database, AppView
                 await Task.Delay(1000, token);
                 while (_changes.Reader.TryRead(out _)) { }
                 if (!state.IsFolderWatchEnabled) continue;
-                App.MainWindow.DispatcherQueue.TryEnqueue(() => state.ProcessRingVisibility = Visibility.Visible);
+                // ProgressCenter 自带 UI 线程转派，监视线程可直接注册/移除任务条目。
+                state.Progress.Begin(ProgressCenter.Keys.LibraryRescanning, ToolUtils.GetString("ProgressRescanning"));
                 try { await AutoRescanService.AutoScan(token); }
                 catch (OperationCanceledException) when (token.IsCancellationRequested) { break; }
                 catch (Exception ex) { logger.LogError(ex, "文件变化后重新扫描失败"); }
-                finally { App.MainWindow.DispatcherQueue.TryEnqueue(() => state.ProcessRingVisibility = Visibility.Collapsed); }
+                finally { state.Progress.Complete(ProgressCenter.Keys.LibraryRescanning); }
             }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }

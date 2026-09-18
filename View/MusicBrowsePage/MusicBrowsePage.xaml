@@ -62,33 +62,12 @@
             </StackPanel>
 
 
+            <!--  顶栏右侧只保留设备与排序选择；传输/重扫进度统一由 MainPage 全页进度层显示  -->
             <StackPanel
                 Margin="16,10,16,10"
                 HorizontalAlignment="Right"
                 VerticalAlignment="Center"
                 Orientation="Horizontal">
-                <TextBlock
-                    x:Uid="Transmitting"
-                    Margin="5,0,5,0"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    FontSize="15"
-                    Visibility="Collapsed" />
-                <ProgressRing
-                    x:Name="ProcessingRing"
-                    Width="20"
-                    Height="20"
-                    Margin="0,0,5,0"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    IsActive="True"
-                    Visibility="{x:Bind ViewModel.AppViewModel.ProcessRingVisibility, Mode=OneWay}" />
-                <TextBlock
-                    Margin="0,0,5,0"
-                    VerticalAlignment="Center"
-                    FontSize="13"
-                    Text="{x:Bind ViewModel.AppViewModel.ProcessRingPercentText, Mode=OneWay}"
-                    Visibility="{x:Bind ViewModel.AppViewModel.ProcessRingVisibility, Mode=OneWay}" />
                 <ComboBox
                     x:Name="UsbDeviceCombox"
                     x:Uid="USBDevice"

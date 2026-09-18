@@ -7,8 +7,17 @@ namespace WinUIMusicPlayer.ViewModel
         public Music? CurrentPlayingMusic { get; set => SetProperty(ref field, value); }
         public System.Collections.ObjectModel.ObservableCollection<Music> CurrentPlayingList { get; set => SetProperty(ref field, value); } = [];
         public bool IsPlaying { get; set; }
+        public bool IsPlaybackEngineReady { get; set; }
         public bool IsFolderWatchEnabled { get; set => SetProperty(ref field, value); } = true;
-        public Microsoft.UI.Xaml.Visibility ProcessRingVisibility { get; set; }
+        public ProgressCenter Progress { get; } = new();
+    }
+    // 与真实 ProgressCenter 同签名的空桩：监视器只用到 Begin/Complete。
+    public sealed class ProgressCenter
+    {
+        public static class Keys { public const string LibraryRescanning = nameof(LibraryRescanning); }
+        public void Begin(string key, string text, double percent = -1) { }
+        public void Report(string key, double percent) { }
+        public void Complete(string key) { }
     }
     public sealed class MusicBrowseViewModel
     {
@@ -48,6 +57,10 @@ namespace WinUIMusicPlayer.Services
     }
 }
 namespace Microsoft.UI.Xaml { public enum Visibility { Visible, Collapsed } }
+namespace WinUIMusicPlayer.Utils
+{
+    public static class ToolUtils { public static string GetString(string key) => key; }
+}
 namespace WinUIMusicPlayer
 {
     public static class App

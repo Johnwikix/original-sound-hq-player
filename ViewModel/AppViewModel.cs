@@ -219,70 +219,12 @@ namespace WinUIMusicPlayer.ViewModel
         public bool IsInitialized => _lifecycle.IsReady;
         private readonly AppLifecycle _lifecycle;
         public Visibility UsbDeviceVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
-        public Visibility ProcessRingVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
         // 播放引擎就绪 = 生命周期 Ready 且 IPC 已连接且首曲/设置推送完成；由 StartupCoordinator 在
         // 两处条件变化点统一刷新，播放入口（命令 CanExecute 与按钮 IsEnabled）据此置灰。
         public bool IsPlaybackEngineReady { get; set => SetProperty(ref field, value); }
-        public bool IsLibraryScanning
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    OnPropertyChanged(nameof(IsTitleBarTaskActive));
-                    OnPropertyChanged(nameof(TitleBarTaskText));
-                }
-            }
-        }
-        // 库整表加载（启动恢复缓存库）；与扫描互斥——扫描在加载完成后才启动。
-        public bool IsLibraryLoading
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    OnPropertyChanged(nameof(IsTitleBarTaskActive));
-                    OnPropertyChanged(nameof(TitleBarTaskText));
-                }
-            }
-        }
-        // 标题栏任务指示器：IPC 连接 / 库加载 / 库扫描共用，显示当前正在执行的任务。
-        public bool IsIpcConnecting
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    OnPropertyChanged(nameof(IsTitleBarTaskActive));
-                    OnPropertyChanged(nameof(TitleBarTaskText));
-                    OnPropertyChanged(nameof(IsTitleBarTaskIndeterminate));
-                }
-            }
-        }
-        public bool IsTitleBarTaskActive => IsIpcConnecting || IsLibraryLoading || IsLibraryScanning;
-        public bool IsTitleBarTaskIndeterminate => IsIpcConnecting || IsLibraryScanIndeterminate;
-        public string TitleBarTaskText => IsIpcConnecting
-            ? ToolUtils.GetString("TitleBarTaskConnecting")
-            : IsLibraryScanning ? ToolUtils.GetString("TitleBarTaskScanning")
-            : ToolUtils.GetString("TitleBarTaskLoadingLibrary");
-        public int LibraryScanPercent
-        {
-            get;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    OnPropertyChanged(nameof(LibraryScanPercentText));
-                    OnPropertyChanged(nameof(IsLibraryScanIndeterminate));
-                    OnPropertyChanged(nameof(IsTitleBarTaskIndeterminate));
-                }
-            }
-        } = -1;
-        public string LibraryScanPercentText => LibraryScanPercent < 0 ? "…" : $"{LibraryScanPercent}%";
-        public bool IsLibraryScanIndeterminate => LibraryScanPercent < 0;
+        // 全局进行中任务（IPC 连接/库加载/库扫描/文件监视重扫/USB 传输）的唯一状态源，
+        // 驱动 MainPage 全页进度层；多操作并发时逐行显示文本，仅单操作上报百分比时进度环用确定进度。
+        public ProgressCenter Progress { get; } = new();
         // 空音乐库占位（MusicBrowsePage 内容区）。初始 Collapsed，待首次 NotifySongsSourceChanged（DB 加载完成）后才置 Visible，避免启动加载期闪现。
         public Visibility LibraryEmptyVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
         // 最爱页占位：库非空但没有任何收藏时显示（FavouritePlayListPage）；搜索过滤导致的空列表不显示。
@@ -1464,23 +1406,15 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        /// <summary>传输进度环的百分比（0-100），由发送/转换流程聚合更新。</summary>
-        public int ProcessRingPercent { get => field; set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(ProcessRingPercentText)); } } = 0;
-        public string ProcessRingPercentText => $"{ProcessRingPercent}%";
-
         public async Task TransmitFileToUsb(IEnumerable<Music> selectedMusics, UsbStorageDevice usbDevice, string? format = null, int bitRateKbps = 320)
         {
             var musics = selectedMusics.AsValueEnumerable().ToList();
             if (musics.Count == 0) return;
 
-            App.Services.GetRequiredService<MusicBrowseViewModel>().ShowTransmission();
-            ProcessRingPercent = 0; // 每轮发送独立重置，连续多批不残留上一轮进度
+            Progress.Begin(ProgressCenter.Keys.UsbTransmitting, ToolUtils.GetString("ProgressTransmitting"));
             int completed = 0;
             var aggregate = new Progress<double>(p =>
-            {
-                int percent = (int)Math.Clamp(p, 0, 100);
-                if (percent > ProcessRingPercent) ProcessRingPercent = percent;
-            });
+                Progress.Report(ProgressCenter.Keys.UsbTransmitting, Math.Clamp(p, 0, 100)));
 
             var usbWriter = new UsbWriterHelper(
                 App.Services.GetRequiredService<AudioConverterService>(),
@@ -1496,7 +1430,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
             finally
             {
-                ProcessRingVisibility = Visibility.Collapsed; // 传输结束隐藏进度环（与 ShowTransmission 配对）
+                Progress.Complete(ProgressCenter.Keys.UsbTransmitting); // 传输结束移除任务条目（与 Begin 配对）
             }
             // 发送台账：转换发送记实际输出扩展名；幂等去重后触发依设备标记刷新
             string recordedExtension = format is null ? null : AudioConverterService.GetExtensionForFormat(format);
