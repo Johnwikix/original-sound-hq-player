@@ -129,11 +129,12 @@
 
 ## 🖼️ 软件截图
 
-<img src="doc/img/1.png" width="50%"><img src="doc/img/2.png" width="50%">
-<img src="doc/img/3.png" width="50%"><img src="doc/img/4.png" width="50%">
+<img src="doc/img/1.png" width="50%"><img src="doc/img/2.jpg" width="50%">
+<img src="doc/img/3.jpg" width="50%"><img src="doc/img/4.png" width="50%">
 <img src="doc/img/5.png" width="50%"><img src="doc/img/6.png" width="50%">
 <img src="doc/img/7.png" width="50%"><img src="doc/img/8.png" width="50%">
 <img src="doc/img/9.png" width="50%"><img src="doc/img/10.png" width="50%">
+<img src="doc/img/11.jpg" width="50%"><img src="doc/img/12.png" width="50%">
 
 ## ✍️ 贡献与构建
 
