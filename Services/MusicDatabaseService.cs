@@ -386,6 +386,26 @@ namespace WinUIMusicPlayer.Services
             return (lyrics?.Lyrics, lyrics?.TranslatedLyrics, lyrics?.Krc, lyrics?.TKrc);
         }
 
+        /// <summary>
+        /// 按路径大小写不敏感匹配库内曲目并取其已保存歌词（走 IX_Music_Path_NoCase）；
+        /// 未匹配或无歌词行返回全空。供外部文件一次性播放复用，免重复在线搜索。
+        /// </summary>
+        public async Task<(string? lyrics, string? transLrc, string? krc, string? tKrc)> GetLyricsByPathAsync(string path)
+        {
+            try
+            {
+                int musicId = await _dbConnection.ExecuteScalarAsync<int>(
+                    "SELECT Id FROM Music WHERE Path = ? COLLATE NOCASE LIMIT 1", path);
+                if (musicId <= 0) return (null, null, null, null);
+                return await GetLyricsAsync(musicId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"GetLyricsByPathAsync 按路径查询歌词失败: {path}: {ex.Message}");
+                return (null, null, null, null);
+            }
+        }
+
         public async Task SaveLyricsAsync(int musicId, string? lyrics, string? transLrc, string? krc, string? tKrc)
         {
             await _dbConnection.InsertOrReplaceAsync(new MusicLyrics

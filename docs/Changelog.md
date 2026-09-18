@@ -2,6 +2,15 @@
 
 新条目加在最上方。
 
+## 2026-09-18 一次性外部文件优先复用库内同路径曲目的已存歌词
+
+- `Services/MusicDatabaseService.cs`：新增 `GetLyricsByPathAsync`——按路径 NOCASE 匹配库内条目（走 `IX_Music_Path_NoCase` 索引）并取其已保存歌词；数据库在引擎就绪前必已初始化，无需新增启动顺序
+- `Services/LyricsRefreshService.cs`：一次性分支歌词优先级调整为与库内播放对齐——文件旁本地 → 库内同路径已存歌词（先 KRC 后 LRC，传入非空原文只解析不触发在线搜索）→ 内嵌 → OneShotLyricsCache → 在线搜索；库内命中的原文不写入路径缓存，仅本次在线新搜到的结果写回
+
+## 2026-09-18 修复连续切换一次性外部文件时迟到歌词覆盖当前曲目
+
+- `ViewModel/AppViewModel.cs`：歌词迟到守卫从按 `Music.Id` 匹配改为递增票据（`Interlocked`/`Volatile`）——一次性外部曲目 Id 均为 0，按 Id 匹配会放过上一首的迟到结果，覆盖正在播放曲目的 `UILyrics`
+
 ## 2026-09-18 文件关联一次性播放：系统"打开方式"入口直接播放外部文件
 
 - `Package.appxmanifest`：新增 `windows.fileTypeAssociation`，注册 15 种音频扩展名（与 `ToolUtils.MusicExtensions` 一致），应用出现在系统"打开方式"候选

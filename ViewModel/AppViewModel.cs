@@ -33,7 +33,8 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class AppViewModel : ObservableObject, IDisposable
     {
-        private int _loadingMusicId;
+        // 歌词迟到守卫票据：LoadLyricsToUI 可能在后台线程（IPC 自动切歌）调用，递增须原子。
+        private int _lyricsLoadTicket;
         private int _lastDisplayedSecond = -1;
         public Music? CurrentArtistObj
         {
@@ -651,18 +652,19 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void LoadLyricsToUI(Music music)
         {
-            _loadingMusicId = music.Id;
-            _ = Task.Run(() => LoadLyricsCore(music));
+            // 按递增票据匹配而非 Music.Id：一次性外部曲目 Id 均为 0，按 Id 匹配会放过上一首的迟到结果。
+            int ticket = Interlocked.Increment(ref _lyricsLoadTicket);
+            _ = Task.Run(() => LoadLyricsCore(music, ticket));
         }
 
-        private static async Task LoadLyricsCore(Music music)
+        private static async Task LoadLyricsCore(Music music, int ticket)
         {
             var vm = App.Services.GetRequiredService<AppViewModel>();
             vm.LastLyricIndex = -1;
             var parsedLyrics = await App.Services.GetRequiredService<LyricsRefreshService>().SetLyrics(music);
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
-                if (vm._loadingMusicId == music.Id)
+                if (Volatile.Read(ref vm._lyricsLoadTicket) == ticket)
                     vm.UILyrics = parsedLyrics;
             });
         }
