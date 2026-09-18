@@ -69,10 +69,13 @@
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard ContentAlignment="Left">
                             <StackPanel Orientation="Horizontal" Spacing="8">
-                                <HyperlinkButton NavigateUri="https://johnwikix.github.io/original-sound-player-page/terms"
-                                    Content="{x:Bind tool:ToolUtils.GetString('LegalTerms')}" />
-                                <HyperlinkButton NavigateUri="https://johnwikix.github.io/original-sound-player-page/privacy"
-                                    Content="{x:Bind tool:ToolUtils.GetString('LegalPrivacy')}" />
+                                <HyperlinkButton Content="{x:Bind tool:ToolUtils.GetString('LegalTerms')}" NavigateUri="https://johnwikix.github.io/original-sound-player-page/terms" />
+                                <HyperlinkButton Content="{x:Bind tool:ToolUtils.GetString('LegalPrivacy')}" NavigateUri="https://johnwikix.github.io/original-sound-player-page/privacy" />
+                                <HyperlinkButton NavigateUri="https://johnwikix.github.io/original-sound-player-page/disclaimer">
+                                    <HyperlinkButton.Content>
+                                        <TextBlock x:Uid="AboutDisclaimerHeader" />
+                                    </HyperlinkButton.Content>
+                                </HyperlinkButton>
                             </StackPanel>
                         </controls:SettingsCard>
                         <controls:SettingsCard ContentAlignment="Left">
@@ -89,23 +92,16 @@
                                     x:Name="MainGitHub"
                                     Command="{x:Bind ViewModel.AppViewModel.OpenMainGitHubCommand, Mode=OneWay}"
                                     Content="GitHub" />
-                                <HyperlinkButton NavigateUri="https://johnwikix.github.io/original-sound-player-page/disclaimer">
-                                    <HyperlinkButton.Content>
-                                        <TextBlock x:Uid="AboutDisclaimerHeader" />
-                                    </HyperlinkButton.Content>
-                                </HyperlinkButton>
                             </StackPanel>
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
 
                 <controls:SettingsCard
-                    Header="{x:Bind tool:ToolUtils.GetString('LicensePurchase')}"
                     Description="{x:Bind ViewModel.AppViewModel.LicenseDescription, Mode=OneWay}"
+                    Header="{x:Bind tool:ToolUtils.GetString('LicensePurchase')}"
                     Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.CanPurchaseLicense), Mode=OneWay}">
-                    <Button
-                        Content="{x:Bind tool:ToolUtils.GetString('LicensePurchase')}"
-                        Command="{x:Bind ViewModel.AppViewModel.PurchaseLicenseCommand}" />
+                    <Button Command="{x:Bind ViewModel.AppViewModel.PurchaseLicenseCommand}" Content="{x:Bind tool:ToolUtils.GetString('LicensePurchase')}" />
                 </controls:SettingsCard>
 
                 <!--  音频可视化  -->
@@ -118,9 +114,7 @@
 
                 <!--  缓存  -->
                 <controls:SettingsExpander x:Uid="AboutCacheExpander">
-                    <Button
-                        x:Uid="OpenCacheFolderButton"
-                        Command="{x:Bind ViewModel.AppViewModel.OpenCoverCacheLocationCommand, Mode=OneWay}" />
+                    <Button x:Uid="OpenCacheFolderButton" Command="{x:Bind ViewModel.AppViewModel.OpenCoverCacheLocationCommand, Mode=OneWay}" />
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}">
                             <controls:SettingsCard.Header>
@@ -158,16 +152,12 @@
 
                 <!--  日志  -->
                 <controls:SettingsCard x:Uid="AboutLogCard">
-                    <Button
-                        x:Uid="OpenLogFolderButton"
-                        Command="{x:Bind ViewModel.AppViewModel.OpenLogPathCommand, Mode=OneWay}" />
+                    <Button x:Uid="OpenLogFolderButton" Command="{x:Bind ViewModel.AppViewModel.OpenLogPathCommand, Mode=OneWay}" />
                 </controls:SettingsCard>
 
                 <!--  设置文件  -->
                 <controls:SettingsCard x:Uid="AboutSettingsCard">
-                    <Button
-                        x:Uid="OpenSettingsFolderButton"
-                        Command="{x:Bind ViewModel.AppViewModel.OpenSettingsFolderCommand, Mode=OneWay}" />
+                    <Button x:Uid="OpenSettingsFolderButton" Command="{x:Bind ViewModel.AppViewModel.OpenSettingsFolderCommand, Mode=OneWay}" />
                 </controls:SettingsCard>
             </StackPanel>
         </Grid>
