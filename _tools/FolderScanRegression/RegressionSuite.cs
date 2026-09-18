@@ -258,6 +258,9 @@ internal static class RegressionSuite
             await InitialFileScan.InitialScan();
             songs = await database.GetMusicListAsync();
             Check(songs.Count == 1 && songs[0].Path.EndsWith("slow.mp3"), "cancelled scan could not retry");
+            bool retryChanged = await InitialFileScan.InitialScan();
+            bool unchanged = await InitialFileScan.InitialScan();
+            Check(retryChanged && !unchanged, "unchanged scan reported database changes");
             string secondDirectory = Path.Combine(root, "StartupProgress");
             Directory.CreateDirectory(secondDirectory);
             await database.Connection.InsertAsync(new Folder { Path = secondDirectory });

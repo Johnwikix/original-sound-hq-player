@@ -10,79 +10,87 @@ namespace WinUIMusicPlayer.Services;
 
 public class InitialFileScan
 {
-    public static async Task InitialScan(CancellationToken cancellationToken = default, IProgress<int>? progress = null)
-    {
-        var database = App.Services.GetRequiredService<MusicDatabaseService>();
-        // 只枚举一次并保存路径，确定分母后复用快照扫描；不提前读取全部文件的元数据。
-        var pending = new List<(string Path, List<string> Files)>();
-        long total = 0;
-        foreach (var folder in await database.GetFolders())
+        /// <summary>启动全库扫描；返回本轮是否产生了数据库变更（新增/更新/删除，含去重删除）。</summary>
+        public static async Task<bool> InitialScan(CancellationToken cancellationToken = default, IProgress<int>? progress = null)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (string.IsNullOrEmpty(folder.Path)) continue;
-            try
+            var database = App.Services.GetRequiredService<MusicDatabaseService>();
+            // 只枚举一次并保存路径，确定分母后复用快照扫描；不提前读取全部文件的元数据。
+            var pending = new List<(string Path, List<string> Files)>();
+            long total = 0;
+            foreach (var folder in await database.GetFolders())
             {
-                var files = new List<string>();
-                foreach (var path in AddFolderService.EnumerateMusicPaths(folder.Path))
+                cancellationToken.ThrowIfCancellationRequested();
+                if (string.IsNullOrEmpty(folder.Path)) continue;
+                try
                 {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    files.Add(path);
+                    var files = new List<string>();
+                    foreach (var path in AddFolderService.EnumerateMusicPaths(folder.Path))
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+                        files.Add(path);
+                    }
+                    pending.Add((folder.Path, files));
+                    total += files.Count;
                 }
-                pending.Add((folder.Path, files));
-                total += files.Count;
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                // A missing drive or inaccessible subtree is not evidence that its music was deleted.
-                App.GetLogger<InitialFileScan>().LogWarning(ex, "启动扫描未完成，保留旧记录: {Path}", folder.Path);
-            }
-        }
-        var progressGate = new object();
-        long completed = 0;
-        int lastPercent = 0;
-        progress?.Report(0);
-        foreach (var folder in pending)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            int folderCompleted = 0;
-            void Advance(int count)
-            {
-                // 枚举未变更文件与提交元数据批次在不同线程；串行发布并限制为最多 100 次。
-                lock (progressGate)
+                catch (Exception ex) when (ex is not OperationCanceledException)
                 {
-                    folderCompleted += count;
-                    completed += count;
-                    int percent = total == 0 ? 99 : (int)Math.Min(99, completed * 100 / total);
-                    if (percent <= lastPercent) return;
-                    lastPercent = percent;
-                    progress?.Report(percent);
+                    // A missing drive or inaccessible subtree is not evidence that its music was deleted.
+                    App.GetLogger<InitialFileScan>().LogWarning(ex, "启动扫描未完成，保留旧记录: {Path}", folder.Path);
                 }
             }
-            try
+            var progressGate = new object();
+            long completed = 0;
+            int lastPercent = 0;
+            bool changed = false;
+            progress?.Report(0);
+            foreach (var folder in pending)
             {
-                await database.ScanChangedFolderAsync(folder.Path, cancellationToken, folder.Files, Advance);
+                cancellationToken.ThrowIfCancellationRequested();
+                int folderCompleted = 0;
+                void Advance(int count)
+                {
+                    // 枚举未变更文件与提交元数据批次在不同线程；串行发布并限制为最多 100 次。
+                    lock (progressGate)
+                    {
+                        folderCompleted += count;
+                        completed += count;
+                        int percent = total == 0 ? 99 : (int)Math.Min(99, completed * 100 / total);
+                        if (percent <= lastPercent) return;
+                        lastPercent = percent;
+                        progress?.Report(percent);
+                    }
+                }
+                try
+                {
+                    changed |= await database.ScanChangedFolderAsync(folder.Path, cancellationToken, folder.Files, Advance) > 0;
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    App.GetLogger<InitialFileScan>().LogWarning(ex, "启动扫描未完成，保留旧记录: {Path}", folder.Path);
+                    // 抛出前可能已提交部分批次，无法确认无变更：按有变更处理。
+                    changed = true;
+                }
+                // 失败目录也结束本轮尝试；取消时不继续推进或发布完成。
+                Advance(folder.Files.Count - folderCompleted);
+                folder.Files.Clear();
             }
-            catch (Exception ex) when (ex is not OperationCanceledException)
-            {
-                App.GetLogger<InitialFileScan>().LogWarning(ex, "启动扫描未完成，保留旧记录: {Path}", folder.Path);
-            }
-            // 失败目录也结束本轮尝试；取消时不继续推进或发布完成。
-            Advance(folder.Files.Count - folderCompleted);
-            folder.Files.Clear();
+            changed |= await Deduplication(cancellationToken);
+            return changed;
         }
-        await Deduplication(cancellationToken);
-    }
 
-    public static async Task Deduplication(CancellationToken cancellationToken = default)
-    {
-        var database = App.Services.GetRequiredService<MusicDatabaseService>();
-        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var duplicates = new List<Music>();
-        foreach (var music in await database.GetMusicListAsync())
+        /// <summary>按路径去重；返回是否删除了重复记录。</summary>
+        public static async Task<bool> Deduplication(CancellationToken cancellationToken = default)
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (!seen.Add(music.Path)) duplicates.Add(music);
+            var database = App.Services.GetRequiredService<MusicDatabaseService>();
+            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var duplicates = new List<Music>();
+            foreach (var music in await database.GetMusicListAsync())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!seen.Add(music.Path)) duplicates.Add(music);
+            }
+            if (duplicates.Count == 0) return false;
+            await database.DeletedMusicList(duplicates, cancellationToken);
+            return true;
         }
-        await database.DeletedMusicList(duplicates, cancellationToken);
-    }
 }

@@ -268,17 +268,25 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 using var lease = await LibraryOperationGate.EnterAsync(token);
+                bool changed = false;
                 try
                 {
-                    await InitialFileScan.InitialScan(token, progress);
+                    changed = await InitialFileScan.InitialScan(token, progress);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    // 中途失败无法排除已提交的批次，按有变更处理保守刷新。
+                    changed = true;
+                    throw;
                 }
                 finally
                 {
+                    // 无变更不刷新：避免启动时列表在数据未变的情况下被 Reset 二次重置（闪两次）。
                     // 失败也可能已提交部分批次；只刷新库，不重放启动状态或重建用户的播放队列。
-                    if (!token.IsCancellationRequested)
+                    if (!token.IsCancellationRequested && changed)
                         await AppViewModel.RefreshSongsSourceAsync(token);
                 }
-                logger.LogInformation("启动后台音乐扫描完成");
+                logger.LogInformation("启动后台音乐扫描完成，{Result}", changed ? "数据库有变更" : "数据库无变更");
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested) { }
             catch (Exception ex)
