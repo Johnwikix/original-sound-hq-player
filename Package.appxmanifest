@@ -5,13 +5,12 @@
   xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-  xmlns:desktop7="http://schemas.microsoft.com/appx/manifest/desktop/windows10/7"
-  IgnorableNamespaces="uap rescap desktop7">
+  IgnorableNamespaces="uap rescap">
 
   <Identity
     Name="SennpaiStudio.528762A6196EF"
     Publisher="CN=CF259542-70C0-4852-9523-066A80212473"
-    Version="1.2.3.0" />
+    Version="1.2.4.0" />
 
   <mp:PhoneIdentity PhoneProductId="4acbd93b-89da-420d-8e0b-8588586c1cc2"
     PhonePublisherId="00000000-0000-0000-0000-000000000000" />
@@ -34,22 +33,16 @@
     <Resource Language="x-generate" />
   </Resources>
 
-  <!-- 崩溃诊断（WER 运行时异常辅助模块）：
-       自包含 .NET 部署在包根携带 mscordaccore.dll，它导出 WER 所需的
-       OutOfProcessExceptionEvent* 回调。在此声明后，崩溃时 WER 会加载它并
-       按托管异常类型与堆栈分桶，合作伙伴中心"运行状况"报告才拿得到可定位的堆栈，
-       而不是只有 coreclr/apphost 内的无意义偏移。
-       注：Windows App SDK 2.5.1 新增了 windows.diagnosticServiceModule 扩展用于同样目的，
-       但截至其发布（2026-09）尚无公开 schema，本机与 NuGet 上全部 makeappx（26100/28000/29648 预览）
-       均拒绝该类别；待 SDK 支持落地后可将此扩展替换为新写法。
-       依赖配置见 Services/CrashReportingService.cs。 -->
-  <Extensions>
-    <desktop7:Extension Category="windows.errorReporting">
-      <desktop7:ErrorReporting>
-        <desktop7:RuntimeExceptionHelperModule Path="mscordaccore.dll" />
-      </desktop7:ErrorReporting>
-    </desktop7:Extension>
-  </Extensions>
+  <!-- 崩溃诊断不在此声明清单扩展，原因（2026-09-18 实证）：
+       desktop7:ErrorReporting 扩展要求 CompatMode=classic，而 classic 注册方式依赖
+       classicAppCompat_8wekyb3d8bbwe 自定义能力——需要微软审批签发 .sccd，第三方应用
+       实际无法获得（见 github.com/MicrosoftDocs/winrt-related/issues/394，补齐属性后
+       部署仍失败于自定义能力校验 0x80073CF9）。
+       WER 集成全部改为代码内完成（Services/CrashReportingService.cs）：
+       已处理异常用 NonCritical 报告附带托管堆栈，真实崩溃用 createdump 转储 + 符号包。
+       待 Windows App SDK 2.5.1 新增的 windows.diagnosticServiceModule 扩展随 SDK 服务更新
+       落地后，可在此声明以获得真实崩溃的托管分桶，切换步骤见
+       docs/wer-diagnostics-2026-09-18.md。 -->
 
   <Applications>
     <Application Id="App"

@@ -12,10 +12,14 @@ namespace WinUIMusicPlayer.Services;
 /// 两条路径：
 /// 1. 已处理异常（进程不退出）：ReportHandledException 用 WER 报告 API 主动生成一份
 ///    NonCritical 报告（静默入队、不弹 UI，用户同意后后台上传），附带异常详情文件、
-///    当前日志与一份当前进程转储；
+///    当前日志与一份当前进程转储——托管异常类型/消息/栈顶作为报告参数，这弥补了
+///    .NET 崩溃在 WER 里只有原生偏移、无托管堆栈的问题；
 /// 2. 致命异常（进程即将终止，如后台线程未处理异常）：OnFatalException 把当前日志注册进
-///    WER 即将生成的真实崩溃报告并刷盘。清单声明的 mscordaccore 诊断模块
-///    （desktop7:ErrorReporting）也只对这类真实崩溃生效。
+///    WER 即将生成的真实崩溃报告并刷盘；createdump 环境变量在本地落 Mini 转储，
+///    配合提交商店的符号包（.appxsym）可还原托管堆栈。
+/// 说明：清单级声明 WER 运行时异常辅助模块（desktop7:ErrorReporting / 未来的
+/// windows.diagnosticServiceModule）因 classicAppCompat 自定义能力墙而不可用，详见
+/// Package.appxmanifest 注释与 docs/wer-diagnostics-2026-09-18.md。
 /// 本服务会被崩溃路径调用，因此保持静态、无依赖、所有操作均为尽力而为不抛出。
 /// </summary>
 internal static class CrashReportingService
