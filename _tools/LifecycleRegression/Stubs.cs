@@ -7,7 +7,7 @@ namespace WinUIMusicPlayer.ViewModel
         public Music? CurrentPlayingMusic { get; set => SetProperty(ref field, value); }
         public System.Collections.ObjectModel.ObservableCollection<Music> CurrentPlayingList { get; set => SetProperty(ref field, value); } = [];
         public bool IsPlaying { get; set; }
-        public bool IsPlaybackEngineReady { get; set; }
+        public bool IsPlaybackEngineReady { get; set => SetProperty(ref field, value); }
         public bool IsFolderWatchEnabled { get; set => SetProperty(ref field, value); } = true;
         public ProgressCenter Progress { get; } = new();
     }

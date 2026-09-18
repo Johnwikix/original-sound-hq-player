@@ -48,10 +48,13 @@ public partial class MusicDatabaseService
             await InsertSubFolders(AutoRescanService.RecordInitialFolderTimes(folder.Path, folderId));
         }
 
-        private async Task CommitScanBatchAsync(IReadOnlyList<(Music Music, string Lyrics)> batch,
+        /// <summary>提交一批扫描结果；返回新增行（供增量 UI 回调复用）与 UPDATE 命中的行数——
+        /// 两者都属于数据库变更，调用方据此决定是否刷新视图。</summary>
+        private async Task<(List<Music> Added, int Updated)> CommitScanBatchAsync(IReadOnlyList<(Music Music, string Lyrics)> batch,
             Func<IReadOnlyList<Music>, Task>? onBatchInserted)
         {
             var added = new List<Music>(batch.Count);
+            int updated = 0;
             await _dbConnection.RunInTransactionAsync(db =>
             {
                 foreach (var (music, lyrics) in batch)
@@ -71,7 +74,7 @@ public partial class MusicDatabaseService
                     else
                     {
                         // Update only metadata; favorite/order/play count/lyrics offsets may change during a scan.
-                        db.Execute("UPDATE Music SET Title=?, Author=?, Album=?, Duration=?, FolderPath=?, LastLevelFolderPath=?, " +
+                        updated += db.Execute("UPDATE Music SET Title=?, Author=?, Album=?, Duration=?, FolderPath=?, LastLevelFolderPath=?, " +
                             "Extension=?, BitDepth=?, BitRate=?, SampleRate=?, Channel=?, TrackNumber=?, DiskNumber=?, Year=?, " +
                             "CreateTime=?, UpdateTime=? WHERE Id=?",
                             music.Title, music.Author, music.Album, music.Duration, music.FolderPath, music.LastLevelFolderPath,
@@ -88,6 +91,7 @@ public partial class MusicDatabaseService
             });
             if (added.Count > 0 && onBatchInserted is not null)
                 await onBatchInserted(added);
+            return (added, updated);
         }
 
         private Task<List<Music>> GetSongsInFolderAsync(string folderPath, bool recursive)
@@ -199,11 +203,8 @@ public partial class MusicDatabaseService
             }, async batch =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                await CommitScanBatchAsync(batch, async added =>
-                {
-                    changes += added.Count;
-                    if (onBatchInserted is not null) await onBatchInserted(added);
-                });
+                var committed = await CommitScanBatchAsync(batch, onBatchInserted);
+                changes += committed.Added.Count + committed.Updated;
                 onFilesChecked?.Invoke(batch.Count);
             }, onBatchInserted is null ? TimeSpan.Zero : TimeSpan.FromMilliseconds(500), cancellationToken);
 
@@ -235,7 +236,7 @@ public partial class MusicDatabaseService
             => RescanFolderCoreAsync(folderPath, true, false, onlyChanged: true, cancellationToken: cancellationToken,
                 scannedPaths: scannedPaths, onFilesChecked: onFilesChecked);
 
-        // Called by AutoScan while its library-operation lease is held. The count includes deletions.
+        // Called by AutoScan while its library-operation lease is held. The count includes updates and deletions.
         public Task<int> RescanFolderWithOutUpdateAll(string folderPath, bool isSingleFolder = false)
             => RescanFolderCoreAsync(folderPath, false, isSingleFolder);
 

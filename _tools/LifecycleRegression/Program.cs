@@ -48,6 +48,8 @@ Check(created == 0, "Constructing command surface must not resolve playback back
 await commands.ToggleCommand.ExecuteAsync(null); commands.NextCommand.Execute(null); commands.SeekCommand.Execute(50L);
 Check(created == 0 && !commands.ToggleCommand.CanExecute(null), "Commands bypassed startup guard");
 life.TransitionTo(AppPhase.Initializing); life.TransitionTo(AppPhase.Ready);
+// 引擎轨完成（IPC 连接 + 首曲推送）：模拟 StartupCoordinator.UpdatePlaybackEngineReady 置位。
+state.IsPlaybackEngineReady = true;
 Check(tray.IsReady && tray.OpenSettingsCommand.CanExecute(null), "Ready transition did not enable tray");
 tray.OpenSettingsCommand.Execute(null);
 Check(services.GetRequiredService<WinUIMusicPlayer.View.MainPage>().SettingsOpened == 1, "Tray settings executed before ready or failed afterwards");

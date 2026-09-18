@@ -258,9 +258,12 @@ internal static class RegressionSuite
             await InitialFileScan.InitialScan();
             songs = await database.GetMusicListAsync();
             Check(songs.Count == 1 && songs[0].Path.EndsWith("slow.mp3"), "cancelled scan could not retry");
-            bool retryChanged = await InitialFileScan.InitialScan();
-            bool unchanged = await InitialFileScan.InitialScan();
-            Check(retryChanged && !unchanged, "unchanged scan reported database changes");
+            // 插入时已保存精确文件时间，紧随的扫描应报告无变更。
+            Check(!await InitialFileScan.InitialScan(), "unchanged scan reported database changes");
+            // 外部改标签（仅时间戳变化、无增删）也必须报告有变更，启动扫描才会刷新 UI。
+            File.SetLastWriteTime(songs[0].Path, File.GetLastWriteTime(songs[0].Path).AddSeconds(5));
+            Check(await InitialFileScan.InitialScan(), "metadata update scan reported no changes");
+            Check(!await InitialFileScan.InitialScan(), "scan after update reported database changes");
             string secondDirectory = Path.Combine(root, "StartupProgress");
             Directory.CreateDirectory(secondDirectory);
             await database.Connection.InsertAsync(new Folder { Path = secondDirectory });
