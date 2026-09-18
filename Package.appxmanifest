@@ -5,7 +5,8 @@
   xmlns:mp="http://schemas.microsoft.com/appx/2014/phone/manifest"
   xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-  IgnorableNamespaces="uap rescap">
+  xmlns:desktop7="http://schemas.microsoft.com/appx/manifest/desktop/windows10/7"
+  IgnorableNamespaces="uap rescap desktop7">
 
   <Identity
     Name="SennpaiStudio.528762A6196EF"
@@ -32,6 +33,23 @@
   <Resources>
     <Resource Language="x-generate" />
   </Resources>
+
+  <!-- 崩溃诊断（WER 运行时异常辅助模块）：
+       自包含 .NET 部署在包根携带 mscordaccore.dll，它导出 WER 所需的
+       OutOfProcessExceptionEvent* 回调。在此声明后，崩溃时 WER 会加载它并
+       按托管异常类型与堆栈分桶，合作伙伴中心"运行状况"报告才拿得到可定位的堆栈，
+       而不是只有 coreclr/apphost 内的无意义偏移。
+       注：Windows App SDK 2.5.1 新增了 windows.diagnosticServiceModule 扩展用于同样目的，
+       但截至其发布（2026-09）尚无公开 schema，本机与 NuGet 上全部 makeappx（26100/28000/29648 预览）
+       均拒绝该类别；待 SDK 支持落地后可将此扩展替换为新写法。
+       依赖配置见 Services/CrashReportingService.cs。 -->
+  <Extensions>
+    <desktop7:Extension Category="windows.errorReporting">
+      <desktop7:ErrorReporting>
+        <desktop7:RuntimeExceptionHelperModule Path="mscordaccore.dll" />
+      </desktop7:ErrorReporting>
+    </desktop7:Extension>
+  </Extensions>
 
   <Applications>
     <Application Id="App"

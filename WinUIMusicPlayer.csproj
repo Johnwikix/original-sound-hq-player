@@ -299,7 +299,7 @@
     <GenerateAppInstallerFile>False</GenerateAppInstallerFile>
     <AppxPackageSigningTimestampDigestAlgorithm>SHA256</AppxPackageSigningTimestampDigestAlgorithm>
     <AppxAutoIncrementPackageRevision>True</AppxAutoIncrementPackageRevision>
-    <AppxSymbolPackageEnabled>False</AppxSymbolPackageEnabled>
+    <AppxSymbolPackageEnabled>True</AppxSymbolPackageEnabled>
     <GenerateTestArtifacts>True</GenerateTestArtifacts>
     <AppxBundle>Never</AppxBundle>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
@@ -342,8 +342,9 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
 	 <IsPublishable>True</IsPublishable>
 	 <Optimize>True</Optimize>
-	 <DebugType>none</DebugType>
-	 <DebugSymbols>false</DebugSymbols>
+	 <!-- 合作伙伴中心的崩溃堆栈符号化依赖 PDB：符号包(.appxsym)打包时取自构建输出，
+	      PDB 不进入提交给商店的 MSIX，不影响包体积。 -->
+	 <DebugType>portable</DebugType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <IsPublishable>True</IsPublishable>

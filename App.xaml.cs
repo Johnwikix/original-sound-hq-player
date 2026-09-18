@@ -39,6 +39,10 @@ namespace WinUIMusicPlayer
         public static MainWindow MainWindow { get; set; }
         public static IServiceProvider Services { get; private set; }
         private static ILogger<App> _logger;
+
+        private static readonly string LogDirectory = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OriginalSoundPlayer", "Logs");
+
         public static ILogger<T> GetLogger<T>()
         {
             return Services.GetRequiredService<ILogger<T>>();
@@ -47,7 +51,7 @@ namespace WinUIMusicPlayer
             .ConfigureLogging((context, logging) =>
             {
                 logging.ClearProviders();
-                var logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OriginalSoundPlayer", "Logs");
+                var logDirectory = LogDirectory;
                 if (!Directory.Exists(logDirectory))
                 {
                     Directory.CreateDirectory(logDirectory);
@@ -135,6 +139,8 @@ namespace WinUIMusicPlayer
         public App()
         {
             GCSettings.LatencyMode = GCLatencyMode.Interactive;
+            // 崩溃诊断要先于任何可能失败的初始化：配置 createdump 本地转储兜底，供崩溃时由运行时拉起。
+            CrashReportingService.Initialize(LogDirectory);
             this.InitializeComponent();
             Services = _host.Services;
             _logger = Services.GetRequiredService<ILogger<App>>();
@@ -185,7 +191,10 @@ namespace WinUIMusicPlayer
             errorMessage.AppendLine($"异常类型：{exception.GetType().FullName}");
             errorMessage.AppendLine($"异常消息：{exception.Message}");
             errorMessage.AppendLine($"堆栈跟踪：{exception.StackTrace}");
-            _logger.LogError(e.Exception, "应用程序未处理异常: {Message}", errorMessage);
+            _logger.LogCritical(e.Exception, "应用程序未处理异常: {Message}", errorMessage);
+            // 进程不崩溃：用 WER 报告 API 主动上报（NonCritical，静默入队、不弹 UI），
+            // 报告附带异常类型/消息/栈顶参数、完整异常详情、当前日志与进程转储。
+            CrashReportingService.ReportHandledException(e.Exception);
             e.Handled = true;
         }
 
@@ -199,6 +208,8 @@ namespace WinUIMusicPlayer
             {
                 _logger.LogCritical("应用程序域未处理异常: {ExceptionObject}", e.ExceptionObject);
             }
+            // 后台线程未处理异常进程必然终止：附加日志并刷盘，随后交给 WER 生成崩溃报告。
+            CrashReportingService.OnFatalException();
         }
 
         private void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
@@ -243,10 +254,9 @@ namespace WinUIMusicPlayer
 
         private static void ShowStartupErrorBox(Exception ex)
         {
-            var logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OriginalSoundPlayer", "Logs");
             string text = $"应用程序启动失败，即将退出。\r\n\r\n" +
                           $"异常：{ex.Message}\r\n\r\n" +
-                          $"详细信息已记录到日志：{logDirectory}";
+                          $"详细信息已记录到日志：{LogDirectory}";
             Win32MessageBox(IntPtr.Zero, text, "启动失败", 0x10 | 0x0);
         }
 
