@@ -202,6 +202,14 @@ namespace WinUIMusicPlayer.Utils
             return true;
         }
 
+        /// <summary>播放入口可用 = 播放引擎就绪且存在当前曲目；引擎未就绪时按钮置灰。</summary>
+        public static bool IsPlaybackEntryEnabled(bool isPlaybackEngineReady, Music? current)
+            => isPlaybackEngineReady && current is not null;
+
+        /// <summary>切歌入口可用 = 播放引擎就绪且播放列表非空；引擎未就绪时按钮置灰。</summary>
+        public static bool IsSwitchEntryEnabled(bool isPlaybackEngineReady, IEnumerable<Music>? playList)
+            => isPlaybackEngineReady && playList is not null && playList.Any();
+
         public static Visibility GetMusicVisibility(Music current)
             => current is null ? Visibility.Collapsed : Visibility.Visible;
 

@@ -120,6 +120,12 @@
   <data name="AppTitle.Text" xml:space="preserve">
     <value>Original-Sound HQ Player</value>
   </data>
+  <data name="TitleBarTaskConnecting" xml:space="preserve">
+    <value>Audiomodul wird verbunden</value>
+  </data>
+  <data name="TitleBarTaskScanning" xml:space="preserve">
+    <value>Bibliothek wird gescannt</value>
+  </data>
   <data name="LoadingText.Text" xml:space="preserve">
     <value>Daten werden geladen, bitte warten...</value>
   </data>

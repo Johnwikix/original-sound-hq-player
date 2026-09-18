@@ -120,6 +120,12 @@
   <data name="AppTitle.Text" xml:space="preserve">
     <value>原音HQプレイヤー</value>
   </data>
+  <data name="TitleBarTaskConnecting" xml:space="preserve">
+    <value>オーディオエンジンに接続中</value>
+  </data>
+  <data name="TitleBarTaskScanning" xml:space="preserve">
+    <value>ライブラリをスキャン中</value>
+  </data>
   <data name="LoadingText.Text" xml:space="preserve">
     <value>データを読み込んでいます、しばらくお待ちください...</value>
   </data>

@@ -41,7 +41,11 @@ namespace WinUIMusicPlayer.Services
         /// <summary>获取本次枚举中设备索引对应的稳定端点 ID。</summary>
         public string? GetWasapiEndpointId(int id) => _wasapiEndpoints.GetValueOrDefault(id);
         private MailboxClient? _transport;
+        private int _connected;
         private int _disposed;
+
+        /// <summary>IPC 已连接且监听通道已建立；连接是单向的，断开由服务端监视器整体退出处理。</summary>
+        public bool IsConnected => Volatile.Read(ref _connected) == 1;
 
         private CancellationTokenSource? _notificationCts;
         private Task? _notificationListenerTask;
@@ -76,6 +80,8 @@ namespace WinUIMusicPlayer.Services
         {
             for (int i = 0; i < 200; i++)
             {
+                // 退出中（如用户在协议弹窗拒绝）：静默结束重试，不触发失败退出路径。
+                if (Volatile.Read(ref _disposed) != 0) return;
                 try
                 {
                     _mmf = MemoryMappedFile.OpenExisting(IpcConstants.MmfName);
@@ -92,6 +98,7 @@ namespace WinUIMusicPlayer.Services
                     _dspListenerTask = Task.Factory.StartNew(() => ListenForDspState(_notificationCts!.Token),
                         CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
                     StartServerMonitor();
+                    Volatile.Write(ref _connected, 1);
                     return;
                 }
                 catch

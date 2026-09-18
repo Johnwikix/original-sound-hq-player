@@ -288,7 +288,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.AppViewModel.FastBackwardButtonCommand, Mode=OneWay}"
-                            IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsPlaybackEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="18" Glyph="&#xED3C;" />
                         </Button>
@@ -303,7 +303,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.MusicBrowseVM.Playback.PreviousCommand, Mode=OneWay}"
-                            IsEnabled="{x:Bind tools:BindUtils.IsCurrentPlayListExist(ViewModel.AppViewModel.CurrentPlayingList), Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsSwitchEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingList), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="22" Glyph="&#xF8AC;" />
                         </Button>
@@ -318,7 +318,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.MusicBrowseVM.Playback.ToggleCommand, Mode=OneWay}"
-                            IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsPlaybackEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource PlayButtonStyle}">
                             <FontIcon
                                 Width="45"
@@ -337,7 +337,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.MusicBrowseVM.Playback.NextCommand, Mode=OneWay}"
-                            IsEnabled="{x:Bind tools:BindUtils.IsCurrentPlayListExist(ViewModel.AppViewModel.CurrentPlayingList), Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsSwitchEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingList), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="22" Glyph="&#xF8AD;" />
                         </Button>
@@ -352,7 +352,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.AppViewModel.FastForwardButtonCommand, Mode=OneWay}"
-                            IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsPlaybackEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="18" Glyph="&#xED3D;" />
                         </Button>
@@ -367,7 +367,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.AppViewModel.StopButtonChangedCommand, Mode=OneWay}"
-                            IsEnabled="{x:Bind tools:BindUtils.IsCurrentMusicExist(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsPlaybackEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="18" Glyph="&#xEE95;" />
                         </Button>
@@ -586,22 +586,29 @@
                     IsHitTestVisible="False"
                     Orientation="Horizontal"
                     Spacing="6"
-                    Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.IsLibraryScanning), Mode=OneWay}">
+                    Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.IsTitleBarTaskActive), Mode=OneWay}">
                     <ProgressRing
                         Width="16"
                         Height="16"
                         MinWidth="16"
                         MinHeight="16"
-                        IsActive="{x:Bind ViewModel.AppViewModel.IsLibraryScanning, Mode=OneWay}"
-                        IsIndeterminate="{x:Bind ViewModel.AppViewModel.IsLibraryScanIndeterminate, Mode=OneWay}"
+                        IsActive="{x:Bind ViewModel.AppViewModel.IsTitleBarTaskActive, Mode=OneWay}"
+                        IsIndeterminate="{x:Bind ViewModel.AppViewModel.IsTitleBarTaskIndeterminate, Mode=OneWay}"
                         Maximum="100"
                         Value="{x:Bind ViewModel.AppViewModel.LibraryScanPercent, Mode=OneWay}" />
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        IsTextScaleFactorEnabled="False"
+                        Style="{StaticResource CaptionTextBlockStyle}"
+                        Text="{x:Bind ViewModel.AppViewModel.TitleBarTaskText, Mode=OneWay}" />
+                    <!--  百分比仅扫描有意义；IPC 连接期不显示  -->
                     <TextBlock
                         MinWidth="34"
                         VerticalAlignment="Center"
                         IsTextScaleFactorEnabled="False"
                         Style="{StaticResource CaptionTextBlockStyle}"
-                        Text="{x:Bind ViewModel.AppViewModel.LibraryScanPercentText, Mode=OneWay}" />
+                        Text="{x:Bind ViewModel.AppViewModel.LibraryScanPercentText, Mode=OneWay}"
+                        Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.IsLibraryScanning), Mode=OneWay}" />
                 </StackPanel>
             </StackPanel>
 

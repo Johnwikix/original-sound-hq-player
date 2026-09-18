@@ -24,6 +24,8 @@ namespace WinUIMusicPlayer.Services
         private readonly AppViewModel AppViewModel;
         private readonly MusicDatabaseService MusicDatabaseService;
         private Task? _libraryScan;
+        private Task? _engineInitialization;
+        private volatile bool _engineInitialized;
         public StartupCoordinator(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
             AppViewModel = appViewModel;
@@ -37,6 +39,17 @@ namespace WinUIMusicPlayer.Services
             cancellationToken = startupCancellation.Token;
             var startup = Stopwatch.StartNew();
             var logger = App.GetLogger<StartupCoordinator>();
+            // 音频进程与 IPC 连接最先启动（先于用户协议）：服务端首个动作即创建共享内存，
+            // 连接等待与数据库初始化、协议阅读并行；连接完成不阻塞主界面，进度由标题栏指示。
+            var shutdown = App.Services.GetRequiredService<ShutdownCoordinator>();
+            var lifecycle = App.Services.GetRequiredService<AppLifecycle>();
+            var ipcService = App.Services.GetRequiredService<IpcService>();
+            var audio = App.Services.GetRequiredService<AudioProcessService>();
+            shutdown.RegisterCleanup(audio.Dispose);
+            audio.Start();
+            shutdown.RegisterCleanup(ipcService.Dispose);
+            AppViewModel.IsIpcConnecting = true;
+            var ipcInitialization = ipcService.InitializingAsync();
             await MusicDatabaseService.Initialize();
             var appViewModel = App.Services.GetRequiredService<AppViewModel>();
             await Task.WhenAll(
@@ -46,7 +59,6 @@ namespace WinUIMusicPlayer.Services
             appViewModel.UpdateCover();
             MusicDatabaseService.LoadWindowState();
             App.MainWindow = App.Services.GetRequiredService<MainWindow>();
-            var shutdown = App.Services.GetRequiredService<ShutdownCoordinator>();
             shutdown.RegisterCleanup(App.MainWindow.Dispose);
             shutdown.RegisterCleanup(appViewModel.Dispose);
             App.MainWindow.InitializeTray();
@@ -57,7 +69,7 @@ namespace WinUIMusicPlayer.Services
             var acceptance = AgreementAcceptanceStore.ForCurrentUser();
             if (!await acceptance.HasAcceptedAsync(AgreementAcceptanceStore.CurrentVersion))
             {
-                App.Services.GetRequiredService<AppLifecycle>().TransitionTo(AppPhase.WaitingForAgreement);
+                lifecycle.TransitionTo(AppPhase.WaitingForAgreement);
                 var agreement = await UserAgreementViewModel.LoadAsync(acceptance);
                 var result = await new View.SubView.UserAgreementDialog(agreement)
                     .ShowThemedAsync(App.MainWindow.Content.XamlRoot);
@@ -68,16 +80,11 @@ namespace WinUIMusicPlayer.Services
                 }
             }
             // User reading time is not startup processing time.
-            App.Services.GetRequiredService<AppLifecycle>().TransitionTo(AppPhase.Initializing);
+            lifecycle.TransitionTo(AppPhase.Initializing);
             startup.Restart();
             cancellationToken.ThrowIfCancellationRequested();
-            var ipcService = App.Services.GetRequiredService<IpcService>();
             var musicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             shutdown.RegisterCleanup(musicBrowseViewModel.Dispose);
-            var audio = App.Services.GetRequiredService<AudioProcessService>();
-            shutdown.RegisterCleanup(audio.Dispose);
-            audio.Start();
-            shutdown.RegisterCleanup(ipcService.Dispose);
             var commands = App.Services.GetRequiredService<PlaybackCommands>();
             var media = App.Services.GetRequiredService<SystemMediaControlsService>();
             shutdown.RegisterCleanup(media.Dispose);
@@ -93,8 +100,6 @@ namespace WinUIMusicPlayer.Services
             shutdown.RegisterSave(statistics.FlushSessionAsync);
             shutdown.RegisterSave(() => { player.MusicEnd(); App.MainWindow.Hide(); return Task.CompletedTask; });
             shutdown.RegisterCleanup(() => CoverLoadQueue.Shutdown(TimeSpan.FromSeconds(3)));
-            var ipcInitialization = ipcService.InitializingAsync();
-            // Independent work overlaps; no audio or online startup work runs before agreement.
             var licenseInitialization = App.Services.GetRequiredService<LicenseService>().InitializeAsync();
             var libraryInitialization = Task.Run(async () =>
             {
@@ -102,10 +107,13 @@ namespace WinUIMusicPlayer.Services
                 // Keep disk enumeration off the UI thread and before cover restoration.
                 ToolUtils.CleanupStaleCacheFiles();
             }, cancellationToken);
-            await Task.WhenAll(ipcInitialization, licenseInitialization, libraryInitialization).WaitAsync(cancellationToken);
+            // 引擎轨：连接完成后推送首曲与设置，与许可/缓存库并行，不阻塞主界面显示；
+            // 完成前播放入口保持置灰（IsPlaybackEngineReady）。
+            _engineInitialization = Task.Run(() => InitializePlaybackEngineAsync(
+                ipcInitialization, licenseInitialization, libraryInitialization, cancellationToken));
+            shutdown.RegisterCleanup(() => _engineInitialization ?? Task.CompletedTask);
+            await Task.WhenAll(licenseInitialization, libraryInitialization).WaitAsync(cancellationToken);
             await musicBrowseViewModel.LoadPlayStateToMusicBrowsePage();
-            // 许可状态必须在首次推送设置前就绪，受限判定才能作用于首推内容。
-            await ipcService.InitializeMusic(appViewModel.CurrentPlayingMusic);
             // 缓存和播放状态恢复完成后才允许监视器发布音乐库变化。
             var watcher = App.Services.GetRequiredService<LibraryWatcherService>();
             shutdown.RegisterCleanup(watcher.StopAsync);
@@ -116,12 +124,52 @@ namespace WinUIMusicPlayer.Services
             await CheckVersionUpdateAsync();
         }
 
+        /// <summary>等待 IPC 连接、许可与缓存库（播放状态来源）后推送首曲；后台线程运行，VM 更新回 UI 线程。</summary>
+        private async Task InitializePlaybackEngineAsync(
+            Task ipcInitialization, Task licenseInitialization, Task libraryInitialization,
+            CancellationToken cancellationToken)
+        {
+            var ipcService = App.Services.GetRequiredService<IpcService>();
+            try
+            {
+                await Task.WhenAll(ipcInitialization, licenseInitialization, libraryInitialization).WaitAsync(cancellationToken);
+                await ipcService.InitializeMusic(AppViewModel.CurrentPlayingMusic);
+                _engineInitialized = true;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return; }
+            catch (Exception ex)
+            {
+                // 连接失败时 InitializingAsync 已触发退出；此处仅记录，播放入口保持置灰。
+                App.GetLogger<StartupCoordinator>().LogError(ex, "播放引擎初始化失败，播放入口保持不可用");
+            }
+            if (cancellationToken.IsCancellationRequested) return;
+            await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+            {
+                // 连接阶段结束即收起标题栏指示；入口可用性由 UpdatePlaybackEngineReady 汇总判定。
+                AppViewModel.IsIpcConnecting = false;
+                UpdatePlaybackEngineReady();
+            });
+            // 校正同步在首推中失败时才需要重试；此时 IPC 已连接，重试可达。
+            if (_engineInitialized && ipcService.CorrectionSyncFailed)
+                _ = ipcService.RetryStartupCorrectionsAsync();
+        }
+
+        /// <summary>播放引擎就绪 = 生命周期 Ready 且 IPC 已连接且首曲推送完成；主界面启用与引擎轨完成两处刷新。</summary>
+        private void UpdatePlaybackEngineReady()
+        {
+            AppViewModel.IsPlaybackEngineReady =
+                _engineInitialized && App.Services.GetRequiredService<IpcService>().IsConnected &&
+                App.Services.GetRequiredService<AppLifecycle>().IsReady;
+        }
+
         // 由 App.OnLaunched 在 Host.StartAsync 完成后同步调用，无 await 的交互启用阶段。
         internal void EnableInteraction()
         {
             var appViewModel = App.Services.GetRequiredService<AppViewModel>();
             App.MainWindow.ShowMainPage();
             App.Services.GetRequiredService<AppLifecycle>().TransitionTo(AppPhase.Ready);
+            // Ready 不再隐含 IPC 已连接：引擎初始化未完成时播放入口保持置灰，完成时由引擎轨再次刷新。
+            UpdatePlaybackEngineReady();
             App.Services.GetRequiredService<DesktopLyricsViewModel>().IsMainWindowShown =
                 App.MainWindow.Visible;
             App.MainWindow.InitializeTaskbarHelper();
@@ -132,7 +180,6 @@ namespace WinUIMusicPlayer.Services
             App.Services.GetRequiredService<ShutdownCoordinator>().RegisterCleanup(DesktopLyricsManager.Shutdown);
             DesktopLyricsManager.RestoreFromSettings();
             appViewModel.InitHotKeys();
-            _ = App.Services.GetRequiredService<IpcService>().RetryStartupCorrectionsAsync();
             StartLibraryScan();
             App.GetLogger<StartupCoordinator>().LogInformation("启动完成，主界面与系统交互已启用");
         }

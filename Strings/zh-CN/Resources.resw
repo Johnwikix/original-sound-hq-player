@@ -120,6 +120,12 @@
   <data name="AppTitle.Text" xml:space="preserve">
     <value>原音HQ播放器</value>
   </data>
+  <data name="TitleBarTaskConnecting" xml:space="preserve">
+    <value>正在连接音频引擎</value>
+  </data>
+  <data name="TitleBarTaskScanning" xml:space="preserve">
+    <value>正在扫描音乐库</value>
+  </data>
   <data name="LoadingText.Text" xml:space="preserve">
     <value>正在加载数据，请稍候...</value>
   </data>

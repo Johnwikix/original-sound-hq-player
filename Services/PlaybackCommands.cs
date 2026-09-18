@@ -26,7 +26,8 @@ public sealed class PlaybackCommands : IDisposable
     public IRelayCommand NextCommand { get; }
     public IAsyncRelayCommand PreviousCommand { get; }
     public IRelayCommand<long> SeekCommand { get; }
-    private bool CanPlay => !_disposed && _lifecycle.IsReady && _state.CurrentPlayingMusic is not null;
+        // 引擎就绪（Ready + IPC 连接 + 首曲推送完成）是播放的前提；Ready 已包含在该状态内。
+        private bool CanPlay => !_disposed && _state.IsPlaybackEngineReady && _state.CurrentPlayingMusic is not null;
     private bool CanSwitch => CanPlay && _state.CurrentPlayingList.Count > 0;
     private BassPlayerCommandService Player => _services.GetRequiredService<BassPlayerCommandService>();
 
@@ -86,10 +87,11 @@ public sealed class PlaybackCommands : IDisposable
             await _services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(list[index > 0 ? index - 1 : list.Count - 1]);
     }
     private void Seek(long milliseconds) { if (CanPlay) Player.ChangeWaveChannelTime(Math.Max(0, milliseconds)); }
-    private void StateChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName is nameof(AppViewModel.CurrentPlayingMusic) or nameof(AppViewModel.CurrentPlayingList)) Changed(sender, EventArgs.Empty);
-    }
+        private void StateChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName is nameof(AppViewModel.CurrentPlayingMusic) or nameof(AppViewModel.CurrentPlayingList)
+                or nameof(AppViewModel.IsPlaybackEngineReady)) Changed(sender, EventArgs.Empty);
+        }
     private void ObserveList()
     {
         if (ReferenceEquals(_listChanges, _state.CurrentPlayingList)) return;

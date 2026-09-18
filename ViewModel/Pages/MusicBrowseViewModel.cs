@@ -396,6 +396,8 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false)
         {
+            // 引擎未就绪（IPC 未连接或首曲未推送）时禁止发起播放；有按钮的入口已同步置灰。
+            if (!AppViewModel.IsPlaybackEngineReady) return;
             try
             {
                 // 1. 立即取消上一次正在进行的 UI 更新任务（图片读取、网络请求等）

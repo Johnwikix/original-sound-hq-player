@@ -220,7 +220,36 @@ namespace WinUIMusicPlayer.ViewModel
         private readonly AppLifecycle _lifecycle;
         public Visibility UsbDeviceVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
         public Visibility ProcessRingVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
-        public bool IsLibraryScanning { get; set => SetProperty(ref field, value); }
+        // 播放引擎就绪 = 生命周期 Ready 且 IPC 已连接且首曲/设置推送完成；由 StartupCoordinator 在
+        // 两处条件变化点统一刷新，播放入口（命令 CanExecute 与按钮 IsEnabled）据此置灰。
+        public bool IsPlaybackEngineReady { get; set => SetProperty(ref field, value); }
+        public bool IsLibraryScanning
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value)) OnPropertyChanged(nameof(IsTitleBarTaskActive));
+            }
+        }
+        // 标题栏任务指示器：IPC 连接与音乐库扫描共用，显示当前正在执行的任务。
+        public bool IsIpcConnecting
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    OnPropertyChanged(nameof(IsTitleBarTaskActive));
+                    OnPropertyChanged(nameof(TitleBarTaskText));
+                    OnPropertyChanged(nameof(IsTitleBarTaskIndeterminate));
+                }
+            }
+        }
+        public bool IsTitleBarTaskActive => IsIpcConnecting || IsLibraryScanning;
+        public bool IsTitleBarTaskIndeterminate => IsIpcConnecting || IsLibraryScanIndeterminate;
+        public string TitleBarTaskText => IsIpcConnecting
+            ? ToolUtils.GetString("TitleBarTaskConnecting")
+            : ToolUtils.GetString("TitleBarTaskScanning");
         public int LibraryScanPercent
         {
             get;
@@ -230,6 +259,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     OnPropertyChanged(nameof(LibraryScanPercentText));
                     OnPropertyChanged(nameof(IsLibraryScanIndeterminate));
+                    OnPropertyChanged(nameof(IsTitleBarTaskIndeterminate));
                 }
             }
         } = -1;
