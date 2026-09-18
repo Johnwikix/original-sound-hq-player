@@ -2,10 +2,12 @@
 
 新条目加在最上方。
 
-## 2026-09-18 一次性外部文件优先复用库内同路径曲目的已存歌词
+## 2026-09-18 外部文件路径匹配库内条目时直接按库内曲目播放
 
-- `Services/MusicDatabaseService.cs`：新增 `GetLyricsByPathAsync`——按路径 NOCASE 匹配库内条目（走 `IX_Music_Path_NoCase` 索引）并取其已保存歌词；数据库在引擎就绪前必已初始化，无需新增启动顺序
-- `Services/LyricsRefreshService.cs`：一次性分支歌词优先级调整为与库内播放对齐——文件旁本地 → 库内同路径已存歌词（先 KRC 后 LRC，传入非空原文只解析不触发在线搜索）→ 内嵌 → OneShotLyricsCache → 在线搜索；库内命中的原文不写入路径缓存，仅本次在线新搜到的结果写回
+- `Services/MusicDatabaseService.cs`：新增 `FindMusicByPathAsync`——按路径 NOCASE 匹配库内条目（走 `IX_Music_Path_NoCase` 索引）返回完整 Music；数据库在引擎就绪前必已初始化，无需新增启动顺序
+- `Services/OneShotPlaybackService.cs`：播放派发时先按路径查库——命中则播放库内条目（优先取 SongsSource 实例与库内列表/收藏同源，索引未同步时退回数据库行实例），统计、歌词、当前曲存档均为标准库内语义；未命中才等待外部解析走一次性播放（Id=0、不写库不统计）；查询失败按未命中回退
+- `Services/LyricsRefreshService.cs`：一次性分支只服务纯外部文件（本地 → 内嵌 → OneShotLyricsCache → 在线搜索），移除按路径取库内歌词阶段（匹配文件已改走标准库内链路，该阶段不可达）
+- 行为：匹配文件从资源管理器打开 = 播放库内对应曲目，但不改变当前播放队列；纯外部文件行为不变
 
 ## 2026-09-18 修复连续切换一次性外部文件时迟到歌词覆盖当前曲目
 

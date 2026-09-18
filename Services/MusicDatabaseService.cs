@@ -387,22 +387,22 @@ namespace WinUIMusicPlayer.Services
         }
 
         /// <summary>
-        /// 按路径大小写不敏感匹配库内曲目并取其已保存歌词（走 IX_Music_Path_NoCase）；
-        /// 未匹配或无歌词行返回全空。供外部文件一次性播放复用，免重复在线搜索。
+        /// 按路径大小写不敏感匹配库内曲目并返回完整条目（走 IX_Music_Path_NoCase）；
+        /// 未匹配或查询失败返回 null。供外部文件打开入口复用库内条目播放。
         /// </summary>
-        public async Task<(string? lyrics, string? transLrc, string? krc, string? tKrc)> GetLyricsByPathAsync(string path)
+        public async Task<Music?> FindMusicByPathAsync(string path)
         {
             try
             {
                 int musicId = await _dbConnection.ExecuteScalarAsync<int>(
                     "SELECT Id FROM Music WHERE Path = ? COLLATE NOCASE LIMIT 1", path);
-                if (musicId <= 0) return (null, null, null, null);
-                return await GetLyricsAsync(musicId);
+                if (musicId <= 0) return null;
+                return await _dbConnection.FindAsync<Music>(musicId);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"GetLyricsByPathAsync 按路径查询歌词失败: {path}: {ex.Message}");
-                return (null, null, null, null);
+                _logger.LogError(ex, $"FindMusicByPathAsync 按路径查找曲目失败: {path}: {ex.Message}");
+                return null;
             }
         }
 

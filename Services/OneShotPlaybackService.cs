@@ -16,13 +16,15 @@ namespace WinUIMusicPlayer.Services;
 
 /// <summary>
 /// 外部文件一次性播放（文件关联/打开方式入口）的唯一状态源：解析出未入库的 Music（Id 保持 0）
-/// 并仅替换 CurrentPlayingMusic 播放，不改播放列表、不写数据库与播放统计。
+/// 并仅替换 CurrentPlayingMusic 播放，不改播放列表、不写数据库与播放统计；
+/// 路径与库内条目匹配时改为直接播放库内条目（统计/歌词/当前曲存档走标准库内语义）。
 /// 播放触发是事件驱动（生命周期与引擎就绪属性变化时派发），引擎未就绪的请求登记挂起，不存在固定延时等待。
 /// </summary>
 public sealed class OneShotPlaybackService : IDisposable
 {
     private readonly AppViewModel _appViewModel;
     private readonly AppLifecycle _lifecycle;
+    private readonly MusicDatabaseService _databaseService;
     private readonly NotificationService _notificationService;
     private readonly ILogger<OneShotPlaybackService> _logger;
     private readonly object _gate = new();
@@ -36,11 +38,13 @@ public sealed class OneShotPlaybackService : IDisposable
     public OneShotPlaybackService(
         AppViewModel appViewModel,
         AppLifecycle lifecycle,
+        MusicDatabaseService databaseService,
         NotificationService notificationService,
         ILogger<OneShotPlaybackService> logger)
     {
         _appViewModel = appViewModel;
         _lifecycle = lifecycle;
+        _databaseService = databaseService;
         _notificationService = notificationService;
         _logger = logger;
         _appViewModel.PropertyChanged += OnViewModelPropertyChanged;
@@ -183,11 +187,18 @@ public sealed class OneShotPlaybackService : IDisposable
         }
         try
         {
-            var music = await resolve.ConfigureAwait(false);
+            // 库内同路径条目：直接按库内曲目播放（统计/歌词/当前曲存档均为标准库内语义），不再走一次性链路。
+            // 派发等引擎就绪，此刻数据库必已初始化；查询失败按未命中处理，回退一次性播放。
+            var dbMusic = await _databaseService.FindMusicByPathAsync(path).ConfigureAwait(false);
+            Music? music = dbMusic;
             if (music is null)
             {
-                NotifyFailure(path);
-                return;
+                music = await resolve.ConfigureAwait(false);
+                if (music is null)
+                {
+                    NotifyFailure(path);
+                    return;
+                }
             }
             await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
             {
@@ -197,7 +208,10 @@ public sealed class OneShotPlaybackService : IDisposable
                     if (_disposed || generation != _generation) return;
                 }
                 if (!_lifecycle.IsReady || !_appViewModel.IsPlaybackEngineReady) return;
-                _ = App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(music);
+                // 库内命中时优先用 SongsSource 实例播放，与库内列表/收藏等状态保持同源；
+                // 条目尚未同步进内存索引（如扫描刚入库）时退回数据库行实例。
+                Music target = dbMusic is not null ? (_appViewModel.FindById(dbMusic.Id) ?? dbMusic) : music;
+                _ = App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(target);
             });
         }
         catch (Exception ex)

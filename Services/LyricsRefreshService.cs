@@ -123,10 +123,10 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 await Task.Delay(500, ct);
-                // 未入库曲目（外部文件一次性播放，Id=0）：不递增播放计数、不向数据库写入。
-                // 优先级与库内播放对齐：文件旁本地歌词 → 库内同路径曲目已存歌词（先 KRC 后 LRC）→ 内嵌歌词
-                // → 独立缓存（OneShotLyricsCache，按路径哈希的 JSON 文件）→ 在线搜索
-                // （受"自动获取歌词"设置与熔断器约束，仅本次在线新搜到的结果写回独立缓存）。
+                // 未入库曲目（外部文件一次性播放，Id=0）：不查询/写入数据库、不递增播放计数。
+                // 路径与库内条目匹配的外部文件在 OneShotPlaybackService 派发时已改播库内条目（标准库内链路），
+                // 走到本分支的都是纯外部文件：文件旁本地歌词 → 内嵌歌词 → 独立缓存（OneShotLyricsCache，
+                // 按路径哈希的 JSON 文件）→ 在线搜索（受"自动获取歌词"设置与熔断器约束，搜到即写回独立缓存）。
                 if (music.Id <= 0)
                 {
                     var oneShotLocal = TryParseLocalLyricsFile(music, ct);
@@ -135,32 +135,6 @@ namespace WinUIMusicPlayer.Services
                         FixEndMs(oneShotLocal, music.Duration.TotalMilliseconds);
                         _previousLyrics = oneShotLocal;
                         return oneShotLocal;
-                    }
-
-                    // 外部文件可能本就是库内曲目（如从资源管理器打开已扫描文件）：按路径复用库内已存歌词，
-                    // 顺序与库内播放一致（先 KRC 后 LRC），避免重复在线搜索。
-                    // 播放派发等待引擎就绪，此刻数据库必已初始化，无启动顺序问题。
-                    var (dbLrc, dbTrans, dbKrc, dbTKrc) = await _musicDatabaseService.GetLyricsByPathAsync(music.Path);
-                    if (!string.IsNullOrWhiteSpace(dbKrc))
-                    {
-                        // 传入非空原文时下方内部函数只解析、不触发在线搜索。
-                        var (dbKrcLyrics, _, _) = await TryParseKrcLyricsInternal(music, dbKrc, dbTKrc ?? "", ct);
-                        if (dbKrcLyrics is { Count: > 0 })
-                        {
-                            FixEndMs(dbKrcLyrics, music.Duration.TotalMilliseconds);
-                            _previousLyrics = dbKrcLyrics;
-                            return dbKrcLyrics;
-                        }
-                    }
-                    if (!string.IsNullOrWhiteSpace(dbLrc))
-                    {
-                        var dbLrcLyrics = ParseByFormat(dbLrc, dbTrans, ct);
-                        if (dbLrcLyrics is { Count: > 0 })
-                        {
-                            FixEndMs(dbLrcLyrics, music.Duration.TotalMilliseconds);
-                            _previousLyrics = dbLrcLyrics;
-                            return dbLrcLyrics;
-                        }
                     }
 
                     if (!string.IsNullOrWhiteSpace(music.EmbeddedLyrics))
