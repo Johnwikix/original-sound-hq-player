@@ -81,10 +81,14 @@
   - 音效总开关一键旁路全部音效；DoP / Native DSD 位流播放自动旁路并保留设置
   - 全程 float64 高精度音频管线，24bit 源位透明处理
 
+- 🌈 **动态着色器背景与逐字歌词**
+  - 7 种动态着色器背景（流体、PS3 XMB、旋转网格、液态流、渐变流动、波动、色彩共振），按封面取色实时渲染，支持背景光波、雾化等氛围效果
+  - 播放页逐字歌词动效：逐字点亮、字符浮动与缩放，换行采用流波弹簧、逐行错峰等缓动曲线（可调），歌词字号、颜色与透明度均可自定义
+  - 独立桌面歌词窗口：逐字/逐行模式、双行显示（原文+翻译）、描边发光、雾化/飘雪/雨滴特效与自定义配色，锁定不挡操作
+
 - 📝 **音乐信息与歌词**
   - 实时展示歌曲标题、创作者、专辑名、时长、采样率、码率、文件类型
   - 支持自动匹配专辑封面与歌词
-  - 播放页支持逐字动态动画的高级歌词效果，换行采用逐行缓动滚动（流波弹簧、逐行错峰等缓动可调），提供多种着色器背景选择
 
 - 📱 **Sony Walkman 支持**
   - 通过 USB 将匹配元信息的音乐（含歌词）传输至 Sony Walkman
@@ -130,11 +134,15 @@
 ## 🖼️ 软件截图
 
 <img src="doc/img/1.png" width="50%"><img src="doc/img/2.jpg" width="50%">
-<img src="doc/img/3.jpg" width="50%"><img src="doc/img/4.png" width="50%">
+<img src="doc/img/3.jpg" width="50%"><img src="doc/img/4.jpg" width="50%">
 <img src="doc/img/5.png" width="50%"><img src="doc/img/6.png" width="50%">
 <img src="doc/img/7.png" width="50%"><img src="doc/img/8.png" width="50%">
-<img src="doc/img/9.png" width="50%"><img src="doc/img/10.png" width="50%">
-<img src="doc/img/11.jpg" width="50%"><img src="doc/img/12.png" width="50%">
+<img src="doc/img/9.jpg" width="50%"><img src="doc/img/10.png" width="50%">
+<img src="doc/img/11.png" width="50%"><img src="doc/img/12.png" width="50%">
+<img src="doc/img/13.png" width="50%"><img src="doc/img/14.png" width="50%">
+<img src="doc/img/15.png" width="50%"><img src="doc/img/16.png" width="50%">
+<img src="doc/img/17.png" width="50%"><img src="doc/img/18.png" width="50%">
+<img src="doc/img/19.jpg" width="50%"><img src="doc/img/20.png" width="50%">
 
 ## ✍️ 贡献与构建
 

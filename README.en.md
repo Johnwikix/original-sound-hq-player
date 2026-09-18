@@ -81,10 +81,14 @@ While restricted, your existing settings are never modified or erased — comple
   - One-tap DSP master switch bypasses all effects; DoP / Native DSD bitstream playback bypasses them automatically with settings preserved
   - Full float64 high-precision audio pipeline with bit-transparent handling of 24-bit sources
 
+- 🌈 **Shader Backgrounds & Word-by-word Lyrics**
+  - 7 dynamic shader backgrounds (Fluid, PS3 XMB, Rotating Mesh, Liquid Flow, Gradient Flow, Wavy, Chromatic Resonance) rendered live with cover-based color extraction, plus light-wave and fog ambience effects
+  - Now-playing word-by-word lyrics: per-word highlighting, character float/scale animation, and eased per-line scrolling (FlowWave spring / per-line stagger easing options) with customizable font size, colors and opacity
+  - Standalone desktop lyrics window: word/line modes, dual-line display (original + translation), glow and outline, fog/snow/rain effects, custom colors, lockable and click-through
+
 - 📝 **Music Info & Lyrics**
   - Real-time display of title, artist, album, duration, sample rate, bitrate, file type
   - Automatic album art and lyrics matching
-  - Advanced per-word animated lyrics with eased per-line scrolling (FlowWave spring / per-line stagger easing options) and multiple shader background choices
 
 - 📱 **Sony Walkman Support**
   - Transfer music with metadata (including lyrics) to Sony Walkman over USB
@@ -130,11 +134,15 @@ Professional audio output options to match different quality needs:
 ## 🖼️ Screenshots
 
 <img src="doc/img/1.png" width="50%"><img src="doc/img/2.jpg" width="50%">
-<img src="doc/img/3.jpg" width="50%"><img src="doc/img/4.png" width="50%">
+<img src="doc/img/3.jpg" width="50%"><img src="doc/img/4.jpg" width="50%">
 <img src="doc/img/5.png" width="50%"><img src="doc/img/6.png" width="50%">
 <img src="doc/img/7.png" width="50%"><img src="doc/img/8.png" width="50%">
-<img src="doc/img/9.png" width="50%"><img src="doc/img/10.png" width="50%">
-<img src="doc/img/11.jpg" width="50%"><img src="doc/img/12.png" width="50%">
+<img src="doc/img/9.jpg" width="50%"><img src="doc/img/10.png" width="50%">
+<img src="doc/img/11.png" width="50%"><img src="doc/img/12.png" width="50%">
+<img src="doc/img/13.png" width="50%"><img src="doc/img/14.png" width="50%">
+<img src="doc/img/15.png" width="50%"><img src="doc/img/16.png" width="50%">
+<img src="doc/img/17.png" width="50%"><img src="doc/img/18.png" width="50%">
+<img src="doc/img/19.jpg" width="50%"><img src="doc/img/20.png" width="50%">
 
 ## ✍️ Contributing & Building
 
