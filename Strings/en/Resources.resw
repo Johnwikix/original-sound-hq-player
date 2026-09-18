@@ -1917,4 +1917,6 @@
   <data name="CurveOfflineEditing" xml:space="preserve">
     <value>No audio output yet. Your custom curve will apply when playback starts and follow output changes. Select or reapply a preset to resume automatic device bindings. Unsaved drafts expire when the app exits.</value>
   </data>
+  <data name="OneShotOpenFailedTitle" xml:space="preserve"><value>Unable to play file</value></data>
+  <data name="OneShotOpenFailedContent" xml:space="preserve"><value>The selected music file could not be parsed or opened: {0}</value></data>
 </root>

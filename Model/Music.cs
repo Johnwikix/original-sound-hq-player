@@ -44,6 +44,9 @@ namespace WinUIMusicPlayer.Model
         public int PlayCount { get; set; } = 0;
         public bool IsLrcSearched { get; set; } = false;
         public bool IsKrcSearched { get; set; } = false;
+        // 外部文件一次性播放携带的内嵌歌词（不入库，仅内存使用；入库曲目的歌词走 MusicLyrics 表）。
+        [Ignore]
+        public string? EmbeddedLyrics { get; set; }
         [Ignore]
         public int IsExistOnDevice { get; set => SetProperty(ref field, value); } = 0;
         public string ImageHash { get; set => SetProperty(ref field, value); } = string.Empty;

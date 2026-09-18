@@ -1917,5 +1917,6 @@
   <data name="CurveOfflineEditing" xml:space="preserve">
     <value>Noch keine Audioausgabe. Der Kurvenentwurf wird beim Wiedergabestart aktiv und folgt dem Ausgabegerät. Ein Preset auswählen oder erneut anwenden, um automatische Gerätezuordnungen wiederherzustellen. Ungespeicherte Entwürfe verfallen beim Beenden der App.</value>
   </data>
+  <data name="OneShotOpenFailedTitle" xml:space="preserve"><value>Datei kann nicht wiedergegeben werden</value></data>
+  <data name="OneShotOpenFailedContent" xml:space="preserve"><value>Die ausgewählte Musikdatei konnte nicht gelesen oder geöffnet werden: {0}</value></data>
 </root>
-

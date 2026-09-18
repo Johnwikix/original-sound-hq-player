@@ -8,6 +8,7 @@ using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Timers;
 using Windows.Graphics;
 using Windows.UI;
@@ -222,6 +223,11 @@ namespace WinUIMusicPlayer
                     });
                     return IntPtr.Zero;
                 }
+                if (msg == SingleInstanceHelper.WM_COPYDATA)
+                {
+                    HandleCopyData(lParam);
+                    return IntPtr.Zero;
+                }
                 if (msg == 0x0312) // WM_HOTKEY
                 {
                     int id = (int)wParam;
@@ -238,6 +244,31 @@ namespace WinUIMusicPlayer
             }
         }
 
+
+        //第二实例转发的待播文件路径：SendMessage 返回后对端缓冲即失效，负载必须在 WndProc 内同步拷贝完成，
+        //播放与界面更新再转交 UI 线程。显示窗口仍由第二实例的 WM_SHOWME/前台逻辑负责。
+        private void HandleCopyData(IntPtr lParam)
+        {
+            try
+            {
+                var copyData = System.Runtime.InteropServices.Marshal.PtrToStructure<SingleInstanceHelper.CopyDataStruct>(lParam);
+                if (copyData.dwData != SingleInstanceHelper.CopyDataMagic || copyData.cbData <= sizeof(char)) return;
+                int charCount = copyData.cbData / sizeof(char) - 1; // 去掉终止符
+                if (charCount <= 0 || copyData.lpData == IntPtr.Zero) return;
+                var chars = new char[charCount];
+                System.Runtime.InteropServices.Marshal.Copy(copyData.lpData, chars, 0, charCount);
+                string path = new string(chars);
+                if (!ToolUtils.IsMusicFile(Path.GetExtension(path))) return;
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    App.Services.GetRequiredService<OneShotPlaybackService>().PlayNow(path);
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "处理第二实例转发的播放请求失败");
+            }
+        }
 
         private async void AppWindow_Closing(Microsoft.UI.Windowing.AppWindow sender, AppWindowClosingEventArgs args)
         {

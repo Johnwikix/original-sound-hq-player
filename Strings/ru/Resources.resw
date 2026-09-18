@@ -1917,5 +1917,6 @@
   <data name="CurveOfflineEditing" xml:space="preserve">
     <value>Аудиовыход пока отсутствует. Черновик кривой будет применён при запуске воспроизведения и последует за сменой выхода. Выберите или повторно примените пресет, чтобы восстановить автоматические привязки устройств. Несохранённые черновики теряются при выходе.</value>
   </data>
+  <data name="OneShotOpenFailedTitle" xml:space="preserve"><value>Не удалось воспроизвести файл</value></data>
+  <data name="OneShotOpenFailedContent" xml:space="preserve"><value>Не удалось обработать или открыть выбранный музыкальный файл: {0}</value></data>
 </root>
-

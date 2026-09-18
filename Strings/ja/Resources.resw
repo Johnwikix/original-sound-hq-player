@@ -1917,5 +1917,6 @@
   <data name="CurveOfflineEditing" xml:space="preserve">
     <value>音声出力はまだありません。カスタムカーブは再生開始時に適用され、出力デバイスの切り替えにも追従します。プリセットを選択または再適用すると、デバイスごとの自動割り当てに戻ります。未保存の草稿はアプリ終了時に失われます。</value>
   </data>
+  <data name="OneShotOpenFailedTitle" xml:space="preserve"><value>ファイルを再生できません</value></data>
+  <data name="OneShotOpenFailedContent" xml:space="preserve"><value>選択した音楽ファイルを解析または開けませんでした：{0}</value></data>
 </root>
-

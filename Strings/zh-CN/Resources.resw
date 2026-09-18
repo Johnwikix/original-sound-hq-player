@@ -1916,4 +1916,6 @@
   <data name="CurveOfflineEditing" xml:space="preserve">
     <value>当前尚无音频输出。自定义草稿将在播放开始后实时生效，并跟随输出设备切换。选择或重新应用预设后恢复按设备自动绑定。未保存草稿在退出应用时失效。</value>
   </data>
+  <data name="OneShotOpenFailedTitle" xml:space="preserve"><value>无法播放文件</value></data>
+  <data name="OneShotOpenFailedContent" xml:space="preserve"><value>无法解析或打开所选音乐文件：{0}</value></data>
 </root>

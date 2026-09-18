@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace WinUIMusicPlayer.Helper
@@ -9,11 +10,22 @@ namespace WinUIMusicPlayer.Helper
         private static Mutex _mutex = null;
         private const string MutexName = "WinUIMusicPlayer_SingleInstanceMutex";
         public const int WM_SHOWME = 0x8001;
+        public const int WM_COPYDATA = 0x004A;
+        /// <summary>WM_COPYDATA 负载魔数：接收方只处理本应用协议的消息，忽略第三方进程的 COPYDATA。</summary>
+        public static readonly IntPtr CopyDataMagic = new(0x4F53485031L);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct CopyDataStruct
+        {
+            public IntPtr dwData;
+            public int cbData;
+            public IntPtr lpData;
+        }
 
         /// <summary>
         /// 检查应用程序是否已经在运行
         /// </summary>
-        /// <returns>如果应用程序是首次运行则返回true，否则返回false</returns>
+        /// <returns>如果应用程序是首次运行则返回true，否则false</returns>
         public static bool CheckSingleInstance()
         {
             bool mutexCreated;
@@ -24,9 +36,9 @@ namespace WinUIMusicPlayer.Helper
         }
 
         /// <summary>
-        /// 尝试激活已有的应用程序实例
-        /// </summary>        
-        public static void ActivateExistingInstance()
+        /// 尝试激活已有的应用程序实例；filePath 非空时先通过 WM_COPYDATA 转发给现有实例播放。
+        /// </summary>
+        public static void ActivateExistingInstance(string? filePath = null)
         {
             try
             {
@@ -57,6 +69,11 @@ namespace WinUIMusicPlayer.Helper
                     // 确保窗口存在
                     if (WindowHelper.IsWindow(mainWindowHandle))
                     {
+                        // SendMessage 同步返回时接收方已完成负载拷贝，此后才释放发送缓冲。
+                        if (!string.IsNullOrEmpty(filePath))
+                        {
+                            SendFilePathCopyData(mainWindowHandle, filePath);
+                        }
                         if (WindowHelper.IsWindowVisible(mainWindowHandle))
                         {
                             // 如果窗口最小化，则恢复它
@@ -81,6 +98,29 @@ namespace WinUIMusicPlayer.Helper
             catch (Exception ex)
             {
                 Debug.WriteLine($"激活已有实例时出错: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 通过 WM_COPYDATA 把待播文件路径同步转发给现有实例主窗口（UTF-16 含终止符）。
+        /// </summary>
+        private static void SendFilePathCopyData(IntPtr window, string filePath)
+        {
+            int byteCount = checked((filePath.Length + 1) * sizeof(char));
+            IntPtr data = Marshal.AllocHGlobal(byteCount);
+            IntPtr structPtr = Marshal.AllocHGlobal(Marshal.SizeOf<CopyDataStruct>());
+            try
+            {
+                Marshal.Copy(filePath.ToCharArray(), 0, data, filePath.Length);
+                Marshal.WriteInt16(data, filePath.Length * sizeof(char), 0);
+                var copyData = new CopyDataStruct { dwData = CopyDataMagic, cbData = byteCount, lpData = data };
+                Marshal.StructureToPtr(copyData, structPtr, fDeleteOld: false);
+                WindowHelper.SendMessage(window, WM_COPYDATA, IntPtr.Zero, structPtr);
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(structPtr);
+                Marshal.FreeHGlobal(data);
             }
         }
 

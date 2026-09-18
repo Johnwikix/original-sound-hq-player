@@ -62,6 +62,30 @@
         <uap:Extension Category="windows.protocol">
           <uap:Protocol Name="originalsoundhqplayer"/>
         </uap:Extension>
+        <!-- 文件关联：扩展名与 Utils/ToolUtils.cs MusicExtensions 保持一致；
+             声明后应用出现在系统"打开方式"候选，处理见 Services/OneShotPlaybackService.cs。 -->
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="audio">
+            <uap:DisplayName>ms-resource:AppMainTitle</uap:DisplayName>
+            <uap:SupportedFileTypes>
+              <uap:FileType>.mp3</uap:FileType>
+              <uap:FileType>.wav</uap:FileType>
+              <uap:FileType>.flac</uap:FileType>
+              <uap:FileType>.wma</uap:FileType>
+              <uap:FileType>.aac</uap:FileType>
+              <uap:FileType>.ogg</uap:FileType>
+              <uap:FileType>.oga</uap:FileType>
+              <uap:FileType>.aiff</uap:FileType>
+              <uap:FileType>.aif</uap:FileType>
+              <uap:FileType>.m4a</uap:FileType>
+              <uap:FileType>.dsf</uap:FileType>
+              <uap:FileType>.dff</uap:FileType>
+              <uap:FileType>.ape</uap:FileType>
+              <uap:FileType>.opus</uap:FileType>
+              <uap:FileType>.wv</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
       </Extensions>
     </Application>
   </Applications>

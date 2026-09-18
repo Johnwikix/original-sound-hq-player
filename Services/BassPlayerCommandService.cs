@@ -99,9 +99,17 @@ namespace WinUIMusicPlayer.Services
                         break;
                     case PlayMode.ListLoop:
                     case PlayMode.RandomLoop:
+                        // 一次性外部曲目不在列表内（index=-1）时 nextIndex=0，从播放队列第一首继续；
+                        // 队列为空（如空库下直接打开外部文件）则结束播放，避免取模零异常。
+                        var playingList = AppViewModel.CurrentPlayingList;
+                        if (playingList.Count == 0)
+                        {
+                            MusicEnd();
+                            break;
+                        }
                         int currentIndex = AppViewModel.GetCurrentIndex();
-                        int nextIndex = (currentIndex + 1) % AppViewModel.CurrentPlayingList.Count;
-                        await MusicBrowsePlayMusic(AppViewModel.CurrentPlayingList[nextIndex]);
+                        int nextIndex = (currentIndex + 1) % playingList.Count;
+                        await MusicBrowsePlayMusic(playingList[nextIndex]);
                         break;
                     case PlayMode.RepeatOff:
                         MusicEnd();

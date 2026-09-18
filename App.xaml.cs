@@ -81,6 +81,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<AudioProcessService>();
                  services.AddSingleton<PlaybackStatePersistence>();
                  services.AddSingleton<PlaybackCommands>();
+                 services.AddSingleton<OneShotPlaybackService>();
                  services.AddSingleton<TrayViewModel>();
                  services.AddSingleton<LibraryWatcherService>();
                  services.AddSingleton<AudioSettingsSynchronizer>();
@@ -226,13 +227,19 @@ namespace WinUIMusicPlayer
         {
             try
             {
+                // 文件关联/打开方式激活的最早捕获：第二实例需据此转发给现有实例，第一实例立即开始解析。
+                string? activatedFilePath = OneShotPlaybackService.CaptureActivationPath();
                 // 检查应用程序是否已经在运行
                 if (!SingleInstanceHelper.CheckSingleInstance())
                 {
-                    // 应用程序已在运行，尝试激活现有实例
-                    SingleInstanceHelper.ActivateExistingInstance();
+                    // 应用程序已在运行，转发待播文件并激活现有实例
+                    SingleInstanceHelper.ActivateExistingInstance(activatedFilePath);
                     Environment.Exit(0);
                     return;
+                }
+                if (activatedFilePath is not null)
+                {
+                    Services.GetRequiredService<OneShotPlaybackService>().Begin(activatedFilePath);
                 }
                 await _host.StartAsync();
                 if (Services.GetRequiredService<AppLifecycle>().Phase == AppPhase.Stopping) return;

@@ -123,6 +123,49 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 await Task.Delay(500, ct);
+                // 未入库曲目（外部文件一次性播放，Id=0）：歌词仅在内存使用，
+                // 不查询/写入数据库、不递增播放计数。优先级与入库曲目一致——
+                // 文件旁本地歌词优先，其次内嵌歌词，最后在线搜索（受"自动获取歌词"设置与熔断器约束）。
+                if (music.Id <= 0)
+                {
+                    var oneShotLocal = TryParseLocalLyricsFile(music, ct);
+                    if (oneShotLocal is { Count: > 0 })
+                    {
+                        FixEndMs(oneShotLocal, music.Duration.TotalMilliseconds);
+                        _previousLyrics = oneShotLocal;
+                        return oneShotLocal;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(music.EmbeddedLyrics))
+                    {
+                        var embedded = ParseByFormat(music.EmbeddedLyrics, null, ct);
+                        if (embedded is { Count: > 0 })
+                        {
+                            FixEndMs(embedded, music.Duration.TotalMilliseconds);
+                            _previousLyrics = embedded;
+                            return embedded;
+                        }
+                    }
+
+                    var (oneShotKrc, _, _) = await TryParseKrcLyricsInternal(music, "", "", ct);
+                    if (oneShotKrc.Count > 0)
+                    {
+                        FixEndMs(oneShotKrc, music.Duration.TotalMilliseconds);
+                        _previousLyrics = oneShotKrc;
+                        return oneShotKrc;
+                    }
+
+                    var (oneShotLrc, _, _) = await ParseLrcLyricsInternal(music, "", "", null, null, ct);
+                    FixEndMs(oneShotLrc, music.Duration.TotalMilliseconds);
+                    if (oneShotLrc.Count == 1 && oneShotLrc[0].Words.Count == 0)
+                    {
+                        var word = RentWord();
+                        word.Word = ToolUtils.GetString("LyricsGetFailed");
+                        oneShotLrc[0].Words.Add(word);
+                    }
+                    _previousLyrics = oneShotLrc;
+                    return oneShotLrc;
+                }
                 var (lyricsText, transLrc, krc, tKrc) = await _musicDatabaseService.GetLyricsAsync(music.Id);
 
                 // 1. 本地文件（.krc / .qrc / .lrc）

@@ -63,6 +63,7 @@ namespace WinUIMusicPlayer.Services
             shutdown.RegisterCleanup(appViewModel.Dispose);
             App.MainWindow.InitializeTray();
             shutdown.RegisterCleanup(App.Services.GetRequiredService<PlaybackCommands>().Dispose);
+            shutdown.RegisterCleanup(App.Services.GetRequiredService<OneShotPlaybackService>().Dispose);
             App.MainWindow.Activate();
             await WaitForContentLoadedAsync((FrameworkElement)App.MainWindow.Content);
             logger.LogInformation("启动窗口就绪：{ElapsedMs} ms", startup.ElapsedMilliseconds);
@@ -136,7 +137,12 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 await Task.WhenAll(ipcInitialization, licenseInitialization, libraryInitialization).WaitAsync(cancellationToken);
-                await ipcService.InitializeMusic(AppViewModel.CurrentPlayingMusic);
+                // 一次性外部文件已解析完成时，首推直接加载它，省去先加载恢复曲再切换的一次开销；
+                // 解析未完成则照常推恢复曲，外部文件在引擎就绪后接替播放（OneShotPlaybackService 事件驱动派发）。
+                var initialMusic = AppViewModel.CurrentPlayingMusic;
+                if (App.Services.GetRequiredService<OneShotPlaybackService>().TryGetResolvedMusic() is { } oneShotMusic)
+                    initialMusic = oneShotMusic;
+                await ipcService.InitializeMusic(initialMusic);
                 _engineInitialized = true;
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { return; }

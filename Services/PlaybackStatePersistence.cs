@@ -108,7 +108,8 @@ public sealed class PlaybackStatePersistence(MusicDatabaseService db, AppViewMod
             var playState = new SavePlayState
             {
                 PlayMode = appvm.CurrentPlayMode,
-                LastPlayedMusicId = appvm.CurrentPlayingMusic?.Id,
+                // 未入库的一次性外部曲目（Id=0）不覆盖当前曲存档，避免下次启动恢复不出任何曲目。
+                LastPlayedMusicId = appvm.CurrentPlayingMusic is { Id: > 0 } current ? current.Id : existing?.LastPlayedMusicId,
                 Volume = appvm.Volume,
                 SortOrder = appvm.SelectedSortOption?.Tag?.ToString() ?? "DefaultOrder",
                 HasWindowBounds = hasWindowBounds,

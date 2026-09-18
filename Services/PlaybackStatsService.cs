@@ -69,7 +69,8 @@ namespace WinUIMusicPlayer.Services
         /// </summary>
         public void StartSession(Music music)
         {
-            if (music is null) return;
+            // 未入库曲目（外部文件一次性播放，Id=0）不产生统计会话，避免写出 MusicId=0 的孤儿记录。
+            if (music is null || music.Id <= 0) return;
 
             lock (_sessionLock)
             {

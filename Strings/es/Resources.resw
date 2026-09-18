@@ -1917,4 +1917,6 @@
   <data name="CurveOfflineEditing" xml:space="preserve">
     <value>Aún no hay salida de audio. El borrador se aplicará al iniciar la reproducción y seguirá los cambios de salida. Selecciona o vuelve a aplicar un preajuste para recuperar las asignaciones automáticas por dispositivo. Los borradores sin guardar se pierden al salir.</value>
   </data>
+  <data name="OneShotOpenFailedTitle" xml:space="preserve"><value>No se puede reproducir el archivo</value></data>
+  <data name="OneShotOpenFailedContent" xml:space="preserve"><value>No se pudo analizar o abrir el archivo de música seleccionado: {0}</value></data>
 </root>
