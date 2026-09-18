@@ -16,20 +16,6 @@
     </winex:WindowEx.SystemBackdrop>
     <Grid>
         <Frame x:Name="ShellFrame" />
-        <!--  Loading 界面  -->
-        <Grid x:Name="LoadingGrid" Visibility="Visible">
-            <ProgressRing
-                Width="100"
-                Height="100"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                IsActive="True" />
-            <TextBlock
-                x:Uid="LoadingText"
-                Margin="0,180,0,0"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center" />
-        </Grid>
         <!-- 托盘随主窗口显式创建；命令可用性由生命周期控制。 -->
         <Grid x:Name="TrayHost" />
     </Grid>

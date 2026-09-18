@@ -120,14 +120,14 @@
   <data name="AppTitle.Text" xml:space="preserve">
     <value>OriginalSound HQ Player</value>
   </data>
+  <data name="TitleBarTaskLoadingLibrary" xml:space="preserve">
+    <value>Loading music library</value>
+  </data>
   <data name="TitleBarTaskConnecting" xml:space="preserve">
     <value>Connecting audio engine</value>
   </data>
   <data name="TitleBarTaskScanning" xml:space="preserve">
     <value>Scanning music library</value>
-  </data>
-  <data name="LoadingText.Text" xml:space="preserve">
-    <value>Loading data...</value>
   </data>
   <data name="SongTab.Text" xml:space="preserve">
     <value>Songs</value>

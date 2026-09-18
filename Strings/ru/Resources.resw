@@ -120,14 +120,14 @@
   <data name="AppTitle.Text" xml:space="preserve">
     <value>HQ-плеер Original Sound</value>
   </data>
+  <data name="TitleBarTaskLoadingLibrary" xml:space="preserve">
+    <value>Загрузка музыкальной библиотеки</value>
+  </data>
   <data name="TitleBarTaskConnecting" xml:space="preserve">
     <value>Подключение аудиодвижка</value>
   </data>
   <data name="TitleBarTaskScanning" xml:space="preserve">
     <value>Сканирование библиотеки</value>
-  </data>
-  <data name="LoadingText.Text" xml:space="preserve">
-    <value>Загрузка данных, пожалуйста подождите...</value>
   </data>
   <data name="SongTab.Text" xml:space="preserve">
     <value>Песни</value>

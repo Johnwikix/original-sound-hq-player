@@ -228,10 +228,27 @@ namespace WinUIMusicPlayer.ViewModel
             get => field;
             set
             {
-                if (SetProperty(ref field, value)) OnPropertyChanged(nameof(IsTitleBarTaskActive));
+                if (SetProperty(ref field, value))
+                {
+                    OnPropertyChanged(nameof(IsTitleBarTaskActive));
+                    OnPropertyChanged(nameof(TitleBarTaskText));
+                }
             }
         }
-        // 标题栏任务指示器：IPC 连接与音乐库扫描共用，显示当前正在执行的任务。
+        // 库整表加载（启动恢复缓存库）；与扫描互斥——扫描在加载完成后才启动。
+        public bool IsLibraryLoading
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value))
+                {
+                    OnPropertyChanged(nameof(IsTitleBarTaskActive));
+                    OnPropertyChanged(nameof(TitleBarTaskText));
+                }
+            }
+        }
+        // 标题栏任务指示器：IPC 连接 / 库加载 / 库扫描共用，显示当前正在执行的任务。
         public bool IsIpcConnecting
         {
             get => field;
@@ -245,11 +262,12 @@ namespace WinUIMusicPlayer.ViewModel
                 }
             }
         }
-        public bool IsTitleBarTaskActive => IsIpcConnecting || IsLibraryScanning;
+        public bool IsTitleBarTaskActive => IsIpcConnecting || IsLibraryLoading || IsLibraryScanning;
         public bool IsTitleBarTaskIndeterminate => IsIpcConnecting || IsLibraryScanIndeterminate;
         public string TitleBarTaskText => IsIpcConnecting
             ? ToolUtils.GetString("TitleBarTaskConnecting")
-            : ToolUtils.GetString("TitleBarTaskScanning");
+            : IsLibraryScanning ? ToolUtils.GetString("TitleBarTaskScanning")
+            : ToolUtils.GetString("TitleBarTaskLoadingLibrary");
         public int LibraryScanPercent
         {
             get;
@@ -806,6 +824,12 @@ namespace WinUIMusicPlayer.ViewModel
             if (IsInitialized)
             {
                 RefreshAllViews();
+            }
+            else
+            {
+                // 主界面已先行显示（无 Loading 过渡层）：缓存库到达时刷新当前页，
+                // 成本与首次导航构建相同；其余调用路径均在 Ready 之后走全量分支。
+                RefreshDataSource();
             }
         }
 

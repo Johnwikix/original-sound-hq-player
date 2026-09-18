@@ -287,7 +287,6 @@ namespace WinUIMusicPlayer
         public void ShowMainPage()
         {
             ShellFrame.Content = App.Services.GetRequiredService<MainPage>();
-            LoadingGrid.Visibility = Visibility.Collapsed;
         }
 
         public void UpdateTaskbarIcon()
