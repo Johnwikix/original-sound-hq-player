@@ -123,9 +123,9 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 await Task.Delay(500, ct);
-                // 未入库曲目（外部文件一次性播放，Id=0）：歌词仅在内存使用，
-                // 不查询/写入数据库、不递增播放计数。优先级与入库曲目一致——
-                // 文件旁本地歌词优先，其次内嵌歌词，最后在线搜索（受"自动获取歌词"设置与熔断器约束）。
+                // 未入库曲目（外部文件一次性播放，Id=0）：不查询/写入数据库、不递增播放计数。
+                // 优先级：文件旁本地歌词 → 内嵌歌词 → 独立缓存（OneShotLyricsCache，按路径哈希的 JSON 文件）
+                // → 在线搜索（受"自动获取歌词"设置与熔断器约束，搜到即写回独立缓存）。
                 if (music.Id <= 0)
                 {
                     var oneShotLocal = TryParseLocalLyricsFile(music, ct);
@@ -147,15 +147,31 @@ namespace WinUIMusicPlayer.Services
                         }
                     }
 
-                    var (oneShotKrc, _, _) = await TryParseKrcLyricsInternal(music, "", "", ct);
+                    // 独立歌词缓存（按路径哈希，不依赖数据库）：命中直接用原文解析；
+                    // 未命中则在线搜索（下方内部函数在传入文本为空时才搜索），搜到后写回缓存。
+                    var cached = OneShotLyricsCache.Load(music.Path);
+
+                    var (oneShotKrc, oneShotKrcOut, oneShotKrcTrans) = await TryParseKrcLyricsInternal(
+                        music, cached?.Krc ?? "", cached?.TKrc ?? "", ct);
                     if (oneShotKrc.Count > 0)
                     {
+                        if (!string.IsNullOrEmpty(oneShotKrcOut)
+                            && !string.Equals(cached?.Krc, oneShotKrcOut, StringComparison.Ordinal))
+                        {
+                            OneShotLyricsCache.Save(music.Path, oneShotKrcOut, oneShotKrcTrans, null, null);
+                        }
                         FixEndMs(oneShotKrc, music.Duration.TotalMilliseconds);
                         _previousLyrics = oneShotKrc;
                         return oneShotKrc;
                     }
 
-                    var (oneShotLrc, _, _) = await ParseLrcLyricsInternal(music, "", "", null, null, ct);
+                    var (oneShotLrc, oneShotLrcOut, oneShotLrcTrans) = await ParseLrcLyricsInternal(
+                        music, cached?.Lrc ?? "", cached?.Trans ?? "", null, null, ct);
+                    if (!string.IsNullOrEmpty(oneShotLrcOut)
+                        && !string.Equals(cached?.Lrc, oneShotLrcOut, StringComparison.Ordinal))
+                    {
+                        OneShotLyricsCache.Save(music.Path, null, null, oneShotLrcOut, oneShotLrcTrans);
+                    }
                     FixEndMs(oneShotLrc, music.Duration.TotalMilliseconds);
                     if (oneShotLrc.Count == 1 && oneShotLrc[0].Words.Count == 0)
                     {
