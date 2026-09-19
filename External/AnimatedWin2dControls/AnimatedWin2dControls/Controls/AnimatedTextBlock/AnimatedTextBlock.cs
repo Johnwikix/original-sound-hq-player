@@ -1,4 +1,4 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects;
+using AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Internals;
 using Microsoft.Graphics.Canvas;
@@ -74,91 +74,70 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
     #region DependencyProperties
 
     public static readonly DependencyProperty TextProperty = DependencyProperty.Register(
-        nameof(Text), typeof(string), typeof(AnimatedTextBlock), new PropertyMetadata(default(string)));
+        nameof(Text), typeof(string), typeof(AnimatedTextBlock), new PropertyMetadata(string.Empty, OnTextChanged));
 
     public string Text
     {
         get => (string)GetValue(TextProperty);
-        set
-        {
-            _oldText = _newText ?? string.Empty;
-            _newText = value ?? string.Empty;
-            SetValue(TextProperty, value);
-            SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
-        }
+        set => SetValue(TextProperty, value);
     }
 
     public static readonly DependencyProperty TextEffectProperty = DependencyProperty.Register(
-        nameof(TextEffect), typeof(ITextEffect), typeof(AnimatedTextBlock), new PropertyMetadata(default(ITextEffect)));
+        nameof(TextEffect), typeof(ITextEffect), typeof(AnimatedTextBlock), new PropertyMetadata(null, OnTextEffectChanged));
 
     public ITextEffect TextEffect
     {
         get => (ITextEffect)GetValue(TextEffectProperty);
-        set
-        {
-            _textEffect = value;
-            SetValue(TextEffectProperty, value);
-        }
+        set => SetValue(TextEffectProperty, value);
     }
 
     public static readonly DependencyProperty TextAlignmentProperty = DependencyProperty.Register(
-        nameof(TextAlignment), typeof(TextAlignment), typeof(AnimatedTextBlock), new PropertyMetadata(default(TextAlignment)));
+        nameof(TextAlignment), typeof(TextAlignment), typeof(AnimatedTextBlock), new PropertyMetadata(TextAlignment.Left, OnTextLayoutPropertyChanged));
 
     public TextAlignment TextAlignment
     {
         get => (TextAlignment)GetValue(TextAlignmentProperty);
-        set
-        {
-            _textAlignment = value;
-            _textFormatDirty = true;
-            _staticLayoutDirty = true;
-            SetValue(TextAlignmentProperty, value);
-            ApplyTextFormatIfNeeded();
-            RebuildLayoutsIfReady();
-            _canvas?.Invalidate();
-        }
+        set => SetValue(TextAlignmentProperty, value);
     }
 
     public static readonly DependencyProperty TextDirectionProperty = DependencyProperty.Register(
-        nameof(TextDirection), typeof(AnimatedTextBlockTextDirection), typeof(AnimatedTextBlock), new PropertyMetadata(default(AnimatedTextBlockTextDirection)));
+        nameof(TextDirection), typeof(AnimatedTextBlockTextDirection), typeof(AnimatedTextBlock), new PropertyMetadata(AnimatedTextBlockTextDirection.LeftToRightThenTopToBottom, OnTextLayoutPropertyChanged));
 
     public AnimatedTextBlockTextDirection TextDirection
     {
         get => (AnimatedTextBlockTextDirection)GetValue(TextDirectionProperty);
-        set
-        {
-            _textDirection = value;
-            _textFormatDirty = true;
-            SetValue(TextDirectionProperty, value);
-        }
+        set => SetValue(TextDirectionProperty, value);
     }
 
     public static readonly DependencyProperty TextTrimmingProperty = DependencyProperty.Register(
-        nameof(TextTrimming), typeof(TextTrimming), typeof(AnimatedTextBlock), new PropertyMetadata(default(TextTrimming)));
+        nameof(TextTrimming), typeof(TextTrimming), typeof(AnimatedTextBlock), new PropertyMetadata(TextTrimming.None, OnTextLayoutPropertyChanged));
 
     public TextTrimming TextTrimming
     {
         get => (TextTrimming)GetValue(TextTrimmingProperty);
-        set
-        {
-            _textTrimming = value;
-            _textFormatDirty = true;
-            SetValue(TextTrimmingProperty, value);
-        }
+        set => SetValue(TextTrimmingProperty, value);
     }
 
     public static readonly DependencyProperty TextWrappingProperty = DependencyProperty.Register(
-        nameof(TextWrapping), typeof(TextWrapping), typeof(AnimatedTextBlock), new PropertyMetadata(default(TextWrapping)));
+        nameof(TextWrapping), typeof(TextWrapping), typeof(AnimatedTextBlock), new PropertyMetadata(TextWrapping.NoWrap, OnTextLayoutPropertyChanged));
 
     public TextWrapping TextWrapping
     {
         get => (TextWrapping)GetValue(TextWrappingProperty);
-        set
-        {
-            _textWrapping = value;
-            _textFormatDirty = true;
-            SetValue(TextWrappingProperty, value);
-        }
+        set => SetValue(TextWrappingProperty, value);
+    }
+
+    public static readonly DependencyProperty IsHoverScrollEnabledProperty = DependencyProperty.Register(
+        nameof(IsHoverScrollEnabled), typeof(bool), typeof(AnimatedTextBlock), new PropertyMetadata(false, OnHoverScrollEnabledChanged));
+
+    /// <summary>
+    /// Scroll actually trimmed, single-line horizontal text while the mouse is over
+    /// the control. Text transitions finish before scrolling starts. Defaults to false.
+    /// </summary>
+    public bool IsHoverScrollEnabled
+    {
+        get => (bool)GetValue(IsHoverScrollEnabledProperty);
+        set => SetValue(IsHoverScrollEnabledProperty, value);
     }
 
     public bool IsAnimating => _currentState != AnimatedTextBlockRedrawState.Idle;
@@ -173,6 +152,12 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
         this.Loaded += OnLoaded;
         this.Unloaded += OnUnloaded;
+        SizeChanged += OnSizeChanged;
+        PointerEntered += OnPointerEntered;
+        PointerExited += OnPointerExited;
+        PointerCanceled += OnPointerExited;
+        RegisterPropertyChangedCallback(PaddingProperty, OnTextMetricsChanged);
+        RegisterPropertyChangedCallback(BorderThicknessProperty, OnTextMetricsChanged);
         this.RegisterPropertyChangedCallback(ForegroundProperty, ForegroundChangedCallback);
         this.RegisterPropertyChangedCallback(FontFamilyProperty, FontFamilyChangedCallback);
         this.RegisterPropertyChangedCallback(FontSizeProperty, FontSizeChangedCallback);
@@ -185,38 +170,41 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
     protected override void OnApplyTemplate()
     {
+        StopHoverScroll();
+        StopRenderingLoop();
+        DetachCanvas();
+        DisposeLayouts();
         base.OnApplyTemplate();
 
         _canvas = GetTemplateChild("AnimatedCanvas") as CanvasControl;
-        this.SizeChanged += OnSizeChanged;
 
         ApplyTextFormatIfNeeded();
         ApplyTextForeground();
 
-        if (_canvas != null)
-        {
-            _canvas.CreateResources += Canvas_CreateResources;
-            _canvas.Draw += Canvas_Draw;
-        }
+        AttachCanvas();
+        if (IsLoaded)
+            SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        EnsureTextFormat();
+        AttachCanvas();
+        ApplyTextFormatIfNeeded();
+        ApplyTextForeground();
         _newText = Text ?? string.Empty;
+        _staticLayoutDirty = true;
+        InvalidateMeasure();
         SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        // 停止渲染循环
+        _isPointerOver = false;
+        StopHoverScroll();
         StopRenderingLoop();
-
-        // 解绑画布事件
-        if (_canvas != null)
-        {
-            _canvas.CreateResources -= Canvas_CreateResources;
-            _canvas.Draw -= Canvas_Draw;
-        }
+        _currentState = AnimatedTextBlockRedrawState.Idle;
+        DetachCanvas();
 
         // 释放所有 GPU 资源
         DisposeLayouts();
@@ -224,12 +212,18 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         _textBrush = null;
         _textFormat?.Dispose();
         _textFormat = null;
+        _textFormatDirty = true;
+        _diffResults = null;
     }
 
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
+        StopHoverScroll();
         if (e.NewSize.Width <= 0 || e.NewSize.Height <= 0)
+        {
+            SetRedrawState(AnimatedTextBlockRedrawState.Idle);
             return;
+        }
 
         // 尺寸变化：重建 newTextLayout 后直接进 Idle，不跑动画
         // 在 UI 线程操作，此时没有并发问题
@@ -258,6 +252,8 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         _fontFamily = FontFamily.Source;
         _textFormatDirty = true;
         _staticLayoutDirty = true;
+        StopHoverScroll();
+        InvalidateMeasure();
         ApplyTextFormatIfNeeded();
         RebuildLayoutsIfReady();
         _canvas?.Invalidate();
@@ -268,6 +264,8 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         _fontSize = (float)FontSize;
         _textFormatDirty = true;
         _staticLayoutDirty = true;
+        StopHoverScroll();
+        InvalidateMeasure();
         ApplyTextFormatIfNeeded();
         RebuildLayoutsIfReady();
         _canvas?.Invalidate();
@@ -278,6 +276,8 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         _fontStretch = FontStretch;
         _textFormatDirty = true;
         _staticLayoutDirty = true;
+        StopHoverScroll();
+        InvalidateMeasure();
         ApplyTextFormatIfNeeded();
         RebuildLayoutsIfReady();
         _canvas?.Invalidate();
@@ -288,6 +288,8 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         _fontStyle = FontStyle;
         _textFormatDirty = true;
         _staticLayoutDirty = true;
+        StopHoverScroll();
+        InvalidateMeasure();
         ApplyTextFormatIfNeeded();
         RebuildLayoutsIfReady();
         _canvas?.Invalidate();
@@ -298,6 +300,8 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         _fontWeight = FontWeight;
         _textFormatDirty = true;
         _staticLayoutDirty = true;
+        StopHoverScroll();
+        InvalidateMeasure();
         ApplyTextFormatIfNeeded();
         RebuildLayoutsIfReady();
         _canvas?.Invalidate();
@@ -309,6 +313,11 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
     private void Canvas_CreateResources(CanvasControl sender, CanvasCreateResourcesEventArgs args)
     {
+        DisposeLayouts();
+        StopHoverScroll();
+        _staticLayoutDirty = true;
+        if (_currentState == AnimatedTextBlockRedrawState.Animating)
+            SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
         if (Foreground is LinearGradientBrush linearGradientBrush)
         {
             var stops = new CanvasGradientStop[linearGradientBrush.GradientStops.Count];
@@ -332,9 +341,13 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         if (sender.Size.Width <= 0 || sender.Size.Height <= 0)
             return;
 
+        ApplyTextFormatIfNeeded();
+
         // ── 无动画效果 or Idle：画静态帧 ────────────────────────────────
         if (_textEffect == null || _currentState == AnimatedTextBlockRedrawState.Idle)
         {
+            if (_currentState != AnimatedTextBlockRedrawState.Idle)
+                SetRedrawState(AnimatedTextBlockRedrawState.Idle, false);
             DrawStatic(sender, args.DrawingSession);
             return;
         }
@@ -390,7 +403,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
     private void StartRenderingLoop()
     {
-        if (_isClockRegistered) return;
+        if (_isClockRegistered || !IsLoaded) return;
         SharedAnimationClock.Register(this);
         _isClockRegistered = true;
     }
@@ -409,8 +422,8 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
     private void ApplyTextFormatIfNeeded()
     {
+        EnsureTextFormat();
         if (!_textFormatDirty) return;
-        if (_textFormat == null) return;
 
         _textFormat.FontSize = _fontSize;
         _textFormat.FontFamily = _fontFamily;
@@ -433,6 +446,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         if (Foreground is SolidColorBrush colorBrush)
         {
             _textColor = colorBrush.Color;
+            _textBrush?.Dispose();
             _textBrush = null;
         }
         else if (Foreground is LinearGradientBrush linearGradientBrush)
@@ -459,6 +473,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
             if (Application.Current.Resources["TextFillColorPrimaryBrush"] is SolidColorBrush defaultBrush)
             {
                 _textColor = defaultBrush.Color;
+                _textBrush?.Dispose();
                 _textBrush = null;
             }
         }
@@ -487,7 +502,16 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
         if (_staticTextLayout == null) return;
 
-        try { ds.DrawTextLayout(_staticTextLayout, 0, 0, _textColor); }
+        EnsureHoverScroll(sender);
+        var layout = _hoverTextLayout ?? _staticTextLayout;
+        float x = GetHoverOffset();
+        try
+        {
+            if (_textBrush != null)
+                ds.DrawTextLayout(layout, x, 0, _textBrush);
+            else
+                ds.DrawTextLayout(layout, x, 0, _textColor);
+        }
         catch (Exception ex) when (ex is ObjectDisposedException || ex is ArgumentException) { }
     }
 
@@ -673,9 +697,16 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
     #endregion
     public void OnSharedTick(TimeSpan elapsed)
     {
-        // 空闲状态不做任何事，连 Invalidate 也不调用
+        // 空闲状态仅在悬停滚动期间重绘。
         if (_currentState == AnimatedTextBlockRedrawState.Idle)
+        {
+            if (_hoverTextLayout != null)
+            {
+                _hoverElapsed += elapsed.TotalSeconds;
+                _canvas?.Invalidate();
+            }
             return;
+        }
 
         _totalAnimationTime += elapsed;
 
@@ -704,6 +735,8 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
     }
     private void SetRedrawState(AnimatedTextBlockRedrawState state, bool fireEvent = true)
     {
+        if (state != AnimatedTextBlockRedrawState.Idle)
+            StopHoverScroll();
         _currentState = state;
 
         switch (state)

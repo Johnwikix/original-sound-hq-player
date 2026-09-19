@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-09-19 AnimatedTextBlock 自动测量与悬停滚动
+
+- `External/AnimatedWin2dControls/.../AnimatedTextBlock`：按 Win2D 文字布局测量自身尺寸，统一依赖属性变更处理，恢复卸载后重新加载的资源与事件。
+- `External/AnimatedWin2dControls/.../AnimatedTextBlock`：新增 `IsHoverScrollEnabled`（默认关闭），单行横排文字实际截断时悬停往返滚动；切换动画优先，移出、文字/格式/尺寸变化及卸载时复位。
+- `View/PlayingDetailPage.xaml`：启用动画文字悬停滚动，普通文字分支改为 Collapsed，不再用透明文字撑高。
+
 ## 2026-09-18 外部文件路径匹配库内条目时直接按库内曲目播放
 
 - `Services/MusicDatabaseService.cs`：新增 `FindMusicByPathAsync`——按路径 NOCASE 匹配库内条目（走 `IX_Music_Path_NoCase` 索引）返回完整 Music；数据库在引擎就绪前必已初始化，无需新增启动顺序

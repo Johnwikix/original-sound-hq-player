@@ -24,6 +24,7 @@
                     <Border
                         x:Name="ContentBorder"
                         Background="{TemplateBinding Background}"
+                        Padding="{TemplateBinding Padding}"
                         BorderBrush="{TemplateBinding BorderBrush}"
                         BorderThickness="{TemplateBinding BorderThickness}">
                         <canvas:CanvasControl
