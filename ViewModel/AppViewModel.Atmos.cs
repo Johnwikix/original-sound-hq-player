@@ -54,7 +54,7 @@ public partial class AppViewModel
             _ => "AtmosWaiting"
         });
         string reason = AtmosText.Failure(state.AtmosReason);
-        if (reason.Length != 0) text += Environment.NewLine + reason;
+        if (reason.Length != 0) text += " " + reason;
         if (AtmosStatusText == text) return;
         AtmosStatusText = text;
         OnPropertyChanged(nameof(AtmosStatusText));

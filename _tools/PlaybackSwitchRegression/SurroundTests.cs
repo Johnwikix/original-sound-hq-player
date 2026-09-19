@@ -42,8 +42,8 @@ internal static unsafe partial class Program
                         engine.ExperimentalSurround51 = enabled;
                         using var session = (Session?)Invoke(engine, "OpenSession", path, false, null);
                         bool shared = mode is "WasapiShared" or "DirectSound";
-                        Require(session != null && session.Channels == (shared ? 2 : 6), "existing channel policy changed");
-                        Require(session!.ChannelMask == (enabled && !shared ? mask : 0), "experiment escaped output scope");
+                        Require(session != null && session.Channels == (shared && !enabled ? 2 : 6), "existing channel policy changed");
+                        Require(session!.ChannelMask == (enabled ? mask : 0), "experiment escaped output scope");
                         CheckProgress(session);
                     });
             }
@@ -139,15 +139,15 @@ internal static unsafe partial class Program
         public void FillDsdBytes(Span<byte> buffer, int frames) => throw new NotSupportedException();
     }
 
-    private static void WriteSurroundWave(string path, uint mask)
+    private static void WriteSurroundWave(string path, uint mask, int channels = 6)
     {
-        const int dataBytes = 48000 * 6 * 2;
+        int dataBytes = 48000 * channels * 2;
         using var writer = new BinaryWriter(File.Create(path));
         writer.Write("RIFF"u8); writer.Write(60 + dataBytes); writer.Write("WAVEfmt "u8);
-        writer.Write(40); writer.Write((ushort)0xFFFE); writer.Write((ushort)6);
-        writer.Write(48000); writer.Write(48000 * 12); writer.Write((ushort)12); writer.Write((ushort)16);
+        writer.Write(40); writer.Write((ushort)0xFFFE); writer.Write((ushort)channels);
+        writer.Write(48000); writer.Write(48000 * channels * 2); writer.Write((ushort)(channels * 2)); writer.Write((ushort)16);
         writer.Write((ushort)22); writer.Write((ushort)16); writer.Write(mask);
         writer.Write(SubFormats.Pcm.ToByteArray()); writer.Write("data"u8); writer.Write(dataBytes);
-        for (int f = 0; f < 48000; f++) for (int ch = 0; ch < 6; ch++) writer.Write((short)((ch + 1) * 1000));
+        for (int f = 0; f < 48000; f++) for (int ch = 0; ch < channels; ch++) writer.Write((short)((ch + 1) * 1000));
     }
 }

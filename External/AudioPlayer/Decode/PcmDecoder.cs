@@ -45,7 +45,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
 
     /// <param name="forceRate">强制输出采样率（独占/ASIO 回退共享时按混音率）；null = 源率。</param>
     /// <param name="forceChannels">强制输出声道数；null = 源声道数（受 maxChannels 上限约束）。</param>
-    /// <param name="maxChannels">声道上限（共享直传时压到 2：EQ 仅处理 ≤2 声道，多声道由 swresample 下混）。</param>
+    /// <param name="maxChannels">普通路径的声道上限；显式启用且识别出 5.1 时保留六声道，供自动独占输出。</param>
     public bool Open(string path, int dsdPcmFreq, int dsdGainDb, int? forceRate = null, int? forceChannels = null,
         int? maxChannels = null, bool experimentalSurround51 = false)
     {
@@ -79,7 +79,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
             // WAV/PCM 解码器常给 UNSPEC 布局，swr 需规范化（转换器同款注释）
             int channels = Math.Max(1, _dec->ch_layout.nb_channels);
             bool surround51 = experimentalSurround51 && !_dsdSource && channels == 6
-                && forceChannels == null && maxChannels == null
+                && forceChannels == null
                 && _dec->ch_layout.order == AVChannelOrder.AV_CHANNEL_ORDER_NATIVE
                 && _dec->ch_layout.u.mask is 0x3FUL or 0x60FUL;
             ChannelMask = surround51 ? (uint)_dec->ch_layout.u.mask : 0;
@@ -91,7 +91,8 @@ internal sealed unsafe class PcmDecoder : IDisposable
 
             int inRate = _dec->sample_rate != 0 ? _dec->sample_rate : 48000;
             SampleRate = forceRate ?? (_dsdSource && dsdPcmFreq > 0 ? dsdPcmFreq : inRate);
-            Channels = forceChannels ?? (maxChannels is > 0 ? Math.Min(channels, maxChannels.Value) : channels);
+            // A recognized 5.1 layout opts into automatic exclusive output; other layouts keep the ordinary channel limit.
+            Channels = surround51 ? 6 : forceChannels ?? (maxChannels is > 0 ? Math.Min(channels, maxChannels.Value) : channels);
 
             AVChannelLayout outLayout = default;
             if (surround51) ffmpeg.av_channel_layout_copy(&outLayout, &_dec->ch_layout);

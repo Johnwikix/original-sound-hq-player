@@ -69,6 +69,7 @@ internal static unsafe partial class Program
         RunExportTests(Path.Combine(root, "_tools", "test_tone.wav"));
         WriteDsfFixture();
         RunSurroundTests(root);
+        RunAutomaticSurroundTests(root);
         RunAtmosTests(root);
         RunAtmosAutomaticTests(root);
         RunProgressTests();

@@ -144,8 +144,8 @@ public sealed partial class PlaybackEngine : IDisposable
             : RenderKind.Pcm);
 
     /// <summary>软件增益的稳态目标：WasapiShared 的音量由会话音量承担（SetSessionVolume），
-    /// 增益只承担淡入淡出形状，稳态必须回 1 否则音量被乘两次；其余模式增益即音量。</summary>
-    private float GainVolumeTarget => OutputMode == "WasapiShared" ? 1f : Volume;
+    /// 增益只承担淡入淡出形状，稳态必须回 1 否则音量被乘两次；自动 5.1 独占及其余模式使用软件音量。</summary>
+    private float GainVolumeTarget => OutputMode == "WasapiShared" && !IsSurroundSession(_session) ? 1f : Volume;
 
     // ─────────────── 播放控制（IPC 面） ───────────────
 
@@ -172,6 +172,7 @@ public sealed partial class PlaybackEngine : IDisposable
         Interlocked.Increment(ref _playGen);
         _recovery = null;
         ResetAtmosAttempt();
+        ResetSurroundAttempt();
         var next = OpenSession(musicUrl); // 先开新会话：复用时旧会话须存活到源替换完成
         if (next != null && TryReuseExclusiveOutput(next))
         {
@@ -193,6 +194,7 @@ public sealed partial class PlaybackEngine : IDisposable
         Interlocked.Increment(ref _playGen);
         _recovery = null;
         ResetAtmosAttempt();
+        ResetSurroundAttempt();
         var next = OpenSession(url);
         if (next != null && TryReuseExclusiveOutput(next))
         {
@@ -215,7 +217,8 @@ public sealed partial class PlaybackEngine : IDisposable
     /// </summary>
     private bool TryReuseExclusiveOutput(Session next)
     {
-        if (IsSharedMode(OutputMode) || next.Kind != RenderKind.Pcm) return false;
+        bool surround = IsSurroundSession(next);
+        if ((IsSharedMode(OutputMode) && !surround) || next.Kind != RenderKind.Pcm) return false;
         if (OutputMode == "ASIO" && _output is AsioOutput asio && !asio.IsFailed)
         {
             if (asio.SourceKind != RenderKind.Pcm) return false;
@@ -223,19 +226,27 @@ public sealed partial class PlaybackEngine : IDisposable
             next.ConfigureDsp(ResolveDsp(asio.DeviceId));
             return asio.AttachSource(next);
         }
-        if (OutputMode is "WasapiExclusivePush" or "WasapiExclusiveEvent"
+        if ((OutputMode is "WasapiExclusivePush" or "WasapiExclusiveEvent" || (surround && OutputMode != "ASIO"))
             && _output is WasapiOutput wasapi && wasapi.IsExclusive && !wasapi.IsFailed)
         {
             if (wasapi.SourceKind != RenderKind.Pcm) return false;
             if (wasapi.IsPushMode != (OutputMode == "WasapiExclusivePush")) return false;
-            if (wasapi.DeviceIndex != BassOutputDeviceId) return false;
-            if (!string.IsNullOrEmpty(WasapiEndpointId) && !string.Equals(wasapi.DeviceId, WasapiEndpointId, StringComparison.OrdinalIgnoreCase)) return false;
-            // 跟随默认设备的输出：系统默认已变更则不复用（重建时会解析到新默认）
-            if (wasapi.FollowsDefaultDevice && _lastDefaultDeviceId != null
+            string? requestedEndpoint = OutputMode == "DirectSound" ? null : WasapiEndpointId;
+            int requestedIndex = OutputMode == "DirectSound" ? -1 : BassOutputDeviceId;
+            if (!string.IsNullOrEmpty(requestedEndpoint))
+            {
+                if (!string.Equals(wasapi.DeviceId, requestedEndpoint, StringComparison.OrdinalIgnoreCase)) return false;
+            }
+            else if (wasapi.DeviceIndex != requestedIndex) return false;
+            // Automatic exclusive pins a resolved ID, but the preference may still follow default.
+            bool followsDefault = wasapi.FollowsDefaultDevice || (surround && requestedIndex < 0 && string.IsNullOrEmpty(requestedEndpoint));
+            if (followsDefault && _lastDefaultDeviceId != null
                 && !string.Equals(_lastDefaultDeviceId, wasapi.DeviceId ?? "", StringComparison.OrdinalIgnoreCase))
                 return false;
             next.ConfigureDsp(ResolveDsp(wasapi.DeviceId));
-            return wasapi.AttachSource(next);
+            bool attached = wasapi.AttachSource(next);
+            if (attached && IsSurroundSession(next)) _surroundEndpoint = wasapi.DeviceId;
+            return attached;
         }
         return false;
     }
@@ -274,7 +285,7 @@ public sealed partial class PlaybackEngine : IDisposable
 
     private Session? OpenSession(string url, bool forceSharedFormat = false, RenderKind? kindOverride = null)
     {
-        if (ExperimentalAtmosPassthrough && !forceSharedFormat && !_atmosUseSharedPcm
+        if (ExperimentalAtmosPassthrough && !forceSharedFormat && !_atmosUseSharedPcm && !_surroundFallback
             && kindOverride is null or RenderKind.Eac3)
         {
             var encoded = Session.Open(this, url, RenderKind.Eac3, DsdPcmFreq, DsdGain, Latency,
@@ -302,7 +313,7 @@ public sealed partial class PlaybackEngine : IDisposable
         int? forcedRate = null;
         int? forcedChannels = null;
         int? maxChannels = null;
-        if (kind == RenderKind.Pcm && (forceSharedFormat || _atmosUseSharedPcm || IsSharedMode(OutputMode)))
+        if (kind == RenderKind.Pcm && (forceSharedFormat || _atmosUseSharedPcm || _surroundFallback || IsSharedMode(OutputMode)))
         {
             if (forceSharedFormat)
             {
@@ -328,8 +339,7 @@ public sealed partial class PlaybackEngine : IDisposable
                 maxChannels = 2;
             }
         }
-        bool surround51 = ExperimentalSurround51 && !forceSharedFormat && !_atmosUseSharedPcm && kind == RenderKind.Pcm
-            && OutputMode is "ASIO" or "WasapiExclusivePush" or "WasapiExclusiveEvent";
+        bool surround51 = ExperimentalSurround51 && !forceSharedFormat && !_atmosUseSharedPcm && !_surroundFallback && kind == RenderKind.Pcm;
         var session = Session.Open(this, url, kind, DsdPcmFreq, DsdGain, Latency, forcedRate, forcedChannels, maxChannels, surround51);
         if (session != null)
         {
@@ -338,8 +348,9 @@ public sealed partial class PlaybackEngine : IDisposable
                 : ResolveDsp(_output?.DeviceId));
             if (session.Gain != null)
             {
-                session.Gain.SetImmediately(IsFadingEnabled ? 0 : GainVolumeTarget);
-                if (IsFadingEnabled) session.Gain.RampTo(GainVolumeTarget, FadeMs);
+                float gainTarget = OutputMode == "WasapiShared" && !IsSurroundSession(session) ? 1f : Volume;
+                session.Gain.SetImmediately(IsFadingEnabled ? 0 : gainTarget);
+                if (IsFadingEnabled) session.Gain.RampTo(gainTarget, FadeMs);
             }
             if (session.Kind == RenderKind.Pcm)
                 session.Eq.Configure(session.SampleRate, IsEqualizerEnabled, EqGains, EqQ);
@@ -356,8 +367,8 @@ public sealed partial class PlaybackEngine : IDisposable
     // 不缓存混音格式：系统改"输出音频格式"会变更混音格式而设备 ID 不变，陈旧缓存
     // 会让会话按旧率构建、端点按新率初始化 → 速率错配（变声）。每次现查（毫秒级）。
     private WasapiDeviceList.SharedMixFormat? GetEndpointMixFormat(int deviceIndex)
-        => WasapiDeviceList.GetSharedMixFormat(_atmosUseSharedPcm ? -1 : deviceIndex,
-            _atmosUseSharedPcm ? _atmosResolvedEndpoint : OutputMode is "DirectSound" or "ASIO" ? null : WasapiEndpointId).Mix;
+        => WasapiDeviceList.GetSharedMixFormat(_atmosUseSharedPcm || _surroundFallback ? -1 : deviceIndex,
+            _atmosUseSharedPcm ? _atmosResolvedEndpoint : _surroundFallback ? _surroundEndpoint : OutputMode is "DirectSound" or "ASIO" ? null : WasapiEndpointId).Mix;
 
     /// <summary>创建输出并开始播放；首选输出失败回退 WASAPI 共享（对应 bass 回退 DirectSound）。
     /// 播放状态只在变化时通知：静默恢复路径（设备切换/失效重建）不打扰 UI。</summary>
@@ -376,6 +387,11 @@ public sealed partial class PlaybackEngine : IDisposable
             FailAtmosOutput(session);
             return;
         }
+        if (output == null && IsSurroundSession(session))
+        {
+            FailSurroundOutput(session);
+            return;
+        }
         if (output == null && OutputMode == "ASIO" && session.Kind == RenderKind.NativeDsd)
         {
             // ASIO native DSD 协商失败（驱动无 DSD 扩展/采样率域不符）→ 先试 ASIO DoP：
@@ -391,7 +407,7 @@ public sealed partial class PlaybackEngine : IDisposable
                 output = CreateOutput(session);
             }
         }
-        if (output == null && !_atmosUseSharedPcm && !IsSharedMode(OutputMode))
+        if (output == null && !_atmosUseSharedPcm && !_surroundFallback && !IsSharedMode(OutputMode))
         {
             // 独占/ASIO 失败 → 回退共享：会话按混音格式重建（率/声道可能与源不同）
             Console.WriteLine("[engine] primary output failed, fallback to shared");
@@ -406,6 +422,7 @@ public sealed partial class PlaybackEngine : IDisposable
         if (output == null) { StopAndNotifyLocked(); return; }
         _output = output;
         CompleteAtmosStart(true);
+        CompleteSurroundStart(true);
         QueueDspState();
         ApplyEqToSession();
         ApplyVolumeToOutput();
@@ -428,7 +445,8 @@ public sealed partial class PlaybackEngine : IDisposable
     private IAudioOutput? CreateOutput(Session session)
     {
         if (session.Kind == RenderKind.Eac3) return CreateAtmosOutput(session);
-        if (_atmosUseSharedPcm) return CreateSharedOutput(session);
+        if (_atmosUseSharedPcm || (_surroundFallback && OutputMode != "ASIO")) return CreateSharedOutput(session);
+        if (IsSurroundSession(session) && OutputMode != "ASIO") return CreateSurroundOutput(session);
         switch (OutputMode)
         {
             case "WasapiExclusivePush":
@@ -457,9 +475,10 @@ public sealed partial class PlaybackEngine : IDisposable
         try
         {
             if (_atmosUseSharedPcm && string.IsNullOrEmpty(_atmosResolvedEndpoint)) return null;
-            if (_atmosUseSharedPcm) deviceIndex = -1;
+            if (_surroundFallback && string.IsNullOrEmpty(_surroundEndpoint)) return null;
+            if (_atmosUseSharedPcm || _surroundFallback) deviceIndex = -1;
             string? endpointId = _atmosUseSharedPcm ? _atmosResolvedEndpoint
-                : OutputMode is "DirectSound" or "ASIO" ? null : WasapiEndpointId;
+                : _surroundFallback ? _surroundEndpoint : OutputMode is "DirectSound" or "ASIO" ? null : WasapiEndpointId;
             var output = new WasapiOutput(false, false);
             if (output.Start(deviceIndex, Latency, session, OutputMode == "WasapiShared" ? Volume : 1, endpointId,
                 id => PrepareOutputDsp(session, id))) return output;
@@ -735,7 +754,8 @@ public sealed partial class PlaybackEngine : IDisposable
         switch (OutputMode)
         {
             case "WasapiShared":
-                if (output is WasapiOutput shared) shared.SetSessionVolume(Volume);
+                if (output is WasapiOutput { IsExclusive: true }) session.Gain?.RampTo(Volume, 20);
+                else if (output is WasapiOutput shared) shared.SetSessionVolume(Volume);
                 break;
             case "WasapiExclusivePush":
             case "WasapiExclusiveEvent":
@@ -825,6 +845,7 @@ public sealed partial class PlaybackEngine : IDisposable
                 _pauseFadeActive = false;
                 DisposeSession();
                 ResetAtmosAttempt();
+                ResetSurroundAttempt();
                 var url = MusicUrl;
                 if (url == null) { QueueDspState(); return; }
                 SetSession(OpenSession(url));
@@ -981,6 +1002,8 @@ public sealed partial class PlaybackEngine : IDisposable
                 OutputDeviceId = _output is { IsFailed: false } output ? output.DeviceId ?? "" : "",
                 AtmosStatus = !ExperimentalAtmosPassthrough ? AtmosPlaybackStatus.Off
                     : _atmosStatus == AtmosPlaybackStatus.Off ? AtmosPlaybackStatus.Waiting : _atmosStatus,
+                SurroundStatus = GetSurroundStatus(), SurroundFailureSequence = _surroundFailureSequence,
+                SurroundFailureStopped = _surroundFailureStopped,
                 AtmosReason = _atmosReason, AtmosFailureSequence = _atmosFailureSequence,
                 LastAtmosFailure = _lastAtmosFailure, AtmosFailureStopped = _atmosFailureStopped,
                 ActualOutput = _output is { IsFailed: false } ? _output switch
@@ -1036,6 +1059,11 @@ public sealed partial class PlaybackEngine : IDisposable
                 {
                     if (IsPlaying && ReferenceEquals(output, _output) && output.IsFailed)
                     {
+                        if (IsSurroundSession(session) && output is not AsioOutput { IsRestartPending: true })
+                        {
+                            FailSurroundOutput(session);
+                            return;
+                        }
                         if (session.Kind == RenderKind.Eac3)
                         {
                             _atmosReason = AtmosFailure.OutputFailed;
@@ -1128,6 +1156,16 @@ public sealed partial class PlaybackEngine : IDisposable
                 if (!string.Equals(deviceId, wasapi.DeviceId, StringComparison.OrdinalIgnoreCase)) continue;
                 if (kind != EndpointEventKind.StateChanged) relevant = true; // Removed / FormatChanged
             }
+            if (IsSurroundSession(_session) || _surroundFallback)
+            {
+                foreach (var (_, deviceId) in events)
+                    if (string.Equals(deviceId, wasapi.DeviceId, StringComparison.OrdinalIgnoreCase)) relevant = true;
+                bool followsDefault = OutputMode == "DirectSound" || (BassOutputDeviceId < 0 && string.IsNullOrEmpty(WasapiEndpointId));
+                if (followsDefault && defaultId != null
+                    && !string.Equals(defaultId, wasapi.DeviceId, StringComparison.OrdinalIgnoreCase)) relevant = true;
+                if (relevant) StopSurroundForDeviceChange();
+                return;
+            }
             if (_session.Kind == RenderKind.Eac3 || _atmosUseSharedPcm)
             {
                 foreach (var (_, deviceId) in events)
@@ -1174,6 +1212,7 @@ public sealed partial class PlaybackEngine : IDisposable
     /// <summary>停机并如实上报（持锁）：静默恢复穷尽/快速失败抖动后的最终让位。</summary>
     private void StopAndNotifyLocked()
     {
+        CompleteSurroundStart(false);
         CompleteAtmosStart(false);
         try { _output?.Pause(); } catch { }
         if (IsPlaying)

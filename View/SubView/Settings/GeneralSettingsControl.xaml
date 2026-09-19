@@ -106,6 +106,18 @@
                         IsOn="{x:Bind ViewModel.AppViewModel.ExperimentalSurround51, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
+                <controls:SettingsCard ContentAlignment="Right"
+                    Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.ExperimentalSurround51), Mode=OneWay}">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE946;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <controls:SettingsCard.Header>
+                        <TextBlock Text="{x:Bind ViewModel.AppViewModel.SurroundStatusText, Mode=OneWay}" TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <Button Content="{x:Bind tool:ToolUtils.GetString('SurroundUseOrdinary')}"
+                        VerticalAlignment="Center" Command="{x:Bind ViewModel.AppViewModel.UseOrdinarySurroundPlaybackCommand}" />
+                </controls:SettingsCard>
+
                 <controls:SettingsCard
                     Header="{x:Bind tool:ToolUtils.GetString('ExperimentalAtmosTitle'), Mode=OneWay}"
                     Description="{x:Bind ViewModel.AppViewModel.AtmosCardDescription, Mode=OneWay}">
@@ -126,15 +138,17 @@
                         SelectedItem="{x:Bind ViewModel.AppViewModel.SelectedAtmosDevice, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
-                <InfoBar IsClosable="False" Severity="Informational"
-                    IsOpen="{x:Bind ViewModel.AppViewModel.ExperimentalAtmosPassthrough, Mode=OneWay}"
-                    Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.ExperimentalAtmosPassthrough), Mode=OneWay}"
-                    Message="{x:Bind ViewModel.AppViewModel.AtmosStatusText, Mode=OneWay}">
-                    <InfoBar.ActionButton>
-                        <Button Content="{x:Bind tool:ToolUtils.GetString('AtmosUseOrdinary')}"
-                            Command="{x:Bind ViewModel.AppViewModel.UseOrdinaryPlaybackCommand}" />
-                    </InfoBar.ActionButton>
-                </InfoBar>
+                <controls:SettingsCard ContentAlignment="Right"
+                    Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.ExperimentalAtmosPassthrough), Mode=OneWay}">
+                    <controls:SettingsCard.HeaderIcon>
+                        <FontIcon Glyph="&#xE946;" />
+                    </controls:SettingsCard.HeaderIcon>
+                    <controls:SettingsCard.Header>
+                        <TextBlock Text="{x:Bind ViewModel.AppViewModel.AtmosStatusText, Mode=OneWay}" TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <Button Content="{x:Bind tool:ToolUtils.GetString('AtmosUseOrdinary')}"
+                        VerticalAlignment="Center" Command="{x:Bind ViewModel.AppViewModel.UseOrdinaryPlaybackCommand}" />
+                </controls:SettingsCard>
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>

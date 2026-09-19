@@ -1840,7 +1840,7 @@
     <value>実験的な 5.1 出力</value>
   </data>
   <data name="ExperimentalSurround51Description" xml:space="preserve">
-    <value>既定はオフ。ASIO / WASAPI 排他の 5.1 PCM のみ（Atmos 非対応）。ASIO 出力 1～6 は左、右、中央、LFE、左サラウンド、右サラウンドの順。</value>
+    <value>対応する 5.1 PCM 曲は WASAPI 排他へ自動切替。他の曲は元の出力設定を使用します。ASIO は元のモードを維持し、先頭 6 出力は L、R、C、LFE、Ls、Rs が必要です。失敗時はステレオへ戻ります。Atmos オブジェクト描画は含みません。</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
     <value>Atmos HDMI パススルーを優先（試験的）</value>
@@ -1980,6 +1980,30 @@
     <value>対応曲のパススルーと PCM フォールバックにのみ適用。表示機器の Atmos 対応は再生時に確認します。他の機器へ自動変更しません。</value>
   </data>
   <data name="AtmosUseOrdinary" xml:space="preserve">
-    <value>パススルーをオフにして通常再生に戻す</value>
+    <value>通常再生に戻す</value>
+  </data>
+  <data name="SurroundUseOrdinary" xml:space="preserve">
+    <value>5.1 をオフにする</value>
+  </data>
+  <data name="SurroundNotificationTitle" xml:space="preserve">
+    <value>5.1 出力</value>
+  </data>
+  <data name="SurroundWaiting" xml:space="preserve">
+    <value>対応する 5.1 PCM 曲を待機中。他の曲は通常の出力を使用します。</value>
+  </data>
+  <data name="SurroundReady" xml:space="preserve">
+    <value>5.1 曲の準備完了。再開時に排他または ASIO 出力を確認します。</value>
+  </data>
+  <data name="SurroundActive" xml:space="preserve">
+    <value>5.1 PCM 出力確立。音量と対応する音響効果を利用できます。</value>
+  </data>
+  <data name="SurroundFallback" xml:space="preserve">
+    <value>5.1 出力に失敗したため、同じ機器で通常の PCM に戻りました。</value>
+  </data>
+  <data name="SurroundStopped" xml:space="preserve">
+    <value>5.1 出力に失敗したか機器が変更されたため停止しました。出力機器を確認してください。</value>
+  </data>
+  <data name="SurroundOff" xml:space="preserve">
+    <value>5.1 自動出力はオフです。</value>
   </data>
 </root>

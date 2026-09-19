@@ -1051,7 +1051,7 @@ namespace WinUIMusicPlayer.ViewModel
             get => field;
             set
             {
-                if (!Surround51Allowed)
+                if (value && !Surround51Allowed)
                 {
                     OnPropertyChanged(nameof(ExperimentalSurround51));
                     return;

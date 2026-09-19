@@ -435,6 +435,25 @@ internal sealed class WasapiDeviceList
         finally { Marshal.Release(enumPtr); if (apartment >= 0) Win32.CoUninitialize(); }
     }
 
+    /// <summary>Resolve an output once for automatic exclusive/PCM fallback. An invalid explicit index never falls back to default.</summary>
+    public static string? ResolveStableDeviceId(int index, string? endpointId)
+    {
+        if (string.IsNullOrEmpty(endpointId) && index >= 0)
+        {
+            endpointId = Enumerate().Devices.Find(d => d.Index == index)?.Id;
+            if (string.IsNullOrEmpty(endpointId)) return null;
+        }
+        int apartment = Win32.CoInitializeEx(IntPtr.Zero, Win32.COINIT_MULTITHREADED);
+        try
+        {
+            IntPtr device = ResolveDevicePtr(-1, out _, endpointId);
+            if (device == IntPtr.Zero) return null;
+            try { return GetDeviceIdRaw(device); }
+            finally { Marshal.Release(device); }
+        }
+        finally { if (apartment >= 0) Win32.CoUninitialize(); }
+    }
+
     /// <summary>共享模式端点混音格式摘要。</summary>
     public sealed record SharedMixFormat(int SampleRate, int Channels, int BitsPerSample, bool IsFloat);
 

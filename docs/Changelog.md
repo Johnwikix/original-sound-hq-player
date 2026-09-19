@@ -2,6 +2,14 @@
 
 新条目加在最上方。
 
+## 2026-09-19 5.1 自动独占与输出状态布局调整
+
+- `External/AudioPlayer/Playback/PlaybackEngine.Surround.cs`、`PlaybackEngine.cs`、`Decode/PcmDecoder.cs`：共享偏好下仅兼容 5.1 PCM 曲目自动切独占，保留音量和静音；ASIO 保持原模式，失败在同设备回退普通 PCM，设备变化暂停，普通曲目恢复原输出偏好；Atmos 优先且回退不触发二次独占。
+- `External/AudioPlayer/Interop/WasapiInterop.cs`：Atmos 与 5.1 共用稳定端点解析，显式设备失效时不改用默认扬声器。
+- `External/BassPlayerIpc.Shared`、`Services/IpcService.Atmos.cs`、`ViewModel/AppViewModel.Surround.cs`：发布 5.1 实际状态并复用统一失败系统通知；DSP 状态邮箱升级为 v8，主程序与 `Player/AudioPlayer.exe` 配套更新。
+- `View/SubView/Settings/GeneralSettingsControl.xaml`、`ViewModel/AppViewModel.Atmos.cs`、`Strings/*/Resources.resw`：去掉 Atmos 状态文案的强制换行，状态文字与操作按钮左右排列，窄窗口自然折行；增加 5.1 状态与关闭入口，补齐六种语言。
+- 验证：播放回归包含自动切换、音量/静音、暂停保进度、同设备回退、无效端点、ASIO 及 Atmos 组合；WinUI 构建与资源键静态校验。真实六声道出声、通知横幅及新布局实机视觉尚未验证。
+
 ## 2026-09-19 Atmos 自动独占直通与统一系统通知
 
 - `External/AudioPlayer/Playback/PlaybackEngine.Atmos.cs`、`PlaybackEngine.cs`、`Interop/WasapiOutput.cs`：兼容曲目临时使用 WASAPI 独占，保留普通输出偏好；固定目标端点协商格式，失败保进度回退同设备 PCM，断开设备暂停，避免重复抢占；能力查询与初始化共用超时及资源收尾。

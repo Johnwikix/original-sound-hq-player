@@ -1840,7 +1840,7 @@
     <value>Experimentelle 5.1-Ausgabe</value>
   </data>
   <data name="ExperimentalSurround51Description" xml:space="preserve">
-    <value>Standardmäßig aus. Nur 5.1-PCM über ASIO / WASAPI exklusiv, kein Atmos. ASIO-Ausgänge 1–6: L, R, C, LFE, Surround L, Surround R.</value>
+    <value>Kompatible 5.1-PCM-Titel nutzen automatisch WASAPI exklusiv; andere behalten die Ausgabeeinstellungen. ASIO bleibt im ASIO-Modus (L, R, C, LFE, Ls, Rs auf den ersten sechs Ausgängen). Bei Fehlern Stereo. Kein Atmos-Objektrendering.</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
     <value>Atmos-HDMI-Passthrough bevorzugen (experimentell)</value>
@@ -1980,6 +1980,30 @@
     <value>Nur für kompatible Titel und deren PCM-Rückfall. Die Liste bestätigt keine Atmos-Unterstützung; Prüfung bei Wiedergabe. Kein automatischer Wechsel zu anderen Geräten.</value>
   </data>
   <data name="AtmosUseOrdinary" xml:space="preserve">
-    <value>Passthrough ausschalten, normal wiedergeben</value>
+    <value>Normal wiedergeben</value>
+  </data>
+  <data name="SurroundUseOrdinary" xml:space="preserve">
+    <value>5.1 ausschalten</value>
+  </data>
+  <data name="SurroundNotificationTitle" xml:space="preserve">
+    <value>5.1-Ausgabe</value>
+  </data>
+  <data name="SurroundWaiting" xml:space="preserve">
+    <value>Warten auf einen kompatiblen 5.1-PCM-Titel; andere nutzen die übliche Ausgabe.</value>
+  </data>
+  <data name="SurroundReady" xml:space="preserve">
+    <value>5.1-Titel bereit; Exklusiv- oder ASIO-Ausgabe beim Fortsetzen.</value>
+  </data>
+  <data name="SurroundActive" xml:space="preserve">
+    <value>5.1-PCM-Ausgabe aktiv; Lautstärke und kompatible Effekte bleiben verfügbar.</value>
+  </data>
+  <data name="SurroundFallback" xml:space="preserve">
+    <value>5.1-Ausgabe fehlgeschlagen; normale PCM-Wiedergabe auf demselben Gerät.</value>
+  </data>
+  <data name="SurroundStopped" xml:space="preserve">
+    <value>5.1-Ausgabe fehlgeschlagen oder Gerät geändert. Wiedergabe gestoppt; Ausgabegerät prüfen.</value>
+  </data>
+  <data name="SurroundOff" xml:space="preserve">
+    <value>Automatische 5.1-Ausgabe ist aus.</value>
   </data>
 </root>

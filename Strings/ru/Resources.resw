@@ -1840,7 +1840,7 @@
     <value>Экспериментальный вывод 5.1</value>
   </data>
   <data name="ExperimentalSurround51Description" xml:space="preserve">
-    <value>По умолчанию выключен. Только PCM 5.1 через ASIO / WASAPI Exclusive, без Atmos. Выходы ASIO 1–6: L, R, C, LFE, Surround L, Surround R.</value>
+    <value>Совместимые треки PCM 5.1 автоматически используют WASAPI Exclusive; остальные сохраняют обычные настройки. ASIO сохраняет свой режим: первые шесть выходов L, R, C, LFE, Ls, Rs. При ошибке используется стерео. Без рендеринга объектов Atmos.</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
     <value>Предпочитать Atmos по HDMI (экспериментально)</value>
@@ -1980,6 +1980,30 @@
     <value>Только для совместимых треков и их резервного вывода PCM. Список не подтверждает поддержку Atmos; проверка выполняется при воспроизведении. Другие устройства автоматически не выбираются.</value>
   </data>
   <data name="AtmosUseOrdinary" xml:space="preserve">
-    <value>Выключить прямой вывод и вернуться к обычному воспроизведению</value>
+    <value>Обычное воспроизведение</value>
+  </data>
+  <data name="SurroundUseOrdinary" xml:space="preserve">
+    <value>Выключить 5.1</value>
+  </data>
+  <data name="SurroundNotificationTitle" xml:space="preserve">
+    <value>Вывод 5.1</value>
+  </data>
+  <data name="SurroundWaiting" xml:space="preserve">
+    <value>Ожидание совместимого трека PCM 5.1; остальные используют обычный вывод.</value>
+  </data>
+  <data name="SurroundReady" xml:space="preserve">
+    <value>Трек 5.1 готов; эксклюзивный вывод или ASIO проверяется при возобновлении.</value>
+  </data>
+  <data name="SurroundActive" xml:space="preserve">
+    <value>Вывод PCM 5.1 установлен; громкость и совместимые эффекты доступны.</value>
+  </data>
+  <data name="SurroundFallback" xml:space="preserve">
+    <value>Ошибка вывода 5.1; используется обычный PCM на том же устройстве.</value>
+  </data>
+  <data name="SurroundStopped" xml:space="preserve">
+    <value>Ошибка вывода 5.1 или изменение устройства. Воспроизведение остановлено; проверьте устройство.</value>
+  </data>
+  <data name="SurroundOff" xml:space="preserve">
+    <value>Автоматический вывод 5.1 выключен.</value>
   </data>
 </root>

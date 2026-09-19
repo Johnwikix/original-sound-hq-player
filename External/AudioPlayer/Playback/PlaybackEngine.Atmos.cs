@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using AudioPlayer.Interop;
 using BassPlayerIpc.Shared;
 
@@ -36,25 +35,7 @@ public sealed partial class PlaybackEngine
             string? requested = !string.IsNullOrEmpty(AtmosEndpointId) ? AtmosEndpointId
                 : OutputMode == "DirectSound" ? null : WasapiEndpointId;
             int index = !string.IsNullOrEmpty(requested) || OutputMode is "DirectSound" or "ASIO" ? -1 : BassOutputDeviceId;
-            // Legacy indices must resolve to a real entry, not ResolveDevicePtr's default fallback.
-            if (string.IsNullOrEmpty(requested) && index >= 0)
-                requested = WasapiDeviceList.Enumerate().Devices.Find(d => d.Index == index)?.Id;
-            if (index >= 0 && string.IsNullOrEmpty(requested))
-            {
-                _atmosReason = AtmosFailure.DeviceUnavailable;
-                return false;
-            }
-            int apartment = Win32.CoInitializeEx(IntPtr.Zero, Win32.COINIT_MULTITHREADED);
-            try
-            {
-                IntPtr device = WasapiDeviceList.ResolveDevicePtr(-1, out _, requested);
-                if (device != IntPtr.Zero)
-                {
-                    try { _atmosResolvedEndpoint = WasapiDeviceList.GetDeviceIdRaw(device); }
-                    finally { Marshal.Release(device); }
-                }
-            }
-            finally { if (apartment >= 0) Win32.CoUninitialize(); }
+            _atmosResolvedEndpoint = WasapiDeviceList.ResolveStableDeviceId(index, requested);
         }
         if (string.IsNullOrEmpty(_atmosResolvedEndpoint))
         {

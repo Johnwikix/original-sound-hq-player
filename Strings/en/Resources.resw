@@ -1843,7 +1843,7 @@
     <value>Experimental 5.1 output</value>
   </data>
   <data name="ExperimentalSurround51Description" xml:space="preserve">
-    <value>Off by default. 5.1 PCM via ASIO / WASAPI exclusive only; no Atmos. ASIO outputs 1–6 must be L, R, C, LFE, surround L, surround R.</value>
+    <value>Compatible 5.1 PCM tracks automatically use WASAPI exclusive; other tracks keep your output settings. ASIO stays in ASIO mode with L, R, C, LFE, Ls, Rs on its first six outputs. Failure falls back to stereo. No Atmos object rendering.</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
     <value>Prefer Atmos HDMI passthrough (experimental)</value>
@@ -1980,6 +1980,30 @@
     <value>Used only for compatible tracks and their PCM fallback. Listed devices are not certified for Atmos; capability is checked at playback. Other devices are never selected automatically.</value>
   </data>
   <data name="AtmosUseOrdinary" xml:space="preserve">
-    <value>Turn off passthrough and restore normal playback</value>
+    <value>Use normal playback</value>
+  </data>
+  <data name="SurroundUseOrdinary" xml:space="preserve">
+    <value>Turn off 5.1</value>
+  </data>
+  <data name="SurroundNotificationTitle" xml:space="preserve">
+    <value>5.1 output</value>
+  </data>
+  <data name="SurroundWaiting" xml:space="preserve">
+    <value>Waiting for a compatible 5.1 PCM track; other tracks use your usual output.</value>
+  </data>
+  <data name="SurroundReady" xml:space="preserve">
+    <value>5.1 track ready; exclusive or ASIO output is negotiated on resume.</value>
+  </data>
+  <data name="SurroundActive" xml:space="preserve">
+    <value>5.1 PCM output established; volume and compatible effects remain available.</value>
+  </data>
+  <data name="SurroundFallback" xml:space="preserve">
+    <value>5.1 output failed; using ordinary PCM on the same device.</value>
+  </data>
+  <data name="SurroundStopped" xml:space="preserve">
+    <value>5.1 output failed or the device changed. Playback stopped; check the output device.</value>
+  </data>
+  <data name="SurroundOff" xml:space="preserve">
+    <value>Automatic 5.1 output is off.</value>
   </data>
 </root>

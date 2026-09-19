@@ -1842,7 +1842,7 @@
     <value>实验性 5.1 输出</value>
   </data>
   <data name="ExperimentalSurround51Description" xml:space="preserve">
-    <value>默认关闭，仅用于 ASIO / WASAPI 独占的 5.1 PCM，不含 Atmos。ASIO 前六路须为左、右、中置、低音、左环绕、右环绕。</value>
+    <value>兼容的 5.1 PCM 曲目自动使用 WASAPI 独占，普通曲目保留原输出设置。ASIO 保持原模式，前六路须为左、右、中置、低音、左环绕、右环绕；失败回退立体声。不含 Atmos 对象渲染。</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
     <value>优先 Atmos HDMI 直通（实验性）</value>
@@ -1979,6 +1979,30 @@
     <value>只影响兼容曲目的直通及失败回退。列表不代表设备已通过 Atmos 验证；播放时检测，不自动改选其他设备。</value>
   </data>
   <data name="AtmosUseOrdinary" xml:space="preserve">
-    <value>关闭直通，恢复普通播放</value>
+    <value>恢复普通播放</value>
+  </data>
+  <data name="SurroundUseOrdinary" xml:space="preserve">
+    <value>关闭 5.1，恢复普通播放</value>
+  </data>
+  <data name="SurroundNotificationTitle" xml:space="preserve">
+    <value>5.1 输出提示</value>
+  </data>
+  <data name="SurroundWaiting" xml:space="preserve">
+    <value>等待兼容的 5.1 PCM 曲目；其他曲目使用原输出设置。</value>
+  </data>
+  <data name="SurroundReady" xml:space="preserve">
+    <value>5.1 曲目已准备；恢复播放时协商独占或 ASIO 输出。</value>
+  </data>
+  <data name="SurroundActive" xml:space="preserve">
+    <value>5.1 PCM 输出已建立；音量和兼容音效仍可使用。</value>
+  </data>
+  <data name="SurroundFallback" xml:space="preserve">
+    <value>5.1 输出失败，已在同一设备回退普通 PCM 播放。</value>
+  </data>
+  <data name="SurroundStopped" xml:space="preserve">
+    <value>5.1 输出失败或设备已变化，播放已停止；请检查输出设备。</value>
+  </data>
+  <data name="SurroundOff" xml:space="preserve">
+    <value>5.1 自动输出已关闭。</value>
   </data>
 </root>

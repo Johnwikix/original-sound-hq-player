@@ -8,7 +8,9 @@ seek/EOF 与默认关闭、共享输出临时切独占、ASIO 显式设备隔离
 没有真实 HDMI/Atmos 设备出声验证。
 
 `SurroundTests` 覆盖实验性 5.1 开关隔离、侧/后环绕布局、WASAPI 格式、ASIO 路由、
-通道不足和复用边界；不依赖真实声卡。`ProgressTests` 覆盖最新快照跨进程一致性、
+通道不足和复用边界；不依赖真实声卡。`AutomaticSurroundTests` 验证共享偏好下自动独占、
+PCM 音量/静音、暂停切换、失败立体声回退、未知布局下混、真实 Windows 无效端点、
+IPC v7/v8 兼容、ASIO 模式保留与 Atmos 优先级。`ProgressTests` 覆盖最新快照跨进程一致性、
 时间戳外推、过期快照、连续 seek 确认、暂停/换曲及旧协议兼容。
 仅运行进度测试：`dotnet run --project _tools/PlaybackSwitchRegression -- --test-progress`。
 

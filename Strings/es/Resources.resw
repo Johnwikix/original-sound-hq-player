@@ -1840,7 +1840,7 @@
     <value>Salida 5.1 experimental</value>
   </data>
   <data name="ExperimentalSurround51Description" xml:space="preserve">
-    <value>Desactivada por defecto. Solo PCM 5.1 con ASIO / WASAPI exclusivo, sin Atmos. Salidas ASIO 1–6: L, R, C, LFE, surround L, surround R.</value>
+    <value>Las pistas PCM 5.1 compatibles usan WASAPI exclusivo automáticamente; las demás conservan la salida habitual. ASIO mantiene su modo con L, R, C, LFE, Ls, Rs en las primeras seis salidas. Si falla, se usa estéreo. Sin renderizado de objetos Atmos.</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
     <value>Preferir paso directo Atmos por HDMI (experimental)</value>
@@ -1980,6 +1980,30 @@
     <value>Solo para pistas compatibles y su alternativa PCM. La lista no certifica Atmos; se comprueba al reproducir. No se cambia de dispositivo automáticamente.</value>
   </data>
   <data name="AtmosUseOrdinary" xml:space="preserve">
-    <value>Desactivar paso directo y volver a reproducción normal</value>
+    <value>Reproducción normal</value>
+  </data>
+  <data name="SurroundUseOrdinary" xml:space="preserve">
+    <value>Desactivar 5.1</value>
+  </data>
+  <data name="SurroundNotificationTitle" xml:space="preserve">
+    <value>Salida 5.1</value>
+  </data>
+  <data name="SurroundWaiting" xml:space="preserve">
+    <value>Esperando una pista PCM 5.1 compatible; las demás usan la salida habitual.</value>
+  </data>
+  <data name="SurroundReady" xml:space="preserve">
+    <value>Pista 5.1 lista; se negociará salida exclusiva o ASIO al reanudar.</value>
+  </data>
+  <data name="SurroundActive" xml:space="preserve">
+    <value>Salida PCM 5.1 establecida; el volumen y los efectos compatibles siguen disponibles.</value>
+  </data>
+  <data name="SurroundFallback" xml:space="preserve">
+    <value>Falló la salida 5.1; se usa PCM normal en el mismo dispositivo.</value>
+  </data>
+  <data name="SurroundStopped" xml:space="preserve">
+    <value>Falló la salida 5.1 o cambió el dispositivo. Reproducción detenida; compruebe la salida.</value>
+  </data>
+  <data name="SurroundOff" xml:space="preserve">
+    <value>Salida 5.1 automática desactivada.</value>
   </data>
 </root>
