@@ -32,8 +32,6 @@ namespace WinUIMusicPlayer.View
     public sealed partial class PlayingDetailPage : Page, IDisposable
     {
         public PlayingDetailViewModel ViewModel { get; }
-        // Stable line boxes across Latin/CJK fallback fonts, including the two-line metadata.
-        public static double GetAnimatedLineHeight(double fontSize) => Math.Ceiling(fontSize * 1.4);
         private ILogger<PlayingDetailPage> _logger;
         private float _dpiScale = 1.0f;
         private bool _isPortraitLayout;
@@ -73,9 +71,7 @@ namespace WinUIMusicPlayer.View
                     AnimatedTextEffect.TextZoomEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextZoomEffect(),
                     _ => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextDefaultEffect()
                 };
-                var effect = CreateEffect(effectType);
-                AnimatedPlayingDetailTitleTextBlock?.TextEffect = effect;
-                AnimatedPlayingDetailAlbumArtistTextBlock?.TextEffect = effect;
+                AnimatedPlayingDetailTextBlock?.TextEffect = CreateEffect(effectType);
             }
             App.MainWindow.SizeChanged += MainWindow_SizeChanged;
             App.MainWindow.AppWindow.Changed += AppWindow_Changed;

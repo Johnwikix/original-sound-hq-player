@@ -1,0 +1,22 @@
+<Page
+    x:Class="AnimatedTextRegression.DocumentLayoutRegressionPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:AnimatedTextRegression"
+    xmlns:atb="using:AnimatedWin2dControls.Controls.AnimatedTextBlock">
+    <Grid Background="#223344">
+        <Grid ColumnDefinitions="*,*">
+            <Grid ColumnDefinitions="*,4*,*" RowDefinitions="*,6*,Auto,50,*">
+                <Border Grid.Row="1" Grid.Column="1" Margin="20" Background="#445566" />
+                <Grid Grid.Row="2" Grid.Column="1" Margin="20,0,20,0" RowDefinitions="Auto,Auto,Auto">
+                    <atb:AnimatedTextBlock x:Name="CombinedText" Grid.RowSpan="2" Margin="0,0,0,1"
+                        x:Load="{x:Bind ViewModel.Enabled, Mode=OneTime}"
+                        Document="{x:Bind local:DocumentLayoutRegressionPage.CreateDocument(ViewModel.Title, ViewModel.Info, ViewModel.TitleFontSize, ViewModel.InfoFontSize), Mode=OneWay}"
+                        IsHoverScrollEnabled="{x:Bind ViewModel.HoverEnabled, Mode=OneWay}"
+                        Foreground="White" TextAlignment="Center" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" />
+                    <TextBlock Grid.Row="2" Text="FLAC 24-bit" HorizontalAlignment="Center" Foreground="White" />
+                </Grid>
+            </Grid>
+        </Grid>
+    </Grid>
+</Page>

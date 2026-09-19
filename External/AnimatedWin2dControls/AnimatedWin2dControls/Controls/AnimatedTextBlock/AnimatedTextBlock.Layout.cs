@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
+using System.Collections.Generic;
 using Windows.Foundation;
 
 namespace AnimatedWin2dControls.Controls.AnimatedTextBlock;
@@ -17,11 +18,12 @@ public sealed partial class AnimatedTextBlock
     private bool _hoverChecked;
     private HoverLine[] _hoverLines;
 
-    private readonly struct HoverLine(CanvasTextLayout layout, float y, float distance)
+    private readonly struct HoverLine(CanvasTextLayout layout, float y, float distance, float opacity)
     {
         public CanvasTextLayout Layout { get; } = layout;
         public float Y { get; } = y;
         public float Distance { get; } = distance;
+        public float Opacity { get; } = opacity;
     }
     private double _hoverElapsed;
 
@@ -35,6 +37,12 @@ public sealed partial class AnimatedTextBlock
         double insetHeight = Padding.Top + Padding.Bottom + BorderThickness.Top + BorderThickness.Bottom;
         float width = double.IsPositiveInfinity(availableSize.Width)
             ? float.MaxValue : (float)Math.Max(0, availableSize.Width - insetWidth);
+        if (Document != null)
+        {
+            var size = MeasureDocument(width);
+            return new Size(Math.Min(availableSize.Width, size.Width + insetWidth),
+                Math.Min(availableSize.Height, size.Height + insetHeight));
+        }
         using var layout = new CanvasTextLayout(CanvasDevice.GetSharedDevice(), Text ?? string.Empty,
             _textFormat, width, float.MaxValue);
         layout.TrimmingGranularity = CanvasTextTrimmingGranularity.None;
@@ -54,22 +62,22 @@ public sealed partial class AnimatedTextBlock
         _textFormatDirty = true;
     }
 
-    private void ApplyLineSpacing()
+    private static void ApplyLineSpacing(CanvasTextFormat format, double lineHeight)
     {
         // Win2D's negative spacing sentinel restores natural font metrics.
-        _textFormat.LineSpacing = -1;
-        _textFormat.LineSpacingBaseline = 0;
-        _textFormat.LineSpacingMode = CanvasLineSpacingMode.Default;
-        if (!double.IsFinite(LineHeight) || LineHeight <= 0 || LineHeight > float.MaxValue)
+        format.LineSpacing = -1;
+        format.LineSpacingBaseline = 0;
+        format.LineSpacingMode = CanvasLineSpacingMode.Default;
+        if (!double.IsFinite(lineHeight) || lineHeight <= 0 || lineHeight > float.MaxValue)
             return;
 
         // A space uses the primary font, avoiding content-dependent fallback metrics.
         // Keep its baseline centered in the chosen line box for every script.
-        using var reference = new CanvasTextLayout(CanvasDevice.GetSharedDevice(), " ", _textFormat, 0, 0);
+        using var reference = new CanvasTextLayout(CanvasDevice.GetSharedDevice(), " ", format, 0, 0);
         var metric = reference.LineMetrics[0];
-        _textFormat.LineSpacing = (float)LineHeight;
-        _textFormat.LineSpacingBaseline = metric.Baseline + ((float)LineHeight - metric.Height) / 2;
-        _textFormat.LineSpacingMode = CanvasLineSpacingMode.Uniform;
+        format.LineSpacing = (float)lineHeight;
+        format.LineSpacingBaseline = metric.Baseline + ((float)lineHeight - metric.Height) / 2;
+        format.LineSpacingMode = CanvasLineSpacingMode.Uniform;
     }
 
     private void AttachCanvas()
@@ -162,89 +170,80 @@ public sealed partial class AnimatedTextBlock
             StopRenderingLoop();
     }
 
+    private bool CanPrepareHoverScroll() => !_hoverChecked && IsLoaded && IsHoverScrollEnabled && _isPointerOver
+        && _currentState == AnimatedTextBlockRedrawState.Idle
+        && TextTrimming != TextTrimming.None && TextWrapping == TextWrapping.NoWrap
+        && TextDirection <= AnimatedTextBlockTextDirection.RightToLeftThenBottomToTop;
+
     private void EnsureHoverScroll(CanvasControl sender)
     {
-        // NoWrap still allows explicit newlines (e.g. album + artist). Each line
-        // retains its baseline and alignment; only actually trimmed lines move.
-        // Transitions continue to own the original, complete text layouts.
-        if (_hoverChecked || !IsLoaded || !IsHoverScrollEnabled || !_isPointerOver
-            || _currentState != AnimatedTextBlockRedrawState.Idle
-            || TextTrimming == TextTrimming.None || TextWrapping != TextWrapping.NoWrap
-            || TextDirection > AnimatedTextBlockTextDirection.RightToLeftThenBottomToTop)
-            return;
-
+        if (!CanPrepareHoverScroll()) return;
         _hoverChecked = true;
-        var metrics = _staticTextLayout.LineMetrics;
-        bool hasTrimmedLine = false;
-        foreach (var metric in metrics)
-            hasTrimmedLine |= metric.IsTrimmed;
-        if (!hasTrimmedLine) return;
-
-        var lines = new HoverLine[metrics.Length];
-        bool bottomToTop = TextDirection == AnimatedTextBlockTextDirection.LeftToRightThenBottomToTop
-            || TextDirection == AnimatedTextBlockTextDirection.RightToLeftThenBottomToTop;
-        float y = (float)_staticTextLayout.LayoutBounds.Y;
-        if (bottomToTop)
-        {
-            foreach (var metric in metrics)
-                y += metric.Height;
-        }
-        int textOffset = 0;
-        bool hasScrollableLine = false;
+        if (!HasTrimmedLine(_staticTextLayout)) return;
+        var lines = new List<HoverLine>();
         try
         {
-            for (int i = 0; i < metrics.Length; i++)
+            if (AppendHoverLines(sender, _staticTextLayout, _textFormat, _newText, 0, 1, lines))
             {
-                var metric = metrics[i];
-                if (bottomToTop) y -= metric.Height;
-                // DirectWrite counts UTF-16 code units, including CRLF as two units.
-                string text = _newText.Substring(textOffset, metric.CharacterCount - metric.TerminalNewlineCount);
-                lines[i] = CreateHoverLine(sender, text, metric, y);
-                hasScrollableLine |= lines[i].Distance > 0;
-                textOffset += metric.CharacterCount;
-                if (!bottomToTop) y += metric.Height;
-            }
-            if (hasScrollableLine)
-            {
-                _hoverLines = lines;
+                _hoverLines = lines.ToArray();
                 StartRenderingLoop();
             }
         }
         finally
         {
-            if (_hoverLines != lines)
-            {
-                foreach (var line in lines)
-                    line.Layout?.Dispose();
-            }
+            if (_hoverLines == null)
+                foreach (var line in lines) line.Layout.Dispose();
         }
     }
 
-    private HoverLine CreateHoverLine(CanvasControl sender, string text, CanvasLineMetrics metric, float y)
+    private static bool HasTrimmedLine(CanvasTextLayout layout)
     {
-        var layout = new CanvasTextLayout(sender, text, _textFormat, (float)sender.Size.Width, metric.Height);
-        try
+        foreach (var metric in layout.LineMetrics)
+            if (metric.IsTrimmed) return true;
+        return false;
+    }
+
+    private bool AppendHoverLines(CanvasControl sender, CanvasTextLayout source, CanvasTextFormat format,
+        string text, float offsetY, float opacity, List<HoverLine> lines)
+    {
+        var metrics = source.LineMetrics;
+        bool bottomToTop = TextDirection == AnimatedTextBlockTextDirection.LeftToRightThenBottomToTop
+            || TextDirection == AnimatedTextBlockTextDirection.RightToLeftThenBottomToTop;
+        float y = offsetY + (float)source.LayoutBounds.Y;
+        if (bottomToTop)
+            foreach (var metric in metrics) y += metric.Height;
+        int textOffset = 0;
+        bool scrollable = false;
+        foreach (var metric in metrics)
         {
-            layout.TrimmingGranularity = CanvasTextTrimmingGranularity.None;
-            layout.TrimmingSign = CanvasTrimmingSign.None;
-            layout.VerticalAlignment = CanvasVerticalAlignment.Top;
-            float width = (float)Math.Ceiling(layout.LayoutBounds.Width);
-            float distance = metric.IsTrimmed ? Math.Max(0, width - (float)sender.Size.Width) : 0;
-            if (distance > 0)
+            if (bottomToTop) y -= metric.Height;
+            string lineText = text.Substring(textOffset, metric.CharacterCount - metric.TerminalNewlineCount);
+            var layout = new CanvasTextLayout(sender, lineText, format, (float)sender.Size.Width, metric.Height);
+            try
             {
-                layout.HorizontalAlignment = CanvasHorizontalAlignment.Left;
-                layout.RequestedSize = new Size(width, metric.Height);
+                layout.TrimmingGranularity = CanvasTextTrimmingGranularity.None;
+                layout.TrimmingSign = CanvasTrimmingSign.None;
+                layout.VerticalAlignment = CanvasVerticalAlignment.Top;
+                float width = (float)Math.Ceiling(layout.LayoutBounds.Width);
+                float distance = metric.IsTrimmed ? Math.Max(0, width - (float)sender.Size.Width) : 0;
+                if (distance > 0)
+                {
+                    layout.HorizontalAlignment = CanvasHorizontalAlignment.Left;
+                    layout.RequestedSize = new Size(width, metric.Height);
+                }
+                float baseline = layout.LineMetrics[0].Baseline;
+                lines.Add(new HoverLine(layout, y + metric.Baseline - baseline, distance, opacity));
+                scrollable |= distance > 0;
             }
-            // Emoji/fallback fonts can give individual lines different ascenders.
-            // Match the original baseline rather than centering each line separately.
-            float baseline = layout.LineMetrics[0].Baseline;
-            return new HoverLine(layout, y + metric.Baseline - baseline, distance);
+            catch
+            {
+                layout.Dispose();
+                throw;
+            }
+            textOffset += metric.CharacterCount;
+            if (!bottomToTop) y += metric.Height;
         }
-        catch
-        {
-            layout.Dispose();
-            throw;
-        }
+        return scrollable;
     }
 
     private float GetHoverOffset(float distance)

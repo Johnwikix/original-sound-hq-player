@@ -1157,6 +1157,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.EnableLightWave = settings.EnableLightWave;
                 AppViewModel.PaletteAlgorithm = (AnimatedWin2dControls.Impressionist.PaletteAlgorithm)settings.PaletteAlgorithm;
                 AppViewModel.IsWin2dAnimatedText = settings.IsWin2dAnimatedText;
+                AppViewModel.IsHoverScrollEnabled = settings.IsHoverScrollEnabled;
                 AppViewModel.Win2dTextEffectType = AppViewModel.TextEffectItems.AsValueEnumerable().FirstOrDefault(t => t.Value == settings.Win2dTextEffectType) ?? AppViewModel.TextEffectItems[0];
                 AppViewModel.CharFloatAmount = settings.CharFloatAmount;
                 AppViewModel.CharScaleAmount = settings.CharScaleAmount;
@@ -1308,6 +1309,7 @@ namespace WinUIMusicPlayer.Services
             newSettings.EnableLightWave = AppViewModel.EnableLightWave;
             newSettings.PaletteAlgorithm = (int)AppViewModel.PaletteAlgorithm;
             newSettings.IsWin2dAnimatedText = AppViewModel.IsWin2dAnimatedText;
+            newSettings.IsHoverScrollEnabled = AppViewModel.IsHoverScrollEnabled;
             newSettings.CharFloatAmount = AppViewModel.CharFloatAmount;
             newSettings.CharScaleAmount = AppViewModel.CharScaleAmount;
             newSettings.GlowAmount = AppViewModel.GlowAmount;

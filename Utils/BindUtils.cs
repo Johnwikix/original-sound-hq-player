@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using AnimatedWin2dControls.Controls.AnimatedTextBlock;
+using Microsoft.UI.Text;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
@@ -288,6 +290,15 @@ namespace WinUIMusicPlayer.Utils
         public static double ValueAmplifierConverter(double value, double scale = 1.0)
         {
             return value * scale;
+        }
+
+        public static AnimatedTextDocument MusicToAnimatedDocument(Music music, double titleFontSize, double infoFontSize)
+        {
+            return new AnimatedTextDocument(
+                new AnimatedTextParagraph(music?.Title ?? string.Empty, titleFontSize, FontWeights.SemiBold,
+                    Math.Ceiling(titleFontSize * 1.4)),
+                new AnimatedTextParagraph(MusicToInfo(music), infoFontSize, FontWeights.Normal,
+                    Math.Ceiling(infoFontSize * 1.4), 0.8));
         }
 
         public static string MusicToInfo(Music music)

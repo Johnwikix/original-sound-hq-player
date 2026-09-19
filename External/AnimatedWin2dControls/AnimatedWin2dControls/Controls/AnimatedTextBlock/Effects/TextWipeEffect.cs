@@ -1,4 +1,4 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Text;
@@ -56,7 +56,6 @@ public sealed class TextWipeEffect : ITextEffect
     {
         if (ds == null) return;
 
-        ds.Transform = Matrix3x2.Identity;
 
         if (state == AnimatedTextBlockRedrawState.Idle || Progress >= 1f)
         {

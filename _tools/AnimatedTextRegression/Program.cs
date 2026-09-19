@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Dispatching;
@@ -63,6 +64,26 @@ public sealed partial class TestApp : Application
         for (int i = 0; i < Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(node); i++)
             text += DescribeLayout(Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(node, i), depth + 1);
         return text;
+    }
+    private static T ParagraphValue<T>(AnimatedTextBlock c, int index, string name)
+    {
+        object paragraph = ((Array)Field(c, "_documentLayouts")).GetValue(index);
+        return (T)paragraph.GetType().GetField(name).GetValue(paragraph);
+    }
+    private static int CanvasCount(DependencyObject root)
+    {
+        int count = root is CanvasControl ? 1 : 0;
+        for (int i = 0; i < Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(root); i++)
+            count += CanvasCount(Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(root, i));
+        return count;
+    }
+    private static int InkInBand(byte[] pixels, int width, int top, int bottom)
+    {
+        int count = 0;
+        for (int y = top; y < bottom; y++)
+            for (int x = 0; x < width; x++)
+                if (pixels[(y * width + x) * 4 + 3] > 8) count++;
+        return count;
     }
     private void Check(bool condition, string message)
     {
@@ -308,6 +329,92 @@ public sealed partial class TestApp : Application
             await Until(() => Field(page.TitleControl, "_staticTextLayout") != null && Field(page.InfoControl, "_staticTextLayout") != null,
                 "reloaded page draws both labels");
             Check(page.InfoControl.LineHeight == 42, "Page reload keeps bound line height");
+            var documentPage = new DocumentLayoutRegressionPage();
+            _window.Content = documentPage;
+            await Until(() => documentPage.TextControl?.IsLoaded == true && !documentPage.TextControl.IsAnimating,
+                "unified document page loads");
+            var unified = documentPage.TextControl;
+            Check(unified.ActualHeight == 146 && CanvasCount(documentPage) == 1,
+                "Title and two metadata lines use one canvas and their combined intrinsic height");
+            var titleLayout = ParagraphValue<CanvasTextLayout>(unified, 0, "NewLayout");
+            var infoLayout = ParagraphValue<CanvasTextLayout>(unified, 1, "NewLayout");
+            Check(titleLayout.DefaultFontSize == 44 && infoLayout.DefaultFontSize == 30
+                && titleLayout.DefaultFontWeight.Weight == 600 && infoLayout.DefaultFontWeight.Weight == 400,
+                "Unified control preserves paragraph sizes and weights");
+            Check(ParagraphValue<float>(unified, 1, "Y") == 62 && infoLayout.LineCount == 2,
+                "Metadata remains two lines below the title");
+            unified.TextEffect = null;
+            unified.Document = DocumentLayoutRegressionPage.CreateDocument(LongText, LongText + "\r\nArtist", 44, 30);
+            Hover(unified);
+            await Until(() => Field(unified, "_hoverLines") != null, "formatted paragraph hover");
+            Check(((Array)Field(unified, "_hoverLines")).Length == 3 && LineValue<float>(unified, 2, "Distance") == 0,
+                "Formatted title and album scroll independently while short artist stays still");
+            Check(LineValue<float>(unified, 1, "Opacity") == 0.8f, "Metadata hover preserves its opacity");
+            documentPage.ViewModel.SetHoverEnabled(false);
+            Check(!unified.IsHoverScrollEnabled && Field(unified, "_hoverLines") == null && !(bool)Field(unified, "_isClockRegistered"),
+                "Settings binding immediately disables scrolling and clock activity");
+            documentPage.ViewModel.SetHoverEnabled(true);
+            await Until(() => Field(unified, "_hoverLines") != null, "settings enables hover again");
+            Invoke(unified, "OnPointerExited", unified, null);
+
+            ITextEffect[] effects = [new TextDefaultEffect(), new TextFadeEffect(), new TextWipeEffect(), new TextElasticEffect(),
+                new TextZoomEffect(), new TextBlurEffect(), new TextPivotEffect(), new TextMotionBlurEffect()];
+            for (int effectIndex = 0; effectIndex < effects.Length; effectIndex++)
+            {
+                var effect = effects[effectIndex];
+                effect.AnimationDuration = TimeSpan.FromSeconds(5);
+                effect.DelayPerCluster = TimeSpan.Zero;
+                unified.TextEffect = effect;
+                unified.Document = DocumentLayoutRegressionPage.CreateDocument("Title " + effectIndex, "Album " + effectIndex + "\r\nArtist " + effectIndex, 44, 30);
+                await Until(() => (AnimatedTextBlockRedrawState)Field(unified, "_currentState") == AnimatedTextBlockRedrawState.Animating,
+                    effect.GetType().Name + " starts");
+                unified.OnSharedTick(TimeSpan.FromSeconds(2.5));
+                var canvas = (CanvasControl)Field(unified, "_canvas");
+                using var bitmap = new CanvasRenderTarget(canvas, (float)canvas.Size.Width, (float)canvas.Size.Height, 96);
+                using (var drawing = bitmap.CreateDrawingSession())
+                {
+                    drawing.Clear(Microsoft.UI.Colors.Transparent);
+                    Invoke(unified, "DrawDocument", canvas, drawing);
+                }
+                byte[] pixels = bitmap.GetPixelBytes();
+                int pixelWidth = (int)bitmap.SizeInPixels.Width;
+                Check(InkInBand(pixels, pixelWidth, 0, 62) > 0 && InkInBand(pixels, pixelWidth, 62, 104) > 0
+                    && InkInBand(pixels, pixelWidth, 104, 146) > 0, effect.GetType().Name + " paints all three styled rows during transition");
+                if (effect is TextFadeEffect)
+                {
+                    float progress = (float)effect.GetType().GetProperty("Progress", Private).GetValue(effect);
+                    Check(progress >= 0.5f && progress < 0.65f, "Fade advances once per shared tick, not once per paragraph");
+                    await bitmap.SaveAsync(Path.Combine(AppContext.BaseDirectory, "unified-text.png"), CanvasBitmapFileFormat.Png);
+                }
+                unified.OnSharedTick(TimeSpan.FromSeconds(6));
+                await Until(() => !unified.IsAnimating, "unified effect completes");
+            }
+            unified.TextEffect = new TextFadeEffect { AnimationDuration = TimeSpan.FromMilliseconds(100) };
+            var finalDocument = DocumentLayoutRegressionPage.CreateDocument("Final title", "Final album\r\nFinal artist", 44, 30);
+            unified.Document = DocumentLayoutRegressionPage.CreateDocument("Intermediate", "Intermediate\r\nIntermediate", 44, 30);
+            unified.Document = finalDocument;
+            await Until(() => !unified.IsAnimating && ReferenceEquals(Field(unified, "_renderedDocument"), finalDocument), "coalesced document update");
+            Check(ParagraphValue<CanvasTextLayout>(unified, 1, "NewLayout").LineCount == 2, "Atomic document updates retain complete metadata");
+            unified.TextEffect = new TextDefaultEffect { AnimationDuration = TimeSpan.FromSeconds(5), DelayPerCluster = TimeSpan.Zero };
+            unified.Document = DocumentLayoutRegressionPage.CreateDocument("Long title", LongText + "\r\nVisible artist", 44, 30);
+            await Until(() => (AnimatedTextBlockRedrawState)Field(unified, "_currentState") == AnimatedTextBlockRedrawState.Animating, "trimmed document transition starts");
+            var metadataDiffs = ParagraphValue<System.Collections.Generic.List<TextDiffResult>>(unified, 1, "Diffs");
+            Check(metadataDiffs.Exists(d => d.NewGlyphCluster?.Characters.Contains('V') == true), "Trimmed album retains following artist in grapheme animation");
+            string originalTitle = ParagraphValue<string>(unified, 0, "OldText");
+            unified.TextAlignment = TextAlignment.Right;
+            await Until(() => ParagraphValue<CanvasTextFormat>(unified, 0, "Format").HorizontalAlignment == CanvasHorizontalAlignment.Right, "alignment changes during animation");
+            Check(ParagraphValue<string>(unified, 0, "OldText") == originalTitle && Field(unified, "_diffResults") != null,
+                "Layout changes retain animation source and cluster progress data");
+            unified.OnSharedTick(TimeSpan.FromSeconds(6));
+            await Until(() => !unified.IsAnimating, "changed layout animation completes");
+            bool unloaded = false;
+            unified.Unloaded += (_, _) => unloaded = true;
+            _window.Content = panel;
+            await Until(() => unloaded, "unified control Unloaded event completes");
+            Check(Field(unified, "_documentLayouts") == null && !(bool)Field(unified, "_isClockRegistered"), "Unified unload releases paragraph layouts and stops clock");
+            _window.Content = documentPage;
+            await Until(() => unified.IsLoaded && !unified.IsAnimating && Field(unified, "_documentLayouts") != null, "unified reload");
+            Check(CanvasCount(documentPage) == 1, "Unified page re-entry retains exactly one canvas");
             File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), $"PASS: {_assertions} assertions; initial auto height={initial}; real WinUI layout/draw/transition/unload/reload.");
         }
         catch (Exception ex)

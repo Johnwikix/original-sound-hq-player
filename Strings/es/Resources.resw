@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1919,4 +1919,10 @@
   </data>
   <data name="OneShotOpenFailedTitle" xml:space="preserve"><value>No se puede reproducir el archivo</value></data>
   <data name="OneShotOpenFailedContent" xml:space="preserve"><value>No se pudo analizar o abrir el archivo de música seleccionado: {0}</value></data>
+  <data name="AnimatedTextHoverScroll" xml:space="preserve">
+    <value>Desplazar texto recortado al pasar el cursor</value>
+  </data>
+  <data name="AnimatedTextHoverScrollDescription" xml:space="preserve">
+    <value>Muestra el título, álbum y artista completos al pasar el cursor, después de la transición de texto.</value>
+  </data>
 </root>

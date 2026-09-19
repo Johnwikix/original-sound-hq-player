@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1918,4 +1918,10 @@
   </data>
   <data name="OneShotOpenFailedTitle" xml:space="preserve"><value>无法播放文件</value></data>
   <data name="OneShotOpenFailedContent" xml:space="preserve"><value>无法解析或打开所选音乐文件：{0}</value></data>
+  <data name="AnimatedTextHoverScroll" xml:space="preserve">
+    <value>悬停滚动截断文字</value>
+  </data>
+  <data name="AnimatedTextHoverScrollDescription" xml:space="preserve">
+    <value>鼠标移入时滚动显示完整歌名、专辑和艺术家，文字切换动画结束后开始。</value>
+  </data>
 </root>

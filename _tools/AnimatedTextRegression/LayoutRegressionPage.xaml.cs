@@ -31,11 +31,17 @@ public sealed partial class LayoutRegressionPage : Page
 public sealed class LayoutViewModel : INotifyPropertyChanged
 {
     public bool Enabled => true;
+    public bool HoverEnabled { get; private set; } = true;
     public string Title { get; private set; } = "All In My Head";
     public string Info { get; private set; } = "Album with a very long name\r\nArtist";
     public double TitleFontSize { get; private set; } = 24;
     public double InfoFontSize { get; private set; } = 22;
     public event PropertyChangedEventHandler PropertyChanged;
+    public void SetHoverEnabled(bool enabled)
+    {
+        HoverEnabled = enabled;
+        PropertyChanged?.Invoke(this, new(nameof(HoverEnabled)));
+    }
     public void ResizeFonts(double title, double info)
     {
         TitleFontSize = title;

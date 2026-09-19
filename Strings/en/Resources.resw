@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1919,4 +1919,10 @@
   </data>
   <data name="OneShotOpenFailedTitle" xml:space="preserve"><value>Unable to play file</value></data>
   <data name="OneShotOpenFailedContent" xml:space="preserve"><value>The selected music file could not be parsed or opened: {0}</value></data>
+  <data name="AnimatedTextHoverScroll" xml:space="preserve">
+    <value>Scroll truncated text on hover</value>
+  </data>
+  <data name="AnimatedTextHoverScrollDescription" xml:space="preserve">
+    <value>Hover to read the full title, album and artist after the text transition finishes.</value>
+  </data>
 </root>

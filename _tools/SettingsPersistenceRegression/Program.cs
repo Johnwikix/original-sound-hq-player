@@ -25,6 +25,12 @@ try
          "ExperimentalSurround51":true,"ExperimentalAtmosPassthrough":true,"DsdGain":12,"DsdPcmFreq":176400,
          "AppTheme":"Dark","AppWidth":1450,"DefualtEntry":"song","PlayOrPauseShortcut":["Ctrl","P"]}
         """;
+    var defaults = JsonSerializer.Deserialize("{}", SettingsJsonContext.Default.SaveSettings)!;
+    Check(defaults.IsHoverScrollEnabled, "Existing settings without hover-scroll key must keep hover enabled.");
+    defaults.IsHoverScrollEnabled = false;
+    var hoverRoundTrip = JsonSerializer.Deserialize(JsonSerializer.Serialize(defaults, SettingsJsonContext.Default.SaveSettings), SettingsJsonContext.Default.SaveSettings)!;
+    Check(!hoverRoundTrip.IsHoverScrollEnabled, "Disabled hover-scroll must survive saving and restarting.");
+    Console.WriteLine("PASS: hover-scroll default and disabled setting round-trip.");
     var general = JsonSerializer.Deserialize(legacyJson, SettingsJsonContext.Default.SaveSettings)!;
     var legacy = general.ReadLegacyAudioPreferences();
     Check(legacy.OutputMode == "WasapiExclusiveEvent" && legacy.Latency == 137 && legacy.BassOutputDeviceId == 9

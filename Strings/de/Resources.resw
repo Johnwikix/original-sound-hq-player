@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1919,4 +1919,10 @@
   </data>
   <data name="OneShotOpenFailedTitle" xml:space="preserve"><value>Datei kann nicht wiedergegeben werden</value></data>
   <data name="OneShotOpenFailedContent" xml:space="preserve"><value>Die ausgewählte Musikdatei konnte nicht gelesen oder geöffnet werden: {0}</value></data>
+  <data name="AnimatedTextHoverScroll" xml:space="preserve">
+    <value>Abgeschnittenen Text bei Mauszeigerkontakt scrollen</value>
+  </data>
+  <data name="AnimatedTextHoverScrollDescription" xml:space="preserve">
+    <value>Zeigen Sie nach dem Textwechsel auf Titel, Album und Interpret, um den vollständigen Text zu lesen.</value>
+  </data>
 </root>

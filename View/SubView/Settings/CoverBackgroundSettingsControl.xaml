@@ -74,6 +74,16 @@
                     </Grid>
                 </controls:SettingsCard>
 
+                <controls:SettingsCard
+                    Header="{x:Bind tool:ToolUtils.GetString('AnimatedTextHoverScroll'), Mode=OneWay}"
+                    Description="{x:Bind tool:ToolUtils.GetString('AnimatedTextHoverScrollDescription'), Mode=OneWay}">
+                    <ToggleSwitch
+                        MinWidth="0"
+                        VerticalAlignment="Center"
+                        IsEnabled="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=OneWay}"
+                        IsOn="{x:Bind ViewModel.AppViewModel.IsHoverScrollEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
                         <TextBlock

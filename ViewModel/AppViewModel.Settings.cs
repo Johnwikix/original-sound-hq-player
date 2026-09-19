@@ -106,6 +106,16 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = 0;
 
+        public bool IsHoverScrollEnabled
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value) && IsInitialized)
+                    _ = _musicDatabaseService.SaveSettingAsync();
+            }
+        } = true;
+
         public bool IsWin2dAnimatedText
         {
             get => field;

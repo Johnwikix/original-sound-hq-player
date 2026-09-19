@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1919,4 +1919,10 @@
   </data>
   <data name="OneShotOpenFailedTitle" xml:space="preserve"><value>Не удалось воспроизвести файл</value></data>
   <data name="OneShotOpenFailedContent" xml:space="preserve"><value>Не удалось обработать или открыть выбранный музыкальный файл: {0}</value></data>
+  <data name="AnimatedTextHoverScroll" xml:space="preserve">
+    <value>Прокручивать обрезанный текст при наведении</value>
+  </data>
+  <data name="AnimatedTextHoverScrollDescription" xml:space="preserve">
+    <value>При наведении показывать полные названия трека, альбома и исполнителя после завершения анимации смены текста.</value>
+  </data>
 </root>

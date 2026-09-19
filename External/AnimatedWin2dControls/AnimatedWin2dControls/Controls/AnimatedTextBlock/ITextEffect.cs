@@ -22,6 +22,8 @@ public interface ITextEffect
 
     /// <summary>
     /// Implement this method to draw the texts.
+    /// Preserve the drawing session's incoming transform: formatted paragraphs
+    /// share one session and use it to position each paragraph on the canvas.
     /// </summary>
     /// <param name="oldText">The unchanged text.</param>
     /// <param name="newText">The changed text.</param>
@@ -33,7 +35,6 @@ public interface ITextEffect
     /// <param name="gradientBrush">The gradient brush for rendering text with gradient colors.</param>
     /// <param name="state">Current drawing state of the control.</param>
     /// <param name="drawingSession">The drawing sessions used to issue text drawing commands.</param>
-    /// <param name="args">Data for drawing operations.</param>
     void DrawText(string oldText,
         string newText,
         List<TextDiffResult> diffResults,

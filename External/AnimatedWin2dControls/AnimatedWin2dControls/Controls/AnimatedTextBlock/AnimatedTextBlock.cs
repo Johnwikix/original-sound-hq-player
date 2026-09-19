@@ -224,10 +224,13 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         _textFormat = null;
         _textFormatDirty = true;
         _diffResults = null;
+        _renderedDocument = null;
+        _transitionSourceDocument = null;
     }
 
     private void OnSizeChanged(object sender, SizeChangedEventArgs e)
     {
+        _documentLayoutDirty = true;
         StopHoverScroll();
         if (e.NewSize.Width <= 0 || e.NewSize.Height <= 0)
         {
@@ -359,6 +362,11 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
             return;
 
         ApplyTextFormatIfNeeded();
+        if (Document != null)
+        {
+            DrawDocument(sender, args.DrawingSession);
+            return;
+        }
 
         // ── 无动画效果 or Idle：画静态帧 ────────────────────────────────
         if (_textEffect == null || _currentState == AnimatedTextBlockRedrawState.Idle)
@@ -377,21 +385,9 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
             RebuildOldTextLayout(sender);
             RebuildNewTextLayout(sender);
 
-            if (_textEffect is TextFadeEffect fadeEffect)
-            {
-                fadeEffect.Reset();
-            }
-            else if (_textEffect is TextWipeEffect textWipeEffect)
-            {
-                textWipeEffect.Reset();
-            }
-            else
-            {
+            if (_textEffect is not TextFadeEffect && _textEffect is not TextWipeEffect)
                 GenerateDiffResults();
-                _animationBeginTime = _totalAnimationTime;
-            }
-
-            _currentState = AnimatedTextBlockRedrawState.Animating;
+            BeginTextAnimation();
         }
 
         // ── Animating：交给 TextEffect 绘制 ─────────────────────────────
@@ -415,6 +411,15 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
     }
 
     #endregion
+
+    private void BeginTextAnimation()
+    {
+        if (_textEffect is TextFadeEffect fade) fade.Reset();
+        if (_textEffect is TextWipeEffect wipe) wipe.Reset();
+        _animationBeginTime = _totalAnimationTime;
+        _currentState = AnimatedTextBlockRedrawState.Animating;
+        StartRenderingLoop();
+    }
 
     #region Rendering Loop (SharedAnimationClock)
 
@@ -453,7 +458,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         _textFormat.Direction = Win2dHelpers.MapTextDirection(_textDirection);
         _textFormat.TrimmingGranularity = Win2dHelpers.MapTrimmingGranularity(_textTrimming);
         _textFormat.WordWrapping = Win2dHelpers.MapWordWrapping(_textWrapping);
-        ApplyLineSpacing();
+        ApplyLineSpacing(_textFormat, LineHeight);
 
         _textFormatDirty = false;
         _formatVersion++;
@@ -530,18 +535,25 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
             else
             {
                 foreach (var line in _hoverLines)
-                    DrawTextLayout(ds, line.Layout, GetHoverOffset(line.Distance), line.Y);
+                    DrawTextLayout(ds, line.Layout, GetHoverOffset(line.Distance), line.Y, line.Opacity);
             }
         }
         catch (Exception ex) when (ex is ObjectDisposedException || ex is ArgumentException) { }
     }
 
-    private void DrawTextLayout(CanvasDrawingSession ds, CanvasTextLayout layout, float x, float y)
+    private void DrawTextLayout(CanvasDrawingSession ds, CanvasTextLayout layout, float x, float y, float opacity = 1)
     {
         if (_textBrush != null)
+        {
+            using var layer = opacity < 1 ? ds.CreateLayer(opacity) : null;
             ds.DrawTextLayout(layout, x, y, _textBrush);
+        }
         else
-            ds.DrawTextLayout(layout, x, y, _textColor);
+        {
+            var color = _textColor;
+            color.A = (byte)Math.Round(color.A * opacity);
+            ds.DrawTextLayout(layout, x, y, color);
+        }
     }
 
     private void RebuildOldTextLayout(CanvasControl resourceCreator)
@@ -556,6 +568,11 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
     private void RebuildNewTextLayout(CanvasControl resourceCreator)
     {
+        if (Document != null)
+        {
+            _documentLayoutDirty = true;
+            return;
+        }
         if (resourceCreator == null || !resourceCreator.ReadyToDraw)
             return;
 
@@ -591,6 +608,8 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
     private void DisposeLayouts()
     {
+        DisposeDocumentLayouts();
+        _documentLayoutDirty = true;
         _oldTextLayout?.Dispose();
         _oldTextLayout = null;
         _newTextLayout?.Dispose();
@@ -764,6 +783,9 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
     }
     private void SetRedrawState(AnimatedTextBlockRedrawState state, bool fireEvent = true)
     {
+        if (state == AnimatedTextBlockRedrawState.TextChanged ||
+            (state == AnimatedTextBlockRedrawState.Idle && _currentState == AnimatedTextBlockRedrawState.Animating))
+            _documentLayoutDirty = true;
         if (state != AnimatedTextBlockRedrawState.Idle)
             StopHoverScroll();
         _currentState = state;

@@ -1,4 +1,4 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Internals;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
@@ -104,7 +104,6 @@ public partial class TextBlurEffect : ITextEffect
         if (newTextLayout == null) return;
         try
         {
-            ds.Transform = Matrix3x2.Identity;
             ds.DrawTextLayout(newTextLayout, 0, 0, textColor);
         }
         catch (Exception ex) when (ex is ObjectDisposedException || ex is ArgumentException) { }
