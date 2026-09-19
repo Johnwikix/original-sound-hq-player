@@ -2,6 +2,22 @@
 
 新条目加在最上方。
 
+## 2026-09-19 修复动画文字在 x:Load 初始化时消失
+
+- `View/PlayingDetailPage.xaml`：字号改为带正值回退的常规 Binding，避免 x:Load 创建控件时生成的 x:Bind setter 写入默认 0，触发 WinUI 参数错误并阻止控件进入可视树；保留 ViewModel 字号联动与固定行高。
+- `_tools/AnimatedTextRegression/LayoutRegressionPage.xaml(.cs)`：新增真实编译 XAML 的嵌套 Grid、x:Load、绑定和 Loaded 字号更新用例，验证控件进入可视树、非零尺寸与绘制完成。
+
+## 2026-09-19 修复跨字体切换导致文字动画中断和布局抖动
+
+- `External/AnimatedWin2dControls/.../AnimatedTextBlock`：文本过渡中尺寸变化时重建动画布局，不再直接切入 Idle；新增 `LineHeight`，默认 0 保留自然行高，正值固定行高与基线。
+- `View/PlayingDetailPage.xaml(.cs)`：动画文字字号统一绑定 ViewModel，并按字号的 1.4 倍向上取整设置行高，稳定中英文切换及两行专辑/艺术家信息的布局。
+- `_tools/AnimatedTextRegression`：复现“祝融 → All In My Head”自然行高 31 → 32 DIP 导致动画中断；补充固定行高、基线与跨行数的 Fade/Default/Wipe 回归。
+
+## 2026-09-19 修复 AnimatedTextBlock 两行信息的悬停滚动
+
+- `External/AnimatedWin2dControls/.../AnimatedTextBlock`：支持专辑与艺术家在同一控件内显式换行；截断行按各自长度滚动，短行保留对齐与基线，切换动画仍优先，复位时统一释放各行布局。
+- `_tools/AnimatedTextRegression`：补充 CRLF/LF、单行溢出/双行溢出、空行、对齐、RTL 和两行切换动画的真实 WinUI 回归。
+
 ## 2026-09-19 AnimatedTextBlock 自动测量与悬停滚动
 
 - `External/AnimatedWin2dControls/.../AnimatedTextBlock`：按 Win2D 文字布局测量自身尺寸，统一依赖属性变更处理，恢复卸载后重新加载的资源与事件。

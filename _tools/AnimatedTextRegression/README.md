@@ -17,6 +17,27 @@ scroll progress, transition priority and resumption, exit/reset, untrimmed text,
 resize, RTL, unload/reload and clock cleanup. Results are written beside the executable;
 the runner fails on a failed assertion, crash or timeout.
 
+Multiline cases cover album/artist CRLF and LF, either/both lines overflowing,
+independent travel distances, short-line alignment and baseline stability, empty/trailing
+lines, RTL, transition handoff and cleanup. `NoWrap` does not suppress explicit newlines.
+
+The cross-script regression reproduced `祝融` → `All In My Head` changing natural
+height from 31 to 32 DIP at 24-point Semibold and canceling the transition. Tests now
+verify that resizing preserves transitions and that an explicit `LineHeight` stabilizes
+both height and baseline, including Fade/Default/Wipe transitions across line counts.
+
+`LayoutRegressionPage` additionally uses compiled XAML with the page's nested Grid,
+`x:Load`, ViewModel bindings and Loaded-time font changes. It reproduced both labels
+being absent from the visual tree: the generated `x:Bind` connector wrote its default
+deferred `FontSize` of zero before evaluating the source, and WinUI rejected it.
+The fixture now uses ordinary Binding for FontSize, as PlayingDetailPage does, and
+checks attachment, measured dimensions, drawing, responsive updates and re-entry.
+`layout.txt` beside the executable records the native layout tree. The main project
+excludes `_tools` XAML so test pages and generated output are never compiled into the app.
+
+For an external lvt tree inspection, launch the test executable with `--inspect-layout`.
+It keeps the offscreen fixture window alive for 45 seconds.
+
 Pointer presence is injected through reflection, and pointer exit invokes the actual
 handler. Physical mouse hit testing and visual quality on PlayingDetailPage at different
 DPI settings still require interactive verification.

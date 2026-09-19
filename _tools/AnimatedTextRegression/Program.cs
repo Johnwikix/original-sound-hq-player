@@ -7,6 +7,7 @@ using AnimatedWin2dControls.Controls.AnimatedTextBlock;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 using Microsoft.Graphics.Canvas.UI.Xaml;
+using Microsoft.Graphics.Canvas.Text;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -46,6 +47,23 @@ public sealed partial class TestApp : Application
     private static readonly BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.DeclaredOnly;
     private static object Field(AnimatedTextBlock c, string name) => typeof(AnimatedTextBlock).GetField(name, Private).GetValue(c);
     private static void Invoke(AnimatedTextBlock c, string name, params object[] args) => typeof(AnimatedTextBlock).GetMethod(name, Private).Invoke(c, args);
+    private static T LineValue<T>(AnimatedTextBlock c, int index, string name)
+    {
+        object line = ((Array)Field(c, "_hoverLines")).GetValue(index);
+        return (T)line.GetType().GetProperty(name).GetValue(line);
+    }
+    private static float HoverOffset(AnimatedTextBlock c, int index) =>
+        (float)typeof(AnimatedTextBlock).GetMethod("GetHoverOffset", Private).Invoke(c, new object[] { LineValue<float>(c, index, "Distance") });
+    private static string DescribeLayout(DependencyObject node, int depth)
+    {
+        string text = new string(' ', depth * 2) + node.GetType().Name;
+        if (node is FrameworkElement element)
+            text += $" [{element.Name}] Actual={element.ActualWidth}x{element.ActualHeight}, Desired={element.DesiredSize}, Loaded={element.IsLoaded}, Visibility={element.Visibility}, Slot={Microsoft.UI.Xaml.Controls.Primitives.LayoutInformation.GetLayoutSlot(element)}";
+        text += "\n";
+        for (int i = 0; i < Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(node); i++)
+            text += DescribeLayout(Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(node, i), depth + 1);
+        return text;
+    }
     private void Check(bool condition, string message)
     {
         if (!condition) throw new Exception(message);
@@ -71,6 +89,17 @@ public sealed partial class TestApp : Application
     {
         try
         {
+            if (Array.IndexOf(Environment.GetCommandLineArgs(), "--inspect-layout") >= 0)
+            {
+                _window = new Window { Content = new LayoutRegressionPage(), Title = "AnimatedTextBlock layout regression" };
+                _window.AppWindow.Resize(new Windows.Graphics.SizeInt32(1000, 800));
+                _window.AppWindow.Move(new Windows.Graphics.PointInt32(-10000, -10000));
+                _window.Activate();
+                await Task.Delay(45000);
+                _window.Close();
+                Exit();
+                return;
+            }
             var c = new AnimatedTextBlock { Text = "Title 标题", FontSize = 24, TextWrapping = TextWrapping.NoWrap };
             c.Measure(new Size(240, double.PositiveInfinity));
             double initial = c.DesiredSize.Height;
@@ -105,50 +134,180 @@ public sealed partial class TestApp : Application
             Check(!c.IsHoverScrollEnabled, "Hover default must be off");
             Hover(c);
             await Task.Delay(100);
-            Check(Field(c, "_hoverTextLayout") == null, "Disabled hover must not scroll");
+            Check(Field(c, "_hoverLines") == null, "Disabled hover must not scroll");
             c.IsHoverScrollEnabled = true;
-            await Until(() => Field(c, "_hoverTextLayout") != null, "hover starts for trimmed text");
+            await Until(() => Field(c, "_hoverLines") != null, "hover starts for trimmed text");
             c.OnSharedTick(TimeSpan.FromSeconds(2));
-            float offset = (float)typeof(AnimatedTextBlock).GetMethod("GetHoverOffset", Private).Invoke(c, null);
+            float offset = HoverOffset(c, 0);
             Check(offset < 0, "Hover must advance text horizontally");
             c.TextEffect = new TextFadeEffect { AnimationDuration = TimeSpan.FromMilliseconds(160) };
             c.Text = LongText + " updated";
-            Check(Field(c, "_hoverTextLayout") == null, "Text transition resets hover synchronously");
+            Check(Field(c, "_hoverLines") == null, "Text transition resets hover synchronously");
             await Until(() => c.IsAnimating, "transition starts");
-            Check(Field(c, "_hoverTextLayout") == null, "Transition and marquee must not overlap");
-            await Until(() => !c.IsAnimating && Field(c, "_hoverTextLayout") != null, "hover resumes after transition");
+            Check(Field(c, "_hoverLines") == null, "Transition and marquee must not overlap");
+            await Until(() => !c.IsAnimating && Field(c, "_hoverLines") != null, "hover resumes after transition");
             Invoke(c, "OnPointerExited", c, null);
-            Check(Field(c, "_hoverTextLayout") == null && !(bool)Field(c, "_isClockRegistered"), "Exit must dispose hover and stop clock");
+            Check(Field(c, "_hoverLines") == null && !(bool)Field(c, "_isClockRegistered"), "Exit must dispose hover and stop clock");
             Hover(c);
-            await Until(() => Field(c, "_hoverTextLayout") != null, "second hover");
+            await Until(() => Field(c, "_hoverLines") != null, "second hover");
             c.IsHoverScrollEnabled = false;
-            Check(Field(c, "_hoverTextLayout") == null && !(bool)Field(c, "_isClockRegistered"), "Disabling must stop clock");
+            Check(Field(c, "_hoverLines") == null && !(bool)Field(c, "_isClockRegistered"), "Disabling must stop clock");
             c.IsHoverScrollEnabled = true;
             c.TextEffect = null;
             c.Text = "short";
             await Until(() => !c.IsAnimating, "short text draw");
-            Check(Field(c, "_hoverTextLayout") == null, "Untrimmed text must not scroll");
+            Check(Field(c, "_hoverLines") == null, "Untrimmed text must not scroll");
             c.Text = LongText;
-            await Until(() => Field(c, "_hoverTextLayout") != null, "long text scroll");
+            await Until(() => Field(c, "_hoverLines") != null, "long text scroll");
             panel.Width = 2000;
-            await Until(() => c.ActualWidth > 1000 && Field(c, "_hoverTextLayout") == null, "resize clears trimming");
+            await Until(() => c.ActualWidth > 1000 && Field(c, "_hoverLines") == null, "resize clears trimming");
             Check(!(bool)Field(c, "_isClockRegistered"), "Untrimmed resize must stop clock");
             panel.Width = 240;
             c.TextDirection = AnimatedTextBlockTextDirection.RightToLeftThenTopToBottom;
-            await Until(() => Field(c, "_hoverTextLayout") != null, "RTL hover");
-            offset = (float)typeof(AnimatedTextBlock).GetMethod("GetHoverOffset", Private).Invoke(c, null);
+            await Until(() => Field(c, "_hoverLines") != null, "RTL hover");
+            offset = HoverOffset(c, 0);
             Check(offset < 0, "RTL starts at the right end of text");
             panel.Children.Remove(c);
             await Until(() => !c.IsLoaded && Field(c, "_textFormat") == null, "unload cleanup");
-            Check(Field(c, "_hoverTextLayout") == null && !(bool)Field(c, "_isClockRegistered"), "Unload stops all rendering");
+            Check(Field(c, "_hoverLines") == null && !(bool)Field(c, "_isClockRegistered"), "Unload stops all rendering");
             panel.Children.Add(c);
             await Until(() => c.IsLoaded && Field(c, "_staticTextLayout") != null, "reload renders again");
             Check(c.ActualHeight > 0, "Reload retains auto height");
             Hover(c);
-            await Until(() => Field(c, "_hoverTextLayout") != null, "reload hover");
+            await Until(() => Field(c, "_hoverLines") != null, "reload hover");
             c.TextWrapping = TextWrapping.Wrap;
             await Task.Delay(100);
-            Check(Field(c, "_hoverTextLayout") == null, "Wrapped text does not use horizontal marquee");
+            Check(Field(c, "_hoverLines") == null, "Wrapped text does not use horizontal marquee");
+            c.TextWrapping = TextWrapping.NoWrap;
+            c.TextDirection = AnimatedTextBlockTextDirection.LeftToRightThenTopToBottom;
+            c.TextAlignment = TextAlignment.Center;
+            c.Text = LongText + Environment.NewLine + "Artist";
+            await Until(() => !c.IsAnimating, "two-line text draw");
+            Check(c.ActualHeight > initial * 1.8, "Explicit newline must preserve two-line auto height");
+            await Until(() => Field(c, "_hoverLines") != null, "two-line album/artist must scroll when either line is trimmed");
+            Check(((Array)Field(c, "_hoverLines")).Length == 2, "Album and artist remain separate lines in one control");
+            Check(LineValue<float>(c, 0, "Distance") > 0 && LineValue<float>(c, 1, "Distance") == 0, "Only overflowing album scrolls");
+            var artistLayout = LineValue<CanvasTextLayout>(c, 1, "Layout");
+            Check(artistLayout.HorizontalAlignment == CanvasHorizontalAlignment.Center && artistLayout.LayoutBounds.X > 0,
+                "Short artist retains center alignment");
+            var original = (CanvasTextLayout)Field(c, "_staticTextLayout");
+            var originalMetrics = original.LineMetrics;
+            double expectedBaseline = original.LayoutBounds.Y + originalMetrics[0].Height + originalMetrics[1].Baseline;
+            double artistBaseline = LineValue<float>(c, 1, "Y") + artistLayout.LineMetrics[0].Baseline;
+            Check(Math.Abs(expectedBaseline - artistBaseline) < 0.01, "Artist baseline must not jump on hover");
+            c.OnSharedTick(TimeSpan.FromSeconds(2));
+            Check(HoverOffset(c, 0) < 0 && HoverOffset(c, 1) == 0, "Scrolling album must not drag short artist");
+
+            c.Text = "Album" + "\n" + LongText + LongText;
+            await Until(() => Field(c, "_hoverLines") != null, "LF artist-only overflow");
+            Check(LineValue<float>(c, 0, "Distance") == 0 && LineValue<float>(c, 1, "Distance") > 0, "Artist can scroll independently of album");
+            c.Text = LongText + "\r\n" + LongText + LongText;
+            await Until(() => Field(c, "_hoverLines") != null, "both lines overflow");
+            float firstDistance = LineValue<float>(c, 0, "Distance");
+            float secondDistance = LineValue<float>(c, 1, "Distance");
+            Check(secondDistance > firstDistance && firstDistance > 0, "Each long line has its own travel distance");
+            typeof(AnimatedTextBlock).GetField("_hoverElapsed", Private).SetValue(c, 0.8 + firstDistance / 36 + 0.4);
+            Check(Math.Abs(HoverOffset(c, 0) + firstDistance) < 0.01 && HoverOffset(c, 1) < -firstDistance,
+                "One line can pause at its end while the other continues");
+            c.TextEffect = new TextFadeEffect { AnimationDuration = TimeSpan.FromMilliseconds(160) };
+            c.Text = LongText + " album\r\n" + LongText + " artist";
+            Check(Field(c, "_hoverLines") == null, "Two-line text change disposes all scrolling layouts");
+            await Until(() => !c.IsAnimating && Field(c, "_hoverLines") != null, "two-line hover resumes after animation");
+            Invoke(c, "OnPointerExited", c, null);
+            Check(Field(c, "_hoverLines") == null && !(bool)Field(c, "_isClockRegistered"), "Two-line pointer exit stops the clock");
+            c.TextEffect = null;
+            Hover(c);
+            c.Text = LongText + "\r\n\r\n🎵 Artist\r\n";
+            await Until(() => Field(c, "_hoverLines") != null, "blank and trailing lines");
+            Check(((Array)Field(c, "_hoverLines")).Length == 4, "Blank and trailing lines preserve their slots");
+            c.TextAlignment = TextAlignment.Right;
+            await Until(() => Field(c, "_hoverLines") != null, "right-aligned multiline hover");
+            Check(LineValue<CanvasTextLayout>(c, 2, "Layout").HorizontalAlignment == CanvasHorizontalAlignment.Right,
+                "Short lines retain right alignment");
+            c.TextDirection = AnimatedTextBlockTextDirection.RightToLeftThenTopToBottom;
+            await Until(() => Field(c, "_hoverLines") != null, "RTL multiline hover");
+            Check(HoverOffset(c, 0) < 0 && HoverOffset(c, 2) == 0, "RTL long line starts at its right edge without moving short lines");
+            c.IsHoverScrollEnabled = false;
+            Check(Field(c, "_hoverLines") == null && !(bool)Field(c, "_isClockRegistered"), "Disabling disposes every line");
+            c.TextDirection = AnimatedTextBlockTextDirection.LeftToRightThenTopToBottom;
+            c.TextAlignment = TextAlignment.Center;
+            c.FontWeight = Microsoft.UI.Text.FontWeights.SemiBold;
+            c.Text = "祝融";
+            await Until(() => !c.IsAnimating, "Chinese title settles");
+            double chineseHeight = c.ActualHeight;
+            c.TextEffect = new TextFadeEffect { AnimationDuration = TimeSpan.FromSeconds(1) };
+            c.Text = "All In My Head";
+            await Task.Delay(100);
+            Check(c.IsAnimating, $"Script change must keep transition running; Chinese height={chineseHeight}, English height={c.ActualHeight}");
+            await Until(() => !c.IsAnimating, "resized transition completes");
+            c.TextEffect = null;
+            c.LineHeight = Math.Ceiling(c.FontSize * 1.4);
+            c.Text = "祝融";
+            await Until(() => !c.IsAnimating, "uniform Chinese title");
+            double fixedHeight = c.ActualHeight;
+            var chineseMetrics = ((CanvasTextLayout)Field(c, "_staticTextLayout")).LineMetrics[0];
+            c.TextEffect = new TextFadeEffect { AnimationDuration = TimeSpan.FromMilliseconds(500) };
+            c.Text = "All In My Head";
+            await Task.Delay(80);
+            Check(c.IsAnimating && c.ActualHeight == fixedHeight, "Uniform line height preserves layout and transition across scripts");
+            await Until(() => !c.IsAnimating, "uniform English title");
+            var englishMetrics = ((CanvasTextLayout)Field(c, "_staticTextLayout")).LineMetrics[0];
+            Check(Math.Abs(chineseMetrics.Baseline - englishMetrics.Baseline) < 0.01 && Math.Abs(fixedHeight - c.LineHeight) < 0.01,
+                "Uniform line height stabilizes baseline as well as control height");
+            c.TextEffect = new TextDefaultEffect { AnimationDuration = TimeSpan.FromMilliseconds(500), DelayPerCluster = TimeSpan.Zero };
+            c.Text = "祝融\r\nAll In My Head";
+            await Task.Delay(80);
+            Check(c.IsAnimating && Math.Abs(c.ActualHeight - 2 * fixedHeight) < 0.01,
+                "Changing line count must preserve grapheme transition and measure both uniform lines");
+            await Until(() => !c.IsAnimating, "grapheme transition after resize completes");
+            c.TextEffect = new TextWipeEffect { AnimationDuration = TimeSpan.FromMilliseconds(500) };
+            c.Text = "All In My Head";
+            await Task.Delay(80);
+            Check(c.IsAnimating && c.ActualHeight == fixedHeight, "Two lines to one preserves wipe transition");
+            await Until(() => !c.IsAnimating, "wipe after resize completes");
+            c.TextEffect = null;
+            c.Text = LongText + "\r\n艺术家 Artist";
+            c.IsHoverScrollEnabled = true;
+            Hover(c);
+            await Until(() => Field(c, "_hoverLines") != null, "uniform multiline hover");
+            Check(Math.Abs(c.ActualHeight - 2 * fixedHeight) < 0.01 && LineValue<float>(c, 1, "Y") >= fixedHeight - 0.01,
+                "Uniform line boxes also apply to independent hover layouts");
+            c.IsHoverScrollEnabled = false;
+            c.ClearValue(AnimatedTextBlock.LineHeightProperty);
+            c.Text = "祝融";
+            await Until(() => !c.IsAnimating, "natural line height restored");
+            Check(c.ActualHeight == chineseHeight, "Clearing LineHeight restores natural font metrics");
+            int bindingErrors = 0;
+            void CaptureBindingException(object sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
+            {
+                if (e.Exception is ArgumentException || e.Exception is System.Runtime.InteropServices.COMException)
+                    bindingErrors++;
+            }
+            AppDomain.CurrentDomain.FirstChanceException += CaptureBindingException;
+            var page = new LayoutRegressionPage();
+            _window.Content = page;
+            await Task.Delay(1800);
+            AppDomain.CurrentDomain.FirstChanceException -= CaptureBindingException;
+            Check(bindingErrors == 0, "x:Load must not write an invalid deferred FontSize");
+            Check(page.TitleControl != null && page.InfoControl != null && page.TitleControl.IsLoaded && page.InfoControl.IsLoaded,
+                "x:Load creates and attaches both animated text controls");
+            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "layout.txt"), DescribeLayout(page, 0));
+            Check(page.TitleControl.ActualWidth > 0 && page.TitleControl.ActualHeight >= 62,
+                $"Nested grid title remains visible: {page.TitleControl.ActualWidth} x {page.TitleControl.ActualHeight}, FontSize={page.TitleControl.FontSize}, LineHeight={page.TitleControl.LineHeight}, Text={page.TitleControl.Text}");
+            Check(page.InfoControl.ActualWidth > 0 && page.InfoControl.ActualHeight >= 84,
+                $"Nested grid info remains visible: {page.InfoControl.ActualWidth} x {page.InfoControl.ActualHeight}");
+            Check(Field(page.TitleControl, "_staticTextLayout") != null && Field(page.InfoControl, "_staticTextLayout") != null,
+                "Both nested-grid controls draw after shared effect completes");
+            page.ViewModel.ResizeFonts(56, 34);
+            await Until(() => page.TitleControl.ActualHeight == 79 && page.InfoControl.ActualHeight == 96, "responsive font bindings update both rows");
+            Check(page.TitleControl.FontSize == 56 && page.InfoControl.FontSize == 34, "Binding continues to follow ViewModel font changes");
+            _window.Content = panel;
+            await Until(() => !page.TitleControl.IsLoaded && !page.InfoControl.IsLoaded, "page detaches");
+            _window.Content = page;
+            await Until(() => page.TitleControl.IsLoaded && page.TitleControl.ActualHeight == 62 && page.InfoControl.ActualHeight == 84, "page reload restores both rows");
+            await Until(() => Field(page.TitleControl, "_staticTextLayout") != null && Field(page.InfoControl, "_staticTextLayout") != null,
+                "reloaded page draws both labels");
+            Check(page.InfoControl.LineHeight == 42, "Page reload keeps bound line height");
             File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), $"PASS: {_assertions} assertions; initial auto height={initial}; real WinUI layout/draw/transition/unload/reload.");
         }
         catch (Exception ex)

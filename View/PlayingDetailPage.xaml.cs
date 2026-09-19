@@ -32,6 +32,8 @@ namespace WinUIMusicPlayer.View
     public sealed partial class PlayingDetailPage : Page, IDisposable
     {
         public PlayingDetailViewModel ViewModel { get; }
+        // Stable line boxes across Latin/CJK fallback fonts, including the two-line metadata.
+        public static double GetAnimatedLineHeight(double fontSize) => Math.Ceiling(fontSize * 1.4);
         private ILogger<PlayingDetailPage> _logger;
         private float _dpiScale = 1.0f;
         private bool _isPortraitLayout;
@@ -161,8 +163,6 @@ namespace WinUIMusicPlayer.View
                 ViewModel.ArtistAlbumFontSize = artist;
                 ViewModel.InfoFontSize = info;
                 ViewModel.AppViewModel.LyricsFontSize = lyrics;
-                AnimatedPlayingDetailTitleTextBlock?.FontSize = title;
-                AnimatedPlayingDetailAlbumArtistTextBlock?.FontSize = artist;
 
                 if (windowSize.Width > 0 && wantPortrait != _isPortraitWanted)
                 {

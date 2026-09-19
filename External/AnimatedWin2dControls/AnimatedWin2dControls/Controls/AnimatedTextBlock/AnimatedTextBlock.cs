@@ -127,11 +127,21 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         set => SetValue(TextWrappingProperty, value);
     }
 
+    public static readonly DependencyProperty LineHeightProperty = DependencyProperty.Register(
+        nameof(LineHeight), typeof(double), typeof(AnimatedTextBlock), new PropertyMetadata(0d, OnTextLayoutPropertyChanged));
+
+    /// <summary>Uniform line height in DIPs; zero uses the font's natural line metrics.</summary>
+    public double LineHeight
+    {
+        get => (double)GetValue(LineHeightProperty);
+        set => SetValue(LineHeightProperty, value);
+    }
+
     public static readonly DependencyProperty IsHoverScrollEnabledProperty = DependencyProperty.Register(
         nameof(IsHoverScrollEnabled), typeof(bool), typeof(AnimatedTextBlock), new PropertyMetadata(false, OnHoverScrollEnabledChanged));
 
     /// <summary>
-    /// Scroll actually trimmed, single-line horizontal text while the mouse is over
+    /// Scroll actually trimmed horizontal lines while the mouse is over
     /// the control. Text transitions finish before scrolling starts. Defaults to false.
     /// </summary>
     public bool IsHoverScrollEnabled
@@ -225,9 +235,16 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
             return;
         }
 
-        // 尺寸变化：重建 newTextLayout 后直接进 Idle，不跑动画
-        // 在 UI 线程操作，此时没有并发问题
         _staticLayoutDirty = true;
+
+        // A font fallback or line-count change can resize an Auto row during a
+        // text transition. Reinitialize both layouts at the new size on Draw;
+        // entering Idle here would silently discard the requested transition.
+        if (_textEffect != null && IsAnimating)
+        {
+            SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
+            return;
+        }
 
         if (_canvas != null && _canvas.Size.Width > 0 && _canvas.Size.Height > 0)
         {
@@ -436,6 +453,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         _textFormat.Direction = Win2dHelpers.MapTextDirection(_textDirection);
         _textFormat.TrimmingGranularity = Win2dHelpers.MapTrimmingGranularity(_textTrimming);
         _textFormat.WordWrapping = Win2dHelpers.MapWordWrapping(_textWrapping);
+        ApplyLineSpacing();
 
         _textFormatDirty = false;
         _formatVersion++;
@@ -503,16 +521,27 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         if (_staticTextLayout == null) return;
 
         EnsureHoverScroll(sender);
-        var layout = _hoverTextLayout ?? _staticTextLayout;
-        float x = GetHoverOffset();
         try
         {
-            if (_textBrush != null)
-                ds.DrawTextLayout(layout, x, 0, _textBrush);
+            if (_hoverLines == null)
+            {
+                DrawTextLayout(ds, _staticTextLayout, 0, 0);
+            }
             else
-                ds.DrawTextLayout(layout, x, 0, _textColor);
+            {
+                foreach (var line in _hoverLines)
+                    DrawTextLayout(ds, line.Layout, GetHoverOffset(line.Distance), line.Y);
+            }
         }
         catch (Exception ex) when (ex is ObjectDisposedException || ex is ArgumentException) { }
+    }
+
+    private void DrawTextLayout(CanvasDrawingSession ds, CanvasTextLayout layout, float x, float y)
+    {
+        if (_textBrush != null)
+            ds.DrawTextLayout(layout, x, y, _textBrush);
+        else
+            ds.DrawTextLayout(layout, x, y, _textColor);
     }
 
     private void RebuildOldTextLayout(CanvasControl resourceCreator)
@@ -700,7 +729,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         // 空闲状态仅在悬停滚动期间重绘。
         if (_currentState == AnimatedTextBlockRedrawState.Idle)
         {
-            if (_hoverTextLayout != null)
+            if (_hoverLines != null)
             {
                 _hoverElapsed += elapsed.TotalSeconds;
                 _canvas?.Invalidate();

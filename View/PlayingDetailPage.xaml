@@ -68,13 +68,16 @@
                     Grid.Column="1"
                     Margin="20,0,20,0"
                     RowDefinitions="Auto,Auto,Auto">
+                    <!-- x:Load creates the element before x:Bind's deferred FontSize is initialized.
+                         Binding keeps a valid font size until the ViewModel value is available. -->
                     <atb:AnimatedTextBlock
                         x:Name="AnimatedPlayingDetailTitleTextBlock"
                         Grid.Row="0"
                         Margin="0"
                         x:Load="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=OneTime}"
                         IsHoverScrollEnabled="True"
-                        FontSize="24"
+                        FontSize="{Binding ViewModel.TitleFontSize, Mode=OneWay, FallbackValue=24}"
+                        LineHeight="{x:Bind local:PlayingDetailPage.GetAnimatedLineHeight(ViewModel.TitleFontSize), Mode=OneWay}"
                         FontWeight="SemiBold"
                         Text="{x:Bind ViewModel.AppViewModel.CurrentPlayingMusic.Title, Mode=OneWay}"
                         TextAlignment="{x:Bind ViewModel.AppViewModel.EffectivePlayingDetailAlignment, Mode=OneWay}"
@@ -86,7 +89,8 @@
                         Margin="0,0,0,1"
                         x:Load="{x:Bind ViewModel.AppViewModel.IsWin2dAnimatedText, Mode=OneTime}"
                         IsHoverScrollEnabled="True"
-                        FontSize="24"
+                        FontSize="{Binding ViewModel.ArtistAlbumFontSize, Mode=OneWay, FallbackValue=22}"
+                        LineHeight="{x:Bind local:PlayingDetailPage.GetAnimatedLineHeight(ViewModel.ArtistAlbumFontSize), Mode=OneWay}"
                         FontWeight="Normal"
                         Opacity="0.8"
                         Text="{x:Bind tool:BindUtils.MusicToInfo(ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
