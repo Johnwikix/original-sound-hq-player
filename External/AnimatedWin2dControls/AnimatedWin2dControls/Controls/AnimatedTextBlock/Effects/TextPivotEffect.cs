@@ -123,11 +123,10 @@ public partial class TextPivotEffect : ITextEffect
         using var cl = new CanvasCommandList(ds);
         using (var clds = cl.CreateDrawingSession())
         {
-            clds.DrawText(
-                newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
+            ShapedText.Draw(clds, newCluster,
                 (float)newCluster.DrawBounds.X,
                 (float)newCluster.DrawBounds.Y,
-                textColor, textFormat);
+                textColor);
         }
 
         using var fx = new Transform3DEffect
@@ -157,11 +156,10 @@ public partial class TextPivotEffect : ITextEffect
         using var cl = new CanvasCommandList(ds);
         using (var clds = cl.CreateDrawingSession())
         {
-            clds.DrawText(
-                oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+            ShapedText.Draw(clds, oldCluster,
                 (float)oldCluster.DrawBounds.X,
                 (float)oldCluster.DrawBounds.Y,
-                textColor, textFormat);
+                textColor);
         }
 
         using var fx = new Transform3DEffect
@@ -203,22 +201,20 @@ public partial class TextPivotEffect : ITextEffect
         // pivotProgress == 0 时跳过离屏路径，直接绘制
         if (pivotProgress == 0f)
         {
-            ds.DrawText(
-                oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+            ShapedText.Draw(ds, newCluster,
                 (float)(oX + dX * p),
                 (float)(oY + dY * p),
-                textColor, textFormat);
+                textColor);
             return;
         }
 
         using var cl = new CanvasCommandList(ds);
         using (var clds = cl.CreateDrawingSession())
         {
-            clds.DrawText(
-                newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
+            ShapedText.Draw(clds, newCluster,
                 (float)(oX + dX * p),
                 (float)(oY + dY * p),
-                textColor, textFormat);
+                textColor);
         }
 
         // 原来 CreateLayer(1.0f) 是空操作，直接 DrawImage 即可
@@ -252,11 +248,10 @@ public partial class TextPivotEffect : ITextEffect
             using var oCl = new CanvasCommandList(ds);
             using (var clds = oCl.CreateDrawingSession())
             {
-                clds.DrawText(
-                    oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+                ShapedText.Draw(clds, oldCluster,
                     (float)oldCluster.DrawBounds.X,
                     (float)oldCluster.DrawBounds.Y,
-                    textColor, textFormat);
+                    textColor);
             }
 
             using var oldFx = new Transform3DEffect
@@ -281,11 +276,10 @@ public partial class TextPivotEffect : ITextEffect
                 clds.Transform = Matrix3x2.CreateTranslation(0,
                     (float)(newCluster.LayoutBounds.Height * newT));
 
-                clds.DrawText(
-                    newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
+                ShapedText.Draw(clds, newCluster,
                     (float)newCluster.DrawBounds.X,
                     (float)newCluster.DrawBounds.Y,
-                    textColor, textFormat);
+                    textColor);
             }
 
             using var newFx = new Transform3DEffect

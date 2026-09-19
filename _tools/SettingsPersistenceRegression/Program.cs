@@ -58,6 +58,15 @@ try
     Check(await new AudioSettingsStore(path).LoadAsync(new()) == legacy, "Restart remigrated over saved audio preferences.");
     Console.WriteLine("PASS: every audio field migrates once; general settings retain UI preferences and stop writing audio keys.");
 
+    var atmosPreferences = legacy with { AtmosEndpointId = "hdmi-dedicated", OutputMode = "ASIO" };
+    await store.SaveAsync(atmosPreferences);
+    var restoredAtmos = await new AudioSettingsStore(path).LoadAsync(new());
+    Check(restoredAtmos.AtmosEndpointId == "hdmi-dedicated" && restoredAtmos.OutputMode == "ASIO"
+        && restoredAtmos.ExperimentalAtmosPassthrough, "Dedicated HDMI did not persist independently of ordinary ASIO output.");
+    Check(legacy.AtmosEndpointId == null, "Old preferences unexpectedly selected a dedicated endpoint.");
+    await store.SaveAsync(legacy);
+    Console.WriteLine("PASS: dedicated Atmos HDMI persists without changing ordinary output; old settings keep current endpoint.");
+
     byte[] committed = await File.ReadAllBytesAsync(path);
     using (var locked = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
     {

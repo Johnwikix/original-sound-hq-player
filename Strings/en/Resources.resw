@@ -1846,10 +1846,10 @@
     <value>Off by default. 5.1 PCM via ASIO / WASAPI exclusive only; no Atmos. ASIO outputs 1–6 must be L, R, C, LFE, surround L, surround R.</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
-    <value>Experimental Atmos HDMI passthrough</value>
+    <value>Prefer Atmos HDMI passthrough (experimental)</value>
   </data>
   <data name="ExperimentalAtmosDescription" xml:space="preserve">
-    <value>Off by default. WASAPI exclusive only: 48 kHz six-channel E-AC-3 / Atmos. Requires a compatible HDMI receiver; adjust volume there, as app volume and effects are bypassed. No ASIO, TrueHD or headphone Atmos.</value>
+    <value>Compatible tracks automatically use WASAPI exclusive; other tracks keep your output settings. Supports 48 kHz, six-channel E-AC-3 / Atmos, not TrueHD. Passthrough bypasses app volume and effects; adjust volume on the receiver.</value>
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>Experimental E-AC-3 / Atmos HDMI bitstream mode: app volume and all effects are bypassed. Adjust volume on your receiver. Saved settings resume with PCM.</value>
@@ -1924,5 +1924,62 @@
   </data>
   <data name="AnimatedTextHoverScrollDescription" xml:space="preserve">
     <value>Hover to read the full title, album and artist after the text transition finishes.</value>
+  </data>
+  <data name="AtmosNotificationTitle" xml:space="preserve">
+    <value>Atmos HDMI passthrough</value>
+  </data>
+  <data name="AtmosWaiting" xml:space="preserve">
+    <value>Waiting for a compatible track; other tracks use your usual output.</value>
+  </data>
+  <data name="AtmosReady" xml:space="preserve">
+    <value>Ready to try passthrough; device negotiation starts when playback resumes.</value>
+  </data>
+  <data name="AtmosActive" xml:space="preserve">
+    <value>E-AC-3 / Atmos bitstream output established · WASAPI exclusive. Adjust receiver volume; check the receiver for Atmos decoding status.</value>
+  </data>
+  <data name="AtmosFallback" xml:space="preserve">
+    <value>Atmos passthrough is unavailable; playing ordinary PCM.</value>
+  </data>
+  <data name="AtmosStopped" xml:space="preserve">
+    <value>Atmos passthrough failed and playback stopped. Check or reselect the output device.</value>
+  </data>
+  <data name="AtmosOff" xml:space="preserve">
+    <value>Automatic Atmos passthrough is off.</value>
+  </data>
+  <data name="AtmosUnsupported" xml:space="preserve">
+    <value>The device does not accept this E-AC-3 / Atmos bitstream format.</value>
+  </data>
+  <data name="AtmosDeviceUnavailable" xml:space="preserve">
+    <value>The output device disconnected, changed, or is unavailable.</value>
+  </data>
+  <data name="AtmosDeviceBusy" xml:space="preserve">
+    <value>Another application is using the output device.</value>
+  </data>
+  <data name="AtmosExclusiveDenied" xml:space="preserve">
+    <value>Windows or the driver does not allow exclusive mode on this device.</value>
+  </data>
+  <data name="AtmosOutputFailed" xml:space="preserve">
+    <value>The device could not start or maintain bitstream output.</value>
+  </data>
+  <data name="AtmosDecodeFailed" xml:space="preserve">
+    <value>The source bitstream could not be read or contains unsupported data.</value>
+  </data>
+  <data name="AtmosSelectDevice" xml:space="preserve">
+    <value>For ASIO, explicitly select an Atmos HDMI output device below.</value>
+  </data>
+  <data name="AtmosCurrentDevice" xml:space="preserve">
+    <value>Use current output device (except ASIO)</value>
+  </data>
+  <data name="AtmosSavedDeviceUnavailable" xml:space="preserve">
+    <value>Saved device (currently disconnected)</value>
+  </data>
+  <data name="AtmosDeviceTitle" xml:space="preserve">
+    <value>Atmos output device</value>
+  </data>
+  <data name="AtmosDeviceDescription" xml:space="preserve">
+    <value>Used only for compatible tracks and their PCM fallback. Listed devices are not certified for Atmos; capability is checked at playback. Other devices are never selected automatically.</value>
+  </data>
+  <data name="AtmosUseOrdinary" xml:space="preserve">
+    <value>Turn off passthrough and restore normal playback</value>
   </data>
 </root>

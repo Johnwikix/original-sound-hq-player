@@ -1843,10 +1843,10 @@
     <value>По умолчанию выключен. Только PCM 5.1 через ASIO / WASAPI Exclusive, без Atmos. Выходы ASIO 1–6: L, R, C, LFE, Surround L, Surround R.</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
-    <value>Экспериментальный Atmos HDMI passthrough</value>
+    <value>Предпочитать Atmos по HDMI (экспериментально)</value>
   </data>
   <data name="ExperimentalAtmosDescription" xml:space="preserve">
-    <value>По умолчанию выключен. Только WASAPI Exclusive: E-AC-3 / Atmos, 48 кГц, 6 каналов. Нужен совместимый HDMI-ресивер; громкость регулируется на нём, настройки громкости и эффекты приложения обходятся. Без ASIO, TrueHD и Atmos для наушников.</value>
+    <value>Совместимые треки автоматически используют WASAPI Exclusive; остальные сохраняют обычные настройки вывода. Поддерживается E-AC-3 / Atmos: 48 кГц, 6 каналов, без TrueHD. Громкость и эффекты приложения обходятся; регулируйте громкость на ресивере.</value>
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>Экспериментальный битстрим E-AC-3 / Atmos HDMI: громкость и эффекты приложения обходятся. Регулируйте громкость на ресивере. При возврате к PCM настройки возобновляются.</value>
@@ -1924,5 +1924,62 @@
   </data>
   <data name="AnimatedTextHoverScrollDescription" xml:space="preserve">
     <value>При наведении показывать полные названия трека, альбома и исполнителя после завершения анимации смены текста.</value>
+  </data>
+  <data name="AtmosNotificationTitle" xml:space="preserve">
+    <value>Atmos по HDMI</value>
+  </data>
+  <data name="AtmosWaiting" xml:space="preserve">
+    <value>Ожидание совместимого трека; остальные используют обычный вывод.</value>
+  </data>
+  <data name="AtmosReady" xml:space="preserve">
+    <value>Готово к попытке прямого вывода; устройство проверится при возобновлении.</value>
+  </data>
+  <data name="AtmosActive" xml:space="preserve">
+    <value>Поток E-AC-3 / Atmos установлен · WASAPI Exclusive. Регулируйте громкость и проверяйте декодирование Atmos на ресивере.</value>
+  </data>
+  <data name="AtmosFallback" xml:space="preserve">
+    <value>Прямой вывод Atmos недоступен; воспроизводится обычный PCM.</value>
+  </data>
+  <data name="AtmosStopped" xml:space="preserve">
+    <value>Ошибка прямого вывода Atmos; воспроизведение остановлено. Проверьте или выберите устройство вывода.</value>
+  </data>
+  <data name="AtmosOff" xml:space="preserve">
+    <value>Автоматический прямой вывод Atmos выключен.</value>
+  </data>
+  <data name="AtmosUnsupported" xml:space="preserve">
+    <value>Устройство не принимает этот формат E-AC-3 / Atmos.</value>
+  </data>
+  <data name="AtmosDeviceUnavailable" xml:space="preserve">
+    <value>Устройство вывода отключено, изменено или недоступно.</value>
+  </data>
+  <data name="AtmosDeviceBusy" xml:space="preserve">
+    <value>Устройство вывода занято другим приложением.</value>
+  </data>
+  <data name="AtmosExclusiveDenied" xml:space="preserve">
+    <value>Windows или драйвер запрещает эксклюзивный режим для этого устройства.</value>
+  </data>
+  <data name="AtmosOutputFailed" xml:space="preserve">
+    <value>Устройство не смогло начать или продолжить вывод битового потока.</value>
+  </data>
+  <data name="AtmosDecodeFailed" xml:space="preserve">
+    <value>Не удалось прочитать исходный поток, либо он содержит неподдерживаемые данные.</value>
+  </data>
+  <data name="AtmosSelectDevice" xml:space="preserve">
+    <value>Для ASIO явно выберите ниже устройство вывода Atmos HDMI.</value>
+  </data>
+  <data name="AtmosCurrentDevice" xml:space="preserve">
+    <value>Текущее устройство вывода (кроме ASIO)</value>
+  </data>
+  <data name="AtmosSavedDeviceUnavailable" xml:space="preserve">
+    <value>Сохранённое устройство (не подключено)</value>
+  </data>
+  <data name="AtmosDeviceTitle" xml:space="preserve">
+    <value>Устройство вывода Atmos</value>
+  </data>
+  <data name="AtmosDeviceDescription" xml:space="preserve">
+    <value>Только для совместимых треков и их резервного вывода PCM. Список не подтверждает поддержку Atmos; проверка выполняется при воспроизведении. Другие устройства автоматически не выбираются.</value>
+  </data>
+  <data name="AtmosUseOrdinary" xml:space="preserve">
+    <value>Выключить прямой вывод и вернуться к обычному воспроизведению</value>
   </data>
 </root>

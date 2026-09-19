@@ -1,4 +1,5 @@
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
+using AnimatedWin2dControls.Controls.AnimatedTextBlock.Internals;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
@@ -18,12 +19,13 @@ public sealed partial class AnimatedTextBlock
     private bool _hoverChecked;
     private HoverLine[] _hoverLines;
 
-    private readonly struct HoverLine(CanvasTextLayout layout, float y, float distance, float opacity)
+    private readonly struct HoverLine(CanvasTextLayout layout, float y, float distance, float opacity, bool hasColorGlyphs)
     {
         public CanvasTextLayout Layout { get; } = layout;
         public float Y { get; } = y;
         public float Distance { get; } = distance;
         public float Opacity { get; } = opacity;
+        public bool HasColorGlyphs { get; } = hasColorGlyphs;
     }
     private double _hoverElapsed;
 
@@ -221,6 +223,7 @@ public sealed partial class AnimatedTextBlock
             var layout = new CanvasTextLayout(sender, lineText, format, (float)sender.Size.Width, metric.Height);
             try
             {
+                layout.Options = CanvasDrawTextOptions.EnableColorFont | CanvasDrawTextOptions.NoPixelSnap;
                 layout.TrimmingGranularity = CanvasTextTrimmingGranularity.None;
                 layout.TrimmingSign = CanvasTrimmingSign.None;
                 layout.VerticalAlignment = CanvasVerticalAlignment.Top;
@@ -232,7 +235,7 @@ public sealed partial class AnimatedTextBlock
                     layout.RequestedSize = new Size(width, metric.Height);
                 }
                 float baseline = layout.LineMetrics[0].Baseline;
-                lines.Add(new HoverLine(layout, y + metric.Baseline - baseline, distance, opacity));
+                lines.Add(new HoverLine(layout, y + metric.Baseline - baseline, distance, opacity, ShapedText.MayContainColorGlyphs(lineText)));
                 scrollable |= distance > 0;
             }
             catch

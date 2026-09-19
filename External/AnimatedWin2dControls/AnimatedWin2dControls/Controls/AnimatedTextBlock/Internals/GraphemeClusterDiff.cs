@@ -95,22 +95,15 @@ internal partial class GraphemeClusterDiff
             }
         }
 
-        var removeOffsets = new int[oa.Length];
-        int runningOffset = 0;
-
         for (int i = 0; i < oa.Length; i++)
         {
-            removeOffsets[i] = runningOffset;
             if (!oa[i].HasValue)
             {
                 var removeOp = new TextDiffResult(AnimatedTextBlockDiffOperationType.Remove, i, i);
                 removeOp.OldGlyphCluster = oldClusters[i];
                 results.Add(removeOp);
-                runningOffset += 1;
             }
         }
-
-        runningOffset = 0;
 
         for (int i = 0; i < na.Length; i++)
         {
@@ -125,6 +118,8 @@ internal partial class GraphemeClusterDiff
                     results.Add(updateOp);
                 }
 
+                // A matched pair has exactly one operation. Emitting another
+                // Move after Stay would draw and advance the same glyph twice.
                 if (i != j)
                 {
                     var moveOp = new TextDiffResult(AnimatedTextBlockDiffOperationType.Move, j, i);
@@ -140,21 +135,12 @@ internal partial class GraphemeClusterDiff
                     stayOp.NewGlyphCluster = newClusters[i];
                     results.Add(stayOp);
                 }
-
-                if (i != (j + runningOffset - removeOffsets[j]))
-                {
-                    var moveOp = new TextDiffResult(AnimatedTextBlockDiffOperationType.Move, j, i);
-                    moveOp.OldGlyphCluster = oldClusters[j];
-                    moveOp.NewGlyphCluster = newClusters[i];
-                    results.Add(moveOp);
-                }
             }
             else
             {
                 var insertOp = new TextDiffResult(AnimatedTextBlockDiffOperationType.Insert, i, i);
                 insertOp.NewGlyphCluster = newClusters[i];
                 results.Add(insertOp);
-                runningOffset += 1;
             }
         }
 

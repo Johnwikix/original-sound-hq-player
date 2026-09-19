@@ -127,11 +127,10 @@ public partial class TextBlurEffect : ITextEffect
         using var cl = new CanvasCommandList(ds);
         using (var clds = cl.CreateDrawingSession())
         {
-            clds.DrawText(
-                newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
+            ShapedText.Draw(clds, newCluster,
                 (float)newCluster.DrawBounds.X,
                 (float)newCluster.DrawBounds.Y,
-                textColor, textFormat);
+                textColor);
         }
 
         using var blurEffect = new GaussianBlurEffect
@@ -161,11 +160,10 @@ public partial class TextBlurEffect : ITextEffect
         using var cl = new CanvasCommandList(ds);
         using (var clds = cl.CreateDrawingSession())
         {
-            clds.DrawText(
-                oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+            ShapedText.Draw(clds, oldCluster,
                 (float)oldCluster.DrawBounds.X,
                 (float)oldCluster.DrawBounds.Y,
-                textColor, textFormat);
+                textColor);
         }
 
         using var blurEffect = new GaussianBlurEffect
@@ -197,11 +195,10 @@ public partial class TextBlurEffect : ITextEffect
             using var oCl = new CanvasCommandList(ds);
             using (var clds = oCl.CreateDrawingSession())
             {
-                clds.DrawText(
-                    oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+                ShapedText.Draw(clds, oldCluster,
                     (float)oldCluster.DrawBounds.X,
                     (float)oldCluster.DrawBounds.Y,
-                    textColor, textFormat);
+                    textColor);
             }
 
             using var oldBlur = new GaussianBlurEffect
@@ -224,11 +221,10 @@ public partial class TextBlurEffect : ITextEffect
                 clds.Transform = Matrix3x2.CreateTranslation(0,
                     (float)(newCluster.LayoutBounds.Height * blurT));
 
-                clds.DrawText(
-                    newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
+                ShapedText.Draw(clds, newCluster,
                     (float)newCluster.DrawBounds.X,
                     (float)newCluster.DrawBounds.Y,
-                    textColor, textFormat);
+                    textColor);
             }
 
             using var newBlur = new GaussianBlurEffect
@@ -267,14 +263,10 @@ public partial class TextBlurEffect : ITextEffect
         var dX = nX - oX;
         var dY = nY - oY;
 
-        ds.DrawText(
-            oldCluster.IsTrimmed
-                ? oldTextLayout.GenerateTrimmingSign()
-                : oldCluster.Characters,
+        ShapedText.Draw(ds, newCluster,
             (float)(oX + dX * oldProgress),
             (float)(oY + dY * oldProgress),
-            textColor,
-            textFormat);
+            textColor);
     }
 
     private static float DegreesToRadians(float degrees)

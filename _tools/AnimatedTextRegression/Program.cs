@@ -106,6 +106,44 @@ public sealed partial class TestApp : Application
         typeof(AnimatedTextBlock).GetField("_isPointerOver", Private).SetValue(c, true);
         ((CanvasControl)Field(c, "_canvas")).Invalidate();
     }
+    private async Task CheckEndpoint(AnimatedTextBlock control, ITextEffect effect, AnimatedTextDocument document, float dpi, string label)
+    {
+        effect.AnimationDuration = TimeSpan.FromSeconds(10);
+        effect.DelayPerCluster = TimeSpan.Zero;
+        control.TextEffect = effect;
+        control.Document = document;
+        await Until(() => (AnimatedTextBlockRedrawState)Field(control, "_currentState") == AnimatedTextBlockRedrawState.Animating, "mixed-script endpoint transition starts");
+        var endpointDiffs = (System.Collections.Generic.List<TextDiffResult>)Field(control, "_diffResults");
+        foreach (var diff in endpointDiffs)
+        {
+            if (diff.OldGlyphCluster != null) diff.OldGlyphCluster.Progress = 0.99999f;
+            if (diff.NewGlyphCluster != null) diff.NewGlyphCluster.Progress = 0.99999f;
+        }
+        var endpointCanvas = (CanvasControl)Field(control, "_canvas");
+        using var animatedEndpoint = new CanvasRenderTarget(endpointCanvas, (float)endpointCanvas.Size.Width, (float)endpointCanvas.Size.Height, dpi);
+        using var staticEndpoint = new CanvasRenderTarget(endpointCanvas, (float)endpointCanvas.Size.Width, (float)endpointCanvas.Size.Height, dpi);
+        using (var drawing = animatedEndpoint.CreateDrawingSession())
+        {
+            drawing.Clear(Microsoft.UI.Colors.Transparent);
+            Invoke(control, "DrawDocument", endpointCanvas, drawing);
+        }
+        Invoke(control, "SetRedrawState", AnimatedTextBlockRedrawState.Idle, false);
+        using (var drawing = staticEndpoint.CreateDrawingSession())
+        {
+            drawing.Clear(Microsoft.UI.Colors.Transparent);
+            Invoke(control, "DrawDocument", endpointCanvas, drawing);
+        }
+        await animatedEndpoint.SaveAsync(Path.Combine(AppContext.BaseDirectory, $"endpoint-{label}-animation.png"), CanvasBitmapFileFormat.Png);
+        await staticEndpoint.SaveAsync(Path.Combine(AppContext.BaseDirectory, $"endpoint-{label}-static.png"), CanvasBitmapFileFormat.Png);
+        byte[] animatedPixels = animatedEndpoint.GetPixelBytes(), staticPixels = staticEndpoint.GetPixelBytes();
+        long alphaDifference = 0, alphaTotal = 0;
+        for (int pixel = 3; pixel < animatedPixels.Length; pixel += 4)
+        {
+            alphaDifference += Math.Abs(animatedPixels[pixel] - staticPixels[pixel]);
+            alphaTotal += staticPixels[pixel];
+        }
+        Check(alphaDifference < alphaTotal * 0.001, $"{label} endpoint matches static positions (alpha difference {alphaDifference / (double)alphaTotal:P4})");
+    }
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
         try
@@ -323,7 +361,8 @@ public sealed partial class TestApp : Application
             await Until(() => page.TitleControl.ActualHeight == 79 && page.InfoControl.ActualHeight == 96, "responsive font bindings update both rows");
             Check(page.TitleControl.FontSize == 56 && page.InfoControl.FontSize == 34, "Binding continues to follow ViewModel font changes");
             _window.Content = panel;
-            await Until(() => !page.TitleControl.IsLoaded && !page.InfoControl.IsLoaded, "page detaches");
+            await Until(() => !page.TitleControl.IsLoaded && !page.InfoControl.IsLoaded
+                && Field(page.TitleControl, "_textFormat") == null && Field(page.InfoControl, "_textFormat") == null, "page completes Unloaded cleanup");
             _window.Content = page;
             await Until(() => page.TitleControl.IsLoaded && page.TitleControl.ActualHeight == 62 && page.InfoControl.ActualHeight == 84, "page reload restores both rows");
             await Until(() => Field(page.TitleControl, "_staticTextLayout") != null && Field(page.InfoControl, "_staticTextLayout") != null,
@@ -415,6 +454,23 @@ public sealed partial class TestApp : Application
             _window.Content = documentPage;
             await Until(() => unified.IsLoaded && !unified.IsAnimating && Field(unified, "_documentLayouts") != null, "unified reload");
             Check(CanvasCount(documentPage) == 1, "Unified page re-entry retains exactly one canvas");
+            int endpointIndex = 0;
+            foreach (var effect in effects)
+            {
+                if (effect is TextFadeEffect || effect is TextWipeEffect) continue;
+                await CheckEndpoint(unified, effect, DocumentLayoutRegressionPage.CreateDocument(
+                    "祝融 All In My Head " + endpointIndex++, "专辑 Album AV office\r\n艺术家 Artist café", 44, 30), 96, effect.GetType().Name);
+            }
+            await CheckEndpoint(unified, new TextDefaultEffect(), DocumentLayoutRegressionPage.CreateDocument(
+                "中英 AVATAR office café", "中文 Album ffi\r\nArtist e\u0301 中英文", 44, 30), 144, "Dpi144");
+            unified.TextDirection = AnimatedTextBlockTextDirection.RightToLeftThenTopToBottom;
+            await CheckEndpoint(unified, new TextDefaultEffect(), DocumentLayoutRegressionPage.CreateDocument(
+                "中文 English שלום", "专辑 Album مرحبا\r\nArtist אבג 中文", 44, 30), 96, "Rtl");
+            unified.TextDirection = AnimatedTextBlockTextDirection.LeftToRightThenTopToBottom;
+            await CheckEndpoint(unified, new TextDefaultEffect(), DocumentLayoutRegressionPage.CreateDocument(
+                LongText, LongText + "\r\nArtist 中文", 44, 30), 96, "Trimmed");
+            await CheckEndpoint(unified, new TextDefaultEffect(), DocumentLayoutRegressionPage.CreateDocument(
+                "中文 😀 Music", "专辑 🌈 Album\r\nArtist 中文", 44, 30), 96, "Emoji");
             File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), $"PASS: {_assertions} assertions; initial auto height={initial}; real WinUI layout/draw/transition/unload/reload.");
         }
         catch (Exception ex)

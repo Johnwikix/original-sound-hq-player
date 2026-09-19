@@ -5,6 +5,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedTextBlock;
 
 public partial class GraphemeCluster : IEquatable<GraphemeCluster>
 {
+    internal Internals.ShapedText.GlyphRun ShapedRun { get; set; }
     /// <summary>
     /// The content of the cluster.
     /// </summary>

@@ -52,6 +52,7 @@ public partial class MusicDatabaseService
         IsDopEnabled = AppViewModel.IsDopEnabled,
         ExperimentalSurround51 = AppViewModel.ExperimentalSurround51,
         ExperimentalAtmosPassthrough = AppViewModel.ExperimentalAtmosPassthrough,
+        AtmosEndpointId = AppViewModel.AtmosEndpointId,
         DsdGain = AppViewModel.DsdGain,
         DsdPcmFreq = AppViewModel.DsdPcmFreq
     };

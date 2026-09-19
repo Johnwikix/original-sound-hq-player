@@ -16,6 +16,7 @@ public sealed record AudioPreferences
     public bool IsDopEnabled { get; init; }
     public bool ExperimentalSurround51 { get; init; }
     public bool ExperimentalAtmosPassthrough { get; init; }
+    public string? AtmosEndpointId { get; init; }
     public int DsdGain { get; init; } = 6;
     public int DsdPcmFreq { get; init; } = 88200;
 
@@ -25,6 +26,8 @@ public sealed record AudioPreferences
         if (Dsp == null) throw new ArgumentException("Missing DSP settings.");
         if (WasapiEndpointId is { } id && (Encoding.UTF8.GetByteCount(id) > 256 || id.Contains('\0')))
             throw new ArgumentException("Invalid WASAPI endpoint ID.");
+        if (AtmosEndpointId is { } atmosId && (Encoding.UTF8.GetByteCount(atmosId) > 256 || atmosId.Contains('\0')))
+            throw new ArgumentException("Invalid Atmos endpoint ID.");
         if (DeviceFriendlyName == null || DeviceFriendlyName.Length > 1024)
             throw new ArgumentException("Invalid output device name.");
         return this with

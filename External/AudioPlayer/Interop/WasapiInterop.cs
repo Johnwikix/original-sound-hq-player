@@ -171,6 +171,10 @@ internal sealed unsafe class RawAudioClient
         ((delegate* unmanaged[Stdcall]<IntPtr, int, int, long, long, WAVEFORMATEX*, void*, int>)_vtbl[3])(
             _self, shareMode, streamFlags, bufferDuration, periodicity, format, null);
 
+    public int IsExclusiveFormatSupported(WAVEFORMATEX* format) =>
+        ((delegate* unmanaged[Stdcall]<IntPtr, int, WAVEFORMATEX*, WAVEFORMATEX**, int>)_vtbl[7])(
+            _self, WasapiTypes.ShareModeExclusive, format, null);
+
     public int GetBufferSize(out uint frames)
     {
         fixed (uint* p = &frames)

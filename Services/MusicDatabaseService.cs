@@ -1151,6 +1151,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.IsDopEnabled = audio.IsDopEnabled;
                 AppViewModel.ExperimentalSurround51 = audio.ExperimentalSurround51;
                 AppViewModel.ExperimentalAtmosPassthrough = audio.ExperimentalAtmosPassthrough;
+                AppViewModel.AtmosEndpointId = audio.AtmosEndpointId ?? "";
                 AppViewModel.IsFadeEnabled = audio.IsFadeEnabled;
                 AppViewModel.LyricsBlurAmount = settings.LyricsBlurAmount;
                 AppViewModel.UseImageDominantTheme = settings.UseImageDominantTheme;

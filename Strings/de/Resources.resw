@@ -1843,10 +1843,10 @@
     <value>Standardmäßig aus. Nur 5.1-PCM über ASIO / WASAPI exklusiv, kein Atmos. ASIO-Ausgänge 1–6: L, R, C, LFE, Surround L, Surround R.</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
-    <value>Experimentelles Atmos HDMI-Passthrough</value>
+    <value>Atmos-HDMI-Passthrough bevorzugen (experimentell)</value>
   </data>
   <data name="ExperimentalAtmosDescription" xml:space="preserve">
-    <value>Standardmäßig aus. Nur WASAPI exklusiv: E-AC-3 / Atmos mit 48 kHz und 6 Kanälen. Kompatibler HDMI-Receiver erforderlich; Lautstärke dort regeln, App-Lautstärke und Effekte werden umgangen. Kein ASIO, TrueHD oder Kopfhörer-Atmos.</value>
+    <value>Kompatible Titel nutzen automatisch WASAPI exklusiv; andere behalten Ihre Ausgabeeinstellungen. Unterstützt E-AC-3 / Atmos mit 48 kHz und sechs Kanälen, kein TrueHD. Lautstärke und Effekte der App werden umgangen; Lautstärke am Receiver regeln.</value>
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>Experimenteller E-AC-3 / Atmos HDMI-Bitstream: App-Lautstärke und alle Effekte werden umgangen. Lautstärke am Receiver regeln. Gespeicherte Einstellungen gelten wieder bei PCM.</value>
@@ -1924,5 +1924,62 @@
   </data>
   <data name="AnimatedTextHoverScrollDescription" xml:space="preserve">
     <value>Zeigen Sie nach dem Textwechsel auf Titel, Album und Interpret, um den vollständigen Text zu lesen.</value>
+  </data>
+  <data name="AtmosNotificationTitle" xml:space="preserve">
+    <value>Atmos-HDMI-Passthrough</value>
+  </data>
+  <data name="AtmosWaiting" xml:space="preserve">
+    <value>Warten auf einen kompatiblen Titel; andere verwenden die übliche Ausgabe.</value>
+  </data>
+  <data name="AtmosReady" xml:space="preserve">
+    <value>Bereit für Passthrough; Geräteprüfung beim Fortsetzen.</value>
+  </data>
+  <data name="AtmosActive" xml:space="preserve">
+    <value>E-AC-3-/Atmos-Bitstream aktiv · WASAPI exklusiv. Lautstärke am Receiver regeln; Atmos-Decodierung dort prüfen.</value>
+  </data>
+  <data name="AtmosFallback" xml:space="preserve">
+    <value>Atmos-Passthrough nicht verfügbar; normale PCM-Wiedergabe.</value>
+  </data>
+  <data name="AtmosStopped" xml:space="preserve">
+    <value>Atmos-Passthrough fehlgeschlagen, Wiedergabe gestoppt. Ausgabegerät prüfen oder neu wählen.</value>
+  </data>
+  <data name="AtmosOff" xml:space="preserve">
+    <value>Automatisches Atmos-Passthrough ist aus.</value>
+  </data>
+  <data name="AtmosUnsupported" xml:space="preserve">
+    <value>Das Gerät akzeptiert dieses E-AC-3-/Atmos-Bitstreamformat nicht.</value>
+  </data>
+  <data name="AtmosDeviceUnavailable" xml:space="preserve">
+    <value>Das Ausgabegerät wurde getrennt, geändert oder ist nicht verfügbar.</value>
+  </data>
+  <data name="AtmosDeviceBusy" xml:space="preserve">
+    <value>Eine andere Anwendung belegt das Ausgabegerät.</value>
+  </data>
+  <data name="AtmosExclusiveDenied" xml:space="preserve">
+    <value>Windows oder der Treiber erlaubt keinen Exklusivmodus für dieses Gerät.</value>
+  </data>
+  <data name="AtmosOutputFailed" xml:space="preserve">
+    <value>Das Gerät konnte die Bitstream-Ausgabe nicht starten oder aufrechterhalten.</value>
+  </data>
+  <data name="AtmosDecodeFailed" xml:space="preserve">
+    <value>Der Quell-Bitstream ist nicht lesbar oder enthält nicht unterstützte Daten.</value>
+  </data>
+  <data name="AtmosSelectDevice" xml:space="preserve">
+    <value>Bei ASIO unten ein Atmos-HDMI-Ausgabegerät auswählen.</value>
+  </data>
+  <data name="AtmosCurrentDevice" xml:space="preserve">
+    <value>Aktuelles Ausgabegerät verwenden (außer ASIO)</value>
+  </data>
+  <data name="AtmosSavedDeviceUnavailable" xml:space="preserve">
+    <value>Gespeichertes Gerät (nicht verbunden)</value>
+  </data>
+  <data name="AtmosDeviceTitle" xml:space="preserve">
+    <value>Atmos-Ausgabegerät</value>
+  </data>
+  <data name="AtmosDeviceDescription" xml:space="preserve">
+    <value>Nur für kompatible Titel und deren PCM-Rückfall. Die Liste bestätigt keine Atmos-Unterstützung; Prüfung bei Wiedergabe. Kein automatischer Wechsel zu anderen Geräten.</value>
+  </data>
+  <data name="AtmosUseOrdinary" xml:space="preserve">
+    <value>Passthrough ausschalten, normal wiedergeben</value>
   </data>
 </root>

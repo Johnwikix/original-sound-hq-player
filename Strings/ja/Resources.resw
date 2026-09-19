@@ -1843,10 +1843,10 @@
     <value>既定はオフ。ASIO / WASAPI 排他の 5.1 PCM のみ（Atmos 非対応）。ASIO 出力 1～6 は左、右、中央、LFE、左サラウンド、右サラウンドの順。</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
-    <value>実験的な Atmos HDMI パススルー</value>
+    <value>Atmos HDMI パススルーを優先（試験的）</value>
   </data>
   <data name="ExperimentalAtmosDescription" xml:space="preserve">
-    <value>既定はオフ。WASAPI 排他のみ：48 kHz・6 チャンネルの E-AC-3 / Atmos。対応 HDMI アンプが必要です。アプリの音量・音響効果は適用されないため、アンプで音量を調整してください。ASIO、TrueHD、ヘッドホン Atmos は非対応。</value>
+    <value>対応曲では WASAPI 排他モードに自動切替し、その他の曲は元の出力設定を使用します。48 kHz・6 チャンネル E-AC-3 / Atmos に対応（TrueHD 非対応）。パススルー中はアプリの音量と音響効果を適用しません。AV アンプで音量を調整してください。</value>
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>実験的な E-AC-3 / Atmos HDMI ビットストリーム：アプリの音量と音響効果は適用されません。アンプで音量を調整してください。PCM に戻ると設定が復元されます。</value>
@@ -1924,5 +1924,62 @@
   </data>
   <data name="AnimatedTextHoverScrollDescription" xml:space="preserve">
     <value>文字の切り替えアニメーション後、マウスを重ねると曲名・アルバム・アーティストの全文を表示します。</value>
+  </data>
+  <data name="AtmosNotificationTitle" xml:space="preserve">
+    <value>Atmos HDMI パススルー</value>
+  </data>
+  <data name="AtmosWaiting" xml:space="preserve">
+    <value>対応曲を待機中。他の曲は通常の出力を使用します。</value>
+  </data>
+  <data name="AtmosReady" xml:space="preserve">
+    <value>パススルー準備完了。再生再開時に機器を確認します。</value>
+  </data>
+  <data name="AtmosActive" xml:space="preserve">
+    <value>E-AC-3 / Atmos ビットストリーム出力確立・WASAPI 排他。音量調整と Atmos デコード状態の確認は AV アンプで行ってください。</value>
+  </data>
+  <data name="AtmosFallback" xml:space="preserve">
+    <value>Atmos パススルーを利用できないため、通常の PCM で再生中。</value>
+  </data>
+  <data name="AtmosStopped" xml:space="preserve">
+    <value>Atmos パススルーに失敗し、再生を停止しました。出力機器を確認または選び直してください。</value>
+  </data>
+  <data name="AtmosOff" xml:space="preserve">
+    <value>Atmos 自動パススルーはオフです。</value>
+  </data>
+  <data name="AtmosUnsupported" xml:space="preserve">
+    <value>機器がこの E-AC-3 / Atmos 形式に対応していません。</value>
+  </data>
+  <data name="AtmosDeviceUnavailable" xml:space="preserve">
+    <value>出力機器が切断・変更されたか、利用できません。</value>
+  </data>
+  <data name="AtmosDeviceBusy" xml:space="preserve">
+    <value>他のアプリが出力機器を使用しています。</value>
+  </data>
+  <data name="AtmosExclusiveDenied" xml:space="preserve">
+    <value>Windows またはドライバーが排他モードを許可していません。</value>
+  </data>
+  <data name="AtmosOutputFailed" xml:space="preserve">
+    <value>機器がビットストリーム出力を開始または維持できませんでした。</value>
+  </data>
+  <data name="AtmosDecodeFailed" xml:space="preserve">
+    <value>音源ビットストリームを読み取れないか、非対応データが含まれています。</value>
+  </data>
+  <data name="AtmosSelectDevice" xml:space="preserve">
+    <value>ASIO 使用時は、下で Atmos HDMI 出力機器を選択してください。</value>
+  </data>
+  <data name="AtmosCurrentDevice" xml:space="preserve">
+    <value>現在の出力機器を使用（ASIO を除く）</value>
+  </data>
+  <data name="AtmosSavedDeviceUnavailable" xml:space="preserve">
+    <value>保存済み機器（未接続）</value>
+  </data>
+  <data name="AtmosDeviceTitle" xml:space="preserve">
+    <value>Atmos 出力機器</value>
+  </data>
+  <data name="AtmosDeviceDescription" xml:space="preserve">
+    <value>対応曲のパススルーと PCM フォールバックにのみ適用。表示機器の Atmos 対応は再生時に確認します。他の機器へ自動変更しません。</value>
+  </data>
+  <data name="AtmosUseOrdinary" xml:space="preserve">
+    <value>パススルーをオフにして通常再生に戻す</value>
   </data>
 </root>

@@ -70,6 +70,7 @@ internal static unsafe partial class Program
         WriteDsfFixture();
         RunSurroundTests(root);
         RunAtmosTests(root);
+        RunAtmosAutomaticTests(root);
         RunProgressTests();
         RunWavPackTests();
         RunBufferPolicyTests();

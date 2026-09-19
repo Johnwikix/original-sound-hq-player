@@ -81,17 +81,19 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
 
     /// <summary>创建本输出时绑定的设备索引（-1 = 系统默认；设备变更须重建）。</summary>
     public int DeviceIndex { get; private set; } = -1;
+    public int LastError { get; private set; }
 
     public bool Start(int deviceIndex, int latencyMs, IRenderSource source, float sessionVolume = 1, string? endpointId = null, Action<string?>? prepareSource = null)
     {
         if (source.Kind == RenderKind.Eac3 && !_exclusive) return false;
+        LastError = unchecked((int)0x80004005);
         _source = source;
         DeviceIndex = deviceIndex;
         int apartment = Win32.CoInitializeEx(IntPtr.Zero, Win32.COINIT_MULTITHREADED);
         try
         {
             _devicePtr = WasapiDeviceList.ResolveDevicePtr(deviceIndex, out bool isDefault, endpointId);
-            if (_devicePtr == IntPtr.Zero) { Console.WriteLine("[wasapi] ResolveDevice failed"); return false; }
+            if (_devicePtr == IntPtr.Zero) { LastError = WasapiTypes.AudclntEDeviceInvalidated; Console.WriteLine("[wasapi] ResolveDevice failed"); return false; }
             FollowsDefaultDevice = isDefault;
             DeviceId = WasapiDeviceList.GetDeviceIdRaw(_devicePtr);
             prepareSource?.Invoke(DeviceId);
@@ -115,7 +117,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
 
             Guid iidRender = WasapiTypes.IidIAudioRenderClient;
             int gsr = _client.GetService(&iidRender, out IntPtr renderPtr);
-            if (gsr != 0) { Console.WriteLine($"[wasapi] GetService(render) hr=0x{gsr:X8}"); return false; }
+            if (gsr != 0) { LastError = gsr; Console.WriteLine($"[wasapi] GetService(render) hr=0x{gsr:X8}"); return false; }
             _renderPtr = renderPtr;
             _render = new RawRenderClient(renderPtr);
 
@@ -160,6 +162,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
             int started = _client.Start();
             if (started != 0)
             {
+                LastError = started;
                 Console.WriteLine($"[wasapi] Start hr=0x{started:X8}");
                 return false;
             }
@@ -170,7 +173,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
             for (int i = 0; i < 75; i++)
             {
                 Thread.Sleep(20);
-                if (Volatile.Read(ref _renderCycles) >= 2) return true;
+                if (Volatile.Read(ref _renderCycles) >= 2) { LastError = 0; return true; }
             }
             Console.WriteLine("[wasapi] 起播后无渲染周期（驱动未消费该格式）→ 按失败处理");
             return false;
@@ -374,6 +377,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
             if (attempt > 0 && !ReplaceClientForInitialize()) return false;
             var format = WAVEFORMATEXTENSIBLE_IEC61937.Eac3(source.EncodedChannelMask, source.IsAtmos && attempt == 0);
             int hr = InitializeExclusiveAligned(&format.FormatExt, (long)Math.Round(frames * 10000000.0 / 192000));
+            LastError = hr == 0 ? unchecked((int)0x80004005) : hr;
             if (hr == 0 && _client!.GetBufferSize(out _bufferFrames) == 0)
             {
                 _endpointKind = FormatKind.Pcm16; // Carrier storage only; FillEndpoint bypasses PCM conversion.
@@ -426,11 +430,11 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
     /// ECHO future-graveyard：Initialize 在专用线程执行，3 秒超时即放弃。
     /// 必须用 Thread.Join（不可内联）——Task.Wait 会把尚未开跑的任务体内联到
     /// 调用线程上，驱动挂死时“超时”永不触发（Senary 虚拟声卡实测会挂）。
-    /// 超时后泄漏该次尝试的对象与线程，交给进程退出回收。
+    /// 超时后由 Dispose 的退休线程等待在途调用结束，再释放 client 和设备。
     /// </summary>
     private int InitializeWithTimeout(int shareMode, int flags, long bufferDuration, long periodicity, WAVEFORMATEXTENSIBLE* format)
     {
-        // 格式放非托管内存：worker 线程持有指针；超时则泄漏（进程退出回收）。
+        // 格式放非托管内存：worker 持有指针，超时也必须等调用返回后才释放。
         // （GCHandle.AddrOfPinnedObject 对装箱结构返回的是对象头，不可用。）
         nuint formatBytes = (nuint)(sizeof(WAVEFORMATEX) + format->Format.cbSize);
         var pFmt = (WAVEFORMATEXTENSIBLE*)NativeMemory.Alloc(formatBytes);
@@ -441,9 +445,21 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
         int hr = unchecked((int)0x80004005);
         var worker = new Thread(() =>
         {
-            try { hr = client.Initialize(shareMode, flags, bufferDuration, periodicity, (WAVEFORMATEX*)pFmt); }
+            int apartment = Win32.CoInitializeEx(IntPtr.Zero, Win32.COINIT_MULTITHREADED);
+            try
+            {
+                // Capability query and Initialize share the same pinned endpoint and
+                // timeout/retirement lifetime. A stalled driver cannot trap the control loop.
+                hr = shareMode == WasapiTypes.ShareModeExclusive && pFmt->Format.cbSize == 34
+                    ? client.IsExclusiveFormatSupported((WAVEFORMATEX*)pFmt) : 0;
+                if (hr == 0) hr = client.Initialize(shareMode, flags, bufferDuration, periodicity, (WAVEFORMATEX*)pFmt);
+            }
             catch { hr = unchecked((int)0x80004005); }
-            NativeMemory.Free(pFmt); // 只有 worker 持有；完成后即释放
+            finally
+            {
+                NativeMemory.Free(pFmt);
+                if (apartment >= 0) Win32.CoUninitialize();
+            }
         })
         { IsBackground = true, Name = "wasapi-init" };
         _initWorker = worker;

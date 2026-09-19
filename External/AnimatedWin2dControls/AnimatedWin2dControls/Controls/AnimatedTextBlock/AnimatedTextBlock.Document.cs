@@ -40,9 +40,11 @@ public sealed partial class AnimatedTextBlock
         public CanvasTextLayout NewLayout;
         public List<TextDiffResult> Diffs;
         public float Y;
+        public bool HasColorGlyphs;
 
         public void Dispose()
         {
+            TextRenderingHelper.DisposeShapedText(Diffs);
             OldLayout?.Dispose();
             NewLayout?.Dispose();
             Format?.Dispose();
@@ -119,6 +121,7 @@ public sealed partial class AnimatedTextBlock
         var layout = new CanvasTextLayout(sender, text, format, (float)sender.Size.Width, float.MaxValue);
         try
         {
+            layout.Options = CanvasDrawTextOptions.EnableColorFont | CanvasDrawTextOptions.NoPixelSnap;
             layout.VerticalAlignment = CanvasVerticalAlignment.Top;
             layout.RequestedSize = new Size(sender.Size.Width, Math.Ceiling(layout.LayoutBounds.Height));
             return layout;
@@ -135,7 +138,7 @@ public sealed partial class AnimatedTextBlock
         bool needsDiff = _textEffect != null && _currentState == AnimatedTextBlockRedrawState.TextChanged;
         // Layout changes during a transition must keep its original source frame.
         // A new document starts from the last submitted frame instead.
-        var sourceDocument = ReferenceEquals(Document, _renderedDocument)
+        var sourceDocument = !needsDiff ? Document : ReferenceEquals(Document, _renderedDocument)
             ? _transitionSourceDocument : _renderedDocument;
         var paragraphs = Document.Paragraphs;
         int oldCount = sourceDocument?.Paragraphs.Count ?? 0;
@@ -155,6 +158,7 @@ public sealed partial class AnimatedTextBlock
                     NewText = newText,
                     Y = y
                 };
+                item.HasColorGlyphs = ShapedText.MayContainColorGlyphs(newText) || ShapedText.MayContainColorGlyphs(item.OldText);
                 layouts[i] = item;
                 item.Format = CreateParagraphFormat(paragraph);
                 item.NewLayout = CreateParagraphLayout(sender, newText, item.Format);
@@ -180,6 +184,7 @@ public sealed partial class AnimatedTextBlock
             throw;
         }
         DisposeDocumentLayouts();
+        TextRenderingHelper.DisposeShapedText(_diffResults);
         _documentLayouts = layouts;
         _diffResults = combinedDiffs;
         _renderedDocument = Document;
@@ -210,7 +215,7 @@ public sealed partial class AnimatedTextBlock
             if (_hoverLines != null)
             {
                 foreach (var line in _hoverLines)
-                    DrawTextLayout(ds, line.Layout, GetHoverOffset(line.Distance), line.Y, line.Opacity);
+                    DrawTextLayout(ds, line.Layout, GetHoverOffset(line.Distance), line.Y, line.Opacity, line.HasColorGlyphs);
                 return;
             }
         }
@@ -222,14 +227,16 @@ public sealed partial class AnimatedTextBlock
             {
                 if (_currentState == AnimatedTextBlockRedrawState.Idle || _textEffect == null)
                 {
-                    DrawTextLayout(ds, item.NewLayout, 0, item.Y, (float)item.Paragraph.Opacity);
+                    DrawTextLayout(ds, item.NewLayout, 0, item.Y, (float)item.Paragraph.Opacity, item.HasColorGlyphs);
                     continue;
                 }
                 ds.Transform = Matrix3x2.CreateTranslation(0, item.Y) * originalTransform;
                 var color = _textColor;
-                color.A = (byte)Math.Round(color.A * item.Paragraph.Opacity);
-                // Solid foreground opacity needs no extra offscreen layer.
-                using var opacityLayer = _textBrush != null && item.Paragraph.Opacity < 1
+                bool useOpacityLayer = _textBrush != null || item.HasColorGlyphs;
+                if (!useOpacityLayer)
+                    color.A = (byte)Math.Round(color.A * item.Paragraph.Opacity);
+                // Color fonts ignore foreground alpha, so fade the whole paragraph.
+                using var opacityLayer = useOpacityLayer && item.Paragraph.Opacity < 1
                     ? ds.CreateLayer((float)item.Paragraph.Opacity) : null;
                 _textEffect.DrawText(item.OldText, item.NewText, item.Diffs,
                     item.OldLayout, item.NewLayout, item.Format, color, _textBrush, _currentState, ds);

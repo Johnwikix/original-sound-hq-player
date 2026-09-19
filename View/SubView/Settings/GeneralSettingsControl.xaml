@@ -115,6 +115,27 @@
                         IsOn="{x:Bind ViewModel.AppViewModel.ExperimentalAtmosPassthrough, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
+                <controls:SettingsCard
+                    Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.ExperimentalAtmosPassthrough), Mode=OneWay}"
+                    Header="{x:Bind tool:ToolUtils.GetString('AtmosDeviceTitle')}"
+                    Description="{x:Bind tool:ToolUtils.GetString('AtmosDeviceDescription')}">
+                    <ComboBox Width="300"
+                        AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('AtmosDeviceTitle')}"
+                        ItemsSource="{x:Bind ViewModel.AppViewModel.AtmosDevices}"
+                        DisplayMemberPath="Name"
+                        SelectedItem="{x:Bind ViewModel.AppViewModel.SelectedAtmosDevice, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <InfoBar IsClosable="False" Severity="Informational"
+                    IsOpen="{x:Bind ViewModel.AppViewModel.ExperimentalAtmosPassthrough, Mode=OneWay}"
+                    Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.ExperimentalAtmosPassthrough), Mode=OneWay}"
+                    Message="{x:Bind ViewModel.AppViewModel.AtmosStatusText, Mode=OneWay}">
+                    <InfoBar.ActionButton>
+                        <Button Content="{x:Bind tool:ToolUtils.GetString('AtmosUseOrdinary')}"
+                            Command="{x:Bind ViewModel.AppViewModel.UseOrdinaryPlaybackCommand}" />
+                    </InfoBar.ActionButton>
+                </InfoBar>
+
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
                         <TextBlock x:Uid="FadeInOut" TextWrapping="Wrap" />

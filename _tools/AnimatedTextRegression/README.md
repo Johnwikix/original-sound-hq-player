@@ -30,10 +30,23 @@ both height and baseline, including Fade/Default/Wipe transitions across line co
 `x:Load`, ViewModel bindings and Loaded-time font changes. It reproduced both labels
 being absent from the visual tree: the generated `x:Bind` connector wrote its default
 deferred `FontSize` of zero before evaluating the source, and WinUI rejected it.
-The fixture now uses ordinary Binding for FontSize, as PlayingDetailPage does, and
+The legacy fixture uses ordinary Binding for FontSize and
 checks attachment, measured dimensions, drawing, responsive updates and re-entry.
 `layout.txt` beside the executable records the native layout tree. The main project
 excludes `_tools` XAML so test pages and generated output are never compiled into the app.
+
+`DocumentLayoutRegressionPage` exercises PlayingDetailPage's new single-canvas binding:
+one atomic Document contains a Semibold title and two Normal metadata lines with
+different sizes, fixed line heights and opacity. Checks cover all eight effects,
+one progress advance per tick, live hover settings, coalesced updates, layout changes
+during transitions, independent line scrolling, and unload/re-entry cleanup.
+
+The mixed-script endpoint regression reproduced a 26.49% normalized alpha difference
+between the final Default animation frame and the static frame. It now compares native
+Win2D images immediately before completion against the static frame for all six glyph
+effects, 96/144 DPI, RTL, combining marks, trimmed multiline text and emoji. Artifacts
+are saved as `endpoint-*-animation.png` / `endpoint-*-static.png` beside the executable.
+This checks rendering consistency, not runtime frame rate or allocation savings.
 
 For an external lvt tree inspection, launch the test executable with `--inspect-layout`.
 It keeps the offscreen fixture window alive for 45 seconds.

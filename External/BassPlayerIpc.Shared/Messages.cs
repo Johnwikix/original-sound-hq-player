@@ -37,6 +37,7 @@ public struct IpcSetting
     public bool IsFadeEnabled;
     public bool ExperimentalSurround51;
     public bool ExperimentalAtmosPassthrough;
+    public string? AtmosEndpointId;
 }
 
 public struct UpdateEqRequest

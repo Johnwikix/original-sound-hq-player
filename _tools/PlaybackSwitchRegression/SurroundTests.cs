@@ -14,8 +14,8 @@ internal static unsafe partial class Program
             var settings = new IpcSetting { OutputMode = "ASIO", WasapiEndpointId = "endpoint", ExperimentalSurround51 = true };
             int length = BinarySerializer.WriteIpcSetting(bytes, settings);
             Require(BinarySerializer.ReadIpcSetting(bytes.AsSpan(0, length)).ExperimentalSurround51, "flag lost");
-            Require(!BinarySerializer.ReadIpcSetting(bytes.AsSpan(0, length - 2)).ExperimentalSurround51, "old payload enabled experiment");
-            Require(BinarySerializer.ReadIpcSetting(bytes.AsSpan(0, length - 2)).WasapiEndpointId == "endpoint", "old endpoint lost");
+            Require(!BinarySerializer.ReadIpcSetting(bytes.AsSpan(0, length - 4)).ExperimentalSurround51, "old payload enabled experiment");
+            Require(BinarySerializer.ReadIpcSetting(bytes.AsSpan(0, length - 4)).WasapiEndpointId == "endpoint", "old endpoint lost");
         });
         foreach (uint mask in new uint[] { 0x3F, 0x60F })
         {

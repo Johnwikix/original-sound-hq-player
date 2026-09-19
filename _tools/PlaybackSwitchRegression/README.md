@@ -2,7 +2,10 @@
 
 `AtmosTests` 验证实验性 E-AC-3/JOC HDMI 直通：与 FFmpeg spdif 基准字节一致、
 六声道音轨封装为 192 kHz 双通道载波、ring/输出保真、52 字节格式跨线程完整性、
-seek/EOF 与默认关闭、ASIO/共享隔离。没有真实 HDMI/Atmos 设备验证。
+seek/EOF 与默认关闭、共享输出临时切独占、ASIO 显式设备隔离。
+`AtmosAutomaticTests` 覆盖暂停时开关和 seek、PCM 回退不重抢独占、失败状态协议兼容、
+能力查询的线程与格式边界、真实 MMDevice 无效端点和 IPC 状态邮箱、设备丢失后的停止通知。
+没有真实 HDMI/Atmos 设备出声验证。
 
 `SurroundTests` 覆盖实验性 5.1 开关隔离、侧/后环绕布局、WASAPI 格式、ASIO 路由、
 通道不足和复用边界；不依赖真实声卡。`ProgressTests` 覆盖最新快照跨进程一致性、

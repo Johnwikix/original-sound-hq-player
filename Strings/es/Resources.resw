@@ -1843,10 +1843,10 @@
     <value>Desactivada por defecto. Solo PCM 5.1 con ASIO / WASAPI exclusivo, sin Atmos. Salidas ASIO 1–6: L, R, C, LFE, surround L, surround R.</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
-    <value>Passthrough Atmos HDMI experimental</value>
+    <value>Preferir paso directo Atmos por HDMI (experimental)</value>
   </data>
   <data name="ExperimentalAtmosDescription" xml:space="preserve">
-    <value>Desactivado por defecto. Solo WASAPI exclusivo: E-AC-3 / Atmos de 48 kHz y 6 canales. Requiere receptor HDMI compatible; ajuste allí el volumen, pues se omiten volumen y efectos de la app. Sin ASIO, TrueHD ni Atmos para auriculares.</value>
+    <value>Las pistas compatibles usan WASAPI exclusivo automáticamente; las demás conservan la salida habitual. Admite E-AC-3 / Atmos de seis canales a 48 kHz, no TrueHD. El volumen y los efectos de la app se omiten; ajuste el volumen en el receptor.</value>
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>Modo bitstream HDMI E-AC-3 / Atmos experimental: se omiten el volumen y los efectos de la app. Ajuste el volumen en el receptor. Los ajustes se restauran al volver a PCM.</value>
@@ -1924,5 +1924,62 @@
   </data>
   <data name="AnimatedTextHoverScrollDescription" xml:space="preserve">
     <value>Muestra el título, álbum y artista completos al pasar el cursor, después de la transición de texto.</value>
+  </data>
+  <data name="AtmosNotificationTitle" xml:space="preserve">
+    <value>Paso directo Atmos por HDMI</value>
+  </data>
+  <data name="AtmosWaiting" xml:space="preserve">
+    <value>Esperando una pista compatible; las demás usan la salida habitual.</value>
+  </data>
+  <data name="AtmosReady" xml:space="preserve">
+    <value>Listo para intentar paso directo; se comprobará el dispositivo al reanudar.</value>
+  </data>
+  <data name="AtmosActive" xml:space="preserve">
+    <value>Salida de flujo E-AC-3 / Atmos establecida · WASAPI exclusivo. Ajuste el volumen y compruebe la decodificación Atmos en el receptor.</value>
+  </data>
+  <data name="AtmosFallback" xml:space="preserve">
+    <value>Paso directo Atmos no disponible; reproduciendo PCM normal.</value>
+  </data>
+  <data name="AtmosStopped" xml:space="preserve">
+    <value>Falló el paso directo Atmos y se detuvo la reproducción. Compruebe o vuelva a seleccionar la salida.</value>
+  </data>
+  <data name="AtmosOff" xml:space="preserve">
+    <value>Paso directo Atmos automático desactivado.</value>
+  </data>
+  <data name="AtmosUnsupported" xml:space="preserve">
+    <value>El dispositivo no admite este formato de flujo E-AC-3 / Atmos.</value>
+  </data>
+  <data name="AtmosDeviceUnavailable" xml:space="preserve">
+    <value>La salida se desconectó, cambió o no está disponible.</value>
+  </data>
+  <data name="AtmosDeviceBusy" xml:space="preserve">
+    <value>Otra aplicación está utilizando la salida.</value>
+  </data>
+  <data name="AtmosExclusiveDenied" xml:space="preserve">
+    <value>Windows o el controlador no permite el modo exclusivo en este dispositivo.</value>
+  </data>
+  <data name="AtmosOutputFailed" xml:space="preserve">
+    <value>El dispositivo no pudo iniciar o mantener la salida de flujo.</value>
+  </data>
+  <data name="AtmosDecodeFailed" xml:space="preserve">
+    <value>No se pudo leer el flujo de origen o contiene datos no compatibles.</value>
+  </data>
+  <data name="AtmosSelectDevice" xml:space="preserve">
+    <value>Con ASIO, seleccione un dispositivo de salida Atmos HDMI abajo.</value>
+  </data>
+  <data name="AtmosCurrentDevice" xml:space="preserve">
+    <value>Usar salida actual (excepto ASIO)</value>
+  </data>
+  <data name="AtmosSavedDeviceUnavailable" xml:space="preserve">
+    <value>Dispositivo guardado (desconectado)</value>
+  </data>
+  <data name="AtmosDeviceTitle" xml:space="preserve">
+    <value>Dispositivo de salida Atmos</value>
+  </data>
+  <data name="AtmosDeviceDescription" xml:space="preserve">
+    <value>Solo para pistas compatibles y su alternativa PCM. La lista no certifica Atmos; se comprueba al reproducir. No se cambia de dispositivo automáticamente.</value>
+  </data>
+  <data name="AtmosUseOrdinary" xml:space="preserve">
+    <value>Desactivar paso directo y volver a reproducción normal</value>
   </data>
 </root>

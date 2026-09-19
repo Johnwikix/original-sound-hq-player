@@ -1845,10 +1845,10 @@
     <value>默认关闭，仅用于 ASIO / WASAPI 独占的 5.1 PCM，不含 Atmos。ASIO 前六路须为左、右、中置、低音、左环绕、右环绕。</value>
   </data>
   <data name="ExperimentalAtmosTitle" xml:space="preserve">
-    <value>实验性 Atmos HDMI 直通</value>
+    <value>优先 Atmos HDMI 直通（实验性）</value>
   </data>
   <data name="ExperimentalAtmosDescription" xml:space="preserve">
-    <value>默认关闭。仅 WASAPI 独占，支持 48 kHz 六声道 E-AC-3 / Atmos；需要兼容的 HDMI 功放。绕过音量和音效，请在功放调节音量。非 ASIO、TrueHD 或耳机 Atmos。</value>
+    <value>兼容曲目自动使用 WASAPI 独占，普通曲目保持原输出设置。支持 48 kHz 六声道 E-AC-3 / Atmos，不支持 TrueHD。直通时绕过应用音量和音效，请在功放调节音量。</value>
   </data>
   <data name="DspAtmosBitstreamBypass" xml:space="preserve">
     <value>实验性 E-AC-3 / Atmos HDMI 位流模式：已绕过应用音量和所有音效，请在功放上调节音量。回到 PCM 后恢复原设置。</value>
@@ -1923,5 +1923,62 @@
   </data>
   <data name="AnimatedTextHoverScrollDescription" xml:space="preserve">
     <value>鼠标移入时滚动显示完整歌名、专辑和艺术家，文字切换动画结束后开始。</value>
+  </data>
+  <data name="AtmosNotificationTitle" xml:space="preserve">
+    <value>Atmos HDMI 直通提示</value>
+  </data>
+  <data name="AtmosWaiting" xml:space="preserve">
+    <value>等待兼容曲目；普通曲目使用原输出设置。</value>
+  </data>
+  <data name="AtmosReady" xml:space="preserve">
+    <value>已准备直通；恢复播放时检测设备并尝试独占。</value>
+  </data>
+  <data name="AtmosActive" xml:space="preserve">
+    <value>E-AC-3 / Atmos 位流输出已建立 · WASAPI 独占。请在功放调节音量；Atmos 解码状态以功放显示为准。</value>
+  </data>
+  <data name="AtmosFallback" xml:space="preserve">
+    <value>Atmos 直通未生效，已改用普通 PCM 播放。</value>
+  </data>
+  <data name="AtmosStopped" xml:space="preserve">
+    <value>Atmos 直通失败，播放已停止。请检查或重新选择输出设备。</value>
+  </data>
+  <data name="AtmosOff" xml:space="preserve">
+    <value>Atmos 自动直通已关闭。</value>
+  </data>
+  <data name="AtmosUnsupported" xml:space="preserve">
+    <value>设备不接受当前 E-AC-3 / Atmos 位流格式。</value>
+  </data>
+  <data name="AtmosDeviceUnavailable" xml:space="preserve">
+    <value>输出设备已断开、发生变化或暂时不可用。</value>
+  </data>
+  <data name="AtmosDeviceBusy" xml:space="preserve">
+    <value>输出设备被其他程序占用。</value>
+  </data>
+  <data name="AtmosExclusiveDenied" xml:space="preserve">
+    <value>Windows 或驱动不允许此设备使用独占模式。</value>
+  </data>
+  <data name="AtmosOutputFailed" xml:space="preserve">
+    <value>设备未能启动或维持位流输出。</value>
+  </data>
+  <data name="AtmosDecodeFailed" xml:space="preserve">
+    <value>音源位流读取失败或包含不支持的数据。</value>
+  </data>
+  <data name="AtmosSelectDevice" xml:space="preserve">
+    <value>使用 ASIO 时，请先在下方明确选择 Atmos HDMI 输出设备。</value>
+  </data>
+  <data name="AtmosCurrentDevice" xml:space="preserve">
+    <value>沿用当前输出设备（ASIO 除外）</value>
+  </data>
+  <data name="AtmosSavedDeviceUnavailable" xml:space="preserve">
+    <value>已保存的设备（当前未连接）</value>
+  </data>
+  <data name="AtmosDeviceTitle" xml:space="preserve">
+    <value>Atmos 输出设备</value>
+  </data>
+  <data name="AtmosDeviceDescription" xml:space="preserve">
+    <value>只影响兼容曲目的直通及失败回退。列表不代表设备已通过 Atmos 验证；播放时检测，不自动改选其他设备。</value>
+  </data>
+  <data name="AtmosUseOrdinary" xml:space="preserve">
+    <value>关闭直通，恢复普通播放</value>
   </data>
 </root>

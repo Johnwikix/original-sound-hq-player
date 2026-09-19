@@ -130,11 +130,10 @@ public partial class TextElasticEffect : ITextEffect
         ds.Transform = (Matrix3x2.CreateTranslation(0,
             (float)newCluster.LayoutBounds.Height * 0.5f * bounce)) * originalTransform;
 
-        ds.DrawText(
-            newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
+        ShapedText.Draw(ds, newCluster,
             (float)newCluster.DrawBounds.X,
             (float)newCluster.DrawBounds.Y,
-            c, textFormat);
+            c);
 
         ds.Transform = originalTransform;
     }
@@ -159,11 +158,10 @@ public partial class TextElasticEffect : ITextEffect
         ds.Transform = (Matrix3x2.CreateTranslation(0,
             (float)oldCluster.LayoutBounds.Height * 0.5f * bounce)) * originalTransform;
 
-        ds.DrawText(
-            oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+        ShapedText.Draw(ds, oldCluster,
             (float)oldCluster.DrawBounds.X,
             (float)oldCluster.DrawBounds.Y,
-            c, textFormat);
+            c);
 
         ds.Transform = originalTransform;
     }
@@ -179,11 +177,10 @@ public partial class TextElasticEffect : ITextEffect
 
         float p = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.ElasticOut);
 
-        ds.DrawText(
-            oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+        ShapedText.Draw(ds, newCluster,
             (float)(oldCluster.DrawBounds.X + (newCluster.DrawBounds.X - oldCluster.DrawBounds.X) * p),
             (float)(oldCluster.DrawBounds.Y + (newCluster.DrawBounds.Y - oldCluster.DrawBounds.Y) * p),
-            textColor, textFormat);
+            textColor);
     }
 
     private void DrawUpdate(CanvasDrawingSession ds,
@@ -208,11 +205,10 @@ public partial class TextElasticEffect : ITextEffect
             ds.Transform = (Matrix3x2.CreateTranslation(0,
                 (float)oldCluster.LayoutBounds.Height * 0.5f * oldBounce)) * originalTransform;
 
-            ds.DrawText(
-                oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+            ShapedText.Draw(ds, oldCluster,
                 (float)oldCluster.DrawBounds.X,
                 (float)oldCluster.DrawBounds.Y,
-                oldC, textFormat);
+                oldC);
 
             ds.Transform = originalTransform;
         }
@@ -229,11 +225,10 @@ public partial class TextElasticEffect : ITextEffect
             ds.Transform = (Matrix3x2.CreateTranslation(0,
                 (float)newCluster.LayoutBounds.Height * newBounce)) * originalTransform;
 
-            ds.DrawText(
-                newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
+            ShapedText.Draw(ds, newCluster,
                 (float)newCluster.DrawBounds.X,
                 (float)newCluster.DrawBounds.Y,
-                newC, textFormat);
+                newC);
 
             ds.Transform = originalTransform;
         }

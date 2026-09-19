@@ -28,7 +28,7 @@ namespace AudioPlayer.Playback;
 /// 独占换曲复用（ASIO 与 WASAPI 独占）：仅同设备、同采样率、同声道的 PCM 换源。
 /// 采样率/声道/位流格式变化先停止并释放旧输出，再为新会话协商驱动格式和缓冲。
 /// </summary>
-public sealed class PlaybackEngine : IDisposable
+public sealed partial class PlaybackEngine : IDisposable
 {
     private readonly PlayerIpcService _ipc;
 
@@ -171,6 +171,7 @@ public sealed class PlaybackEngine : IDisposable
     {
         Interlocked.Increment(ref _playGen);
         _recovery = null;
+        ResetAtmosAttempt();
         var next = OpenSession(musicUrl); // 先开新会话：复用时旧会话须存活到源替换完成
         if (next != null && TryReuseExclusiveOutput(next))
         {
@@ -191,6 +192,7 @@ public sealed class PlaybackEngine : IDisposable
     {
         Interlocked.Increment(ref _playGen);
         _recovery = null;
+        ResetAtmosAttempt();
         var next = OpenSession(url);
         if (next != null && TryReuseExclusiveOutput(next))
         {
@@ -272,13 +274,21 @@ public sealed class PlaybackEngine : IDisposable
 
     private Session? OpenSession(string url, bool forceSharedFormat = false, RenderKind? kindOverride = null)
     {
-        if (ExperimentalAtmosPassthrough && !forceSharedFormat
-            && OutputMode is "WasapiExclusivePush" or "WasapiExclusiveEvent"
+        if (ExperimentalAtmosPassthrough && !forceSharedFormat && !_atmosUseSharedPcm
             && kindOverride is null or RenderKind.Eac3)
         {
             var encoded = Session.Open(this, url, RenderKind.Eac3, DsdPcmFreq, DsdGain, Latency,
                 atmosProbeCache: _atmosProbeCache ??= new AtmosProbeCache());
-            if (encoded != null) return encoded; // Encoded audio bypasses all PCM effects and volume.
+            if (encoded != null)
+            {
+                if (OutputMode != "ASIO" || !string.IsNullOrEmpty(AtmosEndpointId))
+                {
+                    _atmosStatus = AtmosPlaybackStatus.Ready;
+                    return encoded;
+                }
+                encoded.Dispose();
+                _atmosReason = AtmosFailure.SelectDevice;
+            }
             kindOverride = null;
         }
         if (kindOverride == RenderKind.Eac3) kindOverride = RenderKind.Pcm;
@@ -292,7 +302,7 @@ public sealed class PlaybackEngine : IDisposable
         int? forcedRate = null;
         int? forcedChannels = null;
         int? maxChannels = null;
-        if (kind == RenderKind.Pcm && (forceSharedFormat || IsSharedMode(OutputMode)))
+        if (kind == RenderKind.Pcm && (forceSharedFormat || _atmosUseSharedPcm || IsSharedMode(OutputMode)))
         {
             if (forceSharedFormat)
             {
@@ -318,7 +328,7 @@ public sealed class PlaybackEngine : IDisposable
                 maxChannels = 2;
             }
         }
-        bool surround51 = ExperimentalSurround51 && !forceSharedFormat && kind == RenderKind.Pcm
+        bool surround51 = ExperimentalSurround51 && !forceSharedFormat && !_atmosUseSharedPcm && kind == RenderKind.Pcm
             && OutputMode is "ASIO" or "WasapiExclusivePush" or "WasapiExclusiveEvent";
         var session = Session.Open(this, url, kind, DsdPcmFreq, DsdGain, Latency, forcedRate, forcedChannels, maxChannels, surround51);
         if (session != null)
@@ -346,7 +356,8 @@ public sealed class PlaybackEngine : IDisposable
     // 不缓存混音格式：系统改"输出音频格式"会变更混音格式而设备 ID 不变，陈旧缓存
     // 会让会话按旧率构建、端点按新率初始化 → 速率错配（变声）。每次现查（毫秒级）。
     private WasapiDeviceList.SharedMixFormat? GetEndpointMixFormat(int deviceIndex)
-        => WasapiDeviceList.GetSharedMixFormat(deviceIndex, OutputMode is "DirectSound" or "ASIO" ? null : WasapiEndpointId).Mix;
+        => WasapiDeviceList.GetSharedMixFormat(_atmosUseSharedPcm ? -1 : deviceIndex,
+            _atmosUseSharedPcm ? _atmosResolvedEndpoint : OutputMode is "DirectSound" or "ASIO" ? null : WasapiEndpointId).Mix;
 
     /// <summary>创建输出并开始播放；首选输出失败回退 WASAPI 共享（对应 bass 回退 DirectSound）。
     /// 播放状态只在变化时通知：静默恢复路径（设备切换/失效重建）不打扰 UI。</summary>
@@ -355,10 +366,16 @@ public sealed class PlaybackEngine : IDisposable
         var session = _session!;
         if (session.Kind == RenderKind.Eac3 && session.DecodeFailure != null)
         {
+            if (!ResolveAtmosEndpoint()) { StopAtmosForDeviceChange(); return; }
             if (!RebuildBitstreamAsPcm(session)) { StopAndNotifyLocked(); return; }
             session = _session!;
         }
         IAudioOutput? output = CreateOutput(session);
+        if (output == null && session.Kind == RenderKind.Eac3)
+        {
+            FailAtmosOutput(session);
+            return;
+        }
         if (output == null && OutputMode == "ASIO" && session.Kind == RenderKind.NativeDsd)
         {
             // ASIO native DSD 协商失败（驱动无 DSD 扩展/采样率域不符）→ 先试 ASIO DoP：
@@ -374,20 +391,21 @@ public sealed class PlaybackEngine : IDisposable
                 output = CreateOutput(session);
             }
         }
-        if (output == null && !IsSharedMode(OutputMode))
+        if (output == null && !_atmosUseSharedPcm && !IsSharedMode(OutputMode))
         {
             // 独占/ASIO 失败 → 回退共享：会话按混音格式重建（率/声道可能与源不同）
             Console.WriteLine("[engine] primary output failed, fallback to shared");
             long keepMs = session.CurrentMs; // 回退重建会话必须保留位置（否则从头播放）
             DisposeSession();
             SetSession(OpenSession(MusicUrl!, forceSharedFormat: true));
-            if (_session == null) { if (IsPlaying) { IsPlaying = false; _ipc.PlayStateUpdate(false); } return; }
+            if (_session == null) { StopAndNotifyLocked(); return; }
             _session.RequestSeek(keepMs);
             output = CreateSharedOutput(_session);
-            if (output == null) { if (IsPlaying) { IsPlaying = false; _ipc.PlayStateUpdate(false); } return; }
+            if (output == null) { StopAndNotifyLocked(); return; }
         }
-        if (output == null) { if (IsPlaying) { IsPlaying = false; _ipc.PlayStateUpdate(false); } return; }
+        if (output == null) { StopAndNotifyLocked(); return; }
         _output = output;
+        CompleteAtmosStart(true);
         QueueDspState();
         ApplyEqToSession();
         ApplyVolumeToOutput();
@@ -403,19 +421,14 @@ public sealed class PlaybackEngine : IDisposable
     private bool RebuildBitstreamAsPcm(Session failed)
     {
         if (!ReferenceEquals(failed, _session) || failed.Kind != RenderKind.Eac3 || failed.DecodeFailure == null) return false;
-        long positionMs = GetTimeProgress().currentMs;
-        string? url = MusicUrl;
-        Console.WriteLine($"[engine] E-AC-3 transport failed; retry PCM at {positionMs}ms: {failed.DecodeFailure.Message}");
-        DisposeSession(); // Stop the old carrier before decoding or opening any PCM output.
-        if (string.IsNullOrWhiteSpace(url)) return false;
-        SetSession(OpenSession(url, kindOverride: RenderKind.Pcm));
-        if (_session == null) return false;
-        _session.RequestSeek(positionMs);
-        return true;
+        _atmosReason = AtmosFailure.DecodeFailed;
+        return RebuildAtmosFallback(failed);
     }
 
     private IAudioOutput? CreateOutput(Session session)
     {
+        if (session.Kind == RenderKind.Eac3) return CreateAtmosOutput(session);
+        if (_atmosUseSharedPcm) return CreateSharedOutput(session);
         switch (OutputMode)
         {
             case "WasapiExclusivePush":
@@ -443,8 +456,12 @@ public sealed class PlaybackEngine : IDisposable
     {
         try
         {
+            if (_atmosUseSharedPcm && string.IsNullOrEmpty(_atmosResolvedEndpoint)) return null;
+            if (_atmosUseSharedPcm) deviceIndex = -1;
+            string? endpointId = _atmosUseSharedPcm ? _atmosResolvedEndpoint
+                : OutputMode is "DirectSound" or "ASIO" ? null : WasapiEndpointId;
             var output = new WasapiOutput(false, false);
-            if (output.Start(deviceIndex, Latency, session, OutputMode == "WasapiShared" ? Volume : 1, OutputMode is "DirectSound" or "ASIO" ? null : WasapiEndpointId,
+            if (output.Start(deviceIndex, Latency, session, OutputMode == "WasapiShared" ? Volume : 1, endpointId,
                 id => PrepareOutputDsp(session, id))) return output;
             if (!output.NeedsMixFormatSession)
             {
@@ -463,7 +480,7 @@ public sealed class PlaybackEngine : IDisposable
             _session.RequestSeek(keepMs);
             var retry = new WasapiOutput(false, false);
             if (retry.Start(deviceIndex, Latency, _session, OutputMode == "WasapiShared" ? Volume : 1,
-                OutputMode is "DirectSound" or "ASIO" ? null : WasapiEndpointId,
+                endpointId,
                 id => PrepareOutputDsp(_session, id))) return retry;
             retry.Dispose();
             return null;
@@ -500,7 +517,7 @@ public sealed class PlaybackEngine : IDisposable
     {
         var session = _session;
         if (session == null) return false;
-        if (session.Kind == RenderKind.Pcm && IsSharedMode(OutputMode)) return SwapSharedOutput();
+        if (session.Kind == RenderKind.Pcm && (_atmosUseSharedPcm || IsSharedMode(OutputMode))) return SwapSharedOutput();
         var url = MusicUrl;
         if (string.IsNullOrWhiteSpace(url)) return false;
         var kind = session.Kind;
@@ -767,7 +784,7 @@ public sealed class PlaybackEngine : IDisposable
                 || WasapiEndpointId != s.WasapiEndpointId || BassASIODeviceId != s.BassASIODeviceId
                 || Latency != Math.Clamp(s.Latency, 10, 2000) || IsDopEnabled != s.IsDopEnabled
                 || ExperimentalSurround51 != s.ExperimentalSurround51
-                || ExperimentalAtmosPassthrough != s.ExperimentalAtmosPassthrough
+                || ExperimentalAtmosPassthrough != s.ExperimentalAtmosPassthrough || AtmosEndpointId != s.AtmosEndpointId
                 || DsdGain != Math.Clamp(s.DsdGain, -24, 24) || DsdPcmFreq != Math.Clamp(s.DsdPcmFreq, 8000, 768000);
             OutputMode = s.OutputMode ?? "DirectSound";
             BassOutputDeviceId = s.BassOutputDeviceId;
@@ -777,6 +794,7 @@ public sealed class PlaybackEngine : IDisposable
             IsDopEnabled = s.IsDopEnabled;
             ExperimentalSurround51 = s.ExperimentalSurround51;
             ExperimentalAtmosPassthrough = s.ExperimentalAtmosPassthrough;
+            AtmosEndpointId = s.AtmosEndpointId;
             DsdGain = Math.Clamp(s.DsdGain, -24, 24);
             DsdPcmFreq = Math.Clamp(s.DsdPcmFreq, 8000, 768000);
             Volume = float.IsFinite(s.Volume) ? Math.Clamp(s.Volume, 0, 1) : 0;
@@ -784,7 +802,11 @@ public sealed class PlaybackEngine : IDisposable
             IsEqualizerEnabled = s.IsEqualizerEnabled;
             ApplyEqToSession();
             if (s.IsSettingChanged || (rebuild && _session != null)) ChangingSetting();
-            else ApplyVolumeToOutput(); // 常规设置同步也刷新音量（与 bass UpdateSettings 一致）
+            else
+            {
+                ApplyVolumeToOutput();
+                QueueDspState();
+            }
         }
     }
 
@@ -799,9 +821,12 @@ public sealed class PlaybackEngine : IDisposable
                 _recovery = null; // 用户改设置：接管恢复
                 var (curMs, _) = GetTimeProgress();
                 bool wasPlaying = IsPlaying;
+                _pauseFadeToken++;
+                _pauseFadeActive = false;
                 DisposeSession();
+                ResetAtmosAttempt();
                 var url = MusicUrl;
-                if (url == null) return;
+                if (url == null) { QueueDspState(); return; }
                 SetSession(OpenSession(url));
                 if (_session != null)
                 {
@@ -950,7 +975,22 @@ public sealed class PlaybackEngine : IDisposable
             bool eq = enabled && kind == 0 && IsEqualizerEnabled && (_session == null || _session.Channels <= 2);
             var state = _session?.Effects?.GetState(kind, eq)
                 ?? new DspState(kind, eq, _session?.Channels ?? 0, LoudnessStatus.Off, 0, double.NaN, enabled);
-            return state with { OutputGeneration = _outputGeneration, OutputDeviceId = _output is { IsFailed: false } output ? output.DeviceId ?? "" : "" };
+            return state with
+            {
+                OutputGeneration = _outputGeneration,
+                OutputDeviceId = _output is { IsFailed: false } output ? output.DeviceId ?? "" : "",
+                AtmosStatus = !ExperimentalAtmosPassthrough ? AtmosPlaybackStatus.Off
+                    : _atmosStatus == AtmosPlaybackStatus.Off ? AtmosPlaybackStatus.Waiting : _atmosStatus,
+                AtmosReason = _atmosReason, AtmosFailureSequence = _atmosFailureSequence,
+                LastAtmosFailure = _lastAtmosFailure, AtmosFailureStopped = _atmosFailureStopped,
+                ActualOutput = _output is { IsFailed: false } ? _output switch
+                {
+                    WasapiOutput { IsExclusive: true } => ActualOutputMode.Exclusive,
+                    WasapiOutput => ActualOutputMode.Shared,
+                    AsioOutput => ActualOutputMode.Asio,
+                    _ => ActualOutputMode.None
+                } : ActualOutputMode.None
+            };
         }
     }
 
@@ -996,6 +1036,12 @@ public sealed class PlaybackEngine : IDisposable
                 {
                     if (IsPlaying && ReferenceEquals(output, _output) && output.IsFailed)
                     {
+                        if (session.Kind == RenderKind.Eac3)
+                        {
+                            _atmosReason = AtmosFailure.OutputFailed;
+                            FailAtmosOutput(session);
+                            return;
+                        }
                         // 重建后 4 秒内又挂 = 设备抖动：连续两次后交还用户，避免播放/暂停每秒抖动
                         bool driverReconfigured = output is AsioOutput { IsRestartPending: true };
                         bool fastFail = !driverReconfigured && Environment.TickCount64 - _outputStartedTick < 4000;
@@ -1082,6 +1128,19 @@ public sealed class PlaybackEngine : IDisposable
                 if (!string.Equals(deviceId, wasapi.DeviceId, StringComparison.OrdinalIgnoreCase)) continue;
                 if (kind != EndpointEventKind.StateChanged) relevant = true; // Removed / FormatChanged
             }
+            if (_session.Kind == RenderKind.Eac3 || _atmosUseSharedPcm)
+            {
+                foreach (var (_, deviceId) in events)
+                    if (string.Equals(deviceId, wasapi.DeviceId, StringComparison.OrdinalIgnoreCase)) relevant = true;
+                // A default-route change requires a new user decision, not silent migration
+                // from an HDMI receiver to an unrelated speaker.
+                bool followsDefault = string.IsNullOrEmpty(AtmosEndpointId)
+                    && (OutputMode == "DirectSound" || (BassOutputDeviceId < 0 && string.IsNullOrEmpty(WasapiEndpointId)));
+                if (followsDefault && defaultId != null
+                    && !string.Equals(defaultId, wasapi.DeviceId, StringComparison.OrdinalIgnoreCase)) relevant = true;
+                if (relevant) StopAtmosForDeviceChange();
+                return;
+            }
             if (!relevant) return;
             if (_session.Kind != RenderKind.Pcm) return;
             if (IsPlaying)
@@ -1115,6 +1174,7 @@ public sealed class PlaybackEngine : IDisposable
     /// <summary>停机并如实上报（持锁）：静默恢复穷尽/快速失败抖动后的最终让位。</summary>
     private void StopAndNotifyLocked()
     {
+        CompleteAtmosStart(false);
         try { _output?.Pause(); } catch { }
         if (IsPlaying)
         {

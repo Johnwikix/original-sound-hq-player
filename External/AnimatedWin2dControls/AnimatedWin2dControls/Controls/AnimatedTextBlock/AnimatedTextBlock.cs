@@ -519,7 +519,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
                 _newText, _textFormat,
                 (float)sender.Size.Width,
                 (float)sender.Size.Height);
-            _staticTextLayout.Options = CanvasDrawTextOptions.EnableColorFont;
+            _staticTextLayout.Options = CanvasDrawTextOptions.EnableColorFont | CanvasDrawTextOptions.NoPixelSnap;
             _staticLayoutDirty = false;
         }
 
@@ -535,13 +535,13 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
             else
             {
                 foreach (var line in _hoverLines)
-                    DrawTextLayout(ds, line.Layout, GetHoverOffset(line.Distance), line.Y, line.Opacity);
+                    DrawTextLayout(ds, line.Layout, GetHoverOffset(line.Distance), line.Y, line.Opacity, line.HasColorGlyphs);
             }
         }
         catch (Exception ex) when (ex is ObjectDisposedException || ex is ArgumentException) { }
     }
 
-    private void DrawTextLayout(CanvasDrawingSession ds, CanvasTextLayout layout, float x, float y, float opacity = 1)
+    private void DrawTextLayout(CanvasDrawingSession ds, CanvasTextLayout layout, float x, float y, float opacity = 1, bool hasColorGlyphs = false)
     {
         if (_textBrush != null)
         {
@@ -551,7 +551,9 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         else
         {
             var color = _textColor;
-            color.A = (byte)Math.Round(color.A * opacity);
+            using var layer = hasColorGlyphs && opacity < 1 ? ds.CreateLayer(opacity) : null;
+            if (!hasColorGlyphs)
+                color.A = (byte)Math.Round(color.A * opacity);
             ds.DrawTextLayout(layout, x, y, color);
         }
     }
@@ -601,6 +603,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
     private void GenerateDiffResults()
     {
+        TextRenderingHelper.DisposeShapedText(_diffResults);
         var oldClusters = TextRenderingHelper.GenerateGraphemeClusters(_oldText, _oldTextLayout);
         var newClusters = TextRenderingHelper.GenerateGraphemeClusters(_newText, _newTextLayout);
         _diffResults = GraphemeClusterDiff.Diff(oldClusters, newClusters);
@@ -608,6 +611,8 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
     private void DisposeLayouts()
     {
+        TextRenderingHelper.DisposeShapedText(_diffResults);
+        _diffResults = null;
         DisposeDocumentLayouts();
         _documentLayoutDirty = true;
         _oldTextLayout?.Dispose();
@@ -803,6 +808,8 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
                 break;
 
             case AnimatedTextBlockRedrawState.Idle:
+                TextRenderingHelper.DisposeShapedText(_diffResults);
+                _diffResults = null;
                 StopRenderingLoop();          // 从共享时钟注销，不再收到 tick
                 _canvas?.Invalidate();        // 最后一帧刷新为最终状态
                 break;

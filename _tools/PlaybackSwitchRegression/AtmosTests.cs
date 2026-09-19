@@ -229,7 +229,7 @@ internal static unsafe partial class Program
                 var engine = Engine(mode);
                 engine.ExperimentalAtmosPassthrough = enabled;
                 using var session = (Session?)Invoke(engine, "OpenSession", path, false, null);
-                Require(session?.Kind == (enabled && mode.StartsWith("WasapiExclusive") ? RenderKind.Eac3 : RenderKind.Pcm), "experimental path escaped scope");
+                Require(session?.Kind == (enabled && mode != "ASIO" ? RenderKind.Eac3 : RenderKind.Pcm), "experimental path escaped scope");
                 using var ordinary = (Session?)Invoke(engine, "OpenSession", Path.Combine(root, "_tools", "test_tone.wav"), false, null);
                 Require(ordinary?.Kind == RenderKind.Pcm && ordinary.Channels == 2, "ordinary PCM behavior changed");
             });
@@ -250,6 +250,7 @@ internal static unsafe partial class Program
         {
             using var native = new NativeObject(16);
             native.Table[3] = (void*)(delegate* unmanaged[Stdcall]<IntPtr, int, int, long, long, WAVEFORMATEX*, void*, int>)&CaptureIecInitialize;
+            native.Table[7] = (void*)(delegate* unmanaged[Stdcall]<IntPtr, int, WAVEFORMATEX*, WAVEFORMATEX**, int>)&SupportIecFormat;
             using var output = new WasapiOutput(true, false);
             Set(output, "_client", new RawAudioClient(native.Pointer));
             try
@@ -279,10 +280,13 @@ internal static unsafe partial class Program
             byte[] bytes = new byte[BinarySerializer.IpcSettingSize];
             int size = BinarySerializer.WriteIpcSetting(bytes, new() { ExperimentalAtmosPassthrough = true, ExperimentalSurround51 = true });
             Require(BinarySerializer.ReadIpcSetting(bytes.AsSpan(0, size)).ExperimentalAtmosPassthrough, "flag lost");
-            var legacy = BinarySerializer.ReadIpcSetting(bytes.AsSpan(0, size - 1));
+            var legacy = BinarySerializer.ReadIpcSetting(bytes.AsSpan(0, size - 3));
             Require(!legacy.ExperimentalAtmosPassthrough && legacy.ExperimentalSurround51, "old 5.1 setting changed");
         });
     }
+
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
+    private static int SupportIecFormat(IntPtr self, int mode, WAVEFORMATEX* format, WAVEFORMATEX** closest) => 0;
 
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
     private static int CaptureIecInitialize(IntPtr self, int mode, int flags, long duration, long periodicity, WAVEFORMATEX* format, void* guid)

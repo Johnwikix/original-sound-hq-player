@@ -53,6 +53,7 @@ namespace WinUIMusicPlayer.Services
         private Task? _serverMonitorTask;
         private readonly ILogger<IpcService> _logger;
         private readonly LicenseService _license;
+        private readonly NotificationService _systemNotifications;
         private bool _lastLicenseRestricted;
         private AppViewModel AppViewModel { get; }
 
@@ -67,9 +68,10 @@ namespace WinUIMusicPlayer.Services
         /// </summary>
         public event Action<MessageTypeId, ReadOnlyMemory<byte>>? NotificationReceived;
 
-        public IpcService(AppViewModel appViewModel, LicenseService license, ILogger<IpcService> logger)
+        public IpcService(AppViewModel appViewModel, LicenseService license, ILogger<IpcService> logger, NotificationService systemNotifications)
         {
             AppViewModel = appViewModel;
+            _systemNotifications = systemNotifications;
             _license = license;
             _lastLicenseRestricted = license.IsRestricted;
             _logger = logger;
@@ -174,6 +176,7 @@ namespace WinUIMusicPlayer.Services
                         var previous = CurrentDspState?.State;
                         Volatile.Write(ref _dspSnapshot, snapshot);
                         SynchronizeCorrectionOutput(previous, snapshot.State);
+                        SynchronizeAtmosState(snapshot);
                         NotifyDspStateChanged();
                     }
                 } while (WaitHandle.WaitAny(waits) != 0);
@@ -372,6 +375,7 @@ namespace WinUIMusicPlayer.Services
                 IsDopEnabled = AppViewModel.IsDopEnabled,
                 ExperimentalSurround51 = AppViewModel.ExperimentalSurround51,
                 ExperimentalAtmosPassthrough = AppViewModel.ExperimentalAtmosPassthrough,
+                AtmosEndpointId = AppViewModel.AtmosEndpointId,
                 DsdGain = AppViewModel.DsdGain,
                 DsdPcmFreq = AppViewModel.DsdPcmFreq,
                 IsEqualizerEnabled = AppSettings.IsEqualizerEnabled,

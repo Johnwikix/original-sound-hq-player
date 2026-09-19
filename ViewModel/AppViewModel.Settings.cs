@@ -1069,7 +1069,7 @@ namespace WinUIMusicPlayer.ViewModel
             get => field;
             set
             {
-                if (!AtmosPassthroughAllowed)
+                if (value && !AtmosPassthroughAllowed)
                 {
                     OnPropertyChanged(nameof(ExperimentalAtmosPassthrough));
                     return;
@@ -1910,7 +1910,7 @@ namespace WinUIMusicPlayer.ViewModel
                     }
                 }
             }
-            finally { _isLoadingDevices = false; }
+            finally { RefreshAtmosDevices(); _isLoadingDevices = false; }
         }
 
         [RelayCommand]

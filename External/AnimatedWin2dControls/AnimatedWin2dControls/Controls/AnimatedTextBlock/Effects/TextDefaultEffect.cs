@@ -16,19 +16,6 @@ public partial class TextDefaultEffect : ITextEffect
 
     public TimeSpan DelayPerCluster { get; set; } = TimeSpan.FromMilliseconds(10);
 
-    //public void Update(string oldText,
-    //    string newText,
-    //    List<TextDiffResult> diffResults,
-    //    CanvasTextLayout oldTextLayout,
-    //    CanvasTextLayout newTextLayout,
-    //    AnimatedTextBlockRedrawState state,
-    //    ICanvasAnimatedControl canvas,
-    //    CanvasAnimatedUpdateEventArgs args)
-    //{
-    //    // CanvasControl 模式下 Update 不再被调用，逻辑已移入 AnimatedTextBlock.OnRendering
-    //    // 保留此方法以满足接口约定
-    //}
-
     public void DrawText(string oldText,
         string newText,
         List<TextDiffResult> diffResults,
@@ -38,7 +25,7 @@ public partial class TextDefaultEffect : ITextEffect
         Color textColor,
         CanvasLinearGradientBrush gradientBrush,
         AnimatedTextBlockRedrawState state,
-        CanvasDrawingSession drawingSession)   // CanvasControl 模式下传入 null，不要使用
+        CanvasDrawingSession drawingSession)
     {
         if (diffResults == null || newTextLayout == null)
             return;
@@ -131,11 +118,10 @@ public partial class TextDefaultEffect : ITextEffect
                 (float)(newCluster.LayoutBounds.X + newCluster.LayoutBounds.Width * 0.5),
                 (float)newCluster.LayoutBounds.Bottom))) * originalTransform;
 
-        ds.DrawText(
-            newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
+        ShapedText.Draw(ds, newCluster,
             (float)newCluster.DrawBounds.X,
             (float)newCluster.DrawBounds.Y,
-            c, textFormat);
+            c);
 
         ds.Transform = originalTransform;
     }
@@ -160,11 +146,10 @@ public partial class TextDefaultEffect : ITextEffect
                 (float)(oldCluster.LayoutBounds.X + oldCluster.LayoutBounds.Width * 0.5),
                 (float)oldCluster.LayoutBounds.Bottom))) * originalTransform;
 
-        ds.DrawText(
-            oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+        ShapedText.Draw(ds, oldCluster,
             (float)oldCluster.DrawBounds.X,
             (float)oldCluster.DrawBounds.Y,
-            c, textFormat);
+            c);
 
         ds.Transform = originalTransform;
     }
@@ -182,11 +167,10 @@ public partial class TextDefaultEffect : ITextEffect
         if (p <= 0f)
         {
             // 还没开始动画，画在原位
-            ds.DrawText(
-                oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+            ShapedText.Draw(ds, newCluster,
                 (float)oldCluster.DrawBounds.X,
                 (float)oldCluster.DrawBounds.Y,
-                textColor, textFormat);
+                textColor);
             return;
         }
 
@@ -195,11 +179,10 @@ public partial class TextDefaultEffect : ITextEffect
         var dX = newCluster.DrawBounds.X - oX;
         var dY = newCluster.DrawBounds.Y - oY;
 
-        ds.DrawText(
-            oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+        ShapedText.Draw(ds, newCluster,
             (float)(oX + dX * p),
             (float)(oY + dY * p),
-            textColor, textFormat);
+            textColor);
     }
 
     private void DrawUpdate(CanvasDrawingSession ds,
@@ -228,11 +211,10 @@ public partial class TextDefaultEffect : ITextEffect
                     (float)(oldCluster.LayoutBounds.X + oldCluster.LayoutBounds.Width * 0.5),
                     (float)oldCluster.LayoutBounds.Bottom))) * originalTransform;
 
-            ds.DrawText(
-                oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+            ShapedText.Draw(ds, oldCluster,
                 (float)oldCluster.DrawBounds.X,
                 (float)oldCluster.DrawBounds.Y,
-                oldColor, textFormat);
+                oldColor);
 
             ds.Transform = originalTransform;
         }
@@ -249,11 +231,10 @@ public partial class TextDefaultEffect : ITextEffect
                     (float)(newCluster.LayoutBounds.X + newCluster.LayoutBounds.Width * 0.5),
                     (float)newCluster.LayoutBounds.Bottom))) * originalTransform;
 
-            ds.DrawText(
-                newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
+            ShapedText.Draw(ds, newCluster,
                 (float)newCluster.DrawBounds.X,
                 (float)newCluster.DrawBounds.Y,
-                newColor, textFormat);
+                newColor);
 
             ds.Transform = originalTransform;
         }

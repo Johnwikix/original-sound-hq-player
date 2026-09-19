@@ -125,11 +125,10 @@ public partial class TextMotionBlurEffect : ITextEffect
         {
             clds.Transform = Matrix3x2.CreateTranslation(0,
                 (float)(newCluster.LayoutBounds.Height * t));
-            clds.DrawText(
-                newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
+            ShapedText.Draw(clds, newCluster,
                 (float)newCluster.DrawBounds.X,
                 (float)newCluster.DrawBounds.Y,
-                textColor, textFormat);
+                textColor);
         }
 
         using var fx = new DirectionalBlurEffect
@@ -160,11 +159,10 @@ public partial class TextMotionBlurEffect : ITextEffect
         {
             clds.Transform = Matrix3x2.CreateTranslation(0,
                 (float)(-oldCluster.LayoutBounds.Height * 0.5 * p));
-            clds.DrawText(
-                oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+            ShapedText.Draw(clds, oldCluster,
                 (float)oldCluster.DrawBounds.X,
                 (float)oldCluster.DrawBounds.Y,
-                textColor, textFormat);
+                textColor);
         }
 
         using var fx = new DirectionalBlurEffect
@@ -190,11 +188,10 @@ public partial class TextMotionBlurEffect : ITextEffect
 
         float p = Easing.UpdateProgress(oldCluster.Progress, Easing.EasingFunction.CubicOut);
 
-        ds.DrawText(
-            oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+        ShapedText.Draw(ds, newCluster,
             (float)(oldCluster.DrawBounds.X + (newCluster.DrawBounds.X - oldCluster.DrawBounds.X) * p),
             (float)(oldCluster.DrawBounds.Y + (newCluster.DrawBounds.Y - oldCluster.DrawBounds.Y) * p),
-            textColor, textFormat);
+            textColor);
     }
 
     private void DrawUpdate(CanvasDrawingSession ds,
@@ -217,11 +214,10 @@ public partial class TextMotionBlurEffect : ITextEffect
             {
                 clds.Transform = Matrix3x2.CreateTranslation(0,
                     (float)(-oldCluster.LayoutBounds.Height * 0.5 * oldP));
-                clds.DrawText(
-                    oldCluster.IsTrimmed ? oldTextLayout.GenerateTrimmingSign() : oldCluster.Characters,
+                ShapedText.Draw(clds, oldCluster,
                     (float)oldCluster.DrawBounds.X,
                     (float)oldCluster.DrawBounds.Y,
-                    textColor, textFormat);
+                    textColor);
             }
 
             using var oldFx = new DirectionalBlurEffect
@@ -244,11 +240,10 @@ public partial class TextMotionBlurEffect : ITextEffect
             {
                 clds.Transform = Matrix3x2.CreateTranslation(0,
                     (float)(newCluster.LayoutBounds.Height * newT));
-                clds.DrawText(
-                    newCluster.IsTrimmed ? newTextLayout.GenerateTrimmingSign() : newCluster.Characters,
+                ShapedText.Draw(clds, newCluster,
                     (float)newCluster.DrawBounds.X,
                     (float)newCluster.DrawBounds.Y,
-                    textColor, textFormat);
+                    textColor);
             }
 
             using var newFx = new DirectionalBlurEffect

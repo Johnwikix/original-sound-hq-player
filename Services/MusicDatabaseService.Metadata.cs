@@ -3,6 +3,7 @@ using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 
@@ -72,7 +73,7 @@ public partial class MusicDatabaseService
                     await _dbConnection.UpdateAsync(request);
                     _logger.LogError(ex, "标签写入待重试: {Path}", request.Path);
                     App.MainWindow.DispatcherQueue.TryEnqueue(() =>
-                        new NotificationService().SendNotification(ToolUtils.GetString("Error"), request.Path + Environment.NewLine + ex.Message));
+                        App.Services.GetRequiredService<NotificationService>().SendNotification(ToolUtils.GetString("Error"), request.Path + Environment.NewLine + ex.Message));
                 }
             }
         }

@@ -2,6 +2,22 @@
 
 新条目加在最上方。
 
+## 2026-09-19 Atmos 自动独占直通与统一系统通知
+
+- `External/AudioPlayer/Playback/PlaybackEngine.Atmos.cs`、`PlaybackEngine.cs`、`Interop/WasapiOutput.cs`：兼容曲目临时使用 WASAPI 独占，保留普通输出偏好；固定目标端点协商格式，失败保进度回退同设备 PCM，断开设备暂停，避免重复抢占；能力查询与初始化共用超时及资源收尾。
+- `External/BassPlayerIpc.Shared`、`Services/IpcService.Atmos.cs`、`ViewModel/AppViewModel.Atmos.cs`、`View/SubView/Settings/GeneralSettingsControl.xaml`：新增可选 Atmos 专用设备、实际状态和恢复普通播放入口；ASIO 需明确指定设备，旧配置沿用当前输出；六种语言补齐独立资源键。
+- `Services/NotificationService.cs`、`App.xaml.cs`、`Services/MusicDatabaseService.Metadata.cs`：统一系统通知单例入口，失败通知区分 PCM 回退和停止，30 秒同类去重、有界缓存和异常隔离，退出后拒绝迟到通知。
+- `Player/AudioPlayer.exe`：同步发布更新后的 AOT 播放端；DSP 状态邮箱升级，主程序与播放端须配套更新，旧设置载荷仍可读取。
+- 验证：主程序构建、播放切换回归、通知网关并发/失败/退出测试、设置持久化、元数据通知回归和 Release 许可门控；真实 HDMI 功放、系统通知横幅及界面设备交互仍需实机验证。
+
+## 2026-09-19 合并动画文字、增加悬停设置并修复混排动画收尾偏移
+
+- `View/SubView/Settings/CoverBackgroundSettingsControl.xaml`、`ViewModel/AppViewModel.Settings.cs`、`Model/SaveSettings.cs`、`Services/MusicDatabaseService.cs`：在 Win2D 动画文本块下增加悬停滚动开关，即时生效并持久化；旧配置默认开启，保持原页面行为，六种语言补齐独立资源键。
+- `View/PlayingDetailPage.xaml(.cs)`、`Utils/BindUtils.cs`：标题与两行专辑/艺术家改为一个 AnimatedTextBlock，保留字号、字重、透明度及固定行高；整组内容一次更新，统一推进动画效果。
+- `External/AnimatedWin2dControls/.../AnimatedTextBlock`：新增不可变 Document/Paragraph 输入，共用 Canvas 和动画进度；各截断行独立悬停滚动，切换动画优先，格式变动和卸载释放缓存。
+- `External/AnimatedWin2dControls/.../AnimatedTextBlock/Internals`、`Effects`：逐字效果复用完整排版的字形、回退字体和基线，统一静态/动画的像素对齐；修复重复 Stay/Move 操作，保留段落偏移和彩色符号绘制。
+- `_tools/AnimatedTextRegression`、`_tools/SettingsPersistenceRegression`：增加单 Canvas、多样式、八种效果、混排末帧图像对比、DPI/RTL/截断/emoji、开关绑定及设置兼容性回归。
+
 ## 2026-09-19 修复动画文字在 x:Load 初始化时消失
 
 - `View/PlayingDetailPage.xaml`：字号改为带正值回退的常规 Binding，避免 x:Load 创建控件时生成的 x:Bind setter 写入默认 0，触发 WinUI 参数错误并阻止控件进入可视树；保留 ViewModel 字号联动与固定行高。

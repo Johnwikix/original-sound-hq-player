@@ -86,7 +86,10 @@ public enum LoudnessStatus : byte
 
 /// <summary>提供播放端当前实际的 PCM/位流及音效状态。</summary>
 public readonly record struct DspState(byte RenderKind, bool EqualizerActive, int Channels,
-    LoudnessStatus Loudness, double GainDb, double IntegratedLufs, bool IsEnabled = true, ConvolutionStatus Convolution = ConvolutionStatus.Off, int SampleRate = 0, string OutputDeviceId = "", long OutputGeneration = 0);
+    LoudnessStatus Loudness, double GainDb, double IntegratedLufs, bool IsEnabled = true, ConvolutionStatus Convolution = ConvolutionStatus.Off, int SampleRate = 0, string OutputDeviceId = "", long OutputGeneration = 0,
+    AtmosPlaybackStatus AtmosStatus = AtmosPlaybackStatus.Off, AtmosFailure AtmosReason = AtmosFailure.None,
+    long AtmosFailureSequence = 0, AtmosFailure LastAtmosFailure = AtmosFailure.None,
+    bool AtmosFailureStopped = false, ActualOutputMode ActualOutput = ActualOutputMode.None);
 
 /// <summary>提供版本化 DSP 协议；独立命令保持旧设置和 EQ 载荷兼容。</summary>
 public static class DspProtocol
@@ -94,7 +97,7 @@ public static class DspProtocol
     /// <summary>设置载荷字节数。</summary>
     public const int SettingsSize = 1596;
     /// <summary>状态载荷字节数。</summary>
-    public const int StateSize = 296;
+    public const int StateSize = 309;
 
     /// <summary>写入 DSP 设置。</summary>
     public static void WriteSettings(Span<byte> data, DspSettings settings)
@@ -177,7 +180,13 @@ public static class DspProtocol
         data[0] = state.RenderKind;
         data[1] = state.EqualizerActive ? (byte)1 : (byte)0;
         data[2] = (byte)state.Loudness;
-        data[3] = 6;
+        data[3] = 7;
+        data[296] = (byte)state.AtmosStatus;
+        data[297] = (byte)state.AtmosReason;
+        BinaryPrimitives.WriteInt64LittleEndian(data[298..], state.AtmosFailureSequence);
+        data[306] = (byte)state.LastAtmosFailure;
+        data[307] = state.AtmosFailureStopped ? (byte)1 : (byte)0;
+        data[308] = (byte)state.ActualOutput;
         BinaryPrimitives.WriteInt64LittleEndian(data[288..], state.OutputGeneration);
         data.Slice(30, 258).Clear();
         int deviceLength = Encoding.UTF8.GetBytes(state.OutputDeviceId ?? "", data.Slice(32, 256));
@@ -196,7 +205,11 @@ public static class DspProtocol
         bool legacy = data.Length == 24 && data[3] == 1;
         bool v2 = data.Length == 25 && data[3] == 2;
         bool v3 = data.Length == 26 && data[3] == 3;
-        bool v6 = data.Length == StateSize && data[3] == 6;
+        bool v7 = data.Length == StateSize && data[3] == 7;
+        if (v7 && (data[296] > (byte)AtmosPlaybackStatus.Stopped || data[297] > (byte)AtmosFailure.SelectDevice
+            || data[306] > (byte)AtmosFailure.SelectDevice || data[307] > 1 || data[308] > (byte)ActualOutputMode.Asio))
+            throw new ArgumentException("Invalid Atmos state.");
+        bool v6 = (data.Length == 296 && data[3] == 6) || v7;
         bool v5 = (data.Length == 288 && data[3] == 5) || v6;
         bool v4 = (data.Length == 30 && data[3] == 4) || v5;
         if (v5 && BinaryPrimitives.ReadUInt16LittleEndian(data[30..]) > 256)
@@ -208,6 +221,12 @@ public static class DspProtocol
             BinaryPrimitives.ReadDoubleLittleEndian(data[16..]), legacy || data[24] != 0, v3 || v4 ? (ConvolutionStatus)data[25] : ConvolutionStatus.Off,
             v4 ? BinaryPrimitives.ReadInt32LittleEndian(data[26..]) : 0,
             v5 ? new UTF8Encoding(false, true).GetString(data.Slice(32, BinaryPrimitives.ReadUInt16LittleEndian(data[30..]))) : "",
-            v6 ? BinaryPrimitives.ReadInt64LittleEndian(data[288..]) : 0);
+            v6 ? BinaryPrimitives.ReadInt64LittleEndian(data[288..]) : 0,
+            v7 ? (AtmosPlaybackStatus)data[296] : AtmosPlaybackStatus.Off,
+            v7 ? (AtmosFailure)data[297] : AtmosFailure.None,
+            v7 ? BinaryPrimitives.ReadInt64LittleEndian(data[298..]) : 0,
+            v7 ? (AtmosFailure)data[306] : AtmosFailure.None,
+            v7 && data[307] != 0,
+            v7 ? (ActualOutputMode)data[308] : ActualOutputMode.None);
     }
 }

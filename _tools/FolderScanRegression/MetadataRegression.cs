@@ -1,3 +1,5 @@
+using Microsoft.Extensions.DependencyInjection;
+using WinUIMusicPlayer;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -6,6 +8,8 @@ internal static class MetadataRegression
 {
     public static async Task RunAsync(string root)
     {
+        using var services = new ServiceCollection().AddSingleton<NotificationService>().BuildServiceProvider();
+        App.Services = services;
         string dbPath = Path.Combine(root, "metadata.db");
         string filePath = Path.Combine(root, "metadata.mp3");
         await File.WriteAllTextAsync(filePath, "original");
