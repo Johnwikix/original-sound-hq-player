@@ -1,0 +1,32 @@
+<UserControl
+    x:Class="WinUIMusicPlayer.View.SubView.Settings.PluginsSettingsControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:plugins="using:WinUIMusicPlayer.Services.Plugins"
+    xmlns:tools="using:WinUIMusicPlayer.Utils">
+    <Grid Margin="24,8,24,24" RowDefinitions="Auto,Auto,*" RowSpacing="16">
+        <StackPanel Spacing="8">
+            <TextBlock Text="{x:Bind tools:ToolUtils.GetString('PluginsTitle')}" Style="{StaticResource SubtitleTextBlockStyle}" />
+            <TextBlock Text="{x:Bind ViewModel.Message, Mode=OneWay}" TextWrapping="Wrap" />
+        </StackPanel>
+        <StackPanel Grid.Row="1" Spacing="8">
+            <TextBlock Text="{x:Bind ViewModel.DirectoryPath}" IsTextSelectionEnabled="True" TextWrapping="Wrap" />
+            <Button Content="{x:Bind tools:ToolUtils.GetString('PluginsOpenFolder')}" Command="{x:Bind ViewModel.OpenFolderCommand}" />
+        </StackPanel>
+        <ListView Grid.Row="2" ItemsSource="{x:Bind ViewModel.Items}" SelectionMode="None" IsItemClickEnabled="False" HorizontalContentAlignment="Stretch">
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="plugins:PluginItem">
+                    <Grid Padding="8,12" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="6">
+                        <TextBlock Text="{x:Bind Name}" Style="{StaticResource BodyStrongTextBlockStyle}" TextWrapping="Wrap" />
+                        <TextBlock Grid.Row="1" Text="{x:Bind Details}" TextWrapping="Wrap" />
+                        <TextBlock Grid.Row="2" Text="{x:Bind Status, Mode=OneWay}" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
+                        <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">
+                            <Button Content="{x:Bind ActionLabel, Mode=OneWay}" IsEnabled="{x:Bind CanChange, Mode=OneWay}" Click="Toggle_Click" />
+                            <Button Content="{x:Bind tools:ToolUtils.GetString('PluginRetry')}" IsEnabled="{x:Bind CanChange, Mode=OneWay}" Click="Retry_Click" />
+                        </StackPanel>
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</UserControl>

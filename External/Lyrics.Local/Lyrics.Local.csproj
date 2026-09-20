@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net11.0-windows10.0.26100.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks><IsTrimmable>true</IsTrimmable>
+    <DefineConstants>$(DefineConstants);LYRICS_LOCAL_ONLY</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../Lyricify.Lyrics.Helper/**/*.cs" Exclude="../Lyricify.Lyrics.Helper/obj/**;../Lyricify.Lyrics.Helper/bin/**;../Lyricify.Lyrics.Helper/Decrypter/Qrc/Helper.cs;../Lyricify.Lyrics.Helper/Decrypter/Krc/Helper.cs;../Lyricify.Lyrics.Helper/Providers/**;../Lyricify.Lyrics.Helper/Searchers/**;../Lyricify.Lyrics.Helper/Helpers/SearchHelper.cs;../Lyricify.Lyrics.Helper/Helpers/ProviderHelper.cs" />
+    <PackageReference Include="CHTCHSConv" Version="1.0.0" />
+    <PackageReference Include="SharpZipLib" Version="1.4.2" />
+  </ItemGroup>
+</Project>

@@ -23,6 +23,7 @@ using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
 using WinUIMusicPlayer.ViewModel.Pages;
 using ZLinq;
+using WinUIMusicPlayer.Services.Plugins;
 using static WinUIMusicPlayer.Utils.ToolUtils;
 
 // To learn more about WinUI, the WinUI project structure,
@@ -57,6 +58,9 @@ namespace WinUIMusicPlayer.View
             _playingNavigation = navigationServiceFactory.CreateNavigationService(PlayingFrame);
             _playingNavigation.RegisterPage<PlayingDetailPage>();
             ViewModel.MusicBrowseVM.SetMainPage(this);
+            var plugins = App.Services.GetRequiredService<PluginManager>();
+            plugins.RoutesChanged += UpdatePluginRoutes;
+            App.Services.GetRequiredService<ShutdownCoordinator>().RegisterCleanup(() => plugins.RoutesChanged -= UpdatePluginRoutes);
             Loaded += MainPage_Loaded;
             Unloaded += MainPage_Unloaded;
         }
@@ -263,8 +267,29 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        private void UpdatePluginRoutes()
+        {
+            var plugins = App.Services.GetRequiredService<PluginManager>();
+            for (int i = NavigationViewControl.MenuItems.Count - 1; i >= 0; i--)
+                if (NavigationViewControl.MenuItems[i] is NavigationViewItem { Tag: PluginRoute })
+                    NavigationViewControl.MenuItems.RemoveAt(i);
+            foreach (var route in plugins.Routes)
+                NavigationViewControl.MenuItems.Add(new NavigationViewItem { Content = route.Title, Tag = route, Icon = new SymbolIcon(Symbol.Library) });
+            if (MainFrame.Content is PluginPage page)
+            {
+                bool exists = false;
+                foreach (var route in plugins.Routes) if (route.PluginId == page.PluginId) exists = true;
+                if (!exists) { MainFrame.BackStack.Clear(); NavigateToSettingsPage(); }
+            }
+        }
+
         private void NavigationView_ItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
         {
+            if (args.InvokedItemContainer?.Tag is PluginRoute route)
+            {
+                MainFrame.Navigate(typeof(PluginPage), route);
+                return;
+            }
             Type? targetType = null;
 
             if (args.IsSettingsInvoked)

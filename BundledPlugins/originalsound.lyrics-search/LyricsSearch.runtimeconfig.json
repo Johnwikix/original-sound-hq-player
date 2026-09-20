@@ -1,0 +1,15 @@
+{
+  "runtimeOptions": {
+    "tfm": "net11.0",
+    "rollForward": "LatestMinor",
+    "framework": {
+      "name": "Microsoft.NETCore.App",
+      "version": "11.0.0-rc.1.26425.128"
+    },
+    "configProperties": {
+      "System.Reflection.Metadata.MetadataUpdater.IsSupported": false,
+      "System.Runtime.Serialization.EnableUnsafeBinaryFormatterSerialization": false,
+      "CSWINRT_USE_WINDOWS_UI_XAML_PROJECTIONS": false
+    }
+  }
+}

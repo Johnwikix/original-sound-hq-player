@@ -2,7 +2,8 @@ using System.Net;
 using System.Text;
 using Lyricify.Lyrics.Providers.Web;
 using Lyricify.Lyrics.Searchers;
-using Microsoft.Extensions.Logging.Abstractions;
+using OriginalSound.Plugins;
+using OriginalSound.Plugin;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.WebService;
 using WinUIMusicPlayer.Helper;
@@ -15,41 +16,43 @@ const string qqSong = """
 const string qqEmpty = """{"code":0,"req_1":{"code":0,"data":{"code":0,"body":{"song":{"list":[]}}}}} """;
 const string neteaseEmpty = """{"code":200,"result":{"songCount":0,"songs":[]}}""";
 int failed = 0;
-using var service = new LrcService(NullLogger<LrcService>.Instance);
+await using var service = new LyricsSearchPlugin();
+var metadata = new OriginalSound.Plugin.TrackMetadata("test", "Test Song", "Test Artist", "Test Album", 180000, "zh-CN");
+Task<PluginReply> Lookup(bool words = false, CancellationToken ct = default) => service.HandleAsync(new() { Method = "lyrics", Track = metadata, WordSynced = words }, ct).AsTask();
 await Run("网易云不可用仍回退 QQ", async () =>
 {
     SetHttp(request => request.RequestUri!.Host.Contains("163.com")
         ? new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)
         : Json(request.RequestUri.AbsolutePath.Contains("musicu.fcg") ? qqSong : QqLyric(0, "[00:00.00]hello")));
-    var result = await service.GetMixedLyricsAsync(new Music());
-    Check(result.Status == LyricsSearchStatus.Found && result.Lyrics.Contains("hello"));
+    var result = await Lookup();
+    Check(result.Result == PluginResult.Found && result.Lyrics.Any(x => x.Text.Contains("hello")));
 });
 await Run("一方失败另一方无结果仍保留重试", async () =>
 {
     SetHttp(request => request.RequestUri!.Host.Contains("163.com")
         ? new HttpResponseMessage(HttpStatusCode.ServiceUnavailable) : Json(qqEmpty));
-    Check((await service.GetMixedLyricsAsync(new Music())).Status == LyricsSearchStatus.NetworkError);
+    Check((await Lookup()).Result == PluginResult.NetworkError);
 });
 await Run("双方成功且为空才确认无结果", async () =>
 {
     SetHttp(request => Json(request.RequestUri!.Host.Contains("163.com") ? neteaseEmpty : qqEmpty));
-    Check((await service.GetMixedLyricsAsync(new Music())).Status == LyricsSearchStatus.NoResult);
+    Check((await Lookup()).Result == PluginResult.NoResult);
 });
 await Run("QQ 搜索业务错误不能记为无结果", async () =>
 {
     SetHttp(_ => Json("""{"code":0,"req_1":{"code":1000}}"""));
-    Check((await service.GetLyricsAsync(new Music(), Searchers.QQMusic)).Status == LyricsSearchStatus.NetworkError);
-    Check((await service.GetKrcLyricsAsync(new Music())).Status == LyricsSearchStatus.NetworkError);
+    Check((await Lookup()).Result == PluginResult.NetworkError);
+    Check((await Lookup(words: true)).Result == PluginResult.NetworkError);
 });
 await Run("QQ 歌词业务错误不能记为无结果", async () =>
 {
     SetHttp(request => Json(request.RequestUri!.AbsolutePath.Contains("musicu.fcg") ? qqSong : QqLyric(1000, null)));
-    Check((await service.GetLyricsAsync(new Music(), Searchers.QQMusic)).Status == LyricsSearchStatus.NetworkError);
+    Check((await Lookup()).Result == PluginResult.NetworkError);
 });
 await Run("有效的空歌词确认无结果", async () =>
 {
-    SetHttp(request => Json(request.RequestUri!.AbsolutePath.Contains("musicu.fcg") ? qqSong : QqLyric(0, "")));
-    Check((await service.GetLyricsAsync(new Music(), Searchers.QQMusic)).Status == LyricsSearchStatus.NoResult);
+    SetHttp(request => Json(request.RequestUri!.Host.Contains("163.com") ? neteaseEmpty : request.RequestUri.AbsolutePath.Contains("musicu.fcg") ? qqSong : QqLyric(0, "")));
+    Check((await Lookup()).Result == PluginResult.NoResult);
 });
 await Run("取消不再发起任何请求", async () =>
 {
@@ -57,7 +60,7 @@ await Run("取消不再发起任何请求", async () =>
     SetHttp(_ => { requests++; return Json(qqEmpty); });
     using var cts = new CancellationTokenSource();
     cts.Cancel();
-    try { await service.GetMixedLyricsAsync(new Music(), cts.Token); throw new Exception("未传播取消"); }
+    try { await Lookup(ct: cts.Token); throw new Exception("未传播取消"); }
     catch (OperationCanceledException) { }
     Check(requests == 0);
 });
@@ -65,19 +68,19 @@ BaseApi.HttpClient.Dispose();
 await Run("网易云业务错误与有效空结果分开", async () =>
 {
     SetHttp(_ => Json("""{"code":500}"""));
-    Check((await service.GetLyricsAsync(new Music(), Searchers.Netease)).Status == LyricsSearchStatus.NetworkError);
-    SetHttp(_ => Json("""{"code":200,"result":{"songCount":0}}"""));
-    Check((await service.GetLyricsAsync(new Music(), Searchers.Netease)).Status == LyricsSearchStatus.NoResult);
+    Check((await Lookup()).Result == PluginResult.NetworkError);
+    SetHttp(request => Json(request.RequestUri!.Host.Contains("163.com") ? """{"code":200,"result":{"songCount":0}}""" : qqEmpty));
+    Check((await Lookup()).Result == PluginResult.NoResult);
 });
 await Run("QQ 逐字歌词协议错误保留重试", async () =>
 {
     foreach (string response in new[] { "<result><retcode>1</retcode></result>", "<result/>", "<result><content>broken</content></result>" })
     {
         SetHttp(request => Json(request.RequestUri!.AbsolutePath.Contains("musicu.fcg") ? qqSong : response));
-        Check((await service.GetKrcLyricsAsync(new Music())).Status == LyricsSearchStatus.NetworkError);
+        Check((await Lookup(words: true)).Result == PluginResult.NetworkError);
     }
     SetHttp(request => Json(request.RequestUri!.AbsolutePath.Contains("musicu.fcg") ? qqSong : "<result><retcode>0</retcode><content/></result>"));
-    Check((await service.GetKrcLyricsAsync(new Music())).Status == LyricsSearchStatus.NoResult);
+    Check((await Lookup(words: true)).Result == PluginResult.NoResult);
 });
 BaseApi.HttpClient.Dispose();
 await Run("断路器只允许一个并发探测且取消后可重试", () =>

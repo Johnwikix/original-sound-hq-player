@@ -2,6 +2,29 @@
 
 新条目加在最上方。
 
+## 2026-09-20 预置歌词与封面插件
+
+- `BundledPlugins/originalsound.lyrics-search`、`WinUIMusicPlayer.csproj`：纳入插件 DLL、依赖和清单，随应用构建及发布分发。
+- `External/Plugin.Runtime/BundledPluginInstaller.cs`、`Services/Plugins/PluginManager.cs`：启动扫描前整包部署到文档目录的 `OriginalSoundPlayer/Plugins`，已有目录不覆盖，仍由用户启用。
+- `_tools/Publish-Plugins.ps1`、设置说明与 ADR：发布脚本同步项目内置文件，更新安装说明。
+- 验证：预置文件在项目、应用输出及本机插件目录哈希一致；真实宿主加载、首次安装、重复安装保留用户版本和取消安装回归通过。
+
+## 2026-09-20 插件目录统一到文档目录
+
+- `Services/Plugins/PluginManager.cs`：插件与插件数据目录改为系统文档目录下的 `OriginalSoundPlayer/Plugins`、`PluginData`，与 `Settings` 同级；未发布功能不添加旧目录兼容或迁移。
+- `docs/adr/0002-plugins-and-network-playback.md`：同步插件安装路径说明。
+
+## 2026-09-20 插件系统与网络播放接口
+
+- `External/Plugin.*`、`External/PluginHost`、`Services/Plugins`：新增独立插件宿主、版本化协议与启用管理。
+- `View/PluginPage*`、`View/SubView/Settings/PluginsSettingsControl*`：新增插件设置及动态导航页面。
+- `External/Plugins/LyricsSearch`、`External/Lyrics.Local`、`WebService/LrcService.cs`：在线歌词/封面搜索独立分发，主应用仅保留本地解析和插件代理。
+- `External/AudioPlayer`、`External/BassPlayerIpc.Shared/Streaming.cs`：新增 HTTP/HTTPS 源描述、预缓冲/恢复阈值、会话控制、取消、Seek、源刷新及独立 IPC；未接入在线歌曲平台。
+- `Libraries/FFmpeg/x64`、`Player/AudioPlayer.exe`：从指定 FFmpeg 源码启用网络/Schannel，更新四个 DLL 与 NativeAOT 播放器，保留既有音频编解码器。
+- `Model/MusicLyrics.cs`、歌词缓存和加载服务：手动应用歌词优先显示，迟到的自动搜索不覆盖选择，刷新歌词不增加播放次数。
+- 验证：真实插件进程和 AOT 网络集成通过，本地播放 281 项、歌词封面 15 项、生命周期 7 组回归通过；Release 裁剪构建通过。WinUI 实机页面及 MSIX 打包限制见 ADR。
+- `docs/adr/0002-plugins-and-network-playback.md`：记录旧 DLL 禁用网络的实测证据及从指定源码重建网络版 FFmpeg 的决定；验证状态随实现更新。
+
 ## 2026-09-20 歌词 Helper 迁移到可剪裁的 System.Text.Json
 
 - `External/Lyricify.Lyrics.Helper`：移除 Newtonsoft.Json，使用源生成 JSON 元数据迁移各提供商、KRC/YRC/Spotify/Musixmatch；兼容数字字符串、布尔值、请求转义与浮点输出，Musixmatch 使用可释放的 JsonDocument。

@@ -2,6 +2,10 @@
 
 # AudioPlayer — 独立音频播放进程
 
+插件与网络播放正在实现，FFmpeg 网络构建约束、架构决策及验收状态见
+[插件与网络播放决策](../../docs/adr/0002-plugins-and-network-playback.md)。
+可按需从 `G:\SoftwareProject\ffmpeg` 源码重编译和调整功能，长期约定见根目录 `AGENTS.md`。
+
 原音 HQ 播放器的播放引擎，一个独立于 UI 的 AOT 单文件进程：FFmpeg 解码 +
 自研 WASAPI/ASIO 互操作，与主程序经 `External\BassPlayerIpc.Shared` 的
 IPC 契约通信（信封/序列化逐字节兼容；命名对象 `AudioPlayer_SharedMemory` /

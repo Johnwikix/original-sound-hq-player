@@ -1,0 +1,107 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v11.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v11.0": {
+      "LyricsSearch/1.0.0": {
+        "dependencies": {
+          "Lyricify.Lyrics.Helper": "0.1.4",
+          "Plugin.Contracts": "1.0.0",
+          "runtimepack.Microsoft.Windows.SDK.NET.Ref": "10.0.26100.87"
+        },
+        "runtime": {
+          "LyricsSearch.dll": {}
+        }
+      },
+      "runtimepack.Microsoft.Windows.SDK.NET.Ref/10.0.26100.87": {
+        "runtime": {
+          "Microsoft.Windows.SDK.NET.dll": {
+            "assemblyVersion": "10.0.26100.86",
+            "fileVersion": "10.0.26100.86"
+          },
+          "WinRT.Runtime.dll": {
+            "assemblyVersion": "2.3.1.0",
+            "fileVersion": "2.3.1.54291"
+          }
+        }
+      },
+      "CHTCHSConv/1.0.0": {
+        "runtime": {
+          "lib/netstandard2.0/ChineseConverter.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0",
+            "localPath": "ChineseConverter.dll"
+          }
+        }
+      },
+      "SharpZipLib/1.4.2": {
+        "runtime": {
+          "lib/net6.0/ICSharpCode.SharpZipLib.dll": {
+            "assemblyVersion": "1.4.2.13",
+            "fileVersion": "1.4.2.13",
+            "localPath": "ICSharpCode.SharpZipLib.dll"
+          }
+        }
+      },
+      "Lyricify.Lyrics.Helper/0.1.4": {
+        "dependencies": {
+          "CHTCHSConv": "1.0.0",
+          "SharpZipLib": "1.4.2"
+        },
+        "runtime": {
+          "Lyricify.Lyrics.Helper.dll": {
+            "assemblyVersion": "0.1.4.0",
+            "fileVersion": "0.1.4.0"
+          }
+        }
+      },
+      "Plugin.Contracts/1.0.0": {
+        "runtime": {
+          "Plugin.Contracts.dll": {
+            "assemblyVersion": "1.0.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "LyricsSearch/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "runtimepack.Microsoft.Windows.SDK.NET.Ref/10.0.26100.87": {
+      "type": "runtimepack",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "CHTCHSConv/1.0.0": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-A6G2FO6AZ6MHNY3YbA98YF2Cty1O74+hffIJN6vKONUhyeXtd+kpZumYLFW0Q8tT3SToXNQoLuMFqScQF+FY8g==",
+      "path": "chtchsconv/1.0.0",
+      "hashPath": "chtchsconv.1.0.0.nupkg.sha512"
+    },
+    "SharpZipLib/1.4.2": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-yjj+3zgz8zgXpiiC3ZdF/iyTBbz2fFvMxZFEBPUcwZjIvXOf37Ylm+K58hqMfIBt5JgU/Z2uoUS67JmTLe973A==",
+      "path": "sharpziplib/1.4.2",
+      "hashPath": "sharpziplib.1.4.2.nupkg.sha512"
+    },
+    "Lyricify.Lyrics.Helper/0.1.4": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "Plugin.Contracts/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

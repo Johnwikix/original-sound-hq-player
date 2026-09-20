@@ -2011,4 +2011,28 @@
   <data name="RemoveExternalImportsTitle" xml:space="preserve">
     <value>是否要移除全部外部导入的歌曲</value>
   </data>
+  <data name="PluginsTitle" xml:space="preserve"><value>插件</value></data>
+  <data name="SettingsSectionPlugins.Text" xml:space="preserve"><value>插件</value></data>
+  <data name="PluginsInstructions" xml:space="preserve"><value>将每个插件放入独立文件夹后重启应用。仅启用可信插件；插件拥有当前用户权限。应用预置歌词与封面插件，在此启用后使用。</value></data>
+  <data name="PluginsOpenFolder" xml:space="preserve"><value>打开插件目录</value></data>
+  <data name="PluginDisabled" xml:space="preserve"><value>已禁用</value></data>
+  <data name="PluginInvalid" xml:space="preserve"><value>清单无效或插件不兼容</value></data>
+  <data name="PluginLoading" xml:space="preserve"><value>正在加载…</value></data>
+  <data name="PluginReady" xml:space="preserve"><value>已启用 · 就绪</value></data>
+  <data name="PluginLoadFailed" xml:space="preserve"><value>插件加载失败。请检查文件后重试。</value></data>
+  <data name="PluginRequestFailed" xml:space="preserve"><value>插件请求失败或超时，请重试。</value></data>
+  <data name="PluginSaveFailed" xml:space="preserve"><value>无法保存更改或打开目录。</value></data>
+  <data name="PluginRetry" xml:space="preserve"><value>重新加载</value></data>
+  <data name="PluginEnable" xml:space="preserve"><value>启用</value></data>
+  <data name="PluginDisable" xml:space="preserve"><value>禁用</value></data>
+  <data name="PluginSearchHint" xml:space="preserve"><value>搜索歌词；结果将应用到搜索开始时的当前歌曲。</value></data>
+  <data name="PluginSearching" xml:space="preserve"><value>正在搜索…</value></data>
+  <data name="PluginSelectResult" xml:space="preserve"><value>选择结果以预览和应用。</value></data>
+  <data name="PluginNoResult" xml:space="preserve"><value>未找到匹配歌词。</value></data>
+  <data name="PluginApplied" xml:space="preserve"><value>歌词已保存。</value></data>
+  <data name="PluginSongTitle" xml:space="preserve"><value>歌曲名称</value></data>
+  <data name="PluginArtist" xml:space="preserve"><value>歌手</value></data>
+  <data name="PluginSearch" xml:space="preserve"><value>搜索</value></data>
+  <data name="PluginApply" xml:space="preserve"><value>应用到搜索目标歌曲</value></data>
+  <data name="PluginLyricsUnavailable" xml:space="preserve"><value>在线匹配需要在设置 → 插件中安装并启用歌词插件。</value></data>
 </root>

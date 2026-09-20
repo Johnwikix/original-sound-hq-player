@@ -10,13 +10,13 @@ namespace WinUIMusicPlayer.Services;
 public sealed class LyricsLoader(AppState state, LyricsRefreshService parser, ApplicationTasks tasks, ILogger<LyricsLoader> logger)
 {
     private int _ticket;
-    public void Load(Music music)
+    public void Load(Music music, bool countPlayback = true)
     {
         if (state.Lifecycle.Phase == AppPhase.Stopping) return;
         var dispatcher = App.MainWindow.DispatcherQueue;
         if (!dispatcher.HasThreadAccess)
         {
-            dispatcher.TryEnqueue(() => Load(music));
+            dispatcher.TryEnqueue(() => Load(music, countPlayback));
             return;
         }
         state.Presentation.LastLyricIndex = -1;
@@ -25,7 +25,7 @@ public sealed class LyricsLoader(AppState state, LyricsRefreshService parser, Ap
         {
             try
             {
-                var lyrics = await Task.Run(() => parser.SetLyrics(music));
+                var lyrics = await Task.Run(() => parser.SetLyrics(music, countPlayback));
                 if (!token.IsCancellationRequested && ticket == Volatile.Read(ref _ticket)) state.Presentation.UILyrics = lyrics;
             }
             catch (Exception ex) { logger.LogError(ex, "加载歌词失败"); }

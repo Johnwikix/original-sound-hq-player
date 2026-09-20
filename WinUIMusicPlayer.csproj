@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net11.0-windows10.0.26100.0</TargetFramework>
@@ -363,7 +363,8 @@
   <ItemGroup>
     <ProjectReference Include="External\AnimatedWin2dControls\AnimatedWin2dControls\AnimatedWin2dControls.csproj" />
     <ProjectReference Include="External\BassPlayerIpc.Shared\BassPlayerIpc.Shared.csproj" />
-    <ProjectReference Include="External\Lyricify.Lyrics.Helper\Lyricify.Lyrics.Helper.csproj" />
+    <ProjectReference Include="External\Plugin.Runtime\Plugin.Runtime.csproj" />
+    <ProjectReference Include="External\Lyrics.Local\Lyrics.Local.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Content Update="Assets\Fonts\UntamedFluentIcons.ttf">
@@ -373,5 +374,11 @@
   <ItemGroup>
     <Content Include="UpdateNotes.json" />
     <Content Include="Legal\*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Import Project="build/PluginHost.targets" />
+  <ItemGroup>
+    <None Remove="BundledPlugins\**\*" />
+    <Content Include="BundledPlugins\**\*.dll;BundledPlugins\**\*.json"
+             CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

@@ -18,6 +18,7 @@ public sealed class OneShotLyricsCacheEntry
     public string? TKrc { get; set; }
     public string? Lrc { get; set; }
     public string? Trans { get; set; }
+    public bool UserSelected { get; set; }
     public DateTime CachedAtUtc { get; set; }
 }
 
@@ -32,6 +33,7 @@ public static class OneShotLyricsCache
         Windows.Storage.ApplicationData.Current.LocalFolder.Path, "OneShotLyricsCache");
     // 每条数 KB，300 条上限约几 MB；写入时淘汰，无独立清理任务。
     private const int MaxEntries = 300;
+    private static readonly object SaveGate = new();
 
     public static OneShotLyricsCacheEntry? Load(string musicPath)
     {
@@ -58,14 +60,17 @@ public static class OneShotLyricsCache
         }
     }
 
-    public static void Save(string musicPath, string? krc, string? tKrc, string? lrc, string? trans)
+    public static bool Save(string musicPath, string? krc, string? tKrc, string? lrc, string? trans, bool userSelected = false)
     {
+        lock (SaveGate)
         try
         {
+            if (!userSelected && Load(musicPath)?.UserSelected == true) return true;
             Directory.CreateDirectory(CacheDirectory);
             var entry = new OneShotLyricsCacheEntry
             {
                 Path = musicPath,
+                UserSelected = userSelected,
                 Krc = krc,
                 TKrc = tKrc,
                 Lrc = lrc,
@@ -78,10 +83,12 @@ public static class OneShotLyricsCache
                 entry, Helper.AppJsonSerializerContextHelper.Default.OneShotLyricsCacheEntry));
             File.Move(tmp, file, overwrite: true);
             TrimToLimit();
+            return true;
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"OneShotLyricsCache.Save 失败: {ex.Message}");
+            return false;
         }
     }
 

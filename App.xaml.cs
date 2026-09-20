@@ -145,6 +145,10 @@ namespace WinUIMusicPlayer
                      sp.GetRequiredService<ShutdownCoordinator>().RegisterCleanup(service.Dispose);
                      return service;
                  });
+                 services.AddSingleton<WinUIMusicPlayer.Services.Plugins.PluginManager>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.Plugins.StreamingPlaybackService>();
+                 services.AddSingleton<WinUIMusicPlayer.ViewModel.Pages.PluginsViewModel>();
+                 services.AddTransient<WinUIMusicPlayer.ViewModel.Pages.PluginPageViewModel>();
                  services.AddSingleton<LyricsRefreshService>();
                  services.AddSingleton<IpcService>();
                  services.AddSingleton<LicenseService>();
@@ -153,7 +157,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<MusicDatabaseService>();
                  services.AddSingleton<LrcService>(sp =>
                  {
-                     var service = new LrcService(sp.GetRequiredService<ILogger<LrcService>>());
+                     var service = new LrcService(sp.GetRequiredService<WinUIMusicPlayer.Services.Plugins.PluginManager>());
                      sp.GetRequiredService<ShutdownCoordinator>().RegisterCleanup(service.Dispose);
                      return service;
                  });

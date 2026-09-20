@@ -1,0 +1,23 @@
+<Project>
+  <PropertyGroup>
+    <PluginHostStage>$(MSBuildProjectDirectory)\obj\PluginHost\$(Configuration)\</PluginHostStage>
+  </PropertyGroup>
+  <ItemGroup>
+    <PluginHostInput Include="$(MSBuildProjectDirectory)\External\PluginHost\*.cs;$(MSBuildProjectDirectory)\External\PluginHost\*.csproj;$(MSBuildProjectDirectory)\External\Plugin.Contracts\*.cs;$(MSBuildProjectDirectory)\External\Plugin.Contracts\*.csproj" />
+  </ItemGroup>
+  <!-- The runtime is shipped with the host; installing the SDK must never be a user prerequisite. -->
+  <Target Name="PublishPluginHost" BeforeTargets="PrepareForBuild" Condition="'$(DesignTimeBuild)' != 'true'" Inputs="@(PluginHostInput)" Outputs="$(PluginHostStage)PluginHost.exe">
+    <Exec Command="dotnet publish &quot;$(MSBuildProjectDirectory)\External\PluginHost\PluginHost.csproj&quot; -c $(Configuration) -r win-x64 --self-contained true -p:PublishTrimmed=false -p:NuGetAudit=false -o &quot;$(PluginHostStage).&quot; --verbosity quiet" />
+  </Target>
+  <Target Name="IncludePluginHost" BeforeTargets="AssignTargetPaths" DependsOnTargets="PublishPluginHost" Condition="'$(DesignTimeBuild)' != 'true'">
+    <ItemGroup>
+      <_PluginHostFile Include="$(PluginHostStage)**\*" Exclude="$(PluginHostStage)**\*.pdb" />
+      <Content Include="@(_PluginHostFile)">
+        <Link>PluginHost\%(_PluginHostFile.RecursiveDir)%(_PluginHostFile.Filename)%(_PluginHostFile.Extension)</Link>
+        <TargetPath>PluginHost\%(_PluginHostFile.RecursiveDir)%(_PluginHostFile.Filename)%(_PluginHostFile.Extension)</TargetPath>
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+    </ItemGroup>
+  </Target>
+</Project>

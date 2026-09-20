@@ -7,7 +7,7 @@ public readonly record struct ProgressSnapshot(long Revision, long Epoch, long C
 /// <summary>Single publisher, latest-only telemetry; no request queue or cross-process wait.</summary>
 public sealed unsafe class ProgressMailbox : IDisposable
 {
-    public const string Name = "AudioPlayer_Progress_v1";
+    public static readonly string Name = "AudioPlayer_Progress_v1" + IpcConstants.Scope;
     private readonly object _gate = new();
     private readonly MemoryMappedFile _memory;
     private readonly MemoryMappedViewAccessor _view;
@@ -16,8 +16,9 @@ public sealed unsafe class ProgressMailbox : IDisposable
     private long* _data;
     private long _version;
 
-    public ProgressMailbox(bool create, string name = Name)
+    public ProgressMailbox(bool create, string? name = null)
     {
+        name ??= Name;
         _writer = create;
         _memory = create ? MemoryMappedFile.CreateOrOpen(name, 56) : MemoryMappedFile.OpenExisting(name);
         try

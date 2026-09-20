@@ -15,6 +15,9 @@ internal abstract class FrameRingBase<T> where T : unmanaged
     private long _tail; // 总读取帧数
 
     private readonly int _prebufferFrames;
+    private readonly int _resumeFrames;
+    private int _bufferTarget;
+    public bool IsBuffering { get { lock (_gate) return _prebuffering; } }
     private readonly bool _wholeWrites;
     private readonly int _prebufferTimeoutMs;
     private long _prebufferDeadlineTicks;
@@ -29,13 +32,14 @@ internal abstract class FrameRingBase<T> where T : unmanaged
     private long _underrunCallbacks;
     private long _underrunFrames;
 
-    protected FrameRingBase(int channels, int capacityFrames, int prebufferFrames, int prebufferTimeoutMs, bool wholeWrites = false)
+    protected FrameRingBase(int channels, int capacityFrames, int prebufferFrames, int prebufferTimeoutMs, bool wholeWrites = false, int resumeFrames = 0)
     {
         Channels = Math.Max(1, channels);
         _buffer = new T[Math.Max(1, capacityFrames) * Channels];
         _prebufferFrames = Math.Max(0, prebufferFrames);
         _wholeWrites = wholeWrites;
-        _prebufferTimeoutMs = Math.Max(0, prebufferTimeoutMs);
+        _prebufferTimeoutMs = prebufferTimeoutMs;
+        _resumeFrames = resumeFrames;
         BeginSession();
     }
 
@@ -55,6 +59,7 @@ internal abstract class FrameRingBase<T> where T : unmanaged
             _head = _tail = 0;
             _sessionHasAudio = false;
             InputEnded = false;
+            _bufferTarget = _prebufferFrames;
             _prebuffering = _prebufferFrames > 0;
             _prebufferDeadlineTicks = Stopwatch.GetTimestamp()
                 + Math.Max(1, _prebufferTimeoutMs) * Stopwatch.Frequency / 1000;
@@ -144,6 +149,7 @@ internal abstract class FrameRingBase<T> where T : unmanaged
                 {
                     if (!InputEnded && _sessionHasAudio)
                     {
+                        if (_resumeFrames > 0) { _bufferTarget = _resumeFrames; _prebuffering = true; }
                         Interlocked.Increment(ref _underrunCallbacks);
                         Interlocked.Add(ref _underrunFrames, needed);
                     }
@@ -179,8 +185,8 @@ internal abstract class FrameRingBase<T> where T : unmanaged
         {
             if (!_prebuffering) return false;
             int ready = (int)(_head - _tail);
-            bool enough = ready >= _prebufferFrames;
-            bool timedOut = _prebufferTimeoutMs <= 0 || Stopwatch.GetTimestamp() >= _prebufferDeadlineTicks;
+            bool enough = ready >= _bufferTarget;
+            bool timedOut = _prebufferTimeoutMs >= 0 && (_prebufferTimeoutMs == 0 || Stopwatch.GetTimestamp() >= _prebufferDeadlineTicks);
             if (enough || timedOut || InputEnded)
             {
                 _prebuffering = false;
@@ -212,8 +218,8 @@ internal abstract class FrameRingBase<T> where T : unmanaged
 /// <summary>PCM：float64（double）交织。</summary>
 internal sealed class PcmRing : FrameRingBase<double>
 {
-    public PcmRing(int channels, int capacityFrames, int prebufferFrames, int prebufferMs)
-        : base(channels, capacityFrames, prebufferFrames, prebufferMs) { }
+    public PcmRing(int channels, int capacityFrames, int prebufferFrames, int prebufferMs, int resumeFrames = 0)
+        : base(channels, capacityFrames, prebufferFrames, prebufferMs, resumeFrames: resumeFrames) { }
 }
 
 /// <summary>

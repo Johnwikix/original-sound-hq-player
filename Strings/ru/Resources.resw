@@ -2012,4 +2012,28 @@
   <data name="RemoveExternalImportsTitle" xml:space="preserve">
     <value>Удалить все внешние импортированные композиции?</value>
   </data>
+  <data name="PluginsTitle" xml:space="preserve"><value>Plugins</value></data>
+  <data name="SettingsSectionPlugins.Text" xml:space="preserve"><value>Plugins</value></data>
+  <data name="PluginsInstructions" xml:space="preserve"><value>Place each plugin in its own folder, then restart the app. Enable only plugins you trust; plugins run with your user permissions. The lyrics and cover plugin is preinstalled; enable it here to use it.</value></data>
+  <data name="PluginsOpenFolder" xml:space="preserve"><value>Open plugin folder</value></data>
+  <data name="PluginDisabled" xml:space="preserve"><value>Disabled</value></data>
+  <data name="PluginInvalid" xml:space="preserve"><value>Invalid manifest or incompatible plugin</value></data>
+  <data name="PluginLoading" xml:space="preserve"><value>Loading…</value></data>
+  <data name="PluginReady" xml:space="preserve"><value>Enabled · Ready</value></data>
+  <data name="PluginLoadFailed" xml:space="preserve"><value>Could not load plugin. Check its files, then retry.</value></data>
+  <data name="PluginRequestFailed" xml:space="preserve"><value>Plugin request failed or timed out. Try again.</value></data>
+  <data name="PluginSaveFailed" xml:space="preserve"><value>Could not save changes or open the folder.</value></data>
+  <data name="PluginRetry" xml:space="preserve"><value>Retry loading</value></data>
+  <data name="PluginEnable" xml:space="preserve"><value>Enable</value></data>
+  <data name="PluginDisable" xml:space="preserve"><value>Disable</value></data>
+  <data name="PluginSearchHint" xml:space="preserve"><value>Search for lyrics. Results can be applied to the song selected when the search starts.</value></data>
+  <data name="PluginSearching" xml:space="preserve"><value>Searching…</value></data>
+  <data name="PluginSelectResult" xml:space="preserve"><value>Select a result to preview and apply.</value></data>
+  <data name="PluginNoResult" xml:space="preserve"><value>No matching lyrics found.</value></data>
+  <data name="PluginApplied" xml:space="preserve"><value>Lyrics saved.</value></data>
+  <data name="PluginSongTitle" xml:space="preserve"><value>Song title</value></data>
+  <data name="PluginArtist" xml:space="preserve"><value>Artist</value></data>
+  <data name="PluginSearch" xml:space="preserve"><value>Search</value></data>
+  <data name="PluginApply" xml:space="preserve"><value>Apply to search target</value></data>
+  <data name="PluginLyricsUnavailable" xml:space="preserve"><value>Online matching requires a lyrics plugin in Settings → Plugins.</value></data>
 </root>

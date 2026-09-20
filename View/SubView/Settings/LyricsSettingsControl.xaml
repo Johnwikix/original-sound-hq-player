@@ -29,6 +29,8 @@
 
                 <TextBlock x:Uid="SettingLyrics" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
+                <TextBlock Text="{x:Bind tools:ToolUtils.GetString('PluginLyricsUnavailable')}" TextWrapping="Wrap" />
+
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
                         <TextBlock x:Uid="AutoLyricMatching" TextWrapping="Wrap" />

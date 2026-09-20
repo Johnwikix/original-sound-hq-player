@@ -118,6 +118,14 @@ namespace WinUIMusicPlayer.Services
             lifecycle.TransitionTo(AppPhase.Initializing);
             startup.Restart();
             cancellationToken.ThrowIfCancellationRequested();
+            var plugins = App.Services.GetRequiredService<WinUIMusicPlayer.Services.Plugins.PluginManager>();
+            shutdown.RegisterStop(plugins.StopAsync);
+            _ = App.Services.GetRequiredService<ApplicationTasks>().RunAsync(async token =>
+            {
+                try { await plugins.StartAsync(token); }
+                catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+                catch (Exception ex) { logger.LogError(ex, "Plugin startup failed"); }
+            });
             var musicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             shutdown.RegisterCleanup(musicBrowseViewModel.Dispose);
             settings.ThemeChanged += musicBrowseViewModel.ThemeChangedUpdateCover;

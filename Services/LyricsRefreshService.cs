@@ -46,8 +46,6 @@ namespace WinUIMusicPlayer.Services
         // 行级时间偏移（ms）：每行动画在 EndMs 前提前结束，确保过渡平滑
         internal static double LineEndOffsetMs = 300;
 
-        // 在线搜词断路器：连续网络失败达到阈值后进入冷却，冷却期内跳过在线匹配（进程内，不持久化）
-        private static readonly LyricsSearchCircuitBreaker s_searchCircuit = new(3, 10 * 60 * 1000);
 
         private static readonly ConcurrentBag<LyricLine> s_linePool = new();
         private static readonly ConcurrentBag<LyricWord> s_wordPool = new();
@@ -112,7 +110,7 @@ namespace WinUIMusicPlayer.Services
         //  主入口
         // ──────────────────────────────────────────────────────────────
 
-        public async Task<List<LyricLine>> SetLyrics(Music music)
+        public async Task<List<LyricLine>> SetLyrics(Music music, bool countPlayback = true)
         {
             CancelPreviousLyricsTask();
             _lyricsCancellationTokenSource = new CancellationTokenSource();
@@ -123,6 +121,29 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 await Task.Delay(500, ct);
+                // An explicit plugin selection overrides automatic/local matching, including sidecar lyrics.
+                var selected = music.Id > 0 ? await _musicDatabaseService.GetSelectedLyricsAsync(music.Id) : null;
+                var selectedOneShot = music.Id <= 0 ? OneShotLyricsCache.Load(music.Path) : null;
+                if (selected is not null || selectedOneShot?.UserSelected == true)
+                {
+                    string? text = selected is not null ? (string.IsNullOrEmpty(selected.Krc) ? selected.Lyrics : selected.Krc)
+                        : (string.IsNullOrEmpty(selectedOneShot!.Krc) ? selectedOneShot.Lrc : selectedOneShot.Krc);
+                    string? translation = selected is not null ? (string.IsNullOrEmpty(selected.Krc) ? selected.TranslatedLyrics : selected.TKrc)
+                        : (string.IsNullOrEmpty(selectedOneShot!.Krc) ? selectedOneShot.Trans : selectedOneShot.TKrc);
+                    var chosen = ParseByFormat(text ?? "", translation, ct);
+                    if (chosen is { Count: > 0 })
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        FixEndMs(chosen, music.Duration.TotalMilliseconds);
+                        _previousLyrics = chosen;
+                        if (music.Id > 0 && countPlayback)
+                        {
+                            music.PlayCount++;
+                            await _musicDatabaseService.UpdateMusicInfo(music);
+                        }
+                        return chosen;
+                    }
+                }
                 // 未入库曲目（非固定盘或入库失败的一次性播放，Id=0）：不查询/写入数据库、不递增播放计数。
                 // 固定盘外部文件在 OneShotPlaybackService 解析阶段已入库并改播库内行（标准库内链路），
                 // 走到本分支的均为不入库的一次性播放：文件旁本地歌词 → 内嵌歌词 → 独立缓存
@@ -190,7 +211,7 @@ namespace WinUIMusicPlayer.Services
                 var localLyrics = TryParseLocalLyricsFile(music, ct);
                 if (localLyrics is { Count: > 0 })
                 {
-                    music.PlayCount++;
+                    if (countPlayback) music.PlayCount++;
                     await _musicDatabaseService.UpdateMusicInfo(music);
                     FixEndMs(localLyrics, music.Duration.TotalMilliseconds);
                     _previousLyrics = localLyrics;
@@ -201,7 +222,7 @@ namespace WinUIMusicPlayer.Services
                 var (krcLyrics, krcOut, tKrcOut) = await TryParseKrcLyricsInternal(music, krc ?? "", tKrc ?? "", ct);
                 if (krcLyrics.Count > 0)
                 {
-                    music.PlayCount++;
+                    if (countPlayback) music.PlayCount++;
                     await _musicDatabaseService.SaveLyricsAsync(music.Id, lyricsText, transLrc, krcOut, tKrcOut);
                     await _musicDatabaseService.UpdateMusicInfo(music);
                     FixEndMs(krcLyrics, music.Duration.TotalMilliseconds);
@@ -214,7 +235,7 @@ namespace WinUIMusicPlayer.Services
                 var (lrcLyrics, lrcOut, transOut) = await ParseLrcLyricsInternal(music, lyricsText ?? "", transLrc ?? "", null, null, ct);
 
                 ct.ThrowIfCancellationRequested();
-                music.PlayCount++;
+                if (countPlayback) music.PlayCount++;
                 await _musicDatabaseService.SaveLyricsAsync(music.Id, lrcOut, transOut, krcOut, tKrcOut);
                 await _musicDatabaseService.UpdateMusicInfo(music);
                 ct.ThrowIfCancellationRequested();
@@ -373,26 +394,19 @@ namespace WinUIMusicPlayer.Services
         private async Task<(List<LyricLine> lyrics, string? krc, string? tKrc)> TryParseKrcLyricsInternal(
             Music music, string krc, string tKrc, CancellationToken cancellationToken = default)
         {
-            if (string.IsNullOrWhiteSpace(krc) && AppSettings.IsAutoLyricsEnabled && !music.IsKrcSearched &&
-                s_searchCircuit.TryBegin(Environment.TickCount64, out int searchGeneration))
+            if (string.IsNullOrWhiteSpace(krc) && AppSettings.IsAutoLyricsEnabled && App.Services.GetRequiredService<LrcService>().IsAvailable)
             {
-                LyricsSearchStatus? outcome = null;
                 try
                 {
                     var (newKrc, newTKrc, status) = await App.Services.GetRequiredService<LrcService>()
                         .GetKrcLyricsAsync(music, cancellationToken);
-                    outcome = status;
                     if (status == LyricsSearchStatus.Found)
                     {
                         krc = newKrc;
                         tKrc = newTKrc ?? "";
                     }
-                    // 网络失败不置已搜索标志，联网恢复后下次播放自动重试
-                    if (status != LyricsSearchStatus.NetworkError)
-                        music.IsKrcSearched = true;
                 }
                 catch (OperationCanceledException) { }
-                finally { s_searchCircuit.Complete(searchGeneration, outcome, Environment.TickCount64); }
             }
 
             if (string.IsNullOrWhiteSpace(krc)) return ([], krc, tKrc);
@@ -949,26 +963,19 @@ namespace WinUIMusicPlayer.Services
                 lrcContent = providedLrc;
                 transLrcStr = string.IsNullOrWhiteSpace(transLrcStr) ? providedTrans : transLrcStr;
 
-                if (string.IsNullOrWhiteSpace(lrcContent) && AppSettings.IsAutoLyricsEnabled && !music.IsLrcSearched &&
-                    s_searchCircuit.TryBegin(Environment.TickCount64, out int searchGeneration))
+                if (string.IsNullOrWhiteSpace(lrcContent) && AppSettings.IsAutoLyricsEnabled && App.Services.GetRequiredService<LrcService>().IsAvailable)
                 {
-                    LyricsSearchStatus? outcome = null;
-                    try
+                        try
                     {
                         var (lyric, trans, status) = await App.Services.GetRequiredService<LrcService>()
                             .GetMixedLyricsAsync(music, cancellationToken);
-                        outcome = status;
-                        if (status == LyricsSearchStatus.Found)
+                            if (status == LyricsSearchStatus.Found)
                         {
                             lrcContent = lyric;
                             transLrcStr = trans;
                         }
-                        // 网络失败不置已搜索标志，联网恢复后下次播放自动重试
-                        if (status != LyricsSearchStatus.NetworkError)
-                            music.IsLrcSearched = true;
                     }
                     catch (OperationCanceledException) { }
-                    finally { s_searchCircuit.Complete(searchGeneration, outcome, Environment.TickCount64); }
                 }
             }
 

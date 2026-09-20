@@ -151,6 +151,7 @@ public sealed partial class PlaybackEngine : IDisposable
 
     public void PlayMusic(string musicUrl)
     {
+        CancelStreams();
         lock (_streamLock)
         {
             MusicUrl = musicUrl;
@@ -285,6 +286,15 @@ public sealed partial class PlaybackEngine : IDisposable
 
     private Session? OpenSession(string url, bool forceSharedFormat = false, RenderKind? kindOverride = null)
     {
+        var remote = _streamSlots.Values.FirstOrDefault(x => x.Id == _currentStream && x.Source.Location == url);
+        if (remote is not null)
+        {
+            var mix = forceSharedFormat ? GetEndpointMixFormat(OutputMode == "DirectSound" || OutputMode == "ASIO" ? -1 : BassOutputDeviceId) : null;
+            if (forceSharedFormat && mix is null) return null;
+            return Session.Open(this, url, RenderKind.Pcm, DsdPcmFreq, DsdGain, Latency,
+                forcedRate: mix?.SampleRate, forcedChannels: mix?.Channels, maxChannels: 2,
+                source: remote.Source, cancellationToken: remote.Cancel.Token);
+        }
         if (ExperimentalAtmosPassthrough && !forceSharedFormat && !_atmosUseSharedPcm && !_surroundFallback
             && kindOverride is null or RenderKind.Eac3)
         {
@@ -552,6 +562,12 @@ public sealed partial class PlaybackEngine : IDisposable
     {
         lock (_streamLock)
         {
+            if (_requestedStream != _currentStream && _streamSlots.TryGetValue(_requestedStream, out var pending))
+            {
+                pending.WantsPlay = !pending.WantsPlay;
+                if (pending.WantsPlay && pending.Phase == BassPlayerIpc.Shared.StreamPhase.Ready) CommitStream(pending);
+                return;
+            }
             if (IsPlaying) PauseCore();
             else ResumeCore();
         }
@@ -560,6 +576,8 @@ public sealed partial class PlaybackEngine : IDisposable
     /// <summary>暂停（持锁）：淡入淡出开启且输出健康时后台淡完再停机（延迟停机可被恢复取消）。</summary>
     private void PauseCore()
     {
+        if (_streamSlots.TryGetValue(_requestedStream, out var pending)) pending.WantsPlay = false;
+        if (_streamSlots.TryGetValue(_currentStream, out var current)) current.WantsPlay = false;
         if (!IsPlaying) return;
         _recovery = null; // 用户暂停：接管，自动恢复计划作废
         if (IsFadingEnabled && _session is { Kind: RenderKind.Pcm, Gain: not null } && _output is { IsFailed: false })
@@ -597,6 +615,7 @@ public sealed partial class PlaybackEngine : IDisposable
     /// <summary>恢复/起播（持锁）。</summary>
     private void ResumeCore()
     {
+        if (_streamSlots.TryGetValue(_currentStream, out var current)) current.WantsPlay = true;
         // 关键（旧实现错位根源）：淡出已调度"延迟停机"，恢复若不递增令牌，
         // 延迟任务到点仍会 Pause 掉刚恢复的输出 → UI 播放中、实际静音
         _pauseFadeToken++;
@@ -644,6 +663,7 @@ public sealed partial class PlaybackEngine : IDisposable
         {
             int fadeMs;
             int drain;
+            long switchGeneration;
             lock (_streamLock)
             {
                 if (_session is not { Kind: RenderKind.Pcm, Gain: not null } || _output is not { IsFailed: false })
@@ -659,6 +679,7 @@ public sealed partial class PlaybackEngine : IDisposable
                     Interlocked.Exchange(ref _fadeBusy, 0);
                     return;
                 }
+                switchGeneration = _playGen;
                 fadeMs = (int)Math.Min(remainingMs / 2, FadeMs);
                 _session.Gain.RampTo(0f, fadeMs);
                 drain = FadeDrainMs;
@@ -668,6 +689,7 @@ public sealed partial class PlaybackEngine : IDisposable
             {
                 try
                 {
+                    if (_playGen != switchGeneration) return;
                     // MusicUrl 现值 = 最新请求（期间的新 PlayMusic 只更新了它）
                     if (_session is { Kind: RenderKind.Pcm })
                     {
@@ -698,6 +720,7 @@ public sealed partial class PlaybackEngine : IDisposable
 
     public void MusicEnd()
     {
+        CancelStreams();
         lock (_streamLock)
         {
             Interlocked.Increment(ref _playGen);
@@ -1042,6 +1065,14 @@ public sealed partial class PlaybackEngine : IDisposable
             var session = _session;
             var output = _output;
             if (session == null) return;
+            if (session.Kind == RenderKind.Pcm && session.DecodeFailure != null)
+            {
+                lock (_streamLock)
+                {
+                    if (ReferenceEquals(session, _session)) StopAndNotifyLocked();
+                }
+                return;
+            }
             if (session.Kind == RenderKind.Eac3 && session.DecodeFailure != null)
             {
                 lock (_streamLock)
@@ -1274,6 +1305,7 @@ public sealed partial class PlaybackEngine : IDisposable
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+        CancelStreams();
         if (_endedWatchdog != null)
         {
             using var stopped = new ManualResetEvent(false);

@@ -42,6 +42,7 @@ namespace Lyricify.Lyrics.Serialization;
 [JsonSerializable(typeof(global::Lyricify.Lyrics.Parsers.Models.Yrc.CreditsInfo.Credit), TypeInfoPropertyName = "Lyricify_Lyrics_Parsers_Models_Yrc_CreditsInfo_Credit")]
 [JsonSerializable(typeof(List<global::Lyricify.Lyrics.Parsers.Models.Yrc.CreditsInfo.Credit>), TypeInfoPropertyName = "List_Lyricify_Lyrics_Parsers_Models_Yrc_CreditsInfo_Credit")]
 [JsonSerializable(typeof(global::Lyricify.Lyrics.Parsers.Models.Yrc.CreditsInfo.Credit[]), TypeInfoPropertyName = "Array_Lyricify_Lyrics_Parsers_Models_Yrc_CreditsInfo_Credit")]
+#if !LYRICS_LOCAL_ONLY
 [JsonSerializable(typeof(global::Lyricify.Lyrics.Providers.Web.AppleMusic.LyricAttributes), TypeInfoPropertyName = "Lyricify_Lyrics_Providers_Web_AppleMusic_LyricAttributes")]
 [JsonSerializable(typeof(List<global::Lyricify.Lyrics.Providers.Web.AppleMusic.LyricAttributes>), TypeInfoPropertyName = "List_Lyricify_Lyrics_Providers_Web_AppleMusic_LyricAttributes")]
 [JsonSerializable(typeof(global::Lyricify.Lyrics.Providers.Web.AppleMusic.LyricAttributes[]), TypeInfoPropertyName = "Array_Lyricify_Lyrics_Providers_Web_AppleMusic_LyricAttributes")]
@@ -576,6 +577,7 @@ namespace Lyricify.Lyrics.Serialization;
 [JsonSerializable(typeof(global::Lyricify.Lyrics.Providers.Web.SodaMusic.UrlWithTemplate), TypeInfoPropertyName = "Lyricify_Lyrics_Providers_Web_SodaMusic_UrlWithTemplate")]
 [JsonSerializable(typeof(List<global::Lyricify.Lyrics.Providers.Web.SodaMusic.UrlWithTemplate>), TypeInfoPropertyName = "List_Lyricify_Lyrics_Providers_Web_SodaMusic_UrlWithTemplate")]
 [JsonSerializable(typeof(global::Lyricify.Lyrics.Providers.Web.SodaMusic.UrlWithTemplate[]), TypeInfoPropertyName = "Array_Lyricify_Lyrics_Providers_Web_SodaMusic_UrlWithTemplate")]
+#endif
 [JsonSerializable(typeof(Dictionary<string, string>))]
 [JsonSerializable(typeof(Dictionary<string, object>))]
 [JsonSerializable(typeof(string))]

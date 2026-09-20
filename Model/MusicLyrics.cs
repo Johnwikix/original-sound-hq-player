@@ -10,6 +10,7 @@ namespace WinUIMusicPlayer.Model
         public string Lyrics { get; set; } = "";
         public string TranslatedLyrics { get; set; } = "";
         public string Krc { get; set; } = "";
+        public bool UserSelected { get; set; }
         public string TKrc { get; set; } = "";
     }
 }

@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.WinUI;
+using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
@@ -421,16 +421,20 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public async Task SaveLyricsAsync(int musicId, string? lyrics, string? transLrc, string? krc, string? tKrc)
+        public Task<MusicLyrics?> GetSelectedLyricsAsync(int musicId) =>
+            _dbConnection.Table<MusicLyrics>().Where(x => x.MusicId == musicId && x.UserSelected).FirstOrDefaultAsync();
+
+        public async Task SaveLyricsAsync(int musicId, string? lyrics, string? transLrc, string? krc, string? tKrc, bool userSelected = false)
         {
-            await _dbConnection.InsertOrReplaceAsync(new MusicLyrics
-            {
-                MusicId = musicId,
-                Lyrics = lyrics ?? "",
-                TranslatedLyrics = transLrc ?? "",
-                Krc = krc ?? "",
-                TKrc = tKrc ?? ""
-            });
+            // A late automatic lookup must not replace a user's explicit selection.
+            await _dbConnection.ExecuteAsync("""
+                INSERT INTO MusicLyrics (MusicId, Lyrics, TranslatedLyrics, Krc, TKrc, UserSelected)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT(MusicId) DO UPDATE SET
+                    Lyrics = excluded.Lyrics, TranslatedLyrics = excluded.TranslatedLyrics,
+                    Krc = excluded.Krc, TKrc = excluded.TKrc, UserSelected = excluded.UserSelected
+                WHERE excluded.UserSelected = 1 OR COALESCE(MusicLyrics.UserSelected, 0) = 0
+                """, musicId, lyrics ?? "", transLrc ?? "", krc ?? "", tKrc ?? "", userSelected);
         }
 
         public IEnumerable<PlayListMusicItem> GetMusicByPlayListIdFromMem(int playListId, string search = null)

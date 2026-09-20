@@ -1,0 +1,11 @@
+{
+  "Id": "originalsound.lyrics-search",
+  "Name": "Lyrics search",
+  "Version": "1.0.0",
+  "Author": "OriginalSound",
+  "ApiVersion": 1,
+  "EntryAssembly": "LyricsSearch.dll",
+  "EntryType": "OriginalSound.Plugins.LyricsSearchPlugin",
+  "Capabilities": ["lyrics", "cover"],
+  "Pages": [{ "Id": "search", "Title": "Lyrics search", "Kind": "lyrics-search" }]
+}
