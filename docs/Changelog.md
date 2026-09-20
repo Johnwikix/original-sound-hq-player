@@ -2,6 +2,13 @@
 
 新条目加在最上方。
 
+## 2026-09-20 修复外部导入重开、文件夹显示与并发创建
+
+- `Services/OneShotPlaybackService.cs`：每次显式打开重新解析库内身份，移除后重开和失败后重试不再复用旧结果；通过文件夹 ViewModel 统一发布导入状态。
+- `ViewModel/Pages/AddFolderViewModel.cs`：导入歌曲按 Id 去重发布，同步数据库中的文件夹行、计数与空状态，首次导入立即显示虚拟文件夹。
+- `Services/MusicDatabaseService.ExternalImports.cs`：从数据库主文件移出外部导入方法供真实代码回归复用；虚拟文件夹查询与创建在同一事务中完成，避免并发查空后重复插入。
+- `_tools/FolderScanRegression`：编译生产解析与导入代码，覆盖移除后同路径重开、失败后重试、首次发布、重复发布计数和 30 轮并发创建；平台桩不替代真实 WinUI 文件激活与派发验证。
+
 ## 2026-09-20 修复双击导入后歌曲/专辑/艺术家列表与播放队列不刷新
 
 - `Services/OneShotPlaybackService.cs`：入库与播放派发存在竞速——派发时另行按路径查库，而解析任务内的入库写仍在飞行，查空即误入一次性分支（`PlayMusic` 只换当前曲：不发布 SongsSource/页面投影、不建文件夹队列）；歌曲/专辑/艺术家列表要等重启后的全量加载才正确。修复：删除派发时查库，分支一律以 await 后的解析结果 Id 判定（Id>0=库内行，统一发布+`PlayMusicWithFolderQueue`）；固定盘先查库再解析元数据（库内已有文件免重复解析）；发布路径改为顺序等待扫描批发布完成（SongsSource/ListSongs/文件夹计数）后触发 `NotifySongsSourceChanged`，当前页投影按库版本重建、导入即时按序可见。

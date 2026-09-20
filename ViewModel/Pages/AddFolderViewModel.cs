@@ -225,7 +225,21 @@ public partial class AddFolderViewModel : ObservableObject
             onBatchInserted: ApplyBatchAsync));
     }
 
-    /// <summary>扫描/导入批次的统一发布路径：歌曲索引增量 + 各扫描根计数递增；
+    /// <summary>在 UI 线程发布导入歌曲，并从数据库同步文件夹行、归属计数与空状态。</summary>
+    internal async Task PublishImportedAsync(Music music)
+    {
+        if (_stopped) return;
+        // 在首次 await 前检查并发布，避免并发打开同一文件造成重复歌曲。
+        if (_appViewModel.FindById(music.Id) is null)
+        {
+            _appViewModel.AppendSongsBatch([music]);
+            _appViewModel.NotifySongsSourceChanged();
+        }
+        // 首次导入可能刚创建虚拟行，不能仅对已有 FolderList 递增计数。
+        await LoadFoldersAsync();
+    }
+
+    /// <summary>扫描批次的发布路径：歌曲索引增量 + 各扫描根计数递增；
     /// 外部导入虚拟行的计数按归属（不落在任何扫描根内的批次条目）同步递增。</summary>
     internal Task ApplyBatchAsync(IReadOnlyList<Music> batch) =>
         App.MainWindow.DispatcherQueue.EnqueueAsync(() =>

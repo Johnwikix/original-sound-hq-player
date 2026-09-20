@@ -35,6 +35,7 @@ namespace CommunityToolkit.WinUI
 {
     public static class DispatcherExtensions
     {
+        public static Task EnqueueAsync(this TestDispatcher dispatcher, Func<Task> action) => action();
         public static Task EnqueueAsync(this TestDispatcher dispatcher, Action action)
         {
             action();
@@ -87,9 +88,14 @@ namespace WinUIMusicPlayer.Helper
 }
 namespace WinUIMusicPlayer.ViewModel
 {
-    public class AppViewModel
+    public class AppViewModel : System.ComponentModel.INotifyPropertyChanged
     {
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged { add { } remove { } }
+        public bool IsPlaybackEngineReady => false;
         public List<Music> SongsSource { get; } = [];
+        public Music? FindById(int id) => SongsSource.Find(music => music.Id == id);
+        public int SourceNotifications { get; private set; }
+        public void NotifySongsSourceChanged() => SourceNotifications++;
         public event Action<IReadOnlyList<Music>>? BatchApplied;
         public void AppendSongsBatch(IReadOnlyList<Music> batch)
         {
@@ -118,6 +124,9 @@ namespace WinUIMusicPlayer.Services
         public SQLite.SQLiteAsyncConnection Connection => _dbConnection;
         private readonly SQLite.SQLiteAsyncConnection _dbConnection;
         private readonly AddFolderService addFolderService = new();
+        private readonly SemaphoreSlim _rescanfolderSemaphore = new(4, 4);
+        public Task<Music?> FindMusicByPathAsync(string path) => _dbConnection.FindWithQueryAsync<Music>(
+            "SELECT * FROM Music WHERE Path = ? COLLATE NOCASE LIMIT 1", path)!;
         public MusicDatabaseService(string path) => _dbConnection = new(path);
         public async Task InitializeAsync()
         {

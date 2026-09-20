@@ -118,11 +118,9 @@ public sealed class OneShotPlaybackService : IDisposable
         lock (_gate)
         {
             if (_disposed) return;
-            if (!string.Equals(_pendingPath, path, StringComparison.OrdinalIgnoreCase) || _resolveTask is null)
-            {
-                _pendingPath = path;
-                _resolveTask = ResolveAsync(path);
-            }
+            // 同一路径也可能已移出曲库或上次解析失败；每个显式打开请求重新确认库内身份。
+            _pendingPath = path;
+            _resolveTask = ResolveAsync(path);
             _generation++;
         }
         TryDispatchPending();
@@ -287,19 +285,20 @@ public sealed class OneShotPlaybackService : IDisposable
     }
 
     /// <summary>首次入库的导入条目发布到内存索引与全部页面投影。发布在 UI 线程做存在性检查，
-    /// 复用扫描批发布路径（SongsSource/ListSongs 增量 + 扫描根/虚拟文件夹计数）后触发
-    /// NotifySongsSourceChanged——歌曲/专辑/艺术家等投影按库版本重建，导入即时按序可见，
-    /// 不必等重启后的全量加载；已在索引或发布失败均不影响播放。</summary>
+    /// 同步 SongsSource/ListSongs 并触发 NotifySongsSourceChanged——歌曲/专辑/艺术家等投影
+    /// 按库版本重建，再从数据库同步文件夹行与计数；不必等重启后的全量加载。
+    /// 已在索引的歌曲不重复发布，发布失败不影响播放。</summary>
     private Task PublishImportedOnUiAsync(Music dbMusic) =>
         App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
         {
             try
             {
-                if (_appViewModel.FindById(dbMusic.Id) is not null) return;
+                lock (_gate)
+                {
+                    if (_disposed) return;
+                }
                 var folders = App.Services.GetRequiredService<AddFolderViewModel>();
-                // 同一派发器 FIFO：先等计数/索引增量提交完成，再触发投影重建，顺序确定。
-                await folders.ApplyBatchAsync([dbMusic]);
-                _appViewModel.NotifySongsSourceChanged();
+                await folders.PublishImportedAsync(dbMusic);
             }
             catch (Exception ex)
             {

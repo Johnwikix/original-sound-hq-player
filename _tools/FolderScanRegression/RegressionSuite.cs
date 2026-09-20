@@ -36,6 +36,7 @@ internal static class RegressionSuite
         await PipelineAsync();
         await DatabaseAsync(root);
         await ExternalImportAsync(root);
+        await ExternalImportPublicationAsync(root);
         await StartupCancellationAsync(root);
         PlaybackSnapshot();
         await BenchmarkAsync();
@@ -232,7 +233,7 @@ internal static class RegressionSuite
     }
 
     // 外部打开入库的库内语义：归属按路径现算、扫描根加入/移除的处理、存在性对账与虚拟行移除。
-    // 入库写路径与扫描共用 CommitScanBatchAsync（既有用例已覆盖查重），此处直接落行验证归属与对账。
+    // 归属与对账使用真实外部导入写路径。
     private static async Task ExternalImportAsync(string root)
     {
         var database = new MusicDatabaseService(Path.Combine(root, "external.db"));
@@ -244,11 +245,7 @@ internal static class RegressionSuite
             string importedPath = Path.Combine(dir, "imported.mp3");
             File.WriteAllText(importedPath, "");
             var imported = new Music { Path = importedPath, FolderPath = dir, Title = "imported.mp3" };
-            await database.Connection.InsertAsync(imported);
-            await database.Connection.InsertAsync(new Folder
-            {
-                Name = Folder.TypeExternal, Path = Folder.ExternalPath, Type = Folder.TypeExternal
-            });
+            Check(await database.AddExternalFileAsync(imported, "") is not null, "external import failed");
 
             var counted = await database.GetFoldersWithSongCountsAsync();
             Check(counted.Single(f => f.IsExternalImport).SongCount == 1, "external import count missing");
@@ -293,6 +290,86 @@ internal static class RegressionSuite
             Console.WriteLine("PASS: external imports: path-based ownership, folder add/remove semantics, reconcile and virtual removal.");
         }
         finally { await database.Connection.CloseAsync(); }
+    }
+
+    private static async Task ExternalImportPublicationAsync(string root)
+    {
+        var database = new MusicDatabaseService(Path.Combine(root, "external-publication.db"));
+        await database.InitializeAsync();
+        var app = new AppViewModel();
+        var folders = new AddFolderViewModel(database, app, NullLogger<AddFolderViewModel>.Instance,
+            new FolderAccessService(NullLogger<FolderAccessService>.Instance));
+        using var services = new ServiceCollection().AddSingleton(database).AddSingleton(app).BuildServiceProvider();
+        App.Services = services;
+        using var oneShot = new OneShotPlaybackService(app, new AppLifecycle(), database,
+            new NotificationService(), NullLogger<OneShotPlaybackService>.Instance);
+        try
+        {
+            // Wait for the empty page load before import, reproducing an already-visible management page.
+            folders.Activate();
+            await (Task)typeof(AddFolderViewModel).GetField("_initialLoad",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(folders)!;
+            string path = Path.Combine(root, "reopen.mp3");
+            File.WriteAllText(path, "");
+            oneShot.PlayNow(path);
+            var first = await ResolvedAsync(oneShot);
+            Check(first is { Id: > 0 }, "first open was not imported");
+            await folders.PublishImportedAsync(first!);
+            Check(folders.FolderList.Count == 1 && folders.FolderList[0].SongCount == 1,
+                "first import did not publish virtual folder/count");
+            Check(folders.EmptyVisibility == Microsoft.UI.Xaml.Visibility.Collapsed
+                && folders.ListVisibility == Microsoft.UI.Xaml.Visibility.Visible, "import left empty page visible");
+            await folders.PublishImportedAsync(first!);
+            Check(app.SongsSource.Count == 1 && folders.FolderList[0].SongCount == 1
+                && app.SourceNotifications == 1, "repeated publication duplicated song/count/notification");
+
+            await database.RemoveFolder(folders.FolderList[0].Id);
+            await app.RefreshSongsSourceAsync();
+            oneShot.PlayNow(path);
+            var second = await ResolvedAsync(oneShot);
+            Check(second is { Id: > 0 } && second.Id != first!.Id
+                && (await database.FindMusicByPathAsync(path))?.Id == second.Id, "reopen reused removed database identity");
+            await folders.PublishImportedAsync(second!);
+            Check(app.SongsSource.Count == 1 && app.SongsSource[0].Id == second!.Id
+                && folders.FolderList.Single().SongCount == 1, "reimport publication was stale");
+
+            // A failed resolution must also be retried for the same path.
+            await database.RemoveFolder(folders.FolderList.Single().Id);
+            string retryPath = Path.Combine(root, "broken-retry.mp3");
+            File.WriteAllText(retryPath, "");
+            oneShot.PlayNow(retryPath);
+            Check(await ResolvedAsync(oneShot) is null, "broken metadata unexpectedly resolved");
+            var repaired = new Music { Path = retryPath, FolderPath = root };
+            await database.AddExternalFileAsync(repaired, "");
+            oneShot.PlayNow(retryPath);
+            Check((await ResolvedAsync(oneShot))?.Id == repaired.Id, "failed resolution was cached on retry");
+
+            await database.RemoveFolder((await database.GetFolders()).Single().Id);
+            for (int round = 0; round < 30; round++)
+            {
+                var imports = new Task<Music?>[4];
+                for (int i = 0; i < imports.Length; i++)
+                    imports[i] = database.AddExternalFileAsync(new Music
+                    {
+                        Path = Path.Combine(root, $"parallel-{i}.mp3"), FolderPath = root
+                    }, "");
+                Check((await Task.WhenAll(imports)).All(m => m is { Id: > 0 }), "concurrent import failed");
+                var rows = await database.GetFoldersWithSongCountsAsync();
+                Check(rows.Count == 1 && rows[0].SongCount == 4, "concurrent imports duplicated virtual folder");
+                await database.RemoveFolder(rows[0].Id);
+            }
+            Console.WriteLine("PASS: real one-shot resolver retries removed/failed identities; first publication, idempotent counts and concurrent virtual-folder creation.");
+        }
+        finally
+        {
+            await folders.StopAsync();
+            await database.Connection.CloseAsync();
+        }
+
+        static Task<Music?> ResolvedAsync(OneShotPlaybackService service) =>
+            ((Task<Music?>)typeof(OneShotPlaybackService).GetField("_resolveTask",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(service)!)
+                .WaitAsync(TimeSpan.FromSeconds(5));
     }
 
     private static async Task StartupCancellationAsync(string root)
