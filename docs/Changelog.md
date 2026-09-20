@@ -1,6 +1,13 @@
-﻿# 功能变更记录
+# 功能变更记录
 
 新条目加在最上方。
+
+## 2026-09-20 悬停滚动开关默认关闭并更名
+
+- `State/AppearancePreferencesState.cs`、`Model/SaveSettings.cs`：`IsHoverScrollEnabled` 默认值由开改为关；设置文件中已保存该键的用户不受影响，仅新装机或无该键的存档默认关闭。控件侧 `AnimatedTextBlock.IsHoverScrollEnabled` 本就默认关，保持一致。
+- `Strings/*/Resources.resw`（六语言）：`AnimatedTextHoverScroll` 显示名改为「Win2d动画文本悬停滚动」，作用域由标题表达——AutoScrollView 包裹的普通 TextBlock（回退路径与各列表页）的悬停滚动是默认常开、不受此开关控制的既有行为，避免名称误导；描述保持一句行为说明不变。
+- `_tools/SettingsPersistenceRegression/Program.cs`：默认值断言改为默认关闭，改为验证显式开启值可往返保存；已运行通过。
+- 范围说明：该开关唯一运行时消费点是 `View/PlayingDetailPage.xaml` 的 `AnimatedTextBlock` 绑定；同页 Win2D 文本关闭时的 `AutoScrollView` 回退路径及各列表页的悬停滚动不受它控制（既有行为，未改动）。
 
 ## 2026-09-20 继续迁移窗口、队列与展示生命周期
 

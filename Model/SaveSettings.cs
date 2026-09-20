@@ -82,7 +82,7 @@ namespace WinUIMusicPlayer.Model
         public bool EnableLightWave { get; set; } = true;
         public int PaletteAlgorithm { get; set; } = 0;
         public bool IsWin2dAnimatedText { get; set; } = true;
-        public bool IsHoverScrollEnabled { get; set; } = true;
+        public bool IsHoverScrollEnabled { get; set; } = false;
         public double CharFloatAmount { get; set; } = 5.0;
         public double CharScaleAmount { get; set; } = 110.0;
         public double GlowAmount { get; set; } = 5.0;

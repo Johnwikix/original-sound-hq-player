@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using Windows.UI;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
@@ -13,7 +13,7 @@ namespace WinUIMusicPlayer.State;
 public sealed class AppearancePreferencesState : ObservableObject
 {
     public string ThemeType { get; set => SetProperty(ref field, value); } = "Default";
-    public bool IsHoverScrollEnabled { get; set => SetProperty(ref field, value); } = true;
+    public bool IsHoverScrollEnabled { get; set => SetProperty(ref field, value); } = false;
     public bool UseImageDominantTheme { get; set => SetProperty(ref field, value); } = false;
     public bool IsFluidBackgroundEnabled { get; set => SetProperty(ref field, value); }
     public bool IsFogEffectEnabled { get; set => SetProperty(ref field, value); }

@@ -1920,7 +1920,7 @@
   <data name="OneShotOpenFailedTitle" xml:space="preserve"><value>Datei kann nicht wiedergegeben werden</value></data>
   <data name="OneShotOpenFailedContent" xml:space="preserve"><value>Die ausgewählte Musikdatei konnte nicht gelesen oder geöffnet werden: {0}</value></data>
   <data name="AnimatedTextHoverScroll" xml:space="preserve">
-    <value>Abgeschnittenen Text bei Mauszeigerkontakt scrollen</value>
+    <value>Win2D-animierten Text bei Mauszeigerkontakt scrollen</value>
   </data>
   <data name="AnimatedTextHoverScrollDescription" xml:space="preserve">
     <value>Zeigen Sie nach dem Textwechsel auf Titel, Album und Interpret, um den vollständigen Text zu lesen.</value>

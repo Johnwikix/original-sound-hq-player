@@ -1920,7 +1920,7 @@
   <data name="OneShotOpenFailedTitle" xml:space="preserve"><value>Не удалось воспроизвести файл</value></data>
   <data name="OneShotOpenFailedContent" xml:space="preserve"><value>Не удалось обработать или открыть выбранный музыкальный файл: {0}</value></data>
   <data name="AnimatedTextHoverScroll" xml:space="preserve">
-    <value>Прокручивать обрезанный текст при наведении</value>
+    <value>Прокручивать анимированный текст Win2D при наведении</value>
   </data>
   <data name="AnimatedTextHoverScrollDescription" xml:space="preserve">
     <value>При наведении показывать полные названия трека, альбома и исполнителя после завершения анимации смены текста.</value>

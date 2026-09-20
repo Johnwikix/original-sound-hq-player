@@ -1920,7 +1920,7 @@
   <data name="OneShotOpenFailedTitle" xml:space="preserve"><value>No se puede reproducir el archivo</value></data>
   <data name="OneShotOpenFailedContent" xml:space="preserve"><value>No se pudo analizar o abrir el archivo de música seleccionado: {0}</value></data>
   <data name="AnimatedTextHoverScroll" xml:space="preserve">
-    <value>Desplazar texto recortado al pasar el cursor</value>
+    <value>Desplazar el texto animado Win2D al pasar el cursor</value>
   </data>
   <data name="AnimatedTextHoverScrollDescription" xml:space="preserve">
     <value>Muestra el título, álbum y artista completos al pasar el cursor, después de la transición de texto.</value>
