@@ -33,8 +33,6 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class AppViewModel : ObservableObject, IDisposable
     {
-        // 歌词迟到守卫票据：LoadLyricsToUI 可能在后台线程（IPC 自动切歌）调用，递增须原子。
-        private int _lyricsLoadTicket;
         public Music? CurrentArtistObj { get => State.Browse.CurrentArtistObj; set => State.Browse.CurrentArtistObj = value; }
         public Music? CurrentAlbumObj { get => State.Browse.CurrentAlbumObj; set => State.Browse.CurrentAlbumObj = value; }
         public Music? CurrentFolderObj { get => State.Browse.CurrentFolderObj; set => State.Browse.CurrentFolderObj = value; }
@@ -53,7 +51,6 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         public string SearchText { get => State.Browse.SearchText; set => State.Browse.SearchText = value; }
-        private DispatcherQueueTimer? _searchDebounceTimer;
 
         public List<Music> SongsSource
         {
@@ -64,18 +61,18 @@ namespace WinUIMusicPlayer.ViewModel
                 State.Library.Replace(value);
             }
         }
-        public BulkObservableCollection<Music> FavoriteSongs { get; set => SetProperty(ref field, value); } = [];
-        public BulkObservableCollection<PlayListMusicItem> PlayListSongs { get; set => SetProperty(ref field, value); } = [];
-        public BulkObservableCollection<PlayList> AllPlayList { get; set => SetProperty(ref field, value); } = [];
+        public BulkObservableCollection<Music> FavoriteSongs { get => State.LibraryViews.FavoriteSongs; set => State.LibraryViews.FavoriteSongs = value; }
+        public BulkObservableCollection<PlayListMusicItem> PlayListSongs { get => State.LibraryViews.PlayListSongs; set => State.LibraryViews.PlayListSongs = value; }
+        public BulkObservableCollection<PlayList> AllPlayList { get => State.LibraryViews.AllPlayList; set => State.LibraryViews.AllPlayList = value; }
         public PlayList CurrentPlayList { get => State.Browse.CurrentPlayList; set => State.Browse.CurrentPlayList = value; }
         public int CurrentPlayListId { get => State.Browse.CurrentPlayListId; set => State.Browse.CurrentPlayListId = value; }
-        public CollectionViewSource AlbumPageSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource() { IsSourceGrouped = true };
-        public CollectionViewSource ArtistPageSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource() { IsSourceGrouped = true };
-        public CollectionViewSource FolderPageSource { get; set => SetProperty(ref field, value); } = new CollectionViewSource() { IsSourceGrouped = true };
-        public BulkObservableCollection<Music> ListSongs { get; set => SetProperty(ref field, value); } = [];
-        public BulkObservableCollection<Music> AlbumSongs { get; set => SetProperty(ref field, value); } = [];
-        public BulkObservableCollection<Music> ArtistSongs { get; set => SetProperty(ref field, value); } = [];
-        public BulkObservableCollection<Music> FolderSongs { get; set => SetProperty(ref field, value); } = [];
+        public CollectionViewSource AlbumPageSource { get => State.LibraryViews.AlbumPageSource; set => State.LibraryViews.AlbumPageSource = value; }
+        public CollectionViewSource ArtistPageSource { get => State.LibraryViews.ArtistPageSource; set => State.LibraryViews.ArtistPageSource = value; }
+        public CollectionViewSource FolderPageSource { get => State.LibraryViews.FolderPageSource; set => State.LibraryViews.FolderPageSource = value; }
+        public BulkObservableCollection<Music> ListSongs { get => State.LibraryViews.ListSongs; set => State.LibraryViews.ListSongs = value; }
+        public BulkObservableCollection<Music> AlbumSongs { get => State.LibraryViews.AlbumSongs; set => State.LibraryViews.AlbumSongs = value; }
+        public BulkObservableCollection<Music> ArtistSongs { get => State.LibraryViews.ArtistSongs; set => State.LibraryViews.ArtistSongs = value; }
+        public BulkObservableCollection<Music> FolderSongs { get => State.LibraryViews.FolderSongs; set => State.LibraryViews.FolderSongs = value; }
         public Music? CurrentPlayingMusic { get => State.Playback.CurrentPlayingMusic; set => State.Playback.CurrentPlayingMusic = value; }
         public BulkObservableCollection<Music> SequentialPlayingList
         {
@@ -95,26 +92,18 @@ namespace WinUIMusicPlayer.ViewModel
             new SortOption("UpdateTimeASC", "SortOrderUpdateTimeASC"),
             new SortOption("UpdateTimeDESC", "SortOrderUpdateTimeDESC")
         ];
-        public string MusicInfo { get; set => SetProperty(ref field, value); }
+        public string MusicInfo { get => State.Presentation.MusicInfo; set => State.Presentation.MusicInfo = value; }
         public bool IsMuted { get; set; } = false;
         public double TempVolume { get; set; } = 50;
         public string PlayTimeText { get => State.Playback.PlayTimeText; set => State.Playback.PlayTimeText = value; }
         //public string ProgressSliderThumbTipText { get; set => SetProperty(ref field, value); } = "00:00";
         public double ProgressSliderMax { get => State.Playback.ProgressSliderMax; set => State.Playback.ProgressSliderMax = value; }
-        public List<LyricLine> UILyrics
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                    AnimatedWin2dControls.Messages.UILyricsBus.Publish(value);
-            }
-        } = [];
-        public int LastLyricIndex { get; set; } = -1;
-        public string LyricPageBackgroundHash { get; set => SetProperty(ref field, value); } = "";
-        public AnimatedWin2dControls.Impressionist.PaletteResult? LyricPagePalette { get; set => SetProperty(ref field, value); }
+        public List<LyricLine> UILyrics { get => State.Presentation.UILyrics; set => State.Presentation.UILyrics = value; }
+        public int LastLyricIndex { get => State.Presentation.LastLyricIndex; set => State.Presentation.LastLyricIndex = value; }
+        public string LyricPageBackgroundHash { get => State.Presentation.LyricPageBackgroundHash; set => State.Presentation.LyricPageBackgroundHash = value; }
+        public AnimatedWin2dControls.Impressionist.PaletteResult? LyricPagePalette { get => State.Presentation.LyricPagePalette; set => State.Presentation.LyricPagePalette = value; }
         // 当前曲目封面像素（RotatingMesh 背景着色器消费；null 表示无封面，着色器回退调色板渐变）。
-        public AnimatedWin2dControls.Impressionist.ArtworkPixelData? LyricPageArtwork { get; set => SetProperty(ref field, value); }
+        public AnimatedWin2dControls.Impressionist.ArtworkPixelData? LyricPageArtwork { get => State.Presentation.LyricPageArtwork; set => State.Presentation.LyricPageArtwork = value; }
         // 兼容现有设置持久化守卫；不再拥有可写的第二份就绪状态。
         public bool IsInitialized => _lifecycle.IsReady;
         private readonly AppLifecycle _lifecycle;
@@ -126,65 +115,23 @@ namespace WinUIMusicPlayer.ViewModel
         // 驱动 MainPage 全页进度层；多操作并发时逐行显示文本，仅单操作上报百分比时进度环用确定进度。
         public ProgressCenter Progress => State.Operations;
         // 空音乐库占位（MusicBrowsePage 内容区）。初始 Collapsed，待首次 NotifySongsSourceChanged（DB 加载完成）后才置 Visible，避免启动加载期闪现。
-        public Visibility LibraryEmptyVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
+        public Visibility LibraryEmptyVisibility { get => State.LibraryViews.LibraryEmptyVisibility; set => State.LibraryViews.LibraryEmptyVisibility = value; }
         // 最爱页占位：库非空但没有任何收藏时显示（FavouritePlayListPage）；搜索过滤导致的空列表不显示。
-        public Visibility FavoriteEmptyVisibility { get; set => SetProperty(ref field, value); } = Visibility.Collapsed;
-        public bool IsFullScreen
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                    ApplyFullScreen(value);
-            }
-        } = false;
-        public bool IsMaximized { get; set => SetProperty(ref field, value); } = false;
-        public bool IsPlayingDetailVisible
-        {
-            get;
-            set
-            {
-                if (SetProperty(ref field, value))
-                    App.Services.GetRequiredService<DesktopLyrics.DesktopLyricsViewModel>().IsPlayingDetailVisible = value;
-            }
-        } = false;
-        public bool IsPointerOverTitleBar { get; set => SetProperty(ref field, value); } = true;
-
+        public Visibility FavoriteEmptyVisibility { get => State.LibraryViews.FavoriteEmptyVisibility; set => State.LibraryViews.FavoriteEmptyVisibility = value; }
+        public bool IsFullScreen { get => State.Shell.IsFullScreen; set => State.Shell.IsFullScreen = value; }
+        public bool IsMaximized { get => State.Shell.IsMaximized; set => State.Shell.IsMaximized = value; }
+        public bool IsPointerOverTitleBar { get => State.Shell.IsPointerOverTitleBar; set => State.Shell.IsPointerOverTitleBar = value; }
+        public bool IsPlayingDetailVisible { get => State.DesktopLyrics.IsPlayingDetailVisible; set => State.DesktopLyrics.IsPlayingDetailVisible = value; }
         public void ToggleFullScreen() => IsFullScreen = !IsFullScreen;
-
-        private void ApplyFullScreen(bool enable)
-        {
-            var window = App.MainWindow?.AppWindow;
-            if (window is null) return;
-
-            var desired = enable
-                ? AppWindowPresenterKind.FullScreen
-                : AppWindowPresenterKind.Default;
-
-            if (window.Presenter.Kind != desired)
-                window.SetPresenter(desired);
-        }
-
-        public void UpdateMaximizeState()
-        {
-            if (App.MainWindow?.AppWindow.Presenter is OverlappedPresenter overlapped)
-            {
-                IsMaximized = overlapped.State == OverlappedPresenterState.Maximized;
-            }
-        }
-
-        public void SyncFullScreenStateFromWindow()
-        {
-            IsFullScreen = App.MainWindow?.AppWindow.Presenter.Kind
-                           == AppWindowPresenterKind.FullScreen;
-        }
-        public string InfoBarTitle { get; set => SetProperty(ref field, value); } = string.Empty;
-        public bool InfoBarIsOpen { get; set => SetProperty(ref field, value); } = false;
-        public string InfoBarMessage { get; set => SetProperty(ref field, value); } = string.Empty;
+        public void UpdateMaximizeState() => App.Services.GetRequiredService<ShellService>().UpdateMaximizeState();
+        public void SyncFullScreenStateFromWindow() => App.Services.GetRequiredService<ShellService>().SyncFullScreenStateFromWindow();
+        public string InfoBarTitle { get => State.Shell.InfoBarTitle; set => State.Shell.InfoBarTitle = value; }
+        public bool InfoBarIsOpen { get => State.Shell.InfoBarIsOpen; set => State.Shell.InfoBarIsOpen = value; }
+        public string InfoBarMessage { get => State.Shell.InfoBarMessage; set => State.Shell.InfoBarMessage = value; }
         public string PageType { get; set; } = string.Empty;
         public float ControlsStackOpacity { get; set => SetProperty(ref field, value); } = 0.0f;
         public bool IsBackBtnEnable { get; set => SetProperty(ref field, value); } = false;
-        public TimeSpan LyricsDurationTime { get; set; } = TimeSpan.Zero;
+        public TimeSpan LyricsDurationTime { get => State.Presentation.LyricsDurationTime; set => State.Presentation.LyricsDurationTime = value; }
         public bool IsManualSelect { get => State.Playback.IsManualSelect; set => State.Playback.IsManualSelect = value; }
         public bool IsMouseOverVolumeSlider { get; set; } = false;
         public TimeSpan CurrentPlayingTime { get => State.Playback.CurrentPlayingTime; set => State.Playback.CurrentPlayingTime = value; }
@@ -205,23 +152,7 @@ namespace WinUIMusicPlayer.ViewModel
         public bool IsFogEffectEnabled { get => State.Preferences.IsFogEffectEnabled; set => State.Preferences.IsFogEffectEnabled = value; }
         public bool IsSnowEffectEnabled { get => State.Preferences.IsSnowEffectEnabled; set => State.Preferences.IsSnowEffectEnabled = value; }
         public bool IsRaindropEffectEnabled { get => State.Preferences.IsRaindropEffectEnabled; set => State.Preferences.IsRaindropEffectEnabled = value; }
-        public double Volume
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        if (value > 0) IsMuted = false;
-                        if (!IsMuted) TempVolume = value;
-
-                        App.Services.GetRequiredService<BassPlayerCommandService>().SetVolume(value / 100);
-                    }
-                }
-            }
-        } = 50;
+        public double Volume { get => State.Playback.Volume; set => State.Playback.Volume = value; }
 
         public Thickness LyricsMargin { get => State.Preferences.LyricsMargin; set => State.Preferences.LyricsMargin = value; }
 
@@ -247,9 +178,12 @@ namespace WinUIMusicPlayer.ViewModel
             _playbackProgress = playbackProgress;
             _projections = projections;
             State.Playback.PropertyChanged += OnPlaybackStateChanged;
+            State.Presentation.PropertyChanged += OnPreferencesStateChanged;
             State.Preferences.PropertyChanged += OnPreferencesStateChanged;
             State.Browse.PropertyChanged += OnBrowseStateChanged;
             State.Output.PropertyChanged += OnPreferencesStateChanged;
+            State.HotKeys.PropertyChanged += OnPreferencesStateChanged;
+            State.Shell.PropertyChanged += OnPreferencesStateChanged;
             State.DesktopLyrics.PropertyChanged += OnDesktopLyricsStateChanged;
             State.Queue.PropertyChanged += OnQueueStateChanged;
             _lifecycle = lifecycle;
@@ -264,44 +198,20 @@ namespace WinUIMusicPlayer.ViewModel
             usbDeviceService.DevicesChanged += OnUsbDevicesChanged;
             usbDeviceService.DeviceMusicChanged += OnUsbMusicChanged;
             AllPlayList.CollectionChanged += AllPlayList_CollectionChanged;
-            FavoriteSongs.CollectionChanged += FavoriteSongs_CollectionChanged;
-            LyricsSyncRequestBus.Requested += SendFullLyricsSync;
+            State.LibraryViews.PropertyChanged += OnPreferencesStateChanged;
         }
 
-        private void OnBrowseStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-        {
-            OnPropertyChanged(e);
-            switch (e.PropertyName)
-            {
-                case nameof(SearchText):
-                    if (_searchDebounceTimer is null)
-                    {
-                        _searchDebounceTimer = App.MainWindow.DispatcherQueue.CreateTimer();
-                        _searchDebounceTimer.Interval = TimeSpan.FromMilliseconds(300);
-                        _searchDebounceTimer.IsRepeating = false;
-                        _searchDebounceTimer.Tick += OnSearchDebounceElapsed;
-                    }
-                    _searchDebounceTimer.Stop();
-                    _searchDebounceTimer.Start();
-                    break;
-                case nameof(SelectedSortOption):
-                    OnSelectSortChanged();
-                    break;
-                case nameof(CurrentArtistObj):
-                    _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => ArtistHelper.IsMusicByArtist(m, CurrentArtistObj?.Author ?? ""));
-                    break;
-                case nameof(CurrentAlbumObj):
-                    _ = UpdateSongCollectionsAsync(AlbumSongs, SongViewType.Album, m => m.Album == CurrentAlbumObj?.Album);
-                    break;
-                case nameof(CurrentFolderObj):
-                    _ = UpdateSongCollectionsAsync(FolderSongs, SongViewType.Folder, m => m.LastLevelFolderPath == CurrentFolderObj?.LastLevelFolderPath);
-                    break;
-            }
-        }
+        private void OnBrowseStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e) => OnPropertyChanged(e);
 
         private void OnPlaybackStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             OnPropertyChanged(e);
+            if (e.PropertyName == nameof(Volume) && IsInitialized)
+            {
+                if (Volume > 0) IsMuted = false;
+                if (!IsMuted) TempVolume = Volume;
+                App.Services.GetRequiredService<BassPlayerCommandService>().SetVolume(Volume / 100);
+            }
             if (e.PropertyName == nameof(ProgressSlider)) HandleProgressSliderChange(ProgressSlider);
             else if (e.PropertyName == nameof(CurrentPlayingMusic) && IsInitialized)
                 OffsetMsBus.Publish(CurrentPlayingMusic?.LyricsOffsetMs ?? 0);
@@ -313,10 +223,21 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        internal void NotifyPreferenceComputed(string name) => OnPropertyChanged(name);
-
         private void OnPreferencesStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-            => OnPropertyChanged(e);
+        {
+            OnPropertyChanged(e);
+            string? computed = e.PropertyName switch
+            {
+                nameof(PaletteAlgorithm) => nameof(PaletteAlgorithmIndex),
+                nameof(BackgroundShader) => nameof(BackgroundShaderIndex),
+                nameof(ScrollEasingType) => nameof(ScrollEasingTypeIndex),
+                nameof(ScrollEasingMode) => nameof(ScrollEasingModeIndex),
+                nameof(PlayingDetailAlignment) or nameof(UsePlayingDetailAlignmentInPortrait) or nameof(IsPortraitLayout) => nameof(EffectivePlayingDetailAlignment),
+                nameof(AtmosEndpointId) => nameof(SelectedAtmosDevice),
+                _ => null
+            };
+            if (computed is not null) OnPropertyChanged(computed);
+        }
 
         private void OnQueueStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
@@ -335,6 +256,7 @@ namespace WinUIMusicPlayer.ViewModel
         private void OnUsbMusicChanged(object? sender, EventArgs e) { if (!_isDisposed) RefreshUsbDeviceMusicList(); }
         private void OnDesktopLyricsStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
+            if (e.PropertyName == nameof(IsPlayingDetailVisible)) OnPropertyChanged(e);
             if (e.PropertyName == nameof(State.DesktopLyrics.IsKaraokeEnabled))
             {
                 AppSettings.IsDesktopLyricsKaraokeEnabled = State.DesktopLyrics.IsKaraokeEnabled;
@@ -386,27 +308,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void CancelProgressSeek(long seekId) => _playbackProgress.CancelProgressSeek(seekId);
         public void MarkPlaybackEnded(long totalMs) => _playbackProgress.MarkPlaybackEnded(totalMs);
 
-        public void LoadLyricsToUI(Music music)
-        {
-            if (!CanPublishState) return;
-            LastLyricIndex = -1;
-            // 按递增票据匹配而非 Music.Id：一次性外部曲目 Id 均为 0，按 Id 匹配会放过上一首的迟到结果。
-            int ticket = Interlocked.Increment(ref _lyricsLoadTicket);
-            _ = App.Services.GetRequiredService<ApplicationTasks>().RunAsync(_ => LoadLyricsCore(music, ticket));
-        }
-
-        private static async Task LoadLyricsCore(Music music, int ticket)
-        {
-            var vm = App.Services.GetRequiredService<AppViewModel>();
-            try
-            {
-                var service = App.Services.GetRequiredService<LyricsRefreshService>();
-                var parsedLyrics = await Task.Run(() => service.SetLyrics(music));
-                if (vm.CanPublishState && Volatile.Read(ref vm._lyricsLoadTicket) == ticket)
-                    vm.UILyrics = parsedLyrics;
-            }
-            catch (Exception ex) { vm._logger.LogError(ex, "加载歌词失败"); }
-        }
+        public void LoadLyricsToUI(Music music) => App.Services.GetRequiredService<LyricsLoader>().Load(music);
 
         public void AdjustVolume(int delta)
         {
@@ -447,16 +349,7 @@ namespace WinUIMusicPlayer.ViewModel
         public event Action? PlaylistMenusChanged;
         public event Action? UsbMenusChanged;
 
-        public void UpdateMenuOptionsPlayList()
-        {
-            App.Services.GetRequiredService<AlbumViewModel>().UpdateAlbumMenuOptionsPlayList();
-            App.Services.GetRequiredService<ArtistViewModel>().UpdateAlbumMenuOptionsPlayList();
-            App.Services.GetRequiredService<FolderViewModel>().UpdateAlbumMenuOptionsPlayList();
-            App.Services.GetRequiredService<SongListViewModel>().UpdateAlbumMenuOptionsPlayList();
-            App.Services.GetRequiredService<FavouritePlayListViewModel>().UpdateAlbumMenuOptionsPlayList();
-            PlaylistMenusChanged?.Invoke();
-            App.Services.GetRequiredService<PlaylistDetailViewModel>().UpdateAlbumMenuOptionsPlayList();
-        }
+        public void UpdateMenuOptionsPlayList() => PlaylistMenusChanged?.Invoke();
 
         public Task UpdateSongCollectionsAsync(BulkObservableCollection<Music> target, SongViewType kind, Func<Music, bool>? filter = null)
             => _projections.UpdateSongCollectionsAsync(target, kind, filter);
@@ -477,67 +370,10 @@ namespace WinUIMusicPlayer.ViewModel
 
         public int GetCurrentIndex() => State.Queue.IndexOf(CurrentPlayingMusic);
 
-        private void OnSearchDebounceElapsed(DispatcherQueueTimer sender, object args)
-        {
-            RefreshDataSource();
-        }
-
-        public void RefreshDataSource()
-        {
-            RefreshDataForPageType(AppData.CurrentPage);
-        }
-
-        public void RefreshAllViews()
-        {
-            _libraryQueries.Invalidate();
-            // 收藏/歌单映射用于跨页操作；其他展示投影在导航到对应页时按版本重建。
-            _ = UpdateSongCollectionsAsync(FavoriteSongs, SongViewType.Favorite, m => m.IsFavorite == true);
-            _ = RefreshPlayListSongMapping();
-            RefreshDataSource();
-        }
-
-        private void RefreshDataForPageType(Type pageType)
-        {
-            if (pageType == typeof(SongListPage))
-            {
-                _ = UpdateSongCollectionsAsync(ListSongs, SongViewType.All);
-            }
-            else if (pageType == typeof(AlbumPage))
-            {
-                _ = UpdateSongCollectionsAsync(AlbumSongs, SongViewType.Album, m => m.Album == CurrentAlbumObj?.Album);
-                UpdateGroupedByFirstLetter(m => m.Album, m => GetFirstLetterAdvanced(m.Album), AlbumPageSource);
-            }
-            else if (pageType == typeof(ArtistPage))
-            {
-                _ = UpdateSongCollectionsAsync(ArtistSongs, SongViewType.Artist, m => ArtistHelper.IsMusicByArtist(m, CurrentArtistObj?.Author ?? ""));
-                UpdateArtistGroupedByFirstLetter(ArtistPageSource);
-            }
-            else if (pageType == typeof(FolderBrowsePage))
-            {
-                _ = UpdateSongCollectionsAsync(FolderSongs, SongViewType.Folder, m => m.LastLevelFolderPath == CurrentFolderObj?.LastLevelFolderPath);
-                UpdateGroupedByFirstLetter(m => m.LastLevelFolderPath, m => GetFirstLetterAdvanced(m.LastLevelFolderPath), FolderPageSource);
-            }
-            else if (pageType == typeof(FavouritePlayListPage))
-            {
-                _ = UpdateSongCollectionsAsync(FavoriteSongs, SongViewType.Favorite, m => m.IsFavorite == true);
-            }
-            else if (pageType == typeof(PlayListPage))
-            {
-                _ = RefreshPlayListSongMapping();
-            }
-            else
-            {
-                return;
-            }
-            App.Services.GetRequiredService<MusicBrowseViewModel>()?.UpdateViewList();
-        }
-
+        public void RefreshDataSource() => App.Services.GetRequiredService<LibraryBrowseCoordinator>().RefreshDataSource();
+        public void RefreshAllViews() => App.Services.GetRequiredService<LibraryBrowseCoordinator>().RefreshAllViews();
         public Task RefreshPlayListSongMapping() => _projections.RefreshPlayListSongMapping(PlayListSongs);
-
-        public void OnSelectSortChanged()
-        {
-            RefreshDataSource();
-        }
+        public void OnSelectSortChanged() => RefreshDataSource();
 
         /// <summary>
         /// 当歌曲被设为收藏时调用
@@ -555,15 +391,6 @@ namespace WinUIMusicPlayer.ViewModel
         {
             _libraryQueries.Invalidate();
             FavoriteSongs.Remove(music);
-        }
-
-        // FavoriteSongs 的所有变更（FillFrom 整表刷新 / 单首增删）都会经过 CollectionChanged，
-        // 这里是"最爱页是否为空"的唯一汇聚点；FillFrom 无条件触发 Reset，空->空 也会重新求值。
-        private void FavoriteSongs_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        {
-            FavoriteEmptyVisibility = FavoriteSongs.Count == 0 && string.IsNullOrWhiteSpace(SearchText)
-                ? Visibility.Visible
-                : Visibility.Collapsed;
         }
 
         public async Task RefreshSongsSourceAsync(CancellationToken cancellationToken = default)
@@ -598,9 +425,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             var songs = new Dictionary<int, Music>(SongsSource.Count);
             foreach (var song in SongsSource) songs.TryAdd(song.Id, song);
-            LibraryPlaybackReconciler.Reconcile(SequentialPlayingList, songs, CurrentPlayingMusic);
-            if (!ReferenceEquals(SequentialPlayingList, CurrentPlayingList))
-                LibraryPlaybackReconciler.Reconcile(CurrentPlayingList, songs, CurrentPlayingMusic);
+            State.Queue.ReconcileLibrary(songs, CurrentPlayingMusic);
         }
 
         /// <summary>
@@ -639,17 +464,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public void UpDateUsbDeviceMenuflyout()
-        {
-            App.Services.GetRequiredService<FavouritePlayListViewModel>().UpDateUsbDeviceMenuflyout();
-            UsbMenusChanged?.Invoke();
-            App.Services.GetRequiredService<SongListViewModel>().UpDateUsbDeviceMenuflyout();
-            App.Services.GetRequiredService<PlaylistDetailViewModel>().UpDateUsbDeviceMenuflyout();
-            App.Services.GetRequiredService<AlbumViewModel>().UpDateUsbDeviceMenuflyout();
-            App.Services.GetRequiredService<ArtistViewModel>().UpDateUsbDeviceMenuflyout();
-            App.Services.GetRequiredService<FolderViewModel>().UpDateUsbDeviceMenuflyout();
-        }
-
+        public void UpDateUsbDeviceMenuflyout() => UsbMenusChanged?.Invoke();
 
         public void RefreshUsbDeviceMusicList()
         {
@@ -677,19 +492,8 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async Task ReGetLyrics(IEnumerable<Music> uniqueSelectedMusics, Music? selectedMusic = null)
-        {
-            if (uniqueSelectedMusics is not null && uniqueSelectedMusics.AsValueEnumerable().Any())
-            {
-                foreach (Music item in uniqueSelectedMusics)
-                {
-                    (string lyrics, string transLrc) = await ToolUtils.GetLyricsFromNet(item);
-                    (string krc, string tKrc) = await ToolUtils.GetKrcFromNet(item);
-                    await _musicDatabaseService.SaveLyricsAsync(item.Id, lyrics, transLrc, krc ?? "", tKrc ?? "");
-                    await _musicDatabaseService.UpdateMusicInfo(item);
-                }
-            }
-        }
+        public Task ReGetLyrics(IEnumerable<Music> songs, Music? selectedMusic = null)
+            => App.Services.GetRequiredService<LibraryTrackActions>().RefreshLyricsAsync(songs);
 
         public async Task EditPlayListName(PlayList playList, Func<Task<string>> getNameCallback)
         {
@@ -705,26 +509,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async Task RescanFolder(Music music)
-        {
-            try
-            {
-                if (music is not null)
-                {
-                    if (!string.IsNullOrEmpty(music.FolderPath))
-                    {
-                        await Task.Run(async () =>
-                        {
-                            await App.Services.GetRequiredService<MusicDatabaseService>().RescanFolderByPath(music.FolderPath);
-                        });
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"RescanFolder 重新扫描文件夹失败: {ex.Message}");
-            }
-        }
+        public Task RescanFolder(Music music) => App.Services.GetRequiredService<LibraryTrackActions>().RescanAsync(music);
 
         public Task TransmitFileToUsb(IEnumerable<Music> selectedMusics, UsbStorageDevice usbDevice, string? format = null, int bitRateKbps = 320)
             => App.Services.GetRequiredService<UsbExportCoordinator>().ExportAsync(selectedMusics, usbDevice, format, bitRateKbps);
@@ -760,93 +545,26 @@ namespace WinUIMusicPlayer.ViewModel
                 if (_isDisposed) return;
                 _isDisposed = true;
                 StopProgressTimer();
-                _searchDebounceTimer?.Stop();
-                _settingsDebounceTimer?.Stop();
-                GlobalHotKeyHook.ConflictsChanged -= OnGlobalHotKeyConflictsChanged;
-                try
-                {
-                    if (App.MainWindow is { } window) GlobalHotKeyHook.ClearAll(window);
-                }
-                catch (Exception ex) { _logger.LogError(ex, "注销全局快捷键失败"); }
-                if (_searchDebounceTimer is not null) _searchDebounceTimer.Tick -= OnSearchDebounceElapsed;
                 _licenseService.StateChanged -= OnLicenseStateChanged;
                 UsbDeviceService.DevicesChanged -= OnUsbDevicesChanged;
                 UsbDeviceService.DeviceMusicChanged -= OnUsbMusicChanged;
                 AllPlayList.CollectionChanged -= AllPlayList_CollectionChanged;
-                FavoriteSongs.CollectionChanged -= FavoriteSongs_CollectionChanged;
-                LyricsSyncRequestBus.Requested -= SendFullLyricsSync;
+                State.LibraryViews.PropertyChanged -= OnPreferencesStateChanged;
                 State.DesktopLyrics.PropertyChanged -= OnDesktopLyricsStateChanged;
                 State.Queue.PropertyChanged -= OnQueueStateChanged;
                 State.Playback.PropertyChanged -= OnPlaybackStateChanged;
+                State.Presentation.PropertyChanged -= OnPreferencesStateChanged;
                 State.Preferences.PropertyChanged -= OnPreferencesStateChanged;
                 State.Browse.PropertyChanged -= OnBrowseStateChanged;
                 State.Output.PropertyChanged -= OnPreferencesStateChanged;
+                State.HotKeys.PropertyChanged -= OnPreferencesStateChanged;
+                State.Shell.PropertyChanged -= OnPreferencesStateChanged;
             }
         }
 
-        private DispatcherQueueTimer? _settingsDebounceTimer;
-
-        internal void ScheduleSettingsBroadcast()
-        {
-            if (_settingsDebounceTimer is null)
-            {
-                _settingsDebounceTimer = App.MainWindow.DispatcherQueue.CreateTimer();
-                _settingsDebounceTimer.Interval = TimeSpan.FromMilliseconds(1000);
-                _settingsDebounceTimer.Tick += (s, e) =>
-                {
-                    _settingsDebounceTimer?.Stop();
-                    SendLyricsSettings();
-                };
-            }
-            _settingsDebounceTimer.Start();
-        }
-
-        public void SendLyricsSettings()
-        {
-
-            string fontFamilyName = FontFamily?.FontFamily?.Source ?? "Segoe UI";
-            AnimatedWin2dControls.Messages.LyricsSettingsBus.Publish(new AnimatedWin2dControls.Messages.LyricsSettingsBus.Settings(
-                fontFamilyName: fontFamilyName,
-                lyricsTextAlignment: LyricsAlignment,
-                isDark: IsDarkMode,
-                scrollSensitivity: 1.0,
-                // 固定字号模式不随竖屏放大；保留用户设置，只缩放渲染值。
-                lyricsBlurAmount: LyricsBlurAmount * (IsPortraitLayout && !IsGlobalFontSizeEnabled ? PortraitLyricsScale : 1.0),
-                glowAmount: GlowAmount,
-                charFloatAmount: CharFloatAmount,
-                charScaleAmount: CharScaleAmount,
-                longSyllableThreshold: LongSyllableThreshold,
-                isFadeOutEnabled: true,
-                isOutOfSightEnabled: true,
-                unplayedOpacity: UnplayedOpacityPercent / 100.0,
-                translatedOpacity: TranslatedOpacityPercent / 100.0,
-                strokeWidth: 0.0,
-                scrollEasingType: ScrollEasingType,
-                scrollEasingMode: ScrollEasingMode,
-                playingLineTopOffset: PlayingLineTopOffsetPercent / 100.0,
-                targetFrameRate: TargetFrameRate,
-                isCustomColorEnabled: IsCustomLyricsColorEnabled,
-                lyricsCustomColor: LyricsCustomColor,
-                fontWeight: LyricsFontWeight));
-        }
-
-        internal void SendLyricsFontSize()
-        {
-            double fontSize = IsGlobalFontSizeEnabled ? GlobalFontSize : LyricsFontSize;
-            AnimatedWin2dControls.Messages.LyricsFontSizeBus.Publish(fontSize);
-        }
-
-        private void SendFullLyricsSync()
-        {
-            _settingsDebounceTimer?.Stop();
-            SendLyricsSettings();
-            SendLyricsFontSize();
-            AnimatedWin2dControls.Messages.IsPlayingBus.Publish(IsPlaying);
-            AnimatedWin2dControls.Messages.TimeProgressBus.Publish((long)CurrentPlayingTime.TotalMilliseconds);
-            AnimatedWin2dControls.Messages.OffsetMsBus.Publish(CurrentPlayingMusic?.LyricsOffsetMs ?? 0);
-            if (UILyrics.Count > 0)
-                AnimatedWin2dControls.Messages.UILyricsBus.Publish(UILyrics);
-        }
+        internal void ScheduleSettingsBroadcast() => App.Services.GetRequiredService<LyricsPresentationService>().ScheduleSettingsBroadcast();
+        public void SendLyricsSettings() => App.Services.GetRequiredService<LyricsPresentationService>().SendLyricsSettings();
+        internal void SendLyricsFontSize() => App.Services.GetRequiredService<LyricsPresentationService>().SendLyricsFontSize();
 
         [RelayCommand]
         private void OnVolumeSliderIconButtonChanged()

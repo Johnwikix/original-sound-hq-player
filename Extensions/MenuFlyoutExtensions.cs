@@ -1,6 +1,7 @@
 ﻿using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System.Collections.Generic;
+using System.Windows.Input;
 using WinUIMusicPlayer.Model;
 using ZLinq;
 
@@ -8,6 +9,11 @@ namespace WinUIMusicPlayer.Extensions
 {
     public static class MenuFlyoutExtensions
     {
+        public static readonly DependencyProperty PrepareCommandProperty =
+            DependencyProperty.RegisterAttached("PrepareCommand", typeof(ICommand), typeof(MenuFlyoutExtensions), new PropertyMetadata(null));
+        public static void SetPrepareCommand(DependencyObject target, ICommand value) => target.SetValue(PrepareCommandProperty, value);
+        public static ICommand GetPrepareCommand(DependencyObject target) => (ICommand)target.GetValue(PrepareCommandProperty);
+
         public static readonly DependencyProperty ItemsSourceProperty =
             DependencyProperty.RegisterAttached("ItemsSource", typeof(IEnumerable<MenuModel>),
             typeof(MenuFlyoutExtensions), new PropertyMetadata(null, OnItemsSourceChanged));
@@ -33,6 +39,8 @@ namespace WinUIMusicPlayer.Extensions
         {
             if (sender is MenuFlyout flyout)
             {
+                var prepare = GetPrepareCommand(flyout);
+                if (prepare?.CanExecute(null) == true) prepare.Execute(null);
                 RebuildItems(flyout);
             }
         }

@@ -4,7 +4,7 @@ using WinUIMusicPlayer.DesktopLyrics;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.ViewModel;
+using Microsoft.Extensions.Logging;
 using System.ComponentModel;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.State;
@@ -12,8 +12,9 @@ using WinUIMusicPlayer.State;
 namespace WinUIMusicPlayer.Services;
 
 /// <summary>偏好编辑到持久化的应用边界。启动恢复只改内存，Ready 后才接受自动保存。</summary>
-public sealed class SettingsCoordinator(AppState state, MusicDatabaseService database, AppViewModel view, DesktopLyricsViewModel desktopLyrics) : IDisposable
+public sealed class SettingsCoordinator(AppState state, MusicDatabaseService database, LyricsPresentationService lyrics, LibraryProjectionService library, DesktopLyricsViewModel desktopLyrics, HotKeyService hotKeys, ILogger<SettingsCoordinator> logger) : IDisposable
 {
+    public event Action? ThemeChanged;
     private bool _started;
     private DispatcherQueueTimer? _desktopStyleTimer;
 
@@ -49,15 +50,45 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
     {
         switch (e.PropertyName)
         {
+            case nameof(state.Preferences.DesktopLyricsFontFamily):
+                if (state.Preferences.DesktopLyricsFontFamily is { } font)
+                {
+                    AppSettings.DesktopLyricsFontFamily = font.FontFamily.Source;
+                    ScheduleDesktopLyricsStyleCommit();
+                }
+                break;
+            case nameof(state.Preferences.ThemeType):
+                try
+                {
+                    AppSettings.AppTheme = state.Preferences.ThemeType;
+                    AppSettings.ElementTheme = state.Preferences.ThemeType switch
+                    {
+                        "Dark" => Microsoft.UI.Xaml.ElementTheme.Dark,
+                        "Light" => Microsoft.UI.Xaml.ElementTheme.Light,
+                        _ => Microsoft.UI.Xaml.ElementTheme.Default
+                    };
+                    state.Preferences.IsDarkMode = state.Preferences.ThemeType switch
+                    {
+                        "Dark" => true,
+                        "Light" => false,
+                        _ => !ToolUtils.GetIsLightTheme()
+                    };
+                    App.MainWindow?.SetAppTheme();
+                    if (state.Lifecycle.IsReady)
+                    {
+                        ThemeChanged?.Invoke();
+                        _ = database.SaveSettingAsync();
+                    }
+                }
+                catch (Exception ex) { logger.LogError(ex, "应用窗口主题失败"); }
+                break;
             case nameof(state.Preferences.PaletteAlgorithm):
-                view.NotifyPreferenceComputed(nameof(view.PaletteAlgorithmIndex));
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
                 }
                 break;
             case nameof(state.Preferences.BackgroundShader):
-                view.NotifyPreferenceComputed(nameof(view.BackgroundShaderIndex));
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
@@ -70,6 +101,10 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                     _ = database.SaveSettingAsync();
                 }
                 break;
+            case nameof(AudioPreferencesState.IsDopEnabled):
+            case nameof(AudioPreferencesState.ExperimentalSurround51):
+            case nameof(AudioPreferencesState.ExperimentalAtmosPassthrough):
+            case nameof(AudioPreferencesState.AtmosEndpointId):
             case nameof(state.Preferences.DsdGain):
                 if (state.Lifecycle.IsReady)
                 {
@@ -89,7 +124,7 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.RefreshAllViews();
+                    library.RequestRefresh();
                 }
                 break;
             case nameof(state.Preferences.IsAutoCoverEnabled):
@@ -136,13 +171,13 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 break;
             case nameof(state.Preferences.IsDarkMode):
                 if (state.Lifecycle.IsReady)
-                view.SendLyricsSettings();
+                lyrics.SendLyricsSettings();
                 break;
             case nameof(state.Preferences.FontFamily):
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.SendLyricsSettings();
+                    lyrics.SendLyricsSettings();
                 }
                 break;
             case nameof(state.Preferences.CustomColor):
@@ -157,7 +192,7 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.ScheduleSettingsBroadcast();
+                    lyrics.ScheduleSettingsBroadcast();
                 }
                 break;
             case nameof(state.Preferences.LyricsCustomColor):
@@ -165,7 +200,7 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.ScheduleSettingsBroadcast();
+                    lyrics.ScheduleSettingsBroadcast();
                 }
                 break;
             case nameof(state.Preferences.DesktopLyricsFontSize):
@@ -264,7 +299,7 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.SendLyricsSettings();
+                    lyrics.SendLyricsSettings();
                 }
                 break;
             case nameof(state.Preferences.CustomOpacity):
@@ -287,7 +322,7 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.SendLyricsSettings();
+                    lyrics.SendLyricsSettings();
                 }
                 break;
             case nameof(state.Preferences.PlayingDetailAlignment):
@@ -295,20 +330,17 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 {
                     _ = database.SaveSettingAsync();
                 }
-                view.NotifyPreferenceComputed(nameof(view.EffectivePlayingDetailAlignment));
                 break;
             case nameof(state.Preferences.UsePlayingDetailAlignmentInPortrait):
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
                 }
-                view.NotifyPreferenceComputed(nameof(view.EffectivePlayingDetailAlignment));
                 break;
             case nameof(state.Preferences.IsPortraitLayout):
-                view.NotifyPreferenceComputed(nameof(view.EffectivePlayingDetailAlignment));
                 if (state.Lifecycle.IsReady)
                 {
-                    view.SendLyricsSettings();
+                    lyrics.SendLyricsSettings();
                 }
                 break;
             case nameof(state.Preferences.IsGlobalFontSizeEnabled):
@@ -316,22 +348,22 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.SendLyricsFontSize();
-                    view.SendLyricsSettings();
+                    lyrics.SendLyricsFontSize();
+                    lyrics.SendLyricsSettings();
                 }
                 break;
             case nameof(state.Preferences.GlobalFontSize):
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.SendLyricsFontSize();
+                    lyrics.SendLyricsFontSize();
                 }
                 break;
             case nameof(state.Preferences.LyricsFontSize):
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.SendLyricsFontSize();
+                    lyrics.SendLyricsFontSize();
                 }
                 break;
             case nameof(state.Preferences.MusicCoverCache):
@@ -359,79 +391,77 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.ScheduleSettingsBroadcast();
+                    lyrics.ScheduleSettingsBroadcast();
                 }
                 break;
             case nameof(state.Preferences.CharFloatAmount):
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.ScheduleSettingsBroadcast();
+                    lyrics.ScheduleSettingsBroadcast();
                 }
                 break;
             case nameof(state.Preferences.CharScaleAmount):
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.ScheduleSettingsBroadcast();
+                    lyrics.ScheduleSettingsBroadcast();
                 }
                 break;
             case nameof(state.Preferences.GlowAmount):
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.ScheduleSettingsBroadcast();
+                    lyrics.ScheduleSettingsBroadcast();
                 }
                 break;
             case nameof(state.Preferences.LongSyllableThreshold):
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.ScheduleSettingsBroadcast();
+                    lyrics.ScheduleSettingsBroadcast();
                 }
                 break;
             case nameof(state.Preferences.PlayingLineTopOffsetPercent):
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.ScheduleSettingsBroadcast();
+                    lyrics.ScheduleSettingsBroadcast();
                 }
                 break;
             case nameof(state.Preferences.TranslatedOpacityPercent):
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.ScheduleSettingsBroadcast();
+                    lyrics.ScheduleSettingsBroadcast();
                 }
                 break;
             case nameof(state.Preferences.UnplayedOpacityPercent):
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.ScheduleSettingsBroadcast();
+                    lyrics.ScheduleSettingsBroadcast();
                 }
                 break;
             case nameof(state.Preferences.TargetFrameRate):
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.SendLyricsSettings();
+                    lyrics.SendLyricsSettings();
                 }
                 break;
             case nameof(state.Preferences.ScrollEasingType):
-                view.NotifyPreferenceComputed(nameof(view.ScrollEasingTypeIndex));
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.ScheduleSettingsBroadcast();
+                    lyrics.ScheduleSettingsBroadcast();
                 }
                 break;
             case nameof(state.Preferences.ScrollEasingMode):
-                view.NotifyPreferenceComputed(nameof(view.ScrollEasingModeIndex));
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.ScheduleSettingsBroadcast();
+                    lyrics.ScheduleSettingsBroadcast();
                 }
                 break;
             case nameof(state.Preferences.EnableGlobalHotKey):
@@ -439,7 +469,7 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                    view.InitHotKeys();
+                    hotKeys.Refresh();
                 }
                 break;
             case nameof(state.Preferences.IsTrimOnHideEnabled):

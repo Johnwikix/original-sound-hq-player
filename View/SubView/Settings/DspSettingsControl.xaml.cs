@@ -12,6 +12,7 @@ namespace WinUIMusicPlayer.View.SubView.Settings;
 public sealed partial class DspSettingsControl : UserControl
 {
     public DspSettingsViewModel ViewModel { get; }
+    private IDisposable? _session;
 
     public DspSettingsControl()
     {
@@ -22,9 +23,19 @@ public sealed partial class DspSettingsControl : UserControl
         Unloaded += OnUnloaded;
     }
 
-    private async void OnLoaded(object sender, RoutedEventArgs args) => await ViewModel.OnViewLoadedAsync();
+    private async void OnLoaded(object sender, RoutedEventArgs args)
+    {
+        _session ??= App.Services.GetRequiredService<EditorSessions>().Attach(ViewModel.StopAsync);
+        await ViewModel.OnViewLoadedAsync();
+    }
 
-    private async void OnUnloaded(object sender, RoutedEventArgs args) => await ViewModel.OnViewUnloadedAsync();
+    private async void OnUnloaded(object sender, RoutedEventArgs args)
+    {
+        var session = _session;
+        _session = null;
+        try { await ViewModel.OnViewUnloadedAsync(); }
+        finally { session?.Dispose(); }
+    }
 
     private async void EditCurve_Click(object sender, RoutedEventArgs args)
     {

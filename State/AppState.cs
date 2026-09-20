@@ -8,7 +8,11 @@ public sealed class AppState(AppLifecycle lifecycle)
     public AppLifecycle Lifecycle { get; } = lifecycle;
     public DesktopLyricsState DesktopLyrics { get; } = new();
     public PlaybackQueueState Queue { get; } = new();
+    public LibraryViewState LibraryViews { get; } = new();
     public LibraryState Library { get; } = new();
+    public HotKeyState HotKeys { get; } = new();
+    public ShellState Shell { get; } = new();
+    public PlaybackPresentationState Presentation { get; } = new();
     public PlaybackState Playback { get; } = new();
     public PreferencesState Preferences { get; } = new();
     public BrowseState Browse { get; } = new();

@@ -1,4 +1,5 @@
 using BassPlayerIpc.Shared;
+using WinUIMusicPlayer.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -13,6 +14,7 @@ namespace WinUIMusicPlayer.View.SubView;
 public sealed partial class ConvolutionCurveDialog : ContentDialog
 {
     public ConvolutionCurveViewModel ViewModel { get; }
+    private IDisposable? _session;
     public ConvolutionCurveDialog(DspSettingsViewModel bindings)
     {
         ViewModel = App.Services.GetRequiredService<ConvolutionCurveViewModel>();
@@ -24,14 +26,14 @@ public sealed partial class ConvolutionCurveDialog : ContentDialog
         ViewModel.PresetDeleted += () => DeleteFlyout.Hide();
         Response.PointSelected += index => ViewModel.SelectedNode = index;
         Response.PointMoved += ViewModel.MovePoint;
-        Opened += async (_, _) => { ResizeEditor(); XamlRoot.Changed += RootChanged; await ViewModel.OpenAsync(); };
+        Opened += async (_, _) => { _session = App.Services.GetRequiredService<EditorSessions>().Attach(ViewModel.StopAsync); ResizeEditor(); XamlRoot.Changed += RootChanged; await ViewModel.OpenAsync(); };
         Closing += async (_, args) =>
         {
             var deferral = args.GetDeferral();
             try
             {
                 args.Cancel = !await ViewModel.CloseAsync();
-                if (!args.Cancel) { XamlRoot.Changed -= RootChanged; bindings.EndCorrectionEditing(); }
+                if (!args.Cancel) { _session?.Dispose(); _session = null; XamlRoot.Changed -= RootChanged; bindings.EndCorrectionEditing(); }
             }
             finally { deferral.Complete(); }
         };

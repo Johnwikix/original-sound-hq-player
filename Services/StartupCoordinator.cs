@@ -46,6 +46,26 @@ namespace WinUIMusicPlayer.Services
             var settings = App.Services.GetRequiredService<SettingsCoordinator>();
             MusicDatabaseService.AttachSettingsCapture(App.Services.GetRequiredService<SettingsSnapshotFactory>());
             settings.Start();
+            var libraryBrowse = App.Services.GetRequiredService<LibraryBrowseCoordinator>();
+            libraryBrowse.Start();
+            shutdown.RegisterStop(() => { libraryBrowse.Dispose(); return Task.CompletedTask; });
+            shutdown.RegisterStop(App.Services.GetRequiredService<LibraryProjectionService>().StopAsync);
+            shutdown.RegisterStop(App.Services.GetRequiredService<EditorSessions>().StopAsync);
+            var devices = App.Services.GetRequiredService<OutputDeviceService>();
+            devices.Start();
+            shutdown.RegisterStop(devices.StopAsync);
+            var covers = App.Services.GetRequiredService<CoverPresentationService>();
+            covers.Start();
+            shutdown.RegisterStop(() => { covers.Dispose(); return Task.CompletedTask; });
+            var lyricsPresentation = App.Services.GetRequiredService<LyricsPresentationService>();
+            lyricsPresentation.Start();
+            shutdown.RegisterStop(() => { lyricsPresentation.Dispose(); return Task.CompletedTask; });
+            var hotKeys = App.Services.GetRequiredService<HotKeyService>();
+            hotKeys.Start();
+            shutdown.RegisterStop(() => { hotKeys.Dispose(); return Task.CompletedTask; });
+            var shell = App.Services.GetRequiredService<ShellService>();
+            shell.Start();
+            shutdown.RegisterStop(() => { shell.Dispose(); return Task.CompletedTask; });
             shutdown.RegisterCleanup(settings.Dispose);
             shutdown.RegisterStop(() => { settings.Dispose(); return Task.CompletedTask; });
             var ipcService = App.Services.GetRequiredService<IpcService>();
@@ -100,8 +120,11 @@ namespace WinUIMusicPlayer.Services
             cancellationToken.ThrowIfCancellationRequested();
             var musicBrowseViewModel = App.Services.GetRequiredService<MusicBrowseViewModel>();
             shutdown.RegisterCleanup(musicBrowseViewModel.Dispose);
+            settings.ThemeChanged += musicBrowseViewModel.ThemeChangedUpdateCover;
+            shutdown.RegisterCleanup(() => settings.ThemeChanged -= musicBrowseViewModel.ThemeChangedUpdateCover);
             var commands = App.Services.GetRequiredService<PlaybackCommands>();
             var media = App.Services.GetRequiredService<SystemMediaControlsService>();
+            shutdown.RegisterStop(media.StopAsync);
             shutdown.RegisterCleanup(media.Dispose);
             media.Initialize(commands);
             var settingsSync = App.Services.GetRequiredService<AudioSettingsSynchronizer>();
@@ -135,6 +158,7 @@ namespace WinUIMusicPlayer.Services
             await musicBrowseViewModel.LoadPlayStateToMusicBrowsePage();
             // 缓存和播放状态恢复完成后才允许监视器发布音乐库变化。
             var watcher = App.Services.GetRequiredService<LibraryWatcherService>();
+            shutdown.RegisterStop(watcher.StopAsync);
             shutdown.RegisterCleanup(watcher.StopAsync);
             await watcher.StartAsync();
             cancellationToken.ThrowIfCancellationRequested();
@@ -197,6 +221,7 @@ namespace WinUIMusicPlayer.Services
             App.MainWindow.InitializeTaskbarHelper();
             var usb = App.Services.GetRequiredService<UsbDeviceService>();
             App.Services.GetRequiredService<ShutdownCoordinator>().RegisterCleanup(usb.StopWatching);
+            App.Services.GetRequiredService<ShutdownCoordinator>().RegisterStop(() => { usb.StopWatching(); return Task.CompletedTask; });
             usb.StartWatching();
             App.Services.GetRequiredService<SystemMediaControlsService>().EnableControls();
             App.Services.GetRequiredService<ShutdownCoordinator>().RegisterCleanup(DesktopLyricsManager.Shutdown);

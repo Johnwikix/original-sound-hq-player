@@ -60,7 +60,7 @@ var state = new AppViewModel { CurrentPlayingMusic = new(1), CurrentPlayingList 
 int created = 0;
 using var services = new ServiceCollection().AddSingleton(state)
     .AddSingleton(sp => { created++; return new BassPlayerCommandService(state); })
-    .AddSingleton<WinUIMusicPlayer.View.MainPage>().AddSingleton<MusicBrowseViewModel>().BuildServiceProvider();
+    .AddSingleton<WinUIMusicPlayer.View.MainPage>().AddSingleton<MusicBrowseViewModel>().AddSingleton<PlaybackCoordinator>().BuildServiceProvider();
 WinUIMusicPlayer.App.Services = services;
 using var commands = new PlaybackCommands(life, state, services);
 using var tray = new TrayViewModel(life, state, new WinUIMusicPlayer.DesktopLyrics.DesktopLyricsViewModel(), commands);

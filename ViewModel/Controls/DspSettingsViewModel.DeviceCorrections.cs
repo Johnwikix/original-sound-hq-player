@@ -90,9 +90,10 @@ public partial class DspSettingsViewModel
 
     private string? CorrectionDeviceId => string.IsNullOrEmpty(SelectedCorrectionDevice?.EndpointId)
         ? _actualCorrectionDeviceId : SelectedCorrectionDevice.EndpointId;
-    private bool CanBindCorrection() => !CorrectionBusy && !ConvolutionRestricted && !string.IsNullOrEmpty(CorrectionDeviceId)
+    private bool _stopping;
+    private bool CanBindCorrection() => !_stopping && !CorrectionBusy && !ConvolutionRestricted && !string.IsNullOrEmpty(CorrectionDeviceId)
         && (AppSettings.DeviceCorrections.Find(CorrectionDeviceId) != null || AppSettings.DeviceCorrections.Bindings.Length < 64);
-    private bool HasCorrection() => !CorrectionBusy && !ConvolutionRestricted && AppSettings.DeviceCorrections.Find(CorrectionDeviceId) != null;
+    private bool HasCorrection() => !_stopping && !CorrectionBusy && !ConvolutionRestricted && AppSettings.DeviceCorrections.Find(CorrectionDeviceId) != null;
 
     private bool CanLoadCorrection() => HasCorrection() && (_loadCorrectionDraft == null
         || CorrectionCurve.UsesCurve(AppSettings.DeviceCorrections.Find(CorrectionDeviceId)!.Settings));
@@ -123,13 +124,14 @@ public partial class DspSettingsViewModel
     [RelayCommand]
     private async Task RefreshCorrectionDevicesAsync()
     {
-        if (CorrectionBusy) return;
+        if (_stopping || CorrectionBusy) return;
         CorrectionBusy = true;
         string? selected = SelectedCorrectionDevice?.EndpointId;
         try
         {
             var wasapi = await _ipc.GetWasapiDevices();
             var asio = await _ipc.GetAsioDevices();
+            if (_stopping) return;
             CorrectionDevices.Clear();
             CorrectionDevices.Add(new() { Name = ToolUtils.GetString("DspDeviceCurrent"), EndpointId = "" });
             foreach (var device in wasapi)
@@ -212,7 +214,7 @@ public partial class DspSettingsViewModel
 
     private async Task SaveCorrectionsAsync(DeviceCorrections candidate)
     {
-        if (CorrectionBusy || ConvolutionRestricted) return;
+        if (_stopping || CorrectionBusy || ConvolutionRestricted) return;
         CorrectionBusy = true;
         _pendingCorrection = candidate;
         bool saved = false;

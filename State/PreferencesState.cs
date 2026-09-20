@@ -25,6 +25,10 @@ public sealed class PreferencesState : ObservableObject
         Audio.PropertyChanged += ForwardChange;
         General.PropertyChanged += ForwardChange;
     }
+    public bool IsHoverScrollEnabled { get => Appearance.IsHoverScrollEnabled; set => Appearance.IsHoverScrollEnabled = value; }
+    public string DefaultEntryComboBoxTag { get => General.DefaultEntryComboBoxTag; set => General.DefaultEntryComboBoxTag = value; }
+    public string ThemeType { get => Appearance.ThemeType; set => Appearance.ThemeType = value; }
+    public FontInfo DesktopLyricsFontFamily { get => Lyrics.DesktopLyricsFontFamily; set => Lyrics.DesktopLyricsFontFamily = value; }
     private void ForwardChange(object? sender, PropertyChangedEventArgs e) => OnPropertyChanged(e);
 
     public bool UseImageDominantTheme { get => Appearance.UseImageDominantTheme; set => Appearance.UseImageDominantTheme = value; }

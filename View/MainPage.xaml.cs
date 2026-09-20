@@ -455,11 +455,7 @@ namespace WinUIMusicPlayer.View
 
         private void CurrentPlayListView_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
-            var selectedMusic = CurrentPlayListView.SelectedItem as Music;
-            if (selectedMusic is not null)
-            {
-                _ = ViewModel.MusicBrowseVM.PlayMusic(music: selectedMusic, IsChangeList: false);
-            }
+            _ = App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(CurrentPlayListView.SelectedIndex);
         }
 
         private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)
@@ -499,26 +495,12 @@ namespace WinUIMusicPlayer.View
 
         public void UpdateCurrentPlayList()
         {
-            if (ViewModel.AppViewModel.CurrentPlayingList is not null)
-            {
-                if (ViewModel.AppViewModel.CurrentPlayingMusic is not null)
-                {
-                    var selectedMusic = ViewModel.AppViewModel.CurrentPlayingList.AsValueEnumerable().FirstOrDefault(music =>
-                    music.Id == ViewModel.AppViewModel.CurrentPlayingMusic.Id);
-
-                    if (selectedMusic is not null)
-                    {
-                        _ = Task.Delay(100).ContinueWith(_ =>
-                        {
-                            DispatcherQueue.TryEnqueue(() =>
-                            {
-                                CurrentPlayListView.SelectedItem = selectedMusic;
-                                CurrentPlayListView.ScrollIntoView(selectedMusic);
-                            });
-                        });
-                    }
-                }
-            }
+            int index = ViewModel.AppViewModel.GetCurrentIndex();
+            CurrentPlayListView.SelectedIndex = index;
+            if (index < 0) return;
+            if (CurrentPlayListView.ContainerFromIndex(index) is FrameworkElement container)
+                container.StartBringIntoView();
+            else CurrentPlayListView.ScrollIntoView(ViewModel.AppViewModel.CurrentPlayingList[index]);
         }
 
         private void CancelPlayingDetailButton_Click(object sender, RoutedEventArgs e)

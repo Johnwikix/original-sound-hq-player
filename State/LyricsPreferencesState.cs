@@ -12,6 +12,7 @@ namespace WinUIMusicPlayer.State;
 /// <summary>Lyrics 领域偏好的可观察状态；不执行 I/O 或启动后台任务。</summary>
 public sealed class LyricsPreferencesState : ObservableObject
 {
+    public FontInfo DesktopLyricsFontFamily { get; set => SetProperty(ref field, value); } = null!;
     public Thickness LyricsMargin { get; set => SetProperty(ref field, value); }
     public bool EnableAdvancedLyricsEffect { get; set => SetProperty(ref field, value); } = true;
     public bool IsAutoLyricsEnabled { get; set => SetProperty(ref field, value); } = true;

@@ -12,6 +12,7 @@ namespace WinUIMusicPlayer.State;
 /// <summary>General 领域偏好的可观察状态；不执行 I/O 或启动后台任务。</summary>
 public sealed class GeneralPreferencesState : ObservableObject
 {
+    public string DefaultEntryComboBoxTag { get; set => SetProperty(ref field, value); } = "AddFolder";
     public string DefaultPlayListComboBoxTag { get; set => SetProperty(ref field, value); } = "song";
     public bool IsFolderWatchEnabled { get; set => SetProperty(ref field, value); } = true;
     public string ArtistSplitSymbols { get; set => SetProperty(ref field, value); } = AppSettings.ArtistSplitSymbols;

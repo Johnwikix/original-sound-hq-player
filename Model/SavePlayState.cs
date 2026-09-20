@@ -6,6 +6,10 @@ namespace WinUIMusicPlayer.Model
     {
         public PlayMode PlayMode { get; set; } = PlayMode.ListLoop;
         public int? LastPlayedMusicId { get; set; }
+        public long[]? QueueEntryIds { get; set; }
+        public long[]? QueueOrderIds { get; set; }
+        public int[]? QueueMusicIds { get; set; }
+        public long CurrentQueueEntryId { get; set; }
         public double Volume { get; set; } = 50;
         public string SortOrder { get; set; } = "DefaultOrder";
         public bool HasWindowBounds { get; set; } = false;

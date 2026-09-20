@@ -6,6 +6,7 @@ namespace WinUIMusicPlayer.ViewModel
     {
         public Music? CurrentPlayingMusic { get; set => SetProperty(ref field, value); }
         public System.Collections.ObjectModel.ObservableCollection<Music> CurrentPlayingList { get; set => SetProperty(ref field, value); } = [];
+        public int GetCurrentIndex() => CurrentPlayingList.ToList().FindIndex(music => music.Id == CurrentPlayingMusic?.Id);
         public bool IsPlaying { get; set; }
         public bool IsPlaybackEngineReady { get; set => SetProperty(ref field, value); }
         public bool IsFolderWatchEnabled { get; set => SetProperty(ref field, value); } = true;
@@ -27,6 +28,10 @@ namespace WinUIMusicPlayer.ViewModel
 }
 namespace WinUIMusicPlayer.Services
 {
+    public sealed class PlaybackCoordinator(WinUIMusicPlayer.ViewModel.AppViewModel state, WinUIMusicPlayer.ViewModel.MusicBrowseViewModel browse)
+    {
+        public Task PlayAtAsync(int index) => browse.PlayMusic(state.CurrentPlayingList[index]);
+    }
     public sealed class BassPlayerCommandService(WinUIMusicPlayer.ViewModel.AppViewModel state)
     {
         public int Toggles, NextCalls;

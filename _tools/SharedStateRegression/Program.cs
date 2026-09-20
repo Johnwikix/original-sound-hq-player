@@ -25,6 +25,28 @@ static async Task RunAsync()
     state.IsKaraokeEnabled = false;
     Check(firstPage == 1 && secondPage == 1, "Shared value must notify both pages exactly once.");
 
+    var keys = new HotKeyState();
+    int keyNotifications = 0;
+    keys.PropertyChanged += (_, _) => keyNotifications++;
+    var shortcut = new List<string> { "Ctrl", "P" };
+    keys.PlayOrPauseShortcut = shortcut;
+    keys.PlayOrPauseShortcut = shortcut;
+    Check(keyNotifications == 1, "Shared shortcuts should not notify an unchanged reference twice.");
+    var editors = new EditorSessions();
+    int closedEditorStops = 0, remainingEditorStops = 0;
+    editors.Attach(() => { closedEditorStops++; return Task.CompletedTask; }).Dispose();
+    var editorGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+    editors.Attach(() => editorGate.Task);
+    editors.Attach(() => Task.FromException(new IOException("editor failure")));
+    editors.Attach(() => { remainingEditorStops++; return Task.CompletedTask; });
+    var editorStop = editors.StopAsync();
+    Check(!editorStop.IsCompleted, "Shutdown must wait for the actual editor task.");
+    editorGate.SetResult();
+    try { await editorStop; throw new Exception("Editor failure disappeared"); } catch (AggregateException) { }
+    Check(closedEditorStops == 0 && remainingEditorStops == 1, "Unloaded editors must not be retained; one failure must not skip another editor.");
+    await editors.StopAsync();
+    Console.WriteLine("PASS: shared shortcut notifications; editor unsubscribe, actual drain, failure isolation and idempotence.");
+
     var queue = new PlaybackQueueState();
     var first = new Music(1, "one.flac");
     var external = new Music(0, "external.flac");
@@ -39,6 +61,30 @@ static async Task RunAsync()
     Check(restored.Playing.Count == 4, "Canonical persistence must restore appended members.");
     Check(restored.IndexOf(null) == -1 && restored.IndexOf(new(0, "missing.flac")) == -1, "Null and Id=0 paths must remain distinct.");
     Console.WriteLine("PASS: shared notifications; random append/mode switch/restore; duplicates and external identities.");
+
+    var duplicates = new PlaybackQueueState();
+    duplicates.Replace([first, first, external]);
+    long secondEntry = duplicates.EntryIdAt(1);
+    duplicates.SelectEntry(secondEntry, first);
+    Check(duplicates.IndexOf(first) == 1, "Second occurrence must retain its cursor.");
+    duplicates.InsertNext(first, [external]);
+    Check(duplicates.EntryIdAt(1) == secondEntry && duplicates.Playing.Count == 4, "Insert must preserve occurrence identity.");
+    duplicates.Mode = PlayMode.RandomLoop;
+    Check(duplicates.EntryIdAt(duplicates.IndexOf(first)) == secondEntry, "Shuffle must keep the selected occurrence.");
+    var preciseRestore = new PlaybackQueueState();
+    preciseRestore.Replace(new(duplicates.Sequential));
+    preciseRestore.Mode = PlayMode.RandomLoop;
+    preciseRestore.RestoreEntries(duplicates.CaptureEntryIds(), duplicates.CaptureOrderIds(), duplicates.CaptureMusicIds(), secondEntry);
+    Check(preciseRestore.CurrentEntryId == secondEntry && preciseRestore.EntryIdAt(preciseRestore.IndexOf(first)) == secondEntry, "Restore must preserve duplicate cursor and shuffle order.");
+    Check(preciseRestore.CaptureOrderIds().SequenceEqual(duplicates.CaptureOrderIds()), "Random traversal order must survive restart.");
+    preciseRestore.Mode = PlayMode.ListLoop;
+    Check(preciseRestore.IndexOf(first) == 1, "Sequential mode must recover the same occurrence.");
+    preciseRestore.Sequential.RemoveAt(0);
+    Check(preciseRestore.IndexOf(first) == 0 && preciseRestore.CurrentEntryId == secondEntry, "Removing the first duplicate must preserve the second entry.");
+    var refreshedExternal = new Music(0, "external.flac");
+    preciseRestore.ReconcileLibrary(new Dictionary<int, Music> { [0] = refreshedExternal, [1] = first }, first);
+    Check(preciseRestore.CurrentEntryId == secondEntry && preciseRestore.IndexOf(first) == 0, "Library refresh must preserve current entry identity.");
+    Console.WriteLine("PASS: stable duplicate identity, remove, library refresh, shuffle order and precise restore.");
 
     int writes = 0, value = 0, saved = 0;
     var firstWrite = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -161,7 +207,23 @@ static async Task RunAsync()
     library.Browse.CurrentAlbumObj = new(7, "") { Album = "second" };
     await projections.UpdateSongCollectionsAsync(list, SongViewType.Album, m => m.Album == library.Browse.CurrentAlbumObj.Album);
     Check(list.Count == 1 && list[0].Id == 6, "Detail selection must be part of the query key.");
-    Console.WriteLine("PASS: production library projection cache, search/group/version invalidation and index refresh.");
+    library.Browse.SearchText = "";
+    await Task.Run(() => projections.UpdateSongCollectionsAsync(list, SongViewType.All));
+    Check(list.Count == 2, "Background callers must marshal capture and publication to the UI owner.");
+    library.Browse.SearchText = "missing";
+    var superseded = projections.UpdateSongCollectionsAsync(list, SongViewType.All);
+    library.Browse.SearchText = "";
+    var latest = projections.UpdateSongCollectionsAsync(list, SongViewType.All);
+    Check(ReferenceEquals(superseded, latest), "One target must share one active refresh barrier.");
+    await latest;
+    Check(list.Count == 2, "Latest pending search must win.");
+    library.Browse.SearchText = "missing";
+    var pendingProjection = projections.UpdateSongCollectionsAsync(list, SongViewType.All);
+    int fillsBeforeStop = list.FillCount;
+    await projections.StopAsync();
+    await pendingProjection;
+    Check(list.FillCount == fillsBeforeStop, "Stopping must suppress delayed list publication.");
+    Console.WriteLine("PASS: library cache, version invalidation, shared refresh barrier, latest search and stop suppression.");
 }
 
 sealed class TestContext : SynchronizationContext, IDisposable

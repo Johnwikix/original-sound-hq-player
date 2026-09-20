@@ -23,7 +23,7 @@
             TargetType="ListViewItem">
             <Setter Property="ContextFlyout">
                 <Setter.Value>
-                    <MenuFlyout extensions:MenuFlyoutExtensions.ItemsSource="{x:Bind ViewModel.MenuOptions, Mode=OneWay}" />
+                    <MenuFlyout extensions:MenuFlyoutExtensions.PrepareCommand="{x:Bind ViewModel.PrepareMenuCommand}" extensions:MenuFlyoutExtensions.ItemsSource="{x:Bind ViewModel.MenuOptions, Mode=OneWay}" />
                 </Setter.Value>
             </Setter>
         </Style>

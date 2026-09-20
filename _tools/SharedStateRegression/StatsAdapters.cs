@@ -5,12 +5,14 @@ namespace Microsoft.UI.Dispatching
     public enum DispatcherQueuePriority { Normal }
     public sealed class DispatcherQueue
     {
+        private readonly SynchronizationContext _context = SynchronizationContext.Current!;
+        public bool HasThreadAccess => ReferenceEquals(SynchronizationContext.Current, _context);
         public DispatcherQueueTimer Timer { get; } = new();
         public DispatcherQueueTimer CreateTimer() => Timer;
         public bool TryEnqueue(Action work) => TryEnqueue(DispatcherQueuePriority.Normal, work);
         public bool TryEnqueue(DispatcherQueuePriority priority, Action work)
         {
-            SynchronizationContext.Current!.Post(_ => work(), null);
+            _context.Post(_ => work(), null);
             return true;
         }
     }

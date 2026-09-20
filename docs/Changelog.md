@@ -2,6 +2,16 @@
 
 新条目加在最上方。
 
+## 2026-09-20 继续迁移窗口、队列与展示生命周期
+
+- `State/`、`Services/HotKeyService.cs`、`ShellService.cs`、`OutputDeviceService.cs`：共享快捷键、窗口和设备状态；原生注册、枚举与解绑移出 AppViewModel，退出等待枚举结束并屏蔽迟到结果。
+- `Services/SettingsCoordinator.cs`、`SettingsSnapshotFactory.cs`、`SettingsActions.cs`：设置效果和保存快照解除 AppViewModel 反向依赖，目录操作由设置命令服务承担；保留旧绑定名称和默认值。
+- `State/PlaybackQueueState.cs`、`Services/PlaybackCoordinator.cs`、`Model/SavePlayState.cs`：为重复歌曲建立独立条目身份，统一前后切歌及队列双击入口；保存随机顺序与游标，旧文件或不匹配的存档安全回退；库刷新批量保留条目身份。
+- `Services/LibraryBrowseCoordinator.cs`、`LibraryProjectionService.cs`：迁移库展示集合与刷新调度；UI 捕获字段快照，后台执行列表搜索/排序，每个目标合并请求、全局串行计算，停止后不发布结果，池数组可靠清空归还。
+- `Services/CoverPresentationService.cs`、`LyricsLoader.cs`、`LibraryTrackActions.cs`：封面、歌词展示及网络歌词任务移出根/浏览 VM，并纳入任务屏障；菜单打开时才准备歌单和 USB 子项，不再预先创建所有页面 VM。
+- `Services/EditorSessions.cs`、DSP/卷积/频响 VM、`SystemMediaControlsService.cs`：退出等待编辑器提交、导入/预设操作与频响计算；SMTC 只提交当前版本元数据，显式持有并释放封面原生流。
+- 验证：七组回归通过（播放切换 281/281）；本轮新增共享快捷键、重复条目恢复、编辑器等待/失败隔离、查询合并/停止发布回归。用户已通过上一轮人工验收；本轮 WinUI 菜单、设置即时退出、真实设备/SMTC 和 Release GC 对照仍需验收。
+
 ## 2026-09-20 动画文本空字形回调修复
 
 - `External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedTextBlock/Internals/ShapedText.cs`：跳过 `null` 和空字形数组，修复切换文本时 `DrawGlyphRun` 访问 `glyphs.Length` 引发的空引用异常。

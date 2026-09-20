@@ -53,6 +53,13 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
+        [RelayCommand]
+        private void PrepareMenu()
+        {
+            UpdateAlbumMenuOptionsPlayList();
+            UpDateUsbDeviceMenuflyout();
+        }
+
         public void UpDateUsbDeviceMenuflyout()
             => ToolUtils.UpdateUsbSendMenu(AlbumMenuOptions, TransmitFileToUsbCommand);
 

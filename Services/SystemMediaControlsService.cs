@@ -24,9 +24,20 @@ namespace WinUIMusicPlayer.Services
         }
 
         private PlaybackCommands? _commands;
+        private bool _stopping;
+        private long _mediaVersion;
+        private Task _mediaUpdate = Task.CompletedTask;
+        private InMemoryRandomAccessStream? _thumbnailStream;
+        public async Task StopAsync()
+        {
+            _stopping = true;
+            _mediaVersion++;
+            if (SystemMediaControls is not null) SystemMediaControls.IsEnabled = false;
+            await _mediaUpdate;
+        }
         public void Initialize(PlaybackCommands commands)
         {
-            if (mediaPlayer is not null) return;
+            if (_stopping || mediaPlayer is not null) return;
             _commands = commands;
             commands.ToggleCommand.CanExecuteChanged += CommandsChanged;
             commands.NextCommand.CanExecuteChanged += CommandsChanged;
@@ -104,6 +115,10 @@ namespace WinUIMusicPlayer.Services
 
         public void Dispose()
         {
+            _stopping = true;
+            _mediaVersion++;
+            _thumbnailStream?.Dispose();
+            _thumbnailStream = null;
             if (_commands is not null)
             {
                 _commands.ToggleCommand.CanExecuteChanged -= CommandsChanged;
@@ -130,29 +145,43 @@ namespace WinUIMusicPlayer.Services
         }
 
 
-        public async Task UpdateMediaInfo(string title, string artist, string album, byte[] cover = null)
+        public Task UpdateMediaInfo(string title, string artist, string album, byte[] cover = null)
         {
-            if (SystemMediaControls is null) return;
-            SystemMediaControls.DisplayUpdater.Type = MediaPlaybackType.Music;
-            SystemMediaControls.DisplayUpdater.MusicProperties.Title = title;
-            SystemMediaControls.DisplayUpdater.MusicProperties.Artist = artist;
-            SystemMediaControls.DisplayUpdater.MusicProperties.AlbumTitle = album;
-            if (cover is not null && cover.Length > 0)
+            if (_stopping || SystemMediaControls is null) return Task.CompletedTask;
+            return _mediaUpdate = UpdateMediaInfoCoreAsync(_mediaUpdate, ++_mediaVersion, title, artist, album, cover);
+        }
+
+        private async Task UpdateMediaInfoCoreAsync(Task previous, long version, string title, string artist, string album, byte[]? cover)
+        {
+            InMemoryRandomAccessStream? stream = null;
+            try
             {
-                try
+                await previous;
+                if (_stopping || version != _mediaVersion || SystemMediaControls is null) return;
+                RandomAccessStreamReference thumbnail;
+                if (cover is { Length: > 0 })
                 {
-                    SystemMediaControls.DisplayUpdater.Thumbnail = await ByteArrayToRandomAccessStreamReferenceAsync(cover);
+                    stream = new InMemoryRandomAccessStream();
+                    await stream.WriteAsync(cover.AsBuffer());
+                    stream.Seek(0);
+                    thumbnail = RandomAccessStreamReference.CreateFromStream(stream);
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, $"UpdateMediaInfo 设置专辑封面失败: {ex.Message}");
-                }
+                else thumbnail = RandomAccessStreamReference.CreateFromUri(new Uri("ms-appx:///Assets/Album.png"));
+                if (_stopping || version != _mediaVersion || SystemMediaControls is null) return;
+                var updater = SystemMediaControls.DisplayUpdater;
+                updater.Type = MediaPlaybackType.Music;
+                updater.MusicProperties.Title = title;
+                updater.MusicProperties.Artist = artist;
+                updater.MusicProperties.AlbumTitle = album;
+                updater.Thumbnail = thumbnail;
+                updater.Update();
+                var oldStream = _thumbnailStream;
+                _thumbnailStream = stream;
+                stream = null;
+                oldStream?.Dispose();
             }
-            else
-            {
-                SystemMediaControls.DisplayUpdater.Thumbnail = RandomAccessStreamReference.CreateFromUri(new Uri("ms-appx:///Assets/Album.png"));
-            }
-            SystemMediaControls.DisplayUpdater.Update();
+            catch (Exception ex) { _logger.LogError(ex, "更新 SMTC 媒体信息失败"); }
+            finally { stream?.Dispose(); }
         }
 
         public void UpdateTimelineProperties(TimeSpan currentPosition, TimeSpan totalDuration)
@@ -173,23 +202,5 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public static async Task<RandomAccessStreamReference?> ByteArrayToRandomAccessStreamReferenceAsync(byte[] imageBytes)
-        {
-            try
-            {
-                if (imageBytes is null || imageBytes.Length == 0)
-                    return null;
-
-                var memoryStream = new InMemoryRandomAccessStream();
-                await memoryStream.WriteAsync(imageBytes.AsBuffer());
-                memoryStream.Seek(0);
-                return RandomAccessStreamReference.CreateFromStream(memoryStream);
-            }
-            catch (Exception ex)
-            {
-                App.GetLogger<SystemMediaControlsService>().LogError(ex, "ByteArrayToRandomAccessStreamReferenceAsync 转换过程中出现错误");
-                return null;
-            }
-        }
     }
 }

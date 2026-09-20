@@ -12,6 +12,8 @@ namespace WinUIMusicPlayer.State;
 /// <summary>Appearance 领域偏好的可观察状态；不执行 I/O 或启动后台任务。</summary>
 public sealed class AppearancePreferencesState : ObservableObject
 {
+    public string ThemeType { get; set => SetProperty(ref field, value); } = "Default";
+    public bool IsHoverScrollEnabled { get; set => SetProperty(ref field, value); } = true;
     public bool UseImageDominantTheme { get; set => SetProperty(ref field, value); } = false;
     public bool IsFluidBackgroundEnabled { get; set => SetProperty(ref field, value); }
     public bool IsFogEffectEnabled { get; set => SetProperty(ref field, value); }

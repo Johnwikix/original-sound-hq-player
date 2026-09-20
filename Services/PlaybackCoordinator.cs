@@ -18,7 +18,13 @@ public sealed class PlaybackCoordinator(AppViewModel state, BassPlayerCommandSer
     private bool _registered;
     public event Action<Music, CancellationToken>? TrackStarted;
 
-    public Task PlayAsync(Music music)
+    public Task PlayAtAsync(int index)
+    {
+        if (index < 0 || index >= state.CurrentPlayingList.Count) return Task.CompletedTask;
+        return PlayAsync(state.CurrentPlayingList[index], state.State.Queue.EntryIdAt(index));
+    }
+
+    public Task PlayAsync(Music music, long entryId = 0)
     {
         if (_disposed || !state.CanStartPlayback || music is null) return Task.CompletedTask;
         if (!_registered)
@@ -26,10 +32,10 @@ public sealed class PlaybackCoordinator(AppViewModel state, BassPlayerCommandSer
             _registered = true;
             shutdown.RegisterCleanup(Dispose);
         }
-        return tasks.RunAsync(_ => PlayCoreAsync(music));
+        return tasks.RunAsync(_ => PlayCoreAsync(music, entryId));
     }
 
-    private async Task PlayCoreAsync(Music music)
+    private async Task PlayCoreAsync(Music music, long entryId)
     {
         if (_disposed || !state.CanStartPlayback) return;
         _presentation?.Cancel();
@@ -42,6 +48,7 @@ public sealed class PlaybackCoordinator(AppViewModel state, BassPlayerCommandSer
             await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
             {
                 if (_disposed || !state.CanStartPlayback || token.IsCancellationRequested) return;
+                state.State.Queue.SelectEntry(entryId, music);
                 state.CurrentPlayingMusic = music;
                 try { statistics.StartSession(music); }
                 catch (Exception ex) { logger.LogError(ex, "记录播放统计会话失败"); }

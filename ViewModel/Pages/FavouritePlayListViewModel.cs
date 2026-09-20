@@ -55,6 +55,13 @@ namespace WinUIMusicPlayer.ViewModel
             MenuOptions.Add(new() { Title = ToolUtils.GetString("FlyoutDeleteItem"), Tag = "DeleteMenuItem", Command = DeleteMenuItemCommand });
         }
 
+        [RelayCommand]
+        private void PrepareMenu()
+        {
+            UpdateAlbumMenuOptionsPlayList();
+            UpDateUsbDeviceMenuflyout();
+        }
+
         public void UpDateUsbDeviceMenuflyout()
             => ToolUtils.UpdateUsbSendMenu(MenuOptions, TransmitFileToUsbCommand);
 

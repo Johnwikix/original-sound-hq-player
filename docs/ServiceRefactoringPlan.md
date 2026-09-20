@@ -33,13 +33,24 @@
 - 静态核对 71 个迁移偏好的默认值与 HEAD 完全一致；新增 `GetString("Error")` 在六种语言均有独立键。构建/替身测试不证明原生 WinUI、音频设备或移动磁盘实机表现。
 - 未采集同包/同库/同设备的 Release ETW、GC/分配和交互延迟对照；上述数字为回归场景的调度次数，不是产品性能收益百分比。
 
-### 仍需迁移/实机验收
+### 2026-09-20 人工验收后继续迁移
 
-1. AppViewModel 仍有窗口/快捷键、设备枚举、库投影调度与部分兼容入口；SettingsCoordinator 通过显式注入的兼容门面调用现有展示/热键适配，尚未完全去除这个反向依赖。静态 AppSettings/AppData 也尚未全部退场。
-2. LibraryProjectionService 已实现查询键复用及隐藏页按需刷新，但仍须连同缓存页面导航做 WinUI 验收；大库过滤/排序仍在 UI 调用线程执行，后台稳定快照计算需结合实测继续实施。
-3. 队列重复成员得以保留，但同一 Music 引用重复出现时，当前歌曲定位仍沿用首次匹配；逐条目稳定 ID 与精确游标恢复仍需完成。
-4. Dsp/卷积编辑器的既有打开/关闭提交逻辑及用户已验收草稿语义保持；完整编辑器退出提交登记、所有原生资源/SMTC 在途操作的统一生命周期仍需继续梳理。
-5. 原生退出致命错误仍需转储与实机复现；桌面歌词开关、拖动设置后立即退出、大库切页、USB 拔盘、长时间播放和 GC 对照尚未完成实际设备验证。
+用户确认上一轮初步人工验收未发现问题。本轮继续实现：
+
+1. **状态与依赖**：新增 HotKeys、Shell、LibraryViews、Presentation 稳定子状态；快捷键列表、全屏/最大化、设备列表/选择、库绑定集合、当前封面/歌词只保留一个可写源。SettingsCoordinator、SettingsSnapshotFactory 不再依赖 AppViewModel；computed 通知由兼容门面自身转发，业务服务不回调根 VM 的属性通知。
+2. **平台边界**：HotKeyService、ShellService、OutputDeviceService、SettingsActions 分别拥有原生注册、窗口适配、枚举和目录操作。启动显式挂接、停止显式解绑；设备刷新同享在途任务，退出等待真实完成，迟到结果不能发布。
+3. **队列身份**：独立 long 条目 ID 区分同一个 Music 对象的重复出现；切歌、上一首和两个队列控件的双击按条目选择。JSON 增加规范条目 ID、随机顺序、音乐 ID 校验和游标；保留旧字段，旧档案或库成员不匹配时退回旧恢复方式。库刷新按条目批量替换引用/剔除失效项，保留当前曲和顺序，避免逐项通知引发反复重建。
+4. **库与菜单**：LibraryBrowseCoordinator 管理搜索防抖和当前页刷新。歌曲列表的过滤输入及排序字段在 UI 上取稳定值，后台不读取可变 Music 字段；每目标一个在途任务和一个最新参数，全局一个计算门，避免多个页面并行扫描/排序。结果发布前检查查询键和停止状态，所有引用型池缓冲在 finally 清空归还。旧队列加载从逐 ID 扫全库改为一次建索引。菜单在 Opening 前准备，不再从根 VM 解析所有页面。
+5. **展示管线**：CoverPresentationService、LyricsLoader 和 LyricsPresentationService 分别拥有封面/调色板、歌词解析与广播；浏览 VM 保留页面导航及交互转发。网络歌词和目录重扫由 LibraryTrackActions 纳入 ApplicationTasks；失败显示现有错误提示。
+6. **编辑器与 SMTC**：EditorSessions 只保留已打开编辑器的 stop 委托，正常卸载后移除；关闭和退出等待已开始的导入、设备绑定、预设写入、最终提交及频响任务。频响 CTS 由实际任务结束时释放，昂贵计算串行。SMTC 版本检查覆盖 await 前后，替换元数据时转移封面流所有权，停止等待实际写入后才释放 MediaPlayer。
+
+### 当前兼容边界与验收状态
+
+- AppViewModel 保留旧 XAML/API 门面、许可命令、部分库写入和播放交互适配；数据库的旧恢复/库发布代码仍调用该门面。已有 AppSettings / AppData 继续适配旧音频与持久化消费者。本轮没有把“所有旧类型与调用已删除”作为完成声明；这些冷路径后续可逐个替换，不能把它们重新变成第二份可绑定状态。
+- 三类分组投影仍按版本缓存、按需在 UI 线程构建；本轮后台化的是歌曲列表的搜索与排序。进一步共用跨页面快照、分组后台化及曲线点快照复用，应以 Release 大库/拖动测量为依据，避免没有收益证据的额外缓存和池化。
+- 新增回归链接生产队列、EditorSessions、共享快捷键及 LibraryProjectionService，覆盖重复条目删除/随机/恢复/库刷新、编辑器等待真实完成和逐项失败隔离、查询单飞/最新参数/停止后不发布；UI 调度替身保留线程切换及异步完成边界。
+- LifecycleRegression、FolderScanRegression、SettingsPersistenceRegression、LyricsCoverRegression、CurvePresetRegression、PlaybackSwitchRegression、SharedStateRegression 均通过；播放切换 281/281。本轮需重新做 WinUI 菜单键鼠操作、重复曲目选择、切主题、设置拖动后立即退出、DSP 对话框打开时退出、SMTC 连续切歌、实际输出设备与 USB 验收。桩测试不能替代这些验证。
+- 尚无 Release ETW/GC 分配、长时间保留或交互延迟对照数据，因此没有声称零分配、无泄漏或具体加速比例。TODO 4 的概率原生崩溃仍保留待转储定位。
 
 下面的审查位置和行数记录的是**实施前基线**，并不表示全部问题仍保持原样；上述记录是当前实施状态。
 

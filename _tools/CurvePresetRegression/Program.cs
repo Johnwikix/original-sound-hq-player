@@ -499,3 +499,22 @@ coldIpc.ChangeOutput("cold-a", coldIpc.CurrentDspState!.State.OutputGeneration);
 Check(coldIpc.PreviewCount == previewsBeforeFeedback, "Ordinary DSP feedback must not create a preview notification loop.");
 await delayedUi.CloseAsync();
 Console.WriteLine("PASS: first-output/UI interleaving and no repeated preview on ordinary DSP notifications.");
+
+// Closing an editor is a real barrier, including a commit that started before shutdown.
+var shutdownDatabase = new MusicDatabaseService();
+var shutdownEditor = new ConvolutionCurveViewModel(ipc, store, shutdownDatabase, new LicenseService());
+await shutdownEditor.OpenAsync();
+shutdownEditor.MovePoint(0, 20, 3);
+shutdownDatabase.SaveGate = new();
+var shutdownWrite = shutdownEditor.FlushAsync();
+var shutdownBarrier = shutdownEditor.StopAsync();
+Check(!shutdownBarrier.IsCompleted, "Editor stop must wait for the actual settings write.");
+shutdownDatabase.SaveGate.SetResult();
+await shutdownWrite;
+await shutdownBarrier;
+Check(!shutdownEditor.CanEdit, "Stopped editor must reject new edits.");
+var stoppingResponse = new FrequencyResponseViewModel();
+stoppingResponse.Load();
+await stoppingResponse.StopAsync();
+Check(stoppingResponse.Current is null, "Frequency response stop must drain work and release its preview.");
+Console.WriteLine("PASS: real curve shutdown waits for slow save; stopped editing rejected; frequency task and cache drained.");

@@ -170,7 +170,14 @@ public partial class DspSettingsViewModel : ObservableObject
     public bool ImportAvailable => !ImportBusy;
     public bool ImportBusy { get => field; private set { if (SetProperty(ref field, value)) OnPropertyChanged(nameof(ImportAvailable)); } }
 
-    public async Task ImportImpulseAsync(string path)
+    private Task _importTask = Task.CompletedTask;
+    private Task _loadTask = Task.CompletedTask;
+    public Task ImportImpulseAsync(string path)
+    {
+        if (_stopping || !_importTask.IsCompleted) return _importTask;
+        return _importTask = ImportImpulseCoreAsync(path);
+    }
+    private async Task ImportImpulseCoreAsync(string path)
     {
         if (ImportBusy || ConvolutionRestricted) return;
         ImportBusy = true;
@@ -188,7 +195,7 @@ public partial class DspSettingsViewModel : ObservableObject
                 try { ImpulseResponse.Read(destination); }
                 catch { File.Delete(destination); throw; }
             });
-            if (ConvolutionRestricted)
+            if (_stopping || ConvolutionRestricted)
             {
                 File.Delete(destination);
                 Directory.Delete(directory);
@@ -247,7 +254,7 @@ public partial class DspSettingsViewModel : ObservableObject
     /// <summary>先订阅再读取缓存，避免首次读取与订阅之间遗漏通知。</summary>
     public Task OnViewLoadedAsync()
     {
-        if (_loaded) return Task.CompletedTask;
+        if (_stopping || _loaded) return Task.CompletedTask;
         _loaded = true;
         _lastRevision = 0;
         _ipc.DspStateChanged += OnDspStateChanged;
@@ -257,7 +264,7 @@ public partial class DspSettingsViewModel : ObservableObject
         RefreshCorrectionSyncState();
         LoadValues();
         ApplyLatestState();
-        return RefreshCorrectionDevicesAsync();
+        return _loadTask = RefreshCorrectionDevicesAsync();
     }
 
     private void OnDspStateChanged() => _queue.TryEnqueue(ApplyLatestState);
@@ -280,6 +287,13 @@ public partial class DspSettingsViewModel : ObservableObject
     }
 
     /// <summary>视图卸载：取消状态订阅并提交未落盘的修改。</summary>
+    public async Task StopAsync()
+    {
+        _stopping = true;
+        await OnViewUnloadedAsync();
+        if (_dirty) throw new IOException("DSP editor final commit failed.");
+    }
+
     public async Task OnViewUnloadedAsync()
     {
         _loaded = false;
@@ -287,7 +301,16 @@ public partial class DspSettingsViewModel : ObservableObject
         _ipc.CorrectionSyncChanged -= OnCorrectionSyncChanged;
         _license.StateChanged -= OnLicenseStateChanged;
         _commitTimer.Stop();
-        await CommitAsync();
+        try
+        {
+        await Task.WhenAll(_importTask, _loadTask,
+                RefreshCorrectionDevicesCommand.ExecutionTask ?? Task.CompletedTask,
+                BindCorrectionCommand.ExecutionTask ?? Task.CompletedTask,
+                LoadCorrectionCommand.ExecutionTask ?? Task.CompletedTask,
+                RemoveCorrectionCommand.ExecutionTask ?? Task.CompletedTask,
+                RetryCorrectionCommand.ExecutionTask ?? Task.CompletedTask);
+        }
+        finally { await CommitAsync(); }
     }
 
     public async Task ResetAsync()
@@ -428,11 +451,28 @@ public partial class DspSettingsViewModel : ObservableObject
         _commitTimer.Start();
     }
 
-    private async Task CommitAsync()
+    private Task _commitTask = Task.CompletedTask;
+    private Task CommitAsync()
     {
-        if (!_dirty) return;
-        _dirty = false;
-        _ipc.UpdateDsp();
-        await _database.SaveSettingAsync();
+        if (!_commitTask.IsCompleted) return _commitTask;
+        return _commitTask = CommitCoreAsync();
+    }
+    private async Task CommitCoreAsync()
+    {
+        while (_dirty)
+        {
+            _dirty = false;
+            try
+            {
+                _ipc.UpdateDsp();
+                await _database.SaveSettingAsync(throwOnError: true);
+            }
+            catch
+            {
+                _dirty = true;
+                System.Diagnostics.Trace.TraceError("DSP preferences commit failed; edits retained for retry.");
+                return;
+            }
+        }
     }
 }

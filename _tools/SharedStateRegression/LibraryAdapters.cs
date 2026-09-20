@@ -43,8 +43,18 @@ namespace CommunityToolkit.WinUI
     {
         public static Task EnqueueAsync(this Microsoft.UI.Dispatching.DispatcherQueue dispatcher, Action work)
         {
-            work();
-            return Task.CompletedTask;
+            return dispatcher.EnqueueAsync(() => { work(); return Task.CompletedTask; });
+        }
+        public static Task EnqueueAsync(this Microsoft.UI.Dispatching.DispatcherQueue dispatcher, Func<Task> work)
+        {
+            if (dispatcher.HasThreadAccess) return work();
+            var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            dispatcher.TryEnqueue(async () =>
+            {
+                try { await work(); completion.SetResult(); }
+                catch (Exception ex) { completion.SetException(ex); }
+            });
+            return completion.Task;
         }
     }
 }

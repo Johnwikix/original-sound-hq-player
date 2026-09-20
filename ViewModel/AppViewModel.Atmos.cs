@@ -9,22 +9,17 @@ namespace WinUIMusicPlayer.ViewModel;
 
 public partial class AppViewModel
 {
-    public ObservableCollection<BassOutputDevice> AtmosDevices { get; } = new();
+    public ObservableCollection<BassOutputDevice> AtmosDevices => State.Output.AtmosDevices;
     public string AtmosEndpointId
     {
-        get => field;
+        get => State.Preferences.Audio.AtmosEndpointId;
         set
         {
             if (value == null) return;
-            if (!SetProperty(ref field, value)) return;
-            OnPropertyChanged(nameof(SelectedAtmosDevice));
-            if (IsInitialized)
-            {
-                _ = _musicDatabaseService.SaveSettingAsync();
-                AppSettings.OnOutputSettingsUpdated();
-            }
+            if (State.Preferences.Audio.AtmosEndpointId == value) return;
+            State.Preferences.Audio.AtmosEndpointId = value;
         }
-    } = "";
+    }
 
     public BassOutputDevice? SelectedAtmosDevice
     {
@@ -36,7 +31,7 @@ public partial class AppViewModel
         }
         set
         {
-            if (!_isLoadingDevices && value != null) AtmosEndpointId = value.EndpointId ?? "";
+            if (!State.Output.IsLoadingDevices && value != null) AtmosEndpointId = value.EndpointId ?? "";
         }
     }
 
@@ -57,22 +52,6 @@ public partial class AppViewModel
         if (reason.Length != 0) text += " " + reason;
         if (AtmosStatusText == text) return;
         AtmosStatusText = text;
-    }
-
-    private void RefreshAtmosDevices()
-    {
-        AtmosDevices.Clear();
-        AtmosDevices.Add(new BassOutputDevice { EndpointId = "", Name = ToolUtils.GetString("AtmosCurrentDevice") });
-        bool found = string.IsNullOrEmpty(AtmosEndpointId);
-        foreach (var device in BassOutputDevices)
-        {
-            if (device.OutputMode != "WasapiShared" || string.IsNullOrEmpty(device.EndpointId)) continue;
-            AtmosDevices.Add(device);
-            found |= string.Equals(device.EndpointId, AtmosEndpointId, StringComparison.OrdinalIgnoreCase);
-        }
-        if (!found)
-            AtmosDevices.Add(new BassOutputDevice { EndpointId = AtmosEndpointId, Name = ToolUtils.GetString("AtmosSavedDeviceUnavailable") });
-        OnPropertyChanged(nameof(SelectedAtmosDevice));
     }
 
     [RelayCommand]

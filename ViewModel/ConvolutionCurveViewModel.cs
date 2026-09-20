@@ -22,7 +22,8 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     private readonly DispatcherQueue _queue;
     private readonly DispatcherQueueTimer _timer;
     private readonly List<CurvePoint> _points;
-    private bool _syncing, _open;
+    private bool _syncing, _open, _stopped;
+    private Task _openTask = Task.CompletedTask;
     private string? _editorOutputId;
     private long _editorOutputGeneration;
     private bool _deviceMode;
@@ -38,7 +39,7 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
     public CurvePoint[] Points => _points.ToArray();
     public string TitleText => ToolUtils.GetString("CurveEditorTitle");
     public string CloseText => ToolUtils.GetString("CloseButton");
-    public bool CanEdit => !_license.IsFeatureRestricted(LicenseFeature.Convolution);
+    public bool CanEdit => !_stopped && !_license.IsFeatureRestricted(LicenseFeature.Convolution);
     public bool IsOfflineEditing => _offlineEditing;
     public string OfflineEditingText => ToolUtils.GetString("CurveOfflineEditing");
     public string PresetPlaceholder => ToolUtils.GetString(Presets.Count > 0 ? "CurveCustom" : "CurvePresetEmpty");
@@ -103,7 +104,12 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
         _timer.Tick += async (_, _) => await FlushAsync();
         SyncNodes();
     }
-    public async Task OpenAsync()
+    public Task OpenAsync()
+    {
+        if (_stopped || _open) return _openTask;
+        return _openTask = OpenCoreAsync();
+    }
+    private async Task OpenCoreAsync()
     {
         _offlineEditing = false;
         _deviceMode = false;
@@ -141,9 +147,31 @@ public sealed partial class ConvolutionCurveViewModel : ObservableObject
         else NotifyPresetActions();
     }
 
+    public async Task StopAsync()
+    {
+        _stopped = true;
+        _timer.Stop();
+        _open = false;
+        _ipc.DspStateChanged -= PlaybackChanged;
+        _license.StateChanged -= LicenseChanged;
+        AppSettings.AudioResponseChanged -= SettingsChanged;
+        await Task.WhenAll(_openTask,
+            SavePresetCommand.ExecutionTask ?? Task.CompletedTask,
+            UpdatePresetCommand.ExecutionTask ?? Task.CompletedTask,
+            DeletePresetCommand.ExecutionTask ?? Task.CompletedTask,
+            ApplyPresetCommand.ExecutionTask ?? Task.CompletedTask);
+        await FlushAsync();
+        if (_dirty) throw new System.IO.IOException("Curve editor final commit failed.");
+    }
+
     public async Task<bool> CloseAsync()
     {
         _timer.Stop();
+        await Task.WhenAll(_openTask,
+            SavePresetCommand.ExecutionTask ?? Task.CompletedTask,
+            UpdatePresetCommand.ExecutionTask ?? Task.CompletedTask,
+            DeletePresetCommand.ExecutionTask ?? Task.CompletedTask,
+            ApplyPresetCommand.ExecutionTask ?? Task.CompletedTask);
         await FlushAsync();
         if (_dirty) return false;
         _open = false;

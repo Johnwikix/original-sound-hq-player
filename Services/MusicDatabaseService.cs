@@ -320,14 +320,10 @@ namespace WinUIMusicPlayer.Services
             }
             var musicIds = ParseCsvIntList(playListState.PlayListMusicIds);
             var musicList = new List<Music>(musicIds.Count);
+            var byId = new Dictionary<int, Music>();
+            foreach (var music in AllMusicList) byId.TryAdd(music.Id, music);
             foreach (var musicId in musicIds)
-            {
-                var music = AllMusicList.FirstOrDefault(m => m.Id == musicId);
-                if (music is not null)
-                {
-                    musicList.Add(music);
-                }
-            }
+                if (byId.TryGetValue(musicId, out var music)) musicList.Add(music);
             return musicList;
         }
 
@@ -982,6 +978,8 @@ namespace WinUIMusicPlayer.Services
                     playState.LastPlayedMusicId = AppViewModel.SongsSource[0].Id;
                 }
                 AppViewModel.CurrentPlayMode = playState.PlayMode;
+                AppViewModel.State.Queue.RestoreEntries(playState.QueueEntryIds, playState.QueueOrderIds,
+                    playState.QueueMusicIds, playState.CurrentQueueEntryId);
                 AppViewModel.CurrentPlayingMusic = LoadCurrentPlayingMusic(playState.LastPlayedMusicId);
                 AppViewModel.Volume = playState.Volume;
                 AppViewModel.TempVolume = playState.Volume;

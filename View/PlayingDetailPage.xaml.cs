@@ -343,34 +343,16 @@ namespace WinUIMusicPlayer.View
         }
         private void UpdateCurrentPlayList()
         {
-            if (ViewModel.AppViewModel.CurrentPlayingList is not null)
-            {
-                if (ViewModel.AppViewModel.CurrentPlayingMusic is not null)
-                {
-                    var selectedMusic = ViewModel.AppViewModel.CurrentPlayingList.AsValueEnumerable().FirstOrDefault(music =>
-                    music.Id == ViewModel.AppViewModel.CurrentPlayingMusic.Id);
-
-                    if (selectedMusic is not null)
-                    {
-                        _ = Task.Delay(100).ContinueWith(_ =>
-                        {
-                            DispatcherQueue.TryEnqueue(() =>
-                            {
-                                CurrentPlayListViewPlayingDetail.SelectedItem = selectedMusic;
-                                CurrentPlayListViewPlayingDetail.ScrollIntoView(selectedMusic);
-                            });
-                        });
-                    }
-                }
-            }
+            int index = ViewModel.AppViewModel.GetCurrentIndex();
+            CurrentPlayListViewPlayingDetail.SelectedIndex = index;
+            if (index < 0) return;
+            if (CurrentPlayListViewPlayingDetail.ContainerFromIndex(index) is FrameworkElement container)
+                container.StartBringIntoView();
+            else CurrentPlayListViewPlayingDetail.ScrollIntoView(ViewModel.AppViewModel.CurrentPlayingList[index]);
         }
         private void CurrentPlayListViewPlayingDetail_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
         {
-            var selectedMusic = CurrentPlayListViewPlayingDetail.SelectedItem as Music;
-            if (selectedMusic is not null)
-            {
-                _ = App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(music: selectedMusic, IsChangeList: false);
-            }
+            _ = App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(CurrentPlayListViewPlayingDetail.SelectedIndex);
         }
 
         private void VolumeSlider_PointerEntered(object sender, PointerRoutedEventArgs e)

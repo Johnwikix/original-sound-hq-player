@@ -7,6 +7,7 @@ namespace WinUIMusicPlayer.State;
 public sealed class PlaybackState : ObservableObject
 {
     public WinUIMusicPlayer.Model.Music? CurrentPlayingMusic { get; internal set => SetProperty(ref field, value); }
+    public double Volume { get; set => SetProperty(ref field, value); } = 50;
     public bool IsPlaying { get; internal set => SetProperty(ref field, value); }
     public string PlayTimeText { get; set => SetProperty(ref field, value); } = "00:00/00:00";
     public double ProgressSliderMax { get; set => SetProperty(ref field, value); } = 100;

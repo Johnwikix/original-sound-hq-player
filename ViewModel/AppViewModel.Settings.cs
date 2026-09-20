@@ -1,4 +1,4 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
+using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -21,7 +21,6 @@ using WinUIMusicPlayer.DesktopLyrics;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
-using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 using ZLinq;
 
@@ -29,8 +28,7 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class AppViewModel
     {
-        public bool IsRealDevceChange { get; set; } = true;
-        private bool _isLoadingDevices;
+        public bool IsRealDevceChange { get => State.Output.IsRealDeviceChange; set => State.Output.IsRealDeviceChange = value; }
         public bool EnableLightWave { get => State.Preferences.EnableLightWave; set => State.Preferences.EnableLightWave = value; }
         public AnimatedWin2dControls.Impressionist.PaletteAlgorithm PaletteAlgorithm { get => State.Preferences.PaletteAlgorithm; set => State.Preferences.PaletteAlgorithm = value; }
         public int PaletteAlgorithmIndex
@@ -51,15 +49,7 @@ namespace WinUIMusicPlayer.ViewModel
             (int)AnimatedWin2dControls.BackgroundShaderMode.ChromaticResonance; // 枚举尾成员=最大合法索引
         public int CoverSize { get => State.Preferences.CoverSize; set => State.Preferences.CoverSize = value; }
 
-        public bool IsHoverScrollEnabled
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value) && IsInitialized)
-                    _ = _musicDatabaseService.SaveSettingAsync();
-            }
-        } = true;
+        public bool IsHoverScrollEnabled { get => State.Preferences.IsHoverScrollEnabled; set => State.Preferences.IsHoverScrollEnabled = value; }
 
         public bool IsWin2dAnimatedText { get => State.Preferences.IsWin2dAnimatedText; set => State.Preferences.IsWin2dAnimatedText = value; }
 
@@ -81,108 +71,16 @@ namespace WinUIMusicPlayer.ViewModel
 
         public int AppHeight { get => State.Preferences.AppHeight; set => State.Preferences.AppHeight = value; }
 
-        public string DefaultEntryComboBoxTag
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    OnDefaultEntryComboBoxTagChanged(value);
-                }
-            }
-        } = "AddFolder";
+        public string DefaultEntryComboBoxTag { get => State.Preferences.DefaultEntryComboBoxTag; set => State.Preferences.DefaultEntryComboBoxTag = value; }
 
         public string DefaultPlayListComboBoxTag { get => State.Preferences.DefaultPlayListComboBoxTag; set => State.Preferences.DefaultPlayListComboBoxTag = value; }
 
-        public ObservableCollection<BassOutputDevice> BassOutputDevices
-        {
-            get => field;
-            set => SetProperty(ref field, value);
-        } = new();
-
-        public BassOutputDevice SelectedDevice
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (value is not null)
-                    {
-                        if (IsRealDevceChange)
-                        {
-                            if (IsInitialized)
-                            {
-                                if (value.OutputMode != "ASIO")
-                                {
-                                    AppSettings.BassOutputDeviceId = value.Id;
-                                    AppSettings.WasapiEndpointId = value.EndpointId;
-                                }
-                                else
-                                {
-                                    AppSettings.BassASIODeviceId = value.AsioId;
-                                }
-                                AppSettings.DeviceName = value.Name;
-                                AppSettings.OutputMode = value.OutputMode;
-                                _ = _musicDatabaseService.SaveSettingAsync();
-                                AppSettings.OnOutputSettingsChanged();
-                            }
-                        }
-                        else
-                        {
-                            IsRealDevceChange = true;
-                        }
-                    }
-                }
-            }
-        }
+        public ObservableCollection<BassOutputDevice> BassOutputDevices { get => State.Output.BassOutputDevices; set => State.Output.BassOutputDevices = value; }
+        public BassOutputDevice SelectedDevice { get => State.Output.SelectedDevice; set => State.Output.SelectedDevice = value; }
 
         public string BackdropType { get => State.Preferences.BackdropType; set => State.Preferences.BackdropType = value; }
 
-        public string ThemeType
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.AppTheme = value;
-                    try
-                    {
-                        switch (value)
-                        {
-                            case "Default":
-                                IsDarkMode = !ToolUtils.GetIsLightTheme();
-                                AppSettings.ElementTheme = ElementTheme.Default;
-                                break;
-                            case "Dark":
-                                IsDarkMode = true;
-                                AppSettings.ElementTheme = ElementTheme.Dark;
-                                break;
-                            case "Light":
-                                IsDarkMode = false;
-                                AppSettings.ElementTheme = ElementTheme.Light;
-                                break;
-                            default:
-                                IsDarkMode = !ToolUtils.GetIsLightTheme();
-                                AppSettings.ElementTheme = ElementTheme.Default;
-                                break;
-                        }
-                        App.MainWindow?.SetAppTheme();
-                        if (IsInitialized)
-                        {
-                            App.Services.GetRequiredService<MusicBrowseViewModel>().ThemeChangedUpdateCover();
-                            _ = _musicDatabaseService.SaveSettingAsync();
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, ex.Message);
-                    }
-                }
-            }
-        } = "Default";
+        public string ThemeType { get => State.Preferences.ThemeType; set => State.Preferences.ThemeType = value; }
 
         public bool IsDarkMode { get => State.Preferences.IsDarkMode; set => State.Preferences.IsDarkMode = value; }
 
@@ -204,11 +102,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public FontInfo FontFamily { get => State.Preferences.FontFamily; set => State.Preferences.FontFamily = value; }
 
-        public bool IsColorPickerVisible
-        {
-            get => field;
-            set => SetProperty(ref field, value);
-        } = false;
+        public bool IsColorPickerVisible { get => State.Shell.IsColorPickerVisible; set => State.Shell.IsColorPickerVisible = value; }
 
         public Color CustomColor { get => State.Preferences.CustomColor; set => State.Preferences.CustomColor = value; }
 
@@ -218,21 +112,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public double DesktopLyricsFontSize { get => State.Preferences.DesktopLyricsFontSize; set => State.Preferences.DesktopLyricsFontSize = value; }
 
-        public FontInfo DesktopLyricsFontFamily
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value) && value is not null)
-                {
-                    AppSettings.DesktopLyricsFontFamily = value.FontFamily.Source;
-                    if (IsInitialized)
-                    {
-                        ScheduleDesktopLyricsStyleCommit();
-                    }
-                }
-            }
-        }
+        public FontInfo DesktopLyricsFontFamily { get => State.Preferences.DesktopLyricsFontFamily; set => State.Preferences.DesktopLyricsFontFamily = value; }
 
         public Color DesktopLyricsColor { get => State.Preferences.DesktopLyricsColor; set => State.Preferences.DesktopLyricsColor = value; }
 
@@ -322,7 +202,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public bool IsDopEnabled
         {
-            get => field;
+            get => State.Preferences.Audio.IsDopEnabled;
             set
             {
                 if (!DsdBitstreamAllowed)
@@ -331,20 +211,13 @@ namespace WinUIMusicPlayer.ViewModel
                     OnPropertyChanged(nameof(IsDopEnabled));
                     return;
                 }
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        AppSettings.OnOutputSettingsUpdated();
-                    }
-                }
+                SetAudioPreference(nameof(IsDopEnabled), value);
             }
         }
 
         public bool ExperimentalSurround51
         {
-            get => field;
+            get => State.Preferences.Audio.ExperimentalSurround51;
             set
             {
                 if (value && !Surround51Allowed)
@@ -352,17 +225,13 @@ namespace WinUIMusicPlayer.ViewModel
                     OnPropertyChanged(nameof(ExperimentalSurround51));
                     return;
                 }
-                if (SetProperty(ref field, value) && IsInitialized)
-                {
-                    _ = _musicDatabaseService.SaveSettingAsync();
-                    AppSettings.OnOutputSettingsUpdated();
-                }
+                SetAudioPreference(nameof(ExperimentalSurround51), value);
             }
         }
 
         public bool ExperimentalAtmosPassthrough
         {
-            get => field;
+            get => State.Preferences.Audio.ExperimentalAtmosPassthrough;
             set
             {
                 if (value && !AtmosPassthroughAllowed)
@@ -370,12 +239,29 @@ namespace WinUIMusicPlayer.ViewModel
                     OnPropertyChanged(nameof(ExperimentalAtmosPassthrough));
                     return;
                 }
-                if (SetProperty(ref field, value) && IsInitialized)
-                {
-                    _ = _musicDatabaseService.SaveSettingAsync();
-                    AppSettings.OnOutputSettingsUpdated();
-                }
+                SetAudioPreference(nameof(ExperimentalAtmosPassthrough), value);
             }
+        }
+
+        private bool SetAudioPreference(string name, bool value)
+        {
+            var audio = State.Preferences.Audio;
+            switch (name)
+            {
+                case nameof(IsDopEnabled):
+                    if (audio.IsDopEnabled == value) return false;
+                    audio.IsDopEnabled = value;
+                    break;
+                case nameof(ExperimentalSurround51):
+                    if (audio.ExperimentalSurround51 == value) return false;
+                    audio.ExperimentalSurround51 = value;
+                    break;
+                case nameof(ExperimentalAtmosPassthrough):
+                    if (audio.ExperimentalAtmosPassthrough == value) return false;
+                    audio.ExperimentalAtmosPassthrough = value;
+                    break;
+            }
+            return true;
         }
 
         public bool IsFadeEnabled { get => State.Preferences.IsFadeEnabled; set => State.Preferences.IsFadeEnabled = value; }
@@ -431,414 +317,22 @@ namespace WinUIMusicPlayer.ViewModel
 
         public bool IsTrimAfterPlaybackEnabled { get => State.Preferences.IsTrimAfterPlaybackEnabled; set => State.Preferences.IsTrimAfterPlaybackEnabled = value; }
 
-        public bool HasGlobalHotKeyConflict
-        {
-            get => field;
-            private set => SetProperty(ref field, value);
-        } = false;
-
-        public string GlobalHotKeyConflictTitle
-        {
-            get => field;
-            private set => SetProperty(ref field, value);
-        } = string.Empty;
-
-        private void OnGlobalHotKeyConflictsChanged(object? sender, EventArgs e)
-        {
-            bool any = GlobalHotKeyHook.Conflicts.Count > 0;
-            if (HasGlobalHotKeyConflict != any)
-            {
-                HasGlobalHotKeyConflict = any;
-            }
-            if (any)
-            {
-                string format = ToolUtils.GetString("GlobalHotKeyConflictTitleFormat");
-                string list = string.Join(", ", GlobalHotKeyHook.Conflicts.Select(GlobalHotKeyHook.GetDisplayName));
-                GlobalHotKeyConflictTitle = string.Format(format, list);
-            }
-            else
-            {
-                GlobalHotKeyConflictTitle = string.Empty;
-            }
-        }
-
-        public List<string> PlayOrPauseShortcut
-        {
-            get;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        if (EnableGlobalHotKey)
-                        {
-                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.PlayOrPauseSong, value, () =>
-                            {
-                                App.Services.GetRequiredService<PlaybackCommands>().ToggleCommand.Execute(null);
-                            });
-                        }
-                    }
-                }
-            }
-        } = new List<string> { "Ctrl", "Alt", "P" };
-
-        public List<string> NextSongShortcut
-        {
-            get;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        if (EnableGlobalHotKey)
-                        {
-                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.NextSong, value, () =>
-                            {
-                                App.Services.GetRequiredService<PlaybackCommands>().NextCommand.Execute(null);
-                            });
-                        }
-                    }
-                }
-            }
-        } = new List<string> { "Ctrl", "Alt", "Right" };
-
-        public List<string> PreviousSongShortcut
-        {
-            get;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        if (EnableGlobalHotKey)
-                        {
-                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.PreviousSong, value, () =>
-                            {
-                                App.Services.GetRequiredService<PlaybackCommands>().PreviousCommand.Execute(null);
-                            });
-                        }
-                    }
-                }
-            }
-        } = new List<string> { "Ctrl", "Alt", "Left" };
-
-        public List<string> VolumeUpShortcut
-        {
-            get;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        if (EnableGlobalHotKey)
-                        {
-                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.VolumeUp, value, () =>
-                            {
-                                AdjustVolume(5);
-                            });
-                        }
-                    }
-                }
-            }
-        } = new List<string> { "Ctrl", "Alt", "Up" };
-
-        public List<string> VolumeDownShortcut
-        {
-            get;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        if (EnableGlobalHotKey)
-                        {
-                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.VolumeDown, value, () =>
-                            {
-                                AdjustVolume(-5);
-                            });
-                        }
-                    }
-                }
-            }
-        } = new List<string> { "Ctrl", "Alt", "Down" };
-
-        public List<string> TogglePlayingDetailShortcut
-        {
-            get;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        if (EnableGlobalHotKey)
-                        {
-                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.TogglePlayingDetail, value, () =>
-                            {
-                                if (App.MainWindow is not { Visible: true }) return;
-                                var mainPage = App.Services.GetRequiredService<MainPage>();
-                                if (mainPage.IsPlayingDetailVisible)
-                                    mainPage.NavigatebackToMusicBrowsePage();
-                                else
-                                    mainPage.NavigateToPlayingDetailPage();
-                            });
-                        }
-                    }
-                }
-            }
-        } = new List<string> { "Ctrl", "Alt", "Q" };
-
-        public List<string> BackShortcut
-        {
-            get;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        if (EnableGlobalHotKey)
-                        {
-                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.Back, value, () =>
-                            {
-                                if (App.MainWindow is not { Visible: true }) return;
-                                App.Services.GetRequiredService<MainPage>().HandleBackNavigation();
-                            });
-                        }
-                    }
-                }
-            }
-        } = new List<string> { "Ctrl", "Alt", "B" };
-
-        public List<string> ShowWindowShortcut
-        {
-            get;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        if (EnableGlobalHotKey)
-                        {
-                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.ShowWindow, value, () =>
-                            {
-                                App.MainWindow?.ToggleShowHide();
-                            });
-                        }
-                    }
-                }
-            }
-        } = new List<string> { "Ctrl", "Alt", "W" };
-
-        public List<string> ToggleFullScreenShortcut
-        {
-            get;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        if (EnableGlobalHotKey)
-                        {
-                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.ToggleFullScreen, value, () =>
-                            {
-                                if (App.MainWindow is not { Visible: true }) return;
-                                ToggleFullScreen();
-                            });
-                        }
-                    }
-                }
-            }
-        } = new List<string> { "Ctrl", "Alt", "F" };
-
-        public List<string> ToggleDesktopLyricsShortcut
-        {
-            get;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        if (EnableGlobalHotKey)
-                        {
-                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.ToggleDesktopLyrics, value, () =>
-                            {
-                                var desktopLyrics = App.Services.GetRequiredService<DesktopLyricsViewModel>();
-                                desktopLyrics.IsEnabled = !desktopLyrics.IsEnabled;
-                            });
-                        }
-                    }
-                }
-            }
-        } = new List<string> { "Ctrl", "Alt", "D" };
-
-        public List<string> ToggleDesktopLyricsLockShortcut
-        {
-            get;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        if (EnableGlobalHotKey)
-                        {
-                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.ToggleDesktopLyricsLock, value, () =>
-                            {
-                                var desktopLyrics = App.Services.GetRequiredService<DesktopLyricsViewModel>();
-                                desktopLyrics.IsLocked = !desktopLyrics.IsLocked;
-                            });
-                        }
-                    }
-                }
-            }
-        } = new List<string> { "Ctrl", "Alt", "L" };
-
-        public List<string> ToggleDesktopLyricsKaraokeShortcut
-        {
-            get;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        if (EnableGlobalHotKey)
-                        {
-                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.ToggleDesktopLyricsKaraoke, value, () =>
-                            {
-                                var desktopLyrics = App.Services.GetRequiredService<DesktopLyricsViewModel>();
-                                desktopLyrics.IsKaraokeEnabled = !desktopLyrics.IsKaraokeEnabled;
-                            });
-                        }
-                    }
-                }
-            }
-        } = new List<string> { "Ctrl", "Alt", "K" };
-
-        public List<string> ResetDesktopLyricsShortcut
-        {
-            get;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        if (EnableGlobalHotKey)
-                        {
-                            GlobalHotKeyHook.UpdateHotKey(App.MainWindow, ShortcutId.ResetDesktopLyrics, value, DesktopLyricsManager.ResetWindowBounds);
-                        }
-                    }
-                }
-            }
-        } = new List<string> { "Ctrl", "Alt", "R" };
-
-        public void InitHotKeys()
-        {
-            if (_isDisposed || _lifecycle.Phase == AppPhase.Stopping) return;
-            var window = App.MainWindow;
-            if (window is null) return;
-
-            GlobalHotKeyHook.ConflictsChanged -= OnGlobalHotKeyConflictsChanged;
-            GlobalHotKeyHook.ConflictsChanged += OnGlobalHotKeyConflictsChanged;
-            GlobalHotKeyHook.ClearAll(window);
-
-            if (!EnableGlobalHotKey) return;
-
-            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.PlayOrPauseSong, PlayOrPauseShortcut, () =>
-            {
-                App.Services.GetRequiredService<PlaybackCommands>().ToggleCommand.Execute(null);
-            });
-
-            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.NextSong, NextSongShortcut, () =>
-            {
-                App.Services.GetRequiredService<PlaybackCommands>().NextCommand.Execute(null);
-            });
-
-            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.PreviousSong, PreviousSongShortcut, () =>
-            {
-                App.Services.GetRequiredService<PlaybackCommands>().PreviousCommand.Execute(null);
-            });
-
-            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.VolumeUp, VolumeUpShortcut, () =>
-            {
-                AdjustVolume(5);
-            });
-
-            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.VolumeDown, VolumeDownShortcut, () =>
-            {
-                AdjustVolume(-5);
-            });
-
-            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.TogglePlayingDetail, TogglePlayingDetailShortcut, () =>
-            {
-                if (window is not { Visible: true }) return;
-                var mainPage = App.Services.GetRequiredService<MainPage>();
-                if (mainPage.IsPlayingDetailVisible)
-                    mainPage.NavigatebackToMusicBrowsePage();
-                else
-                    mainPage.NavigateToPlayingDetailPage();
-            });
-
-            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.Back, BackShortcut, () =>
-            {
-                if (window is not { Visible: true }) return;
-                App.Services.GetRequiredService<MainPage>().HandleBackNavigation();
-            });
-
-            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.ShowWindow, ShowWindowShortcut, () =>
-            {
-                window.ToggleShowHide();
-            });
-
-            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.ToggleFullScreen, ToggleFullScreenShortcut, () =>
-            {
-                if (App.MainWindow is not { Visible: true }) return;
-                ToggleFullScreen();
-            });
-
-            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.ToggleDesktopLyrics, ToggleDesktopLyricsShortcut, () =>
-            {
-                var desktopLyrics = App.Services.GetRequiredService<DesktopLyricsViewModel>();
-                desktopLyrics.IsEnabled = !desktopLyrics.IsEnabled;
-            });
-
-            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.ToggleDesktopLyricsLock, ToggleDesktopLyricsLockShortcut, () =>
-            {
-                var desktopLyrics = App.Services.GetRequiredService<DesktopLyricsViewModel>();
-                desktopLyrics.IsLocked = !desktopLyrics.IsLocked;
-            });
-
-            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.ToggleDesktopLyricsKaraoke, ToggleDesktopLyricsKaraokeShortcut, () =>
-            {
-                var desktopLyrics = App.Services.GetRequiredService<DesktopLyricsViewModel>();
-                desktopLyrics.IsKaraokeEnabled = !desktopLyrics.IsKaraokeEnabled;
-            });
-
-            GlobalHotKeyHook.UpdateHotKey(window, ShortcutId.ResetDesktopLyrics, ResetDesktopLyricsShortcut, DesktopLyricsManager.ResetWindowBounds);
-        }
+        public bool HasGlobalHotKeyConflict => State.HotKeys.HasGlobalHotKeyConflict;
+        public string GlobalHotKeyConflictTitle => State.HotKeys.GlobalHotKeyConflictTitle;
+        public List<string> PlayOrPauseShortcut { get => State.HotKeys.PlayOrPauseShortcut; set => State.HotKeys.PlayOrPauseShortcut = value; }
+        public List<string> NextSongShortcut { get => State.HotKeys.NextSongShortcut; set => State.HotKeys.NextSongShortcut = value; }
+        public List<string> PreviousSongShortcut { get => State.HotKeys.PreviousSongShortcut; set => State.HotKeys.PreviousSongShortcut = value; }
+        public List<string> VolumeUpShortcut { get => State.HotKeys.VolumeUpShortcut; set => State.HotKeys.VolumeUpShortcut = value; }
+        public List<string> VolumeDownShortcut { get => State.HotKeys.VolumeDownShortcut; set => State.HotKeys.VolumeDownShortcut = value; }
+        public List<string> TogglePlayingDetailShortcut { get => State.HotKeys.TogglePlayingDetailShortcut; set => State.HotKeys.TogglePlayingDetailShortcut = value; }
+        public List<string> BackShortcut { get => State.HotKeys.BackShortcut; set => State.HotKeys.BackShortcut = value; }
+        public List<string> ShowWindowShortcut { get => State.HotKeys.ShowWindowShortcut; set => State.HotKeys.ShowWindowShortcut = value; }
+        public List<string> ToggleFullScreenShortcut { get => State.HotKeys.ToggleFullScreenShortcut; set => State.HotKeys.ToggleFullScreenShortcut = value; }
+        public List<string> ToggleDesktopLyricsShortcut { get => State.HotKeys.ToggleDesktopLyricsShortcut; set => State.HotKeys.ToggleDesktopLyricsShortcut = value; }
+        public List<string> ToggleDesktopLyricsLockShortcut { get => State.HotKeys.ToggleDesktopLyricsLockShortcut; set => State.HotKeys.ToggleDesktopLyricsLockShortcut = value; }
+        public List<string> ToggleDesktopLyricsKaraokeShortcut { get => State.HotKeys.ToggleDesktopLyricsKaraokeShortcut; set => State.HotKeys.ToggleDesktopLyricsKaraokeShortcut = value; }
+        public List<string> ResetDesktopLyricsShortcut { get => State.HotKeys.ResetDesktopLyricsShortcut; set => State.HotKeys.ResetDesktopLyricsShortcut = value; }
+        public void InitHotKeys() => App.Services.GetRequiredService<HotKeyService>().Refresh();
 
         public List<double> TargetFrameRateOptions { get; } = [60, 72, 80, 90, 120, 144, 160, 165, 180, 240, 280, 320, 360, 480];
 
@@ -855,287 +349,18 @@ namespace WinUIMusicPlayer.ViewModel
 
         ];
 
-        public async Task GetWasapiDeviceAsync()
-        {
-            if (_isLoadingDevices) return;
-            _isLoadingDevices = true;
-            try
-            {
-                BassOutputDevices.Clear();
-                //默认设备
-                BassOutputDevices.Add(new BassOutputDevice
-                {
-                    Name = "DefaultDevice",
-                    Tag = ToolUtils.GetString("DefaultDevice") + " [DirectSound]",
-                    Id = -1,
-                    OutputMode = "DirectSound"
-                });
-                BassOutputDevices.Add(new BassOutputDevice
-                {
-                    Name = "DefaultDevice",
-                    Tag = $"{ToolUtils.GetString("DefaultDevice")} [{ToolUtils.GetString("WasapiSharedText")}]",
-                    Id = -1,
-                    OutputMode = "WasapiShared"
-                });
-                BassOutputDevices.Add(new BassOutputDevice
-                {
-                    Name = "DefaultDevice",
-                    Tag = $"{ToolUtils.GetString("DefaultDevice")} [{ToolUtils.GetString("WasapiExclusivePushText")}]",
-                    Id = -1,
-                    OutputMode = "WasapiExclusivePush"
-                });
-                BassOutputDevices.Add(new BassOutputDevice
-                {
-                    Name = "DefaultDevice",
-                    Tag = $"{ToolUtils.GetString("DefaultDevice")} [{ToolUtils.GetString("WasapiExclusiveEventText")}]",
-                    Id = -1,
-                    OutputMode = "WasapiExclusiveEvent"
-                });
+        public Task GetWasapiDeviceAsync() => App.Services.GetRequiredService<OutputDeviceService>().RefreshAsync();
 
-                var cmd = App.Services.GetRequiredService<BassPlayerCommandService>();
-
-                // ASIO devices from server
-                var asioDevices = await cmd.GetAsioDevices();
-                foreach (var (id, name) in asioDevices)
-                {
-                    BassOutputDevices.Add(new BassOutputDevice
-                    {
-                        Name = name,
-                        Tag = name + " [ASIO]",
-                        AsioId = id,
-                        OutputMode = "ASIO"
-                    });
-                }
-
-                // WASAPI devices from server
-                var wasapiDevices = await cmd.GetWasapiDevices();
-                foreach (var (id, name) in wasapiDevices)
-                {
-                    if (!BassOutputDevices.AsValueEnumerable().Any(d => d.EndpointId == cmd.GetWasapiEndpointId(id) && d.OutputMode == "WasapiShared"))
-                    {
-                        BassOutputDevices.Add(new BassOutputDevice
-                        {
-                            Name = name,
-                            Tag = $"{name} [{ToolUtils.GetString("WasapiSharedText")}]",
-                            Id = id,
-                            EndpointId = cmd.GetWasapiEndpointId(id),
-                            OutputMode = "WasapiShared"
-                        });
-                        BassOutputDevices.Add(new BassOutputDevice
-                        {
-                            Name = name,
-                            Tag = $"{name} [{ToolUtils.GetString("WasapiExclusivePushText")}]",
-                            Id = id,
-                            EndpointId = cmd.GetWasapiEndpointId(id),
-                            OutputMode = "WasapiExclusivePush"
-                        });
-                        BassOutputDevices.Add(new BassOutputDevice
-                        {
-                            Name = name,
-                            Tag = $"{name} [{ToolUtils.GetString("WasapiExclusiveEventText")}]",
-                            Id = id,
-                            EndpointId = cmd.GetWasapiEndpointId(id),
-                            OutputMode = "WasapiExclusiveEvent"
-                        });
-                    }
-                }
-
-                var device = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.OutputMode == AppSettings.OutputMode && (string.IsNullOrEmpty(AppSettings.WasapiEndpointId)
-                    || d.OutputMode == "ASIO" || d.OutputMode == "DirectSound" ? d.Name == AppSettings.DeviceName : d.EndpointId == AppSettings.WasapiEndpointId));
-                if (device is null)
-                {
-                    // 枚举不到已保存设备（未上电/驱动未就绪等瞬时原因）时只回退内存状态到默认设备，
-                    // 不触发落盘，避免把用户保存的输出设备设置永久重置（下次启动设备在位时自动恢复）
-                    AppSettings.OutputMode = "DirectSound";
-                    AppSettings.BassOutputDeviceId = -1;
-                    AppSettings.WasapiEndpointId = null;
-                    AppSettings.DeviceName = "DefaultDevice";
-                    IsRealDevceChange = false;
-                    SelectedDevice = BassOutputDevices.AsValueEnumerable().FirstOrDefault(d => d.Name == "DefaultDevice" && d.OutputMode == "DirectSound");
-                    AppSettings.OnOutputSettingsChanged();
-                }
-                else
-                {
-                    // 启动/刷新枚举时回选已保存设备不算真实切换：跳过落盘（避免多余全量写盘），
-                    // 但保留输出重配事件以维持原有启动初始化行为
-                    IsRealDevceChange = false;
-                    SelectedDevice = device;
-                    if (device.OutputMode.StartsWith("Wasapi", StringComparison.Ordinal))
-                    {
-                        AppSettings.BassOutputDeviceId = device.Id;
-                        AppSettings.WasapiEndpointId = device.EndpointId;
-                    }
-                }
-            }
-            finally { RefreshAtmosDevices(); _isLoadingDevices = false; }
-        }
-
-        [RelayCommand]
-        private void OnBackdropTypeChanged(string type)
-        {
-            try
-            {
-                switch (type)
-                {
-                    case "Acrylic":
-                        BackdropType = "Acrylic";
-                        IsColorPickerVisible = false;
-                        break;
-                    case "TransparentAcrylic":
-                        BackdropType = "TransparentAcrylic";
-                        IsColorPickerVisible = false;
-                        break;
-                    case "Mica":
-                        BackdropType = "Mica";
-                        IsColorPickerVisible = false;
-                        break;
-                    case "TransparentTint":
-                        BackdropType = "TransparentTint";
-                        IsColorPickerVisible = false;
-                        break;
-                    case "CustomAcrylicStyle":
-                        BackdropType = "CustomAcrylicStyle";
-                        IsColorPickerVisible = true;
-                        break;
-                }
-                App.MainWindow?.SetAppStyle();
-                if (IsInitialized)
-                {
-                    _ = _musicDatabaseService.SaveSettingAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, ex.Message);
-            }
-        }
-        [RelayCommand]
-        private void OnThemeTypeChanged(string type)
-        {
-            ThemeType = type;
-        }
-
-        private void OnDefaultEntryComboBoxTagChanged(string value)
-        {
-            if (IsInitialized)
-            {
-                _ = _musicDatabaseService.SaveSettingAsync();
-            }
-        }
-
-        [RelayCommand]
-        private async Task OpenLogPath()
-        {
-            var logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OriginalSoundPlayer", "Logs");
-            var folder = await StorageFolder.GetFolderFromPathAsync(logDirectory);
-            var options = new FolderLauncherOptions
-            {
-                DesiredRemainingView = Windows.UI.ViewManagement.ViewSizePreference.UseMore
-            };
-            await Launcher.LaunchFolderAsync(folder, options);
-        }
-
-        [RelayCommand]
-        private async Task OpenSettingsFolder()
-        {
-            string settingsDirectory;
-            try
-            {
-                settingsDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OriginalSoundPlayer", "Settings");
-                if (!Directory.Exists(settingsDirectory))
-                {
-                    Directory.CreateDirectory(settingsDirectory);
-                }
-            }
-            catch
-            {
-                settingsDirectory = ApplicationData.Current.LocalFolder.Path;
-            }
-            var folder = await StorageFolder.GetFolderFromPathAsync(settingsDirectory);
-            var options = new FolderLauncherOptions
-            {
-                DesiredRemainingView = Windows.UI.ViewManagement.ViewSizePreference.UseMore
-            };
-            await Launcher.LaunchFolderAsync(folder, options);
-        }
-
-        [RelayCommand]
-        private async Task ChangeCoverCacheLocation()
-        {
-            var folderPicker = new Microsoft.Windows.Storage.Pickers.FolderPicker(App.MainWindow.AppWindow.Id);
-            PickFolderResult folder = await folderPicker.PickSingleFolderAsync();
-            if (folder is not null)
-            {
-                MusicCoverCache = folder.Path;
-            }
-        }
-
-        [RelayCommand]
-        private void OpenWebSite()
-        {
-            _ = Launcher.LaunchUriAsync(new Uri("https://johnwikix.github.io/original-sound-player-page"));
-        }
-
-        [RelayCommand]
-        private void OpenMainGitHub()
-        {
-            _ = Launcher.LaunchUriAsync(new Uri("https://github.com/Johnwikix/original-sound-hq-player"));
-        }
-        [RelayCommand]
-        private async Task OpenCoverCacheLocation()
-        {
-            var folder = await StorageFolder.GetFolderFromPathAsync(MusicCoverCache);
-            var options = new FolderLauncherOptions
-            {
-                DesiredRemainingView = Windows.UI.ViewManagement.ViewSizePreference.UseMore
-            };
-            await Launcher.LaunchFolderAsync(folder, options);
-        }
-
-        [RelayCommand]
-        private async Task ClearCoverCache()
-        {
-            try
-            {
-                string cacheRoot = MusicCoverCache;
-                await Task.Run(() =>
-                {
-                    // 根目录下的 .bin 为网络封面原图缓存
-                    if (!string.IsNullOrEmpty(cacheRoot) && Directory.Exists(cacheRoot))
-                    {
-                        foreach (var file in Directory.EnumerateFiles(cacheRoot, "*.bin"))
-                        {
-                            File.Delete(file);
-                        }
-                    }
-
-                    // Cache 子目录存放缩略图 .bmp 与全尺寸 _raw.bin，整体删除
-                    if (!string.IsNullOrEmpty(cacheRoot))
-                    {
-                        var cacheDir = Path.Combine(cacheRoot, "Cache");
-                        if (Directory.Exists(cacheDir))
-                        {
-                            Directory.Delete(cacheDir, recursive: true);
-                        }
-                    }
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"清空封面缓存失败: {ex.Message}");
-            }
-        }
-
-        [RelayCommand]
-        private static async Task TrimNow()
-        {
-            await WorkingSetCompressor.TrimSelfAsync();
-        }
-
-        [RelayCommand]
-        private void ResetWindowBounds()
-        {
-            App.MainWindow.CenterOnScreen();
-        }
+        public IRelayCommand<string> BackdropTypeChangedCommand => App.Services.GetRequiredService<SettingsActions>().BackdropTypeChangedCommand;
+        public IRelayCommand<string> ThemeTypeChangedCommand => App.Services.GetRequiredService<SettingsActions>().ThemeTypeChangedCommand;
+        public IAsyncRelayCommand OpenLogPathCommand => App.Services.GetRequiredService<SettingsActions>().OpenLogPathCommand;
+        public IAsyncRelayCommand OpenSettingsFolderCommand => App.Services.GetRequiredService<SettingsActions>().OpenSettingsFolderCommand;
+        public IAsyncRelayCommand ChangeCoverCacheLocationCommand => App.Services.GetRequiredService<SettingsActions>().ChangeCoverCacheLocationCommand;
+        public IRelayCommand OpenWebSiteCommand => App.Services.GetRequiredService<SettingsActions>().OpenWebSiteCommand;
+        public IRelayCommand OpenMainGitHubCommand => App.Services.GetRequiredService<SettingsActions>().OpenMainGitHubCommand;
+        public IAsyncRelayCommand OpenCoverCacheLocationCommand => App.Services.GetRequiredService<SettingsActions>().OpenCoverCacheLocationCommand;
+        public IAsyncRelayCommand ClearCoverCacheCommand => App.Services.GetRequiredService<SettingsActions>().ClearCoverCacheCommand;
+        public IAsyncRelayCommand TrimNowCommand => App.Services.GetRequiredService<SettingsActions>().TrimNowCommand;
+        public IRelayCommand ResetWindowBoundsCommand => App.Services.GetRequiredService<SettingsActions>().ResetWindowBoundsCommand;
     }
 }

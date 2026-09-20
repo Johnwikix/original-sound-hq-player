@@ -124,7 +124,7 @@ namespace WinUIMusicPlayer.Services
                         }
                         int currentIndex = AppViewModel.GetCurrentIndex();
                         int nextIndex = (currentIndex + 1) % playingList.Count;
-                        await MusicBrowsePlayMusic(playingList[nextIndex]);
+                        await App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(nextIndex);
                         break;
                     case PlayMode.RepeatOff:
                         MusicEnd();
@@ -169,7 +169,7 @@ namespace WinUIMusicPlayer.Services
             {
                 int currentIndex = AppViewModel.GetCurrentIndex();
                 int nextIndex = (currentIndex + 1) % AppViewModel.CurrentPlayingList.Count;
-                MusicBrowsePlayMusic(AppViewModel.CurrentPlayingList[nextIndex]);
+                _ = App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(nextIndex);
             }
             catch (Exception ex) { _logger.LogError(ex, $"PlayNextTrack failed: {ex.Message}"); }
         }

@@ -33,7 +33,7 @@
                         <Style BasedOn="{StaticResource DefaultGridViewItemStyle}" TargetType="GridViewItem">
                             <Setter Property="ContextFlyout">
                                 <Setter.Value>
-                                    <MenuFlyout extensions:MenuFlyoutExtensions.ItemsSource="{x:Bind ViewModel.ArtistMenuOptions, Mode=OneWay}" />
+                                    <MenuFlyout extensions:MenuFlyoutExtensions.PrepareCommand="{x:Bind ViewModel.PrepareMenuCommand}" extensions:MenuFlyoutExtensions.ItemsSource="{x:Bind ViewModel.ArtistMenuOptions, Mode=OneWay}" />
                                 </Setter.Value>
                             </Setter>
                         </Style>

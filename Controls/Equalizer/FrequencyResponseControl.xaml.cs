@@ -22,6 +22,7 @@ public sealed partial class FrequencyResponseControl : UserControl
 {
     public WinUIMusicPlayer.ViewModel.FrequencyResponseViewModel ViewModel { get; } = new();
     private WinUIMusicPlayer.ViewModel.FrequencyResponseViewModel.Preview? _preview => ViewModel.Current;
+    private IDisposable? _session;
     private CurvePoint[] _points = [];
     private int _selected = -1;
     private bool _dragging;
@@ -33,8 +34,18 @@ public sealed partial class FrequencyResponseControl : UserControl
     public FrequencyResponseControl()
     {
         InitializeComponent();
-        Loaded += (_, _) => ViewModel.Load();
-        Unloaded += (_, _) => ViewModel.Unload();
+        Loaded += (_, _) =>
+        {
+            _session ??= App.Services.GetRequiredService<EditorSessions>().Attach(ViewModel.StopAsync);
+            ViewModel.Load();
+        };
+        Unloaded += async (_, _) =>
+        {
+            var session = _session;
+            _session = null;
+            try { await ViewModel.StopAsync(); }
+            finally { session?.Dispose(); }
+        };
         ViewModel.Updated += () =>
         {
             if (_preview != null)

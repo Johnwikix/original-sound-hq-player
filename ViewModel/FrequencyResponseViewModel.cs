@@ -20,6 +20,7 @@ public sealed class FrequencyResponseViewModel : ObservableObject
     public Preview? Current => _preview;
     private CancellationTokenSource? _cancellation;
     private bool _loaded;
+    private Task _refreshTask = Task.CompletedTask;
     private int _rate = 48000;
     private string? _cacheKey;
     private ImpulseResponse? _cacheImpulse;
@@ -44,14 +45,28 @@ public sealed class FrequencyResponseViewModel : ObservableObject
         App.Services.GetRequiredService<LicenseService>().StateChanged -= StateChanged;
         AppSettings.EqUpdated -= EqChanged;
         AppSettings.AudioResponseChanged -= EqChanged;
-        _cancellation?.Cancel(); _cancellation?.Dispose(); _cancellation = null;
+        _cancellation?.Cancel();
     }
     private void EqChanged(object? sender, EventArgs e) => StateChanged();
     private void StateChanged() => _queue.TryEnqueue(() => { if (_loaded) Refresh(); });
-    public async void Refresh()
+    public async Task StopAsync()
+    {
+        Unload();
+        await _refreshTask;
+        if (_loaded) return;
+        _preview = null;
+        _cacheKey = null;
+        _cacheImpulse = null;
+        _cacheSpectra = null;
+    }
+    public void Refresh()
     {
         if (!_loaded) return;
-        _cancellation?.Cancel(); _cancellation?.Dispose();
+        _cancellation?.Cancel();
+        _refreshTask = RefreshCoreAsync(_refreshTask);
+    }
+    private async Task RefreshCoreAsync(Task previous)
+    {
         var cancellation = new CancellationTokenSource();
         _cancellation = cancellation;
         var token = cancellation.Token;
@@ -70,6 +85,7 @@ public sealed class FrequencyResponseViewModel : ObservableObject
         Status = ToolUtils.GetString("ResponsePreparing");
         try
         {
+            await previous;
             await Task.Delay(150, token);
             var result = await Task.Run(() =>
             {
@@ -116,6 +132,11 @@ public sealed class FrequencyResponseViewModel : ObservableObject
         {
             if (token.IsCancellationRequested || !_loaded) return;
             _preview = null; Updated?.Invoke(); Status = ToolUtils.GetString("ResponseFailed");
+        }
+        finally
+        {
+            if (ReferenceEquals(_cancellation, cancellation)) _cancellation = null;
+            cancellation.Dispose();
         }
     }
 

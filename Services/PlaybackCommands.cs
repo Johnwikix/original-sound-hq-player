@@ -81,11 +81,9 @@ public sealed class PlaybackCommands : IDisposable
     {
         if (!CanSwitch) return;
         var list = _state.CurrentPlayingList;
-        int index = -1;
-        for (int i = 0; i < list.Count; i++)
-            if (list[i].Id == _state.CurrentPlayingMusic!.Id) { index = i; break; }
+        int index = _state.GetCurrentIndex();
         if (index > 0 || (index == 0 && list.Count > 1))
-            await _services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(list[index > 0 ? index - 1 : list.Count - 1]);
+            await _services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(index > 0 ? index - 1 : list.Count - 1);
     }
     private void Seek(long milliseconds) { if (CanPlay) Player.ChangeWaveChannelTime(Math.Max(0, milliseconds)); }
     private void StateChanged(object? sender, PropertyChangedEventArgs e)

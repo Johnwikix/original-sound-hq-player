@@ -6,6 +6,8 @@ using System.Buffers;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using System.Threading;
+using System.Linq;
 using WinUIMusicPlayer.Extensions;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.State;
@@ -26,6 +28,8 @@ public enum SongViewType
 /// <summary>音乐库展示查询的所有者；UI 线程读取稳定库版本，只发布当前查询结果。</summary>
 public sealed class LibraryProjectionService(AppState state, LibraryQueries queries, ILogger<LibraryProjectionService> logger)
 {
+    public event Action? RefreshRequested;
+    public void RequestRefresh() => RefreshRequested?.Invoke();
     private List<Music> SongsSource => state.Library.Songs;
     private string SearchText => state.Browse.SearchText;
     private SortOption SelectedSortOption => state.Browse.SelectedSortOption;
@@ -42,102 +46,117 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
         SongViewType.Folder => state.Browse.CurrentFolderObj?.LastLevelFolderPath,
         _ => null
     });
-    public async Task UpdateSongCollectionsAsync(
-    BulkObservableCollection<Music> targetCollection,
-    SongViewType viewType,
-    Func<Music, bool>? filterPredicate = null)
+    private readonly Dictionary<BulkObservableCollection<Music>, (SongViewType Kind, Func<Music, bool>? Filter)> _requested = new();
+    private readonly Dictionary<BulkObservableCollection<Music>, Task> _inflight = new();
+    private readonly SemaphoreSlim _computeGate = new(1, 1);
+    private bool _stopped;
+
+    /// <summary>同一列表最多一个在途计算；新请求替换待执行参数，不为每次输入复制音乐库。</summary>
+    public Task UpdateSongCollectionsAsync(BulkObservableCollection<Music> target, SongViewType kind, Func<Music, bool>? filterPredicate = null)
     {
-        var key = SongKey(viewType);
-        if (_published.TryGetValue(targetCollection, out var existing) && existing == key) return;
-        Func<Music, bool>? searchPredicate = null;
-        if (!string.IsNullOrWhiteSpace(SearchText))
-        {
-            searchPredicate = viewType switch
-            {
-                SongViewType.Album => m =>
-                    (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false),
-                SongViewType.Artist => m =>
-                    (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false),
-                SongViewType.Folder => m =>
-                    (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.LastLevelFolderPath?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false),
-                _ => m =>
-                    (m.Title?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Album?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
-                    (m.Author?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false)
-            };
-        }
+        if (_stopped || state.Lifecycle.Phase == AppPhase.Stopping) return Task.CompletedTask;
+        var dispatcher = App.MainWindow.DispatcherQueue;
+        if (!dispatcher.HasThreadAccess)
+            return dispatcher.EnqueueAsync(() => UpdateSongCollectionsAsync(target, kind, filterPredicate));
+        _requested[target] = (kind, filterPredicate);
+        if (_inflight.TryGetValue(target, out var pending)) return pending;
+        if (_published.TryGetValue(target, out var published) && published == SongKey(kind)) return Task.CompletedTask;
+        return _inflight[target] = RefreshSongsAsync(target);
+    }
 
-        Func<Music, bool>? combinedPredicate = filterPredicate != null && searchPredicate != null
-            ? m => filterPredicate(m) && searchPredicate(m)
-            : filterPredicate ?? searchPredicate;
-
-        var srcSpan = CollectionsMarshal.AsSpan(SongsSource);
-        var pool = ArrayPool<Music>.Shared;
-        var buf = pool.Rent(Math.Max(srcSpan.Length, 1));
-        int count = 0;
+    private async Task RefreshSongsAsync(BulkObservableCollection<Music> target)
+    {
+        await Task.Yield(); // 登记任务后才执行，避免同步完成留下已完成任务条目。
         try
         {
-            if (combinedPredicate != null)
+            while (!_stopped && state.Lifecycle.Phase != AppPhase.Stopping)
             {
-                for (int i = 0; i < srcSpan.Length; i++)
+                await _computeGate.WaitAsync();
+                try
                 {
-                    if (combinedPredicate(srcSpan[i]))
-                        buf[count++] = srcSpan[i];
+                    if (_stopped || state.Lifecycle.Phase == AppPhase.Stopping) return;
+                    var request = _requested[target];
+                    var key = SongKey(request.Kind);
+                    if (_published.TryGetValue(target, out var published) && published == key) return;
+                    var rows = ArrayPool<SongRow>.Shared.Rent(Math.Max(1, SongsSource.Count));
+                    var result = ArrayPool<Music>.Shared.Rent(Math.Max(1, SongsSource.Count));
+                    int count = 0;
+                    try
+                    {
+                        // 在 UI 线程复制字段；后台比较器绝不读取可变 Music 属性或 UI 集合。
+                        foreach (var music in SongsSource)
+                            if (request.Filter is null || request.Filter(music)) rows[count++] = new SongRow(music);
+                        int written = await Task.Run(() =>
+                        {
+                            int matches = 0;
+                            for (int i = 0; i < count; i++)
+                                if (rows[i].Matches(key.Search, request.Kind == SongViewType.Folder)) rows[matches++] = rows[i];
+                            Array.Sort(rows, 0, matches, SongRow.Comparer(key.Sort, request.Kind));
+                            for (int i = 0; i < matches; i++) result[i] = rows[i].Music;
+                            return matches;
+                        });
+                        if (_stopped || state.Lifecycle.Phase == AppPhase.Stopping) return;
+                        if (SongKey(request.Kind) == key && _requested[target].Kind == request.Kind)
+                        {
+                            target.FillFrom(result.AsSpan(0, written));
+                            _published[target] = key;
+                            return;
+                        }
+                    }
+                    finally
+                    {
+                        ArrayPool<SongRow>.Shared.Return(rows, clearArray: true);
+                        ArrayPool<Music>.Shared.Return(result, clearArray: true);
+                    }
                 }
+                finally { _computeGate.Release(); }
             }
-            else
-            {
-                srcSpan.CopyTo(buf);
-                count = srcSpan.Length;
-            }
-
-            var slice = buf.AsSpan(0, count);
-            var tag = SelectedSortOption?.Tag?.ToString() ?? "DefaultOrder";
-            IComparer<Music> comparer;
-            if (tag == "DefaultOrder")
-            {
-                comparer = viewType switch
-                {
-                    SongViewType.Album => _songByDiskTrack,
-                    SongViewType.Artist or SongViewType.Folder => _songByAlbumDiskTrack,
-                    SongViewType.Favorite => _songByOrderDesc,
-                    _ => _songByTitle
-                };
-            }
-            else
-            {
-                comparer = tag switch
-                {
-                    "A-Z" => _songByTitle,
-                    "Artist" => _songByAuthor,
-                    "Album" => _songByAlbumTrack,
-                    "CreateTimeASC" => _songByCreateTimeAsc,
-                    "CreateTimeDESC" => _songByCreateTimeDesc,
-                    "UpdateTimeASC" => _songByUpdateTimeAsc,
-                    "UpdateTimeDESC" => _songByUpdateTimeDesc,
-                    _ => _songByTitle
-                };
-            }
-            slice.Sort(comparer);
-
-            await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
-            {
-                if (state.Lifecycle.Phase == AppPhase.Stopping || SongKey(viewType) != key) return;
-                targetCollection.FillFrom(buf.AsSpan(0, count));
-                _published[targetCollection] = key;
-            });
         }
-        finally
+        catch (Exception ex) { logger.LogError(ex, "刷新音乐列表失败"); }
+        finally { _inflight.Remove(target); }
+    }
+
+    public async Task StopAsync()
+    {
+        _stopped = true;
+        await Task.WhenAll(_inflight.Values.ToArray());
+        _requested.Clear();
+        _published.Clear();
+    }
+
+    private readonly record struct SongRow(Music Music, string? Title, string? Author, string? Album, string? Folder,
+        int Disk, int Track, int Order, DateTime Created, DateTime Updated)
+    {
+        public SongRow(Music music) : this(music, music.Title, music.Author, music.Album, music.LastLevelFolderPath,
+            music.DiskNumber, music.TrackNumber, music.Order, music.CreateTime, music.UpdateTime)
+        { }
+        public bool Matches(string search, bool folder) => string.IsNullOrWhiteSpace(search) ||
+            (Title?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (Author?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (Album?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            (folder && (Folder?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false));
+        public static IComparer<SongRow> Comparer(string sort, SongViewType kind) => System.Collections.Generic.Comparer<SongRow>.Create((a, b) =>
         {
-            pool.Return(buf, clearArray: true);
-        }
+            int c;
+            switch (sort)
+            {
+                case "Artist": return CjkStringComparer.Compare(a.Author, b.Author);
+                case "Album":
+                    c = CjkStringComparer.Compare(a.Album, b.Album);
+                    return c != 0 ? c : a.Track.CompareTo(b.Track);
+                case "CreateTimeASC": return a.Created.CompareTo(b.Created);
+                case "CreateTimeDESC": return b.Created.CompareTo(a.Created);
+                case "UpdateTimeASC": return a.Updated.CompareTo(b.Updated);
+                case "UpdateTimeDESC": return b.Updated.CompareTo(a.Updated);
+                case "DefaultOrder" when kind == SongViewType.Favorite: return b.Order.CompareTo(a.Order);
+                case "DefaultOrder" when kind is SongViewType.Album or SongViewType.Artist or SongViewType.Folder:
+                    c = kind == SongViewType.Album ? 0 : CjkStringComparer.Compare(a.Album, b.Album);
+                    if (c != 0) return c;
+                    c = a.Disk.CompareTo(b.Disk);
+                    return c != 0 ? c : a.Track.CompareTo(b.Track);
+                default: return CjkStringComparer.Compare(a.Title, b.Title);
+            }
+        });
     }
 
     public void UpdateGroupedByFirstLetter(Func<Music, string> distinctSelector, Func<Music, string> groupSelector, CollectionViewSource source)
@@ -255,7 +274,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
 
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
-                if (state.Lifecycle.Phase == AppPhase.Stopping || Key() != key) return;
+                if (_stopped || state.Lifecycle.Phase == AppPhase.Stopping || Key() != key) return;
                 source.Source = groups;
                 _published[source] = key;
             });
@@ -294,6 +313,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
 
             await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
             {
+                if (_stopped || state.Lifecycle.Phase == AppPhase.Stopping || CurrentPlayListId != curListId || SearchText != search) return;
                 PlayListSongs.FillFrom(buf.AsSpan(0, written));
             });
         }
@@ -313,49 +333,12 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
 
     private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byPlayListOrderDesc =
         Comparer<PlayListMusicItem>.Create((a, b) => b.PlayListOrder.CompareTo(a.PlayListOrder));
-    private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicTitleAsc =
-        Comparer<PlayListMusicItem>.Create((a, b) => CjkStringComparer.Compare(a.Music?.Title, b.Music?.Title));
-    private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicAuthorAsc =
-        Comparer<PlayListMusicItem>.Create((a, b) => CjkStringComparer.Compare(a.Music?.Author, b.Music?.Author));
-    private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicAlbumAsc =
-        Comparer<PlayListMusicItem>.Create((a, b) => CjkStringComparer.Compare(a.Music?.Album, b.Music?.Album));
-    private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicCreateTimeAsc =
-        Comparer<PlayListMusicItem>.Create((a, b) => a.Music?.CreateTime.CompareTo(b.Music?.CreateTime) ?? 0);
-    private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicCreateTimeDesc =
-        Comparer<PlayListMusicItem>.Create((a, b) => b.Music?.CreateTime.CompareTo(a.Music?.CreateTime) ?? 0);
-    private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicUpdateTimeDesc =
-        Comparer<PlayListMusicItem>.Create((a, b) => b.Music?.UpdateTime.CompareTo(a.Music?.UpdateTime) ?? 0);
-    private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byMusicUpdateTimeAsc =
-        Comparer<PlayListMusicItem>.Create((a, b) => a.Music?.UpdateTime.CompareTo(b.Music?.UpdateTime) ?? 0);
-
     private static readonly IComparer<Music> _songByTitle =
         Comparer<Music>.Create((a, b) => CjkStringComparer.Compare(a.Title, b.Title));
     private static readonly IComparer<Music> _songByAuthor =
         Comparer<Music>.Create((a, b) => CjkStringComparer.Compare(a.Author, b.Author));
     private static readonly IComparer<Music> _songByAlbum =
         Comparer<Music>.Create((a, b) => CjkStringComparer.Compare(a.Album, b.Album));
-    private static readonly IComparer<Music> _songByAlbumTrack =
-        Comparer<Music>.Create((a, b) =>
-        {
-            int c = CjkStringComparer.Compare(a.Album, b.Album);
-            return c != 0 ? c : a.TrackNumber.CompareTo(b.TrackNumber);
-        });
-    private static readonly IComparer<Music> _songByDiskTrack =
-        Comparer<Music>.Create((a, b) =>
-        {
-            int c = a.DiskNumber.CompareTo(b.DiskNumber);
-            return c != 0 ? c : a.TrackNumber.CompareTo(b.TrackNumber);
-        });
-    private static readonly IComparer<Music> _songByAlbumDiskTrack =
-        Comparer<Music>.Create((a, b) =>
-        {
-            int c = CjkStringComparer.Compare(a.Album, b.Album);
-            if (c != 0) return c;
-            c = a.DiskNumber.CompareTo(b.DiskNumber);
-            return c != 0 ? c : a.TrackNumber.CompareTo(b.TrackNumber);
-        });
-    private static readonly IComparer<Music> _songByOrderDesc =
-        Comparer<Music>.Create((a, b) => b.Order.CompareTo(a.Order));
     private static readonly IComparer<Music> _songByCreateTimeAsc =
         Comparer<Music>.Create((a, b) => a.CreateTime.CompareTo(b.CreateTime));
     private static readonly IComparer<Music> _songByCreateTimeDesc =

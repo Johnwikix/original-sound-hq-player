@@ -3,12 +3,12 @@ using BassPlayerIpc.Shared;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.ViewModel;
+using WinUIMusicPlayer.State;
 
 namespace WinUIMusicPlayer.Services;
 
-/// <summary>UI 到持久化的快照适配边界；迁移中的偏好仍经兼容门面取值，数据库写入不反向读 VM。</summary>
-public sealed class SettingsSnapshotFactory(AppViewModel AppViewModel)
+/// <summary>UI 到持久化的快照适配边界；读取共享状态，数据库写入不反向读 VM。</summary>
+public sealed class SettingsSnapshotFactory(AppState state)
 {
     public SaveSettings CaptureGeneral(SaveSettings baseline, bool audioMigrated, bool correctionsMigrated)
     {
@@ -16,71 +16,71 @@ public sealed class SettingsSnapshotFactory(AppViewModel AppViewModel)
         var newSettings = JsonSerializer.Deserialize(JsonSerializer.SerializeToUtf8Bytes(baseline, SettingsJsonContext.Default.SaveSettings), SettingsJsonContext.Default.SaveSettings)!;
         if (audioMigrated) newSettings.ClearLegacyAudioPreferences();
         if (correctionsMigrated) newSettings.DeviceCorrections = null;
-        newSettings.DefaultEntry = AppViewModel.DefaultEntryComboBoxTag;
-        newSettings.DefaultPlayList = AppViewModel.DefaultPlayListComboBoxTag;
-        newSettings.AppStyle = AppViewModel.BackdropType;
-        newSettings.AppTheme = AppViewModel.ThemeType;
-        newSettings.IsRunningBackend = AppViewModel.IsRunningBackend;
-        newSettings.IsAutoLyricsEnabled = AppViewModel.IsAutoLyricsEnabled;
-        newSettings.IsAutoCoverEnabled = AppViewModel.IsAutoCoverEnabled;
-        newSettings.CoverSize = AppViewModel.CoverSize;
-        newSettings.Win2dTextEffectType = AppViewModel.Win2dTextEffectType.Value;
-        newSettings.IsFluidBackgroundEnabled = AppViewModel.IsFluidBackgroundEnabled;
-        newSettings.BackgroundShader = (int)AppViewModel.BackgroundShader;
-        newSettings.IsFogEffectEnabled = AppViewModel.IsFogEffectEnabled;
-        newSettings.IsSnowEffectEnabled = AppViewModel.IsSnowEffectEnabled;
-        newSettings.IsRaindropEffectEnabled = AppViewModel.IsRaindropEffectEnabled;
-        newSettings.IsFolderWatchEnabled = AppViewModel.IsFolderWatchEnabled;
-        newSettings.IsCustomAppSize = AppViewModel.IsCustomAppSize;
-        newSettings.AppHeight = AppViewModel.AppHeight;
-        newSettings.AppWidth = AppViewModel.AppWidth;
-        newSettings.GlobalFont = AppViewModel.FontFamily.FontFamily.Source;
-        newSettings.CustomAcrylicOpacity = AppViewModel.CustomOpacity;
-        newSettings.CustomColorArgb = (uint)((AppViewModel.CustomColor.A << 24) | (AppViewModel.CustomColor.R << 16) | (AppViewModel.CustomColor.G << 8) | AppViewModel.CustomColor.B);
-        newSettings.IsCustomLyricsColorEnabled = AppViewModel.IsCustomLyricsColorEnabled;
-        newSettings.LyricsCustomColorRgb = (uint)((AppViewModel.LyricsCustomColor.R << 16) | (AppViewModel.LyricsCustomColor.G << 8) | AppViewModel.LyricsCustomColor.B);
-        newSettings.IsUpdateBackDrop = AppViewModel.IsUpdateBackDrop;
-        newSettings.LyricsAlignment = AppViewModel.LyricsAlignment;
-        newSettings.LyricsMargin = (int)AppViewModel.LyricsMargin.Left;
-        newSettings.GlobalFontSize = AppViewModel.GlobalFontSize;
-        newSettings.IsGlobalFontSizeEnabled = AppViewModel.IsGlobalFontSizeEnabled;
-        newSettings.MusicCoverCache = AppViewModel.MusicCoverCache;
-        newSettings.LyricsBlurAmount = AppViewModel.LyricsBlurAmount;
-        newSettings.UseImageDominantTheme = AppViewModel.UseImageDominantTheme;
-        newSettings.EnableLightWave = AppViewModel.EnableLightWave;
-        newSettings.PaletteAlgorithm = (int)AppViewModel.PaletteAlgorithm;
-        newSettings.IsWin2dAnimatedText = AppViewModel.IsWin2dAnimatedText;
-        newSettings.IsHoverScrollEnabled = AppViewModel.IsHoverScrollEnabled;
-        newSettings.CharFloatAmount = AppViewModel.CharFloatAmount;
-        newSettings.CharScaleAmount = AppViewModel.CharScaleAmount;
-        newSettings.GlowAmount = AppViewModel.GlowAmount;
-        newSettings.LongSyllableThreshold = AppViewModel.LongSyllableThreshold;
-        newSettings.PlayingLineTopOffsetPercent = AppViewModel.PlayingLineTopOffsetPercent;
-        newSettings.TranslatedOpacityPercent = AppViewModel.TranslatedOpacityPercent;
-        newSettings.UnplayedOpacityPercent = AppViewModel.UnplayedOpacityPercent;
-        newSettings.TargetFrameRate = AppViewModel.TargetFrameRate;
-        newSettings.EnableAdvancedLyricsEffect = AppViewModel.EnableAdvancedLyricsEffect;
-        newSettings.ScrollEasingType = AppViewModel.ScrollEasingType;
-        newSettings.ScrollEasingMode = AppViewModel.ScrollEasingMode;
-        newSettings.PlayOrPauseShortcut = new(AppViewModel.PlayOrPauseShortcut);
-        newSettings.NextSongShortcut = new(AppViewModel.NextSongShortcut);
-        newSettings.PreviousSongShortcut = new(AppViewModel.PreviousSongShortcut);
-        newSettings.VolumeUpShortcut = new(AppViewModel.VolumeUpShortcut);
-        newSettings.VolumeDownShortcut = new(AppViewModel.VolumeDownShortcut);
-        newSettings.TogglePlayingDetailShortcut = new(AppViewModel.TogglePlayingDetailShortcut);
-        newSettings.BackShortcut = new(AppViewModel.BackShortcut);
-        newSettings.ShowWindowShortcut = new(AppViewModel.ShowWindowShortcut);
-        newSettings.ToggleFullScreenShortcut = new(AppViewModel.ToggleFullScreenShortcut);
-        newSettings.ToggleDesktopLyricsShortcut = new(AppViewModel.ToggleDesktopLyricsShortcut);
-        newSettings.ToggleDesktopLyricsLockShortcut = new(AppViewModel.ToggleDesktopLyricsLockShortcut);
-        newSettings.ToggleDesktopLyricsKaraokeShortcut = new(AppViewModel.ToggleDesktopLyricsKaraokeShortcut);
-        newSettings.ResetDesktopLyricsShortcut = new(AppViewModel.ResetDesktopLyricsShortcut);
-        newSettings.EnableGlobalHotKey = AppViewModel.EnableGlobalHotKey;
-        newSettings.IsTrimOnHideEnabled = AppViewModel.IsTrimOnHideEnabled;
-        newSettings.IsTrimAfterPlaybackEnabled = AppViewModel.IsTrimAfterPlaybackEnabled;
-        newSettings.ArtistSplitSymbols = AppViewModel.ArtistSplitSymbols;
-        newSettings.PlayingDetailAlignment = AppViewModel.PlayingDetailAlignment;
-        newSettings.UsePlayingDetailAlignmentInPortrait = AppViewModel.UsePlayingDetailAlignmentInPortrait;
+        newSettings.DefaultEntry = state.Preferences.DefaultEntryComboBoxTag;
+        newSettings.DefaultPlayList = state.Preferences.DefaultPlayListComboBoxTag;
+        newSettings.AppStyle = state.Preferences.BackdropType;
+        newSettings.AppTheme = state.Preferences.ThemeType;
+        newSettings.IsRunningBackend = state.Preferences.IsRunningBackend;
+        newSettings.IsAutoLyricsEnabled = state.Preferences.IsAutoLyricsEnabled;
+        newSettings.IsAutoCoverEnabled = state.Preferences.IsAutoCoverEnabled;
+        newSettings.CoverSize = state.Preferences.CoverSize;
+        newSettings.Win2dTextEffectType = state.Preferences.Win2dTextEffectType.Value;
+        newSettings.IsFluidBackgroundEnabled = state.Preferences.IsFluidBackgroundEnabled;
+        newSettings.BackgroundShader = (int)state.Preferences.BackgroundShader;
+        newSettings.IsFogEffectEnabled = state.Preferences.IsFogEffectEnabled;
+        newSettings.IsSnowEffectEnabled = state.Preferences.IsSnowEffectEnabled;
+        newSettings.IsRaindropEffectEnabled = state.Preferences.IsRaindropEffectEnabled;
+        newSettings.IsFolderWatchEnabled = state.Preferences.IsFolderWatchEnabled;
+        newSettings.IsCustomAppSize = state.Preferences.IsCustomAppSize;
+        newSettings.AppHeight = state.Preferences.AppHeight;
+        newSettings.AppWidth = state.Preferences.AppWidth;
+        newSettings.GlobalFont = state.Preferences.FontFamily.FontFamily.Source;
+        newSettings.CustomAcrylicOpacity = state.Preferences.CustomOpacity;
+        newSettings.CustomColorArgb = (uint)((state.Preferences.CustomColor.A << 24) | (state.Preferences.CustomColor.R << 16) | (state.Preferences.CustomColor.G << 8) | state.Preferences.CustomColor.B);
+        newSettings.IsCustomLyricsColorEnabled = state.Preferences.IsCustomLyricsColorEnabled;
+        newSettings.LyricsCustomColorRgb = (uint)((state.Preferences.LyricsCustomColor.R << 16) | (state.Preferences.LyricsCustomColor.G << 8) | state.Preferences.LyricsCustomColor.B);
+        newSettings.IsUpdateBackDrop = state.Preferences.IsUpdateBackDrop;
+        newSettings.LyricsAlignment = state.Preferences.LyricsAlignment;
+        newSettings.LyricsMargin = (int)state.Preferences.LyricsMargin.Left;
+        newSettings.GlobalFontSize = state.Preferences.GlobalFontSize;
+        newSettings.IsGlobalFontSizeEnabled = state.Preferences.IsGlobalFontSizeEnabled;
+        newSettings.MusicCoverCache = state.Preferences.MusicCoverCache;
+        newSettings.LyricsBlurAmount = state.Preferences.LyricsBlurAmount;
+        newSettings.UseImageDominantTheme = state.Preferences.UseImageDominantTheme;
+        newSettings.EnableLightWave = state.Preferences.EnableLightWave;
+        newSettings.PaletteAlgorithm = (int)state.Preferences.PaletteAlgorithm;
+        newSettings.IsWin2dAnimatedText = state.Preferences.IsWin2dAnimatedText;
+        newSettings.IsHoverScrollEnabled = state.Preferences.IsHoverScrollEnabled;
+        newSettings.CharFloatAmount = state.Preferences.CharFloatAmount;
+        newSettings.CharScaleAmount = state.Preferences.CharScaleAmount;
+        newSettings.GlowAmount = state.Preferences.GlowAmount;
+        newSettings.LongSyllableThreshold = state.Preferences.LongSyllableThreshold;
+        newSettings.PlayingLineTopOffsetPercent = state.Preferences.PlayingLineTopOffsetPercent;
+        newSettings.TranslatedOpacityPercent = state.Preferences.TranslatedOpacityPercent;
+        newSettings.UnplayedOpacityPercent = state.Preferences.UnplayedOpacityPercent;
+        newSettings.TargetFrameRate = state.Preferences.TargetFrameRate;
+        newSettings.EnableAdvancedLyricsEffect = state.Preferences.EnableAdvancedLyricsEffect;
+        newSettings.ScrollEasingType = state.Preferences.ScrollEasingType;
+        newSettings.ScrollEasingMode = state.Preferences.ScrollEasingMode;
+        newSettings.PlayOrPauseShortcut = new(state.HotKeys.PlayOrPauseShortcut);
+        newSettings.NextSongShortcut = new(state.HotKeys.NextSongShortcut);
+        newSettings.PreviousSongShortcut = new(state.HotKeys.PreviousSongShortcut);
+        newSettings.VolumeUpShortcut = new(state.HotKeys.VolumeUpShortcut);
+        newSettings.VolumeDownShortcut = new(state.HotKeys.VolumeDownShortcut);
+        newSettings.TogglePlayingDetailShortcut = new(state.HotKeys.TogglePlayingDetailShortcut);
+        newSettings.BackShortcut = new(state.HotKeys.BackShortcut);
+        newSettings.ShowWindowShortcut = new(state.HotKeys.ShowWindowShortcut);
+        newSettings.ToggleFullScreenShortcut = new(state.HotKeys.ToggleFullScreenShortcut);
+        newSettings.ToggleDesktopLyricsShortcut = new(state.HotKeys.ToggleDesktopLyricsShortcut);
+        newSettings.ToggleDesktopLyricsLockShortcut = new(state.HotKeys.ToggleDesktopLyricsLockShortcut);
+        newSettings.ToggleDesktopLyricsKaraokeShortcut = new(state.HotKeys.ToggleDesktopLyricsKaraokeShortcut);
+        newSettings.ResetDesktopLyricsShortcut = new(state.HotKeys.ResetDesktopLyricsShortcut);
+        newSettings.EnableGlobalHotKey = state.Preferences.EnableGlobalHotKey;
+        newSettings.IsTrimOnHideEnabled = state.Preferences.IsTrimOnHideEnabled;
+        newSettings.IsTrimAfterPlaybackEnabled = state.Preferences.IsTrimAfterPlaybackEnabled;
+        newSettings.ArtistSplitSymbols = state.Preferences.ArtistSplitSymbols;
+        newSettings.PlayingDetailAlignment = state.Preferences.PlayingDetailAlignment;
+        newSettings.UsePlayingDetailAlignmentInPortrait = state.Preferences.UsePlayingDetailAlignmentInPortrait;
         newSettings.AutoHideDesktopLyricsOnPlayingDetail = AppSettings.AutoHideDesktopLyricsOnPlayingDetail;
         newSettings.IsDesktopLyricsEnabled = AppSettings.IsDesktopLyricsEnabled;
         newSettings.IsDesktopLyricsLocked = AppSettings.IsDesktopLyricsLocked;
@@ -100,7 +100,7 @@ public sealed class SettingsSnapshotFactory(AppViewModel AppViewModel)
         newSettings.DesktopLyricsShadowAmount = AppSettings.DesktopLyricsShadowAmount;
         newSettings.DesktopLyricsFontWeight = AppSettings.DesktopLyricsFontWeight;
         newSettings.LyricsFontWeight = AppSettings.LyricsFontWeight;
-        newSettings.IsMusicInfoVisible = AppViewModel.IsMusicInfoVisible;
+        newSettings.IsMusicInfoVisible = state.Preferences.IsMusicInfoVisible;
         return newSettings;
     }
 
@@ -109,18 +109,18 @@ public sealed class SettingsSnapshotFactory(AppViewModel AppViewModel)
     {
         Dsp = AppSettings.Dsp,
         OutputMode = AppSettings.OutputMode,
-        Latency = AppViewModel.Latency,
+        Latency = state.Preferences.Latency,
         BassOutputDeviceId = AppSettings.BassOutputDeviceId,
         WasapiEndpointId = AppSettings.WasapiEndpointId,
         BassASIODeviceId = AppSettings.BassASIODeviceId,
         DeviceFriendlyName = AppSettings.DeviceName,
-        IsFadeEnabled = AppViewModel.IsFadeEnabled,
-        IsDopEnabled = AppViewModel.IsDopEnabled,
-        ExperimentalSurround51 = AppViewModel.ExperimentalSurround51,
-        ExperimentalAtmosPassthrough = AppViewModel.ExperimentalAtmosPassthrough,
-        AtmosEndpointId = AppViewModel.AtmosEndpointId,
-        DsdGain = AppViewModel.DsdGain,
-        DsdPcmFreq = AppViewModel.DsdPcmFreq
+        IsFadeEnabled = state.Preferences.IsFadeEnabled,
+        IsDopEnabled = state.Preferences.Audio.IsDopEnabled,
+        ExperimentalSurround51 = state.Preferences.Audio.ExperimentalSurround51,
+        ExperimentalAtmosPassthrough = state.Preferences.Audio.ExperimentalAtmosPassthrough,
+        AtmosEndpointId = state.Preferences.Audio.AtmosEndpointId,
+        DsdGain = state.Preferences.DsdGain,
+        DsdPcmFreq = state.Preferences.DsdPcmFreq
     };
 
 }

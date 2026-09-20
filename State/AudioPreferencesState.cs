@@ -12,6 +12,10 @@ namespace WinUIMusicPlayer.State;
 /// <summary>Audio 领域偏好的可观察状态；不执行 I/O 或启动后台任务。</summary>
 public sealed class AudioPreferencesState : ObservableObject
 {
+    public bool IsDopEnabled { get; set => SetProperty(ref field, value); }
+    public bool ExperimentalSurround51 { get; set => SetProperty(ref field, value); }
+    public bool ExperimentalAtmosPassthrough { get; set => SetProperty(ref field, value); }
+    public string AtmosEndpointId { get; set => SetProperty(ref field, value); } = "";
     public int Latency { get; set => SetProperty(ref field, value); } = 300;
     public int DsdGain { get; set => SetProperty(ref field, value); } = 6;
     public bool IsFadeEnabled { get; set => SetProperty(ref field, value); }

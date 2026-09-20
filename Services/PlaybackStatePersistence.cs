@@ -108,6 +108,10 @@ public sealed class PlaybackStatePersistence(MusicDatabaseService db, AppViewMod
             var playState = new SavePlayState
             {
                 PlayMode = appvm.CurrentPlayMode,
+                QueueEntryIds = appvm.State.Queue.CaptureEntryIds(),
+                QueueOrderIds = appvm.State.Queue.CaptureOrderIds(),
+                QueueMusicIds = appvm.State.Queue.CaptureMusicIds(),
+                CurrentQueueEntryId = appvm.State.Queue.CurrentEntryId,
                 // 未入库的一次性外部曲目（Id=0）不覆盖当前曲存档，避免下次启动恢复不出任何曲目。
                 LastPlayedMusicId = appvm.CurrentPlayingMusic is { Id: > 0 } current ? current.Id : existing?.LastPlayedMusicId,
                 Volume = appvm.Volume,

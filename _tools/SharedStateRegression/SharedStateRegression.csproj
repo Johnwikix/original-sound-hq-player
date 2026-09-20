@@ -9,6 +9,9 @@
     <Compile Include="../../State/DesktopLyricsState.cs" />
     <Compile Include="../../State/PlaybackQueueState.cs" />
     <Compile Include="../../Services/SettingsSaveQueue.cs" />
+    <Compile Include="../../Services/EditorSessions.cs" />
+    <Compile Include="../../State/HotKeyState.cs" />
+    <Compile Include="../../State/ShellState.cs" />
     <Compile Include="../../Services/ApplicationTasks.cs" />
     <Compile Include="../../Services/AppLifecycle.cs" />
     <Compile Include="../../Helper/UsbWriterHelper.cs" />

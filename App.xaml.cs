@@ -85,6 +85,16 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<ApplicationTasks>();
                  services.AddSingleton<UsbExportCoordinator>();
                  services.AddSingleton<SettingsCoordinator>();
+                 services.AddSingleton<HotKeyService>();
+                 services.AddSingleton<ShellService>();
+                 services.AddSingleton<LibraryTrackActions>();
+                 services.AddSingleton<LyricsLoader>();
+                 services.AddSingleton<CoverPresentationService>();
+                 services.AddSingleton<SettingsActions>();
+                 services.AddSingleton<LibraryBrowseCoordinator>();
+                 services.AddSingleton<EditorSessions>();
+                 services.AddSingleton<OutputDeviceService>();
+                 services.AddSingleton<LyricsPresentationService>();
                  services.AddSingleton<SettingsSnapshotFactory>();
                  services.AddSingleton<StartupCoordinator>();
                  services.AddSingleton<ShutdownCoordinator>();
