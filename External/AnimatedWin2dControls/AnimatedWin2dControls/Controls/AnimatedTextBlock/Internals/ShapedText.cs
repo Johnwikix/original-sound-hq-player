@@ -53,7 +53,8 @@ internal sealed partial class ShapedText : ICanvasTextRenderer, IDisposable
         string localeName, string textString, int[] clusterMapIndices, uint characterIndex,
         CanvasGlyphOrientation glyphOrientation)
     {
-        if (glyphs.Length == 0) return;
+        // 原生回调可能传入 null；无字形时直接跳过，不创建替代数组。
+        if (glyphs == null || glyphs.Length == 0) return;
         var orientationTransform = CanvasTextLayout.GetGlyphOrientationTransform(glyphOrientation, isSideways, point);
         if (clusterMapIndices == null || clusterMapIndices.Length == 0)
         {

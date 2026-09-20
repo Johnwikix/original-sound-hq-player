@@ -2,6 +2,10 @@
 
 新条目加在最上方。
 
+## 2026-09-20 动画文本空字形回调修复
+
+- `External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedTextBlock/Internals/ShapedText.cs`：跳过 `null` 和空字形数组，修复切换文本时 `DrawGlyphRun` 访问 `glyphs.Length` 引发的空引用异常。
+
 ## 2026-09-20 共享状态迁移与异步收尾
 
 - `State/`、`ViewModel/AppViewModel*.cs`：新增单例 `AppState`，迁移播放进度/队列、浏览状态、输出状态及 71 个分域偏好；旧绑定通过同一实例转发通知，保留默认值与现有布局。
