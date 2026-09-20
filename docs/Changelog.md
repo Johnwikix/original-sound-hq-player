@@ -2,6 +2,24 @@
 
 新条目加在最上方。
 
+## 2026-09-20 修复双击导入后歌曲/专辑/艺术家列表与播放队列不刷新
+
+- `Services/OneShotPlaybackService.cs`：入库与播放派发存在竞速——派发时另行按路径查库，而解析任务内的入库写仍在飞行，查空即误入一次性分支（`PlayMusic` 只换当前曲：不发布 SongsSource/页面投影、不建文件夹队列）；歌曲/专辑/艺术家列表要等重启后的全量加载才正确。修复：删除派发时查库，分支一律以 await 后的解析结果 Id 判定（Id>0=库内行，统一发布+`PlayMusicWithFolderQueue`）；固定盘先查库再解析元数据（库内已有文件免重复解析）；发布路径改为顺序等待扫描批发布完成（SongsSource/ListSongs/文件夹计数）后触发 `NotifySongsSourceChanged`，当前页投影按库版本重建、导入即时按序可见。
+- 验证：主工程构建 0 错误；FolderScanRegression（含外部导入场景）与 LifecycleRegression 全部通过；OneShot 派发竞速需真机复测（首装双击导入立即出现在歌曲/专辑/艺术家页且进入当前播放队列、连续导入多首逐一可见）。
+
+## 2026-09-20 双击打开的外部文件入库为库内条目（外部导入虚拟文件夹）
+
+- `Services/OneShotPlaybackService.cs`：解析阶段判定位置——固定本地盘且库内无同路径行时经 `AddExternalFileAsync` 入库并返回库内权威行，播放、统计、歌词、当前曲存档均为标准库内语义；可移动盘/网络盘/UNC 及入库失败回退原一次性播放（Id=0 不写库不统计，`OneShotLyricsCache` 继续服务）；引擎首推探询拿到的即库内行，保留省一次恢复曲加载的优化；首次入库条目经扫描批发布路径增量进 SongsSource/文件夹计数。
+- `Services/MusicDatabaseService.cs`：新增 `WhenInitialized`（早于 Host 启动的一次性解析在入库前等待）与 `AddExternalFileAsync`（确保虚拟行存在 + 复用提交批核心，事务内同路径查重防并发扫描/转换重复落库，失败按路径回查）；`Initialize` 失败以异常完成信号。
+- `Services/MusicDatabaseService.Scanning.cs`：外部导入虚拟文件夹（`Folder.Type="external"` 哨兵行）管理——归属按路径现算（不在任何本地扫描根内的行），`GetFoldersWithSongCountsAsync` 现算虚拟行计数，`CheckFolderBeforeAdd` 重叠判定排除虚拟行；`RescanFolder`/`RemoveFolder` 对虚拟行改为存在性对账/按归属移除；新增 `ReconcileExternalImportsAsync`（盘根不可达整组保留、确认缺失行连同歌词删除）。
+- `Services/InitialFileScan.cs`、`AutoRescanService.cs`、`LibraryWatcherService.cs`：枚举/监视跳过虚拟哨兵行；启动扫描末尾统一执行外部导入对账。
+- `Services/LibraryPath.cs`：新增 `IsFixedLocalDrive`（可移动/网络/UNC/光驱/无法判定返回 false，与 UsbDeviceMusic 设备音乐体系保持边界）。
+- `Model/Folder.cs`：`Type` 常量（`TypeLocal` 保持存量字面量、`TypeExternal`）、哨兵路径常量、`IsExternalImport`/`CanOpenInExplorer` 派生属性。
+- `ViewModel/Pages/AddFolderViewModel.cs`、`Services/FolderCommands.cs`、`View/AddFolderPage.xaml`：`ApplyBatchAsync` 改 internal 并同步虚拟行计数；虚拟行显示名在展示层注入资源（库内不固化本地化文本）、隐藏"打开所在位置"；移除确认按类型区分文案。
+- `Strings/*/Resources.resw`（六语言）：新增 `ExternalImportsFolderName`、`RemoveExternalImportsTitle`。
+- 行为：从资源管理器双击固定盘音乐文件 = 入库 + 按文件夹页语义播放（同文件夹入队列）；所在目录之后加入扫描不重复（归属移交扫描根）、移除扫描根随路径删除、文件从磁盘删除由启动对账清理；多选文件仍只取第一个；U 盘/网络路径双击维持不入库的一次性播放。
+- `_tools/FolderScanRegression`：新增外部导入回归（归属现算/移交、扫描根加入去重与移除、对账删除/保留、虚拟行移除）；`Program.cs` 末尾目录清理加句柄晚释放重试兜底，消除偶发非零退出。`_tools/LifecycleRegression`：桩 `Folder` 补 `IsExternalImport` 对齐生产模型。
+
 ## 2026-09-20 悬停滚动开关默认关闭并更名
 
 - `State/AppearancePreferencesState.cs`、`Model/SaveSettings.cs`：`IsHoverScrollEnabled` 默认值由开改为关；设置文件中已保存该键的用户不受影响，仅新装机或无该键的存档默认关闭。控件侧 `AnimatedTextBlock.IsHoverScrollEnabled` 本就默认关，保持一致。

@@ -2005,4 +2005,10 @@
   <data name="SurroundOff" xml:space="preserve">
     <value>5.1 自动输出已关闭。</value>
   </data>
+  <data name="ExternalImportsFolderName" xml:space="preserve">
+    <value>外部导入</value>
+  </data>
+  <data name="RemoveExternalImportsTitle" xml:space="preserve">
+    <value>是否要移除全部外部导入的歌曲</value>
+  </data>
 </root>

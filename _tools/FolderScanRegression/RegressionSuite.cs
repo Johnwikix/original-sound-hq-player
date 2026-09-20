@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Windows.Storage.Pickers;
@@ -35,6 +35,7 @@ internal static class RegressionSuite
     {
         await PipelineAsync();
         await DatabaseAsync(root);
+        await ExternalImportAsync(root);
         await StartupCancellationAsync(root);
         PlaybackSnapshot();
         await BenchmarkAsync();
@@ -226,6 +227,70 @@ internal static class RegressionSuite
             Check(!vm.IsScanning, "drop did not release operation gate");
             Console.WriteLine("PASS: interface-only dropped folder is inserted, scanned and published.");
             Console.WriteLine("PASS: real SQLite + VM/commands: old DB counts, progressive commits, all guards, picker/dialog races, dedup, user state, startup diff and safe deletion.");
+        }
+        finally { await database.Connection.CloseAsync(); }
+    }
+
+    // 外部打开入库的库内语义：归属按路径现算、扫描根加入/移除的处理、存在性对账与虚拟行移除。
+    // 入库写路径与扫描共用 CommitScanBatchAsync（既有用例已覆盖查重），此处直接落行验证归属与对账。
+    private static async Task ExternalImportAsync(string root)
+    {
+        var database = new MusicDatabaseService(Path.Combine(root, "external.db"));
+        await database.InitializeAsync();
+        try
+        {
+            string dir = Path.Combine(root, "ExternalMusic");
+            Directory.CreateDirectory(dir);
+            string importedPath = Path.Combine(dir, "imported.mp3");
+            File.WriteAllText(importedPath, "");
+            var imported = new Music { Path = importedPath, FolderPath = dir, Title = "imported.mp3" };
+            await database.Connection.InsertAsync(imported);
+            await database.Connection.InsertAsync(new Folder
+            {
+                Name = Folder.TypeExternal, Path = Folder.ExternalPath, Type = Folder.TypeExternal
+            });
+
+            var counted = await database.GetFoldersWithSongCountsAsync();
+            Check(counted.Single(f => f.IsExternalImport).SongCount == 1, "external import count missing");
+
+            // 之后把包含导入文件的目录加入扫描：不重复入库，归属移交给扫描根。
+            await database.CheckFolderBeforeAdd(new StorageFolder(dir));
+            Check((await database.GetMusicListAsync()).Count(m => m.Path == importedPath) == 1,
+                "adding folder duplicated imported row");
+            counted = await database.GetFoldersWithSongCountsAsync();
+            Check(counted.Single(f => f.IsExternalImport).SongCount == 0, "ownership did not transfer to scan root");
+            Check(counted.Single(f => f.Path == dir).SongCount == 1, "scan root count missing");
+
+            // 对账：盘根可达且文件存在 → 保留；文件确认缺失 → 行与歌词一并删除。
+            string strayDir = Path.Combine(root, "ExternalStray");
+            Directory.CreateDirectory(strayDir);
+            string strayPath = Path.Combine(strayDir, "stray.mp3");
+            File.WriteAllText(strayPath, "");
+            var stray = new Music { Path = strayPath, FolderPath = strayDir, Title = "stray.mp3" };
+            await database.Connection.InsertAsync(stray);
+            await database.Connection.InsertOrReplaceAsync(new MusicLyrics { MusicId = stray.Id, Lyrics = "x" });
+            Check(!await database.ReconcileExternalImportsAsync(), "present import reported deletion");
+            File.Delete(strayPath);
+            Check(await database.ReconcileExternalImportsAsync(), "missing import kept");
+            Check(await database.Connection.FindAsync<Music>(stray.Id) is null, "missing import row survived");
+            Check(await database.Connection.FindAsync<MusicLyrics>(stray.Id) is null, "missing import lyrics survived");
+
+            // 移除扫描根：其中的（原导入）行随路径删除，与库内歌曲一致。
+            var scanFolder = (await database.GetFolders()).Single(f => f.Path == dir);
+            await database.RemoveFolder(scanFolder.Id);
+            Check(!(await database.GetMusicListAsync()).Any(m => m.Path == importedPath),
+                "imported row survived scan-root removal");
+
+            // 移除虚拟行：全部导入行与虚拟行本身一并删除。
+            string stray2Path = Path.Combine(strayDir, "stray2.mp3");
+            File.WriteAllText(stray2Path, "");
+            await database.Connection.InsertAsync(new Music { Path = stray2Path, FolderPath = strayDir });
+            var external = (await database.GetFolders()).Single(f => f.IsExternalImport);
+            await database.RemoveFolder(external.Id);
+            Check(!(await database.GetMusicListAsync()).Any(m => m.Path == stray2Path),
+                "virtual removal left imported rows");
+            Check(!(await database.GetFolders()).Any(f => f.IsExternalImport), "virtual row survived removal");
+            Console.WriteLine("PASS: external imports: path-based ownership, folder add/remove semantics, reconcile and virtual removal.");
         }
         finally { await database.Connection.CloseAsync(); }
     }

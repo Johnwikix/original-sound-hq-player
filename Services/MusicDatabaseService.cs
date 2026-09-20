@@ -60,36 +60,52 @@ namespace WinUIMusicPlayer.Services
             _logger = logger;
         }
 
+        // 数据库就绪信号：Begin() 在 OnLaunched 早期启动的一次性解析早于 Host/数据库初始化，
+        // 入库前须等待此信号；初始化失败转发异常，等待方按回退处理。
+        private readonly TaskCompletionSource _initializedTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        /// <summary>数据库初始化完成（表结构与 DbPath 就绪）；失败时以异常完成。</summary>
+        public Task WhenInitialized => _initializedTcs.Task;
+
         public async Task Initialize()
         {
-            InitalizeDbPath();
-            if (_dbConnection is null)
+            try
             {
-                _dbConnection = new SQLiteAsyncConnection(DbPath);
-                await _dbConnection.CreateTableAsync<Music>();
-                await _dbConnection.CreateTableAsync<PendingMetadataWrite>();
-                await _dbConnection.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Music_Path_NoCase ON Music(Path COLLATE NOCASE)");
-                await _dbConnection.CreateTableAsync<MusicLyrics>();
-                await _dbConnection.CreateTableAsync<Folder>();
-                await _dbConnection.CreateTableAsync<SaveEqualizer>();
-                await _dbConnection.CreateTableAsync<SaveEqualizerPreset>();
-                await _dbConnection.CreateTableAsync<PlayList>();
-                await _dbConnection.CreateTableAsync<PlayListMusic>();
-                await _dbConnection.CreateTableAsync<LastPlayListState>();
-                await _dbConnection.CreateTableAsync<SubFolder>();
-                await _dbConnection.CreateTableAsync<UsbDeviceMusic>();
-                try
+                InitalizeDbPath();
+                if (_dbConnection is null)
                 {
-                    await _dbConnection.CreateTableAsync<PlaybackHistory>();
-                    await _dbConnection.ExecuteAsync(
-                        "CREATE INDEX IF NOT EXISTS IX_PlaybackHistory_StartedAt ON PlaybackHistory(StartedAt)");
+                    _dbConnection = new SQLiteAsyncConnection(DbPath);
+                    await _dbConnection.CreateTableAsync<Music>();
+                    await _dbConnection.CreateTableAsync<PendingMetadataWrite>();
+                    await _dbConnection.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Music_Path_NoCase ON Music(Path COLLATE NOCASE)");
+                    await _dbConnection.CreateTableAsync<MusicLyrics>();
+                    await _dbConnection.CreateTableAsync<Folder>();
+                    await _dbConnection.CreateTableAsync<SaveEqualizer>();
+                    await _dbConnection.CreateTableAsync<SaveEqualizerPreset>();
+                    await _dbConnection.CreateTableAsync<PlayList>();
+                    await _dbConnection.CreateTableAsync<PlayListMusic>();
+                    await _dbConnection.CreateTableAsync<LastPlayListState>();
+                    await _dbConnection.CreateTableAsync<SubFolder>();
+                    await _dbConnection.CreateTableAsync<UsbDeviceMusic>();
+                    try
+                    {
+                        await _dbConnection.CreateTableAsync<PlaybackHistory>();
+                        await _dbConnection.ExecuteAsync(
+                            "CREATE INDEX IF NOT EXISTS IX_PlaybackHistory_StartedAt ON PlaybackHistory(StartedAt)");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "初始化播放统计表失败，统计功能降级不可用: {Message}", ex.Message);
+                    }
                 }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "初始化播放统计表失败，统计功能降级不可用: {Message}", ex.Message);
-                }
+                AppViewModel = App.Services.GetRequiredService<AppViewModel>();
             }
-            AppViewModel = App.Services.GetRequiredService<AppViewModel>();
+            catch (Exception ex)
+            {
+                _initializedTcs.TrySetException(ex);
+                throw;
+            }
+            _initializedTcs.TrySetResult();
         }
 
         private void InitalizeDbPath()
@@ -1451,6 +1467,52 @@ namespace WinUIMusicPlayer.Services
                 _logger.LogError(ex, $"AddMusicFileCoreAsync 添加新音乐文件时出错: {ex.Message}");
                 return (null, "");
             }
+        }
+
+        /// <summary>
+        /// 外部打开文件入库（OneShotPlaybackService 在固定本地盘且库内无同路径行时调用）：
+        /// 先确保"外部导入"虚拟文件夹行存在，再复用提交批核心（PendingMetadataWrite 检查 +
+        /// 事务内同路径二次查重，防并发扫描/转换重复落库）。返回权威库内行；并发方先落库时按路径
+        /// 回查；失败返回 null 由调用方回退一次性播放。与 AddConvertedFileAsync 同模式，不取
+        /// LibraryOperationGate——单行小事务，避免与扫描互锁。
+        /// </summary>
+        public async Task<Music?> AddExternalFileAsync(Music music, string lyrics)
+        {
+            await _rescanfolderSemaphore.WaitAsync();
+            try
+            {
+                await EnsureExternalFolderAsync();
+                var committed = await CommitScanBatchAsync([(music, lyrics)], null);
+                // Insert 已回填自增 Id；被跳过说明并发方先落库（或文件正在被转换写入），按路径取权威行。
+                if (committed.Added.Count > 0) return music;
+                return await FindMusicByPathAsync(music.Path);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"AddExternalFileAsync 外部文件入库失败: {music.Path}: {ex.Message}");
+                try { return await FindMusicByPathAsync(music.Path); }
+                catch { return null; }
+            }
+            finally
+            {
+                _rescanfolderSemaphore.Release();
+            }
+        }
+
+        /// <summary>确保"外部导入"虚拟文件夹行存在（先查后插；全部写经同一 SQLite 连接串行化，
+        /// 且仅本服务在信号量内调用）。Name 存稳定代码值，显示名由界面层注入资源文案。</summary>
+        private async Task EnsureExternalFolderAsync()
+        {
+            int existing = await _dbConnection.ExecuteScalarAsync<int>(
+                "SELECT COUNT(*) FROM Folder WHERE Type = ? AND Path = ?",
+                Folder.TypeExternal, Folder.ExternalPath);
+            if (existing != 0) return;
+            await _dbConnection.InsertAsync(new Folder
+            {
+                Name = Folder.TypeExternal,
+                Path = Folder.ExternalPath,
+                Type = Folder.TypeExternal
+            });
         }
 
         public async Task<List<UsbDeviceMusic>> GetUsbDeviceMusics(string uniqueDeviceId)

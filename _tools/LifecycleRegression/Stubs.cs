@@ -41,7 +41,8 @@ namespace WinUIMusicPlayer.Services
         public void PlayNextTrack() => NextCalls++;
         public void ChangeWaveChannelTime(long position) => Position = position;
     }
-    public sealed record Folder(string Path);
+    // 与生产 Model/Folder 对齐的最小桩：监视器跳过外部导入虚拟行时读取该属性。
+    public sealed record Folder(string Path) { public bool IsExternalImport => false; }
     public sealed class MusicDatabaseService
     {
         public List<Folder> Folders = [];

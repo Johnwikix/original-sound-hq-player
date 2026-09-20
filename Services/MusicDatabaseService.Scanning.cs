@@ -26,11 +26,29 @@ public partial class MusicDatabaseService
             // grouping once by directory rather than materializing every Music or relying on UI startup order.
             var counts = await _dbConnection.QueryAsync<DirectorySongCount>(
                 "SELECT FolderPath AS Path, COUNT(*) AS SongCount FROM Music GROUP BY FolderPath COLLATE NOCASE");
+            // 外部导入虚拟行的计数同源现算：归属 = 分组目录不落入任何本地扫描根。
+            Folder? external = null;
+            var roots = new List<Folder>(folders.Count);
             foreach (var folder in folders)
             {
+                if (folder.IsExternalImport) { external = folder; continue; }
+                roots.Add(folder);
                 folder.SongCount = 0;
-                foreach (var count in counts)
-                    if (LibraryPath.IsWithin(count.Path, folder.Path)) folder.SongCount += count.SongCount;
+            }
+            if (external is not null) external.SongCount = 0;
+            foreach (var count in counts)
+            {
+                bool ownedByRoot = false;
+                foreach (var folder in roots)
+                {
+                    if (LibraryPath.IsWithin(count.Path, folder.Path))
+                    {
+                        // 嵌套扫描根的历史库沿用原口径：各根分别累计，不提前 break。
+                        folder.SongCount += count.SongCount;
+                        ownedByRoot = true;
+                    }
+                }
+                if (external is not null && !ownedByRoot) external.SongCount += count.SongCount;
             }
             return folders;
         }
@@ -109,6 +127,13 @@ public partial class MusicDatabaseService
         {
             var folder = await GetFolder(folderId);
             if (folder is null) return;
+            if (folder.IsExternalImport)
+            {
+                // 虚拟行无磁盘路径可按包含删除：改按归属移除全部导入行（含离线盘，用户显式移除）
+                // 与虚拟行本身；下次外部导入时自动重建。
+                await RemoveExternalImportsCoreAsync(folder);
+                return;
+            }
             var songs = await GetSongsInFolderAsync(folder.Path, true);
             await _dbConnection.RunInTransactionAsync(db =>
             {
@@ -133,8 +158,10 @@ public partial class MusicDatabaseService
         {
             var existingFolders = await _dbConnection.Table<Folder>().ToListAsync();
 
+            // 外部导入虚拟行是哨兵路径，不参与真实目录的重叠判定。
             bool folderAlreadyExists = existingFolders.Any(f =>
-                LibraryPath.IsWithin(folder.Path, f.Path) || LibraryPath.IsWithin(f.Path, folder.Path));
+                !f.IsExternalImport
+                && (LibraryPath.IsWithin(folder.Path, f.Path) || LibraryPath.IsWithin(f.Path, folder.Path)));
 
             if (!folderAlreadyExists)
             {
@@ -142,7 +169,7 @@ public partial class MusicDatabaseService
                 {
                     Name = folder.Name,
                     Path = folder.Path,
-                    Type = "本地"
+                    Type = Folder.TypeLocal
                 };
                 await _dbConnection.InsertAsync(newFolder);
                 // Folder 行先落库即回调：上层可让文件夹行先出现在列表中，SongCount 随扫描批次递增
@@ -155,8 +182,14 @@ public partial class MusicDatabaseService
         public async Task RescanFolder(int folderId, Func<IReadOnlyList<Music>, Task>? onBatchInserted = null)
         {
             var folder = await GetFolder(folderId);
-            if (folder is not null)
-                await RescanFolderCoreAsync(folder.Path, true, false, onBatchInserted);
+            if (folder is null) return;
+            if (folder.IsExternalImport)
+            {
+                // 虚拟行"重扫" = 存在性对账：只删确认缺失行，无新增可发布（刷新由调用方统一触发）。
+                await ReconcileExternalImportsAsync();
+                return;
+            }
+            await RescanFolderCoreAsync(folder.Path, true, false, onBatchInserted);
         }
 
         public async Task RescanFolderByPath(string folderPath, bool isUpdate = true, bool isSingleFolder = false)
@@ -263,6 +296,95 @@ public partial class MusicDatabaseService
                         db.Delete<MusicLyrics>(music.Id);
                     }
                 });
+        }
+
+        /// <summary>
+        /// 外部导入行集合：路径不在任何本地扫描根内的 Music 行。归属始终按路径现算——
+        /// 导入文件所在目录之后被加入扫描即自动移交为普通库内行，移除扫描根时随路径删除。
+        /// </summary>
+        private async Task<List<Music>> GetExternalImportRowsAsync(CancellationToken cancellationToken)
+        {
+            var localRoots = new List<string>();
+            foreach (var folder in await GetFolders())
+            {
+                if (!folder.IsExternalImport && !string.IsNullOrEmpty(folder.Path))
+                    localRoots.Add(folder.Path);
+            }
+            var owned = new List<Music>();
+            foreach (var music in await GetMusicListAsync())
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                bool within = false;
+                foreach (var root in localRoots)
+                    if (LibraryPath.IsWithin(music.Path, root)) { within = true; break; }
+                if (!within) owned.Add(music);
+            }
+            return owned;
+        }
+
+        /// <summary>
+        /// 外部导入对账：删除磁盘上确认缺失的导入行（含歌词）。按盘根分组防御性判断——
+        /// 盘根不可达（VHD/subst 卸载、盘符消失等）整组保留，与扫描根"枚举失败不推断删除"
+        /// 的语义一致；单行意外 IO/权限错误同样保留。返回是否存在删除。
+        /// </summary>
+        public async Task<bool> ReconcileExternalImportsAsync(CancellationToken cancellationToken = default)
+        {
+            var owned = await GetExternalImportRowsAsync(cancellationToken);
+            if (owned.Count == 0) return false;
+            var missing = new List<Music>();
+            foreach (var group in owned.GroupBy(
+                         music => Path.GetPathRoot(music.Path) ?? string.Empty, StringComparer.OrdinalIgnoreCase))
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!IsDriveRootReachable(group.Key)) continue;
+                foreach (var music in group)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    try
+                    {
+                        if (LibraryPath.IsConfirmedMissing(music.Path, Path.GetDirectoryName(music.Path) ?? music.Path))
+                            missing.Add(music);
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    {
+                        // 不可访问不构成删除证据，保留该行。
+                    }
+                }
+            }
+            if (missing.Count == 0) return false;
+            await DeletedMusicList(missing, cancellationToken);
+            return true;
+        }
+
+        /// <summary>盘根是否可达：DriveInfo 为元数据查询；IsReady=false 或根访问异常按不可达保留整组。</summary>
+        private static bool IsDriveRootReachable(string root)
+        {
+            if (string.IsNullOrEmpty(root)) return false;
+            try
+            {
+                if (!new DriveInfo(root).IsReady) return false;
+                _ = File.GetAttributes(root);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>移除外部导入虚拟文件夹：删除全部导入行（含离线盘，用户显式移除）与虚拟行本身。</summary>
+        private async Task RemoveExternalImportsCoreAsync(Folder external)
+        {
+            var owned = await GetExternalImportRowsAsync(CancellationToken.None);
+            await _dbConnection.RunInTransactionAsync(db =>
+            {
+                foreach (var music in owned)
+                {
+                    db.Delete<Music>(music.Id);
+                    db.Delete<MusicLyrics>(music.Id);
+                }
+                db.Delete<Folder>(external.Id);
+            });
         }
 
 }

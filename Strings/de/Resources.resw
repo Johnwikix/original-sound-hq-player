@@ -2006,4 +2006,10 @@
   <data name="SurroundOff" xml:space="preserve">
     <value>Automatische 5.1-Ausgabe ist aus.</value>
   </data>
+  <data name="ExternalImportsFolderName" xml:space="preserve">
+    <value>Externe Importe</value>
+  </data>
+  <data name="RemoveExternalImportsTitle" xml:space="preserve">
+    <value>Alle extern importierten Titel entfernen?</value>
+  </data>
 </root>

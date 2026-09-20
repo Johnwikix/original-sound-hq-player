@@ -67,6 +67,8 @@ public sealed class LibraryWatcherService(MusicDatabaseService database, AppView
                 {
                     token.ThrowIfCancellationRequested();
                     if (string.IsNullOrEmpty(folder.Path)) continue;
+                    // 外部导入虚拟行是哨兵路径无法监视；导入行由启动对账与手动重扫维护。
+                    if (folder.IsExternalImport) continue;
                     FileSystemWatcher? watcher = null;
                     try
                     {

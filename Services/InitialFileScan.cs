@@ -21,6 +21,8 @@ public class InitialFileScan
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 if (string.IsNullOrEmpty(folder.Path)) continue;
+                // 外部导入虚拟行是哨兵路径不可枚举；其导入行在末尾统一做存在性对账。
+                if (folder.IsExternalImport) continue;
                 try
                 {
                     var files = new List<string>();
@@ -75,6 +77,8 @@ public class InitialFileScan
                 folder.Files.Clear();
             }
             changed |= await Deduplication(cancellationToken);
+            // 外部导入对账：删除磁盘上确认缺失的导入行（盘根不可达整组保留）。
+            changed |= await database.ReconcileExternalImportsAsync(cancellationToken);
             return changed;
         }
 

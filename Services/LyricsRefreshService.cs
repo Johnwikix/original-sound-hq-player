@@ -1,4 +1,4 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -123,10 +123,11 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 await Task.Delay(500, ct);
-                // 未入库曲目（外部文件一次性播放，Id=0）：不查询/写入数据库、不递增播放计数。
-                // 路径与库内条目匹配的外部文件在 OneShotPlaybackService 派发时已改播库内条目（标准库内链路），
-                // 走到本分支的都是纯外部文件：文件旁本地歌词 → 内嵌歌词 → 独立缓存（OneShotLyricsCache，
-                // 按路径哈希的 JSON 文件）→ 在线搜索（受"自动获取歌词"设置与熔断器约束，搜到即写回独立缓存）。
+                // 未入库曲目（非固定盘或入库失败的一次性播放，Id=0）：不查询/写入数据库、不递增播放计数。
+                // 固定盘外部文件在 OneShotPlaybackService 解析阶段已入库并改播库内行（标准库内链路），
+                // 走到本分支的均为不入库的一次性播放：文件旁本地歌词 → 内嵌歌词 → 独立缓存
+                // （OneShotLyricsCache，按路径哈希的 JSON 文件）→ 在线搜索
+                // （受"自动获取歌词"设置与熔断器约束，搜到即写回独立缓存）。
                 if (music.Id <= 0)
                 {
                     var oneShotLocal = TryParseLocalLyricsFile(music, ct);

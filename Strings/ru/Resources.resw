@@ -2006,4 +2006,10 @@
   <data name="SurroundOff" xml:space="preserve">
     <value>Автоматический вывод 5.1 выключен.</value>
   </data>
+  <data name="ExternalImportsFolderName" xml:space="preserve">
+    <value>Внешние импорты</value>
+  </data>
+  <data name="RemoveExternalImportsTitle" xml:space="preserve">
+    <value>Удалить все внешние импортированные композиции?</value>
+  </data>
 </root>

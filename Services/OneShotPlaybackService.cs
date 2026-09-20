@@ -15,10 +15,12 @@ using WinUIMusicPlayer.ViewModel;
 namespace WinUIMusicPlayer.Services;
 
 /// <summary>
-/// 外部文件一次性播放（文件关联/打开方式入口）的唯一状态源：解析出未入库的 Music（Id 保持 0）
-/// 并仅替换 CurrentPlayingMusic 播放，不改播放列表、不写数据库与播放统计；
-/// 路径与库内条目匹配时改为直接播放库内条目（统计/歌词/当前曲存档走标准库内语义）。
-/// 播放触发是事件驱动（生命周期与引擎就绪属性变化时派发），引擎未就绪的请求登记挂起，不存在固定延时等待。
+/// 外部文件打开（文件关联/打开方式入口）的唯一状态源：解析外部文件并尽量沉淀为库内条目——
+/// 固定本地盘且库内无同路径行时入库（AddExternalFileAsync，归入"外部导入"虚拟文件夹），
+/// 返回库内权威行，播放、统计、歌词、当前曲存档均为标准库内语义；可移动盘/网络盘/UNC 或
+/// 入库失败时回退一次性播放（Id 保持 0，不写库不统计，歌词走 OneShotLyricsCache）。
+/// 播放触发是事件驱动（生命周期与引擎就绪属性变化时派发），引擎未就绪的请求登记挂起，
+/// 不存在固定延时等待；迟到回调按请求代差丢弃。
 /// </summary>
 public sealed class OneShotPlaybackService : IDisposable
 {
@@ -126,7 +128,8 @@ public sealed class OneShotPlaybackService : IDisposable
         TryDispatchPending();
     }
 
-    /// <summary>引擎首推前的探询：仅在解析已完成且成功时返回外部文件，供内核直接加载（省一次恢复曲加载）。</summary>
+    /// <summary>引擎首推前的探询：仅在解析已完成且成功时返回结果（固定盘为已入库行，其余为未入库实例），
+    /// 供内核直接加载（省一次恢复曲加载）。</summary>
     public Music? TryGetResolvedMusic()
     {
         lock (_gate)
@@ -137,20 +140,81 @@ public sealed class OneShotPlaybackService : IDisposable
 
     private async Task<Music?> ResolveAsync(string path)
     {
+        // 固定盘先查库：已在库内的文件直接返回权威行，免去重复元数据解析。
+        bool fixedDrive = LibraryPath.IsFixedLocalDrive(path);
+        if (fixedDrive)
+        {
+            try
+            {
+                // 查库须等数据库就绪（Begin 早于 Host/数据库初始化）。
+                await _databaseService.WhenInitialized.ConfigureAwait(false);
+                var existing = await _databaseService.FindMusicByPathAsync(path).ConfigureAwait(false);
+                if (existing is not null) return existing;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "外部文件查库失败，按未入库继续解析: {Path}", path);
+            }
+        }
+        Music? music;
+        string? lyrics;
         try
         {
             var file = await StorageFile.GetFileFromPathAsync(path);
-            var (music, lyrics) = await ToolUtils.GetMusicInfo(file);
-            // 内嵌歌词随 Music 对象在内存传递（LyricsRefreshService 对未入库曲目优先使用）。
-            if (music is not null && !string.IsNullOrEmpty(lyrics))
-                music.EmbeddedLyrics = lyrics;
-            // 未入库曲目 Id 保持 0：统计会话与 LastPlayedMusicId 持久化据此跳过。
-            return music;
+            (music, lyrics) = await ToolUtils.GetMusicInfo(file);
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "解析外部音乐文件失败: {Path}", path);
             return null;
+        }
+        if (music is null) return null;
+        // 可移动/网络/UNC 等非固定盘不沉淀曲库（与 UsbDeviceMusic 设备音乐体系保持边界）：
+        // 携带内嵌歌词走一次性播放。
+        if (!fixedDrive) return WithEmbeddedLyrics(music, lyrics);
+        try
+        {
+            // 导入成功返回库内权威行（Id>0）；并发方先落库时由其内部按路径回查返回权威行。
+            var imported = await _databaseService.AddExternalFileAsync(music, lyrics ?? string.Empty).ConfigureAwait(false);
+            if (imported is not null)
+            {
+                await MigrateOneShotLyricsAsync(imported, lyrics).ConfigureAwait(false);
+                return imported;
+            }
+            _logger.LogWarning("外部文件入库未生效，回退一次性播放: {Path}", path);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "外部文件入库失败，回退一次性播放: {Path}", path);
+        }
+        return WithEmbeddedLyrics(music, lyrics);
+    }
+
+    private static Music WithEmbeddedLyrics(Music music, string? lyrics)
+    {
+        // 内嵌歌词随 Music 对象在内存传递（LyricsRefreshService 对未入库曲目优先使用）。
+        if (!string.IsNullOrEmpty(lyrics)) music.EmbeddedLyrics = lyrics;
+        return music;
+    }
+
+    /// <summary>导入入库后把旧一次性歌词缓存迁入 MusicLyrics（仅当无内嵌且库内歌词为空），
+    /// 避免升级场景下同一文件重复在线搜索；失败只记录不影响播放。缓存条目保留，由其上限淘汰。</summary>
+    private async Task MigrateOneShotLyricsAsync(Music imported, string? embeddedLyrics)
+    {
+        if (!string.IsNullOrEmpty(embeddedLyrics)) return;
+        try
+        {
+            var (lyrics, _, krc, _) = await _databaseService.GetLyricsAsync(imported.Id).ConfigureAwait(false);
+            if (!string.IsNullOrEmpty(lyrics) || !string.IsNullOrEmpty(krc)) return;
+            var cached = OneShotLyricsCache.Load(imported.Path);
+            if (cached is null) return;
+            if (string.IsNullOrEmpty(cached.Lrc) && string.IsNullOrEmpty(cached.Krc)) return;
+            await _databaseService.SaveLyricsAsync(imported.Id, cached.Lrc, cached.Trans, cached.Krc, cached.TKrc)
+                .ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "迁移一次性歌词缓存失败（忽略）: {Path}", imported.Path);
         }
     }
 
@@ -187,19 +251,19 @@ public sealed class OneShotPlaybackService : IDisposable
         }
         try
         {
-            // 库内同路径条目：直接按库内曲目播放（统计/歌词/当前曲存档均为标准库内语义），不再走一次性链路。
-            // 派发等引擎就绪，此刻数据库必已初始化；查询失败按未命中处理，回退一次性播放。
-            var dbMusic = await _databaseService.FindMusicByPathAsync(path).ConfigureAwait(false);
-            Music? music = dbMusic;
+            // 解析结果是唯一事实源：固定盘文件（新导入或库内已有）返回库内行（Id>0），
+            // 统一走库内播放链路（统计/歌词/当前曲存档为标准库内语义）；非固定盘或入库
+            // 失败返回 Id=0 实例，走一次性播放。禁止在派发时另行查库判定——解析中的
+            // 入库写仍在飞行，查空会误入一次性分支（不发布列表、不建文件夹队列）。
+            Music? music = await resolve.ConfigureAwait(false);
             if (music is null)
             {
-                music = await resolve.ConfigureAwait(false);
-                if (music is null)
-                {
-                    NotifyFailure(path);
-                    return;
-                }
+                NotifyFailure(path);
+                return;
             }
+            bool isLibraryRow = music.Id > 0;
+            // 首次入库的条目增量发布到内存索引、文件夹计数与页面投影（先于播放派发完成，保证随后同帧可见）。
+            if (isLibraryRow) await PublishImportedOnUiAsync(music).ConfigureAwait(false);
             await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
             {
                 lock (_gate)
@@ -208,11 +272,11 @@ public sealed class OneShotPlaybackService : IDisposable
                     if (_disposed || generation != _generation) return;
                 }
                 if (!_lifecycle.IsReady || !_appViewModel.IsPlaybackEngineReady) return;
-                // 库内命中时优先用 SongsSource 实例播放，与库内列表/收藏等状态保持同源；
-                // 条目尚未同步进内存索引（如扫描刚入库）时退回数据库行实例。
-                Music target = dbMusic is not null ? (_appViewModel.FindById(dbMusic.Id) ?? dbMusic) : music;
+                // 库内行优先用 SongsSource 实例播放，与库内列表/收藏等状态保持同源；
+                // 条目尚未同步进内存索引（如发布失败）时退回数据库行实例。
+                Music target = isLibraryRow ? (_appViewModel.FindById(music.Id) ?? music) : music;
                 var browse = App.Services.GetRequiredService<MusicBrowseViewModel>();
-                if (dbMusic is not null) browse.PlayMusicWithFolderQueue(target);
+                if (isLibraryRow) browse.PlayMusicWithFolderQueue(target);
                 else _ = browse.PlayMusic(target);
             });
         }
@@ -221,6 +285,27 @@ public sealed class OneShotPlaybackService : IDisposable
             _logger.LogError(ex, "一次性播放外部文件失败: {Path}", path);
         }
     }
+
+    /// <summary>首次入库的导入条目发布到内存索引与全部页面投影。发布在 UI 线程做存在性检查，
+    /// 复用扫描批发布路径（SongsSource/ListSongs 增量 + 扫描根/虚拟文件夹计数）后触发
+    /// NotifySongsSourceChanged——歌曲/专辑/艺术家等投影按库版本重建，导入即时按序可见，
+    /// 不必等重启后的全量加载；已在索引或发布失败均不影响播放。</summary>
+    private Task PublishImportedOnUiAsync(Music dbMusic) =>
+        App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
+        {
+            try
+            {
+                if (_appViewModel.FindById(dbMusic.Id) is not null) return;
+                var folders = App.Services.GetRequiredService<AddFolderViewModel>();
+                // 同一派发器 FIFO：先等计数/索引增量提交完成，再触发投影重建，顺序确定。
+                await folders.ApplyBatchAsync([dbMusic]);
+                _appViewModel.NotifySongsSourceChanged();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "发布外部导入条目到界面失败（不影响播放）: {Path}", dbMusic.Path);
+            }
+        });
 
     private void NotifyFailure(string path)
     {

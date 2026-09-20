@@ -12,6 +12,7 @@ using Windows.Storage;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View;
 
 namespace WinUIMusicPlayer.ViewModel;
@@ -100,6 +101,13 @@ public partial class AddFolderViewModel : ObservableObject
             FolderList.Clear();
             foreach (var folder in folders)
             {
+                if (folder.IsExternalImport)
+                {
+                    // 显示名在展示层注入资源文案（库内不固化本地化文本，避免切换语言后过期）；
+                    // 哨兵路径不展示，业务逻辑一律走 IsExternalImport/Id。
+                    folder.Name = ToolUtils.GetString("ExternalImportsFolderName");
+                    folder.Path = string.Empty;
+                }
                 FolderList.Add(folder);
             }
             SetVisualState(false);
@@ -157,7 +165,11 @@ public partial class AddFolderViewModel : ObservableObject
     public Task RemoveFolderWithLoadingAsync(int folderId) => RunOperationAsync(async () =>
     {
         var xamlRoot = App.Services.GetRequiredService<MainPage>().XamlRoot;
-        if (xamlRoot is null || !await DialogHelper.ShowConfirmAsync(xamlRoot, "RemoveFolderTitle")) return;
+        var folder = await _database.GetFolder(folderId);
+        if (folder is null) return;
+        // 虚拟行移除的是全部外部导入歌曲，确认文案与普通文件夹区分。
+        string titleKey = folder.IsExternalImport ? "RemoveExternalImportsTitle" : "RemoveFolderTitle";
+        if (xamlRoot is null || !await DialogHelper.ShowConfirmAsync(xamlRoot, titleKey)) return;
         _needsReconcile = true;
         SetVisualState(true);
         await Task.Run(() => _database.RemoveFolder(folderId));
@@ -213,16 +225,33 @@ public partial class AddFolderViewModel : ObservableObject
             onBatchInserted: ApplyBatchAsync));
     }
 
-    private Task ApplyBatchAsync(IReadOnlyList<Music> batch) =>
+    /// <summary>扫描/导入批次的统一发布路径：歌曲索引增量 + 各扫描根计数递增；
+    /// 外部导入虚拟行的计数按归属（不落在任何扫描根内的批次条目）同步递增。</summary>
+    internal Task ApplyBatchAsync(IReadOnlyList<Music> batch) =>
         App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
         {
             _appViewModel.AppendSongsBatch(batch);
+            Folder? external = null;
             foreach (var folder in FolderList)
             {
+                if (folder.IsExternalImport) { external = folder; continue; }
                 int count = 0;
                 foreach (var music in batch)
                     if (LibraryPath.IsWithin(music.Path, folder.Path)) count++;
                 folder.SongCount += count;
             }
+            if (external is null) return;
+            int externalCount = 0;
+            foreach (var music in batch)
+            {
+                bool owned = true;
+                foreach (var folder in FolderList)
+                {
+                    if (folder.IsExternalImport) continue;
+                    if (LibraryPath.IsWithin(music.Path, folder.Path)) { owned = false; break; }
+                }
+                if (owned) externalCount++;
+            }
+            if (externalCount > 0) external.SongCount += externalCount;
         });
 }

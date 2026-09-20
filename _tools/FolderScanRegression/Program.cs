@@ -34,7 +34,13 @@ try
 finally
 {
     ToolUtils.SlowFile.TrySetResult();
-    Directory.Delete(root, true);
+    // SQLite 异步连接句柄可能晚于断言释放（仅清理竞态,与检查结果无关）：小步重试后仍失败则留给系统临时目录清理。
+    for (int attempt = 0; ; attempt++)
+    {
+        try { Directory.Delete(root, true); break; }
+        catch (IOException) when (attempt < 10) { await Task.Delay(100); }
+        catch (UnauthorizedAccessException) when (attempt < 10) { await Task.Delay(100); }
+    }
 }
 
 // Captured legacy ordering: directory-wide WhenAll precedes the first batch.

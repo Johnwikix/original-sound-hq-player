@@ -59,6 +59,8 @@ namespace WinUIMusicPlayer.Services
                     var database = App.Services.GetRequiredService<MusicDatabaseService>();
                     foreach (var folder in await database.GetFolders())
                     {
+                        // 虚拟行无磁盘根可枚举；导入行由启动对账与虚拟行手动重扫维护。
+                        if (folder.IsExternalImport) continue;
                         cancellationToken.ThrowIfCancellationRequested();
                         try
                         {

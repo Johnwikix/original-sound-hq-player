@@ -2006,4 +2006,10 @@
   <data name="SurroundOff" xml:space="preserve">
     <value>5.1 自動出力はオフです。</value>
   </data>
+  <data name="ExternalImportsFolderName" xml:space="preserve">
+    <value>外部インポート</value>
+  </data>
+  <data name="RemoveExternalImportsTitle" xml:space="preserve">
+    <value>外部インポートした楽曲をすべて削除しますか</value>
+  </data>
 </root>

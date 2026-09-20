@@ -174,8 +174,9 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 await Task.WhenAll(ipcInitialization, licenseInitialization, libraryInitialization).WaitAsync(cancellationToken);
-                // 一次性外部文件已解析完成时，首推直接加载它，省去先加载恢复曲再切换的一次开销；
-                // 解析未完成则照常推恢复曲，外部文件在引擎就绪后接替播放（OneShotPlaybackService 事件驱动派发）。
+                // 一次性外部文件已解析完成时（固定盘文件已入库为库内行），首推直接加载它，
+                // 省去先加载恢复曲再切换的一次开销；解析未完成则照常推恢复曲，
+                // 外部文件在引擎就绪后接替播放（OneShotPlaybackService 事件驱动派发）。
                 var initialMusic = AppViewModel.CurrentPlayingMusic;
                 if (App.Services.GetRequiredService<OneShotPlaybackService>().TryGetResolvedMusic() is { } oneShotMusic)
                     initialMusic = oneShotMusic;

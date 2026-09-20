@@ -26,7 +26,8 @@ namespace WinUIMusicPlayer.Services
 
         private static void OpenFolder(Folder? folder)
         {
-            if (folder is null) return;
+            // 外部导入虚拟行无对应磁盘目录，不提供资源管理器入口。
+            if (folder is null || folder.IsExternalImport) return;
             _ = App.Services.GetRequiredService<AddFolderViewModel>().OpenFolderAsync(folder.Path);
         }
 

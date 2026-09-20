@@ -2006,4 +2006,10 @@
   <data name="SurroundOff" xml:space="preserve">
     <value>Automatic 5.1 output is off.</value>
   </data>
+  <data name="ExternalImportsFolderName" xml:space="preserve">
+    <value>External imports</value>
+  </data>
+  <data name="RemoveExternalImportsTitle" xml:space="preserve">
+    <value>Do you want to remove all externally imported songs</value>
+  </data>
 </root>
