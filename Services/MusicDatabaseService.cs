@@ -1,4 +1,4 @@
-using CommunityToolkit.WinUI;
+﻿using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
@@ -39,6 +39,9 @@ namespace WinUIMusicPlayer.Services
         // 设置文件读写互斥：写不并发（避免 IOException 丢更新），读不撞写（避免读到半截 JSON）
         private readonly SemaphoreSlim _settingsIoGate = new(1, 1);
         private readonly SemaphoreSlim _settingsSaveGate = new(1, 1);
+        private SettingsSaveQueue? _settingsSaveQueue;
+        private SettingsSnapshotFactory? _settingsCapture;
+        public void AttachSettingsCapture(SettingsSnapshotFactory capture) => _settingsCapture = capture;
         // 播放状态文件同一套互斥（同步读写路径用 Wait() 阻塞进入，临界区仅一次小文件 IO）
         private readonly SemaphoreSlim _playStateIoGate = new(1, 1);
         // 桌面歌词窗口状态文件仅同步读写，用 lock 即可
@@ -1221,32 +1224,59 @@ namespace WinUIMusicPlayer.Services
             _ = AppViewModel.GetWasapiDeviceAsync();
         }
 
-        public async Task SaveSettingAsync(bool throwOnError = false)
+        private Task? _lastSettingsWrite;
+        private Task _observedSettingsWrite = Task.CompletedTask;
+        private Func<Task>? _saveOnUi;
+        private Func<Task>? _saveStrictOnUi;
+        private Task SaveOnUi() => SaveSettingAsync();
+        private Task SaveStrictOnUi() => SaveSettingAsync(throwOnError: true);
+
+        public Task SaveSettingAsync(bool throwOnError = false)
         {
+            var dispatcher = App.MainWindow?.DispatcherQueue;
+            if (dispatcher is not null && !dispatcher.HasThreadAccess)
+                return dispatcher.EnqueueAsync(throwOnError
+                    ? _saveStrictOnUi ??= SaveStrictOnUi
+                    : _saveOnUi ??= SaveOnUi);
+            _settingsSaveQueue ??= new SettingsSaveQueue(WriteCurrentSettingsAsync);
+            var pending = _settingsSaveQueue.RequestAsync();
+            // 同一写入批次共用异常观察任务，不让每次滑块变化挂起一个 async 状态机。
+            if (!ReferenceEquals(pending, _lastSettingsWrite))
+            {
+                _lastSettingsWrite = pending;
+                _observedSettingsWrite = ObserveSettingsWriteAsync(pending);
+            }
+            return throwOnError ? pending : _observedSettingsWrite;
+        }
+
+        private async Task ObserveSettingsWriteAsync(Task pending)
+        {
+            try { await pending; }
+            catch (Exception ex) { _logger.LogError(ex, "保存设置失败"); }
+        }
+
+        /// <summary>包含尚未触发的样式防抖值，在释放 UI 状态前等待最终写盘。</summary>
+        public Task FlushSettingsAsync() => SaveSettingAsync(throwOnError: true);
+
+        private async Task WriteCurrentSettingsAsync()
+        {
+            // 以最后一次已知的磁盘状态为基底合并写盘：未被当前快照适配器覆盖的字段
+            // 不会被默认值冲掉；快照构建的异常也不再静默吞掉（此前 fire-and-forget 会丢掉整次保存）。
+            SaveSettings baseline = _currentSettings ?? await GetSettings();
+            var capture = _settingsCapture ?? throw new InvalidOperationException("Settings capture is not attached.");
+            SaveSettings merged = capture.CaptureGeneral(baseline, _audioSettingsMigrated, _correctionsMigrated);
+            var audio = capture.CaptureAudio();
+            // 在 UI 调用顺序上排队，再派发后台任务，防止线程池调度反转保存顺序。
+            await _settingsSaveGate.WaitAsync();
             try
             {
-                // 以最后一次已知的磁盘状态为基底合并写盘：未被 SaveCurrentSettings 覆盖的字段
-                // 不会被默认值冲掉；快照构建的异常也不再静默吞掉（此前 fire-and-forget 会丢掉整次保存）。
-                SaveSettings baseline = _currentSettings ?? await GetSettings();
-                SaveSettings merged = JsonSerializer.Deserialize(JsonSerializer.SerializeToUtf8Bytes(baseline, SettingsJsonContext.Default.SaveSettings), SettingsJsonContext.Default.SaveSettings)!;
-                SaveCurrentSettings(merged);
-                var audio = CaptureAudioPreferences();
-                // 在 UI 调用顺序上排队，再派发后台任务，防止线程池调度反转保存顺序。
-                await _settingsSaveGate.WaitAsync();
-                try
-                {
-                    if (_audioSettingsMigrated)
-                        await Task.Run(() => _audioSettingsStore!.SaveAsync(audio));
-                    await WriteSettingsToJson(merged);
-                }
-                finally { _settingsSaveGate.Release(); }
+                if (_audioSettingsMigrated)
+                    await Task.Run(() => _audioSettingsStore!.SaveAsync(audio));
+                await WriteSettingsToJson(merged);
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"SaveSettingAsync 保存设置失败: {ex.Message}");
-                if (throwOnError) throw;
-            }
+            finally { _settingsSaveGate.Release(); }
         }
+
 
         public async Task SaveEqualizerSettingAsync()
         {
@@ -1270,98 +1300,6 @@ namespace WinUIMusicPlayer.Services
             newEqualizer.IsEqualizerEnabled = AppSettings.IsEqualizerEnabled;
             newEqualizer.EqualizerPreset = AppSettings.EqualizerPreset;
             return newEqualizer;
-        }
-
-        private SaveSettings SaveCurrentSettings(SaveSettings newSettings)
-        {
-            if (_audioSettingsMigrated) newSettings.ClearLegacyAudioPreferences();
-            if (_correctionsMigrated) newSettings.DeviceCorrections = null;
-            newSettings.DefaultEntry = AppViewModel.DefaultEntryComboBoxTag;
-            newSettings.DefaultPlayList = AppViewModel.DefaultPlayListComboBoxTag;
-            newSettings.AppStyle = AppViewModel.BackdropType;
-            newSettings.AppTheme = AppViewModel.ThemeType;
-            newSettings.IsRunningBackend = AppViewModel.IsRunningBackend;
-            newSettings.IsAutoLyricsEnabled = AppViewModel.IsAutoLyricsEnabled;
-            newSettings.IsAutoCoverEnabled = AppViewModel.IsAutoCoverEnabled;
-            newSettings.CoverSize = AppViewModel.CoverSize;
-            newSettings.Win2dTextEffectType = AppViewModel.Win2dTextEffectType.Value;
-            newSettings.IsFluidBackgroundEnabled = AppViewModel.IsFluidBackgroundEnabled;
-            newSettings.BackgroundShader = (int)AppViewModel.BackgroundShader;
-            newSettings.IsFogEffectEnabled = AppViewModel.IsFogEffectEnabled;
-            newSettings.IsSnowEffectEnabled = AppViewModel.IsSnowEffectEnabled;
-            newSettings.IsRaindropEffectEnabled = AppViewModel.IsRaindropEffectEnabled;
-            newSettings.IsFolderWatchEnabled = AppViewModel.IsFolderWatchEnabled;
-            newSettings.IsCustomAppSize = AppViewModel.IsCustomAppSize;
-            newSettings.AppHeight = AppViewModel.AppHeight;
-            newSettings.AppWidth = AppViewModel.AppWidth;
-            newSettings.GlobalFont = AppViewModel.FontFamily.FontFamily.Source;
-            newSettings.CustomAcrylicOpacity = AppViewModel.CustomOpacity;
-            newSettings.CustomColorArgb = (uint)((AppViewModel.CustomColor.A << 24) | (AppViewModel.CustomColor.R << 16) | (AppViewModel.CustomColor.G << 8) | AppViewModel.CustomColor.B);
-            newSettings.IsCustomLyricsColorEnabled = AppViewModel.IsCustomLyricsColorEnabled;
-            newSettings.LyricsCustomColorRgb = (uint)((AppViewModel.LyricsCustomColor.R << 16) | (AppViewModel.LyricsCustomColor.G << 8) | AppViewModel.LyricsCustomColor.B);
-            newSettings.IsUpdateBackDrop = AppViewModel.IsUpdateBackDrop;
-            newSettings.LyricsAlignment = AppViewModel.LyricsAlignment;
-            newSettings.LyricsMargin = (int)AppViewModel.LyricsMargin.Left;
-            newSettings.GlobalFontSize = AppViewModel.GlobalFontSize;
-            newSettings.IsGlobalFontSizeEnabled = AppViewModel.IsGlobalFontSizeEnabled;
-            newSettings.MusicCoverCache = AppViewModel.MusicCoverCache;
-            newSettings.LyricsBlurAmount = AppViewModel.LyricsBlurAmount;
-            newSettings.UseImageDominantTheme = AppViewModel.UseImageDominantTheme;
-            newSettings.EnableLightWave = AppViewModel.EnableLightWave;
-            newSettings.PaletteAlgorithm = (int)AppViewModel.PaletteAlgorithm;
-            newSettings.IsWin2dAnimatedText = AppViewModel.IsWin2dAnimatedText;
-            newSettings.IsHoverScrollEnabled = AppViewModel.IsHoverScrollEnabled;
-            newSettings.CharFloatAmount = AppViewModel.CharFloatAmount;
-            newSettings.CharScaleAmount = AppViewModel.CharScaleAmount;
-            newSettings.GlowAmount = AppViewModel.GlowAmount;
-            newSettings.LongSyllableThreshold = AppViewModel.LongSyllableThreshold;
-            newSettings.PlayingLineTopOffsetPercent = AppViewModel.PlayingLineTopOffsetPercent;
-            newSettings.TranslatedOpacityPercent = AppViewModel.TranslatedOpacityPercent;
-            newSettings.UnplayedOpacityPercent = AppViewModel.UnplayedOpacityPercent;
-            newSettings.TargetFrameRate = AppViewModel.TargetFrameRate;
-            newSettings.EnableAdvancedLyricsEffect = AppViewModel.EnableAdvancedLyricsEffect;
-            newSettings.ScrollEasingType = AppViewModel.ScrollEasingType;
-            newSettings.ScrollEasingMode = AppViewModel.ScrollEasingMode;
-            newSettings.PlayOrPauseShortcut = AppViewModel.PlayOrPauseShortcut;
-            newSettings.NextSongShortcut = AppViewModel.NextSongShortcut;
-            newSettings.PreviousSongShortcut = AppViewModel.PreviousSongShortcut;
-            newSettings.VolumeUpShortcut = AppViewModel.VolumeUpShortcut;
-            newSettings.VolumeDownShortcut = AppViewModel.VolumeDownShortcut;
-            newSettings.TogglePlayingDetailShortcut = AppViewModel.TogglePlayingDetailShortcut;
-            newSettings.BackShortcut = AppViewModel.BackShortcut;
-            newSettings.ShowWindowShortcut = AppViewModel.ShowWindowShortcut;
-            newSettings.ToggleFullScreenShortcut = AppViewModel.ToggleFullScreenShortcut;
-            newSettings.ToggleDesktopLyricsShortcut = AppViewModel.ToggleDesktopLyricsShortcut;
-            newSettings.ToggleDesktopLyricsLockShortcut = AppViewModel.ToggleDesktopLyricsLockShortcut;
-            newSettings.ToggleDesktopLyricsKaraokeShortcut = AppViewModel.ToggleDesktopLyricsKaraokeShortcut;
-            newSettings.ResetDesktopLyricsShortcut = AppViewModel.ResetDesktopLyricsShortcut;
-            newSettings.EnableGlobalHotKey = AppViewModel.EnableGlobalHotKey;
-            newSettings.IsTrimOnHideEnabled = AppViewModel.IsTrimOnHideEnabled;
-            newSettings.IsTrimAfterPlaybackEnabled = AppViewModel.IsTrimAfterPlaybackEnabled;
-            newSettings.ArtistSplitSymbols = AppViewModel.ArtistSplitSymbols;
-            newSettings.PlayingDetailAlignment = AppViewModel.PlayingDetailAlignment;
-            newSettings.UsePlayingDetailAlignmentInPortrait = AppViewModel.UsePlayingDetailAlignmentInPortrait;
-            newSettings.AutoHideDesktopLyricsOnPlayingDetail = AppSettings.AutoHideDesktopLyricsOnPlayingDetail;
-            newSettings.IsDesktopLyricsEnabled = AppSettings.IsDesktopLyricsEnabled;
-            newSettings.IsDesktopLyricsLocked = AppSettings.IsDesktopLyricsLocked;
-            newSettings.IsDesktopLyricsKaraokeEnabled = AppSettings.IsDesktopLyricsKaraokeEnabled;
-            newSettings.DesktopLyricsFontSize = AppSettings.DesktopLyricsFontSize;
-            newSettings.DesktopLyricsFontFamily = AppSettings.DesktopLyricsFontFamily;
-            newSettings.DesktopLyricsColorRgb = AppSettings.DesktopLyricsColorRgb;
-            newSettings.IsDesktopLyricsCustomColorEnabled = AppSettings.IsDesktopLyricsCustomColorEnabled;
-            newSettings.IsDesktopLyricsTranslationEnabled = AppSettings.IsDesktopLyricsTranslationEnabled;
-            newSettings.IsDesktopLyricsGlowEnabled = AppSettings.IsDesktopLyricsGlowEnabled;
-            newSettings.IsDesktopLyricsCharFloatEnabled = AppSettings.IsDesktopLyricsCharFloatEnabled;
-            newSettings.IsDesktopLyricsCharScaleEnabled = AppSettings.IsDesktopLyricsCharScaleEnabled;
-            newSettings.DesktopLyricsLongSyllableThreshold = AppSettings.DesktopLyricsLongSyllableThreshold;
-            newSettings.DesktopLyricsGlowAmount = AppSettings.DesktopLyricsGlowAmount;
-            newSettings.DesktopLyricsCharFloatAmount = AppSettings.DesktopLyricsCharFloatAmount;
-            newSettings.DesktopLyricsCharScaleAmount = AppSettings.DesktopLyricsCharScaleAmount;
-            newSettings.DesktopLyricsShadowAmount = AppSettings.DesktopLyricsShadowAmount;
-            newSettings.DesktopLyricsFontWeight = AppSettings.DesktopLyricsFontWeight;
-            newSettings.LyricsFontWeight = AppSettings.LyricsFontWeight;
-            newSettings.IsMusicInfoVisible = AppViewModel.IsMusicInfoVisible;
-            return newSettings;
         }
 
         public async Task RemoveMusic(int musicId)

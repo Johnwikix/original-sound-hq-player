@@ -24,6 +24,8 @@ namespace WinUIMusicPlayer.View
         {
             InitializeComponent();
             ViewModel = App.Services.GetRequiredService<AddFolderViewModel>();
+            Loaded += (_, _) => ViewModel.Activate();
+            Unloaded += (_, _) => ViewModel.Deactivate();
             NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
         }
 

@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using System.Threading;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
@@ -35,9 +36,10 @@ namespace WinUIMusicPlayer.Helper
         /// <paramref name="nextFileBase"/> 在每个文件完成后调用，返回该文件的完成基准百分比
         /// （= 已完成文件数/总数），用于跨批次的进度重置与聚合。
         /// </summary>
-        public async Task WriteToUsb(IList<Music> musicList, UsbStorageDevice device, string? format = null,
-            int bitRateKbps = 320, IProgress<double>? progress = null, Func<double>? nextFileBase = null)
+        public async Task<List<(Music Music, string Extension)>> WriteToUsb(IList<Music> musicList, UsbStorageDevice device, string? format = null,
+            int bitRateKbps = 320, IProgress<double>? progress = null, Func<double>? nextFileBase = null, CancellationToken cancellationToken = default)
         {
+            List<(Music Music, string Extension)> succeeded = new(musicList.Count);
             char[] invalidChars = Path.GetInvalidFileNameChars();
             double basePercent = 0;
             double currentFilePercent = 0;
@@ -52,6 +54,8 @@ namespace WinUIMusicPlayer.Helper
             {
                 foreach (var music in musicList)
                 {
+                    // 原生转换没有取消协议：等待本文件真正结束后停止下一项，保留已成功的台账。
+                    if (cancellationToken.IsCancellationRequested) break;
                     currentFilePercent = 0;
                     progress?.Report(basePercent);
                     try
@@ -89,6 +93,7 @@ namespace WinUIMusicPlayer.Helper
                         }
 
                         _logger.LogInformation($"已写入 {targetFilePath}");
+                        succeeded.Add((music, Path.GetExtension(targetFilePath).TrimStart('.')));
                         await WriteLyricsFileAsync(music, targetBasePath, sanitizedFileName);
                     }
                     catch (Exception ex)
@@ -105,6 +110,7 @@ namespace WinUIMusicPlayer.Helper
             {
                 _converterService.updateProgress -= OnConverterProgress;
             }
+            return succeeded;
         }
 
         /// <summary>流式复制并按字节进度回调（0-100）。</summary>

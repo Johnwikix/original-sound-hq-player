@@ -22,6 +22,7 @@ namespace WinUIMusicPlayer.ViewModel
         public bool IsInDetailMode { get; set => SetProperty(ref field, value); }
         private MusicBrowseViewModel? _musicBrowseViewModel { get; }
         public AppViewModel AppViewModel { get; }
+        public WinUIMusicPlayer.State.AppState State => AppViewModel.State;
         private MusicDatabaseService _musicDatabaseService { get; }
         //private ArtistPage? currentPage { get; set; }
         //private ContextMenuService _contextMenuService { get; }
@@ -109,6 +110,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private async Task Play()
         {
+            if (!AppViewModel.CanStartPlayback) return;
             var srcSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(AppViewModel.SongsSource);
             var pool = System.Buffers.ArrayPool<Music>.Shared;
             var buf = pool.Rent(Math.Max(srcSpan.Length, 1));
@@ -133,7 +135,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
             finally
             {
-                pool.Return(buf, clearArray: false);
+                pool.Return(buf, clearArray: true);
             }
         }
         [RelayCommand]

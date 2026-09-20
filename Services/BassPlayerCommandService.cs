@@ -12,7 +12,7 @@ using static WinUIMusicPlayer.Utils.ToolUtils;
 
 namespace WinUIMusicPlayer.Services
 {
-    public class BassPlayerCommandService
+    public class BassPlayerCommandService : IDisposable
     {
         public int? lastPlayedMusicId;
         public bool isPausing = false;
@@ -21,6 +21,16 @@ namespace WinUIMusicPlayer.Services
         private IpcService IpcService { get; set; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private ILogger<BassPlayerCommandService> _logger;
+        private bool _disposed;
+        private bool CanPlay => !_disposed && AppViewModel.CanStartPlayback;
+        private bool CanReceive => !_disposed && AppViewModel.CanPublishState;
+
+        public void Dispose()
+        {
+            if (_disposed) return;
+            _disposed = true;
+            IpcService.NotificationReceived -= IpcService_NotificationReceived;
+        }
 
         public BassPlayerCommandService(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<BassPlayerCommandService> logger)
         {
@@ -33,11 +43,13 @@ namespace WinUIMusicPlayer.Services
 
         private void IpcService_NotificationReceived(MessageTypeId typeId, ReadOnlyMemory<byte> payload)
         {
+            if (!CanReceive || App.MainWindow is null) return;
             if (typeId == MessageTypeId.PlayState)
             {
                 var state = BinarySerializer.ReadPlayStateResponse(payload.Span);
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
+                    if (!CanReceive) return;
                     AppViewModel.IsPlaying = state.IsPlaying;
                     if (state.IsPlaying)
                         AppViewModel.StartProgressTimer();
@@ -49,6 +61,7 @@ namespace WinUIMusicPlayer.Services
             {
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
+                    if (!CanReceive) return;
                     AppViewModel.IsPlaying = false;
                     AppViewModel.StopProgressTimer();
                     var (_, total) = AppViewModel.GetTimeProgressCache();
@@ -62,6 +75,7 @@ namespace WinUIMusicPlayer.Services
                 var vol = BinarySerializer.ReadVolumeResponse(payload.Span);
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
+                    if (!CanReceive) return;
                     AppViewModel.Volume = vol.Volume;
                 });
             }
@@ -88,6 +102,7 @@ namespace WinUIMusicPlayer.Services
 
         public async Task AutoPlayNextTrack()
         {
+            if (!CanPlay) return;
             if (Interlocked.Exchange(ref _autoPlayInFlight, 1) != 0) return;
             try
             {
@@ -124,7 +139,7 @@ namespace WinUIMusicPlayer.Services
 
         private static async Task MusicBrowsePlayMusic(Music music)
         {
-            await App.Services.GetRequiredService<MusicBrowseViewModel>().PlayMusic(music);
+            await App.Services.GetRequiredService<PlaybackCoordinator>().PlayAsync(music);
         }
 
         public void MusicEnd()
@@ -140,6 +155,7 @@ namespace WinUIMusicPlayer.Services
             IpcService.MusicEnd();
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
+                if (!CanReceive) return;
                 AppViewModel.StopProgressTimer();
                 AppViewModel.ProgressSlider = 0;
                 AppViewModel.IsPlaying = false;
@@ -148,6 +164,7 @@ namespace WinUIMusicPlayer.Services
 
         public void PlayNextTrack()
         {
+            if (!CanPlay || AppViewModel.CurrentPlayingList.Count == 0) return;
             try
             {
                 int currentIndex = AppViewModel.GetCurrentIndex();
@@ -159,12 +176,14 @@ namespace WinUIMusicPlayer.Services
 
         public void PlayMusic(Music music)
         {
+            if (!CanPlay) return;
             IpcService.Play(music.Path);
             AppViewModel.StartProgressTimer();
         }
 
         public async Task PlayButton()
         {
+            if (!CanPlay) return;
             try
             {
                 bool? state = await IpcService.PlayButton();
@@ -173,6 +192,7 @@ namespace WinUIMusicPlayer.Services
                     // 完成任务前发布确认状态，共享命令才能正确处理在途的 Play/Pause 意图。
                     await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
                     {
+                        if (!CanPlay) return;
                         AppViewModel.IsPlaying = s;
                         if (s) AppViewModel.StartProgressTimer();
                         else AppViewModel.StopProgressTimer();

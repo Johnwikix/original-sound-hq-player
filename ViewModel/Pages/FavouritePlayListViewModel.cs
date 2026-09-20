@@ -24,6 +24,7 @@ namespace WinUIMusicPlayer.ViewModel
         public ObservableCollection<MenuModel> MenuOptions { get; set => SetProperty(ref field, value); } = [];
         public MusicBrowseViewModel BrowseViewModel { get; set; }
         public AppViewModel AppViewModel { get; }
+        public WinUIMusicPlayer.State.AppState State => AppViewModel.State;
         private MusicDatabaseService _musicDatabaseService { get; }
         private FavouritePlayListPage currentPage { get; set; }
         private ILogger<FavouritePlayListViewModel> _logger;
@@ -118,6 +119,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task MusicListView_DoubleTappedAsync(Music selectedMusic)
         {
+            if (!AppViewModel.CanStartPlayback) return;
             if (selectedMusic is not null && BrowseViewModel is not null)
             {
                 AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(AppViewModel.FavoriteSongs);
@@ -129,6 +131,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void PlayMenuItem_Click(IEnumerable<Music> uniqueSelectedMusics)
         {
+            if (!AppViewModel.CanStartPlayback) return;
             if (uniqueSelectedMusics is ICollection<Music> col && col.Count > 1)
             {
                 AppViewModel.SequentialPlayingList = new(col);
@@ -214,6 +217,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private async Task Play()
         {
+            if (!AppViewModel.CanStartPlayback) return;
             if (SelectedMusics.Count == 1)
             {
                 if (BrowseViewModel is not null)

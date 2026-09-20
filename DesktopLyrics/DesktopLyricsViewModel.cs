@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using Windows.UI;
@@ -16,105 +16,62 @@ namespace WinUIMusicPlayer.DesktopLyrics
     /// </summary>
     public class DesktopLyricsViewModel : ObservableObject
     {
-        private bool _isEnabled;
-        private bool _autoHideOnPlayingDetail;
-        private bool _isMainWindowShown;
-        private bool _isPlayingDetailVisible;
-
-        /// <summary>自动隐藏仅改变窗口显示，不改变用户的桌面歌词总开关。</summary>
-        public bool AutoHideOnPlayingDetail
+        public WinUIMusicPlayer.State.AppState State { get; }
+        public DesktopLyricsViewModel(WinUIMusicPlayer.State.AppState state, MusicDatabaseService database, ShutdownCoordinator shutdown)
         {
-            get => _autoHideOnPlayingDetail;
-            set
+            State = state;
+            _database = database;
+            shutdown.RegisterCleanup(() => State.DesktopLyrics.PropertyChanged -= OnSharedStateChanged);
+            State.DesktopLyrics.PropertyChanged += OnSharedStateChanged;
+        }
+
+        private bool _restoring;
+        private readonly MusicDatabaseService _database;
+        private void OnSharedStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            OnPropertyChanged(e);
+            if (_restoring) return;
+            switch (e.PropertyName)
             {
-                if (!SetProperty(ref _autoHideOnPlayingDetail, value)) return;
-                AppSettings.AutoHideDesktopLyricsOnPlayingDetail = value;
-                UpdateWindowVisibility();
-                PersistSettings();
+                case nameof(IsEnabled):
+                    AppSettings.IsDesktopLyricsEnabled = IsEnabled;
+                    EnsureBoundsLoaded();
+                    if (IsEnabled) UpdateWindowVisibility();
+                    else DesktopLyricsManager.CloseWindow();
+                    PersistSettings();
+                    break;
+                case nameof(IsLocked):
+                    AppSettings.IsDesktopLyricsLocked = IsLocked;
+                    PersistSettings();
+                    break;
+                case nameof(AutoHideOnPlayingDetail):
+                    AppSettings.AutoHideDesktopLyricsOnPlayingDetail = AutoHideOnPlayingDetail;
+                    UpdateWindowVisibility();
+                    PersistSettings();
+                    break;
+                case nameof(IsMainWindowShown):
+                case nameof(IsPlayingDetailVisible):
+                    UpdateWindowVisibility();
+                    break;
             }
         }
 
-        /// <summary>主窗口事件转发的显示状态：窗口存在（含失焦/最小化）为 true，仅收进托盘后为 false；
-        /// 与激活/焦点无关。仅变化时更新，无轮询、闭包或设置落盘。</summary>
-        public bool IsMainWindowShown
-        {
-            get => _isMainWindowShown;
-            set
-            {
-                if (_isMainWindowShown == value) return;
-                _isMainWindowShown = value;
-                UpdateWindowVisibility();
-            }
-        }
-
-        /// <summary>由应用 VM 转发实际播放详情页状态。</summary>
-        public bool IsPlayingDetailVisible
-        {
-            get => _isPlayingDetailVisible;
-            set
-            {
-                if (_isPlayingDetailVisible == value) return;
-                _isPlayingDetailVisible = value;
-                UpdateWindowVisibility();
-            }
-        }
+        public bool IsEnabled { get => State.DesktopLyrics.IsEnabled; set => State.DesktopLyrics.IsEnabled = value; }
+        public bool IsLocked { get => State.DesktopLyrics.IsLocked; set => State.DesktopLyrics.IsLocked = value; }
+        public bool IsKaraokeEnabled { get => State.DesktopLyrics.IsKaraokeEnabled; set => State.DesktopLyrics.IsKaraokeEnabled = value; }
+        public bool AutoHideOnPlayingDetail { get => State.DesktopLyrics.AutoHideOnPlayingDetail; set => State.DesktopLyrics.AutoHideOnPlayingDetail = value; }
+        public bool IsMainWindowShown { get => State.DesktopLyrics.IsMainWindowShown; set => State.DesktopLyrics.IsMainWindowShown = value; }
+        public bool IsPlayingDetailVisible { get => State.DesktopLyrics.IsPlayingDetailVisible; set => State.DesktopLyrics.IsPlayingDetailVisible = value; }
 
         private void UpdateWindowVisibility()
         {
-            if (!_isEnabled) return;
-            DesktopLyricsManager.SetWindowVisible(
-                !(_autoHideOnPlayingDetail && _isPlayingDetailVisible && _isMainWindowShown));
+            if (!IsEnabled || State.Lifecycle.Phase == AppPhase.Stopping) return;
+            DesktopLyricsManager.SetWindowVisible(!(AutoHideOnPlayingDetail && IsPlayingDetailVisible && IsMainWindowShown));
         }
 
-        private bool _isLocked = true;
-        private bool _isKaraokeEnabled;
         private DesktopLyricsStyle _style;
         private SaveDesktopLyricsState _boundsState = new();
         private bool _boundsLoaded;
-
-        public bool IsEnabled
-        {
-            get => _isEnabled;
-            set
-            {
-                if (SetProperty(ref _isEnabled, value))
-                {
-                    AppSettings.IsDesktopLyricsEnabled = value;
-                    EnsureBoundsLoaded();
-                    if (value) UpdateWindowVisibility();
-                    else DesktopLyricsManager.CloseWindow();
-                    PersistSettings();
-                }
-            }
-        }
-
-        public bool IsLocked
-        {
-            get => _isLocked;
-            set
-            {
-                if (SetProperty(ref _isLocked, value))
-                {
-                    AppSettings.IsDesktopLyricsLocked = value;
-                    PersistSettings();
-                }
-            }
-        }
-
-        /// <summary>逐字效果开关：true = CanvasLyricsRenderer（Win2D 逐字扫光），false = TextBlockLyricsRenderer。
-        /// 窗口监听本属性热切换渲染器；默认开（与主界面 EnableAdvancedLyricsEffect 保持一致）。</summary>
-        public bool IsKaraokeEnabled
-        {
-            get => _isKaraokeEnabled;
-            set
-            {
-                if (SetProperty(ref _isKaraokeEnabled, value))
-                {
-                    AppSettings.IsDesktopLyricsKaraokeEnabled = value;
-                    PersistSettings();
-                }
-            }
-        }
 
         /// <summary>样式快照（悬浮窗监听变化推送渲染器；RestoreFromSettings / 设置页提交时整体更新）。</summary>
         public DesktopLyricsStyle Style { get => _style; set => SetProperty(ref _style, value); }
@@ -128,14 +85,15 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             EnsureBoundsLoaded();
             Style = BuildStyleFromSettings();
-            _isEnabled = AppSettings.IsDesktopLyricsEnabled;
-            OnPropertyChanged(nameof(IsEnabled));
-            _isLocked = AppSettings.IsDesktopLyricsLocked;
-            OnPropertyChanged(nameof(IsLocked));
-            _isKaraokeEnabled = AppSettings.IsDesktopLyricsKaraokeEnabled;
-            OnPropertyChanged(nameof(IsKaraokeEnabled));
-            _autoHideOnPlayingDetail = AppSettings.AutoHideDesktopLyricsOnPlayingDetail;
-            OnPropertyChanged(nameof(AutoHideOnPlayingDetail));
+            _restoring = true;
+            try
+            {
+                IsEnabled = AppSettings.IsDesktopLyricsEnabled;
+                IsLocked = AppSettings.IsDesktopLyricsLocked;
+                IsKaraokeEnabled = AppSettings.IsDesktopLyricsKaraokeEnabled;
+                AutoHideOnPlayingDetail = AppSettings.AutoHideDesktopLyricsOnPlayingDetail;
+            }
+            finally { _restoring = false; }
             UpdateWindowVisibility();
         }
 
@@ -149,7 +107,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             EnsureBoundsLoaded();
             try
             {
-                App.Services.GetRequiredService<MusicDatabaseService>().SaveDesktopLyricsState(BoundsState);
+                _database.SaveDesktopLyricsState(BoundsState);
             }
             catch
             {
@@ -163,8 +121,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
             {
                 // 启动水合期间 GetSettingsAsync 回填开关会走到这里，此时全量落盘会把
                 // 尚未加载完的设置写成默认值，故初始化完成前只更新内存不写盘
-                if (!App.Services.GetRequiredService<ViewModel.AppViewModel>().IsInitialized) return;
-                _ = App.Services.GetRequiredService<MusicDatabaseService>().SaveSettingAsync();
+                if (!State.Lifecycle.IsReady) return;
+                _ = _database.SaveSettingAsync();
             }
             catch
             {
@@ -178,7 +136,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _boundsLoaded = true;
             try
             {
-                _boundsState = App.Services.GetRequiredService<MusicDatabaseService>().LoadDesktopLyricsState();
+                _boundsState = _database.LoadDesktopLyricsState();
             }
             catch
             {

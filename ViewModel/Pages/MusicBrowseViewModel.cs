@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,8 +47,9 @@ namespace WinUIMusicPlayer.ViewModel
         private SystemMediaControlsService SystemMediaControlsService { get; set; }
         private MusicBrowsePage MusicBrowsePage { get; set; }
         private MainPage MainPage { get; set; }
-        private CancellationTokenSource? _musicUpdateCts;
+        private readonly PlaybackCoordinator _coordinator;
         private int _coverUpdateVersion;
+        private bool _disposed;
         private int _defaultPaletteVersion;
         private Music? _paletteMusic;
         private bool _usesDefaultPalette;
@@ -59,10 +60,13 @@ namespace WinUIMusicPlayer.ViewModel
             App.Services.GetRequiredService<MusicBrowseViewModel>().AppViewModel.UILyrics = [];
         public PlaybackCommands Playback { get; }
         public AppViewModel AppViewModel { get; }
+        public WinUIMusicPlayer.State.AppState State => AppViewModel.State;
         private MusicDatabaseService _musicDatabaseService { get; }
-        public MusicBrowseViewModel(BassPlayerCommandService bassPlayerCommand, SystemMediaControlsService systemMediaControlsService, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, UsbDeviceService usbDeviceService, ILogger<MusicBrowseViewModel> logger, PlaybackCommands playback)
+        public MusicBrowseViewModel(BassPlayerCommandService bassPlayerCommand, SystemMediaControlsService systemMediaControlsService, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, UsbDeviceService usbDeviceService, ILogger<MusicBrowseViewModel> logger, PlaybackCommands playback, PlaybackCoordinator coordinator)
         {
             Playback = playback;
+            _coordinator = coordinator;
+            coordinator.TrackStarted += OnTrackStarted;
             this.AppViewModel = appViewModel;
             AppViewModel.PropertyChanged += OnCoverSettingsChanged;
             _musicDatabaseService = musicDatabaseService;
@@ -97,8 +101,12 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public async Task UpdatePlayBar(Music music, CancellationToken token = default)
+        public Task UpdatePlayBar(Music music, CancellationToken token = default)
+            => App.Services.GetRequiredService<ApplicationTasks>().RunAsync(_ => UpdatePlayBarCoreAsync(music, token));
+
+        private async Task UpdatePlayBarCoreAsync(Music music, CancellationToken token)
         {
+            if (_disposed || !AppViewModel.CanPublishState) return;
             int version = Interlocked.Increment(ref _coverUpdateVersion);
             try
             {
@@ -149,7 +157,7 @@ namespace WinUIMusicPlayer.ViewModel
 
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    if (!token.IsCancellationRequested && version == Volatile.Read(ref _coverUpdateVersion) &&
+                    if (!_disposed && AppViewModel.CanPublishState && !token.IsCancellationRequested && version == Volatile.Read(ref _coverUpdateVersion) &&
                         ReferenceEquals(music, AppViewModel.CurrentPlayingMusic))
                     {
                         _defaultPaletteVersion++;
@@ -167,7 +175,7 @@ namespace WinUIMusicPlayer.ViewModel
                 // 同样在后台运行，避免 SMTC 的 COM 组件调用阻塞 UI
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    if (token.IsCancellationRequested || version != Volatile.Read(ref _coverUpdateVersion) ||
+                    if (_disposed || !AppViewModel.CanPublishState || token.IsCancellationRequested || version != Volatile.Read(ref _coverUpdateVersion) ||
                         !ReferenceEquals(music, AppViewModel.CurrentPlayingMusic)) return;
 
                     SystemMediaControlsService.UpdateSystemMediaControlsState();
@@ -226,7 +234,7 @@ namespace WinUIMusicPlayer.ViewModel
                 var palette = await s_defaultPalettes.GetAsync(isDark, algorithm, token);
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    if (!token.IsCancellationRequested && version == _defaultPaletteVersion && _usesDefaultPalette &&
+                    if (!_disposed && AppViewModel.CanPublishState && !token.IsCancellationRequested && version == _defaultPaletteVersion && _usesDefaultPalette &&
                         ReferenceEquals(music, AppViewModel.CurrentPlayingMusic) &&
                         isDark == AppViewModel.IsDarkMode && algorithm == AppViewModel.PaletteAlgorithm)
                         AppViewModel.LyricPagePalette = palette;
@@ -278,11 +286,12 @@ namespace WinUIMusicPlayer.ViewModel
         }
         public void Dispose()
         {
+            _disposed = true;
+            Interlocked.Increment(ref _coverUpdateVersion);
+            _defaultPaletteVersion++;
             AppViewModel.PropertyChanged -= OnCoverSettingsChanged;
             if (_addFolderVm is not null) _addFolderVm.PropertyChanged -= FolderScanChanged;
-            _musicUpdateCts?.Cancel();
-            _musicUpdateCts?.Dispose();
-            _musicUpdateCts = null;
+            _coordinator.TrackStarted -= OnTrackStarted;
         }
 
         [RelayCommand]
@@ -394,42 +403,16 @@ namespace WinUIMusicPlayer.ViewModel
             PreviousSelectedIndex = currentSelectedIndex;
         }
 
-        public async Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false)
+        public Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false)
+            => _coordinator.PlayAsync(music);
+
+        private void OnTrackStarted(Music music, CancellationToken token)
         {
-            // 引擎未就绪（IPC 未连接或首曲未推送）时禁止发起播放；有按钮的入口已同步置灰。
-            if (!AppViewModel.IsPlaybackEngineReady) return;
-            try
-            {
-                // 1. 立即取消上一次正在进行的 UI 更新任务（图片读取、网络请求等）
-                _musicUpdateCts?.Cancel();
-                _musicUpdateCts?.Dispose();
-                _musicUpdateCts = new CancellationTokenSource();
-                var token = _musicUpdateCts.Token;
-                MusicPlaybackService.PlayMusic(music);
-                await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
-                {
-                    AppViewModel.CurrentPlayingMusic = music;
-                    try
-                    {
-                        App.Services.GetService<PlaybackStatsService>()?.StartSession(music);
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.LogError(ex, "记录播放统计会话失败: {Message}", ex.Message);
-                    }
-                    AppViewModel.UILyrics = [];
-                    MusicBrowsePage?.UpdateViewList();
-                });
-                _ = UpdatePlayBar(music, token);
-                AppViewModel.LoadLyricsToUI(music);
-                MainPage?.UpdateCurrentPlayList();
-                AppViewModel.UpdateProgressTimerUI();
-                TrimMemory();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"播放音乐失败: {ex.Message}");
-            }
+            if (_disposed) return;
+            MusicBrowsePage?.UpdateViewList();
+            _ = UpdatePlayBar(music, token);
+            MainPage?.UpdateCurrentPlayList();
+            TrimMemory();
         }
 
         /// <summary>
@@ -439,6 +422,7 @@ namespace WinUIMusicPlayer.ViewModel
         /// </summary>
         public void PlayMusicWithFolderQueue(Music music)
         {
+            if (!AppViewModel.CanStartPlayback) return;
             if (string.IsNullOrEmpty(music.LastLevelFolderPath))
             {
                 _ = PlayMusic(music, IsChangeList: true);

@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
@@ -27,12 +27,13 @@ namespace WinUIMusicPlayer.ViewModel.Controls
     {
         public enum GroupKind { None, Album, Artist, Folder }
 
-        private static readonly Lock _instancesLock = new();
-        private static readonly List<MusicGroupDetailViewModel> _instances = [];
+        private bool _active;
 
         public AppViewModel AppViewModel { get; }
+        public WinUIMusicPlayer.State.AppState State => AppViewModel.State;
         public MusicBrowseViewModel MusicBrowseViewModel { get; }
         private MusicDatabaseService _db;
+        private readonly ApplicationTasks _tasks;
         private readonly ILogger<MusicGroupDetailViewModel> _logger;
 
         private GroupKind _kind = GroupKind.None;
@@ -59,67 +60,51 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         public Music SelectedMusic { get; set => SetProperty(ref field, value); }
         public List<Music> SelectedMusics { get; } = [];
 
-        public IRelayCommand PlayAllCommand { get; }
+        public IAsyncRelayCommand PlayAllCommand { get; }
         public IRelayCommand AlbumInfoChangedCommand { get; }
-        public IRelayCommand PlayCommand { get; }
+        public IAsyncRelayCommand PlayCommand { get; }
         public IRelayCommand AddMusicToCurrentPlayListCommand { get; }
         public IRelayCommand UpdateFavouriteCommand { get; }
         public IRelayCommand AddToFavourCommand { get; }
         public IRelayCommand AddToPlayListCommand { get; }
-        public IRelayCommand DeleteMenuItemCommand { get; }
-        public IRelayCommand ConvertAudioCommand { get; }
+        public IAsyncRelayCommand DeleteMenuItemCommand { get; }
+        public IAsyncRelayCommand ConvertAudioCommand { get; }
         public IRelayCommand OpenInExplorerCommand { get; }
         public IRelayCommand MusicDetailCommand { get; }
-        public IRelayCommand ReGetLyricsCommand { get; }
-        public IRelayCommand TransmitFileToUsbCommand { get; }
+        public IAsyncRelayCommand ReGetLyricsCommand { get; }
+        public IAsyncRelayCommand TransmitFileToUsbCommand { get; }
 
         public MusicGroupDetailViewModel(
             MusicBrowseViewModel musicBrowseViewModel,
             AppViewModel appViewModel,
             MusicDatabaseService db,
-            ILogger<MusicGroupDetailViewModel> logger)
+            ILogger<MusicGroupDetailViewModel> logger, ApplicationTasks tasks)
         {
             MusicBrowseViewModel = musicBrowseViewModel;
             AppViewModel = appViewModel;
             _db = db;
             _logger = logger;
+            _tasks = tasks;
 
-            AppViewModel.PropertyChanged += OnAppVmPropertyChanged;
-            AppViewModel.AlbumSongs.CollectionChanged += OnSongsCollectionChanged;
-            AppViewModel.ArtistSongs.CollectionChanged += OnSongsCollectionChanged;
-            AppViewModel.FolderSongs.CollectionChanged += OnSongsCollectionChanged;
 
-            PlayAllCommand = new RelayCommand(async () => await OnPlayAllAsync());
+
+            PlayAllCommand = new AsyncRelayCommand(() => ObserveCommandAsync(OnPlayAllAsync));
             AlbumInfoChangedCommand = new RelayCommand(OnAlbumInfoChanged);
-            PlayCommand = new RelayCommand(async () => await OnPlayFromSelectionAsync());
+            PlayCommand = new AsyncRelayCommand(() => ObserveCommandAsync(OnPlayFromSelectionAsync));
             AddMusicToCurrentPlayListCommand = new RelayCommand(OnAddMusicToCurrentPlayListFromSelection);
             UpdateFavouriteCommand = new RelayCommand<Music>(OnUpdateFavourite);
             AddToFavourCommand = new RelayCommand(OnAddToFavourFromSelection);
             AddToPlayListCommand = new RelayCommand<int>(OnAddToPlayList);
-            DeleteMenuItemCommand = new RelayCommand(async () => await OnDeleteAsync());
-            ConvertAudioCommand = new RelayCommand<string>(async tag => await OnConvertAudioAsync(tag));
+            DeleteMenuItemCommand = new AsyncRelayCommand(() => ObserveCommandAsync(OnDeleteAsync));
+            ConvertAudioCommand = new AsyncRelayCommand<string>(tag => ObserveCommandAsync(() => OnConvertAudioAsync(tag)));
             OpenInExplorerCommand = new RelayCommand(OnOpenInExplorer);
             MusicDetailCommand = new RelayCommand(OnMusicDetail);
-            ReGetLyricsCommand = new RelayCommand(async () => await OnReGetLyricsAsync());
-            TransmitFileToUsbCommand = new RelayCommand<UsbSendTarget>(async target => await OnTransmitFileToUsbAsync(target));
+            ReGetLyricsCommand = new AsyncRelayCommand(() => ObserveCommandAsync(OnReGetLyricsAsync));
+            TransmitFileToUsbCommand = new AsyncRelayCommand<UsbSendTarget>(target => ObserveCommandAsync(() => OnTransmitFileToUsbAsync(target)));
 
             InitalizeOption();
 
-            lock (_instancesLock)
-            {
-                _instances.Add(this);
-            }
-        }
 
-        public static void UpdateAll(Action<MusicGroupDetailViewModel> action)
-        {
-            lock (_instancesLock)
-            {
-                foreach (var vm in _instances)
-                {
-                    action(vm);
-                }
-            }
         }
 
         public void SetPageKind(GroupKind kind)
@@ -129,7 +114,37 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             RefreshFromAppState();
         }
 
-        public void SetView(MusicGroupDetailControl? view) => _view = view;
+        private async Task ObserveCommandAsync(Func<Task> execute)
+        {
+            if (!AppViewModel.IsInitialized) return;
+            try { await _tasks.RunAsync(_ => execute()); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "详情页操作失败");
+                if (AppViewModel.CanPublishState)
+                {
+                    AppViewModel.InfoBarTitle = ToolUtils.GetString("Error");
+                    AppViewModel.InfoBarMessage = ex.Message;
+                    AppViewModel.InfoBarIsOpen = true;
+                }
+            }
+        }
+
+        public void SetView(MusicGroupDetailControl? view)
+        {
+            if (view is null) { Dispose(); return; }
+            _view = view;
+            if (_active) return;
+            _active = true;
+            AppViewModel.PropertyChanged += OnAppVmPropertyChanged;
+            AppViewModel.AlbumSongs.CollectionChanged += OnSongsCollectionChanged;
+            AppViewModel.ArtistSongs.CollectionChanged += OnSongsCollectionChanged;
+            AppViewModel.FolderSongs.CollectionChanged += OnSongsCollectionChanged;
+            AppViewModel.PlaylistMenusChanged += UpdateAlbumMenuOptionsPlayList;
+            AppViewModel.UsbMenusChanged += UpDateUsbDeviceMenuflyout;
+            UpdateAlbumMenuOptionsPlayList();
+            UpDateUsbDeviceMenuflyout();
+        }
 
         public GroupKind CurrentKind => _kind;
 
@@ -327,6 +342,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
 
         public async Task MusicListView_DoubleTappedAsync()
         {
+            if (!AppViewModel.CanStartPlayback) return;
             if (SelectedMusic is not null && MusicBrowseViewModel is not null)
             {
                 var list = _kind switch
@@ -344,6 +360,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
 
         private async Task OnPlayAllAsync()
         {
+            if (!AppViewModel.CanStartPlayback) return;
             if (MusicBrowseViewModel is null) return;
             var list = _kind switch
             {
@@ -368,6 +385,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
 
         private async Task OnPlayFromSelectionAsync()
         {
+            if (!AppViewModel.CanStartPlayback) return;
             if (MusicBrowseViewModel is null) return;
             if (SelectedMusics.Count == 1)
             {
@@ -465,7 +483,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         private async Task OnConvertAudioAsync(string tag)
         {
             if (MusicBrowseViewModel is null) return;
-            _ = MusicBrowseViewModel.ConvertAudio_Click(SelectedMusics, tag);
+            await MusicBrowseViewModel.ConvertAudio_Click(SelectedMusics.ToArray(), tag);
         }
 
         private void OnOpenInExplorer()
@@ -544,10 +562,11 @@ namespace WinUIMusicPlayer.ViewModel.Controls
 
         public void Dispose()
         {
-            lock (_instancesLock)
-            {
-                _instances.Remove(this);
-            }
+            _view = null;
+            if (!_active) return;
+            _active = false;
+            AppViewModel.PlaylistMenusChanged -= UpdateAlbumMenuOptionsPlayList;
+            AppViewModel.UsbMenusChanged -= UpDateUsbDeviceMenuflyout;
             AppViewModel.PropertyChanged -= OnAppVmPropertyChanged;
             AppViewModel.AlbumSongs.CollectionChanged -= OnSongsCollectionChanged;
             AppViewModel.ArtistSongs.CollectionChanged -= OnSongsCollectionChanged;

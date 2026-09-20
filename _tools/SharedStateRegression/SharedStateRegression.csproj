@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><LangVersion>preview</LangVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <Compile Include="../../State/DesktopLyricsState.cs" />
+    <Compile Include="../../State/PlaybackQueueState.cs" />
+    <Compile Include="../../Services/SettingsSaveQueue.cs" />
+    <Compile Include="../../Services/ApplicationTasks.cs" />
+    <Compile Include="../../Services/AppLifecycle.cs" />
+    <Compile Include="../../Helper/UsbWriterHelper.cs" />
+    <Compile Include="../../Model/UsbStorageDevice.cs" />
+    <Compile Include="../../ViewModel/StatsViewModel.cs" />
+    <Compile Include="../../Services/ShutdownCoordinator.cs" />
+    <Compile Include="../../Model/Stats/StatsSnapshot.cs" />
+    <Compile Include="../../Model/Stats/HeatmapNode.cs" />
+    <Compile Include="../../Model/Stats/HourlyActivityItem.cs" />
+    <Compile Include="../../Model/Stats/MonthLabel.cs" />
+    <Compile Include="../../Services/LibraryProjectionService.cs" />
+    <Compile Include="../../Services/LibraryQueries.cs" />
+    <Compile Include="../../State/LibraryState.cs" />
+    <Compile Include="../../State/BrowseState.cs" />
+  </ItemGroup>
+</Project>

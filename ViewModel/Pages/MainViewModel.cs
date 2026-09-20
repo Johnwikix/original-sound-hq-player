@@ -7,6 +7,7 @@ namespace WinUIMusicPlayer.ViewModel.Pages
     public partial class MainViewModel : ObservableObject
     {
         public AppViewModel AppViewModel { get; }
+        public WinUIMusicPlayer.State.AppState State => AppViewModel.State;
         public BassPlayerCommandService PlayerCommandService { get; }
         public MusicBrowseViewModel MusicBrowseVM { get; }
         public DesktopLyricsViewModel DesktopLyrics { get; }

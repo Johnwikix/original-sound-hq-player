@@ -1,4 +1,4 @@
-using BassPlayerIpc.Shared;
+﻿using BassPlayerIpc.Shared;
 using CommunityToolkit.Mvvm.Input;
 using WinUIMusicPlayer.Utils;
 
@@ -6,7 +6,7 @@ namespace WinUIMusicPlayer.ViewModel;
 
 public partial class AppViewModel
 {
-    public string SurroundStatusText { get; private set; } = ToolUtils.GetString("SurroundWaiting");
+    public string SurroundStatusText { get => State.Output.SurroundStatusText; private set => State.Output.SurroundStatusText = value; }
 
     public void ApplySurroundState(DspState state)
     {
@@ -21,7 +21,6 @@ public partial class AppViewModel
         });
         if (SurroundStatusText == text) return;
         SurroundStatusText = text;
-        OnPropertyChanged(nameof(SurroundStatusText));
     }
 
     [RelayCommand]

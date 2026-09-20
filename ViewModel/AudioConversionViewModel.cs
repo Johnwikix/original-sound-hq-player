@@ -7,16 +7,23 @@ using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.Helper;
 using ZLinq;
+using Microsoft.Extensions.Logging;
 namespace WinUIMusicPlayer.ViewModel;
 
 /// <summary>转换交互与进度的唯一归属，不依赖音乐浏览页面实例。</summary>
-public sealed class AudioConversionViewModel(AudioConverterService ConverterService, AppViewModel AppViewModel)
+public sealed class AudioConversionViewModel(AudioConverterService ConverterService, AppViewModel AppViewModel, ApplicationTasks tasks)
 {
     private ProgressDialog? ProgressDialog;
     private int ProgressBarValue;
     private bool IsMutiFile;
     private bool _busy;
-    public async Task ConvertAsync(IEnumerable<Music> music, string? tag)
+    public Task ConvertAsync(IEnumerable<Music> music, string? tag)
+    {
+        var snapshot = new List<Music>(music);
+        return tasks.RunAsync(_ => ConvertTrackedAsync(snapshot, tag));
+    }
+
+    private async Task ConvertTrackedAsync(IEnumerable<Music> music, string? tag)
     {
         if (_busy || !AppViewModel.IsInitialized) return;
         _busy = true;
@@ -25,6 +32,16 @@ public sealed class AudioConversionViewModel(AudioConverterService ConverterServ
             ProgressDialog ??= new ProgressDialog(ToolUtils.GetString("Converting")) { Title = ToolUtils.GetString("Processing") };
             ConverterService.updateProgress += OnConverterProgressUpdated;
             await ConvertCoreAsync(music, tag);
+        }
+        catch (Exception ex)
+        {
+            App.GetLogger<AudioConversionViewModel>().LogError(ex, "音频转换失败");
+            if (AppViewModel.CanPublishState)
+            {
+                AppViewModel.InfoBarTitle = ToolUtils.GetString("Error");
+                AppViewModel.InfoBarMessage = ex.Message;
+                AppViewModel.InfoBarIsOpen = true;
+            }
         }
         finally { ConverterService.updateProgress -= OnConverterProgressUpdated; _busy = false; }
     }
@@ -89,6 +106,7 @@ public sealed class AudioConversionViewModel(AudioConverterService ConverterServ
         {
             foreach (Music music in musics)
             {
+                if (!AppViewModel.IsInitialized) break;
                 _batchCurrentFilePercent = 0;
                 if (!await ConverterService.ConvertAudioAsync(music, targetFormat, bitrate))
                     allSuccess = false;

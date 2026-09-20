@@ -1,4 +1,4 @@
-using BassPlayerIpc.Shared;
+﻿using BassPlayerIpc.Shared;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.ObjectModel;
@@ -40,7 +40,7 @@ public partial class AppViewModel
         }
     }
 
-    public string AtmosStatusText { get; private set; } = ToolUtils.GetString("AtmosWaiting");
+    public string AtmosStatusText { get => State.Output.AtmosStatusText; private set => State.Output.AtmosStatusText = value; }
 
     public void ApplyAtmosState(DspState state)
     {
@@ -57,7 +57,6 @@ public partial class AppViewModel
         if (reason.Length != 0) text += " " + reason;
         if (AtmosStatusText == text) return;
         AtmosStatusText = text;
-        OnPropertyChanged(nameof(AtmosStatusText));
     }
 
     private void RefreshAtmosDevices()

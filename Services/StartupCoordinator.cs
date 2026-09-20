@@ -43,6 +43,11 @@ namespace WinUIMusicPlayer.Services
             // 连接等待与数据库初始化、协议阅读并行；连接完成不阻塞主界面，进度由标题栏指示。
             var shutdown = App.Services.GetRequiredService<ShutdownCoordinator>();
             var lifecycle = App.Services.GetRequiredService<AppLifecycle>();
+            var settings = App.Services.GetRequiredService<SettingsCoordinator>();
+            MusicDatabaseService.AttachSettingsCapture(App.Services.GetRequiredService<SettingsSnapshotFactory>());
+            settings.Start();
+            shutdown.RegisterCleanup(settings.Dispose);
+            shutdown.RegisterStop(() => { settings.Dispose(); return Task.CompletedTask; });
             var ipcService = App.Services.GetRequiredService<IpcService>();
             var audio = App.Services.GetRequiredService<AudioProcessService>();
             shutdown.RegisterCleanup(audio.Dispose);
@@ -59,8 +64,14 @@ namespace WinUIMusicPlayer.Services
             appViewModel.UpdateCover();
             MusicDatabaseService.LoadWindowState();
             App.MainWindow = App.Services.GetRequiredService<MainWindow>();
+            App.Services.GetRequiredService<PlaybackProgressService>().Attach(ipcService, App.MainWindow.DispatcherQueue);
             shutdown.RegisterCleanup(App.MainWindow.Dispose);
-            shutdown.RegisterCleanup(appViewModel.Dispose);
+            shutdown.RegisterCleanup(appViewModel.StopAsync);
+            shutdown.RegisterStop(appViewModel.StopAsync);
+            shutdown.RegisterStop(App.Services.GetRequiredService<ApplicationTasks>().DrainAsync);
+            var folders = App.Services.GetRequiredService<AddFolderViewModel>();
+            folders.Start();
+            shutdown.RegisterStop(folders.StopAsync);
             App.MainWindow.InitializeTray();
             shutdown.RegisterCleanup(App.Services.GetRequiredService<PlaybackCommands>().Dispose);
             shutdown.RegisterCleanup(App.Services.GetRequiredService<OneShotPlaybackService>().Dispose);
@@ -100,7 +111,9 @@ namespace WinUIMusicPlayer.Services
             var stateStore = App.Services.GetRequiredService<PlaybackStatePersistence>();
             var statistics = App.Services.GetRequiredService<PlaybackStatsService>();
             var player = App.Services.GetRequiredService<BassPlayerCommandService>();
+            shutdown.RegisterCleanup(player.Dispose);
             shutdown.RegisterSave(() => stateStore.SaveAsync(App.MainWindow));
+            shutdown.RegisterSave(MusicDatabaseService.FlushSettingsAsync);
             shutdown.RegisterSave(statistics.FlushSessionAsync);
             shutdown.RegisterSave(() => { player.MusicEnd(); App.MainWindow.Hide(); return Task.CompletedTask; });
             shutdown.RegisterCleanup(() => CoverLoadQueue.Shutdown(TimeSpan.FromSeconds(3)));

@@ -1,4 +1,4 @@
-using DevWinUI;
+﻿using DevWinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -79,9 +79,9 @@ namespace WinUIMusicPlayer.View.Controls
             ViewModel.MusicListView_DoubleTapped();
         }
 
-        private void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
+        private async void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
         {
-            ViewModel.MusicListView_DragItemsCompleted();
+            await ViewModel.MusicListView_DragItemsCompleted();
         }
 
         private void AuthorButton_Click(object sender, RoutedEventArgs e)

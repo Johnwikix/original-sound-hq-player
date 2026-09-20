@@ -76,6 +76,16 @@ namespace WinUIMusicPlayer
              {
                  services.AddHostedService<AppInitializerService>();
                  services.AddSingleton<AppLifecycle>();
+                 services.AddSingleton<WinUIMusicPlayer.State.AppState>();
+                 services.AddSingleton(sp => sp.GetRequiredService<WinUIMusicPlayer.State.AppState>().Library);
+                 services.AddSingleton<LibraryQueries>();
+                 services.AddSingleton<LibraryProjectionService>();
+                 services.AddSingleton<PlaybackProgressService>();
+                 services.AddSingleton<PlaybackCoordinator>();
+                 services.AddSingleton<ApplicationTasks>();
+                 services.AddSingleton<UsbExportCoordinator>();
+                 services.AddSingleton<SettingsCoordinator>();
+                 services.AddSingleton<SettingsSnapshotFactory>();
                  services.AddSingleton<StartupCoordinator>();
                  services.AddSingleton<ShutdownCoordinator>();
                  services.AddSingleton<AudioProcessService>();

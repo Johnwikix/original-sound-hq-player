@@ -29,7 +29,11 @@ public partial class AddFolderViewModel : ObservableObject
     private readonly MusicDatabaseService _database;
     private readonly ILogger<AddFolderViewModel> _logger;
     private readonly FolderAccessService _folderAccess;
-    private readonly Task _initialLoad;
+    private Task? _initialLoad;
+    private Task _operationTask = Task.CompletedTask;
+    private bool _active;
+    private bool _started;
+    private bool _stopped;
     private bool _needsReconcile;
     private int _folderLoadVersion;
 
@@ -39,8 +43,33 @@ public partial class AddFolderViewModel : ObservableObject
         _appViewModel = appViewModel;
         _logger = logger;
         _folderAccess = folderAccess;
-        LibraryOperationGate.Changed += OnOperationChanged; // Both services are application singletons.
+    }
+
+    public void Start()
+    {
+        if (_started || _stopped) return;
+        _started = true;
+        LibraryOperationGate.Changed += OnOperationChanged;
+    }
+
+    public void Activate()
+    {
+        if (_stopped) return;
+        Start();
+        _active = true;
         _initialLoad = LoadFoldersAsync();
+    }
+
+    public void Deactivate() => _active = false;
+
+    public async Task StopAsync()
+    {
+        _stopped = true;
+        _active = false;
+        _folderLoadVersion++;
+        LibraryOperationGate.Changed -= OnOperationChanged;
+        if (_initialLoad is not null) await _initialLoad;
+        await _operationTask;
     }
 
     private void OnOperationChanged()
@@ -53,11 +82,12 @@ public partial class AddFolderViewModel : ObservableObject
 
     private void NotifyCommands()
     {
+        if (_stopped) return;
         OnPropertyChanged(nameof(IsScanning));
         AddFolderCommand.NotifyCanExecuteChanged();
         FolderCommands.NotifyCanExecuteChanged();
         if (IsScanning) _folderLoadVersion++;
-        else _ = LoadFoldersAsync(); // Includes startup and watcher scans, which do not call this VM.
+        else if (_active) _initialLoad = LoadFoldersAsync();
     }
 
     private async Task LoadFoldersAsync()
@@ -133,14 +163,22 @@ public partial class AddFolderViewModel : ObservableObject
         await Task.Run(() => _database.RemoveFolder(folderId));
     });
 
-    private async Task RunOperationAsync(Func<Task> operation)
+    private Task RunOperationAsync(Func<Task> operation)
     {
+        if (_stopped || !_operationTask.IsCompleted) return Task.CompletedTask;
+        _operationTask = RunOperationCoreAsync(operation);
+        return _operationTask;
+    }
+
+    private async Task RunOperationCoreAsync(Func<Task> operation)
+    {
+        if (_stopped) return;
         using var lease = LibraryOperationGate.TryEnter();
         if (lease is null) return;
         _needsReconcile = false;
         try
         {
-            await _initialLoad;
+            await (_initialLoad ??= LoadFoldersAsync());
             await operation();
         }
         catch (Exception ex)

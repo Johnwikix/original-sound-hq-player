@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Windows.Storage.Pickers;
@@ -120,6 +120,7 @@ internal static class RegressionSuite
             var appVm = new AppViewModel(); // Empty until startup loads SongsSource.
             var vm = new AddFolderViewModel(database, appVm, NullLogger<AddFolderViewModel>.Instance,
                 new FolderAccessService(NullLogger<FolderAccessService>.Instance));
+            vm.Activate();
             App.Services = new ServiceCollection().AddSingleton(database).AddSingleton(appVm)
                 .AddSingleton(vm).AddSingleton<MainPage>().BuildServiceProvider();
             for (int i = 0; vm.FolderList.Count == 0 && i < 100; i++) await Task.Delay(10);

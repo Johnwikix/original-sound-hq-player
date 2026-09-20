@@ -63,6 +63,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void ApplyLicenseState()
         {
+            if (_isDisposed) return;
             LicenseRestricted = _licenseService.IsRestricted;
             OnPropertyChanged(nameof(CanPurchaseLicense));
             OnPropertyChanged(nameof(LicenseDescription));

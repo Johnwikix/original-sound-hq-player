@@ -12,6 +12,7 @@ namespace WinUIMusicPlayer.ViewModel
     public partial class PlayListViewModel : ObservableObject
     {
         public AppViewModel AppViewModel { get; }
+        public WinUIMusicPlayer.State.AppState State => AppViewModel.State;
         private MusicDatabaseService MusicDatabaseService { get; }
         private MusicBrowseViewModel MusicBrowseViewModel { get; }
 
@@ -89,6 +90,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task PlayPlayList(PlayList playList)
         {
+            if (!AppViewModel.CanStartPlayback) return;
             if (playList is null) return;
             var items = MusicDatabaseService.GetMusicByPlayListIdFromMem(playList.Id, AppViewModel.SearchText);
             if (items is null) return;

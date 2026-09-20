@@ -1,4 +1,4 @@
-using BassPlayerIpc.Shared;
+﻿using BassPlayerIpc.Shared;
 using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
@@ -37,24 +37,5 @@ public partial class MusicDatabaseService
             catch (ArgumentException) { return new AudioPreferences(); }
         }
     }
-
-    // 在 UI 线程读取偏好一次；后台序列化期间不再访问 ViewModel。
-    private AudioPreferences CaptureAudioPreferences() => new()
-    {
-        Dsp = AppSettings.Dsp,
-        OutputMode = AppSettings.OutputMode,
-        Latency = AppViewModel.Latency,
-        BassOutputDeviceId = AppSettings.BassOutputDeviceId,
-        WasapiEndpointId = AppSettings.WasapiEndpointId,
-        BassASIODeviceId = AppSettings.BassASIODeviceId,
-        DeviceFriendlyName = AppSettings.DeviceName,
-        IsFadeEnabled = AppViewModel.IsFadeEnabled,
-        IsDopEnabled = AppViewModel.IsDopEnabled,
-        ExperimentalSurround51 = AppViewModel.ExperimentalSurround51,
-        ExperimentalAtmosPassthrough = AppViewModel.ExperimentalAtmosPassthrough,
-        AtmosEndpointId = AppViewModel.AtmosEndpointId,
-        DsdGain = AppViewModel.DsdGain,
-        DsdPcmFreq = AppViewModel.DsdPcmFreq
-    };
 
 }

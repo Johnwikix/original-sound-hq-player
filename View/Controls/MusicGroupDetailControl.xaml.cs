@@ -1,4 +1,4 @@
-using DevWinUI;
+﻿using DevWinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
@@ -48,11 +48,13 @@ namespace WinUIMusicPlayer.View.Controls
 
         public MusicGroupDetailControl()
         {
+            // 控件拥有此实例；避免根 DI 容器长期保留 transient IDisposable。
             ViewModel = new MusicGroupDetailViewModel(
                 App.Services.GetRequiredService<MusicBrowseViewModel>(),
                 App.Services.GetRequiredService<AppViewModel>(),
                 App.Services.GetRequiredService<MusicDatabaseService>(),
-                App.Services.GetRequiredService<ILogger<MusicGroupDetailViewModel>>());
+                App.Services.GetRequiredService<ILogger<MusicGroupDetailViewModel>>(),
+                App.Services.GetRequiredService<ApplicationTasks>());
             this.InitializeComponent();
             _scrollHelper = new ScrollerHelper(DispatcherQueue);
             _scrollHelper.Tick += OnScrollTick;

@@ -7,6 +7,7 @@ namespace WinUIMusicPlayer.ViewModel
     public partial class SettingsViewModel : ObservableObject
     {
         public AppViewModel AppViewModel { get; }
+        public WinUIMusicPlayer.State.AppState State => AppViewModel.State;
         public DesktopLyrics.DesktopLyricsViewModel DesktopLyrics { get; }
 
         public SettingsViewModel(AppViewModel appViewModel, DesktopLyrics.DesktopLyricsViewModel desktopLyrics)

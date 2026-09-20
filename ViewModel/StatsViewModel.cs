@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Dispatching;
@@ -33,16 +33,19 @@ namespace WinUIMusicPlayer.ViewModel
         private readonly PlaybackStatsService _statsService;
         private readonly ILogger<StatsViewModel> _logger;
         private DispatcherQueueTimer? _debounceTimer;
+        private bool _active;
+        private long _requestedVersion;
+        private Task _loadTask = Task.CompletedTask;
 
         public StatsViewModel(
             AppViewModel appViewModel,
             PlaybackStatsService statsService,
-            ILogger<StatsViewModel> logger)
+            ILogger<StatsViewModel> logger, ShutdownCoordinator shutdown)
         {
             _appViewModel = appViewModel;
             _statsService = statsService;
             _logger = logger;
-            _statsService.StatsUpdated += OnStatsUpdated;
+            shutdown.RegisterStop(StopAsync);
         }
 
         // ───────────────────────── 时间范围 ─────────────────────────
@@ -101,12 +104,31 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void OnPageActive()
         {
+            if (_active) return;
+            _active = true;
+            _statsService.StatsUpdated += OnStatsUpdated;
             EnsureTimers();
             DebouncedLoad();
         }
 
         public void OnPageInactive()
         {
+            if (!_active) return;
+            _active = false;
+            _requestedVersion++;
+            _statsService.StatsUpdated -= OnStatsUpdated;
+            _debounceTimer?.Stop();
+        }
+
+        public async Task StopAsync()
+        {
+            OnPageInactive();
+            await _loadTask;
+        }
+
+        private void StartLoad()
+        {
+            if (_active && _loadTask.IsCompleted) _loadTask = LoadDataCoreAsync();
         }
 
         private void EnsureTimers()
@@ -118,7 +140,7 @@ namespace WinUIMusicPlayer.ViewModel
             _debounceTimer = dq.CreateTimer();
             _debounceTimer.Interval = TimeSpan.FromMilliseconds(500);
             _debounceTimer.IsRepeating = false;
-            _debounceTimer.Tick += (s, e) => _ = LoadDataCoreAsync();
+            _debounceTimer.Tick += (s, e) => StartLoad();
         }
 
         private void OnStatsUpdated()
@@ -130,9 +152,11 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void DebouncedLoad()
         {
+            _requestedVersion++;
+            if (!_active) return;
             if (_debounceTimer is null)
             {
-                _ = LoadDataCoreAsync();
+                StartLoad();
                 return;
             }
             _debounceTimer.Stop();
@@ -173,44 +197,48 @@ namespace WinUIMusicPlayer.ViewModel
 
         private async Task LoadDataCoreAsync()
         {
-            if (IsLoading) return;
             IsLoading = true;
             try
             {
-                var (startUtc, endUtc) = CalculateRange();
+                while (_active)
+                {
+                    _debounceTimer?.Stop();
+                    long version = _requestedVersion;
+                    int range = SelectedTimeRangeIndex;
+                    var (startUtc, endUtc) = CalculateRange();
+                    DateTime today = DateTime.Now.Date;
+                    var heatmapStart = today.AddDays(-364);
+                    var heatmapEnd = today.AddDays(1).AddTicks(-1);
+                    try
+                    {
+                        var snapshot = await _statsService.GetStatsSnapshotAsync(startUtc, endUtc);
+                        if (!_active) return;
+                        if (version != _requestedVersion) continue;
+                        var dailyCounts = range == (int)StatsRange.PastYear
+                            ? snapshot.DailyCounts
+                            : await _statsService.GetDailyCountsAsync(heatmapStart, heatmapEnd);
+                        if (!_active) return;
+                        if (version != _requestedVersion) continue;
 
-                var snapshot = await _statsService.GetStatsSnapshotAsync(startUtc, endUtc);
-
-                TotalDurationText = FormatHours(snapshot.TotalListeningSeconds);
-                TracksPlayedCount = snapshot.TracksPlayedCount;
-                ActiveDaysCount = snapshot.ActiveDaysCount;
-
-                ApplyTopSongs(snapshot.TopSongs);
-                ApplyTopArtists(snapshot.TopArtists);
-                ApplyTopAlbums(snapshot.TopAlbums);
-
-                UpdateHourlyPeaks(snapshot.HourlyCounts);
-                UpdateHourlySeries(snapshot.HourlyCounts);
-
-                // 热度图固定展示滚动过去一年，不随所选时间范围变化。
-                // 选「过去一年」时热度图范围与快照范围一致，直接复用快照日聚合，不再单独扫描。
-                DateTime now = DateTime.Now;
-                var heatmapStartLocal = now.Date.AddDays(-364);
-                var heatmapEndLocal = now.Date.AddDays(1).AddTicks(-1);
-
-                var dailyCounts = SelectedTimeRangeIndex == (int)StatsRange.PastYear
-                    ? snapshot.DailyCounts
-                    : await _statsService.GetDailyCountsAsync(heatmapStartLocal, heatmapEndLocal);
-                ApplyHeatmap(dailyCounts, heatmapStartLocal, heatmapEndLocal);
+                        TotalDurationText = FormatHours(snapshot.TotalListeningSeconds);
+                        TracksPlayedCount = snapshot.TracksPlayedCount;
+                        ActiveDaysCount = snapshot.ActiveDaysCount;
+                        ApplyTopSongs(snapshot.TopSongs);
+                        ApplyTopArtists(snapshot.TopArtists);
+                        ApplyTopAlbums(snapshot.TopAlbums);
+                        UpdateHourlyPeaks(snapshot.HourlyCounts);
+                        UpdateHourlySeries(snapshot.HourlyCounts);
+                        ApplyHeatmap(dailyCounts, heatmapStart, heatmapEnd);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "加载播放统计失败");
+                        if (_active && version != _requestedVersion) continue;
+                    }
+                    return;
+                }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "加载播放统计失败: {Message}", ex.Message);
-            }
-            finally
-            {
-                IsLoading = false;
-            }
+            finally { IsLoading = false; }
         }
 
         /// <summary>

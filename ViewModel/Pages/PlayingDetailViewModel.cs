@@ -1,4 +1,4 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+﻿using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -15,6 +15,7 @@ namespace WinUIMusicPlayer.ViewModel.Pages
     {
         public PlaybackCommands Playback { get; }
         public AppViewModel AppViewModel { get; }
+        public WinUIMusicPlayer.State.AppState State => AppViewModel.State;
         public double TitleFontSize { get; set => SetProperty(ref field, value); } = 24;
         public double ArtistAlbumFontSize { get => field; set => SetProperty(ref field, value); } = 22;
         public double InfoFontSize { get; set => SetProperty(ref field, value); } = 12;

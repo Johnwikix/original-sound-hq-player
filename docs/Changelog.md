@@ -1,13 +1,25 @@
-# 功能变更记录
+﻿# 功能变更记录
 
 新条目加在最上方。
+
+## 2026-09-20 共享状态迁移与异步收尾
+
+- `State/`、`ViewModel/AppViewModel*.cs`：新增单例 `AppState`，迁移播放进度/队列、浏览状态、输出状态及 71 个分域偏好；旧绑定通过同一实例转发通知，保留默认值与现有布局。
+- `Services/PlaybackCoordinator.cs`、`PlaybackProgressService.cs`、`ApplicationTasks.cs`、`ShutdownCoordinator.cs`：提取选曲用例与进度轮询，拒绝退出后的播放，等待在途任务，退出步骤记录名称与耗时。
+- `Services/SettingsCoordinator.cs`、`SettingsSaveQueue.cs`、`SettingsSnapshotFactory.cs`：分离偏好副作用和持久化快照，合并设置写入及异常观察任务；退出提交防抖期间的最终值。
+- `DesktopLyrics/DesktopLyricsViewModel.cs`：桌面歌词公共开关使用共享状态，修复托盘/快捷键与设置页逐字开关不同步。
+- `State/PlaybackQueueState.cs`、`Services/LibraryQueries.cs`、`LibraryProjectionService.cs`：随机追加同时更新规范队列和播放顺序；库索引按版本重建，过滤/分组缓存查询键并延后隐藏页刷新，引用池数组归还时清空。
+- `ViewModel/StatsViewModel.cs`：慢查询期间保留最新筛选请求，拒绝旧结果，离页停订阅和刷新；查询发布保持 UI 上下文。
+- `Services/UsbExportCoordinator.cs`、`Helper/UsbWriterHelper.cs`：USB 操作独立身份和退出屏障，只登记成功复制/转换的实际格式；取消在当前文件实际完成后停止下一项。
+- 详情页 VM 改用可等待命令，快照化删除/重排输入，离页解绑；文件夹 VM 构造不查库，激活加载并等待进行中操作收尾。
+- `_tools/SharedStateRegression`：覆盖共享通知、随机追加、合并写盘/失败重试、停止屏障、真实文件复制及统计页异步竞态。WinUI 实机交互和 Release GC/延迟测量尚未执行；完整迁移状态见 `docs/ServiceRefactoringPlan.md`。
 
 ## 2026-09-20 文件夹兼容回退与退出异常隔离
 
 - `Services/FolderAccessService.cs`、`ViewModel/Pages/AddFolderViewModel.cs`、`App.xaml.cs`：提取文件夹平台交互服务，按路径打开目录并补 Explorer 回退；选择器 COM/不支持异常时回退 HWND 绑定的 WinRT 选择器，取消不重复弹窗。
 - `Services/AppLifecycle.cs`、`Services/ShutdownCoordinator.cs`：退出时隔离取消及状态订阅者异常，继续保存与清理，避免停留在 Stopping 而不再执行收尾。
 - `_tools/LifecycleRegression`、`_tools/FolderScanRegression`：新增退出失败与选择器回退回归；修正播放意图测试的引擎就绪前置条件。
-- `TODO.md`、`docs/ServiceRefactoringPlan.md`：记录分阶段重构方案及验收边界；故障 Win10 对话框与用户报告的原生退出崩溃仍待实机验证。
+- `TODO.md`、`docs/ServiceRefactoringPlan.md`：记录分阶段重构方案及验收边界；第 3 项已于 2026-09-20 经用户确认验收，原生退出崩溃仍待定位。
 
 ## 2026-09-19 5.1 自动独占与输出状态布局调整
 

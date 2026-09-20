@@ -1,4 +1,4 @@
-using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
+﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
 using AnimatedWin2dControls.Controls.AnimatedTextBlock.Enums;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.DependencyInjection;
@@ -31,55 +31,14 @@ namespace WinUIMusicPlayer.ViewModel
     {
         public bool IsRealDevceChange { get; set; } = true;
         private bool _isLoadingDevices;
-        public bool EnableLightWave
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = true;
-        public AnimatedWin2dControls.Impressionist.PaletteAlgorithm PaletteAlgorithm
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    OnPropertyChanged(nameof(PaletteAlgorithmIndex));
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = AnimatedWin2dControls.Impressionist.PaletteAlgorithm.KMeansPP;
+        public bool EnableLightWave { get => State.Preferences.EnableLightWave; set => State.Preferences.EnableLightWave = value; }
+        public AnimatedWin2dControls.Impressionist.PaletteAlgorithm PaletteAlgorithm { get => State.Preferences.PaletteAlgorithm; set => State.Preferences.PaletteAlgorithm = value; }
         public int PaletteAlgorithmIndex
         {
             get => (int)PaletteAlgorithm;
             set => PaletteAlgorithm = (AnimatedWin2dControls.Impressionist.PaletteAlgorithm)value;
         }
-        public AnimatedWin2dControls.BackgroundShaderMode BackgroundShader
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    OnPropertyChanged(nameof(BackgroundShaderIndex));
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = AnimatedWin2dControls.BackgroundShaderMode.FluidBackground;
+        public AnimatedWin2dControls.BackgroundShaderMode BackgroundShader { get => State.Preferences.BackgroundShader; set => State.Preferences.BackgroundShader = value; }
         public int BackgroundShaderIndex
         {
             // 历史保存值可能越界（枚举成员增删/实验构建残留），越界索引直塞
@@ -90,21 +49,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private static readonly int MaxBackgroundShaderIndex =
             (int)AnimatedWin2dControls.BackgroundShaderMode.ChromaticResonance; // 枚举尾成员=最大合法索引
-        public int CoverSize
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    CoverLoadQueue.CoverSize = value;
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = 0;
+        public int CoverSize { get => State.Preferences.CoverSize; set => State.Preferences.CoverSize = value; }
 
         public bool IsHoverScrollEnabled
         {
@@ -116,164 +61,25 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = true;
 
-        public bool IsWin2dAnimatedText
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = true;
+        public bool IsWin2dAnimatedText { get => State.Preferences.IsWin2dAnimatedText; set => State.Preferences.IsWin2dAnimatedText = value; }
 
-        public int DsdGain
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        AppSettings.OnOutputSettingsUpdated();
-                    }
-                }
-            }
-        } = 6;
+        public int DsdGain { get => State.Preferences.DsdGain; set => State.Preferences.DsdGain = value; }
 
-        public bool IsAutoLyricsEnabled
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.IsAutoLyricsEnabled = value;
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = true;
+        public bool IsAutoLyricsEnabled { get => State.Preferences.IsAutoLyricsEnabled; set => State.Preferences.IsAutoLyricsEnabled = value; }
 
-        public string ArtistSplitSymbols
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.ArtistSplitSymbols = value ?? string.Empty;
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        RefreshAllViews();
-                    }
-                }
-            }
-        } = AppSettings.ArtistSplitSymbols;
+        public string ArtistSplitSymbols { get => State.Preferences.ArtistSplitSymbols; set => State.Preferences.ArtistSplitSymbols = value; }
 
-        public bool IsAutoCoverEnabled
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.IsAutoCoverEnabled = value;
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = true;
+        public bool IsAutoCoverEnabled { get => State.Preferences.IsAutoCoverEnabled; set => State.Preferences.IsAutoCoverEnabled = value; }
 
-        public bool IsRunningBackend
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.IsRunningBackend = value;
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = true;
+        public bool IsRunningBackend { get => State.Preferences.IsRunningBackend; set => State.Preferences.IsRunningBackend = value; }
 
-        public int Latency
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = 300;
+        public int Latency { get => State.Preferences.Latency; set => State.Preferences.Latency = value; }
 
-        public bool IsCustomAppSize
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.IsCustomAppSize = value;
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = false;
+        public bool IsCustomAppSize { get => State.Preferences.IsCustomAppSize; set => State.Preferences.IsCustomAppSize = value; }
 
-        public int AppWidth
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.AppWidth = value;
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = 1440;
+        public int AppWidth { get => State.Preferences.AppWidth; set => State.Preferences.AppWidth = value; }
 
-        public int AppHeight
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.AppHeight = value;
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = 810;
+        public int AppHeight { get => State.Preferences.AppHeight; set => State.Preferences.AppHeight = value; }
 
         public string DefaultEntryComboBoxTag
         {
@@ -287,20 +93,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = "AddFolder";
 
-        public string DefaultPlayListComboBoxTag
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = "song";
+        public string DefaultPlayListComboBoxTag { get => State.Preferences.DefaultPlayListComboBoxTag; set => State.Preferences.DefaultPlayListComboBoxTag = value; }
 
         public ObservableCollection<BassOutputDevice> BassOutputDevices
         {
@@ -345,21 +138,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public string BackdropType
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.AppStyle = value;
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = "TransparentAcrylic";
+        public string BackdropType { get => State.Preferences.BackdropType; set => State.Preferences.BackdropType = value; }
 
         public string ThemeType
         {
@@ -405,33 +184,9 @@ namespace WinUIMusicPlayer.ViewModel
             }
         } = "Default";
 
-        public bool IsDarkMode
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                        SendLyricsSettings();
-                }
-            }
-        } = false;
+        public bool IsDarkMode { get => State.Preferences.IsDarkMode; set => State.Preferences.IsDarkMode = value; }
 
-        public EffectComboBoxItem Win2dTextEffectType
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = new EffectComboBoxItem { DisplayName = ToolUtils.GetString("TextDefaultEffect"), Value = AnimatedTextEffect.TextDefaultEffect };
+        public EffectComboBoxItem Win2dTextEffectType { get => State.Preferences.Win2dTextEffectType; set => State.Preferences.Win2dTextEffectType = value; }
 
         public string Version
         {
@@ -439,20 +194,7 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref field, value);
         } = string.Empty;
 
-        public bool IsFolderWatchEnabled
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = true;
+        public bool IsFolderWatchEnabled { get => State.Preferences.IsFolderWatchEnabled; set => State.Preferences.IsFolderWatchEnabled = value; }
 
         public ObservableCollection<FontInfo> FontFamilyList
         {
@@ -460,21 +202,7 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref field, value);
         }
 
-        public FontInfo FontFamily
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        SendLyricsSettings();
-                    }
-                }
-            }
-        }
+        public FontInfo FontFamily { get => State.Preferences.FontFamily; set => State.Preferences.FontFamily = value; }
 
         public bool IsColorPickerVisible
         {
@@ -482,71 +210,13 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref field, value);
         } = false;
 
-        public Color CustomColor
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.CustomColorArgb = (uint)((value.A << 24) | (value.R << 16) | (value.G << 8) | value.B);
-                    if (IsInitialized)
-                    {
-                        App.MainWindow?.SetCustomAppStyle();
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = Color.FromArgb(0xFF, 0x80, 0x80, 0x80);
+        public Color CustomColor { get => State.Preferences.CustomColor; set => State.Preferences.CustomColor = value; }
 
-        public bool IsCustomLyricsColorEnabled
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        ScheduleSettingsBroadcast();
-                    }
-                }
-            }
-        } = false;
+        public bool IsCustomLyricsColorEnabled { get => State.Preferences.IsCustomLyricsColorEnabled; set => State.Preferences.IsCustomLyricsColorEnabled = value; }
 
-        public Color LyricsCustomColor
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.LyricsCustomColorRgb = (uint)((value.R << 16) | (value.G << 8) | value.B);
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        ScheduleSettingsBroadcast();
-                    }
-                }
-            }
-        } = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
+        public Color LyricsCustomColor { get => State.Preferences.LyricsCustomColor; set => State.Preferences.LyricsCustomColor = value; }
 
-        public double DesktopLyricsFontSize
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.DesktopLyricsFontSize = value;
-                    if (IsInitialized)
-                    {
-                        ScheduleDesktopLyricsStyleCommit();
-                    }
-                }
-            }
-        } = 36;
+        public double DesktopLyricsFontSize { get => State.Preferences.DesktopLyricsFontSize; set => State.Preferences.DesktopLyricsFontSize = value; }
 
         public FontInfo DesktopLyricsFontFamily
         {
@@ -564,204 +234,39 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public Color DesktopLyricsColor
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.DesktopLyricsColorRgb = (uint)((value.R << 16) | (value.G << 8) | value.B);
-                    if (IsInitialized)
-                    {
-                        ScheduleDesktopLyricsStyleCommit();
-                    }
-                }
-            }
-        } = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
+        public Color DesktopLyricsColor { get => State.Preferences.DesktopLyricsColor; set => State.Preferences.DesktopLyricsColor = value; }
 
         /// <summary>false（默认）= 桌面歌词颜色按悬浮窗周围环境自动取色（黑/白）；true = 用上方自选颜色覆盖自动取色。</summary>
-        public bool IsDesktopLyricsCustomColorEnabled
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.IsDesktopLyricsCustomColorEnabled = value;
-                    if (IsInitialized)
-                    {
-                        ScheduleDesktopLyricsStyleCommit();
-                    }
-                }
-            }
-        } = false;
+        public bool IsDesktopLyricsCustomColorEnabled { get => State.Preferences.IsDesktopLyricsCustomColorEnabled; set => State.Preferences.IsDesktopLyricsCustomColorEnabled = value; }
 
-        public bool IsDesktopLyricsTranslationEnabled
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.IsDesktopLyricsTranslationEnabled = value;
-                    if (IsInitialized)
-                    {
-                        ScheduleDesktopLyricsStyleCommit();
-                    }
-                }
-            }
-        } = true;
+        public bool IsDesktopLyricsTranslationEnabled { get => State.Preferences.IsDesktopLyricsTranslationEnabled; set => State.Preferences.IsDesktopLyricsTranslationEnabled = value; }
 
-        public bool IsDesktopLyricsGlowEnabled
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.IsDesktopLyricsGlowEnabled = value;
-                    if (IsInitialized)
-                    {
-                        ScheduleDesktopLyricsStyleCommit();
-                    }
-                }
-            }
-        } = true;
+        public bool IsDesktopLyricsGlowEnabled { get => State.Preferences.IsDesktopLyricsGlowEnabled; set => State.Preferences.IsDesktopLyricsGlowEnabled = value; }
 
-        public bool IsDesktopLyricsCharFloatEnabled
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.IsDesktopLyricsCharFloatEnabled = value;
-                    if (IsInitialized)
-                    {
-                        ScheduleDesktopLyricsStyleCommit();
-                    }
-                }
-            }
-        } = true;
+        public bool IsDesktopLyricsCharFloatEnabled { get => State.Preferences.IsDesktopLyricsCharFloatEnabled; set => State.Preferences.IsDesktopLyricsCharFloatEnabled = value; }
 
-        public bool IsDesktopLyricsCharScaleEnabled
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.IsDesktopLyricsCharScaleEnabled = value;
-                    if (IsInitialized)
-                    {
-                        ScheduleDesktopLyricsStyleCommit();
-                    }
-                }
-            }
-        } = true;
+        public bool IsDesktopLyricsCharScaleEnabled { get => State.Preferences.IsDesktopLyricsCharScaleEnabled; set => State.Preferences.IsDesktopLyricsCharScaleEnabled = value; }
 
         /// <summary>长音节阈值（ms）：音节时长达到该值才触发发光/字缩动效（与主界面 LongSyllableThreshold 同语义）。</summary>
-        public double DesktopLyricsLongSyllableThreshold
-        {
-            get => field;
-            set
-            {
-                value = Math.Clamp(value, 0, 5000);
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.DesktopLyricsLongSyllableThreshold = value;
-                    if (IsInitialized)
-                    {
-                        ScheduleDesktopLyricsStyleCommit();
-                    }
-                }
-            }
-        } = 700.0;
+        public double DesktopLyricsLongSyllableThreshold { get => State.Preferences.DesktopLyricsLongSyllableThreshold; set => State.Preferences.DesktopLyricsLongSyllableThreshold = value; }
 
         /// <summary>发光强度（px，模糊半径）：0 无发光（与主界面 GlowAmount 同语义）。</summary>
-        public double DesktopLyricsGlowAmount
-        {
-            get => field;
-            set
-            {
-                value = Math.Clamp(value, 0, 10);
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.DesktopLyricsGlowAmount = value;
-                    if (IsInitialized)
-                    {
-                        ScheduleDesktopLyricsStyleCommit();
-                    }
-                }
-            }
-        } = 5.0;
+        public double DesktopLyricsGlowAmount { get => State.Preferences.DesktopLyricsGlowAmount; set => State.Preferences.DesktopLyricsGlowAmount = value; }
 
         /// <summary>字浮强度（px，上浮距离）：0 无浮动（与主界面 CharFloatAmount 同语义）。</summary>
-        public double DesktopLyricsCharFloatAmount
-        {
-            get => field;
-            set
-            {
-                value = Math.Clamp(value, 0, 10);
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.DesktopLyricsCharFloatAmount = value;
-                    if (IsInitialized)
-                    {
-                        ScheduleDesktopLyricsStyleCommit();
-                    }
-                }
-            }
-        } = 5.0;
+        public double DesktopLyricsCharFloatAmount { get => State.Preferences.DesktopLyricsCharFloatAmount; set => State.Preferences.DesktopLyricsCharFloatAmount = value; }
 
         /// <summary>字缩强度（%，长音节字符放大比例，110 = 1.1 倍）：与主界面 CharScaleAmount 同语义。</summary>
-        public double DesktopLyricsCharScaleAmount
-        {
-            get => field;
-            set
-            {
-                value = Math.Clamp(value, 50, 150);
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.DesktopLyricsCharScaleAmount = value;
-                    if (IsInitialized)
-                    {
-                        ScheduleDesktopLyricsStyleCommit();
-                    }
-                }
-            }
-        } = 110.0;
+        public double DesktopLyricsCharScaleAmount { get => State.Preferences.DesktopLyricsCharScaleAmount; set => State.Preferences.DesktopLyricsCharScaleAmount = value; }
 
-        /// <summary>逐字效果开关（设置页绑定入口）：field-backed 可观察属性保证 OneWay 绑定联动；
-        /// 转发给桌面歌词 VM 单例（其 setter 负责持久化与窗口热切换通知），不经样式防抖提交。</summary>
+        /// <summary>兼容旧设置页绑定；状态和通知均转发到共享源。</summary>
         public bool IsDesktopLyricsKaraokeEnabled
         {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    App.Services.GetRequiredService<DesktopLyricsViewModel>().IsKaraokeEnabled = value;
-                }
-            }
-        } = true;
+            get => State.DesktopLyrics.IsKaraokeEnabled;
+            set => State.DesktopLyrics.IsKaraokeEnabled = value;
+        }
 
-        public int DesktopLyricsFontWeight
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.DesktopLyricsFontWeight = value;
-                    if (IsInitialized)
-                    {
-                        ScheduleDesktopLyricsStyleCommit();
-                    }
-                }
-            }
-        } = 400;
+        public int DesktopLyricsFontWeight { get => State.Preferences.DesktopLyricsFontWeight; set => State.Preferences.DesktopLyricsFontWeight = value; }
 
         /// <summary>字重 ComboBox 的 SelectedIndex（0=正常400 1=中等500 2=半粗600 3=粗体700）。</summary>
         public int DesktopLyricsWeightIndex
@@ -772,39 +277,9 @@ namespace WinUIMusicPlayer.ViewModel
 
         /// <summary>阴影强度（%，0–100）：文字色反相软阴影；0 = 关闭（渲染直接跳过阴影），
         /// 50 = 单层满强度，100 = 双重叠加（Win2D 侧光晕约再深一倍，Composition 侧封顶不透明）。</summary>
-        public double DesktopLyricsShadowAmount
-        {
-            get => field;
-            set
-            {
-                value = Math.Clamp(value, 0, 100);
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.DesktopLyricsShadowAmount = value;
-                    if (IsInitialized)
-                    {
-                        ScheduleDesktopLyricsStyleCommit();
-                    }
-                }
-            }
-        } = 50.0;
+        public double DesktopLyricsShadowAmount { get => State.Preferences.DesktopLyricsShadowAmount; set => State.Preferences.DesktopLyricsShadowAmount = value; }
 
-        public int LyricsFontWeight
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.LyricsFontWeight = value;
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        SendLyricsSettings();
-                    }
-                }
-            }
-        } = 700;
+        public int LyricsFontWeight { get => State.Preferences.LyricsFontWeight; set => State.Preferences.LyricsFontWeight = value; }
 
         /// <summary>主歌词字重 ComboBox 的 SelectedIndex（0=正常400 1=中等500 2=半粗600 3=粗体700）。</summary>
         public int LyricsFontWeightIndex
@@ -813,216 +288,37 @@ namespace WinUIMusicPlayer.ViewModel
             set => LyricsFontWeight = value switch { 0 => 400, 1 => 500, 2 => 600, _ => 700 };
         }
 
-        // 不要在本文件加 using Microsoft.UI.Dispatching —— 会触发 XAML 编译器源码扫描的
-        // WMC9999 内部错误（AppViewModel.cs 中的同款 using 不受影响），故用全限定类型名。
-        private Microsoft.UI.Dispatching.DispatcherQueueTimer? _desktopLyricsStyleCommitTimer;
+        internal void ScheduleDesktopLyricsStyleCommit()
+            => App.Services.GetRequiredService<SettingsCoordinator>().ScheduleDesktopLyricsStyleCommit();
 
-        /// <summary>
-        /// 桌面歌词样式提交防抖：滑块/数字框连续变更（如拖动描边宽度滑块逐刻度触发 setter）
-        /// 合并为一次全量设置落盘（SaveSettingAsync）+ 样式推送（RefreshStyle），
-        /// 避免逐 tick 全量序列化写盘。与 ScheduleSettingsBroadcast 同款重启式定时器。
-        /// </summary>
-        private void ScheduleDesktopLyricsStyleCommit()
-        {
-            if (_desktopLyricsStyleCommitTimer is null)
-            {
-                _desktopLyricsStyleCommitTimer = App.MainWindow.DispatcherQueue.CreateTimer();
-                _desktopLyricsStyleCommitTimer.Interval = TimeSpan.FromMilliseconds(300);
-                _desktopLyricsStyleCommitTimer.Tick += (s, e) =>
-                {
-                    _desktopLyricsStyleCommitTimer?.Stop();
-                    _ = _musicDatabaseService.SaveSettingAsync();
-                    App.Services.GetRequiredService<DesktopLyricsViewModel>().RefreshStyleFromSettings();
-                };
-            }
-            _desktopLyricsStyleCommitTimer.Start();
-        }
+        public float CustomOpacity { get => State.Preferences.CustomOpacity; set => State.Preferences.CustomOpacity = value; }
 
-        public float CustomOpacity
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.CustomAcrylicOpacity = value / 100;
-                    if (IsInitialized)
-                    {
-                        App.MainWindow?.SetCustomAppStyle();
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = 50f;
+        public bool IsUpdateBackDrop { get => State.Preferences.IsUpdateBackDrop; set => State.Preferences.IsUpdateBackDrop = value; }
 
-        public bool IsUpdateBackDrop
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.IsUpdateBackDrop = value;
-                    if (IsInitialized)
-                    {
-                        App.MainWindow?.UpdateBackdropActiveState(value);
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = false;
+        public Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment LyricsAlignment { get => State.Preferences.LyricsAlignment; set => State.Preferences.LyricsAlignment = value; }
 
-        public Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment LyricsAlignment
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        SendLyricsSettings();
-                    }
-                }
-            }
-        } = Microsoft.Graphics.Canvas.Text.CanvasHorizontalAlignment.Left;
+        public TextAlignment PlayingDetailAlignment { get => State.Preferences.PlayingDetailAlignment; set => State.Preferences.PlayingDetailAlignment = value; }
 
-        public TextAlignment PlayingDetailAlignment
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                    OnPropertyChanged(nameof(EffectivePlayingDetailAlignment));
-                }
-            }
-        } = TextAlignment.Left;
-
-        public bool UsePlayingDetailAlignmentInPortrait
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                    OnPropertyChanged(nameof(EffectivePlayingDetailAlignment));
-                }
-            }
-        } = false;
+        public bool UsePlayingDetailAlignmentInPortrait { get => State.Preferences.UsePlayingDetailAlignmentInPortrait; set => State.Preferences.UsePlayingDetailAlignmentInPortrait = value; }
 
         public const double PortraitLyricsScale = 1.6;
 
-        public bool IsPortraitLayout
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    OnPropertyChanged(nameof(EffectivePlayingDetailAlignment));
-                    if (IsInitialized)
-                    {
-                        SendLyricsSettings();
-                    }
-                }
-            }
-        }
+        public bool IsPortraitLayout { get => State.Preferences.IsPortraitLayout; set => State.Preferences.IsPortraitLayout = value; }
 
         public TextAlignment EffectivePlayingDetailAlignment =>
             IsPortraitLayout && !UsePlayingDetailAlignmentInPortrait
                 ? TextAlignment.Left
                 : PlayingDetailAlignment;
 
-        public bool IsMusicInfoVisible
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = true;
+        public bool IsMusicInfoVisible { get => State.Preferences.IsMusicInfoVisible; set => State.Preferences.IsMusicInfoVisible = value; }
 
-        public bool IsGlobalFontSizeEnabled
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.IsGlobalFontSizeEnabled = value;
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        SendLyricsFontSize();
-                        SendLyricsSettings();
-                    }
-                }
-            }
-        } = false;
+        public bool IsGlobalFontSizeEnabled { get => State.Preferences.IsGlobalFontSizeEnabled; set => State.Preferences.IsGlobalFontSizeEnabled = value; }
 
-        public double GlobalFontSize
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        SendLyricsFontSize();
-                    }
-                }
-            }
-        } = 32f;
+        public double GlobalFontSize { get => State.Preferences.GlobalFontSize; set => State.Preferences.GlobalFontSize = value; }
 
-        public double LyricsFontSize
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        SendLyricsFontSize();
-                    }
-                }
-            }
-        } = 32;
+        public double LyricsFontSize { get => State.Preferences.LyricsFontSize; set => State.Preferences.LyricsFontSize = value; }
 
-        public string MusicCoverCache
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.MusicCoverCache = value;
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        }
+        public string MusicCoverCache { get => State.Preferences.MusicCoverCache; set => State.Preferences.MusicCoverCache = value; }
 
         public bool IsDopEnabled
         {
@@ -1082,218 +378,36 @@ namespace WinUIMusicPlayer.ViewModel
             }
         }
 
-        public bool IsFadeEnabled
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        AppSettings.OnOutputSettingsUpdated();
-                    }
-                }
-            }
-        }
+        public bool IsFadeEnabled { get => State.Preferences.IsFadeEnabled; set => State.Preferences.IsFadeEnabled = value; }
         public ObservableCollection<int> DsdPcmFreqs
         {
             get => field;
             set => SetProperty(ref field, value);
         } = [44100, 88200, 176400, 352800];
 
-        public int DsdPcmFreq
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        AppSettings.OnOutputSettingsUpdated();
-                    }
-                }
-            }
-        } = 88200;
+        public int DsdPcmFreq { get => State.Preferences.DsdPcmFreq; set => State.Preferences.DsdPcmFreq = value; }
 
-        public float LyricsBlurAmount
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        ScheduleSettingsBroadcast();
-                    }
-                }
-            }
-        } = 5f;
+        public float LyricsBlurAmount { get => State.Preferences.LyricsBlurAmount; set => State.Preferences.LyricsBlurAmount = value; }
 
-        public double CharFloatAmount
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        ScheduleSettingsBroadcast();
-                    }
-                }
-            }
-        } = 5.0;
+        public double CharFloatAmount { get => State.Preferences.CharFloatAmount; set => State.Preferences.CharFloatAmount = value; }
 
-        public double CharScaleAmount
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        ScheduleSettingsBroadcast();
-                    }
-                }
-            }
-        } = 110.0;
+        public double CharScaleAmount { get => State.Preferences.CharScaleAmount; set => State.Preferences.CharScaleAmount = value; }
 
-        public double GlowAmount
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        ScheduleSettingsBroadcast();
-                    }
-                }
-            }
-        } = 5.0;
+        public double GlowAmount { get => State.Preferences.GlowAmount; set => State.Preferences.GlowAmount = value; }
 
-        public double LongSyllableThreshold
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        ScheduleSettingsBroadcast();
-                    }
-                }
-            }
-        } = 700.0;
+        public double LongSyllableThreshold { get => State.Preferences.LongSyllableThreshold; set => State.Preferences.LongSyllableThreshold = value; }
 
-        public double PlayingLineTopOffsetPercent
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        ScheduleSettingsBroadcast();
-                    }
-                }
-            }
-        } = 40.0;
+        public double PlayingLineTopOffsetPercent { get => State.Preferences.PlayingLineTopOffsetPercent; set => State.Preferences.PlayingLineTopOffsetPercent = value; }
 
-        public double TranslatedOpacityPercent
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        ScheduleSettingsBroadcast();
-                    }
-                }
-            }
-        } = 60.0;
+        public double TranslatedOpacityPercent { get => State.Preferences.TranslatedOpacityPercent; set => State.Preferences.TranslatedOpacityPercent = value; }
 
-        public double UnplayedOpacityPercent
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        ScheduleSettingsBroadcast();
-                    }
-                }
-            }
-        } = 50.0;
+        public double UnplayedOpacityPercent { get => State.Preferences.UnplayedOpacityPercent; set => State.Preferences.UnplayedOpacityPercent = value; }
 
-        public double TargetFrameRate
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        SendLyricsSettings();
-                    }
-                }
-            }
-        } = 60.0;
+        public double TargetFrameRate { get => State.Preferences.TargetFrameRate; set => State.Preferences.TargetFrameRate = value; }
 
-        public bool EnableAdvancedLyricsEffect
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = true;
+        public bool EnableAdvancedLyricsEffect { get => State.Preferences.EnableAdvancedLyricsEffect; set => State.Preferences.EnableAdvancedLyricsEffect = value; }
 
-        public EasingType ScrollEasingType
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    OnPropertyChanged(nameof(ScrollEasingTypeIndex));
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        ScheduleSettingsBroadcast();
-                    }
-                }
-            }
-        } = EasingType.FlowWave;
+        public EasingType ScrollEasingType { get => State.Preferences.ScrollEasingType; set => State.Preferences.ScrollEasingType = value; }
         public int ScrollEasingTypeIndex
         {
             get => Math.Clamp((int)ScrollEasingType, 0, MaxEasingTypeIndex);
@@ -1302,22 +416,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         private static readonly int MaxEasingTypeIndex = (int)EasingType.FlowWave; // 枚举尾成员
 
-        public EaseMode ScrollEasingMode
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    OnPropertyChanged(nameof(ScrollEasingModeIndex));
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        ScheduleSettingsBroadcast();
-                    }
-                }
-            }
-        } = EaseMode.FlowWave;
+        public EaseMode ScrollEasingMode { get => State.Preferences.ScrollEasingMode; set => State.Preferences.ScrollEasingMode = value; }
         public int ScrollEasingModeIndex
         {
             get => Math.Clamp((int)ScrollEasingMode, 0, MaxEaseModeIndex);
@@ -1326,54 +425,11 @@ namespace WinUIMusicPlayer.ViewModel
 
         private static readonly int MaxEaseModeIndex = (int)EaseMode.FlowWave; // 枚举尾成员
 
-        public bool EnableGlobalHotKey
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.EnableGlobalHotKey = value;
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                        InitHotKeys();
-                    }
-                }
-            }
-        } = false;
+        public bool EnableGlobalHotKey { get => State.Preferences.EnableGlobalHotKey; set => State.Preferences.EnableGlobalHotKey = value; }
 
-        public bool IsTrimOnHideEnabled
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.IsTrimOnHideEnabled = value;
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = false;
+        public bool IsTrimOnHideEnabled { get => State.Preferences.IsTrimOnHideEnabled; set => State.Preferences.IsTrimOnHideEnabled = value; }
 
-        public bool IsTrimAfterPlaybackEnabled
-        {
-            get => field;
-            set
-            {
-                if (SetProperty(ref field, value))
-                {
-                    AppSettings.IsTrimAfterPlaybackEnabled = value;
-                    if (IsInitialized)
-                    {
-                        _ = _musicDatabaseService.SaveSettingAsync();
-                    }
-                }
-            }
-        } = false;
+        public bool IsTrimAfterPlaybackEnabled { get => State.Preferences.IsTrimAfterPlaybackEnabled; set => State.Preferences.IsTrimAfterPlaybackEnabled = value; }
 
         public bool HasGlobalHotKeyConflict
         {
@@ -1701,6 +757,7 @@ namespace WinUIMusicPlayer.ViewModel
 
         public void InitHotKeys()
         {
+            if (_isDisposed || _lifecycle.Phase == AppPhase.Stopping) return;
             var window = App.MainWindow;
             if (window is null) return;
 

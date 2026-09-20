@@ -25,6 +25,7 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicDatabaseService _musicDatabaseService;
         private MusicBrowseViewModel MusicBrowseViewModel { get; set; }
         public AppViewModel AppViewModel { get; }
+        public WinUIMusicPlayer.State.AppState State => AppViewModel.State;
 
         public AlbumViewModel(MusicBrowseViewModel musicBrowseViewModel, AppViewModel appViewModel, MusicDatabaseService musicDatabaseService)
         {
@@ -115,6 +116,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private async Task Play()
         {
+            if (!AppViewModel.CanStartPlayback) return;
             var srcSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(AppViewModel.SongsSource);
             var pool = System.Buffers.ArrayPool<Music>.Shared;
             var buf = pool.Rent(Math.Max(srcSpan.Length, 1));
@@ -139,7 +141,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
             finally
             {
-                pool.Return(buf, clearArray: false);
+                pool.Return(buf, clearArray: true);
             }
         }
         [RelayCommand]
