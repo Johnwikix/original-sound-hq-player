@@ -2,6 +2,10 @@
 
 新条目加在最上方。
 
+## 2026-09-20 更新对话框警告精简并补充系统美化软件不兼容
+
+- `Strings/*/Resources.resw`：`RtssWarningTitle` 放宽为覆盖 FPS 监控与系统美化两类注入软件；`RtssWarningBody` 精简为一段，保留「桌面歌词＋着色器背景」与 DXGI 挂钩冲突的触发条件，并补充 Windhawk、StartAllBack 等注入式系统美化软件同样可能导致崩溃，均建议关闭或将本程序加入排除列表。全部 6 种语言同步，键名与 XAML/GetString 未变。
+
 ## 2026-09-20 歌词 Helper 迁移到可剪裁的 System.Text.Json
 
 - `External/Lyricify.Lyrics.Helper`：移除 Newtonsoft.Json，使用源生成 JSON 元数据迁移各提供商、KRC/YRC/Spotify/Musixmatch；兼容数字字符串、布尔值、请求转义与浮点输出，Musixmatch 使用可释放的 JsonDocument。
