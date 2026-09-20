@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Lyricify.Lyrics.Serialization;
 
 namespace Lyricify.Lyrics.Providers.Web.SodaMusic
 {
@@ -17,7 +17,7 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
 
             var res = await GetAsync(url);
 
-            return JsonConvert.DeserializeObject<SearchResult>(res);
+            return LyricsJson.Deserialize<SearchResult>(res);
         }
 
         public async Task<TrackDetailResult?> GetDetail(string id)

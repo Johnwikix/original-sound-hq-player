@@ -1,76 +1,76 @@
-﻿#nullable disable
-using Newtonsoft.Json;
+#nullable disable
+using System.Text.Json.Serialization;
 
 namespace Lyricify.Lyrics.Providers.Web.AppleMusic
 {
     // ===== /v1/me/storefront =====
     public class StorefrontResponse
     {
-        [JsonProperty("data")]
+        [JsonPropertyName("data")]
         public StorefrontData[] Data { get; set; }
     }
 
     public class StorefrontData
     {
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public string Id { get; set; }
 
-        [JsonProperty("attributes")]
+        [JsonPropertyName("attributes")]
         public StorefrontAttributes Attributes { get; set; }
     }
 
     public class StorefrontAttributes
     {
-        [JsonProperty("defaultLanguageTag")]
+        [JsonPropertyName("defaultLanguageTag")]
         public string DefaultLanguageTag { get; set; }
     }
 
     // ===== /v1/catalog/{storefront}/search =====
     public class SearchResponse
     {
-        [JsonProperty("results")]
+        [JsonPropertyName("results")]
         public SearchResults Results { get; set; }
     }
 
     public class SearchResults
     {
-        [JsonProperty("songs")]
+        [JsonPropertyName("songs")]
         public SongsContainer Songs { get; set; }
     }
 
     public class SongsContainer
     {
-        [JsonProperty("data")]
+        [JsonPropertyName("data")]
         public SongData[] Data { get; set; }
     }
 
     public class SongData
     {
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public string Id { get; set; }
 
-        [JsonProperty("attributes")]
+        [JsonPropertyName("attributes")]
         public SongAttributes Attributes { get; set; }
     }
 
     public class SongAttributes
     {
-        [JsonProperty("name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
-        [JsonProperty("artistName")]
+        [JsonPropertyName("artistName")]
         public string ArtistName { get; set; }
 
-        [JsonProperty("albumName")]
+        [JsonPropertyName("albumName")]
         public string AlbumName { get; set; }
 
-        [JsonProperty("durationInMillis")]
+        [JsonPropertyName("durationInMillis")]
         public int DurationInMillis { get; set; }
     }
 
     public class LyricResponse
     {
-        [JsonProperty("data")]
+        [JsonPropertyName("data")]
         public LyricSongData[] Data { get; set; }
 
         /// <summary>
@@ -118,37 +118,37 @@ namespace Lyricify.Lyrics.Providers.Web.AppleMusic
 
     public class LyricSongData
     {
-        [JsonProperty("relationships")]
+        [JsonPropertyName("relationships")]
         public LyricRelationships Relationships { get; set; }
     }
 
     public class LyricRelationships
     {
-        [JsonProperty("syllable-lyrics")]
+        [JsonPropertyName("syllable-lyrics")]
         public LyricContainer SyllableLyrics { get; set; }
 
-        [JsonProperty("lyrics")]
+        [JsonPropertyName("lyrics")]
         public LyricContainer Lyrics { get; set; }
     }
 
     public class LyricContainer
     {
-        [JsonProperty("data")]
+        [JsonPropertyName("data")]
         public LyricData[] Data { get; set; }
     }
 
     public class LyricData
     {
-        [JsonProperty("attributes")]
+        [JsonPropertyName("attributes")]
         public LyricAttributes Attributes { get; set; }
     }
 
     public class LyricAttributes
     {
-        [JsonProperty("ttml")]
+        [JsonPropertyName("ttml")]
         public string Ttml { get; set; }
 
-        [JsonProperty("ttmlLocalizations")]
+        [JsonPropertyName("ttmlLocalizations")]
         public string TtmlLocalizations { get; set; }
     }
 }

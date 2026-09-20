@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 #nullable disable
 namespace Lyricify.Lyrics.Providers.Web.SodaMusic
@@ -9,37 +9,37 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
     /// </summary>
     public class SearchResult
     {
-        [JsonProperty("status_info")]
+        [JsonPropertyName("status_info")]
         public StatusInfo StatusInfo { get; set; }
 
-        [JsonProperty("result_groups")]
+        [JsonPropertyName("result_groups")]
         public List<ResultGroup> ResultGroups { get; set; }
 
-        [JsonProperty("extra")]
+        [JsonPropertyName("extra")]
         public Extra Extra { get; set; }
     }
 
     public class StatusInfo
     {
-        [JsonProperty("log_id")]
+        [JsonPropertyName("log_id")]
         public string LogId { get; set; }
 
         /// <summary>
         /// unix 秒
         /// </summary>
-        [JsonProperty("now")]
+        [JsonPropertyName("now")]
         public long Now { get; set; }
 
         /// <summary>
         /// unix 毫秒
         /// </summary>
-        [JsonProperty("now_ts_ms")]
+        [JsonPropertyName("now_ts_ms")]
         public long NowTsMs { get; set; }
     }
 
     public class Extra
     {
-        [JsonProperty("log_extra")]
+        [JsonPropertyName("log_extra")]
         public string LogExtra { get; set; }
     }
 
@@ -47,18 +47,18 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
     {
         public string Id { get; set; }
 
-        [JsonProperty("next_cursor")]
+        [JsonPropertyName("next_cursor")]
         public string NextCursor { get; set; }
 
-        [JsonProperty("has_more")]
+        [JsonPropertyName("has_more")]
         public bool HasMore { get; set; }
 
         public List<ResultGroupItem> Data { get; set; }
 
-        [JsonProperty("display_view_all")]
+        [JsonPropertyName("display_view_all")]
         public bool? DisplayViewAll { get; set; }
 
-        [JsonProperty("display_title")]
+        [JsonPropertyName("display_title")]
         public string DisplayTitle { get; set; }
 
         public string Description { get; set; }
@@ -72,7 +72,7 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
 
     public class Meta
     {
-        [JsonProperty("item_type")]
+        [JsonPropertyName("item_type")]
         public string ItemType { get; set; }
     }
 
@@ -104,25 +104,25 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
 
         public string Vid { get; set; }
 
-        [JsonProperty("label_info")]
+        [JsonPropertyName("label_info")]
         public LabelInfo LabelInfo { get; set; }
 
-        [JsonProperty("sim_id")]
+        [JsonPropertyName("sim_id")]
         public long? SimId { get; set; }
 
         /// <summary>
         /// 可选码率集合（文件级）
         /// </summary>
-        [JsonProperty("bit_rates")]
+        [JsonPropertyName("bit_rates")]
         public List<BitRateItem> BitRates { get; set; }
 
-        [JsonProperty("audition_info")]
+        [JsonPropertyName("audition_info")]
         public AuditionInfo AuditionInfo { get; set; }
 
-        [JsonProperty("song_maker_team")]
+        [JsonPropertyName("song_maker_team")]
         public SongMakerTeam SongMakerTeam { get; set; }
 
-        [JsonProperty("media_type")]
+        [JsonPropertyName("media_type")]
         public string MediaType { get; set; }
 
         public bool? Explicit { get; set; }
@@ -131,7 +131,7 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
 
         public Colors Colors { get; set; }
 
-        [JsonProperty("limited_free_info")]
+        [JsonPropertyName("limited_free_info")]
         public object LimitedFreeInfo { get; set; }
 
         /// <summary>
@@ -139,22 +139,22 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
         /// </summary>
         public int? Vocal { get; set; }
 
-        [JsonProperty("lang_codes")]
+        [JsonPropertyName("lang_codes")]
         public List<string> LangCodes { get; set; }
 
-        [JsonProperty("first_vocal")]
+        [JsonPropertyName("first_vocal")]
         public Range FirstVocal { get; set; }
 
-        [JsonProperty("sharable_platforms")]
+        [JsonPropertyName("sharable_platforms")]
         public List<string> SharablePlatforms { get; set; }
 
         /// <summary>
         /// 可播放区间（ms）
         /// </summary>
-        [JsonProperty("playable_range")]
+        [JsonPropertyName("playable_range")]
         public Range PlayableRange { get; set; }
 
-        [JsonProperty("plug_status")]
+        [JsonPropertyName("plug_status")]
         public PlugStatus PlugStatus { get; set; }
 
         public List<TagWrapper> Tags { get; set; }
@@ -171,22 +171,22 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
         /// <summary>
         /// unix 秒
         /// </summary>
-        [JsonProperty("release_date")]
+        [JsonPropertyName("release_date")]
         public long ReleaseDate { get; set; }
 
-        [JsonProperty("url_cover")]
+        [JsonPropertyName("url_cover")]
         public UrlWithTemplate UrlCover { get; set; }
 
-        [JsonProperty("url_player_bg")]
+        [JsonPropertyName("url_player_bg")]
         public UrlWithTemplate UrlPlayerBg { get; set; }
 
-        [JsonProperty("cover_gradient_effect_color")]
+        [JsonPropertyName("cover_gradient_effect_color")]
         public List<RgbColor> CoverGradientEffectColor { get; set; }
 
-        [JsonProperty("playing_wave_color")]
+        [JsonPropertyName("playing_wave_color")]
         public RgbaColor PlayingWaveColor { get; set; }
 
-        [JsonProperty("paused_wave_color")]
+        [JsonPropertyName("paused_wave_color")]
         public RgbaColor PausedWaveColor { get; set; }
     }
 
@@ -196,10 +196,10 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
 
         public List<string> Urls { get; set; }
 
-        [JsonProperty("template")]
+        [JsonPropertyName("template")]
         public string Template { get; set; }
 
-        [JsonProperty("template_prefix")]
+        [JsonPropertyName("template_prefix")]
         public string TemplatePrefix { get; set; }
     }
 
@@ -209,18 +209,18 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
 
         public string Name { get; set; }
 
-        [JsonProperty("url_avatar")]
+        [JsonPropertyName("url_avatar")]
         public UrlWithTemplate UrlAvatar { get; set; }
 
         public State State { get; set; }
 
-        [JsonProperty("user_info")]
+        [JsonPropertyName("user_info")]
         public ArtistUserInfo UserInfo { get; set; }
 
-        [JsonProperty("simple_display_name")]
+        [JsonPropertyName("simple_display_name")]
         public string SimpleDisplayName { get; set; }
 
-        [JsonProperty("user_artist_type")]
+        [JsonPropertyName("user_artist_type")]
         public int? UserArtistType { get; set; }
     }
 
@@ -230,24 +230,24 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
 
         public string Nickname { get; set; }
 
-        [JsonProperty("medium_avatar_url")]
+        [JsonPropertyName("medium_avatar_url")]
         public UrlsOnly MediumAvatarUrl { get; set; }
 
-        [JsonProperty("thumb_avatar_url")]
+        [JsonPropertyName("thumb_avatar_url")]
         public UrlsOnly ThumbAvatarUrl { get; set; }
 
-        [JsonProperty("artist_id")]
+        [JsonPropertyName("artist_id")]
         public string ArtistId { get; set; }
 
         public bool? Secret { get; set; }
 
-        [JsonProperty("test_tag")]
+        [JsonPropertyName("test_tag")]
         public int? TestTag { get; set; }
 
-        [JsonProperty("vip_stage")]
+        [JsonPropertyName("vip_stage")]
         public string VipStage { get; set; }
 
-        [JsonProperty("is_vip")]
+        [JsonPropertyName("is_vip")]
         public bool? IsVip { get; set; }
     }
 
@@ -255,13 +255,13 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
     {
         public List<string> Urls { get; set; }
 
-        [JsonProperty("need_complete_url")]
+        [JsonPropertyName("need_complete_url")]
         public bool? NeedCompleteUrl { get; set; }
     }
 
     public class State
     {
-        [JsonProperty("blocked_by_me")]
+        [JsonPropertyName("blocked_by_me")]
         public bool? BlockedByMe { get; set; }
     }
 
@@ -279,7 +279,7 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
 
         public string Vid { get; set; }
 
-        [JsonProperty("bit_rates")]
+        [JsonPropertyName("bit_rates")]
         public List<BitRateItem> BitRates { get; set; }
     }
 
@@ -303,43 +303,43 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
 
     public class Stats
     {
-        [JsonProperty("count_collected")]
+        [JsonPropertyName("count_collected")]
         public long? CountCollected { get; set; }
 
-        [JsonProperty("count_comment")]
+        [JsonPropertyName("count_comment")]
         public long? CountComment { get; set; }
 
-        [JsonProperty("count_shared")]
+        [JsonPropertyName("count_shared")]
         public long? CountShared { get; set; }
     }
 
     public class LabelInfo
     {
-        [JsonProperty("only_vip_download")]
+        [JsonPropertyName("only_vip_download")]
         public bool? OnlyVipDownload { get; set; }
 
-        [JsonProperty("only_vip_playable")]
+        [JsonPropertyName("only_vip_playable")]
         public bool? OnlyVipPlayable { get; set; }
 
-        [JsonProperty("quality_only_vip_can_download")]
+        [JsonPropertyName("quality_only_vip_can_download")]
         public List<string> QualityOnlyVipCanDownload { get; set; }
 
-        [JsonProperty("quality_only_vip_can_play")]
+        [JsonPropertyName("quality_only_vip_can_play")]
         public List<string> QualityOnlyVipCanPlay { get; set; }
 
-        [JsonProperty("is_original")]
+        [JsonPropertyName("is_original")]
         public bool? IsOriginal { get; set; }
 
-        [JsonProperty("quality_map")]
+        [JsonPropertyName("quality_map")]
         public Dictionary<string, QualityDetailWrap> QualityMap { get; set; }
     }
 
     public class QualityDetailWrap
     {
-        [JsonProperty("play_detail")]
+        [JsonPropertyName("play_detail")]
         public QualityDetail PlayDetail { get; set; }
 
-        [JsonProperty("download_detail")]
+        [JsonPropertyName("download_detail")]
         public QualityDetail DownloadDetail { get; set; }
     }
 
@@ -347,10 +347,10 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
     {
         public string Condition { get; set; }
 
-        [JsonProperty("need_vip")]
+        [JsonPropertyName("need_vip")]
         public bool? NeedVip { get; set; }
 
-        [JsonProperty("need_purchase")]
+        [JsonPropertyName("need_purchase")]
         public bool? NeedPurchase { get; set; }
     }
 
@@ -358,10 +358,10 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
     {
         public string Vid { get; set; }
 
-        [JsonProperty("start_time_ms")]
+        [JsonPropertyName("start_time_ms")]
         public int? StartTimeMs { get; set; }
 
-        [JsonProperty("duration_ms")]
+        [JsonPropertyName("duration_ms")]
         public int? DurationMs { get; set; }
     }
 
@@ -391,37 +391,37 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
 
     public class Colors
     {
-        [JsonProperty("cover_gradient_effect_color")]
+        [JsonPropertyName("cover_gradient_effect_color")]
         public List<RgbColor> CoverGradientEffectColor { get; set; }
 
-        [JsonProperty("normal_lyric_color")]
+        [JsonPropertyName("normal_lyric_color")]
         public RgbaColor NormalLyricColor { get; set; }
 
-        [JsonProperty("playing_lyric_color")]
+        [JsonPropertyName("playing_lyric_color")]
         public RgbaColor PlayingLyricColor { get; set; }
 
-        [JsonProperty("recommend_reason_background_color")]
+        [JsonPropertyName("recommend_reason_background_color")]
         public RgbaColor RecommendReasonBackgroundColor { get; set; }
 
-        [JsonProperty("featured_comment_tag_color")]
+        [JsonPropertyName("featured_comment_tag_color")]
         public RgbaColor FeaturedCommentTagColor { get; set; }
 
-        [JsonProperty("background_color")]
+        [JsonPropertyName("background_color")]
         public RgbaColor BackgroundColor { get; set; }
 
-        [JsonProperty("playing_wave_color")]
+        [JsonPropertyName("playing_wave_color")]
         public RgbaColor PlayingWaveColor { get; set; }
 
-        [JsonProperty("paused_wave_color")]
+        [JsonPropertyName("paused_wave_color")]
         public RgbaColor PausedWaveColor { get; set; }
 
-        [JsonProperty("comment_share_additional_color")]
+        [JsonPropertyName("comment_share_additional_color")]
         public RgbaColor CommentShareAdditionalColor { get; set; }
 
-        [JsonProperty("base_colors")]
+        [JsonPropertyName("base_colors")]
         public List<RgbColor> BaseColors { get; set; }
 
-        [JsonProperty("non_interactive_anchor_background")]
+        [JsonPropertyName("non_interactive_anchor_background")]
         public RgbaColor NonInteractiveAnchorBackground { get; set; }
     }
 
@@ -450,10 +450,10 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
 
     public class PlugStatus
     {
-        [JsonProperty("can_plug")]
+        [JsonPropertyName("can_plug")]
         public bool? CanPlug { get; set; }
 
-        [JsonProperty("is_plugged")]
+        [JsonPropertyName("is_plugged")]
         public bool? IsPlugged { get; set; }
     }
 
@@ -461,28 +461,28 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
     {
         public TagCategory Category { get; set; }
 
-        [JsonProperty("first_level_tag")]
+        [JsonPropertyName("first_level_tag")]
         public Tag FirstLevelTag { get; set; }
 
-        [JsonProperty("second_level_tag")]
+        [JsonPropertyName("second_level_tag")]
         public Tag SecondLevelTag { get; set; }
     }
 
     public class TagCategory
     {
-        [JsonProperty("tag_id")]
+        [JsonPropertyName("tag_id")]
         public long TagId { get; set; }
 
-        [JsonProperty("tag_name")]
+        [JsonPropertyName("tag_name")]
         public string TagName { get; set; }
     }
 
     public class Tag
     {
-        [JsonProperty("tag_id")]
+        [JsonPropertyName("tag_id")]
         public long TagId { get; set; }
 
-        [JsonProperty("tag_name")]
+        [JsonPropertyName("tag_name")]
         public string TagName { get; set; }
     }
 
@@ -490,10 +490,10 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
     {
         public string Type { get; set; }
 
-        [JsonProperty("start_time")]
+        [JsonPropertyName("start_time")]
         public int? StartTime { get; set; }
 
-        [JsonProperty("end_time")]
+        [JsonPropertyName("end_time")]
         public int? EndTime { get; set; }
     }
 
@@ -502,20 +502,20 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
     /// </summary>
     public class TrackDetailResult
     {
-        [JsonProperty("status_info")]
+        [JsonPropertyName("status_info")]
         public StatusInfo StatusInfo { get; set; }
 
         public LyricInfo Lyric { get; set; }
 
         public TrackInfo Track { get; set; }
 
-        [JsonProperty("track_player")]
+        [JsonPropertyName("track_player")]
         public TrackPlayer TrackPlayer { get; set; }
 
-        [JsonProperty("risk_result")]
+        [JsonPropertyName("risk_result")]
         public int? RiskResult { get; set; }
 
-        [JsonProperty("expire_at")]
+        [JsonPropertyName("expire_at")]
         public long? ExpireAt { get; set; }
     }
 
@@ -525,23 +525,23 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
 
         public string Lang { get; set; }
 
-        [JsonProperty("hide_request_lyrics")]
+        [JsonPropertyName("hide_request_lyrics")]
         public bool? HideRequestLyrics { get; set; }
 
         public string Type { get; set; }
 
-        [JsonProperty("lyric_contributor")]
+        [JsonPropertyName("lyric_contributor")]
         public LyricContributor LyricContributor { get; set; }
 
         public string Id { get; set; }
 
-        [JsonProperty("lang_translations")]
+        [JsonPropertyName("lang_translations")]
         public Dictionary<string, LyricTranslation> LangTranslations { get; set; }
     }
 
     public class LyricContributor
     {
-        [JsonProperty("filter_reason")]
+        [JsonPropertyName("filter_reason")]
         public string FilterReason { get; set; }
     }
 
@@ -551,12 +551,12 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
 
         public string Lang { get; set; }
 
-        [JsonProperty("hide_request_lyrics")]
+        [JsonPropertyName("hide_request_lyrics")]
         public bool? HideRequestLyrics { get; set; }
 
         public string Type { get; set; }
 
-        [JsonProperty("lyric_contributor")]
+        [JsonPropertyName("lyric_contributor")]
         public LyricContributor LyricContributor { get; set; }
 
         public string Id { get; set; }
@@ -585,43 +585,43 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
 
         public string Vid { get; set; }
 
-        [JsonProperty("label_info")]
+        [JsonPropertyName("label_info")]
         public LabelInfo LabelInfo { get; set; }
 
-        [JsonProperty("sim_id")]
+        [JsonPropertyName("sim_id")]
         public long? SimId { get; set; }
 
-        [JsonProperty("bit_rates")]
+        [JsonPropertyName("bit_rates")]
         public List<BitRateItem> BitRates { get; set; }
 
-        [JsonProperty("audition_info")]
+        [JsonPropertyName("audition_info")]
         public AuditionInfo AuditionInfo { get; set; }
 
-        [JsonProperty("song_maker_team")]
+        [JsonPropertyName("song_maker_team")]
         public SongMakerTeam SongMakerTeam { get; set; }
 
-        [JsonProperty("media_type")]
+        [JsonPropertyName("media_type")]
         public string MediaType { get; set; }
 
         public Chorus Chorus { get; set; }
 
         public Colors Colors { get; set; }
 
-        [JsonProperty("limited_free_info")]
+        [JsonPropertyName("limited_free_info")]
         public LimitedFreeInfo LimitedFreeInfo { get; set; }
 
         public int? Vocal { get; set; }
 
-        [JsonProperty("lang_codes")]
+        [JsonPropertyName("lang_codes")]
         public List<string> LangCodes { get; set; }
 
-        [JsonProperty("first_vocal")]
+        [JsonPropertyName("first_vocal")]
         public Range FirstVocal { get; set; }
 
-        [JsonProperty("sharable_platforms")]
+        [JsonPropertyName("sharable_platforms")]
         public List<string> SharablePlatforms { get; set; }
 
-        [JsonProperty("plug_status")]
+        [JsonPropertyName("plug_status")]
         public PlugStatus PlugStatus { get; set; }
 
         public List<TagWrapper> Tags { get; set; }
@@ -629,42 +629,42 @@ namespace Lyricify.Lyrics.Providers.Web.SodaMusic
 
     public class LimitedFreeInfo
     {
-        [JsonProperty("queue_types")]
+        [JsonPropertyName("queue_types")]
         public List<string> QueueTypes { get; set; }
 
-        [JsonProperty("expire_time")]
+        [JsonPropertyName("expire_time")]
         public long? ExpireTime { get; set; }
 
         public string Sign { get; set; }
 
-        [JsonProperty("sign_version")]
+        [JsonPropertyName("sign_version")]
         public string SignVersion { get; set; }
 
-        [JsonProperty("limited_free_type")]
+        [JsonPropertyName("limited_free_type")]
         public string LimitedFreeType { get; set; }
 
-        [JsonProperty("rewind_prev_intercept_type")]
+        [JsonPropertyName("rewind_prev_intercept_type")]
         public string RewindPrevInterceptType { get; set; }
 
-        [JsonProperty("intercept_type")]
+        [JsonPropertyName("intercept_type")]
         public string InterceptType { get; set; }
     }
 
     public class TrackPlayer
     {
-        [JsonProperty("expire_at")]
+        [JsonPropertyName("expire_at")]
         public long? ExpireAt { get; set; }
 
-        [JsonProperty("media_id")]
+        [JsonPropertyName("media_id")]
         public string MediaId { get; set; }
 
-        [JsonProperty("url_player_info")]
+        [JsonPropertyName("url_player_info")]
         public string UrlPlayerInfo { get; set; }
 
-        [JsonProperty("video_model")]
+        [JsonPropertyName("video_model")]
         public string VideoModel { get; set; }
 
-        [JsonProperty("video_model_type")]
+        [JsonPropertyName("video_model_type")]
         public int? VideoModelType { get; set; }
     }
 }

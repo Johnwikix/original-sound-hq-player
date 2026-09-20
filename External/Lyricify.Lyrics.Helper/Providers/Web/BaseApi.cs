@@ -1,5 +1,6 @@
-﻿using Newtonsoft.Json;
+using Lyricify.Lyrics.Serialization;
 using System.Text;
+using System.Text.Json.Serialization.Metadata;
 
 namespace Lyricify.Lyrics.Providers.Web
 {
@@ -44,7 +45,7 @@ namespace Lyricify.Lyrics.Providers.Web
         {
             SetRequestHeaders();
 
-            var content = new StringContent(JsonConvert.SerializeObject(param), Encoding.UTF8, "application/json");
+            var content = new StringContent(LyricsJson.Serialize(param), Encoding.UTF8, "application/json");
 
             var response = await HttpClient.PostAsync(url, content);
 
@@ -103,10 +104,16 @@ namespace Lyricify.Lyrics.Providers.Web
 
     public static class JsonUtils
     {
-        public static T? ToEntity<T>(this string val) => JsonConvert.DeserializeObject<T>(val);
+        public static T? ToEntity<T>(this string val, JsonTypeInfo<T> typeInfo) => LyricsJson.Deserialize(val, typeInfo);
 
-        public static List<T>? ToEntityList<T>(this string val) => JsonConvert.DeserializeObject<List<T>>(val);
+        public static List<T>? ToEntityList<T>(this string val, JsonTypeInfo<List<T>> typeInfo) => LyricsJson.Deserialize(val, typeInfo);
 
-        public static string? ToJson<T>(this T entity, Formatting formatting = Formatting.None) => JsonConvert.SerializeObject(entity, formatting);
+        public static string ToJson<T>(this T entity, JsonTypeInfo<T> typeInfo) => LyricsJson.Serialize(entity, typeInfo);
+
+        public static T? ToEntity<T>(this string val) => LyricsJson.Deserialize<T>(val);
+
+        public static List<T>? ToEntityList<T>(this string val) => LyricsJson.Deserialize<List<T>>(val);
+
+        public static string? ToJson<T>(this T entity, bool writeIndented = false) => LyricsJson.Serialize(entity, writeIndented);
     }
 }

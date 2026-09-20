@@ -1,6 +1,6 @@
-﻿using Lyricify.Lyrics.Models;
+using Lyricify.Lyrics.Models;
 using Lyricify.Lyrics.Parsers.Models.Spotify;
-using Newtonsoft.Json;
+using Lyricify.Lyrics.Serialization;
 
 namespace Lyricify.Lyrics.Parsers
 {
@@ -8,7 +8,7 @@ namespace Lyricify.Lyrics.Parsers
     {
         public static LyricsData? Parse(string rawJson)
         {
-            var colorLyrics = JsonConvert.DeserializeObject<SpotifyColorLyrics>(rawJson);
+            var colorLyrics = LyricsJson.Deserialize<SpotifyColorLyrics>(rawJson);
             if (colorLyrics != null && colorLyrics.Lyrics != null)
             {
                 var lyrics = ParseLyrics(colorLyrics.Lyrics);

@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Lyricify.Lyrics.Serialization;
 using System.Net;
 using System.Text.RegularExpressions;
 
@@ -171,7 +171,7 @@ namespace Lyricify.Lyrics.Providers.Web.AppleMusic
             lock (_lock) _mediaUserToken = mediaUserToken;
 
             var json = await GetAsync("https://amp-api.music.apple.com/v1/me/storefront").ConfigureAwait(false);
-            var resp = JsonConvert.DeserializeObject<StorefrontResponse>(json);
+            var resp = LyricsJson.Deserialize<StorefrontResponse>(json);
 
             var data = resp?.Data;
             if (data == null || data.Length == 0) throw new Exception("AppleMusic: storefront data empty");
@@ -202,7 +202,7 @@ namespace Lyricify.Lyrics.Providers.Web.AppleMusic
                 $"?term={WebUtility.UrlEncode(keyword)}&types=songs&limit={limit}&l={WebUtility.UrlEncode(language)}";
 
             var json = await GetAsync(url).ConfigureAwait(false);
-            return JsonConvert.DeserializeObject<SearchResponse>(json);
+            return LyricsJson.Deserialize<SearchResponse>(json);
         }
 
         /// <summary>
@@ -224,7 +224,7 @@ namespace Lyricify.Lyrics.Providers.Web.AppleMusic
                 $"?include[songs]=syllable-lyrics&l={WebUtility.UrlEncode("zh-hans-cn")}&extend=ttmlLocalizations";
 
             var json = await GetAsync(url).ConfigureAwait(false);
-            var resp = JsonConvert.DeserializeObject<LyricResponse>(json);
+            var resp = LyricsJson.Deserialize<LyricResponse>(json);
 
             resp?.NormalizeTtml();
             return resp;

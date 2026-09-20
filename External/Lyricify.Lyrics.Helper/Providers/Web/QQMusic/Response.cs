@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 using System.Text;
 
 #nullable disable
@@ -216,7 +216,7 @@ namespace Lyricify.Lyrics.Providers.Web.QQMusic
 
         public string Traceid { get; set; }
 
-        [JsonProperty("music.search.SearchCgiService")]
+        [JsonPropertyName("music.search.SearchCgiService")]
         public SearchCgiService Search { get; set; }
 
         public class SearchCgiService
@@ -414,7 +414,7 @@ namespace Lyricify.Lyrics.Providers.Web.QQMusic
         /// <summary>
         /// 同版本的曲目
         /// </summary>
-        [JsonProperty("grp")]
+        [JsonPropertyName("grp")]
         public List<Song> Group { get; set; }
         public int Language { get; set; }
         public int Genre { get; set; }

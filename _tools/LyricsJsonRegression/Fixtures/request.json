@@ -1,0 +1,1 @@
+{"req_0":{"method":"CgiGetVkey","module":"vkey.GetVkeyServer","param":{"songmid":["歌曲 <>&'\"\\ /\u0001\u0085\u2028\u2029 😀"],"songtype":[1],"loginflag":1,"platform":"20","enabled":true,"missing":null,"ratio":1.0}},"header":{"os":"pc","appver":"2.0.3"}}

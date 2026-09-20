@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-09-20 歌词 Helper 迁移到可剪裁的 System.Text.Json
+
+- `External/Lyricify.Lyrics.Helper`：移除 Newtonsoft.Json，使用源生成 JSON 元数据迁移各提供商、KRC/YRC/Spotify/Musixmatch；兼容数字字符串、布尔值、请求转义与浮点输出，Musixmatch 使用可释放的 JsonDocument。
+- `WinUIMusicPlayer.csproj`：移除 Lyricify.Lyrics.Helper 的 TrimmerRootAssembly；库启用剪裁分析，外部自定义 DTO 可传入 JsonTypeInfo。
+- `_tools/LyricsJsonRegression`：保存迁移前 191 个模型、请求载荷及解析/生成器输出基线，禁用反射并验证全剪裁发布；公共 ToJson 缩进参数改为 bool，未指定类型的 JSON 对象改为 JsonElement，其他兼容边界与测量见其 README。
+
 ## 2026-09-20 修复外部导入重开、文件夹显示与并发创建
 
 - `Services/OneShotPlaybackService.cs`：每次显式打开重新解析库内身份，移除后重开和失败后重试不再复用旧结果；通过文件夹 ViewModel 统一发布导入状态。

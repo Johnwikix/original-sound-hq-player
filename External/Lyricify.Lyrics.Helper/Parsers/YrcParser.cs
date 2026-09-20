@@ -1,6 +1,6 @@
 using Lyricify.Lyrics.Models;
 using Lyricify.Lyrics.Parsers.Models.Yrc;
-using Newtonsoft.Json;
+using Lyricify.Lyrics.Serialization;
 using System.Text;
 
 namespace Lyricify.Lyrics.Parsers
@@ -27,7 +27,7 @@ namespace Lyricify.Lyrics.Parsers
                 {
                     var endIndex = input.IndexOf('\n', i);
                     var jsonLine = input[i..endIndex];
-                    var credits = JsonConvert.DeserializeObject<CreditsInfo>(jsonLine);
+                    var credits = LyricsJson.Deserialize<CreditsInfo>(jsonLine);
                     if (credits != null)
                     {
                         lines.Add(new LineInfo(string.Concat(credits.Credits.Select(c => c.Text)), credits.Timestamp));
@@ -64,7 +64,7 @@ namespace Lyricify.Lyrics.Parsers
                     var startIndex = input.LastIndexOf('\n', j);
                     if (startIndex == -1) startIndex = 0; else startIndex++;
                     var jsonLine = input[startIndex..(j + 1)];
-                    var credits = JsonConvert.DeserializeObject<CreditsInfo>(jsonLine);
+                    var credits = LyricsJson.Deserialize<CreditsInfo>(jsonLine);
                     if (credits != null)
                     {
                         endCredits.Add(new LineInfo(string.Concat(credits.Credits.Select(c => c.Text)), credits.Timestamp));
@@ -119,7 +119,7 @@ namespace Lyricify.Lyrics.Parsers
                     var endIndex = input.IndexOf('\n', i);
                     if (endIndex == -1) endIndex = input.Length;
                     var jsonLine = input[i..endIndex];
-                    var credits = JsonConvert.DeserializeObject<CreditsInfo>(jsonLine);
+                    var credits = LyricsJson.Deserialize<CreditsInfo>(jsonLine);
                     if (credits != null)
                     {
                         lines.Add(new LineInfo(string.Concat(credits.Credits.Select(c => c.Text)), credits.Timestamp));

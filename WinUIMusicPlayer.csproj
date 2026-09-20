@@ -272,7 +272,6 @@
   <ItemGroup>
 	  <TrimmerRootAssembly Include="SQLite-net" />
 	  <TrimmerRootAssembly Include="SQLitePCLRaw.core" />
-	  <TrimmerRootAssembly Include="Lyricify.Lyrics.Helper" />
 	  <TrimmerRootDescriptor Include="TrimmerRoots.xml" />
   </ItemGroup>
   <ItemGroup>

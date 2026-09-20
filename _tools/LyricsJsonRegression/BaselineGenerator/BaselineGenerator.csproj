@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows10.0.26100.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OriginalHelperProject Condition="'$(OriginalHelperProject)' == ''">../obj/source/External/Lyricify.Lyrics.Helper/Lyricify.Lyrics.Helper.csproj</OriginalHelperProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="$(OriginalHelperProject)" />
+    <Compile Include="../ParserScenarios.cs" Link="ParserScenarios.cs" />
+    <Compile Include="../RequestScenarios.cs" Link="RequestScenarios.cs" />
+  </ItemGroup>
+</Project>

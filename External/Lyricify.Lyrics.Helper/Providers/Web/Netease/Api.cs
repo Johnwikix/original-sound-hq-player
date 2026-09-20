@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+using Lyricify.Lyrics.Serialization;
 using System.ComponentModel;
 using System.Numerics;
 using System.Security.Cryptography;
@@ -51,7 +51,7 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
 
             var res = await GetAsync(url);
 
-            var result = JsonConvert.DeserializeObject<SearchResult>(res);
+            var result = LyricsJson.Deserialize<SearchResult>(res);
             if (result is null || result.Code != 200 || result.NeedLogin || result.Result is null)
                 throw new InvalidOperationException("网易云搜索服务返回失败状态。");
             return result;
@@ -72,7 +72,7 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
 
             var raw = await EapiHelper.PostAsync(url, HttpClient, data);
 
-            var eapiResult = JsonConvert.DeserializeObject<EapiSearchResult>(raw);
+            var eapiResult = LyricsJson.Deserialize<EapiSearchResult>(raw);
             if (eapiResult is null || eapiResult.Code != 200 || eapiResult.NeedLogin || eapiResult.Result is null)
                 throw new InvalidOperationException("网易云搜索服务返回失败状态。");
             if (eapiResult.Result.Songs is null && eapiResult.Result.SongCount != 0)
@@ -168,9 +168,9 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
                 { "csrf_token", string.Empty },
             };
 
-            var raw = await PostAsync(url, Prepare(JsonConvert.SerializeObject(data)));
+            var raw = await PostAsync(url, Prepare(LyricsJson.Serialize(data)));
 
-            return JsonConvert.DeserializeObject<AlbumResult>(raw);
+            return LyricsJson.Deserialize<AlbumResult>(raw);
         }
 
         public async Task<PlaylistResult?> GetPlaylist(string playlistId)
@@ -187,9 +187,9 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
                 { "n", "1000" }
             };
 
-            var raw = await PostAsync(url, Prepare(JsonConvert.SerializeObject(data)));
+            var raw = await PostAsync(url, Prepare(LyricsJson.Serialize(data)));
 
-            return JsonConvert.DeserializeObject<PlaylistResult>(raw);
+            return LyricsJson.Deserialize<PlaylistResult>(raw);
         }
 
         /// <summary>
@@ -214,9 +214,9 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
                 { "csrf_token", string.Empty }
             };
 
-            var raw = await PostAsync(url, Prepare(JsonConvert.SerializeObject(data)));
+            var raw = await PostAsync(url, Prepare(LyricsJson.Serialize(data)));
 
-            var result = JsonConvert.DeserializeObject<LyricResult>(raw);
+            var result = LyricsJson.Deserialize<LyricResult>(raw);
             if (result is null || result.Code != 200)
                 throw new InvalidOperationException("网易云歌词服务返回失败状态。");
             if (result.Lrc is null && !result.Nolyric && !result.Uncollected)
@@ -251,7 +251,7 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
 
             var raw = await EapiHelper.PostAsync(url, HttpClient, data);
 
-            return JsonConvert.DeserializeObject<LyricResult>(raw);
+            return LyricsJson.Deserialize<LyricResult>(raw);
         }
 
         /// <summary>
@@ -272,9 +272,9 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
                 { "csrf_token", string.Empty }
             };
 
-            var raw = await PostAsync(url, Prepare(JsonConvert.SerializeObject(data)));
+            var raw = await PostAsync(url, Prepare(LyricsJson.Serialize(data)));
 
-            return JsonConvert.DeserializeObject<SongUrls>(raw);
+            return LyricsJson.Deserialize<SongUrls>(raw);
         }
 
         /// <summary>
@@ -305,9 +305,9 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
                     { "csrf_token", string.Empty },
                 };
 
-                var raw = await PostAsync(url, Prepare(JsonConvert.SerializeObject(data)));
+                var raw = await PostAsync(url, Prepare(LyricsJson.Serialize(data)));
 
-                return JsonConvert.DeserializeObject<DetailResult>(raw);
+                return LyricsJson.Deserialize<DetailResult>(raw);
             }
             catch
             {
