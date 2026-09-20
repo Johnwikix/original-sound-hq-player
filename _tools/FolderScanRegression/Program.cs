@@ -2,6 +2,8 @@ using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Utils;
 using Windows.Storage;
 
+await FolderAccessRegression.RunAsync();
+
 string root = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "FolderScanRegression-" + Guid.NewGuid());
 Directory.CreateDirectory(root);
 try

@@ -62,7 +62,7 @@ internal static class ReviewRegression
         var lifecycle = new AppLifecycle();
         lifecycle.TransitionTo(AppPhase.Initializing);
         lifecycle.TransitionTo(AppPhase.Ready);
-        var state = new AppViewModel { CurrentPlayingMusic = new(1) };
+        var state = new AppViewModel { CurrentPlayingMusic = new(1), IsPlaybackEngineReady = true };
         using var services = new ServiceCollection().AddSingleton(state).AddSingleton<BassPlayerCommandService>().BuildServiceProvider();
         var player = services.GetRequiredService<BassPlayerCommandService>();
         using var commands = new PlaybackCommands(lifecycle, state, services);

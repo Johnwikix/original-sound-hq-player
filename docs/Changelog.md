@@ -2,6 +2,13 @@
 
 新条目加在最上方。
 
+## 2026-09-20 文件夹兼容回退与退出异常隔离
+
+- `Services/FolderAccessService.cs`、`ViewModel/Pages/AddFolderViewModel.cs`、`App.xaml.cs`：提取文件夹平台交互服务，按路径打开目录并补 Explorer 回退；选择器 COM/不支持异常时回退 HWND 绑定的 WinRT 选择器，取消不重复弹窗。
+- `Services/AppLifecycle.cs`、`Services/ShutdownCoordinator.cs`：退出时隔离取消及状态订阅者异常，继续保存与清理，避免停留在 Stopping 而不再执行收尾。
+- `_tools/LifecycleRegression`、`_tools/FolderScanRegression`：新增退出失败与选择器回退回归；修正播放意图测试的引擎就绪前置条件。
+- `TODO.md`、`docs/ServiceRefactoringPlan.md`：记录分阶段重构方案及验收边界；故障 Win10 对话框与用户报告的原生退出崩溃仍待实机验证。
+
 ## 2026-09-19 5.1 自动独占与输出状态布局调整
 
 - `External/AudioPlayer/Playback/PlaybackEngine.Surround.cs`、`PlaybackEngine.cs`、`Decode/PcmDecoder.cs`：共享偏好下仅兼容 5.1 PCM 曲目自动切独占，保留音量和静音；ASIO 保持原模式，失败在同设备回退普通 PCM，设备变化暂停，普通曲目恢复原输出偏好；Atmos 优先且回退不触发二次独占。

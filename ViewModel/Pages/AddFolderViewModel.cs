@@ -4,13 +4,11 @@ using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
-using Microsoft.Windows.Storage.Pickers;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading.Tasks;
 using Windows.Storage;
-using Windows.System;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -30,15 +28,17 @@ public partial class AddFolderViewModel : ObservableObject
     private readonly AppViewModel _appViewModel;
     private readonly MusicDatabaseService _database;
     private readonly ILogger<AddFolderViewModel> _logger;
+    private readonly FolderAccessService _folderAccess;
     private readonly Task _initialLoad;
     private bool _needsReconcile;
     private int _folderLoadVersion;
 
-    public AddFolderViewModel(MusicDatabaseService database, AppViewModel appViewModel, ILogger<AddFolderViewModel> logger)
+    public AddFolderViewModel(MusicDatabaseService database, AppViewModel appViewModel, ILogger<AddFolderViewModel> logger, FolderAccessService folderAccess)
     {
         _database = database;
         _appViewModel = appViewModel;
         _logger = logger;
+        _folderAccess = folderAccess;
         LibraryOperationGate.Changed += OnOperationChanged; // Both services are application singletons.
         _initialLoad = LoadFoldersAsync();
     }
@@ -86,11 +86,15 @@ public partial class AddFolderViewModel : ObservableObject
 
     public async Task OpenFolderAsync(string path)
     {
-        var folder = await StorageFolder.GetFolderFromPathAsync(path);
-        await Launcher.LaunchFolderAsync(folder, new FolderLauncherOptions
+        try
         {
-            DesiredRemainingView = Windows.UI.ViewManagement.ViewSizePreference.UseMore
-        });
+            await _folderAccess.OpenAsync(path);
+        }
+        catch (Exception ex)
+        {
+            // FolderCommands 的快捷入口不等待此任务，异常必须在这里观察。
+            _logger.LogError(ex, "打开文件夹失败: {Path}", path);
+        }
     }
 
     [RelayCommand(CanExecute = nameof(NotScanning))]
@@ -98,10 +102,9 @@ public partial class AddFolderViewModel : ObservableObject
 
     public Task AddFolderWithLoadingAsync() => RunOperationAsync(async () =>
     {
-        var picker = new FolderPicker(App.MainWindow.AppWindow.Id);
-        var result = await picker.PickSingleFolderAsync();
+        var result = await _folderAccess.PickAsync(App.MainWindow.AppWindow.Id, AppData.HWnd);
         if (result is not null)
-            await AddFolderMusicAsync(await StorageFolder.GetFolderFromPathAsync(result.Path));
+            await AddFolderMusicAsync(result);
     });
 
     public Task DropFoldersAsync(IReadOnlyList<IStorageItem> folders) => RunOperationAsync(async () =>

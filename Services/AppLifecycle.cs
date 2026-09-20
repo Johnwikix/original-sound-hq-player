@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 
 namespace WinUIMusicPlayer.Services;
@@ -41,8 +42,21 @@ public sealed class AppLifecycle
             if (_phase == AppPhase.Stopping) return false;
             _phase = AppPhase.Stopping;
         }
-        _stopping.Cancel();
-        Changed?.Invoke(this, EventArgs.Empty);
+        List<Exception>? failures = null;
+        try
+        {
+            _stopping.Cancel();
+        }
+        catch (Exception ex)
+        {
+            (failures ??= []).Add(ex);
+        }
+        // 退出是冷路径；逐个通知，避免一个失败订阅者阻止其他入口关闭。
+        if (Changed is { } changed)
+            foreach (EventHandler handler in changed.GetInvocationList())
+                try { handler(this, EventArgs.Empty); }
+                catch (Exception ex) { (failures ??= []).Add(ex); }
+        if (failures is not null) throw new AggregateException("Application stopping notifications failed.", failures);
         return true;
     }
 }

@@ -30,6 +30,31 @@ foreach (bool ready in new[] { false, true })
 }
 Console.WriteLine("PASS: early exit skips persistence/host; ready exit saves once; failure does not skip cleanup; stopping cannot become ready.");
 
+foreach (bool failCancellation in new[] { true, false })
+{
+    var lifecycle = new AppLifecycle();
+    lifecycle.TransitionTo(AppPhase.Initializing);
+    lifecycle.TransitionTo(AppPhase.Ready);
+    bool stoppingNotified = false;
+    if (!failCancellation)
+        lifecycle.Changed += (_, _) => throw new IOException("Subscriber failed");
+    lifecycle.Changed += (_, _) => stoppingNotified = lifecycle.Phase == AppPhase.Stopping;
+    using var registration = lifecycle.StoppingToken.Register(() =>
+    {
+        if (failCancellation) throw new IOException("Cancellation callback failed");
+    });
+    var shutdown = new ShutdownCoordinator(lifecycle, NullLogger<ShutdownCoordinator>.Instance);
+    var order = new List<string>();
+    shutdown.RegisterSave(() => { order.Add("save"); return Task.CompletedTask; });
+    shutdown.HostStarted(() => { order.Add("host"); return Task.CompletedTask; });
+    shutdown.RegisterCleanup(() => order.Add("cleanup"));
+    Check(await shutdown.ShutdownAsync(), "Notification failure lost shutdown ownership");
+    Check(stoppingNotified, "Cancellation failure skipped stopping notification");
+    Check(string.Join(',', order) == "save,host,cleanup", "Notification failure skipped shutdown stages");
+    Check(!await shutdown.ShutdownAsync(), "Notification failure allowed repeated cleanup");
+}
+Console.WriteLine("PASS: throwing cancellation callbacks and lifecycle subscribers cannot strand shutdown.");
+
 var life = new AppLifecycle();
 var state = new AppViewModel { CurrentPlayingMusic = new(1), CurrentPlayingList = [new(1), new(2)] };
 int created = 0;

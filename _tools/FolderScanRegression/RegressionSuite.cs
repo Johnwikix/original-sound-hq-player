@@ -118,7 +118,8 @@ internal static class RegressionSuite
             var oldSong = new Music { Path = oldPath, FolderPath = musicRoot, UpdateTime = File.GetLastWriteTime(oldPath) };
             await database.Connection.InsertAsync(oldSong);
             var appVm = new AppViewModel(); // Empty until startup loads SongsSource.
-            var vm = new AddFolderViewModel(database, appVm, NullLogger<AddFolderViewModel>.Instance);
+            var vm = new AddFolderViewModel(database, appVm, NullLogger<AddFolderViewModel>.Instance,
+                new FolderAccessService(NullLogger<FolderAccessService>.Instance));
             App.Services = new ServiceCollection().AddSingleton(database).AddSingleton(appVm)
                 .AddSingleton(vm).AddSingleton<MainPage>().BuildServiceProvider();
             for (int i = 0; vm.FolderList.Count == 0 && i < 100; i++) await Task.Delay(10);

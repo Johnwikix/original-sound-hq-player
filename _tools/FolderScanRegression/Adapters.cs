@@ -6,6 +6,31 @@ namespace Microsoft.UI.Xaml
 {
     public enum Visibility { Visible, Collapsed }
 }
+namespace Microsoft.UI { public readonly record struct WindowId(ulong Value); }
+namespace WinUIMusicPlayer.Model { public static class AppData { public static IntPtr HWnd => new(1); } }
+namespace WinRT.Interop
+{
+    public static class InitializeWithWindow
+    {
+        public static void Initialize(object picker, IntPtr owner)
+        {
+            if (owner == IntPtr.Zero) throw new InvalidOperationException("Missing owner");
+        }
+    }
+}
+namespace Windows.Storage.Pickers
+{
+    public class FolderPicker
+    {
+        public List<string> FileTypeFilter { get; } = [];
+        public static Func<Task<StorageFolder?>> Pick = () => Task.FromResult<StorageFolder?>(null);
+        public Task<StorageFolder?> PickSingleFolderAsync()
+        {
+            if (!FileTypeFilter.Contains("*")) throw new InvalidOperationException("Missing filter");
+            return Pick();
+        }
+    }
+}
 namespace CommunityToolkit.WinUI
 {
     public static class DispatcherExtensions
@@ -25,7 +50,7 @@ namespace CommunityToolkit.WinUI
 namespace Microsoft.Windows.Storage.Pickers
 {
     public class PickFolderResult { public string Path { get; init; } = ""; }
-    public class FolderPicker(int id)
+    public class FolderPicker(Microsoft.UI.WindowId id)
     {
         public static Func<Task<PickFolderResult?>> Pick = () => Task.FromResult<PickFolderResult?>(null);
         public Task<PickFolderResult?> PickSingleFolderAsync() => Pick();
@@ -37,6 +62,7 @@ namespace Windows.System
     public class FolderLauncherOptions { public UI.ViewManagement.ViewSizePreference DesiredRemainingView { get; set; } }
     public static class Launcher
     {
+        public static Task<bool> LaunchFolderPathAsync(string path) => Task.FromResult(true);
         public static Task LaunchFolderAsync(StorageFolder folder, FolderLauncherOptions options) => Task.CompletedTask;
     }
 }
@@ -46,7 +72,7 @@ namespace WinUIMusicPlayer
     {
         public CommunityToolkit.WinUI.TestDispatcher DispatcherQueue { get; } = new();
         public TestWindow AppWindow => this;
-        public int Id => 1;
+        public Microsoft.UI.WindowId Id => new(1);
     }
 }
 namespace WinUIMusicPlayer.View { public class MainPage { public object XamlRoot { get; } = new(); } }

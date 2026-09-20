@@ -18,6 +18,7 @@
     <Compile Include="../../Services/AudioFileWriteGate.cs" />
     <Compile Include="../../Model/PendingMetadataWrite.cs" />
     <Compile Include="../../Services/FolderCommands.cs" />
+    <Compile Include="../../Services/FolderAccessService.cs" />
     <Compile Include="../../ViewModel/Pages/AddFolderViewModel.cs" />
     <Compile Include="../../Model/Folder.cs" />
     <Compile Include="../../Model/SubFolder.cs" />

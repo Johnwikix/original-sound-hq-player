@@ -102,6 +102,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<MusicBrowseViewModel>();
                  services.AddSingleton<DesktopLyricsViewModel>();
                  services.AddSingleton<AddFolderViewModel>();
+                 services.AddSingleton<FolderAccessService>();
                  services.AddSingleton<SettingsViewModel>();
                 services.AddTransient<DspSettingsViewModel>();
                 services.AddSingleton<CurvePresetService>();

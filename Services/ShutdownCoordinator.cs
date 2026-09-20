@@ -29,7 +29,16 @@ public sealed class ShutdownCoordinator(AppLifecycle lifecycle, ILogger<Shutdown
 
     public async Task<bool> ShutdownAsync()
     {
-        if (!lifecycle.TryBeginExit(out bool wasReady)) return false;
+        bool wasReady = false;
+        try
+        {
+            if (!lifecycle.TryBeginExit(out wasReady)) return false;
+        }
+        catch (Exception ex) when (lifecycle.Phase == AppPhase.Stopping)
+        {
+            // 阶段已经改变；取消/状态订阅者异常不能使后续请求全部被挡住却无人清理。
+            logger.LogError(ex, "退出通知失败，继续保存和清理资源");
+        }
         if (wasReady)
             foreach (var save in _save)
                 try { await save(); }
