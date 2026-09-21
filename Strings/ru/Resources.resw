@@ -1979,12 +1979,6 @@
   <data name="AtmosDeviceDescription" xml:space="preserve">
     <value>Только для совместимых треков и их резервного вывода PCM. Список не подтверждает поддержку Atmos; проверка выполняется при воспроизведении. Другие устройства автоматически не выбираются.</value>
   </data>
-  <data name="AtmosUseOrdinary" xml:space="preserve">
-    <value>Обычное воспроизведение</value>
-  </data>
-  <data name="SurroundUseOrdinary" xml:space="preserve">
-    <value>Выключить 5.1</value>
-  </data>
   <data name="SurroundNotificationTitle" xml:space="preserve">
     <value>Вывод 5.1</value>
   </data>

@@ -1,5 +1,4 @@
 ﻿using BassPlayerIpc.Shared;
-using CommunityToolkit.Mvvm.Input;
 using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.ViewModel;
@@ -22,7 +21,4 @@ public partial class AppViewModel
         if (SurroundStatusText == text) return;
         SurroundStatusText = text;
     }
-
-    [RelayCommand]
-    private void UseOrdinarySurroundPlayback() => ExperimentalSurround51 = false;
 }

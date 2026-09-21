@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-09-21 移除 Atmos / 5.1 状态卡的“恢复普通播放”按钮
+
+- `View/SubView/Settings/GeneralSettingsControl.xaml`：删除 Atmos 直通与 5.1 环绕状态提示条上的按钮及随之失去意义的 `ContentAlignment="Right"`，状态文本保留，关闭功能直接用各卡片自身的 toggle。
+- `ViewModel/AppViewModel.Atmos.cs`、`ViewModel/AppViewModel.Surround.cs`：删除 `UseOrdinaryPlaybackCommand` / `UseOrdinarySurroundPlaybackCommand`，实现只是把对应开关设为 false，与 toggle 完全等价；同步移除不再使用的 `CommunityToolkit.Mvvm.Input` using。
+- `Strings/*/Resources.resw`：移除 6 种语言的 `AtmosUseOrdinary`、`SurroundUseOrdinary` 资源键。
+
 ## 2026-09-21 AudioPlayer 网络播放基础
 
 - `External/AudioPlayer`、`External/BassPlayerIpc.Shared/Streaming.cs`：参考 Plugins 最后提交 df6f9d99，加入 HTTP(S) 描述符、鉴权请求头、独立管道客户端、异步准备、播放/暂停、Range 定位、URL 刷新及缓存状态，为 WebDAV GET 播放准备接口。

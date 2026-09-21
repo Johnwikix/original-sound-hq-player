@@ -1979,12 +1979,6 @@
   <data name="AtmosDeviceDescription" xml:space="preserve">
     <value>対応曲のパススルーと PCM フォールバックにのみ適用。表示機器の Atmos 対応は再生時に確認します。他の機器へ自動変更しません。</value>
   </data>
-  <data name="AtmosUseOrdinary" xml:space="preserve">
-    <value>通常再生に戻す</value>
-  </data>
-  <data name="SurroundUseOrdinary" xml:space="preserve">
-    <value>5.1 をオフにする</value>
-  </data>
   <data name="SurroundNotificationTitle" xml:space="preserve">
     <value>5.1 出力</value>
   </data>

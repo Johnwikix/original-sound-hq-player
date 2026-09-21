@@ -1978,12 +1978,6 @@
   <data name="AtmosDeviceDescription" xml:space="preserve">
     <value>只影响兼容曲目的直通及失败回退。列表不代表设备已通过 Atmos 验证；播放时检测，不自动改选其他设备。</value>
   </data>
-  <data name="AtmosUseOrdinary" xml:space="preserve">
-    <value>恢复普通播放</value>
-  </data>
-  <data name="SurroundUseOrdinary" xml:space="preserve">
-    <value>关闭 5.1，恢复普通播放</value>
-  </data>
   <data name="SurroundNotificationTitle" xml:space="preserve">
     <value>5.1 输出提示</value>
   </data>

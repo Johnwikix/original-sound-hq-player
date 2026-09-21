@@ -106,7 +106,7 @@
                         IsOn="{x:Bind ViewModel.AppViewModel.ExperimentalSurround51, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
-                <controls:SettingsCard ContentAlignment="Right"
+                <controls:SettingsCard
                     Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.ExperimentalSurround51), Mode=OneWay}">
                     <controls:SettingsCard.HeaderIcon>
                         <FontIcon Glyph="&#xE946;" />
@@ -114,8 +114,6 @@
                     <controls:SettingsCard.Header>
                         <TextBlock Text="{x:Bind ViewModel.AppViewModel.SurroundStatusText, Mode=OneWay}" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
-                    <Button Content="{x:Bind tool:ToolUtils.GetString('SurroundUseOrdinary')}"
-                        VerticalAlignment="Center" Command="{x:Bind ViewModel.AppViewModel.UseOrdinarySurroundPlaybackCommand}" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard
@@ -138,7 +136,7 @@
                         SelectedItem="{x:Bind ViewModel.AppViewModel.SelectedAtmosDevice, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
-                <controls:SettingsCard ContentAlignment="Right"
+                <controls:SettingsCard
                     Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.ExperimentalAtmosPassthrough), Mode=OneWay}">
                     <controls:SettingsCard.HeaderIcon>
                         <FontIcon Glyph="&#xE946;" />
@@ -146,8 +144,6 @@
                     <controls:SettingsCard.Header>
                         <TextBlock Text="{x:Bind ViewModel.AppViewModel.AtmosStatusText, Mode=OneWay}" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
-                    <Button Content="{x:Bind tool:ToolUtils.GetString('AtmosUseOrdinary')}"
-                        VerticalAlignment="Center" Command="{x:Bind ViewModel.AppViewModel.UseOrdinaryPlaybackCommand}" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard>

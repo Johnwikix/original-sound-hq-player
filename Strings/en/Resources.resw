@@ -1979,12 +1979,6 @@
   <data name="AtmosDeviceDescription" xml:space="preserve">
     <value>Used only for compatible tracks and their PCM fallback. Listed devices are not certified for Atmos; capability is checked at playback. Other devices are never selected automatically.</value>
   </data>
-  <data name="AtmosUseOrdinary" xml:space="preserve">
-    <value>Use normal playback</value>
-  </data>
-  <data name="SurroundUseOrdinary" xml:space="preserve">
-    <value>Turn off 5.1</value>
-  </data>
   <data name="SurroundNotificationTitle" xml:space="preserve">
     <value>5.1 output</value>
   </data>

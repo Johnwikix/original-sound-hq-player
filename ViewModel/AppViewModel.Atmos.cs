@@ -1,5 +1,4 @@
 ﻿using BassPlayerIpc.Shared;
-using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.ObjectModel;
 using WinUIMusicPlayer.Model;
@@ -53,7 +52,4 @@ public partial class AppViewModel
         if (AtmosStatusText == text) return;
         AtmosStatusText = text;
     }
-
-    [RelayCommand]
-    private void UseOrdinaryPlayback() => ExperimentalAtmosPassthrough = false;
 }
