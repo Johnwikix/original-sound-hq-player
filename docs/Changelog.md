@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-09-21 FFmpeg DLL 换为支持网络播放的最小化构建
+
+- `Libraries/FFmpeg/x64/*.dll`：基于同一 n9.0.1 源码（commit bf1b838f）重编，去掉 `--disable-network`，协议在 file 基础上新增 http/https/tcp/tls，TLS 用 Windows 原生 SChannel；demuxer/decoder/encoder/muxer/parser 清单与原版完全一致（schannel 会自动带入 dtls/udp，为 configure 上游行为）。
+- `Libraries/FFmpeg/build-audio-net.sh`：新增网络版构建脚本，与原 `build-audio.sh` 仅上述三处差异；`Libraries/FFmpeg/x64/BUILD_INFO.txt` 更新工具链（MSYS2 UCRT64 gcc 16.2.0，D:\code\msys64）、SHA256 与验证记录。
+- 验证：PlaybackSwitchRegression 281/281；本地 HTTP（E-AC-3 5.1 M4A）与公网 HTTPS MP3 实际经 libavformat 打开解码，旧 DLL 对 http:// 正确拒绝。License 不变（LGPL-2.1+，schannel 为系统组件）。
+
 ## 2026-09-21 退出时取消在途歌词请求
 
 - `Services/LyricsLoader.cs`、`Services/LyricsRefreshService.cs`：将应用停止令牌与切歌取消合并；每次解析在实际结束后释放自身 CTS，取消后停止后续搜词，不再让退出等待完整网络超时与回退链路。

@@ -1,15 +1,22 @@
-FFmpeg n9.0.1 (tag), custom minimal audio-only build, LGPL-2.1-or-later.
-Source: https://github.com/FFmpeg/FFmpeg (tag n9.0.1), original source tree G:\SoftwareProject\ffmpeg\src
-Toolchain: MSYS2 UCRT64 gcc (G:\msys64), external codecs statically linked: libmp3lame (LGPL), libvorbis (BSD-3), libopus (BSD-3)
-Configure flags and reproducible build: ../build-audio.sh (MSYS2 UCRT64; clean n9.0.1 source plus separate build directory).
-Adds native AC-3/E-AC-3 decoders and raw demuxers to the existing minimal audio configuration; no GPL/nonfree components enabled.
+FFmpeg n9.0.1 (tag), custom minimal audio-only build with network playback, LGPL-2.1-or-later.
+Source: https://github.com/FFmpeg/FFmpeg (tag n9.0.1). Original build device tree: G:\SoftwareProject\ffmpeg\src. Current device tree: D:\code\ffmpeg\ffmpeg-9.0.1 (verified same commit as tag)
+Toolchain: MSYS2 UCRT64 gcc. Original build device: G:\msys64 (gcc version unrecorded, built the previous no-network DLL set). Current device: D:\code\msys64, gcc 16.2.0, rebuilt 2026-09-21 for this network build. External codecs statically linked on both: libmp3lame (LGPL), libvorbis (BSD-3), libopus (BSD-3)
+Configure flags and reproducible build: ../build-audio-net.sh (MSYS2 UCRT64; clean n9.0.1 source plus separate build directory).
+Identical to the previous no-network build (../build-audio.sh) except: --disable-network removed; protocols add http/https/tcp/tls; TLS backend is Windows-native SChannel (no external TLS library; configure auto-enables dtls+udp as an unavoidable SChannel byproduct). Demuxer/decoder/encoder/muxer/parser lists unchanged.
+Native AC-3/E-AC-3 decoders and raw demuxers included as before; no GPL/nonfree components enabled.
 E-AC-3 Atmos/JOC files decode to compatible channel-based PCM, not object-based Atmos rendering or HDMI passthrough.
-Corresponding source offer: https://ffmpeg.org / the n9.0.1 tag of the FFmpeg repository plus build-audio.sh.
+Corresponding source offer: https://ffmpeg.org / the n9.0.1 tag of the FFmpeg repository plus build-audio-net.sh.
 Source commit: bf1b838f2ab88b4f8fd83443325c782ea0e0f7fa
 Build output: <build dir>/dist (stripped DLLs; copy all four together to this directory).
-Validation: PlaybackSwitchRegression 177/177; actual E-AC-3 Atmos M4A 8/8 (full PCM decode, stereo downmix, resample, EOF/seek, session progress; no physical output test).
-SHA256:
+Validation: PlaybackSwitchRegression 281/281 with these DLLs in place; network probes: E-AC-3 5.1 M4A over local HTTP and public HTTPS MP3 (SChannel TLS) both open and decode via libavformat; old no-network DLLs confirmed to reject http:// (negative control). No physical output test.
+SHA256 (current network build, this device D:\code\msys64):
+079094F754ED545F33442A9C42434F10E392D3E0713FF8D8E6F29F82E5A29881  avcodec-63.dll
+11C8CDBD56C8ABC4AB0E79C2298ECFA02E5B7966E5A68B8E8F23D28E3EBDC5DA  avformat-63.dll
+C05215E3DAB5105A46760CE223E2104FCC0828D6E1B10DD6547F007A9B676E35  avutil-61.dll
+06771C633735CF06E3FBE0F19EF698DF3C6249BEDA2036D78AEAB75D74A20A10  swresample-7.dll
+SHA256 (previous no-network build, original device G:\msys64; kept so the original machine can verify its shipped DLLs or attempt a same-toolchain reproduction):
 7409C09B559EB1596F8E01F9D521CE906CCBDCAC3A0C63B802BF41BEC7248E55  avcodec-63.dll
 AA51B7F4D9A4FF1C0D0BC4821790C856F942D8E37A105815A5EB24A5F2DA670F  avformat-63.dll
 0EA6AC9E01A9211678870D03405FB4F9F8A604CD4690D639AA59F0C4505D42A0  avutil-61.dll
 7FD3CF1A366A10D20388FFAE27197740752271DAA7E55E81BF0757BE9E20D94A  swresample-7.dll
+Why the two hash sets differ: the original device's gcc version was never recorded, the statically linked MSYS2 codec packages (libmp3lame/libvorbis/libopus) roll forward over time, and MinGW ld stamps each PE header with the link timestamp, so builds are not bit-exact across devices or dates. Evidence from this device: a same-config repro of the no-network build (build-audio.sh) matched the original's configure output (CONFIG_NETWORK=0, FILE-only protocol) and sizes within 2 KB, yet hashed differently. Comparing a fresh original-device rebuild against the second set above isolates whether that divergence is purely toolchain drift.
