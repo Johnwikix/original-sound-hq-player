@@ -166,6 +166,29 @@
 3. 按 `Ctrl+Shift+B` 构建解决方案
 4. 按 `Ctrl+F5` 启动调试
 
+### 命令行构建并部署 Release（无需 Visual Studio）
+
+只安装 .NET 11 SDK 时，可用 dotnet CLI 完成与 VS「运行 Release」等效的构建和部署：
+
+```powershell
+# 1. 构建 Release 部署布局（路径中的 TFM 段随 TargetFramework 变化）
+$layout = "bin\x64\Release\net11.0-windows10.0.26100.0\win-x64"
+dotnet build WinUIMusicPlayer.csproj -c Release -p:Platform=x64
+
+# 2. 补齐 Content 资源（应用图标/磁贴、默认封面、UpdateNotes.json 等默认不进入构建输出，
+#    VS 部署时会自动完成这一步）
+Copy-Item Assets\*.png, Assets\icon.ico "$layout\Assets\" -Force
+Copy-Item UpdateNotes.json $layout -Force
+
+# 3. 将构建产物注册到系统，等效于 VS 的部署步骤（需在 Windows 设置中开启开发者模式）
+Add-AppxPackage -Register "$layout\AppxManifest.xml"
+```
+
+- 注册指向构建输出目录：重新构建（并重复第 2、3 步）后再次启动即运行新版本；清单版本号变更后需重新注册
+- 应用出现在开始菜单可直接启动；移除注册：`Get-AppxPackage SennpaiStudio.528762A6196EF | Remove-AppxPackage`
+- 应用正在运行时重新注册，追加 `-ForceApplicationShutdown` 参数
+- 如需可分发的安装包（.msix），在第 1 步追加 `-p:GenerateAppxPackageOnBuild=true`，包输出于仓库 `AppPackages\` 目录（安装前需自行签名）
+
 > **架构提示**：音频播放由独立进程 `External\AudioPlayer`（FFmpeg + 自研
 > WASAPI/ASIO 互操作，NativeAOT 单文件，仓库内 `Player\AudioPlayer.exe` 为发布
 > 产物暂存）承担，与主程序经共享内存 IPC 通信。引擎细节见

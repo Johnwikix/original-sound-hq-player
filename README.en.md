@@ -166,6 +166,31 @@ Issues and Pull Requests are welcome.
 3. Press `Ctrl+Shift+B` to build the solution
 4. Press `Ctrl+F5` to launch without debugging
 
+### Build and Deploy Release from the Command Line (no Visual Studio)
+
+With just the .NET 11 SDK, the dotnet CLI can build and deploy the same way
+Visual Studio does when running Release:
+
+```powershell
+# 1. Build the Release deployment layout (the TFM segment changes with TargetFramework)
+$layout = "bin\x64\Release\net11.0-windows10.0.26100.0\win-x64"
+dotnet build WinUIMusicPlayer.csproj -c Release -p:Platform=x64
+
+# 2. Copy Content assets into the layout (app icons/tiles, default covers, and UpdateNotes.json
+#    are not copied to the build output by default; VS does this automatically when deploying)
+Copy-Item Assets\*.png, Assets\icon.ico "$layout\Assets\" -Force
+Copy-Item UpdateNotes.json $layout -Force
+
+# 3. Register the build output with the system — the same deployment step VS performs
+#    (requires Developer Mode in Windows settings)
+Add-AppxPackage -Register "$layout\AppxManifest.xml"
+```
+
+- The registration points at the build output folder: rebuild (repeating steps 2–3) and relaunch to run the new build; re-register after the manifest version changes
+- The app shows up in the Start menu; remove the registration with `Get-AppxPackage SennpaiStudio.528762A6196EF | Remove-AppxPackage`
+- Add `-ForceApplicationShutdown` when re-registering while the app is running
+- For a distributable installer (.msix), add `-p:GenerateAppxPackageOnBuild=true` to step 1; the package is written to the repository's `AppPackages\` folder (sign it yourself before installing)
+
 > **Architecture note**: audio playback runs in a standalone process,
 > `External\AudioPlayer` (FFmpeg + self-developed WASAPI/ASIO interop, published
 > as a single-file NativeAOT binary; `Player\AudioPlayer.exe` in the repo is the
