@@ -2,6 +2,15 @@
 
 新条目加在最上方。
 
+## 2026-09-21 AudioPlayer 网络播放基础
+
+- `External/AudioPlayer`、`External/BassPlayerIpc.Shared/Streaming.cs`：参考 Plugins 最后提交 df6f9d99，加入 HTTP(S) 描述符、鉴权请求头、独立管道客户端、异步准备、播放/暂停、Range 定位、URL 刷新及缓存状态，为 WebDAV GET 播放准备接口。
+- `Playback/Session.cs`、`Playback/Ring.cs`、`Decode/PcmDecoder.cs`：有界预缓冲和断流恢复、原生 I/O 超时取消、失败与自然结束分离；网络源不触发本地响度扫描，退出阻止新请求并等待准备任务收尾。
+- `Playback/PlaybackEngine.Streaming.cs`：补齐停止时恢复计划失效、在途准备并发上限、seek ID 同步及越界拒绝；刷新保留位置和暂停意图。
+- `Libraries/FFmpeg/x64`、`build/ffmpeg-network.sh`：使用 Plugins 四个 DLL；实测同为 9.0.1，编解码器/封装器/解封装器列表相同，输入协议新增 httpproxy；更新构建来源与 SHA-256。
+- `Player/AudioPlayer.exe`：更新 NativeAOT 发布产物；`External/AudioPlayer/README.md` 补充接入示例和能力边界。暂不包含 WebDAV UI、目录浏览或账号管理。
+- 验证：主程序 x64 构建及播放器 NativeAOT 发布成功；本地播放回归 281/281，网络集成 39/39；真实 AOT 进程网络集成覆盖 HTTP、Range、鉴权头描述符、401、截断、重试、超时、TLS 不可信证书拒绝、实际设备播放、暂停刷新、自然结束与打开期间退出；未验证真实 WebDAV 服务和 HTTP 代理服务器。
+
 ## 2026-09-21 FFmpeg DLL 换为支持网络播放的最小化构建
 
 - `Libraries/FFmpeg/x64/*.dll`：基于同一 n9.0.1 源码（commit bf1b838f）重编，去掉 `--disable-network`，协议在 file 基础上新增 http/https/tcp/tls，TLS 用 Windows 原生 SChannel；demuxer/decoder/encoder/muxer/parser 清单与原版完全一致（schannel 会自动带入 dtls/udp，为 configure 上游行为）。

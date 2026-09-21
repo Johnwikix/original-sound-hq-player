@@ -127,6 +127,11 @@ internal static unsafe partial class Program
     {
         // Bypass the constructor's endpoint listener/watchdog; all exercised methods are production code.
         var engine = (PlaybackEngine)RuntimeHelpers.GetUninitializedObject(typeof(PlaybackEngine));
+        foreach (string name in new[] { "_streamSlots", "_streamWork", "_streamCommandLock" })
+        {
+            var field = typeof(PlaybackEngine).GetField(name, Private)!;
+            field.SetValue(engine, Activator.CreateInstance(field.FieldType));
+        }
         engine.OutputMode = mode;
         engine.IsDopEnabled = true;
         engine.DsdPcmFreq = 88200;

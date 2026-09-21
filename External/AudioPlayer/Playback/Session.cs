@@ -1,5 +1,6 @@
 using AudioPlayer.Decode;
 using AudioPlayer.Interop;
+using BassPlayerIpc.Shared;
 
 namespace AudioPlayer.Playback;
 
@@ -15,6 +16,13 @@ internal sealed class Session : IRenderSource, IDisposable
     public long TimelineEpoch { get; private set; } = Interlocked.Increment(ref _nextTimelineEpoch);
 
     private PcmDecoder? _pcm;
+    public bool CanSeek { get; private set; } = true;
+    public bool InputEnded => _pcmRing?.InputEnded ?? false;
+    public bool IsBuffering => _pcmRing?.IsBuffering ?? false;
+    public int InitialBufferFrames { get; private set; }
+    public long CompletedSeekId;
+    private long _pendingSeekId;
+    public void CancelIo() => _pcm?.CancelIo();
     private DsdRawReader? _dsd;
     private Eac3BitstreamReader? _eac3;
     private Exception? _decodeFailure;
@@ -109,24 +117,30 @@ internal sealed class Session : IRenderSource, IDisposable
 
     public static Session? Open(PlaybackEngine engine, string path, RenderKind kind,
         int dsdPcmFreq, int dsdGainDb, int latencyMs, int? forcedRate = null, int? forcedChannels = null,
-        int? maxChannels = null, bool experimentalSurround51 = false, AtmosProbeCache? atmosProbeCache = null)
+        int? maxChannels = null, bool experimentalSurround51 = false, AtmosProbeCache? atmosProbeCache = null, PlaybackSource? source = null, CancellationToken cancellationToken = default)
     {
         switch (kind)
         {
             case RenderKind.Pcm:
             {
                 var dec = new PcmDecoder();
-                if (!dec.Open(path, dsdPcmFreq, dsdGainDb, forcedRate, forcedChannels, maxChannels, experimentalSurround51)) { dec.Dispose(); return null; }
+                if (!dec.Open(path, dsdPcmFreq, dsdGainDb, forcedRate, forcedChannels, maxChannels, experimentalSurround51, source, cancellationToken)) { dec.Dispose(); return null; }
                 int rate = dec.SampleRate;
                 int channels = dec.Channels;
-                int ringFrames = RingCapacity(rate, latencyMs);
+                int ringFrames = source?.Kind == PlaybackSourceKind.Http
+                    ? checked((int)Math.Min((long)rate * source.Buffer.CapacityMs / 1000, 64 * 1024 * 1024 / (sizeof(double) * channels)))
+                    : RingCapacity(rate, latencyMs);
+                int initialFrames = source?.Kind == PlaybackSourceKind.Http ? Math.Min(ringFrames, (int)((long)rate * source.Buffer.InitialMs / 1000)) : PrebufferFrames(rate);
                 var s = new Session(engine, kind, channels, rate, rate, dec.TotalMs, rate)
                 {
                     _pcm = dec,
                     ChannelMask = dec.ChannelMask,
-                    _pcmRing = new PcmRing(channels, ringFrames, PrebufferFrames(rate), 300),
+                    _pcmRing = new PcmRing(channels, ringFrames, initialFrames, source?.Kind == PlaybackSourceKind.Http ? -1 : 300,
+                        source?.Kind == PlaybackSourceKind.Http ? Math.Min(ringFrames, (int)((long)rate * source.Buffer.ResumeMs / 1000)) : 0),
+                    CanSeek = dec.CanSeek,
+                    InitialBufferFrames = initialFrames,
                 };
-                s.Effects!.SetFile(path, dsdPcmFreq, dsdGainDb);
+                if (source?.Kind != PlaybackSourceKind.Http) s.Effects!.SetFile(path, dsdPcmFreq, dsdGainDb);
                 s.StartThread(s.PcmDecodeProc);
                 return s;
             }
@@ -207,10 +221,11 @@ internal sealed class Session : IRenderSource, IDisposable
     public bool IsDrained => DecodeFailure == null && (_pcmRing?.IsDrained ?? _dopRing?.IsDrained ?? _dsdRing?.IsDrained ?? _iecRing?.IsDrained ?? false);
 
     /// <summary>seek：立即重置环与锚点（进度条即时响应），解码线程随后转到新位置。</summary>
-    public void RequestSeek(long targetMs)
+    public void RequestSeek(long targetMs, long seekId = 0)
     {
         lock (_seekGate)
         {
+            _pendingSeekId = seekId;
             Effects?.RequestReset();
             Interlocked.Increment(ref _dspResetVersion);
             Volatile.Write(ref AnchorFrames, MsToFrames(targetMs));
@@ -257,7 +272,8 @@ internal sealed class Session : IRenderSource, IDisposable
             if (TakeSeek(out long ms))
             {
                 bool ok = _pcm?.SeekToMs(ms) ?? _dsd?.SeekToMs(ms) ?? _eac3?.SeekToMs(ms) ?? false;
-                if (!ok) Console.WriteLine($"[decode] seek failed: {ms}ms");
+                if (!ok) throw new IOException("Seek failed.");
+                Volatile.Write(ref CompletedSeekId, _pendingSeekId);
                 _dsdLeftoverBytes = 0;
             }
             _decodeEpoch = _pcmRing?.Epoch ?? _dopRing?.Epoch ?? _dsdRing?.Epoch ?? _iecRing?.Epoch ?? 0;
@@ -307,7 +323,7 @@ internal sealed class Session : IRenderSource, IDisposable
                 }
             }
         }
-        catch (Exception ex) { Console.WriteLine($"[decode] {ex.Message}"); _pcmRing?.MarkInputEnded(_decodeEpoch); }
+        catch (Exception ex) { if (!_cancelled) Volatile.Write(ref _decodeFailure, ex); _pcmRing?.MarkInputEnded(_decodeEpoch); }
         finally { DisposeDecoder(); }
     }
 
@@ -473,6 +489,7 @@ internal sealed class Session : IRenderSource, IDisposable
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
         _cancelled = true;
+        CancelIo();
         WakeProducer();
         Effects?.Dispose();
         if (_thread == null) DisposeDecoder();

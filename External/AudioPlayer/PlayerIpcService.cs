@@ -15,6 +15,7 @@ public class PlayerIpcService : IDisposable
     private DspStateMailbox? _dspMailbox;
     private ProgressMailbox? _progressMailbox;
     private Task? _progressTask;
+    private Task? _streamingTask;
 
     private static readonly long MmfSize = IpcConstants.MmfSize;
 
@@ -69,6 +70,7 @@ public class PlayerIpcService : IDisposable
             _dspMailbox = new DspStateMailbox(create: true);
             _progressMailbox = new ProgressMailbox(create: true);
             _engine = new PlaybackEngine(this);
+            _streamingTask = new StreamingServer(_engine).RunAsync(_cancellationTokenSource!.Token);
             _progressTask = PublishProgressAsync(_cancellationTokenSource!.Token);
             PublishDspState(_engine.GetDspState());
             _listenerTask = Task.Factory.StartNew(() => ListenForRequests(_cancellationTokenSource!.Token),
@@ -83,6 +85,8 @@ public class PlayerIpcService : IDisposable
         finally
         {
             _cancellationTokenSource?.Cancel();
+            if (_engine is not null) await _engine.StopStreamingAsync();
+            try { await (_streamingTask ?? Task.CompletedTask); } catch (OperationCanceledException) { }
             try { await Task.WhenAll(_listenerTask ?? Task.CompletedTask, _clientMonitorTask ?? Task.CompletedTask, _progressTask ?? Task.CompletedTask); } catch (OperationCanceledException) { }
             Dispose();
             Console.WriteLine("Server stopped.");

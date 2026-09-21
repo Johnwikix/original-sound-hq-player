@@ -192,3 +192,37 @@ IPC 在旧 41 字节（开关+增益）后追加 10 个 float32 Q，现为 81 �
 一倍频程公式只在低频近似等效，高频响应不保证与旧版完全一致。
 滤波器采用 [RBJ Q 形式](https://www.w3.org/TR/audio-eq-cookbook/)，
 超过奈奎斯特频率的频段不启用，非法 Q 在预设及播放边界归一化。
+
+
+## HTTP(S) 网络播放与 WebDAV 接入准备
+
+网络控制复用 `BassPlayerIpc.Shared.StreamingClient`，通过独立、限长（128 KiB）的当前用户命名管道发送描述符，不占用旧共享内存的 2 KiB 请求槽。旧本地播放入口保持兼容。此阶段提供有限长度 HTTP(S) 音频的 PCM 播放；不包含 WebDAV 目录浏览、账号管理、直播、HLS、DRM 或网络 DSD/Atmos 位流直通。
+
+```csharp
+var client = new StreamingClient();
+var id = Guid.NewGuid();
+var source = new PlaybackSource
+{
+    Kind = PlaybackSourceKind.Http,
+    ResourceId = "webdav:stable-file-id",
+    Location = "https://dav.example.com/music/song.flac",
+    Headers = new() { ["Authorization"] = authorizationHeader },
+    CanSeek = true,
+};
+var prepared = await client.PrepareAsync(source, id, cancellationToken);
+if (!prepared.Accepted) throw new IOException(prepared.Error);
+// 可在 Opening/Buffering 阶段表达播放或暂停意图；无需等待状态轮询来触发起播。
+await client.PlayAsync(id, cancellationToken);
+var status = await client.StatusAsync(id, cancellationToken);
+// 每个会话使用递增、正数 seekId；Status.SeekId 表示解码线程已完成的定位。
+await client.SeekAsync(id, 30000, seekId: 1, ct: cancellationToken);
+await client.StopAsync(id, cancellationToken);
+```
+
+- 每个命令应检查 `Accepted/Error`；播放器最多保留两个会话，取消后尚未清理的准备任务也占并发额度。收到 `PreparationLimit` 时调用端需等待后重试。客户端取消仅取消本次 IPC 等待，释放已接受的会话需要显式 `StopAsync`。
+- 默认初始缓存 1.5 秒、断流恢复缓存 2.5 秒、容量 8 秒；每会话 PCM 环上限 64 MiB。缓存不足不推进播放位置。打开超时默认 20 秒，读取超时 15 秒，网络重试 2 次，均可由 `BufferPolicy` 配置。
+- `CanSeek` 同时受描述符和服务器 Range 能力限制；不支持定位时明确拒绝。未知时长以 `DurationMs = null` 返回，读取失败返回 `Failed`，不会作为自然结束触发下一曲。
+- WebDAV 适配层负责提供 GET 地址和鉴权头，不把账号密码嵌入 URL；HTTPS 验证系统证书。凭据/签名过期时，用相同 `ResourceId` 调用 `RefreshSourceAsync` 更换地址和请求头，保留位置及播放/暂停意图。非零位置恢复要求新源可定位；`ExpiresAt` 只在提交时校验，自动续期由未来的适配层负责。
+- 网络会话不启动本地整曲响度扫描。构建版本与校验和见 `Libraries/FFmpeg/x64/BUILD.md`；Plugins 版 DLL 保留当前全部编解码与封装能力，并增加 `httpproxy`。
+
+验证：`dotnet run --project _tools/StreamingRegression -c Release -- <AudioPlayer.exe> --play`。播放器 EXE 旁需放置四个 FFmpeg DLL；测试使用独立 IPC 名称、本地 HTTP/Range/TLS 服务器，`--play` 会向实际默认设备播放低音量测试音。TLS 测试需要 Windows 临时私钥容器访问权限。

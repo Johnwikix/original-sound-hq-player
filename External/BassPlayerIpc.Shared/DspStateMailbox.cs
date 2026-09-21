@@ -11,7 +11,7 @@ public sealed record DspStateSnapshot(long Revision, DspState State);
 /// </summary>
 public sealed class DspStateMailbox : IDisposable
 {
-    public const string Name = "AudioPlayer_DspState_v8";
+    public static readonly string Name = "AudioPlayer_DspState_v8" + IpcConstants.Scope;
     private const int Size = sizeof(long) + DspProtocol.StateSize;
     private readonly MemoryMappedFile _memory;
     private readonly MemoryMappedViewAccessor _view;
@@ -21,8 +21,9 @@ public sealed class DspStateMailbox : IDisposable
 
     public WaitHandle Changed => _changed;
 
-    public DspStateMailbox(bool create, string name = Name)
+    public DspStateMailbox(bool create, string? name = null)
     {
+        name ??= Name;
         _memory = create ? MemoryMappedFile.CreateOrOpen(name, Size) : MemoryMappedFile.OpenExisting(name);
         try
         {

@@ -2,12 +2,19 @@ namespace BassPlayerIpc.Shared;
 
 public static class IpcConstants
 {
-    public const string MmfName = "AudioPlayer_SharedMemory";
-    public const string RequestSemaphoreName = "AudioPlayer_RequestReady";
-    public const string ResponseSemaphoreName = "AudioPlayer_ResponseReady";
-    public const string NotificationSemaphoreName = "AudioPlayer_NotificationReady";
-    public const string MutexName = "AudioPlayer_SingleInstanceMutex";
-    public const string ClientAliveMutexName = "WinUIMusicPlayer_SingleInstanceMutex";
+    // Test processes opt into private kernel objects; production uses the original names.
+    public static readonly string Scope = ReadScope();
+    private static string ReadScope()
+    {
+        string? value = Environment.GetEnvironmentVariable("ORIGINALSOUND_IPC_SCOPE");
+        return !string.IsNullOrEmpty(value) && value.Length <= 64 && value.All(c => char.IsAsciiLetterOrDigit(c) || c == '-') ? "_" + value : "";
+    }
+    public static readonly string MmfName = "AudioPlayer_SharedMemory" + Scope;
+    public static readonly string RequestSemaphoreName = "AudioPlayer_RequestReady" + Scope;
+    public static readonly string ResponseSemaphoreName = "AudioPlayer_ResponseReady" + Scope;
+    public static readonly string NotificationSemaphoreName = "AudioPlayer_NotificationReady" + Scope;
+    public static readonly string MutexName = "AudioPlayer_SingleInstanceMutex" + Scope;
+    public static readonly string ClientAliveMutexName = "WinUIMusicPlayer_SingleInstanceMutex" + Scope;
 
     public const int MaxRequestSize = 2048;
     public const int MaxResponseSize = 512;
