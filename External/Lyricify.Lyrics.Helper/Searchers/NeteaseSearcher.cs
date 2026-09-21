@@ -1,4 +1,4 @@
-﻿using Lyricify.Lyrics.Providers.Web.Netease;
+using Lyricify.Lyrics.Providers.Web.Netease;
 
 namespace Lyricify.Lyrics.Searchers
 {
@@ -12,22 +12,25 @@ namespace Lyricify.Lyrics.Searchers
 
         private bool useNewSearchFirst = false;
 
-        public override async Task<List<ISearchResult>?> SearchForResults(string searchString)
+        public override Task<List<ISearchResult>?> SearchForResults(string searchString)
+            => SearchForResults(searchString, CancellationToken.None);
+
+        public override async Task<List<ISearchResult>?> SearchForResults(string searchString, CancellationToken cancellationToken)
         {
             var search = new List<ISearchResult>();
 
             SearchResult? result = null;
             if (useNewSearchFirst)
             {
-                try { result = await Providers.Web.Providers.NeteaseApi.SearchNew(searchString); }
-                catch
+                try { result = await Providers.Web.Providers.NeteaseApi.SearchNew(searchString, cancellationToken); }
+                catch (Exception) when (!cancellationToken.IsCancellationRequested)
                 {
                     useNewSearchFirst = !useNewSearchFirst;
                     try
                     {
-                        result = await Providers.Web.Providers.NeteaseApi.Search(searchString, Api.SearchTypeEnum.SONG_ID);
+                        result = await Providers.Web.Providers.NeteaseApi.Search(searchString, Api.SearchTypeEnum.SONG_ID, cancellationToken);
                     }
-                    catch
+                    catch (Exception) when (!cancellationToken.IsCancellationRequested)
                     {
                         useNewSearchFirst = !useNewSearchFirst;
                         // 两个接口都失败视为网络/服务故障，向上抛出以便上层与"搜索成功但无结果"区分
@@ -39,13 +42,13 @@ namespace Lyricify.Lyrics.Searchers
             {
                 try
                 {
-                    result = await Providers.Web.Providers.NeteaseApi.Search(searchString, Api.SearchTypeEnum.SONG_ID);
+                    result = await Providers.Web.Providers.NeteaseApi.Search(searchString, Api.SearchTypeEnum.SONG_ID, cancellationToken);
                 }
-                catch
+                catch (Exception) when (!cancellationToken.IsCancellationRequested)
                 {
                     useNewSearchFirst = !useNewSearchFirst;
                     // 尝试新接口，可以在外网使用；接口失败同样向上抛出（网络/服务故障）
-                    result = await Providers.Web.Providers.NeteaseApi.SearchNew(searchString);
+                    result = await Providers.Web.Providers.NeteaseApi.SearchNew(searchString, cancellationToken);
                 }
             }
 

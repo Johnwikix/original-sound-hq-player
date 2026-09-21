@@ -1,4 +1,4 @@
-﻿using Lyricify.Lyrics.Providers.Web.QQMusic;
+using Lyricify.Lyrics.Providers.Web.QQMusic;
 
 namespace Lyricify.Lyrics.Searchers
 {
@@ -10,10 +10,13 @@ namespace Lyricify.Lyrics.Searchers
 
         public override Searchers SearcherType => Searchers.QQMusic;
 
-        public override async Task<List<ISearchResult>?> SearchForResults(string searchString)
+        public override Task<List<ISearchResult>?> SearchForResults(string searchString)
+            => SearchForResults(searchString, CancellationToken.None);
+
+        public override async Task<List<ISearchResult>?> SearchForResults(string searchString, CancellationToken cancellationToken)
         {
             // 请求异常直接向上抛出（网络/服务故障），与"搜索成功但无结果"区分
-            var result = await Providers.Web.Providers.QQMusicApi.Search(searchString, Api.SearchTypeEnum.SONG_ID);
+            var result = await Providers.Web.Providers.QQMusicApi.Search(searchString, Api.SearchTypeEnum.SONG_ID, cancellationToken);
             if (result is null || result.Code != 0 || result.Req_1 is null || result.Req_1.Code != 0 ||
                 result.Req_1.Data is null || result.Req_1.Data.Code != 0)
                 throw new InvalidOperationException("QQ Music 搜索服务返回失败状态。");

@@ -1,4 +1,4 @@
-﻿using Lyricify.Lyrics.Models;
+using Lyricify.Lyrics.Models;
 using Lyricify.Lyrics.Searchers.Helpers;
 
 namespace Lyricify.Lyrics.Searchers
@@ -34,6 +34,17 @@ namespace Lyricify.Lyrics.Searchers
         /// <param name="minimumMatch">最低匹配要求</param>
         /// <returns></returns>
         public Task<ISearchResult?> SearchForResult(ITrackMetadata track, CompareHelper.MatchType minimumMatch);
+
+        /// <summary>兼容原搜索器的取消重载；支持取消的实现应将令牌传至底层请求。</summary>
+        public async Task<ISearchResult?> SearchForResult(ITrackMetadata track, CompareHelper.MatchType minimumMatch,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var result = await SearchForResult(track, minimumMatch);
+            cancellationToken.ThrowIfCancellationRequested();
+            return result;
+        }
+
 
         /// <summary>
         /// 搜索匹配的曲目列表

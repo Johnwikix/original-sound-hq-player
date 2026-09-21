@@ -9,6 +9,11 @@ namespace Lyricify.Lyrics.Helpers
     /// </summary>
     public static class SearchHelper
     {
+        /// <summary>可取消搜索；网易云和 QQ 搜索器将令牌传递到实际 HTTP 请求。</summary>
+        public static Task<ISearchResult?> Search(ITrackMetadata track, Searchers.Searchers searcher,
+            CompareHelper.MatchType minimumMatch, CancellationToken cancellationToken)
+            => searcher.GetSearcher().SearchForResult(track, minimumMatch, cancellationToken);
+
         /// <summary>
         /// 搜索指定曲目的对应曲目
         /// </summary>

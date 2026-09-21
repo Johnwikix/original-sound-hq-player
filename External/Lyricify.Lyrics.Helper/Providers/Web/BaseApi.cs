@@ -16,27 +16,33 @@ namespace Lyricify.Lyrics.Providers.Web
 
         protected abstract Dictionary<string, string>? AdditionalHeaders { get; }
 
-        protected async Task<string> GetAsync(string url)
+        protected Task<string> GetAsync(string url) => GetAsync(url, CancellationToken.None);
+
+        protected async Task<string> GetAsync(string url, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             SetRequestHeaders();
 
-            var response = await HttpClient.GetAsync(url);
+            using var response = await HttpClient.GetAsync(url, cancellationToken);
 
             response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadAsStringAsync();
+            var result = await response.Content.ReadAsStringAsync(cancellationToken);
 
             return result;
         }
 
-        protected async Task<string> PostAsync(string url, Dictionary<string, string> paramDict)
+        protected Task<string> PostAsync(string url, Dictionary<string, string> paramDict) => PostAsync(url, paramDict, CancellationToken.None);
+
+        protected async Task<string> PostAsync(string url, Dictionary<string, string> paramDict, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             SetRequestHeaders();
 
-            var content = new FormUrlEncodedContent(paramDict);
-            var response = await HttpClient.PostAsync(url, content);
+            using var content = new FormUrlEncodedContent(paramDict);
+            using var response = await HttpClient.PostAsync(url, content, cancellationToken);
 
             response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadAsStringAsync();
+            var result = await response.Content.ReadAsStringAsync(cancellationToken);
 
             return result;
         }
@@ -55,15 +61,18 @@ namespace Lyricify.Lyrics.Providers.Web
             return result;
         }
 
-        protected async Task<string> PostAsync(string url, Dictionary<string, object> paramDict)
+        protected Task<string> PostAsync(string url, Dictionary<string, object> paramDict) => PostAsync(url, paramDict, CancellationToken.None);
+
+        protected async Task<string> PostAsync(string url, Dictionary<string, object> paramDict, CancellationToken cancellationToken)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             SetRequestHeaders();
 
-            var jsonContent = new StringContent(paramDict.ToJson(), Encoding.UTF8, "application/json");
-            var response = await HttpClient.PostAsync(url, jsonContent);
+            using var jsonContent = new StringContent(paramDict.ToJson(), Encoding.UTF8, "application/json");
+            using var response = await HttpClient.PostAsync(url, jsonContent, cancellationToken);
 
             response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadAsStringAsync();
+            var result = await response.Content.ReadAsStringAsync(cancellationToken);
 
             return result;
         }

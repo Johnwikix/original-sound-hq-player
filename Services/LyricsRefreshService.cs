@@ -98,7 +98,9 @@ namespace WinUIMusicPlayer.Services
 
         // ──────────────────────────────────────────────────────────────
 
+        private readonly object _lyricsCancellationGate = new();
         private CancellationTokenSource? _lyricsCancellationTokenSource;
+        private bool _disposed;
         private MusicDatabaseService _musicDatabaseService { get; }
         private ILogger<LyricsRefreshService> _logger;
 
@@ -112,16 +114,25 @@ namespace WinUIMusicPlayer.Services
         //  主入口
         // ──────────────────────────────────────────────────────────────
 
-        public async Task<List<LyricLine>> SetLyrics(Music music)
-        {
-            CancelPreviousLyricsTask();
-            _lyricsCancellationTokenSource = new CancellationTokenSource();
-            var ct = _lyricsCancellationTokenSource.Token;
+        public Task<List<LyricLine>> SetLyrics(Music music) => SetLyrics(music, CancellationToken.None);
 
-            ReturnLyrics(Interlocked.Exchange(ref _previousLyrics, null));
+        /// <summary>将退出取消与切歌取消合并；等待实际请求结束后由本次调用释放 CTS。</summary>
+        public async Task<List<LyricLine>> SetLyrics(Music music, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            CancellationTokenSource owner;
+            lock (_lyricsCancellationGate)
+            {
+                if (_disposed) return [];
+                _lyricsCancellationTokenSource?.Cancel();
+                owner = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                _lyricsCancellationTokenSource = owner;
+            }
+            var ct = owner.Token;
 
             try
             {
+                ReturnLyrics(Interlocked.Exchange(ref _previousLyrics, null));
                 await Task.Delay(500, ct);
                 // 未入库曲目（非固定盘或入库失败的一次性播放，Id=0）：不查询/写入数据库、不递增播放计数。
                 // 固定盘外部文件在 OneShotPlaybackService 解析阶段已入库并改播库内行（标准库内链路），
@@ -229,9 +240,18 @@ namespace WinUIMusicPlayer.Services
                 _previousLyrics = lrcLyrics;
                 return lrcLyrics;
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
                 return [];
+            }
+            finally
+            {
+                lock (_lyricsCancellationGate)
+                {
+                    if (ReferenceEquals(_lyricsCancellationTokenSource, owner))
+                        _lyricsCancellationTokenSource = null;
+                    owner.Dispose();
+                }
             }
         }
 
@@ -391,7 +411,6 @@ namespace WinUIMusicPlayer.Services
                     if (status != LyricsSearchStatus.NetworkError)
                         music.IsKrcSearched = true;
                 }
-                catch (OperationCanceledException) { }
                 finally { s_searchCircuit.Complete(searchGeneration, outcome, Environment.TickCount64); }
             }
 
@@ -967,7 +986,6 @@ namespace WinUIMusicPlayer.Services
                         if (status != LyricsSearchStatus.NetworkError)
                             music.IsLrcSearched = true;
                     }
-                    catch (OperationCanceledException) { }
                     finally { s_searchCircuit.Complete(searchGeneration, outcome, Environment.TickCount64); }
                 }
             }
@@ -1202,34 +1220,16 @@ namespace WinUIMusicPlayer.Services
         //  取消与释放
         // ──────────────────────────────────────────────────────────────
 
-        private void CancelPreviousLyricsTask()
-        {
-            if (_lyricsCancellationTokenSource is not null)
-            {
-                try
-                {
-                    if (!_lyricsCancellationTokenSource.IsCancellationRequested)
-                        _lyricsCancellationTokenSource.Cancel();
-                }
-                catch (ObjectDisposedException) { }
-                finally
-                {
-                    _lyricsCancellationTokenSource.Dispose();
-                    _lyricsCancellationTokenSource = null;
-                }
-            }
-        }
-
         public void Dispose()
         {
-            Dispose(true);
+            lock (_lyricsCancellationGate)
+            {
+                if (_disposed) return;
+                _disposed = true;
+                // 只请求取消；在途调用仍拥有 CTS，直到请求和解析真正结束。
+                _lyricsCancellationTokenSource?.Cancel();
+            }
             GC.SuppressFinalize(this);
-        }
-
-        private void Dispose(bool dispose)
-        {
-            if (dispose)
-                CancelPreviousLyricsTask();
         }
     }
 }

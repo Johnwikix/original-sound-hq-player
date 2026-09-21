@@ -61,6 +61,66 @@ await Run("取消不再发起任何请求", async () =>
     catch (OperationCanceledException) { }
     Check(requests == 0);
 });
+// 真正挂起 SendAsync，并延迟取消后的清理；排空屏障不能仅取消等待就返回。
+await Run("歌词加载入口传递停止令牌且不发布迟到 UI", async () =>
+{
+    using var handler = new PendingHandler();
+    BaseApi.HttpClient.Dispose();
+    BaseApi.HttpClient = new HttpClient(handler);
+    await Task.Run(() => LoaderCancellationChecks.Run(service, handler));
+});
+await Run("退出取消在途搜词并等待 HTTP 清理，不再回退且允许重试", async () =>
+{
+    var lifecycle = new AppLifecycle();
+    var tasks = new ApplicationTasks(lifecycle);
+    using var handler = new PendingHandler();
+    BaseApi.HttpClient.Dispose();
+    BaseApi.HttpClient = new HttpClient(handler);
+    var operation = tasks.RunAsync(async token =>
+        await service.GetMixedLyricsAsync(new Music(), token));
+    await handler.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+    lifecycle.TryBeginExit(out _);
+    var drain = tasks.DrainAsync();
+    try
+    {
+        await handler.Cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Check(!drain.IsCompleted);
+    }
+    finally { handler.Release.TrySetResult(); }
+    try { await operation.WaitAsync(TimeSpan.FromSeconds(5)); throw new Exception("未传播取消"); }
+    catch (OperationCanceledException) { }
+    try { await drain.WaitAsync(TimeSpan.FromSeconds(5)); }
+    catch (OperationCanceledException) { }
+    Check(handler.Finished && handler.Requests == 1);
+    SetHttp(request => Json(request.RequestUri!.Host.Contains("163.com") ? neteaseEmpty
+        : request.RequestUri.AbsolutePath.Contains("musicu.fcg") ? qqSong : QqLyric(0, "hello")));
+    Check((await service.GetMixedLyricsAsync(new Music())).Status == LyricsSearchStatus.Found);
+});
+foreach (var stage in new[] { "netease-new-search", "netease-lyrics", "qq-search", "qq-lyrics", "qq-verbatim" })
+{
+    await Run("在途请求取消: " + stage, async () =>
+    {
+        using var cts = new CancellationTokenSource();
+        using var handler = new PendingHandler();
+        BaseApi.HttpClient.Dispose();
+        BaseApi.HttpClient = new HttpClient(handler);
+        Task operation = stage switch
+        {
+            "netease-new-search" => Lyricify.Lyrics.Helpers.ProviderHelper.NeteaseApi.SearchNew("test", cts.Token),
+            "netease-lyrics" => Lyricify.Lyrics.Helpers.ProviderHelper.NeteaseApi.GetLyric("1", cts.Token),
+            "qq-search" => service.GetLyricsAsync(new Music(), Searchers.QQMusic, cts.Token),
+            "qq-lyrics" => Lyricify.Lyrics.Helpers.ProviderHelper.QQMusicApi.GetLyric("test", cts.Token),
+            _ => Lyricify.Lyrics.Helpers.ProviderHelper.QQMusicApi.GetLyricsAsync("1", cts.Token)
+        };
+        await handler.Started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        cts.Cancel();
+        try { await handler.Cancelled.Task.WaitAsync(TimeSpan.FromSeconds(5)); }
+        finally { handler.Release.TrySetResult(); }
+        try { await operation.WaitAsync(TimeSpan.FromSeconds(5)); throw new Exception("未传播取消"); }
+        catch (OperationCanceledException) { }
+        Check(handler.Finished && handler.Requests == 1);
+    });
+}
 BaseApi.HttpClient.Dispose();
 await Run("网易云业务错误与有效空结果分开", async () =>
 {
@@ -214,4 +274,30 @@ static void SetHttp(Func<HttpRequestMessage, HttpResponseMessage> respond)
 sealed class StubHandler(Func<HttpRequestMessage, HttpResponseMessage> respond) : HttpMessageHandler
 {
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token) => Task.FromResult(respond(request));
+}
+
+sealed class PendingHandler : HttpMessageHandler
+{
+    public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    public TaskCompletionSource Cancelled { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    public int Requests;
+    public bool Finished;
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
+    {
+        Interlocked.Increment(ref Requests);
+        Started.TrySetResult();
+        try
+        {
+            await Task.Delay(Timeout.Infinite, token);
+            throw new Exception("请求未被取消");
+        }
+        catch (OperationCanceledException)
+        {
+            Cancelled.TrySetResult();
+            await Release.Task;
+            throw;
+        }
+        finally { Finished = true; }
+    }
 }

@@ -9,8 +9,9 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
 {
     internal class EapiHelper
     {
-        public static async Task<string> PostAsync(string url, HttpClient httpClient, Dictionary<string, string> data)
+        public static async Task<string> PostAsync(string url, HttpClient httpClient, Dictionary<string, string> data, CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             var headers = new Dictionary<string, string>
             {
                 ["User-Agent"] = userAgent,
@@ -41,9 +42,10 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
             {
                 httpClient.DefaultRequestHeaders.Add(h.Key, h.Value);
             }
-            using var response = await httpClient.PostAsync(url, new FormUrlEncodedContent(data2));
+            using var content = new FormUrlEncodedContent(data2);
+            using var response = await httpClient.PostAsync(url, content, cancellationToken);
             response.EnsureSuccessStatusCode();
-            byte[] buffer = await response.Content.ReadAsByteArrayAsync();
+            byte[] buffer = await response.Content.ReadAsByteArrayAsync(cancellationToken);
             return Encoding.UTF8.GetString(buffer);
         }
 

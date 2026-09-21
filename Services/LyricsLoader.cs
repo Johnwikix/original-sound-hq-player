@@ -25,9 +25,10 @@ public sealed class LyricsLoader(AppState state, LyricsRefreshService parser, Ap
         {
             try
             {
-                var lyrics = await Task.Run(() => parser.SetLyrics(music));
+                var lyrics = await Task.Run(() => parser.SetLyrics(music, token));
                 if (!token.IsCancellationRequested && ticket == Volatile.Read(ref _ticket)) state.Presentation.UILyrics = lyrics;
             }
+            catch (OperationCanceledException) when (token.IsCancellationRequested) { }
             catch (Exception ex) { logger.LogError(ex, "加载歌词失败"); }
         });
     }

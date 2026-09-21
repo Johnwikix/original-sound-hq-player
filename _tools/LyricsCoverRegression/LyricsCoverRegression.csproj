@@ -9,6 +9,9 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="../../External/Lyricify.Lyrics.Helper/Lyricify.Lyrics.Helper.csproj" />
     <Compile Include="../../WebService/LrcService.cs" Link="LrcService.cs" />
+    <Compile Include="../../Services/LyricsLoader.cs" Link="LyricsLoader.cs" />
+    <Compile Include="../../Services/ApplicationTasks.cs" Link="ApplicationTasks.cs" />
+    <Compile Include="../../Services/AppLifecycle.cs" Link="AppLifecycle.cs" />
     <Compile Include="../../Services/LyricsSearchCircuitBreaker.cs" Link="LyricsSearchCircuitBreaker.cs" />
     <Compile Include="../../Helper/CoverLoadState.cs" Link="CoverLoadState.cs" />
     <Compile Include="../../Helper/DefaultCoverPaletteCache.cs" Link="DefaultCoverPaletteCache.cs" />

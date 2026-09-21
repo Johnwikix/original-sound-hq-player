@@ -1,4 +1,4 @@
-﻿using Lyricify.Lyrics.Helpers;
+using Lyricify.Lyrics.Helpers;
 using Lyricify.Lyrics.Models;
 using Lyricify.Lyrics.Searchers;
 using Lyricify.Lyrics.Searchers.Helpers;
@@ -75,7 +75,7 @@ namespace WinUIMusicPlayer.WebService
                 {
                     Album = music.Album,
                     Title = music.Title,
-                }, searchers, CompareHelper.MatchType.Low);
+                }, searchers, CompareHelper.MatchType.Low, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 if (search is NeteaseSearchResult neteaseSearch)
                 {
@@ -122,19 +122,19 @@ namespace WinUIMusicPlayer.WebService
                     Artists = [music.Author],
                     DurationMs = (int)music.Duration.TotalMilliseconds,
                     Title = music.Title,
-                }, searchers, CompareHelper.MatchType.Low);
+                }, searchers, CompareHelper.MatchType.Low, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 string lyrics, trans;
                 if (search is NeteaseSearchResult neteaseSearch)
                 {
-                    var res = await ProviderHelper.NeteaseApi.GetLyric(neteaseSearch.Id);
+                    var res = await ProviderHelper.NeteaseApi.GetLyric(neteaseSearch.Id, cancellationToken);
                     cancellationToken.ThrowIfCancellationRequested();
                     lyrics = res?.Lrc?.Lyric ?? string.Empty;
                     trans = AppData.SystemLanguage.Contains("zh") == true ? res?.Tlyric?.Lyric ?? string.Empty : string.Empty;
                 }
                 else if (search is QQMusicSearchResult qQMusicSearchResult)
                 {
-                    var res = await ProviderHelper.QQMusicApi.GetLyric(qQMusicSearchResult.Mid);
+                    var res = await ProviderHelper.QQMusicApi.GetLyric(qQMusicSearchResult.Mid, cancellationToken);
                     cancellationToken.ThrowIfCancellationRequested();
                     lyrics = res?.Lyric ?? string.Empty;
                     trans = AppData.SystemLanguage.Contains("zh") == true ? res?.Trans ?? string.Empty : string.Empty;
@@ -171,12 +171,12 @@ namespace WinUIMusicPlayer.WebService
                     Artists = [music.Author],
                     DurationMs = (int)music.Duration.TotalMilliseconds,
                     Title = music.Title,
-                }, Searchers.QQMusic, CompareHelper.MatchType.Medium);
+                }, Searchers.QQMusic, CompareHelper.MatchType.Medium, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 if (search is not QQMusicSearchResult qQMusicSearchResult)
                     return (string.Empty, string.Empty, LyricsSearchStatus.NoResult);
 
-                var res = await ProviderHelper.QQMusicApi.GetLyricsAsync(qQMusicSearchResult.Id);
+                var res = await ProviderHelper.QQMusicApi.GetLyricsAsync(qQMusicSearchResult.Id, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 var lyrics = res?.Lyrics ?? string.Empty;
                 var trans = AppData.SystemLanguage.Contains("zh") == true ? res?.Trans ?? string.Empty : string.Empty;

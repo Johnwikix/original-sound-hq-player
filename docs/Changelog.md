@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-09-21 退出时取消在途歌词请求
+
+- `Services/LyricsLoader.cs`、`Services/LyricsRefreshService.cs`：将应用停止令牌与切歌取消合并；每次解析在实际结束后释放自身 CTS，取消后停止后续搜词，不再让退出等待完整网络超时与回退链路。
+- `WebService/LrcService.cs`、`External/Lyricify.Lyrics.Helper`：网易云/QQ 搜索、歌词下载和 HTTP 读写贯通取消；保留原调用重载，取消不触发备用搜索，释放请求内容和响应。
+- `_tools/LyricsCoverRegression`：新增挂起请求取消、退出等待实际清理、取消后重试，以及网易云新搜索和两家歌词下载的取消回归。
+
 ## 2026-09-20 更新对话框警告精简并补充系统美化软件不兼容
 
 - `Strings/*/Resources.resw`：`RtssWarningTitle` 放宽为覆盖 FPS 监控与系统美化两类注入软件；`RtssWarningBody` 精简为一段，保留「桌面歌词＋着色器背景」与 DXGI 挂钩冲突的触发条件，并补充 Windhawk、StartAllBack 等注入式系统美化软件同样可能导致崩溃，均建议关闭或将本程序加入排除列表。全部 6 种语言同步，键名与 XAML/GetString 未变。

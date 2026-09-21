@@ -1,4 +1,4 @@
-﻿using Lyricify.Lyrics.Models;
+using Lyricify.Lyrics.Models;
 using Lyricify.Lyrics.Searchers.Helpers;
 
 namespace Lyricify.Lyrics.Searchers
@@ -16,6 +16,15 @@ namespace Lyricify.Lyrics.Searchers
 
         public abstract Task<List<ISearchResult>?> SearchForResults(string searchString);
 
+        /// <summary>旧提供商等待真实任务后检查取消；网易云/QQ 覆盖此方法取消实际请求。</summary>
+        public virtual async Task<List<ISearchResult>?> SearchForResults(string searchString, CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var result = await SearchForResults(searchString);
+            cancellationToken.ThrowIfCancellationRequested();
+            return result;
+        }
+
         public async Task<ISearchResult?> SearchForResult(ITrackMetadata track)
         {
             var search = await SearchForResults(track);
@@ -31,13 +40,15 @@ namespace Lyricify.Lyrics.Searchers
             return search[0];
         }
 
-        public async Task<ISearchResult?> SearchForResult(ITrackMetadata track, CompareHelper.MatchType minimumMatch)
+        public Task<ISearchResult?> SearchForResult(ITrackMetadata track, CompareHelper.MatchType minimumMatch) => SearchForResult(track, minimumMatch, CancellationToken.None);
+
+        public async Task<ISearchResult?> SearchForResult(ITrackMetadata track, CompareHelper.MatchType minimumMatch, CancellationToken cancellationToken)
         {
-            var search = await SearchForResults(track);
+            var search = await SearchForResults(track, false, cancellationToken);
 
             // 没有搜到时，尝试完整搜索
             if (search is not { Count: > 0 } || (int)search[0].MatchType! < (int)minimumMatch)
-                search = await SearchForResults(track, true);
+                search = await SearchForResults(track, true, cancellationToken);
 
             // 仍然没有搜到，直接返回 null
             if (search is not { Count: > 0 })
@@ -54,7 +65,9 @@ namespace Lyricify.Lyrics.Searchers
             return await SearchForResults(track, false);
         }
 
-        public async Task<List<ISearchResult>> SearchForResults(ITrackMetadata track, bool fullSearch)
+        public Task<List<ISearchResult>> SearchForResults(ITrackMetadata track, bool fullSearch) => SearchForResults(track, fullSearch, CancellationToken.None);
+
+        public async Task<List<ISearchResult>> SearchForResults(ITrackMetadata track, bool fullSearch, CancellationToken cancellationToken)
         {
             string searchString = $"{track.Title} {track.Artist?.Replace(", ", " ")} {track.Album}".Replace(" - ", " ").Trim();
             var searchResults = new List<ISearchResult>();
@@ -62,7 +75,9 @@ namespace Lyricify.Lyrics.Searchers
             var level = 1;
             do
             {
-                var results = await SearchForResults(searchString);
+                cancellationToken.ThrowIfCancellationRequested();
+                var results = await SearchForResults(searchString, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
                 if (results is { Count: > 0 })
                     searchResults.AddRange(results);
 

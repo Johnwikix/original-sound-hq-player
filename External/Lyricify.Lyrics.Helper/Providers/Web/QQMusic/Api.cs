@@ -1,4 +1,4 @@
-﻿using Lyricify.Lyrics.Decrypter.Qrc;
+using Lyricify.Lyrics.Decrypter.Qrc;
 using Lyricify.Lyrics.Helpers.General;
 using System.ComponentModel;
 using System.Text;
@@ -30,7 +30,9 @@ namespace Lyricify.Lyrics.Providers.Web.QQMusic
             [Description("歌单")] PLAYLIST_ID = 2,
         }
 
-        public async Task<MusicFcgApiResult?> Search(string keyword, SearchTypeEnum searchType)
+        public Task<MusicFcgApiResult?> Search(string keyword, SearchTypeEnum searchType) => Search(keyword, searchType, CancellationToken.None);
+
+        public async Task<MusicFcgApiResult?> Search(string keyword, SearchTypeEnum searchType, CancellationToken cancellationToken)
         {
             // 0单曲 2专辑 1歌手 3歌单 7歌词 12mv
             var type = searchType switch
@@ -60,7 +62,7 @@ namespace Lyricify.Lyrics.Providers.Web.QQMusic
                 }
             };
 
-            var resp = await PostAsync("https://u.y.qq.com/cgi-bin/musicu.fcg", data);
+            var resp = await PostAsync("https://u.y.qq.com/cgi-bin/musicu.fcg", data, cancellationToken);
 
             return resp.ToEntity<MusicFcgApiResult>();
         }
@@ -226,7 +228,9 @@ namespace Lyricify.Lyrics.Providers.Web.QQMusic
             return ResolveRespJson(callBack, resp).ToEntity<SongResult>();
         }
 
-        public async Task<LyricResult?> GetLyric(string songMid)
+        public Task<LyricResult?> GetLyric(string songMid) => GetLyric(songMid, CancellationToken.None);
+
+        public async Task<LyricResult?> GetLyric(string songMid, CancellationToken cancellationToken)
         {
             var currentMillis = (DateTime.Now.ToLocalTime().Ticks - _dtFrom.Ticks) / 10000;
 
@@ -249,7 +253,7 @@ namespace Lyricify.Lyrics.Providers.Web.QQMusic
                 { "needNewCode", "0" },
             };
 
-            var resp = await PostAsync("https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg", data);
+            var resp = await PostAsync("https://c.y.qq.com/lyric/fcgi-bin/fcg_query_lyric_new.fcg", data, cancellationToken);
 
             var result = ResolveRespJson(callBack, resp).ToEntity<LyricResult>();
             if (result is null || result.Code != 0 || result.Lyric is null)
@@ -262,7 +266,9 @@ namespace Lyricify.Lyrics.Providers.Web.QQMusic
         /// </summary>
         /// <param name="id"></param>
         /// <returns></returns>
-        public async Task<QqLyricsResponse?> GetLyricsAsync(string id)
+        public Task<QqLyricsResponse?> GetLyricsAsync(string id) => GetLyricsAsync(id, CancellationToken.None);
+
+        public async Task<QqLyricsResponse?> GetLyricsAsync(string id, CancellationToken cancellationToken)
         {
             var resp = await PostAsync("https://c.y.qq.com/qqmusic/fcgi-bin/lyric_download.fcg", new Dictionary<string, string>
                 {
@@ -270,7 +276,7 @@ namespace Lyricify.Lyrics.Providers.Web.QQMusic
                     { "miniversion", "82" },
                     { "lrctype", "4" },
                     { "musicid", id },
-                });
+                }, cancellationToken);
 
             resp = resp.Replace("<!--", "").Replace("-->", "");
 

@@ -36,7 +36,9 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
             [Description("歌单")] PLAYLIST_ID = 2,
         }
 
-        public async Task<SearchResult?> Search(string keyword, SearchTypeEnum searchType)
+        public Task<SearchResult?> Search(string keyword, SearchTypeEnum searchType) => Search(keyword, searchType, CancellationToken.None);
+
+        public async Task<SearchResult?> Search(string keyword, SearchTypeEnum searchType, CancellationToken cancellationToken)
         {
             // 1: 单曲, 10: 专辑, 100: 歌手, 1000: 歌单, 1002: 用户, 1004: MV, 1006: 歌词, 1009: 电台, 1014: 视频, 1018:综合, 2000:声音
             string type = searchType switch
@@ -49,7 +51,7 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
 
             string url = $"http://music.163.com/api/search/get/web?csrf_token=hlpretag=&hlposttag=&s={Uri.EscapeDataString(keyword)}&type={type}&offset=0&total=true&limit=20";
 
-            var res = await GetAsync(url);
+            var res = await GetAsync(url, cancellationToken);
 
             var result = LyricsJson.Deserialize<SearchResult>(res);
             if (result is null || result.Code != 200 || result.NeedLogin || result.Result is null)
@@ -57,7 +59,9 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
             return result;
         }
 
-        public async Task<SearchResult?> SearchNew(string keyword)
+        public Task<SearchResult?> SearchNew(string keyword) => SearchNew(keyword, CancellationToken.None);
+
+        public async Task<SearchResult?> SearchNew(string keyword, CancellationToken cancellationToken)
         {
             const string url = "https://interface.music.163.com/eapi/cloudsearch/pc";
 
@@ -70,7 +74,7 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
                 { "total", "true" }
             };
 
-            var raw = await EapiHelper.PostAsync(url, HttpClient, data);
+            var raw = await EapiHelper.PostAsync(url, HttpClient, data, cancellationToken);
 
             var eapiResult = LyricsJson.Deserialize<EapiSearchResult>(raw);
             if (eapiResult is null || eapiResult.Code != 200 || eapiResult.NeedLogin || eapiResult.Result is null)
@@ -199,7 +203,9 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
         /// <exception cref="WebException"></exception>
         /// <returns>一个
         /// <see cref="LyricResult"/></returns>
-        public async Task<LyricResult?> GetLyric(string songId)
+        public Task<LyricResult?> GetLyric(string songId) => GetLyric(songId, CancellationToken.None);
+
+        public async Task<LyricResult?> GetLyric(string songId, CancellationToken cancellationToken)
         {
             const string url = "https://music.163.com/weapi/song/lyric?csrf_token=";
 
@@ -214,7 +220,7 @@ namespace Lyricify.Lyrics.Providers.Web.Netease
                 { "csrf_token", string.Empty }
             };
 
-            var raw = await PostAsync(url, Prepare(LyricsJson.Serialize(data)));
+            var raw = await PostAsync(url, Prepare(LyricsJson.Serialize(data)), cancellationToken);
 
             var result = LyricsJson.Deserialize<LyricResult>(raw);
             if (result is null || result.Code != 200)
