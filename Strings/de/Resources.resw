@@ -2217,4 +2217,45 @@
   <data name="CacheRootDescription" xml:space="preserve">
     <value>Cover und WebDAV nutzen diesen Ordner. Nach einer Änderung wird der Cache bei Bedarf aufgebaut; vorhandene Dateien bleiben erhalten.</value>
   </data>
+  <data name="WebDavTlsError" xml:space="preserve">
+    <value>Keine sichere HTTPS-Verbindung möglich. Prüfen Sie NAS-Zertifikat und TLS-Einstellungen.</value>
+  </data>
+  <data name="WebDavCertificateUntrusted" xml:space="preserve">
+    <value>Das Serverzertifikat konnte nicht verifiziert werden. Bearbeiten Sie die Verbindung, um es nur für diese Quelle zu bestätigen.</value>
+  </data>
+  <data name="WebDavCertificateChanged" xml:space="preserve">
+    <value>Das Serverzertifikat weicht vom gespeicherten Zertifikat ab. Bearbeiten Sie die Verbindung und prüfen Sie es erneut.</value>
+  </data>
+  <data name="WebDavCertificateTitle" xml:space="preserve">
+    <value>Serverzertifikat prüfen</value>
+  </data>
+  <data name="WebDavCertificateHelp" xml:space="preserve">
+    <value>Vergleichen Sie den SHA-256-Fingerabdruck mit der NAS-Verwaltung. Die Bestätigung gilt nur für diese Adresse und dieses Zertifikat. Ein neues Zertifikat muss erneut bestätigt werden. Das Systemvertrauen bleibt unverändert.</value>
+  </data>
+  <data name="WebDavCertificateDetails" xml:space="preserve">
+    <value>Adresse: {0}
+Inhaber: {1}
+Aussteller: {2}
+Gültigkeit: {3:g} — {4:g}
+SHA-256: {5}
+{6}</value>
+  </data>
+  <data name="WebDavCertificateNameMismatch" xml:space="preserve">
+    <value>Die Adresse stimmt nicht mit dem Zertifikatsnamen überein.</value>
+  </data>
+  <data name="WebDavCertificateChainError" xml:space="preserve">
+    <value>Die Zertifikatskette wurde vom System nicht bestätigt.</value>
+  </data>
+  <data name="WebDavCertificateExpired" xml:space="preserve">
+    <value>Das Zertifikat ist abgelaufen oder noch nicht gültig. Aktualisieren Sie zuerst das NAS-Zertifikat.</value>
+  </data>
+  <data name="WebDavTrustCertificate" xml:space="preserve">
+    <value>Zertifikat bestätigen und verbinden</value>
+  </data>
+  <data name="WebDavCertificateRemembered" xml:space="preserve">
+    <value>Ein Zertifikat wurde für diese Quelle bestätigt und wird beim Speichern gemerkt. Bei einem Wechsel wird die Verbindung bis zur erneuten Bestätigung gestoppt.</value>
+  </data>
+  <data name="WebDavForgetCertificate" xml:space="preserve">
+    <value>Zertifikatsbestätigung vergessen</value>
+  </data>
 </root>

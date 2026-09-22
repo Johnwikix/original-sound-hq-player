@@ -2217,4 +2217,45 @@
   <data name="CacheRootDescription" xml:space="preserve">
     <value>Обложки и WebDAV используют эту папку. После изменения кэш создаётся по мере необходимости, прежние файлы сохраняются.</value>
   </data>
+  <data name="WebDavTlsError" xml:space="preserve">
+    <value>Не удалось установить защищённое HTTPS-соединение. Проверьте сертификат NAS и настройки TLS.</value>
+  </data>
+  <data name="WebDavCertificateUntrusted" xml:space="preserve">
+    <value>Не удалось проверить сертификат сервера. Откройте настройки подключения и подтвердите доверие только для этого источника.</value>
+  </data>
+  <data name="WebDavCertificateChanged" xml:space="preserve">
+    <value>Сертификат сервера отличается от сохранённого. Откройте настройки подключения и проверьте его снова.</value>
+  </data>
+  <data name="WebDavCertificateTitle" xml:space="preserve">
+    <value>Проверка сертификата сервера</value>
+  </data>
+  <data name="WebDavCertificateHelp" xml:space="preserve">
+    <value>Сравните отпечаток SHA-256 со страницей управления NAS. Подтверждение действует только для этого адреса и сертификата. При замене сертификата потребуется новое подтверждение. Доверие системных сертификатов не изменяется.</value>
+  </data>
+  <data name="WebDavCertificateDetails" xml:space="preserve">
+    <value>Адрес: {0}
+Субъект: {1}
+Издатель: {2}
+Срок действия: {3:g} — {4:g}
+SHA-256: {5}
+{6}</value>
+  </data>
+  <data name="WebDavCertificateNameMismatch" xml:space="preserve">
+    <value>Адрес не совпадает с именем в сертификате.</value>
+  </data>
+  <data name="WebDavCertificateChainError" xml:space="preserve">
+    <value>Цепочка сертификатов не прошла проверку системы.</value>
+  </data>
+  <data name="WebDavCertificateExpired" xml:space="preserve">
+    <value>Срок действия сертификата истёк или ещё не начался. Сначала обновите сертификат NAS.</value>
+  </data>
+  <data name="WebDavTrustCertificate" xml:space="preserve">
+    <value>Подтвердить сертификат и подключиться</value>
+  </data>
+  <data name="WebDavCertificateRemembered" xml:space="preserve">
+    <value>Сертификат подтверждён для этого источника и будет запомнен при сохранении. При его замене соединение остановится до нового подтверждения.</value>
+  </data>
+  <data name="WebDavForgetCertificate" xml:space="preserve">
+    <value>Забыть подтверждённый сертификат</value>
+  </data>
 </root>

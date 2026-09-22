@@ -6,7 +6,13 @@ using System.Diagnostics;
 
 ffmpeg.RootPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../Libraries/FFmpeg/x64"));
 using var transport = new WebDavTransport();
+if (args.Contains("--connection-only"))
+{
+    await ConnectionProbe.RunAsync(transport);
+    return;
+}
 await Regression.RunAsync(transport);
+await ConnectionViewModelRegression.RunAsync(transport);
 var address = Environment.GetEnvironmentVariable("MUSIC_WEBDAV_URL");
 if (address is null) { Console.WriteLine("Set MUSIC_WEBDAV_URL, MUSIC_WEBDAV_USER and MUSIC_WEBDAV_PASSWORD to run integration checks."); return; }
 var connection = new WebDavConnection(WebDavTransport.NormalizeRoot(address),

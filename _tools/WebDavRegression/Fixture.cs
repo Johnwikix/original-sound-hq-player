@@ -2,6 +2,10 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Collections.Concurrent;
+using System.Net.Security;
+using System.Security.Authentication;
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 
 internal sealed class Fixture : IAsyncDisposable
 {
@@ -9,14 +13,27 @@ internal sealed class Fixture : IAsyncDisposable
     private readonly CancellationTokenSource _stop = new();
     private readonly ConcurrentBag<Task> _requests = [];
     private readonly Task _accept;
+    private readonly X509Certificate2? _certificate;
     public readonly byte[] Bytes = new byte[3 * 1024 * 1024 + 137];
     public string Root { get; }
     public int Gets, UnauthorizedRedirects;
-    public Fixture()
+    public Fixture(bool tls = false, bool nameMismatch = false, bool expired = false)
     {
+        if (tls)
+        {
+            using var rsa = RSA.Create(2048);
+            var request = new CertificateRequest("CN=localhost", rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            var san = new SubjectAlternativeNameBuilder();
+            if (nameMismatch) san.AddDnsName("nas.invalid");
+            else san.AddIpAddress(IPAddress.Loopback);
+            request.CertificateExtensions.Add(san.Build());
+            using var generated = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-2), DateTimeOffset.UtcNow.AddDays(expired ? -1 : 1));
+            _certificate = X509CertificateLoader.LoadPkcs12(generated.Export(X509ContentType.Pfx), null,
+                X509KeyStorageFlags.UserKeySet | X509KeyStorageFlags.Exportable);
+        }
         new Random(42).NextBytes(Bytes);
         _listener.Start();
-        Root = $"http://127.0.0.1:{((IPEndPoint)_listener.LocalEndpoint).Port}/dav/";
+        Root = $"{(tls ? "https" : "http")}://127.0.0.1:{((IPEndPoint)_listener.LocalEndpoint).Port}/dav/";
         _accept = AcceptAsync();
     }
     private async Task AcceptAsync()
@@ -36,7 +53,10 @@ internal sealed class Fixture : IAsyncDisposable
         using (client)
         try
         {
-            var stream = client.GetStream();
+            using Stream stream = _certificate is null ? client.GetStream() : new SslStream(client.GetStream(), false);
+            if (stream is SslStream ssl)
+                await ssl.AuthenticateAsServerAsync(new SslServerAuthenticationOptions
+                { ServerCertificate = _certificate, EnabledSslProtocols = SslProtocols.Tls12 }, _stop.Token);
             using var reader = new StreamReader(stream, Encoding.ASCII, false, 1024, true);
             string first = await reader.ReadLineAsync(_stop.Token) ?? "";
             string? range = null, auth = null;
@@ -78,7 +98,7 @@ internal sealed class Fixture : IAsyncDisposable
             async Task Header(int status, int length, string extra) =>
                 await stream.WriteAsync(Encoding.ASCII.GetBytes($"HTTP/1.1 {status} Response\r\nContent-Length: {length}\r\nConnection: close\r\n{extra}\r\n"), _stop.Token);
         }
-        catch (Exception ex) when (ex is IOException or OperationCanceledException or SocketException) { }
+        catch (Exception ex) when (ex is IOException or OperationCanceledException or SocketException or AuthenticationException) { }
     }
     public async ValueTask DisposeAsync()
     {
@@ -86,6 +106,7 @@ internal sealed class Fixture : IAsyncDisposable
         _listener.Stop();
         await _accept;
         await Task.WhenAll(_requests);
+        _certificate?.Dispose();
         _stop.Dispose();
     }
 }

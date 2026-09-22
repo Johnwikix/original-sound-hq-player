@@ -7,6 +7,65 @@ internal static class Regression
 {
     public static async Task RunAsync(WebDavTransport transport)
     {
+        await using (var tlsFixture = new Fixture(tls: true, nameMismatch: true))
+        {
+            var tlsConnection = new WebDavConnection(new Uri(tlsFixture.Root), "", "");
+            WebDavCertificate? observed = null;
+            try
+            {
+                await foreach (var _ in transport.ListAsync(tlsConnection, "/dav/", default)) { }
+                throw new Exception("Untrusted TLS certificate was accepted.");
+            }
+            catch (WebDavCertificateException ex)
+            {
+                observed = ex.Certificate;
+                Check(ex.Code == "CertificateUntrusted" && ex.Status is null && observed.Sha256.Length == 64 && observed.NameMismatch,
+                    "untrusted HTTPS certificate reports reviewable details without accepting TLS");
+            }
+            var trustedConnection = tlsConnection with { CertificateTrust = new(observed!.Origin, observed.Sha256) };
+            int count = 0;
+            await foreach (var _ in transport.ListAsync(trustedConnection, "/dav/", default)) count++;
+            Check(count == 2, "exact confirmed certificate permits HTTPS directory listing");
+            await using (var audio = await transport.OpenAsync(trustedConnection, "/dav/tone.flac", 0, 15, true, default))
+            {
+                var bytes = new byte[16];
+                await audio.Stream.ReadExactlyAsync(bytes);
+                Check(bytes.AsSpan().SequenceEqual(tlsFixture.Bytes.AsSpan(0, 16)), "confirmed certificate also supports playback Range requests");
+            }
+            try
+            {
+                await foreach (var _ in transport.ListAsync(tlsConnection, "/dav/", default)) { }
+                throw new Exception("Strict source reused a pinned TLS connection.");
+            }
+            catch (WebDavCertificateException) { Check(true, "unconfirmed source cannot reuse confirmed source TLS connections"); }
+            try
+            {
+                await foreach (var _ in transport.ListAsync(tlsConnection with { CertificateTrust = new(observed.Origin, new string('0', 64)) }, "/dav/", default)) { }
+                throw new Exception("Changed certificate accepted.");
+            }
+            catch (WebDavCertificateException ex) { Check(ex.Code == "CertificateChanged", "changed certificate requires fresh confirmation"); }
+            await using var otherServer = new Fixture(tls: true);
+            try
+            {
+                await foreach (var _ in transport.ListAsync(trustedConnection with { Root = new Uri(otherServer.Root) }, "/dav/", default)) { }
+                throw new Exception("Certificate trust escaped its origin.");
+            }
+            catch (WebDavCertificateException ex) { Check(ex.Code == "CertificateUntrusted", "certificate trust is scoped to source origin including port"); }
+        }
+        await using (var expiredServer = new Fixture(tls: true, expired: true))
+        {
+            var expiredConnection = new WebDavConnection(new Uri(expiredServer.Root), "", "");
+            WebDavCertificate? expired = null;
+            try { await foreach (var _ in transport.ListAsync(expiredConnection, "/dav/", default)) { } }
+            catch (WebDavCertificateException ex) { expired = ex.Certificate; }
+            Check(expired is { CanTrust: false }, "expired certificate cannot be confirmed");
+            try
+            {
+                await foreach (var _ in transport.ListAsync(expiredConnection with { CertificateTrust = new(expired!.Origin, expired.Sha256) }, "/dav/", default)) { }
+                throw new Exception("Expired pinned certificate accepted.");
+            }
+            catch (WebDavCertificateException) { Check(true, "saved fingerprint does not bypass certificate expiry"); }
+        }
         CheckCoverStream();
         using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
         await using var fixture = new Fixture();

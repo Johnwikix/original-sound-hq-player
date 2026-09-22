@@ -2217,4 +2217,45 @@
   <data name="CacheRootDescription" xml:space="preserve">
     <value>Covers and WebDAV share this folder. Changing it creates caches on demand and keeps existing files.</value>
   </data>
+  <data name="WebDavTlsError" xml:space="preserve">
+    <value>Cannot establish a secure HTTPS connection. Check the NAS certificate and TLS settings.</value>
+  </data>
+  <data name="WebDavCertificateUntrusted" xml:space="preserve">
+    <value>The server certificate could not be verified. Edit the connection to review and trust it for this source only.</value>
+  </data>
+  <data name="WebDavCertificateChanged" xml:space="preserve">
+    <value>The server certificate differs from the saved certificate. Edit the connection to review it again.</value>
+  </data>
+  <data name="WebDavCertificateTitle" xml:space="preserve">
+    <value>Review server certificate</value>
+  </data>
+  <data name="WebDavCertificateHelp" xml:space="preserve">
+    <value>Compare the SHA-256 fingerprint with your NAS administration page. Confirmation applies only to this address and certificate; a replacement requires confirmation again. System certificate trust is unchanged.</value>
+  </data>
+  <data name="WebDavCertificateDetails" xml:space="preserve">
+    <value>Address: {0}
+Subject: {1}
+Issuer: {2}
+Validity: {3:g} — {4:g}
+SHA-256: {5}
+{6}</value>
+  </data>
+  <data name="WebDavCertificateNameMismatch" xml:space="preserve">
+    <value>The address does not match the certificate name.</value>
+  </data>
+  <data name="WebDavCertificateChainError" xml:space="preserve">
+    <value>The certificate chain failed system verification.</value>
+  </data>
+  <data name="WebDavCertificateExpired" xml:space="preserve">
+    <value>The certificate has expired or is not yet valid. Update the NAS certificate first.</value>
+  </data>
+  <data name="WebDavTrustCertificate" xml:space="preserve">
+    <value>Confirm certificate and reconnect</value>
+  </data>
+  <data name="WebDavCertificateRemembered" xml:space="preserve">
+    <value>A certificate is confirmed for this source and will be remembered when you save. A replacement stops the connection until confirmed again.</value>
+  </data>
+  <data name="WebDavForgetCertificate" xml:space="preserve">
+    <value>Forget confirmed certificate</value>
+  </data>
 </root>

@@ -2217,4 +2217,45 @@
   <data name="CacheRootDescription" xml:space="preserve">
     <value>カバーと WebDAV で共通のフォルダーを使います。変更後は必要に応じてキャッシュを作成し、以前のファイルは保持します。</value>
   </data>
+  <data name="WebDavTlsError" xml:space="preserve">
+    <value>HTTPS の安全な接続を確立できません。NAS の証明書と TLS 設定を確認してください。</value>
+  </data>
+  <data name="WebDavCertificateUntrusted" xml:space="preserve">
+    <value>サーバー証明書を検証できませんでした。接続を編集して確認すると、この接続先に限り信頼できます。</value>
+  </data>
+  <data name="WebDavCertificateChanged" xml:space="preserve">
+    <value>サーバー証明書が保存済みの証明書と異なります。接続を編集して再確認してください。</value>
+  </data>
+  <data name="WebDavCertificateTitle" xml:space="preserve">
+    <value>サーバー証明書の確認</value>
+  </data>
+  <data name="WebDavCertificateHelp" xml:space="preserve">
+    <value>NAS の管理画面で SHA-256 フィンガープリントを照合してください。確認はこのアドレスと証明書にのみ適用され、証明書が変わると再確認が必要です。システムの証明書信頼設定は変更しません。</value>
+  </data>
+  <data name="WebDavCertificateDetails" xml:space="preserve">
+    <value>アドレス: {0}
+サブジェクト: {1}
+発行者: {2}
+有効期間: {3:g} — {4:g}
+SHA-256: {5}
+{6}</value>
+  </data>
+  <data name="WebDavCertificateNameMismatch" xml:space="preserve">
+    <value>アクセス先と証明書の名前が一致しません。</value>
+  </data>
+  <data name="WebDavCertificateChainError" xml:space="preserve">
+    <value>証明書チェーンがシステムの検証に失敗しました。</value>
+  </data>
+  <data name="WebDavCertificateExpired" xml:space="preserve">
+    <value>証明書が期限切れか、まだ有効ではありません。先に NAS の証明書を更新してください。</value>
+  </data>
+  <data name="WebDavTrustCertificate" xml:space="preserve">
+    <value>この証明書を確認して再接続</value>
+  </data>
+  <data name="WebDavCertificateRemembered" xml:space="preserve">
+    <value>この接続先の証明書を確認済みです。保存時に記憶します。証明書が変わると再確認まで接続を停止します。</value>
+  </data>
+  <data name="WebDavForgetCertificate" xml:space="preserve">
+    <value>確認済みの証明書を忘れる</value>
+  </data>
 </root>

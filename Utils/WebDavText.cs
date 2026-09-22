@@ -6,6 +6,9 @@ public static class WebDavText
     public static string Error(string code) => ToolUtils.GetString(code switch
     {
         "AuthenticationRequired" or "AuthenticationFailed" => "WebDavAuthenticationError",
+        "CertificateUntrusted" => "WebDavCertificateUntrusted",
+        "CertificateChanged" => "WebDavCertificateChanged",
+        "TlsConnectionFailed" => "WebDavTlsError",
         "InvalidAddress" or "InvalidResource" or "InvalidRedirect" => "WebDavAddressError",
         "NameRequired" or "NameExists" => "WebDavNameError",
         "ResourceMissing" or "SourceUnavailable" => "WebDavMissingError",

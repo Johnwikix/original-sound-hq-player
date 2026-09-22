@@ -2,6 +2,14 @@
 
 新条目加在最上方。
 
+## 2026-09-22 WebDAV 按来源确认 NAS 自签名证书
+
+- `Services/WebDav/WebDavCertificates.cs`、`WebDavTransport.cs`：HTTPS 失败提供证书信息和 SHA-256 指纹；确认后仅放行指定来源地址的同一张有效证书，证书变化需重新确认，过期证书继续拒绝。连接池按信任状态隔离，不修改系统信任或放开其他来源。
+- `Model/WebDavSource.cs`、`Services/WebDavLibraryService.cs`：保存来源时持久化证书地址与指纹，目录同步、元数据、封面和播放共用；已有来源默认无证书例外。
+- `WebDavConnectionViewModel.cs`、`WebDavConnectionDialog.xaml`、`Utils/WebDavText.cs`、六种语言资源：增加证书详情、确认重连及忘记入口，区分证书未受信任、证书变化与其他 TLS 错误；修改连接信息或关闭窗口会取消测试并拒绝迟到结果。
+- `_tools/WebDavRegression`：增加真实 TLS 目录/Range、证书与连接池隔离、过期、来源保存恢复、SQLite 迁移和表单取消回归。NAS 实测为 fnOS 自签名证书且名称不包含访问 IP；固定该证书后 TLS 成功进入 HTTP 认证层，无密码测试返回预期 401。
+- 验证：50 项回归、六种语言资源键及格式占位符检查、Release 构建通过；现有编译/裁剪警告仍在。未替换当前运行实例，WinUI 证书确认交互需在新构建验证。
+
 ## 2026-09-22 统一 WebDAV 缓存位置并修复播放详情原图
 
 - `Services/WebDavLibraryService.cs`、`Services/WebDav/WebDavCachePaths.cs`、`RemoteAudioCache.cs`：统一使用原有可配置缓存根目录，远程音频和原图分别写入 `WebDav/Audio`、`WebDav/Covers`；缩略图继续共用 `Cache`。取消独立 WebDAV 路径配置，升级及换目录按需重建，旧缓存保留、不批量搬运。

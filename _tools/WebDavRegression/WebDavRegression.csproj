@@ -8,5 +8,10 @@
     <Compile Include="../../Reader/AudioCoverReader.cs" Link="AudioCoverReader.cs" />
     <PackageReference Include="FFmpeg.AutoGen" Version="9.0.1.1" />
     <PackageReference Include="z440.atl.core" Version="7.17.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
+    <Compile Include="../../Model/WebDavSource.cs" Link="WebDavSource.cs" />
+    <Compile Include="../../ViewModel/Pages/WebDavConnectionViewModel.cs" Link="WebDavConnectionViewModel.cs" />
+    <Compile Include="../../Utils/WebDavText.cs" Link="WebDavText.cs" />
   </ItemGroup>
 </Project>

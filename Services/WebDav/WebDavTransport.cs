@@ -15,7 +15,7 @@ using System.Xml.Linq;
 namespace WinUIMusicPlayer.Services.WebDav;
 
 /// <summary>凭据仅存在于请求生命周期；持久化由主程序的凭据库负责。</summary>
-public sealed record WebDavConnection(Uri Root, string UserName, string Password)
+public sealed record WebDavConnection(Uri Root, string UserName, string Password, WebDavCertificateTrust? CertificateTrust = null)
 {
     public override string ToString() => "WebDAV connection";
 }
@@ -25,7 +25,7 @@ public sealed record WebDavEntry(string Href, string Name, bool IsDirectory, lon
 }
 
 /// <summary>对用户报告固定错误类型，避免异常消息泄漏重定向签名和认证信息。</summary>
-public sealed class WebDavException(string code, HttpStatusCode? status = null) : IOException(code)
+public class WebDavException(string code, HttpStatusCode? status = null) : IOException(code)
 {
     public string Code { get; } = code;
     public HttpStatusCode? Status { get; } = status;
@@ -34,23 +34,10 @@ public sealed class WebDavException(string code, HttpStatusCode? status = null) 
 /// <summary>只读 DAV/HTTP 传输；响应持有并发租约直至释放，给前台保留请求容量。</summary>
 public sealed class WebDavTransport : IDisposable
 {
-    private readonly HttpClient _http;
+    private readonly WebDavHttpClients _clients = new();
     private readonly SemaphoreSlim _all = new(8, 8);
     private readonly SemaphoreSlim _background = new(6, 6);
     private static readonly XNamespace Dav = "DAV:";
-
-    public WebDavTransport()
-    {
-        _http = new HttpClient(new SocketsHttpHandler
-        {
-            AllowAutoRedirect = false,
-            AutomaticDecompression = DecompressionMethods.None,
-            UseCookies = false,
-            ConnectTimeout = TimeSpan.FromSeconds(15),
-            PooledConnectionLifetime = TimeSpan.FromMinutes(5),
-            MaxConnectionsPerServer = 8
-        }) { Timeout = Timeout.InfiniteTimeSpan };
-    }
 
     public static Uri NormalizeRoot(string address)
     {
@@ -131,6 +118,7 @@ public sealed class WebDavTransport : IDisposable
         long? start, long? end, bool foreground, CancellationToken token)
     {
         bool backgroundHeld = false, allHeld = false;
+        WebDavHttpClients.Lease? client = null;
         try
         {
             if (!foreground) { await _background.WaitAsync(token).ConfigureAwait(false); backgroundHeld = true; }
@@ -151,11 +139,25 @@ public sealed class WebDavTransport : IDisposable
                     request.Headers.Add("Depth", "1");
                     request.Content = new StringContent("<d:propfind xmlns:d=\"DAV:\"><d:prop><d:resourcetype/><d:getcontentlength/><d:getetag/><d:getlastmodified/></d:prop></d:propfind>", Encoding.UTF8, "application/xml");
                 }
-                var response = await _http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, headersDeadline.Token).ConfigureAwait(false);
+                client = _clients.Acquire(source, target);
+                HttpResponseMessage response;
+                try
+                {
+                    response = await client.Client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, headersDeadline.Token).ConfigureAwait(false);
+                }
+                catch (HttpRequestException ex) when (ex.HttpRequestError == HttpRequestError.SecureConnectionError)
+                {
+                    if (request.Options.TryGetValue(WebDavHttpClients.RejectedCertificate, out var certificate))
+                        throw new WebDavCertificateException(certificate, source.CertificateTrust is { } trusted &&
+                            trusted.Origin == certificate.Origin && !string.Equals(trusted.Sha256, certificate.Sha256, StringComparison.OrdinalIgnoreCase));
+                    throw new WebDavException("TlsConnectionFailed");
+                }
                 if ((int)response.StatusCode is 301 or 302 or 303 or 307 or 308)
                 {
                     var location = response.Headers.Location;
                     response.Dispose();
+                    client.Dispose();
+                    client = null;
                     if (location is null || redirect == 5) throw new WebDavException("InvalidRedirect");
                     var next = new Uri(target, location);
                     if (next.Scheme is not ("http" or "https") || next.UserInfo.Length != 0 ||
@@ -175,7 +177,7 @@ public sealed class WebDavTransport : IDisposable
                     if (response.Content.Headers.ContentEncoding.Count != 0)
                         throw new WebDavException("UnexpectedContentEncoding");
                     var stream = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
-                    return new WebDavResponse(response, stream, _all, backgroundHeld ? _background : null);
+                    return new WebDavResponse(response, stream, _all, backgroundHeld ? _background : null, client);
                 }
                 catch { response.Dispose(); throw; }
             }
@@ -183,17 +185,19 @@ public sealed class WebDavTransport : IDisposable
         }
         catch
         {
+            client?.Dispose();
             if (allHeld) _all.Release();
             if (backgroundHeld) _background.Release();
             throw;
         }
     }
 
-    public void Dispose() => _http.Dispose();
+    public void Dispose() => _clients.Dispose();
 }
 
 /// <summary>响应与并发名额具有相同生命周期；调用者必须等待读取退出后再释放。</summary>
-public sealed class WebDavResponse(HttpResponseMessage message, Stream stream, SemaphoreSlim all, SemaphoreSlim? background) : IAsyncDisposable
+public sealed class WebDavResponse(HttpResponseMessage message, Stream stream, SemaphoreSlim all, SemaphoreSlim? background,
+    IDisposable? clientLease = null) : IAsyncDisposable
 {
     private int _disposed;
     public HttpResponseMessage Message { get; } = message;
@@ -203,6 +207,7 @@ public sealed class WebDavResponse(HttpResponseMessage message, Stream stream, S
         if (Interlocked.Exchange(ref _disposed, 1) == 0)
         {
             Message.Dispose();
+            clientLease?.Dispose();
             all.Release();
             background?.Release();
         }

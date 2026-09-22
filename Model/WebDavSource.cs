@@ -11,6 +11,8 @@ public sealed class WebDavSource
     public string BaseUri { get; set; } = "";
     public string UserName { get; set; } = "";
     public string CredentialKey { get; set; } = Guid.NewGuid().ToString("N");
+    public string TrustedCertificateOrigin { get; set; } = "";
+    public string TrustedCertificateSha256 { get; set; } = "";
     public string Roots { get; set; } = "";
     public bool Enabled { get; set; } = true;
     public bool ScanOnStartup { get; set; }

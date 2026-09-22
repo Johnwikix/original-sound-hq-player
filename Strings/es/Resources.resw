@@ -2217,4 +2217,45 @@
   <data name="CacheRootDescription" xml:space="preserve">
     <value>Las portadas y WebDAV comparten esta carpeta. Al cambiarla, la caché se crea según se necesita y se conservan los archivos anteriores.</value>
   </data>
+  <data name="WebDavTlsError" xml:space="preserve">
+    <value>No se puede establecer una conexión HTTPS segura. Comprueba el certificado del NAS y la configuración TLS.</value>
+  </data>
+  <data name="WebDavCertificateUntrusted" xml:space="preserve">
+    <value>No se pudo verificar el certificado. Edita la conexión para revisarlo y confiar en él solo para este origen.</value>
+  </data>
+  <data name="WebDavCertificateChanged" xml:space="preserve">
+    <value>El certificado del servidor difiere del guardado. Edita la conexión para revisarlo de nuevo.</value>
+  </data>
+  <data name="WebDavCertificateTitle" xml:space="preserve">
+    <value>Revisar certificado del servidor</value>
+  </data>
+  <data name="WebDavCertificateHelp" xml:space="preserve">
+    <value>Compara la huella SHA-256 con la página de administración del NAS. La confirmación solo se aplica a esta dirección y certificado. Un certificado nuevo requiere otra confirmación. No se modifica la confianza del sistema.</value>
+  </data>
+  <data name="WebDavCertificateDetails" xml:space="preserve">
+    <value>Dirección: {0}
+Sujeto: {1}
+Emisor: {2}
+Validez: {3:g} — {4:g}
+SHA-256: {5}
+{6}</value>
+  </data>
+  <data name="WebDavCertificateNameMismatch" xml:space="preserve">
+    <value>La dirección no coincide con el nombre del certificado.</value>
+  </data>
+  <data name="WebDavCertificateChainError" xml:space="preserve">
+    <value>La cadena de certificados no superó la verificación del sistema.</value>
+  </data>
+  <data name="WebDavCertificateExpired" xml:space="preserve">
+    <value>El certificado ha caducado o aún no es válido. Actualiza primero el certificado del NAS.</value>
+  </data>
+  <data name="WebDavTrustCertificate" xml:space="preserve">
+    <value>Confirmar certificado y reconectar</value>
+  </data>
+  <data name="WebDavCertificateRemembered" xml:space="preserve">
+    <value>Se ha confirmado un certificado para este origen y se recordará al guardar. Si cambia, la conexión se detendrá hasta confirmarlo de nuevo.</value>
+  </data>
+  <data name="WebDavForgetCertificate" xml:space="preserve">
+    <value>Olvidar certificado confirmado</value>
+  </data>
 </root>

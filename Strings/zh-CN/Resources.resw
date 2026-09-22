@@ -2216,4 +2216,45 @@
   <data name="CacheRootDescription" xml:space="preserve">
     <value>封面与 WebDAV 共用此目录；更改后按需建立缓存，旧文件保留。</value>
   </data>
+  <data name="WebDavTlsError" xml:space="preserve">
+    <value>无法建立 HTTPS 安全连接。请检查 NAS 证书和 TLS 设置。</value>
+  </data>
+  <data name="WebDavCertificateUntrusted" xml:space="preserve">
+    <value>服务器证书未通过验证。编辑连接并检查证书后，可仅对此来源确认信任。</value>
+  </data>
+  <data name="WebDavCertificateChanged" xml:space="preserve">
+    <value>服务器证书与已保存的证书不同。请编辑连接并重新核对证书。</value>
+  </data>
+  <data name="WebDavCertificateTitle" xml:space="preserve">
+    <value>检查服务器证书</value>
+  </data>
+  <data name="WebDavCertificateHelp" xml:space="preserve">
+    <value>请与 NAS 管理页面中的 SHA-256 指纹核对。确认仅对此地址和当前证书生效，证书更换后需要重新确认；不会修改系统证书信任。</value>
+  </data>
+  <data name="WebDavCertificateDetails" xml:space="preserve">
+    <value>地址：{0}
+主体：{1}
+颁发者：{2}
+有效期：{3:g} — {4:g}
+SHA-256：{5}
+{6}</value>
+  </data>
+  <data name="WebDavCertificateNameMismatch" xml:space="preserve">
+    <value>访问地址与证书名称不匹配。</value>
+  </data>
+  <data name="WebDavCertificateChainError" xml:space="preserve">
+    <value>证书链未通过系统验证。</value>
+  </data>
+  <data name="WebDavCertificateExpired" xml:space="preserve">
+    <value>证书已过期或尚未生效，请先更新 NAS 证书。</value>
+  </data>
+  <data name="WebDavTrustCertificate" xml:space="preserve">
+    <value>确认此证书并重新连接</value>
+  </data>
+  <data name="WebDavCertificateRemembered" xml:space="preserve">
+    <value>已对此来源确认一张证书，保存来源后记住；证书更换后会停止连接并要求重新确认。</value>
+  </data>
+  <data name="WebDavForgetCertificate" xml:space="preserve">
+    <value>忘记已确认的证书</value>
+  </data>
 </root>

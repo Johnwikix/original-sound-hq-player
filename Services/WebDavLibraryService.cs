@@ -83,7 +83,9 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
             }
             catch { throw new WebDavException("AuthenticationRequired"); }
         }
-        return new(WebDavTransport.NormalizeRoot(source.BaseUri), source.UserName, password);
+        var trust = string.IsNullOrEmpty(source.TrustedCertificateSha256) ? null
+            : new WebDavCertificateTrust(source.TrustedCertificateOrigin, source.TrustedCertificateSha256);
+        return new(WebDavTransport.NormalizeRoot(source.BaseUri), source.UserName, password, trust);
     }
     public async Task SaveSourceAsync(WebDavSource source, string password)
     {
