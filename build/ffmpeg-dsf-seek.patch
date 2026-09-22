@@ -1,0 +1,66 @@
+--- a/libavformat/dsfdec.c
++++ b/libavformat/dsfdec.c
+@@ -84,7 +84,7 @@
+ 
+     avio_skip(pb, 8);
+     id3pos = avio_rl64(pb);
+-    if (pb->seekable & AVIO_SEEKABLE_NORMAL) {
++    if (id3pos && (pb->seekable & AVIO_SEEKABLE_NORMAL)) {
+         read_id3(s, id3pos);
+         avio_seek(pb, 28, SEEK_SET);
+     }
+@@ -150,6 +150,7 @@
+         return AVERROR_INVALIDDATA;
+     dsf->data_size = avio_rl64(pb) - 12;
+     dsf->data_end += dsf->data_size + 12;
++    st->duration = dsf->audio_size / channels;
+ 
+     return 0;
+ }
+@@ -207,6 +208,40 @@
+     pkt->pts = (pos - si->data_offset) / channels;
+     pkt->duration = st->codecpar->block_align / channels;
+ 
++    return 0;
++}
++
++static int dsf_read_seek(AVFormatContext *s, int stream_index,
++                         int64_t timestamp, int flags)
++{
++    DSFContext *dsf = s->priv_data;
++    AVStream *st = s->streams[0];
++    int channels = st->codecpar->ch_layout.nb_channels;
++    int block = st->codecpar->block_align;
++    int64_t frames_per_block = block / channels;
++    int64_t offset, blocks, ret;
++    int64_t data_offset = ffformatcontext(s)->data_offset;
++
++    if (stream_index != 0 || (flags & AVSEEK_FLAG_BYTE) ||
++        dsf->data_end > INT64_MAX || dsf->audio_size > INT64_MAX ||
++        data_offset < 0 || frames_per_block <= 0)
++        return AVERROR(EINVAL);
++    timestamp = av_clip64(timestamp, 0, st->duration);
++    if (timestamp == st->duration) {
++        offset = dsf->data_size;
++    } else {
++        /* DSF stores fixed planar blocks. Generic index seeking would read
++         * every intervening packet, including over HTTP Range transports. */
++        blocks = timestamp / frames_per_block;
++        if (!(flags & AVSEEK_FLAG_BACKWARD) && timestamp % frames_per_block)
++            blocks++;
++        if (blocks > (INT64_MAX - data_offset) / block)
++            return AVERROR(EINVAL);
++        offset = FFMIN(blocks * block, dsf->data_size);
++    }
++    if ((ret = avio_seek(s->pb, data_offset + offset, SEEK_SET)) < 0)
++        return ret;
++    ffstream(st)->cur_dts = offset / channels;
+     return 0;
+ }
+ 
+@@ -218,4 +253,5 @@
+     .read_probe     = dsf_probe,
+     .read_header    = dsf_read_header,
+     .read_packet    = dsf_read_packet,
++    .read_seek      = dsf_read_seek,
+ };

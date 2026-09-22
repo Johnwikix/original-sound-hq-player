@@ -5,6 +5,12 @@ source_dir="${1:?source worktree required}"
 build_dir="${2:?build directory required}"
 install_dir="${3:?installation directory required}"
 export PATH=/ucrt64/bin:/usr/bin
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+seek_patch="$script_dir/ffmpeg-dsf-seek.patch"
+if ! git -C "$source_dir" apply --reverse --check "$seek_patch" 2>/dev/null; then
+  git -C "$source_dir" apply --check "$seek_patch"
+  git -C "$source_dir" apply "$seek_patch"
+fi
 mkdir -p "$build_dir" "$install_dir"
 cd "$build_dir"
 "$source_dir/configure" \

@@ -29,6 +29,9 @@ public sealed record PlaybackSource
     public PlaybackSourceKind Kind { get; init; }
     public string ResourceId { get; init; } = "";
     public string Location { get; init; } = "";
+    /// <summary>Optional container extension (e.g. .dsf) when an opaque URL hides the filename.
+    /// Used only to select a reader; the reader still validates the actual container/codec.</summary>
+    public string FileExtension { get; init; } = "";
     public Dictionary<string, string> Headers { get; init; } = [];
     public DateTimeOffset? ExpiresAt { get; init; }
     public bool CanSeek { get; init; } = true;
@@ -36,9 +39,11 @@ public sealed record PlaybackSource
     public BufferPolicy Buffer { get; init; } = new();
     public void Validate()
     {
-        if (Buffer is null || Headers is null || Location is null || ResourceId is null)
+        if (Buffer is null || Headers is null || Location is null || ResourceId is null || FileExtension is null)
             throw new ArgumentException("Invalid source.");
         Buffer.Validate();
+        if (FileExtension.Length > 16 || FileExtension.Any(c => c != '.' && !char.IsAsciiLetterOrDigit(c)))
+            throw new ArgumentException("Invalid file extension.");
         if (Location.Length is 0 or > 32768 || ResourceId.Length > 1024 || Headers.Count > 32) throw new ArgumentException("Invalid source.");
         if (ExpiresAt <= DateTimeOffset.UtcNow) throw new ArgumentException("Source expired.");
         if (Kind == PlaybackSourceKind.Http)

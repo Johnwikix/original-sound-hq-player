@@ -588,9 +588,33 @@ flowchart LR
 
 ### 14.5 当前明确边界
 
-- 当前实际服务为用户提供的 OpenList；另有可控 HTTP/DAV fixture。真实 NAS、广域网/代理、断网后长期恢复、近 100 GB 曲库混合负载与长时间原生/GPU 保留趋势尚未验证。
+- 首版实际服务为用户提供的 OpenList；另有可控 HTTP/DAV fixture。2026-09-22 补充真实 NAS DSF 验证，见第 15 节；广域网/代理、断网后长期恢复、近 100 GB 曲库混合负载与长时间原生/GPU 保留趋势尚未验证。
 - 新持久缓存要求已知长度和强 ETag；无/弱验证器仍可在线播放，但不新增跨 Range 持久缓存。无 Range 时退化顺序播放，标签/封面可能暂缓。部分缓存不跨会话恢复，退出会删除未完成文件；下一次重播复用完整缓存。
 - 修改缓存目录/清理使旧写入租约失效；当前音频继续读取，下次选曲使用新目录。第一版没有源内独立缓存清理、永久保留、整库离线下载、下载列表或服务端同步扩展。
 - 目录选择器列出根和直接子目录；更深路径可直接作为来源地址。连接测试证明目录可列，实际音频 Range/读权限在探测与播放时验证。
 - 来源筛选当前保留在本次应用会话；缺失状态落库但暂不单独绘制离线徽标。深度元数据读取、带宽限速、完整断点恢复和长期性能验收仍按前文后续项推进。
 - 构建仍有既有和新调用触发的 SQLite 裁剪分析警告及网络不可达的 NU1900 警告；新增 SQLite 模型与 System.IO.Pipes 已显式保留，并用实际裁剪安装包验证，而非据构建成功推定运行正确。
+
+## 15. 大 DSF 网络播放修复与验证（2026-09-22）
+
+### 原因与资源所有权
+
+FFmpeg 9.0.1 的 DSF demuxer 原本只有通用索引定位，没有 `read_seek`。首次定位到尚未建立索引的位置，会从已有索引末尾读取中间音频；NAS 即使支持 HTTP Range 也会发生。仓库补丁根据每声道字节时间戳、声道数和固定块大小计算偏移，保留向前/向后块对齐、EOF 与再次播放行为。时长直接取 DSF 样本数，不再估算包含封面尾部的总文件长度。
+
+网络准备与输出重建原来固定使用 PCM，且桥接地址没有扩展名。`PlaybackSource.FileExtension` 是可选的容器提示，实际格式仍由解复用器验证。DSF/DFF 现在沿用本地的 ASIO Native DSD、独占 DoP、共享 PCM 策略及设备回退。原始 DSD 读取与 PCM 共用 HTTP 白名单、证书验证、鉴权头、超时和中断生命周期；读取失败不再当作正常 EOF。三种格式均支持初始/恢复预缓冲，环缓冲各不超过 64 MiB，后台准备会话上限不变。
+
+176.4 kHz 双声道 PCM 的默认八秒环缓冲为 22,579,200 字节。每次切换原来重新分配 LOH 数组，低延迟模式下工作集会阶梯式增长，直到运行时回收。测试中没有发现旧会话持续被引用；不能把增长直接称为泄漏。网络大环缓冲改用 SafeHandle 持有的 VirtualAlloc 页，在 Session 关闭时通过环锁与读写互斥并 VirtualFree；阻塞生产者被唤醒，迟到渲染返回相应格式的静音。SafeHandle 提供异常构造/遗漏清理的兜底。小型 scratch、本地环缓冲仍由 GC 管理；没有生产环境 `GC.Collect`，也不承诺整个进程工作集立即降至零。
+
+DSF 封面通过头部的 ID3 偏移直接读取 APIC，继续受 8 MiB/64 请求预算限制。旧版本缓存的 DSF 空封面会重试；每次运行最多记住 256 个已确认的空结果，避免重复请求和无限保留状态。
+
+### 可重复测试与结果
+
+- `dotnet run --project _tools/PlaybackSwitchRegression -- --test-network-dsf`：15 项，使用按需生成的 1 GiB DSF；定位到 15 分钟、精确包偏移、向前/向后定位、EOF 后重播、远程格式选择、阻塞 I/O 取消、封面边界和内存所有权。修复前定位读取超过 32 MiB 测试预算，修复后通常传输 3–5 MiB。
+- 同一 JIT/.NET 11 测试连续开关 30 个 176.4 kHz PCM 网络会话，累计托管分配由 689,713,752 字节降为约 12,229,264 字节。弱引用检测全部旧会话可回收。强制 GC 仅用于测试末尾确认存活对象，累计分配值不依赖强制 GC。
+- `--test-network-asio`：FiiO ASIO Driver 实际播放合成网络 DSD 静音数据。15 次 PCM 开关的关闭后私有内存，修改前约 50–147 MB，修改后约 19–34 MB（十进制）；线程数量稳定。另验证 DSD256 Native 与 DSD64 DoP 确实进入设备回调并推进播放。DSD256 DoP 的 705,600 Hz 被当前驱动 `CanSampleRate` 拒绝，属设备能力限制；继续保留 PCM 回退。
+- `dotnet run --project _tools/StreamingRegression -- artifacts/dsf-player/AudioPlayer.exe`：使用隔离 IPC 运行正式 NativeAOT 产物；50 项通过，包括 15 次 DSF 准备/停止与大文件定位。第 3 次停止后私有内存 11,976,704 字节，其后最大 14,004,224 字节；该进程没有强制 GC。不是全程播放峰值或 GC/STW 测量。
+- `--test-nas-dsf`：通过环境变量 `MUSIC_WEBDAV_URL/USER/PASSWORD/DSF` 指定只读样本；使用真实 WebDavTransport → RemoteReadSession → WebDavPlaybackBridge → Session，自动下载关闭。实际 DSF 长度 1,534,642,268 字节、时长 543,560 ms；封面 492,133 字节，Range 共传输 706,652 字节。跳到 80% 并达到预缓冲门槛：PCM 77 ms / 6,226,704 字节，Native DSD 78 ms / 5,796,732 字节，DoP 77 ms / 5,796,732 字节。此项验证真实网络供数和解复用；设备能力由前述 ASIO 测试单独验证。
+- 原有本地切换/输出/DSP 回归 281 项、WebDAV/TLS 回归 50 项通过。主程序未新增资源键或 UI 布局。未执行长时间 WAN、完整 UI 手动拖动、整库混合负载或图像/GPU 保留测试。
+- `dotnet publish External/AudioPlayer/AudioPlayer.csproj -c Release -r win-x64 -p:Platform=x64 --no-restore -o artifacts/dsf-player` 通过，产物更新到 `Player/AudioPlayer.exe`。主程序 x64 Release 构建通过；因本机缺少 `mspdbcmf.exe`，验证命令使用 `-p:AppxSymbolPackageEnabled=false -p:GenerateTemporaryStoreCertificate=false -p:AppxPackageSigningEnabled=false`，未更改项目默认发布设置。保留现有 512 项编译/裁剪等警告，没有验证发布包签名。
+
+NAS 地址和凭据只通过测试进程环境传入，不写入源码、测试日志或本文档。数据只反映本机和当前局域网条件，不能作为慢网络响应时间或所有 ASIO 硬件支持范围的保证。

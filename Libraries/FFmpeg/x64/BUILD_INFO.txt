@@ -1,5 +1,6 @@
 FFmpeg 9.0.1, LGPL-2.1-or-later.
 Imported from Plugins commit df6f9d99a201ad5405d7d285bf014bb0e65efe4d.
+avformat rebuilt 2026-09-22 with build/ffmpeg-dsf-seek.patch (fixed-block DSF random seek).
 Source, toolchain, configuration and SHA-256: BUILD.md and ../../../build/ffmpeg-network.sh.
 Compared against previous audioplayer DLLs by native av_codec_iterate, av_demuxer_iterate, av_muxer_iterate and avio_enum_protocols: identical codecs/demuxers/muxers; adds httpproxy, removes no input protocols.
 TLS: Windows Schannel; external codecs statically linked.

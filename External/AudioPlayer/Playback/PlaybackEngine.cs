@@ -290,7 +290,8 @@ public sealed partial class PlaybackEngine : IDisposable
         {
             var mix = forceSharedFormat ? GetEndpointMixFormat(OutputMode == "DirectSound" || OutputMode == "ASIO" ? -1 : BassOutputDeviceId) : null;
             if (forceSharedFormat && mix is null) return null;
-            return Session.Open(this, url, RenderKind.Pcm, DsdPcmFreq, DsdGain, Latency,
+            var remoteKind = forceSharedFormat ? RenderKind.Pcm : kindOverride ?? StreamingKind(remote.Source);
+            return Session.Open(this, url, remoteKind, DsdPcmFreq, DsdGain, Latency,
                 forcedRate: mix?.SampleRate, forcedChannels: mix?.Channels, maxChannels: 2,
                 source: remote.Source, cancellationToken: remote.Cancel.Token);
         }

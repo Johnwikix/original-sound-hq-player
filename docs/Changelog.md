@@ -2,6 +2,16 @@
 
 新条目加在最上方。
 
+## 2026-09-22 WebDAV 大 DSF 的内存、定位、位流与封面修复
+
+- `AudioPlayer/Playback/AudioRingMemory.cs`、`Ring.cs`、`Session.cs`：网络 PCM/DoP/Native DSD 大环缓冲由会话独占的原生内存承载，停止时在读写锁内释放；拒绝迟到读写、唤醒等待生产者，避免每次切歌的多 MB LOH 分配等待 GC。未增加生产环境强制 GC。
+- `Decode/FfmpegHttpInput.cs`、`DsdRawReader.cs`、`PlaybackEngine.Streaming.cs`、`Streaming.cs`、`RemotePlaybackService.cs`：远程 DSF/DFF 按输出设置选择 Native DSD/DoP，匿名桥接 URL 通过扩展名提示保留格式；共用超时、取消、预缓冲/欠载恢复及定位能力，保持 Native → DoP → PCM 设备回退。
+- `build/ffmpeg-dsf-seek.patch`、`Libraries/FFmpeg/x64/avformat-63.dll`：从现有 FFmpeg 源码重编译，DSF 按固定块直接定位并使用样本数计算时长，不再为了建立索引遍历未播放音频；构建脚本自动检查/应用补丁。
+- `Reader/AudioCoverReader.cs`、`Services/WebDavLibraryService.cs`：按 DSF 头部偏移读取尾部 ID3/APIC；对旧 DSF 空封面缓存做有界重试，复用原图缓存。
+- `_tools/PlaybackSwitchRegression`、`_tools/StreamingRegression`：新增大文件定位、精确包位置/EOF、DSD 模式、取消、原生缓冲释放与正式 NativeAOT 连续切换回归；`Player/AudioPlayer.exe` 已更新。
+- 验证：NAS 的 1,534,642,268 字节 DSF 封面读取成功；跳到 80% 并预缓冲约 77–78 ms、传输约 5.8–6.2 MB。真实 FiiO ASIO 的 DSD256 Native 和 DSD64 DoP 输出成功；此设备拒绝 DSD256 DoP 所需的 705.6 kHz。测量范围、命令与硬件边界见 `docs/WebDAV接入设计方案.md` 第 15 节。
+- 构建：NativeAOT 与主程序 x64 Release 通过；本机缺少符号转换工具，主程序验证通过命令行关闭符号包和包签名（未更改项目发布默认值），现有平台/裁剪等警告保留。
+
 ## 2026-09-22 WebDAV 按来源确认 NAS 自签名证书
 
 - `Services/WebDav/WebDavCertificates.cs`、`WebDavTransport.cs`：HTTPS 失败提供证书信息和 SHA-256 指纹；确认后仅放行指定来源地址的同一张有效证书，证书变化需重新确认，过期证书继续拒绝。连接池按信任状态隔离，不修改系统信任或放开其他来源。

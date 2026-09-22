@@ -30,6 +30,19 @@ internal static unsafe partial class Program
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(WasapiOutput))]
     private static int Main(string[] args)
     {
+        if (args.Length == 1 && args[0] is "--test-network-asio" or "--test-nas-dsf")
+        {
+            FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
+            if (args[0] == "--test-network-asio") Run("real ASIO network switches", CheckRealAsioNetworkMemory);
+            else Run("real NAS DSF bridge seek and cover", CheckNasDsf);
+            return _failures == 0 ? 0 : 1;
+        }
+        if (args.Length == 1 && args[0] == "--test-network-dsf")
+        {
+            FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
+            RunNetworkDsfTests();
+            return _failures == 0 ? 0 : 1;
+        }
         if (args.Length == 3 && args[0] == "--test-atmos-file")
         {
             FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;

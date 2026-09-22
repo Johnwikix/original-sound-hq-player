@@ -137,6 +137,34 @@ try
         }
         await client.StopAsync(audible);
     }
+    using (var dsfServer = new DsfHttpFixture())
+    {
+        var dsfSource = source with { Location = dsfServer.Url, FileExtension = ".dsf", ResourceId = "dsf",
+            Buffer = source.Buffer with { CapacityMs = 8000 } };
+        long baseline = 0, maximum = 0;
+        for (int i = 0; i < 15; i++)
+        {
+            Guid dsfId = Guid.NewGuid();
+            await PrepareWhenAvailable(dsfSource, dsfId);
+            var dsfReady = await WaitFor(dsfId, x => x.Phase is StreamPhase.Ready or StreamPhase.Failed);
+            Check(dsfReady.Phase == StreamPhase.Ready, $"NativeAOT DSF prepare {i + 1}");
+            if (i == 0)
+            {
+                long before = dsfServer.BytesSent;
+                Check((await client.SeekAsync(dsfId, 900000, 1)).Accepted, "NativeAOT large DSF seek accepted");
+                var dsfSeek = await WaitFor(dsfId, x => x.SeekId == 1 || x.Phase == StreamPhase.Failed);
+                Check(dsfSeek.SeekId == 1 && dsfSeek.Phase != StreamPhase.Failed && dsfServer.BytesSent - before < 16 * 1024 * 1024,
+                    "NativeAOT DSF seek skips intervening audio");
+            }
+            await client.StopAsync(dsfId);
+            player.Refresh();
+            long bytes = player.PrivateMemorySize64;
+            if (i == 2) baseline = bytes;
+            if (i >= 2) maximum = Math.Max(maximum, bytes);
+        }
+        Console.WriteLine($"NativeAOT 15 DSF switches: private baseline={baseline}, post-stop maximum={maximum}");
+        Check(maximum - baseline < 48L * 1024 * 1024, "NativeAOT repeated DSF stop releases large buffers without forced GC");
+    }
     // Leave a slow preparation in flight: releasing the private client mutex must shut down the entire player.
     await PrepareWhenAvailable(source with { Location = server.Url("slow") }, Guid.NewGuid());
     alive.Dispose();

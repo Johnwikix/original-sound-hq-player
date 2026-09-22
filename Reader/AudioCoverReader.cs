@@ -18,6 +18,7 @@ public static class AudioCoverReader
         return ("." + extension.TrimStart('.').ToLowerInvariant()) switch
         {
             ".mp3" => ReadId3v2Cover(bounded),
+            ".dsf" => ReadDsfCover(bounded),
             ".wav" => ReadRiffCover(bounded),
             ".flac" => ReadFlacCover(bounded),
             ".ogg" or ".oga" or ".opus" => ReadOggCover(bounded),
@@ -58,6 +59,7 @@ public static class AudioCoverReader
             return ext switch
             {
                 ".mp3" => ReadId3v2Cover(fs),
+                ".dsf" => ReadDsfCover(fs),
                 //".aiff" or ".aif" => ReadAiffCover(fs),
                 ".wav" => ReadRiffCover(fs),
                 ".flac" => ReadFlacCover(fs),
@@ -73,7 +75,21 @@ public static class AudioCoverReader
         }
     }
 
-    // ── ID3v2 核心解析（MP3 / AIFF / WAV 共用）────────────────────────────────
+    private static byte[] ReadDsfCover(Stream stream)
+    {
+        Span<byte> header = stackalloc byte[28];
+        if (!ReadExact(stream, header) || !header[..4].SequenceEqual("DSD "u8) ||
+            BinaryPrimitives.ReadUInt64LittleEndian(header[4..]) != 28)
+            return Array.Empty<byte>();
+        ulong offset = BinaryPrimitives.ReadUInt64LittleEndian(header[20..]);
+        // ID3 lives after the audio; do not traverse the potentially multi-GB data chunk.
+        if (offset < 28 || stream.Length < 38 || offset > (ulong)(stream.Length - 10))
+            return Array.Empty<byte>();
+        stream.Seek((long)offset, SeekOrigin.Begin);
+        return ReadId3v2Cover(stream);
+    }
+
+    // ── ID3v2 核心解析（MP3 / AIFF / WAV / DSF 共用）───────────────────────────
 
     private static byte[] ReadId3v2Cover(Stream s)
     {

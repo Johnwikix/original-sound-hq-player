@@ -26,6 +26,9 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
     private readonly Dictionary<int, (CancellationTokenSource Cancel, Task Work)> _scans = [];
     private readonly SemaphoreSlim _metadataSlots = new(2, 2);
     private readonly SemaphoreSlim _coverSlot = new(1, 1);
+    // Older readers cached DSF as coverless. Recheck these misses once per bounded working set.
+    // Access is serialized by _coverSlot; never retain artwork or Music instances here.
+    private readonly HashSet<string> _checkedDsfCoverMisses = [];
     private readonly SemaphoreSlim _lyricsSlot = new(1, 1);
     private readonly Dictionary<int, WebDavScanStatus> _statuses = [];
     private readonly Dictionary<int, long> _publishedAt = [];
@@ -248,7 +251,11 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
             string cacheRoot = AppSettings.MusicCoverCache;
             string folder = WebDavCachePaths.Covers(cacheRoot);
             string file = WebDavCachePaths.Cover(cacheRoot, music.ImageHash);
-            if (File.Exists(file) && new FileInfo(file).Length <= 8 * 1024 * 1024) return await File.ReadAllBytesAsync(file, linked.Token).ConfigureAwait(false);
+            bool dsf = music.Extension.Equals(".dsf", StringComparison.OrdinalIgnoreCase);
+            long cachedLength = File.Exists(file) ? new FileInfo(file).Length : -1;
+            if (cachedLength is >= 0 and <= 8 * 1024 * 1024 &&
+                (cachedLength > 0 || !dsf || _checkedDsfCoverMisses.Contains(music.ImageHash)))
+                return await File.ReadAllBytesAsync(file, linked.Token).ConfigureAwait(false);
             var connection = Connect(source);
             byte[] bytes = await Task.Run(() =>
             {
@@ -274,6 +281,11 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
                 // 空文件记录该版本没有封面，避免每次展示都重复发起网络请求。
                 await PlaybackCoverCache.StoreAsync(file, bytes, linked.Token).ConfigureAwait(false);
                 TrimCovers(folder, file);
+                if (dsf && bytes.Length == 0)
+                {
+                    if (_checkedDsfCoverMisses.Count >= 256) _checkedDsfCoverMisses.Clear();
+                    _checkedDsfCoverMisses.Add(music.ImageHash);
+                }
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             { logger.LogWarning(ex, "写入 WebDAV 封面缓存失败"); }
