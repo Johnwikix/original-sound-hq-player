@@ -117,7 +117,7 @@
                 <controls:SettingsExpander x:Uid="AboutCacheExpander">
                     <Button x:Uid="OpenCacheFolderButton" Command="{x:Bind ViewModel.AppViewModel.OpenCoverCacheLocationCommand, Mode=OneWay}" />
                     <controls:SettingsExpander.Items>
-                        <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}">
+                        <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('CacheRootDescription'), Mode=OneWay}">
                             <controls:SettingsCard.Header>
                                 <TextBlock x:Uid="CoverDiskCache" />
                             </controls:SettingsCard.Header>

@@ -2,13 +2,13 @@ using CommunityToolkit.WinUI;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
-using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Security.Credentials;
-using Windows.Storage;
+using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Reader;
 using WinUIMusicPlayer.Services.WebDav;
@@ -31,6 +31,7 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
     private readonly Dictionary<int, long> _publishedAt = [];
     private readonly object _gate = new();
     private AppViewModel? _library;
+    private WebDavCacheSettings _cacheSettings = new();
     public CancellationToken StoppingToken => _stop.Token;
     public event Action<WebDavScanStatus>? StatusChanged;
     public event Action? SourcesChanged;
@@ -41,7 +42,16 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
     {
         _library = library;
         await ApplyCacheSettingsAsync(await database.GetWebDavCacheSettingsAsync(), false);
+        if (!_stop.IsCancellationRequested) library.State.Preferences.PropertyChanged += OnPreferencesChanged;
     }
+
+    private void OnPreferencesChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (!_stop.IsCancellationRequested && e.PropertyName == nameof(AppSettings.MusicCoverCache)) ConfigureCache();
+    }
+
+    private void ConfigureCache() => cache.Configure(_cacheSettings.Enabled, AppSettings.MusicCoverCache,
+        _cacheSettings.LimitGiB * 1024L * 1024 * 1024);
     public async Task StartConfiguredScansAsync()
     {
         foreach (var source in await database.GetWebDavSourcesAsync())
@@ -233,9 +243,9 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
         try
         {
             var (source, track) = await ResolveAsync(music).ConfigureAwait(false);
-            string key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(music.Path + track.ETag + track.Modified + track.Length)));
-            string folder = Path.Combine(ApplicationData.Current.LocalCacheFolder.Path, "WebDavCovers");
-            string file = Path.Combine(folder, key + ".cover");
+            string cacheRoot = AppSettings.MusicCoverCache;
+            string folder = WebDavCachePaths.Covers(cacheRoot);
+            string file = WebDavCachePaths.Cover(cacheRoot, music.ImageHash);
             if (File.Exists(file) && new FileInfo(file).Length <= 8 * 1024 * 1024) return await File.ReadAllBytesAsync(file, linked.Token).ConfigureAwait(false);
             var connection = Connect(source);
             byte[] bytes = await Task.Run(() =>
@@ -256,22 +266,57 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
                     break;
                 }
             }
-            Directory.CreateDirectory(folder);
-            await File.WriteAllBytesAsync(file, bytes, linked.Token).ConfigureAwait(false);
-            TrimCovers(folder);
+            try
+            {
+                // 与详情页按同一个 ImageHash 读写同一文件，发布完整文件后才返回字节。
+                // 空文件记录该版本没有封面，避免每次展示都重复发起网络请求。
+                await PlaybackCoverCache.StoreAsync(file, bytes, linked.Token).ConfigureAwait(false);
+                TrimCovers(folder, file);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            { logger.LogWarning(ex, "写入 WebDAV 封面缓存失败"); }
             return bytes;
         }
         catch (OperationCanceledException) when (linked.IsCancellationRequested) { return []; }
         catch (Exception ex) when (ex is IOException or OperationCanceledException or ArgumentException) { return []; }
         finally { _coverSlot.Release(); }
     }
-    private static void TrimCovers(string folder)
+    private static void TrimCovers(string folder, string currentFile)
     {
-        var files = new DirectoryInfo(folder).GetFiles("*.cover");
+        var files = new DirectoryInfo(folder).GetFiles("*_raw.bin");
         Array.Sort(files, static (a, b) => a.LastWriteTimeUtc.CompareTo(b.LastWriteTimeUtc));
         long size = 0;
         foreach (var file in files) size += file.Length;
-        foreach (var file in files) { if (size <= 256L * 1024 * 1024) break; long bytes = file.Length; file.Delete(); size -= bytes; }
+        foreach (var file in files)
+        {
+            if (size <= 256L * 1024 * 1024) break;
+            if (file.FullName.Equals(currentFile, StringComparison.OrdinalIgnoreCase)) continue;
+            long bytes = file.Length;
+            file.Delete();
+            size -= bytes;
+        }
+    }
+
+    /// <summary>与原图读写互斥，只清封面，不影响音频租约。</summary>
+    public async Task ClearCoverCacheAsync(string cacheRoot)
+    {
+        await _coverSlot.WaitAsync(_stop.Token).ConfigureAwait(false);
+        try
+        {
+            await Task.Run(() =>
+            {
+                string folder = WebDavCachePaths.Covers(cacheRoot);
+                if (!Directory.Exists(folder)) return;
+                foreach (string file in Directory.EnumerateFiles(folder, "*_raw.bin"))
+                {
+                    _stop.Token.ThrowIfCancellationRequested();
+                    try { File.Delete(file); }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    { logger.LogWarning(ex, "清理 WebDAV 封面缓存失败"); }
+                }
+            }, _stop.Token).ConfigureAwait(false);
+        }
+        finally { _coverSlot.Release(); }
     }
     public async Task<string> ReadLyricsAsync(Music music, CancellationToken token)
     {
@@ -302,13 +347,14 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
     public async Task ApplyCacheSettingsAsync(WebDavCacheSettings settings, bool save = true)
     {
         settings.LimitGiB = Math.Clamp(settings.LimitGiB, 1, 1024);
-        string path = string.IsNullOrWhiteSpace(settings.Directory) ? ApplicationData.Current.LocalCacheFolder.Path : settings.Directory;
-        cache.Configure(settings.Enabled, path, settings.LimitGiB * 1024L * 1024 * 1024);
+        _cacheSettings = settings;
+        ConfigureCache();
         if (save) await database.SaveWebDavCacheSettingsAsync(settings);
     }
     public async Task StopAsync()
     {
         _stop.Cancel();
+        if (_library is not null) _library.State.Preferences.PropertyChanged -= OnPreferencesChanged;
         Task[] scans;
         lock (_gate) { scans = new Task[_scans.Count]; int i = 0; foreach (var scan in _scans.Values) scans[i++] = scan.Work; }
         await Task.WhenAll(scans);

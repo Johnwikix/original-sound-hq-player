@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
@@ -24,13 +25,14 @@ public partial class WebDavSourcesViewModel : ObservableObject
     private readonly LibraryQueries _queries;
     private bool _loaded, _loading, _stopped;
     private Task _save = Task.CompletedTask;
+    private Task _sizeRefresh = Task.CompletedTask;
     private readonly System.Threading.SemaphoreSlim _loadGate = new(1, 1);
     public ObservableCollection<WebDavSourceItem> Sources { get; } = [];
     public ObservableCollection<MusicSourceChoice> Choices { get; } = [];
     public string Status { get; private set => SetProperty(ref field, value); } = "";
     public bool CacheEnabled { get; set { if (SetProperty(ref field, value) && !_loading) SaveCache(); } }
     public double CacheLimitGiB { get; set { if (SetProperty(ref field, value) && !_loading) SaveCache(); } } = 10;
-    public string CacheDirectory { get; set { if (SetProperty(ref field, value) && !_loading) SaveCache(); } } = "";
+    public string CacheDirectory => WebDavCachePaths.Root(_app.MusicCoverCache);
     public string CacheSize { get; private set => SetProperty(ref field, value); } = "";
     public MusicSourceChoice? SelectedSource
     {
@@ -78,10 +80,13 @@ public partial class WebDavSourcesViewModel : ObservableObject
             if (!_loaded)
             {
                 var settings = await _database.GetWebDavCacheSettingsAsync();
+                if (_stopped) return;
                 _loading = true;
-                CacheEnabled = settings.Enabled; CacheLimitGiB = settings.LimitGiB; CacheDirectory = settings.Directory;
+                CacheEnabled = settings.Enabled;
+                CacheLimitGiB = settings.LimitGiB;
                 _loading = false;
                 _loaded = true;
+                _app.State.Preferences.PropertyChanged += OnPreferencesChanged;
             }
             await UpdateCacheSizeAsync();
         }
@@ -89,6 +94,18 @@ public partial class WebDavSourcesViewModel : ObservableObject
         finally { _loadGate.Release(); }
     }
     private void OnSourcesChanged() { if (!_stopped) _ = LoadAsync(); }
+    private void OnPreferencesChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (_stopped || e.PropertyName != nameof(AppSettings.MusicCoverCache)) return;
+        OnPropertyChanged(nameof(CacheDirectory));
+        _sizeRefresh = RefreshSizeAfterAsync(_sizeRefresh);
+    }
+    private async Task RefreshSizeAfterAsync(Task previous)
+    {
+        await previous;
+        try { await UpdateCacheSizeAsync(); }
+        catch { if (!_stopped) Status = ToolUtils.GetString("WebDavCacheUnavailable"); }
+    }
     private void OnStatus(WebDavScanStatus status)
     {
         if (_stopped) return;
@@ -113,7 +130,7 @@ public partial class WebDavSourcesViewModel : ObservableObject
     private void SaveCache()
     {
         if (_stopped || !_loaded) return;
-        var snapshot = new WebDavCacheSettings { Enabled = CacheEnabled, Directory = CacheDirectory,
+        var snapshot = new WebDavCacheSettings { Enabled = CacheEnabled,
             LimitGiB = double.IsFinite(CacheLimitGiB) ? Math.Clamp((int)CacheLimitGiB, 1, 1024) : 10 };
         _save = SaveAfterAsync(_save, snapshot);
     }
@@ -139,7 +156,9 @@ public partial class WebDavSourcesViewModel : ObservableObject
         _stopped = true;
         _library.StatusChanged -= OnStatus;
         _library.SourcesChanged -= OnSourcesChanged;
+        _app.State.Preferences.PropertyChanged -= OnPreferencesChanged;
         await _save;
+        await _sizeRefresh;
         await _loadGate.WaitAsync();
         _loadGate.Release();
     }

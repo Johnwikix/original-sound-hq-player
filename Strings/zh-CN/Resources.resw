@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1114,7 +1114,7 @@
     <value>移除文件夹</value>
   </data>
   <data name="CoverDiskCache.Text" xml:space="preserve">
-    <value>封面磁盘缓存</value>
+    <value>缓存位置</value>
   </data>
   <data name="OfficialWebSite.Content" xml:space="preserve">
     <value>官方网址</value>
@@ -1618,7 +1618,7 @@
     <value>缓存</value>
   </data>
   <data name="AboutCacheExpander.Description" xml:space="preserve">
-    <value>封面图片缓存及其存储位置</value>
+    <value>统一管理封面和 WebDAV 的缓存位置</value>
   </data>
   <data name="OpenCacheFolderButton.Content" xml:space="preserve">
     <value>打开缓存文件夹</value>
@@ -2184,7 +2184,7 @@
     <value>WebDAV 播放缓存</value>
   </data>
   <data name="WebDavCacheExpander.Description" xml:space="preserve">
-    <value>按需保存播放过的音乐，管理位置与空间。</value>
+    <value>按需保存播放过的音乐，管理下载开关与空间。</value>
   </data>
   <data name="WebDavCacheToggleLabel" xml:space="preserve">
     <value>播放时自动缓存</value>
@@ -2211,9 +2211,9 @@
     <value>缓存位置</value>
   </data>
   <data name="WebDavCacheLocationCard.Description" xml:space="preserve">
-    <value>留空使用应用缓存目录。</value>
+    <value>跟随上方缓存位置，自动存放在 WebDav 子目录。</value>
   </data>
-  <data name="WebDavCacheLocationLabel" xml:space="preserve">
-    <value>缓存位置</value>
+  <data name="CacheRootDescription" xml:space="preserve">
+    <value>封面与 WebDAV 共用此目录；更改后按需建立缓存，旧文件保留。</value>
   </data>
 </root>

@@ -117,7 +117,7 @@ namespace WinUIMusicPlayer.Controls
 
             if (hasData)
             {
-                string rawPath = ToolUtils.GetRawCachePath(newHash!);
+                string rawPath = ToolUtils.FindRawCachePath(newHash!);
                 if (File.Exists(rawPath))
                 {
                     try

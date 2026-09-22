@@ -2,6 +2,15 @@
 
 新条目加在最上方。
 
+## 2026-09-22 统一 WebDAV 缓存位置并修复播放详情原图
+
+- `Services/WebDavLibraryService.cs`、`Services/WebDav/WebDavCachePaths.cs`、`RemoteAudioCache.cs`：统一使用原有可配置缓存根目录，远程音频和原图分别写入 `WebDav/Audio`、`WebDav/Covers`；缩略图继续共用 `Cache`。取消独立 WebDAV 路径配置，升级及换目录按需重建，旧缓存保留、不批量搬运。
+- `Controls/ImageSwitcher.xaml.cs`、`Behaviors/FadeImageBehavior.cs`、`Utils/ToolUtils.cs`、`Helper/PlaybackCoverCache.cs`：展示与取图按同一标识读取同一份远程原图；临时文件完整发布后才刷新封面，不重复保存原图、不重复请求网络。
+- `Services/CoverPresentationService.cs`、`SettingsActions.cs`、`ViewModel/Pages/WebDavSourcesViewModel.cs`、关于页及六种语言资源：统一入口更改目录，WebDAV 位置只读展示；切换后刷新封面和缓存占用，清理封面包含远程原图，下载音频仍独立清理。
+- `RemoteAudioCache.cs`：换目录使旧写入失效，提交时再次核对代次；旧目录的预留不占用新目录额度，清理新目录不删除旧目录仍在读取的音频。
+- `_tools/LyricsCoverRegression`、`_tools/WebDavRegression`：增加同目录原图解析、完整发布、命中、并发、取消/失败、空封面，以及跨目录额度、提交和活动读取回归。
+- 验证：歌词/封面 27 项、WebDAV 核心 31 项通过，六种语言设置资源检查通过；x64 安装包构建通过。当前运行中的 Release 实例未替换，统一缓存位置及大封面需使用新构建验证界面。
+
 ## 2026-09-22 WebDAV 音乐来源、网络播放与可选缓存
 
 - `Services/WebDav`、`WebDavLibraryService`、`MusicDatabaseService.WebDav`：只读目录同步、稳定来源索引、分批补全标签；FLAC 使用 ATL Stream 跳过封面，其余格式使用有界 FFmpeg 探测，封面优先复用自研读取器。

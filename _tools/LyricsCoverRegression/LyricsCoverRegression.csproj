@@ -14,6 +14,8 @@
     <Compile Include="../../Services/AppLifecycle.cs" Link="AppLifecycle.cs" />
     <Compile Include="../../Services/LyricsSearchCircuitBreaker.cs" Link="LyricsSearchCircuitBreaker.cs" />
     <Compile Include="../../Helper/CoverLoadState.cs" Link="CoverLoadState.cs" />
+    <Compile Include="../../Helper/PlaybackCoverCache.cs" Link="PlaybackCoverCache.cs" />
+    <Compile Include="../../Services/WebDav/WebDavCachePaths.cs" Link="WebDavCachePaths.cs" />
     <Compile Include="../../Helper/DefaultCoverPaletteCache.cs" Link="DefaultCoverPaletteCache.cs" />
     <Compile Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/Impressionist/PaletteResult.cs" Link="PaletteResult.cs" />
   </ItemGroup>

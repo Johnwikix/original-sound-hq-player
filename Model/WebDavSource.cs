@@ -33,11 +33,10 @@ public sealed class RemoteTrack
     public bool Missing { get; set; }
 }
 
-/// <summary>音频缓存独立于封面缓存；缺省关闭。</summary>
+/// <summary>音频缓存缺省关闭，容量独立管理；位置统一使用 MusicCoverCache。</summary>
 public sealed class WebDavCacheSettings
 {
     [PrimaryKey] public int Id { get; set; } = 1;
     public bool Enabled { get; set; }
-    public string Directory { get; set; } = "";
     public int LimitGiB { get; set; } = 10;
 }

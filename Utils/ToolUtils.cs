@@ -450,6 +450,9 @@ namespace WinUIMusicPlayer.Utils
         internal static string GetRawCachePath(string imageHash)
             => Path.Combine(AppSettings.MusicCoverCache, "Cache", $"{imageHash}_raw.bin");
 
+        internal static string FindRawCachePath(string imageHash)
+            => Services.WebDav.WebDavCachePaths.FindCover(AppSettings.MusicCoverCache, imageHash);
+
         private static void DeleteRawCaches(string imageHash)
         {
             try

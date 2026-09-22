@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1115,7 +1115,7 @@
     <value>Ordner entfernen</value>
   </data>
   <data name="CoverDiskCache.Text" xml:space="preserve">
-    <value>Cover-Festplatten-Cache</value>
+    <value>Cache-Speicherort</value>
   </data>
   <data name="OfficialWebSite.Content" xml:space="preserve">
     <value>Offizielle Webseite</value>
@@ -1616,7 +1616,7 @@
     <value>Cache</value>
   </data>
   <data name="AboutCacheExpander.Description" xml:space="preserve">
-    <value>Coverbild-Cache und Speicherort</value>
+    <value>Gemeinsamer Cache-Speicherort für Cover und WebDAV</value>
   </data>
   <data name="OpenCacheFolderButton.Content" xml:space="preserve">
     <value>Cache-Ordner öffnen</value>
@@ -2185,7 +2185,7 @@
     <value>WebDAV-Wiedergabecache</value>
   </data>
   <data name="WebDavCacheExpander.Description" xml:space="preserve">
-    <value>Musik beim Abspielen speichern und Speicherort und Größe verwalten.</value>
+    <value>Musik beim Abspielen speichern und Downloads und Speicherplatz verwalten.</value>
   </data>
   <data name="WebDavCacheToggleLabel" xml:space="preserve">
     <value>Musik beim Abspielen zwischenspeichern</value>
@@ -2212,9 +2212,9 @@
     <value>Cache-Speicherort</value>
   </data>
   <data name="WebDavCacheLocationCard.Description" xml:space="preserve">
-    <value>Leer lassen, um den Cache-Ordner der App zu verwenden.</value>
+    <value>Verwendet den Unterordner WebDav am oben gewählten Cache-Speicherort.</value>
   </data>
-  <data name="WebDavCacheLocationLabel" xml:space="preserve">
-    <value>Cache-Speicherort</value>
+  <data name="CacheRootDescription" xml:space="preserve">
+    <value>Cover und WebDAV nutzen diesen Ordner. Nach einer Änderung wird der Cache bei Bedarf aufgebaut; vorhandene Dateien bleiben erhalten.</value>
   </data>
 </root>

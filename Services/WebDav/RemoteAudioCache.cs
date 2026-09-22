@@ -28,7 +28,7 @@ public sealed class RemoteAudioCache
     {
         lock (_gate)
         {
-            string directory = Path.Combine(Path.GetFullPath(parent), "WebDavAudio");
+            string directory = WebDavCachePaths.Audio(parent);
             if (!string.Equals(directory, _directory, StringComparison.OrdinalIgnoreCase)) _generation++;
             _enabled = enabled;
             _directory = directory;
@@ -67,7 +67,8 @@ public sealed class RemoteAudioCache
                     used += file.Length;
                     if (!_active.Contains(path)) files.Add(file);
                 }
-                foreach (long bytes in _reserved.Values) used += bytes;
+                foreach (var reservation in _reserved)
+                    if (IsInCurrentDirectory(reservation.Key)) used += reservation.Value;
                 files.Sort(static (a, b) => a.LastWriteTimeUtc.CompareTo(b.LastWriteTimeUtc));
                 foreach (var file in files)
                 {
@@ -107,6 +108,20 @@ public sealed class RemoteAudioCache
         // 关闭自动下载不丢弃已经完整写入的数据；清理、换目录仍使旧租约失效。
         lock (_gate) return generation == _generation && length <= _limit && !_deleteOnRelease.Contains(file);
     }
+
+    private bool IsInCurrentDirectory(string file)
+        => string.Equals(Path.GetDirectoryName(file), _directory, StringComparison.OrdinalIgnoreCase);
+
+    private bool Commit(string partial, string complete, int generation, long length)
+    {
+        lock (_gate)
+        {
+            // 关闭文件与提交之间仍可能切换目录/清理，必须在同一锁内复查并发布。
+            if (!CanCommit(complete, generation, length)) return false;
+            File.Move(partial, complete, true);
+            return true;
+        }
+    }
     public long GetSize()
     {
         lock (_gate)
@@ -124,7 +139,8 @@ public sealed class RemoteAudioCache
         {
             if (!Directory.Exists(_directory)) return;
             _generation++;
-            foreach (string path in _active) _deleteOnRelease.Add(path);
+            foreach (string path in _active)
+                if (IsInCurrentDirectory(path)) _deleteOnRelease.Add(path);
             foreach (string path in Directory.EnumerateFiles(_directory, "*.audio"))
                 if (!_active.Contains(path)) File.Delete(path);
         }
@@ -231,7 +247,7 @@ public sealed class RemoteAudioCache
                 lock (_gate) full = full && _ranges.Count == 1 && _ranges[0] == (0, _length);
                 if (full) _file.Flush(true);
                 await _file.DisposeAsync().ConfigureAwait(false);
-                if (full) { File.Move(_partialPath, _completePath, true); IsComplete = true; }
+                if (full) IsComplete = _owner.Commit(_partialPath, _completePath, _generation, _length);
             }
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }

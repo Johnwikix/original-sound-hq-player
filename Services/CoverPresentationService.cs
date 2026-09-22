@@ -141,6 +141,12 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
     {
         if (e.PropertyName is nameof(state.Preferences.IsDarkMode) or nameof(state.Preferences.PaletteAlgorithm))
             _ = RefreshDefaultPaletteAsync();
+        else if (e.PropertyName == nameof(state.Preferences.MusicCoverCache) && state.Playback.CurrentPlayingMusic is { } music)
+        {
+            // 根目录切换后，即使歌曲标识不变，也要重新取得原图并刷新展示控件。
+            state.Presentation.LyricPageBackgroundHash = "";
+            _ = UpdatePlayBar(music);
+        }
     }
 
     // UI 线程捕获状态；解码在后台，发布前再次核对，避免旧主题/旧歌曲覆盖当前结果。

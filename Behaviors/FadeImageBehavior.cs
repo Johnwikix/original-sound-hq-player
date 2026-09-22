@@ -145,7 +145,7 @@ namespace WinUIMusicPlayer.Behaviors
 
                         if (source is null)
                         {
-                            string rawPath = ToolUtils.GetRawCachePath(hash);
+                            string rawPath = ToolUtils.FindRawCachePath(hash);
                             if (File.Exists(rawPath))
                             {
                                 byte[] rawBytes = await File.ReadAllBytesAsync(rawPath, token);

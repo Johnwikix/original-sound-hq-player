@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1115,7 +1115,7 @@
     <value>Quitar carpeta</value>
   </data>
   <data name="CoverDiskCache.Text" xml:space="preserve">
-    <value>Caché de disco de portada</value>
+    <value>Ubicación de la caché</value>
   </data>
   <data name="OfficialWebSite.Content" xml:space="preserve">
     <value>OfficialWebSite</value>
@@ -1616,7 +1616,7 @@
     <value>Caché</value>
   </data>
   <data name="AboutCacheExpander.Description" xml:space="preserve">
-    <value>Caché de imágenes de portada y ubicación de almacenamiento</value>
+    <value>Ubicación de caché compartida para portadas y WebDAV</value>
   </data>
   <data name="OpenCacheFolderButton.Content" xml:space="preserve">
     <value>Abrir carpeta de caché</value>
@@ -2185,7 +2185,7 @@
     <value>Caché de reproducción WebDAV</value>
   </data>
   <data name="WebDavCacheExpander.Description" xml:space="preserve">
-    <value>Guarda música al reproducirla y gestiona su ubicación y tamaño.</value>
+    <value>Guarda música al reproducirla y gestiona las descargas y el espacio.</value>
   </data>
   <data name="WebDavCacheToggleLabel" xml:space="preserve">
     <value>Guardar en caché al reproducir</value>
@@ -2212,9 +2212,9 @@
     <value>Ubicación de caché</value>
   </data>
   <data name="WebDavCacheLocationCard.Description" xml:space="preserve">
-    <value>Deja vacío para usar la carpeta de caché de la aplicación.</value>
+    <value>Usa la subcarpeta WebDav de la ubicación de caché indicada arriba.</value>
   </data>
-  <data name="WebDavCacheLocationLabel" xml:space="preserve">
-    <value>Ubicación de caché</value>
+  <data name="CacheRootDescription" xml:space="preserve">
+    <value>Las portadas y WebDAV comparten esta carpeta. Al cambiarla, la caché se crea según se necesita y se conservan los archivos anteriores.</value>
   </data>
 </root>

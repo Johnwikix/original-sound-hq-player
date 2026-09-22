@@ -72,7 +72,7 @@ internal static class Regression
             sequential.Start();
             Check((await http.GetByteArrayAsync(sequential.Location)).AsSpan().SequenceEqual(fixture.Bytes), "no Range server uses bounded sequential streaming");
         }
-        Check(!Directory.EnumerateFiles(Path.Combine(temp, "WebDavAudio"), "*.part").Any(), "session cleanup leaves no partial files");
+        Check(!Directory.EnumerateFiles(WebDavCachePaths.Audio(temp), "*.part").Any(), "session cleanup leaves no partial files");
         cache.Configure(true, temp, 32L * 1024 * 1024);
         var small = item with { Length = 65550 };
         await using (var pending = cache.Acquire("toggle-commit", small)!)
@@ -89,6 +89,58 @@ internal static class Regression
         cache.Clear();
         cache.Configure(true, temp, 32L * 1024 * 1024);
         Check(cache.Acquire("weak", small with { ETag = "W/\"v1\"" }) is null, "weak version does not create persistent range cache");
+        await CheckCacheDirectoriesAsync(temp);
+    }
+
+    private static async Task CheckCacheDirectoriesAsync(string temp)
+    {
+        string first = Path.Combine(temp, "first");
+        string second = Path.Combine(temp, "second");
+        var cache = new RemoteAudioCache();
+        var entry = new WebDavEntry("/dav/small.flac", "small.flac", false, 1024, "\"v1\"", null);
+        byte[] bytes = new byte[1024];
+        new Random(31).NextBytes(bytes);
+        cache.Configure(true, first, entry.Length);
+        var old = cache.Acquire("same-resource", entry)!;
+        Check(old.TryWrite(0, bytes), "first directory accepts bounded cache write");
+        cache.Configure(true, second, entry.Length);
+        Check(!old.CanWrite, "changing cache root invalidates old writer");
+        await using (var current = cache.Acquire("same-resource", entry))
+            Check(current is not null && current.TryWrite(0, bytes), "old directory reservations do not consume new directory capacity");
+        await old.DisposeAsync();
+        Check(!Directory.EnumerateFiles(WebDavCachePaths.Audio(first)).Any(), "old writer cannot publish after directory switch and removes partial file");
+
+        string completePath;
+        await using (var complete = cache.Acquire("same-resource", entry))
+        {
+            Check(complete?.IsComplete == true, "new root publishes complete audio");
+            completePath = complete!.CompletePath!;
+            Check(Path.GetDirectoryName(completePath) == WebDavCachePaths.Audio(second)
+                && File.ReadAllBytes(completePath).AsSpan().SequenceEqual(bytes), "audio lives under configured root/WebDav/Audio");
+            cache.Configure(true, first, entry.Length);
+            cache.Clear();
+            var result = new byte[1024];
+            Check(await complete.ReadAsync(result, 0, default) == result.Length && result.AsSpan().SequenceEqual(bytes),
+                "switching roots and clearing new root preserves old active reader");
+        }
+        Check(File.Exists(completePath), "clearing new root does not delete old root audio on lease release");
+        cache.Configure(true, second, entry.Length);
+        string cover = WebDavCachePaths.Cover(second, "fixture");
+        Directory.CreateDirectory(Path.GetDirectoryName(cover)!);
+        File.WriteAllBytes(cover, bytes);
+        string unrelated = Path.Combine(second, "keep.txt");
+        File.WriteAllText(unrelated, "keep");
+        cache.Clear();
+        Check(cache.GetSize() == 0 && File.Exists(cover) && File.Exists(unrelated), "audio cleanup preserves covers and other root files");
+        File.Delete(cover);
+        File.Delete(unrelated);
+        Directory.Delete(WebDavCachePaths.Covers(second));
+        Directory.Delete(WebDavCachePaths.Audio(second));
+        Directory.Delete(WebDavCachePaths.Root(second));
+        Directory.Delete(second);
+        Directory.Delete(WebDavCachePaths.Audio(first));
+        Directory.Delete(WebDavCachePaths.Root(first));
+        Directory.Delete(first);
     }
 
     private static void CheckCoverStream()

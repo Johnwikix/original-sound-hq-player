@@ -8,6 +8,7 @@ using WinUIMusicPlayer.WebService;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Services;
 using AnimatedWin2dControls.Impressionist;
+using WinUIMusicPlayer.Services.WebDav;
 
 const string qqSong = """
 {"code":0,"req_1":{"code":0,"data":{"code":0,"body":{"song":{"list":[{"id":"1","mid":"test","title":"Test Song","interval":180,"singer":[{"name":"Test Artist"}],"album":{"title":"Test Album","mid":"album"}}]}}}}}
@@ -252,6 +253,77 @@ await Run("缓存失败和取消不会污染后续加载", async () =>
     try { await cache.GetAsync(false, PaletteAlgorithm.KMeansPP, cts.Token); throw new Exception("未传播取消"); }
     catch (OperationCanceledException) { }
     Check(await cache.GetAsync(false, PaletteAlgorithm.KMeansPP, default) is not null && loads == 2);
+});
+await Run("播放原图缓存完整发布、命中不重写且不修改输入", async () =>
+{
+    string root = Path.Combine(Path.GetTempPath(), "playback-cover-" + Guid.NewGuid().ToString("N"));
+    string path = Path.Combine(root, "remote-version_raw.bin");
+    byte[] bytes = new byte[262144];
+    new Random(42).NextBytes(bytes);
+    await PlaybackCoverCache.StoreAsync(path, bytes, default);
+    Check(File.ReadAllBytes(path).AsSpan().SequenceEqual(bytes));
+    DateTime stamp = new(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+    File.SetLastWriteTimeUtc(path, stamp);
+    await PlaybackCoverCache.StoreAsync(path, bytes, default);
+    Check(File.GetLastWriteTimeUtc(path) == stamp);
+    Check(!Directory.EnumerateFiles(root, "*.part").Any());
+    File.Delete(path);
+    Directory.Delete(root);
+});
+await Run("播放原图缓存并发发布相同版本保持完整", async () =>
+{
+    string root = Path.Combine(Path.GetTempPath(), "playback-cover-" + Guid.NewGuid().ToString("N"));
+    string path = Path.Combine(root, "shared_raw.bin");
+    byte[] bytes = new byte[262144];
+    new Random(43).NextBytes(bytes);
+    await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => PlaybackCoverCache.StoreAsync(path, bytes, default)));
+    Check(File.ReadAllBytes(path).AsSpan().SequenceEqual(bytes));
+    Check(!Directory.EnumerateFiles(root, "*.part").Any());
+    File.Delete(path);
+    Directory.Delete(root);
+});
+await Run("播放原图缓存取消或发布失败不留下半成品", async () =>
+{
+    string root = Path.Combine(Path.GetTempPath(), "playback-cover-" + Guid.NewGuid().ToString("N"));
+    string path = Path.Combine(root, "blocked_raw.bin");
+    using var cancel = new CancellationTokenSource();
+    cancel.Cancel();
+    try { await PlaybackCoverCache.StoreAsync(path, new byte[64], cancel.Token); throw new Exception("未传播取消"); }
+    catch (OperationCanceledException) { }
+    Check(!Directory.Exists(root));
+    Directory.CreateDirectory(path); // 实际文件系统发布失败，不能把临时文件留作成功结果。
+    try { await PlaybackCoverCache.StoreAsync(path, new byte[64], default); throw new Exception("未传播写入失败"); }
+    catch (IOException) { }
+    catch (UnauthorizedAccessException) { }
+    Check(!Directory.EnumerateFiles(root, "*.part").Any() && !File.Exists(path));
+    Directory.Delete(path);
+    Directory.Delete(root);
+});
+await Run("WebDAV 原图与详情读取共用自定义目录，不复制本地原图缓存", async () =>
+{
+    string root = Path.Combine(Path.GetTempPath(), "unified-cover-" + Guid.NewGuid().ToString("N"));
+    string path = WebDavCachePaths.Cover(root, "remote-version");
+    Check(path == Path.Combine(root, "WebDav", "Covers", "remote-version_raw.bin"));
+    byte[] bytes = new byte[1024];
+    new Random(44).NextBytes(bytes);
+    await PlaybackCoverCache.StoreAsync(path, bytes, default);
+    Check(WebDavCachePaths.FindCover(root, "remote-version") == path);
+    Check(File.ReadAllBytes(WebDavCachePaths.FindCover(root, "remote-version")).AsSpan().SequenceEqual(bytes));
+    Check(!Directory.Exists(Path.Combine(root, "Cache")));
+    Check(WebDavCachePaths.FindCover(root, "local-hash") == Path.Combine(root, "Cache", "local-hash_raw.bin"));
+    File.Delete(path);
+    Directory.Delete(WebDavCachePaths.Covers(root));
+    Directory.Delete(WebDavCachePaths.Root(root));
+    Directory.Delete(root);
+});
+await Run("远程版本无封面时完整保存空结果，避免重复请求", async () =>
+{
+    string root = Path.Combine(Path.GetTempPath(), "empty-cover-" + Guid.NewGuid().ToString("N"));
+    string path = Path.Combine(root, "empty_raw.bin");
+    await PlaybackCoverCache.StoreAsync(path, ReadOnlyMemory<byte>.Empty, default);
+    Check(File.Exists(path) && new FileInfo(path).Length == 0);
+    File.Delete(path);
+    Directory.Delete(root);
 });
 return failed == 0 ? 0 : 1;
 

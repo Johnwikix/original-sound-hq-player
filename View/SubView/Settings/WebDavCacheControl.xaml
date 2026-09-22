@@ -18,7 +18,7 @@
                 </StackPanel>
             </controls:SettingsCard>
             <controls:SettingsCard x:Uid="WebDavCacheLocationCard">
-                <TextBox Width="300" Text="{x:Bind ViewModel.CacheDirectory, Mode=TwoWay}" AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('WebDavCacheLocationLabel')}" />
+                <TextBlock MaxWidth="300" Text="{x:Bind ViewModel.CacheDirectory, Mode=OneWay}" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
             </controls:SettingsCard>
             <controls:SettingsCard x:Uid="WebDavCacheCleanupCard">
                 <Button x:Uid="WebDavClearCacheButton" Command="{x:Bind ViewModel.ClearCacheCommand}" />

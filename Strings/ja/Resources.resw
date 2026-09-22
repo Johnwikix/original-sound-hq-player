@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1115,7 +1115,7 @@
     <value>フォルダーを削除</value>
   </data>
   <data name="CoverDiskCache.Text" xml:space="preserve">
-    <value>カバーディスクキャッシュ</value>
+    <value>キャッシュの保存先</value>
   </data>
   <data name="OfficialWebSite.Content" xml:space="preserve">
     <value>公式サイト</value>
@@ -1616,7 +1616,7 @@
     <value>キャッシュ</value>
   </data>
   <data name="AboutCacheExpander.Description" xml:space="preserve">
-    <value>カバー画像のキャッシュとその保存場所</value>
+    <value>カバーと WebDAV の共通キャッシュ保存先</value>
   </data>
   <data name="OpenCacheFolderButton.Content" xml:space="preserve">
     <value>キャッシュフォルダーを開く</value>
@@ -2185,7 +2185,7 @@
     <value>WebDAV 再生キャッシュ</value>
   </data>
   <data name="WebDavCacheExpander.Description" xml:space="preserve">
-    <value>再生中の音楽を保存し、保存先と容量を管理します。</value>
+    <value>再生中の音楽を保存し、ダウンロードと容量を管理します。</value>
   </data>
   <data name="WebDavCacheToggleLabel" xml:space="preserve">
     <value>再生中にキャッシュする</value>
@@ -2212,9 +2212,9 @@
     <value>キャッシュの保存先</value>
   </data>
   <data name="WebDavCacheLocationCard.Description" xml:space="preserve">
-    <value>空欄の場合はアプリのキャッシュフォルダーを使用します。</value>
+    <value>上で指定したキャッシュ保存先の WebDav サブフォルダーを使用します。</value>
   </data>
-  <data name="WebDavCacheLocationLabel" xml:space="preserve">
-    <value>キャッシュの保存先</value>
+  <data name="CacheRootDescription" xml:space="preserve">
+    <value>カバーと WebDAV で共通のフォルダーを使います。変更後は必要に応じてキャッシュを作成し、以前のファイルは保持します。</value>
   </data>
 </root>

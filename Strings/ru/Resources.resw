@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!-- 
     Microsoft ResX Schema 
@@ -1115,7 +1115,7 @@
     <value>Удалить папку</value>
   </data>
   <data name="CoverDiskCache.Text" xml:space="preserve">
-    <value>Кэш на диске обложки</value>
+    <value>Расположение кэша</value>
   </data>
   <data name="OfficialWebSite.Content" xml:space="preserve">
     <value>Официальный сайт</value>
@@ -1616,7 +1616,7 @@
     <value>Кэш</value>
   </data>
   <data name="AboutCacheExpander.Description" xml:space="preserve">
-    <value>Кэш обложек и место его хранения</value>
+    <value>Общее расположение кэша обложек и WebDAV</value>
   </data>
   <data name="OpenCacheFolderButton.Content" xml:space="preserve">
     <value>Открыть папку кэша</value>
@@ -2185,7 +2185,7 @@
     <value>Кэш воспроизведения WebDAV</value>
   </data>
   <data name="WebDavCacheExpander.Description" xml:space="preserve">
-    <value>Сохраняйте музыку при воспроизведении и управляйте размещением и размером.</value>
+    <value>Сохраняйте музыку при воспроизведении и управляйте загрузками и местом.</value>
   </data>
   <data name="WebDavCacheToggleLabel" xml:space="preserve">
     <value>Кэшировать при воспроизведении</value>
@@ -2212,9 +2212,9 @@
     <value>Расположение кэша</value>
   </data>
   <data name="WebDavCacheLocationCard.Description" xml:space="preserve">
-    <value>Оставьте пустым, чтобы использовать папку кэша приложения.</value>
+    <value>Используется подпапка WebDav в расположении кэша, указанном выше.</value>
   </data>
-  <data name="WebDavCacheLocationLabel" xml:space="preserve">
-    <value>Расположение кэша</value>
+  <data name="CacheRootDescription" xml:space="preserve">
+    <value>Обложки и WebDAV используют эту папку. После изменения кэш создаётся по мере необходимости, прежние файлы сохраняются.</value>
   </data>
 </root>
