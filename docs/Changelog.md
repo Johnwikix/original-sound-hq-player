@@ -2,6 +2,17 @@
 
 新条目加在最上方。
 
+## 2026-09-22 WebDAV 音乐来源、网络播放与可选缓存
+
+- `Services/WebDav`、`WebDavLibraryService`、`MusicDatabaseService.WebDav`：只读目录同步、稳定来源索引、分批补全标签；FLAC 使用 ATL Stream 跳过封面，其余格式使用有界 FFmpeg 探测，封面优先复用自研读取器。
+- `RemotePlaybackService`、`PlaybackCoordinator`、`IpcService`：连接现有 StreamingClient，主程序管理鉴权与 loopback 桥接、暂停/定位/切换和资源收尾；完整音频缓存可复用，自动下载默认关闭、10 GiB 上限。
+- `View/AddFolderPage`、`WebDavSourcesControl`：统一音乐来源标题、添加菜单及本地/WebDAV 卡片样式；音乐库增加来源筛选，歌曲/收藏/歌单/分组列表增加来源图标列。
+- `View/MainPage`、`View/SubView/Settings/AboutSettingsControl`：网络标识放到播放栏歌曲信息与音频格式同一行，状态以提示显示；缓存设置放到关于页的可展开卡片，不增加独立设置分类。
+- `Model/Music`、相关详情/转换/导出入口：远程文件只读，收藏、歌单、统计继续使用统一 Music.Id；本地扫描不清理远程记录，相同专辑名按来源区分。
+- `Strings/*/Resources.resw`：新增界面与错误信息覆盖六种语言，程序取词采用独立资源键。
+- `Player/AudioPlayer.exe`、`TrimmerRoots.xml`、项目文件：更新 NativeAOT 播放器，避免远程结束重复走旧通知；保留 SQLite 模型与命名管道依赖供裁剪后的应用使用。
+- 验证：x64 安装包构建成功；OpenList 实际 224 首元数据通过；WebDAV 核心 22 项、网络播放器 39 项、本地切换 281 项、共享曲库和歌词封面回归通过；实际界面验证来源添加、扫描、播放/暂停和约 33 MiB 缓存落盘。NAS、广域网与近 100 GB 长时间负载尚未验证，性能测量范围见设计文档第 14 节。
+
 ## 2026-09-21 移除 Atmos / 5.1 状态卡的“恢复普通播放”按钮
 
 - `View/SubView/Settings/GeneralSettingsControl.xaml`：删除 Atmos 直通与 5.1 环绕状态提示条上的按钮及随之失去意义的 `ContentAlignment="Right"`，状态文本保留，关闭功能直接用各卡片自身的 toggle。

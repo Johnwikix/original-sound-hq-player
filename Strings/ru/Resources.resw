@@ -2006,4 +2006,215 @@
   <data name="RemoveExternalImportsTitle" xml:space="preserve">
     <value>Удалить все внешние импортированные композиции?</value>
   </data>
+  <data name="WebDavAllSources" xml:space="preserve">
+    <value>Все источники</value>
+  </data>
+  <data name="WebDavLocalSources" xml:space="preserve">
+    <value>Локальные</value>
+  </data>
+  <data name="WebDavOpening" xml:space="preserve">
+    <value>Открытие удалённого трека…</value>
+  </data>
+  <data name="WebDavBuffering" xml:space="preserve">
+    <value>Буферизация…</value>
+  </data>
+  <data name="WebDavReady" xml:space="preserve">
+    <value>Готово</value>
+  </data>
+  <data name="WebDavPlaying" xml:space="preserve">
+    <value>Потоковое воспроизведение</value>
+  </data>
+  <data name="WebDavPaused" xml:space="preserve">
+    <value>Приостановлено</value>
+  </data>
+  <data name="WebDavEnded" xml:space="preserve">
+    <value>Воспроизведение завершено</value>
+  </data>
+  <data name="WebDavStopped" xml:space="preserve">
+    <value>Остановлено</value>
+  </data>
+  <data name="WebDavFailed" xml:space="preserve">
+    <value>Ошибка подключения; можно повторить</value>
+  </data>
+  <data name="WebDavScanning" xml:space="preserve">
+    <value>Обновление каталогов</value>
+  </data>
+  <data name="WebDavMetadata" xml:space="preserve">
+    <value>Чтение сведений о треках</value>
+  </data>
+  <data name="WebDavCompleted" xml:space="preserve">
+    <value>Обновление завершено</value>
+  </data>
+  <data name="WebDavCancelled" xml:space="preserve">
+    <value>Сканирование приостановлено</value>
+  </data>
+  <data name="WebDavScanSummary" xml:space="preserve">
+    <value>{0} · найдено: {1} · обработано: {2}</value>
+  </data>
+  <data name="WebDavConnecting" xml:space="preserve">
+    <value>Подключение…</value>
+  </data>
+  <data name="WebDavConnected" xml:space="preserve">
+    <value>Доступ к каталогу проверен. Выберите папки с музыкой.</value>
+  </data>
+  <data name="WebDavEntireRoot" xml:space="preserve">
+    <value>Весь корневой каталог</value>
+  </data>
+  <data name="WebDavTestFirst" xml:space="preserve">
+    <value>Сначала проверьте адрес и учётную запись подключением.</value>
+  </data>
+  <data name="WebDavChooseFolder" xml:space="preserve">
+    <value>Выберите хотя бы одну папку.</value>
+  </data>
+  <data name="WebDavRemoveConfirm" xml:space="preserve">
+    <value>Удалить источник и записи медиатеки? Удалённые файлы сохранятся.</value>
+  </data>
+  <data name="WebDavReadOnly" xml:space="preserve">
+    <value>Удалённые файлы доступны только для чтения. Запись тегов и локальные операции недоступны.</value>
+  </data>
+  <data name="WebDavBrowserHint" xml:space="preserve">
+    <value>Откройте папку или выберите проиндексированный трек.</value>
+  </data>
+  <data name="WebDavIndexFirst" xml:space="preserve">
+    <value>Сначала обновите источник, чтобы добавить трек в медиатеку.</value>
+  </data>
+  <data name="WebDavCacheUnavailable" xml:space="preserve">
+    <value>Кэш недоступен. Потоковое воспроизведение доступно.</value>
+  </data>
+  <data name="WebDavErrorConnectionFailed" xml:space="preserve">
+    <value>Не удалось прочитать удалённый ресурс. Проверьте подключение.</value>
+  </data>
+  <data name="WebDavAuthenticationError" xml:space="preserve">
+    <value>Неверные учётные данные или права. Измените источник.</value>
+  </data>
+  <data name="WebDavAddressError" xml:space="preserve">
+    <value>Введите действительный HTTP(S)-адрес WebDAV. Перенаправления должны быть разрешены.</value>
+  </data>
+  <data name="WebDavNameError" xml:space="preserve">
+    <value>Введите уникальное имя источника.</value>
+  </data>
+  <data name="WebDavMissingError" xml:space="preserve">
+    <value>Источник отключён или трек удалён. Обновите источник.</value>
+  </data>
+  <data name="WebDavChangedError" xml:space="preserve">
+    <value>Удалённый файл изменён. Обновите источник и повторите воспроизведение.</value>
+  </data>
+  <data name="WebDavRangeError" xml:space="preserve">
+    <value>Ресурс не поддерживает диапазоны; перемотка и чтение тегов могут быть недоступны.</value>
+  </data>
+  <data name="WebDavConnectionDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Сохранить и сканировать</value>
+  </data>
+  <data name="WebDavConnectionDialog.CloseButtonText" xml:space="preserve">
+    <value>Отмена</value>
+  </data>
+  <data name="WebDavConnectionHelp.Text" xml:space="preserve">
+    <value>Поддерживаются NAS и OpenList/AList. Только чтение; HTTP не зашифрован. Для анонимного доступа оставьте учётную запись пустой.</value>
+  </data>
+  <data name="WebDavName.Header" xml:space="preserve">
+    <value>Имя источника</value>
+  </data>
+  <data name="WebDavAddress.Header" xml:space="preserve">
+    <value>Адрес WebDAV</value>
+  </data>
+  <data name="WebDavUserName.Header" xml:space="preserve">
+    <value>Имя пользователя</value>
+  </data>
+  <data name="WebDavPassword.Header" xml:space="preserve">
+    <value>Пароль (оставьте пустым при редактировании, чтобы сохранить)</value>
+  </data>
+  <data name="WebDavConnectButton.Content" xml:space="preserve">
+    <value>Подключиться и выбрать папки</value>
+  </data>
+  <data name="WebDavReadMetadata.Content" xml:space="preserve">
+    <value>Читать сведения о треках в фоне</value>
+  </data>
+  <data name="WebDavScanOnStartup.Content" xml:space="preserve">
+    <value>Обновлять каталоги при запуске</value>
+  </data>
+  <data name="WebDavSourceEnabled.Content" xml:space="preserve">
+    <value>Включить источник</value>
+  </data>
+<data name="WebDavBrowseButton.Content" xml:space="preserve">
+    <value>Обзор</value>
+  </data>
+<data name="WebDavPauseButton.Content" xml:space="preserve">
+    <value>Приостановить сканирование</value>
+  </data>
+<data name="WebDavRemoveButton.Content" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="WebDavBrowserDialog.CloseButtonText" xml:space="preserve">
+    <value>Закрыть</value>
+  </data>
+  <data name="WebDavUpButton.Content" xml:space="preserve">
+    <value>Родительская папка</value>
+  </data>
+<data name="WebDavCacheTitle.Text" xml:space="preserve">
+    <value>Кэш воспроизведения WebDAV</value>
+  </data>
+  <data name="WebDavCacheCard.Header" xml:space="preserve">
+    <value>Кэшировать при воспроизведении</value>
+  </data>
+<data name="WebDavCacheHelp.Text" xml:space="preserve">
+    <value>Кэшируется исходное аудио. При достижении лимита старые записи удаляются. Отключение прекращает загрузку; готовый кэш остаётся доступным.</value>
+  </data>
+  <data name="WebDavClearCacheButton.Content" xml:space="preserve">
+    <value>Очистить кэш</value>
+  </data>
+  <data name="MusicSources.Text" xml:space="preserve"><value>Источники музыки</value></data>
+  <data name="WebDavPauseMenu.Text" xml:space="preserve"><value>Приостановить сканирование</value></data>
+  <data name="WebDavEditMenu.Text" xml:space="preserve"><value>Изменить</value></data>
+  <data name="WebDavRemoveMenu.Text" xml:space="preserve"><value>Удалить</value></data>
+  <data name="MusicSourcesSubtitle.Text" xml:space="preserve">
+    <value>Управляйте локальными папками и сетевой музыкой в одной медиатеке.</value>
+  </data>
+  <data name="MusicSourcesAdd" xml:space="preserve">
+    <value>Добавить источник</value>
+  </data>
+  <data name="MusicSourcesLocal" xml:space="preserve">
+    <value>Локальные папки</value>
+  </data>
+  <data name="MusicSourcesLocalEmpty.Text" xml:space="preserve">
+    <value>Добавьте локальную папку или перетащите её сюда.</value>
+  </data>
+  <data name="WebDavSourcesEmpty.Text" xml:space="preserve">
+    <value>Подключите папки с музыкой на NAS, OpenList или другом сервере WebDAV.</value>
+  </data>
+  <data name="WebDavCacheExpander.Header" xml:space="preserve">
+    <value>Кэш воспроизведения WebDAV</value>
+  </data>
+  <data name="WebDavCacheExpander.Description" xml:space="preserve">
+    <value>Сохраняйте музыку при воспроизведении и управляйте размещением и размером.</value>
+  </data>
+  <data name="WebDavCacheToggleLabel" xml:space="preserve">
+    <value>Кэшировать при воспроизведении</value>
+  </data>
+  <data name="WebDavCacheLimitLabel" xml:space="preserve">
+    <value>Лимит кэша (GiB)</value>
+  </data>
+  <data name="WebDavCacheCleanupCard.Header" xml:space="preserve">
+    <value>Очистить загруженное аудио</value>
+  </data>
+  <data name="WebDavMoreAction" xml:space="preserve">
+    <value>Другие действия</value>
+  </data>
+  <data name="WebDavSongsAction" xml:space="preserve">
+    <value>Треки</value>
+  </data>
+  <data name="WebDavBrowseAction" xml:space="preserve">
+    <value>Обзор</value>
+  </data>
+  <data name="WebDavScanAction" xml:space="preserve">
+    <value>Обновить</value>
+  </data>
+  <data name="WebDavCacheLocationCard.Header" xml:space="preserve">
+    <value>Расположение кэша</value>
+  </data>
+  <data name="WebDavCacheLocationCard.Description" xml:space="preserve">
+    <value>Оставьте пустым, чтобы использовать папку кэша приложения.</value>
+  </data>
+  <data name="WebDavCacheLocationLabel" xml:space="preserve">
+    <value>Расположение кэша</value>
+  </data>
 </root>

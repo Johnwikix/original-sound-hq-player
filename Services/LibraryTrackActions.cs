@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -38,6 +39,19 @@ public sealed class LibraryTrackActions(AppState state, MusicDatabaseService dat
     public Task RescanAsync(Music music)
     {
         if (!state.Lifecycle.IsReady || string.IsNullOrEmpty(music?.FolderPath)) return Task.CompletedTask;
+        if (music.IsRemote)
+            return tasks.RunAsync(async token =>
+            {
+                try
+                {
+                    var library = App.Services.GetRequiredService<WebDavLibraryService>();
+                    var (source, _) = await library.ResolveAsync(music);
+                    token.ThrowIfCancellationRequested();
+                    await library.ScanAsync(source);
+                }
+                catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+                catch { state.Shell.InfoBarMessage = ToolUtils.GetString("WebDavErrorConnectionFailed"); state.Shell.InfoBarIsOpen = true; }
+            });
         string path = music.FolderPath;
         return tasks.RunAsync(async token =>
         {

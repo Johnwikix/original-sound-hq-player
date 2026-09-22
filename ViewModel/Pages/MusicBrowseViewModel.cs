@@ -29,6 +29,7 @@ namespace WinUIMusicPlayer.ViewModel
 {
     public partial class MusicBrowseViewModel : ObservableObject, IDisposable
     {
+        public WebDavSourcesViewModel RemoteSources => App.Services.GetRequiredService<WebDavSourcesViewModel>();
 
         public SelectorBarItem SelectedPage
         {

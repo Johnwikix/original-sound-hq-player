@@ -76,6 +76,11 @@ namespace WinUIMusicPlayer.Services
                 {
                     _dbConnection = new SQLiteAsyncConnection(DbPath);
                     await _dbConnection.CreateTableAsync<Music>();
+                    await _dbConnection.ExecuteAsync("UPDATE Music SET SourceId = 0 WHERE SourceId IS NULL");
+                    await _dbConnection.CreateTableAsync<WebDavSource>();
+                    await _dbConnection.CreateTableAsync<RemoteTrack>();
+                    await _dbConnection.CreateTableAsync<WebDavCacheSettings>();
+                    await _dbConnection.ExecuteAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_RemoteTrack_Resource ON RemoteTrack(SourceId, Href COLLATE BINARY)");
                     await _dbConnection.CreateTableAsync<PendingMetadataWrite>();
                     await _dbConnection.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Music_Path_NoCase ON Music(Path COLLATE NOCASE)");
                     await _dbConnection.CreateTableAsync<MusicLyrics>();

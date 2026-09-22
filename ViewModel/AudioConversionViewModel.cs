@@ -20,6 +20,13 @@ public sealed class AudioConversionViewModel(AudioConverterService ConverterServ
     public Task ConvertAsync(IEnumerable<Music> music, string? tag)
     {
         var snapshot = new List<Music>(music);
+        if (snapshot.Exists(static item => item.IsRemote))
+        {
+            AppViewModel.InfoBarTitle = ToolUtils.GetString("Error");
+            AppViewModel.InfoBarMessage = ToolUtils.GetString("WebDavReadOnly");
+            AppViewModel.InfoBarIsOpen = true;
+            return Task.CompletedTask;
+        }
         return tasks.RunAsync(_ => ConvertTrackedAsync(snapshot, tag));
     }
 

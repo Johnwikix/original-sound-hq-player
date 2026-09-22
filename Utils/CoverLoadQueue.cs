@@ -40,6 +40,8 @@ internal static class CoverLoadQueue
         });
 
     private static readonly List<Thread> _workers = new();
+    private static readonly Channel<CoverLoadRequest> _remoteChannel = Channel.CreateBounded<CoverLoadRequest>(
+        new BoundedChannelOptions(64) { SingleReader = true, FullMode = BoundedChannelFullMode.Wait });
     private static readonly CancellationTokenSource _shutdownCts = new();
     private static readonly object _initLock = new();
     private static int _initialized;
@@ -74,7 +76,11 @@ internal static class CoverLoadQueue
 
         if (_pendingTasks.TryAdd(cacheKey, tcs.Task))
         {
-            _channel.Writer.TryWrite(req);
+            if (!(music.IsRemote ? _remoteChannel : _channel).Writer.TryWrite(req))
+            {
+                _pendingTasks.TryRemove(cacheKey, out _);
+                tcs.TrySetResult(null);
+            }
             return tcs.Task;
         }
 
@@ -88,9 +94,10 @@ internal static class CoverLoadQueue
         {
             if (_initialized != 0) return;
             int n = Math.Max(1, WorkerCount);
-            for (int i = 0; i < n; i++)
+            for (int i = 0; i <= n; i++)
             {
-                var t = new Thread(WorkerLoop)
+                var channel = i == n ? _remoteChannel : _channel;
+                var t = new Thread(() => WorkerLoop(channel))
                 {
                     Name = $"AlbumCoverLoader#{i}",
                     IsBackground = true,
@@ -103,13 +110,13 @@ internal static class CoverLoadQueue
         }
     }
 
-    private static void WorkerLoop()
+    private static void WorkerLoop(Channel<CoverLoadRequest> channel)
     {
         while (!_shutdownCts.IsCancellationRequested)
         {
             try
             {
-                InnerLoop();
+                InnerLoop(channel);
             }
             catch (Exception ex)
             {
@@ -119,7 +126,7 @@ internal static class CoverLoadQueue
         }
     }
 
-    private static void InnerLoop()
+    private static void InnerLoop(Channel<CoverLoadRequest> channel)
     {
         var ct = _shutdownCts.Token;
         while (!ct.IsCancellationRequested)
@@ -127,7 +134,7 @@ internal static class CoverLoadQueue
             CoverLoadRequest req;
             try
             {
-                req = _channel.Reader.ReadAsync(ct).AsTask().GetAwaiter().GetResult();
+                req = channel.Reader.ReadAsync(ct).AsTask().GetAwaiter().GetResult();
             }
             catch (OperationCanceledException) { return; }
             catch (ChannelClosedException) { return; }
@@ -164,7 +171,7 @@ internal static class CoverLoadQueue
             var thumbPath = GetThumbCachePath(req.Music.ImageHash, req.CoverSize);
             if (File.Exists(thumbPath))
             {
-                if (File.GetLastWriteTime(thumbPath) > File.GetLastWriteTime(req.Music.Path))
+                if (req.Music.IsRemote || File.GetLastWriteTime(thumbPath) > File.GetLastWriteTime(req.Music.Path))
                 {
                     var result = await LoadThumbFromCacheAsync(thumbPath, req.Token);
                     if (result != null) return result;
@@ -410,6 +417,12 @@ internal static class CoverLoadQueue
         if (Interlocked.Exchange(ref _initialized, 0) == 0) return;
         _shutdownCts.Cancel();
         _channel.Writer.TryComplete();
+        _remoteChannel.Writer.TryComplete();
+        while (_remoteChannel.Reader.TryRead(out var request))
+        {
+            _pendingTasks.TryRemove(request.CacheKey, out _);
+            request.Tcs.TrySetCanceled();
+        }
 
         var t = timeout ?? TimeSpan.FromSeconds(3);
         foreach (var w in _workers)

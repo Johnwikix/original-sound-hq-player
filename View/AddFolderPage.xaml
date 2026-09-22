@@ -3,158 +3,59 @@
     x:Class="WinUIMusicPlayer.View.AddFolderPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:local="using:WinUIMusicPlayer.View"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
-    mc:Ignorable="d">
-
-    <Grid
-        AllowDrop="True"
-        Background="Transparent"
-        DragLeave="Grid_DragLeave"
-        DragOver="Grid_DragOver"
-        Drop="Grid_Drop"
-        Unloaded="DropTarget_Unloaded">
-        <!--  Loading 界面  -->
-        <Grid x:Name="LoadingGrid" Visibility="{x:Bind ViewModel.LoadingVisibility, Mode=OneWay}">
-            <ProgressRing
-                Width="100"
-                Height="100"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                IsActive="True" />
-            <TextBlock
-                x:Uid="ProcessingDataHint"
-                Margin="0,180,0,0"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center" />
-        </Grid>
-
-        <!--  空状态：新用户首启引导  -->
-        <Grid
-            x:Name="EmptyGrid"
-            Visibility="{x:Bind ViewModel.EmptyVisibility, Mode=OneWay}">
-            <StackPanel
-                MaxWidth="520"
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center">
-                <Border
-                    Width="96"
-                    Height="96"
-                    HorizontalAlignment="Center"
-                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                    CornerRadius="28">
-                    <FontIcon
-                        FontSize="44"
-                        Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                        Glyph="&#xE8B7;" />
-                </Border>
-                <TextBlock
-                    x:Uid="AddFolderPageWelcomeTitle"
-                    Margin="0,24,0,0"
-                    HorizontalAlignment="Center"
-                    FontSize="28"
-                    FontWeight="SemiBold"
-                    TextAlignment="Center" />
-                <TextBlock
-                    x:Uid="AddFolderPageWelcomeSubtitle"
-                    Margin="0,8,0,0"
-                    HorizontalAlignment="Center"
-                    FontSize="14"
-                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                    TextAlignment="Center"
-                    TextWrapping="Wrap" />
-                <Button
-                    x:Name="EmptyAddFolderButton"
-                    Margin="0,32,0,0"
-                    HorizontalAlignment="Center"
-                    Command="{x:Bind ViewModel.AddFolderCommand}"
-                    Style="{StaticResource AccentButtonStyle}">
-                    <StackPanel Orientation="Horizontal">
-                        <FontIcon Glyph="&#xE8B7;" />
-                        <TextBlock
-                            x:Uid="AddFolder"
-                            Margin="8,0,0,0"
-                            VerticalAlignment="Center" />
+    xmlns:tools="using:WinUIMusicPlayer.Utils"
+    xmlns:sub="using:WinUIMusicPlayer.View.SubView">
+    <Grid AllowDrop="True" Background="Transparent" DragLeave="Grid_DragLeave" DragOver="Grid_DragOver" Drop="Grid_Drop" Unloaded="DropTarget_Unloaded">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="16,16,16,24" Spacing="24">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                    <StackPanel Spacing="6">
+                        <TextBlock x:Uid="MusicSources" FontSize="28" />
+                        <TextBlock x:Uid="MusicSourcesSubtitle" FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
                     </StackPanel>
-                </Button>
-                <StackPanel
-                    Margin="0,20,0,0"
-                    HorizontalAlignment="Center"
-                    Opacity="0.6"
-                    Orientation="Horizontal">
-                    <FontIcon
-                        VerticalAlignment="Center"
-                        FontSize="12"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Glyph="&#xE8B7;" />
-                    <TextBlock
-                        x:Uid="AddFolderPageDragHint"
-                        Margin="6,0,0,0"
-                        VerticalAlignment="Center"
-                        FontSize="12"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                </StackPanel>
-            </StackPanel>
-        </Grid>
-
-        <!--  列表状态  -->
-        <Grid
-            x:Name="AddFolderGrid"
-            RowDefinitions="Auto,*"
-            Visibility="{x:Bind ViewModel.ListVisibility, Mode=OneWay}">
-            <Grid Margin="16,10,16,10" ColumnDefinitions="*,Auto">
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock
-                        x:Uid="AddFolderPageTitle"
-                        VerticalAlignment="Center"
-                        FontSize="28" />
-                    <StackPanel Margin="0,4,0,0" Orientation="Horizontal">
-                        <TextBlock
-                            FontSize="12"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Text="{x:Bind ViewModel.FolderList.Count, Mode=OneWay}" />
-                        <TextBlock
-                            x:Uid="AddFolderPageFolderCountSuffix"
-                            Margin="4,0,0,0"
-                            FontSize="12"
-                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <DropDownButton Grid.Column="1" VerticalAlignment="Top" AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('MusicSourcesAdd')}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE710;" FontSize="14" />
+                            <TextBlock Text="{x:Bind tools:ToolUtils.GetString('MusicSourcesAdd')}" />
+                        </StackPanel>
+                        <DropDownButton.Flyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem Text="{x:Bind tools:ToolUtils.GetString('MusicSourcesLocal')}" Command="{x:Bind ViewModel.AddFolderCommand}">
+                                    <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE8B7;" /></MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                                <MenuFlyoutItem Text="WebDAV" Click="AddWebDav_Click">
+                                    <MenuFlyoutItem.Icon><FontIcon Glyph="&#xE753;" /></MenuFlyoutItem.Icon>
+                                </MenuFlyoutItem>
+                            </MenuFlyout>
+                        </DropDownButton.Flyout>
+                    </DropDownButton>
+                </Grid>
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Text="{x:Bind tools:ToolUtils.GetString('MusicSourcesLocal')}" FontSize="16" FontWeight="SemiBold" />
+                        <TextBlock Text="{x:Bind ViewModel.FolderList.Count, Mode=OneWay}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     </StackPanel>
-                </StackPanel>
-                <Button
-                    x:Name="AddFolderButton"
-                    Grid.Column="1"
-                    VerticalAlignment="Center"
-                    Command="{x:Bind ViewModel.AddFolderCommand}"
-                    Style="{StaticResource AccentButtonStyle}">
-                    <StackPanel Orientation="Horizontal">
-                        <FontIcon Glyph="&#xE8B7;" />
-                        <TextBlock
-                            x:Uid="AddFolder"
-                            Margin="8,0,0,0"
-                            VerticalAlignment="Center" />
+                    <StackPanel Orientation="Horizontal" Spacing="12" Visibility="{x:Bind ViewModel.LoadingVisibility, Mode=OneWay}">
+                        <ProgressRing Width="24" Height="24" IsActive="{x:Bind ViewModel.IsScanning, Mode=OneWay}" />
+                        <TextBlock x:Uid="ProcessingDataHint" VerticalAlignment="Center" />
                     </StackPanel>
-                </Button>
-            </Grid>
-            <ListView
-                x:Name="FolderListView"
-                Grid.Row="1"
-                Margin="16,10"
-                ItemsSource="{x:Bind ViewModel.FolderList, Mode=OneWay}"
-                SelectionMode="None">
-                <ListView.ItemContainerStyle>
-                    <Style BasedOn="{StaticResource DefaultListViewItemStyle}" TargetType="ListViewItem">
-                        <Setter Property="CornerRadius" Value="8" />
-                        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                        <Setter Property="Margin" Value="0,2,8,2" />
-                        <Setter Property="MinHeight" Value="64" />
-                        <Setter Property="Padding" Value="0" />
-                    </Style>
-                </ListView.ItemContainerStyle>
-                <ListView.ItemTemplate>
-                    <DataTemplate x:DataType="model:Folder">
-                        <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Border Padding="16" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" Visibility="{x:Bind ViewModel.EmptyVisibility, Mode=OneWay}">
+                        <TextBlock x:Uid="MusicSourcesLocalEmpty" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+                    </Border>
+                    <ListView x:Name="FolderListView" ItemsSource="{x:Bind ViewModel.FolderList, Mode=OneWay}" SelectionMode="None" IsTabStop="False" ScrollViewer.VerticalScrollBarVisibility="Disabled" Visibility="{x:Bind ViewModel.ListVisibility, Mode=OneWay}">
+                        <ListView.ItemContainerStyle>
+                            <Style BasedOn="{StaticResource DefaultListViewItemStyle}" TargetType="ListViewItem">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="Margin" Value="0,0,0,8" />
+                                <Setter Property="CornerRadius" Value="8" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+<DataTemplate x:DataType="model:Folder">
+                        <Border Padding="12" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                        <Grid MinHeight="56" ColumnDefinitions="40,*,Auto" ColumnSpacing="12">
                             <Button
                                 x:Name="OpenFolderButton"
                                 Width="40"
@@ -179,10 +80,11 @@
                             </Button>
                             <StackPanel
                                 Grid.Column="1"
-                                Margin="12,0,0,0"
+                                Margin="0"
                                 VerticalAlignment="Center">
                                 <TextBlock
                                     FontSize="15"
+                                    FontWeight="SemiBold"
                                     Text="{x:Bind Name}"
                                     TextTrimming="CharacterEllipsis" />
                                 <TextBlock
@@ -194,7 +96,7 @@
                             </StackPanel>
                             <StackPanel
                                 Grid.Column="2"
-                                Margin="12,0,0,0"
+                                Margin="0"
                                 VerticalAlignment="Center"
                                 Orientation="Horizontal">
                                 <StackPanel
@@ -244,44 +146,21 @@
                                 </Button>
                             </StackPanel>
                         </Grid>
+                    </Border>
                     </DataTemplate>
-                </ListView.ItemTemplate>
-            </ListView>
-        </Grid>
-
-        <!--  拖放反馈层（置于最上层，不拦截拖放事件）  -->
-        <Grid
-            x:Name="DropOverlay"
-            Margin="12"
-            IsHitTestVisible="False"
-            Visibility="Collapsed">
-            <Border
-                Background="{ThemeResource AccentFillColorSecondaryBrush}"
-                CornerRadius="12"
-                Opacity="0.35" />
-            <Rectangle
-                Margin="2"
-                RadiusX="10"
-                RadiusY="10"
-                Stroke="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                StrokeDashArray="4,4"
-                StrokeThickness="2" />
-            <StackPanel
-                HorizontalAlignment="Center"
-                VerticalAlignment="Center"
-                Orientation="Horizontal">
-                <FontIcon
-                    VerticalAlignment="Center"
-                    FontSize="16"
-                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
-                    Glyph="&#xE8B7;" />
-                <TextBlock
-                    x:Uid="AddFolderPageDropOverlayText"
-                    Margin="8,0,0,0"
-                    VerticalAlignment="Center"
-                    FontSize="16"
-                    FontWeight="SemiBold"
-                    Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </StackPanel>
+                <sub:WebDavSourcesControl x:Name="RemoteSources" />
+                <TextBlock x:Uid="AddFolderPageDragHint" FontSize="12" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+            </StackPanel>
+        </ScrollViewer>
+        <Grid x:Name="DropOverlay" Margin="12" IsHitTestVisible="False" Visibility="Collapsed">
+            <Border Background="{ThemeResource AccentFillColorSecondaryBrush}" CornerRadius="12" Opacity="0.35" />
+            <Rectangle Margin="2" RadiusX="10" RadiusY="10" Stroke="{ThemeResource AccentTextFillColorPrimaryBrush}" StrokeDashArray="4,4" StrokeThickness="2" />
+            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
+                <FontIcon FontSize="16" Glyph="&#xE8B7;" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                <TextBlock x:Uid="AddFolderPageDropOverlayText" FontSize="16" FontWeight="SemiBold" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
             </StackPanel>
         </Grid>
     </Grid>

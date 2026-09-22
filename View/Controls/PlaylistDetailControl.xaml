@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <UserControl
     x:Class="WinUIMusicPlayer.View.Controls.PlaylistDetailControl"
     xmlns:tools="using:WinUIMusicPlayer.Utils"
@@ -169,7 +169,7 @@
             SelectionMode="Extended">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="model:PlayListMusicItem">
-                    <Grid ColumnDefinitions="Auto,Auto,3*,1.5*,3*,0.5*,70,Auto,50">
+                    <Grid ColumnDefinitions="Auto,Auto,3*,1.5*,3*,0.5*,70,Auto,50,32">
                         <Button
                             x:Name="CoverThumbnail"
                             Grid.Column="0"
@@ -314,6 +314,13 @@
                             Grid.Column="8"
                             FontSize="14"
                             Glyph="{x:Bind tools:BindUtils.IsExistOnDeviceGlyphConverter(Music.IsExistOnDevice), Mode=OneWay}" />
+                        <FontIcon
+                            Grid.Column="9"
+                            FontSize="14"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Glyph="{x:Bind tools:BindUtils.MusicSourceGlyph(Music.IsRemote), Mode=OneWay}"
+                            AutomationProperties.Name="{x:Bind tools:BindUtils.MusicSourceLabel(Music.IsRemote), Mode=OneWay}"
+                            ToolTipService.ToolTip="{x:Bind tools:BindUtils.MusicSourceLabel(Music.IsRemote), Mode=OneWay}" />
                     </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>

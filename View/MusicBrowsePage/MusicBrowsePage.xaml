@@ -68,6 +68,9 @@
                 HorizontalAlignment="Right"
                 VerticalAlignment="Center"
                 Orientation="Horizontal">
+                <ComboBox Width="150" Margin="4,0" VerticalAlignment="Center"
+                    ItemsSource="{x:Bind ViewModel.RemoteSources.Choices}" DisplayMemberPath="Name"
+                    SelectedItem="{x:Bind ViewModel.RemoteSources.SelectedSource, Mode=TwoWay}" />
                 <ComboBox
                     x:Name="UsbDeviceCombox"
                     x:Uid="USBDevice"

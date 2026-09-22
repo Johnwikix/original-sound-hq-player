@@ -9,6 +9,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
     xmlns:ui="using:CommunityToolkit.WinUI"
+    xmlns:settings="using:WinUIMusicPlayer.View.SubView.Settings"
     mc:Ignorable="d">
 
     <ScrollViewer Style="{StaticResource SettingsScrollViewerStyle}">
@@ -149,6 +150,8 @@
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
+
+                <settings:WebDavCacheControl />
 
                 <!--  日志  -->
                 <controls:SettingsCard x:Uid="AboutLogCard">

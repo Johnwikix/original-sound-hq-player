@@ -21,6 +21,7 @@ namespace WinUIMusicPlayer.Services
         private IpcService IpcService { get; set; }
         private MusicDatabaseService _musicDatabaseService { get; }
         private ILogger<BassPlayerCommandService> _logger;
+        private readonly RemotePlaybackService _remote;
         private bool _disposed;
         private bool CanPlay => !_disposed && AppViewModel.CanStartPlayback;
         private bool CanReceive => !_disposed && AppViewModel.CanPublishState;
@@ -30,26 +31,30 @@ namespace WinUIMusicPlayer.Services
             if (_disposed) return;
             _disposed = true;
             IpcService.NotificationReceived -= IpcService_NotificationReceived;
+            _remote.Ended -= RemoteEnded;
         }
 
-        public BassPlayerCommandService(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<BassPlayerCommandService> logger)
+        public BassPlayerCommandService(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<BassPlayerCommandService> logger, RemotePlaybackService remote)
         {
             IpcService = App.Services.GetRequiredService<IpcService>();
             AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
             _logger = logger;
+            _remote = remote;
+            _remote.Ended += RemoteEnded;
             IpcService.NotificationReceived += IpcService_NotificationReceived;
         }
 
         private void IpcService_NotificationReceived(MessageTypeId typeId, ReadOnlyMemory<byte> payload)
         {
             if (!CanReceive || App.MainWindow is null) return;
+            if (_remote.IsActive && typeId is MessageTypeId.PlayState or MessageTypeId.PlayEnded) return;
             if (typeId == MessageTypeId.PlayState)
             {
                 var state = BinarySerializer.ReadPlayStateResponse(payload.Span);
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    if (!CanReceive) return;
+                    if (!CanReceive || _remote.IsActive) return;
                     AppViewModel.IsPlaying = state.IsPlaying;
                     if (state.IsPlaying)
                         AppViewModel.StartProgressTimer();
@@ -61,7 +66,7 @@ namespace WinUIMusicPlayer.Services
             {
                 App.MainWindow.DispatcherQueue.TryEnqueue(() =>
                 {
-                    if (!CanReceive) return;
+                    if (!CanReceive || _remote.IsActive) return;
                     AppViewModel.IsPlaying = false;
                     AppViewModel.StopProgressTimer();
                     var (_, total) = AppViewModel.GetTimeProgressCache();
@@ -144,6 +149,7 @@ namespace WinUIMusicPlayer.Services
 
         public void MusicEnd()
         {
+            _ = _remote.StopAsync();
             try
             {
                 App.Services.GetService<PlaybackStatsService>()?.FlushSession();
@@ -159,6 +165,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.StopProgressTimer();
                 AppViewModel.ProgressSlider = 0;
                 AppViewModel.IsPlaying = false;
+                AppViewModel.RemotePlaybackStatus = "";
             });
         }
 
@@ -184,6 +191,12 @@ namespace WinUIMusicPlayer.Services
         public async Task PlayButton()
         {
             if (!CanPlay) return;
+            if (AppViewModel.CurrentPlayingMusic?.IsRemote == true)
+            {
+                if (_remote.NeedsStart) await App.Services.GetRequiredService<PlaybackCoordinator>().PlayAsync(AppViewModel.CurrentPlayingMusic);
+                else await _remote.SetIntentAsync(!_remote.WantsPlay);
+                return;
+            }
             try
             {
                 bool? state = await IpcService.PlayButton();
@@ -207,8 +220,11 @@ namespace WinUIMusicPlayer.Services
 
         public void ChangeWaveChannelTime(long positionMs)
         {
+            if (_remote.IsActive) { _ = _remote.SeekAsync(positionMs); return; }
             IpcService.SetPosition(positionMs);
         }
+
+        private void RemoteEnded() { if (CanPlay) _ = AutoPlayNextTrack(); }
 
         public void SetVolume(double volume)
         {

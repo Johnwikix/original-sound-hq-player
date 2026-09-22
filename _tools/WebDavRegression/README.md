@@ -1,0 +1,22 @@
+# WebDAV 回归验证
+
+使用项目当前 .NET SDK、FFmpeg DLL 和 ATL 版本，直接链接生产读取、缓存、桥接与封面代码。
+
+```powershell
+dotnet run --project _tools/WebDavRegression/WebDavRegression.csproj
+```
+
+默认运行 22 项确定性检查：Unicode 目录、来源路径边界、跨主机重定向移除凭据、Range 读取与预算、版本变化、阻塞读取取消、桥接跨窗口数据一致性、未知令牌拒绝、播放期间开启缓存、完整缓存零上游请求、活动文件清理、无 Range 顺序降级、部分文件清理、开关反复切换与完整文件保留、弱 ETag 拒绝持久缓存，以及自研 Opus 跨页封面读取和预算。
+
+实际服务验证通过当前进程环境变量提供连接信息；不要把密码写入源码、日志或提交文件：
+
+```powershell
+$env:MUSIC_WEBDAV_URL = 'http://127.0.0.1:5244/dav/'
+$env:MUSIC_WEBDAV_USER = '<user>'
+$env:MUSIC_WEBDAV_PASSWORD = '<password>'
+dotnet run --project _tools/WebDavRegression/WebDavRegression.csproj -- --scan-all
+```
+
+集成验证默认抽取根目录前两个文件，另包含指定的大封面 FLAC 回归样本（存在时）。`--scan-all` 递归验证音频元数据，输出成功/暂缓数量、读取音频字节、耗时、托管分配总量、GC 次数和运行时报告的累计暂停。这个入口不含主程序的数据库写入、列表更新、图像解码或 AudioPlayer；不能将其指标当作主界面性能或 NAS/WAN 性能。
+
+2026-09-22：真实 OpenList 224 首全部成功。独立播放器的设备播放/TLS/定位等验证使用 `_tools/StreamingRegression`；主程序界面、数据库迁移和凭据保存另做实际安装包验证。所有临时缓存使用系统临时目录内的独立随机子目录，不触及用户音频文件。

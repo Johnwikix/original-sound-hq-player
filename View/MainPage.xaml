@@ -34,7 +34,7 @@
                     <NavigationView.MenuItems>
                         <NavigationViewItem Icon="NewFolder" Tag="AddFolder">
                             <NavigationViewItem.Content>
-                                <TextBlock x:Uid="AddFolder" />
+                                <TextBlock x:Uid="MusicSources" />
                             </NavigationViewItem.Content>
                         </NavigationViewItem>
                         <NavigationViewItem Icon="Audio" Tag="MusicBrowse">
@@ -225,7 +225,7 @@
                             <Grid
                                 Grid.Row="3"
                                 VerticalAlignment="Bottom"
-                                ColumnDefinitions="Auto,Auto,*">
+                                ColumnDefinitions="Auto,Auto,Auto,*">
                                 <TextBlock
                                     x:Name="MusicInfoTextBlock"
                                     Grid.Column="0"
@@ -250,6 +250,17 @@
                                         Foreground="#F98555"
                                         Text="HQ" />
                                 </Border>
+                                <FontIcon
+                                    x:Name="RemoteSourceIcon"
+                                    Grid.Column="2"
+                                    Margin="8,0,0,0"
+                                    VerticalAlignment="Center"
+                                    FontSize="12"
+                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                    Glyph="&#xE753;"
+                                    AutomationProperties.Name="{x:Bind tools:BindUtils.RemotePlaybackDescription(ViewModel.AppViewModel.RemotePlaybackStatus), Mode=OneWay}"
+                                    ToolTipService.ToolTip="{x:Bind tools:BindUtils.RemotePlaybackDescription(ViewModel.AppViewModel.RemotePlaybackStatus), Mode=OneWay}"
+                                    Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.CurrentPlayingMusic.IsRemote), Mode=OneWay}" />
                             </Grid>
                         </Grid>
                     </Grid>

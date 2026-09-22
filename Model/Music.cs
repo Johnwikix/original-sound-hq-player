@@ -12,6 +12,9 @@ namespace WinUIMusicPlayer.Model
     {
         [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
+        public int SourceId { get; set; }
+        [Ignore] public bool IsRemote => SourceId != 0;
+        [Ignore] public bool CanEditFile => !IsRemote;
         public string Path { get; set => SetProperty(ref field, value); } = string.Empty;
         public string Title { get; set => SetProperty(ref field, value); } = string.Empty;
         public string Author { get; set => SetProperty(ref field, value); } = string.Empty;

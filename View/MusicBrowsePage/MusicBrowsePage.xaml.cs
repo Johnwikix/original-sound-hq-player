@@ -126,7 +126,7 @@ namespace WinUIMusicPlayer.View
             ViewModel.SelectedPage = item;
         }
 
-        private void SelectBarItem(string name)
+        public void SelectBarItem(string name)
         {
             foreach (var item in selectPage.Items)
             {

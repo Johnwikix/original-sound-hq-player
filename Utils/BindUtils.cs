@@ -18,6 +18,13 @@ namespace WinUIMusicPlayer.Utils
 {
     public static class BindUtils
     {
+        /// <summary>列表来源标识只依赖曲目状态，不在可视项绑定中读取数据库或启动网络请求。</summary>
+        public static string MusicSourceGlyph(bool isRemote) => isRemote ? "\uE753" : "\uE8B7";
+        public static string MusicSourceLabel(bool isRemote) => isRemote ? "WebDAV" : GetString("WebDavLocalSources");
+        public static string RemotePlaybackDescription(string status) => string.IsNullOrEmpty(status) ? "WebDAV" : status;
+        public static Visibility NonEmptyTextVisibility(string text) => string.IsNullOrWhiteSpace(text) ? Visibility.Collapsed : Visibility.Visible;
+        public static Visibility EmptyCollectionVisibility(int count) => count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
         public static Visibility GetHrMusicVisibility(int sampleRate, int bitDepth)
             => (sampleRate >= 48000 && bitDepth >= 24) || (sampleRate >= 2822400 && bitDepth == 1)
                 ? Visibility.Visible

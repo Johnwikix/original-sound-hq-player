@@ -196,6 +196,12 @@ namespace WinUIMusicPlayer.Services
                     return oneShotLrc;
                 }
                 var (lyricsText, transLrc, krc, tKrc) = await _musicDatabaseService.GetLyricsAsync(music.Id);
+                if (music.IsRemote && string.IsNullOrWhiteSpace(lyricsText) && string.IsNullOrWhiteSpace(krc))
+                {
+                    lyricsText = await App.Services.GetRequiredService<WebDavLibraryService>().ReadLyricsAsync(music, ct);
+                    if (!string.IsNullOrWhiteSpace(lyricsText))
+                        await _musicDatabaseService.SaveLyricsAsync(music.Id, lyricsText, transLrc, krc, tKrc);
+                }
 
                 // 1. 本地文件（.krc / .qrc / .lrc）
                 var localLyrics = TryParseLocalLyricsFile(music, ct);
@@ -303,6 +309,7 @@ namespace WinUIMusicPlayer.Services
         /// </summary>
         private List<LyricLine>? TryParseLocalLyricsFile(Music music, CancellationToken ct)
         {
+            if (music.IsRemote) return null;
             if (string.IsNullOrWhiteSpace(music.Path)) return null;
 
             foreach (var ext in s_lyricExtensions)

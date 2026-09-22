@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.WinUI;
+using CommunityToolkit.WinUI;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml.Data;
 using System;
@@ -36,12 +36,12 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
     private int CurrentPlayListId => state.Browse.CurrentPlayListId;
     // 仅缓存固定页面投影的键，结果仍由绑定集合持有，不额外复制全库或保留第二份结果。
     private readonly Dictionary<object, QueryKey> _published = new();
-    private readonly record struct QueryKey(long Version, string Search, string Sort, string? Group, string ArtistSymbols);
+    private readonly record struct QueryKey(long Version, string Search, string Sort, string? Group, string ArtistSymbols, int Source);
     private QueryKey Key(string? group = null) => new(state.Library.Version, SearchText,
-        SelectedSortOption?.Tag?.ToString() ?? "DefaultOrder", group, AppSettings.ArtistSplitSymbols);
+        SelectedSortOption?.Tag?.ToString() ?? "DefaultOrder", group, AppSettings.ArtistSplitSymbols, state.Browse.SourceFilterId);
     private QueryKey SongKey(SongViewType kind) => Key(kind switch
     {
-        SongViewType.Album => state.Browse.CurrentAlbumObj?.Album,
+        SongViewType.Album => state.Browse.CurrentAlbumObj is { } album ? $"{album.SourceId}\0{album.Album}" : null,
         SongViewType.Artist => state.Browse.CurrentArtistObj?.Author,
         SongViewType.Folder => state.Browse.CurrentFolderObj?.LastLevelFolderPath,
         _ => null
@@ -85,7 +85,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
                     {
                         // 在 UI 线程复制字段；后台比较器绝不读取可变 Music 属性或 UI 集合。
                         foreach (var music in SongsSource)
-                            if (request.Filter is null || request.Filter(music)) rows[count++] = new SongRow(music);
+                            if (LibraryQueries.MatchesSource(music, key.Source) && (request.Filter is null || request.Filter(music))) rows[count++] = new SongRow(music);
                         int written = await Task.Run(() =>
                         {
                             int matches = 0;
@@ -172,10 +172,13 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
             for (int i = 0; i < srcSpan.Length; i++)
             {
                 ref readonly var m = ref srcSpan[i];
+                if (!LibraryQueries.MatchesSource(m, state.Browse.SourceFilterId)) continue;
                 if (hasSearch && !MatchesSearchShape(m, search))
                     continue;
 
                 var key = distinctSelector(m);
+                if (string.IsNullOrWhiteSpace(key)) continue;
+                if (ReferenceEquals(source, state.LibraryViews.AlbumPageSource)) key = $"{m.SourceId}\0{key}";
                 distinctMap.TryAdd(key, m);
             }
 
@@ -200,6 +203,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
             for (int i = 0; i < srcSpan.Length; i++)
             {
                 ref readonly var m = ref srcSpan[i];
+                if (!LibraryQueries.MatchesSource(m, state.Browse.SourceFilterId) || string.IsNullOrWhiteSpace(m.Author)) continue;
                 if (hasSearch && !MatchesSearchShape(m, search))
                     continue;
 

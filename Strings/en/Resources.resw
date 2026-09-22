@@ -2006,4 +2006,215 @@
   <data name="RemoveExternalImportsTitle" xml:space="preserve">
     <value>Do you want to remove all externally imported songs</value>
   </data>
+  <data name="WebDavAllSources" xml:space="preserve">
+    <value>All sources</value>
+  </data>
+  <data name="WebDavLocalSources" xml:space="preserve">
+    <value>Local</value>
+  </data>
+  <data name="WebDavOpening" xml:space="preserve">
+    <value>Opening remote track…</value>
+  </data>
+  <data name="WebDavBuffering" xml:space="preserve">
+    <value>Buffering…</value>
+  </data>
+  <data name="WebDavReady" xml:space="preserve">
+    <value>Ready</value>
+  </data>
+  <data name="WebDavPlaying" xml:space="preserve">
+    <value>Streaming</value>
+  </data>
+  <data name="WebDavPaused" xml:space="preserve">
+    <value>Paused</value>
+  </data>
+  <data name="WebDavEnded" xml:space="preserve">
+    <value>Playback ended</value>
+  </data>
+  <data name="WebDavStopped" xml:space="preserve">
+    <value>Stopped</value>
+  </data>
+  <data name="WebDavFailed" xml:space="preserve">
+    <value>Connection failed; retry available</value>
+  </data>
+  <data name="WebDavScanning" xml:space="preserve">
+    <value>Updating directories</value>
+  </data>
+  <data name="WebDavMetadata" xml:space="preserve">
+    <value>Reading track information</value>
+  </data>
+  <data name="WebDavCompleted" xml:space="preserve">
+    <value>Update complete</value>
+  </data>
+  <data name="WebDavCancelled" xml:space="preserve">
+    <value>Scan paused</value>
+  </data>
+  <data name="WebDavScanSummary" xml:space="preserve">
+    <value>{0} · {1} found · {2} processed</value>
+  </data>
+  <data name="WebDavConnecting" xml:space="preserve">
+    <value>Connecting…</value>
+  </data>
+  <data name="WebDavConnected" xml:space="preserve">
+    <value>Directory access verified. Select music folders.</value>
+  </data>
+  <data name="WebDavEntireRoot" xml:space="preserve">
+    <value>Entire root folder</value>
+  </data>
+  <data name="WebDavTestFirst" xml:space="preserve">
+    <value>Connect and verify the current address and account first.</value>
+  </data>
+  <data name="WebDavChooseFolder" xml:space="preserve">
+    <value>Select at least one folder.</value>
+  </data>
+  <data name="WebDavRemoveConfirm" xml:space="preserve">
+    <value>Remove this source and its library entries? Remote files will be kept.</value>
+  </data>
+  <data name="WebDavReadOnly" xml:space="preserve">
+    <value>Remote files are read-only. Tag writing and local file operations are unavailable.</value>
+  </data>
+  <data name="WebDavBrowserHint" xml:space="preserve">
+    <value>Open a folder, or select an indexed track to play.</value>
+  </data>
+  <data name="WebDavIndexFirst" xml:space="preserve">
+    <value>Update this source to add the track to your library first.</value>
+  </data>
+  <data name="WebDavCacheUnavailable" xml:space="preserve">
+    <value>Cache location unavailable. Streaming remains available.</value>
+  </data>
+  <data name="WebDavErrorConnectionFailed" xml:space="preserve">
+    <value>Cannot read the remote resource. Check the connection and retry.</value>
+  </data>
+  <data name="WebDavAuthenticationError" xml:space="preserve">
+    <value>Invalid credentials or permissions. Edit the source to reconnect.</value>
+  </data>
+  <data name="WebDavAddressError" xml:space="preserve">
+    <value>Enter a valid HTTP(S) WebDAV address. Redirects must stay within permitted boundaries.</value>
+  </data>
+  <data name="WebDavNameError" xml:space="preserve">
+    <value>Enter a unique source name.</value>
+  </data>
+  <data name="WebDavMissingError" xml:space="preserve">
+    <value>Source disabled or track removed. Update the source.</value>
+  </data>
+  <data name="WebDavChangedError" xml:space="preserve">
+    <value>The remote file changed. Update the source and play again.</value>
+  </data>
+  <data name="WebDavRangeError" xml:space="preserve">
+    <value>This resource does not support ranges; seeking or tag reading may be unavailable.</value>
+  </data>
+  <data name="WebDavConnectionDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Save and scan</value>
+  </data>
+  <data name="WebDavConnectionDialog.CloseButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="WebDavConnectionHelp.Text" xml:space="preserve">
+    <value>Supports NAS and OpenList/AList. Read-only access; HTTP is unencrypted. Leave the account blank for anonymous access.</value>
+  </data>
+  <data name="WebDavName.Header" xml:space="preserve">
+    <value>Source name</value>
+  </data>
+  <data name="WebDavAddress.Header" xml:space="preserve">
+    <value>WebDAV address</value>
+  </data>
+  <data name="WebDavUserName.Header" xml:space="preserve">
+    <value>User name</value>
+  </data>
+  <data name="WebDavPassword.Header" xml:space="preserve">
+    <value>Password (leave blank to keep when editing)</value>
+  </data>
+  <data name="WebDavConnectButton.Content" xml:space="preserve">
+    <value>Connect and choose folders</value>
+  </data>
+  <data name="WebDavReadMetadata.Content" xml:space="preserve">
+    <value>Read track information in background</value>
+  </data>
+  <data name="WebDavScanOnStartup.Content" xml:space="preserve">
+    <value>Update folders after startup</value>
+  </data>
+  <data name="WebDavSourceEnabled.Content" xml:space="preserve">
+    <value>Enable this source</value>
+  </data>
+<data name="WebDavBrowseButton.Content" xml:space="preserve">
+    <value>Browse</value>
+  </data>
+<data name="WebDavPauseButton.Content" xml:space="preserve">
+    <value>Pause scan</value>
+  </data>
+<data name="WebDavRemoveButton.Content" xml:space="preserve">
+    <value>Remove</value>
+  </data>
+  <data name="WebDavBrowserDialog.CloseButtonText" xml:space="preserve">
+    <value>Close</value>
+  </data>
+  <data name="WebDavUpButton.Content" xml:space="preserve">
+    <value>Parent folder</value>
+  </data>
+<data name="WebDavCacheTitle.Text" xml:space="preserve">
+    <value>WebDAV playback cache</value>
+  </data>
+  <data name="WebDavCacheCard.Header" xml:space="preserve">
+    <value>Cache while playing</value>
+  </data>
+<data name="WebDavCacheHelp.Text" xml:space="preserve">
+    <value>Caches original audio being played. Old entries are evicted at the limit. Turning this off stops filling; complete cached tracks remain playable.</value>
+  </data>
+  <data name="WebDavClearCacheButton.Content" xml:space="preserve">
+    <value>Clear cache</value>
+  </data>
+  <data name="MusicSources.Text" xml:space="preserve"><value>Music sources</value></data>
+  <data name="WebDavPauseMenu.Text" xml:space="preserve"><value>Pause scan</value></data>
+  <data name="WebDavEditMenu.Text" xml:space="preserve"><value>Edit</value></data>
+  <data name="WebDavRemoveMenu.Text" xml:space="preserve"><value>Remove</value></data>
+  <data name="MusicSourcesSubtitle.Text" xml:space="preserve">
+    <value>Manage local folders and network music in one library.</value>
+  </data>
+  <data name="MusicSourcesAdd" xml:space="preserve">
+    <value>Add source</value>
+  </data>
+  <data name="MusicSourcesLocal" xml:space="preserve">
+    <value>Local folders</value>
+  </data>
+  <data name="MusicSourcesLocalEmpty.Text" xml:space="preserve">
+    <value>Add a local folder or drag one here.</value>
+  </data>
+  <data name="WebDavSourcesEmpty.Text" xml:space="preserve">
+    <value>Connect music folders on a NAS, OpenList, or another WebDAV service.</value>
+  </data>
+  <data name="WebDavCacheExpander.Header" xml:space="preserve">
+    <value>WebDAV playback cache</value>
+  </data>
+  <data name="WebDavCacheExpander.Description" xml:space="preserve">
+    <value>Save music as you play and manage its location and size.</value>
+  </data>
+  <data name="WebDavCacheToggleLabel" xml:space="preserve">
+    <value>Cache music during playback</value>
+  </data>
+  <data name="WebDavCacheLimitLabel" xml:space="preserve">
+    <value>Cache size limit (GiB)</value>
+  </data>
+  <data name="WebDavCacheCleanupCard.Header" xml:space="preserve">
+    <value>Clear downloaded audio</value>
+  </data>
+  <data name="WebDavMoreAction" xml:space="preserve">
+    <value>More actions</value>
+  </data>
+  <data name="WebDavSongsAction" xml:space="preserve">
+    <value>Songs</value>
+  </data>
+  <data name="WebDavBrowseAction" xml:space="preserve">
+    <value>Browse</value>
+  </data>
+  <data name="WebDavScanAction" xml:space="preserve">
+    <value>Update</value>
+  </data>
+  <data name="WebDavCacheLocationCard.Header" xml:space="preserve">
+    <value>Cache location</value>
+  </data>
+  <data name="WebDavCacheLocationCard.Description" xml:space="preserve">
+    <value>Leave empty to use the application cache folder.</value>
+  </data>
+  <data name="WebDavCacheLocationLabel" xml:space="preserve">
+    <value>Cache location</value>
+  </data>
 </root>

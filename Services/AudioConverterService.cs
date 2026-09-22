@@ -44,6 +44,7 @@ namespace WinUIMusicPlayer.Services
         /// </summary>
         public async Task<bool> ConvertForExportAsync(Music music, string outputPath, string format, int bitRateKbps = 320)
         {
+            if (music.IsRemote) { OnProgressChanged(100); return false; }
             using (AudioFileWriteGate.BeginWrite(outputPath))
             {
                 try
@@ -123,6 +124,7 @@ namespace WinUIMusicPlayer.Services
 
         public async Task<bool> ConvertAudioAsync(Music music, string type = "wav", int bitRateKbps = 320)
         {
+            if (music.IsRemote) { OnProgressChanged(100); return false; }
             string format = type.ToLowerInvariant();
             if (music.Extension.Equals(format, StringComparison.OrdinalIgnoreCase))
                 return true; // 同格式无需转换（多选批量时逐文件判重）

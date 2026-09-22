@@ -20,6 +20,9 @@ namespace WinUIMusicPlayer.Services
         private DeviceCorrectionMailbox? _correctionMailbox;
         private ProgressMailbox? _progressMailbox;
         private long _nextSeekId;
+        private long _progressSequence;
+        private Func<ProgressSnapshot?>? _remoteProgress;
+        public void AttachRemoteProgress(Func<ProgressSnapshot?> source) => _remoteProgress = source;
         private readonly object _seekPublishGate = new();
         private Task? _dspListenerTask;
         private DspStateSnapshot? _dspSnapshot;
@@ -144,7 +147,7 @@ namespace WinUIMusicPlayer.Services
             {
                 _logger.LogWarning(ex, "Startup correction synchronization was not confirmed; initialization will continue");
             }
-            if (music is not null)
+            if (music is not null && !music.IsRemote)
                 await SetMusicUrl(music.Path);
             UpdateEq();
             UpdateSettings();
@@ -606,7 +609,11 @@ namespace WinUIMusicPlayer.Services
         public bool TryGetProgressSnapshot(out ProgressSnapshot snapshot)
         {
             snapshot = default;
-            return _progressMailbox?.TryRead(out snapshot) == true;
+            var remote = _remoteProgress?.Invoke();
+            if (remote is not null) snapshot = remote.Value;
+            else if (_progressMailbox?.TryRead(out snapshot) != true) return false;
+            snapshot = snapshot with { Revision = Interlocked.Increment(ref _progressSequence) };
+            return true;
         }
 
         public void SetPosition(long positionMs)

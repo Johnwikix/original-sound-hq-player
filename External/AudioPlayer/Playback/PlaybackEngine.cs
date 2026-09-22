@@ -1156,7 +1156,8 @@ public sealed partial class PlaybackEngine : IDisposable
                     {
                         output?.Pause();
                         IsPlaying = false;
-                        _ipc.PlayBackEnded(); // 自然结束：只发 PlayEnded（bass SyncFlags.End 对等）
+                        // 网络会话通过带 SessionId 的 status 结束，避免旧无身份通知重复切歌。
+                        if (_currentStream == Guid.Empty) _ipc.PlayBackEnded();
                     }
                 }
             }

@@ -4,6 +4,9 @@
 		<type fullname="WinUIMusicPlayer.Model.PlayListMusic" preserve="all"/>
 		<type fullname="WinUIMusicPlayer.Model.PlayList" preserve="all"/>
 		<type fullname="WinUIMusicPlayer.Model.Music" preserve="all"/>
+		<type fullname="WinUIMusicPlayer.Model.WebDavSource" preserve="all"/>
+		<type fullname="WinUIMusicPlayer.Model.RemoteTrack" preserve="all"/>
+		<type fullname="WinUIMusicPlayer.Model.WebDavCacheSettings" preserve="all"/>
 		<type fullname="WinUIMusicPlayer.Model.PendingMetadataWrite" preserve="all"/>
 		<type fullname="WinUIMusicPlayer.Model.Folder" preserve="all"/>
 		<type fullname="WinUIMusicPlayer.Model.SaveEqualizer" preserve="all"/>

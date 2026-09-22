@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <winex:WindowEx
     x:Class="WinUIMusicPlayer.View.SubView.MusicDetailsWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -59,7 +59,7 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <TextBox
+                            <TextBox IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
                                 BorderThickness="0"
                                 Text="{x:Bind MusicDetail.Title, Mode=TwoWay}"
                                 TextWrapping="Wrap" />
@@ -70,7 +70,7 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <TextBox
+                            <TextBox IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
                                 BorderThickness="0"
                                 Text="{x:Bind MusicDetail.Author, Mode=TwoWay}"
                                 TextWrapping="Wrap" />
@@ -81,7 +81,7 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <TextBox
+                            <TextBox IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
                                 BorderThickness="0"
                                 Text="{x:Bind MusicDetail.Album, Mode=TwoWay}"
                                 TextWrapping="Wrap" />
@@ -99,7 +99,7 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <NumberBox
+                            <NumberBox IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
                                 Minimum="0"
                                 SmallChange="1"
                                 SpinButtonPlacementMode="Compact"
@@ -111,7 +111,7 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <NumberBox
+                            <NumberBox IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
                                 Minimum="0"
                                 SmallChange="1"
                                 SpinButtonPlacementMode="Compact"
@@ -123,7 +123,7 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <NumberBox
+                            <NumberBox IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
                                 Minimum="0"
                                 SmallChange="1"
                                 SpinButtonPlacementMode="Compact"
@@ -301,6 +301,7 @@
                                 Width="36"
                                 Height="36"
                                 Padding="0"
+                                IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
                                 Click="OpenFile_Click">
                                 <FontIcon FontSize="14" Glyph="&#xE838;" />
                             </Button>
@@ -308,7 +309,7 @@
                                 Width="36"
                                 Height="36"
                                 Padding="0"
-                                Click="ReadLyricsFromFile_Click">
+                                IsEnabled="{x:Bind MusicDetail.CanEditFile}" Click="ReadLyricsFromFile_Click">
                                 <FontIcon FontSize="14" Glyph="&#xE72C;" />
                                 <ToolTipService.ToolTip>
                                     <ToolTip x:Uid="ReadLyricsFromFile" />
@@ -318,7 +319,7 @@
                                 Width="36"
                                 Height="36"
                                 Padding="0"
-                                Click="SaveLyrics_Click">
+                                IsEnabled="{x:Bind MusicDetail.CanEditFile}" Click="SaveLyrics_Click">
                                 <FontIcon FontSize="14" Glyph="&#xE74E;" />
                                 <ToolTipService.ToolTip>
                                     <ToolTip x:Uid="SaveLyricsTextBox" />
@@ -374,7 +375,7 @@
                                     Width="32"
                                     Height="32"
                                     Padding="0"
-                                    Click="SelectCoverImageButton_Click">
+                                    IsEnabled="{x:Bind MusicDetail.CanEditFile}" Click="SelectCoverImageButton_Click">
                                     <FontIcon FontSize="14" Glyph="&#xe70f;" />
                                     <ToolTipService.ToolTip>
                                         <ToolTip x:Uid="SelectCoverImageButton" />
@@ -403,7 +404,7 @@
                 HorizontalAlignment="Right"
                 Orientation="Horizontal"
                 Spacing="8">
-                <Button x:Uid="SaveButton">
+                <Button IsEnabled="{x:Bind MusicDetail.CanEditFile}" x:Uid="SaveButton">
                     <Button.Flyout>
                         <Flyout x:Name="ConfirmFlyout">
                             <StackPanel>

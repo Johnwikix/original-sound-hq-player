@@ -355,6 +355,7 @@ namespace WinUIMusicPlayer.Utils
 
         public static async Task<byte[]> GetRawImage(Music music, bool isManual = false)
         {
+            if (music.IsRemote) return await App.Services.GetRequiredService<WebDavLibraryService>().ReadCoverAsync(music);
             try
             {
                 // 磁盘缓存查找（raw bytes，避免重复从音频文件读取内嵌封面）

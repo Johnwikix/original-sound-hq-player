@@ -2006,4 +2006,215 @@
   <data name="RemoveExternalImportsTitle" xml:space="preserve">
     <value>Alle extern importierten Titel entfernen?</value>
   </data>
+  <data name="WebDavAllSources" xml:space="preserve">
+    <value>Alle Quellen</value>
+  </data>
+  <data name="WebDavLocalSources" xml:space="preserve">
+    <value>Lokal</value>
+  </data>
+  <data name="WebDavOpening" xml:space="preserve">
+    <value>Remote-Titel wird geöffnet…</value>
+  </data>
+  <data name="WebDavBuffering" xml:space="preserve">
+    <value>Wird gepuffert…</value>
+  </data>
+  <data name="WebDavReady" xml:space="preserve">
+    <value>Bereit</value>
+  </data>
+  <data name="WebDavPlaying" xml:space="preserve">
+    <value>Streaming</value>
+  </data>
+  <data name="WebDavPaused" xml:space="preserve">
+    <value>Pausiert</value>
+  </data>
+  <data name="WebDavEnded" xml:space="preserve">
+    <value>Wiedergabe beendet</value>
+  </data>
+  <data name="WebDavStopped" xml:space="preserve">
+    <value>Gestoppt</value>
+  </data>
+  <data name="WebDavFailed" xml:space="preserve">
+    <value>Verbindung fehlgeschlagen; erneut versuchen</value>
+  </data>
+  <data name="WebDavScanning" xml:space="preserve">
+    <value>Verzeichnisse werden aktualisiert</value>
+  </data>
+  <data name="WebDavMetadata" xml:space="preserve">
+    <value>Titelinformationen werden gelesen</value>
+  </data>
+  <data name="WebDavCompleted" xml:space="preserve">
+    <value>Aktualisierung abgeschlossen</value>
+  </data>
+  <data name="WebDavCancelled" xml:space="preserve">
+    <value>Scan pausiert</value>
+  </data>
+  <data name="WebDavScanSummary" xml:space="preserve">
+    <value>{0} · {1} gefunden · {2} verarbeitet</value>
+  </data>
+  <data name="WebDavConnecting" xml:space="preserve">
+    <value>Verbindung wird hergestellt…</value>
+  </data>
+  <data name="WebDavConnected" xml:space="preserve">
+    <value>Verzeichniszugriff geprüft. Musikordner auswählen.</value>
+  </data>
+  <data name="WebDavEntireRoot" xml:space="preserve">
+    <value>Gesamtes Stammverzeichnis</value>
+  </data>
+  <data name="WebDavTestFirst" xml:space="preserve">
+    <value>Zuerst Adresse und Konto durch Verbinden prüfen.</value>
+  </data>
+  <data name="WebDavChooseFolder" xml:space="preserve">
+    <value>Mindestens einen Ordner auswählen.</value>
+  </data>
+  <data name="WebDavRemoveConfirm" xml:space="preserve">
+    <value>Quelle und Bibliothekseinträge entfernen? Remote-Dateien bleiben erhalten.</value>
+  </data>
+  <data name="WebDavReadOnly" xml:space="preserve">
+    <value>Remote-Dateien sind schreibgeschützt. Tags und lokale Dateiaktionen sind nicht verfügbar.</value>
+  </data>
+  <data name="WebDavBrowserHint" xml:space="preserve">
+    <value>Ordner öffnen oder einen indizierten Titel abspielen.</value>
+  </data>
+  <data name="WebDavIndexFirst" xml:space="preserve">
+    <value>Zuerst die Quelle aktualisieren, um den Titel hinzuzufügen.</value>
+  </data>
+  <data name="WebDavCacheUnavailable" xml:space="preserve">
+    <value>Cache nicht verfügbar. Streaming bleibt möglich.</value>
+  </data>
+  <data name="WebDavErrorConnectionFailed" xml:space="preserve">
+    <value>Remote-Ressource nicht lesbar. Verbindung prüfen und erneut versuchen.</value>
+  </data>
+  <data name="WebDavAuthenticationError" xml:space="preserve">
+    <value>Zugangsdaten oder Berechtigungen ungültig. Quelle bearbeiten.</value>
+  </data>
+  <data name="WebDavAddressError" xml:space="preserve">
+    <value>Gültige HTTP(S)-WebDAV-Adresse eingeben. Umleitungen müssen zulässig sein.</value>
+  </data>
+  <data name="WebDavNameError" xml:space="preserve">
+    <value>Einen eindeutigen Quellennamen eingeben.</value>
+  </data>
+  <data name="WebDavMissingError" xml:space="preserve">
+    <value>Quelle deaktiviert oder Titel entfernt. Quelle aktualisieren.</value>
+  </data>
+  <data name="WebDavChangedError" xml:space="preserve">
+    <value>Remote-Datei geändert. Quelle aktualisieren und erneut abspielen.</value>
+  </data>
+  <data name="WebDavRangeError" xml:space="preserve">
+    <value>Diese Ressource unterstützt keine Bereichsabrufe; Suchen oder Tags können fehlen.</value>
+  </data>
+  <data name="WebDavConnectionDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Speichern und scannen</value>
+  </data>
+  <data name="WebDavConnectionDialog.CloseButtonText" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="WebDavConnectionHelp.Text" xml:space="preserve">
+    <value>Unterstützt NAS und OpenList/AList. Nur lesend; HTTP ist unverschlüsselt. Konto für anonymen Zugriff leer lassen.</value>
+  </data>
+  <data name="WebDavName.Header" xml:space="preserve">
+    <value>Quellenname</value>
+  </data>
+  <data name="WebDavAddress.Header" xml:space="preserve">
+    <value>WebDAV-Adresse</value>
+  </data>
+  <data name="WebDavUserName.Header" xml:space="preserve">
+    <value>Benutzername</value>
+  </data>
+  <data name="WebDavPassword.Header" xml:space="preserve">
+    <value>Passwort (beim Bearbeiten leer lassen zum Beibehalten)</value>
+  </data>
+  <data name="WebDavConnectButton.Content" xml:space="preserve">
+    <value>Verbinden und Ordner wählen</value>
+  </data>
+  <data name="WebDavReadMetadata.Content" xml:space="preserve">
+    <value>Titelinformationen im Hintergrund lesen</value>
+  </data>
+  <data name="WebDavScanOnStartup.Content" xml:space="preserve">
+    <value>Ordner nach dem Start aktualisieren</value>
+  </data>
+  <data name="WebDavSourceEnabled.Content" xml:space="preserve">
+    <value>Quelle aktivieren</value>
+  </data>
+<data name="WebDavBrowseButton.Content" xml:space="preserve">
+    <value>Durchsuchen</value>
+  </data>
+<data name="WebDavPauseButton.Content" xml:space="preserve">
+    <value>Scan pausieren</value>
+  </data>
+<data name="WebDavRemoveButton.Content" xml:space="preserve">
+    <value>Entfernen</value>
+  </data>
+  <data name="WebDavBrowserDialog.CloseButtonText" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  <data name="WebDavUpButton.Content" xml:space="preserve">
+    <value>Übergeordneter Ordner</value>
+  </data>
+<data name="WebDavCacheTitle.Text" xml:space="preserve">
+    <value>WebDAV-Wiedergabecache</value>
+  </data>
+  <data name="WebDavCacheCard.Header" xml:space="preserve">
+    <value>Beim Abspielen zwischenspeichern</value>
+  </data>
+<data name="WebDavCacheHelp.Text" xml:space="preserve">
+    <value>Speichert abgespielte Originaldateien. Alte Einträge werden bei Erreichen des Limits entfernt. Abschalten beendet das Nachladen; vollständige Dateien bleiben abspielbar.</value>
+  </data>
+  <data name="WebDavClearCacheButton.Content" xml:space="preserve">
+    <value>Cache leeren</value>
+  </data>
+  <data name="MusicSources.Text" xml:space="preserve"><value>Musikquellen</value></data>
+  <data name="WebDavPauseMenu.Text" xml:space="preserve"><value>Scan pausieren</value></data>
+  <data name="WebDavEditMenu.Text" xml:space="preserve"><value>Bearbeiten</value></data>
+  <data name="WebDavRemoveMenu.Text" xml:space="preserve"><value>Entfernen</value></data>
+  <data name="MusicSourcesSubtitle.Text" xml:space="preserve">
+    <value>Lokale Ordner und Netzwerkmusik in einer Mediathek verwalten.</value>
+  </data>
+  <data name="MusicSourcesAdd" xml:space="preserve">
+    <value>Quelle hinzufügen</value>
+  </data>
+  <data name="MusicSourcesLocal" xml:space="preserve">
+    <value>Lokale Ordner</value>
+  </data>
+  <data name="MusicSourcesLocalEmpty.Text" xml:space="preserve">
+    <value>Einen lokalen Ordner hinzufügen oder hierher ziehen.</value>
+  </data>
+  <data name="WebDavSourcesEmpty.Text" xml:space="preserve">
+    <value>Musikordner auf NAS, OpenList oder anderen WebDAV-Diensten verbinden.</value>
+  </data>
+  <data name="WebDavCacheExpander.Header" xml:space="preserve">
+    <value>WebDAV-Wiedergabecache</value>
+  </data>
+  <data name="WebDavCacheExpander.Description" xml:space="preserve">
+    <value>Musik beim Abspielen speichern und Speicherort und Größe verwalten.</value>
+  </data>
+  <data name="WebDavCacheToggleLabel" xml:space="preserve">
+    <value>Musik beim Abspielen zwischenspeichern</value>
+  </data>
+  <data name="WebDavCacheLimitLabel" xml:space="preserve">
+    <value>Cache-Größenlimit (GiB)</value>
+  </data>
+  <data name="WebDavCacheCleanupCard.Header" xml:space="preserve">
+    <value>Heruntergeladene Audiodateien löschen</value>
+  </data>
+  <data name="WebDavMoreAction" xml:space="preserve">
+    <value>Weitere Aktionen</value>
+  </data>
+  <data name="WebDavSongsAction" xml:space="preserve">
+    <value>Titel</value>
+  </data>
+  <data name="WebDavBrowseAction" xml:space="preserve">
+    <value>Durchsuchen</value>
+  </data>
+  <data name="WebDavScanAction" xml:space="preserve">
+    <value>Aktualisieren</value>
+  </data>
+  <data name="WebDavCacheLocationCard.Header" xml:space="preserve">
+    <value>Cache-Speicherort</value>
+  </data>
+  <data name="WebDavCacheLocationCard.Description" xml:space="preserve">
+    <value>Leer lassen, um den Cache-Ordner der App zu verwenden.</value>
+  </data>
+  <data name="WebDavCacheLocationLabel" xml:space="preserve">
+    <value>Cache-Speicherort</value>
+  </data>
 </root>

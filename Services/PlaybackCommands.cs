@@ -52,6 +52,17 @@ public sealed class PlaybackCommands : IDisposable
     private async Task ToggleAsync(bool? playing)
     {
         if (!CanPlay) return;
+        var remote = _services.GetRequiredService<RemotePlaybackService>();
+        if (_state.CurrentPlayingMusic?.IsRemote == true)
+        {
+            if (remote.NeedsStart)
+            {
+                if (playing != false) await _services.GetRequiredService<PlaybackCoordinator>().PlayAsync(_state.CurrentPlayingMusic);
+                return;
+            }
+            await remote.SetIntentAsync(playing ?? !remote.WantsPlay);
+            return;
+        }
         if (_toggleInFlight)
         {
             // 重复 toggle 合并；显式播放/暂停保存最新意图，在后端确认状态后再判断。

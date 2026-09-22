@@ -2005,4 +2005,215 @@
   <data name="RemoveExternalImportsTitle" xml:space="preserve">
     <value>是否要移除全部外部导入的歌曲</value>
   </data>
+  <data name="WebDavAllSources" xml:space="preserve">
+    <value>全部来源</value>
+  </data>
+  <data name="WebDavLocalSources" xml:space="preserve">
+    <value>本地</value>
+  </data>
+  <data name="WebDavOpening" xml:space="preserve">
+    <value>正在打开远程歌曲…</value>
+  </data>
+  <data name="WebDavBuffering" xml:space="preserve">
+    <value>正在缓冲…</value>
+  </data>
+  <data name="WebDavReady" xml:space="preserve">
+    <value>就绪</value>
+  </data>
+  <data name="WebDavPlaying" xml:space="preserve">
+    <value>网络播放</value>
+  </data>
+  <data name="WebDavPaused" xml:space="preserve">
+    <value>已暂停</value>
+  </data>
+  <data name="WebDavEnded" xml:space="preserve">
+    <value>播放结束</value>
+  </data>
+  <data name="WebDavStopped" xml:space="preserve">
+    <value>已停止</value>
+  </data>
+  <data name="WebDavFailed" xml:space="preserve">
+    <value>连接失败，可重试</value>
+  </data>
+  <data name="WebDavScanning" xml:space="preserve">
+    <value>正在更新目录</value>
+  </data>
+  <data name="WebDavMetadata" xml:space="preserve">
+    <value>正在补全歌曲信息</value>
+  </data>
+  <data name="WebDavCompleted" xml:space="preserve">
+    <value>更新完成</value>
+  </data>
+  <data name="WebDavCancelled" xml:space="preserve">
+    <value>已暂停扫描</value>
+  </data>
+  <data name="WebDavScanSummary" xml:space="preserve">
+    <value>{0} · 已发现 {1} 首 · 已处理信息 {2} 首</value>
+  </data>
+  <data name="WebDavConnecting" xml:space="preserve">
+    <value>正在连接…</value>
+  </data>
+  <data name="WebDavConnected" xml:space="preserve">
+    <value>目录连接成功，请选择音乐目录。</value>
+  </data>
+  <data name="WebDavEntireRoot" xml:space="preserve">
+    <value>整个根目录</value>
+  </data>
+  <data name="WebDavTestFirst" xml:space="preserve">
+    <value>请先连接并验证当前地址与账号。</value>
+  </data>
+  <data name="WebDavChooseFolder" xml:space="preserve">
+    <value>请至少选择一个目录。</value>
+  </data>
+  <data name="WebDavRemoveConfirm" xml:space="preserve">
+    <value>移除此来源及其曲库索引？远端文件不会被删除。</value>
+  </data>
+  <data name="WebDavReadOnly" xml:space="preserve">
+    <value>远程文件为只读，不能写回标签或执行本地文件操作。</value>
+  </data>
+  <data name="WebDavBrowserHint" xml:space="preserve">
+    <value>点击目录浏览，点击已入库歌曲播放。</value>
+  </data>
+  <data name="WebDavIndexFirst" xml:space="preserve">
+    <value>请先更新此来源的目录，将歌曲加入音乐库。</value>
+  </data>
+  <data name="WebDavCacheUnavailable" xml:space="preserve">
+    <value>缓存位置不可用，仍可在线播放。</value>
+  </data>
+  <data name="WebDavErrorConnectionFailed" xml:space="preserve">
+    <value>无法读取远程资源，请检查连接后重试。</value>
+  </data>
+  <data name="WebDavAuthenticationError" xml:space="preserve">
+    <value>账号、密码或访问权限无效，请编辑来源重新连接。</value>
+  </data>
+  <data name="WebDavAddressError" xml:space="preserve">
+    <value>请输入有效的 HTTP(S) WebDAV 地址。重定向必须保持安全且在允许范围内。</value>
+  </data>
+  <data name="WebDavNameError" xml:space="preserve">
+    <value>请输入与现有来源不同的名称。</value>
+  </data>
+  <data name="WebDavMissingError" xml:space="preserve">
+    <value>来源已禁用或歌曲已移除，请更新来源。</value>
+  </data>
+  <data name="WebDavChangedError" xml:space="preserve">
+    <value>远程文件已变化，请更新目录后重新播放。</value>
+  </data>
+  <data name="WebDavRangeError" xml:space="preserve">
+    <value>此资源不支持分段读取，可能无法定位或补全标签。</value>
+  </data>
+  <data name="WebDavConnectionDialog.PrimaryButtonText" xml:space="preserve">
+    <value>保存并扫描</value>
+  </data>
+  <data name="WebDavConnectionDialog.CloseButtonText" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="WebDavConnectionHelp.Text" xml:space="preserve">
+    <value>支持 NAS 与 OpenList/AList。远端只读；HTTP 连接不加密。匿名访问可留空账号。</value>
+  </data>
+  <data name="WebDavName.Header" xml:space="preserve">
+    <value>来源名称</value>
+  </data>
+  <data name="WebDavAddress.Header" xml:space="preserve">
+    <value>WebDAV 地址</value>
+  </data>
+  <data name="WebDavUserName.Header" xml:space="preserve">
+    <value>账号</value>
+  </data>
+  <data name="WebDavPassword.Header" xml:space="preserve">
+    <value>密码（编辑时留空则沿用）</value>
+  </data>
+  <data name="WebDavConnectButton.Content" xml:space="preserve">
+    <value>连接并选择目录</value>
+  </data>
+  <data name="WebDavReadMetadata.Content" xml:space="preserve">
+    <value>后台补全歌曲信息</value>
+  </data>
+  <data name="WebDavScanOnStartup.Content" xml:space="preserve">
+    <value>启动后更新目录</value>
+  </data>
+  <data name="WebDavSourceEnabled.Content" xml:space="preserve">
+    <value>启用此来源</value>
+  </data>
+<data name="WebDavBrowseButton.Content" xml:space="preserve">
+    <value>浏览</value>
+  </data>
+<data name="WebDavPauseButton.Content" xml:space="preserve">
+    <value>暂停扫描</value>
+  </data>
+<data name="WebDavRemoveButton.Content" xml:space="preserve">
+    <value>移除</value>
+  </data>
+  <data name="WebDavBrowserDialog.CloseButtonText" xml:space="preserve">
+    <value>关闭</value>
+  </data>
+  <data name="WebDavUpButton.Content" xml:space="preserve">
+    <value>上一级</value>
+  </data>
+<data name="WebDavCacheTitle.Text" xml:space="preserve">
+    <value>WebDAV 播放缓存</value>
+  </data>
+  <data name="WebDavCacheCard.Header" xml:space="preserve">
+    <value>播放时自动缓存</value>
+  </data>
+<data name="WebDavCacheHelp.Text" xml:space="preserve">
+    <value>只缓存播放的原始音频，达到限额后自动清理旧缓存。关闭开关停止补全，已有完整缓存仍可播放。</value>
+  </data>
+  <data name="WebDavClearCacheButton.Content" xml:space="preserve">
+    <value>清理缓存</value>
+  </data>
+  <data name="MusicSources.Text" xml:space="preserve"><value>音乐来源</value></data>
+  <data name="WebDavPauseMenu.Text" xml:space="preserve"><value>暂停扫描</value></data>
+  <data name="WebDavEditMenu.Text" xml:space="preserve"><value>编辑</value></data>
+  <data name="WebDavRemoveMenu.Text" xml:space="preserve"><value>移除</value></data>
+  <data name="MusicSourcesSubtitle.Text" xml:space="preserve">
+    <value>管理本地文件夹与网络音乐，在同一个音乐库中聆听。</value>
+  </data>
+  <data name="MusicSourcesAdd" xml:space="preserve">
+    <value>添加来源</value>
+  </data>
+  <data name="MusicSourcesLocal" xml:space="preserve">
+    <value>本地文件夹</value>
+  </data>
+  <data name="MusicSourcesLocalEmpty.Text" xml:space="preserve">
+    <value>添加本地文件夹，或将文件夹拖到此处。</value>
+  </data>
+  <data name="WebDavSourcesEmpty.Text" xml:space="preserve">
+    <value>连接 NAS、OpenList 或其他 WebDAV 音乐目录。</value>
+  </data>
+  <data name="WebDavCacheExpander.Header" xml:space="preserve">
+    <value>WebDAV 播放缓存</value>
+  </data>
+  <data name="WebDavCacheExpander.Description" xml:space="preserve">
+    <value>按需保存播放过的音乐，管理位置与空间。</value>
+  </data>
+  <data name="WebDavCacheToggleLabel" xml:space="preserve">
+    <value>播放时自动缓存</value>
+  </data>
+  <data name="WebDavCacheLimitLabel" xml:space="preserve">
+    <value>缓存容量上限（GiB）</value>
+  </data>
+  <data name="WebDavCacheCleanupCard.Header" xml:space="preserve">
+    <value>清理下载的音频</value>
+  </data>
+  <data name="WebDavMoreAction" xml:space="preserve">
+    <value>更多操作</value>
+  </data>
+  <data name="WebDavSongsAction" xml:space="preserve">
+    <value>歌曲</value>
+  </data>
+  <data name="WebDavBrowseAction" xml:space="preserve">
+    <value>浏览</value>
+  </data>
+  <data name="WebDavScanAction" xml:space="preserve">
+    <value>更新</value>
+  </data>
+  <data name="WebDavCacheLocationCard.Header" xml:space="preserve">
+    <value>缓存位置</value>
+  </data>
+  <data name="WebDavCacheLocationCard.Description" xml:space="preserve">
+    <value>留空使用应用缓存目录。</value>
+  </data>
+  <data name="WebDavCacheLocationLabel" xml:space="preserve">
+    <value>缓存位置</value>
+  </data>
 </root>

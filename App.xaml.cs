@@ -82,6 +82,11 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<LibraryProjectionService>();
                  services.AddSingleton<PlaybackProgressService>();
                  services.AddSingleton<PlaybackCoordinator>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.WebDav.WebDavTransport>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.WebDav.RemoteAudioCache>();
+                 services.AddSingleton<WebDavLibraryService>();
+                 services.AddSingleton<WebDavSourcesViewModel>();
+                 services.AddSingleton<RemotePlaybackService>();
                  services.AddSingleton<ApplicationTasks>();
                  services.AddSingleton<UsbExportCoordinator>();
                  services.AddSingleton<SettingsCoordinator>();
