@@ -68,9 +68,6 @@
                 HorizontalAlignment="Right"
                 VerticalAlignment="Center"
                 Orientation="Horizontal">
-                <ComboBox Width="150" Margin="4,0" VerticalAlignment="Center"
-                    ItemsSource="{x:Bind ViewModel.RemoteSources.Choices}" DisplayMemberPath="Name"
-                    SelectedItem="{x:Bind ViewModel.RemoteSources.SelectedSource, Mode=TwoWay}" />
                 <ComboBox
                     x:Name="UsbDeviceCombox"
                     x:Uid="USBDevice"
@@ -93,6 +90,17 @@
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>
+                <ComboBox
+                    Width="130"
+                    Margin="0,0,4,0"
+                    VerticalAlignment="Center"
+                    Background="Transparent"
+                    BorderBrush="Transparent"
+                    BorderThickness="0"
+                    DisplayMemberPath="Name"
+                    FontSize="12"
+                    ItemsSource="{x:Bind ViewModel.RemoteSources.Choices}"
+                    SelectedItem="{x:Bind ViewModel.RemoteSources.SelectedSource, Mode=TwoWay}" />
                 <StackPanel Margin="0" Orientation="Horizontal">
                     <ComboBox
                         x:Name="SortByComboBox"
