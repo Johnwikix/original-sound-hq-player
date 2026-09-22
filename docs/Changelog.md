@@ -2,6 +2,11 @@
 
 新条目加在最上方。
 
+## 2026-09-22 卷积曲线预设改存用户文档目录
+
+- `Services/CurvePresetService.cs`：`ConvolutionCurves.json` 由 MSIX LocalState 改存 `Documents\OriginalSoundPlayer\Settings\`（与 Settings.json、AudioCorrections.json 同目录），卸载重装/重新部署不再丢失预设；Documents 不可用时回退 LocalState。不做旧位置迁移。
+- `External/AudioPlayer/DSP.md`：同步预设存储位置说明。
+
 ## 2026-09-22 WebDAV 大 DSF 的内存、定位、位流与封面修复
 
 - `AudioPlayer/Playback/AudioRingMemory.cs`、`Ring.cs`、`Session.cs`：网络 PCM/DoP/Native DSD 大环缓冲由会话独占的原生内存承载，停止时在读写锁内释放；拒绝迟到读写、唤醒等待生产者，避免每次切歌的多 MB LOH 分配等待 GC。未增加生产环境强制 GC。

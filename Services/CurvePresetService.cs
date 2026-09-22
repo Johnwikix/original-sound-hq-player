@@ -11,7 +11,26 @@ namespace WinUIMusicPlayer.Services;
 
 public sealed class CurvePresetService
 {
-    private static string PathName => Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "ConvolutionCurves.json");
+    private static string PathName
+    {
+        get
+        {
+            try
+            {
+                string userProfilePath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+                string appFolderPath = Path.Combine(userProfilePath, "OriginalSoundPlayer", "Settings");
+                if (!Directory.Exists(appFolderPath))
+                {
+                    Directory.CreateDirectory(appFolderPath);
+                }
+                return Path.Combine(appFolderPath, "ConvolutionCurves.json");
+            }
+            catch
+            {
+                return Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "ConvolutionCurves.json");
+            }
+        }
+    }
     public async Task<List<CurvePreset>> LoadAsync()
     {
         if (!File.Exists(PathName)) return [];
