@@ -29,13 +29,6 @@ public sealed partial class WebDavSourcesControl : UserControl
         var form = new WebDavConnectionViewModel(App.Services.GetRequiredService<WebDavTransport>(), App.Services.GetRequiredService<WebDavLibraryService>(), source);
         await new WebDavConnectionDialog(form).ShowThemedAsync(XamlRoot);
     }
-    private void Songs_Click(object sender, RoutedEventArgs e)
-    {
-        if ((sender as Button)?.Tag is not WebDavSourceItem item) return;
-        ViewModel.ShowSongs(item.Source);
-        App.Services.GetRequiredService<MainPage>().NavigateToMusicBrowsePage();
-        App.Services.GetRequiredService<MusicBrowsePage>().SelectBarItem("song");
-    }
     private async void Browse_Click(object sender, RoutedEventArgs e)
     {
         if ((sender as Button)?.Tag is WebDavSourceItem item)

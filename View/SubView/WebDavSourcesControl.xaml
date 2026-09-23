@@ -27,21 +27,16 @@
                 <DataTemplate x:DataType="vm:WebDavSourceItem">
                     <Border Padding="12" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
                         <Grid MinHeight="56" ColumnDefinitions="40,*,Auto" ColumnSpacing="12">
-                            <Border Width="40" Height="40" CornerRadius="10" VerticalAlignment="Center" Background="{ThemeResource SubtleFillColorSecondaryBrush}">
-                                <FontIcon FontSize="20" Glyph="&#xE753;" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
-                            </Border>
+                            <Button Width="40" Height="40" Padding="0" VerticalAlignment="Center" Background="{ThemeResource SubtleFillColorSecondaryBrush}" BorderBrush="Transparent" BorderThickness="0" CornerRadius="10"
+                                    Click="Browse_Click" Tag="{x:Bind}" Style="{StaticResource MenuButtonStyle}" ToolTipService.ToolTip="{x:Bind tools:ToolUtils.GetString('WebDavBrowseAction')}" AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('WebDavBrowseAction')}">
+                                <FontIcon FontSize="18" Glyph="&#xE753;" Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                            </Button>
                             <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
                                 <TextBlock Text="{x:Bind Name}" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                                 <TextBlock Text="{x:Bind Address}" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
                                 <TextBlock Text="{x:Bind Status, Mode=OneWay}" FontSize="12" Foreground="{ThemeResource TextFillColorTertiaryBrush}" TextTrimming="CharacterEllipsis" />
                             </StackPanel>
                             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
-                                <Button Width="34" Height="34" Padding="0" Click="Songs_Click" Tag="{x:Bind}" Style="{StaticResource SubtleButtonStyle}" ToolTipService.ToolTip="{x:Bind tools:ToolUtils.GetString('WebDavSongsAction')}" AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('WebDavSongsAction')}">
-                                    <FontIcon FontSize="16" Glyph="&#xE8F1;" />
-                                </Button>
-                                <Button Width="34" Height="34" Padding="0" Click="Browse_Click" Tag="{x:Bind}" Style="{StaticResource SubtleButtonStyle}" ToolTipService.ToolTip="{x:Bind tools:ToolUtils.GetString('WebDavBrowseAction')}" AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('WebDavBrowseAction')}">
-                                    <FontIcon FontSize="16" Glyph="&#xE8B7;" />
-                                </Button>
                                 <Button Width="34" Height="34" Padding="0" Command="{x:Bind ScanCommand}" Style="{StaticResource SubtleButtonStyle}" ToolTipService.ToolTip="{x:Bind tools:ToolUtils.GetString('WebDavScanAction')}" AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('WebDavScanAction')}">
                                     <FontIcon FontSize="16" Glyph="&#xE72C;" />
                                 </Button>

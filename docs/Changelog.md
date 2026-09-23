@@ -2,6 +2,11 @@
 
 新条目加在最上方。
 
+## 2026-09-23 精简 WebDAV 来源卡片操作
+
+- `View/SubView/WebDavSourcesControl.xaml/.cs`：移除无用的“歌曲”跳转按钮；来源图标由纯装饰 Border 改为与 AddFolderPage `OpenFolderButton` 同款的可点击按钮，直接打开 WebDAV 目录浏览，操作行不再保留重复的浏览按钮；清理不再使用的 using。
+- `Strings/*/Resources.resw`：删除全部语言中不再使用的 `WebDavSongsAction` 资源。
+
 ## 2026-09-23 修复 WebDAV 目录选择、曲库范围和来源回退
 
 - `WebDavConnectionDialog.xaml/.cs`、`WebDavConnectionViewModel.cs`、`WebDavTreeItem.cs`：模型管理父子级联与部分选中，懒加载子目录继承选择；扫描根独立保存，勾选所有子目录不会意外扩大到父目录，取消父目录清空子树，取消单个子目录保留其余范围。
