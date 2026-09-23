@@ -99,7 +99,7 @@ public class AlbumCoverBehavior : Behavior<Image>
         {
             if (token.IsCancellationRequested || AssociatedObject == null) return;
 
-            Task<Microsoft.UI.Xaml.Media.ImageSource> task;
+            Task<Microsoft.UI.Xaml.Media.ImageSource?> task;
             try
             {
                 task = CoverLoadQueue.EnqueueAsync(music, token);

@@ -361,7 +361,8 @@ namespace WinUIMusicPlayer.Utils
             cancellationToken.ThrowIfCancellationRequested();
             if (music.IsRemote)
             {
-                var remotePicture = await App.Services.GetRequiredService<WebDavLibraryService>().ReadCoverAsync(music);
+                var remotePicture = await App.Services.GetRequiredService<WebDavLibraryService>()
+                    .ReadCoverAsync(music, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 return remotePicture;
             }
@@ -406,7 +407,7 @@ namespace WinUIMusicPlayer.Utils
                 }
                 if (picture is null || picture.Length == 0)
                 {
-                    picture = await GetPicByteFromNet(music, isManual) ?? [];
+                    picture = await GetPicByteFromNet(music, isManual, cancellationToken) ?? [];
                 }
                 cancellationToken.ThrowIfCancellationRequested();
                 if (picture.Length > 0)
@@ -449,7 +450,7 @@ namespace WinUIMusicPlayer.Utils
                 _logger.LogError(ex, $"GetRawImage 获取原始图片失败: {ex.Message}");
                 try
                 {
-                    return await GetPicByteFromNet(music, isManual) ?? [];
+                    return await GetPicByteFromNet(music, isManual, cancellationToken) ?? [];
                 }
                 catch (Exception innerEx)
                 {
@@ -880,14 +881,17 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        private static async Task<byte[]?> GetPicByteFromNet(Music music, bool isManual = false)
+        private static async Task<byte[]?> GetPicByteFromNet(
+            Music music,
+            bool isManual = false,
+            CancellationToken cancellationToken = default)
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 byte[] picture = null;
                 if (AppSettings.IsAutoCoverEnabled && !isManual)
                 {
-                    using var cancellationToken = new CancellationTokenSource();
                     if (!Directory.Exists(AppSettings.MusicCoverCache))
                     {
                         Directory.CreateDirectory(AppSettings.MusicCoverCache);
@@ -897,18 +901,23 @@ namespace WinUIMusicPlayer.Utils
                     string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".bin");
                     if (System.IO.File.Exists(filePath))
                     {
-                        picture = System.IO.File.ReadAllBytes(filePath);
+                        picture = await System.IO.File.ReadAllBytesAsync(filePath, cancellationToken);
                     }
                     else
                     {
-                        picture ??= await App.Services.GetRequiredService<LrcService>().GetMixedCoverImageAsync(music, cancellationToken.Token);
+                        picture ??= await App.Services.GetRequiredService<LrcService>()
+                            .GetMixedCoverImageAsync(music, cancellationToken);
                         if (picture is not null)
                         {
-                            System.IO.File.WriteAllBytes(filePath, picture);
+                            await System.IO.File.WriteAllBytesAsync(filePath, picture, cancellationToken);
                         }
                     }
                 }
                 return picture;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception ex)
             {

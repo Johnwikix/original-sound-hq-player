@@ -371,6 +371,7 @@ internal static class CoverLoadQueue
     private static async Task<ImageSource?> CreateImageSourceAsync(DecodedCover decoded, CancellationToken token)
     {
         ImageSource? result = null;
+        SoftwareBitmapSource? source = null;
         try
         {
             await App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
@@ -382,9 +383,10 @@ internal static class CoverLoadQueue
                     decoded.Height,
                     BitmapAlphaMode.Premultiplied);
                 softwareBitmap.CopyFromBuffer(decoded.Pixels.AsBuffer());
-                var source = new SoftwareBitmapSource();
+                source = new SoftwareBitmapSource();
                 await source.SetBitmapAsync(softwareBitmap);
                 result = source;
+                source = null;
             });
             return result;
         }
@@ -393,6 +395,10 @@ internal static class CoverLoadQueue
         {
             _logger?.LogError(ex, "创建缩略图 SoftwareBitmapSource 失败");
             return null;
+        }
+        finally
+        {
+            source?.Dispose();
         }
     }
 
