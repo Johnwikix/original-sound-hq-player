@@ -2,6 +2,11 @@
 
 新条目加在最上方。
 
+## 2026-09-23 修复短曲目偶发结束后不自动切歌
+
+- `Services/BassPlayerCommandService.cs`、`Services/AutoAdvanceGate.cs`：自动切歌执行中保留一次新的结束请求，待当前选曲与界面状态完成后继续处理；执行异常记录日志，不让单飞状态卡住。
+- `_tools/AutoAdvanceRegression`：覆盖在途切歌期间再次结束、重复结束合并和退出清理。
+
 ## 2026-09-22 卷积曲线预设改存用户文档目录
 
 - `Services/CurvePresetService.cs`：`ConvolutionCurves.json` 由 MSIX LocalState 改存 `Documents\OriginalSoundPlayer\Settings\`（与 Settings.json、AudioCorrections.json 同目录），卸载重装/重新部署不再丢失预设；Documents 不可用时回退 LocalState。不做旧位置迁移。
