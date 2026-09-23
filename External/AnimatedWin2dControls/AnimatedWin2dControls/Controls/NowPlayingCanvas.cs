@@ -537,7 +537,12 @@ namespace AnimatedWin2dControls.Controls
             if (_canvas is not null)
                 _canvas.Paused = true;
             UnregisterPropertyChangedCallback(VisibilityProperty, _visibilityCallbackToken);
+            var canvas = _canvas;
             DetachCanvasEvents();
+            // Win2D controls contain native event sources. Removing the
+            // CanvasAnimatedControl from the visual tree breaks the XAML/C++
+            // reference cycle when this host is actually unloaded.
+            canvas?.RemoveFromVisualTree();
             _canvas = null;
 
             _coordinator.PrepareForShutdown();

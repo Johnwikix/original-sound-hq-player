@@ -108,7 +108,14 @@ public partial class MusicDatabaseService
         _dbConnection.ExecuteAsync("UPDATE RemoteTrack SET MetadataState = 'Pending' WHERE SourceId = ? AND MetadataState = 'Deferred'", sourceId);
 
     public Task<List<RemoteTrack>> GetPendingRemoteMetadataAsync(int sourceId, int afterId) =>
-        _dbConnection.QueryAsync<RemoteTrack>("SELECT * FROM RemoteTrack WHERE SourceId = ? AND MusicId > ? AND MetadataState = 'Pending' AND Missing = 0 ORDER BY MusicId LIMIT 64", sourceId, afterId);
+        // DSF/DFF entries written by older builds contain FFmpeg's DSD byte rate (1/8 rate).
+        // Include those rows once more so an unchanged remote file is corrected after upgrade.
+        _dbConnection.QueryAsync<RemoteTrack>(
+            "SELECT RemoteTrack.* FROM RemoteTrack JOIN Music ON Music.Id = RemoteTrack.MusicId " +
+            "WHERE RemoteTrack.SourceId = ? AND RemoteTrack.MusicId > ? AND RemoteTrack.Missing = 0 " +
+            "AND (RemoteTrack.MetadataState = 'Pending' OR " +
+            "(lower(Music.Extension) IN ('dsf', 'dff', '.dsf', '.dff') AND Music.SampleRate > 0 AND Music.SampleRate < 2822400 AND Music.SampleRate % 8 = 0)) " +
+            "ORDER BY RemoteTrack.MusicId LIMIT 64", sourceId, afterId);
 
     public async Task<Music?> CommitRemoteMetadataAsync(RemoteTrack expected, RemoteMetadata? metadata, string status)
     {

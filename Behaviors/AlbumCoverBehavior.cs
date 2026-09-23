@@ -59,7 +59,7 @@ public class AlbumCoverBehavior : Behavior<Image>
         }
         if (AssociatedObject != null)
         {
-            AssociatedObject.Source = null;
+            SetSource(null);
             AssociatedObject.Opacity = 0;
         }
         base.OnDetaching();
@@ -80,7 +80,7 @@ public class AlbumCoverBehavior : Behavior<Image>
 
         if (music == null)
         {
-            AssociatedObject.Source = null;
+            SetSource(null);
             AssociatedObject.Opacity = 0;
             return;
         }
@@ -113,8 +113,13 @@ public class AlbumCoverBehavior : Behavior<Image>
             try
             {
                 var source = await task.WaitAsync(token);
-                if (token.IsCancellationRequested || AssociatedObject == null || source == null) return;
-                AssociatedObject.Source = source;
+                if (token.IsCancellationRequested || AssociatedObject == null || source == null)
+                {
+                    DisposeImageSource(source);
+                    return;
+                }
+
+                SetSource(source);
                 FadeIn();
                 return;
             }
@@ -148,6 +153,22 @@ public class AlbumCoverBehavior : Behavior<Image>
         _fadeInStoryboard!.Stop();
         Storyboard.SetTarget(_fadeInAnimation!, AssociatedObject);
         _fadeInStoryboard.Begin();
+    }
+
+    private void SetSource(ImageSource? source)
+    {
+        if (AssociatedObject == null) return;
+        var previous = AssociatedObject.Source;
+        if (ReferenceEquals(previous, source)) return;
+        AssociatedObject.Source = null;
+        AssociatedObject.Source = source;
+        DisposeImageSource(previous);
+    }
+
+    private static void DisposeImageSource(ImageSource? source)
+    {
+        if (source is IDisposable disposable)
+            disposable.Dispose();
     }
 
     public static void ClearImagesInContainer(DependencyObject parent) { }

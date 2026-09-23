@@ -56,7 +56,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             if (_canvas != null)
             {
                 _canvas.Paused = true;
-                DetachCanvasEvents(_canvas);
+                var canvas = _canvas;
+                DetachCanvasEvents(canvas);
+                canvas.RemoveFromVisualTree();
                 _canvas = null;
             }
 

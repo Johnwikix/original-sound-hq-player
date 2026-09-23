@@ -6,6 +6,11 @@ using System.Diagnostics;
 
 ffmpeg.RootPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../Libraries/FFmpeg/x64"));
 using var transport = new WebDavTransport();
+if (args.Contains("--metadata-only"))
+{
+    await MetadataRegression.RunAsync(transport);
+    return;
+}
 if (args.Contains("--tree-only"))
 {
     await ConnectionViewModelRegression.RunTreeAsync(transport);
@@ -16,6 +21,7 @@ if (args.Contains("--connection-only"))
     await ConnectionProbe.RunAsync(transport);
     return;
 }
+await MetadataRegression.RunAsync(transport);
 await Regression.RunAsync(transport);
 await ConnectionViewModelRegression.RunAsync(transport);
 var address = Environment.GetEnvironmentVariable("MUSIC_WEBDAV_URL");

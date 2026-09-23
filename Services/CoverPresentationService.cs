@@ -16,6 +16,7 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
 {
     private int _coverUpdateVersion, _defaultPaletteVersion;
     private bool _disposed, _started, _usesDefaultPalette;
+    private CancellationTokenSource? _coverUpdateCts;
     private Music? _paletteMusic;
     public void Start()
     {
@@ -24,7 +25,44 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
         state.Preferences.PropertyChanged += OnCoverSettingsChanged;
     }
     public Task UpdatePlayBar(Music music, CancellationToken token = default)
-        => tasks.RunAsync(_ => UpdatePlayBarCoreAsync(music, token));
+    {
+        if (_disposed || state.Lifecycle.Phase == AppPhase.Stopping) return Task.CompletedTask;
+
+        var updateCts = new CancellationTokenSource();
+        var previousCts = Interlocked.Exchange(ref _coverUpdateCts, updateCts);
+        previousCts?.Cancel();
+
+        var scheduled = tasks.RunAsync(lifecycleToken =>
+            RunCoverUpdateAsync(music, updateCts, lifecycleToken, token));
+
+        // ApplicationTasks may already be closed during shutdown and therefore
+        // not invoke the operation. Avoid leaving the per-update CTS alive.
+        if (ReferenceEquals(scheduled, Task.CompletedTask))
+        {
+            Interlocked.CompareExchange(ref _coverUpdateCts, null, updateCts);
+            updateCts.Dispose();
+        }
+        return scheduled;
+    }
+
+    private async Task RunCoverUpdateAsync(
+        Music music,
+        CancellationTokenSource updateCts,
+        CancellationToken lifecycleToken,
+        CancellationToken callerToken)
+    {
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(
+            updateCts.Token, lifecycleToken, callerToken);
+        try
+        {
+            await UpdatePlayBarCoreAsync(music, linked.Token);
+        }
+        finally
+        {
+            Interlocked.CompareExchange(ref _coverUpdateCts, null, updateCts);
+            updateCts.Dispose();
+        }
+    }
 
     private async Task UpdatePlayBarCoreAsync(Music music, CancellationToken token)
     {
@@ -32,10 +70,10 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
         int version = Interlocked.Increment(ref _coverUpdateVersion);
         try
         {
-            byte[] picData = await Task.Run(async () =>
+            byte[]? picData = await Task.Run(async () =>
             {
                 token.ThrowIfCancellationRequested();
-                return await GetRawImage(music);
+                return await GetRawImage(music, false, token);
             }, token);
             if (token.IsCancellationRequested) return;
 
@@ -46,7 +84,7 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
                 palette = await AnimatedWin2dControls.Impressionist.PaletteExtractor
                     .ExtractFromBmpCacheAsync(thumbPath, state.Preferences.PaletteAlgorithm, ct: token);
             }
-            if (palette is null && picData.Length > 0)
+            if (palette is null && picData is { Length: > 0 })
             {
                 palette = await Task.Run(() =>
                     AnimatedWin2dControls.Impressionist.PaletteExtractor
@@ -68,7 +106,7 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
                         .LoadSquareRgba8FromBmpCacheAsync(artworkThumbPath, ct: token);
                 }
 
-                if (artwork is null && picData.Length > 0)
+                if (artwork is null && picData is { Length: > 0 })
                 {
                     artwork = await AnimatedWin2dControls.Impressionist.ArtworkPixelDecoder
                         .LoadSquareRgba8FromImageBytesAsync(picData, ct: token);
@@ -76,6 +114,20 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
             }
 
             if (token.IsCancellationRequested) return;
+
+            // SMTC 不需要原图分辨率。优先发送已经生成的缩略图缓存，
+            // 让待进入 UI 队列的闭包不再捕获几十 MB 的原始封面。
+            byte[]? mediaCover = picData;
+            if (music.ImageHash is { Length: > 0 })
+            {
+                var mediaThumbPath = CoverLoadQueue.GetThumbCachePath(music.ImageHash, CoverLoadQueue.CoverSize);
+                if (File.Exists(mediaThumbPath))
+                {
+                    try { mediaCover = await File.ReadAllBytesAsync(mediaThumbPath, token); }
+                    catch (FileNotFoundException) { }
+                }
+            }
+            picData = null;
 
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
@@ -106,7 +158,7 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
                     music.Title,
                     music.Author,
                     music.Album,
-                    picData);
+                    mediaCover);
             });
         }
         catch (OperationCanceledException)
@@ -178,6 +230,9 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
     {
         if (_disposed) return;
         _disposed = true;
+        var updateCts = Interlocked.Exchange(ref _coverUpdateCts, null);
+        updateCts?.Cancel();
+        // The running operation owns disposal; this only sends cancellation.
         Interlocked.Increment(ref _coverUpdateVersion);
         _defaultPaletteVersion++;
         state.Preferences.PropertyChanged -= OnCoverSettingsChanged;

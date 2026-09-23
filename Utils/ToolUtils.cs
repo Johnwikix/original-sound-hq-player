@@ -353,9 +353,18 @@ namespace WinUIMusicPlayer.Utils
             return true; // 默认为浅色模式
         }
 
-        public static async Task<byte[]> GetRawImage(Music music, bool isManual = false)
+        public static async Task<byte[]> GetRawImage(
+            Music music,
+            bool isManual = false,
+            CancellationToken cancellationToken = default)
         {
-            if (music.IsRemote) return await App.Services.GetRequiredService<WebDavLibraryService>().ReadCoverAsync(music);
+            cancellationToken.ThrowIfCancellationRequested();
+            if (music.IsRemote)
+            {
+                var remotePicture = await App.Services.GetRequiredService<WebDavLibraryService>().ReadCoverAsync(music);
+                cancellationToken.ThrowIfCancellationRequested();
+                return remotePicture;
+            }
             try
             {
                 // 磁盘缓存查找（raw bytes，避免重复从音频文件读取内嵌封面）
@@ -366,7 +375,7 @@ namespace WinUIMusicPlayer.Utils
                     if (File.Exists(cachePath))
                     {
                         if (File.GetLastWriteTime(cachePath) > File.GetLastWriteTime(music.Path))
-                            return File.ReadAllBytes(cachePath);
+                            return await File.ReadAllBytesAsync(cachePath, cancellationToken);
 
                         // 缓存过期：清理该 hash 的所有旧格式缓存 (_raw.bin / .bmp / .bgra8 / .jpg)
                         DeleteRawCaches(music.ImageHash);
@@ -374,6 +383,7 @@ namespace WinUIMusicPlayer.Utils
                 }
 
                 byte[]? picture = [];
+                cancellationToken.ThrowIfCancellationRequested();
                 if (FastReadExtensions.Contains(music.Extension))
                 {
                     picture = AudioCoverReader.ReadCover(music.Path);
@@ -398,6 +408,7 @@ namespace WinUIMusicPlayer.Utils
                 {
                     picture = await GetPicByteFromNet(music, isManual) ?? [];
                 }
+                cancellationToken.ThrowIfCancellationRequested();
                 if (picture.Length > 0)
                 {
                     Span<byte> hashSpan = stackalloc byte[8];
@@ -417,7 +428,7 @@ namespace WinUIMusicPlayer.Utils
                         {
                             var cachePath = GetRawCachePath(music.ImageHash);
                             Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
-                            await File.WriteAllBytesAsync(cachePath, picture);
+                            await File.WriteAllBytesAsync(cachePath, picture, cancellationToken);
                         }
                         catch (Exception ex) { _logger.LogError(ex, "写_raw.bin缓存失败"); }
                     }
@@ -434,6 +445,7 @@ namespace WinUIMusicPlayer.Utils
             }
             catch (Exception ex)
             {
+                if (cancellationToken.IsCancellationRequested) throw;
                 _logger.LogError(ex, $"GetRawImage 获取原始图片失败: {ex.Message}");
                 try
                 {

@@ -182,7 +182,10 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             Channel.CreateBounded<(DecodedFrame, PendingRequest)>(
                 new BoundedChannelOptions(1)
                 {
-                    FullMode = BoundedChannelFullMode.DropOldest,
+                    // DecodeFrame may own an ArrayPool buffer. DropOldest would
+                    // discard that tuple without a callback, permanently losing
+                    // the rented buffer. Backpressure keeps ownership explicit.
+                    FullMode = BoundedChannelFullMode.Wait,
                     SingleReader = true,
                     SingleWriter = true,
                 });

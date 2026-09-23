@@ -2,6 +2,19 @@
 
 新条目加在最上方。
 
+## 2026-09-23 修复切歌时封面与 Win2D 资源持续累积
+
+- `Controls/ImageSwitcher`、`PlayingDetailPage.xaml`：隐藏详情页时取消封面读取，原图解码宽度限制为 1536，过渡完成后释放上一张图源，并保留快速恢复所需的当前图像。
+- `CoverLoadQueue`、`AlbumCoverBehavior`、`FadeImageBehavior`：缩略图任务共享像素数据而非共享 `SoftwareBitmapSource`，各控件独立释放 WinRT 图像源；取消或替换时及时回收资源。
+- `CoverPresentationService`、`SystemMediaControlsService`、`ToolUtils`：切歌时取消过期封面/媒体控制任务及原图读取，避免大封面被旧任务链延迟持有。
+- `LyricsRenderCoordinator`、`AlbumArtControl`、`NowPlayingCanvas`：连续换词时立即释放被覆盖的 Win2D 待销毁行，修复丢弃池化帧和卸载时的 Win2D 视觉树引用，关停时完整清理文本布局、几何和缓存效果。
+
+## 2026-09-23 修复 WebDAV DSF 采样率显示为八分之一
+
+- `Services/WebDav/RemoteMetadataProbe.cs`：将 FFmpeg 对 DSF/DFF 暴露的 DSD 字节率换算为实际 DSD 采样率，并按一位样本写入元数据。
+- `Services/MusicDatabaseService.WebDav.cs`：后续元数据扫描自动重读旧版本已保存的八分之一采样率。
+- `_tools/WebDavRegression`：增加 DSF 64/128/256 回归检查，覆盖采样率、位深、时长和有界读取。
+
 ## 2026-09-23 精简 WebDAV 来源卡片操作
 
 - `View/SubView/WebDavSourcesControl.xaml/.cs`：移除无用的“歌曲”跳转按钮；来源图标由纯装饰 Border 改为与 AddFolderPage `OpenFolderButton` 同款的可点击按钮，直接打开 WebDAV 目录浏览，操作行不再保留重复的浏览按钮；清理不再使用的 using。

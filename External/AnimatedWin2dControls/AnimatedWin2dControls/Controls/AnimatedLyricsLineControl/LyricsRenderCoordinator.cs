@@ -192,8 +192,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             DisposeRenderLines();
             if (_pendingDisposeLines != null)
             {
-                foreach (var line in _pendingDisposeLines)
-                    line?.DisposeTextLayout();
+                DisposeLineList(_pendingDisposeLines);
                 _pendingDisposeLines = null;
             }
             _edgeFadeMask.Dispose();
@@ -263,6 +262,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void OnUILyricsChanged(IList<LyricLine>? newLyrics)
         {
+            // 多次换歌可能发生在下一帧之前。旧实现只保留一个 pending 引用，
+            // 中间列表会被覆盖，导致其中的 CanvasEffect/CommandList 永远不释放。
+            if (_pendingDisposeLines != null)
+                DisposeLineList(_pendingDisposeLines);
             _pendingDisposeLines = _renderLines;
 
             var newLines = new List<RenderLyricsLine>();
@@ -306,12 +309,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         {
             if (_pendingDisposeLines != null)
             {
-                foreach (var line in _pendingDisposeLines)
-                {
-                    line?.DisposeCaches();
-                    line?.DisposeTextLayout();
-                    line?.DisposeTextGeometry();
-                }
+                DisposeLineList(_pendingDisposeLines);
                 _pendingDisposeLines = null;
             }
 
@@ -713,7 +711,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void DisposeRenderLines()
         {
-            foreach (var line in _renderLines)
+            DisposeLineList(_renderLines);
+        }
+
+        private static void DisposeLineList(IEnumerable<RenderLyricsLine> lines)
+        {
+            foreach (var line in lines)
             {
                 line?.DisposeCaches();
                 line?.DisposeTextLayout();

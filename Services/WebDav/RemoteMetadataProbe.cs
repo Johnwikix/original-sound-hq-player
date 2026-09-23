@@ -90,9 +90,15 @@ public static unsafe class RemoteMetadataProbe
             double duration = format->duration > 0 ? format->duration * 1000d / ffmpeg.AV_TIME_BASE
                 : stream->duration > 0 ? stream->duration * ffmpeg.av_q2d(stream->time_base) * 1000 : 0;
             if (!double.IsFinite(duration) || duration < 0 || duration > TimeSpan.MaxValue.TotalMilliseconds) duration = 0;
-            int bits = parameters->bits_per_raw_sample > 0 ? parameters->bits_per_raw_sample : ffmpeg.av_get_bits_per_sample(parameters->codec_id);
+            bool isDsd = IsDsdCodec(parameters->codec_id);
+            // libavformat exposes DSF/DFF's byte rate as sample_rate (DSD bit rate / 8).
+            // Music metadata and the rest of the app use the actual one-bit DSD rate.
+            int sampleRate = isDsd && parameters->sample_rate > 0 && parameters->sample_rate <= int.MaxValue / 8
+                ? parameters->sample_rate * 8 : parameters->sample_rate;
+            int bits = isDsd ? 1 : parameters->bits_per_raw_sample > 0
+                ? parameters->bits_per_raw_sample : ffmpeg.av_get_bits_per_sample(parameters->codec_id);
             return new(Field("title"), Field("artist"), Field("album"), Number(Field("track")), Number(Field("disc")),
-                Number(Field("date")), parameters->sample_rate, parameters->ch_layout.nb_channels, bits,
+                Number(Field("date")), sampleRate, parameters->ch_layout.nb_channels, bits,
                 (int)Math.Clamp((format->bit_rate > 0 ? format->bit_rate : parameters->bit_rate) / 1000, 0, int.MaxValue), duration);
         }
         finally
@@ -120,4 +126,8 @@ public static unsafe class RemoteMetadataProbe
             file.Year ?? 0, (int)file.SampleRate, file.ChannelsArrangement.NbChannels,
             file.BitDepth, file.Bitrate, Math.Max(0, file.DurationMs));
     }
+
+    private static bool IsDsdCodec(AVCodecID codec)
+        => codec is AVCodecID.AV_CODEC_ID_DSD_LSBF or AVCodecID.AV_CODEC_ID_DSD_MSBF
+            or AVCodecID.AV_CODEC_ID_DSD_LSBF_PLANAR or AVCodecID.AV_CODEC_ID_DSD_MSBF_PLANAR;
 }

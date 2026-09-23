@@ -57,6 +57,7 @@
                         <uc:ImageSwitcher
                             CornerRadiusAmount="12"
                             ImageHash="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundHash, Mode=OneWay}"
+                            IsActive="{x:Bind ViewModel.AppViewModel.IsPlayingDetailVisible, Mode=OneWay}"
                             IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
                             ShadowAmount="16"
                             SwitchType="{x:Bind model:AppSettings.ImageSwitchType, Mode=OneWay}" />

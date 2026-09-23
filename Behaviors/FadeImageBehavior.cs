@@ -159,14 +159,29 @@ namespace WinUIMusicPlayer.Behaviors
 
                 // 无封面或缓存缺失时回退主题默认封面，保证切歌时背景正确切换
                 bool usesDefault = source is null;
-                token.ThrowIfCancellationRequested();
-                source ??= await LoadDefaultCoverAsync(isDark, token);
-
-                if (!token.IsCancellationRequested && _loadState.IsCurrent(version))
+                try
                 {
-                    TransitionToNewSource(source);
-                    if (source is not null) _loadState.Commit(version, hash, usesDefault, isDark);
-                    else _loadState.Reset();
+                    token.ThrowIfCancellationRequested();
+                    source ??= await LoadDefaultCoverAsync(isDark, token);
+
+                    if (!token.IsCancellationRequested && _loadState.IsCurrent(version))
+                    {
+                        TransitionToNewSource(source);
+                        if (source is not null) _loadState.Commit(version, hash, usesDefault, isDark);
+                        else _loadState.Reset();
+                    }
+                    else
+                    {
+                        // SoftwareBitmapSource owns a native bitmap. A canceled or
+                        // superseded request must release it instead of waiting for
+                        // the next image assignment or GC finalization.
+                        DisposeImageSource(source);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    DisposeImageSource(source);
+                    throw;
                 }
             }
             catch (OperationCanceledException) { }
@@ -277,6 +292,7 @@ namespace WinUIMusicPlayer.Behaviors
             _cts = null;
             Invalidate();
             StopAndCleanup();
+            SetSource(null);
             base.OnDetaching();
         }
 
@@ -292,9 +308,22 @@ namespace WinUIMusicPlayer.Behaviors
         private void SetSource(ImageSource? source)
         {
             if (AssociatedObject == null) return;
+            var previous = AssociatedObject.Source;
+            if (ReferenceEquals(previous, source))
+            {
+                ImageVisibility = source != null ? Visibility.Collapsed : Visibility.Visible;
+                return;
+            }
+
             AssociatedObject.Source = null;
             AssociatedObject.Source = source;
             ImageVisibility = source != null ? Visibility.Collapsed : Visibility.Visible;
+
+            // During a fade the previous source is owned by the overlay until
+            // StopAndCleanup removes it. Do not dispose it while the storyboard
+            // is still drawing that image.
+            if (!ReferenceEquals(previous, _tempOverlayImage?.Source))
+                DisposeImageSource(previous);
         }
 
         private void TransitionToNewSource(ImageSource? newSource)
@@ -363,11 +392,19 @@ namespace WinUIMusicPlayer.Behaviors
 
             if (_tempOverlayImage != null)
             {
+                var overlaySource = _tempOverlayImage.Source;
                 var parent = VisualTreeHelper.GetParent(_tempOverlayImage) as Panel;
                 parent?.Children.Remove(_tempOverlayImage);
                 _tempOverlayImage.Source = null;
                 _tempOverlayImage = null;
+                DisposeImageSource(overlaySource);
             }
+        }
+
+        private static void DisposeImageSource(ImageSource? source)
+        {
+            if (source is IDisposable disposable)
+                disposable.Dispose();
         }
     }
 }
