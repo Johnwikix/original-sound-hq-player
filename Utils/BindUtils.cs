@@ -144,15 +144,6 @@ namespace WinUIMusicPlayer.Utils
             return App.Services.GetRequiredService<AppViewModel>().GetAlbumSongCount(album).ToString();
         }
 
-        public static Music? PlayListCoverMusicConverter(int playListId)
-        {
-            var items = App.Services.GetRequiredService<MusicDatabaseService>().GetMusicByPlayListIdFromMem(playListId);
-            foreach (var item in items)
-            {
-                if (item.Music is not null) return item.Music;
-            }
-            return null;
-        }
         public static double BoolToOpacityRe08Converter(bool isInPlayingDetailMode)
         {
             return isInPlayingDetailMode ? 0 : 0.8;

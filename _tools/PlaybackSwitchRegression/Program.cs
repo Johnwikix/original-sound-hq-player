@@ -78,6 +78,7 @@ internal static unsafe partial class Program
         string root = args.Length > 0 ? Path.GetFullPath(args[0]) : Directory.GetCurrentDirectory();
         FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
         RunPcmFileTests(Path.Combine(AppContext.BaseDirectory, "Fixtures", "eac3-5.1.m4a"));
+        RunPcmFileTests(Path.Combine(AppContext.BaseDirectory, "Fixtures", "flac-invalid-tail.flac"), expectedFrames: 264600);
         RunExportTests(Path.Combine(AppContext.BaseDirectory, "Fixtures", "eac3-5.1.m4a"));
         RunExportTests(Path.Combine(root, "_tools", "test_tone.wav"));
         WriteDsfFixture();

@@ -2073,7 +2073,19 @@
     <value>リモートファイルは読み取り専用です。タグの書き込みやローカルファイル操作はできません。</value>
   </data>
   <data name="WebDavBrowserHint" xml:space="preserve">
-    <value>フォルダーを開くか、登録済みの曲を選んで再生します。</value>
+    <value>選択した登録済みの曲をチェックした順に再生します。</value>
+  </data>
+  <data name="WebDavBrowserTreeHelp.Text" xml:space="preserve">
+    <value>フォルダーを展開して曲を選択します。フォルダーの選択は表示済みの曲にのみ適用されます。</value>
+  </data>
+  <data name="WebDavFolderTreeHelp.Text" xml:space="preserve">
+    <value>フォルダーを展開し、音楽フォルダーを1つ以上選択します。親フォルダーには子フォルダーも含まれます。</value>
+  </data>
+  <data name="WebDavPlaySelectedButton.Content" xml:space="preserve">
+    <value>選択した曲を再生</value>
+  </data>
+  <data name="WebDavSelectedCountLabel.Text" xml:space="preserve">
+    <value>選択した曲:</value>
   </data>
   <data name="WebDavIndexFirst" xml:space="preserve">
     <value>先にこのソースを更新して曲を登録してください。</value>

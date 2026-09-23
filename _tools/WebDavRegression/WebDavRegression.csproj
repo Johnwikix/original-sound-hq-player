@@ -12,6 +12,7 @@
     <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
     <Compile Include="../../Model/WebDavSource.cs" Link="WebDavSource.cs" />
     <Compile Include="../../ViewModel/Pages/WebDavConnectionViewModel.cs" Link="WebDavConnectionViewModel.cs" />
+    <Compile Include="../../ViewModel/Pages/WebDavTreeItem.cs" Link="WebDavTreeItem.cs" />
     <Compile Include="../../Utils/WebDavText.cs" Link="WebDavText.cs" />
   </ItemGroup>
 </Project>

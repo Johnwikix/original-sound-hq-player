@@ -46,6 +46,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
     };
 
     private static readonly int EAgain = ffmpeg.AVERROR(ffmpeg.EAGAIN);
+    private const int MaxConsecutiveInvalidFrames = 32;
 
     /// <param name="forceRate">强制输出采样率（独占/ASIO 回退共享时按混音率）；null = 源率。</param>
     /// <param name="forceChannels">强制输出声道数；null = 源声道数（受 maxChannels 上限约束）。</param>
@@ -153,6 +154,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
         if (_fmt == null || _dec == null) return 0;
         int maxFrames = buffer.Length / Math.Max(1, Channels);
         if (maxFrames <= 0) return 0;
+        int invalidFrames = 0;
 
         while (true)
         {
@@ -166,6 +168,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
             int ret = ffmpeg.avcodec_receive_frame(_dec, _frame);
             if (ret == 0)
             {
+                invalidFrames = 0;
                 fixed (double* p = buffer)
                 {
                     got = ffmpeg.swr_convert(_swr, (byte**)&p, maxFrames,
@@ -183,6 +186,11 @@ internal sealed unsafe class PcmDecoder : IDisposable
                 got = ConvertOut(buffer, maxFrames);
                 return got; // 剩余样本一次给足（缓冲区足够大，通常一次排空）
             }
+            // A damaged packet (including junk after valid FLAC audio) need not end the
+            // decoder's lifetime. Drain its remaining output and keep reading to real EOF,
+            // so the session can finish normally and still service a later seek.
+            // Bound recovery in case a codec keeps returning errors without making progress.
+            if (ret == ffmpeg.AVERROR_INVALIDDATA && ++invalidFrames <= MaxConsecutiveInvalidFrames) continue;
             if (ret != EAgain) throw new IOException($"Decoder error {ret}.");
 
             // 3) 需要新输入包

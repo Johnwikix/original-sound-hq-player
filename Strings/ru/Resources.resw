@@ -2073,7 +2073,19 @@
     <value>Удалённые файлы доступны только для чтения. Запись тегов и локальные операции недоступны.</value>
   </data>
   <data name="WebDavBrowserHint" xml:space="preserve">
-    <value>Откройте папку или выберите проиндексированный трек.</value>
+    <value>Выбранные треки воспроизводятся в порядке выбора.</value>
+  </data>
+  <data name="WebDavBrowserTreeHelp.Text" xml:space="preserve">
+    <value>Раскройте папки и отметьте треки. Выбор папки отмечает только уже показанные треки.</value>
+  </data>
+  <data name="WebDavFolderTreeHelp.Text" xml:space="preserve">
+    <value>Раскройте папки и выберите одну или несколько музыкальных папок. Выбор родительской папки включает вложенные.</value>
+  </data>
+  <data name="WebDavPlaySelectedButton.Content" xml:space="preserve">
+    <value>Воспроизвести выбранное</value>
+  </data>
+  <data name="WebDavSelectedCountLabel.Text" xml:space="preserve">
+    <value>Выбрано треков:</value>
   </data>
   <data name="WebDavIndexFirst" xml:space="preserve">
     <value>Сначала обновите источник, чтобы добавить трек в медиатеку.</value>

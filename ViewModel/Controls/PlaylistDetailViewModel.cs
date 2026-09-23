@@ -395,7 +395,6 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                 await _db.RemoveMusicFromPlayList(playListId, selected.Music.Id);
                 if (AppViewModel.CurrentPlayList?.Id == playListId) AppViewModel.PlayListSongs.Remove(selected);
             }
-            await _db.GetPlayListMusic();
         }
 
         private async Task OnConvertAudioAsync(string tag)

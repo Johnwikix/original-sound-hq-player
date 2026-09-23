@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net11.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PlatformTarget>x64</PlatformTarget>
+    <Nullable>enable</Nullable>
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+    <PlaylistPageXaml Condition="'$(PlaylistPageXaml)' == ''">../../View/PlayListPage.xaml</PlaylistPageXaml>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.260804.1" />
+    <PackageReference Include="Microsoft.Xaml.Behaviors.WinUI.Managed" Version="3.0.1" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
+    <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
+    <Compile Include="../../Model/PlayList.cs" Link="PlayList.cs" />
+    <Compile Include="../../Model/PlayListMusic.cs" Link="PlayListMusic.cs" />
+    <Compile Include="../../Services/PlaylistSummaryProjection.cs" Link="PlaylistSummaryProjection.cs" />
+    <Compile Include="../../Services/LibraryQueries.cs" Link="LibraryQueries.cs" />
+    <Compile Include="../../State/LibraryState.cs" Link="LibraryState.cs" />
+    <Compile Include="../../Behaviors/AlbumCoverBehavior.cs" Link="AlbumCoverBehavior.cs" />
+    <Page Include="$(PlaylistPageXaml)" Link="View/PlayListPage.xaml" />
+  </ItemGroup>
+</Project>

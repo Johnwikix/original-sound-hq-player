@@ -22,6 +22,10 @@ namespace WinUIMusicPlayer.Model
             set => SetProperty(ref field, value);
         }
 
+        /// <summary>按歌单顺序选出的封面曲目；随库和成员映射更新，不持久化图片或曲目副本。</summary>
+        [Ignore]
+        public Music? CoverMusic { get; set => SetProperty(ref field, value); }
+
         [RelayCommand]
         public void EnterPlayListView()
         {

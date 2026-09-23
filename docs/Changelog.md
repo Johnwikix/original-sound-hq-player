@@ -2,6 +2,32 @@
 
 新条目加在最上方。
 
+## 2026-09-23 修复升级后播放列表卡片封面为空
+
+- `Model/PlayList.cs`、`View/PlayListPage.xaml`：封面绑定改为可通知的 `CoverMusic`，修复界面先于歌曲映射加载时，按不变 ID 取图后不再刷新的问题；该属性不写入数据库，无需重建歌单。
+- `Services/PlaylistSummaryProjection.cs`、`ViewModel/AppViewModel.cs`、`Services/MusicDatabaseService.cs`：在 UI 线程随音乐库、歌单成员和顺序更新封面及数量，单次遍历成员选择默认排序的首曲；删除后读取最新成员，移除详情页重复查询。
+- `_tools/PlaylistCoverRegression`：链接真实页面 XAML、图片行为和投影，覆盖延迟加载、同数量排序、移除曲目、新建/空歌单及通知；1.2.5.0 原始 XAML 复现失败，修复后通过。主程序 x64 Release 构建 0 错误。
+
+## 2026-09-23 修复本地 FLAC 曲尾错误导致播放停住
+
+- `External/AudioPlayer/Decode/PcmDecoder.cs`：有限次恢复无效编码帧并继续读取到真实 EOF，修复曲尾错误导致不发结束通知、自动切歌及 seek 失效；真实 I/O 失败仍保留失败语义。
+- `Player/AudioPlayer.exe`：更新 NativeAOT 播放器产物。
+- `_tools/PlaybackSwitchRegression`、`_tools/AudioPlayerSmokeTest`：新增自行生成的曲尾损坏 FLAC、完整解码及 EOF 后 seek、DirectSound 淡入淡出和原生结束通知验证；用户文件完整播放 292.667 秒通过，播放回归 295/295、网络回归 50 项通过。
+- `docs/PlaybackEndInvestigation.md`：记录复现证据及 1.2.2.0 以来播放改动的目的，定位回归来源为 `636f4844` 的共用解码错误处理。
+
+## 2026-09-23 修复 WebDAV 树节点显示类型名
+
+- `WebDavBrowserDialog`、`WebDavConnectionDialog`：模板按实际的 `TreeViewNode` 类型读取 `Content` 中的数据并创建名称和图标，修复控件类型名直出和折叠后复用视图引发的异常。
+- `_tools/WebDavTreeUiRegression`：链接生产 XAML 和节点模型，运行真实 WinUI 对话框验证显示、多选和展开行为。
+
+## 2026-09-23 WebDAV 目录对话框改为多选树
+
+- `WebDavConnectionDialog`、`WebDavConnectionViewModel`、`WebDavTreeItem`：按展开加载多层目录，恢复已保存的深层音乐根目录，并对父子重复选择去重。
+- `WebDavBrowserDialog`、`WebDavBrowserViewModel`：按展开浏览远端目录，勾选多首已入库歌曲后按选择顺序建立播放队列；六种语言资源同步更新。
+- `WebDavConnectionDialog`、`WebDavBrowserDialog`：通过节点映射关联目录数据，将 `SelectedNodes` 的勾选变化同步到 ViewModel。
+- `_tools/WebDavRegression`：增加目录树深层选择、保存与恢复回归。
+- `docs/WebDAV接入设计方案.md`：同步目录树与多选播放交互说明。
+
 ## 2026-09-23 修复短曲目偶发结束后不自动切歌
 
 - `Services/BassPlayerCommandService.cs`、`Services/AutoAdvanceGate.cs`：自动切歌执行中保留一次新的结束请求，待当前选曲与界面状态完成后继续处理；执行异常记录日志，不让单飞状态卡住。

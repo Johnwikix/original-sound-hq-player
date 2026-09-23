@@ -69,10 +69,20 @@ internal sealed class Fixture : IAsyncDisposable
             string path = parts[1];
             if (parts[0] == "PROPFIND")
             {
+                const string musicFolder = "/dav/%E9%9F%B3%E4%B9%90/";
+                string requested = path.StartsWith(musicFolder + "live/", StringComparison.Ordinal) ? musicFolder + "live/"
+                    : path.StartsWith(musicFolder + "studio/", StringComparison.Ordinal) ? musicFolder + "studio/"
+                    : path.StartsWith(musicFolder, StringComparison.Ordinal) ? musicFolder : "/dav/";
                 string xml = "<d:multistatus xmlns:d=\"DAV:\">" +
-                    "<d:response><d:href>/dav/</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>" +
-                    "<d:response><d:href>/dav/%E9%9F%B3%E4%B9%90</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>" +
-                    $"<d:response><d:href>/dav/tone.flac</d:href><d:propstat><d:prop><d:resourcetype/><d:getcontentlength>{Bytes.Length}</d:getcontentlength><d:getetag>&quot;v1&quot;</d:getetag></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response></d:multistatus>";
+                    $"<d:response><d:href>{requested}</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>" +
+                    (requested == "/dav/"
+                        ? "<d:response><d:href>/dav/%E9%9F%B3%E4%B9%90</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>" +
+                          $"<d:response><d:href>/dav/tone.flac</d:href><d:propstat><d:prop><d:resourcetype/><d:getcontentlength>{Bytes.Length}</d:getcontentlength><d:getetag>&quot;v1&quot;</d:getetag></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>"
+                        : requested == musicFolder
+                            ? "<d:response><d:href>/dav/%E9%9F%B3%E4%B9%90/live/</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>" +
+                              "<d:response><d:href>/dav/%E9%9F%B3%E4%B9%90/studio/</d:href><d:propstat><d:prop><d:resourcetype><d:collection/></d:resourcetype></d:prop><d:status>HTTP/1.1 200 OK</d:status></d:propstat></d:response>"
+                            : "") +
+                    "</d:multistatus>";
                 byte[] body = Encoding.UTF8.GetBytes(xml);
                 await Header(207, body.Length, "");
                 await stream.WriteAsync(body, _stop.Token);

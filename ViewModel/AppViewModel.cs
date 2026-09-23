@@ -328,6 +328,7 @@ namespace WinUIMusicPlayer.ViewModel
         public void NotifySongsSourceChanged()
         {
             _libraryQueries.Invalidate();
+            RefreshPlayListSummaries();
             LibraryEmptyVisibility = State.Library.Songs.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
             if (IsInitialized)
             {
@@ -343,8 +344,12 @@ namespace WinUIMusicPlayer.ViewModel
 
         private void AllPlayList_CollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
+            RefreshPlayListSummaries();
             UpdateMenuOptionsPlayList();
         }
+
+        internal void RefreshPlayListSummaries()
+            => PlaylistSummaryProjection.Refresh(AllPlayList, AppData.AllPlayListMusics, _libraryQueries);
 
         public event Action? PlaylistMenusChanged;
         public event Action? UsbMenusChanged;

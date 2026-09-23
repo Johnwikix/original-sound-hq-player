@@ -14,6 +14,7 @@
     <Compile Include="../../AudioConverters/FFmpegAudioConverter.cs" />
     <Compile Include="../../Model/ConversionMetadata.cs" />
     <None Include="Fixtures/eac3-5.1.m4a" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures/flac-invalid-tail.flac" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="../../Model/EqualizerModel.cs" />
     <Compile Include="../../Utils/EqualizerHelper.cs" />
     <!-- Exercise the shipping engine/decoder/interop without starting IPC or a real device. -->

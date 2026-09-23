@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,6 +19,9 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
     private bool _disposed;
     private WebDavConnection? _tested;
     private CancellationTokenSource? _requestCancel;
+    private CancellationTokenSource _treeCancel = CancellationTokenSource.CreateLinkedTokenSource(library.StoppingToken);
+    private readonly HashSet<string> _savedRoots = new(original?.Roots.Split('\n', StringSplitOptions.RemoveEmptyEntries) ?? [], StringComparer.Ordinal);
+    private readonly HashSet<Task> _treeLoads = [];
     private int _revision;
     private WebDavCertificate? _certificate;
     private WebDavCertificateTrust? _trust = string.IsNullOrEmpty(original?.TrustedCertificateSha256) ? null
@@ -34,7 +38,7 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
         }
     } = original?.BaseUri ?? "";
     public string UserName { get; set { if (SetProperty(ref field, value)) InvalidateConnection(); } } = original?.UserName ?? "";
-    public string Password { get; set { if (SetProperty(ref field, value)) InvalidateConnection(); } } = "";
+    public string Password { get; set { if (SetProperty(ref field, value) && !_disposed) InvalidateConnection(); } } = "";
     public bool ScanOnStartup { get; set => SetProperty(ref field, value); } = original?.ScanOnStartup ?? false;
     public bool ReadMetadata { get; set => SetProperty(ref field, value); } = original?.ReadMetadata ?? true;
     public bool Enabled { get; set => SetProperty(ref field, value); } = original?.Enabled ?? true;
@@ -52,17 +56,31 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
             ForgetCertificateCommand.NotifyCanExecuteChanged();
         }
     }
-    public ObservableCollection<WebDavFolderChoice> Folders { get; } = [];
+    public ObservableCollection<WebDavTreeItem> Folders { get; } = [];
+    public bool HasFolders => Folders.Count != 0;
     private void InvalidateConnection()
     {
         _revision++;
         _requestCancel?.Cancel();
+        var previousTreeCancel = _treeCancel;
+        previousTreeCancel.Cancel();
+        if (_treeLoads.Count == 0) previousTreeCancel.Dispose();
+        else _ = DisposeTreeCancelAfterLoadsAsync(previousTreeCancel, [.. _treeLoads]);
+        _treeCancel = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token);
         _tested = null;
         SetCertificate(null);
         Folders.Clear();
+        OnPropertyChanged(nameof(HasFolders));
         Status = "";
         OnPropertyChanged(nameof(HasTrustedCertificate));
         ForgetCertificateCommand.NotifyCanExecuteChanged();
+    }
+    private static async Task DisposeTreeCancelAfterLoadsAsync(CancellationTokenSource cancel, Task[] loads)
+    {
+        try { await Task.WhenAll(loads); }
+        catch (OperationCanceledException) { }
+        catch { /* 目录加载入口已报告错误，清理仍须继续。 */ }
+        finally { cancel.Dispose(); }
     }
     private void SetCertificate(WebDavCertificate? certificate)
     {
@@ -97,17 +115,17 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
             _tested = null;
             SetCertificate(null);
             Folders.Clear();
+            OnPropertyChanged(nameof(HasFolders));
             Status = ToolUtils.GetString("WebDavConnecting");
             var connection = Connection();
-            var folders = new System.Collections.Generic.List<WebDavFolderChoice>
-            { new(connection.Root.AbsolutePath, ToolUtils.GetString("WebDavEntireRoot")) { IsSelected = true } };
-            await foreach (var entry in transport.ListAsync(connection, connection.Root.AbsolutePath, requestCancel.Token))
-                if (entry.IsDirectory) folders.Add(new(entry.Href, entry.Name));
+            var root = new WebDavTreeItem(connection.Root.AbsolutePath, ToolUtils.GetString("WebDavEntireRoot"), true)
+            { IsSelected = original is null || _savedRoots.Count == 0 || HasSavedRoot(connection.Root.AbsolutePath), IsExpanded = true };
+            await LoadChildrenCoreAsync(root, connection, requestCancel.Token);
+            if (original is not null) await RevealSavedRootsAsync(root, connection, requestCancel.Token);
             if (_disposed || revision != _revision) return;
-            foreach (var folder in folders) Folders.Add(folder);
+            Folders.Add(root);
+            OnPropertyChanged(nameof(HasFolders));
             _tested = connection;
-            if (original is not null)
-                foreach (var folder in Folders) folder.IsSelected = Array.IndexOf(original.Roots.Split('\n'), folder.Href) >= 0;
             Status = ToolUtils.GetString("WebDavConnected");
         }
         catch (OperationCanceledException) { }
@@ -123,6 +141,62 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
         }
         finally { _requestCancel = null; IsConnecting = false; }
     }
+    private bool HasSavedRoot(string href) => _savedRoots.Contains(href);
+
+    private async Task RevealSavedRootsAsync(WebDavTreeItem folder, WebDavConnection connection, CancellationToken token)
+    {
+        foreach (var child in folder.Children)
+        {
+            bool hasDescendant = false;
+            foreach (var savedRoot in _savedRoots)
+                if (savedRoot.StartsWith(child.Href, StringComparison.Ordinal) && savedRoot != child.Href)
+                { hasDescendant = true; break; }
+            child.IsSelected = HasSavedRoot(child.Href);
+            if (!hasDescendant) continue;
+            child.IsExpanded = true;
+            await LoadChildrenCoreAsync(child, connection, token);
+            await RevealSavedRootsAsync(child, connection, token);
+        }
+    }
+
+    public async Task LoadChildrenAsync(WebDavTreeItem folder)
+    {
+        if (_disposed || _tested is not { } connection || folder.IsLoaded || folder.IsLoading) return;
+        int revision = _revision;
+        try
+        {
+            var work = LoadChildrenCoreAsync(folder, connection, _treeCancel.Token);
+            _treeLoads.Add(work);
+            try { await work; }
+            finally { _treeLoads.Remove(work); }
+            if (_disposed || revision != _revision) return;
+            foreach (var child in folder.Children) child.IsSelected = HasSavedRoot(child.Href);
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            if (!_disposed && revision == _revision)
+                Status = WebDavText.Error(ex is WebDavException dav ? dav.Code : "ConnectionFailed");
+        }
+    }
+
+    private async Task LoadChildrenCoreAsync(WebDavTreeItem folder, WebDavConnection connection, CancellationToken token)
+    {
+        if (folder.IsLoaded || folder.IsLoading) return;
+        folder.IsLoading = true;
+        try
+        {
+            var children = new List<WebDavTreeItem>();
+            await foreach (var entry in transport.ListAsync(connection, folder.Href, token))
+                if (entry.IsDirectory) children.Add(new(entry.Href, entry.Name, true));
+            token.ThrowIfCancellationRequested();
+            foreach (var child in children) folder.Children.Add(child);
+            folder.IsLoaded = true;
+        }
+        finally { folder.IsLoading = false; }
+    }
+
+    public void SetSelected(WebDavTreeItem folder, bool selected) => folder.IsSelected = selected;
     private bool CanTrustCertificate() => !_disposed && !IsConnecting && _certificate is { CanTrust: true };
     [RelayCommand(CanExecute = nameof(CanTrustCertificate))]
     private async Task TrustCertificateAsync()
@@ -149,8 +223,8 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
             if (_disposed) return false;
             var connection = Connection();
             if (_tested != connection) { Status = ToolUtils.GetString("WebDavTestFirst"); return false; }
-            var roots = new System.Collections.Generic.List<string>();
-            foreach (var folder in Folders) if (folder.IsSelected) roots.Add(folder.Href);
+            var roots = new List<string>();
+            foreach (var folder in Folders) CollectSelectedRoots(folder, false, roots);
             if (roots.Count == 0) { Status = ToolUtils.GetString("WebDavChooseFolder"); return false; }
             if (roots.Contains(connection.Root.AbsolutePath)) { roots.Clear(); roots.Add(connection.Root.AbsolutePath); }
             var source = new WebDavSource
@@ -166,26 +240,29 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
         }
         catch (Exception ex) { Status = WebDavText.Error(ex is WebDavException dav ? dav.Code : "ConnectionFailed"); return false; }
     }
+    private static void CollectSelectedRoots(WebDavTreeItem folder, bool selectedAncestor, List<string> roots)
+    {
+        if (folder.IsSelected && !selectedAncestor) roots.Add(folder.Href);
+        foreach (var child in folder.Children) CollectSelectedRoots(child, selectedAncestor || folder.IsSelected, roots);
+    }
     public void Dispose()
     {
         if (_disposed) return;
         _disposed = true;
         _stop.Cancel();
+        _treeCancel.Cancel();
         Password = "";
         _tested = null;
         _ = DrainAsync();
     }
     private async Task DrainAsync()
     {
-        try { if (ConnectCommand.ExecutionTask is { } task) await task; }
+        try
+        {
+            if (ConnectCommand.ExecutionTask is { } task) await task;
+            await Task.WhenAll([.. _treeLoads]);
+        }
         catch (OperationCanceledException) { }
-        finally { _stop.Dispose(); }
+        finally { _treeCancel.Dispose(); _stop.Dispose(); }
     }
-}
-
-public sealed class WebDavFolderChoice(string href, string name) : ObservableObject
-{
-    public string Href { get; } = href;
-    public string Name { get; } = name;
-    public bool IsSelected { get; set => SetProperty(ref field, value); }
 }

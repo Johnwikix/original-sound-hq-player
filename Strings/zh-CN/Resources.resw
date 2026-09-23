@@ -2072,7 +2072,19 @@
     <value>远程文件为只读，不能写回标签或执行本地文件操作。</value>
   </data>
   <data name="WebDavBrowserHint" xml:space="preserve">
-    <value>点击目录浏览，点击已入库歌曲播放。</value>
+    <value>勾选已入库歌曲后按选择顺序播放。</value>
+  </data>
+  <data name="WebDavBrowserTreeHelp.Text" xml:space="preserve">
+    <value>展开目录并勾选歌曲；勾选文件夹只会选择当前已显示的歌曲。</value>
+  </data>
+  <data name="WebDavFolderTreeHelp.Text" xml:space="preserve">
+    <value>展开目录并选择一个或多个音乐文件夹；选择父目录会包含其子目录。</value>
+  </data>
+  <data name="WebDavPlaySelectedButton.Content" xml:space="preserve">
+    <value>播放所选歌曲</value>
+  </data>
+  <data name="WebDavSelectedCountLabel.Text" xml:space="preserve">
+    <value>已选歌曲：</value>
   </data>
   <data name="WebDavIndexFirst" xml:space="preserve">
     <value>请先更新此来源的目录，将歌曲加入音乐库。</value>

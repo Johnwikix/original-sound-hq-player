@@ -16,6 +16,8 @@ int runSeconds = args.Length > 2 && int.TryParse(args[2], out var rs) ? rs : 6;
 string outputMode = args.FirstOrDefault(a => a.StartsWith("--mode="))?[7..] ?? "WasapiShared";
 bool dop = args.Contains("--dop");
 Console.WriteLine($"[smoke] 模式={outputMode} DoP={dop}");
+if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("ORIGINALSOUND_IPC_SCOPE")))
+    Environment.SetEnvironmentVariable("ORIGINALSOUND_IPC_SCOPE", "smoke-" + Guid.NewGuid().ToString("N"));
 
 // 1. 先持有客户端存活互斥体（服务端靠它确认主程序在场）
 using var clientMutex = new Mutex(true, IpcConstants.ClientAliveMutexName);
@@ -55,6 +57,7 @@ using var notificationReady = Semaphore.OpenExisting(IpcConstants.NotificationSe
 Console.WriteLine("[smoke] IPC 握手完成");
 
 int lastNotificationVersion = accessor.ReadInt32(IpcConstants.NotificationVersionOffset);
+int playbackEnds = 0;
 using var transport = new MailboxClient(accessor, requestReady, responseReady);
 byte[] responseBuffer = new byte[IpcConstants.MaxResponseSize];
 
@@ -72,6 +75,7 @@ void PumpNotifications()
     lastNotificationVersion = v;
     long off = IpcEnvelope.NotificationSlotOffset(v);
     var typeId = IpcEnvelope.ReadMessageTypeId(accessor, off);
+    if (typeId == MessageTypeId.PlayEnded) playbackEnds++;
     Console.WriteLine($"[smoke] 通知: {typeId}");
 }
 
@@ -100,7 +104,7 @@ int setLen = BinarySerializer.WriteIpcSetting(setBuf, new IpcSetting
     IsEqualizerEnabled = false,
     Volume = vol,
     IsSettingChanged = false,
-    IsFadeEnabled = false,
+    IsFadeEnabled = args.Contains("--fade"),
 });
 t = Send(CommandId.UpdateSettings, setBuf[..setLen], out _);
 Console.WriteLine($"[smoke] UpdateSettings → {t}");
@@ -124,6 +128,70 @@ t = Send(CommandId.Play, playBuf, out _);
 Console.WriteLine($"[smoke] Play(confirmed) → {t}（已收到执行确认）");
 Thread.Sleep(400); // 观察首段输出与通知
 PumpNotifications();
+
+// Natural end regression: real output + IPC, optionally seek near EOF to shorten a long fixture.
+// --expect-end --fade --seek-near-end --next=<file> (omit --seek-near-end for a full playthrough).
+if (args.Contains("--expect-end"))
+{
+    try
+    {
+        (long Current, long Total) Progress()
+        {
+            var type = Send(CommandId.GetTimeProgress, ReadOnlySpan<byte>.Empty, out var payload);
+            if (type != MessageTypeId.TimeProgress) throw new InvalidOperationException($"Progress response: {type}");
+            return BinarySerializer.ReadTimeProgress(payload);
+        }
+        void Seek(long position)
+        {
+            Span<byte> payload = stackalloc byte[BinarySerializer.ChangePositionRequestSize];
+            BinarySerializer.WriteChangePositionRequest(payload, new ChangePositionRequest { PositionMs = position });
+            Send(CommandId.ChangePosition, payload, out _);
+        }
+        bool WaitUntil(Func<bool> condition, int timeoutMs)
+        {
+            var clock = System.Diagnostics.Stopwatch.StartNew();
+            do
+            {
+                PumpNotifications();
+                if (condition()) return true;
+                Thread.Sleep(25);
+            } while (clock.ElapsedMilliseconds < timeoutMs);
+            return false;
+        }
+
+        long duration = Progress().Total;
+        if (args.Contains("--seek-near-end")) Seek(Math.Max(0, duration - 4000));
+        if (!WaitUntil(() => playbackEnds > 0, checked(runSeconds * 1000)))
+            throw new InvalidOperationException($"PlayEnded missing, position={Progress()}");
+        if (playbackEnds != 1 || Math.Abs(Progress().Current - duration) > 200)
+            throw new InvalidOperationException($"Duplicate or premature PlayEnded: count={playbackEnds}, position={Progress()}");
+        Console.WriteLine($"[smoke] PASS: one PlayEnded after draining {duration}ms");
+
+        Seek(0);
+        var resumeType = Send(CommandId.PlayButton, ReadOnlySpan<byte>.Empty, out var resumeState);
+        if (resumeType != MessageTypeId.PlayState || !BinarySerializer.ReadPlayStateResponse(resumeState).IsPlaying
+            || !WaitUntil(() => Progress().Current > Math.Min(200, Math.Max(1, duration / 4)), 3000))
+            throw new InvalidOperationException("Seek/resume after EOF did not advance");
+        Console.WriteLine("[smoke] PASS: seek/resume after EOF advances");
+
+        string? nextPath = args.FirstOrDefault(a => a.StartsWith("--next="))?[7..];
+        if (nextPath != null)
+        {
+            BinarySerializer.WritePlayRequest(playBuf, new PlayRequest { Url = Path.GetFullPath(nextPath) });
+            Send(CommandId.Play, playBuf, out _);
+            if (!WaitUntil(() => { var p = Progress(); return p.Total != duration && p.Current > 200; }, 5000))
+                throw new InvalidOperationException("Next fixture (with a different duration) did not start");
+            Console.WriteLine("[smoke] PASS: next track starts with fading enabled");
+        }
+        Send(CommandId.MusicEnd, ReadOnlySpan<byte>.Empty, out _);
+        return 0;
+    }
+    finally
+    {
+        if (!server.HasExited) server.Kill();
+        server.WaitForExit(3000);
+    }
+}
 
 // 播放按钮确认状态（--no-toggle 时跳过，观察连续播放进度）
 if (!args.Contains("--no-toggle"))
@@ -195,7 +263,7 @@ for (int i = 0; i < runSeconds * 4; i++)
 }
 
 // seek 测试
-Span<byte> posBuf = new byte[8];
+Span<byte> posBuf = new byte[BinarySerializer.ChangePositionRequestSize];
 BinarySerializer.WriteChangePositionRequest(posBuf, new ChangePositionRequest { PositionMs = 5000 });
 t = Send(CommandId.ChangePosition, posBuf, out _);
 Console.WriteLine($"[smoke] ChangePosition(5s) → {t}");

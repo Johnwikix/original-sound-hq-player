@@ -2073,7 +2073,19 @@
     <value>Los archivos remotos son de solo lectura. No se pueden escribir etiquetas ni realizar operaciones locales.</value>
   </data>
   <data name="WebDavBrowserHint" xml:space="preserve">
-    <value>Abre una carpeta o reproduce una pista indexada.</value>
+    <value>Las pistas indexadas se reproducen en el orden en que se seleccionan.</value>
+  </data>
+  <data name="WebDavBrowserTreeHelp.Text" xml:space="preserve">
+    <value>Expande las carpetas y marca las pistas. Marcar una carpeta solo selecciona las pistas ya visibles.</value>
+  </data>
+  <data name="WebDavFolderTreeHelp.Text" xml:space="preserve">
+    <value>Expande las carpetas y elige una o varias carpetas de música. Una carpeta principal incluye sus subcarpetas.</value>
+  </data>
+  <data name="WebDavPlaySelectedButton.Content" xml:space="preserve">
+    <value>Reproducir selección</value>
+  </data>
+  <data name="WebDavSelectedCountLabel.Text" xml:space="preserve">
+    <value>Pistas seleccionadas:</value>
   </data>
   <data name="WebDavIndexFirst" xml:space="preserve">
     <value>Actualiza esta fuente para añadir la pista a la biblioteca.</value>

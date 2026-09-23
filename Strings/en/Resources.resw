@@ -2073,7 +2073,19 @@
     <value>Remote files are read-only. Tag writing and local file operations are unavailable.</value>
   </data>
   <data name="WebDavBrowserHint" xml:space="preserve">
-    <value>Open a folder, or select an indexed track to play.</value>
+    <value>Selected indexed tracks play in the order checked.</value>
+  </data>
+  <data name="WebDavBrowserTreeHelp.Text" xml:space="preserve">
+    <value>Expand folders and check tracks. Checking a folder selects only tracks currently shown.</value>
+  </data>
+  <data name="WebDavFolderTreeHelp.Text" xml:space="preserve">
+    <value>Expand folders and select one or more music folders. Selecting a parent includes its subfolders.</value>
+  </data>
+  <data name="WebDavPlaySelectedButton.Content" xml:space="preserve">
+    <value>Play selected</value>
+  </data>
+  <data name="WebDavSelectedCountLabel.Text" xml:space="preserve">
+    <value>Selected tracks:</value>
   </data>
   <data name="WebDavIndexFirst" xml:space="preserve">
     <value>Update this source to add the track to your library first.</value>

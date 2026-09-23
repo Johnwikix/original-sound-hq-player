@@ -6,6 +6,11 @@ using System.Diagnostics;
 
 ffmpeg.RootPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../Libraries/FFmpeg/x64"));
 using var transport = new WebDavTransport();
+if (args.Contains("--tree-only"))
+{
+    await ConnectionViewModelRegression.RunTreeAsync(transport);
+    return;
+}
 if (args.Contains("--connection-only"))
 {
     await ConnectionProbe.RunAsync(transport);

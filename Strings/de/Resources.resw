@@ -2073,7 +2073,19 @@
     <value>Remote-Dateien sind schreibgeschützt. Tags und lokale Dateiaktionen sind nicht verfügbar.</value>
   </data>
   <data name="WebDavBrowserHint" xml:space="preserve">
-    <value>Ordner öffnen oder einen indizierten Titel abspielen.</value>
+    <value>Ausgewählte indizierte Titel werden in Auswahlreihenfolge abgespielt.</value>
+  </data>
+  <data name="WebDavBrowserTreeHelp.Text" xml:space="preserve">
+    <value>Ordner aufklappen und Titel auswählen. Ein Ordner wählt nur bereits angezeigte Titel aus.</value>
+  </data>
+  <data name="WebDavFolderTreeHelp.Text" xml:space="preserve">
+    <value>Ordner aufklappen und einen oder mehrere Musikordner auswählen. Ein übergeordneter Ordner schließt Unterordner ein.</value>
+  </data>
+  <data name="WebDavPlaySelectedButton.Content" xml:space="preserve">
+    <value>Auswahl abspielen</value>
+  </data>
+  <data name="WebDavSelectedCountLabel.Text" xml:space="preserve">
+    <value>Ausgewählte Titel:</value>
   </data>
   <data name="WebDavIndexFirst" xml:space="preserve">
     <value>Zuerst die Quelle aktualisieren, um den Titel hinzuzufügen.</value>
