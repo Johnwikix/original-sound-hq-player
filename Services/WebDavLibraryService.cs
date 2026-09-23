@@ -98,6 +98,7 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
             if (existing.Id != source.Id && existing.Name.Equals(source.Name, StringComparison.OrdinalIgnoreCase)) throw new WebDavException("NameExists");
         if (source.UserName.Length != 0) new PasswordVault().Add(new PasswordCredential("OriginalSoundPlayer.WebDav", source.CredentialKey, password));
         await database.SaveWebDavSourceAsync(source);
+        if (_library is not null) await _library.RefreshSongsSourceAsync();
         SourcesChanged?.Invoke();
     }
     public Task ScanAsync(WebDavSource source)
@@ -166,6 +167,7 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
             source.LastScanUtc = DateTime.UtcNow;
             await database.MarkRemoteSourceScannedAsync(source.Id, run).ConfigureAwait(false);
             await database.SaveWebDavSourceAsync(source).ConfigureAwait(false);
+            if (_library is not null) await _library.RefreshSongsSourceAsync(token).ConfigureAwait(false);
             if (source.ReadMetadata)
             {
                 int after = 0;

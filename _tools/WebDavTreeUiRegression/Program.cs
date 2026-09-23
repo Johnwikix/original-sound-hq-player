@@ -12,6 +12,9 @@ using Windows.Graphics.Imaging;
 using Windows.Storage;
 using WinUIMusicPlayer.View.SubView;
 using WinUIMusicPlayer.ViewModel;
+using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Services.WebDav;
 
 namespace WebDavTreeUiRegression;
 
@@ -58,9 +61,9 @@ public sealed partial class TestApp : Application
 
             var browser = new WebDavBrowserDialog { XamlRoot = host.XamlRoot };
             await CheckDialogAsync(browser, browser.TestTree, "browser");
-            var connection = new WebDavConnectionDialog { XamlRoot = host.XamlRoot };
-            await CheckDialogAsync(connection, connection.TestTree, "connection");
-            File.WriteAllText(ResultPath, "PASS: both production dialog templates render names and icons; lazy children, multi-selection, and collapse/re-expand remain functional.");
+            await CheckConnectionAsync(host.XamlRoot);
+            await CheckLibraryAndSourcesAsync(host);
+            File.WriteAllText(ResultPath, "PASS: real checkbox cascade and partial selection, saved roots, HTTP lazy loading; production SQLite scope filtering and identity retention; real ComboBox removal fallback and filters.");
         }
         catch (Exception ex)
         {
@@ -115,6 +118,86 @@ public sealed partial class TestApp : Application
             dialog.Hide();
             await shown;
         }
+    }
+
+    private static async Task CheckConnectionAsync(XamlRoot xamlRoot)
+    {
+        const string musicRoot = "/dav/%E9%9F%B3%E4%B9%90/";
+        await using var server = new Fixture();
+        using var transport = new WebDavTransport();
+        var library = new WebDavLibraryService();
+        using var vm = new WebDavConnectionViewModel(transport, library, new WebDavSource
+        {
+            Id = 1, Name = "Fixture", BaseUri = server.Root, Roots = musicRoot
+        });
+        var dialog = new WebDavConnectionDialog(vm) { XamlRoot = xamlRoot };
+        var tree = dialog.TestTree;
+        var shown = dialog.ShowAsync();
+        try
+        {
+            await vm.ConnectCommand.ExecuteAsync(null);
+            var root = tree.RootNodes[0];
+            root.IsExpanded = true;
+            var music = root.Children[0];
+            await UntilAsync(() => FindCheckBox(tree.ContainerFromNode(music)) is not null, "music checkbox");
+            var musicCheck = FindCheckBox(tree.ContainerFromNode(music))!;
+            Check(await vm.SaveAsync() && library.Saved?.Roots == musicRoot,
+                "restoring the only child must not save its automatically selected parent");
+            Check(musicCheck.IsChecked == true, "saved checkbox restored");
+            music.IsExpanded = true;
+            await UntilAsync(() => music.Children.Count == 2 && FindCheckBox(tree.ContainerFromNode(music.Children[1])) is not null,
+                "real lazy loading and child templates");
+            var live = FindCheckBox(tree.ContainerFromNode(music.Children[0]))!;
+            var studio = FindCheckBox(tree.ContainerFromNode(music.Children[1]))!;
+            Check(live.IsChecked == true && studio.IsChecked == true, "lazy children inherit checked parent");
+            Toggle(live);
+            Check(live.IsChecked == false && studio.IsChecked == true && musicCheck.IsChecked is null,
+                "excluding child retains checked sibling and partial parent");
+            Check(await vm.SaveAsync() && library.Saved?.Roots == musicRoot + "studio/", "exclude child from parent scope");
+            Toggle(live);
+            string siblings = musicRoot + "live/\n" + musicRoot + "studio/";
+            Check(await vm.SaveAsync() && library.Saved?.Roots == siblings && musicCheck.IsChecked is null,
+                "checking every child does not expand explicit scope");
+            Toggle(musicCheck);
+            Check(live.IsChecked == true && studio.IsChecked == true && await vm.SaveAsync() && library.Saved?.Roots == musicRoot,
+                "clicking partial parent explicitly selects subtree");
+            Toggle(musicCheck);
+            Check(live.IsChecked == false && studio.IsChecked == false && !await vm.SaveAsync(),
+                "unchecking parent clears all descendants");
+            Toggle(live);
+            Check(await vm.SaveAsync() && library.Saved?.Roots == musicRoot + "live/", "select only one directory after entire root");
+            music.IsExpanded = false;
+            music.IsExpanded = true;
+            await UntilAsync(() => FindCheckBox(tree.ContainerFromNode(music.Children[0]))?.IsChecked == true,
+                "selection survives re-expansion");
+            var rootCheck = FindCheckBox(tree.ContainerFromNode(root))!;
+            Toggle(rootCheck);
+            Check(musicCheck.IsChecked == true && await vm.SaveAsync() && library.Saved?.Roots == "/dav/",
+                "entire root cascades to loaded descendants");
+            Toggle(rootCheck);
+            Check(!await vm.SaveAsync() && musicCheck.IsChecked == false, "clearing entire root clears subtree");
+            await vm.ConnectCommand.ExecuteAsync(null);
+            Check(await vm.SaveAsync() && library.Saved?.Roots == musicRoot, "reconnect restores original without broadening");
+            await UntilAsync(() => HasText(tree, "音乐") && HasIcon(tree, "\uE8B7"), "reconnected names and icons render");
+            await Task.Delay(300); // 等待原生展开动画结束再留存截图。
+            await SaveImageAsync(tree, "connection-tree.png");
+        }
+        finally { dialog.Hide(); await shown; }
+    }
+
+    private static void Toggle(CheckBox check)
+    {
+        var peer = new Microsoft.UI.Xaml.Automation.Peers.CheckBoxAutomationPeer(check);
+        ((Microsoft.UI.Xaml.Automation.Provider.IToggleProvider)peer.GetPattern(Microsoft.UI.Xaml.Automation.Peers.PatternInterface.Toggle)).Toggle();
+    }
+
+    private static CheckBox? FindCheckBox(DependencyObject? node)
+    {
+        if (node is null) return null;
+        if (node is CheckBox { Name: "ScanRootCheckBox" } check) return check;
+        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(node); i++)
+            if (FindCheckBox(VisualTreeHelper.GetChild(node, i)) is { } found) return found;
+        return null;
     }
 
     private static bool HasText(DependencyObject node, string text)

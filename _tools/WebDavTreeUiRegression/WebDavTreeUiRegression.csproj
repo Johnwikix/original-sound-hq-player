@@ -9,12 +9,24 @@
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <PlatformTarget>x64</PlatformTarget>
     <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
     <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
     <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.260804.1" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
+    <Compile Include="../../View/SubView/WebDavConnectionDialog.xaml.cs" Link="WebDavConnectionDialog.xaml.cs" />
+    <Compile Include="../../ViewModel/Pages/WebDavConnectionViewModel.cs" Link="WebDavConnectionViewModel.cs" />
+    <Compile Include="../../Model/WebDavSource.cs" Link="WebDavSource.cs" />
+    <Compile Include="../../Utils/WebDavText.cs" Link="WebDavText.cs" />
+    <Compile Include="../../Services/WebDav/WebDavTransport.cs;../../Services/WebDav/WebDavCertificates.cs" />
+    <Compile Include="../WebDavRegression/Fixture.cs" />
+    <Compile Include="../../Services/MusicDatabaseService.WebDav.cs" />
+    <Compile Include="../../ViewModel/Pages/WebDavSourcesViewModel.cs" />
+    <Compile Include="../../Model/Music.cs;../../Model/MusicLyrics.cs;../../Model/PlayListMusic.cs" />
+    <Compile Include="../../Services/WebDav/WebDavCachePaths.cs" />
     <Compile Include="../../ViewModel/Pages/WebDavTreeItem.cs" Link="WebDavTreeItem.cs" />
     <Page Include="../../View/SubView/WebDavBrowserDialog.xaml" Link="View/SubView/WebDavBrowserDialog.xaml" />
     <Page Include="../../View/SubView/WebDavConnectionDialog.xaml" Link="View/SubView/WebDavConnectionDialog.xaml" />

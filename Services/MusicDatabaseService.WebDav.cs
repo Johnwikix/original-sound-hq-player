@@ -16,10 +16,38 @@ public partial class MusicDatabaseService
         await WhenInitialized;
         return await _dbConnection.Table<WebDavSource>().ToListAsync();
     }
-    public Task SaveWebDavSourceAsync(WebDavSource source) => source.Id == 0 ? _dbConnection.InsertAsync(source) : _dbConnection.UpdateAsync(source);
+    public Task SaveWebDavSourceAsync(WebDavSource source)
+    {
+        var connection = new WebDavConnection(WebDavTransport.NormalizeRoot(source.BaseUri), "", "");
+        var roots = source.Roots.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        if (roots.Length == 0) roots = [connection.Root.AbsolutePath];
+        var sql = new StringBuilder("UPDATE RemoteTrack SET Missing = 1 WHERE SourceId = ? AND NOT (");
+        var parameters = new List<object>(1 + roots.Length * 2) { source.Id };
+        for (int i = 0; i < roots.Length; i++)
+        {
+            string root = WebDavTransport.Resolve(connection, roots[i]).AbsolutePath.TrimEnd('/') + "/";
+            if (i != 0) sql.Append(" OR ");
+            // 按完整目录前缀匹配，避免 music/ 匹配 music-old/ 或把 %、_ 当通配符。
+            sql.Append("substr(Href, 1, ?) = ? COLLATE BINARY");
+            parameters.Add(root.Length);
+            parameters.Add(root);
+        }
+        sql.Append(')');
+        return _dbConnection.RunInTransactionAsync(db =>
+        {
+            if (source.Id == 0) db.Insert(source);
+            else db.Update(source);
+            parameters[0] = source.Id;
+            // 保留收藏、歌单映射和元数据；重新纳入范围后扫描可复用原曲目 ID。
+            db.Execute(sql.ToString(), parameters.ToArray());
+        });
+    }
+    /// <summary>缺失或已排除的远程曲目保留在数据库中，但不进入可见曲库。</summary>
+    public Task<List<Music>> GetVisibleMusicAsync() => _dbConnection.QueryAsync<Music>(
+        "SELECT Music.* FROM Music WHERE SourceId = 0 OR EXISTS (SELECT 1 FROM RemoteTrack WHERE MusicId = Music.Id AND Missing = 0) ORDER BY Title");
     public Task<RemoteTrack?> GetRemoteTrackAsync(int musicId) => _dbConnection.FindAsync<RemoteTrack>(musicId)!;
     public Task<Music?> GetRemoteMusicAsync(int sourceId, string href) =>
-        _dbConnection.FindWithQueryAsync<Music>("SELECT Music.* FROM Music JOIN RemoteTrack ON Music.Id=RemoteTrack.MusicId WHERE RemoteTrack.SourceId=? AND Href=? COLLATE BINARY", sourceId, href)!;
+        _dbConnection.FindWithQueryAsync<Music>("SELECT Music.* FROM Music JOIN RemoteTrack ON Music.Id=RemoteTrack.MusicId WHERE RemoteTrack.SourceId=? AND Href=? COLLATE BINARY AND Missing=0", sourceId, href)!;
     public async Task<WebDavCacheSettings> GetWebDavCacheSettingsAsync()
     {
         await WhenInitialized;

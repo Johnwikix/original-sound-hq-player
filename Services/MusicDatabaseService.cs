@@ -874,10 +874,7 @@ namespace WinUIMusicPlayer.Services
         {
             string localizedUnknownAlbum = ToolUtils.GetString("UnknownAlbum");
             string localizedUnknownArtist = ToolUtils.GetString("UnknownArtist");
-            var musicList = await _dbConnection
-                .Table<Music>()
-                .OrderBy(m => m.Title)
-                .ToListAsync();
+            var musicList = await GetVisibleMusicAsync();
 
             // 优化7: AppData.UnknownAlbums / UnknownArtists 建议在 AppData 中改为 HashSet<string>
             // 以将 Contains 从 O(n) 降为 O(1)，此处调用方式不变，修改点在 AppData 定义处

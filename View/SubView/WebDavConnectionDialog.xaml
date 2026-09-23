@@ -35,16 +35,21 @@
             <StackPanel Spacing="6" Visibility="{x:Bind utils:BindUtils.BoolToVisibilityConverter(ViewModel.HasFolders), Mode=OneWay}">
                 <TextBlock x:Uid="WebDavFolderTreeHelp" TextWrapping="Wrap"
                            Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                <TreeView x:Name="FolderTree" Height="210" SelectionMode="Multiple"
-                          Expanding="Tree_Expanding" SelectionChanged="Tree_SelectionChanged"
+                <TreeView x:Name="FolderTree" Height="210" SelectionMode="None"
+                          Expanding="Tree_Expanding"
                           AutomationProperties.Name="WebDAV">
                     <TreeView.ItemTemplate>
                         <DataTemplate x:DataType="controls:TreeViewNode">
                             <TreeViewItem>
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <FontIcon Glyph="{x:Bind ((vm:WebDavTreeItem)Content).IconGlyph}" FontSize="15" />
-                                    <TextBlock Text="{x:Bind ((vm:WebDavTreeItem)Content).Name}" TextTrimming="CharacterEllipsis" />
-                                </StackPanel>
+                                <!-- 模型负责级联显示和扫描根；部分选中不会自动扩大为父目录。 -->
+                                <CheckBox x:Name="ScanRootCheckBox" IsChecked="{x:Bind ((vm:WebDavTreeItem)Content).SelectionState, Mode=OneWay}"
+                                          Tag="{x:Bind Content}" Click="ScanRoot_Click"
+                                          AutomationProperties.Name="{x:Bind ((vm:WebDavTreeItem)Content).Name}">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <FontIcon Glyph="{x:Bind ((vm:WebDavTreeItem)Content).IconGlyph}" FontSize="15" />
+                                        <TextBlock Text="{x:Bind ((vm:WebDavTreeItem)Content).Name}" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                </CheckBox>
                             </TreeViewItem>
                         </DataTemplate>
                     </TreeView.ItemTemplate>

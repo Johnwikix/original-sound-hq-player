@@ -75,8 +75,10 @@ public partial class WebDavSourcesViewModel : ObservableObject
                 Sources.Add(item);
                 Choices.Add(new(source.Id, source.Name));
             }
-            foreach (var choice in Choices) if (choice.Id == selected) { SelectedSource = choice; break; }
-            if (SelectedSource is not null && !Choices.Contains(SelectedSource)) SelectedSource = Choices[0];
+            var nextSelection = Choices[0];
+            foreach (var choice in Choices) if (choice.Id == selected) { nextSelection = choice; break; }
+            // 移除选项时 ComboBox 会通过双向绑定写回 null，仍须恢复选择和来源过滤器。
+            SelectedSource = nextSelection;
             if (!_loaded)
             {
                 var settings = await _database.GetWebDavCacheSettingsAsync();

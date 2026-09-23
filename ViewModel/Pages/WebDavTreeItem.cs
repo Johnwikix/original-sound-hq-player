@@ -16,5 +16,10 @@ public sealed class WebDavTreeItem(string href, string name, bool isDirectory) :
     public bool IsLoaded { get; set; }
     public bool IsLoading { get; set; }
     public bool IsExpanded { get; set; }
+    /// <summary>节点是否被选中；连接表单中包含从祖先继承的选择。</summary>
     public bool IsSelected { get; set => SetProperty(ref field, value); }
+    /// <summary>连接表单的显示状态；部分选择不提升为新的扫描根。</summary>
+    public bool? SelectionState { get; internal set => SetProperty(ref field, value); } = false;
+    internal bool IsScanRoot { get; set; }
+    internal WebDavTreeItem? Parent { get; set; }
 }

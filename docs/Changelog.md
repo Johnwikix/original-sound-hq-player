@@ -2,6 +2,13 @@
 
 新条目加在最上方。
 
+## 2026-09-23 修复 WebDAV 目录选择、曲库范围和来源回退
+
+- `WebDavConnectionDialog.xaml/.cs`、`WebDavConnectionViewModel.cs`、`WebDavTreeItem.cs`：模型管理父子级联与部分选中，懒加载子目录继承选择；扫描根独立保存，勾选所有子目录不会意外扩大到父目录，取消父目录清空子树，取消单个子目录保留其余范围。
+- `MusicDatabaseService.WebDav.cs`、`MusicDatabaseService.cs`、`WebDavLibraryService.cs`：保存来源时立即排除范围外的旧索引，曲库读取过滤缺失曲目并刷新当前视图；重新扫描纳入的歌曲复用原 ID，保留收藏和歌单映射。
+- `WebDavSourcesViewModel.cs`：当前来源被移除且 ComboBox 清空选项后，选择和过滤器统一回退到“全部来源”；移除其他来源保留当前选择。
+- `_tools/WebDavTreeUiRegression`：链接生产对话框、ViewModel、SQLite 方法，覆盖真实复选框点击、级联与保存、范围缩小及重载、曲目身份保留和真实 ComboBox 删除回退。已被扩大并保存的旧配置仍需重新选择原目录。
+
 ## 2026-09-23 修复升级后播放列表卡片封面为空
 
 - `Model/PlayList.cs`、`View/PlayListPage.xaml`：封面绑定改为可通知的 `CoverMusic`，修复界面先于歌曲映射加载时，按不变 ID 取图后不再刷新的问题；该属性不写入数据库，无需重建歌单。

@@ -2,7 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System.Windows.Input;
 
-// 只替换网络、数据库和播放依赖；链接并编译生产 XAML，保留真实 WinUI 模板、布局和选择过程。
+// 浏览对话框只验证模板；连接对话框链接真实代码和 ViewModel，使用本地 HTTP fixture。
 namespace WinUIMusicPlayer.View.SubView
 {
     public sealed class DialogFixture
@@ -38,22 +38,12 @@ namespace WinUIMusicPlayer.View.SubView
 
     public sealed partial class WebDavConnectionDialog : ContentDialog
     {
-        public DialogFixture ViewModel { get; } = new();
         public TreeView TestTree => FolderTree;
-        public WebDavConnectionDialog() => InitializeComponent();
-        private void Tree_Expanding(TreeView sender, TreeViewExpandingEventArgs args) { }
-        private void Tree_SelectionChanged(TreeView sender, TreeViewSelectionChangedEventArgs args) { }
-        private void Save_Click(ContentDialog sender, ContentDialogButtonClickEventArgs args) { }
     }
 }
 
 namespace WinUIMusicPlayer.Utils
 {
-    public static class ToolUtils
-    {
-        public static string GetString(string key) => key;
-    }
-
     public static class BindUtils
     {
         public static Visibility BoolToVisibilityConverter(bool value) => value ? Visibility.Visible : Visibility.Collapsed;

@@ -119,11 +119,12 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
             Status = ToolUtils.GetString("WebDavConnecting");
             var connection = Connection();
             var root = new WebDavTreeItem(connection.Root.AbsolutePath, ToolUtils.GetString("WebDavEntireRoot"), true)
-            { IsSelected = original is null || _savedRoots.Count == 0 || HasSavedRoot(connection.Root.AbsolutePath), IsExpanded = true };
+            { IsScanRoot = original is null || _savedRoots.Count == 0 || HasSavedRoot(connection.Root.AbsolutePath), IsExpanded = true };
             await LoadChildrenCoreAsync(root, connection, requestCancel.Token);
             if (original is not null) await RevealSavedRootsAsync(root, connection, requestCancel.Token);
             if (_disposed || revision != _revision) return;
             Folders.Add(root);
+            RefreshSelection();
             OnPropertyChanged(nameof(HasFolders));
             _tested = connection;
             Status = ToolUtils.GetString("WebDavConnected");
@@ -151,7 +152,7 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
             foreach (var savedRoot in _savedRoots)
                 if (savedRoot.StartsWith(child.Href, StringComparison.Ordinal) && savedRoot != child.Href)
                 { hasDescendant = true; break; }
-            child.IsSelected = HasSavedRoot(child.Href);
+            child.IsScanRoot = HasSavedRoot(child.Href);
             if (!hasDescendant) continue;
             child.IsExpanded = true;
             await LoadChildrenCoreAsync(child, connection, token);
@@ -170,7 +171,7 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
             try { await work; }
             finally { _treeLoads.Remove(work); }
             if (_disposed || revision != _revision) return;
-            foreach (var child in folder.Children) child.IsSelected = HasSavedRoot(child.Href);
+            RefreshSelection();
         }
         catch (OperationCanceledException) { }
         catch (Exception ex)
@@ -188,7 +189,7 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
         {
             var children = new List<WebDavTreeItem>();
             await foreach (var entry in transport.ListAsync(connection, folder.Href, token))
-                if (entry.IsDirectory) children.Add(new(entry.Href, entry.Name, true));
+                if (entry.IsDirectory) children.Add(new(entry.Href, entry.Name, true) { Parent = folder });
             token.ThrowIfCancellationRequested();
             foreach (var child in children) folder.Children.Add(child);
             folder.IsLoaded = true;
@@ -196,7 +197,54 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
         finally { folder.IsLoading = false; }
     }
 
-    public void SetSelected(WebDavTreeItem folder, bool selected) => folder.IsSelected = selected;
+    /// <summary>级联选择由模型维护，父节点的部分选择不会扩大持久化的扫描范围。</summary>
+    public void SetSelected(WebDavTreeItem folder, bool selected)
+    {
+        if (_disposed) return;
+        if (!selected)
+        {
+            // 从选中的祖先里排除一个子树时，以沿途的兄弟目录保留其余范围。
+            // Roots 只表达包含关系，不能同时保留祖先根又排除其中的子目录。
+            var selectedAncestor = folder.Parent;
+            while (selectedAncestor is not null && !selectedAncestor.IsScanRoot) selectedAncestor = selectedAncestor.Parent;
+            if (selectedAncestor is not null)
+            {
+                var branch = folder;
+                while (branch.Parent is { } parent)
+                {
+                    parent.IsScanRoot = false;
+                    foreach (var sibling in parent.Children)
+                        if (!ReferenceEquals(sibling, branch)) sibling.IsScanRoot = true;
+                    if (ReferenceEquals(parent, selectedAncestor)) break;
+                    branch = parent;
+                }
+            }
+        }
+        ClearScanRoots(folder);
+        folder.IsScanRoot = selected;
+        RefreshSelection();
+    }
+    private static void ClearScanRoots(WebDavTreeItem folder)
+    {
+        folder.IsScanRoot = false;
+        foreach (var child in folder.Children) ClearScanRoots(child);
+    }
+    private void RefreshSelection()
+    {
+        foreach (var root in Folders) RefreshSelection(root, false);
+    }
+    private static void RefreshSelection(WebDavTreeItem folder, bool inherited)
+    {
+        bool selected = inherited || folder.IsScanRoot;
+        bool hasSelectedChild = false;
+        foreach (var child in folder.Children)
+        {
+            RefreshSelection(child, selected);
+            hasSelectedChild |= child.SelectionState != false;
+        }
+        folder.IsSelected = selected;
+        folder.SelectionState = selected ? true : hasSelectedChild ? null : false;
+    }
     private bool CanTrustCertificate() => !_disposed && !IsConnecting && _certificate is { CanTrust: true };
     [RelayCommand(CanExecute = nameof(CanTrustCertificate))]
     private async Task TrustCertificateAsync()
@@ -242,8 +290,8 @@ public partial class WebDavConnectionViewModel(WebDavTransport transport, WebDav
     }
     private static void CollectSelectedRoots(WebDavTreeItem folder, bool selectedAncestor, List<string> roots)
     {
-        if (folder.IsSelected && !selectedAncestor) roots.Add(folder.Href);
-        foreach (var child in folder.Children) CollectSelectedRoots(child, selectedAncestor || folder.IsSelected, roots);
+        if (folder.IsScanRoot && !selectedAncestor) roots.Add(folder.Href);
+        foreach (var child in folder.Children) CollectSelectedRoots(child, selectedAncestor || folder.IsScanRoot, roots);
     }
     public void Dispose()
     {
