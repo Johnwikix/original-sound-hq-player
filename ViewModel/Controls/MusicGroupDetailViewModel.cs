@@ -315,8 +315,8 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         {
             try
             {
-                if (AppViewModel.CurrentPlayingList is not null && AppViewModel.CurrentPlayingMusic is not null &&
-                    AppViewModel.TryFindById(AppViewModel.CurrentPlayingMusic.Id, out var m) && m is not null)
+                if (AppViewModel.CurrentPlayingList is not null && AppViewModel.SelectedPlaybackMusic is not null &&
+                    AppViewModel.TryFindById(AppViewModel.SelectedPlaybackMusic.Id, out var m) && m is not null)
                 {
                     SelectedMusic = m;
                     _view?.OnScrollToMusic(m);

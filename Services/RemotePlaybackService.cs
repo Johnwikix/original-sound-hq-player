@@ -24,11 +24,13 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
     private WebDavPlaybackBridge? _bridge;
     private Task _monitor = Task.CompletedTask;
     private Guid _sessionId;
-    private long _generation, _intentVersion, _seekId;
+    private long _generation, _sessionGeneration, _intentVersion, _seekId;
     private bool _intent = true, _active, _needsRestart;
     private Snapshot? _snapshot;
+    private Music? _music;
     private sealed record Snapshot(ProgressSnapshot Progress);
     public event Action? Ended;
+    public event Action<Music, long, bool>? Failed;
     public bool IsActive { get { lock (_gate) return _active; } }
     public bool WantsPlay { get { lock (_gate) return _intent; } }
     public bool NeedsStart { get { lock (_gate) return !_active || _needsRestart; } }
@@ -48,16 +50,21 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
         {
             await StopSessionCoreAsync();
             token.ThrowIfCancellationRequested();
-            lock (_gate) { if (generation != _generation) return; }
+            lock (_gate) { if (generation != _generation) return; _music = music; }
             var (source, track) = await library.ResolveAsync(music);
             token.ThrowIfCancellationRequested();
             lock (_gate) { if (generation != _generation) return; }
-            _sessionCancel = CancellationTokenSource.CreateLinkedTokenSource(token);
-            var connection = library.Connect(source);
-            var session = await Task.Run(() => new RemoteReadSession(transport, connection, WebDavLibraryService.ToEntry(track), cache, music.Path));
+            // 选曲等待和正在播放的会话有不同寿命：下次探活取消，不能停掉旧歌的监控。
+            // 准备阶段由 token 中断并收尾；成功后只由会话 Stop/应用退出取消。
+            lock (_gate) _sessionCancel = new CancellationTokenSource();
+            // 完整缓存从租约读取，不要求网络或 PasswordVault；连接仅在缺失字节时建立。
+            var session = new RemoteReadSession(transport, () => library.Connect(source), WebDavLibraryService.ToEntry(track), cache, music.Path);
             _bridge = new WebDavPlaybackBridge(session);
+            if (!session.HasCompleteCache && library.IsSourceOffline(source.Id) &&
+                !await library.EnsureAvailableAsync(source, token)) throw new WebDavException("SourceUnavailable");
             _bridge.SetPlaying(false);
             _bridge.Start();
+            _sessionGeneration = generation;
             _sessionId = Guid.NewGuid();
             var reply = await _client.PrepareAsync(new PlaybackSource
             {
@@ -71,23 +78,30 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
             bool current;
             lock (_gate) current = generation == _generation;
             if (!current) { await StopSessionCoreAsync(); return; }
-            await SetIntentAsync(null);
+            await SetIntentAsync(null).WaitAsync(token);
+            token.ThrowIfCancellationRequested();
             _monitor = MonitorAsync(music, _sessionId, generation, _sessionCancel.Token);
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { await StopSessionCoreAsync(); }
         catch (Exception ex)
         {
+            var failure = _bridge?.SourceFailure;
             await StopSessionCoreAsync();
-            ReportFailure(ex is WebDavException dav ? dav.Code : "PlaybackFailed", generation);
+            ReportFailure(failure?.Code ?? (ex is WebDavException dav ? dav.Code : "PlaybackFailed"), generation, music, failure?.SourceUnavailable == true);
         }
         finally { _switch.Release(); }
     }
     public async Task SetIntentAsync(bool? playing)
     {
+        long generation;
+        Music? music;
         lock (_gate)
         {
             if (!_active) return;
             if (playing.HasValue) { _intent = playing.Value; _intentVersion++; }
+            if (_needsRestart) return;
+            generation = _generation;
+            music = _music;
         }
         await _control.WaitAsync();
         try
@@ -97,7 +111,12 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
                 Guid id = _sessionId;
                 if (id == Guid.Empty || _sessionCancel?.IsCancellationRequested != false) return;
                 bool intent; long version;
-                lock (_gate) { intent = _intent; version = _intentVersion; }
+                lock (_gate)
+                {
+                    if (generation != _generation || generation != _sessionGeneration) return;
+                    intent = _intent;
+                    version = _intentVersion;
+                }
                 var response = intent ? await _client.PlayAsync(id, _sessionCancel.Token) : await _client.PauseAsync(id, _sessionCancel.Token);
                 if (!response.Accepted) return;
                 _bridge?.SetPlaying(intent && response.Phase == StreamPhase.Playing);
@@ -105,7 +124,7 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
             }
         }
         catch (OperationCanceledException) { }
-        catch (Exception) { ReportFailure("PlaybackFailed", _generation); }
+        catch (Exception) { if (music is not null) ReportFailure("PlaybackFailed", generation, music); }
         finally { _control.Release(); }
     }
     public async Task SeekAsync(long milliseconds)
@@ -130,7 +149,18 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
             using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
             do
             {
+                // 源端读取失败可能先于解码器耗尽缓冲；不等播放器超时才恢复队列。
+                if (_bridge?.SourceFailure is { } failure)
+                {
+                    ReportFailure(failure.Code, generation, music, failure.SourceUnavailable);
+                    return;
+                }
                 var reply = await _client.StatusAsync(id, token);
+                if (_bridge?.SourceFailure is { } failureAfterStatus)
+                {
+                    ReportFailure(failureAfterStatus.Code, generation, music, failureAfterStatus.SourceUnavailable);
+                    return;
+                }
                 if (!reply.Accepted || reply.SessionId != id) throw new WebDavException("PlaybackFailed");
                 lock (_gate)
                 {
@@ -162,21 +192,31 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
                         }
                     });
                 }
-                if (reply.Phase is StreamPhase.Failed) { ReportFailure(_bridge?.Error ?? "PlaybackFailed", generation); return; }
+                if (reply.Phase is StreamPhase.Failed)
+                {
+                    var readFailure = _bridge?.SourceFailure;
+                    ReportFailure(readFailure?.Code ?? _bridge?.Error ?? "PlaybackFailed", generation, music, readFailure?.SourceUnavailable == true);
+                    return;
+                }
                 if (reply.Phase is StreamPhase.Ended or StreamPhase.Stopped) return;
             } while (await timer.WaitForNextTickAsync(token));
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-        catch (Exception) { ReportFailure("PlaybackFailed", generation); }
+        catch (Exception) { ReportFailure("PlaybackFailed", generation, music); }
     }
-    private void ReportFailure(string code, long generation)
+    private void ReportFailure(string code, long generation, Music music, bool sourceUnavailable = false)
     {
+        bool advance;
+        long intentVersion;
         lock (_gate)
         {
-            if (generation != _generation) return;
+            if (generation != _generation || _needsRestart) return;
+            advance = _intent;
+            intentVersion = _intentVersion;
             _intent = false;
             _needsRestart = true;
         }
+        if (sourceUnavailable) library.ReportSourceFailure(music.SourceId);
         logger.LogWarning("Remote playback failed: {Code}", code);
         App.MainWindow.DispatcherQueue.TryEnqueue(() =>
         {
@@ -187,16 +227,30 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
             state.State.Shell.InfoBarTitle = ToolUtils.GetString("Error");
             state.State.Shell.InfoBarMessage = WebDavText.Error(code);
             state.State.Shell.InfoBarIsOpen = true;
+            // 错误入队后用户仍可能暂停；恢复不能覆盖更晚的显式意图。
+            bool shouldAdvance;
+            lock (_gate) shouldAdvance = advance && intentVersion == _intentVersion;
+            Failed?.Invoke(music, generation, shouldAdvance);
         });
     }
-    public async Task StopAsync()
+    public Task StopAsync()
     {
         long generation;
-        lock (_gate) { generation = ++_generation; _intent = false; }
-        _sessionCancel?.Cancel();
+        lock (_gate)
+        {
+            generation = ++_generation;
+            _intent = false;
+            _sessionCancel?.Cancel();
+        }
+        // 先同步记录停止意图，磁盘 Flush 和会话清理留在后台；迟到的停止不能覆盖新选曲。
+        return Task.Run(() => StopCoreAsync(generation));
+    }
+    private async Task StopCoreAsync(long generation)
+    {
         await _switch.WaitAsync();
         try
         {
+            lock (_gate) { if (generation != _generation) return; }
             await StopSessionCoreAsync();
             lock (_gate) { if (generation == _generation) { _active = false; _snapshot = null; } }
         }
@@ -204,7 +258,7 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
     }
     private async Task StopSessionCoreAsync()
     {
-        _sessionCancel?.Cancel();
+        lock (_gate) _sessionCancel?.Cancel();
         await _monitor;
         _monitor = Task.CompletedTask;
         await _control.WaitAsync();
@@ -221,8 +275,11 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
             finally
             {
                 _bridge = null;
-                _sessionCancel?.Dispose();
-                _sessionCancel = null;
+                lock (_gate)
+                {
+                    _sessionCancel?.Dispose();
+                    _sessionCancel = null;
+                }
             }
         }
         finally { _control.Release(); }

@@ -148,8 +148,8 @@ namespace WinUIMusicPlayer.Services
                         break;
                     }
                     int currentIndex = AppViewModel.GetCurrentIndex();
-                    int nextIndex = PlaybackCommands.FindPlayableIndex(playingList, currentIndex, 1);
-                    if (nextIndex >= 0) await App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(nextIndex);
+                    int nextIndex = PlaybackCommands.FindCandidateIndex(playingList, currentIndex, 1);
+                    if (nextIndex >= 0) await App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(nextIndex, stopWhenUnavailable: true);
                     else MusicEnd();
                     break;
                 case PlayMode.RepeatOff:
@@ -190,9 +190,10 @@ namespace WinUIMusicPlayer.Services
             if (!CanPlay || AppViewModel.CurrentPlayingList.Count == 0) return;
             try
             {
-                int currentIndex = AppViewModel.GetCurrentIndex();
-                int nextIndex = PlaybackCommands.FindPlayableIndex(AppViewModel.CurrentPlayingList, currentIndex, 1);
-                if (nextIndex >= 0) _ = App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(nextIndex);
+                var coordinator = App.Services.GetRequiredService<PlaybackCoordinator>();
+                int currentIndex = coordinator.GetNavigationIndex();
+                int nextIndex = PlaybackCommands.FindCandidateIndex(AppViewModel.CurrentPlayingList, currentIndex, 1);
+                if (nextIndex >= 0) _ = coordinator.PlayAtAsync(nextIndex);
             }
             catch (Exception ex) { _logger.LogError(ex, $"PlayNextTrack failed: {ex.Message}"); }
         }

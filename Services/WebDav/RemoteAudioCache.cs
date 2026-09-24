@@ -24,6 +24,35 @@ public sealed class RemoteAudioCache
     private volatile bool _enabled;
     public bool Enabled => _enabled;
     public event Action? Changed;
+    public event Action? ContentsChanged;
+
+    internal static string GetKey(string resource, WebDavEntry entry) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(resource + "\n" + entry.ETag + "\n" + entry.Modified + "\n" + entry.Length)));
+
+    public bool HasCompleteFile(string resource, WebDavEntry entry)
+    {
+        lock (_gate)
+        {
+            if (_directory.Length == 0 || entry.Length <= 0) return false;
+            string path = Path.Combine(_directory, GetKey(resource, entry) + ".audio");
+            try { return !_deleteOnRelease.Contains(path) && new FileInfo(path) is { Exists: true } file && file.Length == entry.Length; }
+            catch (IOException) { return false; }
+            catch (UnauthorizedAccessException) { return false; }
+        }
+    }
+
+    /// <summary>后台刷新状态时一次枚举完整文件；绑定过程不访问磁盘，.part 不算已缓存。</summary>
+    public Dictionary<string, long> GetCompleteFiles()
+    {
+        lock (_gate)
+        {
+            var files = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+            if (!Directory.Exists(_directory)) return files;
+            foreach (var file in new DirectoryInfo(_directory).EnumerateFiles("*.audio"))
+                if (!_deleteOnRelease.Contains(file.FullName)) files[Path.GetFileNameWithoutExtension(file.Name)] = file.Length;
+            return files;
+        }
+    }
     public void Configure(bool enabled, string parent, long limit)
     {
         lock (_gate)
@@ -35,13 +64,20 @@ public sealed class RemoteAudioCache
             _limit = Math.Max(0, limit);
         }
         Changed?.Invoke();
+        ContentsChanged?.Invoke();
     }
     public CacheFile? Acquire(string resource, WebDavEntry entry)
+    {
+        bool changed = false;
+        try { return AcquireCore(resource, entry, ref changed); }
+        finally { if (changed) ContentsChanged?.Invoke(); }
+    }
+    private CacheFile? AcquireCore(string resource, WebDavEntry entry, ref bool changed)
     {
         lock (_gate)
         {
             if (_directory.Length == 0 || entry.Length <= 0) return null;
-            string key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(resource + "\n" + entry.ETag + "\n" + entry.Modified + "\n" + entry.Length)));
+            string key = GetKey(resource, entry);
             string complete = Path.Combine(_directory, key + ".audio");
             if (_active.Contains(complete)) return null;
             try
@@ -75,6 +111,7 @@ public sealed class RemoteAudioCache
                     if (used + entry.Length <= _limit) break;
                     long length = file.Length;
                     file.Delete();
+                    changed = true;
                     used -= length;
                 }
                 if (used + entry.Length > _limit || new DriveInfo(Path.GetPathRoot(_directory)!).AvailableFreeSpace < entry.Length + 2L * 1024 * 1024 * 1024) return null;
@@ -119,8 +156,9 @@ public sealed class RemoteAudioCache
             // 关闭文件与提交之间仍可能切换目录/清理，必须在同一锁内复查并发布。
             if (!CanCommit(complete, generation, length)) return false;
             File.Move(partial, complete, true);
-            return true;
         }
+        ContentsChanged?.Invoke();
+        return true;
     }
     public long GetSize()
     {
@@ -145,6 +183,7 @@ public sealed class RemoteAudioCache
                 if (!_active.Contains(path)) File.Delete(path);
         }
         Changed?.Invoke();
+        ContentsChanged?.Invoke();
     }
 
     /// <summary>写盘队列最多 2 MiB，慢盘降级；网络缓冲与写盘缓冲的所有权分开。</summary>

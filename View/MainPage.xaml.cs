@@ -495,7 +495,7 @@ namespace WinUIMusicPlayer.View
 
         public void UpdateCurrentPlayList()
         {
-            int index = ViewModel.AppViewModel.GetCurrentIndex();
+            int index = ViewModel.AppViewModel.GetSelectedPlaybackIndex();
             CurrentPlayListView.SelectedIndex = index;
             if (index < 0) return;
             if (CurrentPlayListView.ContainerFromIndex(index) is FrameworkElement container)

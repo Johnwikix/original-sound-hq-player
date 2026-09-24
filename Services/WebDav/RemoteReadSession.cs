@@ -13,7 +13,7 @@ public sealed class RemoteReadSession : IAsyncDisposable
 {
     private const int WindowSize = 1024 * 1024;
     private readonly WebDavTransport _transport;
-    private readonly WebDavConnection _source;
+    private readonly Lazy<WebDavConnection> _source;
     private readonly RemoteAudioCache _cache;
     private RemoteAudioCache.CacheFile? _file;
     private readonly string _resource;
@@ -26,12 +26,17 @@ public sealed class RemoteReadSession : IAsyncDisposable
     public WebDavEntry Entry { get; }
     public long NetworkBytes;
     public bool HasCompleteCache => _file?.IsComplete == true;
+    private WebDavReadFailure? _failure;
+    public WebDavReadFailure? Failure => Volatile.Read(ref _failure);
     private static TaskCompletionSource Signal() => new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     public RemoteReadSession(WebDavTransport transport, WebDavConnection source, WebDavEntry entry, RemoteAudioCache cache, string resource)
+        : this(transport, () => source, entry, cache, resource) { }
+
+    public RemoteReadSession(WebDavTransport transport, Func<WebDavConnection> source, WebDavEntry entry, RemoteAudioCache cache, string resource)
     {
         _transport = transport;
-        _source = source;
+        _source = new(source);
         Entry = entry;
         _cache = cache;
         _resource = resource;
@@ -58,7 +63,12 @@ public sealed class RemoteReadSession : IAsyncDisposable
                 Task wait;
                 lock (_gate)
                 {
-                    if (window.Error is not null) throw window.Error;
+                    if (window.Error is not null)
+                    {
+                        if (!_stop.IsCancellationRequested && window.Error is not WebDavException { Code: "RangeNotSupported" })
+                            Volatile.Write(ref _failure, WebDavReadFailure.From(window.Error));
+                        throw window.Error;
+                    }
                     int count = Math.Min(requested, window.Available - offset);
                     if (count > 0) { window.Bytes.AsMemory(offset, count).CopyTo(output); return count; }
                     if (window.Done) return 0;
@@ -105,7 +115,7 @@ public sealed class RemoteReadSession : IAsyncDisposable
     {
         try
         {
-            await using var response = await _transport.OpenAsync(_source, Entry.Href, window.Start, window.Start + window.Count - 1, foreground, _stop.Token).ConfigureAwait(false);
+            await using var response = await _transport.OpenAsync(_source.Value, Entry.Href, window.Start, window.Start + window.Count - 1, foreground, _stop.Token).ConfigureAwait(false);
             var range = response.Message.Content.Headers.ContentRange;
             if (response.Message.StatusCode != HttpStatusCode.PartialContent || range?.From != window.Start || range.To != window.Start + window.Count - 1 || range.Length != Entry.Length)
             {
@@ -199,7 +209,7 @@ public sealed class RemoteReadSession : IAsyncDisposable
 
     public async Task CopySequentialAsync(Stream destination, CancellationToken token)
     {
-        await using var response = await _transport.OpenAsync(_source, Entry.Href, null, null, true, token).ConfigureAwait(false);
+        await using var response = await OpenSequentialAsync(token).ConfigureAwait(false);
         string? etag = response.Message.Headers.ETag?.ToString();
         if (etag is null) _file?.Abandon();
         if (Entry.ETag.Length != 0 && !Entry.ETag.StartsWith("W/", StringComparison.Ordinal) && etag is not null && etag != Entry.ETag)
@@ -212,7 +222,13 @@ public sealed class RemoteReadSession : IAsyncDisposable
             while (true)
             {
                 idle.CancelAfter(TimeSpan.FromSeconds(15));
-                int count = await response.Stream.ReadAsync(buffer.AsMemory(0, 65536), idle.Token).ConfigureAwait(false);
+                int count;
+                try { count = await response.Stream.ReadAsync(buffer.AsMemory(0, 65536), idle.Token).ConfigureAwait(false); }
+                catch (Exception ex) when (!token.IsCancellationRequested)
+                {
+                    Volatile.Write(ref _failure, WebDavReadFailure.From(ex));
+                    throw;
+                }
                 idle.CancelAfter(Timeout.InfiniteTimeSpan);
                 if (count == 0) break;
                 Interlocked.Add(ref NetworkBytes, count);
@@ -221,9 +237,22 @@ public sealed class RemoteReadSession : IAsyncDisposable
                 position += count;
                 await destination.WriteAsync(buffer.AsMemory(0, count), token).ConfigureAwait(false);
             }
-            if (Entry.Length >= 0 && position != Entry.Length) throw new EndOfStreamException();
+            if (Entry.Length >= 0 && position != Entry.Length)
+            {
+                Volatile.Write(ref _failure, new("ConnectionFailed", true));
+                throw new EndOfStreamException();
+            }
         }
         finally { ArrayPool<byte>.Shared.Return(buffer); }
+    }
+    private async Task<WebDavResponse> OpenSequentialAsync(CancellationToken token)
+    {
+        try { return await _transport.OpenAsync(_source.Value, Entry.Href, null, null, true, token).ConfigureAwait(false); }
+        catch (Exception ex) when (!token.IsCancellationRequested)
+        {
+            Volatile.Write(ref _failure, WebDavReadFailure.From(ex));
+            throw;
+        }
     }
     public async ValueTask DisposeAsync()
     {

@@ -2266,4 +2266,7 @@ SHA-256：{5}
   <data name="WebDavForgetCertificate" xml:space="preserve">
     <value>忘记已确认的证书</value>
   </data>
+  <data name="WebDavCachedAudio" xml:space="preserve">
+    <value>WebDAV · 音频已缓存</value>
+  </data>
 </root>

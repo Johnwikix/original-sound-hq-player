@@ -261,7 +261,7 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        public void UpdateViewList()
+        public void UpdateViewList(bool refreshDetails = true)
         {
             if (ContentFrame.Content is SongListPage songListPage)
             {
@@ -269,17 +269,17 @@ namespace WinUIMusicPlayer.View
             }
             if (ContentFrame.Content is AlbumPage albumPage && albumPage.ViewModel.IsInDetailMode)
             {
-                albumPage.RefreshDetailView();
+                if (refreshDetails) albumPage.RefreshDetailView();
                 albumPage.DetailView?.UpdateMusicListView();
             }
             if (ContentFrame.Content is ArtistPage artistPage && artistPage.ViewModel.IsInDetailMode)
             {
-                artistPage.RefreshDetailView();
+                if (refreshDetails) artistPage.RefreshDetailView();
                 artistPage.DetailView?.UpdateMusicListView();
             }
             if (ContentFrame.Content is FolderBrowsePage folderPage && folderPage.ViewModel.IsInDetailMode)
             {
-                folderPage.RefreshDetailView();
+                if (refreshDetails) folderPage.RefreshDetailView();
                 folderPage.DetailView?.UpdateMusicListView();
             }
             if (ContentFrame.Content is FavouritePlayListPage favouritePlayListPage)
@@ -288,7 +288,7 @@ namespace WinUIMusicPlayer.View
             }
             if (ContentFrame.Content is PlayListPage playListPage && playListPage.ViewModel.IsInDetailMode)
             {
-                playListPage.RefreshDetailView();
+                if (refreshDetails) playListPage.RefreshDetailView();
                 playListPage.DetailView?.UpdateMusicListView();
             }
         }

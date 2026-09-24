@@ -33,7 +33,7 @@ public sealed class PlaybackCommands : IDisposable
     // 退出转 Stopping 后不会复位，生命周期守卫须单独保留。
     private bool CanPlay => !_disposed && _lifecycle.IsReady && _state.IsPlaybackEngineReady && _state.CurrentPlayingMusic is not null;
     private bool CanSeek => CanPlay && _state.CurrentPlayingMusic is { IsPlayable: true };
-    private bool CanSwitch => !_disposed && _lifecycle.IsReady && _state.IsPlaybackEngineReady && HasPlayableEntry();
+    private bool CanSwitch => !_disposed && _lifecycle.IsReady && _state.IsPlaybackEngineReady && HasCandidateEntry();
     private BassPlayerCommandService Player => _services.GetRequiredService<BassPlayerCommandService>();
 
     public PlaybackCommands(AppLifecycle lifecycle, AppViewModel state, IServiceProvider services)
@@ -42,12 +42,12 @@ public sealed class PlaybackCommands : IDisposable
         _state = state;
         _services = services;
         _refreshAvailability = RefreshAvailability;
-        ToggleCommand = new AsyncRelayCommand(() => ToggleAsync(null), () => CanPlay);
+        ToggleCommand = new AsyncRelayCommand(() => ToggleAsync(null), () => CanPlay, AsyncRelayCommandOptions.AllowConcurrentExecutions);
         // 保持显式命令可用，让 Play -> Pause -> Play 的最后一次意图能够覆盖待执行意图。
         PlayCommand = new AsyncRelayCommand(() => ToggleAsync(true), () => CanPlay, AsyncRelayCommandOptions.AllowConcurrentExecutions);
         PauseCommand = new AsyncRelayCommand(() => ToggleAsync(false), () => CanPlay, AsyncRelayCommandOptions.AllowConcurrentExecutions);
         NextCommand = new RelayCommand(Next, () => CanSwitch);
-        PreviousCommand = new AsyncRelayCommand(PreviousAsync, () => CanSwitch);
+        PreviousCommand = new AsyncRelayCommand(PreviousAsync, () => CanSwitch, AsyncRelayCommandOptions.AllowConcurrentExecutions);
         SeekCommand = new RelayCommand<long>(Seek, _ => CanSeek);
         lifecycle.Changed += Changed;
         state.PropertyChanged += StateChanged;
@@ -57,12 +57,15 @@ public sealed class PlaybackCommands : IDisposable
     private async Task ToggleAsync(bool? playing)
     {
         if (!CanPlay) return;
+        if (playing == false && _state.State.Playback.PendingSelection is not null)
+            _services.GetRequiredService<PlaybackCoordinator>().CancelPendingSelection();
         var remote = _services.GetRequiredService<RemotePlaybackService>();
         if (_state.CurrentPlayingMusic?.IsRemote == true)
         {
-            if (remote.NeedsStart || _state.CurrentPlayingMusic.IsRemoteOffline)
+            if (remote.NeedsStart)
             {
                 if (playing != false) await _services.GetRequiredService<PlaybackCoordinator>().PlayAsync(_state.CurrentPlayingMusic);
+                else await remote.SetIntentAsync(false);
                 return;
             }
             await remote.SetIntentAsync(playing ?? !remote.WantsPlay);
@@ -97,24 +100,26 @@ public sealed class PlaybackCommands : IDisposable
     {
         if (!CanSwitch) return;
         var list = _state.CurrentPlayingList;
-        int index = _state.GetCurrentIndex();
+        var coordinator = _services.GetRequiredService<PlaybackCoordinator>();
+        int index = coordinator.GetNavigationIndex();
         if (index < 0) return;
-        int previous = FindPlayableIndex(list, index, -1);
-        if (previous >= 0) await _services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(previous);
+        int previous = FindCandidateIndex(list, index, -1);
+        if (previous >= 0) await coordinator.PlayAtAsync(previous, direction: -1);
     }
-    private bool HasPlayableEntry()
+    private bool HasCandidateEntry()
     {
-        foreach (var music in _state.CurrentPlayingList) if (music.IsPlayable) return true;
+        foreach (var music in _state.CurrentPlayingList) if (music.IsRemote || music.IsPlayable) return true;
         return false;
     }
-    internal static int FindPlayableIndex(IReadOnlyList<Music> list, int current, int direction)
+    internal static int FindCandidateIndex(IReadOnlyList<Music> list, int current, int direction)
     {
         if (list.Count == 0) return -1;
         int index = current;
         for (int i = 0; i < list.Count; i++)
         {
             index = (index + direction + list.Count) % list.Count;
-            if (list[index].IsPlayable && index != current) return index;
+            // 来源状态只是上次探活的结果；实际可用性由协调器重新确认。
+            if ((list[index].IsRemote || list[index].IsPlayable) && index != current) return index;
         }
         return -1;
     }

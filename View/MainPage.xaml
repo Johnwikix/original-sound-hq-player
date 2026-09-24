@@ -257,9 +257,9 @@
                                     VerticalAlignment="Center"
                                     FontSize="12"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Glyph="{x:Bind tools:BindUtils.MusicSourceGlyph(ViewModel.AppViewModel.CurrentPlayingMusic.IsRemote, ViewModel.AppViewModel.CurrentPlayingMusic.IsRemoteOffline), Mode=OneWay}"
-                                    AutomationProperties.Name="{x:Bind tools:BindUtils.RemotePlaybackDescription(ViewModel.AppViewModel.RemotePlaybackStatus), Mode=OneWay}"
-                                    ToolTipService.ToolTip="{x:Bind tools:BindUtils.RemotePlaybackDescription(ViewModel.AppViewModel.RemotePlaybackStatus), Mode=OneWay}"
+                                    Glyph="{x:Bind tools:BindUtils.MusicSourceGlyph(ViewModel.AppViewModel.CurrentPlayingMusic.IsRemote, ViewModel.AppViewModel.CurrentPlayingMusic.IsRemoteOffline, ViewModel.AppViewModel.CurrentPlayingMusic.IsRemoteCached), Mode=OneWay}"
+                                    AutomationProperties.Name="{x:Bind tools:BindUtils.RemotePlaybackDescription(ViewModel.AppViewModel.RemotePlaybackStatus, ViewModel.AppViewModel.CurrentPlayingMusic.IsRemoteCached), Mode=OneWay}"
+                                    ToolTipService.ToolTip="{x:Bind tools:BindUtils.RemotePlaybackDescription(ViewModel.AppViewModel.RemotePlaybackStatus, ViewModel.AppViewModel.CurrentPlayingMusic.IsRemoteCached), Mode=OneWay}"
                                     Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.CurrentPlayingMusic.IsRemote), Mode=OneWay}" />
                             </Grid>
                         </Grid>
@@ -299,7 +299,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.AppViewModel.FastBackwardButtonCommand, Mode=OneWay}"
-                            IsEnabled="{x:Bind tools:BindUtils.IsPlaybackEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsPlaybackEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic.IsPlayable), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="18" Glyph="&#xED3C;" />
                         </Button>
@@ -363,7 +363,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.AppViewModel.FastForwardButtonCommand, Mode=OneWay}"
-                            IsEnabled="{x:Bind tools:BindUtils.IsPlaybackEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsPlaybackEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic.IsPlayable), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="18" Glyph="&#xED3D;" />
                         </Button>
@@ -378,7 +378,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.AppViewModel.StopButtonChangedCommand, Mode=OneWay}"
-                            IsEnabled="{x:Bind tools:BindUtils.IsPlaybackEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsPlayButtonEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="18" Glyph="&#xEE95;" />
                         </Button>

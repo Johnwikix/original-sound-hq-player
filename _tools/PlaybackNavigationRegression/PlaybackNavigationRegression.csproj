@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+    <PlaybackCoordinatorSource Condition="'$(PlaybackCoordinatorSource)' == ''">../../Services/PlaybackCoordinator.cs</PlaybackCoordinatorSource>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../State/PlaybackState.cs;../../Services/WebDav/WebDavAvailability.cs" />
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <Compile Include="$(PlaybackCoordinatorSource);../../Services/ApplicationTasks.cs;../../Services/AppLifecycle.cs;../../Services/ShutdownCoordinator.cs" />
+    <Compile Include="../../Services/PlaybackCommands.cs" />
+  </ItemGroup>
+</Project>

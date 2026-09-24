@@ -19,12 +19,11 @@ namespace WinUIMusicPlayer.Services;
 public sealed record WebDavScanStatus(int SourceId, string Phase, int Found, int Tagged, string? Error = null);
 
 /// <summary>来源同步与元数据的应用级所有者；页面离开后继续，应用退出时显式停止。</summary>
-public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTransport transport,
+public sealed partial class WebDavLibraryService(MusicDatabaseService database, WebDavTransport transport,
     RemoteAudioCache cache, ILogger<WebDavLibraryService> logger)
 {
     private readonly CancellationTokenSource _stop = new();
     private readonly Dictionary<int, (CancellationTokenSource Cancel, Task Work)> _scans = [];
-    private readonly Dictionary<int, Task> _probes = [];
     private readonly SemaphoreSlim _metadataSlots = new(2, 2);
     private readonly SemaphoreSlim _coverSlot = new(1, 1);
     // Older readers cached DSF as coverless. Recheck these misses once per bounded working set.
@@ -32,10 +31,11 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
     private readonly HashSet<string> _checkedDsfCoverMisses = [];
     private readonly SemaphoreSlim _lyricsSlot = new(1, 1);
     private readonly Dictionary<int, WebDavScanStatus> _statuses = [];
-    private readonly HashSet<int> _offlineSources = [];
     private readonly Dictionary<int, long> _publishedAt = [];
     private readonly object _gate = new();
     private Task? _availabilityLoop;
+    private Task _cacheStatusRefresh = Task.CompletedTask;
+    private bool _cacheStatusDirty;
     private AppViewModel? _library;
     private WebDavCacheSettings _cacheSettings = new();
     public CancellationToken StoppingToken => _stop.Token;
@@ -48,6 +48,9 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
     public async Task StartAsync(AppViewModel library)
     {
         _library = library;
+        cache.ContentsChanged += OnCacheContentsChanged;
+        library.SongsSourceChanged += OnCacheContentsChanged;
+        library.PropertyChanged += OnLibraryPropertyChanged;
         await ApplyCacheSettingsAsync(await database.GetWebDavCacheSettingsAsync(), false);
         if (!_stop.IsCancellationRequested) library.State.Preferences.PropertyChanged += OnPreferencesChanged;
     }
@@ -59,6 +62,63 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
 
     private void ConfigureCache() => cache.Configure(_cacheSettings.Enabled, AppSettings.MusicCoverCache,
         _cacheSettings.LimitGiB * 1024L * 1024 * 1024);
+
+    private void OnLibraryPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(AppViewModel.CurrentPlayingMusic) or nameof(AppViewModel.CurrentPlayingList))
+            OnCacheContentsChanged();
+    }
+
+    private void OnCacheContentsChanged()
+    {
+        App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
+        {
+            if (_stop.IsCancellationRequested) return;
+            _cacheStatusDirty = true;
+            if (_cacheStatusRefresh.IsCompleted) _cacheStatusRefresh = RefreshCacheStatusAsync();
+        });
+    }
+
+    private async Task RefreshCacheStatusAsync()
+    {
+        await Task.Yield(); // 先登记任务，再合并启动加载、队列恢复和缓存事件。
+        while (_cacheStatusDirty && !_stop.IsCancellationRequested)
+        {
+            _cacheStatusDirty = false;
+            try
+            {
+                var complete = await Task.Run(cache.GetCompleteFiles);
+                var cachedIds = new HashSet<int>();
+                if (complete.Count != 0)
+                {
+                    var tracks = await database.GetVisibleRemoteTracksAsync();
+                    await Task.Run(() =>
+                    {
+                        foreach (var track in tracks)
+                        {
+                            _stop.Token.ThrowIfCancellationRequested();
+                            string key = RemoteAudioCache.GetKey($"webdav://{track.SourceId}{track.Href}", ToEntry(track));
+                            if (track.Length > 0 && complete.TryGetValue(key, out long length) && length == track.Length)
+                                cachedIds.Add(track.MusicId);
+                        }
+                    });
+                }
+                if (_stop.IsCancellationRequested) return;
+                if (_cacheStatusDirty || _library is null) continue;
+                // 所有绑定对象都在 UI 线程发布，队列可包含不同于曲库的 Music 实例。
+                foreach (var music in _library.SongsSource) RefreshRuntimeAvailability(music, cachedIds);
+                foreach (var music in _library.CurrentPlayingList) RefreshRuntimeAvailability(music, cachedIds);
+                if (_library.CurrentPlayingMusic is { } current) RefreshRuntimeAvailability(current, cachedIds);
+            }
+            catch (OperationCanceledException) when (_stop.IsCancellationRequested) { return; }
+            catch (Exception ex) { logger.LogWarning(ex, "刷新 WebDAV 音频缓存状态失败"); }
+        }
+    }
+    private void RefreshRuntimeAvailability(Music music, HashSet<int> cachedIds)
+    {
+        music.IsRemoteCached = music.IsRemote && cachedIds.Contains(music.Id);
+        music.IsRemoteOffline = music.IsRemote && IsSourceOffline(music.SourceId);
+    }
     public async Task StartConfiguredScansAsync()
     {
         var sources = await database.GetWebDavSourcesAsync();
@@ -70,70 +130,6 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
             if (source.Enabled && source.ScanOnStartup) _ = ScanAsync(source);
     }
     public WebDavScanStatus? GetStatus(int sourceId) { lock (_gate) return _statuses.GetValueOrDefault(sourceId); }
-    public bool IsSourceOffline(int sourceId) { lock (_gate) return _offlineSources.Contains(sourceId); }
-
-    /// <summary>对单个来源执行一次轻量在线检查；不会扫描目录内容。</summary>
-    public Task ProbeAsync(WebDavSource source, CancellationToken cancellationToken = default)
-    {
-        lock (_gate)
-        {
-            if (_probes.TryGetValue(source.Id, out var previous) && !previous.IsCompleted) return previous;
-            // PasswordVault 读取和 URI 校验属于同步前置工作，避免在右键菜单/浏览器 UI 线程执行。
-            var work = Task.Run(() => ProbeCoreAsync(source, cancellationToken));
-            _probes[source.Id] = work;
-            return work;
-        }
-    }
-
-    public async Task<bool> EnsureAvailableAsync(WebDavSource source, CancellationToken cancellationToken = default)
-    {
-        await ProbeAsync(source, cancellationToken).WaitAsync(cancellationToken).ConfigureAwait(false);
-        return !IsSourceOffline(source.Id);
-    }
-
-    private async Task ProbeCoreAsync(WebDavSource source, CancellationToken cancellationToken)
-    {
-        using var linked = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token, cancellationToken);
-        try
-        {
-            await transport.ProbeAsync(Connect(source), linked.Token).ConfigureAwait(false);
-            PublishAvailability(source.Id, false);
-        }
-        catch (OperationCanceledException) when (linked.IsCancellationRequested) { }
-        catch (Exception ex)
-        {
-            string error = ex is WebDavException dav ? dav.Code : "ConnectionFailed";
-            logger.LogWarning("WebDAV availability probe failed for source {SourceId}: {Error}", source.Id, error);
-            PublishAvailability(source.Id, true);
-        }
-    }
-
-    private async Task MonitorAvailabilityAsync(CancellationToken token)
-    {
-        try
-        {
-            while (!token.IsCancellationRequested)
-            {
-                try
-                {
-                    var sources = await database.GetWebDavSourcesAsync().ConfigureAwait(false);
-                    var probes = new List<Task>(sources.Count);
-                    foreach (var source in sources)
-                        if (source.Enabled) probes.Add(ProbeAsync(source, token));
-                    await Task.WhenAll(probes).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException) when (token.IsCancellationRequested) { break; }
-                catch (Exception ex) { logger.LogWarning(ex, "WebDAV availability monitoring iteration failed"); }
-
-                TimeSpan delay = _library?.CurrentPlayingMusic?.IsRemote == true
-                    ? TimeSpan.FromSeconds(30)
-                    : TimeSpan.FromMinutes(5);
-                await Task.Delay(delay, token).ConfigureAwait(false);
-            }
-        }
-        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
-    }
-
     private void Publish(WebDavScanStatus status)
     {
         lock (_gate)
@@ -151,29 +147,6 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
         });
     }
 
-    private void PublishAvailability(int sourceId, bool offline)
-    {
-        bool changed;
-        lock (_gate)
-        {
-            changed = offline ? _offlineSources.Add(sourceId) : _offlineSources.Remove(sourceId);
-        }
-        if (!changed) return;
-        App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
-        {
-            if (_stop.IsCancellationRequested) return;
-            if (_library is not null)
-            {
-                foreach (var music in _library.SongsSource)
-                    if (music.SourceId == sourceId) music.IsRemoteOffline = offline;
-                foreach (var music in _library.CurrentPlayingList)
-                    if (music.SourceId == sourceId) music.IsRemoteOffline = offline;
-                if (_library.CurrentPlayingMusic?.SourceId == sourceId)
-                    _library.CurrentPlayingMusic.IsRemoteOffline = offline;
-            }
-            SourceAvailabilityChanged?.Invoke(sourceId, offline);
-        });
-    }
     public WebDavConnection Connect(WebDavSource source)
     {
         string password = "";
@@ -474,6 +447,13 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
     public async Task StopAsync()
     {
         _stop.Cancel();
+        cache.ContentsChanged -= OnCacheContentsChanged;
+        if (_library is not null)
+        {
+            _library.SongsSourceChanged -= OnCacheContentsChanged;
+            _library.PropertyChanged -= OnLibraryPropertyChanged;
+        }
+        await _cacheStatusRefresh;
         if (_library is not null) _library.State.Preferences.PropertyChanged -= OnPreferencesChanged;
         Task[] scans;
         Task[] probes;
@@ -483,7 +463,7 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
             scans = new Task[_scans.Count];
             int i = 0;
             foreach (var scan in _scans.Values) scans[i++] = scan.Work;
-            probes = [.. _probes.Values];
+            probes = [.. _probeWork];
             availabilityLoop = _availabilityLoop;
         }
         if (availabilityLoop is not null) await availabilityLoop;

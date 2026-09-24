@@ -117,11 +117,15 @@ internal static class Regression
             await Task.Delay(400);
         }
         int before = fixture.Gets;
-        await using (var cached = new WebDavPlaybackBridge(new RemoteReadSession(transport, fake, item, cache, "fixture-resource")))
+        Check(cache.HasCompleteFile("fixture-resource", item), "playback availability recognizes exact complete cache");
+        Check(!cache.HasCompleteFile("fixture-resource", item with { ETag = "\"v2\"" }), "new source version cannot reuse old cache");
+        await using (var cached = new WebDavPlaybackBridge(new RemoteReadSession(transport,
+            () => throw new InvalidOperationException("cached playback must not load credentials or connect"), item, cache, "fixture-resource")))
         {
             cached.Start();
             Check((await http.GetByteArrayAsync(cached.Location)).AsSpan().SequenceEqual(fixture.Bytes) && fixture.Gets == before, "complete cache replays without origin requests");
             cache.Clear();
+            Check(!cache.HasCompleteFile("fixture-resource", item), "cleared active cache is unavailable to new selections");
             Check((await http.GetByteArrayAsync(cached.Location)).Length == fixture.Bytes.Length, "clear preserves active reader lease");
         }
         Check(cache.GetSize() == 0, "clear deletes active cache after final reader closes");
@@ -149,6 +153,17 @@ internal static class Regression
         cache.Configure(true, temp, 32L * 1024 * 1024);
         Check(cache.Acquire("weak", small with { ETag = "W/\"v1\"" }) is null, "weak version does not create persistent range cache");
         await CheckCacheDirectoriesAsync(temp);
+        var retryClock = new ManualClock();
+        var availability = new WebDavAvailability(retryClock);
+        long oldProbe = availability.Version(10);
+        availability.ReportFailure(10);
+        Check(availability.IsOffline(10) && availability.ShouldDefer(10) && !availability.ShouldDefer(20), "cooldown is scoped to failed source");
+        Check(!availability.CompleteProbe(10, oldProbe, false) && availability.IsOffline(10), "late probe cannot erase newer streaming failure");
+        retryClock.Advance(WebDavAvailability.RetryDelay);
+        Check(!availability.ShouldDefer(10) && availability.IsOffline(10), "expiry permits retry without inventing online status");
+        Check(availability.CompleteProbe(10, availability.Version(10), false) && !availability.IsOffline(10), "successful new probe recovers source");
+        Check(!WebDavReadFailure.From(new WebDavException("RequestFailed", HttpStatusCode.NotFound)).SourceUnavailable,
+            "missing track does not take entire server offline");
     }
 
     private static async Task CheckCacheDirectoriesAsync(string temp)
@@ -157,15 +172,22 @@ internal static class Regression
         string second = Path.Combine(temp, "second");
         var cache = new RemoteAudioCache();
         var entry = new WebDavEntry("/dav/small.flac", "small.flac", false, 1024, "\"v1\"", null);
+        int cacheChanges = 0;
+        cache.ContentsChanged += () => cacheChanges++;
         byte[] bytes = new byte[1024];
         new Random(31).NextBytes(bytes);
         cache.Configure(true, first, entry.Length);
         var old = cache.Acquire("same-resource", entry)!;
         Check(old.TryWrite(0, bytes), "first directory accepts bounded cache write");
+        Check(cache.GetCompleteFiles().Count == 0, "in-flight partial audio does not expose a downloaded icon");
         cache.Configure(true, second, entry.Length);
         Check(!old.CanWrite, "changing cache root invalidates old writer");
         await using (var current = cache.Acquire("same-resource", entry))
             Check(current is not null && current.TryWrite(0, bytes), "old directory reservations do not consume new directory capacity");
+        Check(cacheChanges >= 3 && cache.GetCompleteFiles().GetValueOrDefault(RemoteAudioCache.GetKey("same-resource", entry)) == entry.Length,
+            "committing complete audio publishes cache state with its exact version and size");
+        Check(!cache.GetCompleteFiles().ContainsKey(RemoteAudioCache.GetKey("same-resource", entry with { ETag = "\"v2\"" })),
+            "a changed remote version does not inherit the old downloaded icon");
         await old.DisposeAsync();
         Check(!Directory.EnumerateFiles(WebDavCachePaths.Audio(first)).Any(), "old writer cannot publish after directory switch and removes partial file");
 
@@ -177,6 +199,7 @@ internal static class Regression
             Check(Path.GetDirectoryName(completePath) == WebDavCachePaths.Audio(second)
                 && File.ReadAllBytes(completePath).AsSpan().SequenceEqual(bytes), "audio lives under configured root/WebDav/Audio");
             cache.Configure(true, first, entry.Length);
+            Check(cache.GetCompleteFiles().Count == 0, "changing cache directory clears downloaded state for the old directory");
             cache.Clear();
             var result = new byte[1024];
             Check(await complete.ReadAsync(result, 0, default) == result.Length && result.AsSpan().SequenceEqual(bytes),
@@ -184,6 +207,11 @@ internal static class Regression
         }
         Check(File.Exists(completePath), "clearing new root does not delete old root audio on lease release");
         cache.Configure(true, second, entry.Length);
+        await using (var active = cache.Acquire("same-resource", entry))
+        {
+            cache.Clear();
+            Check(cache.GetCompleteFiles().Count == 0, "clearing cache hides downloaded state immediately even while a reader retains the file");
+        }
         string cover = WebDavCachePaths.Cover(second, "fixture");
         Directory.CreateDirectory(Path.GetDirectoryName(cover)!);
         File.WriteAllBytes(cover, bytes);
@@ -256,4 +284,12 @@ internal static class Regression
         if (!condition) throw new InvalidOperationException("FAIL: " + message);
         Console.WriteLine("PASS: " + message);
     }
+}
+
+internal sealed class ManualClock : TimeProvider
+{
+    private long _timestamp;
+    public override long TimestampFrequency => TimeSpan.TicksPerSecond;
+    public override long GetTimestamp() => _timestamp;
+    public void Advance(TimeSpan time) => _timestamp += time.Ticks;
 }

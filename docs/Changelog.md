@@ -2,6 +2,22 @@
 
 新条目加在最上方。
 
+## 2026-09-24 分离 WebDAV 选中状态、缓存可播放性与断流恢复
+
+- `PlaybackState.cs`、`PlaybackCoordinator.cs`、列表 ViewModel：待播行立即选中，实际播放信息延后提交；连续切歌取消旧等待，停止取消待播，旧结果不会覆盖新选择。
+- `WebDavLibraryService.Availability.cs`、`WebDavAvailability.cs`：完整缓存优先于来源探活；来源失败后按单调时钟暂缓自动重试 15 秒，直接点选可立即重试，迟到探活不能抹掉新的断流状态。
+- `RemoteReadSession.cs`、`RemotePlaybackService.cs`：缓存读取不取凭据、不联网；源端读失败发布来源状态并触发有界队列恢复，文件/解码错误不误报整台服务离线；当前会话与待播探测独立取消。
+- `Music.cs`、`BindUtils.cs`、列表行和播放页：缓存歌曲在来源离线时保留 CloudDownload 图标、正常透明度和播放控制；停止按钮在离线状态仍可用。
+- `_tools/PlaybackNavigationUiRegression`、`RemotePlaybackRegression`、`WebDavRegression`：验证真实 WinUI ListView 即时选中、实际读取链路断流恢复、离线缓存、缓存清除、重试期限和会话取消边界；播放协议端为可控测试端，未替代真实 NAS 与音频设备验证。
+
+## 2026-09-24 修复 WebDAV 切歌探活并标记完整音频缓存
+
+- `PlaybackCoordinator.cs`、`PlaybackCommands.cs`、`BassPlayerCommandService.cs`：上下首重新确认 WebDAV 实际在线状态；失败继续按队列方向寻找下一首，同次请求不重复探测失败来源，全部不可用时有界结束。
+- `MusicCommands.cs`、`WebDavLibraryService.cs`：探活期间保留切歌入口，再按上下首从正在探测的歌曲继续，新选择立即取消旧选择的等待；共享探活不会被旧调用方取消而误报在线。
+- `PlaybackCoordinator.cs`、`RemotePlaybackService.cs`：远程凭据、准备及缓存会话收尾在后台执行，避免同步磁盘操作拖住 UI；停止代次同步登记，迟到停止不覆盖新选曲。
+- `RemoteAudioCache.cs`、`WebDavLibraryService.cs`、`Music.cs`、列表行及播放栏：完整落盘的当前版本音频显示 CloudDownload（EBD3），缓存清理、目录更换和版本变化同步更新；新增六语言提示词。
+- `_tools/PlaybackNavigationRegression`、`PlaybackNavigationUiRegression`、`WebDavRegression`：增加失联/恢复、连续失败、取消、UI 调度和完整缓存状态回归。
+
 ## 2026-09-24 放开离线曲目手动播放并弱化列表行
 
 - `Services/MusicCommands.cs`、`Services/PlaybackCommands.cs`、`View/MainPage.xaml`、`View/PlayingDetailPage.xaml`：手动播放按钮允许离线 WebDAV 曲目进入播放前探活流程，探活失败后仍停止播放；其它传输控制继续遵循在线状态守卫。

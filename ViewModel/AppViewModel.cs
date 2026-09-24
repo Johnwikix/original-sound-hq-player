@@ -74,6 +74,17 @@ namespace WinUIMusicPlayer.ViewModel
         public BulkObservableCollection<Music> ArtistSongs { get => State.LibraryViews.ArtistSongs; set => State.LibraryViews.ArtistSongs = value; }
         public BulkObservableCollection<Music> FolderSongs { get => State.LibraryViews.FolderSongs; set => State.LibraryViews.FolderSongs = value; }
         public Music? CurrentPlayingMusic { get => State.Playback.CurrentPlayingMusic; set => State.Playback.CurrentPlayingMusic = value; }
+        public Music? SelectedPlaybackMusic => State.Playback.PendingSelection?.Music ?? CurrentPlayingMusic;
+        public int GetSelectedPlaybackIndex()
+        {
+            if (State.Playback.PendingSelection is { } pending)
+            {
+                for (int index = 0; index < CurrentPlayingList.Count; index++)
+                    if (State.Queue.EntryIdAt(index) == pending.EntryId) return index;
+                return -1;
+            }
+            return GetCurrentIndex();
+        }
         public BulkObservableCollection<Music> SequentialPlayingList
         {
             get => State.Queue.Sequential;
@@ -206,6 +217,8 @@ namespace WinUIMusicPlayer.ViewModel
         private void OnPlaybackStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             OnPropertyChanged(e);
+            if (e.PropertyName is nameof(State.Playback.PendingSelection) or nameof(CurrentPlayingMusic))
+                OnPropertyChanged(nameof(SelectedPlaybackMusic));
             if (e.PropertyName == nameof(Volume) && IsInitialized)
             {
                 if (Volume > 0) IsMuted = false;
@@ -325,8 +338,11 @@ namespace WinUIMusicPlayer.ViewModel
         public int GetAlbumSongCount(string? album) => _libraryQueries.GetAlbumSongCount(album);
         public void NotifyIdIndexChanged() => _libraryQueries.Invalidate();
 
+        public event Action? SongsSourceChanged;
+
         public void NotifySongsSourceChanged()
         {
+            SongsSourceChanged?.Invoke();
             _libraryQueries.Invalidate();
             RefreshPlayListSummaries();
             LibraryEmptyVisibility = State.Library.Songs.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -587,6 +603,7 @@ namespace WinUIMusicPlayer.ViewModel
         [RelayCommand]
         private void OnStopButtonChanged()
         {
+            App.Services.GetRequiredService<PlaybackCoordinator>().CancelPendingSelection();
             App.Services.GetRequiredService<BassPlayerCommandService>().MusicEnd();
             ProgressSlider = 0;
         }

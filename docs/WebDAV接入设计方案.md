@@ -618,3 +618,28 @@ DSF 封面通过头部的 ID3 偏移直接读取 APIC，继续受 8 MiB/64 请�
 - `dotnet publish External/AudioPlayer/AudioPlayer.csproj -c Release -r win-x64 -p:Platform=x64 --no-restore -o artifacts/dsf-player` 通过，产物更新到 `Player/AudioPlayer.exe`。主程序 x64 Release 构建通过；因本机缺少 `mspdbcmf.exe`，验证命令使用 `-p:AppxSymbolPackageEnabled=false -p:GenerateTemporaryStoreCertificate=false -p:AppxPackageSigningEnabled=false`，未更改项目默认发布设置。保留现有 512 项编译/裁剪等警告，没有验证发布包签名。
 
 NAS 地址和凭据只通过测试进程环境传入，不写入源码、测试日志或本文档。数据只反映本机和当前局域网条件，不能作为慢网络响应时间或所有 ASIO 硬件支持范围的保证。
+
+
+## 16. 可播放性、待播选择与失败恢复（2026-09-24）
+
+本节描述当前实现。此前“来源在线才可播放”的守卫不再适用于完整缓存。
+
+| 状态 / 资源 | 所有者 | 规则 |
+|---|---|---|
+| 来源连通性、失败重试期限与探活版本 | `WebDavAvailability`，由 `WebDavLibraryService` 发布 | 按 SourceId 记录；失败后 15 秒暂缓自动重试，单调时钟到期；直接点选、来源页重试可以绕过期限。旧版本探活不能覆盖新的断流结果。 |
+| 当前版本的完整缓存 | `RemoteAudioCache` | 键包含资源身份、ETag、修改时间和长度；只有完整提交的文件算缓存。UI 快照不等同于文件租约，实际选曲再次核对磁盘，清理/切换目录使新选择失效。 |
+| 歌曲可播放提示 | `Music.IsPlayable` | 本地或完整缓存可播放；未缓存网络歌曲参考最近来源状态。上下首不会仅凭过期的离线标记跳过歌曲，服务负责重试期限与实时核对。 |
+| 待播选择 | `PlaybackState.PendingSelection` | 用户请求到达即在 UI 线程写入，包含歌曲与队列条目 ID。ListView 使用它更新选中行；失败/取消恢复实际曲目，新请求覆盖旧请求。 |
+| 已提交曲目、进度、统计与歌词 | 原有播放状态与展示服务 | 探活期间保留旧曲目信息，实际启动时才提交；网络统计仍在后端报告 Playing 时开始。 |
+| 读取窗口、缓存租约、loopback 连接、IPC 与状态监控 | `RemoteReadSession` / `WebDavPlaybackBridge` / `RemotePlaybackService` | 完整缓存不建立源端连接、不取凭据；连接惰性建立。会话由停止/替换/退出收尾，不随下次待播探测的取消而失去监控。 |
+| 失败后的队列恢复 | `PlaybackCoordinator` | 只有当前播放代次可以恢复；更新来源状态后向后寻找可播放歌曲，同源缓存仍可用。失败条目集合与单次遍历共同防止无限循环，手动新选择优先。 |
+
+选曲流程：立即发布待播项 → 异步读取本地来源/文件元数据并核对完整缓存 → 命中缓存直接启动，否则遵守来源重试期限并探活 → 成功提交播放信息。再次切歌只取消旧选曲等待；共享来源探活属于库服务，退出时统一取消并等待所有在途任务。缓存状态、磁盘工作与凭据读取不进入同步绑定路径。
+
+原先列表高亮在 `TrackStarted` 后更新，和播放信息提交共用了一个事件。这里保留延后更新曲目、歌词和统计的边界，增加独立的选择通知；提前高亮不意味着提前统计或对系统媒体控件谎报正在播放。
+
+运行中由源端读取边界区分错误。连接失败、读超时、异常 EOF、服务不可用会更新来源；404、版本变化与解码失败只使当前曲目失败。播放器关闭 loopback 请求（例如定位）不作为服务器离线证据。读失败可以在解码器仍报告 Playing/缓冲时触发恢复，不再只弹 InfoBar 等待自然结束。若完整缓存或现有缓冲仍足以播放，则不因网络物理断开而无条件跳歌。
+
+选择期间旧曲目发生失败时，先保留最新选曲意图；若新选曲也失败，才继续恢复旧失败。暂停不触发自动前进，停止取消待播；所有迟到 UI 回调均检查会话代次及应用生命周期。
+
+验证入口：`PlaybackNavigationUiRegression/Run.ps1` 使用真实 WinUI Dispatcher 和 ListView；`RemotePlaybackRegression` 链接生产连通性、缓存、读取、桥接、IPC 客户端、监控与协调器，使用本机 HTTP 服务及隔离命名管道协议端验证断流和恢复；`WebDavRegression` 验证缓存版本、TLS 与时间期限。测试不访问用户数据库或凭据，协议端不是原生解码器；真实 NAS、实际设备、长时间 WAN 与大队列体验仍需集成复验。

@@ -2267,4 +2267,7 @@ SHA-256: {5}
   <data name="WebDavForgetCertificate" xml:space="preserve">
     <value>Olvidar certificado confirmado</value>
   </data>
+  <data name="WebDavCachedAudio" xml:space="preserve">
+    <value>WebDAV · Audio en caché</value>
+  </data>
 </root>

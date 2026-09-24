@@ -10,7 +10,7 @@
   <ItemGroup>
     <Compile Include="*.cs" />
     <Compile Include="../../Reader/AudioCoverReader.cs" />
-    <Compile Include="../../Services/WebDav/WebDavTransport.cs;../../Services/WebDav/WebDavCertificates.cs;../../Services/WebDav/HttpRangeReadStream.cs;../../Services/WebDav/RemoteReadSession.cs;../../Services/WebDav/RemoteAudioCache.cs;../../Services/WebDav/WebDavCachePaths.cs;../../Services/WebDav/WebDavPlaybackBridge.cs" />
+    <Compile Include="../../Services/WebDav/WebDavTransport.cs;../../Services/WebDav/WebDavCertificates.cs;../../Services/WebDav/HttpRangeReadStream.cs;../../Services/WebDav/WebDavReadFailure.cs;../../Services/WebDav/RemoteReadSession.cs;../../Services/WebDav/RemoteAudioCache.cs;../../Services/WebDav/WebDavCachePaths.cs;../../Services/WebDav/WebDavPlaybackBridge.cs" />
     <Compile Include="../../AudioConverters/FFmpegAudioConverter.cs" />
     <Compile Include="../../Model/ConversionMetadata.cs" />
     <None Include="Fixtures/eac3-5.1.m4a" CopyToOutputDirectory="PreserveNewest" />

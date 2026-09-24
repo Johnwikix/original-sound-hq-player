@@ -66,6 +66,7 @@ namespace WinUIMusicPlayer.ViewModel
             Playback = playback;
             _coordinator = coordinator;
             coordinator.TrackStarted += OnTrackStarted;
+            coordinator.SelectionChanged += OnPlaybackSelectionChanged;
             this.AppViewModel = appViewModel;
             _musicDatabaseService = musicDatabaseService;
             UsbDeviceService = usbDeviceService;
@@ -148,6 +149,7 @@ namespace WinUIMusicPlayer.ViewModel
             _disposed = true;
             if (_addFolderVm is not null) _addFolderVm.PropertyChanged -= FolderScanChanged;
             _coordinator.TrackStarted -= OnTrackStarted;
+            _coordinator.SelectionChanged -= OnPlaybackSelectionChanged;
         }
 
         [RelayCommand]
@@ -261,6 +263,13 @@ namespace WinUIMusicPlayer.ViewModel
 
         public Task PlayMusic(Music music, TimeSpan currentPos = new TimeSpan(), bool isSettingChanged = false, bool IsChangeList = false)
             => _coordinator.PlayAsync(music);
+
+        private void OnPlaybackSelectionChanged()
+        {
+            if (_disposed) return;
+            MusicBrowsePage?.UpdateViewList(refreshDetails: false);
+            MainPage?.UpdateCurrentPlayList();
+        }
 
         private void OnTrackStarted(Music music, CancellationToken token)
         {

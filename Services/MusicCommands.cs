@@ -11,7 +11,8 @@ namespace WinUIMusicPlayer.Services
 {
     public static class MusicCommands
     {
-        public static IAsyncRelayCommand<Music> PlayCommand { get; } = new AsyncRelayCommand<Music>(PlayAsync);
+        // 协调器用选曲代次取消旧请求；不能让共享命令在网络探活期间禁用所有歌曲行。
+        public static IAsyncRelayCommand<Music> PlayCommand { get; } = new AsyncRelayCommand<Music>(PlayAsync, AsyncRelayCommandOptions.AllowConcurrentExecutions);
         public static IRelayCommand<Music> UpdateFavouriteCommand { get; } = new RelayCommand<Music>(UpdateFavourite);
         public static IRelayCommand<Music> AddToPlayListCommand { get; } = new RelayCommand<Music>(AddToCurrentPlayList);
         public static IRelayCommand<Music> AddToFavouriteCommand { get; } = new RelayCommand<Music>(AddToFavourite);

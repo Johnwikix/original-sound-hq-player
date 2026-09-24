@@ -46,6 +46,7 @@ public partial class MusicDatabaseService
     public Task<List<Music>> GetVisibleMusicAsync() => _dbConnection.QueryAsync<Music>(
         "SELECT Music.* FROM Music WHERE SourceId = 0 OR EXISTS (SELECT 1 FROM RemoteTrack WHERE MusicId = Music.Id AND Missing = 0) ORDER BY Title");
     public Task<RemoteTrack?> GetRemoteTrackAsync(int musicId) => _dbConnection.FindAsync<RemoteTrack>(musicId)!;
+    public Task<List<RemoteTrack>> GetVisibleRemoteTracksAsync() => _dbConnection.Table<RemoteTrack>().Where(track => !track.Missing).ToListAsync();
     public Task<Music?> GetRemoteMusicAsync(int sourceId, string href) =>
         _dbConnection.FindWithQueryAsync<Music>("SELECT Music.* FROM Music JOIN RemoteTrack ON Music.Id=RemoteTrack.MusicId WHERE RemoteTrack.SourceId=? AND Href=? COLLATE BINARY AND Missing=0", sourceId, href)!;
     public async Task<WebDavCacheSettings> GetWebDavCacheSettingsAsync()

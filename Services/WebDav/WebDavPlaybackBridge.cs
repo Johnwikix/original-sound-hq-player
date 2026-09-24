@@ -24,6 +24,7 @@ public sealed class WebDavPlaybackBridge : IAsyncDisposable
     private bool _disposed;
     public string Location { get; private set; } = "";
     public string? Error { get; private set; }
+    public WebDavReadFailure? SourceFailure => _session.Failure;
     public WebDavPlaybackBridge(RemoteReadSession session) => _session = session;
     public void Start()
     {

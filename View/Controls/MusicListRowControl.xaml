@@ -8,7 +8,7 @@
     xmlns:dev="using:DevWinUI"
     xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     Unloaded="Row_Unloaded">
-    <Grid MinHeight="50" Opacity="{x:Bind tools:BindUtils.MusicRowOpacity(Music.IsRemoteOffline), Mode=OneWay}">
+    <Grid MinHeight="50" Opacity="{x:Bind tools:BindUtils.MusicRowOpacity(Music.IsPlayable), Mode=OneWay}">
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" />
             <ColumnDefinition Width="Auto" />
@@ -183,8 +183,8 @@
             Grid.Column="11"
             FontSize="14"
             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-            Glyph="{x:Bind tools:BindUtils.MusicSourceGlyph(Music.IsRemote, Music.IsRemoteOffline), Mode=OneWay}"
-            AutomationProperties.Name="{x:Bind tools:BindUtils.MusicSourceLabel(Music.IsRemote), Mode=OneWay}"
-            ToolTipService.ToolTip="{x:Bind tools:BindUtils.MusicSourceLabel(Music.IsRemote), Mode=OneWay}" />
+            Glyph="{x:Bind tools:BindUtils.MusicSourceGlyph(Music.IsRemote, Music.IsRemoteOffline, Music.IsRemoteCached), Mode=OneWay}"
+            AutomationProperties.Name="{x:Bind tools:BindUtils.MusicSourceLabel(Music.IsRemote, Music.IsRemoteCached), Mode=OneWay}"
+            ToolTipService.ToolTip="{x:Bind tools:BindUtils.MusicSourceLabel(Music.IsRemote, Music.IsRemoteCached), Mode=OneWay}" />
     </Grid>
 </UserControl>
