@@ -257,7 +257,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             for (int i = 0; i < srcSpan.Length; i++)
             {
                 var music = srcSpan[i];
-                if (music.Album != album.Album) continue;
+                if (music.Album != album.Album || !LibraryQueries.MatchesSource(music, State.Browse.SourceFilterId)) continue;
                 count++;
                 if (!string.IsNullOrEmpty(music.Author) && _seenAuthors.Add(music.Author))
                 {

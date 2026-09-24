@@ -76,7 +76,7 @@ public sealed class LibraryQueries(LibraryState library)
             if (!MatchesSource(m, _sourceFilter)) continue;
             if (!string.IsNullOrEmpty(m.Album))
             {
-                if (!_firstAlbumIndex.ContainsKey(m.Album))
+                if (!_firstAlbumIndex.TryGetValue(m.Album, out var firstAlbum) || (firstAlbum.IsRemote && !m.IsRemote))
                     _firstAlbumIndex[m.Album] = m;
                 _albumSongCounts[m.Album] = _albumSongCounts.GetValueOrDefault(m.Album) + 1;
             }

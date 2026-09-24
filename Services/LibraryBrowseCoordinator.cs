@@ -49,7 +49,7 @@ public sealed class LibraryBrowseCoordinator(AppState state, LibraryQueries quer
                 _ = projections.UpdateSongCollectionsAsync(state.LibraryViews.ArtistSongs, SongViewType.Artist, m => ArtistHelper.IsMusicByArtist(m, state.Browse.CurrentArtistObj?.Author ?? ""));
                 break;
             case nameof(state.Browse.CurrentAlbumObj):
-                _ = projections.UpdateSongCollectionsAsync(state.LibraryViews.AlbumSongs, SongViewType.Album, m => m.Album == state.Browse.CurrentAlbumObj?.Album && m.SourceId == state.Browse.CurrentAlbumObj.SourceId);
+                _ = projections.UpdateSongCollectionsAsync(state.LibraryViews.AlbumSongs, SongViewType.Album, m => m.Album == state.Browse.CurrentAlbumObj?.Album);
                 break;
             case nameof(state.Browse.CurrentFolderObj):
                 _ = projections.UpdateSongCollectionsAsync(state.LibraryViews.FolderSongs, SongViewType.Folder, m => m.LastLevelFolderPath == state.Browse.CurrentFolderObj?.LastLevelFolderPath);
@@ -86,7 +86,7 @@ public sealed class LibraryBrowseCoordinator(AppState state, LibraryQueries quer
         }
         else if (pageType == typeof(AlbumPage))
         {
-            _ = projections.UpdateSongCollectionsAsync(state.LibraryViews.AlbumSongs, SongViewType.Album, m => m.Album == state.Browse.CurrentAlbumObj?.Album && m.SourceId == state.Browse.CurrentAlbumObj.SourceId);
+            _ = projections.UpdateSongCollectionsAsync(state.LibraryViews.AlbumSongs, SongViewType.Album, m => m.Album == state.Browse.CurrentAlbumObj?.Album);
             projections.UpdateGroupedByFirstLetter(m => m.Album, m => GetFirstLetterAdvanced(m.Album), state.LibraryViews.AlbumPageSource);
         }
         else if (pageType == typeof(ArtistPage))

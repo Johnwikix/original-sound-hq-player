@@ -41,7 +41,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
         SelectedSortOption?.Tag?.ToString() ?? "DefaultOrder", group, AppSettings.ArtistSplitSymbols, state.Browse.SourceFilterId);
     private QueryKey SongKey(SongViewType kind) => Key(kind switch
     {
-        SongViewType.Album => state.Browse.CurrentAlbumObj is { } album ? $"{album.SourceId}\0{album.Album}" : null,
+        SongViewType.Album => state.Browse.CurrentAlbumObj?.Album,
         SongViewType.Artist => state.Browse.CurrentArtistObj?.Author,
         SongViewType.Folder => state.Browse.CurrentFolderObj?.LastLevelFolderPath,
         _ => null
@@ -85,7 +85,10 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
                     {
                         // 在 UI 线程复制字段；后台比较器绝不读取可变 Music 属性或 UI 集合。
                         foreach (var music in SongsSource)
-                            if (LibraryQueries.MatchesSource(music, key.Source) && (request.Filter is null || request.Filter(music))) rows[count++] = new SongRow(music);
+                        {
+                            if (!LibraryQueries.MatchesSource(music, key.Source) || (request.Filter is not null && !request.Filter(music))) continue;
+                            rows[count++] = new SongRow(music);
+                        }
                         int written = await Task.Run(() =>
                         {
                             int matches = 0;
@@ -178,8 +181,17 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
 
                 var key = distinctSelector(m);
                 if (string.IsNullOrWhiteSpace(key)) continue;
-                if (ReferenceEquals(source, state.LibraryViews.AlbumPageSource)) key = $"{m.SourceId}\0{key}";
-                distinctMap.TryAdd(key, m);
+                if (ReferenceEquals(source, state.LibraryViews.AlbumPageSource))
+                {
+                    // 专辑卡片按专辑名展示，不把来源作为卡片身份；详情歌曲按歌曲记录展示，
+                    // 因而同一专辑在本地和 WebDAV 的不同来源曲目都会保留。
+                    if (!distinctMap.TryGetValue(key, out var existingMusic) || (existingMusic.IsRemote && !m.IsRemote))
+                        distinctMap[key] = m;
+                }
+                else
+                {
+                    distinctMap.TryAdd(key, m);
+                }
             }
 
             PublishGroupedSource(distinctMap, distinctSelector, groupSelector, source);

@@ -2,6 +2,11 @@
 
 新条目加在最上方。
 
+## 2026-09-24 合并本地与 WebDAV 的同名专辑
+
+- `Services/LibraryProjectionService.cs`、`ViewModel/Pages/AlbumViewModel.cs`、`MusicGroupDetailViewModel.cs`：本地与 WebDAV 同名专辑只显示一张卡片，进入详情后跨来源显示所有歌曲；不同来源的同名曲目也保留。
+- `Services/LibraryQueries.cs`、`_tools/SharedStateRegression`：专辑歌曲数按来源分别计数，并增加跨来源专辑投影、详情和同名曲目回归检查。
+
 ## 2026-09-24 修复 WebDAV 网络源响度偏低
 
 - `External/AudioPlayer/Playback/Session.cs`、`PcmEffects.cs`、`LoudnessScanner.cs`：WebDAV HTTP 会话纳入与本地文件相同的 EBU R128 后台响度分析；分析完成前使用中性增益，避免原先固定 −12 dB 保守衰减导致网络歌曲整体偏低。
