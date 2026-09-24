@@ -164,15 +164,13 @@ namespace WinUIMusicPlayer.Utils
 
         /// <summary>
         /// 根据当前右键选中的曲目刷新需要读取音频内容的菜单项。
-        /// WebDAV 离线时保留菜单项但置灰，避免菜单结构因网络抖动反复变化；
-        /// 播放服务仍保留独立守卫，菜单状态不能作为唯一安全边界。
+        /// WebDAV 离线时将读取内容的操作置灰；播放入口保留以触发重新探活。
         /// </summary>
         public static void UpdateMusicMenuAvailability(
             ObservableCollection<MenuModel> options, IEnumerable<Music>? selected, Music? fallback = null)
         {
             bool hasSelection = false;
             bool hasOffline = false;
-            bool hasUnplayable = false;
             if (selected is not null)
             {
                 foreach (var music in selected)
@@ -180,17 +178,15 @@ namespace WinUIMusicPlayer.Utils
                     if (music is null) continue;
                     hasSelection = true;
                     hasOffline |= music.IsRemote && music.IsRemoteOffline;
-                    hasUnplayable |= !music.IsPlayable;
                 }
             }
             if (!hasSelection && fallback is not null)
             {
                 hasSelection = true;
                 hasOffline = fallback.IsRemote && fallback.IsRemoteOffline;
-                hasUnplayable = !fallback.IsPlayable;
             }
 
-            SetMenuEnabled(options, "Play", hasSelection && !hasUnplayable);
+            SetMenuEnabled(options, "Play", hasSelection);
             SetMenuEnabled(options, "ConvertAudio", hasSelection && !hasOffline);
             SetMenuEnabled(options, "ReGetLyrics", hasSelection && !hasOffline);
             SetMenuEnabled(options, "OpenInExplorer", hasSelection && !hasOffline);

@@ -23,6 +23,8 @@ namespace WinUIMusicPlayer.Utils
         public static string MusicSourceGlyph(bool isRemote, bool isOffline)
             => isRemote && isOffline ? "\uF384" : MusicSourceGlyph(isRemote);
         public static string MusicSourceLabel(bool isRemote) => isRemote ? "WebDAV" : GetString("WebDavLocalSources");
+        /// <summary>离线行仅作视觉弱化，保留点击播放以重新检查连接。</summary>
+        public static double MusicRowOpacity(bool isOffline) => isOffline ? 0.45 : 1.0;
         public static string RemotePlaybackDescription(string status) => string.IsNullOrEmpty(status) ? "WebDAV" : status;
         public static Visibility NonEmptyTextVisibility(string text) => string.IsNullOrWhiteSpace(text) ? Visibility.Collapsed : Visibility.Visible;
         public static Visibility EmptyCollectionVisibility(int count) => count == 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -204,9 +206,13 @@ namespace WinUIMusicPlayer.Utils
             return true;
         }
 
-        /// <summary>播放入口可用 = 播放引擎就绪且存在当前曲目；引擎未就绪时按钮置灰。</summary>
+        /// <summary>快进、快退、停止等传输控制要求引擎就绪且当前曲目在线。</summary>
         public static bool IsPlaybackEntryEnabled(bool isPlaybackEngineReady, Music? current)
             => isPlaybackEngineReady && current is { IsRemoteOffline: false };
+
+        /// <summary>播放按钮允许离线曲目进入探活流程；其它传输控制仍使用在线状态守卫。</summary>
+        public static bool IsPlayButtonEnabled(bool isPlaybackEngineReady, Music? current)
+            => isPlaybackEngineReady && current is not null;
 
         /// <summary>切歌入口可用 = 播放引擎就绪且播放列表非空；引擎未就绪时按钮置灰。</summary>
         public static bool IsSwitchEntryEnabled(bool isPlaybackEngineReady, IEnumerable<Music>? playList)

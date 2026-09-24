@@ -31,7 +31,8 @@ public sealed class PlaybackCommands : IDisposable
     public IRelayCommand<long> SeekCommand { get; }
     // 引擎就绪（IPC 连接 + 首曲推送完成）是播放的前提；IsPlaybackEngineReady 只在置位时包含 Ready，
     // 退出转 Stopping 后不会复位，生命周期守卫须单独保留。
-    private bool CanPlay => !_disposed && _lifecycle.IsReady && _state.IsPlaybackEngineReady && _state.CurrentPlayingMusic is { IsPlayable: true };
+    private bool CanPlay => !_disposed && _lifecycle.IsReady && _state.IsPlaybackEngineReady && _state.CurrentPlayingMusic is not null;
+    private bool CanSeek => CanPlay && _state.CurrentPlayingMusic is { IsPlayable: true };
     private bool CanSwitch => !_disposed && _lifecycle.IsReady && _state.IsPlaybackEngineReady && HasPlayableEntry();
     private BassPlayerCommandService Player => _services.GetRequiredService<BassPlayerCommandService>();
 
@@ -47,7 +48,7 @@ public sealed class PlaybackCommands : IDisposable
         PauseCommand = new AsyncRelayCommand(() => ToggleAsync(false), () => CanPlay, AsyncRelayCommandOptions.AllowConcurrentExecutions);
         NextCommand = new RelayCommand(Next, () => CanSwitch);
         PreviousCommand = new AsyncRelayCommand(PreviousAsync, () => CanSwitch);
-        SeekCommand = new RelayCommand<long>(Seek, _ => CanPlay);
+        SeekCommand = new RelayCommand<long>(Seek, _ => CanSeek);
         lifecycle.Changed += Changed;
         state.PropertyChanged += StateChanged;
         ObserveList();
@@ -59,7 +60,7 @@ public sealed class PlaybackCommands : IDisposable
         var remote = _services.GetRequiredService<RemotePlaybackService>();
         if (_state.CurrentPlayingMusic?.IsRemote == true)
         {
-            if (remote.NeedsStart)
+            if (remote.NeedsStart || _state.CurrentPlayingMusic.IsRemoteOffline)
             {
                 if (playing != false) await _services.GetRequiredService<PlaybackCoordinator>().PlayAsync(_state.CurrentPlayingMusic);
                 return;
@@ -117,7 +118,7 @@ public sealed class PlaybackCommands : IDisposable
         }
         return -1;
     }
-    private void Seek(long milliseconds) { if (CanPlay) Player.ChangeWaveChannelTime(Math.Max(0, milliseconds)); }
+    private void Seek(long milliseconds) { if (CanSeek) Player.ChangeWaveChannelTime(Math.Max(0, milliseconds)); }
     private void StateChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(AppViewModel.CurrentPlayingMusic) or nameof(AppViewModel.CurrentPlayingList)

@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-09-24 放开离线曲目手动播放并弱化列表行
+
+- `Services/MusicCommands.cs`、`Services/PlaybackCommands.cs`、`View/MainPage.xaml`、`View/PlayingDetailPage.xaml`：手动播放按钮允许离线 WebDAV 曲目进入播放前探活流程，探活失败后仍停止播放；其它传输控制继续遵循在线状态守卫。
+- `View/Controls/MusicListRowControl.xaml`、`Utils/BindUtils.cs`：离线歌曲行降低透明度但保留播放点击入口。
+- `Utils/ToolUtils.cs`：右键“播放”保留为可用，转换、歌词、打开位置和 USB 等需要读取内容的操作继续置灰。
+
 ## 2026-09-24 抽取音乐列表/网格模板并同步 WebDAV 探活信息
 
 - `View/Controls/MusicListRowControl.xaml`、列表页：将普通列表行、分组详情行和播放列表行抽成可配置行控件，保留外层 `ListView` 虚拟化与选择/右键行为。

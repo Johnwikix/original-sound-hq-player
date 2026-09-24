@@ -18,7 +18,8 @@ namespace WinUIMusicPlayer.Services
 
         private static async Task PlayAsync(Music? music)
         {
-            if (music is null || !music.IsPlayable) return;
+            // 手动播放由 PlaybackCoordinator 重新探活，不能被缓存的离线状态拦截。
+            if (music is null) return;
             var app = App.Services.GetRequiredService<AppViewModel>();
             var page = AppData.CurrentPage;
             if (page == typeof(FavouritePlayListPage))

@@ -24,6 +24,7 @@ namespace WinUIMusicPlayer.Model
                 if (SetProperty(ref field, value)) OnPropertyChanged(nameof(IsPlayable));
             }
         }
+        /// <summary>供自动切歌和传输控制使用的最近状态；手动播放仍须进入服务重新探活。</summary>
         [Ignore] public bool IsPlayable => !IsRemoteOffline;
         [Ignore] public bool CanEditFile => !IsRemote;
         public string Path { get; set => SetProperty(ref field, value); } = string.Empty;

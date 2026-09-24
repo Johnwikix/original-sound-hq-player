@@ -358,7 +358,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.Playback.ToggleCommand, Mode=OneWay}"
-                            IsEnabled="{x:Bind tools:BindUtils.IsPlaybackEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsPlayButtonEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource PlayButtonStyle}">
                             <FontIcon
                                 Width="32"
