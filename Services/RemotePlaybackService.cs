@@ -63,6 +63,7 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
             {
                 Kind = PlaybackSourceKind.Http, ResourceId = music.Path, Location = _bridge.Location,
                 FileExtension = System.IO.Path.GetExtension(track.Href),
+                ContentLength = track.Length, ETag = track.ETag,
                 CanSeek = track.Length > 0
             }, _sessionId, token);
             if (!reply.Accepted) throw new WebDavException("PlaybackFailed");

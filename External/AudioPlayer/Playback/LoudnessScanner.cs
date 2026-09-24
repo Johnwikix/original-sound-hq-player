@@ -2,26 +2,40 @@ using System.Buffers;
 using System.Security.Cryptography;
 using System.Text;
 using AudioPlayer.Decode;
+using BassPlayerIpc.Shared;
 
 namespace AudioPlayer.Playback;
 
-/// <summary>串行后台扫描和版本化磁盘缓存；不写音乐文件、不占用播放解码器。</summary>
+/// <summary>串行后台扫描本地或 HTTP 源并写入版本化磁盘缓存；不写音乐文件、不占用播放解码器。</summary>
 internal static class LoudnessScanner
 {
     private static readonly SemaphoreSlim Gate = new(1, 1);
 
     internal static Task<LoudnessMeasurement?> ScanAsync(string path, int rate, int channels,
-        int dsdRate, int dsdGain, CancellationToken token, string? cacheDirectory = null)
-        => Task.Run(() => ScanCoreAsync(path, rate, channels, dsdRate, dsdGain, token, cacheDirectory), token);
+        int dsdRate, int dsdGain, CancellationToken token, string? cacheDirectory = null, PlaybackSource? source = null)
+        => Task.Run(() => ScanCoreAsync(path, rate, channels, dsdRate, dsdGain, token, cacheDirectory, source), token);
 
     private static async Task<LoudnessMeasurement?> ScanCoreAsync(string path, int rate, int channels, int dsdRate, int dsdGain,
-        CancellationToken token, string? cacheDirectory)
+        CancellationToken token, string? cacheDirectory, PlaybackSource? source)
     {
         token.ThrowIfCancellationRequested();
-        var file = new FileInfo(path);
-        if (!file.Exists || channels is < 1 or > 2 || rate < 8000) return null;
-        long length = file.Length, modified = file.LastWriteTimeUtc.Ticks;
-        string key = $"v1|{file.FullName.ToUpperInvariant()}|{length}|{modified}|{rate}|{channels}|{dsdRate}|{dsdGain}";
+        bool remote = source?.Kind == PlaybackSourceKind.Http;
+        var file = remote ? null : new FileInfo(path);
+        if ((!remote && !file!.Exists) || channels is < 1 or > 2 || rate < 8000) return null;
+        long length = remote ? source!.ContentLength : file!.Length;
+        long modified = remote ? 0 : file!.LastWriteTimeUtc.Ticks;
+        string remoteVersion = "";
+        if (remote)
+        {
+            var remoteSource = source!;
+            remoteVersion = length >= 0 || remoteSource.ETag.Length != 0
+                ? $"{length}|{remoteSource.ETag}"
+                : remoteSource.Location;
+        }
+        string identity = remote
+            ? $"http|{source!.ResourceId}|{remoteVersion}"
+            : $"file|{file!.FullName.ToUpperInvariant()}|{length}|{modified}";
+        string key = $"v2|{identity}|{rate}|{channels}|{dsdRate}|{dsdGain}";
         string directory = cacheDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "WinUIMusicPlayer", "LoudnessCache");
         string cache = Path.Combine(directory, Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(key))) + ".bin");
@@ -43,7 +57,7 @@ internal static class LoudnessScanner
         try
         {
             using var decoder = new PcmDecoder();
-            if (!decoder.Open(path, dsdRate, dsdGain, rate, channels)) return null;
+            if (!decoder.Open(path, dsdRate, dsdGain, rate, channels, source: source)) return null;
             var meter = new LoudnessMeter(rate, channels);
             double[] scratch = ArrayPool<double>.Shared.Rent(16384 * channels);
             long frames = 0;
@@ -64,8 +78,11 @@ internal static class LoudnessScanner
             token.ThrowIfCancellationRequested();
             // 解码器在错误时也可能返回 EOF，不把明显不完整的测量写入缓存。
             if (decoder.TotalMs > 0 && frames * 1000.0 / rate < decoder.TotalMs - 2000) return null;
-            file.Refresh();
-            if (!file.Exists || file.Length != length || file.LastWriteTimeUtc.Ticks != modified) return null;
+            if (!remote)
+            {
+                file!.Refresh();
+                if (!file.Exists || file.Length != length || file.LastWriteTimeUtc.Ticks != modified) return null;
+            }
             var result = meter.Finish();
             if (result is null) return null;
             try

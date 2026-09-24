@@ -150,7 +150,7 @@ internal sealed class Session : IRenderSource, IDisposable
                         CanSeek = dec.CanSeek,
                         InitialBufferFrames = initialFrames,
                     };
-                    if (source?.Kind != PlaybackSourceKind.Http) s.Effects!.SetFile(path, dsdPcmFreq, dsdGainDb);
+                    s.Effects!.SetFile(path, dsdPcmFreq, dsdGainDb, source);
                     pending = s;
                     s.StartThread(s.PcmDecodeProc);
                     return s;

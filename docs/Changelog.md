@@ -2,6 +2,11 @@
 
 新条目加在最上方。
 
+## 2026-09-24 修复 WebDAV 网络源响度偏低
+
+- `External/AudioPlayer/Playback/Session.cs`、`PcmEffects.cs`、`LoudnessScanner.cs`：WebDAV HTTP 会话纳入与本地文件相同的 EBU R128 后台响度分析；分析完成前使用中性增益，避免原先固定 −12 dB 保守衰减导致网络歌曲整体偏低。
+- `External/BassPlayerIpc.Shared/Streaming.cs`、`Services/RemotePlaybackService.cs`：传递远程文件长度和 ETag 作为响度缓存版本，文件更新后自动重新分析；后台分析不阻塞首次播放，慢速网络仍可先播放。
+
 ## 2026-09-23 修复切歌时封面与 Win2D 资源持续累积
 
 - `Controls/ImageSwitcher`、`PlayingDetailPage.xaml`：隐藏详情页时取消封面读取，原图解码宽度限制为 1536，过渡完成后释放上一张图源，并保留快速恢复所需的当前图像。
