@@ -550,6 +550,14 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         public void UpDateUsbDeviceMenuflyout()
             => ToolUtils.UpdateUsbSendMenu(MenuOptions, TransmitFileToUsbCommand);
 
+        [RelayCommand]
+        private void PrepareMenu()
+        {
+            UpdateAlbumMenuOptionsPlayList();
+            UpDateUsbDeviceMenuflyout();
+            ToolUtils.UpdateMusicMenuAvailability(MenuOptions, SelectedMusics, SelectedMusic);
+        }
+
         public void UpdateAlbumMenuOptionsPlayList()
         {
             var option = MenuOptions.AsValueEnumerable().FirstOrDefault(a => (string)a.Tag == "AddToPlayList");

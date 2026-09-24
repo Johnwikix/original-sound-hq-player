@@ -61,6 +61,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             UpdateAlbumMenuOptionsPlayList();
             UpDateUsbDeviceMenuflyout();
+            ToolUtils.UpdateMusicMenuAvailability(MenuOptions, SelectedMusics, SelectedMusic);
         }
 
         public void UpDateUsbDeviceMenuflyout()

@@ -24,6 +24,7 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
 {
     private readonly CancellationTokenSource _stop = new();
     private readonly Dictionary<int, (CancellationTokenSource Cancel, Task Work)> _scans = [];
+    private readonly Dictionary<int, Task> _probes = [];
     private readonly SemaphoreSlim _metadataSlots = new(2, 2);
     private readonly SemaphoreSlim _coverSlot = new(1, 1);
     // Older readers cached DSF as coverless. Recheck these misses once per bounded working set.
@@ -34,6 +35,7 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
     private readonly HashSet<int> _offlineSources = [];
     private readonly Dictionary<int, long> _publishedAt = [];
     private readonly object _gate = new();
+    private Task? _availabilityLoop;
     private AppViewModel? _library;
     private WebDavCacheSettings _cacheSettings = new();
     public CancellationToken StoppingToken => _stop.Token;
@@ -59,26 +61,85 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
         _cacheSettings.LimitGiB * 1024L * 1024 * 1024);
     public async Task StartConfiguredScansAsync()
     {
-        foreach (var source in await database.GetWebDavSourcesAsync())
+        var sources = await database.GetWebDavSourcesAsync();
+        lock (_gate)
+        {
+            _availabilityLoop ??= Task.Run(() => MonitorAvailabilityAsync(_stop.Token));
+        }
+        foreach (var source in sources)
             if (source.Enabled && source.ScanOnStartup) _ = ScanAsync(source);
     }
     public WebDavScanStatus? GetStatus(int sourceId) { lock (_gate) return _statuses.GetValueOrDefault(sourceId); }
     public bool IsSourceOffline(int sourceId) { lock (_gate) return _offlineSources.Contains(sourceId); }
+
+    /// <summary>对单个来源执行一次轻量在线检查；不会扫描目录内容。</summary>
+    public Task ProbeAsync(WebDavSource source, CancellationToken cancellationToken = default)
+    {
+        lock (_gate)
+        {
+            if (_probes.TryGetValue(source.Id, out var previous) && !previous.IsCompleted) return previous;
+            // PasswordVault 读取和 URI 校验属于同步前置工作，避免在右键菜单/浏览器 UI 线程执行。
+            var work = Task.Run(() => ProbeCoreAsync(source, cancellationToken));
+            _probes[source.Id] = work;
+            return work;
+        }
+    }
+
+    public async Task<bool> EnsureAvailableAsync(WebDavSource source, CancellationToken cancellationToken = default)
+    {
+        await ProbeAsync(source, cancellationToken).WaitAsync(cancellationToken).ConfigureAwait(false);
+        return !IsSourceOffline(source.Id);
+    }
+
+    private async Task ProbeCoreAsync(WebDavSource source, CancellationToken cancellationToken)
+    {
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token, cancellationToken);
+        try
+        {
+            await transport.ProbeAsync(Connect(source), linked.Token).ConfigureAwait(false);
+            PublishAvailability(source.Id, false);
+        }
+        catch (OperationCanceledException) when (linked.IsCancellationRequested) { }
+        catch (Exception ex)
+        {
+            string error = ex is WebDavException dav ? dav.Code : "ConnectionFailed";
+            logger.LogWarning("WebDAV availability probe failed for source {SourceId}: {Error}", source.Id, error);
+            PublishAvailability(source.Id, true);
+        }
+    }
+
+    private async Task MonitorAvailabilityAsync(CancellationToken token)
+    {
+        try
+        {
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    var sources = await database.GetWebDavSourcesAsync().ConfigureAwait(false);
+                    var probes = new List<Task>(sources.Count);
+                    foreach (var source in sources)
+                        if (source.Enabled) probes.Add(ProbeAsync(source, token));
+                    await Task.WhenAll(probes).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException) when (token.IsCancellationRequested) { break; }
+                catch (Exception ex) { logger.LogWarning(ex, "WebDAV availability monitoring iteration failed"); }
+
+                TimeSpan delay = _library?.CurrentPlayingMusic?.IsRemote == true
+                    ? TimeSpan.FromSeconds(30)
+                    : TimeSpan.FromMinutes(5);
+                await Task.Delay(delay, token).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+    }
+
     private void Publish(WebDavScanStatus status)
     {
-        bool? offline = status.Phase switch
-        {
-            "Failed" => true,
-            "Scanning" or "Metadata" or "Completed" => false,
-            _ => null
-        };
-        bool availabilityChanged = false;
         lock (_gate)
         {
             var previous = _statuses.GetValueOrDefault(status.SourceId);
             _statuses[status.SourceId] = status;
-            if (offline is true) availabilityChanged = _offlineSources.Add(status.SourceId);
-            else if (offline is false) availabilityChanged = _offlineSources.Remove(status.SourceId);
             long now = Environment.TickCount64;
             if (previous?.Phase == status.Phase && now - _publishedAt.GetValueOrDefault(status.SourceId) < 250) return;
             _publishedAt[status.SourceId] = now;
@@ -86,17 +147,31 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
         App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
         {
             if (_stop.IsCancellationRequested) return;
-            if (availabilityChanged && _library is not null)
+            StatusChanged?.Invoke(status);
+        });
+    }
+
+    private void PublishAvailability(int sourceId, bool offline)
+    {
+        bool changed;
+        lock (_gate)
+        {
+            changed = offline ? _offlineSources.Add(sourceId) : _offlineSources.Remove(sourceId);
+        }
+        if (!changed) return;
+        App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
+        {
+            if (_stop.IsCancellationRequested) return;
+            if (_library is not null)
             {
                 foreach (var music in _library.SongsSource)
-                    if (music.SourceId == status.SourceId) music.IsRemoteOffline = offline == true;
+                    if (music.SourceId == sourceId) music.IsRemoteOffline = offline;
                 foreach (var music in _library.CurrentPlayingList)
-                    if (music.SourceId == status.SourceId) music.IsRemoteOffline = offline == true;
-                if (_library.CurrentPlayingMusic?.SourceId == status.SourceId)
-                    _library.CurrentPlayingMusic.IsRemoteOffline = offline == true;
-                SourceAvailabilityChanged?.Invoke(status.SourceId, offline == true);
+                    if (music.SourceId == sourceId) music.IsRemoteOffline = offline;
+                if (_library.CurrentPlayingMusic?.SourceId == sourceId)
+                    _library.CurrentPlayingMusic.IsRemoteOffline = offline;
             }
-            StatusChanged?.Invoke(status);
+            SourceAvailabilityChanged?.Invoke(sourceId, offline);
         });
     }
     public WebDavConnection Connect(WebDavSource source)
@@ -125,6 +200,7 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
         if (source.UserName.Length != 0) new PasswordVault().Add(new PasswordCredential("OriginalSoundPlayer.WebDav", source.CredentialKey, password));
         await database.SaveWebDavSourceAsync(source);
         if (_library is not null) await _library.RefreshSongsSourceAsync();
+        if (source.Enabled) _ = ProbeAsync(source);
         SourcesChanged?.Invoke();
     }
     public Task ScanAsync(WebDavSource source)
@@ -249,8 +325,10 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
         List<Music> added = [];
         foreach (var item in batch)
         {
+            item.IsRemoteOffline = IsSourceOffline(item.SourceId);
             var current = _library.FindById(item.Id);
             if (current is null) { added.Add(item); continue; }
+            current.IsRemoteOffline = item.IsRemoteOffline;
             current.Title = item.Title; current.Author = item.Author; current.Album = item.Album;
             current.TrackNumber = item.TrackNumber; current.DiskNumber = item.DiskNumber; current.Year = item.Year;
             current.BitDepth = item.BitDepth; current.BitRate = item.BitRate; current.SampleRate = item.SampleRate;
@@ -398,13 +476,30 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
         _stop.Cancel();
         if (_library is not null) _library.State.Preferences.PropertyChanged -= OnPreferencesChanged;
         Task[] scans;
-        lock (_gate) { scans = new Task[_scans.Count]; int i = 0; foreach (var scan in _scans.Values) scans[i++] = scan.Work; }
+        Task[] probes;
+        Task? availabilityLoop;
+        lock (_gate)
+        {
+            scans = new Task[_scans.Count];
+            int i = 0;
+            foreach (var scan in _scans.Values) scans[i++] = scan.Work;
+            probes = [.. _probes.Values];
+            availabilityLoop = _availabilityLoop;
+        }
+        if (availabilityLoop is not null) await availabilityLoop;
+        await Task.WhenAll(probes);
         await Task.WhenAll(scans);
         await _coverSlot.WaitAsync();
         _coverSlot.Release();
         await _lyricsSlot.WaitAsync();
         _lyricsSlot.Release();
-        lock (_gate) { foreach (var scan in _scans.Values) scan.Cancel.Dispose(); _scans.Clear(); }
+        lock (_gate)
+        {
+            foreach (var scan in _scans.Values) scan.Cancel.Dispose();
+            _scans.Clear();
+            _probes.Clear();
+            _availabilityLoop = null;
+        }
         StatusChanged = null;
         SourceAvailabilityChanged = null;
         SourcesChanged = null;

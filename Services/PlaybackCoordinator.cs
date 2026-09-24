@@ -11,7 +11,7 @@ namespace WinUIMusicPlayer.Services;
 /// <summary>所有选曲入口的播放用例；页面只接收已开始曲目的展示事件，不拥有播放任务。</summary>
 public sealed class PlaybackCoordinator(AppViewModel state, BassPlayerCommandService player,
     PlaybackStatsService statistics, ApplicationTasks tasks, ShutdownCoordinator shutdown,
-    ILogger<PlaybackCoordinator> logger, RemotePlaybackService remote) : IDisposable
+    ILogger<PlaybackCoordinator> logger, RemotePlaybackService remote, WebDavLibraryService library) : IDisposable
 {
     private CancellationTokenSource? _presentation;
     private bool _disposed;
@@ -26,7 +26,7 @@ public sealed class PlaybackCoordinator(AppViewModel state, BassPlayerCommandSer
 
     public Task PlayAsync(Music music, long entryId = 0)
     {
-        if (_disposed || !state.CanStartPlayback || music is null || !music.IsPlayable) return Task.CompletedTask;
+        if (_disposed || !state.CanStartPlayback || music is null || (!music.IsRemote && !music.IsPlayable)) return Task.CompletedTask;
         if (!_registered)
         {
             _registered = true;
@@ -37,13 +37,19 @@ public sealed class PlaybackCoordinator(AppViewModel state, BassPlayerCommandSer
 
     private async Task PlayCoreAsync(Music music, long entryId)
     {
-        if (_disposed || !state.CanStartPlayback) return;
+        if (_disposed || !state.CanStartPlayback || (!music.IsRemote && !music.IsPlayable)) return;
         _presentation?.Cancel();
         _presentation?.Dispose();
         _presentation = new CancellationTokenSource();
         var token = _presentation.Token;
         try
         {
+            if (music.IsRemote)
+            {
+                var (source, _) = await library.ResolveAsync(music).ConfigureAwait(false);
+                if (!await library.EnsureAvailableAsync(source, token).ConfigureAwait(false) || library.IsSourceOffline(source.Id))
+                    return;
+            }
             long remoteGeneration = music.IsRemote ? remote.BeginSelection() : 0;
             if (!music.IsRemote)
             {

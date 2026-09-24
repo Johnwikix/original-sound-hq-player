@@ -111,11 +111,23 @@ public sealed class WebDavTransport : IDisposable
         }
     }
 
+    /// <summary>
+    /// 只验证 WebDAV 根路径的连通性和认证，不读取目录树或文件内容。
+    /// Depth:0 的 PROPFIND 是 WebDAV 服务普遍支持的轻量探活请求。
+    /// </summary>
+    public async Task ProbeAsync(WebDavConnection source, CancellationToken cancellationToken)
+    {
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(TimeSpan.FromSeconds(8));
+        await using var response = await SendAsync(source, "", "PROPFIND", null, null, false, deadline.Token, "0")
+            .ConfigureAwait(false);
+    }
+
     public Task<WebDavResponse> OpenAsync(WebDavConnection source, string href, long? start, long? end,
         bool foreground, CancellationToken token) => SendAsync(source, href, "GET", start, end, foreground, token);
 
     private async Task<WebDavResponse> SendAsync(WebDavConnection source, string href, string method,
-        long? start, long? end, bool foreground, CancellationToken token)
+        long? start, long? end, bool foreground, CancellationToken token, string propfindDepth = "1")
     {
         bool backgroundHeld = false, allHeld = false;
         WebDavHttpClients.Lease? client = null;
@@ -136,7 +148,7 @@ public sealed class WebDavTransport : IDisposable
                 if (start is not null) request.Headers.Range = new RangeHeaderValue(start, end);
                 if (method == "PROPFIND")
                 {
-                    request.Headers.Add("Depth", "1");
+                    request.Headers.Add("Depth", propfindDepth);
                     request.Content = new StringContent("<d:propfind xmlns:d=\"DAV:\"><d:prop><d:resourcetype/><d:getcontentlength/><d:getetag/><d:getlastmodified/></d:prop></d:propfind>", Encoding.UTF8, "application/xml");
                 }
                 client = _clients.Acquire(source, target);

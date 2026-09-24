@@ -163,6 +163,53 @@ namespace WinUIMusicPlayer.Utils
         }
 
         /// <summary>
+        /// 根据当前右键选中的曲目刷新需要读取音频内容的菜单项。
+        /// WebDAV 离线时保留菜单项但置灰，避免菜单结构因网络抖动反复变化；
+        /// 播放服务仍保留独立守卫，菜单状态不能作为唯一安全边界。
+        /// </summary>
+        public static void UpdateMusicMenuAvailability(
+            ObservableCollection<MenuModel> options, IEnumerable<Music>? selected, Music? fallback = null)
+        {
+            bool hasSelection = false;
+            bool hasOffline = false;
+            bool hasUnplayable = false;
+            if (selected is not null)
+            {
+                foreach (var music in selected)
+                {
+                    if (music is null) continue;
+                    hasSelection = true;
+                    hasOffline |= music.IsRemote && music.IsRemoteOffline;
+                    hasUnplayable |= !music.IsPlayable;
+                }
+            }
+            if (!hasSelection && fallback is not null)
+            {
+                hasSelection = true;
+                hasOffline = fallback.IsRemote && fallback.IsRemoteOffline;
+                hasUnplayable = !fallback.IsPlayable;
+            }
+
+            SetMenuEnabled(options, "Play", hasSelection && !hasUnplayable);
+            SetMenuEnabled(options, "ConvertAudio", hasSelection && !hasOffline);
+            SetMenuEnabled(options, "ReGetLyrics", hasSelection && !hasOffline);
+            SetMenuEnabled(options, "OpenInExplorer", hasSelection && !hasOffline);
+            SetMenuEnabled(options, "SendToUsbDevice", hasSelection && !hasOffline);
+        }
+
+        private static void SetMenuEnabled(ObservableCollection<MenuModel> options, string tag, bool enabled)
+        {
+            foreach (var option in options)
+            {
+                if (Equals(option.Tag, tag))
+                {
+                    option.IsEnabled = enabled;
+                    return;
+                }
+            }
+        }
+
+        /// <summary>
         /// 「发送到 USB 设备」菜单子项：每个设备一层子菜单，首项为原格式直传，
         /// 其后直接跟转换格式（有损格式再带码率层）——一层到位，避免设备/格式双重嵌套。
         /// </summary>

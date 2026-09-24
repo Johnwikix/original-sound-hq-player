@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-09-24 独立探测 WebDAV 在线状态并同步右键菜单
+
+- `Services/WebDav/WebDavTransport.cs`、`WebDavLibraryService.cs`：使用 `PROPFIND Depth:0` 轻量探活，启动检查所有启用来源并按前台播放状态自适应轮询；在线状态不再依赖目录扫描结果。
+- `Model/MenuModel.cs`、`Extensions/MenuFlyoutExtensions.cs`、`Utils/ToolUtils.cs`、各列表/网格 ViewModel：WebDAV 离线时将播放、转换、歌词、资源打开和 USB 发送等需要读取内容的右键操作置灰。
+- `Services/PlaybackCoordinator.cs`、`ViewModel/Pages/WebDavBrowserViewModel.cs`：播放和 WebDAV 浏览前执行在线检查，避免探活状态过期后绕过离线守卫。
+
 ## 2026-09-24 标记离线 WebDAV 曲目并禁止播放
 
 - `Services/WebDavLibraryService.cs`、`Model/Music.cs`：启动扫描失败时发布来源离线状态，同步到曲目运行时状态；恢复连接后清除。

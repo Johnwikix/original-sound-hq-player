@@ -65,6 +65,11 @@ public partial class WebDavBrowserViewModel : ObservableObject, IDisposable
         folder.IsLoading = true;
         try
         {
+            if (!await _library.EnsureAvailableAsync(_source, _stop.Token))
+            {
+                Status = ToolUtils.GetString("WebDavFailed");
+                return;
+            }
             _connection ??= _library.Connect(_source);
             Status = ToolUtils.GetString("WebDavConnecting");
             var children = new List<WebDavTreeItem>();
@@ -107,7 +112,7 @@ public partial class WebDavBrowserViewModel : ObservableObject, IDisposable
             var music = await _database.GetRemoteMusicAsync(_source.Id, item.Href);
             if (_disposed) return;
             if (music is null) { Status = ToolUtils.GetString("WebDavIndexFirst"); return; }
-            music.IsRemoteOffline = _library.IsSourceOffline(_source.Id);
+            if (!await _library.EnsureAvailableAsync(_source, _stop.Token)) return;
             await _playback.PlayAsync(music);
         }
         catch (Exception ex)
@@ -124,13 +129,13 @@ public partial class WebDavBrowserViewModel : ObservableObject, IDisposable
         try
         {
             var selection = _selectedTracks.ToArray();
+            if (!await _library.EnsureAvailableAsync(_source, _stop.Token)) return;
             var songs = new List<Music>(selection.Length);
             foreach (var item in selection)
             {
                 if (_disposed || _stop.IsCancellationRequested) return;
                 if (await _database.GetRemoteMusicAsync(_source.Id, item.Href) is { } music)
                 {
-                    music.IsRemoteOffline = _library.IsSourceOffline(_source.Id);
                     songs.Add(music);
                 }
             }
