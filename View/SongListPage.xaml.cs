@@ -114,46 +114,11 @@ namespace WinUIMusicPlayer.View
             e.Handled = true;
         }
 
-        private void AuthorTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
-        {
-            if (sender is TextBlock textBlock)
-            {
-                string artist = textBlock.Text;
-                ViewModel.AuthorTextBlock_Tapped(artist);
-            }
-        }
+        private void MusicRow_ArtistInvoked(object sender, Music music)
+            => ViewModel.AuthorTextBlock_Tapped(music.Author);
 
-        private void AlbumTextBlock_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
-        {
-            if (sender is TextBlock textBlock)
-            {
-                string albumName = textBlock.Text;
-                ViewModel.AlbumTextBlock_Tapped(albumName);
-            }
-        }
+        private void MusicRow_AlbumInvoked(object sender, Music music)
+            => ViewModel.AlbumTextBlock_Tapped(music.Album);
 
-        private void AutoScrollHover_PointerEntered(object sender, PointerRoutedEventArgs e)
-        {
-            if (sender is AutoScrollView autoScrollView)
-            {
-                autoScrollView.IsPlaying = true;
-            }
-        }
-
-        private void AutoScrollHover_PointerCanceled(object sender, PointerRoutedEventArgs e)
-        {
-            if (sender is AutoScrollView autoScrollView)
-            {
-                autoScrollView.IsPlaying = false;
-            }
-        }
-
-        private void AutoScrollHover_PointerExited(object sender, PointerRoutedEventArgs e)
-        {
-            if (sender is AutoScrollView autoScrollView)
-            {
-                autoScrollView.IsPlaying = false;
-            }
-        }
     }
 }

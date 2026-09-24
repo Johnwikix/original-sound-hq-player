@@ -4,12 +4,10 @@
     xmlns:tools="using:WinUIMusicPlayer.Utils"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:behaviors="using:WinUIMusicPlayer.Behaviors"
     xmlns:controls="using:WinUIMusicPlayer.View.Controls"
     xmlns:converters="using:WinUIMusicPlayer.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:extensions="using:WinUIMusicPlayer.Extensions"
-    xmlns:interactivity="using:Microsoft.Xaml.Interactivity"
     xmlns:local="using:WinUIMusicPlayer.View"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
@@ -57,90 +55,7 @@
                     </GridView.GroupStyle>
                     <GridView.ItemTemplate>
                         <DataTemplate x:DataType="model:Music">
-                            <Grid
-                                Height="205"
-                                Margin="5,10,5,10"
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                RowDefinitions="Auto,Auto,*,Auto">
-                                <Grid
-                                    Grid.Row="0"
-                                    Width="150"
-                                    Height="150">
-                                    <Border
-                                        x:Name="CoverBorder"
-                                        Width="150"
-                                        Height="150"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        CornerRadius="5">
-                                        <Grid>
-                                            <Image
-                                                HorizontalAlignment="Center"
-                                                VerticalAlignment="Center"
-                                                Canvas.ZIndex="1"
-                                                Stretch="UniformToFill">
-                                                <interactivity:Interaction.Behaviors>
-                                                    <behaviors:AlbumCoverBehavior Music="{x:Bind Mode=OneWay}" />
-                                                </interactivity:Interaction.Behaviors>
-                                            </Image>
-                                            <Grid
-                                                Width="150"
-                                                Height="150"
-                                                Background="{ThemeResource SolidBackgroundFillColorSecondaryBrush}"
-                                                Canvas.ZIndex="0">
-                                                <FontIcon
-                                                    Canvas.ZIndex="0"
-                                                    FontSize="50"
-                                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                    Glyph="&#xE93C;" />
-                                            </Grid>
-                                        </Grid>
-                                    </Border>
-                                    <FontIcon
-                                        x:Name="IsExistOnDeviceIcon"
-                                        Margin="0,0,5,5"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Bottom"
-                                        FontSize="16"
-                                        Glyph="{x:Bind tools:BindUtils.IsExistOnDeviceGlyphConverter(IsExistOnDevice), Mode=OneWay}" />
-                                </Grid>
-                                <TextBlock
-                                    Grid.Row="1"
-                                    Width="150"
-                                    MaxHeight="40"
-                                    Margin="0"
-                                    FontWeight="SemiBold"
-                                    Text="{x:Bind Album, Mode=OneWay}"
-                                    TextAlignment="Left"
-                                    TextTrimming="CharacterEllipsis"
-                                    TextWrapping="Wrap" />
-                                <Grid Grid.Row="3" Width="150" ColumnDefinitions="*,Auto,Auto">
-                                    <TextBlock
-                                        Grid.Column="0"
-                                        Height="15"
-                                        Margin="0"
-                                        HorizontalAlignment="Stretch"
-                                        FontSize="12"
-                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Text="{x:Bind Author, Mode=OneWay}"
-                                        TextTrimming="CharacterEllipsis" />
-                                    <TextBlock
-                                        Grid.Column="1"
-                                        Height="15"
-                                        Margin="0"
-                                        FontSize="12"
-                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                        Text="{x:Bind tool:BindUtils.AlbumSongsConverter(Album)}" />
-                                    <TextBlock
-                                        x:Uid="AlbumSongs"
-                                        Grid.Column="2"
-                                        Height="15"
-                                        Margin="0"
-                                        FontSize="12"
-                                        Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
-                                </Grid>
-                            </Grid>
+                            <controls:AlbumGridCardControl Music="{x:Bind}" />
                         </DataTemplate>
                     </GridView.ItemTemplate>
                 </GridView>

@@ -8,7 +8,6 @@ using WinUIMusicPlayer.Behaviors;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Helper;
-using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel.Controls;
 
 namespace WinUIMusicPlayer.View.Controls
@@ -79,25 +78,15 @@ namespace WinUIMusicPlayer.View.Controls
             ViewModel.MusicListView_DoubleTapped();
         }
 
+        private void MusicRow_ArtistInvoked(object sender, Music music)
+            => ViewModel.AuthorTextBlock_Tapped(music.Author);
+
+        private void MusicRow_AlbumInvoked(object sender, Music music)
+            => ViewModel.AlbumTextBlock_Tapped(music.Album);
+
         private async void MusicListView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
         {
             await ViewModel.MusicListView_DragItemsCompleted();
-        }
-
-        private void AuthorButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is FrameworkElement fe && fe.DataContext is PlayListMusicItem plm)
-            {
-                ViewModel.AuthorTextBlock_Tapped(plm.Music.Author ?? string.Empty);
-            }
-        }
-
-        private void AlbumButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is FrameworkElement fe && fe.DataContext is PlayListMusicItem plm)
-            {
-                ViewModel.AlbumTextBlock_Tapped(plm.Music.Album ?? string.Empty);
-            }
         }
 
         private void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)

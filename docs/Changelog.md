@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-09-24 抽取音乐列表/网格模板并同步 WebDAV 探活信息
+
+- `View/Controls/MusicListRowControl.xaml`、列表页：将普通列表行、分组详情行和播放列表行抽成可配置行控件，保留外层 `ListView` 虚拟化与选择/右键行为。
+- `View/Controls/*GridCardControl.xaml`、专辑/艺术家/文件夹页：按页面分别抽取 GridView 卡片模板，保留外层 `GridView` 的虚拟化和语义缩放。
+- `ViewModel/Pages/WebDavSourcesViewModel.cs`：来源管理页在加载和探活状态变化时刷新 WebDAV 信息，离线状态不再只更新播放守卫而遗漏来源卡片。
+
 ## 2026-09-24 独立探测 WebDAV 在线状态并同步右键菜单
 
 - `Services/WebDav/WebDavTransport.cs`、`WebDavLibraryService.cs`：使用 `PROPFIND Depth:0` 轻量探活，启动检查所有启用来源并按前台播放状态自适应轮询；在线状态不再依赖目录扫描结果。

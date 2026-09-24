@@ -75,6 +75,7 @@ public partial class WebDavSourcesViewModel : ObservableObject
             {
                 var item = new WebDavSourceItem(source, this);
                 item.Update(_library.GetStatus(source.Id));
+                item.UpdateAvailability(_library.IsSourceOffline(source.Id));
                 Sources.Add(item);
                 Choices.Add(new(source.Id, source.Name));
             }
@@ -118,7 +119,16 @@ public partial class WebDavSourcesViewModel : ObservableObject
     }
     private void OnSourceAvailabilityChanged(int sourceId, bool offline)
     {
-        if (_stopped || !offline || _app.CurrentPlayingMusic?.SourceId != sourceId) return;
+        if (_stopped) return;
+        foreach (var item in Sources)
+        {
+            if (item.Source.Id == sourceId)
+            {
+                item.UpdateAvailability(offline);
+                break;
+            }
+        }
+        if (!offline || _app.CurrentPlayingMusic?.SourceId != sourceId) return;
         _ = _playback.StopAsync();
         _app.IsPlaying = false;
         _app.StopProgressTimer();
@@ -184,10 +194,12 @@ public partial class WebDavSourceItem : ObservableObject
     public string Name => Source.Name;
     public string Address => Source.BaseUri;
     public string Status { get; private set => SetProperty(ref field, value); } = "";
+    public bool IsOffline { get; private set => SetProperty(ref field, value); }
     public IAsyncRelayCommand ScanCommand { get; }
     public IAsyncRelayCommand PauseCommand { get; }
     public IAsyncRelayCommand RemoveCommand { get; }
     private bool _busy;
+    private WebDavScanStatus? _scanStatus;
     public WebDavSourceItem(WebDavSource source, WebDavSourcesViewModel owner)
     {
         Source = source;
@@ -197,11 +209,30 @@ public partial class WebDavSourceItem : ObservableObject
     }
     public void Update(WebDavScanStatus? status)
     {
+        _scanStatus = status;
         _busy = status?.Phase is "Scanning" or "Metadata";
+        RefreshStatus();
+        ScanCommand.NotifyCanExecuteChanged();
+        PauseCommand.NotifyCanExecuteChanged();
+    }
+
+    public void UpdateAvailability(bool offline)
+    {
+        IsOffline = offline;
+        RefreshStatus();
+    }
+
+    private void RefreshStatus()
+    {
+        if (IsOffline)
+        {
+            Status = ToolUtils.GetString("WebDavFailed");
+            return;
+        }
+
+        var status = _scanStatus;
         Status = status is null ? ToolUtils.GetString("WebDavReady") : string.Format(ToolUtils.GetString("WebDavScanSummary"),
             ToolUtils.GetString("WebDav" + status.Phase), status.Found, status.Tagged);
         if (status?.Error is not null) Status += " · " + WebDavText.Error(status.Error);
-        ScanCommand.NotifyCanExecuteChanged();
-        PauseCommand.NotifyCanExecuteChanged();
     }
 }
