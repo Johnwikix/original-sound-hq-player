@@ -52,6 +52,7 @@
                             Command="{x:Bind PlayCommand, Mode=OneWay}"
                             CommandParameter="{x:Bind}"
                             CornerRadius="5"
+                            IsEnabled="{x:Bind IsPlayable, Mode=OneWay}"
                             Style="{StaticResource PlayHoverButtonStyle}">
                             <Grid Width="40" Height="40">
                                 <Image
@@ -190,7 +191,7 @@
                             Grid.Column="9"
                             FontSize="14"
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                            Glyph="{x:Bind tools:BindUtils.MusicSourceGlyph(IsRemote), Mode=OneWay}"
+                            Glyph="{x:Bind tools:BindUtils.MusicSourceGlyph(IsRemote, IsRemoteOffline), Mode=OneWay}"
                             AutomationProperties.Name="{x:Bind tools:BindUtils.MusicSourceLabel(IsRemote), Mode=OneWay}"
                             ToolTipService.ToolTip="{x:Bind tools:BindUtils.MusicSourceLabel(IsRemote), Mode=OneWay}" />
                     </Grid>

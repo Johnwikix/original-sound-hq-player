@@ -132,7 +132,10 @@ namespace WinUIMusicPlayer.Services
             switch (AppViewModel.CurrentPlayMode)
             {
                 case PlayMode.SingleLoop:
-                    await MusicBrowsePlayMusic(AppViewModel.CurrentPlayingMusic);
+                    if (AppViewModel.CurrentPlayingMusic is { IsPlayable: true } current)
+                        await MusicBrowsePlayMusic(current);
+                    else
+                        MusicEnd();
                     break;
                 case PlayMode.ListLoop:
                 case PlayMode.RandomLoop:
@@ -145,8 +148,9 @@ namespace WinUIMusicPlayer.Services
                         break;
                     }
                     int currentIndex = AppViewModel.GetCurrentIndex();
-                    int nextIndex = (currentIndex + 1) % playingList.Count;
-                    await App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(nextIndex);
+                    int nextIndex = PlaybackCommands.FindPlayableIndex(playingList, currentIndex, 1);
+                    if (nextIndex >= 0) await App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(nextIndex);
+                    else MusicEnd();
                     break;
                 case PlayMode.RepeatOff:
                     MusicEnd();
@@ -187,8 +191,8 @@ namespace WinUIMusicPlayer.Services
             try
             {
                 int currentIndex = AppViewModel.GetCurrentIndex();
-                int nextIndex = (currentIndex + 1) % AppViewModel.CurrentPlayingList.Count;
-                _ = App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(nextIndex);
+                int nextIndex = PlaybackCommands.FindPlayableIndex(AppViewModel.CurrentPlayingList, currentIndex, 1);
+                if (nextIndex >= 0) _ = App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(nextIndex);
             }
             catch (Exception ex) { _logger.LogError(ex, $"PlayNextTrack failed: {ex.Message}"); }
         }

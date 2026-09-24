@@ -4,7 +4,9 @@ using Microsoft.UI.Dispatching;
 using System;
 using System.ComponentModel;
 using System.Collections.Specialized;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.Services;
@@ -20,6 +22,7 @@ public sealed class PlaybackCommands : IDisposable
     private volatile bool _disposed;
     private readonly DispatcherQueueHandler _refreshAvailability;
     private INotifyCollectionChanged? _listChanges;
+    private Music? _currentMusic;
     public IAsyncRelayCommand ToggleCommand { get; }
     public IAsyncRelayCommand PlayCommand { get; }
     public IAsyncRelayCommand PauseCommand { get; }
@@ -28,8 +31,8 @@ public sealed class PlaybackCommands : IDisposable
     public IRelayCommand<long> SeekCommand { get; }
     // 引擎就绪（IPC 连接 + 首曲推送完成）是播放的前提；IsPlaybackEngineReady 只在置位时包含 Ready，
     // 退出转 Stopping 后不会复位，生命周期守卫须单独保留。
-    private bool CanPlay => !_disposed && _lifecycle.IsReady && _state.IsPlaybackEngineReady && _state.CurrentPlayingMusic is not null;
-    private bool CanSwitch => CanPlay && _state.CurrentPlayingList.Count > 0;
+    private bool CanPlay => !_disposed && _lifecycle.IsReady && _state.IsPlaybackEngineReady && _state.CurrentPlayingMusic is { IsPlayable: true };
+    private bool CanSwitch => !_disposed && _lifecycle.IsReady && _state.IsPlaybackEngineReady && HasPlayableEntry();
     private BassPlayerCommandService Player => _services.GetRequiredService<BassPlayerCommandService>();
 
     public PlaybackCommands(AppLifecycle lifecycle, AppViewModel state, IServiceProvider services)
@@ -48,6 +51,7 @@ public sealed class PlaybackCommands : IDisposable
         lifecycle.Changed += Changed;
         state.PropertyChanged += StateChanged;
         ObserveList();
+        ObserveCurrentMusic();
     }
     private async Task ToggleAsync(bool? playing)
     {
@@ -93,14 +97,46 @@ public sealed class PlaybackCommands : IDisposable
         if (!CanSwitch) return;
         var list = _state.CurrentPlayingList;
         int index = _state.GetCurrentIndex();
-        if (index > 0 || (index == 0 && list.Count > 1))
-            await _services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(index > 0 ? index - 1 : list.Count - 1);
+        if (index < 0) return;
+        int previous = FindPlayableIndex(list, index, -1);
+        if (previous >= 0) await _services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(previous);
+    }
+    private bool HasPlayableEntry()
+    {
+        foreach (var music in _state.CurrentPlayingList) if (music.IsPlayable) return true;
+        return false;
+    }
+    internal static int FindPlayableIndex(IReadOnlyList<Music> list, int current, int direction)
+    {
+        if (list.Count == 0) return -1;
+        int index = current;
+        for (int i = 0; i < list.Count; i++)
+        {
+            index = (index + direction + list.Count) % list.Count;
+            if (list[index].IsPlayable && index != current) return index;
+        }
+        return -1;
     }
     private void Seek(long milliseconds) { if (CanPlay) Player.ChangeWaveChannelTime(Math.Max(0, milliseconds)); }
     private void StateChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(AppViewModel.CurrentPlayingMusic) or nameof(AppViewModel.CurrentPlayingList)
-            or nameof(AppViewModel.IsPlaybackEngineReady)) Changed(sender, EventArgs.Empty);
+            or nameof(AppViewModel.IsPlaybackEngineReady))
+        {
+            if (e.PropertyName == nameof(AppViewModel.CurrentPlayingMusic)) ObserveCurrentMusic();
+            Changed(sender, EventArgs.Empty);
+        }
+    }
+    private void ObserveCurrentMusic()
+    {
+        if (ReferenceEquals(_currentMusic, _state.CurrentPlayingMusic)) return;
+        if (_currentMusic is not null) _currentMusic.PropertyChanged -= CurrentMusicChanged;
+        _currentMusic = _state.CurrentPlayingMusic;
+        if (_currentMusic is not null) _currentMusic.PropertyChanged += CurrentMusicChanged;
+    }
+    private void CurrentMusicChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(Music.IsRemoteOffline) or nameof(Music.IsPlayable)) Changed(sender, EventArgs.Empty);
     }
     private void ObserveList()
     {
@@ -134,5 +170,6 @@ public sealed class PlaybackCommands : IDisposable
         _lifecycle.Changed -= Changed;
         _state.PropertyChanged -= StateChanged;
         if (_listChanges is not null) _listChanges.CollectionChanged -= ListChanged;
+        if (_currentMusic is not null) _currentMusic.PropertyChanged -= CurrentMusicChanged;
     }
 }

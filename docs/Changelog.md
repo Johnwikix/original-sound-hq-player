@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-09-24 标记离线 WebDAV 曲目并禁止播放
+
+- `Services/WebDavLibraryService.cs`、`Model/Music.cs`：启动扫描失败时发布来源离线状态，同步到曲目运行时状态；恢复连接后清除。
+- `View/*`、`Utils/BindUtils.cs`：离线来源标识改用 `F384`，列表播放入口和当前播放控制同步置灰。
+- `Services/PlaybackCoordinator.cs`、`PlaybackCommands.cs`、`BassPlayerCommandService.cs`：在播放协调器、手动切歌和自动切歌路径统一跳过离线曲目。
+
 ## 2026-09-24 合并本地与 WebDAV 的同名专辑
 
 - `Services/LibraryProjectionService.cs`、`ViewModel/Pages/AlbumViewModel.cs`、`MusicGroupDetailViewModel.cs`：本地与 WebDAV 同名专辑只显示一张卡片，进入详情后跨来源显示所有歌曲；不同来源的同名曲目也保留。

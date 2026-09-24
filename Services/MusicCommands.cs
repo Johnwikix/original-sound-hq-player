@@ -18,7 +18,7 @@ namespace WinUIMusicPlayer.Services
 
         private static async Task PlayAsync(Music? music)
         {
-            if (music is null) return;
+            if (music is null || !music.IsPlayable) return;
             var app = App.Services.GetRequiredService<AppViewModel>();
             var page = AppData.CurrentPage;
             if (page == typeof(FavouritePlayListPage))

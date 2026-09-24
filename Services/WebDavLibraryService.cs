@@ -31,12 +31,14 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
     private readonly HashSet<string> _checkedDsfCoverMisses = [];
     private readonly SemaphoreSlim _lyricsSlot = new(1, 1);
     private readonly Dictionary<int, WebDavScanStatus> _statuses = [];
+    private readonly HashSet<int> _offlineSources = [];
     private readonly Dictionary<int, long> _publishedAt = [];
     private readonly object _gate = new();
     private AppViewModel? _library;
     private WebDavCacheSettings _cacheSettings = new();
     public CancellationToken StoppingToken => _stop.Token;
     public event Action<WebDavScanStatus>? StatusChanged;
+    public event Action<int, bool>? SourceAvailabilityChanged;
     public event Action? SourcesChanged;
     private static readonly HashSet<string> AudioExtensions = new(StringComparer.OrdinalIgnoreCase)
         { ".mp3", ".flac", ".m4a", ".aac", ".wav", ".aiff", ".aif", ".ogg", ".oga", ".opus", ".ape", ".wv", ".dsf", ".dff", ".wma" };
@@ -61,17 +63,41 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
             if (source.Enabled && source.ScanOnStartup) _ = ScanAsync(source);
     }
     public WebDavScanStatus? GetStatus(int sourceId) { lock (_gate) return _statuses.GetValueOrDefault(sourceId); }
+    public bool IsSourceOffline(int sourceId) { lock (_gate) return _offlineSources.Contains(sourceId); }
     private void Publish(WebDavScanStatus status)
     {
+        bool? offline = status.Phase switch
+        {
+            "Failed" => true,
+            "Scanning" or "Metadata" or "Completed" => false,
+            _ => null
+        };
+        bool availabilityChanged = false;
         lock (_gate)
         {
             var previous = _statuses.GetValueOrDefault(status.SourceId);
             _statuses[status.SourceId] = status;
+            if (offline is true) availabilityChanged = _offlineSources.Add(status.SourceId);
+            else if (offline is false) availabilityChanged = _offlineSources.Remove(status.SourceId);
             long now = Environment.TickCount64;
             if (previous?.Phase == status.Phase && now - _publishedAt.GetValueOrDefault(status.SourceId) < 250) return;
             _publishedAt[status.SourceId] = now;
         }
-        App.MainWindow?.DispatcherQueue.TryEnqueue(() => { if (!_stop.IsCancellationRequested) StatusChanged?.Invoke(status); });
+        App.MainWindow?.DispatcherQueue.TryEnqueue(() =>
+        {
+            if (_stop.IsCancellationRequested) return;
+            if (availabilityChanged && _library is not null)
+            {
+                foreach (var music in _library.SongsSource)
+                    if (music.SourceId == status.SourceId) music.IsRemoteOffline = offline == true;
+                foreach (var music in _library.CurrentPlayingList)
+                    if (music.SourceId == status.SourceId) music.IsRemoteOffline = offline == true;
+                if (_library.CurrentPlayingMusic?.SourceId == status.SourceId)
+                    _library.CurrentPlayingMusic.IsRemoteOffline = offline == true;
+                SourceAvailabilityChanged?.Invoke(status.SourceId, offline == true);
+            }
+            StatusChanged?.Invoke(status);
+        });
     }
     public WebDavConnection Connect(WebDavSource source)
     {
@@ -380,6 +406,7 @@ public sealed class WebDavLibraryService(MusicDatabaseService database, WebDavTr
         _lyricsSlot.Release();
         lock (_gate) { foreach (var scan in _scans.Values) scan.Cancel.Dispose(); _scans.Clear(); }
         StatusChanged = null;
+        SourceAvailabilityChanged = null;
         SourcesChanged = null;
     }
 }

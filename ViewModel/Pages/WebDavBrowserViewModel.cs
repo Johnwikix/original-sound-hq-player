@@ -107,6 +107,7 @@ public partial class WebDavBrowserViewModel : ObservableObject, IDisposable
             var music = await _database.GetRemoteMusicAsync(_source.Id, item.Href);
             if (_disposed) return;
             if (music is null) { Status = ToolUtils.GetString("WebDavIndexFirst"); return; }
+            music.IsRemoteOffline = _library.IsSourceOffline(_source.Id);
             await _playback.PlayAsync(music);
         }
         catch (Exception ex)
@@ -127,7 +128,11 @@ public partial class WebDavBrowserViewModel : ObservableObject, IDisposable
             foreach (var item in selection)
             {
                 if (_disposed || _stop.IsCancellationRequested) return;
-                if (await _database.GetRemoteMusicAsync(_source.Id, item.Href) is { } music) songs.Add(music);
+                if (await _database.GetRemoteMusicAsync(_source.Id, item.Href) is { } music)
+                {
+                    music.IsRemoteOffline = _library.IsSourceOffline(_source.Id);
+                    songs.Add(music);
+                }
             }
             if (_disposed || !_app.CanStartPlayback) return;
             if (songs.Count == 0) { Status = ToolUtils.GetString("WebDavIndexFirst"); return; }

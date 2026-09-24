@@ -14,6 +14,17 @@ namespace WinUIMusicPlayer.Model
         public int Id { get; set; }
         public int SourceId { get; set; }
         [Ignore] public bool IsRemote => SourceId != 0;
+        /// <summary>WebDAV 来源最近一次连通性检查失败；仅运行时状态，不写入数据库。</summary>
+        [Ignore]
+        public bool IsRemoteOffline
+        {
+            get => field;
+            set
+            {
+                if (SetProperty(ref field, value)) OnPropertyChanged(nameof(IsPlayable));
+            }
+        }
+        [Ignore] public bool IsPlayable => !IsRemoteOffline;
         [Ignore] public bool CanEditFile => !IsRemote;
         public string Path { get; set => SetProperty(ref field, value); } = string.Empty;
         public string Title { get; set => SetProperty(ref field, value); } = string.Empty;

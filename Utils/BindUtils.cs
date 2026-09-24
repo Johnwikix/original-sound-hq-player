@@ -20,6 +20,8 @@ namespace WinUIMusicPlayer.Utils
     {
         /// <summary>列表来源标识只依赖曲目状态，不在可视项绑定中读取数据库或启动网络请求。</summary>
         public static string MusicSourceGlyph(bool isRemote) => isRemote ? "\uE753" : "\uE8B7";
+        public static string MusicSourceGlyph(bool isRemote, bool isOffline)
+            => isRemote && isOffline ? "\uF384" : MusicSourceGlyph(isRemote);
         public static string MusicSourceLabel(bool isRemote) => isRemote ? "WebDAV" : GetString("WebDavLocalSources");
         public static string RemotePlaybackDescription(string status) => string.IsNullOrEmpty(status) ? "WebDAV" : status;
         public static Visibility NonEmptyTextVisibility(string text) => string.IsNullOrWhiteSpace(text) ? Visibility.Collapsed : Visibility.Visible;
@@ -204,7 +206,7 @@ namespace WinUIMusicPlayer.Utils
 
         /// <summary>播放入口可用 = 播放引擎就绪且存在当前曲目；引擎未就绪时按钮置灰。</summary>
         public static bool IsPlaybackEntryEnabled(bool isPlaybackEngineReady, Music? current)
-            => isPlaybackEngineReady && current is not null;
+            => isPlaybackEngineReady && current is { IsRemoteOffline: false };
 
         /// <summary>切歌入口可用 = 播放引擎就绪且播放列表非空；引擎未就绪时按钮置灰。</summary>
         public static bool IsSwitchEntryEnabled(bool isPlaybackEngineReady, IEnumerable<Music>? playList)

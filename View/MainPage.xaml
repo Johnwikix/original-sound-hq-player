@@ -257,7 +257,7 @@
                                     VerticalAlignment="Center"
                                     FontSize="12"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                    Glyph="&#xE753;"
+                                    Glyph="{x:Bind tools:BindUtils.MusicSourceGlyph(ViewModel.AppViewModel.CurrentPlayingMusic.IsRemote, ViewModel.AppViewModel.CurrentPlayingMusic.IsRemoteOffline), Mode=OneWay}"
                                     AutomationProperties.Name="{x:Bind tools:BindUtils.RemotePlaybackDescription(ViewModel.AppViewModel.RemotePlaybackStatus), Mode=OneWay}"
                                     ToolTipService.ToolTip="{x:Bind tools:BindUtils.RemotePlaybackDescription(ViewModel.AppViewModel.RemotePlaybackStatus), Mode=OneWay}"
                                     Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.CurrentPlayingMusic.IsRemote), Mode=OneWay}" />

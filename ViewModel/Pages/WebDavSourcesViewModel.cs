@@ -54,6 +54,7 @@ public partial class WebDavSourcesViewModel : ObservableObject
         Choices.Add(new(-2, "WebDAV"));
         SelectedSource = Choices[0];
         library.StatusChanged += OnStatus;
+        library.SourceAvailabilityChanged += OnSourceAvailabilityChanged;
         library.SourcesChanged += OnSourcesChanged;
     }
     public async Task LoadAsync()
@@ -65,6 +66,8 @@ public partial class WebDavSourcesViewModel : ObservableObject
             if (_stopped) return;
             var sources = await _database.GetWebDavSourcesAsync();
             if (_stopped) return;
+            foreach (var music in _app.SongsSource)
+                if (music.IsRemote) music.IsRemoteOffline = _library.IsSourceOffline(music.SourceId);
             Sources.Clear();
             int selected = SelectedSource?.Id ?? -1;
             while (Choices.Count > 3) Choices.RemoveAt(Choices.Count - 1);
@@ -113,6 +116,14 @@ public partial class WebDavSourcesViewModel : ObservableObject
         if (_stopped) return;
         foreach (var item in Sources) if (item.Source.Id == status.SourceId) { item.Update(status); break; }
     }
+    private void OnSourceAvailabilityChanged(int sourceId, bool offline)
+    {
+        if (_stopped || !offline || _app.CurrentPlayingMusic?.SourceId != sourceId) return;
+        _ = _playback.StopAsync();
+        _app.IsPlaying = false;
+        _app.StopProgressTimer();
+        _app.RemotePlaybackStatus = ToolUtils.GetString("WebDavFailed");
+    }
     internal Task ScanAsync(WebDavSource source) => _library.ScanAsync(source);
     internal Task PauseAsync(WebDavSource source) => _library.CancelScanAsync(source.Id);
     internal async Task RemoveAsync(WebDavSource source)
@@ -157,6 +168,7 @@ public partial class WebDavSourcesViewModel : ObservableObject
     {
         _stopped = true;
         _library.StatusChanged -= OnStatus;
+        _library.SourceAvailabilityChanged -= OnSourceAvailabilityChanged;
         _library.SourcesChanged -= OnSourcesChanged;
         _app.State.Preferences.PropertyChanged -= OnPreferencesChanged;
         await _save;

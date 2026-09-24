@@ -26,7 +26,7 @@ public sealed class PlaybackCoordinator(AppViewModel state, BassPlayerCommandSer
 
     public Task PlayAsync(Music music, long entryId = 0)
     {
-        if (_disposed || !state.CanStartPlayback || music is null) return Task.CompletedTask;
+        if (_disposed || !state.CanStartPlayback || music is null || !music.IsPlayable) return Task.CompletedTask;
         if (!_registered)
         {
             _registered = true;
