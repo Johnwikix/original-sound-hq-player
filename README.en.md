@@ -210,6 +210,8 @@ Add-AppxPackage -Register "$layout\AppxManifest.xml"
 
 If you find OriginalSound HI-FI Player helpful, consider buying the developer a coffee ☕ — your support keeps the project alive and updated!
 
+**[Afdian](https://afdian.com/a/SennpaiStudio)** · Alipay / WeChat Pay QR codes:
+
 | Alipay | WeChat Pay |
 | :---: | :---: |
 | <img src="doc/img/donation/alipay.jpg" width="240" alt="Alipay QR code"> | <img src="doc/img/donation/wechat.png" width="240" alt="WeChat Pay QR code"> |
