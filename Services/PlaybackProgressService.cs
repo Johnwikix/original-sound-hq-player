@@ -21,6 +21,7 @@ public sealed class PlaybackProgressService(AppState state, SystemMediaControlsS
     private Task? _progressPollingTask;
     private bool _isDisposed;
     private int _lastDisplayedSecond = -1;
+    private int _lastDisplayedTotalSecond = -1;
     private long _lastSmtcUpdateTick;
     private TimeSpan CurrentTime;
     private TimeSpan TotalTime;
@@ -40,7 +41,11 @@ public sealed class PlaybackProgressService(AppState state, SystemMediaControlsS
         if (_dispatcher.HasThreadAccess) action();
         else _dispatcher.TryEnqueue(action);
     }
-    private void UpdateCore() => OnProgressTick(null, null!);
+    private void UpdateCore()
+    {
+        if (_source?.TryGetProgressSnapshot(out var snapshot) == true) _cache.Apply(snapshot);
+        OnProgressTick(null, null!);
+    }
 
     public async Task StopAsync()
     {
@@ -161,12 +166,20 @@ public sealed class PlaybackProgressService(AppState state, SystemMediaControlsS
             state.Playback.ProgressSliderMax = totalMs / 1000.0;
 
             int currentSecond = (int)CurrentTime.TotalSeconds;
-            if (currentSecond == _lastDisplayedSecond) return;
+            int totalSecond = (int)TotalTime.TotalSeconds;
+            if (currentSecond == _lastDisplayedSecond && totalSecond == _lastDisplayedTotalSecond) return;
             _lastDisplayedSecond = currentSecond;
+            _lastDisplayedTotalSecond = totalSecond;
 
             state.Playback.PlayTimeText = CurrentTime.Hours >= 1
                 ? string.Create(17, (curMs, totalMs), WriteTimeWithHours)
                 : string.Create(11, (curMs, totalMs), WriteTimeNoHours);
+            state.Playback.ElapsedTimeText = CurrentTime.TotalHours >= 1
+                ? CurrentTime.ToString(@"hh\:mm\:ss", CultureInfo.InvariantCulture)
+                : CurrentTime.ToString(@"mm\:ss", CultureInfo.InvariantCulture);
+            state.Playback.TotalTimeText = TotalTime.TotalHours >= 1
+                ? TotalTime.ToString(@"hh\:mm\:ss", CultureInfo.InvariantCulture)
+                : TotalTime.ToString(@"mm\:ss", CultureInfo.InvariantCulture);
 
             if (Environment.TickCount64 - _lastSmtcUpdateTick >= 250)
             {

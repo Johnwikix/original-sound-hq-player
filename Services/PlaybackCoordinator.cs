@@ -185,6 +185,8 @@ public sealed class PlaybackCoordinator(AppViewModel state, BassPlayerCommandSer
             if (_disposed || !state.CanStartPlayback || token.IsCancellationRequested) return;
             state.State.Queue.SelectEntry(entryId, music);
             state.CurrentPlayingMusic = music;
+            state.State.Playback.HasRemoteBuffer = false;
+            state.State.Playback.BufferedProgress = 0;
             state.RemotePlaybackStatus = music.IsRemote ? Utils.ToolUtils.GetString("WebDavOpening") : "";
             if (music.IsRemote) { state.IsPlaying = false; state.StopProgressTimer(); }
             try { if (music.IsRemote) statistics.FlushSession(); else statistics.StartSession(music); }

@@ -168,6 +168,19 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
                     _snapshot = new(new ProgressSnapshot(0, -generation, reply.PositionMs, reply.DurationMs ?? 0,
                         Stopwatch.GetTimestamp(), reply.Phase == StreamPhase.Playing, reply.SeekId));
                 }
+                // BufferedMs is the decoded audio still ahead of the playhead, not a timeline position.
+                long? bufferEnd = reply.DurationMs is > 0
+                    ? Math.Min(reply.DurationMs.Value, Math.Max(0, reply.PositionMs) + Math.Max(0, reply.BufferedMs))
+                    : null;
+                App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (token.IsCancellationRequested || generation != _generation || !state.CanPublishState) return;
+                    state.State.Playback.HasRemoteBuffer = bufferEnd.HasValue;
+                    state.State.Playback.BufferedProgress = (bufferEnd ?? 0) / 1000.0;
+                    // Duration may arrive while the stream stays in Buffering; its timer is stopped then.
+                    if (reply.DurationMs is > 0 && state.ProgressSliderMax != reply.DurationMs.Value / 1000.0)
+                        state.UpdateProgressTimerUI();
+                });
                 _bridge?.SetPlaying(reply.Phase == StreamPhase.Playing);
                 if (reply.Phase != previous)
                 {
@@ -224,6 +237,8 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
             state.IsPlaying = false;
             state.StopProgressTimer();
             state.RemotePlaybackStatus = ToolUtils.GetString("WebDavFailed");
+            state.State.Playback.HasRemoteBuffer = false;
+            state.State.Playback.BufferedProgress = 0;
             state.State.Shell.InfoBarTitle = ToolUtils.GetString("Error");
             state.State.Shell.InfoBarMessage = WebDavText.Error(code);
             state.State.Shell.InfoBarIsOpen = true;

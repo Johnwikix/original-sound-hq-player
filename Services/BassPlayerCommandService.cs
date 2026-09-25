@@ -180,6 +180,8 @@ namespace WinUIMusicPlayer.Services
                 if (!CanReceive) return;
                 AppViewModel.StopProgressTimer();
                 AppViewModel.ProgressSlider = 0;
+                AppViewModel.State.Playback.HasRemoteBuffer = false;
+                AppViewModel.State.Playback.BufferedProgress = 0;
                 AppViewModel.IsPlaying = false;
                 AppViewModel.RemotePlaybackStatus = "";
             });

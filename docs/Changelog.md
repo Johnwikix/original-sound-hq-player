@@ -2,6 +2,11 @@
 
 新条目加在最上方。
 
+## 2026-09-25 播放进度条移植 HyPlayer 布局并显示网络缓冲
+
+- `View/MainPage.xaml`、`View/PlayingDetailPage.xaml`、`Style/SilderDictionary.xaml`：进度条采用已播时间、强调色滑块、总时长的三段布局；轨道叠加低亮度的网络缓冲进度。
+- `State/PlaybackState.cs`、`ViewModel/AppViewModel.cs`、`Services/PlaybackProgressService.cs`、`Services/RemotePlaybackService.cs`：从远程状态的当前位置与已解码时长计算缓冲终点，按会话代次发布到 UI；选曲、失败和停止时清除旧缓冲。
+
 ## 2026-09-25 新增土耳其语界面
 
 - `Strings/tr/Resources.resw`：新增土耳其语资源 783 条，键集合与 en 完全一致，占位符逐条校验无差异。
