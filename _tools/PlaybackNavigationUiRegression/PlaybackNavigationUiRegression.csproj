@@ -16,5 +16,6 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <Compile Include="../PlaybackNavigationRegression/Adapters.cs;../PlaybackNavigationRegression/Program.cs" />
     <Compile Include="../../Services/PlaybackCoordinator.cs;../../Services/PlaybackCommands.cs;../../Services/ApplicationTasks.cs;../../Services/AppLifecycle.cs;../../Services/ShutdownCoordinator.cs" />
+    <Compile Include="../../ViewModel/Pages/WebDavSourcesViewModel.cs" />
   </ItemGroup>
 </Project>

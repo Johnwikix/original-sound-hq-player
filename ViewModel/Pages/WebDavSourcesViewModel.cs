@@ -145,11 +145,6 @@ public partial class WebDavSourcesViewModel : ObservableObject
                 break;
             }
         }
-        if (!offline || _app.CurrentPlayingMusic?.SourceId != sourceId) return;
-        _ = _playback.StopAsync(preserveFailedProgress: true);
-        _app.IsPlaying = false;
-        _app.StopProgressTimer();
-        _app.RemotePlaybackStatus = ToolUtils.GetString("WebDavFailed");
     }
     internal Task ScanAsync(WebDavSource source) => _library.ScanAsync(source);
     internal Task PauseAsync(WebDavSource source) => _library.CancelScanAsync(source.Id);

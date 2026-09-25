@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-09-25 修复来源探活误停播放及待播期间暂停失效
+
+- `ViewModel/Pages/WebDavSourcesViewModel.cs`：来源状态通知只更新来源展示，播放服务继续负责真实断流的停止与自动恢复，完整缓存播放不再被探活失败打断。
+- `Services/PlaybackCommands.cs`：播放栏切换按钮实际请求暂停时取消待播选择，避免迟到的 WebDAV 探活再次启动歌曲。
+- `_tools/PlaybackNavigationRegression`：覆盖来源通知、断流后自动切歌及探活期间暂停的交互回归。
+
 ## 2026-09-25 修正播放进度条滑块端点裁切
 
 - `Style/SilderDictionary.xaml`：移除滑块负边距，使其留在 Slider 行程内；将轨道与已播放段对齐到滑块中心，修正两端显示。
