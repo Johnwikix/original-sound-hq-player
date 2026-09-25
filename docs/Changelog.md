@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-09-25 WebDAV 扫描无可见变更不再整库重建；本地来源行图标对齐
+
+- `Services/MusicDatabaseService.WebDav.cs`：目录批次提交返回可见新增数（新插入 + 缺失复现）；目录/来源收尾标记返回本次转入缺失的行数（`Missing` 条件收紧为仅 0→1）。
+- `Services/WebDavLibraryService.cs`：目录阶段结束的整库重载改为仅在存在可见增删时执行，服务端无变化时不再重建曲目列表（消除启动自动扫描结束时的一次闪烁）。
+- `View/AddFolderPage.xaml`：本地文件夹行的重扫/移除按钮改为 34×34、图标字号 16、面板 Spacing 2，与 WebDAV 来源行一致。
+
 ## 2026-09-25 消除 WebDAV 启动扫描列表闪烁并常驻来源曲目数
 
 - `Services/WebDavLibraryService.cs`：扫描批次发布不再逐批 `NotifySongsSourceChanged`（原先每个目录/每 64 首/每 16 条元数据整表 Reset 曲目列表，启动自动扫描期间持续闪烁），新增曲目沿用本地扫描的增量追加口径；元数据阶段实际写入后收敛一次排序与各页投影。

@@ -207,7 +207,7 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
     }
     private async Task ScanCoreAsync(WebDavSource source, CancellationToken token)
     {
-        int found = 0, tagged = 0;
+        int found = 0, tagged = 0, visibleChanges = 0;
         try
         {
             var connection = Connect(source);
@@ -230,19 +230,28 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
                     batch.Add(entry);
                     found++;
                     if (batch.Count < 64) continue;
-                    await PublishBatchAsync(await database.CommitRemoteEntriesAsync(source, directory, run, batch)).ConfigureAwait(false);
+                    var (committed, adds) = await database.CommitRemoteEntriesAsync(source, directory, run, batch).ConfigureAwait(false);
+                    visibleChanges += adds;
+                    await PublishBatchAsync(committed).ConfigureAwait(false);
                     batch.Clear();
                     Publish(new(source.Id, "Scanning", found, tagged));
                 }
-                if (batch.Count != 0) await PublishBatchAsync(await database.CommitRemoteEntriesAsync(source, directory, run, batch)).ConfigureAwait(false);
+                if (batch.Count != 0)
+                {
+                    var (committed, adds) = await database.CommitRemoteEntriesAsync(source, directory, run, batch).ConfigureAwait(false);
+                    visibleChanges += adds;
+                    await PublishBatchAsync(committed).ConfigureAwait(false);
+                }
                 token.ThrowIfCancellationRequested();
-                await database.MarkRemoteDirectoryScannedAsync(source.Id, directory, run).ConfigureAwait(false);
+                visibleChanges += await database.MarkRemoteDirectoryScannedAsync(source.Id, directory, run).ConfigureAwait(false);
                 Publish(new(source.Id, "Scanning", found, tagged));
             }
             source.LastScanUtc = DateTime.UtcNow;
-            await database.MarkRemoteSourceScannedAsync(source.Id, run).ConfigureAwait(false);
+            visibleChanges += await database.MarkRemoteSourceScannedAsync(source.Id, run).ConfigureAwait(false);
             await database.SaveWebDavSourceAsync(source).ConfigureAwait(false);
-            if (_library is not null) await _library.RefreshSongsSourceAsync(token).ConfigureAwait(false);
+            // 仅有可见增删（新增、复现或转入缺失）时才整库重载收敛排序与移除行；
+            // 服务端无变化时不重建列表，避免启动扫描结束时闪一次。
+            if (visibleChanges != 0 && _library is not null) await _library.RefreshSongsSourceAsync(token).ConfigureAwait(false);
             if (source.ReadMetadata)
             {
                 int after = 0, applied = 0;

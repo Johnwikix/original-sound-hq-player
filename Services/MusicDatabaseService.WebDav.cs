@@ -80,9 +80,12 @@ public partial class MusicDatabaseService
             "SELECT COUNT(*) FROM RemoteTrack WHERE SourceId = ? AND Missing = 0", sourceId);
     }
 
-    public async Task<List<Music>> CommitRemoteEntriesAsync(WebDavSource source, string parent, string run, IReadOnlyList<WebDavEntry> entries)
+    /// <summary>提交一个目录批次并返回 (可见曲目列表, 可见新增数)。
+    /// 可见新增 = 新插入曲目 + 重新纳入范围/复现的缺失曲目；供调用方判断是否需要重建列表投影。</summary>
+    public async Task<(List<Music> Batch, int VisibleAdds)> CommitRemoteEntriesAsync(WebDavSource source, string parent, string run, IReadOnlyList<WebDavEntry> entries)
     {
         var changed = new List<Music>(entries.Count);
+        int visibleAdds = 0;
         await _dbConnection.RunInTransactionAsync(db =>
         {
             // 删除来源与迟到扫描提交通过数据库事务串行，迟到结果不能重建已移除来源。
@@ -102,6 +105,7 @@ public partial class MusicDatabaseService
                     };
                     db.Insert(music);
                     remote = new RemoteTrack { MusicId = music.Id, SourceId = source.Id, Href = entry.Href, ParentHref = parent };
+                    visibleAdds++;
                 }
                 string modified = entry.Modified?.ToString("O") ?? "";
                 bool versionChanged = remote!.Length != entry.Length || remote.ETag != entry.ETag || remote.Modified != modified;
@@ -112,6 +116,7 @@ public partial class MusicDatabaseService
                     music.ImageHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes($"{source.Id}\n{entry.Href}\n{entry.ETag}\n{modified}\n{entry.Length}")));
                     db.Update(music);
                 }
+                if (remote.Missing) visibleAdds++;
                 remote.Length = entry.Length;
                 remote.ETag = entry.ETag;
                 remote.Modified = modified;
@@ -121,14 +126,15 @@ public partial class MusicDatabaseService
                 changed.Add(music);
             }
         });
-        return changed;
+        return (changed, visibleAdds);
     }
 
-    public Task MarkRemoteDirectoryScannedAsync(int sourceId, string parent, string run) =>
-        _dbConnection.ExecuteAsync("UPDATE RemoteTrack SET Missing = 1 WHERE SourceId = ? AND ParentHref = ? COLLATE BINARY AND SeenRun <> ?", sourceId, parent, run);
+    /// <summary>返回本次转入缺失（Missing 1←0）的行数；已是缺失的行不再计数，返回值即可见移除数。</summary>
+    public Task<int> MarkRemoteDirectoryScannedAsync(int sourceId, string parent, string run) =>
+        _dbConnection.ExecuteAsync("UPDATE RemoteTrack SET Missing = 1 WHERE SourceId = ? AND ParentHref = ? COLLATE BINARY AND SeenRun <> ? AND Missing = 0", sourceId, parent, run);
 
-    public Task MarkRemoteSourceScannedAsync(int sourceId, string run) =>
-        _dbConnection.ExecuteAsync("UPDATE RemoteTrack SET Missing = 1 WHERE SourceId = ? AND SeenRun <> ?", sourceId, run);
+    public Task<int> MarkRemoteSourceScannedAsync(int sourceId, string run) =>
+        _dbConnection.ExecuteAsync("UPDATE RemoteTrack SET Missing = 1 WHERE SourceId = ? AND SeenRun <> ? AND Missing = 0", sourceId, run);
     public Task RetryDeferredRemoteMetadataAsync(int sourceId) =>
         _dbConnection.ExecuteAsync("UPDATE RemoteTrack SET MetadataState = 'Pending' WHERE SourceId = ? AND MetadataState = 'Deferred'", sourceId);
 

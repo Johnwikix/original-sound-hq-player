@@ -150,7 +150,8 @@
                                             Grid.Column="2"
                                             Margin="0"
                                             VerticalAlignment="Center"
-                                            Orientation="Horizontal">
+                                            Orientation="Horizontal"
+                                            Spacing="2">
                                             <StackPanel
                                                 Margin="0,0,8,0"
                                                 VerticalAlignment="Center"
@@ -168,30 +169,32 @@
                                             </StackPanel>
                                             <Button
                                                 x:Name="RescanFolderButton"
-                                                Margin="2"
-                                                Padding="8"
+                                                Width="34"
+                                                Height="34"
+                                                Padding="0"
                                                 Background="Transparent"
                                                 BorderBrush="Transparent"
                                                 BorderThickness="0"
                                                 Command="{x:Bind RescanFolderCommand}"
                                                 CommandParameter="{x:Bind}"
                                                 Style="{StaticResource MenuButtonStyle}">
-                                                <FontIcon Glyph="&#xE72C;" />
+                                                <FontIcon FontSize="16" Glyph="&#xE72C;" />
                                                 <ToolTipService.ToolTip>
                                                     <ToolTip x:Uid="RescanFolderToolTip" />
                                                 </ToolTipService.ToolTip>
                                             </Button>
                                             <Button
                                                 x:Name="RemoveFolderButton"
-                                                Margin="2"
-                                                Padding="8"
+                                                Width="34"
+                                                Height="34"
+                                                Padding="0"
                                                 Background="Transparent"
                                                 BorderBrush="Transparent"
                                                 BorderThickness="0"
                                                 Command="{x:Bind RemoveFolderCommand}"
                                                 CommandParameter="{x:Bind}"
                                                 Style="{StaticResource MenuButtonStyle}">
-                                                <FontIcon Glyph="&#xECC9;" />
+                                                <FontIcon FontSize="16" Glyph="&#xECC9;" />
                                                 <ToolTipService.ToolTip>
                                                     <ToolTip x:Uid="RemoveFolderToolTip" />
                                                 </ToolTipService.ToolTip>
