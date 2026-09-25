@@ -2,6 +2,10 @@
 
 新条目加在最上方。
 
+## 2026-09-25 修正播放进度条滑块端点裁切
+
+- `Style/SilderDictionary.xaml`：移除滑块负边距，使其留在 Slider 行程内；将轨道与已播放段对齐到滑块中心，修正两端显示。
+
 ## 2026-09-25 修正 WebDAV 续播时进度条短暂归零
 
 - `Services/PlaybackCoordinator.cs`、`Services/BassPlayerCommandService.cs`：断流后的队列恢复耗尽时保留当前进度和失败状态，停止播放器时不清空进度条。

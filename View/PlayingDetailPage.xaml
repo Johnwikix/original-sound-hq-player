@@ -215,7 +215,7 @@
                     ColumnDefinitions="Auto,*,Auto">
                     <TextBlock
                         Grid.Column="0"
-                        Margin="10,0,10,0"
+                        Margin="10,0,10,1"
                         VerticalAlignment="Center"
                         FontSize="14"
                         Text="{x:Bind ViewModel.AppViewModel.ElapsedTimeText, Mode=OneWay}" />
@@ -235,7 +235,7 @@
                     <TextBlock
                         x:Name="PlayTimeTextBlockPlayingDetail"
                         Grid.Column="2"
-                        Margin="10,0,10,0"
+                        Margin="10,0,10,1"
                         VerticalAlignment="Center"
                         FontSize="14"
                         Text="{x:Bind ViewModel.AppViewModel.TotalTimeText, Mode=OneWay}" />

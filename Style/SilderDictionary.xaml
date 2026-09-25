@@ -43,13 +43,14 @@
                                     <RowDefinition Height="10" />
                                 </Grid.RowDefinitions>
                                 <Rectangle x:Name="HorizontalTrackRect" Grid.Row="1" Grid.ColumnSpan="3"
-                                           Height="4" Margin="10,0" Fill="{ThemeResource PlaybackTrackBrush}"
+                                           Height="4" Margin="5,0" Fill="{ThemeResource PlaybackTrackBrush}"
                                            RadiusX="2" RadiusY="2" />
+                                <!-- 已播放段占第 0 列，向右延伸半个滑块宽度以对齐滑块中心。 -->
                                 <Rectangle x:Name="HorizontalDecreaseRect" Grid.Row="1" Height="4"
-                                           Margin="10,0" Fill="{TemplateBinding Foreground}" Opacity="0.75"
+                                           Margin="5,0,-5,0" Fill="{TemplateBinding Foreground}" Opacity="0.75"
                                            RadiusX="2" RadiusY="2" />
                                 <Thumb x:Name="HorizontalThumb" Grid.RowSpan="3" Grid.Column="1"
-                                       Width="10" Height="10" Margin="-20,0,0,0"
+                                       Width="10" Height="10"
                                        AutomationProperties.AccessibilityView="Raw"
                                        DataContext="{TemplateBinding Value}" FocusVisualMargin="0"
                                        Foreground="{TemplateBinding BorderBrush}">
