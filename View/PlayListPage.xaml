@@ -140,7 +140,7 @@
                                             Canvas.ZIndex="1"
                                             Stretch="UniformToFill">
                                             <interactivity:Interaction.Behaviors>
-                                                <behaviors:AlbumCoverBehavior Music="{x:Bind tool:BindUtils.PlayListCoverMusicConverter(Id), Mode=OneWay}" />
+                                                <behaviors:AlbumCoverBehavior Music="{x:Bind CoverMusic, Mode=OneWay}" />
                                             </interactivity:Interaction.Behaviors>
                                         </Image>
                                         <Grid

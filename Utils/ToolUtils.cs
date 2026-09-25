@@ -163,6 +163,49 @@ namespace WinUIMusicPlayer.Utils
         }
 
         /// <summary>
+        /// 根据当前右键选中的曲目刷新需要读取音频内容的菜单项。
+        /// WebDAV 离线时将读取内容的操作置灰；播放入口保留以触发重新探活。
+        /// </summary>
+        public static void UpdateMusicMenuAvailability(
+            ObservableCollection<MenuModel> options, IEnumerable<Music>? selected, Music? fallback = null)
+        {
+            bool hasSelection = false;
+            bool hasOffline = false;
+            if (selected is not null)
+            {
+                foreach (var music in selected)
+                {
+                    if (music is null) continue;
+                    hasSelection = true;
+                    hasOffline |= music.IsRemote && music.IsRemoteOffline;
+                }
+            }
+            if (!hasSelection && fallback is not null)
+            {
+                hasSelection = true;
+                hasOffline = fallback.IsRemote && fallback.IsRemoteOffline;
+            }
+
+            SetMenuEnabled(options, "Play", hasSelection);
+            SetMenuEnabled(options, "ConvertAudio", hasSelection && !hasOffline);
+            SetMenuEnabled(options, "ReGetLyrics", hasSelection && !hasOffline);
+            SetMenuEnabled(options, "OpenInExplorer", hasSelection && !hasOffline);
+            SetMenuEnabled(options, "SendToUsbDevice", hasSelection && !hasOffline);
+        }
+
+        private static void SetMenuEnabled(ObservableCollection<MenuModel> options, string tag, bool enabled)
+        {
+            foreach (var option in options)
+            {
+                if (Equals(option.Tag, tag))
+                {
+                    option.IsEnabled = enabled;
+                    return;
+                }
+            }
+        }
+
+        /// <summary>
         /// 「发送到 USB 设备」菜单子项：每个设备一层子菜单，首项为原格式直传，
         /// 其后直接跟转换格式（有损格式再带码率层）——一层到位，避免设备/格式双重嵌套。
         /// </summary>
@@ -353,8 +396,19 @@ namespace WinUIMusicPlayer.Utils
             return true; // 默认为浅色模式
         }
 
-        public static async Task<byte[]> GetRawImage(Music music, bool isManual = false)
+        public static async Task<byte[]> GetRawImage(
+            Music music,
+            bool isManual = false,
+            CancellationToken cancellationToken = default)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (music.IsRemote)
+            {
+                var remotePicture = await App.Services.GetRequiredService<WebDavLibraryService>()
+                    .ReadCoverAsync(music, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
+                return remotePicture;
+            }
             try
             {
                 // 磁盘缓存查找（raw bytes，避免重复从音频文件读取内嵌封面）
@@ -365,7 +419,7 @@ namespace WinUIMusicPlayer.Utils
                     if (File.Exists(cachePath))
                     {
                         if (File.GetLastWriteTime(cachePath) > File.GetLastWriteTime(music.Path))
-                            return File.ReadAllBytes(cachePath);
+                            return await File.ReadAllBytesAsync(cachePath, cancellationToken);
 
                         // 缓存过期：清理该 hash 的所有旧格式缓存 (_raw.bin / .bmp / .bgra8 / .jpg)
                         DeleteRawCaches(music.ImageHash);
@@ -373,6 +427,7 @@ namespace WinUIMusicPlayer.Utils
                 }
 
                 byte[]? picture = [];
+                cancellationToken.ThrowIfCancellationRequested();
                 if (FastReadExtensions.Contains(music.Extension))
                 {
                     picture = AudioCoverReader.ReadCover(music.Path);
@@ -395,8 +450,9 @@ namespace WinUIMusicPlayer.Utils
                 }
                 if (picture is null || picture.Length == 0)
                 {
-                    picture = await GetPicByteFromNet(music, isManual) ?? [];
+                    picture = await GetPicByteFromNet(music, isManual, cancellationToken) ?? [];
                 }
+                cancellationToken.ThrowIfCancellationRequested();
                 if (picture.Length > 0)
                 {
                     Span<byte> hashSpan = stackalloc byte[8];
@@ -416,7 +472,7 @@ namespace WinUIMusicPlayer.Utils
                         {
                             var cachePath = GetRawCachePath(music.ImageHash);
                             Directory.CreateDirectory(Path.GetDirectoryName(cachePath)!);
-                            await File.WriteAllBytesAsync(cachePath, picture);
+                            await File.WriteAllBytesAsync(cachePath, picture, cancellationToken);
                         }
                         catch (Exception ex) { _logger.LogError(ex, "写_raw.bin缓存失败"); }
                     }
@@ -433,10 +489,11 @@ namespace WinUIMusicPlayer.Utils
             }
             catch (Exception ex)
             {
+                if (cancellationToken.IsCancellationRequested) throw;
                 _logger.LogError(ex, $"GetRawImage 获取原始图片失败: {ex.Message}");
                 try
                 {
-                    return await GetPicByteFromNet(music, isManual) ?? [];
+                    return await GetPicByteFromNet(music, isManual, cancellationToken) ?? [];
                 }
                 catch (Exception innerEx)
                 {
@@ -448,6 +505,9 @@ namespace WinUIMusicPlayer.Utils
 
         internal static string GetRawCachePath(string imageHash)
             => Path.Combine(AppSettings.MusicCoverCache, "Cache", $"{imageHash}_raw.bin");
+
+        internal static string FindRawCachePath(string imageHash)
+            => Services.WebDav.WebDavCachePaths.FindCover(AppSettings.MusicCoverCache, imageHash);
 
         private static void DeleteRawCaches(string imageHash)
         {
@@ -864,14 +924,17 @@ namespace WinUIMusicPlayer.Utils
             }
         }
 
-        private static async Task<byte[]?> GetPicByteFromNet(Music music, bool isManual = false)
+        private static async Task<byte[]?> GetPicByteFromNet(
+            Music music,
+            bool isManual = false,
+            CancellationToken cancellationToken = default)
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 byte[] picture = null;
                 if (AppSettings.IsAutoCoverEnabled && !isManual)
                 {
-                    using var cancellationToken = new CancellationTokenSource();
                     if (!Directory.Exists(AppSettings.MusicCoverCache))
                     {
                         Directory.CreateDirectory(AppSettings.MusicCoverCache);
@@ -881,18 +944,23 @@ namespace WinUIMusicPlayer.Utils
                     string filePath = System.IO.Path.Combine(AppSettings.MusicCoverCache, fileName + ".bin");
                     if (System.IO.File.Exists(filePath))
                     {
-                        picture = System.IO.File.ReadAllBytes(filePath);
+                        picture = await System.IO.File.ReadAllBytesAsync(filePath, cancellationToken);
                     }
                     else
                     {
-                        picture ??= await App.Services.GetRequiredService<LrcService>().GetMixedCoverImageAsync(music, cancellationToken.Token);
+                        picture ??= await App.Services.GetRequiredService<LrcService>()
+                            .GetMixedCoverImageAsync(music, cancellationToken);
                         if (picture is not null)
                         {
-                            System.IO.File.WriteAllBytes(filePath, picture);
+                            await System.IO.File.WriteAllBytesAsync(filePath, picture, cancellationToken);
                         }
                     }
                 }
                 return picture;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
             }
             catch (Exception ex)
             {

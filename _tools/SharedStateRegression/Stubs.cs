@@ -4,6 +4,8 @@ namespace WinUIMusicPlayer.Model
 {
     public sealed record Music(int Id, string Path)
     {
+        public int SourceId { get; init; }
+        public bool IsRemote => SourceId != 0;
         public string Author { get; init; } = "artist";
         public string Album { get; init; } = "album";
         public string Extension => System.IO.Path.GetExtension(Path).TrimStart('.');

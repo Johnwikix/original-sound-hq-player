@@ -290,7 +290,8 @@ public sealed partial class PlaybackEngine : IDisposable
         {
             var mix = forceSharedFormat ? GetEndpointMixFormat(OutputMode == "DirectSound" || OutputMode == "ASIO" ? -1 : BassOutputDeviceId) : null;
             if (forceSharedFormat && mix is null) return null;
-            return Session.Open(this, url, RenderKind.Pcm, DsdPcmFreq, DsdGain, Latency,
+            var remoteKind = forceSharedFormat ? RenderKind.Pcm : kindOverride ?? StreamingKind(remote.Source);
+            return Session.Open(this, url, remoteKind, DsdPcmFreq, DsdGain, Latency,
                 forcedRate: mix?.SampleRate, forcedChannels: mix?.Channels, maxChannels: 2,
                 source: remote.Source, cancellationToken: remote.Cancel.Token);
         }
@@ -1156,7 +1157,8 @@ public sealed partial class PlaybackEngine : IDisposable
                     {
                         output?.Pause();
                         IsPlaying = false;
-                        _ipc.PlayBackEnded(); // 自然结束：只发 PlayEnded（bass SyncFlags.End 对等）
+                        // 网络会话通过带 SessionId 的 status 结束，避免旧无身份通知重复切歌。
+                        if (_currentStream == Guid.Empty) _ipc.PlayBackEnded();
                     }
                 }
             }

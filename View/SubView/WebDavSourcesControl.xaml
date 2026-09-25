@@ -1,0 +1,65 @@
+<UserControl
+    x:Class="WinUIMusicPlayer.View.SubView.WebDavSourcesControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:tools="using:WinUIMusicPlayer.Utils"
+    xmlns:vm="using:WinUIMusicPlayer.ViewModel">
+    <StackPanel Spacing="12">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <TextBlock Text="WebDAV" FontSize="16" FontWeight="SemiBold" />
+            <TextBlock Text="{x:Bind ViewModel.Sources.Count, Mode=OneWay}" VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+        </StackPanel>
+        <TextBlock Text="{x:Bind ViewModel.Status, Mode=OneWay}" TextWrapping="Wrap" Visibility="{x:Bind tools:BindUtils.NonEmptyTextVisibility(ViewModel.Status), Mode=OneWay}" />
+        <Border Padding="16" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                Visibility="{x:Bind tools:BindUtils.EmptyCollectionVisibility(ViewModel.Sources.Count), Mode=OneWay}">
+            <TextBlock x:Uid="WebDavSourcesEmpty" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+        </Border>
+        <ListView ItemsSource="{x:Bind ViewModel.Sources}" SelectionMode="None" IsTabStop="False" ScrollViewer.VerticalScrollBarVisibility="Disabled">
+            <ListView.ItemContainerStyle>
+                <Style BasedOn="{StaticResource DefaultListViewItemStyle}" TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                    <Setter Property="Padding" Value="0" />
+                    <Setter Property="Margin" Value="0,0,0,8" />
+                    <Setter Property="CornerRadius" Value="8" />
+                </Style>
+            </ListView.ItemContainerStyle>
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="vm:WebDavSourceItem">
+                    <Border Padding="12" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                        <Grid MinHeight="56" ColumnDefinitions="40,*,Auto" ColumnSpacing="12">
+                            <Button Width="40" Height="40" Padding="0" VerticalAlignment="Center" Background="{ThemeResource SubtleFillColorSecondaryBrush}" BorderBrush="Transparent" BorderThickness="0" CornerRadius="10"
+                                    Click="Browse_Click" Tag="{x:Bind}" Style="{StaticResource MenuButtonStyle}" ToolTipService.ToolTip="{x:Bind tools:ToolUtils.GetString('WebDavBrowseAction')}" AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('WebDavBrowseAction')}">
+                                <FontIcon FontSize="18" Glyph="&#xE753;" Foreground="{ThemeResource TextFillColorPrimaryBrush}" />
+                            </Button>
+                            <StackPanel Grid.Column="1" Spacing="3" VerticalAlignment="Center">
+                                <TextBlock Text="{x:Bind Name}" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{x:Bind Address}" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+                                <TextBlock Text="{x:Bind Status, Mode=OneWay}" FontSize="12" Foreground="{ThemeResource TextFillColorTertiaryBrush}" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                                <StackPanel Margin="0,0,8,0" VerticalAlignment="Center" Opacity="0.7" Orientation="Horizontal">
+                                    <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind SongCount, Mode=OneWay}" />
+                                    <TextBlock x:Uid="FolderNumberOfSongs" Margin="3,0,0,0" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                </StackPanel>
+                                <Button Width="34" Height="34" Padding="0" Command="{x:Bind ScanCommand}" Style="{StaticResource SubtleButtonStyle}" ToolTipService.ToolTip="{x:Bind tools:ToolUtils.GetString('WebDavScanAction')}" AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('WebDavScanAction')}">
+                                    <FontIcon FontSize="16" Glyph="&#xE72C;" />
+                                </Button>
+                                <Button Width="34" Height="34" Padding="0" Style="{StaticResource SubtleButtonStyle}" AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('WebDavMoreAction')}">
+                                    <FontIcon FontSize="16" Glyph="&#xE712;" />
+                                    <Button.Flyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem x:Uid="WebDavPauseMenu" Command="{x:Bind PauseCommand}" />
+                                            <MenuFlyoutItem x:Uid="WebDavEditMenu" Click="Edit_Click" Tag="{x:Bind}" />
+                                            <MenuFlyoutSeparator />
+                                            <MenuFlyoutItem x:Uid="WebDavRemoveMenu" Command="{x:Bind RemoveCommand}" />
+                                        </MenuFlyout>
+                                    </Button.Flyout>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </StackPanel>
+</UserControl>

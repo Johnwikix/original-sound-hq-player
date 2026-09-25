@@ -99,21 +99,11 @@ namespace WinUIMusicPlayer.View.Controls
             ViewModel.MusicListView_DoubleTapped();
         }
 
-        private void AuthorButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is FrameworkElement fe && fe.DataContext is Music music)
-            {
-                ViewModel.AuthorTextBlock_Tapped(music.Author ?? string.Empty);
-            }
-        }
+        private void MusicRow_ArtistInvoked(object sender, Music music)
+            => ViewModel.AuthorTextBlock_Tapped(music.Author);
 
-        private void AlbumButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is FrameworkElement fe && fe.DataContext is Music music)
-            {
-                ViewModel.AlbumTextBlock_Tapped(music.Album ?? string.Empty);
-            }
-        }
+        private void MusicRow_AlbumInvoked(object sender, Music music)
+            => ViewModel.AlbumTextBlock_Tapped(music.Album);
 
         private void MusicListView_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {

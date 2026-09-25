@@ -44,6 +44,7 @@ internal sealed class PcmEffects : IDisposable
     private LoudnessStatus _status;
     private CancellationTokenSource? _scan;
     private string? _path;
+    private PlaybackSource? _source;
     private int _dsdRate, _dsdGain;
     private bool _disposed, _attempted;
     private int _resetVersion, _renderResetVersion;
@@ -59,9 +60,9 @@ internal sealed class PcmEffects : IDisposable
         _parameterStep = 1.0 / Math.Max(1, rate / 50);
     }
 
-    internal void SetFile(string path, int dsdRate, int dsdGain)
+    internal void SetFile(string path, int dsdRate, int dsdGain, PlaybackSource? source = null)
     {
-        _path = path; _dsdRate = dsdRate; _dsdGain = dsdGain;
+        _path = path; _dsdRate = dsdRate; _dsdGain = dsdGain; _source = source;
     }
 
     internal void Configure(DspSettings settings)
@@ -174,7 +175,7 @@ internal sealed class PcmEffects : IDisposable
         bool failed = false, changed = false;
         try
         {
-            result = await LoudnessScanner.ScanAsync(_path!, _rate, _channels, _dsdRate, _dsdGain, scan.Token).ConfigureAwait(false);
+            result = await LoudnessScanner.ScanAsync(_path!, _rate, _channels, _dsdRate, _dsdGain, scan.Token, source: _source).ConfigureAwait(false);
         }
         catch (OperationCanceledException) { }
         catch (Exception ex) { failed = true; Console.WriteLine($"[loudness] analysis failed: {ex.Message}"); }
@@ -227,9 +228,14 @@ internal sealed class PcmEffects : IDisposable
             _settings.ConvolutionEnabled ? _filter : null, _settings.AutoPreamp.HasValue ? 1 : Math.Pow(10, (_settings.ConvolutionTrimDb + _autoGainDb) / 20)));
     }
 
-    /// <summary>未知响度采用固定保守衰减；失败时保持衰减，避免突然回到原始音量。</summary>
-    private double NormalizationGainDb => !_settings.IsEnabled || !_settings.NormalizeLoudness ? 0
-        : _measurement?.GainDb(_settings.TargetLufs) ?? Math.Min(-12, _settings.TargetLufs + 6);
+    /// <summary>
+    /// 未知本地文件响度采用固定保守衰减；网络源先以中性增益播放，后台分析完成后再平滑归一化。
+    /// 网络读取可能很慢，不能让首次播放一直保持人为的低音量。
+    /// </summary>
+    private double NormalizationGainDb => !_settings.IsEnabled || !_settings.NormalizeLoudness
+        ? 0
+        : _measurement?.GainDb(_settings.TargetLufs)
+            ?? (_source?.Kind == PlaybackSourceKind.Http ? 0 : Math.Min(-12, _settings.TargetLufs + 6));
 
     internal DspState GetState(byte kind, bool eq)
     {

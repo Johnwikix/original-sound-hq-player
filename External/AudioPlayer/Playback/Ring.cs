@@ -7,9 +7,11 @@ namespace AudioPlayer.Playback;
 /// 生产者满时等待消费/seek/取消通知；消费者在预缓冲门槛未到或欠载时输出静音并计数；
 /// 计数器（FramesPlayed/欠载）只在 beginSession/Reset 时清零。
 /// </summary>
-internal abstract class FrameRingBase<T> where T : unmanaged
+internal abstract class FrameRingBase<T> : IDisposable where T : unmanaged
 {
     private readonly T[] _buffer;
+    private readonly AudioRingMemory<T>? _nativeBuffer;
+    private bool _disposed;
     private readonly object _gate = new();
     private long _head; // 总写入帧数
     private long _tail; // 总读取帧数
@@ -32,10 +34,13 @@ internal abstract class FrameRingBase<T> where T : unmanaged
     private long _underrunCallbacks;
     private long _underrunFrames;
 
-    protected FrameRingBase(int channels, int capacityFrames, int prebufferFrames, int prebufferTimeoutMs, bool wholeWrites = false, int resumeFrames = 0)
+    protected FrameRingBase(int channels, int capacityFrames, int prebufferFrames, int prebufferTimeoutMs, bool wholeWrites = false, int resumeFrames = 0, bool nativeStorage = false)
     {
         Channels = Math.Max(1, channels);
-        _buffer = new T[Math.Max(1, capacityFrames) * Channels];
+        CapacityFrames = Math.Max(1, capacityFrames);
+        int samples = checked(CapacityFrames * Channels);
+        _buffer = nativeStorage ? [] : new T[samples];
+        if (nativeStorage) _nativeBuffer = new AudioRingMemory<T>(samples);
         _prebufferFrames = Math.Max(0, prebufferFrames);
         _wholeWrites = wholeWrites;
         _prebufferTimeoutMs = prebufferTimeoutMs;
@@ -45,7 +50,7 @@ internal abstract class FrameRingBase<T> where T : unmanaged
 
     public long Epoch { get { lock (_gate) return _epoch; } }
 
-    public int CapacityFrames => _buffer.Length / Channels;
+    public int CapacityFrames { get; }
     public long FramesPlayed => Interlocked.Read(ref _framesPlayed);
     public long UnderrunCallbacks => Interlocked.Read(ref _underrunCallbacks);
     public bool IsDrained { get { lock (_gate) { return InputEnded && _head == _tail; } } }
@@ -55,6 +60,7 @@ internal abstract class FrameRingBase<T> where T : unmanaged
     {
         lock (_gate)
         {
+            if (_disposed) return;
             _epoch++;
             _head = _tail = 0;
             _sessionHasAudio = false;
@@ -104,7 +110,7 @@ internal abstract class FrameRingBase<T> where T : unmanaged
         {
             lock (_gate)
             {
-                if (epoch != _epoch || cancelled()) return false;
+                if (_disposed || epoch != _epoch || cancelled()) return false;
                 if (frameCount > 0) _sessionHasAudio = true;
                 int free = CapacityFrames - (int)(_head - _tail);
                 if (free > 0 && (!_wholeWrites || free >= frameCount))
@@ -140,6 +146,7 @@ internal abstract class FrameRingBase<T> where T : unmanaged
         int readTotal = 0;
         lock (_gate)
         {
+            if (_disposed) return 0; // output is already filled with format-appropriate silence
             int needed = frameCount;
             int outFrame = 0;
             while (needed > 0)
@@ -207,19 +214,39 @@ internal abstract class FrameRingBase<T> where T : unmanaged
     protected virtual void PostRender(Span<T> output, int frameCount, long phaseBase) { }
 
     private void CopyIn(ReadOnlySpan<T> source, int sourceFrame, int ringFrame, int frames)
-        => source.Slice(sourceFrame * Channels, frames * Channels)
-            .CopyTo(_buffer.AsSpan(ringFrame * Channels, frames * Channels));
+    {
+        var samples = source.Slice(sourceFrame * Channels, frames * Channels);
+        if (_nativeBuffer != null) _nativeBuffer.CopyFrom(samples, ringFrame * Channels);
+        else samples.CopyTo(_buffer.AsSpan(ringFrame * Channels, frames * Channels));
+    }
 
     private void CopyOut(int ringFrame, Span<T> output, int outFrame, int frames)
-        => _buffer.AsSpan(ringFrame * Channels, frames * Channels)
-            .CopyTo(output.Slice(outFrame * Channels, frames * Channels));
+    {
+        var samples = output.Slice(outFrame * Channels, frames * Channels);
+        if (_nativeBuffer != null) _nativeBuffer.CopyTo(ringFrame * Channels, samples);
+        else _buffer.AsSpan(ringFrame * Channels, frames * Channels).CopyTo(samples);
+    }
+
+    public void Dispose()
+    {
+        lock (_gate)
+        {
+            if (_disposed) return;
+            _disposed = true;
+            _nativeBuffer?.Dispose();
+            _head = _tail = 0;
+            InputEnded = true;
+            _prebuffering = false;
+            Monitor.PulseAll(_gate);
+        }
+    }
 }
 
 /// <summary>PCM：float64（double）交织。</summary>
 internal sealed class PcmRing : FrameRingBase<double>
 {
-    public PcmRing(int channels, int capacityFrames, int prebufferFrames, int prebufferMs, int resumeFrames = 0)
-        : base(channels, capacityFrames, prebufferFrames, prebufferMs, resumeFrames: resumeFrames) { }
+    public PcmRing(int channels, int capacityFrames, int prebufferFrames, int prebufferMs, int resumeFrames = 0, bool nativeStorage = false)
+        : base(channels, capacityFrames, prebufferFrames, prebufferMs, resumeFrames: resumeFrames, nativeStorage: nativeStorage) { }
 }
 
 /// <summary>
@@ -232,8 +259,8 @@ internal sealed class DopRing : FrameRingBase<uint>
 {
     private long _renderedFrames; // 渲染线程独占（BeginSession 重置）
 
-    public DopRing(int channels, int capacityFrames, int prebufferFrames, int prebufferMs)
-        : base(channels, capacityFrames, prebufferFrames, prebufferMs) { }
+    public DopRing(int channels, int capacityFrames, int prebufferFrames, int prebufferMs, int resumeFrames = 0, bool nativeStorage = false)
+        : base(channels, capacityFrames, prebufferFrames, prebufferMs, resumeFrames: resumeFrames, nativeStorage: nativeStorage) { }
 
     protected override long NextRenderPhase(int frameCount)
     {
@@ -266,8 +293,8 @@ internal sealed class DopRing : FrameRingBase<uint>
 /// <summary>原生 DSD：每帧每声道 1 字节（MSB 优先）。静音 = 0x69（ECHO 约定）。</summary>
 internal sealed class DsdByteRing : FrameRingBase<byte>
 {
-    public DsdByteRing(int channels, int capacityByteFrames, int prebufferFrames, int prebufferMs)
-        : base(channels, capacityByteFrames, prebufferFrames, prebufferMs) { }
+    public DsdByteRing(int channels, int capacityByteFrames, int prebufferFrames, int prebufferMs, int resumeFrames = 0, bool nativeStorage = false)
+        : base(channels, capacityByteFrames, prebufferFrames, prebufferMs, resumeFrames: resumeFrames, nativeStorage: nativeStorage) { }
 
     protected override void FillSilence(Span<byte> output, int frameCount, long phaseBase)
         => output[..(frameCount * Channels)].Fill((byte)0x69);

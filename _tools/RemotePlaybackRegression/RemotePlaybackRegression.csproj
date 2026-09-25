@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+    <DefineConstants>$(DefineConstants);REAL_REMOTE</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
+    <Compile Include="../PlaybackNavigationRegression/Adapters.cs;../WebDavRegression/Fixture.cs" />
+    <Compile Include="../../State/PlaybackState.cs;../../Services/PlaybackCoordinator.cs;../../Services/ApplicationTasks.cs;../../Services/AppLifecycle.cs;../../Services/ShutdownCoordinator.cs;../../Services/RemotePlaybackService.cs;../../Services/WebDavLibraryService.Availability.cs" />
+    <Compile Include="../../Services/WebDav/*.cs" Exclude="../../Services/WebDav/RemoteMetadataProbe.cs" />
+  </ItemGroup>
+</Project>

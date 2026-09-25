@@ -217,6 +217,32 @@ static async Task RunAsync()
     Check(ReferenceEquals(superseded, latest), "One target must share one active refresh barrier.");
     await latest;
     Check(list.Count == 2, "Latest pending search must win.");
+    library.Library.Replace([
+        new(10, "local") { SourceId = 0, Album = "same album", Title = "track 1", TrackNumber = 1 },
+        new(11, "remote-a") { SourceId = 1, Album = "same album", Title = "track 1", TrackNumber = 1 },
+        new(12, "remote-b") { SourceId = 2, Album = "same album", Title = "network-only track", TrackNumber = 2 },
+        new(13, "remote-c") { SourceId = 2, Album = "other album", Title = "track 3", TrackNumber = 1 }
+    ]);
+    library.Browse.SourceFilterId = 1;
+    queries.SetSourceFilter(1);
+    await projections.UpdateSongCollectionsAsync(list, SongViewType.All);
+    Check(list.Count == 1 && list[0].Id == 11 && queries.FindById(10) is not null, "Source filtering must preserve the global queue ID index.");
+    library.Browse.SourceFilterId = -2;
+    queries.SetSourceFilter(-2);
+    await projections.UpdateSongCollectionsAsync(list, SongViewType.All);
+    Check(list.Count == 3 && list.All(m => m.IsRemote), "All remote sources excludes local songs.");
+    library.Browse.SourceFilterId = -1;
+    queries.SetSourceFilter(-1);
+    projections.UpdateGroupedByFirstLetter(m => m.Album, m => "A", library.LibraryViews.AlbumPageSource);
+    await Task.Yield();
+    var albumGroups = (List<MusicGroup>)library.LibraryViews.AlbumPageSource.Source!;
+    Check(albumGroups.Sum(g => g.Items.Count) == 2, "Mirrored albums should produce one album card.");
+    Check(albumGroups.SelectMany(g => g.Items).Single(m => m.Album == "same album").SourceId == 0,
+        "The local copy should represent a mirrored album when all sources are shown.");
+    Check(queries.GetAlbumSongCount("same album") == 3, "Album song counts should include tracks from every source.");
+    await projections.UpdateSongCollectionsAsync(list, SongViewType.Album, m => m.Album == "same album");
+    Check(list.Count == 3 && list.Any(m => m.Id == 10) && list.Any(m => m.Id == 11) && list.Any(m => m.Id == 12),
+        "Album details should include every track from every source, including same-metadata tracks.");
     library.Browse.SearchText = "missing";
     var pendingProjection = projections.UpdateSongCollectionsAsync(list, SongViewType.All);
     int fillsBeforeStop = list.FillCount;

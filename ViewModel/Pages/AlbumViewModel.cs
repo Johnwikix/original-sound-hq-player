@@ -58,6 +58,10 @@ namespace WinUIMusicPlayer.ViewModel
         {
             UpdateAlbumMenuOptionsPlayList();
             UpDateUsbDeviceMenuflyout();
+            var songs = AppViewModel.SongsSource.Where(m =>
+                m.Album is not null && SelectedItem is not null &&
+                m.Album.Equals(SelectedItem.Album, StringComparison.OrdinalIgnoreCase));
+            ToolUtils.UpdateMusicMenuAvailability(AlbumMenuOptions, songs, SelectedItem);
         }
 
         public void UpDateUsbDeviceMenuflyout()

@@ -10,6 +10,39 @@ public static class AudioCoverReader
 {
     private const int MaxCoverBytes = 30 * 1024 * 1024;
 
+    /// <summary>复用现有解析器读取可定位流；流由调用方持有，取消和预算异常向上传递。</summary>
+    public static byte[] ReadCover(Stream stream, string extension, int maxCoverBytes = 8 * 1024 * 1024)
+    {
+        if (!stream.CanRead || !stream.CanSeek) throw new ArgumentException("A readable, seekable stream is required.", nameof(stream));
+        using var bounded = new CoverStream(stream, Math.Clamp(maxCoverBytes, 1, MaxCoverBytes));
+        return ("." + extension.TrimStart('.').ToLowerInvariant()) switch
+        {
+            ".mp3" => ReadId3v2Cover(bounded),
+            ".dsf" => ReadDsfCover(bounded),
+            ".wav" => ReadRiffCover(bounded),
+            ".flac" => ReadFlacCover(bounded),
+            ".ogg" or ".oga" or ".opus" => ReadOggCover(bounded),
+            ".m4a" => ReadMp4Cover(bounded),
+            _ => Array.Empty<byte>()
+        };
+    }
+    private static int CoverLimit(Stream stream) => stream is CoverStream bounded ? bounded.Limit : MaxCoverBytes;
+    private sealed class CoverStream(Stream inner, int limit) : Stream
+    {
+        public int Limit { get; } = limit;
+        public override bool CanRead => inner.CanRead;
+        public override bool CanSeek => inner.CanSeek;
+        public override bool CanWrite => false;
+        public override long Length => inner.Length;
+        public override long Position { get => inner.Position; set => inner.Position = value; }
+        public override int Read(byte[] buffer, int offset, int count) => inner.Read(buffer, offset, count);
+        public override int Read(Span<byte> buffer) => inner.Read(buffer);
+        public override long Seek(long offset, SeekOrigin origin) => inner.Seek(offset, origin);
+        public override void Flush() { }
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
     public static byte[] ReadCover(string filePath)
     {
         if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
@@ -26,6 +59,7 @@ public static class AudioCoverReader
             return ext switch
             {
                 ".mp3" => ReadId3v2Cover(fs),
+                ".dsf" => ReadDsfCover(fs),
                 //".aiff" or ".aif" => ReadAiffCover(fs),
                 ".wav" => ReadRiffCover(fs),
                 ".flac" => ReadFlacCover(fs),
@@ -41,7 +75,21 @@ public static class AudioCoverReader
         }
     }
 
-    // ── ID3v2 核心解析（MP3 / AIFF / WAV 共用）────────────────────────────────
+    private static byte[] ReadDsfCover(Stream stream)
+    {
+        Span<byte> header = stackalloc byte[28];
+        if (!ReadExact(stream, header) || !header[..4].SequenceEqual("DSD "u8) ||
+            BinaryPrimitives.ReadUInt64LittleEndian(header[4..]) != 28)
+            return Array.Empty<byte>();
+        ulong offset = BinaryPrimitives.ReadUInt64LittleEndian(header[20..]);
+        // ID3 lives after the audio; do not traverse the potentially multi-GB data chunk.
+        if (offset < 28 || stream.Length < 38 || offset > (ulong)(stream.Length - 10))
+            return Array.Empty<byte>();
+        stream.Seek((long)offset, SeekOrigin.Begin);
+        return ReadId3v2Cover(stream);
+    }
+
+    // ── ID3v2 核心解析（MP3 / AIFF / WAV / DSF 共用）───────────────────────────
 
     private static byte[] ReadId3v2Cover(Stream s)
     {
@@ -90,7 +138,7 @@ public static class AudioCoverReader
 
     private static byte[] ReadApicFrame(Stream s, int size)
     {
-        if (size <= 0 || size > MaxCoverBytes) return Array.Empty<byte>();
+        if (size <= 0 || size > CoverLimit(s)) return Array.Empty<byte>();
 
         Span<byte> tmp = stackalloc byte[1];
         int consumed = 0;
@@ -281,9 +329,9 @@ public static class AudioCoverReader
 
             byte headerType = hdr[5];
             byte nsegs = hdr[26];
+            if (nsegs == 0) continue;
 
             if (!ReadExact(s, segtab[..nsegs])) return null;
-            if (!ReadExact(s, segtab)) return null;
 
             int pageDataLen = 0;
             foreach (byte b in segtab[..nsegs]) pageDataLen += b;
@@ -300,6 +348,7 @@ public static class AudioCoverReader
             {
                 var span = pageData.AsSpan(0, pageDataLen);
                 if (!ReadExact(s, span)) return null;
+                if (ms.Length + span.Length > CoverLimit(s)) return null;
                 ms.Write(span);
             }
             finally
@@ -322,7 +371,7 @@ public static class AudioCoverReader
 
             // foundComment 但还没结束：comment packet 跨页，继续累积
             // 限制总大小防止异常文件耗尽内存（封面一般不超过 20MB）
-            if (foundComment && ms.Length > MaxCoverBytes)
+            if (foundComment && ms.Length > CoverLimit(s))
                 return null;
         }
 
@@ -567,7 +616,7 @@ public static class AudioCoverReader
 
     private static byte[]? AllocateCoverBuffer(Stream s, int claimedSize)
     {
-        if (claimedSize <= 0 || claimedSize > MaxCoverBytes) return null;
+        if (claimedSize <= 0 || claimedSize > CoverLimit(s)) return null;
         int safeSize = claimedSize;
         if (s.CanSeek)
         {

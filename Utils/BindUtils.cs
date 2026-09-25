@@ -18,6 +18,23 @@ namespace WinUIMusicPlayer.Utils
 {
     public static class BindUtils
     {
+        /// <summary>列表来源标识只依赖曲目状态，不在可视项绑定中读取数据库或启动网络请求。</summary>
+        public static string MusicSourceGlyph(bool isRemote) => isRemote ? "\uE753" : "\uE8B7";
+        public static string MusicSourceGlyph(bool isRemote, bool isOffline)
+            => isRemote && isOffline ? "\uF384" : MusicSourceGlyph(isRemote);
+        public static string MusicSourceGlyph(bool isRemote, bool isOffline, bool isCached)
+            => isRemote && isCached ? "\uEBD3" : MusicSourceGlyph(isRemote, isOffline);
+        public static string MusicSourceLabel(bool isRemote) => isRemote ? "WebDAV" : GetString("WebDavLocalSources");
+        public static string MusicSourceLabel(bool isRemote, bool isCached)
+            => isRemote && isCached ? GetString("WebDavCachedAudio") : MusicSourceLabel(isRemote);
+        /// <summary>离线行仅作视觉弱化，保留点击播放以重新检查连接。</summary>
+        public static double MusicRowOpacity(bool isPlayable) => isPlayable ? 1.0 : 0.45;
+        public static string RemotePlaybackDescription(string status) => string.IsNullOrEmpty(status) ? "WebDAV" : status;
+        public static string RemotePlaybackDescription(string status, bool isCached)
+            => isCached ? GetString("WebDavCachedAudio") + " · " + RemotePlaybackDescription(status) : RemotePlaybackDescription(status);
+        public static Visibility NonEmptyTextVisibility(string text) => string.IsNullOrWhiteSpace(text) ? Visibility.Collapsed : Visibility.Visible;
+        public static Visibility EmptyCollectionVisibility(int count) => count == 0 ? Visibility.Visible : Visibility.Collapsed;
+
         public static Visibility GetHrMusicVisibility(int sampleRate, int bitDepth)
             => (sampleRate >= 48000 && bitDepth >= 24) || (sampleRate >= 2822400 && bitDepth == 1)
                 ? Visibility.Visible
@@ -137,15 +154,6 @@ namespace WinUIMusicPlayer.Utils
             return App.Services.GetRequiredService<AppViewModel>().GetAlbumSongCount(album).ToString();
         }
 
-        public static Music? PlayListCoverMusicConverter(int playListId)
-        {
-            var items = App.Services.GetRequiredService<MusicDatabaseService>().GetMusicByPlayListIdFromMem(playListId);
-            foreach (var item in items)
-            {
-                if (item.Music is not null) return item.Music;
-            }
-            return null;
-        }
         public static double BoolToOpacityRe08Converter(bool isInPlayingDetailMode)
         {
             return isInPlayingDetailMode ? 0 : 0.8;
@@ -204,8 +212,12 @@ namespace WinUIMusicPlayer.Utils
             return true;
         }
 
-        /// <summary>播放入口可用 = 播放引擎就绪且存在当前曲目；引擎未就绪时按钮置灰。</summary>
-        public static bool IsPlaybackEntryEnabled(bool isPlaybackEngineReady, Music? current)
+        /// <summary>传输控制接受在线歌曲和服务器离线时的完整缓存。</summary>
+        public static bool IsPlaybackEntryEnabled(bool isPlaybackEngineReady, bool isPlayable)
+            => isPlaybackEngineReady && isPlayable;
+
+        /// <summary>播放按钮允许离线曲目进入探活流程；其它传输控制仍使用在线状态守卫。</summary>
+        public static bool IsPlayButtonEnabled(bool isPlaybackEngineReady, Music? current)
             => isPlaybackEngineReady && current is not null;
 
         /// <summary>切歌入口可用 = 播放引擎就绪且播放列表非空；引擎未就绪时按钮置灰。</summary>

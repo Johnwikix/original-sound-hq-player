@@ -16,6 +16,9 @@ public sealed class LibraryQueries(LibraryState library)
     private readonly Dictionary<string, Music> _firstFolderIndex = new(capacity: 4096, StringComparer.Ordinal);
     private readonly Dictionary<string, int> _albumSongCounts = new(capacity: 4096, StringComparer.Ordinal);
     private long _indexedVersion = -1;
+    private int _sourceFilter = -1;
+    public void SetSourceFilter(int sourceId) { _sourceFilter = sourceId; _indexedVersion = -1; }
+    public static bool MatchesSource(Music music, int sourceId) => sourceId == -1 || (sourceId == -2 ? music.IsRemote : music.SourceId == sourceId);
     public Music? FindById(int id)
     {
         if (_indexedVersion != library.Version) RebuildIdIndex();
@@ -70,9 +73,10 @@ public sealed class LibraryQueries(LibraryState library)
             var m = src[i];
             if (m is null) continue;
             _idIndex[m.Id] = m;
+            if (!MatchesSource(m, _sourceFilter)) continue;
             if (!string.IsNullOrEmpty(m.Album))
             {
-                if (!_firstAlbumIndex.ContainsKey(m.Album))
+                if (!_firstAlbumIndex.TryGetValue(m.Album, out var firstAlbum) || (firstAlbum.IsRemote && !m.IsRemote))
                     _firstAlbumIndex[m.Album] = m;
                 _albumSongCounts[m.Album] = _albumSongCounts.GetValueOrDefault(m.Album) + 1;
             }

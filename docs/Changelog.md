@@ -2,6 +2,172 @@
 
 新条目加在最上方。
 
+## 2026-09-25 协议同意记录迁至文档目录
+
+- `Services/AgreementAcceptanceStore.cs`：`agreement.json` 从本地应用数据目录（MSIX 下被虚拟化重定向，部分用户环境无法读写）迁至 `Documents\OriginalSoundPlayer\Agreement\`，与数据库/设置同根；不回退读取旧位置，升级后存量用户需重新确认一次协议。
+- `Legal/legal.zh-CN.json`、`Legal/legal.en.json`：隐私文档中的存储位置声明同步更新。
+
+## 2026-09-25 WebDAV 扫描无可见变更不再整库重建；本地来源行图标对齐
+
+- `Services/MusicDatabaseService.WebDav.cs`：目录批次提交返回可见新增数（新插入 + 缺失复现）；目录/来源收尾标记返回本次转入缺失的行数（`Missing` 条件收紧为仅 0→1）。
+- `Services/WebDavLibraryService.cs`：目录阶段结束的整库重载改为仅在存在可见增删时执行，服务端无变化时不再重建曲目列表（消除启动自动扫描结束时的一次闪烁）。
+- `View/AddFolderPage.xaml`：本地文件夹行的重扫/移除按钮改为 34×34、图标字号 16、面板 Spacing 2，与 WebDAV 来源行一致。
+
+## 2026-09-25 消除 WebDAV 启动扫描列表闪烁并常驻来源曲目数
+
+- `Services/WebDavLibraryService.cs`：扫描批次发布不再逐批 `NotifySongsSourceChanged`（原先每个目录/每 64 首/每 16 条元数据整表 Reset 曲目列表，启动自动扫描期间持续闪烁），新增曲目沿用本地扫描的增量追加口径；元数据阶段实际写入后收敛一次排序与各页投影。
+- `Services/MusicDatabaseService.WebDav.cs`：新增按来源统计可见远程曲目数（`Missing = 0`）的查询。
+- `ViewModel/Pages/WebDavSourcesViewModel.cs`、`View/SubView/WebDavSourcesControl.xaml`：WebDAV 来源行常驻显示曲目数（与本地文件夹行同款式、复用 `FolderNumberOfSongs` 文案），加载时填充、扫描结束（完成/失败/取消）后刷新。
+
+## 2026-09-24 分离 WebDAV 选中状态、缓存可播放性与断流恢复
+
+- `PlaybackState.cs`、`PlaybackCoordinator.cs`、列表 ViewModel：待播行立即选中，实际播放信息延后提交；连续切歌取消旧等待，停止取消待播，旧结果不会覆盖新选择。
+- `WebDavLibraryService.Availability.cs`、`WebDavAvailability.cs`：完整缓存优先于来源探活；来源失败后按单调时钟暂缓自动重试 15 秒，直接点选可立即重试，迟到探活不能抹掉新的断流状态。
+- `RemoteReadSession.cs`、`RemotePlaybackService.cs`：缓存读取不取凭据、不联网；源端读失败发布来源状态并触发有界队列恢复，文件/解码错误不误报整台服务离线；当前会话与待播探测独立取消。
+- `Music.cs`、`BindUtils.cs`、列表行和播放页：缓存歌曲在来源离线时保留 CloudDownload 图标、正常透明度和播放控制；停止按钮在离线状态仍可用。
+- `_tools/PlaybackNavigationUiRegression`、`RemotePlaybackRegression`、`WebDavRegression`：验证真实 WinUI ListView 即时选中、实际读取链路断流恢复、离线缓存、缓存清除、重试期限和会话取消边界；播放协议端为可控测试端，未替代真实 NAS 与音频设备验证。
+
+## 2026-09-24 修复 WebDAV 切歌探活并标记完整音频缓存
+
+- `PlaybackCoordinator.cs`、`PlaybackCommands.cs`、`BassPlayerCommandService.cs`：上下首重新确认 WebDAV 实际在线状态；失败继续按队列方向寻找下一首，同次请求不重复探测失败来源，全部不可用时有界结束。
+- `MusicCommands.cs`、`WebDavLibraryService.cs`：探活期间保留切歌入口，再按上下首从正在探测的歌曲继续，新选择立即取消旧选择的等待；共享探活不会被旧调用方取消而误报在线。
+- `PlaybackCoordinator.cs`、`RemotePlaybackService.cs`：远程凭据、准备及缓存会话收尾在后台执行，避免同步磁盘操作拖住 UI；停止代次同步登记，迟到停止不覆盖新选曲。
+- `RemoteAudioCache.cs`、`WebDavLibraryService.cs`、`Music.cs`、列表行及播放栏：完整落盘的当前版本音频显示 CloudDownload（EBD3），缓存清理、目录更换和版本变化同步更新；新增六语言提示词。
+- `_tools/PlaybackNavigationRegression`、`PlaybackNavigationUiRegression`、`WebDavRegression`：增加失联/恢复、连续失败、取消、UI 调度和完整缓存状态回归。
+
+## 2026-09-24 放开离线曲目手动播放并弱化列表行
+
+- `Services/MusicCommands.cs`、`Services/PlaybackCommands.cs`、`View/MainPage.xaml`、`View/PlayingDetailPage.xaml`：手动播放按钮允许离线 WebDAV 曲目进入播放前探活流程，探活失败后仍停止播放；其它传输控制继续遵循在线状态守卫。
+- `View/Controls/MusicListRowControl.xaml`、`Utils/BindUtils.cs`：离线歌曲行降低透明度但保留播放点击入口。
+- `Utils/ToolUtils.cs`：右键“播放”保留为可用，转换、歌词、打开位置和 USB 等需要读取内容的操作继续置灰。
+
+## 2026-09-24 抽取音乐列表/网格模板并同步 WebDAV 探活信息
+
+- `View/Controls/MusicListRowControl.xaml`、列表页：将普通列表行、分组详情行和播放列表行抽成可配置行控件，保留外层 `ListView` 虚拟化与选择/右键行为。
+- `View/Controls/*GridCardControl.xaml`、专辑/艺术家/文件夹页：按页面分别抽取 GridView 卡片模板，保留外层 `GridView` 的虚拟化和语义缩放。
+- `ViewModel/Pages/WebDavSourcesViewModel.cs`：来源管理页在加载和探活状态变化时刷新 WebDAV 信息，离线状态不再只更新播放守卫而遗漏来源卡片。
+
+## 2026-09-24 独立探测 WebDAV 在线状态并同步右键菜单
+
+- `Services/WebDav/WebDavTransport.cs`、`WebDavLibraryService.cs`：使用 `PROPFIND Depth:0` 轻量探活，启动检查所有启用来源并按前台播放状态自适应轮询；在线状态不再依赖目录扫描结果。
+- `Model/MenuModel.cs`、`Extensions/MenuFlyoutExtensions.cs`、`Utils/ToolUtils.cs`、各列表/网格 ViewModel：WebDAV 离线时将播放、转换、歌词、资源打开和 USB 发送等需要读取内容的右键操作置灰。
+- `Services/PlaybackCoordinator.cs`、`ViewModel/Pages/WebDavBrowserViewModel.cs`：播放和 WebDAV 浏览前执行在线检查，避免探活状态过期后绕过离线守卫。
+
+## 2026-09-24 标记离线 WebDAV 曲目并禁止播放
+
+- `Services/WebDavLibraryService.cs`、`Model/Music.cs`：启动扫描失败时发布来源离线状态，同步到曲目运行时状态；恢复连接后清除。
+- `View/*`、`Utils/BindUtils.cs`：离线来源标识改用 `F384`，列表播放入口和当前播放控制同步置灰。
+- `Services/PlaybackCoordinator.cs`、`PlaybackCommands.cs`、`BassPlayerCommandService.cs`：在播放协调器、手动切歌和自动切歌路径统一跳过离线曲目。
+
+## 2026-09-24 合并本地与 WebDAV 的同名专辑
+
+- `Services/LibraryProjectionService.cs`、`ViewModel/Pages/AlbumViewModel.cs`、`MusicGroupDetailViewModel.cs`：本地与 WebDAV 同名专辑只显示一张卡片，进入详情后跨来源显示所有歌曲；不同来源的同名曲目也保留。
+- `Services/LibraryQueries.cs`、`_tools/SharedStateRegression`：专辑歌曲数按来源分别计数，并增加跨来源专辑投影、详情和同名曲目回归检查。
+
+## 2026-09-24 修复 WebDAV 网络源响度偏低
+
+- `External/AudioPlayer/Playback/Session.cs`、`PcmEffects.cs`、`LoudnessScanner.cs`：WebDAV HTTP 会话纳入与本地文件相同的 EBU R128 后台响度分析；分析完成前使用中性增益，避免原先固定 −12 dB 保守衰减导致网络歌曲整体偏低。
+- `External/BassPlayerIpc.Shared/Streaming.cs`、`Services/RemotePlaybackService.cs`：传递远程文件长度和 ETag 作为响度缓存版本，文件更新后自动重新分析；后台分析不阻塞首次播放，慢速网络仍可先播放。
+
+## 2026-09-23 修复切歌时封面与 Win2D 资源持续累积
+
+- `Controls/ImageSwitcher`、`PlayingDetailPage.xaml`：隐藏详情页时取消封面读取，原图解码宽度限制为 1536，过渡完成后释放上一张图源，并保留快速恢复所需的当前图像。
+- `CoverLoadQueue`、`AlbumCoverBehavior`、`FadeImageBehavior`：缩略图任务共享像素数据而非共享 `SoftwareBitmapSource`，各控件独立释放 WinRT 图像源；取消或替换时及时回收资源。
+- `CoverPresentationService`、`SystemMediaControlsService`、`ToolUtils`：切歌时取消过期封面/媒体控制任务及原图读取，避免大封面被旧任务链延迟持有。
+- `LyricsRenderCoordinator`、`AlbumArtControl`、`NowPlayingCanvas`：连续换词时立即释放被覆盖的 Win2D 待销毁行，修复丢弃池化帧和卸载时的 Win2D 视觉树引用，关停时完整清理文本布局、几何和缓存效果。
+
+## 2026-09-23 修复 WebDAV DSF 采样率显示为八分之一
+
+- `Services/WebDav/RemoteMetadataProbe.cs`：将 FFmpeg 对 DSF/DFF 暴露的 DSD 字节率换算为实际 DSD 采样率，并按一位样本写入元数据。
+- `Services/MusicDatabaseService.WebDav.cs`：后续元数据扫描自动重读旧版本已保存的八分之一采样率。
+- `_tools/WebDavRegression`：增加 DSF 64/128/256 回归检查，覆盖采样率、位深、时长和有界读取。
+
+## 2026-09-23 精简 WebDAV 来源卡片操作
+
+- `View/SubView/WebDavSourcesControl.xaml/.cs`：移除无用的“歌曲”跳转按钮；来源图标由纯装饰 Border 改为与 AddFolderPage `OpenFolderButton` 同款的可点击按钮，直接打开 WebDAV 目录浏览，操作行不再保留重复的浏览按钮；清理不再使用的 using。
+- `Strings/*/Resources.resw`：删除全部语言中不再使用的 `WebDavSongsAction` 资源。
+
+## 2026-09-23 修复 WebDAV 目录选择、曲库范围和来源回退
+
+- `WebDavConnectionDialog.xaml/.cs`、`WebDavConnectionViewModel.cs`、`WebDavTreeItem.cs`：模型管理父子级联与部分选中，懒加载子目录继承选择；扫描根独立保存，勾选所有子目录不会意外扩大到父目录，取消父目录清空子树，取消单个子目录保留其余范围。
+- `MusicDatabaseService.WebDav.cs`、`MusicDatabaseService.cs`、`WebDavLibraryService.cs`：保存来源时立即排除范围外的旧索引，曲库读取过滤缺失曲目并刷新当前视图；重新扫描纳入的歌曲复用原 ID，保留收藏和歌单映射。
+- `WebDavSourcesViewModel.cs`：当前来源被移除且 ComboBox 清空选项后，选择和过滤器统一回退到“全部来源”；移除其他来源保留当前选择。
+- `_tools/WebDavTreeUiRegression`：链接生产对话框、ViewModel、SQLite 方法，覆盖真实复选框点击、级联与保存、范围缩小及重载、曲目身份保留和真实 ComboBox 删除回退。已被扩大并保存的旧配置仍需重新选择原目录。
+
+## 2026-09-23 修复升级后播放列表卡片封面为空
+
+- `Model/PlayList.cs`、`View/PlayListPage.xaml`：封面绑定改为可通知的 `CoverMusic`，修复界面先于歌曲映射加载时，按不变 ID 取图后不再刷新的问题；该属性不写入数据库，无需重建歌单。
+- `Services/PlaylistSummaryProjection.cs`、`ViewModel/AppViewModel.cs`、`Services/MusicDatabaseService.cs`：在 UI 线程随音乐库、歌单成员和顺序更新封面及数量，单次遍历成员选择默认排序的首曲；删除后读取最新成员，移除详情页重复查询。
+- `_tools/PlaylistCoverRegression`：链接真实页面 XAML、图片行为和投影，覆盖延迟加载、同数量排序、移除曲目、新建/空歌单及通知；1.2.5.0 原始 XAML 复现失败，修复后通过。主程序 x64 Release 构建 0 错误。
+
+## 2026-09-23 修复本地 FLAC 曲尾错误导致播放停住
+
+- `External/AudioPlayer/Decode/PcmDecoder.cs`：有限次恢复无效编码帧并继续读取到真实 EOF，修复曲尾错误导致不发结束通知、自动切歌及 seek 失效；真实 I/O 失败仍保留失败语义。
+- `Player/AudioPlayer.exe`：更新 NativeAOT 播放器产物。
+- `_tools/PlaybackSwitchRegression`、`_tools/AudioPlayerSmokeTest`：新增自行生成的曲尾损坏 FLAC、完整解码及 EOF 后 seek、DirectSound 淡入淡出和原生结束通知验证；用户文件完整播放 292.667 秒通过，播放回归 295/295、网络回归 50 项通过。
+- `docs/PlaybackEndInvestigation.md`：记录复现证据及 1.2.2.0 以来播放改动的目的，定位回归来源为 `636f4844` 的共用解码错误处理。
+
+## 2026-09-23 修复 WebDAV 树节点显示类型名
+
+- `WebDavBrowserDialog`、`WebDavConnectionDialog`：模板按实际的 `TreeViewNode` 类型读取 `Content` 中的数据并创建名称和图标，修复控件类型名直出和折叠后复用视图引发的异常。
+- `_tools/WebDavTreeUiRegression`：链接生产 XAML 和节点模型，运行真实 WinUI 对话框验证显示、多选和展开行为。
+
+## 2026-09-23 WebDAV 目录对话框改为多选树
+
+- `WebDavConnectionDialog`、`WebDavConnectionViewModel`、`WebDavTreeItem`：按展开加载多层目录，恢复已保存的深层音乐根目录，并对父子重复选择去重。
+- `WebDavBrowserDialog`、`WebDavBrowserViewModel`：按展开浏览远端目录，勾选多首已入库歌曲后按选择顺序建立播放队列；六种语言资源同步更新。
+- `WebDavConnectionDialog`、`WebDavBrowserDialog`：通过节点映射关联目录数据，将 `SelectedNodes` 的勾选变化同步到 ViewModel。
+- `_tools/WebDavRegression`：增加目录树深层选择、保存与恢复回归。
+- `docs/WebDAV接入设计方案.md`：同步目录树与多选播放交互说明。
+
+## 2026-09-23 修复短曲目偶发结束后不自动切歌
+
+- `Services/BassPlayerCommandService.cs`、`Services/AutoAdvanceGate.cs`：自动切歌执行中保留一次新的结束请求，待当前选曲与界面状态完成后继续处理；执行异常记录日志，不让单飞状态卡住。
+- `_tools/AutoAdvanceRegression`：覆盖在途切歌期间再次结束、重复结束合并和退出清理。
+
+## 2026-09-22 卷积曲线预设改存用户文档目录
+
+- `Services/CurvePresetService.cs`：`ConvolutionCurves.json` 由 MSIX LocalState 改存 `Documents\OriginalSoundPlayer\Settings\`（与 Settings.json、AudioCorrections.json 同目录），卸载重装/重新部署不再丢失预设；Documents 不可用时回退 LocalState。不做旧位置迁移。
+- `External/AudioPlayer/DSP.md`：同步预设存储位置说明。
+
+## 2026-09-22 WebDAV 大 DSF 的内存、定位、位流与封面修复
+
+- `AudioPlayer/Playback/AudioRingMemory.cs`、`Ring.cs`、`Session.cs`：网络 PCM/DoP/Native DSD 大环缓冲由会话独占的原生内存承载，停止时在读写锁内释放；拒绝迟到读写、唤醒等待生产者，避免每次切歌的多 MB LOH 分配等待 GC。未增加生产环境强制 GC。
+- `Decode/FfmpegHttpInput.cs`、`DsdRawReader.cs`、`PlaybackEngine.Streaming.cs`、`Streaming.cs`、`RemotePlaybackService.cs`：远程 DSF/DFF 按输出设置选择 Native DSD/DoP，匿名桥接 URL 通过扩展名提示保留格式；共用超时、取消、预缓冲/欠载恢复及定位能力，保持 Native → DoP → PCM 设备回退。
+- `build/ffmpeg-dsf-seek.patch`、`Libraries/FFmpeg/x64/avformat-63.dll`：从现有 FFmpeg 源码重编译，DSF 按固定块直接定位并使用样本数计算时长，不再为了建立索引遍历未播放音频；构建脚本自动检查/应用补丁。
+- `Reader/AudioCoverReader.cs`、`Services/WebDavLibraryService.cs`：按 DSF 头部偏移读取尾部 ID3/APIC；对旧 DSF 空封面缓存做有界重试，复用原图缓存。
+- `_tools/PlaybackSwitchRegression`、`_tools/StreamingRegression`：新增大文件定位、精确包位置/EOF、DSD 模式、取消、原生缓冲释放与正式 NativeAOT 连续切换回归；`Player/AudioPlayer.exe` 已更新。
+- 验证：NAS 的 1,534,642,268 字节 DSF 封面读取成功；跳到 80% 并预缓冲约 77–78 ms、传输约 5.8–6.2 MB。真实 FiiO ASIO 的 DSD256 Native 和 DSD64 DoP 输出成功；此设备拒绝 DSD256 DoP 所需的 705.6 kHz。测量范围、命令与硬件边界见 `docs/WebDAV接入设计方案.md` 第 15 节。
+- 构建：NativeAOT 与主程序 x64 Release 通过；本机缺少符号转换工具，主程序验证通过命令行关闭符号包和包签名（未更改项目发布默认值），现有平台/裁剪等警告保留。
+
+## 2026-09-22 WebDAV 按来源确认 NAS 自签名证书
+
+- `Services/WebDav/WebDavCertificates.cs`、`WebDavTransport.cs`：HTTPS 失败提供证书信息和 SHA-256 指纹；确认后仅放行指定来源地址的同一张有效证书，证书变化需重新确认，过期证书继续拒绝。连接池按信任状态隔离，不修改系统信任或放开其他来源。
+- `Model/WebDavSource.cs`、`Services/WebDavLibraryService.cs`：保存来源时持久化证书地址与指纹，目录同步、元数据、封面和播放共用；已有来源默认无证书例外。
+- `WebDavConnectionViewModel.cs`、`WebDavConnectionDialog.xaml`、`Utils/WebDavText.cs`、六种语言资源：增加证书详情、确认重连及忘记入口，区分证书未受信任、证书变化与其他 TLS 错误；修改连接信息或关闭窗口会取消测试并拒绝迟到结果。
+- `_tools/WebDavRegression`：增加真实 TLS 目录/Range、证书与连接池隔离、过期、来源保存恢复、SQLite 迁移和表单取消回归。NAS 实测为 fnOS 自签名证书且名称不包含访问 IP；固定该证书后 TLS 成功进入 HTTP 认证层，无密码测试返回预期 401。
+- 验证：50 项回归、六种语言资源键及格式占位符检查、Release 构建通过；现有编译/裁剪警告仍在。未替换当前运行实例，WinUI 证书确认交互需在新构建验证。
+
+## 2026-09-22 统一 WebDAV 缓存位置并修复播放详情原图
+
+- `Services/WebDavLibraryService.cs`、`Services/WebDav/WebDavCachePaths.cs`、`RemoteAudioCache.cs`：统一使用原有可配置缓存根目录，远程音频和原图分别写入 `WebDav/Audio`、`WebDav/Covers`；缩略图继续共用 `Cache`。取消独立 WebDAV 路径配置，升级及换目录按需重建，旧缓存保留、不批量搬运。
+- `Controls/ImageSwitcher.xaml.cs`、`Behaviors/FadeImageBehavior.cs`、`Utils/ToolUtils.cs`、`Helper/PlaybackCoverCache.cs`：展示与取图按同一标识读取同一份远程原图；临时文件完整发布后才刷新封面，不重复保存原图、不重复请求网络。
+- `Services/CoverPresentationService.cs`、`SettingsActions.cs`、`ViewModel/Pages/WebDavSourcesViewModel.cs`、关于页及六种语言资源：统一入口更改目录，WebDAV 位置只读展示；切换后刷新封面和缓存占用，清理封面包含远程原图，下载音频仍独立清理。
+- `RemoteAudioCache.cs`：换目录使旧写入失效，提交时再次核对代次；旧目录的预留不占用新目录额度，清理新目录不删除旧目录仍在读取的音频。
+- `_tools/LyricsCoverRegression`、`_tools/WebDavRegression`：增加同目录原图解析、完整发布、命中、并发、取消/失败、空封面，以及跨目录额度、提交和活动读取回归。
+- 验证：歌词/封面 27 项、WebDAV 核心 31 项通过，六种语言设置资源检查通过；x64 安装包构建通过。当前运行中的 Release 实例未替换，统一缓存位置及大封面需使用新构建验证界面。
+
+## 2026-09-22 WebDAV 音乐来源、网络播放与可选缓存
+
+- `Services/WebDav`、`WebDavLibraryService`、`MusicDatabaseService.WebDav`：只读目录同步、稳定来源索引、分批补全标签；FLAC 使用 ATL Stream 跳过封面，其余格式使用有界 FFmpeg 探测，封面优先复用自研读取器。
+- `RemotePlaybackService`、`PlaybackCoordinator`、`IpcService`：连接现有 StreamingClient，主程序管理鉴权与 loopback 桥接、暂停/定位/切换和资源收尾；完整音频缓存可复用，自动下载默认关闭、10 GiB 上限。
+- `View/AddFolderPage`、`WebDavSourcesControl`：统一音乐来源标题、添加菜单及本地/WebDAV 卡片样式；音乐库增加来源筛选，歌曲/收藏/歌单/分组列表增加来源图标列。
+- `View/MainPage`、`View/SubView/Settings/AboutSettingsControl`：网络标识放到播放栏歌曲信息与音频格式同一行，状态以提示显示；缓存设置放到关于页的可展开卡片，不增加独立设置分类。
+- `Model/Music`、相关详情/转换/导出入口：远程文件只读，收藏、歌单、统计继续使用统一 Music.Id；本地扫描不清理远程记录，相同专辑名按来源区分。
+- `Strings/*/Resources.resw`：新增界面与错误信息覆盖六种语言，程序取词采用独立资源键。
+- `Player/AudioPlayer.exe`、`TrimmerRoots.xml`、项目文件：更新 NativeAOT 播放器，避免远程结束重复走旧通知；保留 SQLite 模型与命名管道依赖供裁剪后的应用使用。
+- 验证：x64 安装包构建成功；OpenList 实际 224 首元数据通过；WebDAV 核心 22 项、网络播放器 39 项、本地切换 281 项、共享曲库和歌词封面回归通过；实际界面验证来源添加、扫描、播放/暂停和约 33 MiB 缓存落盘。NAS、广域网与近 100 GB 长时间负载尚未验证，性能测量范围见设计文档第 14 节。
+
 ## 2026-09-21 移除 Atmos / 5.1 状态卡的“恢复普通播放”按钮
 
 - `View/SubView/Settings/GeneralSettingsControl.xaml`：删除 Atmos 直通与 5.1 环绕状态提示条上的按钮及随之失去意义的 `ContentAlignment="Right"`，状态文本保留，关闭功能直接用各卡片自身的 toggle。

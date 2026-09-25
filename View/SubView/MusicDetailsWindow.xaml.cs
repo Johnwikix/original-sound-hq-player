@@ -273,6 +273,7 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)
         {
+            if (MusicDetail.IsRemote) return;
             ConfirmFlyout.Hide();
             try
             {
@@ -320,6 +321,7 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void SaveLyrics_Click(object sender, RoutedEventArgs e)
         {
+            if (MusicDetail.IsRemote) return;
             char[] invalidChars = Path.GetInvalidFileNameChars();
             string sanitizedFileName = Path.GetFileNameWithoutExtension(MusicDetail.Path);
             string? targetBasePath = Path.GetDirectoryName(MusicDetail.Path);
@@ -374,6 +376,7 @@ namespace WinUIMusicPlayer.View.SubView
 
         private void ReadLyricsFromFile_Click(object sender, RoutedEventArgs e)
         {
+            if (MusicDetail.IsRemote) return;
             _ = Task.Run(async () =>
             {
                 StorageFile storageFile = await StorageFile.GetFileFromPathAsync(MusicDetail.Path);
@@ -404,6 +407,7 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void SelectCoverImageButton_Click(object sender, RoutedEventArgs e)
         {
+            if (MusicDetail.IsRemote) return;
             try
             {
                 FileOpenPicker openPicker = new(App.MainWindow.AppWindow.Id)

@@ -196,8 +196,8 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         {
             try
             {
-                if (AppViewModel.CurrentPlayingMusic is not null &&
-                    AppViewModel.TryFindById(AppViewModel.CurrentPlayingMusic.Id, out var m) && m is not null)
+                if (AppViewModel.SelectedPlaybackMusic is not null &&
+                    AppViewModel.TryFindById(AppViewModel.SelectedPlaybackMusic.Id, out var m) && m is not null)
                 {
                     var plm = AppViewModel.PlayListSongs;
                     for (int i = 0; i < plm.Count; i++)
@@ -395,7 +395,6 @@ namespace WinUIMusicPlayer.ViewModel.Controls
                 await _db.RemoveMusicFromPlayList(playListId, selected.Music.Id);
                 if (AppViewModel.CurrentPlayList?.Id == playListId) AppViewModel.PlayListSongs.Remove(selected);
             }
-            await _db.GetPlayListMusic();
         }
 
         private async Task OnConvertAudioAsync(string tag)
@@ -485,6 +484,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         {
             UpdateAlbumMenuOptionsPlayList();
             UpDateUsbDeviceMenuflyout();
+            ToolUtils.UpdateMusicMenuAvailability(MenuOptions, SelectedMusics.Select(static item => item.Music), SelectedMusic?.Music);
         }
 
         public void UpDateUsbDeviceMenuflyout()

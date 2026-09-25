@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using BassPlayerIpc.Shared;
 using FFmpeg.AutoGen;
 
@@ -16,21 +15,9 @@ namespace AudioPlayer.Decode;
 /// </summary>
 internal sealed unsafe class PcmDecoder : IDisposable
 {
-    private GCHandle _interruptHandle;
-    private CancellationToken _sourceToken;
-    private int _ioCancelled;
-    private long _deadline;
-    private int _readTimeoutMs;
+    private FfmpegHttpInput? _network;
     public bool CanSeek { get; private set; }
-    public void CancelIo() => Volatile.Write(ref _ioCancelled, 1);
-    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
-    private static int Interrupt(void* opaque)
-    {
-        var decoder = (PcmDecoder)GCHandle.FromIntPtr((nint)opaque).Target!;
-        return Volatile.Read(ref decoder._ioCancelled) != 0 || decoder._sourceToken.IsCancellationRequested ||
-            Environment.TickCount64 >= Volatile.Read(ref decoder._deadline) ? 1 : 0;
-    }
-    private void BeginRead() { if (_readTimeoutMs > 0) Volatile.Write(ref _deadline, Environment.TickCount64 + _readTimeoutMs); }
+    public void CancelIo() => _network?.Cancel();
     private AVFormatContext* _fmt;
     private AVCodecContext* _dec;
     private SwrContext* _swr;
@@ -59,6 +46,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
     };
 
     private static readonly int EAgain = ffmpeg.AVERROR(ffmpeg.EAGAIN);
+    private const int MaxConsecutiveInvalidFrames = 32;
 
     /// <param name="forceRate">强制输出采样率（独占/ASIO 回退共享时按混音率）；null = 源率。</param>
     /// <param name="forceChannels">强制输出声道数；null = 源声道数（受 maxChannels 上限约束）。</param>
@@ -75,25 +63,9 @@ internal sealed unsafe class PcmDecoder : IDisposable
             {
                 if (source?.Kind == PlaybackSourceKind.Http)
                 {
-                    source.Validate();
-                    _sourceToken = cancellationToken;
-                    _readTimeoutMs = source.Buffer.ReadTimeoutMs;
-                    _deadline = Environment.TickCount64 + source.Buffer.OpenTimeoutMs;
-                    _interruptHandle = GCHandle.Alloc(this);
-                    fmt = ffmpeg.avformat_alloc_context();
+                    _network = new FfmpegHttpInput(source, cancellationToken);
+                    fmt = _network.AllocateContext(&options);
                     _fmt = fmt;
-                    if (fmt == null) throw new OutOfMemoryException();
-                    fmt->interrupt_callback.opaque = (void*)GCHandle.ToIntPtr(_interruptHandle);
-                    fmt->interrupt_callback.callback = new AVIOInterruptCB_callback_func { Pointer = (nint)(delegate* unmanaged[Cdecl]<void*, int>)&Interrupt };
-                    ffmpeg.av_dict_set(&options, "protocol_whitelist", "http,https,tcp,tls,httpproxy", 0);
-                    ffmpeg.av_dict_set(&options, "tls_verify", "1", 0);
-                    ffmpeg.av_dict_set(&options, "rw_timeout", ((long)source.Buffer.ReadTimeoutMs * 1000).ToString(System.Globalization.CultureInfo.InvariantCulture), 0);
-                    ffmpeg.av_dict_set(&options, "reconnect", source.Buffer.RetryCount > 0 ? "1" : "0", 0);
-                    ffmpeg.av_dict_set(&options, "reconnect_on_network_error", source.Buffer.RetryCount > 0 ? "1" : "0", 0);
-                    ffmpeg.av_dict_set(&options, "reconnect_max_retries", source.Buffer.RetryCount.ToString(System.Globalization.CultureInfo.InvariantCulture), 0);
-                    ffmpeg.av_dict_set(&options, "reconnect_delay_max", "2", 0);
-                    if (source.Headers.Count > 0)
-                        ffmpeg.av_dict_set(&options, "headers", string.Concat(source.Headers.Select(x => x.Key + ": " + x.Value + "\r\n")), 0);
                 }
                 or = ffmpeg.avformat_open_input(&fmt, path, null, &options);
                 _fmt = fmt;
@@ -168,7 +140,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
     public bool SeekToMs(long ms)
     {
         if (_fmt == null || _dec == null || !CanSeek) return false;
-        BeginRead();
+        _network?.BeginRead();
         if (ffmpeg.av_seek_frame(_fmt, -1, ms * 1000, ffmpeg.AVSEEK_FLAG_BACKWARD) < 0) return false;
         ffmpeg.avcodec_flush_buffers(_dec);
         ffmpeg.swr_init(_swr);
@@ -182,6 +154,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
         if (_fmt == null || _dec == null) return 0;
         int maxFrames = buffer.Length / Math.Max(1, Channels);
         if (maxFrames <= 0) return 0;
+        int invalidFrames = 0;
 
         while (true)
         {
@@ -195,6 +168,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
             int ret = ffmpeg.avcodec_receive_frame(_dec, _frame);
             if (ret == 0)
             {
+                invalidFrames = 0;
                 fixed (double* p = buffer)
                 {
                     got = ffmpeg.swr_convert(_swr, (byte**)&p, maxFrames,
@@ -212,10 +186,15 @@ internal sealed unsafe class PcmDecoder : IDisposable
                 got = ConvertOut(buffer, maxFrames);
                 return got; // 剩余样本一次给足（缓冲区足够大，通常一次排空）
             }
+            // A damaged packet (including junk after valid FLAC audio) need not end the
+            // decoder's lifetime. Drain its remaining output and keep reading to real EOF,
+            // so the session can finish normally and still service a later seek.
+            // Bound recovery in case a codec keeps returning errors without making progress.
+            if (ret == ffmpeg.AVERROR_INVALIDDATA && ++invalidFrames <= MaxConsecutiveInvalidFrames) continue;
             if (ret != EAgain) throw new IOException($"Decoder error {ret}.");
 
             // 3) 需要新输入包
-            BeginRead();
+            _network?.BeginRead();
             int pr = ffmpeg.av_read_frame(_fmt, _pkt);
             if (pr == EAgain) continue;
             if (pr < 0 && pr != ffmpeg.AVERROR_EOF) throw new IOException($"Input read error {pr}.");
@@ -259,6 +238,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
         if (_swr != null) { SwrContext* s = _swr; _swr = null; ffmpeg.swr_free(&s); }
         if (_dec != null) { AVCodecContext* d = _dec; _dec = null; ffmpeg.avcodec_free_context(&d); }
         if (_fmt != null) { AVFormatContext* f2 = _fmt; _fmt = null; ffmpeg.avformat_close_input(&f2); }
-        if (_interruptHandle.IsAllocated) _interruptHandle.Free();
+        _network?.Dispose();
+        _network = null;
     }
 }

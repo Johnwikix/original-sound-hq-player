@@ -25,7 +25,7 @@ public partial class MusicDatabaseService
             // The persisted Folder.SongCount can be stale in older databases. Count actual songs,
             // grouping once by directory rather than materializing every Music or relying on UI startup order.
             var counts = await _dbConnection.QueryAsync<DirectorySongCount>(
-                "SELECT FolderPath AS Path, COUNT(*) AS SongCount FROM Music GROUP BY FolderPath COLLATE NOCASE");
+                "SELECT FolderPath AS Path, COUNT(*) AS SongCount FROM Music WHERE SourceId = 0 GROUP BY FolderPath COLLATE NOCASE");
             // 外部导入虚拟行的计数同源现算：归属 = 分组目录不落入任何本地扫描根。
             Folder? external = null;
             var roots = new List<Folder>(folders.Count);
@@ -314,6 +314,7 @@ public partial class MusicDatabaseService
             foreach (var music in await GetMusicListAsync())
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                if (music.IsRemote) continue;
                 bool within = false;
                 foreach (var root in localRoots)
                     if (LibraryPath.IsWithin(music.Path, root)) { within = true; break; }

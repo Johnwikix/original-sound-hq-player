@@ -1115,7 +1115,7 @@
     <value>フォルダーを削除</value>
   </data>
   <data name="CoverDiskCache.Text" xml:space="preserve">
-    <value>カバーディスクキャッシュ</value>
+    <value>キャッシュの保存先</value>
   </data>
   <data name="OfficialWebSite.Content" xml:space="preserve">
     <value>公式サイト</value>
@@ -1616,7 +1616,7 @@
     <value>キャッシュ</value>
   </data>
   <data name="AboutCacheExpander.Description" xml:space="preserve">
-    <value>カバー画像のキャッシュとその保存場所</value>
+    <value>カバーと WebDAV の共通キャッシュ保存先</value>
   </data>
   <data name="OpenCacheFolderButton.Content" xml:space="preserve">
     <value>キャッシュフォルダーを開く</value>
@@ -2005,5 +2005,269 @@
   </data>
   <data name="RemoveExternalImportsTitle" xml:space="preserve">
     <value>外部インポートした楽曲をすべて削除しますか</value>
+  </data>
+  <data name="WebDavAllSources" xml:space="preserve">
+    <value>すべてのソース</value>
+  </data>
+  <data name="WebDavLocalSources" xml:space="preserve">
+    <value>ローカル</value>
+  </data>
+  <data name="WebDavOpening" xml:space="preserve">
+    <value>リモート曲を開いています…</value>
+  </data>
+  <data name="WebDavBuffering" xml:space="preserve">
+    <value>バッファリング中…</value>
+  </data>
+  <data name="WebDavReady" xml:space="preserve">
+    <value>準備完了</value>
+  </data>
+  <data name="WebDavPlaying" xml:space="preserve">
+    <value>ストリーミング再生</value>
+  </data>
+  <data name="WebDavPaused" xml:space="preserve">
+    <value>一時停止中</value>
+  </data>
+  <data name="WebDavEnded" xml:space="preserve">
+    <value>再生終了</value>
+  </data>
+  <data name="WebDavStopped" xml:space="preserve">
+    <value>停止</value>
+  </data>
+  <data name="WebDavFailed" xml:space="preserve">
+    <value>接続に失敗しました。再試行できます</value>
+  </data>
+  <data name="WebDavScanning" xml:space="preserve">
+    <value>フォルダーを更新中</value>
+  </data>
+  <data name="WebDavMetadata" xml:space="preserve">
+    <value>曲情報を読み込み中</value>
+  </data>
+  <data name="WebDavCompleted" xml:space="preserve">
+    <value>更新完了</value>
+  </data>
+  <data name="WebDavCancelled" xml:space="preserve">
+    <value>スキャンを一時停止しました</value>
+  </data>
+  <data name="WebDavScanSummary" xml:space="preserve">
+    <value>{0} · {1} 曲検出 · {2} 曲処理済み</value>
+  </data>
+  <data name="WebDavConnecting" xml:space="preserve">
+    <value>接続中…</value>
+  </data>
+  <data name="WebDavConnected" xml:space="preserve">
+    <value>フォルダーに接続しました。音楽フォルダーを選択してください。</value>
+  </data>
+  <data name="WebDavEntireRoot" xml:space="preserve">
+    <value>ルートフォルダー全体</value>
+  </data>
+  <data name="WebDavTestFirst" xml:space="preserve">
+    <value>先に現在のアドレスとアカウントを検証してください。</value>
+  </data>
+  <data name="WebDavChooseFolder" xml:space="preserve">
+    <value>フォルダーを1つ以上選択してください。</value>
+  </data>
+  <data name="WebDavRemoveConfirm" xml:space="preserve">
+    <value>このソースとライブラリ登録を削除しますか？リモートファイルは削除されません。</value>
+  </data>
+  <data name="WebDavReadOnly" xml:space="preserve">
+    <value>リモートファイルは読み取り専用です。タグの書き込みやローカルファイル操作はできません。</value>
+  </data>
+  <data name="WebDavBrowserHint" xml:space="preserve">
+    <value>選択した登録済みの曲をチェックした順に再生します。</value>
+  </data>
+  <data name="WebDavBrowserTreeHelp.Text" xml:space="preserve">
+    <value>フォルダーを展開して曲を選択します。フォルダーの選択は表示済みの曲にのみ適用されます。</value>
+  </data>
+  <data name="WebDavFolderTreeHelp.Text" xml:space="preserve">
+    <value>フォルダーを展開し、音楽フォルダーを1つ以上選択します。親フォルダーには子フォルダーも含まれます。</value>
+  </data>
+  <data name="WebDavPlaySelectedButton.Content" xml:space="preserve">
+    <value>選択した曲を再生</value>
+  </data>
+  <data name="WebDavSelectedCountLabel.Text" xml:space="preserve">
+    <value>選択した曲:</value>
+  </data>
+  <data name="WebDavIndexFirst" xml:space="preserve">
+    <value>先にこのソースを更新して曲を登録してください。</value>
+  </data>
+  <data name="WebDavCacheUnavailable" xml:space="preserve">
+    <value>キャッシュ先を利用できません。オンライン再生は可能です。</value>
+  </data>
+  <data name="WebDavErrorConnectionFailed" xml:space="preserve">
+    <value>リモートデータを読み込めません。接続を確認して再試行してください。</value>
+  </data>
+  <data name="WebDavAuthenticationError" xml:space="preserve">
+    <value>認証情報または権限が無効です。ソースを編集してください。</value>
+  </data>
+  <data name="WebDavAddressError" xml:space="preserve">
+    <value>有効な HTTP(S) WebDAV アドレスを入力してください。許可されたリダイレクトのみ利用できます。</value>
+  </data>
+  <data name="WebDavNameError" xml:space="preserve">
+    <value>重複しないソース名を入力してください。</value>
+  </data>
+  <data name="WebDavMissingError" xml:space="preserve">
+    <value>ソースが無効か、曲が削除されています。ソースを更新してください。</value>
+  </data>
+  <data name="WebDavChangedError" xml:space="preserve">
+    <value>リモートファイルが変更されました。ソースを更新して再生してください。</value>
+  </data>
+  <data name="WebDavRangeError" xml:space="preserve">
+    <value>範囲読み取り非対応のため、シークやタグ取得ができない場合があります。</value>
+  </data>
+  <data name="WebDavConnectionDialog.PrimaryButtonText" xml:space="preserve">
+    <value>保存してスキャン</value>
+  </data>
+  <data name="WebDavConnectionDialog.CloseButtonText" xml:space="preserve">
+    <value>キャンセル</value>
+  </data>
+  <data name="WebDavConnectionHelp.Text" xml:space="preserve">
+    <value>NAS と OpenList/AList に対応。読み取り専用。HTTP は暗号化されません。匿名接続はアカウントを空欄にします。</value>
+  </data>
+  <data name="WebDavName.Header" xml:space="preserve">
+    <value>ソース名</value>
+  </data>
+  <data name="WebDavAddress.Header" xml:space="preserve">
+    <value>WebDAV アドレス</value>
+  </data>
+  <data name="WebDavUserName.Header" xml:space="preserve">
+    <value>ユーザー名</value>
+  </data>
+  <data name="WebDavPassword.Header" xml:space="preserve">
+    <value>パスワード（編集時に空欄で維持）</value>
+  </data>
+  <data name="WebDavConnectButton.Content" xml:space="preserve">
+    <value>接続してフォルダーを選択</value>
+  </data>
+  <data name="WebDavReadMetadata.Content" xml:space="preserve">
+    <value>バックグラウンドで曲情報を取得</value>
+  </data>
+  <data name="WebDavScanOnStartup.Content" xml:space="preserve">
+    <value>起動後にフォルダーを更新</value>
+  </data>
+  <data name="WebDavSourceEnabled.Content" xml:space="preserve">
+    <value>このソースを有効にする</value>
+  </data>
+<data name="WebDavBrowseButton.Content" xml:space="preserve">
+    <value>参照</value>
+  </data>
+<data name="WebDavPauseButton.Content" xml:space="preserve">
+    <value>スキャンを停止</value>
+  </data>
+<data name="WebDavRemoveButton.Content" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="WebDavBrowserDialog.CloseButtonText" xml:space="preserve">
+    <value>閉じる</value>
+  </data>
+  <data name="WebDavUpButton.Content" xml:space="preserve">
+    <value>上の階層</value>
+  </data>
+<data name="WebDavCacheTitle.Text" xml:space="preserve">
+    <value>WebDAV 再生キャッシュ</value>
+  </data>
+  <data name="WebDavCacheCard.Header" xml:space="preserve">
+    <value>再生中に自動キャッシュ</value>
+  </data>
+<data name="WebDavCacheHelp.Text" xml:space="preserve">
+    <value>再生する元音源を保存します。上限に達すると古いキャッシュを削除します。オフにすると補完を停止し、保存済みの曲は再生できます。</value>
+  </data>
+  <data name="WebDavClearCacheButton.Content" xml:space="preserve">
+    <value>キャッシュを削除</value>
+  </data>
+  <data name="MusicSources.Text" xml:space="preserve"><value>音楽ソース</value></data>
+  <data name="WebDavPauseMenu.Text" xml:space="preserve"><value>スキャンを停止</value></data>
+  <data name="WebDavEditMenu.Text" xml:space="preserve"><value>編集</value></data>
+  <data name="WebDavRemoveMenu.Text" xml:space="preserve"><value>削除</value></data>
+  <data name="MusicSourcesSubtitle.Text" xml:space="preserve">
+    <value>ローカルフォルダーとネットワークの音楽を一つのライブラリで管理します。</value>
+  </data>
+  <data name="MusicSourcesAdd" xml:space="preserve">
+    <value>音楽ソースを追加</value>
+  </data>
+  <data name="MusicSourcesLocal" xml:space="preserve">
+    <value>ローカルフォルダー</value>
+  </data>
+  <data name="MusicSourcesLocalEmpty.Text" xml:space="preserve">
+    <value>ローカルフォルダーを追加するか、ここにドラッグしてください。</value>
+  </data>
+  <data name="WebDavSourcesEmpty.Text" xml:space="preserve">
+    <value>NAS、OpenList などの WebDAV 音楽フォルダーに接続します。</value>
+  </data>
+  <data name="WebDavCacheExpander.Header" xml:space="preserve">
+    <value>WebDAV 再生キャッシュ</value>
+  </data>
+  <data name="WebDavCacheExpander.Description" xml:space="preserve">
+    <value>再生中の音楽を保存し、ダウンロードと容量を管理します。</value>
+  </data>
+  <data name="WebDavCacheToggleLabel" xml:space="preserve">
+    <value>再生中にキャッシュする</value>
+  </data>
+  <data name="WebDavCacheLimitLabel" xml:space="preserve">
+    <value>キャッシュ容量の上限（GiB）</value>
+  </data>
+  <data name="WebDavCacheCleanupCard.Header" xml:space="preserve">
+    <value>ダウンロードした音声を削除</value>
+  </data>
+  <data name="WebDavMoreAction" xml:space="preserve">
+    <value>その他の操作</value>
+  </data>
+  <data name="WebDavBrowseAction" xml:space="preserve">
+    <value>参照</value>
+  </data>
+  <data name="WebDavScanAction" xml:space="preserve">
+    <value>更新</value>
+  </data>
+  <data name="WebDavCacheLocationCard.Header" xml:space="preserve">
+    <value>キャッシュの保存先</value>
+  </data>
+  <data name="WebDavCacheLocationCard.Description" xml:space="preserve">
+    <value>上で指定したキャッシュ保存先の WebDav サブフォルダーを使用します。</value>
+  </data>
+  <data name="CacheRootDescription" xml:space="preserve">
+    <value>カバーと WebDAV で共通のフォルダーを使います。変更後は必要に応じてキャッシュを作成し、以前のファイルは保持します。</value>
+  </data>
+  <data name="WebDavTlsError" xml:space="preserve">
+    <value>HTTPS の安全な接続を確立できません。NAS の証明書と TLS 設定を確認してください。</value>
+  </data>
+  <data name="WebDavCertificateUntrusted" xml:space="preserve">
+    <value>サーバー証明書を検証できませんでした。接続を編集して確認すると、この接続先に限り信頼できます。</value>
+  </data>
+  <data name="WebDavCertificateChanged" xml:space="preserve">
+    <value>サーバー証明書が保存済みの証明書と異なります。接続を編集して再確認してください。</value>
+  </data>
+  <data name="WebDavCertificateTitle" xml:space="preserve">
+    <value>サーバー証明書の確認</value>
+  </data>
+  <data name="WebDavCertificateHelp" xml:space="preserve">
+    <value>NAS の管理画面で SHA-256 フィンガープリントを照合してください。確認はこのアドレスと証明書にのみ適用され、証明書が変わると再確認が必要です。システムの証明書信頼設定は変更しません。</value>
+  </data>
+  <data name="WebDavCertificateDetails" xml:space="preserve">
+    <value>アドレス: {0}
+サブジェクト: {1}
+発行者: {2}
+有効期間: {3:g} — {4:g}
+SHA-256: {5}
+{6}</value>
+  </data>
+  <data name="WebDavCertificateNameMismatch" xml:space="preserve">
+    <value>アクセス先と証明書の名前が一致しません。</value>
+  </data>
+  <data name="WebDavCertificateChainError" xml:space="preserve">
+    <value>証明書チェーンがシステムの検証に失敗しました。</value>
+  </data>
+  <data name="WebDavCertificateExpired" xml:space="preserve">
+    <value>証明書が期限切れか、まだ有効ではありません。先に NAS の証明書を更新してください。</value>
+  </data>
+  <data name="WebDavTrustCertificate" xml:space="preserve">
+    <value>この証明書を確認して再接続</value>
+  </data>
+  <data name="WebDavCertificateRemembered" xml:space="preserve">
+    <value>この接続先の証明書を確認済みです。保存時に記憶します。証明書が変わると再確認まで接続を停止します。</value>
+  </data>
+  <data name="WebDavForgetCertificate" xml:space="preserve">
+    <value>確認済みの証明書を忘れる</value>
+  </data>
+  <data name="WebDavCachedAudio" xml:space="preserve">
+    <value>WebDAV · 音声をキャッシュ済み</value>
   </data>
 </root>

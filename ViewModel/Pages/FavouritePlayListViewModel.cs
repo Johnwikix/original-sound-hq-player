@@ -60,6 +60,7 @@ namespace WinUIMusicPlayer.ViewModel
         {
             UpdateAlbumMenuOptionsPlayList();
             UpDateUsbDeviceMenuflyout();
+            ToolUtils.UpdateMusicMenuAvailability(MenuOptions, SelectedMusics, SelectedMusic);
         }
 
         public void UpDateUsbDeviceMenuflyout()
@@ -90,8 +91,8 @@ namespace WinUIMusicPlayer.ViewModel
         {
             try
             {
-                if (AppViewModel.CurrentPlayingMusic is not null &&
-                    AppViewModel.TryFindById(AppViewModel.CurrentPlayingMusic.Id, out var m) && m is not null)
+                if (AppViewModel.SelectedPlaybackMusic is not null &&
+                    AppViewModel.TryFindById(AppViewModel.SelectedPlaybackMusic.Id, out var m) && m is not null)
                 {
                     SelectedMusic = m;
                     currentPage?.OnScrollToMusic(m);

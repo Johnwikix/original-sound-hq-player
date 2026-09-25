@@ -7,6 +7,11 @@ namespace WinUIMusicPlayer.State
         public Services.AppLifecycle Lifecycle { get; } = new();
         public LibraryState Library { get; } = new();
         public BrowseState Browse { get; } = new();
+        public LibraryViews LibraryViews { get; } = new();
+    }
+    public sealed class LibraryViews
+    {
+        public Microsoft.UI.Xaml.Data.CollectionViewSource AlbumPageSource { get; } = new();
     }
 }
 namespace WinUIMusicPlayer.Model

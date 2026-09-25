@@ -17,12 +17,16 @@ internal sealed class Session : IRenderSource, IDisposable
 
     private PcmDecoder? _pcm;
     public bool CanSeek { get; private set; } = true;
-    public bool InputEnded => _pcmRing?.InputEnded ?? false;
-    public bool IsBuffering => _pcmRing?.IsBuffering ?? false;
+    public bool InputEnded => _pcmRing?.InputEnded ?? _dopRing?.InputEnded ?? _dsdRing?.InputEnded ?? _iecRing?.InputEnded ?? false;
+    public bool IsBuffering => _pcmRing?.IsBuffering ?? _dopRing?.IsBuffering ?? _dsdRing?.IsBuffering ?? _iecRing?.IsBuffering ?? false;
     public int InitialBufferFrames { get; private set; }
     public long CompletedSeekId;
     private long _pendingSeekId;
-    public void CancelIo() => _pcm?.CancelIo();
+    public void CancelIo()
+    {
+        _pcm?.CancelIo();
+        _dsd?.CancelIo();
+    }
     private DsdRawReader? _dsd;
     private Eac3BitstreamReader? _eac3;
     private Exception? _decodeFailure;
@@ -119,82 +123,118 @@ internal sealed class Session : IRenderSource, IDisposable
         int dsdPcmFreq, int dsdGainDb, int latencyMs, int? forcedRate = null, int? forcedChannels = null,
         int? maxChannels = null, bool experimentalSurround51 = false, AtmosProbeCache? atmosProbeCache = null, PlaybackSource? source = null, CancellationToken cancellationToken = default)
     {
-        switch (kind)
+        Session? pending = null;
+        IDisposable? input = null;
+        try
         {
-            case RenderKind.Pcm:
+            switch (kind)
             {
-                var dec = new PcmDecoder();
-                if (!dec.Open(path, dsdPcmFreq, dsdGainDb, forcedRate, forcedChannels, maxChannels, experimentalSurround51, source, cancellationToken)) { dec.Dispose(); return null; }
-                int rate = dec.SampleRate;
-                int channels = dec.Channels;
-                int ringFrames = source?.Kind == PlaybackSourceKind.Http
-                    ? checked((int)Math.Min((long)rate * source.Buffer.CapacityMs / 1000, 64 * 1024 * 1024 / (sizeof(double) * channels)))
-                    : RingCapacity(rate, latencyMs);
-                int initialFrames = source?.Kind == PlaybackSourceKind.Http ? Math.Min(ringFrames, (int)((long)rate * source.Buffer.InitialMs / 1000)) : PrebufferFrames(rate);
-                var s = new Session(engine, kind, channels, rate, rate, dec.TotalMs, rate)
+                case RenderKind.Pcm:
                 {
-                    _pcm = dec,
-                    ChannelMask = dec.ChannelMask,
-                    _pcmRing = new PcmRing(channels, ringFrames, initialFrames, source?.Kind == PlaybackSourceKind.Http ? -1 : 300,
-                        source?.Kind == PlaybackSourceKind.Http ? Math.Min(ringFrames, (int)((long)rate * source.Buffer.ResumeMs / 1000)) : 0),
-                    CanSeek = dec.CanSeek,
-                    InitialBufferFrames = initialFrames,
-                };
-                if (source?.Kind != PlaybackSourceKind.Http) s.Effects!.SetFile(path, dsdPcmFreq, dsdGainDb);
-                s.StartThread(s.PcmDecodeProc);
-                return s;
-            }
-            case RenderKind.Dop:
-            {
-                var reader = new DsdRawReader();
-                if (!reader.Open(path)) { reader.Dispose(); return null; }
-                int dopRate = reader.DopSampleRate;
-                int channels = reader.Channels;
-                int ringFrames = RingCapacity(dopRate, latencyMs);
-                var s = new Session(engine, kind, channels, dopRate, dopRate, reader.TotalMs, 0)
-                {
-                    _dsd = reader,
-                    _dopRing = new DopRing(channels, ringFrames, PrebufferFrames(dopRate), 300),
-                };
-                s.StartThread(s.DopDecodeProc);
-                return s;
-            }
-            case RenderKind.Eac3:
-            {
-                var reader = atmosProbeCache?.TryOpen(path);
-                if (atmosProbeCache == null)
-                {
-                    reader = new Eac3BitstreamReader();
-                    if (!reader.Open(path)) { reader.Dispose(); return null; }
+                    var dec = new PcmDecoder();
+                    input = dec;
+                    if (!dec.Open(path, dsdPcmFreq, dsdGainDb, forcedRate, forcedChannels, maxChannels, experimentalSurround51, source, cancellationToken)) { dec.Dispose(); return null; }
+                    int rate = dec.SampleRate;
+                    int channels = dec.Channels;
+                    int ringFrames = source?.Kind == PlaybackSourceKind.Http
+                        ? checked((int)Math.Min((long)rate * source.Buffer.CapacityMs / 1000, 64 * 1024 * 1024 / (sizeof(double) * channels)))
+                        : RingCapacity(rate, latencyMs);
+                    int initialFrames = source?.Kind == PlaybackSourceKind.Http ? Math.Min(ringFrames, (int)((long)rate * source.Buffer.InitialMs / 1000)) : PrebufferFrames(rate);
+                    var s = new Session(engine, kind, channels, rate, rate, dec.TotalMs, rate)
+                    {
+                        _pcm = dec,
+                        ChannelMask = dec.ChannelMask,
+                        _pcmRing = new PcmRing(channels, ringFrames, initialFrames, source?.Kind == PlaybackSourceKind.Http ? -1 : 300,
+                            source?.Kind == PlaybackSourceKind.Http ? Math.Min(ringFrames, (int)((long)rate * source.Buffer.ResumeMs / 1000)) : 0,
+                            nativeStorage: source?.Kind == PlaybackSourceKind.Http),
+                        CanSeek = dec.CanSeek,
+                        InitialBufferFrames = initialFrames,
+                    };
+                    s.Effects!.SetFile(path, dsdPcmFreq, dsdGainDb, source);
+                    pending = s;
+                    s.StartThread(s.PcmDecodeProc);
+                    return s;
                 }
-                if (reader == null) return null;
-                const int rate = Eac3BitstreamReader.CarrierRate;
-                var s = new Session(engine, kind, 2, rate, rate, reader.TotalMs, 0)
+                case RenderKind.Dop:
                 {
-                    _eac3 = reader,
-                    IsAtmos = reader.IsAtmos,
-                    EncodedChannelMask = reader.EncodedChannelMask,
-                    _iecRing = new Iec61937Ring(RingCapacity(rate, latencyMs), PrebufferFrames(rate)),
-                };
-                s.StartThread(s.Eac3DecodeProc);
-                return s;
-            }
-            default:
-            {
-                var reader = new DsdRawReader();
-                if (!reader.Open(path)) { reader.Dispose(); return null; }
-                int byteRate = reader.ByteRatePerChannel;
-                int channels = reader.Channels;
-                int ringFrames = RingCapacity(byteRate, latencyMs);
-                var s = new Session(engine, kind, channels, byteRate, reader.DsdBitRate, reader.TotalMs, 0)
+                    var reader = new DsdRawReader();
+                    input = reader;
+                    if (!reader.Open(path, source, cancellationToken)) { reader.Dispose(); return null; }
+                    int dopRate = reader.DopSampleRate;
+                    int channels = reader.Channels;
+                    var buffering = DsdBuffering(source, dopRate, channels * sizeof(uint), latencyMs);
+                    var s = new Session(engine, kind, channels, dopRate, dopRate, reader.TotalMs, 0)
+                    {
+                        _dsd = reader,
+                        _dopRing = new DopRing(channels, buffering.Capacity, buffering.Initial, buffering.Timeout, buffering.Resume,
+                            nativeStorage: source?.Kind == PlaybackSourceKind.Http),
+                        InitialBufferFrames = buffering.Initial,
+                        CanSeek = reader.CanSeek,
+                    };
+                    pending = s;
+                    s.StartThread(s.DopDecodeProc);
+                    return s;
+                }
+                case RenderKind.Eac3:
                 {
-                    _dsd = reader,
-                    _dsdRing = new DsdByteRing(channels, ringFrames, PrebufferFrames(byteRate), 300),
-                };
-                s.StartThread(s.DsdDecodeProc);
-                return s;
+                    var reader = atmosProbeCache?.TryOpen(path);
+                    if (atmosProbeCache == null)
+                    {
+                        reader = new Eac3BitstreamReader();
+                        if (!reader.Open(path)) { reader.Dispose(); return null; }
+                    }
+                    if (reader == null) return null;
+                    input = reader;
+                    const int rate = Eac3BitstreamReader.CarrierRate;
+                    var s = new Session(engine, kind, 2, rate, rate, reader.TotalMs, 0)
+                    {
+                        _eac3 = reader,
+                        IsAtmos = reader.IsAtmos,
+                        EncodedChannelMask = reader.EncodedChannelMask,
+                        _iecRing = new Iec61937Ring(RingCapacity(rate, latencyMs), PrebufferFrames(rate)),
+                    };
+                    pending = s;
+                    s.StartThread(s.Eac3DecodeProc);
+                    return s;
+                }
+                default:
+                {
+                    var reader = new DsdRawReader();
+                    input = reader;
+                    if (!reader.Open(path, source, cancellationToken)) { reader.Dispose(); return null; }
+                    int byteRate = reader.ByteRatePerChannel;
+                    int channels = reader.Channels;
+                    var buffering = DsdBuffering(source, byteRate, channels, latencyMs);
+                    var s = new Session(engine, kind, channels, byteRate, reader.DsdBitRate, reader.TotalMs, 0)
+                    {
+                        _dsd = reader,
+                        _dsdRing = new DsdByteRing(channels, buffering.Capacity, buffering.Initial, buffering.Timeout, buffering.Resume,
+                            nativeStorage: source?.Kind == PlaybackSourceKind.Http),
+                        InitialBufferFrames = buffering.Initial,
+                        CanSeek = reader.CanSeek,
+                    };
+                    pending = s;
+                    s.StartThread(s.DsdDecodeProc);
+                    return s;
+                }
             }
         }
+        catch
+        {
+            // A failed ring allocation or thread start must not retain a native decoder/callback.
+            if (pending != null) pending.Dispose();
+            else input?.Dispose();
+            throw;
+        }
+    }
+
+    private static (int Capacity, int Initial, int Resume, int Timeout) DsdBuffering(PlaybackSource? source, int rate, int bytesPerFrame, int latencyMs)
+    {
+        if (source?.Kind != PlaybackSourceKind.Http)
+            return (RingCapacity(rate, latencyMs), PrebufferFrames(rate), 0, 300);
+        int capacity = (int)Math.Min((long)rate * source.Buffer.CapacityMs / 1000, 64 * 1024 * 1024 / bytesPerFrame);
+        return (capacity, (int)Math.Min(capacity, (long)rate * source.Buffer.InitialMs / 1000),
+            (int)Math.Min(capacity, (long)rate * source.Buffer.ResumeMs / 1000), -1);
     }
 
     private static int RingCapacity(int framesPerSecond, int latencyMs)
@@ -368,7 +408,7 @@ internal sealed class Session : IRenderSource, IDisposable
                     continue; // 会话被 seek 重置：回循环顶处理待决 seek，从新位置继续
             }
         }
-        catch (Exception ex) { Console.WriteLine($"[decode] {ex.Message}"); _dopRing?.MarkInputEnded(_decodeEpoch); }
+        catch (Exception ex) { if (!_cancelled) Volatile.Write(ref _decodeFailure, ex); _dopRing?.MarkInputEnded(_decodeEpoch); }
         finally { DisposeDecoder(); }
     }
 
@@ -424,7 +464,7 @@ internal sealed class Session : IRenderSource, IDisposable
                 }
             }
         }
-        catch (Exception ex) { Console.WriteLine($"[decode] {ex.Message}"); _dsdRing?.MarkInputEnded(_decodeEpoch); }
+        catch (Exception ex) { if (!_cancelled) Volatile.Write(ref _decodeFailure, ex); _dsdRing?.MarkInputEnded(_decodeEpoch); }
         finally { DisposeDecoder(); }
     }
 
@@ -491,6 +531,12 @@ internal sealed class Session : IRenderSource, IDisposable
         _cancelled = true;
         CancelIo();
         WakeProducer();
+        // Ring locks drain in-flight copies and reject late producers/render callbacks.
+        // Large network pages can be released even if a decoder is still unwinding I/O.
+        _pcmRing?.Dispose();
+        _dopRing?.Dispose();
+        _dsdRing?.Dispose();
+        _iecRing?.Dispose();
         Effects?.Dispose();
         if (_thread == null) DisposeDecoder();
         else if (!_thread.Join(1000))

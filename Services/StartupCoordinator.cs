@@ -87,6 +87,15 @@ namespace WinUIMusicPlayer.Services
             App.Services.GetRequiredService<PlaybackProgressService>().Attach(ipcService, App.MainWindow.DispatcherQueue);
             shutdown.RegisterCleanup(App.MainWindow.Dispose);
             shutdown.RegisterCleanup(appViewModel.StopAsync);
+            var remoteLibrary = App.Services.GetRequiredService<WebDavLibraryService>();
+            var remotePlayback = App.Services.GetRequiredService<RemotePlaybackService>();
+            ipcService.AttachRemoteProgress(remotePlayback.GetProgress);
+            shutdown.RegisterStop(remotePlayback.StopAsync);
+            var remoteSources = App.Services.GetRequiredService<WebDavSourcesViewModel>();
+            shutdown.RegisterStop(remoteSources.StopAsync);
+            shutdown.RegisterStop(remoteLibrary.StopAsync);
+            await remoteLibrary.StartAsync(appViewModel);
+            await remoteSources.LoadAsync();
             shutdown.RegisterStop(appViewModel.StopAsync);
             shutdown.RegisterStop(App.Services.GetRequiredService<ApplicationTasks>().DrainAsync);
             var folders = App.Services.GetRequiredService<AddFolderViewModel>();
@@ -161,6 +170,7 @@ namespace WinUIMusicPlayer.Services
             shutdown.RegisterStop(watcher.StopAsync);
             shutdown.RegisterCleanup(watcher.StopAsync);
             await watcher.StartAsync();
+            await remoteLibrary.StartConfiguredScansAsync();
             cancellationToken.ThrowIfCancellationRequested();
             logger.LogInformation("协议确认后核心启动完成：{ElapsedMs} ms", startup.ElapsedMilliseconds);
         }

@@ -2,6 +2,8 @@
   <PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net11.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><AllowUnsafeBlocks>true</AllowUnsafeBlocks></PropertyGroup>
   <ItemGroup>
     <Compile Include="../../External/AudioPlayer/Playback/Ring.cs" Link="Ring.cs" />
+    <Compile Include="../../External/AudioPlayer/Playback/AudioRingMemory.cs" Link="AudioRingMemory.cs" />
+    <Compile Include="../PlaybackSwitchRegression/DsfHttpFixture.cs" Link="DsfHttpFixture.cs" />
     <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
   </ItemGroup>
 </Project>

@@ -99,6 +99,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             pCts.Dispose();
 
             _decodeChannel.Writer.TryComplete();
+            DrainDecodeChannel();
             _decodeSignal.Dispose();
 
             CancelAnimLock();

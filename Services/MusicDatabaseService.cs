@@ -76,6 +76,11 @@ namespace WinUIMusicPlayer.Services
                 {
                     _dbConnection = new SQLiteAsyncConnection(DbPath);
                     await _dbConnection.CreateTableAsync<Music>();
+                    await _dbConnection.ExecuteAsync("UPDATE Music SET SourceId = 0 WHERE SourceId IS NULL");
+                    await _dbConnection.CreateTableAsync<WebDavSource>();
+                    await _dbConnection.CreateTableAsync<RemoteTrack>();
+                    await _dbConnection.CreateTableAsync<WebDavCacheSettings>();
+                    await _dbConnection.ExecuteAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_RemoteTrack_Resource ON RemoteTrack(SourceId, Href COLLATE BINARY)");
                     await _dbConnection.CreateTableAsync<PendingMetadataWrite>();
                     await _dbConnection.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Music_Path_NoCase ON Music(Path COLLATE NOCASE)");
                     await _dbConnection.CreateTableAsync<MusicLyrics>();
@@ -549,8 +554,7 @@ namespace WinUIMusicPlayer.Services
             {
                 await _dbConnection.InsertAllAsync(toInsert);
             }
-            AppData.AllPlayListMusics = await _dbConnection.Table<PlayListMusic>().ToListAsync();
-            RefreshPlayListSongCount(playListId);
+            await GetPlayListMusic();
         }
 
         public async Task AddMusicToPlayList(int playListId, int musicId)
@@ -574,7 +578,7 @@ namespace WinUIMusicPlayer.Services
                 };
                 await _dbConnection.InsertAsync(playListMusic);
             }
-            AppData.AllPlayListMusics = await _dbConnection.Table<PlayListMusic>().ToListAsync();
+            await GetPlayListMusic();
         }
 
         private async Task<int> GetMaxOrder()
@@ -598,7 +602,7 @@ namespace WinUIMusicPlayer.Services
             var musicIdsString = string.Join(",", musicIds);
             var sql = $"DELETE FROM PlayListMusic WHERE PlayListId = ? AND MusicId IN ({musicIdsString})";
             await _dbConnection.ExecuteAsync(sql, playListId);
-            RefreshPlayListSongCount(playListId);
+            await GetPlayListMusic();
         }
 
         public async Task RemoveMusicFromPlayList(int playListId, int musicId)
@@ -611,7 +615,7 @@ namespace WinUIMusicPlayer.Services
             {
                 await _dbConnection.DeleteAsync(playListMusic);
             }
-            RefreshPlayListSongCount(playListId);
+            await GetPlayListMusic();
         }
 
         public async Task<int> InsertPlayList(PlayList playList)
@@ -843,47 +847,8 @@ namespace WinUIMusicPlayer.Services
             await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
             {
                 AppData.AllPlayListMusics = mappings;
-                RefreshAllPlayListSongCounts();
+                AppViewModel.RefreshPlayListSummaries();
             });
-        }
-
-        private void RefreshAllPlayListSongCounts()
-        {
-            var appVm = AppViewModel;
-            var counts = new Dictionary<int, int>();
-            for (int i = 0; i < AppData.AllPlayListMusics.Count; i++)
-            {
-                var plm = AppData.AllPlayListMusics[i];
-                if (!appVm.TryFindById(plm.MusicId, out var m) || m is null) continue;
-                if (!counts.ContainsKey(plm.PlayListId)) counts[plm.PlayListId] = 0;
-                counts[plm.PlayListId]++;
-            }
-            for (int i = 0; i < appVm.AllPlayList.Count; i++)
-            {
-                var pl = appVm.AllPlayList[i];
-                pl.SongCount = counts.GetValueOrDefault(pl.Id, 0);
-            }
-        }
-
-        private void RefreshPlayListSongCount(int playListId)
-        {
-            var appVm = AppViewModel;
-            int count = 0;
-            for (int i = 0; i < AppData.AllPlayListMusics.Count; i++)
-            {
-                var plm = AppData.AllPlayListMusics[i];
-                if (plm.PlayListId != playListId) continue;
-                if (!appVm.TryFindById(plm.MusicId, out var m) || m is null) continue;
-                count++;
-            }
-            for (int i = 0; i < appVm.AllPlayList.Count; i++)
-            {
-                if (appVm.AllPlayList[i].Id == playListId)
-                {
-                    appVm.AllPlayList[i].SongCount = count;
-                    return;
-                }
-            }
         }
 
         public async Task LoadMusicList()
@@ -909,10 +874,7 @@ namespace WinUIMusicPlayer.Services
         {
             string localizedUnknownAlbum = ToolUtils.GetString("UnknownAlbum");
             string localizedUnknownArtist = ToolUtils.GetString("UnknownArtist");
-            var musicList = await _dbConnection
-                .Table<Music>()
-                .OrderBy(m => m.Title)
-                .ToListAsync();
+            var musicList = await GetVisibleMusicAsync();
 
             // 优化7: AppData.UnknownAlbums / UnknownArtists 建议在 AppData 中改为 HashSet<string>
             // 以将 Contains 从 O(n) 降为 O(1)，此处调用方式不变，修改点在 AppData 定义处

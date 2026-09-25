@@ -69,7 +69,7 @@ namespace WinUIMusicPlayer.Extensions
             // 处理子菜单 (Children)
             if (model.Children != null && model.Children.AsValueEnumerable().Any())
             {
-                var subItem = new MenuFlyoutSubItem { Text = model.Title };
+                var subItem = new MenuFlyoutSubItem { Text = model.Title, IsEnabled = model.IsEnabled };
 
                 // 递归创建子项
                 foreach (var child in model.Children)
@@ -86,7 +86,8 @@ namespace WinUIMusicPlayer.Extensions
             {
                 Text = model.Title,
                 Command = model.Command,
-                CommandParameter = model.Tag
+                CommandParameter = model.Tag,
+                IsEnabled = model.IsEnabled
             };
         }
     }

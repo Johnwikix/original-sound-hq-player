@@ -80,7 +80,7 @@ public enum LoudnessStatus : byte
     PeakLimited,
     /// <summary>格式、声道布局或内容不支持分析。</summary>
     Unavailable,
-    /// <summary>分析失败，保持保守衰减播放。</summary>
+    /// <summary>分析失败，保留未知源的安全增益策略。</summary>
     Failed
 }
 

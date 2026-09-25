@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -10,11 +11,13 @@ using System.Threading.Tasks;
 using Windows.Storage;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Utils;
+using WinUIMusicPlayer.Constants;
 
 namespace WinUIMusicPlayer.Controls
 {
     public sealed partial class ImageSwitcher : UserControl
     {
+        private const int MaxCoverDecodePixelWidth = 1536;
         private static ILogger<ImageSwitcher> _logger = WinUIMusicPlayer.App.GetLogger<ImageSwitcher>();
 
         public int CornerRadiusAmount
@@ -58,6 +61,15 @@ namespace WinUIMusicPlayer.Controls
             DependencyProperty.Register(nameof(IsDark), typeof(bool), typeof(ImageSwitcher),
                 new PropertyMetadata(false, OnIsDarkChanged));
 
+        public bool IsActive
+        {
+            get => (bool)GetValue(IsActiveProperty);
+            set => SetValue(IsActiveProperty, value);
+        }
+        public static readonly DependencyProperty IsActiveProperty =
+            DependencyProperty.Register(nameof(IsActive), typeof(bool), typeof(ImageSwitcher),
+                new PropertyMetadata(true, OnIsActiveChanged));
+
         public string? ImageHash
         {
             get => (string?)GetValue(ImageHashProperty);
@@ -69,6 +81,7 @@ namespace WinUIMusicPlayer.Controls
 
         private readonly CoverLoadState _loadState = new();
         private CancellationTokenSource? _cts;
+        private DispatcherQueueTimer? _lastSourceClearTimer;
 
         public ImageSwitcher()
         {
@@ -79,9 +92,7 @@ namespace WinUIMusicPlayer.Controls
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
-            _cts?.Cancel();
-            _cts?.Dispose();
-            _cts = null;
+            StopPendingWork(clearLastSource: true);
             _loadState.Reset();
             AlbumArtImage.Source = null;
             LastAlbumArtImage.Source = null;
@@ -99,8 +110,26 @@ namespace WinUIMusicPlayer.Controls
             _ = switcher.UpdateSourceAsync();
         }
 
+        private static void OnIsActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            if (d is not ImageSwitcher switcher) return;
+
+            if ((bool)e.NewValue)
+            {
+                _ = switcher.UpdateSourceAsync();
+            }
+            else
+            {
+                // Detail 页收起时保留当前可见图，快速恢复可直接继续显示；
+                // 取消后台读取并释放过渡层的旧图，避免隐藏页继续持有大封面。
+                switcher.StopPendingWork(clearLastSource: true);
+            }
+        }
+
         private async Task UpdateSourceAsync()
         {
+            if (!IsActive) return;
+
             string? newHash = ImageHash;
             bool hasData = newHash is { Length: > 0 };
             bool isDark = IsDark;
@@ -117,13 +146,13 @@ namespace WinUIMusicPlayer.Controls
 
             if (hasData)
             {
-                string rawPath = ToolUtils.GetRawCachePath(newHash!);
+                string rawPath = ToolUtils.FindRawCachePath(newHash!);
                 if (File.Exists(rawPath))
                 {
                     try
                     {
-                        byte[] rawBytes = await Task.Run(() => File.ReadAllBytes(rawPath), token);
-                        imageSource = await ImageHelper.DecodeToBitmapAsync(rawBytes, 0, token);
+                        byte[] rawBytes = await File.ReadAllBytesAsync(rawPath, token);
+                        imageSource = await ImageHelper.DecodeToBitmapAsync(rawBytes, MaxCoverDecodePixelWidth, token);
                     }
                     catch (OperationCanceledException) { return; }
                     catch (Exception ex) { _logger.LogError(ex, "ImageSwitcher 从缓存加载失败"); }
@@ -200,6 +229,7 @@ namespace WinUIMusicPlayer.Controls
 
             LastAlbumArtImage.Opacity = 0;
             AlbumArtImage.Opacity = 1;
+            ScheduleLastSourceClear();
         }
 
         private void UpdateSourceSlide(ImageSource? source)
@@ -225,6 +255,7 @@ namespace WinUIMusicPlayer.Controls
             AlbumArtImage.Opacity = 1;
             LastAlbumArtImage.Translation = new(-(float)ActualWidth, 0, 0);
             AlbumArtImage.Translation = new();
+            ScheduleLastSourceClear();
         }
         private void UpdateSourceScaleInOut(ImageSource? source)
         {
@@ -257,6 +288,42 @@ namespace WinUIMusicPlayer.Controls
 
             AlbumArtImage.Scale = new(1f, 1f, 1f);
             AlbumArtImage.Opacity = 1f;
+            ScheduleLastSourceClear();
+        }
+
+        private void StopPendingWork(bool clearLastSource)
+        {
+            _cts?.Cancel();
+            _cts?.Dispose();
+            _cts = null;
+            StopLastSourceClearTimer();
+            if (clearLastSource)
+                LastAlbumArtImage.Source = null;
+        }
+
+        private void ScheduleLastSourceClear()
+        {
+            if (LastAlbumArtImage.Source is null) return;
+
+            _lastSourceClearTimer ??= DispatcherQueue.CreateTimer();
+            _lastSourceClearTimer.Stop();
+            _lastSourceClearTimer.Interval = Time.AnimationDuration;
+            _lastSourceClearTimer.Tick -= OnLastSourceClearTimerTick;
+            _lastSourceClearTimer.Tick += OnLastSourceClearTimerTick;
+            _lastSourceClearTimer.Start();
+        }
+
+        private void OnLastSourceClearTimerTick(DispatcherQueueTimer sender, object args)
+        {
+            StopLastSourceClearTimer();
+            LastAlbumArtImage.Source = null;
+        }
+
+        private void StopLastSourceClearTimer()
+        {
+            if (_lastSourceClearTimer is null) return;
+            _lastSourceClearTimer.Stop();
+            _lastSourceClearTimer.Tick -= OnLastSourceClearTimerTick;
         }
     }
 

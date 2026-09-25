@@ -76,6 +76,7 @@ namespace WinUIMusicPlayer.Utils
             return new Music
             {
                 Id = source.Id,
+                SourceId = source.SourceId,
                 Path = source.Path,
                 Title = source.Title,
                 Author = artistName,

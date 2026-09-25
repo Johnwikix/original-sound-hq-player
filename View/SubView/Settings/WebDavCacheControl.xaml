@@ -1,0 +1,31 @@
+<UserControl
+    x:Class="WinUIMusicPlayer.View.SubView.Settings.WebDavCacheControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:tools="using:WinUIMusicPlayer.Utils"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls">
+    <controls:SettingsExpander x:Uid="WebDavCacheExpander" IsExpanded="False">
+        <controls:SettingsExpander.HeaderIcon>
+            <FontIcon Glyph="&#xE896;" />
+        </controls:SettingsExpander.HeaderIcon>
+        <TextBlock Text="{x:Bind ViewModel.CacheSize, Mode=OneWay}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+        <controls:SettingsExpander.Items>
+            <controls:SettingsCard x:Uid="WebDavCacheCard">
+                <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                    <ToggleSwitch IsOn="{x:Bind ViewModel.CacheEnabled, Mode=TwoWay}" AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('WebDavCacheToggleLabel')}" />
+                    <NumberBox Width="110" Minimum="1" Maximum="1024" Value="{x:Bind ViewModel.CacheLimitGiB, Mode=TwoWay}" SpinButtonPlacementMode="Compact" AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('WebDavCacheLimitLabel')}" />
+                    <TextBlock Text="GiB" VerticalAlignment="Center" />
+                </StackPanel>
+            </controls:SettingsCard>
+            <controls:SettingsCard x:Uid="WebDavCacheLocationCard">
+                <TextBlock MaxWidth="300" Text="{x:Bind ViewModel.CacheDirectory, Mode=OneWay}" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
+            </controls:SettingsCard>
+            <controls:SettingsCard x:Uid="WebDavCacheCleanupCard">
+                <Button x:Uid="WebDavClearCacheButton" Command="{x:Bind ViewModel.ClearCacheCommand}" />
+            </controls:SettingsCard>
+            <controls:SettingsCard ContentAlignment="Left" Visibility="{x:Bind tools:BindUtils.NonEmptyTextVisibility(ViewModel.Status), Mode=OneWay}">
+                <TextBlock Text="{x:Bind ViewModel.Status, Mode=OneWay}" TextWrapping="Wrap" />
+            </controls:SettingsCard>
+        </controls:SettingsExpander.Items>
+    </controls:SettingsExpander>
+</UserControl>

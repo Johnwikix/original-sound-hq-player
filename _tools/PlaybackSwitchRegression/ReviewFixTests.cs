@@ -30,6 +30,21 @@ internal static unsafe partial class Program
             effects.Configure(new DspSettings { NormalizeLoudness = true, IsEnabled = false });
             Require(effects.GetState(0, false).GainDb == 0, "disabled DSP still claims attenuation");
         });
+        Run("Loudness: remote source starts at neutral gain while analysis is pending", () =>
+        {
+            using var effects = new PcmEffects(48000, 2);
+            var source = new PlaybackSource
+            {
+                Kind = PlaybackSourceKind.Http, ResourceId = "remote-track",
+                Location = "http://127.0.0.1/remote.flac", FileExtension = ".flac"
+            };
+            effects.SetFile(source.Location, 88200, 6, source);
+            effects.Configure(new DspSettings { NormalizeLoudness = true });
+            double[] samples = [1, 1];
+            effects.ApplyInput(samples, 1);
+            Require(samples[0] == 1 && samples[1] == 1, "remote source was attenuated before measurement");
+            Require(effects.GetState(0, false).GainDb == 0, "remote pending gain was not neutral");
+        });
         Run("Loudness: measured gain rises smoothly and attenuation settles in 50ms", () =>
         {
             using var effects = new PcmEffects(48000, 2);

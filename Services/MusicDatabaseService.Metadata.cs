@@ -17,6 +17,7 @@ public partial class MusicDatabaseService
     public async Task QueueMetadataWriteAsync(Music music, byte[]? cover, string? lyrics, string? krc,
         string? translatedLyrics, string? translatedKrc)
     {
+        if (music.IsRemote) throw new InvalidOperationException(ToolUtils.GetString("WebDavReadOnly"));
         var request = new PendingMetadataWrite
         {
             Path = Path.GetFullPath(music.Path), Title = music.Title, Album = music.Album,

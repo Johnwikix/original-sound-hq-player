@@ -29,6 +29,8 @@ namespace WinUIMusicPlayer.View
             NavigationCacheMode = Microsoft.UI.Xaml.Navigation.NavigationCacheMode.Disabled;
         }
 
+        private async void AddWebDav_Click(object sender, RoutedEventArgs e) => await RemoteSources.ShowAddAsync();
+
         // 拖放属视图层交互：DragOver/DragLeave 只驱动 DropOverlay 瞬时反馈，
         // Drop 提取文件夹后转发 ViewModel.DropFoldersAsync（含 Loading 状态与入库逻辑）。
 

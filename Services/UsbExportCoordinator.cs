@@ -21,6 +21,13 @@ public sealed class UsbExportCoordinator(AppState state, ApplicationTasks tasks,
     {
         if (!state.Lifecycle.IsReady) return Task.CompletedTask;
         var snapshot = new List<Music>(selected);
+        if (snapshot.Exists(static music => music.IsRemote))
+        {
+            state.Shell.InfoBarTitle = ToolUtils.GetString("Error");
+            state.Shell.InfoBarMessage = ToolUtils.GetString("WebDavReadOnly");
+            state.Shell.InfoBarIsOpen = true;
+            return Task.CompletedTask;
+        }
         return tasks.RunAsync(token => ExportCoreAsync(snapshot, device, format, bitRateKbps, token));
     }
 

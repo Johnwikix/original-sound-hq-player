@@ -9,6 +9,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
     xmlns:ui="using:CommunityToolkit.WinUI"
+    xmlns:settings="using:WinUIMusicPlayer.View.SubView.Settings"
     mc:Ignorable="d">
 
     <ScrollViewer Style="{StaticResource SettingsScrollViewerStyle}">
@@ -116,7 +117,7 @@
                 <controls:SettingsExpander x:Uid="AboutCacheExpander">
                     <Button x:Uid="OpenCacheFolderButton" Command="{x:Bind ViewModel.AppViewModel.OpenCoverCacheLocationCommand, Mode=OneWay}" />
                     <controls:SettingsExpander.Items>
-                        <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}">
+                        <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('CacheRootDescription'), Mode=OneWay}">
                             <controls:SettingsCard.Header>
                                 <TextBlock x:Uid="CoverDiskCache" />
                             </controls:SettingsCard.Header>
@@ -149,6 +150,8 @@
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
+
+                <settings:WebDavCacheControl />
 
                 <!--  日志  -->
                 <controls:SettingsCard x:Uid="AboutLogCard">

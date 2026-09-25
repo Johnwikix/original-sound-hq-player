@@ -74,6 +74,9 @@ namespace WinUIMusicPlayer.ViewModel
         {
             UpdateAlbumMenuOptionsPlayList();
             UpDateUsbDeviceMenuflyout();
+            var songs = AppViewModel.SongsSource.Where(m =>
+                SelectedItem is not null && ArtistHelper.IsMusicByArtist(m, SelectedItem.Author));
+            ToolUtils.UpdateMusicMenuAvailability(ArtistMenuOptions, songs, SelectedItem);
         }
 
         public void UpDateUsbDeviceMenuflyout()

@@ -57,6 +57,7 @@
                         <uc:ImageSwitcher
                             CornerRadiusAmount="12"
                             ImageHash="{x:Bind ViewModel.AppViewModel.LyricPageBackgroundHash, Mode=OneWay}"
+                            IsActive="{x:Bind ViewModel.AppViewModel.IsPlayingDetailVisible, Mode=OneWay}"
                             IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
                             ShadowAmount="16"
                             SwitchType="{x:Bind model:AppSettings.ImageSwitchType, Mode=OneWay}" />
@@ -328,7 +329,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.AppViewModel.FastBackwardButtonCommand, Mode=OneWay}"
-                            IsEnabled="{x:Bind tools:BindUtils.IsPlaybackEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsPlaybackEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic.IsPlayable), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="18" Glyph="&#xED3C;" />
                         </Button>
@@ -357,7 +358,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.Playback.ToggleCommand, Mode=OneWay}"
-                            IsEnabled="{x:Bind tools:BindUtils.IsPlaybackEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsPlayButtonEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource PlayButtonStyle}">
                             <FontIcon
                                 Width="32"
@@ -389,7 +390,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.AppViewModel.FastForwardButtonCommand, Mode=OneWay}"
-                            IsEnabled="{x:Bind tools:BindUtils.IsPlaybackEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsPlaybackEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic.IsPlayable), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="18" Glyph="&#xED3D;" />
                         </Button>
@@ -403,7 +404,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.AppViewModel.StopButtonChangedCommand, Mode=OneWay}"
-                            IsEnabled="{x:Bind tools:BindUtils.IsPlaybackEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
+                            IsEnabled="{x:Bind tools:BindUtils.IsPlayButtonEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="18" Glyph="&#xEE95;" />
                         </Button>

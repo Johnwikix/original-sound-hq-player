@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Services/WebDav/*.cs" Link="WebDav/%(Filename)%(Extension)" />
+    <Compile Include="../../Reader/AudioCoverReader.cs" Link="AudioCoverReader.cs" />
+    <Compile Include="../PlaybackSwitchRegression/DsfHttpFixture.cs" Link="DsfHttpFixture.cs" />
+    <PackageReference Include="FFmpeg.AutoGen" Version="9.0.1.1" />
+    <PackageReference Include="z440.atl.core" Version="7.17.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
+    <Compile Include="../../Model/WebDavSource.cs" Link="WebDavSource.cs" />
+    <Compile Include="../../ViewModel/Pages/WebDavConnectionViewModel.cs" Link="WebDavConnectionViewModel.cs" />
+    <Compile Include="../../ViewModel/Pages/WebDavTreeItem.cs" Link="WebDavTreeItem.cs" />
+    <Compile Include="../../Utils/WebDavText.cs" Link="WebDavText.cs" />
+  </ItemGroup>
+</Project>

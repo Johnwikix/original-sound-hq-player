@@ -40,45 +40,66 @@ internal static class CoverLoadQueue
         });
 
     private static readonly List<Thread> _workers = new();
+    private static readonly Channel<CoverLoadRequest> _remoteChannel = Channel.CreateBounded<CoverLoadRequest>(
+        new BoundedChannelOptions(64) { SingleReader = true, FullMode = BoundedChannelFullMode.Wait });
     private static readonly CancellationTokenSource _shutdownCts = new();
     private static readonly object _initLock = new();
     private static int _initialized;
 
-    private static readonly ConcurrentDictionary<string, Task<ImageSource?>> _pendingTasks = new();
+    private sealed class DecodedCover(int width, int height, byte[] pixels)
+    {
+        public int Width { get; } = width;
+        public int Height { get; } = height;
+        public byte[] Pixels { get; } = pixels;
+    }
+
+    private static readonly ConcurrentDictionary<string, Task<DecodedCover?>> _pendingTasks = new();
 
     private readonly record struct CoverLoadRequest(
         Music Music,
         string CacheKey,
         int CoverSize,
-        TaskCompletionSource<ImageSource?> Tcs,
+        TaskCompletionSource<DecodedCover?> Tcs,
         CancellationToken Token);
 
-    public static Task<ImageSource?> EnqueueAsync(Music music, CancellationToken token)
+    public static async Task<ImageSource?> EnqueueAsync(Music music, CancellationToken token)
     {
         EnsureInitialized();
         var cacheKey = CacheKey(music);
-
-        if (_pendingTasks.TryGetValue(cacheKey, out var existing))
+        Task<DecodedCover?> sharedTask;
+        while (true)
         {
-            if (!existing.IsCompleted || existing.Status == TaskStatus.RanToCompletion)
-                return existing;
-            ((ICollection<KeyValuePair<string, Task<ImageSource?>>>)_pendingTasks)
-                .Remove(new KeyValuePair<string, Task<ImageSource?>>(cacheKey, existing));
+            if (_pendingTasks.TryGetValue(cacheKey, out var existing))
+            {
+                if (!existing.IsCompleted || existing.Status == TaskStatus.RanToCompletion)
+                {
+                    sharedTask = existing;
+                    break;
+                }
+
+                ((ICollection<KeyValuePair<string, Task<DecodedCover?>>>)_pendingTasks)
+                    .Remove(new KeyValuePair<string, Task<DecodedCover?>>(cacheKey, existing));
+                continue;
+            }
+
+            var tcs = new TaskCompletionSource<DecodedCover?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            // 共享的是有界的解码像素，而不是 SoftwareBitmapSource。
+            // 每个消费者随后创建并拥有自己的 WinRT source，可独立 Dispose。
+            var req = new CoverLoadRequest(music, cacheKey, CoverSize, tcs, CancellationToken.None);
+
+            if (!_pendingTasks.TryAdd(cacheKey, tcs.Task)) continue;
+            if (!(music.IsRemote ? _remoteChannel : _channel).Writer.TryWrite(req))
+            {
+                _pendingTasks.TryRemove(cacheKey, out _);
+                tcs.TrySetResult(null);
+            }
+            sharedTask = tcs.Task;
+            break;
         }
 
-        var tcs = new TaskCompletionSource<ImageSource?>(TaskCreationOptions.RunContinuationsAsynchronously);
-        // 用 None 取消 token 避免如下问题：
-        // 同一 ImageHash 的多个消费者共享同一个 tcs.Task，
-        // 第一个消费者的 token 若被 CancelLoad 取消，会连锁取消共享 tcs → 其他消费者丢图
-        var req = new CoverLoadRequest(music, cacheKey, CoverSize, tcs, CancellationToken.None);
-
-        if (_pendingTasks.TryAdd(cacheKey, tcs.Task))
-        {
-            _channel.Writer.TryWrite(req);
-            return tcs.Task;
-        }
-
-        return _pendingTasks[cacheKey];
+        var decoded = await sharedTask.WaitAsync(token);
+        if (decoded is null || token.IsCancellationRequested) return null;
+        return await CreateImageSourceAsync(decoded, token);
     }
 
     private static void EnsureInitialized()
@@ -88,9 +109,10 @@ internal static class CoverLoadQueue
         {
             if (_initialized != 0) return;
             int n = Math.Max(1, WorkerCount);
-            for (int i = 0; i < n; i++)
+            for (int i = 0; i <= n; i++)
             {
-                var t = new Thread(WorkerLoop)
+                var channel = i == n ? _remoteChannel : _channel;
+                var t = new Thread(() => WorkerLoop(channel))
                 {
                     Name = $"AlbumCoverLoader#{i}",
                     IsBackground = true,
@@ -103,13 +125,13 @@ internal static class CoverLoadQueue
         }
     }
 
-    private static void WorkerLoop()
+    private static void WorkerLoop(Channel<CoverLoadRequest> channel)
     {
         while (!_shutdownCts.IsCancellationRequested)
         {
             try
             {
-                InnerLoop();
+                InnerLoop(channel);
             }
             catch (Exception ex)
             {
@@ -119,7 +141,7 @@ internal static class CoverLoadQueue
         }
     }
 
-    private static void InnerLoop()
+    private static void InnerLoop(Channel<CoverLoadRequest> channel)
     {
         var ct = _shutdownCts.Token;
         while (!ct.IsCancellationRequested)
@@ -127,7 +149,7 @@ internal static class CoverLoadQueue
             CoverLoadRequest req;
             try
             {
-                req = _channel.Reader.ReadAsync(ct).AsTask().GetAwaiter().GetResult();
+                req = channel.Reader.ReadAsync(ct).AsTask().GetAwaiter().GetResult();
             }
             catch (OperationCanceledException) { return; }
             catch (ChannelClosedException) { return; }
@@ -153,7 +175,7 @@ internal static class CoverLoadQueue
         }
     }
 
-    private static async Task<ImageSource?> LoadAndDecodeAsync(CoverLoadRequest req)
+    private static async Task<DecodedCover?> LoadAndDecodeAsync(CoverLoadRequest req)
     {
         req.Token.ThrowIfCancellationRequested();
 
@@ -164,7 +186,7 @@ internal static class CoverLoadQueue
             var thumbPath = GetThumbCachePath(req.Music.ImageHash, req.CoverSize);
             if (File.Exists(thumbPath))
             {
-                if (File.GetLastWriteTime(thumbPath) > File.GetLastWriteTime(req.Music.Path))
+                if (req.Music.IsRemote || File.GetLastWriteTime(thumbPath) > File.GetLastWriteTime(req.Music.Path))
                 {
                     var result = await LoadThumbFromCacheAsync(thumbPath, req.Token);
                     if (result != null) return result;
@@ -188,7 +210,7 @@ internal static class CoverLoadQueue
         req.Token.ThrowIfCancellationRequested();
 
         // ② 缓存未命中：获取原始图片 → WIC 解码到缩略图尺寸 → 缓存 → 显示
-        byte[]? picture = await ToolUtils.GetRawImage(req.Music);
+        byte[]? picture = await ToolUtils.GetRawImage(req.Music, false, req.Token);
         if (picture is not { Length: > 0 }) return null;
 
         req.Token.ThrowIfCancellationRequested();
@@ -196,13 +218,12 @@ internal static class CoverLoadQueue
         return await DecodeAndCacheThumbAsync(picture, req.Music, req.CoverSize, req.Token);
     }
 
-    private static async Task<ImageSource?> LoadThumbFromCacheAsync(
+    private static async Task<DecodedCover?> LoadThumbFromCacheAsync(
         string cachePath, CancellationToken token)
     {
         try
         {
             var header = ArrayPool<byte>.Shared.Rent(54);
-            byte[]? pixelRented = null;
             int w, h;
             int pixelBytes;
 
@@ -250,34 +271,15 @@ internal static class CoverLoadQueue
                         return null;
                     }
 
-                    pixelRented = ArrayPool<byte>.Shared.Rent(pixelBytes);
-                    await fs.ReadExactlyAsync(pixelRented.AsMemory(0, pixelBytes), token);
+                    var pixels = new byte[pixelBytes];
+                    await fs.ReadExactlyAsync(pixels.AsMemory(), token);
+                    return new DecodedCover(w, h, pixels);
                 }
             }
             finally
             {
                 ArrayPool<byte>.Shared.Return(header, clearArray: false);
             }
-
-            ImageSource? result = null;
-            try
-            {
-                await App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
-                {
-                    if (token.IsCancellationRequested) return;
-                    using var softwareBitmap = new SoftwareBitmap(
-                        BitmapPixelFormat.Bgra8, w, h, BitmapAlphaMode.Premultiplied);
-                    softwareBitmap.CopyFromBuffer(pixelRented.AsBuffer(0, pixelBytes));
-                    var source = new SoftwareBitmapSource();
-                    await source.SetBitmapAsync(softwareBitmap);
-                    result = source;
-                });
-            }
-            finally
-            {
-                ArrayPool<byte>.Shared.Return(pixelRented, clearArray: false);
-            }
-            return result;
         }
         catch (OperationCanceledException) { return null; }
         catch (Exception ex)
@@ -288,7 +290,7 @@ internal static class CoverLoadQueue
         }
     }
 
-    private static async Task<ImageSource?> DecodeAndCacheThumbAsync(
+    private static async Task<DecodedCover?> DecodeAndCacheThumbAsync(
         byte[] picture, Music music, int coverSize, CancellationToken token)
     {
         SoftwareBitmap? softwareBitmap = null;
@@ -314,81 +316,89 @@ internal static class CoverLoadQueue
                 ExifOrientationMode.RespectExifOrientation,
                 ColorManagementMode.DoNotColorManage);
 
-            // 写缩略图像素缓存（8B 头 + Bgra8 裸像素，90KB）
+            uint w = (uint)softwareBitmap.PixelWidth;
+            uint h = (uint)softwareBitmap.PixelHeight;
+            int pixelBytes = checked((int)(w * h * 4));
+            var pixels = new byte[pixelBytes];
+            softwareBitmap.CopyToBuffer(pixels.AsBuffer());
+
+            // 写缩略图像素缓存（Bgra8 裸像素，约 90KB）
             if (music.ImageHash is { Length: > 0 })
             {
                 try
                 {
-                    uint w = (uint)softwareBitmap.PixelWidth;
-                    uint h = (uint)softwareBitmap.PixelHeight;
-                    int pixelBytes = (int)(w * h * 4);
-                    var pixelRented = ArrayPool<byte>.Shared.Rent(pixelBytes);
-                    try
-                    {
-                        softwareBitmap.CopyToBuffer(pixelRented.AsBuffer(0, pixelBytes));
+                    var thumbPath = GetThumbCachePath(music.ImageHash, coverSize);
+                    Directory.CreateDirectory(Path.GetDirectoryName(thumbPath)!);
 
-                        var thumbPath = GetThumbCachePath(music.ImageHash, coverSize);
-                        Directory.CreateDirectory(Path.GetDirectoryName(thumbPath)!);
+                    Span<byte> header = stackalloc byte[54];
+                    header[0] = (byte)'B'; header[1] = (byte)'M';
+                    BinaryPrimitives.WriteUInt32LittleEndian(header[2..], (uint)(14 + 40 + pixelBytes));
+                    BinaryPrimitives.WriteUInt32LittleEndian(header[6..], 0);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header[10..], 54);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header[14..], 40);
+                    BinaryPrimitives.WriteInt32LittleEndian(header[18..], (int)w);
+                    BinaryPrimitives.WriteInt32LittleEndian(header[22..], -(int)h);
+                    BinaryPrimitives.WriteUInt16LittleEndian(header[26..], 1);
+                    BinaryPrimitives.WriteUInt16LittleEndian(header[28..], 32);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header[30..], 0);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header[34..], (uint)pixelBytes);
+                    BinaryPrimitives.WriteInt32LittleEndian(header[38..], 0);
+                    BinaryPrimitives.WriteInt32LittleEndian(header[42..], 0);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header[46..], 0);
+                    BinaryPrimitives.WriteUInt32LittleEndian(header[50..], 0);
 
-                        Span<byte> header = stackalloc byte[54];
-                        header[0] = (byte)'B'; header[1] = (byte)'M';
-                        BinaryPrimitives.WriteUInt32LittleEndian(header[2..], (uint)(14 + 40 + pixelBytes));
-                        BinaryPrimitives.WriteUInt32LittleEndian(header[6..], 0);
-                        BinaryPrimitives.WriteUInt32LittleEndian(header[10..], 54);
-                        BinaryPrimitives.WriteUInt32LittleEndian(header[14..], 40);
-                        BinaryPrimitives.WriteInt32LittleEndian(header[18..], (int)w);
-                        BinaryPrimitives.WriteInt32LittleEndian(header[22..], -(int)h);
-                        BinaryPrimitives.WriteUInt16LittleEndian(header[26..], 1);
-                        BinaryPrimitives.WriteUInt16LittleEndian(header[28..], 32);
-                        BinaryPrimitives.WriteUInt32LittleEndian(header[30..], 0);
-                        BinaryPrimitives.WriteUInt32LittleEndian(header[34..], (uint)pixelBytes);
-                        BinaryPrimitives.WriteInt32LittleEndian(header[38..], 0);
-                        BinaryPrimitives.WriteInt32LittleEndian(header[42..], 0);
-                        BinaryPrimitives.WriteUInt32LittleEndian(header[46..], 0);
-                        BinaryPrimitives.WriteUInt32LittleEndian(header[50..], 0);
-
-                        await using var fs = new FileStream(
-                            thumbPath, FileMode.Create, FileAccess.Write,
-                            FileShare.None, bufferSize: 8192, useAsync: true);
-                        fs.Write(header);
-                        await fs.WriteAsync(pixelRented.AsMemory(0, pixelBytes));
-                    }
-                    finally
-                    {
-                        ArrayPool<byte>.Shared.Return(pixelRented, clearArray: false);
-                    }
+                    await using var fs = new FileStream(
+                        thumbPath, FileMode.Create, FileAccess.Write,
+                        FileShare.None, bufferSize: 8192, useAsync: true);
+                    fs.Write(header);
+                    await fs.WriteAsync(pixels.AsMemory(), token);
                 }
                 catch (OperationCanceledException) { }
                 catch (Exception ex) { _logger?.LogError(ex, "写缩略图缓存失败"); }
             }
 
-            ImageSource? result = null;
-            await App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
-            {
-                if (token.IsCancellationRequested) return;
-                try
-                {
-                    var source = new SoftwareBitmapSource();
-                    await source.SetBitmapAsync(softwareBitmap);
-                    result = source;
-                }
-                catch (Exception ex)
-                {
-                    _logger?.LogError(ex, "SoftwareBitmapSource.SetBitmapAsync 失败");
-                }
-                finally
-                {
-                    softwareBitmap?.Dispose();
-                    softwareBitmap = null;
-                }
-            });
-            return result;
+            token.ThrowIfCancellationRequested();
+            return new DecodedCover((int)w, (int)h, pixels);
         }
         catch (Exception ex)
         {
             _logger?.LogError(ex, "DecodeAndCacheThumbAsync 失败");
-            softwareBitmap?.Dispose();
             return null;
+        }
+        finally { softwareBitmap?.Dispose(); }
+    }
+
+    private static async Task<ImageSource?> CreateImageSourceAsync(DecodedCover decoded, CancellationToken token)
+    {
+        ImageSource? result = null;
+        SoftwareBitmapSource? source = null;
+        try
+        {
+            await App.MainWindow.DispatcherQueue.EnqueueAsync(async () =>
+            {
+                token.ThrowIfCancellationRequested();
+                using var softwareBitmap = new SoftwareBitmap(
+                    BitmapPixelFormat.Bgra8,
+                    decoded.Width,
+                    decoded.Height,
+                    BitmapAlphaMode.Premultiplied);
+                softwareBitmap.CopyFromBuffer(decoded.Pixels.AsBuffer());
+                source = new SoftwareBitmapSource();
+                await source.SetBitmapAsync(softwareBitmap);
+                result = source;
+                source = null;
+            });
+            return result;
+        }
+        catch (OperationCanceledException) { return null; }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "创建缩略图 SoftwareBitmapSource 失败");
+            return null;
+        }
+        finally
+        {
+            source?.Dispose();
         }
     }
 
@@ -410,6 +420,12 @@ internal static class CoverLoadQueue
         if (Interlocked.Exchange(ref _initialized, 0) == 0) return;
         _shutdownCts.Cancel();
         _channel.Writer.TryComplete();
+        _remoteChannel.Writer.TryComplete();
+        while (_remoteChannel.Reader.TryRead(out var request))
+        {
+            _pendingTasks.TryRemove(request.CacheKey, out _);
+            request.Tcs.TrySetCanceled();
+        }
 
         var t = timeout ?? TimeSpan.FromSeconds(3);
         foreach (var w in _workers)

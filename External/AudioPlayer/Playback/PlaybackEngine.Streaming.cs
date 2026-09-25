@@ -62,7 +62,7 @@ public sealed partial class PlaybackEngine
             if (command.Method == "capabilities") return new()
             {
                 RequestId = command.RequestId, Accepted = true,
-                Capabilities = ["local-file", "http-pcm", "prepare", "pause-during-prepare", "bounded-preload", "seek", "source-refresh", "buffer-status"]
+                Capabilities = ["local-file", "http-pcm", "http-dsd", "prepare", "pause-during-prepare", "bounded-preload", "seek", "source-refresh", "buffer-status"]
             };
             if (command.Method == "prepare")
             {
@@ -141,12 +141,13 @@ public sealed partial class PlaybackEngine
     private void BeginPreparation(StreamSlot slot)
     {
         int dsdRate = DsdPcmFreq, dsdGain = DsdGain, latency = Latency;
+        RenderKind kind = StreamingKind(slot.Source);
         slot.Work = Task.Run(async () =>
         {
             Session? prepared = null;
             try
             {
-                prepared = Session.Open(this, slot.Source.Location, RenderKind.Pcm, dsdRate, dsdGain, latency,
+                prepared = Session.Open(this, slot.Source.Location, kind, dsdRate, dsdGain, latency,
                     maxChannels: 2, source: slot.Source, cancellationToken: slot.Cancel.Token);
                 if (prepared is null) throw new IOException("OpenFailed");
                 slot.Cancel.Token.ThrowIfCancellationRequested();
@@ -184,6 +185,16 @@ public sealed partial class PlaybackEngine
         });
         _streamWork.TryAdd(slot.Work, 0);
         _ = ObservePreparationAsync(slot.Work);
+    }
+
+    private RenderKind StreamingKind(PlaybackSource source)
+    {
+        if (!IsDopEnabled || IsSharedMode(OutputMode)) return RenderKind.Pcm;
+        string extension = source.FileExtension.Length > 0 ? source.FileExtension :
+            Path.GetExtension(source.Kind == PlaybackSourceKind.Http ? new Uri(source.Location).AbsolutePath : source.Location);
+        if (!extension.Equals(".dsf", StringComparison.OrdinalIgnoreCase) && !extension.Equals(".dff", StringComparison.OrdinalIgnoreCase))
+            return RenderKind.Pcm;
+        return OutputMode == "ASIO" ? RenderKind.NativeDsd : RenderKind.Dop;
     }
 
     private async Task ObservePreparationAsync(Task task)

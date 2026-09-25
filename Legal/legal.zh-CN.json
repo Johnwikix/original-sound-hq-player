@@ -98,7 +98,7 @@
         {
           "title": "4. 保存位置与管理",
           "paragraphs": [
-            "主要数据库、设置及日志位于用户文档目录下的 OriginalSoundPlayer 文件夹；缓存位置可在应用设置中查看或更改。协议同意记录位于应用可访问的本地应用数据目录下 OriginalSoundPlayer/agreement.json，包含版本、语言和 UTC 同意时间。",
+            "主要数据库、设置及日志位于用户文档目录下的 OriginalSoundPlayer 文件夹；缓存位置可在应用设置中查看或更改。协议同意记录位于用户文档目录下 OriginalSoundPlayer/Agreement/agreement.json，包含版本、语言和 UTC 同意时间。",
             "你可以在应用中管理音乐库与缓存，或退出应用后备份、删除相应应用数据。删除数据库或设置会丢失本地列表、统计或偏好；删除协议记录会在下次启动时重新要求确认。卸载不保证自动删除文档目录和自定义缓存中的文件。"
           ]
         },

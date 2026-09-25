@@ -69,7 +69,7 @@ namespace WinUIMusicPlayer.View.SubView
         {
             this.InitializeComponent();
             MusicDetail = music;
-            AlbumMusics = App.Services.GetRequiredService<AppViewModel>().SongsSource.AsValueEnumerable().Where(m => m.Album == MusicDetail.Album).ToList();
+            AlbumMusics = App.Services.GetRequiredService<AppViewModel>().SongsSource.AsValueEnumerable().Where(m => m.Album == MusicDetail.Album && m.SourceId == MusicDetail.SourceId).ToList();
             AppWindow.TitleBar.PreferredTheme = TitleBarTheme.UseDefaultAppMode;
             AppWindow.TitleBar.ExtendsContentIntoTitleBar = true;
             AppWindow.TitleBar.PreferredHeightOption = TitleBarHeightOption.Standard;
@@ -143,6 +143,7 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void SaveToDataBaseButton_Click(object sender, RoutedEventArgs e)
         {
+            if (MusicDetail.IsRemote) return;
             try
             {
                 foreach (Music music in AlbumMusics)
@@ -187,6 +188,7 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)
         {
+            if (MusicDetail.IsRemote) return;
             ConfirmFlyout.Hide();
             try
             {
@@ -215,6 +217,7 @@ namespace WinUIMusicPlayer.View.SubView
 
         private async void SelectCoverImageButton_Click(object sender, RoutedEventArgs e)
         {
+            if (MusicDetail.IsRemote) return;
             try
             {
                 var openPicker = new Microsoft.Windows.Storage.Pickers.FileOpenPicker(App.MainWindow.AppWindow.Id);

@@ -13,7 +13,7 @@ using WinUIMusicPlayer.Helper;
 namespace WinUIMusicPlayer.Services;
 
 /// <summary>设置页面的平台操作；共享偏好通过 AppState 发布。</summary>
-public sealed partial class SettingsActions(AppState state, MusicDatabaseService database, ILogger<SettingsActions> logger)
+public sealed partial class SettingsActions(AppState state, MusicDatabaseService database, WebDavLibraryService webDav, ILogger<SettingsActions> logger)
 {
     [RelayCommand]
     private void OnBackdropTypeChanged(string type)
@@ -135,6 +135,7 @@ public sealed partial class SettingsActions(AppState state, MusicDatabaseService
         try
         {
             string cacheRoot = state.Preferences.MusicCoverCache;
+            await webDav.ClearCoverCacheAsync(cacheRoot);
             await Task.Run(() =>
             {
                 // 根目录下的 .bin 为网络封面原图缓存

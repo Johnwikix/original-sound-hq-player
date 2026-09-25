@@ -11,6 +11,8 @@
     <UseWinUI>true</UseWinUI>
     <EnableMsixTooling>true</EnableMsixTooling>
     <Nullable>enable</Nullable>
+	<!-- 本地诊断源码及其生成文件不属于主程序；Git 忽略规则不影响 SDK 的默认文件扫描。 -->
+	<DefaultItemExcludes>$(DefaultItemExcludes);artifacts\**</DefaultItemExcludes>
 	<WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
   </PropertyGroup>
   <ItemGroup>
@@ -271,6 +273,7 @@
   </ItemGroup>
   <ItemGroup>
 	  <TrimmerRootAssembly Include="SQLite-net" />
+	  <TrimmerRootAssembly Include="System.IO.Pipes" />
 	  <TrimmerRootAssembly Include="SQLitePCLRaw.core" />
 	  <TrimmerRootDescriptor Include="TrimmerRoots.xml" />
   </ItemGroup>

@@ -21,6 +21,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
             var oldCts = Interlocked.Exchange(ref _pipelineCts, new CancellationTokenSource());
             oldCts.Cancel();
             oldCts.Dispose();
+            DrainDecodeChannel();
 
             _cachedContentW = -1f;
             _cachedContentH = -1f;
@@ -84,16 +85,17 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                 var req = Interlocked.Exchange(ref _pendingRequest, null);
                 if (req == null) continue;
 
+                DecodedFrame frame = default;
+                bool frameOwned = false;
                 try
                 {
-                    DecodedFrame frame;
-
                     if (req.Bytes is { Length: > 0 })
                     {
                         try
                         {
                             var d = await DecodeImageAsync(req.Bytes, ct).ConfigureAwait(false);
                             frame = d ?? throw new InvalidDataException("Image decoding returned null.");
+                            frameOwned = frame.IsPooled;
                         }
                         catch (Exception ex) when (ex is not OperationCanceledException)
                         {
@@ -102,6 +104,7 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                             var d = await GetOrDecodeDefaultAsync(req.IsDark, ct).ConfigureAwait(false);
                             if (d == null) continue;
                             frame = d.Value;
+                            frameOwned = frame.IsPooled;
                         }
                     }
                     else
@@ -109,9 +112,11 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                         var d = await GetOrDecodeDefaultAsync(req.IsDark, ct).ConfigureAwait(false);
                         if (d == null) continue;
                         frame = d.Value;
+                        frameOwned = frame.IsPooled;
                     }
 
                     await _decodeChannel.Writer.WriteAsync((frame, req), ct).ConfigureAwait(false);
+                    frameOwned = false;
 
                     _canvas?.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Normal,
                         () => _canvas?.Invalidate());
@@ -122,7 +127,24 @@ namespace AnimatedWin2dControls.Controls.AlbumImgControl
                     System.Diagnostics.Debug.WriteLine(
                         $"[AlbumArt] Critical error in pipeline: {ex.Message}");
                 }
+                finally
+                {
+                    if (frameOwned)
+                        ReturnFrame(frame);
+                }
             }
+        }
+
+        private void DrainDecodeChannel()
+        {
+            while (_decodeChannel.Reader.TryRead(out var item))
+                ReturnFrame(item.Frame);
+        }
+
+        private static void ReturnFrame(DecodedFrame frame)
+        {
+            if (frame.IsPooled && frame.Pixels is not null)
+                ArrayPool<byte>.Shared.Return(frame.Pixels, clearArray: false);
         }
 
         // ── 图像解码 ──────────────────────────────────────────────────────────

@@ -1115,7 +1115,7 @@
     <value>Quitar carpeta</value>
   </data>
   <data name="CoverDiskCache.Text" xml:space="preserve">
-    <value>Caché de disco de portada</value>
+    <value>Ubicación de la caché</value>
   </data>
   <data name="OfficialWebSite.Content" xml:space="preserve">
     <value>OfficialWebSite</value>
@@ -1616,7 +1616,7 @@
     <value>Caché</value>
   </data>
   <data name="AboutCacheExpander.Description" xml:space="preserve">
-    <value>Caché de imágenes de portada y ubicación de almacenamiento</value>
+    <value>Ubicación de caché compartida para portadas y WebDAV</value>
   </data>
   <data name="OpenCacheFolderButton.Content" xml:space="preserve">
     <value>Abrir carpeta de caché</value>
@@ -2005,5 +2005,269 @@
   </data>
   <data name="RemoveExternalImportsTitle" xml:space="preserve">
     <value>¿Eliminar todas las canciones importadas externamente?</value>
+  </data>
+  <data name="WebDavAllSources" xml:space="preserve">
+    <value>Todas las fuentes</value>
+  </data>
+  <data name="WebDavLocalSources" xml:space="preserve">
+    <value>Local</value>
+  </data>
+  <data name="WebDavOpening" xml:space="preserve">
+    <value>Abriendo pista remota…</value>
+  </data>
+  <data name="WebDavBuffering" xml:space="preserve">
+    <value>Almacenando en búfer…</value>
+  </data>
+  <data name="WebDavReady" xml:space="preserve">
+    <value>Listo</value>
+  </data>
+  <data name="WebDavPlaying" xml:space="preserve">
+    <value>Reproducción en línea</value>
+  </data>
+  <data name="WebDavPaused" xml:space="preserve">
+    <value>En pausa</value>
+  </data>
+  <data name="WebDavEnded" xml:space="preserve">
+    <value>Reproducción finalizada</value>
+  </data>
+  <data name="WebDavStopped" xml:space="preserve">
+    <value>Detenido</value>
+  </data>
+  <data name="WebDavFailed" xml:space="preserve">
+    <value>Error de conexión; puedes reintentar</value>
+  </data>
+  <data name="WebDavScanning" xml:space="preserve">
+    <value>Actualizando carpetas</value>
+  </data>
+  <data name="WebDavMetadata" xml:space="preserve">
+    <value>Leyendo información de pistas</value>
+  </data>
+  <data name="WebDavCompleted" xml:space="preserve">
+    <value>Actualización completada</value>
+  </data>
+  <data name="WebDavCancelled" xml:space="preserve">
+    <value>Exploración en pausa</value>
+  </data>
+  <data name="WebDavScanSummary" xml:space="preserve">
+    <value>{0} · {1} encontradas · {2} procesadas</value>
+  </data>
+  <data name="WebDavConnecting" xml:space="preserve">
+    <value>Conectando…</value>
+  </data>
+  <data name="WebDavConnected" xml:space="preserve">
+    <value>Acceso verificado. Selecciona carpetas de música.</value>
+  </data>
+  <data name="WebDavEntireRoot" xml:space="preserve">
+    <value>Toda la carpeta raíz</value>
+  </data>
+  <data name="WebDavTestFirst" xml:space="preserve">
+    <value>Primero conecta y verifica la dirección y la cuenta.</value>
+  </data>
+  <data name="WebDavChooseFolder" xml:space="preserve">
+    <value>Selecciona al menos una carpeta.</value>
+  </data>
+  <data name="WebDavRemoveConfirm" xml:space="preserve">
+    <value>¿Eliminar esta fuente y sus entradas? Se conservarán los archivos remotos.</value>
+  </data>
+  <data name="WebDavReadOnly" xml:space="preserve">
+    <value>Los archivos remotos son de solo lectura. No se pueden escribir etiquetas ni realizar operaciones locales.</value>
+  </data>
+  <data name="WebDavBrowserHint" xml:space="preserve">
+    <value>Las pistas indexadas se reproducen en el orden en que se seleccionan.</value>
+  </data>
+  <data name="WebDavBrowserTreeHelp.Text" xml:space="preserve">
+    <value>Expande las carpetas y marca las pistas. Marcar una carpeta solo selecciona las pistas ya visibles.</value>
+  </data>
+  <data name="WebDavFolderTreeHelp.Text" xml:space="preserve">
+    <value>Expande las carpetas y elige una o varias carpetas de música. Una carpeta principal incluye sus subcarpetas.</value>
+  </data>
+  <data name="WebDavPlaySelectedButton.Content" xml:space="preserve">
+    <value>Reproducir selección</value>
+  </data>
+  <data name="WebDavSelectedCountLabel.Text" xml:space="preserve">
+    <value>Pistas seleccionadas:</value>
+  </data>
+  <data name="WebDavIndexFirst" xml:space="preserve">
+    <value>Actualiza esta fuente para añadir la pista a la biblioteca.</value>
+  </data>
+  <data name="WebDavCacheUnavailable" xml:space="preserve">
+    <value>La caché no está disponible. Puedes seguir reproduciendo en línea.</value>
+  </data>
+  <data name="WebDavErrorConnectionFailed" xml:space="preserve">
+    <value>No se puede leer el recurso remoto. Comprueba la conexión y reintenta.</value>
+  </data>
+  <data name="WebDavAuthenticationError" xml:space="preserve">
+    <value>Credenciales o permisos no válidos. Edita la fuente.</value>
+  </data>
+  <data name="WebDavAddressError" xml:space="preserve">
+    <value>Introduce una dirección WebDAV HTTP(S) válida. Las redirecciones deben estar permitidas.</value>
+  </data>
+  <data name="WebDavNameError" xml:space="preserve">
+    <value>Introduce un nombre de fuente único.</value>
+  </data>
+  <data name="WebDavMissingError" xml:space="preserve">
+    <value>Fuente desactivada o pista eliminada. Actualiza la fuente.</value>
+  </data>
+  <data name="WebDavChangedError" xml:space="preserve">
+    <value>El archivo remoto cambió. Actualiza la fuente y vuelve a reproducir.</value>
+  </data>
+  <data name="WebDavRangeError" xml:space="preserve">
+    <value>Este recurso no admite rangos; puede que no permita buscar ni leer etiquetas.</value>
+  </data>
+  <data name="WebDavConnectionDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Guardar y explorar</value>
+  </data>
+  <data name="WebDavConnectionDialog.CloseButtonText" xml:space="preserve">
+    <value>Cancelar</value>
+  </data>
+  <data name="WebDavConnectionHelp.Text" xml:space="preserve">
+    <value>Compatible con NAS y OpenList/AList. Solo lectura; HTTP no está cifrado. Deja la cuenta vacía para acceso anónimo.</value>
+  </data>
+  <data name="WebDavName.Header" xml:space="preserve">
+    <value>Nombre de fuente</value>
+  </data>
+  <data name="WebDavAddress.Header" xml:space="preserve">
+    <value>Dirección WebDAV</value>
+  </data>
+  <data name="WebDavUserName.Header" xml:space="preserve">
+    <value>Usuario</value>
+  </data>
+  <data name="WebDavPassword.Header" xml:space="preserve">
+    <value>Contraseña (vacía al editar para conservarla)</value>
+  </data>
+  <data name="WebDavConnectButton.Content" xml:space="preserve">
+    <value>Conectar y elegir carpetas</value>
+  </data>
+  <data name="WebDavReadMetadata.Content" xml:space="preserve">
+    <value>Leer información en segundo plano</value>
+  </data>
+  <data name="WebDavScanOnStartup.Content" xml:space="preserve">
+    <value>Actualizar carpetas al iniciar</value>
+  </data>
+  <data name="WebDavSourceEnabled.Content" xml:space="preserve">
+    <value>Activar esta fuente</value>
+  </data>
+<data name="WebDavBrowseButton.Content" xml:space="preserve">
+    <value>Explorar</value>
+  </data>
+<data name="WebDavPauseButton.Content" xml:space="preserve">
+    <value>Pausar exploración</value>
+  </data>
+<data name="WebDavRemoveButton.Content" xml:space="preserve">
+    <value>Eliminar</value>
+  </data>
+  <data name="WebDavBrowserDialog.CloseButtonText" xml:space="preserve">
+    <value>Cerrar</value>
+  </data>
+  <data name="WebDavUpButton.Content" xml:space="preserve">
+    <value>Carpeta superior</value>
+  </data>
+<data name="WebDavCacheTitle.Text" xml:space="preserve">
+    <value>Caché de reproducción WebDAV</value>
+  </data>
+  <data name="WebDavCacheCard.Header" xml:space="preserve">
+    <value>Guardar en caché al reproducir</value>
+  </data>
+<data name="WebDavCacheHelp.Text" xml:space="preserve">
+    <value>Guarda el audio original que reproduces. Elimina entradas antiguas al alcanzar el límite. Desactivarlo detiene las descargas; la caché completa sigue disponible.</value>
+  </data>
+  <data name="WebDavClearCacheButton.Content" xml:space="preserve">
+    <value>Vaciar caché</value>
+  </data>
+  <data name="MusicSources.Text" xml:space="preserve"><value>Fuentes de música</value></data>
+  <data name="WebDavPauseMenu.Text" xml:space="preserve"><value>Pausar exploración</value></data>
+  <data name="WebDavEditMenu.Text" xml:space="preserve"><value>Editar</value></data>
+  <data name="WebDavRemoveMenu.Text" xml:space="preserve"><value>Eliminar</value></data>
+  <data name="MusicSourcesSubtitle.Text" xml:space="preserve">
+    <value>Gestiona carpetas locales y música de red en una biblioteca.</value>
+  </data>
+  <data name="MusicSourcesAdd" xml:space="preserve">
+    <value>Añadir origen</value>
+  </data>
+  <data name="MusicSourcesLocal" xml:space="preserve">
+    <value>Carpetas locales</value>
+  </data>
+  <data name="MusicSourcesLocalEmpty.Text" xml:space="preserve">
+    <value>Añade una carpeta local o arrástrala aquí.</value>
+  </data>
+  <data name="WebDavSourcesEmpty.Text" xml:space="preserve">
+    <value>Conecta carpetas de música de un NAS, OpenList u otro servicio WebDAV.</value>
+  </data>
+  <data name="WebDavCacheExpander.Header" xml:space="preserve">
+    <value>Caché de reproducción WebDAV</value>
+  </data>
+  <data name="WebDavCacheExpander.Description" xml:space="preserve">
+    <value>Guarda música al reproducirla y gestiona las descargas y el espacio.</value>
+  </data>
+  <data name="WebDavCacheToggleLabel" xml:space="preserve">
+    <value>Guardar en caché al reproducir</value>
+  </data>
+  <data name="WebDavCacheLimitLabel" xml:space="preserve">
+    <value>Límite de caché (GiB)</value>
+  </data>
+  <data name="WebDavCacheCleanupCard.Header" xml:space="preserve">
+    <value>Borrar audio descargado</value>
+  </data>
+  <data name="WebDavMoreAction" xml:space="preserve">
+    <value>Más acciones</value>
+  </data>
+  <data name="WebDavBrowseAction" xml:space="preserve">
+    <value>Explorar</value>
+  </data>
+  <data name="WebDavScanAction" xml:space="preserve">
+    <value>Actualizar</value>
+  </data>
+  <data name="WebDavCacheLocationCard.Header" xml:space="preserve">
+    <value>Ubicación de caché</value>
+  </data>
+  <data name="WebDavCacheLocationCard.Description" xml:space="preserve">
+    <value>Usa la subcarpeta WebDav de la ubicación de caché indicada arriba.</value>
+  </data>
+  <data name="CacheRootDescription" xml:space="preserve">
+    <value>Las portadas y WebDAV comparten esta carpeta. Al cambiarla, la caché se crea según se necesita y se conservan los archivos anteriores.</value>
+  </data>
+  <data name="WebDavTlsError" xml:space="preserve">
+    <value>No se puede establecer una conexión HTTPS segura. Comprueba el certificado del NAS y la configuración TLS.</value>
+  </data>
+  <data name="WebDavCertificateUntrusted" xml:space="preserve">
+    <value>No se pudo verificar el certificado. Edita la conexión para revisarlo y confiar en él solo para este origen.</value>
+  </data>
+  <data name="WebDavCertificateChanged" xml:space="preserve">
+    <value>El certificado del servidor difiere del guardado. Edita la conexión para revisarlo de nuevo.</value>
+  </data>
+  <data name="WebDavCertificateTitle" xml:space="preserve">
+    <value>Revisar certificado del servidor</value>
+  </data>
+  <data name="WebDavCertificateHelp" xml:space="preserve">
+    <value>Compara la huella SHA-256 con la página de administración del NAS. La confirmación solo se aplica a esta dirección y certificado. Un certificado nuevo requiere otra confirmación. No se modifica la confianza del sistema.</value>
+  </data>
+  <data name="WebDavCertificateDetails" xml:space="preserve">
+    <value>Dirección: {0}
+Sujeto: {1}
+Emisor: {2}
+Validez: {3:g} — {4:g}
+SHA-256: {5}
+{6}</value>
+  </data>
+  <data name="WebDavCertificateNameMismatch" xml:space="preserve">
+    <value>La dirección no coincide con el nombre del certificado.</value>
+  </data>
+  <data name="WebDavCertificateChainError" xml:space="preserve">
+    <value>La cadena de certificados no superó la verificación del sistema.</value>
+  </data>
+  <data name="WebDavCertificateExpired" xml:space="preserve">
+    <value>El certificado ha caducado o aún no es válido. Actualiza primero el certificado del NAS.</value>
+  </data>
+  <data name="WebDavTrustCertificate" xml:space="preserve">
+    <value>Confirmar certificado y reconectar</value>
+  </data>
+  <data name="WebDavCertificateRemembered" xml:space="preserve">
+    <value>Se ha confirmado un certificado para este origen y se recordará al guardar. Si cambia, la conexión se detendrá hasta confirmarlo de nuevo.</value>
+  </data>
+  <data name="WebDavForgetCertificate" xml:space="preserve">
+    <value>Olvidar certificado confirmado</value>
+  </data>
+  <data name="WebDavCachedAudio" xml:space="preserve">
+    <value>WebDAV · Audio en caché</value>
   </data>
 </root>

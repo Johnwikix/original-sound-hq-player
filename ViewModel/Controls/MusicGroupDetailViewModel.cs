@@ -257,7 +257,7 @@ namespace WinUIMusicPlayer.ViewModel.Controls
             for (int i = 0; i < srcSpan.Length; i++)
             {
                 var music = srcSpan[i];
-                if (music.Album != album.Album) continue;
+                if (music.Album != album.Album || !LibraryQueries.MatchesSource(music, State.Browse.SourceFilterId)) continue;
                 count++;
                 if (!string.IsNullOrEmpty(music.Author) && _seenAuthors.Add(music.Author))
                 {
@@ -315,8 +315,8 @@ namespace WinUIMusicPlayer.ViewModel.Controls
         {
             try
             {
-                if (AppViewModel.CurrentPlayingList is not null && AppViewModel.CurrentPlayingMusic is not null &&
-                    AppViewModel.TryFindById(AppViewModel.CurrentPlayingMusic.Id, out var m) && m is not null)
+                if (AppViewModel.CurrentPlayingList is not null && AppViewModel.SelectedPlaybackMusic is not null &&
+                    AppViewModel.TryFindById(AppViewModel.SelectedPlaybackMusic.Id, out var m) && m is not null)
                 {
                     SelectedMusic = m;
                     _view?.OnScrollToMusic(m);
@@ -549,6 +549,14 @@ namespace WinUIMusicPlayer.ViewModel.Controls
 
         public void UpDateUsbDeviceMenuflyout()
             => ToolUtils.UpdateUsbSendMenu(MenuOptions, TransmitFileToUsbCommand);
+
+        [RelayCommand]
+        private void PrepareMenu()
+        {
+            UpdateAlbumMenuOptionsPlayList();
+            UpDateUsbDeviceMenuflyout();
+            ToolUtils.UpdateMusicMenuAvailability(MenuOptions, SelectedMusics, SelectedMusic);
+        }
 
         public void UpdateAlbumMenuOptionsPlayList()
         {

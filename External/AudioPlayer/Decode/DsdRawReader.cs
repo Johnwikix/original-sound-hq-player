@@ -1,4 +1,5 @@
 using FFmpeg.AutoGen;
+using BassPlayerIpc.Shared;
 
 namespace AudioPlayer.Decode;
 
@@ -13,6 +14,9 @@ namespace AudioPlayer.Decode;
 /// </summary>
 internal sealed unsafe class DsdRawReader : IDisposable
 {
+    private FfmpegHttpInput? _network;
+    public bool CanSeek { get; private set; } = true;
+    public void CancelIo() => _network?.Cancel();
     private AVFormatContext* _fmt;
     private AVPacket* _pkt;
     private int _streamIndex = -1;
@@ -27,12 +31,12 @@ internal sealed unsafe class DsdRawReader : IDisposable
     /// <summary>Native DSD 位率（DSD64=2822400）。</summary>
     public int DsdBitRate => ByteRatePerChannel * 8;
 
-    public bool Open(string path)
+    public bool Open(string path, PlaybackSource? source = null, CancellationToken cancellationToken = default)
     {
         Dispose();
         try
         {
-            if (Path.GetExtension(path).Equals(".wv", StringComparison.OrdinalIgnoreCase))
+            if (source?.Kind != PlaybackSourceKind.Http && Path.GetExtension(path).Equals(".wv", StringComparison.OrdinalIgnoreCase))
             {
                 _wavpack = new WavPackDsdReader();
                 if (!_wavpack.Open(path)) return false;
@@ -42,8 +46,22 @@ internal sealed unsafe class DsdRawReader : IDisposable
                 return true;
             }
             AVFormatContext* fmt = null;
-            if (ffmpeg.avformat_open_input(&fmt, path, null, null) < 0 || fmt == null) return false;
-            _fmt = fmt;
+            AVDictionary* options = null;
+            int result;
+            try
+            {
+                if (source?.Kind == PlaybackSourceKind.Http)
+                {
+                    _network = new FfmpegHttpInput(source, cancellationToken);
+                    fmt = _network.AllocateContext(&options);
+                    _fmt = fmt;
+                }
+                result = ffmpeg.avformat_open_input(&fmt, path, null, &options);
+                _fmt = fmt;
+            }
+            finally { ffmpeg.av_dict_free(&options); }
+            if (result < 0 || fmt == null) return false;
+            CanSeek = (source?.CanSeek ?? true) && (fmt->pb == null || (fmt->pb->seekable & ffmpeg.AVIO_SEEKABLE_NORMAL) != 0);
             if (ffmpeg.avformat_find_stream_info(_fmt, null) < 0) return false;
 
             int si = ffmpeg.av_find_best_stream(_fmt, AVMediaType.AVMEDIA_TYPE_AUDIO, -1, -1, null, 0);
@@ -99,7 +117,8 @@ internal sealed unsafe class DsdRawReader : IDisposable
     public bool SeekToMs(long ms)
     {
         if (_wavpack != null) return _wavpack.SeekToMs(ms);
-        if (_fmt == null) return false;
+        if (_fmt == null || !CanSeek) return false;
+        _network?.BeginRead();
         double seconds = ms / 1000.0;
         long target = (long)Math.Round(seconds * ByteRatePerChannel); // 每声道字节位置 = pts
         if (ffmpeg.av_seek_frame(_fmt, _streamIndex, target, ffmpeg.AVSEEK_FLAG_BACKWARD) < 0)
@@ -117,7 +136,11 @@ internal sealed unsafe class DsdRawReader : IDisposable
         if (_fmt == null) return 0;
         while (true)
         {
-            if (ffmpeg.av_read_frame(_fmt, _pkt) < 0) return 0;
+            _network?.BeginRead();
+            int result = ffmpeg.av_read_frame(_fmt, _pkt);
+            if (result == ffmpeg.AVERROR_EOF) return 0;
+            if (result == ffmpeg.AVERROR(ffmpeg.EAGAIN)) continue;
+            if (result < 0) throw new IOException($"DSD input read error {result}.");
             if (_pkt->stream_index == _streamIndex) break;
             ffmpeg.av_packet_unref(_pkt);
         }
@@ -170,5 +193,7 @@ internal sealed unsafe class DsdRawReader : IDisposable
         _wavpack = null;
         if (_pkt != null) { AVPacket* p = _pkt; _pkt = null; ffmpeg.av_packet_free(&p); }
         if (_fmt != null) { AVFormatContext* f = _fmt; _fmt = null; ffmpeg.avformat_close_input(&f); }
+        _network?.Dispose();
+        _network = null;
     }
 }

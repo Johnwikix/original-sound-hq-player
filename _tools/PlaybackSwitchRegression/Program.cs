@@ -30,6 +30,19 @@ internal static unsafe partial class Program
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(WasapiOutput))]
     private static int Main(string[] args)
     {
+        if (args.Length == 1 && args[0] is "--test-network-asio" or "--test-nas-dsf")
+        {
+            FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
+            if (args[0] == "--test-network-asio") Run("real ASIO network switches", CheckRealAsioNetworkMemory);
+            else Run("real NAS DSF bridge seek and cover", CheckNasDsf);
+            return _failures == 0 ? 0 : 1;
+        }
+        if (args.Length == 1 && args[0] == "--test-network-dsf")
+        {
+            FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
+            RunNetworkDsfTests();
+            return _failures == 0 ? 0 : 1;
+        }
         if (args.Length == 3 && args[0] == "--test-atmos-file")
         {
             FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
@@ -65,6 +78,7 @@ internal static unsafe partial class Program
         string root = args.Length > 0 ? Path.GetFullPath(args[0]) : Directory.GetCurrentDirectory();
         FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
         RunPcmFileTests(Path.Combine(AppContext.BaseDirectory, "Fixtures", "eac3-5.1.m4a"));
+        RunPcmFileTests(Path.Combine(AppContext.BaseDirectory, "Fixtures", "flac-invalid-tail.flac"), expectedFrames: 264600);
         RunExportTests(Path.Combine(AppContext.BaseDirectory, "Fixtures", "eac3-5.1.m4a"));
         RunExportTests(Path.Combine(root, "_tools", "test_tone.wav"));
         WriteDsfFixture();
