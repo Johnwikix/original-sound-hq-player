@@ -177,10 +177,13 @@ public sealed class PlaybackProgressService(AppState state, SystemMediaControlsS
             state.Playback.ElapsedTimeText = CurrentTime.TotalHours >= 1
                 ? CurrentTime.ToString(@"hh\:mm\:ss", CultureInfo.InvariantCulture)
                 : CurrentTime.ToString(@"mm\:ss", CultureInfo.InvariantCulture);
-            state.Playback.TotalTimeText = TotalTime.TotalHours >= 1
-                ? TotalTime.ToString(@"hh\:mm\:ss", CultureInfo.InvariantCulture)
-                : TotalTime.ToString(@"mm\:ss", CultureInfo.InvariantCulture);
-
+            // 滑块右侧显示剩余时间（总时长 − 当前进度）；curMs 可能瞬时越过 totalMs，钳到 0 避免负值。
+            long remainingMs = totalMs - curMs;
+            if (remainingMs < 0) remainingMs = 0;
+            var remaining = TimeSpan.FromMilliseconds(remainingMs);
+            state.Playback.RemainingTimeText = remaining.TotalHours >= 1
+                ? remaining.ToString(@"hh\:mm\:ss", CultureInfo.InvariantCulture)
+                : remaining.ToString(@"mm\:ss", CultureInfo.InvariantCulture);
             if (Environment.TickCount64 - _lastSmtcUpdateTick >= 250)
             {
                 _lastSmtcUpdateTick = Environment.TickCount64;

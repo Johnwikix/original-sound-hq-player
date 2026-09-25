@@ -238,7 +238,7 @@
                         Margin="10,0,10,1"
                         VerticalAlignment="Center"
                         FontSize="14"
-                        Text="{x:Bind ViewModel.AppViewModel.TotalTimeText, Mode=OneWay}" />
+                        Text="{x:Bind ViewModel.AppViewModel.RemainingTimeText, Mode=OneWay}" />
                 </Grid>
                 <Grid
                     Grid.Row="1"

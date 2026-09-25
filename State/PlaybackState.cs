@@ -12,7 +12,7 @@ public sealed class PlaybackState : ObservableObject
     public bool IsPlaying { get; internal set => SetProperty(ref field, value); }
     public string PlayTimeText { get; set => SetProperty(ref field, value); } = "00:00/00:00";
     public string ElapsedTimeText { get; set => SetProperty(ref field, value); } = "00:00";
-    public string TotalTimeText { get; set => SetProperty(ref field, value); } = "00:00";
+    public string RemainingTimeText { get; set => SetProperty(ref field, value); } = "00:00";
     public double ProgressSliderMax { get; set => SetProperty(ref field, value); } = 100;
     public TimeSpan CurrentPlayingTime { get; set => SetProperty(ref field, value); } = TimeSpan.Zero;
     public bool IsPlaybackEngineReady { get; set => SetProperty(ref field, value); }

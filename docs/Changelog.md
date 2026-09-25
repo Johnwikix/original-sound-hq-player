@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-09-25 播放进度条右侧改显剩余时间
+
+- `Services/PlaybackProgressService.cs`：滑块右侧文本由总时长改为剩余时间（总时长 − 当前进度，倒数归零），`curMs` 越过 `totalMs` 时钳到 0；SMTC 时间线仍上报总时长。
+- `State/PlaybackState.cs`、`ViewModel/AppViewModel.cs`：`TotalTimeText` 更名 `RemainingTimeText`，初始值不变。
+- `View/MainPage.xaml`、`View/PlayingDetailPage.xaml`：`PlayTimeTextBlock`/`PlayTimeTextBlockPlayingDetail` 绑定改指 `RemainingTimeText`。
+
 ## 2026-09-25 修复来源探活误停播放及待播期间暂停失效
 
 - `ViewModel/Pages/WebDavSourcesViewModel.cs`：来源状态通知只更新来源展示，播放服务继续负责真实断流的停止与自动恢复，完整缓存播放不再被探活失败打断。
