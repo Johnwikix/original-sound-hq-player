@@ -56,6 +56,30 @@ public partial class MusicDatabaseService
     }
     public Task SaveWebDavCacheSettingsAsync(WebDavCacheSettings settings) => _dbConnection.InsertOrReplaceAsync(settings);
 
+    private sealed class SourceTrackCount
+    {
+        public int SourceId { get; set; }
+        public int Count { get; set; }
+    }
+
+    /// <summary>各 WebDAV 来源的常驻曲目数；与可见曲库同口径，只统计 Missing = 0 的远程曲目。</summary>
+    public async Task<Dictionary<int, int>> GetWebDavSourceTrackCountsAsync()
+    {
+        await WhenInitialized;
+        var rows = await _dbConnection.QueryAsync<SourceTrackCount>(
+            "SELECT SourceId, COUNT(*) AS Count FROM RemoteTrack WHERE Missing = 0 GROUP BY SourceId");
+        var counts = new Dictionary<int, int>(rows.Count);
+        foreach (var row in rows) counts[row.SourceId] = row.Count;
+        return counts;
+    }
+
+    public async Task<int> GetWebDavSourceTrackCountAsync(int sourceId)
+    {
+        await WhenInitialized;
+        return await _dbConnection.ExecuteScalarAsync<int>(
+            "SELECT COUNT(*) FROM RemoteTrack WHERE SourceId = ? AND Missing = 0", sourceId);
+    }
+
     public async Task<List<Music>> CommitRemoteEntriesAsync(WebDavSource source, string parent, string run, IReadOnlyList<WebDavEntry> entries)
     {
         var changed = new List<Music>(entries.Count);

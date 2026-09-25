@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-09-25 消除 WebDAV 启动扫描列表闪烁并常驻来源曲目数
+
+- `Services/WebDavLibraryService.cs`：扫描批次发布不再逐批 `NotifySongsSourceChanged`（原先每个目录/每 64 首/每 16 条元数据整表 Reset 曲目列表，启动自动扫描期间持续闪烁），新增曲目沿用本地扫描的增量追加口径；元数据阶段实际写入后收敛一次排序与各页投影。
+- `Services/MusicDatabaseService.WebDav.cs`：新增按来源统计可见远程曲目数（`Missing = 0`）的查询。
+- `ViewModel/Pages/WebDavSourcesViewModel.cs`、`View/SubView/WebDavSourcesControl.xaml`：WebDAV 来源行常驻显示曲目数（与本地文件夹行同款式、复用 `FolderNumberOfSongs` 文案），加载时填充、扫描结束（完成/失败/取消）后刷新。
+
 ## 2026-09-24 分离 WebDAV 选中状态、缓存可播放性与断流恢复
 
 - `PlaybackState.cs`、`PlaybackCoordinator.cs`、列表 ViewModel：待播行立即选中，实际播放信息延后提交；连续切歌取消旧等待，停止取消待播，旧结果不会覆盖新选择。

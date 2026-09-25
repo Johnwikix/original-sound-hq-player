@@ -245,7 +245,7 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
             if (_library is not null) await _library.RefreshSongsSourceAsync(token).ConfigureAwait(false);
             if (source.ReadMetadata)
             {
-                int after = 0;
+                int after = 0, applied = 0;
                 while (true)
                 {
                     token.ThrowIfCancellationRequested();
@@ -270,13 +270,16 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
                         { status = "Deferred"; }
                         finally { _metadataSlots.Release(); }
                         var music = await database.CommitRemoteMetadataAsync(remote, metadata, status).ConfigureAwait(false);
-                        if (music is not null) changed.Add(music);
+                        if (music is not null) { changed.Add(music); applied++; }
                         tagged++;
                         if (changed.Count >= 16) { await PublishBatchAsync(changed).ConfigureAwait(false); changed.Clear(); }
                         Publish(new(source.Id, "Metadata", found, tagged));
                     }
                     if (changed.Count != 0) await PublishBatchAsync(changed).ConfigureAwait(false);
                 }
+                // 元数据就地更新不重排列表；实际写入后收敛一次排序与各页投影。
+                if (applied != 0) await App.MainWindow.DispatcherQueue.EnqueueAsync(
+                    () => { if (!_stop.IsCancellationRequested) _library?.NotifySongsSourceChanged(); }).ConfigureAwait(false);
             }
             Publish(new(source.Id, "Completed", found, tagged));
         }
@@ -294,7 +297,7 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
 
     private Task PublishBatchAsync(IReadOnlyList<Music> batch) => App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
     {
-        if (_stop.IsCancellationRequested || _library is null) return;
+        if (_stop.IsCancellationRequested || _library is null || batch.Count == 0) return;
         List<Music> added = [];
         foreach (var item in batch)
         {
@@ -308,8 +311,10 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
             current.Channel = item.Channel; current.Duration = item.Duration; current.ImageHash = item.ImageHash;
             current.Extension = item.Extension;
         }
+        // 与本地扫描批次同口径：新增增量进当前列表，就地更新元数据即可；
+        // 逐批 NotifySongsSourceChanged 会让曲目列表整表 Reset（扫描期间持续闪烁），
+        // 排序与各页投影由扫描结束时的统一刷新收敛。
         if (added.Count != 0) _library.AppendSongsBatch(added);
-        _library.NotifySongsSourceChanged();
     });
 
     public async Task<(WebDavSource Source, RemoteTrack Track)> ResolveAsync(Music music)

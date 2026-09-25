@@ -66,6 +66,8 @@ public partial class WebDavSourcesViewModel : ObservableObject
             if (_stopped) return;
             var sources = await _database.GetWebDavSourcesAsync();
             if (_stopped) return;
+            var trackCounts = await _database.GetWebDavSourceTrackCountsAsync();
+            if (_stopped) return;
             foreach (var music in _app.SongsSource)
                 if (music.IsRemote) music.IsRemoteOffline = _library.IsSourceOffline(music.SourceId);
             Sources.Clear();
@@ -76,6 +78,7 @@ public partial class WebDavSourcesViewModel : ObservableObject
                 var item = new WebDavSourceItem(source, this);
                 item.Update(_library.GetStatus(source.Id));
                 item.UpdateAvailability(_library.IsSourceOffline(source.Id));
+                item.SongCount = trackCounts.TryGetValue(source.Id, out int count) ? count : 0;
                 Sources.Add(item);
                 Choices.Add(new(source.Id, source.Name));
             }
@@ -116,6 +119,20 @@ public partial class WebDavSourcesViewModel : ObservableObject
     {
         if (_stopped) return;
         foreach (var item in Sources) if (item.Source.Id == status.SourceId) { item.Update(status); break; }
+        if (status.Phase is "Completed" or "Failed" or "Cancelled") _ = RefreshTrackCountAsync(status.SourceId);
+    }
+
+    /// <summary>扫描结束（含失败/取消）后从数据库刷新该来源的常驻曲目数。</summary>
+    private async Task RefreshTrackCountAsync(int sourceId)
+    {
+        try
+        {
+            int count = await _database.GetWebDavSourceTrackCountAsync(sourceId);
+            if (_stopped) return;
+            foreach (var item in Sources)
+                if (item.Source.Id == sourceId) { item.SongCount = count; break; }
+        }
+        catch { /* 计数刷新失败不影响来源行的其他状态。 */ }
     }
     private void OnSourceAvailabilityChanged(int sourceId, bool offline)
     {
@@ -195,6 +212,7 @@ public partial class WebDavSourceItem : ObservableObject
     public string Address => Source.BaseUri;
     public string Status { get; private set => SetProperty(ref field, value); } = "";
     public bool IsOffline { get; private set => SetProperty(ref field, value); }
+    public int SongCount { get; internal set => SetProperty(ref field, value); }
     public IAsyncRelayCommand ScanCommand { get; }
     public IAsyncRelayCommand PauseCommand { get; }
     public IAsyncRelayCommand RemoveCommand { get; }

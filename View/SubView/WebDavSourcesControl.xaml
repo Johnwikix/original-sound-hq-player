@@ -37,6 +37,10 @@
                                 <TextBlock Text="{x:Bind Status, Mode=OneWay}" FontSize="12" Foreground="{ThemeResource TextFillColorTertiaryBrush}" TextTrimming="CharacterEllipsis" />
                             </StackPanel>
                             <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="2" VerticalAlignment="Center">
+                                <StackPanel Margin="0,0,8,0" VerticalAlignment="Center" Opacity="0.7" Orientation="Horizontal">
+                                    <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{x:Bind SongCount, Mode=OneWay}" />
+                                    <TextBlock x:Uid="FolderNumberOfSongs" Margin="3,0,0,0" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                </StackPanel>
                                 <Button Width="34" Height="34" Padding="0" Command="{x:Bind ScanCommand}" Style="{StaticResource SubtleButtonStyle}" ToolTipService.ToolTip="{x:Bind tools:ToolUtils.GetString('WebDavScanAction')}" AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('WebDavScanAction')}">
                                     <FontIcon FontSize="16" Glyph="&#xE72C;" />
                                 </Button>
