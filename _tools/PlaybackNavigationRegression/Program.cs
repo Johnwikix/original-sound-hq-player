@@ -198,9 +198,11 @@ internal static class Regression
         await bounded.Coordinator.PlayAtAsync(0);
         bounded.Remote.Fail(offline);
         await WaitAsync(() => bounded.State.CurrentPlayingMusic == sameSource && bounded.State.State.Playback.PendingSelection is null);
+        bounded.State.ProgressSlider = 12;
         bounded.Remote.Fail(sameSource);
         await WaitAsync(() => bounded.Player.Ends == 1);
         Check(bounded.Remote.Played.Count == 2, "decoder failures exhaust queue once instead of looping forever");
+        Check(bounded.State.ProgressSlider == 12, "exhausted recovery keeps the interrupted track position visible");
 
         using var deferred = new Scenario();
         deferred.State.CurrentPlayingList = [offline, sameSource, nextLocal];
@@ -280,6 +282,7 @@ sealed class Scenario : IDisposable
     public PlaybackCoordinator Coordinator { get; }
     public Scenario()
     {
+        Player.State = State;
         State.State.Queue.FindIndex = music => State.CurrentPlayingList.IndexOf(music);
         Coordinator = new(State, Player, new(), new ApplicationTasks(Lifecycle),
             new ShutdownCoordinator(Lifecycle, NullLogger<ShutdownCoordinator>.Instance), NullLogger<PlaybackCoordinator>.Instance, Remote, Library);

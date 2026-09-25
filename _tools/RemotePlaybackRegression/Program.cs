@@ -89,7 +89,7 @@ static async Task RunAsync()
         "stale cache icon is rechecked and cleared without probing during cooldown");
 
     // A decoder failure is recoverable but does not prove a source outage.
-    await using var secondOrigin = new Fixture();
+    var secondOrigin = new Fixture();
     library.Root = secondOrigin.Root;
     library.RejectCredentials = false;
     await coordinator.PlayAsync(network);
@@ -111,6 +111,37 @@ static async Task RunAsync()
     await WaitAsync(() => failures == 4);
     Check(state.CurrentPlayingMusic == network && !remote.WantsPlay, "failure while paused does not auto-advance or resume playback");
     await remote.StopAsync();
+    cache.Clear();
+    cache.Configure(false, directory, 32L * 1024 * 1024);
+    peer.SetPosition(12000);
+    await coordinator.PlayAsync(network);
+    await WaitAsync(() => remote.GetProgress()?.CurrentMs == 12000);
+    await remote.SetIntentAsync(false);
+    await secondOrigin.DisposeAsync();
+    try { await peer.ReadAsync(2 * 1024 * 1024, 2 * 1024 * 1024 + 1023); }
+    catch (HttpRequestException) { }
+    await WaitAsync(() => failures == 5);
+    Check(library.IsSourceOffline(10) && !state.IsPlaying, "paused stream failure marks the WebDAV source offline");
+    await remote.StopAsync(preserveFailedProgress: true);
+    Check(remote.GetProgress()?.CurrentMs == 12000, "stopping an interrupted source keeps its progress snapshot available to the UI");
+    await using var recoveredOrigin = new Fixture();
+    library.Root = recoveredOrigin.Root;
+    Task resume = coordinator.ResumeCurrentAsync();
+    Check(remote.GetProgress()?.CurrentMs == 12000, "resume request never exposes a zero progress snapshot");
+    await resume;
+    Check(peer.LastPreparePositionMs == 12000, "play after interrupted WebDAV session prepares at the last rendered position");
+    await WaitAsync(() => state.IsPlaying && !library.IsSourceOffline(10));
+    await coordinator.PlayAsync(network);
+    Check(peer.LastPreparePositionMs == 0, "explicitly selecting the same song still starts from its beginning");
+    await WaitAsync(() => remote.GetProgress()?.CurrentMs == 12000);
+    await remote.SetIntentAsync(false);
+    peer.SetPosition(0);
+    peer.FailDecoder();
+    await WaitAsync(() => failures == 6);
+    await coordinator.ResumeCurrentAsync();
+    Check(peer.LastPreparePositionMs == 12000, "failed decoder reply cannot erase the last rendered position");
+    await remote.StopAsync();
+    Check(remote.GetProgress() is null, "explicit stop releases the held remote progress snapshot");
     cache.Clear();
     Console.WriteLine("PASS: remote recovery integration completed");
 }

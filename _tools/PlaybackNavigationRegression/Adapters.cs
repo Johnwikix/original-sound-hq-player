@@ -74,6 +74,8 @@ namespace WinUIMusicPlayer.ViewModel
         public int GetSelectedPlaybackIndex() => State.Playback.PendingSelection is { } pending ? (int)pending.EntryId - 1 : GetCurrentIndex();
         public int GetCurrentIndex() => CurrentPlayingList.IndexOf(CurrentPlayingMusic!);
         public bool IsPlaying { get; set => SetProperty(ref field, value); }
+        public double ProgressSlider { get; set; }
+        public double ProgressSliderMax { get; set; }
         public string RemotePlaybackStatus { get; set; } = "";
         public List<string> UILyrics { get; set; } = [];
         public AppState State { get; } = new();
@@ -106,6 +108,7 @@ namespace WinUIMusicPlayer.Services
 {
     public sealed class BassPlayerCommandService
     {
+        public WinUIMusicPlayer.ViewModel.AppViewModel? State;
         public List<Music> Played { get; } = [];
         public int Ends;
         public void PlayMusic(Music music)
@@ -113,7 +116,11 @@ namespace WinUIMusicPlayer.Services
             if (!App.MainWindow.DispatcherQueue.HasThreadAccess) throw new Exception("play called outside UI thread");
             Played.Add(music);
         }
-        public void MusicEnd() => Ends++;
+        public void MusicEnd(bool preserveInterruptedProgress = false)
+        {
+            Ends++;
+            if (!preserveInterruptedProgress && State is not null) State.ProgressSlider = 0;
+        }
         public void PlayNextTrack() { }
         public Task PlayButton() => Task.CompletedTask;
         public void ChangeWaveChannelTime(long ms) { }
@@ -130,7 +137,7 @@ namespace WinUIMusicPlayer.Services
         public List<Music> Played { get; } = [];
         public event Action<Music, long, bool>? Failed;
         private long _generation;
-        public long BeginSelection() => ++_generation;
+        public long BeginSelection(Music music, bool resumeInterrupted = false) => ++_generation;
         public void Fail(Music music, bool advance = true) => Failed?.Invoke(music, _generation, advance);
         public Task StopAsync() => Task.Run(() => Thread.Sleep(StopDelayMs));
         public Task PlayAsync(Music music, long generation, CancellationToken token)

@@ -58,6 +58,13 @@ try
     Check((await client.StatusAsync(id)).PositionMs == 2000, "refresh preserves prepared seek position");
     Check((await client.StopAsync(id)).Accepted, "prepared session released");
 
+    Guid resumed = Guid.NewGuid();
+    Check((await client.PrepareAsync(source, resumed, 3200)).Accepted, "preparation accepts an interrupted stream position");
+    var resumedReady = await WaitFor(resumed, x => x.Phase is StreamPhase.Ready or StreamPhase.Failed);
+    Check(resumedReady.Phase == StreamPhase.Ready && Math.Abs(resumedReady.PositionMs - 3200) < 10,
+        "new decoder session seeks to the interrupted position before playback");
+    Check((await client.StopAsync(resumed)).Accepted, "resumed session released");
+
     Guid slow = Guid.NewGuid();
     Check((await client.PrepareAsync(source with { Location = server.Url("slow") }, slow)).Accepted, "slow open starts asynchronously");
     Check((await client.PlayAsync(slow)).WantsPlay, "play intent during opening is retained");

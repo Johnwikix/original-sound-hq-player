@@ -72,7 +72,12 @@ public sealed partial class PlaybackEngine
                 try { command.Source.Validate(); }
                 catch { return Reject(command, "InvalidSource"); }
                 if (command.Source.IsLive) return Reject(command, "UnsupportedLiveSource");
-                var created = new StreamSlot(command.SessionId, command.Source);
+                if (command.PositionMs < 0 || command.PositionMs > long.MaxValue / 1000 ||
+                    (command.PositionMs > 0 && !command.Source.CanSeek)) return Reject(command, "SeekUnavailable");
+                var created = new StreamSlot(command.SessionId, command.Source)
+                {
+                    ResumePosition = command.PositionMs
+                };
                 _streamSlots[created.Id] = created;
                 BeginPreparation(created);
                 return Snapshot(command, created);
@@ -271,7 +276,7 @@ public sealed partial class PlaybackEngine
         {
             Accepted = true, RequestId = command.RequestId, SessionId = slot.Id,
             Phase = phase, WantsPlay = slot.WantsPlay, CanSeek = session?.CanSeek ?? slot.Source.CanSeek,
-            PositionMs = _currentStream == slot.Id ? GetTimeProgress().Item1 : session?.CurrentMs ?? 0,
+            PositionMs = _currentStream == slot.Id ? GetTimeProgress().Item1 : session?.CurrentMs ?? slot.ResumePosition,
             DurationMs = session is { TotalMs: > 0 } ? session.TotalMs : null,
             BufferedMs = session is null ? 0 : session.FramesToMs(session.ReadyFrames),
             SeekId = session is null ? 0 : Volatile.Read(ref session.CompletedSeekId), Error = slot.Error

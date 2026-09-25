@@ -163,9 +163,9 @@ namespace WinUIMusicPlayer.Services
             await App.Services.GetRequiredService<PlaybackCoordinator>().PlayAsync(music);
         }
 
-        public void MusicEnd()
+        public void MusicEnd(bool preserveInterruptedProgress = false)
         {
-            _ = _remote.StopAsync();
+            _ = _remote.StopAsync(preserveFailedProgress: preserveInterruptedProgress);
             try
             {
                 App.Services.GetService<PlaybackStatsService>()?.FlushSession();
@@ -178,10 +178,12 @@ namespace WinUIMusicPlayer.Services
             App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
                 if (!CanReceive) return;
+                if (preserveInterruptedProgress &&
+                    (AppViewModel.CurrentPlayingMusic?.IsRemote != true || !_remote.NeedsStart)) return;
                 AppViewModel.StopProgressTimer();
-                AppViewModel.ProgressSlider = 0;
+                if (!preserveInterruptedProgress) AppViewModel.ProgressSlider = 0;
                 AppViewModel.IsPlaying = false;
-                AppViewModel.RemotePlaybackStatus = "";
+                if (!preserveInterruptedProgress) AppViewModel.RemotePlaybackStatus = "";
             });
         }
 
@@ -210,7 +212,7 @@ namespace WinUIMusicPlayer.Services
             if (!CanPlay) return;
             if (AppViewModel.CurrentPlayingMusic?.IsRemote == true)
             {
-                if (_remote.NeedsStart) await App.Services.GetRequiredService<PlaybackCoordinator>().PlayAsync(AppViewModel.CurrentPlayingMusic);
+                if (_remote.NeedsStart) await App.Services.GetRequiredService<PlaybackCoordinator>().ResumeCurrentAsync();
                 else await _remote.SetIntentAsync(!_remote.WantsPlay);
                 return;
             }

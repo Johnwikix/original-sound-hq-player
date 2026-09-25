@@ -64,7 +64,7 @@ public sealed class PlaybackCommands : IDisposable
         {
             if (remote.NeedsStart)
             {
-                if (playing != false) await _services.GetRequiredService<PlaybackCoordinator>().PlayAsync(_state.CurrentPlayingMusic);
+                if (playing != false) await _services.GetRequiredService<PlaybackCoordinator>().ResumeCurrentAsync();
                 else await remote.SetIntentAsync(false);
                 return;
             }

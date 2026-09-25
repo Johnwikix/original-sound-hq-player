@@ -2,6 +2,18 @@
 
 新条目加在最上方。
 
+## 2026-09-25 修正 WebDAV 续播时进度条短暂归零
+
+- `Services/PlaybackCoordinator.cs`、`Services/BassPlayerCommandService.cs`：断流后的队列恢复耗尽时保留当前进度和失败状态，停止播放器时不清空进度条。
+- `Services/RemotePlaybackService.cs`、`ViewModel/Pages/WebDavSourcesViewModel.cs`：来源离线导致会话停止后继续向进度轮询提供最后位置，续播会话接管后再切换快照；明确停止仍清除保留状态。
+- `_tools/PlaybackNavigationRegression`、`_tools/RemotePlaybackRegression`：验证恢复耗尽、来源停止与显式停止时的进度行为。
+
+## 2026-09-25 修复 WebDAV 断流后播放从头开始
+
+- `Services/RemotePlaybackService.cs`、`Services/PlaybackCoordinator.cs`、播放命令入口：保留断流前最后一次解码进度，连接恢复后点击播放恢复同一首的当前位置；主动重新选曲仍从头开始。
+- `External/BassPlayerIpc.Shared/Streaming.cs`、`External/AudioPlayer/Playback/PlaybackEngine.Streaming.cs`、`Player/AudioPlayer.exe`：准备远程流时携带起播位置，在解码器就绪前完成定位，并同步更新发布用播放器。
+- `_tools/RemotePlaybackRegression`、`_tools/StreamingRegression`：覆盖断网、重连、恢复进度和主动选曲语义。
+
 ## 2026-09-25 修正播放进度条两侧时间文字对齐
 
 - `View/MainPage.xaml`、`View/PlayingDetailPage.xaml`：移除时间文字的 6 px 下边距，使其与紧凑进度条的轨道垂直居中。

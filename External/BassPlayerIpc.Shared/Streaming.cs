@@ -139,6 +139,8 @@ public sealed class StreamingClient
     }
     public Task<StreamReply> PrepareAsync(PlaybackSource source, Guid sessionId, CancellationToken ct = default)
         => SendAsync(new() { Method = "prepare", Source = source, SessionId = sessionId }, ct);
+    public Task<StreamReply> PrepareAsync(PlaybackSource source, Guid sessionId, long positionMs, CancellationToken ct = default)
+        => SendAsync(new() { Method = "prepare", Source = source, SessionId = sessionId, PositionMs = positionMs }, ct);
     public Task<StreamReply> PlayAsync(Guid id, CancellationToken ct = default) => SendAsync(new() { Method = "play", SessionId = id }, ct);
     public Task<StreamReply> PauseAsync(Guid id, CancellationToken ct = default) => SendAsync(new() { Method = "pause", SessionId = id }, ct);
     public Task<StreamReply> StopAsync(Guid id, CancellationToken ct = default) => SendAsync(new() { Method = "stop", SessionId = id }, ct);
