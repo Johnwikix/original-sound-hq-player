@@ -211,7 +211,7 @@
             <Grid x:Name="PlayingDetailControlBar" RowDefinitions="Auto,Auto">
                 <Grid
                     Grid.Row="0"
-                    Margin="0"
+                    Margin="0,0,0,6"
                     ColumnDefinitions="Auto,*,Auto">
                     <TextBlock
                         Grid.Column="0"
