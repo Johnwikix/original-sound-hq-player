@@ -75,19 +75,10 @@
                     ColumnDefinitions="Auto,*,Auto">
                     <TextBlock
                         Grid.Column="0"
-                        Margin="0,0,10,0"
+                        Margin="0,0,10,6"
                         VerticalAlignment="Center"
                         Text="{x:Bind ViewModel.AppViewModel.ElapsedTimeText, Mode=OneWay}" />
                     <Grid Grid.Column="1">
-                        <Border Height="4" Margin="5,0" VerticalAlignment="Center"
-                                Background="{ThemeResource SliderTrackFill}" CornerRadius="2" />
-                        <ProgressBar Height="4" Margin="5,0" VerticalAlignment="Center"
-                                     AutomationProperties.AccessibilityView="Raw"
-                                     Background="Transparent" Foreground="{ThemeResource SliderTrackValueFill}"
-                                     Opacity="0.45" IsHitTestVisible="False"
-                                     Maximum="{x:Bind ViewModel.AppViewModel.ProgressSliderMax, Mode=OneWay}"
-                                     Value="{x:Bind ViewModel.AppViewModel.BufferedProgress, Mode=OneWay}"
-                                     Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.HasRemoteBuffer), Mode=OneWay}" />
                         <Slider
                             x:Name="ProgressSlider"
                             Style="{StaticResource PlaybackSliderStyle}"
@@ -103,7 +94,7 @@
                     <TextBlock
                         x:Name="PlayTimeTextBlock"
                         Grid.Column="2"
-                        Margin="10,0,0,0"
+                        Margin="10,0,0,6"
                         VerticalAlignment="Center"
                         Text="{x:Bind ViewModel.AppViewModel.TotalTimeText, Mode=OneWay}" />
                 </Grid>

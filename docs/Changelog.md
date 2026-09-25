@@ -2,6 +2,11 @@
 
 新条目加在最上方。
 
+## 2026-09-25 修正播放进度条外观并撤回不准确的缓冲显示
+
+- `Style/SilderDictionary.xaml`、`View/MainPage.xaml`、`View/PlayingDetailPage.xaml`：恢复 HyPlayer 的 12 px 圆形滑块和中性色轨道，对齐两侧时间文字。
+- `Services/RemotePlaybackService.cs`、`State/PlaybackState.cs`、`ViewModel/AppViewModel.cs`：撤回以解码器待播帧绘制的缓冲亮段；断网后解码仍可能消耗已下载字节，现有链路缺少可靠的下载字节到播放时间映射，避免误示网络缓冲。
+
 ## 2026-09-25 播放进度条移植 HyPlayer 布局并显示网络缓冲
 
 - `View/MainPage.xaml`、`View/PlayingDetailPage.xaml`、`Style/SilderDictionary.xaml`：进度条采用已播时间、强调色滑块、总时长的三段布局；轨道叠加低亮度的网络缓冲进度。
