@@ -57,14 +57,16 @@ public sealed class PlaybackCommands : IDisposable
     private async Task ToggleAsync(bool? playing)
     {
         if (!CanPlay) return;
-        if (playing == false && _state.State.Playback.PendingSelection is not null)
-            _services.GetRequiredService<PlaybackCoordinator>().CancelPendingSelection();
         var remote = _services.GetRequiredService<RemotePlaybackService>();
+        bool pausing = playing == false || (playing is null &&
+            (_state.CurrentPlayingMusic?.IsRemote == true ? remote.WantsPlay : _state.IsPlaying));
+        if (pausing && _state.State.Playback.PendingSelection is not null)
+            _services.GetRequiredService<PlaybackCoordinator>().CancelPendingSelection();
         if (_state.CurrentPlayingMusic?.IsRemote == true)
         {
             if (remote.NeedsStart)
             {
-                if (playing != false) await _services.GetRequiredService<PlaybackCoordinator>().PlayAsync(_state.CurrentPlayingMusic);
+                if (playing != false) await _services.GetRequiredService<PlaybackCoordinator>().ResumeCurrentAsync();
                 else await remote.SetIntentAsync(false);
                 return;
             }

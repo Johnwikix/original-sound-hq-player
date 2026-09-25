@@ -1,172 +1,68 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
-<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<?xml version="1.0" encoding="utf-8" ?>
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush x:Key="PlaybackTrackBrush" Color="#55FFFFFF" />
+            <SolidColorBrush x:Key="PlaybackValueBrush" Color="#F4FFFFFF" />
+            <SolidColorBrush x:Key="PlaybackThumbBrush" Color="#F4FFFFFF" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="PlaybackTrackBrush" Color="#60000000" />
+            <SolidColorBrush x:Key="PlaybackValueBrush" Color="#C0000000" />
+            <SolidColorBrush x:Key="PlaybackThumbBrush" Color="#E0000000" />
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="HighContrast">
+            <SolidColorBrush x:Key="PlaybackTrackBrush" Color="{ThemeResource SystemColorGrayTextColor}" />
+            <SolidColorBrush x:Key="PlaybackValueBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="PlaybackThumbBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
 
-    <Style x:Key="GhostSliderStyle" TargetType="Slider">
-        <Setter Property="Background" Value="{ThemeResource ControlStrokeColorOnAccentDefaultBrush}" />
-        <Setter Property="BorderThickness" Value="{ThemeResource SliderBorderThemeThickness}" />
-        <Setter Property="Foreground" Value="{ThemeResource SystemAccentColor}" />
-        <Setter Property="FontFamily" Value="{ThemeResource ContentControlThemeFontFamily}" />
-        <Setter Property="FontSize" Value="{ThemeResource ControlContentThemeFontSize}" />
+    <Style x:Key="PlaybackSliderStyle" TargetType="Slider">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{ThemeResource PlaybackValueBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource PlaybackThumbBrush}" />
         <Setter Property="ManipulationMode" Value="None" />
-        <Setter Property="UseSystemFocusVisuals" Value="{StaticResource UseSystemFocusVisuals}" />
-        <Setter Property="FocusVisualMargin" Value="-7,0,-7,0" />
-        <Setter Property="IsFocusEngagementEnabled" Value="True" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
+        <Setter Property="FocusVisualMargin" Value="0" />
         <Setter Property="Template">
             <Setter.Value>
                 <ControlTemplate TargetType="Slider">
                     <Grid Margin="{TemplateBinding Padding}">
-                        <Grid.Resources>
-                            <!--<Style x:Key="SliderThumbStyle" TargetType="Thumb">
-                                <Setter Property="BorderThickness" Value="0" />
-                                <Setter Property="Background" Value="{ThemeResource TextFillColorPrimaryBrush}" />
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="Thumb">
-                                            <Border
-                                                Background="{TemplateBinding Background}"
-                                                BorderBrush="{TemplateBinding BorderBrush}"
-                                                BorderThickness="{TemplateBinding BorderThickness}"
-                                                CornerRadius="2,2,2,2" />
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>-->
-                            <Style x:Key="SliderThumbStyle" TargetType="Thumb">
-                                <Setter Property="BorderThickness" Value="0" />
-                                <Setter Property="Background" Value="{ThemeResource SliderTrackValueFill}" />
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="Thumb">
-                                            <Border
-                                                Background="{TemplateBinding Background}"
-                                                BorderBrush="{TemplateBinding BorderBrush}"
-                                                BorderThickness="{TemplateBinding BorderThickness}"
-                                                CornerRadius="3" />
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </Grid.Resources>
-
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="*" />
-                        </Grid.RowDefinitions>
-                        <ContentPresenter
-                            x:Name="HeaderContentPresenter"
-                            Grid.Row="0"
-                            Margin="{ThemeResource SliderTopHeaderMargin}"
-                            x:DeferLoadStrategy="Lazy"
-                            Content="{TemplateBinding Header}"
-                            ContentTemplate="{TemplateBinding HeaderTemplate}"
-                            FontWeight="{ThemeResource SliderHeaderThemeFontWeight}"
-                            Foreground="{ThemeResource SliderHeaderForeground}"
-                            TextWrapping="Wrap"
-                            Visibility="Collapsed" />
-                        <Grid
-                            x:Name="SliderContainer"
-                            Grid.Row="1"
-                            Background="{ThemeResource SliderContainerBackground}"
-                            Control.IsTemplateFocusTarget="True">
-                            <Grid x:Name="HorizontalTemplate" MinHeight="{ThemeResource SliderHorizontalHeight}">
-
+                        <Grid x:Name="SliderContainer" Background="Transparent" Control.IsTemplateFocusTarget="True">
+                            <Grid x:Name="HorizontalTemplate" MinHeight="24">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
-
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="{ThemeResource SliderPreContentMargin}" />
+                                    <RowDefinition Height="10" />
                                     <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="{ThemeResource SliderPostContentMargin}" />
+                                    <RowDefinition Height="10" />
                                 </Grid.RowDefinitions>
-                                <!--  轨道背景  -->
-                                <Rectangle
-                                    x:Name="HorizontalTrackRect"
-                                    Grid.Row="1"
-                                    Grid.ColumnSpan="3"
-                                    Height="{ThemeResource SliderOutsideTickBarThemeHeight}"
-                                    Fill="{ThemeResource SliderTrackFill}"
-                                    RadiusX="2"
-                                    RadiusY="2" />
-
-                                <!--  已选择部分  -->
-                                <Rectangle
-                                    x:Name="HorizontalDecreaseRect"
-                                    Grid.Row="1"
-                                    Height="{ThemeResource SliderOutsideTickBarThemeHeight}"
-                                    Margin="0,0,0,0"
-                                    Fill="{ThemeResource SliderTrackValueFill}"
-                                    RadiusX="2"
-                                    RadiusY="2" />
-
-                                <Thumb
-                                    x:Name="HorizontalThumb"
-                                    Grid.Row="0"
-                                    Grid.RowSpan="3"
-                                    Grid.Column="1"
-                                    Width="10"
-                                    Height="6"
-                                    AutomationProperties.AccessibilityView="Raw"
-                                    DataContext="{TemplateBinding Value}"
-                                    FocusVisualMargin="-14,-6,-14,-6"
-                                    Shadow="{x:Null}"
-                                    Style="{StaticResource SliderThumbStyle}" />
+                                <Rectangle x:Name="HorizontalTrackRect" Grid.Row="1" Grid.ColumnSpan="3"
+                                           Height="4" Margin="5,0" Fill="{ThemeResource PlaybackTrackBrush}"
+                                           RadiusX="2" RadiusY="2" />
+                                <!-- 已播放段占第 0 列，向右延伸半个滑块宽度以对齐滑块中心。 -->
+                                <Rectangle x:Name="HorizontalDecreaseRect" Grid.Row="1" Height="4"
+                                           Margin="5,0,-5,0" Fill="{TemplateBinding Foreground}" Opacity="0.75"
+                                           RadiusX="2" RadiusY="2" />
+                                <Thumb x:Name="HorizontalThumb" Grid.RowSpan="3" Grid.Column="1"
+                                       Width="10" Height="10"
+                                       AutomationProperties.AccessibilityView="Raw"
+                                       DataContext="{TemplateBinding Value}" FocusVisualMargin="0"
+                                       Foreground="{TemplateBinding BorderBrush}">
+                                    <Thumb.Template>
+                                        <ControlTemplate TargetType="Thumb">
+                                            <Ellipse Fill="{TemplateBinding Foreground}" />
+                                        </ControlTemplate>
+                                    </Thumb.Template>
+                                </Thumb>
                             </Grid>
-                            <Grid
-                                x:Name="VerticalTemplate"
-                                MinWidth="{ThemeResource SliderVerticalWidth}"
-                                Visibility="Collapsed">
-
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="*" />
-                                    <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="Auto" />
-                                </Grid.RowDefinitions>
-
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="{ThemeResource SliderPreContentMargin}" />
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="{ThemeResource SliderPostContentMargin}" />
-                                </Grid.ColumnDefinitions>
-                                <!--  轨道背景  -->
-                                <Rectangle
-                                    x:Name="VerticalTrackRect"
-                                    Grid.RowSpan="3"
-                                    Grid.Column="1"
-                                    Width="{ThemeResource SliderTrackThemeHeight}"
-                                    Fill="{ThemeResource SliderTrackFill}"
-                                    RadiusX="2"
-                                    RadiusY="2" />
-
-                                <!--  已选择部分  -->
-                                <Rectangle
-                                    x:Name="VerticalDecreaseRect"
-                                    Grid.Row="2"
-                                    Grid.Column="1"
-                                    Width="{ThemeResource SliderTrackThemeHeight}"
-                                    Margin="0,0,0,-10"
-                                    Fill="{ThemeResource SliderTrackValueFill}"
-                                    RadiusX="2"
-                                    RadiusY="2" />
-                                <Thumb
-                                    x:Name="VerticalThumb"
-                                    Grid.Row="1"
-                                    Grid.Column="0"
-                                    Grid.ColumnSpan="3"
-                                    Width="24"
-                                    Height="8"
-                                    AutomationProperties.AccessibilityView="Raw"
-                                    DataContext="{TemplateBinding Value}"
-                                    FocusVisualMargin="-6,-14,-6,-14"
-                                    Style="{StaticResource SliderThumbStyle}" />
-                            </Grid>
-
                         </Grid>
-
                     </Grid>
-
                 </ControlTemplate>
             </Setter.Value>
         </Setter>

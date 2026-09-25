@@ -2,6 +2,57 @@
 
 新条目加在最上方。
 
+## 2026-09-25 播放进度条右侧改显剩余时间
+
+- `Services/PlaybackProgressService.cs`：滑块右侧文本由总时长改为剩余时间（总时长 − 当前进度，倒数归零），`curMs` 越过 `totalMs` 时钳到 0；SMTC 时间线仍上报总时长。
+- `State/PlaybackState.cs`、`ViewModel/AppViewModel.cs`：`TotalTimeText` 更名 `RemainingTimeText`，初始值不变。
+- `View/MainPage.xaml`、`View/PlayingDetailPage.xaml`：`PlayTimeTextBlock`/`PlayTimeTextBlockPlayingDetail` 绑定改指 `RemainingTimeText`。
+
+## 2026-09-25 修复来源探活误停播放及待播期间暂停失效
+
+- `ViewModel/Pages/WebDavSourcesViewModel.cs`：来源状态通知只更新来源展示，播放服务继续负责真实断流的停止与自动恢复，完整缓存播放不再被探活失败打断。
+- `Services/PlaybackCommands.cs`：播放栏切换按钮实际请求暂停时取消待播选择，避免迟到的 WebDAV 探活再次启动歌曲。
+- `_tools/PlaybackNavigationRegression`：覆盖来源通知、断流后自动切歌及探活期间暂停的交互回归。
+
+## 2026-09-25 修正播放进度条滑块端点裁切
+
+- `Style/SilderDictionary.xaml`：移除滑块负边距，使其留在 Slider 行程内；将轨道与已播放段对齐到滑块中心，修正两端显示。
+
+## 2026-09-25 修正 WebDAV 续播时进度条短暂归零
+
+- `Services/PlaybackCoordinator.cs`、`Services/BassPlayerCommandService.cs`：断流后的队列恢复耗尽时保留当前进度和失败状态，停止播放器时不清空进度条。
+- `Services/RemotePlaybackService.cs`、`ViewModel/Pages/WebDavSourcesViewModel.cs`：来源离线导致会话停止后继续向进度轮询提供最后位置，续播会话接管后再切换快照；明确停止仍清除保留状态。
+- `_tools/PlaybackNavigationRegression`、`_tools/RemotePlaybackRegression`：验证恢复耗尽、来源停止与显式停止时的进度行为。
+
+## 2026-09-25 修复 WebDAV 断流后播放从头开始
+
+- `Services/RemotePlaybackService.cs`、`Services/PlaybackCoordinator.cs`、播放命令入口：保留断流前最后一次解码进度，连接恢复后点击播放恢复同一首的当前位置；主动重新选曲仍从头开始。
+- `External/BassPlayerIpc.Shared/Streaming.cs`、`External/AudioPlayer/Playback/PlaybackEngine.Streaming.cs`、`Player/AudioPlayer.exe`：准备远程流时携带起播位置，在解码器就绪前完成定位，并同步更新发布用播放器。
+- `_tools/RemotePlaybackRegression`、`_tools/StreamingRegression`：覆盖断网、重连、恢复进度和主动选曲语义。
+
+## 2026-09-25 修正播放进度条两侧时间文字对齐
+
+- `View/MainPage.xaml`、`View/PlayingDetailPage.xaml`：移除时间文字的 6 px 下边距，使其与紧凑进度条的轨道垂直居中。
+
+## 2026-09-25 收紧播放进度条垂直占位
+
+- `Style/SilderDictionary.xaml`、`View/MainPage.xaml`：播放进度条模板高度从 44 px 收至 24 px，并收紧主播放栏最小高度，缩小两处进度条下方的留白。
+
+## 2026-09-25 修正播放进度条外观并撤回不准确的缓冲显示
+
+- `Style/SilderDictionary.xaml`、`View/MainPage.xaml`、`View/PlayingDetailPage.xaml`：恢复 HyPlayer 的 12 px 圆形滑块和中性色轨道，对齐两侧时间文字。
+- `Services/RemotePlaybackService.cs`、`State/PlaybackState.cs`、`ViewModel/AppViewModel.cs`：撤回以解码器待播帧绘制的缓冲亮段；断网后解码仍可能消耗已下载字节，现有链路缺少可靠的下载字节到播放时间映射，避免误示网络缓冲。
+
+## 2026-09-25 播放进度条移植 HyPlayer 布局并显示网络缓冲
+
+- `View/MainPage.xaml`、`View/PlayingDetailPage.xaml`、`Style/SilderDictionary.xaml`：进度条采用已播时间、强调色滑块、总时长的三段布局；轨道叠加低亮度的网络缓冲进度。
+- `State/PlaybackState.cs`、`ViewModel/AppViewModel.cs`、`Services/PlaybackProgressService.cs`、`Services/RemotePlaybackService.cs`：从远程状态的当前位置与已解码时长计算缓冲终点，按会话代次发布到 UI；选曲、失败和停止时清除旧缓冲。
+
+## 2026-09-25 新增土耳其语界面
+
+- `Strings/tr/Resources.resw`：新增土耳其语资源 783 条，键集合与 en 完全一致，占位符逐条校验无差异。
+- `App.xaml.cs`：系统语言检测链新增 `tr` 分支，系统语言为土耳其语时自动切换应用语言。
+
 ## 2026-09-25 协议同意记录迁至文档目录
 
 - `Services/AgreementAcceptanceStore.cs`：`agreement.json` 从本地应用数据目录（MSIX 下被虚拟化重定向，部分用户环境无法读写）迁至 `Documents\OriginalSoundPlayer\Agreement\`，与数据库/设置同根；不回退读取旧位置，升级后存量用户需重新确认一次协议。

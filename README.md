@@ -28,7 +28,7 @@
 
 <div align="center">
 
-[**🏠 产品主页/使用说明**](https://johnwikix.github.io/original-sound-player-page) | [**🐞 反馈问题**](https://github.com/Johnwikix/original-sound-hq-player/issues)
+[**🏠 产品主页/使用说明**](https://johnwikix.github.io/original-sound-player-page) | [**🎬 宣传视频**](https://www.bilibili.com/video/BV13ehE6DErQ) | [**🐞 反馈问题**](https://github.com/Johnwikix/original-sound-hq-player/issues)
 
 </div>
 
@@ -63,12 +63,13 @@
   - 一键定位心仪曲目
 
 - ☁️ **WebDAV 音乐源**
-  - 接入 WebDAV 服务器（NAS、坚果云、Alist/OpenList 等），与本地音乐同库管理
+  - 接入 WebDAV 服务器（NAS、Alist/OpenList 等），与本地音乐同库管理
   - 目录树浏览选择扫描根，增量扫描；可配置启动时自动更新目录
   - 自动读取远程元数据（标题/艺术家/专辑等）与内嵌封面，自动匹配同名 `.lrc` 歌词
-  - HTTP Range 流式播放、断流自动恢复；来源离线实时标记与探活
+  - HTTP Range 流式播放，断流恢复后从上次进度继续；来源离线实时标记与探活，离线曲目弱化显示、需联网的操作自动置灰
   - 可选音频缓存：完整缓存的歌曲离线也能播放，支持容量上限与一键清理
-  - HTTPS 自签名证书指纹确认；按来源筛选浏览（全部/本地/单个 WebDAV 来源）
+  - 本地与 WebDAV 的同名专辑合并展示，专辑详情跨来源显示全部歌曲
+  - HTTPS 自签名证书指纹确认；按来源筛选浏览（全部/本地/单个 WebDAV 来源），来源卡片显示曲目数
 
 - 📂 **收藏与播放列表**
   - 创建并管理自定义播放列表
@@ -104,6 +105,7 @@
 
 - 🪟 **现代化界面体验**
   - 基于 WinUI 3 构建简洁直观的界面
+  - 支持 7 种界面语言（简体中文、英语、德语、西班牙语、日语、俄语、土耳其语），默认跟随系统语言
   - 支持 Mica、Acrylic 等 3 种应用样式
   - 系统默认、深色、浅色 3 套主题
   - 集成 SMTC 系统媒体传输控件

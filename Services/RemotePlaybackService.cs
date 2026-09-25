@@ -25,7 +25,8 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
     private Task _monitor = Task.CompletedTask;
     private Guid _sessionId;
     private long _generation, _sessionGeneration, _intentVersion, _seekId;
-    private bool _intent = true, _active, _needsRestart;
+    private long _failedPositionMs, _startPositionMs;
+    private bool _intent = true, _active, _needsRestart, _holdFailedProgress;
     private Snapshot? _snapshot;
     private Music? _music;
     private sealed record Snapshot(ProgressSnapshot Progress);
@@ -36,12 +37,30 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
     public bool NeedsStart { get { lock (_gate) return !_active || _needsRestart; } }
     public ProgressSnapshot? GetProgress()
     {
-        lock (_gate) return _active ? _snapshot?.Progress ?? new ProgressSnapshot(0, -_generation, 0, 0, Stopwatch.GetTimestamp(), false) : null;
+        lock (_gate) return _active || _holdFailedProgress
+            ? _snapshot?.Progress ?? new ProgressSnapshot(0, -_generation, _failedPositionMs, 0, Stopwatch.GetTimestamp(), false)
+            : null;
     }
 
-    public long BeginSelection()
+    public long BeginSelection(Music music, bool resumeInterrupted = false)
     {
-        lock (_gate) { _active = true; _needsRestart = false; _intent = true; _snapshot = null; _intentVersion++; return ++_generation; }
+        lock (_gate)
+        {
+            _startPositionMs = resumeInterrupted && _needsRestart && ReferenceEquals(_music, music)
+                ? _failedPositionMs : 0;
+            long totalMs = _snapshot?.Progress.TotalMs ?? (long)music.Duration.TotalMilliseconds;
+            _failedPositionMs = 0;
+            _active = true;
+            _needsRestart = false;
+            _holdFailedProgress = false;
+            _intent = true;
+            _intentVersion++;
+            long generation = ++_generation;
+            _snapshot = _startPositionMs > 0
+                ? new(new ProgressSnapshot(0, -generation, _startPositionMs, Math.Max(0, totalMs),
+                    Stopwatch.GetTimestamp(), false)) : null;
+            return generation;
+        }
     }
     public async Task PlayAsync(Music music, long generation, CancellationToken token)
     {
@@ -50,7 +69,13 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
         {
             await StopSessionCoreAsync();
             token.ThrowIfCancellationRequested();
-            lock (_gate) { if (generation != _generation) return; _music = music; }
+            long startPositionMs;
+            lock (_gate)
+            {
+                if (generation != _generation) return;
+                _music = music;
+                startPositionMs = _startPositionMs;
+            }
             var (source, track) = await library.ResolveAsync(music);
             token.ThrowIfCancellationRequested();
             lock (_gate) { if (generation != _generation) return; }
@@ -72,7 +97,7 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
                 FileExtension = System.IO.Path.GetExtension(track.Href),
                 ContentLength = track.Length, ETag = track.ETag,
                 CanSeek = track.Length > 0
-            }, _sessionId, token);
+            }, _sessionId, startPositionMs, token);
             if (!reply.Accepted) throw new WebDavException("PlaybackFailed");
             token.ThrowIfCancellationRequested();
             bool current;
@@ -165,9 +190,22 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
                 lock (_gate)
                 {
                     if (generation != _generation) return;
-                    _snapshot = new(new ProgressSnapshot(0, -generation, reply.PositionMs, reply.DurationMs ?? 0,
+                    long positionMs = reply.PositionMs;
+                    // 解码器失败回复可能已清掉当前位置；同一次定位内保留最后一次实际播放进度。
+                    if (reply.Phase == StreamPhase.Failed && _snapshot is { } lastProgress &&
+                        lastProgress.Progress.SeekId == reply.SeekId)
+                        positionMs = Math.Max(positionMs, lastProgress.Progress.CurrentMs);
+                    _snapshot = new(new ProgressSnapshot(0, -generation, positionMs, reply.DurationMs ?? 0,
                         Stopwatch.GetTimestamp(), reply.Phase == StreamPhase.Playing, reply.SeekId));
                 }
+                // Duration may arrive while the stream stays in Buffering; its timer is stopped then.
+                if (reply.DurationMs is > 0)
+                    App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+                    {
+                        if (token.IsCancellationRequested || generation != _generation || !state.CanPublishState) return;
+                        if (state.ProgressSliderMax != reply.DurationMs.Value / 1000.0)
+                            state.UpdateProgressTimerUI();
+                    });
                 _bridge?.SetPlaying(reply.Phase == StreamPhase.Playing);
                 if (reply.Phase != previous)
                 {
@@ -213,6 +251,8 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
             if (generation != _generation || _needsRestart) return;
             advance = _intent;
             intentVersion = _intentVersion;
+            // 准备阶段再次失败时尚无新快照，仍保留上次断流位置供下次重试。
+            _failedPositionMs = Math.Max(0, _snapshot?.Progress.CurrentMs ?? _startPositionMs);
             _intent = false;
             _needsRestart = true;
         }
@@ -233,11 +273,28 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
             Failed?.Invoke(music, generation, shouldAdvance);
         });
     }
-    public Task StopAsync()
+    public Task StopAsync() => StopAsync(preserveFailedProgress: false);
+
+    public Task StopAsync(bool preserveFailedProgress)
     {
         long generation;
         lock (_gate)
         {
+            if (preserveFailedProgress && _music is not null)
+            {
+                _failedPositionMs = Math.Max(_failedPositionMs, _snapshot?.Progress.CurrentMs ?? 0);
+                _needsRestart = true;
+                _holdFailedProgress = true;
+                if (_snapshot is { } last)
+                    _snapshot = new(last.Progress with { Playing = false, Timestamp = Stopwatch.GetTimestamp() });
+            }
+            else
+            {
+                _failedPositionMs = 0;
+                _needsRestart = false;
+                _holdFailedProgress = false;
+                _snapshot = null;
+            }
             generation = ++_generation;
             _intent = false;
             _sessionCancel?.Cancel();
@@ -252,7 +309,14 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
         {
             lock (_gate) { if (generation != _generation) return; }
             await StopSessionCoreAsync();
-            lock (_gate) { if (generation == _generation) { _active = false; _snapshot = null; } }
+            lock (_gate)
+            {
+                if (generation == _generation)
+                {
+                    _active = false;
+                    if (!_holdFailedProgress) _snapshot = null;
+                }
+            }
         }
         finally { _switch.Release(); }
     }

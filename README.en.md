@@ -28,7 +28,7 @@
 
 <div align="center">
 
-[**🏠 Product Page/User Guide**](https://johnwikix.github.io/original-sound-player-page) | [**🐞 Report Issue**](https://github.com/Johnwikix/original-sound-hq-player/issues)
+[**🏠 Product Page/User Guide**](https://johnwikix.github.io/original-sound-player-page) | [**🎬 Promo Video**](https://www.bilibili.com/video/BV13ehE6DErQ) | [**🐞 Report Issue**](https://github.com/Johnwikix/original-sound-hq-player/issues)
 
 </div>
 
@@ -63,12 +63,13 @@ While restricted, your existing settings are never modified or erased — comple
   - Quick access to your favorite tracks
 
 - ☁️ **WebDAV Music Sources**
-  - Connect to WebDAV servers (NAS, Nutstore, Alist/OpenList, etc.) and manage them alongside your local library
+  - Connect to WebDAV servers (NAS, Alist/OpenList, etc.) and manage them alongside your local library
   - Browse the remote directory tree to pick scan roots; incremental rescans with optional scan-on-startup
   - Automatic remote metadata (title/artist/album, etc.) and embedded cover art, plus matching `.lrc` lyrics by filename
-  - HTTP Range streaming playback with automatic stream-recovery; live offline marking and availability probing per source
+  - HTTP Range streaming playback that resumes from the last position after a stream drop; live offline marking and availability probing per source — offline tracks are dimmed and online-only actions disabled
   - Optional audio cache: fully cached tracks play offline, with a size limit and one-tap cleanup
-  - HTTPS self-signed certificate confirmation by fingerprint; filter browsing by source (all/local/individual WebDAV source)
+  - Identically named local and WebDAV albums merge into one card, with album details listing songs from all sources
+  - HTTPS self-signed certificate confirmation by fingerprint; filter browsing by source (all/local/individual WebDAV source), with track counts shown on source cards
 
 - 📂 **Favorites & Playlists**
   - Create and manage custom playlists
@@ -104,6 +105,7 @@ While restricted, your existing settings are never modified or erased — comple
 
 - 🪟 **Modern UI Experience**
   - Clean and intuitive interface built with WinUI 3
+  - 7 UI languages (Simplified Chinese, English, German, Spanish, Japanese, Russian, Turkish), following the system language by default
   - 3 application styles: Mica, Acrylic, and more
   - 3 themes: System Default, Dark, Light
   - Integrated SMTC (System Media Transport Controls)

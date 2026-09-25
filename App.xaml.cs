@@ -7,6 +7,7 @@ using Microsoft.UI.Xaml;
 using Serilog;
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using System.IO;
 using System.Runtime;
 using System.Runtime.InteropServices;
@@ -129,9 +130,9 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<AddFolderViewModel>();
                  services.AddSingleton<FolderAccessService>();
                  services.AddSingleton<SettingsViewModel>();
-                services.AddTransient<DspSettingsViewModel>();
-                services.AddSingleton<CurvePresetService>();
-                services.AddTransient<ConvolutionCurveViewModel>();
+                 services.AddTransient<DspSettingsViewModel>();
+                 services.AddSingleton<CurvePresetService>();
+                 services.AddTransient<ConvolutionCurveViewModel>();
                  services.AddSingleton<AlbumViewModel>();
                  services.AddSingleton<FavouritePlayListViewModel>();
                  services.AddSingleton<ArtistViewModel>();
@@ -207,12 +208,31 @@ namespace WinUIMusicPlayer
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "de";
                 AppData.SystemLanguage = "de";
             }
+            else if (systemLanguages[0].StartsWith("tr"))
+            {
+                Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "tr";
+                AppData.SystemLanguage = "tr";
+            }
             else
             {
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "en";
                 AppData.SystemLanguage = "en";
             }
-            //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "es";
+            //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "tr";
+            //AppData.SystemLanguage = "tr";
+            // PrimaryLanguageOverride 只影响 WinRT 资源解析；.NET 的 CurrentUICulture 仍跟随系统 UI 语言，
+            // 会让统计页星期/月份等 .NET 格式化文本与应用语言不一致。此处取最终生效的应用语言，
+            // 同步线程 UI 文化；必须放在所有 PrimaryLanguageOverride 赋值之后。
+            try
+            {
+                var appUiCulture = new CultureInfo(Windows.Globalization.ApplicationLanguages.Languages[0]);
+                CultureInfo.DefaultThreadCurrentUICulture = appUiCulture;
+                CultureInfo.CurrentUICulture = appUiCulture;
+            }
+            catch (CultureNotFoundException)
+            {
+                // 应用语言标签映射不到 .NET 文化时保持系统默认
+            }
         }
 
         private void App_UnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)

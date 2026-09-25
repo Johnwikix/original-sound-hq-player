@@ -10,5 +10,6 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <Compile Include="$(PlaybackCoordinatorSource);../../Services/ApplicationTasks.cs;../../Services/AppLifecycle.cs;../../Services/ShutdownCoordinator.cs" />
     <Compile Include="../../Services/PlaybackCommands.cs" />
+    <Compile Include="../../ViewModel/Pages/WebDavSourcesViewModel.cs" />
   </ItemGroup>
 </Project>

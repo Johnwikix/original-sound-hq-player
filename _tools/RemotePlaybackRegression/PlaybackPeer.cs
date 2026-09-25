@@ -10,9 +10,12 @@ internal sealed class PlaybackPeer : IAsyncDisposable
     private readonly Dictionary<Guid, string> _locations = [];
     private StreamPhase _phase = StreamPhase.Playing;
     public int Prepares;
+    public long LastPreparePositionMs;
     public Guid Current;
     public PlaybackPeer() => _server = Task.Run(ServeAsync);
     public void FailDecoder() => _phase = StreamPhase.Failed;
+    public void SetPosition(long positionMs) => Interlocked.Exchange(ref _positionMs, positionMs);
+    private long _positionMs;
     public async Task<byte[]> ReadAsync(long start, long end)
     {
         string location;
@@ -29,24 +32,30 @@ internal sealed class PlaybackPeer : IAsyncDisposable
         {
             while (!_stop.IsCancellationRequested)
             {
-                await using var pipe = new NamedPipeServerStream(StreamingWire.PipeName, PipeDirection.InOut, 1,
-                    PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
-                await pipe.WaitForConnectionAsync(_stop.Token);
-                var command = await StreamingWire.ReadAsync(pipe, StreamingJson.Default.StreamCommand, _stop.Token);
-                if (command.Method == "prepare")
+                try
                 {
-                    lock (_locations) _locations[command.SessionId] = command.Source!.Location;
-                    Current = command.SessionId;
-                    _phase = StreamPhase.Playing;
-                    Prepares++;
+                    await using var pipe = new NamedPipeServerStream(StreamingWire.PipeName, PipeDirection.InOut, 1,
+                        PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+                    await pipe.WaitForConnectionAsync(_stop.Token);
+                    var command = await StreamingWire.ReadAsync(pipe, StreamingJson.Default.StreamCommand, _stop.Token);
+                    if (command.Method == "prepare")
+                    {
+                        lock (_locations) _locations[command.SessionId] = command.Source!.Location;
+                        Current = command.SessionId;
+                        _phase = StreamPhase.Playing;
+                        Prepares++;
+                        LastPreparePositionMs = command.PositionMs;
+                    }
+                    if (command.Method == "pause") _phase = StreamPhase.Paused;
+                    if (command.Method == "play") _phase = StreamPhase.Playing;
+                    await StreamingWire.WriteAsync(pipe, new StreamReply
+                    {
+                        RequestId = command.RequestId, SessionId = command.SessionId, Accepted = true,
+                        Phase = _phase, WantsPlay = _phase == StreamPhase.Playing, DurationMs = 60000,
+                        PositionMs = command.Method == "prepare" ? command.PositionMs : Interlocked.Read(ref _positionMs)
+                    }, StreamingJson.Default.StreamReply, _stop.Token);
                 }
-                if (command.Method == "pause") _phase = StreamPhase.Paused;
-                if (command.Method == "play") _phase = StreamPhase.Playing;
-                await StreamingWire.WriteAsync(pipe, new StreamReply
-                {
-                    RequestId = command.RequestId, SessionId = command.SessionId, Accepted = true,
-                    Phase = _phase, WantsPlay = _phase == StreamPhase.Playing, DurationMs = 60000
-                }, StreamingJson.Default.StreamReply, _stop.Token);
+                catch (IOException) { /* A canceled IPC request may close its pipe before the reply. */ }
             }
         }
         catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }

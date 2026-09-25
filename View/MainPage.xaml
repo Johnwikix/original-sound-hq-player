@@ -65,32 +65,38 @@
             <Grid
                 x:Name="BottomControlBar"
                 Grid.Row="1"
-                MinHeight="120"
+                MinHeight="104"
                 Margin="10,0,10,10"
                 RowDefinitions="Auto,*"
                 Visibility="{x:Bind NavigationViewControl.Visibility, Mode=OneWay}">
                 <Grid
                     Grid.Row="0"
-                    Margin="0"
-                    ColumnDefinitions="*,Auto">
-                    <Slider
-                        x:Name="ProgressSlider"
+                    Margin="0,0,0,6"
+                    ColumnDefinitions="Auto,*,Auto">
+                    <TextBlock
                         Grid.Column="0"
-                        Margin="0"
+                        Margin="10,0,10,1"
                         VerticalAlignment="Center"
-                        Loaded="ProgressSlider_Loaded"
-                        Maximum="{x:Bind ViewModel.AppViewModel.ProgressSliderMax, Mode=TwoWay}"
-                        Minimum="0"
-                        PointerEntered="ProgressSlider_PointerEntered"
-                        PointerExited="ProgressSlider_PointerExited"
-                        ThumbToolTipValueConverter="{StaticResource AdvancedThumbToolTipValueConverter}"
-                        Value="{x:Bind ViewModel.AppViewModel.ProgressSlider, Mode=TwoWay}" />
+                        Text="{x:Bind ViewModel.AppViewModel.ElapsedTimeText, Mode=OneWay}" />
+                    <Grid Grid.Column="1">
+                        <Slider
+                            x:Name="ProgressSlider"
+                            VerticalAlignment="Center"
+                            Loaded="ProgressSlider_Loaded"
+                            Maximum="{x:Bind ViewModel.AppViewModel.ProgressSliderMax, Mode=TwoWay}"
+                            Minimum="0"
+                            PointerEntered="ProgressSlider_PointerEntered"
+                            PointerExited="ProgressSlider_PointerExited"
+                            Style="{StaticResource PlaybackSliderStyle}"
+                            ThumbToolTipValueConverter="{StaticResource AdvancedThumbToolTipValueConverter}"
+                            Value="{x:Bind ViewModel.AppViewModel.ProgressSlider, Mode=TwoWay}" />
+                    </Grid>
                     <TextBlock
                         x:Name="PlayTimeTextBlock"
-                        Grid.Column="1"
-                        Margin="10,0,0,0"
+                        Grid.Column="2"
+                        Margin="10,0,10,1"
                         VerticalAlignment="Center"
-                        Text="{x:Bind ViewModel.AppViewModel.PlayTimeText, Mode=OneWay}" />
+                        Text="{x:Bind ViewModel.AppViewModel.RemainingTimeText, Mode=OneWay}" />
                 </Grid>
 
                 <Grid
@@ -255,10 +261,10 @@
                                     Grid.Column="2"
                                     Margin="8,0,0,0"
                                     VerticalAlignment="Center"
+                                    AutomationProperties.Name="{x:Bind tools:BindUtils.RemotePlaybackDescription(ViewModel.AppViewModel.RemotePlaybackStatus, ViewModel.AppViewModel.CurrentPlayingMusic.IsRemoteCached), Mode=OneWay}"
                                     FontSize="12"
                                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                     Glyph="{x:Bind tools:BindUtils.MusicSourceGlyph(ViewModel.AppViewModel.CurrentPlayingMusic.IsRemote, ViewModel.AppViewModel.CurrentPlayingMusic.IsRemoteOffline, ViewModel.AppViewModel.CurrentPlayingMusic.IsRemoteCached), Mode=OneWay}"
-                                    AutomationProperties.Name="{x:Bind tools:BindUtils.RemotePlaybackDescription(ViewModel.AppViewModel.RemotePlaybackStatus, ViewModel.AppViewModel.CurrentPlayingMusic.IsRemoteCached), Mode=OneWay}"
                                     ToolTipService.ToolTip="{x:Bind tools:BindUtils.RemotePlaybackDescription(ViewModel.AppViewModel.RemotePlaybackStatus, ViewModel.AppViewModel.CurrentPlayingMusic.IsRemoteCached), Mode=OneWay}"
                                     Visibility="{x:Bind tools:BindUtils.BoolToVisibilityConverter(ViewModel.AppViewModel.CurrentPlayingMusic.IsRemote), Mode=OneWay}" />
                             </Grid>
@@ -492,8 +498,8 @@
                                 FontWeight="Normal"
                                 IsHitTestVisible="False"
                                 IsTextScaleFactorEnabled="False"
-                                TextAlignment="Center"
-                                Opacity="{x:Bind tools:BindUtils.DesktopLyricsButtonOpacity(ViewModel.DesktopLyrics.IsEnabled), Mode=OneWay}" />
+                                Opacity="{x:Bind tools:BindUtils.DesktopLyricsButtonOpacity(ViewModel.DesktopLyrics.IsEnabled), Mode=OneWay}"
+                                TextAlignment="Center" />
                         </Button>
                         <TeachingTip
                             x:Name="CurrentPlayListTeachingTip"
@@ -591,8 +597,10 @@
                     IsHitTestVisible="False"
                     IsTextScaleFactorEnabled="False"
                     Style="{StaticResource CaptionTextBlockStyle}" />
-                <!--  全局唯一任务指示器：环 + 百分比 + 操作文本横排。单操作显示独立百分比；
-                      多操作横排并列、各带百分比（不做跨操作加权平均，会倒退）。  -->
+                <!--
+                    全局唯一任务指示器：环 + 百分比 + 操作文本横排。单操作显示独立百分比；
+                    多操作横排并列、各带百分比（不做跨操作加权平均，会倒退）。
+                -->
                 <StackPanel
                     Margin="12,0,0,0"
                     VerticalAlignment="Center"

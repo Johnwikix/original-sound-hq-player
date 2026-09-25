@@ -42,12 +42,24 @@ public sealed class PlaybackCoordinator(AppViewModel state, BassPlayerCommandSer
     }
 
     public Task PlayAsync(Music music, long entryId = 0)
+        => SelectMusicAsync(music, entryId, resumeInterrupted: false);
+
+    /// <summary>播放按钮恢复同一首断流歌曲；主动选曲仍从曲首开始。</summary>
+    public Task ResumeCurrentAsync()
+    {
+        var music = state.CurrentPlayingMusic;
+        return music is { IsRemote: true } ? SelectMusicAsync(music, state.State.Queue.CurrentEntryId, resumeInterrupted: true)
+            : Task.CompletedTask;
+    }
+
+    private Task SelectMusicAsync(Music music, long entryId, bool resumeInterrupted)
     {
         if (_disposed || !state.CanStartPlayback || music is null || (!music.IsRemote && !music.IsPlayable)) return Task.CompletedTask;
         _failedEntries.Clear();
         return RunSelectionAsync(async token =>
         {
-            if (await IsAvailableAsync(music, token, retryImmediately: true)) await PlayCoreAsync(music, entryId, token);
+            if (await IsAvailableAsync(music, token, retryImmediately: true))
+                await PlayCoreAsync(music, entryId, token, resumeInterrupted);
         }, music, entryId != 0 ? entryId : state.State.Queue.EntryIdAt(state.State.Queue.IndexOf(music)));
     }
 
@@ -118,11 +130,12 @@ public sealed class PlaybackCoordinator(AppViewModel state, BassPlayerCommandSer
         int count = state.CurrentPlayingList.Count;
         if (count == 0) { player.MusicEnd(); return; }
         int index = (state.GetCurrentIndex() + 1) % count;
-        _ = RunSelectionAsync(token => PlayQueueCoreAsync(index, 1, true, token),
+        _ = RunSelectionAsync(token => PlayQueueCoreAsync(index, 1, true, token, preserveInterruptedProgress: true),
             state.CurrentPlayingList[index], state.State.Queue.EntryIdAt(index));
     }
 
-    private async Task PlayQueueCoreAsync(int index, int direction, bool stopWhenUnavailable, CancellationToken token)
+    private async Task PlayQueueCoreAsync(int index, int direction, bool stopWhenUnavailable, CancellationToken token,
+        bool preserveInterruptedProgress = false)
     {
         var list = state.CurrentPlayingList;
         int count = list.Count;
@@ -152,7 +165,8 @@ public sealed class PlaybackCoordinator(AppViewModel state, BassPlayerCommandSer
             }
             index = (index + direction + count) % count;
         }
-        if (stopWhenUnavailable && !_disposed && state.CanStartPlayback && !token.IsCancellationRequested) player.MusicEnd();
+        if (stopWhenUnavailable && !_disposed && state.CanStartPlayback && !token.IsCancellationRequested)
+            player.MusicEnd(preserveInterruptedProgress);
     }
 
     private async Task<bool> IsAvailableAsync(Music music, CancellationToken token, bool retryImmediately = false)
@@ -165,11 +179,11 @@ public sealed class PlaybackCoordinator(AppViewModel state, BassPlayerCommandSer
         catch (WebDavException ex) when (ex.Code is "ResourceMissing" or "SourceUnavailable") { return false; }
     }
 
-    private async Task PlayCoreAsync(Music music, long entryId, CancellationToken token)
+    private async Task PlayCoreAsync(Music music, long entryId, CancellationToken token, bool resumeInterrupted = false)
     {
         token.ThrowIfCancellationRequested();
         if (_disposed || !state.CanStartPlayback) return;
-        long remoteGeneration = music.IsRemote ? remote.BeginSelection() : 0;
+        long remoteGeneration = music.IsRemote ? remote.BeginSelection(music, resumeInterrupted) : 0;
         _playingGeneration = remoteGeneration;
         _playingVersion = _selectionVersion;
         _deferredFailure = null;

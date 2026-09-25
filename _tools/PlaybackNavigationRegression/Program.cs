@@ -181,6 +181,25 @@ internal static class Regression
         Check(failure.Player.Played.SequenceEqual([nextLocal]) && failure.Library.Probes.Count == 1,
             "runtime failure advances to local audio without probing failed source again");
 
+        using var availability = new Scenario();
+        var cachedCurrent = new Music(20, 10) { IsRemoteCached = true };
+        availability.State.CurrentPlayingList = [cachedCurrent, nextLocal];
+        await availability.Coordinator.PlayAtAsync(0);
+        availability.State.IsPlaying = true;
+        var sourcesViewModel = new WebDavSourcesViewModel(new MusicDatabaseService(), availability.Library,
+            availability.Remote, new WinUIMusicPlayer.Services.WebDav.RemoteAudioCache(), availability.State,
+            new LibraryQueries());
+        await sourcesViewModel.LoadAsync();
+        cachedCurrent.IsRemoteOffline = true;
+        availability.Library.PublishAvailability(10, true);
+        Check(availability.Remote.PreservedStops == 0 && availability.State.IsPlaying && cachedCurrent.IsPlayable,
+            "offline source status does not stop a cached current track");
+        availability.Remote.Fail(cachedCurrent);
+        await WaitAsync(() => availability.State.CurrentPlayingMusic == nextLocal);
+        Check(availability.Player.Played.SequenceEqual([nextLocal]),
+            "source read failure still advances after its availability notification");
+        await sourcesViewModel.StopAsync();
+
         using var staleFailure = new Scenario();
         staleFailure.State.CurrentPlayingList = [offline, sameSource, nextLocal];
         await staleFailure.Coordinator.PlayAtAsync(0);
@@ -198,9 +217,11 @@ internal static class Regression
         await bounded.Coordinator.PlayAtAsync(0);
         bounded.Remote.Fail(offline);
         await WaitAsync(() => bounded.State.CurrentPlayingMusic == sameSource && bounded.State.State.Playback.PendingSelection is null);
+        bounded.State.ProgressSlider = 12;
         bounded.Remote.Fail(sameSource);
         await WaitAsync(() => bounded.Player.Ends == 1);
         Check(bounded.Remote.Played.Count == 2, "decoder failures exhaust queue once instead of looping forever");
+        Check(bounded.State.ProgressSlider == 12, "exhausted recovery keeps the interrupted track position visible");
 
         using var deferred = new Scenario();
         deferred.State.CurrentPlayingList = [offline, sameSource, nextLocal];
@@ -226,6 +247,54 @@ internal static class Regression
         await toStop;
         Check(stopped.State.SelectedPlaybackMusic == current && stopped.Remote.Played.Count == 0,
             "stop cancels pending selection so a late probe cannot restart playback");
+
+        using var toggledPause = new Scenario();
+        toggledPause.State.CurrentPlayingList = [current, offline, nextLocal];
+        toggledPause.State.CurrentPlayingMusic = current;
+        toggledPause.State.IsPlaying = true;
+        toggledPause.Lifecycle.TransitionTo(AppPhase.WaitingForAgreement);
+        toggledPause.Lifecycle.TransitionTo(AppPhase.Initializing);
+        toggledPause.Lifecycle.TransitionTo(AppPhase.Ready);
+        var pauseProbe = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        toggledPause.Library.Probe = (_, token) => pauseProbe.Task.WaitAsync(token);
+        using var pauseServices = new ServiceCollection()
+            .AddSingleton(toggledPause.Player).AddSingleton(toggledPause.Remote).AddSingleton(toggledPause.Coordinator)
+            .BuildServiceProvider();
+        using var pauseCommands = new PlaybackCommands(toggledPause.Lifecycle, toggledPause.State, pauseServices);
+        Task pendingBeforePause = toggledPause.Coordinator.PlayAsync(offline);
+        while (toggledPause.Library.Probes.Count == 0) await Task.Delay(1);
+        await pauseCommands.ToggleCommand.ExecuteAsync(null);
+        pauseProbe.SetResult(true);
+        await pendingBeforePause;
+        Check(toggledPause.State.State.Playback.PendingSelection is null &&
+              toggledPause.State.CurrentPlayingMusic == current && toggledPause.Remote.Played.Count == 0,
+            "playback toggle pauses current track and cancels a pending remote selection");
+
+        using var remotePause = new Scenario();
+        var remoteCurrent = new Music(30, 10);
+        var remotePending = new Music(31, 10);
+        remotePause.State.CurrentPlayingList = [remoteCurrent, remotePending, nextLocal];
+        await remotePause.Coordinator.PlayAtAsync(0);
+        remotePause.State.IsPlaying = true;
+        remotePause.Remote.NeedsStart = false;
+        remotePause.Lifecycle.TransitionTo(AppPhase.WaitingForAgreement);
+        remotePause.Lifecycle.TransitionTo(AppPhase.Initializing);
+        remotePause.Lifecycle.TransitionTo(AppPhase.Ready);
+        var remotePauseProbe = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        remotePause.Library.Probe = (_, token) => remotePauseProbe.Task.WaitAsync(token);
+        using var remotePauseServices = new ServiceCollection()
+            .AddSingleton(remotePause.Player).AddSingleton(remotePause.Remote).AddSingleton(remotePause.Coordinator)
+            .BuildServiceProvider();
+        using var remotePauseCommands = new PlaybackCommands(remotePause.Lifecycle, remotePause.State, remotePauseServices);
+        Task remotePendingPlay = remotePause.Coordinator.PlayAsync(remotePending);
+        while (remotePause.Library.Probes.Count < 2) await Task.Delay(1);
+        await remotePauseCommands.ToggleCommand.ExecuteAsync(null);
+        remotePauseProbe.SetResult(true);
+        await remotePendingPlay;
+        Check(remotePause.State.State.Playback.PendingSelection is null &&
+              remotePause.State.CurrentPlayingMusic == remoteCurrent && !remotePause.Remote.WantsPlay &&
+              remotePause.Remote.Played.SequenceEqual([remoteCurrent]),
+            "playback toggle pauses remote current track without starting the pending remote track");
 
         using var responsive = new Scenario();
         responsive.State.CurrentPlayingList = [current, offline, nextLocal];
@@ -280,6 +349,7 @@ sealed class Scenario : IDisposable
     public PlaybackCoordinator Coordinator { get; }
     public Scenario()
     {
+        Player.State = State;
         State.State.Queue.FindIndex = music => State.CurrentPlayingList.IndexOf(music);
         Coordinator = new(State, Player, new(), new ApplicationTasks(Lifecycle),
             new ShutdownCoordinator(Lifecycle, NullLogger<ShutdownCoordinator>.Instance), NullLogger<PlaybackCoordinator>.Instance, Remote, Library);

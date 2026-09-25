@@ -1,0 +1,2273 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppTitle.Text" xml:space="preserve">
+    <value>OriginalSound HQ Player</value>
+  </data>
+  <data name="ProgressConnecting" xml:space="preserve">
+    <value>Ses motoruna bağlanılıyor</value>
+  </data>
+  <data name="ProgressLoadingLibrary" xml:space="preserve">
+    <value>Müzik kitaplığı yükleniyor</value>
+  </data>
+  <data name="ProgressScanning" xml:space="preserve">
+    <value>Müzik kitaplığı taranıyor</value>
+  </data>
+  <data name="ProgressRescanning" xml:space="preserve">
+    <value>Müzik kitaplığı yeniden taranıyor</value>
+  </data>
+  <data name="ProgressTransmitting" xml:space="preserve">
+    <value>USB cihazına aktarılıyor</value>
+  </data>
+  <data name="SongTab.Text" xml:space="preserve">
+    <value>Şarkılar</value>
+  </data>
+  <data name="AlbumTab.Text" xml:space="preserve">
+    <value>Albümler</value>
+  </data>
+  <data name="AddFolder.Text" xml:space="preserve">
+    <value>Klasör ekle</value>
+  </data>
+  <data name="MusicBrowse.Text" xml:space="preserve">
+    <value>Müzik kitaplığı</value>
+  </data>
+  <data name="PlayLists.Text" xml:space="preserve">
+    <value>Çalma listeleri</value>
+  </data>
+  <data name="Stats.Text" xml:space="preserve">
+    <value>İstatistikler</value>
+  </data>
+  <data name="StatsPageTimeRange.Text" xml:space="preserve">
+    <value>Zaman aralığı</value>
+  </data>
+  <data name="StatsRangePastWeek.Content" xml:space="preserve">
+    <value>Son bir hafta</value>
+  </data>
+  <data name="StatsRangePastMonth.Content" xml:space="preserve">
+    <value>Son bir ay</value>
+  </data>
+  <data name="StatsRangePastQuarter.Content" xml:space="preserve">
+    <value>Son çeyrek</value>
+  </data>
+  <data name="StatsRangePastYear.Content" xml:space="preserve">
+    <value>Son bir yıl</value>
+  </data>
+  <data name="StatsRangeCustom.Content" xml:space="preserve">
+    <value>Özel</value>
+  </data>
+  <data name="StatsCustomStart.Header" xml:space="preserve">
+    <value>Başlangıç</value>
+  </data>
+  <data name="StatsCustomEnd.Header" xml:space="preserve">
+    <value>Bitiş</value>
+  </data>
+  <data name="StatsTotalDuration.Text" xml:space="preserve">
+    <value>Toplam dinleme süresi</value>
+  </data>
+  <data name="StatsTracksPlayed.Text" xml:space="preserve">
+    <value>Çalınan parçalar</value>
+  </data>
+  <data name="StatsTopAlbums.Text" xml:space="preserve">
+    <value>En iyi 5 albüm</value>
+  </data>
+  <data name="StatsActiveDays.Text" xml:space="preserve">
+    <value>Etkin günler</value>
+  </data>
+  <data name="StatsHeatmap.Text" xml:space="preserve">
+    <value>Isı haritası</value>
+  </data>
+  <data name="StatsActivityByHour.Text" xml:space="preserve">
+    <value>Saatlik etkinlik</value>
+  </data>
+  <data name="StatsMostActive.Text" xml:space="preserve">
+    <value>En etkin</value>
+  </data>
+  <data name="StatsLeastActive.Text" xml:space="preserve">
+    <value>En az etkin</value>
+  </data>
+  <data name="StatsTopArtists.Text" xml:space="preserve">
+    <value>En iyi 5 sanatçı</value>
+  </data>
+  <data name="StatsTopSongs.Text" xml:space="preserve">
+    <value>En iyi 10 şarkı</value>
+  </data>
+  <data name="StatsTopSongsNext.Text" xml:space="preserve">
+    <value>6-10 arası</value>
+  </data>
+  <data name="StatsTimes.Text" xml:space="preserve">
+    <value>kez</value>
+  </data>
+  <data name="AppMainTitle" xml:space="preserve">
+    <value>OriginalSound HQ Player</value>
+  </data>
+  <data name="ArtistTab.Text" xml:space="preserve">
+    <value>Sanatçılar</value>
+  </data>
+  <data name="FolderTab.Text" xml:space="preserve">
+    <value>Klasörler</value>
+  </data>
+  <data name="FavouriteTab.Text" xml:space="preserve">
+    <value>Favoriler</value>
+  </data>
+  <data name="FavouritePlayListPageEmptyTitle.Text" xml:space="preserve">
+    <value>Henüz favori yok</value>
+  </data>
+  <data name="FavouritePlayListPageEmptySubtitle.Text" xml:space="preserve">
+    <value>Çalarken veya gezinirken bir şarkının yanındaki kalp simgesine dokunun; şarkı burada görünür.</value>
+  </data>
+  <data name="PlaylistTab.Text" xml:space="preserve">
+    <value>Çalma listeleri</value>
+  </data>
+  <data name="PlaylistTitle.Text" xml:space="preserve">
+    <value>Çalma listeleri</value>
+  </data>
+  <data name="PlayListPageCountSuffix.Text" xml:space="preserve">
+    <value>çalma listesi</value>
+  </data>
+  <data name="PlayListPageEmptyTitle.Text" xml:space="preserve">
+    <value>Henüz çalma listesi yok</value>
+  </data>
+  <data name="PlayListPageEmptySubtitle.Text" xml:space="preserve">
+    <value>İlk çalma listenizi oluşturun ve müziğinizi dilediğiniz gibi düzenleyin.</value>
+  </data>
+  <data name="AddPlayList.Text" xml:space="preserve">
+    <value>Yeni çalma listesi</value>
+  </data>
+  <data name="USBDevice.PlaceholderText" xml:space="preserve">
+    <value>USB cihazı</value>
+  </data>
+  <data name="SortOrder.Text" xml:space="preserve">
+    <value>Sıralama düzeni</value>
+  </data>
+  <data name="SortOrderDefault" xml:space="preserve">
+    <value>Varsayılan</value>
+  </data>
+  <data name="SortOrderA_Z" xml:space="preserve">
+    <value>A-Z</value>
+  </data>
+  <data name="SortOrderArtist" xml:space="preserve">
+    <value>Sanatçı</value>
+  </data>
+  <data name="SortOrderAlbum" xml:space="preserve">
+    <value>Albüm</value>
+  </data>
+  <data name="SearchMusic.PlaceholderText" xml:space="preserve">
+    <value>Müzik arama</value>
+  </data>
+  <data name="Settings.Text" xml:space="preserve">
+    <value>Ayarlar</value>
+  </data>
+  <data name="SettingAudio.Text" xml:space="preserve">
+    <value>Ses</value>
+  </data>
+  <data name="SettingOutput.Text" xml:space="preserve">
+    <value>Çıkış ayarları</value>
+  </data>
+  <data name="SettingOutputMode.Header" xml:space="preserve">
+    <value>Çıkış modları</value>
+  </data>
+  <data name="WasapiExclusivePush.Content" xml:space="preserve">
+    <value>Wasapi özel mod (Push)</value>
+  </data>
+  <data name="WasapiExclusiveEvent.Content" xml:space="preserve">
+    <value>Wasapi özel mod (Event)</value>
+  </data>
+  <data name="WasapiShared.Content" xml:space="preserve">
+    <value>Wasapi paylaşılan mod</value>
+  </data>
+  <data name="WaveOut.Content" xml:space="preserve">
+    <value>WaveOut</value>
+  </data>
+  <data name="DirectSound.Content" xml:space="preserve">
+    <value>DirectSound</value>
+  </data>
+  <data name="SettingOutputDevice.Text" xml:space="preserve">
+    <value>Çıkış cihazı</value>
+  </data>
+  <data name="SettingBufferSize.Text" xml:space="preserve">
+    <value>Arabellek boyutu (ms)</value>
+  </data>
+  <data name="SettingFunction.Text" xml:space="preserve">
+    <value>İşlev</value>
+  </data>
+  <data name="DefaultEntryInterface.Text" xml:space="preserve">
+    <value>Varsayılan giriş arabirimi</value>
+  </data>
+  <data name="AddFolderCombox.Content" xml:space="preserve">
+    <value>Klasör ekle</value>
+  </data>
+  <data name="MusicBrowseCombox.Content" xml:space="preserve">
+    <value>Müzik kitaplığı</value>
+  </data>
+  <data name="MusicBrowsePageTitle.Text" xml:space="preserve">
+    <value>Müzik</value>
+  </data>
+  <data name="MusicBrowseEmptyTitle.Text" xml:space="preserve">
+    <value>Kitaplığınız boş</value>
+  </data>
+  <data name="MusicBrowseEmptySubtitle.Text" xml:space="preserve">
+    <value>Kitaplığınızı oluşturmaya başlamak için yerel bir müzik klasörü ekleyin.</value>
+  </data>
+  <data name="PlayListsCombox.Content" xml:space="preserve">
+    <value>Çalma listeleri</value>
+  </data>
+  <data name="AlbumCombox.Content" xml:space="preserve">
+    <value>Albümler</value>
+  </data>
+  <data name="FavouriteCombox.Content" xml:space="preserve">
+    <value>Favoriler</value>
+  </data>
+  <data name="FolderCombox.Content" xml:space="preserve">
+    <value>Klasörler</value>
+  </data>
+  <data name="PlaylistCombox.Content" xml:space="preserve">
+    <value>Çalma listeleri</value>
+  </data>
+  <data name="SongCombox.Content" xml:space="preserve">
+    <value>Şarkılar</value>
+  </data>
+  <data name="ArtistCombox.Content" xml:space="preserve">
+    <value>Sanatçılar</value>
+  </data>
+  <data name="DefaultMusicEntryInterface.Text" xml:space="preserve">
+    <value>Varsayılan müzik giriş arabirimi</value>
+  </data>
+  <data name="SettingInterface.Text" xml:space="preserve">
+    <value>Arabirim ayarları</value>
+  </data>
+  <data name="SettingCover.Text" xml:space="preserve">
+    <value>Kapak ayarları</value>
+  </data>
+  <data name="SettingCoverLyrics.Header" xml:space="preserve">
+    <value>Kapak şarkı sözleri ayarları</value>
+  </data>
+  <data name="SettingLyrics.Text" xml:space="preserve">
+    <value>Şarkı sözleri ayarları</value>
+  </data>
+  <data name="CoverServiceLrcAPISource.Header" xml:space="preserve">
+    <value>Kapak hizmeti LrcAPI kaynağı</value>
+  </data>
+  <data name="CoverServiceLrcAPISourceDoc" xml:space="preserve">
+    <value>belge:https://docs.lrc.cx/docs/QuickStart/</value>
+  </data>
+  <data name="CoverServiceLrcAPISourceAuthCode.Header" xml:space="preserve">
+    <value>Kapak hizmeti LrcAPI kaynağı kimlik doğrulama kodu</value>
+  </data>
+
+  <data name="MaximumNumberOfPreLoadedCovers.Text" xml:space="preserve">
+    <value>Önceden yüklenen en fazla kapak sayısı</value>
+  </data>
+  <data name="AutoCoverMatching.Text" xml:space="preserve">
+    <value>Otomatik kapak eşleştirme</value>
+  </data>
+  <data name="AutoLyricMatching.Text" xml:space="preserve">
+    <value>Otomatik şarkı sözü eşleştirme</value>
+  </data>
+  <data name="NeedConfigureLrcAPIService" xml:space="preserve">
+    <value>LrcAPI hizmetinin yapılandırılması gerekiyor</value>
+  </data>
+  <data name="CloseButtonFunction.Text" xml:space="preserve">
+    <value>Kapat düğmesi işlevi</value>
+  </data>
+  <data name="CloseApp.Content" xml:space="preserve">
+    <value>Uygulamayı kapat</value>
+  </data>
+  <data name="Backgrounder.Content" xml:space="preserve">
+    <value>Arka plana küçült</value>
+  </data>
+  <data name="Appearance.Text" xml:space="preserve">
+    <value>Görünüm</value>
+  </data>
+  <data name="AppStyle.Text" xml:space="preserve">
+    <value>Uygulama stili</value>
+  </data>
+  <data name="MicaStyle.Content" xml:space="preserve">
+    <value>Mica</value>
+  </data>
+  <data name="AcrylicStyle.Content" xml:space="preserve">
+    <value>Acrylic</value>
+  </data>
+  <data name="TransparentAcrylicStyle.Content" xml:space="preserve">
+    <value>Saydam Acrylic</value>
+  </data>
+  <data name="ThemeStyle.Text" xml:space="preserve">
+    <value>Uygulama teması</value>
+  </data>
+  <data name="SystemDefaultTheme.Content" xml:space="preserve">
+    <value>Sistem varsayılanı</value>
+  </data>
+  <data name="Dark.Content" xml:space="preserve">
+    <value>Koyu</value>
+  </data>
+  <data name="Light.Content" xml:space="preserve">
+    <value>Açık</value>
+  </data>
+  <data name="FlyoutPlayItem" xml:space="preserve">
+    <value>Oynat</value>
+  </data>
+  <data name="FlyoutFavoriteItem" xml:space="preserve">
+    <value>Favori ekle/kaldır</value>
+  </data>
+  <data name="FlyoutAddToPlaylistItem" xml:space="preserve">
+    <value>Çalma listesine ekle</value>
+  </data>
+  <data name="FlyoutConvertItem" xml:space="preserve">
+    <value>Dönüştür</value>
+  </data>
+  <data name="FlyoutConvertWavItem.Text" xml:space="preserve">
+    <value>WAV</value>
+  </data>
+  <data name="FlyoutConvertMp3Item.Text" xml:space="preserve">
+    <value>MP3</value>
+  </data>
+  <data name="FlyoutConvertFlacItem.Text" xml:space="preserve">
+    <value>Flac</value>
+  </data>
+  <data name="FlyoutOpenLocationItem" xml:space="preserve">
+    <value>Dosya konumunu aç</value>
+  </data>
+  <data name="FlyoutPropertiesItem" xml:space="preserve">
+    <value>Özellikler</value>
+  </data>
+  <data name="FlyoutDeleteItem" xml:space="preserve">
+    <value>Diskten sil</value>
+  </data>
+  <data name="PlayListDeleteMenu.Text" xml:space="preserve">
+    <value>Çalma listesini sil</value>
+  </data>
+  <data name="FlyoutRemoveFromPlaylistItem" xml:space="preserve">
+    <value>Çalma listesinden kaldır</value>
+  </data>
+  <data name="CancelFavoriteMenuItem.Text" xml:space="preserve">
+    <value>Favorilerden kaldır</value>
+  </data>
+  <data name="SendToUsbDevice" xml:space="preserve">
+    <value>USB cihazına gönder</value>
+  </data>
+  <data name="Path" xml:space="preserve">
+    <value>Yol</value>
+  </data>
+  <data name="FreeSpace" xml:space="preserve">
+    <value>Boş alan</value>
+  </data>
+  <data name="Rescan" xml:space="preserve">
+    <value>Yeniden tara</value>
+  </data>
+  <data name="FlyoutProperties" xml:space="preserve">
+    <value>Özellikler</value>
+  </data>
+  <data name="FlyoutAddToPlaylist" xml:space="preserve">
+    <value>Çalma listesine ekle</value>
+  </data>
+  <data name="FlyoutPlay" xml:space="preserve">
+    <value>Oynat</value>
+  </data>
+  <data name="FlyoutFavorite" xml:space="preserve">
+    <value>Favorilere ekle</value>
+  </data>
+  <data name="AddToFavourite" xml:space="preserve">
+    <value>Favorilere ekle</value>
+  </data>
+  <data name="EnterPlaylistName" xml:space="preserve">
+    <value>Lütfen çalma listesi adını girin</value>
+  </data>
+  <data name="PrimaryButton" xml:space="preserve">
+    <value>Onayla</value>
+  </data>
+  <data name="CloseButton" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="DialogClose" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="ModifyPlaylist" xml:space="preserve">
+    <value>Çalma listesini düzenle</value>
+  </data>
+  <data name="Converting" xml:space="preserve">
+    <value>Dönüştürülüyor</value>
+  </data>
+  <data name="Processing" xml:space="preserve">
+    <value>İşleniyor...</value>
+  </data>
+  <data name="AlbumDetailWindow.Title" xml:space="preserve">
+    <value>Albüm özellikleri</value>
+  </data>
+  <data name="AlbumDetailTitleBar.Text" xml:space="preserve">
+    <value>Albüm ayrıntıları</value>
+  </data>
+  <data name="LoadingTextBlock.Text" xml:space="preserve">
+    <value>Değişiklikler işleniyor, lütfen bekleyin...</value>
+  </data>
+  <data name="GetImageFromNetButton.Content" xml:space="preserve">
+    <value>Kapağı çevrimiçi eşleştir</value>
+  </data>
+  <data name="SaveImageButton.Content" xml:space="preserve">
+    <value>Yerel diske kaydet</value>
+  </data>
+  <data name="SelectCoverImageButton.Content" xml:space="preserve">
+    <value>Kapağı düzenle</value>
+  </data>
+  <data name="TitleLabel.Text" xml:space="preserve">
+    <value>Başlık</value>
+  </data>
+  <data name="YearLabel.Text" xml:space="preserve">
+    <value>Yıl</value>
+  </data>
+  <data name="ConfirmFlyout.Text" xml:space="preserve">
+    <value>Meta veriler bu albümdeki tüm şarkılara kaydedilsin mi?</value>
+  </data>
+  <data name="ConfirmButton.Content" xml:space="preserve">
+    <value>Onayla</value>
+  </data>
+  <data name="CancelButton.Content" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="SaveButton.Content" xml:space="preserve">
+    <value>Dosyaya yaz</value>
+  </data>
+  <data name="CloseButtonItem.Content" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="MusicDetailTitleBar.Text" xml:space="preserve">
+    <value>Müzik ayrıntıları</value>
+  </data>
+  <data name="LoadingGrid.Text" xml:space="preserve">
+    <value>Kaydediliyor, lütfen bekleyin...</value>
+  </data>
+  <data name="TitleTextBlock.Text" xml:space="preserve">
+    <value>Başlık</value>
+  </data>
+  <data name="AuthorTextBlock.Text" xml:space="preserve">
+    <value>Sanatçı</value>
+  </data>
+  <data name="AlbumTextBlock.Text" xml:space="preserve">
+    <value>Albüm</value>
+  </data>
+  <data name="YearTextBlock.Text" xml:space="preserve">
+    <value>Yıl</value>
+  </data>
+  <data name="TrackNumberBox.Text" xml:space="preserve">
+    <value>Parça numarası</value>
+  </data>
+  <data name="LyricsTextBox.Content" xml:space="preserve">
+    <value>Şarkı sözlerini çevrimiçi eşleştir</value>
+  </data>
+  <data name="DurationTextBlock.Text" xml:space="preserve">
+    <value>Süre</value>
+  </data>
+  <data name="BitDepthTextBlock.Text" xml:space="preserve">
+    <value>Bit derinliği</value>
+  </data>
+  <data name="BitRateTextBlock.Text" xml:space="preserve">
+    <value>Bit hızı</value>
+  </data>
+  <data name="SampleRateTextBlock.Text" xml:space="preserve">
+    <value>Örnekleme hızı</value>
+  </data>
+  <data name="LastFolderNameTextBlock.Text" xml:space="preserve">
+    <value>Son klasör adı</value>
+  </data>
+  <data name="PathTextBlock.Text" xml:space="preserve">
+    <value>Yol</value>
+  </data>
+  <data name="Lyrics.Text" xml:space="preserve">
+    <value>Şarkı sözleri:</value>
+  </data>
+  <data name="MusicDetailTitle" xml:space="preserve">
+    <value>Müzik ayrıntıları</value>
+  </data>
+  <data name="AlbumDetailTitle" xml:space="preserve">
+    <value>Albüm ayrıntıları</value>
+  </data>
+  <data name="LyricsGetFailed" xml:space="preserve">
+    <value>Şarkı sözleri bulunamadı, müziğin tadını çıkarın</value>
+  </data>
+  <data name="NoRecognizableLyrics" xml:space="preserve">
+    <value>Tanınabilir şarkı sözü yok</value>
+  </data>
+  <data name="Display" xml:space="preserve">
+    <value>Göster</value>
+  </data>
+  <data name="LastSong" xml:space="preserve">
+    <value>Önceki şarkı</value>
+  </data>
+  <data name="NextSong" xml:space="preserve">
+    <value>Sonraki şarkı</value>
+  </data>
+  <data name="PlayNPause" xml:space="preserve">
+    <value>Oynat/Duraklat</value>
+  </data>
+  <data name="Exit" xml:space="preserve">
+    <value>Çıkış</value>
+  </data>
+  <data name="TrayIconInitialized" xml:space="preserve">
+    <value>Tepsi simgesi başlatıldı</value>
+  </data>
+  <data name="UnknownAlbum" xml:space="preserve">
+    <value>Bilinmeyen albüm</value>
+  </data>
+  <data name="UnknownArtist" xml:space="preserve">
+    <value>Bilinmeyen sanatçı</value>
+  </data>
+  <data name="Error" xml:space="preserve">
+    <value>Hata</value>
+  </data>
+  <data name="DSDPlaybackFailed" xml:space="preserve">
+    <value>DSD çalma başarısız oldu</value>
+  </data>
+  <data name="SwitchingToSharedMode" xml:space="preserve">
+    <value>Lütfen çıkış modunu değiştirmeyi deneyin</value>
+  </data>
+  <data name="FileDoNotExist" xml:space="preserve">
+    <value>Dosya mevcut değil</value>
+  </data>
+  <data name="UpdatingLyricsFailed" xml:space="preserve">
+    <value>Şarkı sözleri güncellenemedi</value>
+  </data>
+  <data name="NoMusicInUSBDevice" xml:space="preserve">
+    <value>USB cihazında müzik dosyası yok</value>
+  </data>
+  <data name="FailedObtainCover" xml:space="preserve">
+    <value>Kapak alınamadı</value>
+  </data>
+  <data name="FailedObtainLyrics" xml:space="preserve">
+    <value>Şarkı sözleri alınamadı</value>
+  </data>
+  <data name="LyricsSaveToDataBase.Content" xml:space="preserve">
+    <value>Şarkı sözlerini veritabanına kaydet</value>
+  </data>
+  <data name="AppMainTitleIcon.ToolTipText" xml:space="preserve">
+    <value>OriginalSound HQ Player</value>
+  </data>
+  <data name="IconDisplay.Text" xml:space="preserve">
+    <value>Göster</value>
+  </data>
+  <data name="IconLastSong.Text" xml:space="preserve">
+    <value>Önceki şarkı</value>
+  </data>
+  <data name="IconNextSong.Text" xml:space="preserve">
+    <value>Sonraki şarkı</value>
+  </data>
+  <data name="IconPlayNPause.Text" xml:space="preserve">
+    <value>Oynat</value>
+  </data>
+  <data name="IconExit.Text" xml:space="preserve">
+    <value>Çıkış</value>
+  </data>
+  <data name="PleaseDragFolder" xml:space="preserve">
+    <value>Lütfen dosya yerine klasör sürükleyin</value>
+  </data>
+  <data name="Warning" xml:space="preserve">
+    <value>Uyarı</value>
+  </data>
+  <data name="IconListLoop" xml:space="preserve">
+    <value>Liste döngüsü</value>
+  </data>
+  <data name="IconRandomLoop" xml:space="preserve">
+    <value>Rastgele döngü</value>
+  </data>
+  <data name="IconSinglePlayback" xml:space="preserve">
+    <value>Tek parça çalma</value>
+  </data>
+  <data name="IconSingleTuneCirculation" xml:space="preserve">
+    <value>Tek parça döngüsü</value>
+  </data>
+  <data name="IconSinglePlaybackValue.Text" xml:space="preserve">
+    <value>Tek parça çalma</value>
+  </data>
+  <data name="IconRandomLoopValue.Text" xml:space="preserve">
+    <value>Rastgele döngü</value>
+  </data>
+  <data name="IconListLoopValue.Text" xml:space="preserve">
+    <value>Liste döngüsü</value>
+  </data>
+  <data name="IconSingleTuneCirculationValue.Text" xml:space="preserve">
+    <value>Tek parça döngüsü</value>
+  </data>
+  <data name="IconSettings.Text" xml:space="preserve">
+    <value>Ayarlar</value>
+  </data>
+  <data name="IconPlay" xml:space="preserve">
+    <value>Oynat</value>
+  </data>
+  <data name="IconPause" xml:space="preserve">
+    <value>Duraklat</value>
+  </data>
+  <data name="SettingDSDGain.Text" xml:space="preserve">
+    <value>DSD kazancı (+db)</value>
+  </data>
+  <data name="EqualizerDialogTitle.Text" xml:space="preserve">
+    <value>Ekolayzer (db)</value>
+  </data>
+  <data name="EqCustom.Content" xml:space="preserve">
+    <value>Özel</value>
+  </data>
+  <data name="EqFlat.Content" xml:space="preserve">
+    <value>Düz</value>
+  </data>
+  <data name="EqRock.Content" xml:space="preserve">
+    <value>Rock</value>
+  </data>
+  <data name="EqPop.Content" xml:space="preserve">
+    <value>Pop</value>
+  </data>
+  <data name="EqJazz.Content" xml:space="preserve">
+    <value>Caz</value>
+  </data>
+  <data name="EqClassical.Content" xml:space="preserve">
+    <value>Klasik</value>
+  </data>
+  <data name="EqElectronic.Content" xml:space="preserve">
+    <value>Elektronik</value>
+  </data>
+  <data name="EqVocal.Content" xml:space="preserve">
+    <value>Vokal</value>
+  </data>
+  <data name="EqSavePresetToolTip" xml:space="preserve">
+    <value>Değişiklikleri seçili özel hazır ayara kaydet</value>
+  </data>
+  <data name="EqDeletePresetToolTip" xml:space="preserve">
+    <value>Seçili özel hazır ayarı sil</value>
+  </data>
+  <data name="EqMoreOptionsToolTip" xml:space="preserve">
+    <value>İçe aktar / dışa aktar</value>
+  </data>
+  <data name="EqImportItem.Text" xml:space="preserve">
+    <value>Hazır ayarı içe aktar</value>
+  </data>
+  <data name="EqExportItem.Text" xml:space="preserve">
+    <value>Hazır ayarı dışa aktar</value>
+  </data>
+  <data name="EqPresetNameTitle" xml:space="preserve">
+    <value>Hazır ayar adını girin</value>
+  </data>
+  <data name="EqDeletePresetConfirm" xml:space="preserve">
+    <value>Seçili özel hazır ayar silinsin mi?</value>
+  </data>
+  <data name="EqImportFailed" xml:space="preserve">
+    <value>İçe aktarma başarısız: geçerli bir ekolayzer hazır ayar dosyası değil</value>
+  </data>
+  <data name="EqExportFailed" xml:space="preserve">
+    <value>Dışa aktarma başarısız</value>
+  </data>
+  <data name="EqAddPresetToolTip" xml:space="preserve">
+    <value>Hazır ayar ekle: geçerli ekolayzeri yeni bir özel hazır ayar olarak kaydet</value>
+  </data>
+  <data name="EqOverwritePreset" xml:space="preserve">
+    <value>Bu ada sahip bir hazır ayar zaten var. Üzerine yazılsın mı?</value>
+  </data>
+  <data name="EqPresetCustom" xml:space="preserve">
+    <value>Özel</value>
+  </data>
+  <data name="EqPresetFlat" xml:space="preserve">
+    <value>Düz</value>
+  </data>
+  <data name="EqPresetRock" xml:space="preserve">
+    <value>Rock</value>
+  </data>
+  <data name="EqPresetPop" xml:space="preserve">
+    <value>Pop</value>
+  </data>
+  <data name="EqPresetJazz" xml:space="preserve">
+    <value>Caz</value>
+  </data>
+  <data name="EqPresetClassical" xml:space="preserve">
+    <value>Klasik</value>
+  </data>
+  <data name="EqPresetElectronic" xml:space="preserve">
+    <value>Elektronik</value>
+  </data>
+  <data name="EqPresetVocal" xml:space="preserve">
+    <value>Vokal</value>
+  </data>
+  <data name="EqDeleteAction" xml:space="preserve">
+    <value>Sil</value>
+  </data>
+  <data name="CoverSize.Text" xml:space="preserve">
+    <value>Kapak küçük resmi boyutu</value>
+  </data>
+  <data name="CoverSizeToolTip" xml:space="preserve">
+    <value>0 özgün boyuttur, önerilen 150-200</value>
+  </data>
+  <data name="IconVolume.Text" xml:space="preserve">
+    <value>Ses düzeyi</value>
+  </data>
+  <data name="AnimationSettings.Header" xml:space="preserve">
+    <value>Animasyon ayarları</value>
+  </data>
+  <data name="EntranceAnimationTime.Header" xml:space="preserve">
+    <value>Giriş animasyonu süresi (ms)</value>
+  </data>
+  <data name="SlideAnimationTime.Header" xml:space="preserve">
+    <value>Kaydırma animasyonu süresi (ms)</value>
+  </data>
+  <data name="DrillInAnimationTime.Header" xml:space="preserve">
+    <value>Derinlemesine geçiş animasyonu süresi (ms)</value>
+  </data>
+  <data name="ProcessPriorityFunction.Header" xml:space="preserve">
+    <value>İşlem önceliği</value>
+  </data>
+  <data name="ProcessPriorityNormal.Content" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="ProcessPriorityAboveNormal.Content" xml:space="preserve">
+    <value>Yüksek</value>
+  </data>
+  <data name="InfoBarTitleConverter" xml:space="preserve">
+    <value>Ses dönüştürme</value>
+  </data>
+  <data name="InfoBarMessageConverter" xml:space="preserve">
+    <value>Hedef biçim, özgün biçimle aynı</value>
+  </data>
+  <data name="InfoBarMessageConverterFailed" xml:space="preserve">
+    <value>Ses dönüştürme başarısız oldu. Ayrıntılar için günlüğe bakın</value>
+  </data>
+  <data name="InfoBarMessageConverterFailedWithFile" xml:space="preserve">
+    <value>Dönüştürme başarısız oldu: {0}</value>
+  </data>
+  <data name="FlyoutConvertWav" xml:space="preserve">
+    <value>WAV</value>
+  </data>
+  <data name="FlyoutConvertMp3" xml:space="preserve">
+    <value>MP3</value>
+  </data>
+  <data name="FlyoutConvertFlac" xml:space="preserve">
+    <value>Flac</value>
+  </data>
+  <data name="FlyoutConvertOgg" xml:space="preserve">
+    <value>Ogg</value>
+  </data>
+  <data name="FlyoutConvertOpus" xml:space="preserve">
+    <value>Opus</value>
+  </data>
+  <data name="FlyoutConvertAac" xml:space="preserve">
+    <value>M4A (AAC)</value>
+  </data>
+  <data name="FlyoutConvertAlac" xml:space="preserve">
+    <value>M4A (ALAC)</value>
+  </data>
+  <data name="SendOriginalFormat" xml:space="preserve">
+    <value>Özgün biçimi gönder</value>
+  </data>
+  <data name="NumberOfSongs" xml:space="preserve">
+    <value>Şarkılar</value>
+  </data>
+  <data name="PlayAll.Text" xml:space="preserve">
+    <value>Tümünü oynat</value>
+  </data>
+  <data name="AddTo.Text" xml:space="preserve">
+    <value>Şuraya ekle</value>
+  </data>
+  <data name="Edit.Text" xml:space="preserve">
+    <value>Düzenle</value>
+  </data>
+  <data name="NumberOfAlbums" xml:space="preserve">
+    <value>albüm</value>
+  </data>
+  <data name="NumberOfArtists" xml:space="preserve">
+    <value>Sanatçılar</value>
+  </data>
+  <data name="Artist" xml:space="preserve">
+    <value>Sanatçı</value>
+  </data>
+  <data name="Folder" xml:space="preserve">
+    <value>Klasör</value>
+  </data>
+  <data name="Playlist" xml:space="preserve">
+    <value>Çalma listesi</value>
+  </data>
+  <data name="SaveLyricsTextBox.Content" xml:space="preserve">
+    <value>LRC şarkı sözlerini yerel olarak kaydet</value>
+  </data>
+  <data name="RemoveFolderTitle" xml:space="preserve">
+    <value>Klasörü kaldırmak istiyor musunuz</value>
+  </data>
+  <data name="ShaderBackground.Text" xml:space="preserve">
+    <value>Gölgeleyici arka plan</value>
+  </data>
+  <data name="BackgroundShader.Text" xml:space="preserve">
+    <value>Arka plan gölgeleyicisi</value>
+  </data>
+  <data name="BackgroundShader_Fluid.Content" xml:space="preserve">
+    <value>Akışkan</value>
+  </data>
+  <data name="BackgroundShader_PS3XMB.Content" xml:space="preserve">
+    <value>PS3 XMB</value>
+  </data>
+  <data name="BackgroundShader_GradientFlow.Content" xml:space="preserve">
+    <value>Gradyan akışı</value>
+  </data>
+  <data name="BackgroundShader_WavyBackground.Content" xml:space="preserve">
+    <value>Dalgalı arka plan</value>
+  </data>
+  <data name="BackgroundShader_ChromaticResonance.Content" xml:space="preserve">
+    <value>Renk şeritleri</value>
+  </data>
+  <data name="BackgroundShader_LiquidFlow.Content" xml:space="preserve">
+    <value>Sıvı akışı</value>
+  </data>
+  <data name="BackgroundShader_RotatingMesh.Content" xml:space="preserve">
+    <value>Dönen örgü</value>
+  </data>
+  <data name="ReGetLyrics" xml:space="preserve">
+    <value>Şarkı sözlerini al</value>
+  </data>
+  <data name="SettingsAbout.Text" xml:space="preserve">
+    <value>Hakkında</value>
+  </data>
+  <data name="ThirdPartyComponents.Content" xml:space="preserve">
+    <value>Üçüncü taraf bileşenler</value>
+  </data>
+  <data name="ThirdPartyComponentsText" xml:space="preserve">
+    <value>Üçüncü taraf bileşenler</value>
+  </data>
+  <data name="FlyoutAddToCurrentPlayList" xml:space="preserve">
+    <value>Geçerli çalma listesine ekle</value>
+  </data>
+  <data name="CoverCacheDescription" xml:space="preserve">
+    <value>Albüm kapağı özgün görüntü önbelleği</value>
+  </data>
+  <data name="AppTitleHeader.Header" xml:space="preserve">
+    <value>OriginalSound HQ Player</value>
+  </data>
+  <data name="CoverLoadThreadCount.Header" xml:space="preserve">
+    <value>Kapak yükleme iş parçacığı sayısı</value>
+  </data>
+  <data name="CoverLoadThreadCountDescription" xml:space="preserve">
+    <value>Albüm sayfasında albüm kapağını yükleyen iş parçacığı sayısı. Uygulamayı yeniden başlatınca etkinleşir</value>
+  </data>
+  <data name="FolderWatchEnabled.Text" xml:space="preserve">
+    <value>Müzik kitaplığı klasör izleme</value>
+  </data>
+  <data name="DiskNumberBox.Text" xml:space="preserve">
+    <value>Disk numarası</value>
+  </data>
+  <data name="ReadLyricsFromFile.Content" xml:space="preserve">
+    <value>Meta verileri dosyadan al</value>
+  </data>
+  <data name="saveConfirm.Text" xml:space="preserve">
+    <value>Meta veriler müzik dosyasına yazılsın mı</value>
+  </data>
+  <data name="IsCustomAppSize.Text" xml:space="preserve">
+    <value>Özel pencere boyutu etkinleştirilsin mi</value>
+  </data>
+  <data name="AppHeight.Text" xml:space="preserve">
+    <value>Pencere yüksekliği</value>
+  </data>
+  <data name="AppWidth.Text" xml:space="preserve">
+    <value>Pencere genişliği</value>
+  </data>
+  <data name="CustomAppSizeDescription" xml:space="preserve">
+    <value>Genişlik ve yükseklik, ekranın DPI değerine göre uyarlanır</value>
+  </data>
+  <data name="CreateTime.Text" xml:space="preserve">
+    <value>Oluşturma zamanı</value>
+  </data>
+  <data name="SortOrderCreateTimeASC" xml:space="preserve">
+    <value>Oluşturma zamanı (artan)</value>
+  </data>
+  <data name="SortOrderCreateTimeDESC" xml:space="preserve">
+    <value>Oluşturma zamanı (azalan)</value>
+  </data>
+  <data name="SortOrderUpdateTimeASC" xml:space="preserve">
+    <value>Güncelleştirme zamanı (artan)</value>
+  </data>
+  <data name="SortOrderUpdateTimeDESC" xml:space="preserve">
+    <value>Güncelleştirme zamanı (azalan)</value>
+  </data>
+  <data name="UpdateTime.Text" xml:space="preserve">
+    <value>Güncelleştirme zamanı</value>
+  </data>
+  <data name="SaveToDataBase.Content" xml:space="preserve">
+    <value>Veritabanına kaydet</value>
+  </data>
+  <data name="ImportM3u8" xml:space="preserve">
+    <value>Çalma listesini m3u8'den içe aktar</value>
+  </data>
+  <data name="ExportM3u8.Content" xml:space="preserve">
+    <value>m3u8 olarak dışa aktar</value>
+  </data>
+  <data name="LogPath.Content" xml:space="preserve">
+    <value>Günlük dizinini aç</value>
+  </data>
+  <data name="LyricsFontFamily.Text" xml:space="preserve">
+    <value>Şarkı sözleri yazı tipi</value>
+  </data>
+  <data name="SettingIsGlobalFFmpegEnabled.Header" xml:space="preserve">
+    <value>Genel FFmpeg kod çözme</value>
+  </data>
+  <data name="TransparentTintStyle.Content" xml:space="preserve">
+    <value>Saydam</value>
+  </data>
+  <data name="CustomAcrylicStyle.Content" xml:space="preserve">
+    <value>Özel akrilik</value>
+  </data>
+  <data name="CustomOpacity.Text" xml:space="preserve">
+    <value>Opaklık</value>
+  </data>
+  <data name="IsUpdateBackDrop.Text" xml:space="preserve">
+    <value>Pencereler odak dışındayken arka plan güncelleştirmelerini durdur</value>
+  </data>
+  <data name="LyricsAlignment.Text" xml:space="preserve">
+    <value>Şarkı sözleri hizalaması</value>
+  </data>
+  <data name="PlayingDetailAlignment.Text" xml:space="preserve">
+    <value>Parça bilgileri hizalaması</value>
+  </data>
+  <data name="UseAlignmentInPortrait.Text" xml:space="preserve">
+    <value>Hizalamayı dikey modda uygula</value>
+  </data>
+  <data name="ForceLeftWhenOff" xml:space="preserve">
+    <value>Kapalıyken dikey mod sola hizalamayı zorlar</value>
+  </data>
+  <data name="MusicInfoVisible.Text" xml:space="preserve">
+    <value>Ses bilgileri görünür</value>
+  </data>
+  <data name="Left.Content" xml:space="preserve">
+    <value>Sol</value>
+  </data>
+  <data name="Center.Content" xml:space="preserve">
+    <value>Orta</value>
+  </data>
+  <data name="Right.Content" xml:space="preserve">
+    <value>Sağ</value>
+  </data>
+  <data name="LyricsMargin.Text" xml:space="preserve">
+    <value>Şarkı sözleri kenar boşluğu</value>
+  </data>
+  <data name="SpectrumVisualization.Header" xml:space="preserve">
+    <value>Spektrum görselleştirme</value>
+  </data>
+  <data name="LyricsFontSize.Text" xml:space="preserve">
+    <value>Şarkı sözleri yazı tipi boyutu</value>
+  </data>
+  <data name="AreUSureDeleteFromDisk" xml:space="preserve">
+    <value>Müziği diskten silmek istediğinizden emin misiniz?</value>
+  </data>
+  <data name="AreUSureDeletePlayList" xml:space="preserve">
+    <value>Bu çalma listesi silinsin mi?</value>
+  </data>
+  <data name="SongListCoverEnable.Header" xml:space="preserve">
+    <value>Şarkı listesi kapağı</value>
+  </data>
+  <data name="ListCoverEnable.Header" xml:space="preserve">
+    <value>Liste kapağı</value>
+  </data>
+  <data name="ListCoverEnableTooltip" xml:space="preserve">
+    <value>Listede kapak görüntülemeyi etkinleştirir. Performans sorunları yaşarsanız duruma göre bu seçeneği kapatın</value>
+  </data>
+  <data name="SongCollectionListCoverEnable.Header" xml:space="preserve">
+    <value>Şarkı koleksiyonu listesi kapağı</value>
+  </data>
+  <data name="FavouriteListCoverEnabled.Header" xml:space="preserve">
+    <value>Favori listesi kapağı</value>
+  </data>
+  <data name="PlayListCoverEnabled.Header" xml:space="preserve">
+    <value>Çalma listesi kapağı</value>
+  </data>
+  <data name="ChangeMusicCoverCache.Content" xml:space="preserve">
+    <value>Konumu değiştir</value>
+  </data>
+  <data name="FolderNumberOfSongs.Text" xml:space="preserve">
+    <value>Şarkılar</value>
+  </data>
+  <data name="AddFolderPageTitle.Text" xml:space="preserve">
+    <value>Müzik klasörleri</value>
+  </data>
+  <data name="AddFolderPageWelcomeTitle.Text" xml:space="preserve">
+    <value>OriginalSound HQ Player'a hoş geldiniz</value>
+  </data>
+  <data name="AddFolderPageWelcomeSubtitle.Text" xml:space="preserve">
+    <value>Kitaplığınızı oluşturmaya başlamak için yerel müzik klasörlerini ekleyin. Yaygın ses biçimlerini destekler; şarkı sözleri ve kapak eşleştirmesi otomatik yapılır.</value>
+  </data>
+  <data name="AddFolderPageDragHint.Text" xml:space="preserve">
+    <value>veya klasörleri buraya sürükleyin</value>
+  </data>
+  <data name="AddFolderPageDropOverlayText.Text" xml:space="preserve">
+    <value>Klasörleri eklemek için bırakın</value>
+  </data>
+  <data name="AddFolderPageFolderCountSuffix.Text" xml:space="preserve">
+    <value>klasör</value>
+  </data>
+  <data name="OpenFolderToolTip.Content" xml:space="preserve">
+    <value>Klasörü aç</value>
+  </data>
+  <data name="RescanFolderToolTip.Content" xml:space="preserve">
+    <value>Yeniden tara</value>
+  </data>
+  <data name="RemoveFolderToolTip.Content" xml:space="preserve">
+    <value>Klasörü kaldır</value>
+  </data>
+  <data name="CoverDiskCache.Text" xml:space="preserve">
+    <value>Önbellek konumu</value>
+  </data>
+  <data name="OfficialWebSite.Content" xml:space="preserve">
+    <value>Resmi web sitesi</value>
+  </data>
+  <data name="AlbumSongs.Text" xml:space="preserve">
+    <value>Şarkılar</value>
+  </data>
+  <data name="ExportM3u8List.Text" xml:space="preserve">
+    <value>m3u8 olarak dışa aktar</value>
+  </data>
+  <data name="DSD2PCMFreq.Text" xml:space="preserve">
+    <value>DSDtoPCM örnekleme hızı</value>
+  </data>
+  <data name="DsdDopDescription" xml:space="preserve">
+    <value>Bu modda ekolayzer devre dışıdır; DoP için Wasapi özel mod, Native için ASIO gerekir. Yalnızca donanım ses düzeyi desteklenir.</value>
+  </data>
+  <data name="DefaultDevice" xml:space="preserve">
+    <value>Varsayılan cihaz</value>
+  </data>
+  <data name="FlyoutConvertOggItem.Text" xml:space="preserve">
+    <value>Ogg</value>
+  </data>
+  <data name="FlyoutConvertOpusItem.Text" xml:space="preserve">
+    <value>Opus</value>
+  </data>
+  <data name="WasapiExclusivePushText" xml:space="preserve">
+    <value>Wasapi özel mod (Push)</value>
+  </data>
+  <data name="WasapiExclusiveEventText" xml:space="preserve">
+    <value>Wasapi özel mod (Event)</value>
+  </data>
+  <data name="WasapiSharedText" xml:space="preserve">
+    <value>Wasapi paylaşılan mod</value>
+  </data>
+  <data name="MainGitHub.Content" xml:space="preserve">
+    <value>Ana program GitHub</value>
+  </data>
+  <data name="PlayerGitHub.Content" xml:space="preserve">
+    <value>Ses programı GitHub</value>
+  </data>
+  <data name="FadeInOutDescription" xml:space="preserve">
+    <value>Yalnızca DirectSound altında etkilidir</value>
+  </data>
+  <data name="FadeInOut.Text" xml:space="preserve">
+    <value>Sesi kademeli aç ve kapat</value>
+  </data>
+  <data name="WFWLyricsEnabled.Header" xml:space="preserve">
+    <value>Sözcük sözcük şarkı sözleri efekti</value>
+  </data>
+  <data name="LyricsBlurAmount.Text" xml:space="preserve">
+    <value>Şarkı sözleri bulanıklık miktarı</value>
+  </data>
+  <data name="CharFloatAmount.Text" xml:space="preserve">
+    <value>Karakter yükselme miktarı</value>
+  </data>
+  <data name="CharScaleAmount.Text" xml:space="preserve">
+    <value>Karakter ölçekleme miktarı</value>
+  </data>
+  <data name="GlowAmount.Text" xml:space="preserve">
+    <value>Parıltı miktarı</value>
+  </data>
+  <data name="LongSyllableThreshold.Text" xml:space="preserve">
+    <value>Uzun hece eşiği (ms)</value>
+  </data>
+  <data name="UnplayedOpacity.Text" xml:space="preserve">
+    <value>Çalınmamış şarkı sözü opaklığı</value>
+  </data>
+  <data name="TranslatedOpacity.Text" xml:space="preserve">
+    <value>Çevrilmiş şarkı sözü opaklığı</value>
+  </data>
+  <data name="PlayingLineTopOffset.Text" xml:space="preserve">
+    <value>Çalan satır üst kaydırması</value>
+  </data>
+  <data name="TargetFrameRate.Text" xml:space="preserve">
+    <value>Şarkı sözleri kare hızı</value>
+  </data>
+  <data name="WFWLyricsDescription" xml:space="preserve">
+    <value>Efekt önizlemesi, gerçek sözcük sözcük şarkı sözleri değildir</value>
+  </data>
+  <data name="LrcTranslation.Text" xml:space="preserve">
+    <value>Lrc çevirisi</value>
+  </data>
+  <data name="UseImageDominantTheme.Text" xml:space="preserve">
+    <value>Albüm kapağı temasını kullan</value>
+  </data>
+  <data name="EnableLightWave.Text" xml:space="preserve">
+    <value>Arka plan ışık dalgasını etkinleştir</value>
+  </data>
+  <data name="PaletteAlgorithm.Text" xml:space="preserve">
+    <value>Palet algoritması</value>
+  </data>
+  <data name="RebootToApply" xml:space="preserve">
+    <value>Değişikliklerin etkili olması için uygulamayı yeniden başlatın.</value>
+  </data>
+  <data name="Win2dAnimatedTitle.Text" xml:space="preserve">
+    <value>Win2D animasyonlu metin bloğu</value>
+  </data>
+  <data name="TextDefaultEffect" xml:space="preserve">
+    <value>Varsayılan (düşük GPU yükü)</value>
+  </data>
+  <data name="TextFadeEffect" xml:space="preserve">
+    <value>Soldurma (düşük GPU yükü)</value>
+  </data>
+  <data name="TextWipeEffect" xml:space="preserve">
+    <value>Silme (düşük GPU yükü)</value>
+  </data>
+  <data name="TextBlurEffect" xml:space="preserve">
+    <value>Bulanıklaştırma (yüksek GPU yükü)</value>
+  </data>
+  <data name="TextElasticEffect" xml:space="preserve">
+    <value>Elastik (düşük GPU yükü)</value>
+  </data>
+  <data name="TextMotionBlurEffect" xml:space="preserve">
+    <value>Hareket bulanıklığı (yüksek GPU yükü)</value>
+  </data>
+  <data name="TextPivotEffect" xml:space="preserve">
+    <value>Pivot (yüksek GPU yükü)</value>
+  </data>
+  <data name="TextZoomEffect" xml:space="preserve">
+    <value>Yakınlaştırma (düşük GPU yükü)</value>
+  </data>
+  <data name="KrcTranslation.Text" xml:space="preserve">
+    <value>Krc çevirisi</value>
+  </data>
+  <data name="LyricsTimeOffset.Content" xml:space="preserve">
+    <value>Şarkı sözü zaman kaydırması</value>
+  </data>
+  <data name="LyricsTimeOffsetTag.Text" xml:space="preserve">
+    <value>Şarkı sözü zaman kaydırması</value>
+  </data>
+  <data name="EnableAdvancedLyricsEffect.Text" xml:space="preserve">
+    <value>Gelişmiş sözcük sözcük şarkı sözleri efektlerini etkinleştir</value>
+  </data>
+  <data name="EnableCustomLyricsColor.Text" xml:space="preserve">
+    <value>Özel şarkı sözü rengi</value>
+  </data>
+  <data name="EnableCustomLyricsColorHint.Text" xml:space="preserve">
+    <value>Yalnızca gelişmiş şarkı sözleri için</value>
+  </data>
+  <data name="SettingsContent.Content" xml:space="preserve">
+    <value>Ayarlar</value>
+  </data>
+  <data name="FogEffect.Text" xml:space="preserve">
+    <value>Sis efekti</value>
+  </data>
+  <data name="SnowEffect.Text" xml:space="preserve">
+    <value>Kar efekti</value>
+  </data>
+  <data name="RaindropEffect.Text" xml:space="preserve">
+    <value>Yağmur damlası efekti</value>
+  </data>
+  <data name="ShaderBackgroundExpander.Text" xml:space="preserve">
+    <value>Gölgeleyici arka plan</value>
+  </data>
+  <data name="ShortcutTextBoxPlaceholder" xml:space="preserve">
+    <value>Kısayolu kaydetmek için tıklayın</value>
+  </data>
+  <data name="ShortcutTextBoxClearToolTip.Content" xml:space="preserve">
+    <value>Kısayolu temizle</value>
+  </data>
+  <data name="ShortcutTextBoxCheckToolTip.Content" xml:space="preserve">
+    <value>Kısayol kaydını denetle</value>
+  </data>
+  <data name="SettingsPageShortcuts.Text" xml:space="preserve">
+    <value>Kısayollar</value>
+  </data>
+  <data name="SettingsPagePlayPauseShortcut.Text" xml:space="preserve">
+    <value>Oynat / Duraklat</value>
+  </data>
+  <data name="SettingsPageNextSongShortcut.Text" xml:space="preserve">
+    <value>Sonraki şarkı</value>
+  </data>
+  <data name="SettingsPagePreviousSongShortcut.Text" xml:space="preserve">
+    <value>Önceki şarkı</value>
+  </data>
+  <data name="ShortcutCheckTitle" xml:space="preserve">
+    <value>Denetle</value>
+  </data>
+  <data name="ShortcutCheckNoKey" xml:space="preserve">
+    <value>Kısayol ayarlanmadı.</value>
+  </data>
+  <data name="ShortcutCheckRegistered" xml:space="preserve">
+    <value>Kısayol şu anda kayıtlı.</value>
+  </data>
+  <data name="ShortcutCheckConflict" xml:space="preserve">
+    <value>Kısayol kaydı başka bir uygulamayla çakışabilir.</value>
+  </data>
+  <data name="SettingsPageVolumeUpShortcut.Text" xml:space="preserve">
+    <value>Ses düzeyini yükselt</value>
+  </data>
+  <data name="SettingsPageVolumeDownShortcut.Text" xml:space="preserve">
+    <value>Ses düzeyini düşür</value>
+  </data>
+  <data name="SettingsPageTogglePlayingDetailShortcut.Text" xml:space="preserve">
+    <value>Oynatma ayrıntısını aç/kapat</value>
+  </data>
+  <data name="SettingsPageBackShortcut.Text" xml:space="preserve">
+    <value>Geri</value>
+  </data>
+  <data name="SettingsPageShowWindowShortcut.Text" xml:space="preserve">
+    <value>Gizle / Göster</value>
+  </data>
+  <data name="SettingsPageToggleFullScreenShortcut.Text" xml:space="preserve">
+    <value>Tam ekranı aç/kapat</value>
+  </data>
+  <data name="SettingsPageToggleDesktopLyricsShortcut.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözlerini göster / gizle</value>
+  </data>
+  <data name="SettingsPageToggleDesktopLyricsLockShortcut.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözlerini kilitle / kilidini aç</value>
+  </data>
+  <data name="SettingsPageToggleDesktopLyricsKaraokeShortcut.Text" xml:space="preserve">
+    <value>Masaüstü karaoke şarkı sözlerini etkinleştir / devre dışı bırak</value>
+  </data>
+  <data name="SettingsPageResetDesktopLyricsShortcut.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri penceresini sıfırla</value>
+  </data>
+<data name="SettingsPageEnableGlobalHotKey.Text" xml:space="preserve">
+    <value>Genel kısayol tuşları</value>
+  </data>
+  <data name="SettingsPageEnableGlobalHotKeyDescription.Text" xml:space="preserve">
+    <value>Kayıtlı genel kısayol tuşları diğer programlarla çakışabilir.</value>
+  </data>
+  <data name="GlobalHotKeyConflictTitleFormat" xml:space="preserve">
+    <value>Genel kısayol tuşu kullanımda: {0}</value>
+  </data>
+  <data name="GlobalHotKeyConflictPlayPause" xml:space="preserve">
+    <value>Oynat / Duraklat</value>
+  </data>
+  <data name="GlobalHotKeyConflictNextSong" xml:space="preserve">
+    <value>Sonraki şarkı</value>
+  </data>
+  <data name="GlobalHotKeyConflictPreviousSong" xml:space="preserve">
+    <value>Önceki şarkı</value>
+  </data>
+  <data name="GlobalHotKeyConflictVolumeUp" xml:space="preserve">
+    <value>Ses düzeyini yükselt</value>
+  </data>
+  <data name="GlobalHotKeyConflictVolumeDown" xml:space="preserve">
+    <value>Ses düzeyini düşür</value>
+  </data>
+  <data name="GlobalHotKeyConflictTogglePlayingDetail" xml:space="preserve">
+    <value>Oynatma ayrıntısını aç/kapat</value>
+  </data>
+  <data name="GlobalHotKeyConflictBack" xml:space="preserve">
+    <value>Geri</value>
+  </data>
+  <data name="GlobalHotKeyConflictShowWindow" xml:space="preserve">
+    <value>Pencereyi göster / gizle</value>
+  </data>
+  <data name="GlobalHotKeyConflictToggleFullScreen" xml:space="preserve">
+    <value>Tam ekranı aç/kapat</value>
+  </data>
+  <data name="GlobalHotKeyConflictToggleDesktopLyrics" xml:space="preserve">
+    <value>Masaüstü şarkı sözlerini göster / gizle</value>
+  </data>
+  <data name="GlobalHotKeyConflictToggleDesktopLyricsLock" xml:space="preserve">
+    <value>Masaüstü şarkı sözlerini kilitle / kilidini aç</value>
+  </data>
+  <data name="GlobalHotKeyConflictToggleDesktopLyricsKaraoke" xml:space="preserve">
+    <value>Masaüstü karaoke şarkı sözlerini etkinleştir / devre dışı bırak</value>
+  </data>
+  <data name="GlobalHotKeyConflictResetDesktopLyrics" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri penceresini sıfırla</value>
+  </data>
+  <data name="Advanced.Text" xml:space="preserve">
+    <value>Gelişmiş</value>
+  </data>
+  <data name="TrimOnHide.Text" xml:space="preserve">
+    <value>Pencere gizlendiğinde belleği boşalt</value>
+  </data>
+  <data name="TrimOnHideDescription.Text" xml:space="preserve">
+    <value>Uygulama görev çubuğuna gizlendiğinde veya sistem tepsisine kapatıldığında çalışma kümesini boşaltır.</value>
+  </data>
+  <data name="TrimAfterPlayback.Text" xml:space="preserve">
+    <value>Oynatma sonrası belleği otomatik boşalt</value>
+  </data>
+  <data name="TrimAfterPlaybackDescription.Text" xml:space="preserve">
+    <value>Her parçadan sonra tam çöp toplama (GC) zorlar. Düşük donanımlı cihazlarda UI takılmalarına neden olabilir.</value>
+  </data>
+  <data name="ArtistSplitSymbols.Text" xml:space="preserve">
+    <value>Sanatçı ayırıcıları</value>
+  </data>
+  <data name="ArtistSplitSymbolsDescription.Text" xml:space="preserve">
+    <value>Sanatçı alanında birden çok sanatçıyı ayırmak için kullanılan simgeler (virgülle ayrılır). Örn. ", ; / 、 &amp; feat. :". Anında geçerli olur.</value>
+  </data>
+  <data name="SelectArtist" xml:space="preserve">
+    <value>Sanatçı seç</value>
+  </data>
+  <data name="TrimNow.Content" xml:space="preserve">
+    <value>Belleği şimdi boşalt</value>
+  </data>
+  <data name="TrimNowLabel.Text" xml:space="preserve">
+    <value>Belleği şimdi boşalt</value>
+  </data>
+  <data name="WindowBoundsDescription.Text" xml:space="preserve">
+    <value>Ana pencere konumu</value>
+  </data>
+  <data name="WindowBoundsHint.Text" xml:space="preserve">
+    <value>Pencere konumu ve boyutu, uygulama çıkarken otomatik kaydedilir ve sonraki açılışta geri yüklenir. Pencere ekran dışındaysa sıfırlama düğmesine tıklayın.</value>
+  </data>
+  <data name="ResetWindowBounds.Content" xml:space="preserve">
+    <value>Pencere konumunu sıfırla</value>
+  </data>
+  <data name="StarOnGitHub.Text" xml:space="preserve">
+    <value>Bu projeyi beğendiyseniz GitHub'da bize bir Star vermeyi unutmayın!</value>
+  </data>
+  <data name="UpdateGuide.Text" xml:space="preserve">
+    <value>Kullanıcı kılavuzu</value>
+  </data>
+  <data name="GuideLink.Content" xml:space="preserve">
+    <value>Kullanıcı kılavuzunu görüntüle</value>
+  </data>
+  <data name="UpdateFaq.Text" xml:space="preserve">
+    <value>SSS</value>
+  </data>
+  <data name="FaqLink.Content" xml:space="preserve">
+    <value>SSS'yi görüntüle</value>
+  </data>
+  <data name="ScrollEasingType.Text" xml:space="preserve">
+    <value>Kaydırma yumuşatma eğrisi</value>
+  </data>
+  <data name="EasingTypeDescription" xml:space="preserve">
+    <value>Şarkı sözleri satırları arasındaki kaydırma animasyonu eğrisinin biçimi</value>
+  </data>
+  <data name="ScrollEasingMode.Text" xml:space="preserve">
+    <value>Kaydırma yumuşatma yönü</value>
+  </data>
+  <data name="EaseModeDescription" xml:space="preserve">
+    <value>Yumuşatmanın başta, sonda mı yoksa her iki uçta mı uygulanacağı</value>
+  </data>
+  <data name="EasingTypeLinear.Content" xml:space="preserve">
+    <value>Doğrusal</value>
+  </data>
+  <data name="EasingTypeSmoothStep.Content" xml:space="preserve">
+    <value>SmoothStep</value>
+  </data>
+  <data name="EasingTypeSine.Content" xml:space="preserve">
+    <value>Sinüs</value>
+  </data>
+  <data name="EasingTypeQuad.Content" xml:space="preserve">
+    <value>Quad</value>
+  </data>
+  <data name="EasingTypeCubic.Content" xml:space="preserve">
+    <value>Cubic</value>
+  </data>
+  <data name="EasingTypeQuart.Content" xml:space="preserve">
+    <value>Quart</value>
+  </data>
+  <data name="EasingTypeQuint.Content" xml:space="preserve">
+    <value>Quint</value>
+  </data>
+  <data name="EasingTypeExpo.Content" xml:space="preserve">
+    <value>Expo</value>
+  </data>
+  <data name="EasingTypeCircle.Content" xml:space="preserve">
+    <value>Circle</value>
+  </data>
+  <data name="EasingTypeBack.Content" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="EasingTypeElastic.Content" xml:space="preserve">
+    <value>Elastic</value>
+  </data>
+  <data name="EasingTypeBounce.Content" xml:space="preserve">
+    <value>Bounce</value>
+  </data>
+  <data name="EaseModeIn.Content" xml:space="preserve">
+    <value>Giriş</value>
+  </data>
+  <data name="EaseModeOut.Content" xml:space="preserve">
+    <value>Çıkış</value>
+  </data>
+  <data name="EaseModeInOut.Content" xml:space="preserve">
+    <value>Giriş-Çıkış</value>
+  </data>
+  <data name="EaseModeContinuous.Content" xml:space="preserve">
+    <value>Sürekli</value>
+  </data>
+  <data name="IconDesktopLyrics.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri</value>
+  </data>
+  <data name="IconLockDesktopLyrics" xml:space="preserve">
+    <value>Masaüstü şarkı sözlerini kilitle</value>
+  </data>
+  <data name="IconUnlockDesktopLyrics" xml:space="preserve">
+    <value>Masaüstü şarkı sözlerinin kilidini aç</value>
+  </data>
+  <data name="IconShowDesktopLyrics" xml:space="preserve">
+    <value>Masaüstü şarkı sözlerini göster</value>
+  </data>
+  <data name="IconHideDesktopLyrics" xml:space="preserve">
+    <value>Masaüstü şarkı sözlerini gizle</value>
+  </data>
+  <data name="IconEnableDesktopLyricsKaraoke" xml:space="preserve">
+    <value>Masaüstü karaoke şarkı sözlerini etkinleştir</value>
+  </data>
+  <data name="IconDisableDesktopLyricsKaraoke" xml:space="preserve">
+    <value>Masaüstü karaoke şarkı sözlerini devre dışı bırak</value>
+  </data>
+  <data name="IconResetDesktopLyrics.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri penceresini sıfırla</value>
+  </data>
+  <data name="DesktopLyricsFontSize.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri yazı tipi boyutu</value>
+  </data>
+  <data name="DesktopLyricsFontFamily.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri yazı tipi</value>
+  </data>
+  <data name="DesktopLyricsColor.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri rengi</value>
+  </data>
+  <data name="DesktopLyricsCustomColor.Text" xml:space="preserve">
+    <value>Özel renk geçersiz kılma</value>
+  </data>
+  <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri çevirisi</value>
+  </data>
+  <data name="DesktopLyricsKaraoke.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri karaoke efekti</value>
+  </data>
+  <data name="DesktopLyricsGlow.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri parıltısı</value>
+  </data>
+  <data name="DesktopLyricsCharFloat.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri karakter yükselmesi</value>
+  </data>
+  <data name="DesktopLyricsCharScale.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri karakter ölçeği</value>
+  </data>
+  <data name="DesktopLyricsLongSyllableThreshold.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri uzun hece eşiği (ms)</value>
+  </data>
+  <data name="DesktopLyricsGlowAmount.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri parıltı miktarı</value>
+  </data>
+  <data name="DesktopLyricsCharFloatAmount.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri karakter yükselme miktarı</value>
+  </data>
+  <data name="DesktopLyricsCharScaleAmount.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri karakter ölçek miktarı</value>
+  </data>
+  <data name="DesktopLyricsShadowAmount.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri gölge miktarı</value>
+  </data>
+  <data name="DesktopLyricsFontWeight.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri yazı tipi kalınlığı</value>
+  </data>
+  <data name="DesktopLyricsWeightNormal.Content" xml:space="preserve">
+    <value>Normal</value>
+  </data>
+  <data name="DesktopLyricsWeightMedium.Content" xml:space="preserve">
+    <value>Orta</value>
+  </data>
+  <data name="DesktopLyricsWeightSemiBold.Content" xml:space="preserve">
+    <value>Yarı kalın</value>
+  </data>
+  <data name="DesktopLyricsWeightBold.Content" xml:space="preserve">
+    <value>Kalın</value>
+  </data>
+  <data name="LyricsFontWeight.Text" xml:space="preserve">
+    <value>Şarkı sözleri yazı tipi kalınlığı</value>
+  </data>
+  <data name="RtssWarningTitle" xml:space="preserve">
+    <value>Enjeksiyon tabanlı yazılımlarla uyumsuz (FPS kaplamaları / sistem özelleştirme)</value>
+  </data>
+  <data name="RtssWarningBody" xml:space="preserve">
+    <value>"Masaüstü şarkı sözleri" ve gölgeleyici arka planı aynı anda etkinleştirildiğinde, RTSS / MSI Afterburner gibi FPS kaplamalarının DXGI kancaları uygulamayı çökertebilir; Windhawk / StartAllBack gibi enjeksiyon tabanlı sistem özelleştirme araçları da çökmelere yol açabilir. Bu programları kapatın veya bu oynatıcıyı dışlama listelerine ekleyin.</value>
+  </data>
+  <data name="SettingsSectionAudio.Text" xml:space="preserve">
+    <value>Ses</value>
+  </data>
+  <data name="SettingsSectionGeneral.Text" xml:space="preserve">
+    <value>Genel</value>
+  </data>
+  <data name="SettingsSectionShortcuts.Text" xml:space="preserve">
+    <value>Kısayollar</value>
+  </data>
+  <data name="SettingsSectionCoverBackground.Text" xml:space="preserve">
+    <value>Kapak ve arka plan</value>
+  </data>
+  <data name="SettingsSectionLyrics.Text" xml:space="preserve">
+    <value>Şarkı sözleri</value>
+  </data>
+  <data name="SettingsSectionAppearance.Text" xml:space="preserve">
+    <value>Görünüm</value>
+  </data>
+  <data name="SettingsSectionAbout.Text" xml:space="preserve">
+    <value>Hakkında</value>
+  </data>
+  <data name="AboutAppTitle.Text" xml:space="preserve">
+    <value>OriginalSound HQ</value>
+  </data>
+  <data name="AboutSlogan.Text" xml:space="preserve">
+    <value>Modern dinleme için tasarlanmış yerel bir müzik oynatıcı</value>
+  </data>
+  <data name="AboutSloganSub.Text" xml:space="preserve">
+    <value>Sürükleyici UI · Üstün ses kalitesi · Yüksek düzeyde özelleştirilebilir</value>
+  </data>
+  <data name="AboutCacheExpander.Header" xml:space="preserve">
+    <value>Önbellek</value>
+  </data>
+  <data name="AboutCacheExpander.Description" xml:space="preserve">
+    <value>Kapaklar ve WebDAV için paylaşılan önbellek konumu</value>
+  </data>
+  <data name="OpenCacheFolderButton.Content" xml:space="preserve">
+    <value>Önbellek klasörünü aç</value>
+  </data>
+  <data name="AboutLogCard.Header" xml:space="preserve">
+    <value>Günlükler</value>
+  </data>
+  <data name="AboutLogCard.Description" xml:space="preserve">
+    <value>Sorun giderme için uygulama günlüklerinin kaydedildiği konum</value>
+  </data>
+  <data name="OpenLogFolderButton.Content" xml:space="preserve">
+    <value>Günlükler klasörünü aç</value>
+  </data>
+  <data name="AboutSettingsCard.Header" xml:space="preserve">
+    <value>Ayar dosyaları</value>
+  </data>
+  <data name="AboutSettingsCard.Description" xml:space="preserve">
+    <value>Uygulama yapılandırmasını ve durum verilerini içeren klasör (Settings.json vb.)</value>
+  </data>
+  <data name="OpenSettingsFolderButton.Content" xml:space="preserve">
+    <value>Ayarlar klasörünü aç</value>
+  </data>
+  <data name="AboutDisclaimerHeader.Text" xml:space="preserve">
+    <value>Yasal uyarı</value>
+  </data>
+  <data name="ClearCoverCacheButton.Content" xml:space="preserve">
+    <value>Önbelleği temizle</value>
+  </data>
+  <data name="AreUSureClearCoverCache" xml:space="preserve">
+    <value>Kapak önbelleği temizlensin mi?</value>
+  </data>
+  <data name="EqQDescription" xml:space="preserve">
+    <value>Yüksek Q bandı daraltır; düşük Q genişletir. Aralık: 0,1–20. Varsayılan: 1.</value>
+  </data>
+  <data name="SettingsSectionDsp.Text" xml:space="preserve">
+    <value>Ses efektleri</value>
+  </data>
+  <data name="DspSection.Text" xml:space="preserve">
+    <value>Ses efektleri (DSP)</value>
+  </data>
+  <data name="DspIntro.Text" xml:space="preserve">
+    <value>Efektler yalnızca PCM için geçerlidir. DoP / Native DSD tüm efektleri atlar ve tercihlerinizi korur.</value>
+  </data>
+  <data name="DspEqualizer" xml:space="preserve">
+    <value>Ekolayzer</value>
+  </data>
+  <data name="DspEqualizerDescription" xml:space="preserve">
+    <value>10 bantlı EQ ve hazır ayarları ayarlayın.</value>
+  </data>
+  <data name="DspOpenEqualizer.Content" xml:space="preserve">
+    <value>Ekolayzeri aç</value>
+  </data>
+  <data name="DspNormalize" xml:space="preserve">
+    <value>Ses düzeyi normalizasyonu</value>
+  </data>
+  <data name="DspNormalizeDescription" xml:space="preserve">
+    <value>Geçerli parçayı arka planda analiz eder, ardından sabit kazancı yumuşak biçimde uygular ve sonucu önbelleğe alır.</value>
+  </data>
+  <data name="DspTarget" xml:space="preserve">
+    <value>Hedef ses düzeyi (LUFS)</value>
+  </data>
+  <data name="DspTargetDescription" xml:space="preserve">
+    <value>Varsayılan: −12. Dinamiği korumak için tepe payı yetersiz kaldığında yükseltme azaltılır.</value>
+  </data>
+  <data name="DspHeadroom" xml:space="preserve">
+    <value>Ön yükseltme kazancı (dB)</value>
+  </data>
+  <data name="DspHeadroomDescription" xml:space="preserve">
+    <value>EQ ve evrişim tarafından ortak kullanılır. Otomatik mod −1 dB yanıt tepesini hedefler ve en fazla +24 dB yükseltme uygular; bu, ses düzeyi normalizasyonu veya limitör değildir.</value>
+  </data>
+  <data name="DspChannels.Text" xml:space="preserve">
+    <value>Kanallar ve kulaklıklar</value>
+  </data>
+  <data name="DspBalance" xml:space="preserve">
+    <value>Sol/sağ dengesi</value>
+  </data>
+  <data name="DspBalanceDescription" xml:space="preserve">
+    <value>−100: sol; 0: orta; 100: sağ.</value>
+  </data>
+  <data name="DspSwap" xml:space="preserve">
+    <value>Sol ve sağı değiştir</value>
+  </data>
+  <data name="DspMono" xml:space="preserve">
+    <value>Mono olarak karıştır</value>
+  </data>
+  <data name="DspCrossfeed" xml:space="preserve">
+    <value>Kulaklık Crossfeed</value>
+  </data>
+  <data name="DspCrossfeedDescription" xml:space="preserve">
+    <value>Aşırı stereo ayrımını yumuşatmak için karşı kanala bir miktar düşük frekanslı ses karıştırır.</value>
+  </data>
+  <data name="DspCrossfeedOff.Content" xml:space="preserve">
+    <value>Kapalı</value>
+  </data>
+  <data name="DspCrossfeedLight.Content" xml:space="preserve">
+    <value>Hafif</value>
+  </data>
+  <data name="DspCrossfeedMedium.Content" xml:space="preserve">
+    <value>Orta</value>
+  </data>
+  <data name="DspWidth" xml:space="preserve">
+    <value>Stereo genişliği (%)</value>
+  </data>
+  <data name="DspWidthDescription" xml:space="preserve">
+    <value>100 orijinal genişliktir; 0 monodur. Genişletme, tepe payı için zayıflatma içerir.</value>
+  </data>
+  <data name="DspReset.Content" xml:space="preserve">
+    <value>Bu sayfadaki efektleri sıfırla</value>
+  </data>
+  <data name="DspBitstreamBypass" xml:space="preserve">
+    <value>DoP / Native DSD çalınırken tüm DSP atlanır. Tercihler korunur ve PCM ile devam eder.</value>
+  </data>
+  <data name="DspStateUnavailable" xml:space="preserve">
+    <value>Oynatma durumu bekleniyor. Efekt denetimleri geçici olarak kullanılamıyor.</value>
+  </data>
+  <data name="DspStereoOnly" xml:space="preserve">
+    <value>Kanal/kulaklık efektleri stereo gerektirir; EQ ve ses düzeyi analizi mono ve stereo destekler.</value>
+  </data>
+  <data name="DspAnalyzing" xml:space="preserve">
+    <value>Bu parça analiz ediliyor; ölçülen kazanç yumuşak biçimde uygulanıp önbelleğe alınana kadar temkinli zayıflatmayla çalınıyor.</value>
+  </data>
+  <data name="DspApplied" xml:space="preserve">
+    <value>Entegre ses düzeyi {0:F1} LUFS · Sabit kazanç {1:+0.0;-0.0;0.0} dB</value>
+  </data>
+  <data name="DspPeakLimited" xml:space="preserve">
+    <value>Entegre {0:F1} LUFS · Sabit kazanç {1:+0.0;-0.0;0.0} dB; dinamiği korumak için yükseltme tepe payı veya kazanç sınırıyla kısıtlandı.</value>
+  </data>
+  <data name="DspAnalysisUnavailable" xml:space="preserve">
+    <value>Analiz kullanılamıyor (ör. çok kanallı içerik, sessizlik veya çok kısa klip); temkinli zayıflatma etkin kalır.</value>
+  </data>
+  <data name="DspAnalysisFailed" xml:space="preserve">
+    <value>Ses düzeyi analizi başarısız oldu; temkinli zayıflatma etkin kalır. Yeniden denemek için normalizasyonu kapatıp açın.</value>
+  </data>
+  <data name="DspAnalysisOff" xml:space="preserve">
+    <value>Normalizasyon kapalı veya açık bir PCM parçası yok.</value>
+  </data>
+  <data name="DspMaster" xml:space="preserve">
+    <value>DSP'yi etkinleştir</value>
+  </data>
+  <data name="DspMasterDescription" xml:space="preserve">
+    <value>Kapalı olduğunda normalizasyon, ön yükseltme zayıflatması, EQ ve kanal efektleri atlanır; ayarları korunur.</value>
+  </data>
+  <data name="DspMasterBypass" xml:space="preserve">
+    <value>DSP kapalı: tüm efektler atlanır ve ayarları korunur. Ayarlar → Ses efektleri bölümünden etkinleştirin.</value>
+  </data>
+  <data name="DspConvolutionSection.Text" xml:space="preserve"><value>Evrişim düzeltmesi</value></data>
+  <data name="DspConvolution" xml:space="preserve"><value>Evrişim düzeltmesini etkinleştir</value></data>
+  <data name="DspConvolutionToggle.AutomationProperties.Name" xml:space="preserve"><value>Evrişim düzeltmesini etkinleştir</value></data>
+  <data name="DspIrDescription.Text" xml:space="preserve"><value>Kulaklık veya oda düzeltmesi için WAV darbe yanıtı (IR) içe aktarın. Mono veya stereo; çıkış örnekleme hızına yeniden örnekleme öncesi ve sonrasında en fazla 8192 örnek. DSD bit akışı çıkışında otomatik olarak atlanır.</value></data>
+  <data name="DspIrFile" xml:space="preserve"><value>Darbe yanıtı dosyası</value></data>
+  <data name="DspIrImport.Content" xml:space="preserve"><value>WAV içe aktar…</value></data>
+  <data name="DspIrClear.Content" xml:space="preserve"><value>Kaldır</value></data>
+  <data name="DspIrEmpty" xml:space="preserve"><value>İçe aktarılmış IR yok</value></data>
+  <data name="DspIrTrim" xml:space="preserve"><value>Düzeltme kazancı (dB)</value></data>
+  <data name="DspIrTrimInput.AutomationProperties.Name" xml:space="preserve"><value>Desibel cinsinden evrişim düzeltme kazancı</value></data>
+  <data name="DspIrTrimDescription" xml:space="preserve"><value>Tepe payı ayırmak için varsayılan değer −6 dB'dir. Bozulma oluşursa kazancı daha da azaltın.</value></data>
+  <data name="DspIrBypass" xml:space="preserve"><value>Evrişim atlanıyor. İçe aktarılan dosya ve ayarlar korunur.</value></data>
+  <data name="DspIrLoading" xml:space="preserve"><value>Darbe yanıtı yükleniyor ve hazırlanıyor…</value></data>
+  <data name="DspIrActive" xml:space="preserve"><value>Evrişim düzeltmesi etkin.</value></data>
+  <data name="DspIrFailed" xml:space="preserve"><value>IR bu çıkış için kullanılamıyor: eksik veya geçersiz olabilir ya da yeniden örnekleme sonrasında 8192 örneği aşıyor olabilir. Başka bir IR içe aktarın.</value></data>
+  <data name="DspIrUnsupported" xml:space="preserve"><value>Evrişim yalnızca mono ve stereo PCM çıkışını destekler.</value></data>
+  <data name="DspIrOff" xml:space="preserve"><value>Evrişim etkin değil. PCM çalma sırasında uygulamak için bir IR içe aktarın ve düzeltmeyi etkinleştirin.</value></data>
+  <data name="DspIrImportError" xml:space="preserve"><value>İçe aktarma başarısız oldu. Geçerli bir mono veya stereo WAV seçin (16/24/32 bit PCM veya 32/64 bit float); en fazla 8192 örnek ve 4 MiB. Önceki yapılandırma korunur.</value></data>
+  <data name="ResponseTitle.Text" xml:space="preserve"><value>Birleşik frekans yanıtı</value></data>
+  <data name="ResponsePlotName" xml:space="preserve"><value>EQ ve evrişim frekans yanıtı. Frekans Hz, kazanç dB cinsindendir.</value></data>
+  <data name="ResponseLeft.Content" xml:space="preserve"><value>Sol</value></data>
+  <data name="ResponseRight.Content" xml:space="preserve"><value>Sağ</value></data>
+  <data name="ResponseCombinedLegend.Text" xml:space="preserve"><value>━ Birleşik</value></data>
+  <data name="ResponseEqLegend.Text" xml:space="preserve"><value>┄ EQ</value></data>
+  <data name="ResponseFirLegend.Text" xml:space="preserve"><value>┈ Evrişim</value></data>
+  <data name="ResponsePreparing" xml:space="preserve"><value>Filtre yanıtı hesaplanıyor…</value></data>
+  <data name="ResponseReady" xml:space="preserve"><value>Çıkış {0:0.##} kHz · Kazanç dengelemesi {1:+0.0;-0.0;0.0} dB · Kararlı durum yanıtı</value></data>
+  <data name="ResponseBypass" xml:space="preserve"><value>Atlanmış veya etkin değil; {0:0.##} kHz'de önizleme. Kazanç dengelemesi {1:+0.0;-0.0;0.0} dB.</value></data>
+  <data name="ResponseScope.Text" xml:space="preserve"><value>Birleşik = EQ + evrişim + ortak ön yükseltme. Otomatik dengeleme, bunların birleşik tepe değerini kullanır. Ses düzeyi normalizasyonu, kanal karıştırma ve ana ses düzeyi hariç tutulur. Kazanç ekseni yanıta göre ölçeklenir.</value></data>
+  <data name="ResponseFailed" xml:space="preserve"><value>Bu IR yanıtı hesaplanamıyor. Dosya kullanılamaz durumda olabilir veya yeniden örnekleme sonrasında uzunluk sınırını aşıyor olabilir. Eski yanıt gösterilmez.</value></data>
+  <data name="CurveEditorTitle" xml:space="preserve"><value>Düzeltme eğrisi çiz</value></data>
+  <data name="CurveIntro.Text" xml:space="preserve"><value>Değişiklikler otomatik olarak geçerli olur. Genel düzenlemeler otomatik kaydedilir; cihaz modunda düzeltmeyi kaydetmek için Bağla / Bağlamayı güncelleştir seçeneğini kullanın. Çıkışlar arasında geçiş yapıldığında kayıtlı bağlamalar geri yüklenir. WAV dosyası olmadan minimum fazlı bir FIR oluşturmak için frekans kazançlarını ayarlayın; bu, kulaklık veya oda ölçümü yapmaz.</value></data>
+  <data name="CurveNodeHint.Text" xml:space="preserve"><value>Düğümlü kesikli çizgi istenen eğridir; Evrişim, kazanç dahil gerçekleşen FIR yanıtını gösterir. Düğümleri sürükleyin veya aşağıdaki sayısal alanları kullanın.</value></data>
+  <data name="CurveNodePicker.Header" xml:space="preserve"><value>Denetim noktası</value></data>
+  <data name="CurveFrequency.Header" xml:space="preserve"><value>Frekans (Hz)</value></data>
+  <data name="CurveGain.Header" xml:space="preserve"><value>Kazanç (dB)</value></data>
+  <data name="CurveAdd.Content" xml:space="preserve"><value>Nokta ekle</value></data>
+  <data name="CurveRemove.Content" xml:space="preserve"><value>Noktayı kaldır</value></data>
+  <data name="CurveFlat.Content" xml:space="preserve"><value>Düzleştir</value></data>
+  <data name="CurveAutoHeadroom.Content" xml:space="preserve"><value>Otomatik kazanç/zayıflatma (EQ + evrişim, 1 dB pay)</value></data>
+  <data name="CurveTrim.Header" xml:space="preserve"><value>Paylaşılan ön yükseltme kazancı (dB)</value></data>
+  <data name="CurvePresetHeading.Text" xml:space="preserve"><value>Eğri hazır ayarları</value></data>
+  <data name="CurvePresets.AutomationProperties.Name" xml:space="preserve"><value>Eğri hazır ayarları</value></data>
+  <data name="CurveSavePreset.Content" xml:space="preserve"><value>Hazır ayarı kaydet…</value></data>
+  <data name="CurvePresetName.Header" xml:space="preserve"><value>Hazır ayar adı</value></data>
+  <data name="CurveSaveNewPreset.Content" xml:space="preserve"><value>Yeni hazır ayarı kaydet</value></data>
+  <data name="CurvePresetError" xml:space="preserve"><value>Eğri hazır ayarları okunamadı veya kaydedilemedi. Dosyayı ve yazma erişimini denetleyin.</value></data>
+  <data name="CurvePresetNameError" xml:space="preserve"><value>Boş olmayan, benzersiz bir ad kullanın. En fazla 100 hazır ayar kaydedilebilir.</value></data>
+  <data name="CurveSource" xml:space="preserve"><value>Düzeltme kaynağı</value></data>
+  <data name="CurveSourceDraw.Content" xml:space="preserve"><value>Eğri çiz</value></data>
+  <data name="CurveSourceWave.Content" xml:space="preserve"><value>WAV içe aktar</value></data>
+  <data name="CurveEditorDescription" xml:space="preserve"><value>IR dosyası gerekmez. Frekans ve kazancı düzenleyin, yanıtı EQ ile birlikte önizleyin.</value></data>
+  <data name="CurveEdit.Content" xml:space="preserve"><value>Eğriyi düzenle…</value></data>
+  <data name="ResponseCombinedToggle.Content" xml:space="preserve"><value>━ Birleşik</value></data>
+  <data name="ResponseEqToggle.Content" xml:space="preserve"><value>┄ EQ</value></data>
+  <data name="ResponseFirToggle.Content" xml:space="preserve"><value>┈ FIR</value></data>
+  <data name="CurveCustom" xml:space="preserve"><value>Özel eğri</value></data>
+  <data name="CurvePresetEmpty" xml:space="preserve"><value>Kaydedilmiş eğri yok</value></data>
+  <data name="DspAutoPreamp" xml:space="preserve"><value>Otomatik kazanç/zayıflatma</value></data>
+  <data name="EasingTypeFlowWave.Content" xml:space="preserve">
+    <value>Flow Wave (yay)</value>
+  </data>
+  <data name="EaseModeFlowWave.Content" xml:space="preserve">
+    <value>Flow Wave (kademeli satırlar)</value>
+  </data>
+  <data name="CurveUpdatePreset.Content" xml:space="preserve">
+    <value>Seçili hazır ayarı güncelleştir</value>
+  </data>
+  <data name="CurveDeletePreset.Content" xml:space="preserve">
+    <value>Hazır ayarı sil</value>
+  </data>
+  <data name="CurveDeletePresetConfirmation" xml:space="preserve">
+    <value>“{0}” hazır ayarı silinsin mi? Geçerli eğriniz korunur.</value>
+  </data>
+  <data name="ExperimentalSurround51Title" xml:space="preserve">
+    <value>Deneysel 5.1 çıkış</value>
+  </data>
+  <data name="ExperimentalSurround51Description" xml:space="preserve">
+    <value>Uyumlu 5.1 PCM parçaları otomatik olarak WASAPI özel modunu kullanır; diğer parçalar çıkış ayarlarınızı korur. ASIO, ilk altı çıkışında L, R, C, LFE, Ls, Rs ile ASIO modunda kalır. Hata durumunda stereoya geri dönülür. Atmos nesne işleme yapılmaz.</value>
+  </data>
+  <data name="ExperimentalAtmosTitle" xml:space="preserve">
+    <value>Atmos HDMI passthrough tercih et (deneysel)</value>
+  </data>
+  <data name="ExperimentalAtmosDescription" xml:space="preserve">
+    <value>Uyumlu parçalar otomatik olarak WASAPI özel modunu kullanır; diğer parçalar çıkış ayarlarınızı korur. 48 kHz, altı kanallı E-AC-3 / Atmos desteklenir; TrueHD desteklenmez. Passthrough uygulama ses düzeyini ve etkileri atlar; ses düzeyini alıcıda ayarlayın.</value>
+  </data>
+  <data name="DspAtmosBitstreamBypass" xml:space="preserve">
+    <value>Deneysel E-AC-3 / Atmos HDMI bit akışı modu: uygulama ses düzeyi ve tüm etkiler atlanır. Ses düzeyini alıcınızda ayarlayın. Kaydedilen ayarlar PCM ile devam eder.</value>
+  </data>
+  <data name="ProcessingDataHint.Text" xml:space="preserve">
+    <value>Veriler işleniyor, lütfen bekleyin...</value>
+  </data>
+  <data name="MetadataWriteQueued" xml:space="preserve"><value>Düzenlemeler kaydedildi. Etiketler, dosya yazılabilir olduğunda yazılacak. Tamamlanmamış yazımlar sonraki başlatmada devam eder.</value></data>
+  <data name="DspDeviceMode" xml:space="preserve"><value>Düzeltmeyi çıkış cihazına göre uygula</value></data>
+  <data name="DspDeviceDescription" xml:space="preserve"><value>Cihaz modunda düzenlemeler ve hazır ayar değişiklikleri yalnızca geçerli çalmayı etkiler. Kaydetmek için Bağla / Bağlamayı güncelleştir, cihaz anlık görüntüsünü geri yüklemek için Kaydedilmiş düzeltmeyi yükle seçeneklerini kullanın. Bağlı olmayan cihazlar varsayılan olarak evrişimi atlar. Evrişimi etkinleştirme ve ön yükseltme genel kalır.</value></data>
+  <data name="DspDeviceTarget" xml:space="preserve"><value>Çıkış cihazına bağla</value></data>
+  <data name="DspDeviceCurrent" xml:space="preserve"><value>Geçerli gerçek çıkış (otomatik)</value></data>
+  <data name="DspDeviceActual" xml:space="preserve"><value>Gerçek çıkış: {0}</value></data>
+  <data name="DspDeviceNoOutput" xml:space="preserve"><value>Etkin çıkış yok. Çalmayı başlatın veya belirli bir cihaz seçin.</value></data>
+  <data name="DspDeviceUnbound" xml:space="preserve"><value>Bağlı değil; cihaz modunda evrişim atlanır.</value></data>
+  <data name="DspDeviceBound" xml:space="preserve"><value>Bağlı: {0} (düzenledikten sonra bağlamayı güncelleştirin)</value></data>
+  <data name="DspDeviceBind" xml:space="preserve"><value>Geçerli düzeltmeyi bağla</value></data>
+  <data name="DspDeviceUpdate" xml:space="preserve"><value>Bağlamayı güncelleştir</value></data>
+  <data name="DspDeviceLoad" xml:space="preserve"><value>Kaydedilmiş düzeltmeyi yükle</value></data>
+  <data name="DspDeviceRemove" xml:space="preserve"><value>Bağlamayı kaldır</value></data>
+  <data name="DspDeviceRefresh" xml:space="preserve"><value>Yenile</value></data>
+  <data name="DspDeviceError" xml:space="preserve"><value>Cihaz düzeltmeleri kaydedilemedi veya okunamadı. Lütfen yeniden deneyin.</value></data>
+  <data name="DspDeviceRetry" xml:space="preserve"><value>Kaydetmeyi / eşitlemeyi yeniden dene</value></data>
+  <data name="DspDeviceApplyError" xml:space="preserve"><value>Düzeltme eşitlemesi onaylanmadı. Yeniden deneyin.</value></data>
+  <data name="DspDeviceSaveError" xml:space="preserve"><value>Düzeltme kaydedilemedi. Mevcut bağlamalar değişmedi. Yeniden deneyin.</value></data>
+  <data name="CurveLiveSaveError" xml:space="preserve"><value>Düzeltme kaydedilemedi. Depolamayı denetleyin, ardından yeniden denemek için tekrar kapatın.</value></data>
+  <data name="CurveApplyPreset.Content" xml:space="preserve"><value>Hazır ayarı uygula</value></data>
+  <data name="LicenseRestrictedDsp" xml:space="preserve">
+    <value>Bazı ses etkileri tam lisans gerektirir. Kilidini açmak için satın alın; kaydedilmiş ayarlarınız korunur.</value>
+  </data>
+  <data name="LicenseTrialRemaining" xml:space="preserve">
+    <value>Deneme süresinde {0} gün kaldı</value>
+  </data>
+  <data name="LicenseDsdLocked" xml:space="preserve">
+    <value>Etkin lisans yok: DSD DoP / Native kilitli. Kilidi açmak için tam sürümü satın alın</value>
+  </data>
+  <data name="LicensePurchase" xml:space="preserve">
+    <value>Tam sürümü satın al</value>
+  </data>
+  <data name="LicenseSurround51Locked" xml:space="preserve"><value>Etkin lisans yok: 5.1 çıkış kilitli. Kilidi açmak için Ayarlar → Hakkında bölümünden tam sürümü satın alın</value></data>
+  <data name="LicenseAtmosLocked" xml:space="preserve"><value>Etkin lisans yok: Atmos HDMI passthrough kilitli. Kilidi açmak için Ayarlar → Hakkında bölümünden tam sürümü satın alın</value></data>
+  <data name="LicenseRestrictedOutput" xml:space="preserve"><value>Bazı gelişmiş çıkış özellikleri tam lisans gerektirir. Kilidini açmak için satın alın; kaydedilmiş ayarlarınız korunur.</value></data>
+  <data name="DesktopLyricsAutoHide.Header" xml:space="preserve">
+    <value>Çalma ayrıntıları sayfasındayken masaüstü şarkı sözlerini gizle</value>
+  </data>
+  <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri etkin olduğunda uygulanır. Çalma ayrıntılarından ayrıldığınızda veya oynatıcıyı tepsiye kapattığınızda geri getirilir.</value>
+  </data>
+  <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
+    <value>Ly</value>
+  </data>
+  <data name="LicenseRestrictedFeatures" xml:space="preserve"><value>Bazı özellikler tam lisans gerektirir. Kilidini açmak için satın alın; kaydedilmiş ayarlarınız korunur.</value></data>
+  <data name="LicenseConvolutionLocked" xml:space="preserve"><value>Evrişim düzeltmesi tam lisans gerektirir. Kilidi açmak için satın alın.</value></data>
+  <data name="AgreementTitle" xml:space="preserve"><value>Başlamadan önce</value></data>
+  <data name="AgreementAccept" xml:space="preserve"><value>Kabul et ve devam et</value></data>
+  <data name="AgreementDecline" xml:space="preserve"><value>Reddet ve çık</value></data>
+  <data name="AgreementIntroduction" xml:space="preserve"><value>Lütfen bu belgeleri okuyun. Kabul et ve devam et; Kullanıcı Sözleşmesi'ni kabul ettiğiniz ve Gizlilik Politikası ile Feragatname'yi okuduğunuz anlamına gelir. Tam metin, Çince ve İngilizce olarak çevrimdışı kullanılabilir.</value></data>
+  <data name="AgreementDocument" xml:space="preserve"><value>Belge</value></data>
+  <data name="AgreementLanguage" xml:space="preserve"><value>Belge dili</value></data>
+  <data name="AgreementSaveFailed" xml:space="preserve"><value>Onayınız kaydedilemedi. Yerel depolama izinlerini denetleyip yeniden deneyin veya çıkın.</value></data>
+  <data name="AgreementImportant" xml:space="preserve"><value>Önemli koşullar</value></data>
+  <data name="LegalTerms" xml:space="preserve"><value>Kullanıcı Sözleşmesi</value></data>
+  <data name="LegalPrivacy" xml:space="preserve"><value>Gizlilik Politikası</value></data>
+  <data name="AgreementOnline" xml:space="preserve"><value>Çevrimiçi oku</value></data>
+  <data name="CurveOfflineEditing" xml:space="preserve">
+    <value>Henüz ses çıkışı yok. Özel eğriniz çalma başladığında uygulanır ve çıkış değişikliklerini izler. Otomatik cihaz bağlamalarını sürdürmek için bir hazır ayar seçin veya yeniden uygulayın. Kaydedilmemiş taslaklar uygulamadan çıkınca geçersiz olur.</value>
+  </data>
+  <data name="OneShotOpenFailedTitle" xml:space="preserve"><value>Dosya oynatılamıyor</value></data>
+  <data name="OneShotOpenFailedContent" xml:space="preserve"><value>Seçilen müzik dosyası ayrıştırılamadı veya açılamadı: {0}</value></data>
+  <data name="AnimatedTextHoverScroll" xml:space="preserve">
+    <value>Win2D animasyonlu metin üzerine gelince kaydırma</value>
+  </data>
+  <data name="AnimatedTextHoverScrollDescription" xml:space="preserve">
+    <value>Metin geçişi bittikten sonra tam başlığı, albümü ve sanatçıyı okumak için üzerine gelin.</value>
+  </data>
+  <data name="AtmosNotificationTitle" xml:space="preserve">
+    <value>Atmos HDMI passthrough</value>
+  </data>
+  <data name="AtmosWaiting" xml:space="preserve">
+    <value>Uyumlu parça bekleniyor; diğer parçalar her zamanki çıkışınızı kullanır.</value>
+  </data>
+  <data name="AtmosReady" xml:space="preserve">
+    <value>Passthrough denenmeye hazır; çalma sürdüğünde cihaz anlaşması başlar.</value>
+  </data>
+  <data name="AtmosActive" xml:space="preserve">
+    <value>E-AC-3 / Atmos bit akışı çıkışı kuruldu · WASAPI özel mod. Alıcı ses düzeyini ayarlayın; Atmos kod çözme durumu için alıcıyı denetleyin.</value>
+  </data>
+  <data name="AtmosFallback" xml:space="preserve">
+    <value>Atmos passthrough kullanılamıyor; normal PCM çalınıyor.</value>
+  </data>
+  <data name="AtmosStopped" xml:space="preserve">
+    <value>Atmos passthrough başarısız oldu ve çalma durduruldu. Çıkış cihazını denetleyin veya yeniden seçin.</value>
+  </data>
+  <data name="AtmosOff" xml:space="preserve">
+    <value>Otomatik Atmos passthrough kapalı.</value>
+  </data>
+  <data name="AtmosUnsupported" xml:space="preserve">
+    <value>Cihaz bu E-AC-3 / Atmos bit akışı biçimini kabul etmiyor.</value>
+  </data>
+  <data name="AtmosDeviceUnavailable" xml:space="preserve">
+    <value>Çıkış cihazının bağlantısı kesildi, değişti veya kullanılamıyor.</value>
+  </data>
+  <data name="AtmosDeviceBusy" xml:space="preserve">
+    <value>Çıkış cihazını başka bir uygulama kullanıyor.</value>
+  </data>
+  <data name="AtmosExclusiveDenied" xml:space="preserve">
+    <value>Windows veya sürücü bu cihazda özel moda izin vermiyor.</value>
+  </data>
+  <data name="AtmosOutputFailed" xml:space="preserve">
+    <value>Cihaz bit akışı çıkışını başlatamadı veya sürdüremedi.</value>
+  </data>
+  <data name="AtmosDecodeFailed" xml:space="preserve">
+    <value>Kaynak bit akışı okunamadı veya desteklenmeyen veri içeriyor.</value>
+  </data>
+  <data name="AtmosSelectDevice" xml:space="preserve">
+    <value>ASIO için aşağıdan bir Atmos HDMI çıkış cihazını açıkça seçin.</value>
+  </data>
+  <data name="AtmosCurrentDevice" xml:space="preserve">
+    <value>Geçerli çıkış cihazını kullan (ASIO hariç)</value>
+  </data>
+  <data name="AtmosSavedDeviceUnavailable" xml:space="preserve">
+    <value>Kaydedilmiş cihaz (şu anda bağlı değil)</value>
+  </data>
+  <data name="AtmosDeviceTitle" xml:space="preserve">
+    <value>Atmos çıkış cihazı</value>
+  </data>
+  <data name="AtmosDeviceDescription" xml:space="preserve">
+    <value>Yalnızca uyumlu parçalar ve bunların PCM geri dönüşü için kullanılır. Listelenen cihazlar Atmos için sertifikalı değildir; yetenek çalma sırasında denetlenir. Diğer cihazlar asla otomatik olarak seçilmez.</value>
+  </data>
+  <data name="SurroundNotificationTitle" xml:space="preserve">
+    <value>5.1 çıkış</value>
+  </data>
+  <data name="SurroundWaiting" xml:space="preserve">
+    <value>Uyumlu 5.1 PCM parçası bekleniyor; diğer parçalar her zamanki çıkışınızı kullanır.</value>
+  </data>
+  <data name="SurroundReady" xml:space="preserve">
+    <value>5.1 parçası hazır; sürdürüldüğünde özel mod veya ASIO çıkışı görüşülür.</value>
+  </data>
+  <data name="SurroundActive" xml:space="preserve">
+    <value>5.1 PCM çıkışı kuruldu; ses düzeyi ve uyumlu etkiler kullanılabilir kalır.</value>
+  </data>
+  <data name="SurroundFallback" xml:space="preserve">
+    <value>5.1 çıkış başarısız oldu; aynı cihazda normal PCM kullanılıyor.</value>
+  </data>
+  <data name="SurroundStopped" xml:space="preserve">
+    <value>5.1 çıkış başarısız oldu veya cihaz değişti. Çalma durduruldu; çıkış cihazını denetleyin.</value>
+  </data>
+  <data name="SurroundOff" xml:space="preserve">
+    <value>Otomatik 5.1 çıkış kapalı.</value>
+  </data>
+  <data name="ExternalImportsFolderName" xml:space="preserve">
+    <value>Harici içe aktarmalar</value>
+  </data>
+  <data name="RemoveExternalImportsTitle" xml:space="preserve">
+    <value>Harici içe aktarılan tüm şarkılar kaldırılsın mı</value>
+  </data>
+  <data name="WebDavAllSources" xml:space="preserve">
+    <value>Tüm kaynaklar</value>
+  </data>
+  <data name="WebDavLocalSources" xml:space="preserve">
+    <value>Yerel</value>
+  </data>
+  <data name="WebDavOpening" xml:space="preserve">
+    <value>Uzak parça açılıyor…</value>
+  </data>
+  <data name="WebDavBuffering" xml:space="preserve">
+    <value>Arabelleğe alınıyor…</value>
+  </data>
+  <data name="WebDavReady" xml:space="preserve">
+    <value>Hazır</value>
+  </data>
+  <data name="WebDavPlaying" xml:space="preserve">
+    <value>Akış</value>
+  </data>
+  <data name="WebDavPaused" xml:space="preserve">
+    <value>Duraklatıldı</value>
+  </data>
+  <data name="WebDavEnded" xml:space="preserve">
+    <value>Çalma bitti</value>
+  </data>
+  <data name="WebDavStopped" xml:space="preserve">
+    <value>Durduruldu</value>
+  </data>
+  <data name="WebDavFailed" xml:space="preserve">
+    <value>Bağlantı başarısız; yeniden denenebilir</value>
+  </data>
+  <data name="WebDavScanning" xml:space="preserve">
+    <value>Dizinler güncelleştiriliyor</value>
+  </data>
+  <data name="WebDavMetadata" xml:space="preserve">
+    <value>Parça bilgileri okunuyor</value>
+  </data>
+  <data name="WebDavCompleted" xml:space="preserve">
+    <value>Güncelleştirme tamamlandı</value>
+  </data>
+  <data name="WebDavCancelled" xml:space="preserve">
+    <value>Tarama duraklatıldı</value>
+  </data>
+  <data name="WebDavScanSummary" xml:space="preserve">
+    <value>{0} · {1} bulundu · {2} işlendi</value>
+  </data>
+  <data name="WebDavConnecting" xml:space="preserve">
+    <value>Bağlanılıyor…</value>
+  </data>
+  <data name="WebDavConnected" xml:space="preserve">
+    <value>Dizin erişimi doğrulandı. Müzik klasörlerini seçin.</value>
+  </data>
+  <data name="WebDavEntireRoot" xml:space="preserve">
+    <value>Tüm kök klasör</value>
+  </data>
+  <data name="WebDavTestFirst" xml:space="preserve">
+    <value>Önce bağlanıp geçerli adresi ve hesabı doğrulayın.</value>
+  </data>
+  <data name="WebDavChooseFolder" xml:space="preserve">
+    <value>En az bir klasör seçin.</value>
+  </data>
+  <data name="WebDavRemoveConfirm" xml:space="preserve">
+    <value>Bu kaynak ve kitaplık girdileri kaldırılsın mı? Uzak dosyalar korunur.</value>
+  </data>
+  <data name="WebDavReadOnly" xml:space="preserve">
+    <value>Uzak dosyalar salt okunurdur. Etiket yazma ve yerel dosya işlemleri kullanılamaz.</value>
+  </data>
+  <data name="WebDavBrowserHint" xml:space="preserve">
+    <value>Seçilen dizinlenmiş parçalar işaretlendikleri sırayla çalınır.</value>
+  </data>
+  <data name="WebDavBrowserTreeHelp.Text" xml:space="preserve">
+    <value>Klasörleri genişletin ve parçaları işaretleyin. Bir klasörü işaretlemek yalnızca şu anda görünen parçaları seçer.</value>
+  </data>
+  <data name="WebDavFolderTreeHelp.Text" xml:space="preserve">
+    <value>Klasörleri genişletin ve bir veya daha fazla müzik klasörü seçin. Bir üst klasörü seçmek alt klasörlerini de kapsar.</value>
+  </data>
+  <data name="WebDavPlaySelectedButton.Content" xml:space="preserve">
+    <value>Seçilenleri oynat</value>
+  </data>
+  <data name="WebDavSelectedCountLabel.Text" xml:space="preserve">
+    <value>Seçilen parçalar:</value>
+  </data>
+  <data name="WebDavIndexFirst" xml:space="preserve">
+    <value>Önce parçayı kitaplığınıza eklemek için bu kaynağı güncelleştirin.</value>
+  </data>
+  <data name="WebDavCacheUnavailable" xml:space="preserve">
+    <value>Önbellek konumu kullanılamıyor. Akış kullanılabilir kalır.</value>
+  </data>
+  <data name="WebDavErrorConnectionFailed" xml:space="preserve">
+    <value>Uzak kaynak okunamıyor. Bağlantıyı denetleyin ve yeniden deneyin.</value>
+  </data>
+  <data name="WebDavAuthenticationError" xml:space="preserve">
+    <value>Kimlik bilgileri veya izinler geçersiz. Yeniden bağlanmak için kaynağı düzenleyin.</value>
+  </data>
+  <data name="WebDavAddressError" xml:space="preserve">
+    <value>Geçerli bir HTTP(S) WebDAV adresi girin. Yönlendirmeler izin verilen sınırlar içinde kalmalıdır.</value>
+  </data>
+  <data name="WebDavNameError" xml:space="preserve">
+    <value>Benzersiz bir kaynak adı girin.</value>
+  </data>
+  <data name="WebDavMissingError" xml:space="preserve">
+    <value>Kaynak devre dışı veya parça kaldırılmış. Kaynağı güncelleştirin.</value>
+  </data>
+  <data name="WebDavChangedError" xml:space="preserve">
+    <value>Uzak dosya değişti. Kaynağı güncelleştirin ve yeniden çalın.</value>
+  </data>
+  <data name="WebDavRangeError" xml:space="preserve">
+    <value>Bu kaynak aralıkları desteklemiyor; konuma atlama veya etiket okuma kullanılamayabilir.</value>
+  </data>
+  <data name="WebDavConnectionDialog.PrimaryButtonText" xml:space="preserve">
+    <value>Kaydet ve tara</value>
+  </data>
+  <data name="WebDavConnectionDialog.CloseButtonText" xml:space="preserve">
+    <value>İptal</value>
+  </data>
+  <data name="WebDavConnectionHelp.Text" xml:space="preserve">
+    <value>NAS ve OpenList/AList desteklenir. Salt okunur erişim; HTTP şifrelenmez. Anonim erişim için hesabı boş bırakın.</value>
+  </data>
+  <data name="WebDavName.Header" xml:space="preserve">
+    <value>Kaynak adı</value>
+  </data>
+  <data name="WebDavAddress.Header" xml:space="preserve">
+    <value>WebDAV adresi</value>
+  </data>
+  <data name="WebDavUserName.Header" xml:space="preserve">
+    <value>Kullanıcı adı</value>
+  </data>
+  <data name="WebDavPassword.Header" xml:space="preserve">
+    <value>Parola (düzenlerken korumak için boş bırakın)</value>
+  </data>
+  <data name="WebDavConnectButton.Content" xml:space="preserve">
+    <value>Bağlan ve klasör seç</value>
+  </data>
+  <data name="WebDavReadMetadata.Content" xml:space="preserve">
+    <value>Parça bilgilerini arka planda oku</value>
+  </data>
+  <data name="WebDavScanOnStartup.Content" xml:space="preserve">
+    <value>Başlangıçtan sonra klasörleri güncelleştir</value>
+  </data>
+  <data name="WebDavSourceEnabled.Content" xml:space="preserve">
+    <value>Bu kaynağı etkinleştir</value>
+  </data>
+<data name="WebDavBrowseButton.Content" xml:space="preserve">
+    <value>Gözat</value>
+  </data>
+<data name="WebDavPauseButton.Content" xml:space="preserve">
+    <value>Taramayı duraklat</value>
+  </data>
+<data name="WebDavRemoveButton.Content" xml:space="preserve">
+    <value>Kaldır</value>
+  </data>
+  <data name="WebDavBrowserDialog.CloseButtonText" xml:space="preserve">
+    <value>Kapat</value>
+  </data>
+  <data name="WebDavUpButton.Content" xml:space="preserve">
+    <value>Üst klasör</value>
+  </data>
+<data name="WebDavCacheTitle.Text" xml:space="preserve">
+    <value>WebDAV çalma önbelleği</value>
+  </data>
+  <data name="WebDavCacheCard.Header" xml:space="preserve">
+    <value>Çalarken önbelleğe al</value>
+  </data>
+<data name="WebDavCacheHelp.Text" xml:space="preserve">
+    <value>Çalınan özgün sesi önbelleğe alır. Sınıra ulaşıldığında eski girdiler çıkarılır. Bunu kapatmak doldurmayı durdurur; tamamen önbelleğe alınmış parçalar çalınmaya devam eder.</value>
+  </data>
+  <data name="WebDavClearCacheButton.Content" xml:space="preserve">
+    <value>Önbelleği temizle</value>
+  </data>
+  <data name="MusicSources.Text" xml:space="preserve"><value>Müzik kaynakları</value></data>
+  <data name="WebDavPauseMenu.Text" xml:space="preserve"><value>Taramayı duraklat</value></data>
+  <data name="WebDavEditMenu.Text" xml:space="preserve"><value>Düzenle</value></data>
+  <data name="WebDavRemoveMenu.Text" xml:space="preserve"><value>Kaldır</value></data>
+  <data name="MusicSourcesSubtitle.Text" xml:space="preserve">
+    <value>Yerel klasörleri ve ağ müziğini tek kitaplıkta yönetin.</value>
+  </data>
+  <data name="MusicSourcesAdd" xml:space="preserve">
+    <value>Kaynak ekle</value>
+  </data>
+  <data name="MusicSourcesLocal" xml:space="preserve">
+    <value>Yerel klasörler</value>
+  </data>
+  <data name="MusicSourcesLocalEmpty.Text" xml:space="preserve">
+    <value>Yerel bir klasör ekleyin veya buraya sürükleyin.</value>
+  </data>
+  <data name="WebDavSourcesEmpty.Text" xml:space="preserve">
+    <value>NAS, OpenList veya başka bir WebDAV hizmetindeki müzik klasörlerine bağlanın.</value>
+  </data>
+  <data name="WebDavCacheExpander.Header" xml:space="preserve">
+    <value>WebDAV çalma önbelleği</value>
+  </data>
+  <data name="WebDavCacheExpander.Description" xml:space="preserve">
+    <value>Çalarken müziği kaydedin; indirmeleri ve depolamayı yönetin.</value>
+  </data>
+  <data name="WebDavCacheToggleLabel" xml:space="preserve">
+    <value>Çalma sırasında müziği önbelleğe al</value>
+  </data>
+  <data name="WebDavCacheLimitLabel" xml:space="preserve">
+    <value>Önbellek boyutu sınırı (GiB)</value>
+  </data>
+  <data name="WebDavCacheCleanupCard.Header" xml:space="preserve">
+    <value>İndirilen sesi temizle</value>
+  </data>
+  <data name="WebDavMoreAction" xml:space="preserve">
+    <value>Diğer eylemler</value>
+  </data>
+  <data name="WebDavBrowseAction" xml:space="preserve">
+    <value>Gözat</value>
+  </data>
+  <data name="WebDavScanAction" xml:space="preserve">
+    <value>Güncelleştir</value>
+  </data>
+  <data name="WebDavCacheLocationCard.Header" xml:space="preserve">
+    <value>Önbellek konumu</value>
+  </data>
+  <data name="WebDavCacheLocationCard.Description" xml:space="preserve">
+    <value>Yukarıdaki önbellek konumunun WebDav alt klasörünü kullanır.</value>
+  </data>
+  <data name="CacheRootDescription" xml:space="preserve">
+    <value>Kapaklar ve WebDAV bu klasörü paylaşır. Değiştirmek, önbellekleri isteğe bağlı oluşturur ve mevcut dosyaları korur.</value>
+  </data>
+  <data name="WebDavTlsError" xml:space="preserve">
+    <value>Güvenli HTTPS bağlantısı kurulamıyor. NAS sertifikasını ve TLS ayarlarını denetleyin.</value>
+  </data>
+  <data name="WebDavCertificateUntrusted" xml:space="preserve">
+    <value>Sunucu sertifikası doğrulanamadı. Yalnızca bu kaynak için incelemek ve güvenmek üzere bağlantıyı düzenleyin.</value>
+  </data>
+  <data name="WebDavCertificateChanged" xml:space="preserve">
+    <value>Sunucu sertifikası kaydedilmiş sertifikadan farklı. Yeniden incelemek için bağlantıyı düzenleyin.</value>
+  </data>
+  <data name="WebDavCertificateTitle" xml:space="preserve">
+    <value>Sunucu sertifikasını incele</value>
+  </data>
+  <data name="WebDavCertificateHelp" xml:space="preserve">
+    <value>SHA-256 parmak izini NAS yönetim sayfanızla karşılaştırın. Onay yalnızca bu adres ve sertifika için geçerlidir; değiştirilen sertifika yeniden onay gerektirir. Sistem sertifika güveni değişmez.</value>
+  </data>
+  <data name="WebDavCertificateDetails" xml:space="preserve">
+    <value>Adres: {0}
+Konu: {1}
+Veren: {2}
+Geçerlilik: {3:g} — {4:g}
+SHA-256: {5}
+{6}</value>
+  </data>
+  <data name="WebDavCertificateNameMismatch" xml:space="preserve">
+    <value>Adres, sertifika adıyla eşleşmiyor.</value>
+  </data>
+  <data name="WebDavCertificateChainError" xml:space="preserve">
+    <value>Sertifika zinciri sistem doğrulamasından geçemedi.</value>
+  </data>
+  <data name="WebDavCertificateExpired" xml:space="preserve">
+    <value>Sertifikanın süresi dolmuş veya henüz geçerli değil. Önce NAS sertifikasını güncelleştirin.</value>
+  </data>
+  <data name="WebDavTrustCertificate" xml:space="preserve">
+    <value>Sertifikayı onayla ve yeniden bağlan</value>
+  </data>
+  <data name="WebDavCertificateRemembered" xml:space="preserve">
+    <value>Bu kaynak için bir sertifika onaylandı ve kaydettiğinizde anımsanacak. Değiştirilen sertifika yeniden onaylanana kadar bağlantıyı durdurur.</value>
+  </data>
+  <data name="WebDavForgetCertificate" xml:space="preserve">
+    <value>Onaylanmış sertifikayı unut</value>
+  </data>
+  <data name="WebDavCachedAudio" xml:space="preserve">
+    <value>WebDAV · Ses önbelleğe alındı</value>
+  </data>
+</root>

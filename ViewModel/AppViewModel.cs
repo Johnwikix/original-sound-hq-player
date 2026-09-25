@@ -107,6 +107,8 @@ namespace WinUIMusicPlayer.ViewModel
         public bool IsMuted { get; set; } = false;
         public double TempVolume { get; set; } = 50;
         public string PlayTimeText { get => State.Playback.PlayTimeText; set => State.Playback.PlayTimeText = value; }
+        public string ElapsedTimeText => State.Playback.ElapsedTimeText;
+        public string RemainingTimeText => State.Playback.RemainingTimeText;
         //public string ProgressSliderThumbTipText { get; set => SetProperty(ref field, value); } = "00:00";
         public double ProgressSliderMax { get => State.Playback.ProgressSliderMax; set => State.Playback.ProgressSliderMax = value; }
         public List<LyricLine> UILyrics { get => State.Presentation.UILyrics; set => State.Presentation.UILyrics = value; }
