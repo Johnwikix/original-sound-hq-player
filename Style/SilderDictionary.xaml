@@ -31,25 +31,25 @@
                 <ControlTemplate TargetType="Slider">
                     <Grid Margin="{TemplateBinding Padding}">
                         <Grid x:Name="SliderContainer" Background="Transparent" Control.IsTemplateFocusTarget="True">
-                            <Grid x:Name="HorizontalTemplate" MinHeight="44">
+                            <Grid x:Name="HorizontalTemplate" MinHeight="24">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                 </Grid.ColumnDefinitions>
                                 <Grid.RowDefinitions>
-                                    <RowDefinition Height="18" />
+                                    <RowDefinition Height="10" />
                                     <RowDefinition Height="Auto" />
-                                    <RowDefinition Height="18" />
+                                    <RowDefinition Height="10" />
                                 </Grid.RowDefinitions>
                                 <Rectangle x:Name="HorizontalTrackRect" Grid.Row="1" Grid.ColumnSpan="3"
-                                           Height="4" Margin="12,0" Fill="{ThemeResource PlaybackTrackBrush}"
+                                           Height="4" Margin="10,0" Fill="{ThemeResource PlaybackTrackBrush}"
                                            RadiusX="2" RadiusY="2" />
                                 <Rectangle x:Name="HorizontalDecreaseRect" Grid.Row="1" Height="4"
-                                           Margin="12,0" Fill="{TemplateBinding Foreground}" Opacity="0.75"
+                                           Margin="10,0" Fill="{TemplateBinding Foreground}" Opacity="0.75"
                                            RadiusX="2" RadiusY="2" />
                                 <Thumb x:Name="HorizontalThumb" Grid.RowSpan="3" Grid.Column="1"
-                                       Width="12" Height="12" Margin="-24,0,0,0"
+                                       Width="10" Height="10" Margin="-20,0,0,0"
                                        AutomationProperties.AccessibilityView="Raw"
                                        DataContext="{TemplateBinding Value}" FocusVisualMargin="0"
                                        Foreground="{TemplateBinding BorderBrush}">

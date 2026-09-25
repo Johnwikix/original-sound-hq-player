@@ -218,8 +218,8 @@ namespace WinUIMusicPlayer
                 Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "en";
                 AppData.SystemLanguage = "en";
             }
-            Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "tr";
-            AppData.SystemLanguage = "tr";
+            //Windows.Globalization.ApplicationLanguages.PrimaryLanguageOverride = "tr";
+            //AppData.SystemLanguage = "tr";
             // PrimaryLanguageOverride 只影响 WinRT 资源解析；.NET 的 CurrentUICulture 仍跟随系统 UI 语言，
             // 会让统计页星期/月份等 .NET 格式化文本与应用语言不一致。此处取最终生效的应用语言，
             // 同步线程 UI 文化；必须放在所有 PrimaryLanguageOverride 赋值之后。

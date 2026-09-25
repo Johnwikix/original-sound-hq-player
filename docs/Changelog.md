@@ -2,6 +2,14 @@
 
 新条目加在最上方。
 
+## 2026-09-25 修正播放进度条两侧时间文字对齐
+
+- `View/MainPage.xaml`、`View/PlayingDetailPage.xaml`：移除时间文字的 6 px 下边距，使其与紧凑进度条的轨道垂直居中。
+
+## 2026-09-25 收紧播放进度条垂直占位
+
+- `Style/SilderDictionary.xaml`、`View/MainPage.xaml`：播放进度条模板高度从 44 px 收至 24 px，并收紧主播放栏最小高度，缩小两处进度条下方的留白。
+
 ## 2026-09-25 修正播放进度条外观并撤回不准确的缓冲显示
 
 - `Style/SilderDictionary.xaml`、`View/MainPage.xaml`、`View/PlayingDetailPage.xaml`：恢复 HyPlayer 的 12 px 圆形滑块和中性色轨道，对齐两侧时间文字。
