@@ -62,6 +62,14 @@ While restricted, your existing settings are never modified or erased — comple
   - Manual local folder scanning with automatic rescan to keep your library in sync
   - Quick access to your favorite tracks
 
+- ☁️ **WebDAV Music Sources**
+  - Connect to WebDAV servers (NAS, Nutstore, Alist/OpenList, etc.) and manage them alongside your local library
+  - Browse the remote directory tree to pick scan roots; incremental rescans with optional scan-on-startup
+  - Automatic remote metadata (title/artist/album, etc.) and embedded cover art, plus matching `.lrc` lyrics by filename
+  - HTTP Range streaming playback with automatic stream-recovery; live offline marking and availability probing per source
+  - Optional audio cache: fully cached tracks play offline, with a size limit and one-tap cleanup
+  - HTTPS self-signed certificate confirmation by fingerprint; filter browsing by source (all/local/individual WebDAV source)
+
 - 📂 **Favorites & Playlists**
   - Create and manage custom playlists
   - A dedicated "Favorite Audio List" for quick access
@@ -197,6 +205,14 @@ Add-AppxPackage -Register "$layout\AppxManifest.xml"
 > staged build artifact), communicating with the main app over shared-memory
 > IPC. See [External/AudioPlayer/README.md](External/AudioPlayer/README.md) for
 > engine details.
+
+## 💰 Donations
+
+If you find OriginalSound HI-FI Player helpful, consider buying the developer a coffee ☕ — your support keeps the project alive and updated!
+
+| Alipay | WeChat Pay |
+| :---: | :---: |
+| <img src="doc/img/donation/alipay.jpg" width="240" alt="Alipay QR code"> | <img src="doc/img/donation/wechat.png" width="240" alt="WeChat Pay QR code"> |
 
 ## 💖 Dependencies & Credits
 

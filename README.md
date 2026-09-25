@@ -62,6 +62,14 @@
   - 手动添加本地文件夹扫描，自动重新扫描实时同步文件变动
   - 一键定位心仪曲目
 
+- ☁️ **WebDAV 音乐源**
+  - 接入 WebDAV 服务器（NAS、坚果云、Alist/OpenList 等），与本地音乐同库管理
+  - 目录树浏览选择扫描根，增量扫描；可配置启动时自动更新目录
+  - 自动读取远程元数据（标题/艺术家/专辑等）与内嵌封面，自动匹配同名 `.lrc` 歌词
+  - HTTP Range 流式播放、断流自动恢复；来源离线实时标记与探活
+  - 可选音频缓存：完整缓存的歌曲离线也能播放，支持容量上限与一键清理
+  - HTTPS 自签名证书指纹确认；按来源筛选浏览（全部/本地/单个 WebDAV 来源）
+
 - 📂 **收藏与播放列表**
   - 创建并管理自定义播放列表
   - 支持将歌曲加入收藏的「最爱音频列表」
@@ -193,6 +201,14 @@ Add-AppxPackage -Register "$layout\AppxManifest.xml"
 > WASAPI/ASIO 互操作，NativeAOT 单文件，仓库内 `Player\AudioPlayer.exe` 为发布
 > 产物暂存）承担，与主程序经共享内存 IPC 通信。引擎细节见
 > [External/AudioPlayer/README.md](External/AudioPlayer/README.md)。
+
+## 💰 赞助
+
+如果原音 HQ 播放器对你有帮助，欢迎请作者喝杯咖啡 ☕ 你的支持是项目持续维护与更新的动力！
+
+| 支付宝 | 微信 |
+| :---: | :---: |
+| <img src="doc/img/donation/alipay.jpg" width="240" alt="支付宝收款码"> | <img src="doc/img/donation/wechat.png" width="240" alt="微信收款码"> |
 
 ## 💖 依赖与致谢
 
