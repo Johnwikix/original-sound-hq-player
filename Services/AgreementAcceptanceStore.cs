@@ -10,8 +10,11 @@ namespace WinUIMusicPlayer.Services;
 public sealed class AgreementAcceptanceStore(string path)
 {
     public const string CurrentVersion = "2026-09-16.1";
+
+    // 与数据库/设置同根的文档目录不经过 MSIX AppData 虚拟化；本地应用数据目录在部分用户环境
+    // 下无法读写（虚拟化重定向），同意记录曾因此丢失。
     public static AgreementAcceptanceStore ForCurrentUser() => new(Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "OriginalSoundPlayer", "agreement.json"));
+        Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "OriginalSoundPlayer", "Agreement", "agreement.json"));
 
     public async Task<bool> HasAcceptedAsync(string version)
     {

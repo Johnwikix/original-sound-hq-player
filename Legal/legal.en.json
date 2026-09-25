@@ -98,7 +98,7 @@
         {
           "title": "4. Storage and controls",
           "paragraphs": [
-            "The main database, settings and logs are under OriginalSoundPlayer in your Documents folder. The cache location can be viewed or changed in Settings. The acceptance record is stored in OriginalSoundPlayer/agreement.json under the local application data directory available to the app; it contains the version, language and UTC acceptance time.",
+            "The main database, settings and logs are under OriginalSoundPlayer in your Documents folder. The cache location can be viewed or changed in Settings. The acceptance record is stored at OriginalSoundPlayer/Agreement/agreement.json in your Documents folder; it contains the version, language and UTC acceptance time.",
             "Manage your library and caches in the app, or exit before backing up or deleting app data. Removing databases or settings loses local lists, statistics or preferences. Removing the acceptance record prompts for acceptance again at the next launch. Uninstalling does not guarantee removal of files in Documents or custom cache folders."
           ]
         },

@@ -2,6 +2,11 @@
 
 新条目加在最上方。
 
+## 2026-09-25 协议同意记录迁至文档目录
+
+- `Services/AgreementAcceptanceStore.cs`：`agreement.json` 从本地应用数据目录（MSIX 下被虚拟化重定向，部分用户环境无法读写）迁至 `Documents\OriginalSoundPlayer\Agreement\`，与数据库/设置同根；不回退读取旧位置，升级后存量用户需重新确认一次协议。
+- `Legal/legal.zh-CN.json`、`Legal/legal.en.json`：隐私文档中的存储位置声明同步更新。
+
 ## 2026-09-25 WebDAV 扫描无可见变更不再整库重建；本地来源行图标对齐
 
 - `Services/MusicDatabaseService.WebDav.cs`：目录批次提交返回可见新增数（新插入 + 缺失复现）；目录/来源收尾标记返回本次转入缺失的行数（`Missing` 条件收紧为仅 0→1）。
