@@ -2,6 +2,11 @@
 
 新条目加在最上方。
 
+## 2026-09-25 新增土耳其语界面
+
+- `Strings/tr/Resources.resw`：新增土耳其语资源 783 条，键集合与 en 完全一致，占位符逐条校验无差异。
+- `App.xaml.cs`：系统语言检测链新增 `tr` 分支，系统语言为土耳其语时自动切换应用语言。
+
 ## 2026-09-25 协议同意记录迁至文档目录
 
 - `Services/AgreementAcceptanceStore.cs`：`agreement.json` 从本地应用数据目录（MSIX 下被虚拟化重定向，部分用户环境无法读写）迁至 `Documents\OriginalSoundPlayer\Agreement\`，与数据库/设置同根；不回退读取旧位置，升级后存量用户需重新确认一次协议。

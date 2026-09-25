@@ -28,7 +28,7 @@
 
 <div align="center">
 
-[**🏠 Product Page/User Guide**](https://johnwikix.github.io/original-sound-player-page) | [**🐞 Report Issue**](https://github.com/Johnwikix/original-sound-hq-player/issues)
+[**🏠 Product Page/User Guide**](https://johnwikix.github.io/original-sound-player-page) | [**🎬 Promo Video**](https://www.bilibili.com/video/BV13ehE6DErQ) | [**🐞 Report Issue**](https://github.com/Johnwikix/original-sound-hq-player/issues)
 
 </div>
 
