@@ -172,9 +172,14 @@
    ```bash
    git clone https://github.com/Johnwikix/original-sound-hq-player.git
    ```
-2. 在 Visual Studio 中打开 `WinUIMusicPlayer.sln`，还原 NuGet 包
-3. 按 `Ctrl+Shift+B` 构建解决方案
-4. 按 `Ctrl+F5` 启动调试
+2. 安装私有包 `Microsoft.Windows.CsWinRT 2.3.2-prerelease.260804.1`：项目引用的是作者自行修改的版本，未发布到任何 NuGet 仓库，需从 [CsWinRT Release 页面](https://github.com/Johnwikix/CsWinRT/releases/tag/2.3.2) 下载 `Microsoft.Windows.CsWinRT.2.3.2-prerelease.260804.1.nupkg`，放入本地任意文件夹（如 `C:\nuget-local`）作为本地 nupkg 仓库，并将其注册为 NuGet 包源后再还原：
+   ```powershell
+   dotnet nuget add source "C:\nuget-local" --name local
+   ```
+   也可在 VS「工具 → NuGet 包管理器 → 程序包管理器设置 → 程序包源」中添加。下节命令行构建同样依赖此步骤。
+3. 在 Visual Studio 中打开 `WinUIMusicPlayer.sln`，还原 NuGet 包
+4. 按 `Ctrl+Shift+B` 构建解决方案
+5. 按 `Ctrl+F5` 启动调试
 
 ### 命令行构建并部署 Release（无需 Visual Studio）
 

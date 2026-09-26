@@ -172,9 +172,14 @@ Issues and Pull Requests are welcome.
    ```bash
    git clone https://github.com/Johnwikix/original-sound-hq-player.git
    ```
-2. Open `WinUIMusicPlayer.sln` in Visual Studio and restore NuGet packages
-3. Press `Ctrl+Shift+B` to build the solution
-4. Press `Ctrl+F5` to launch without debugging
+2. Install the private package `Microsoft.Windows.CsWinRT 2.3.2-prerelease.260804.1`: the project references a modified build by the author that is not published to any NuGet feed. Download `Microsoft.Windows.CsWinRT.2.3.2-prerelease.260804.1.nupkg` from the [CsWinRT release page](https://github.com/Johnwikix/CsWinRT/releases/tag/2.3.2), place it in any local folder (e.g. `C:\nuget-local`) to serve as a local nupkg repository, and register that folder as a NuGet package source before restoring:
+   ```powershell
+   dotnet nuget add source "C:\nuget-local" --name local
+   ```
+   You can also add it in VS under Tools → NuGet Package Manager → Package Manager Settings → Package Sources. The command-line build in the next section depends on this step too.
+3. Open `WinUIMusicPlayer.sln` in Visual Studio and restore NuGet packages
+4. Press `Ctrl+Shift+B` to build the solution
+5. Press `Ctrl+F5` to launch without debugging
 
 ### Build and Deploy Release from the Command Line (no Visual Studio)
 
