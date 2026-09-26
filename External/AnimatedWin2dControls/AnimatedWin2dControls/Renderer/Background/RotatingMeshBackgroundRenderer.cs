@@ -27,10 +27,13 @@ namespace AnimatedWin2dControls.Renderer.Background
         private const float BackdropPixelScale = 1f / 8f;
 
         /// <summary>
-        /// 中间层上的高斯 σ。原版 σ_uv = 170/输出宽，映射到 1/8 目标即 21.25px，
-        /// 与分辨率无关（BlurAmount 以 96DPI 目标的 DIP 计，此处 DIP=px）。
+        /// 高斯 σ 占画布面积平方根（几何平均边长）的比例：以 1920×1080 输出时的
+        /// 150px σ 为基准（原版 170px，实测调低），按 √(宽×高) 缩放，使不同窗口
+        /// 尺寸和 DPI 下的相对模糊强度一致，且横竖屏同面积时强度相同——按宽度
+        /// 缩放在竖屏下会相对高度失准。中间目标为 96DPI，BlurAmount 的 DIP 即
+        /// 目标像素。
         /// </summary>
-        private const float BackdropBlurSigma = 21.25f;
+        private const float BackdropBlurSigmaRatio = 140f / 1440f;
 
         /// <summary>
         /// pinch 网格变形的半周期（秒）：phase = acos(sin(t·π/本值))/π，
@@ -475,7 +478,7 @@ namespace AnimatedWin2dControls.Renderer.Background
             _blurEffect = new GaussianBlurEffect
             {
                 Source = _rotationTarget,
-                BlurAmount = BackdropBlurSigma,
+                BlurAmount = MathF.Sqrt((float)backdropWidth * backdropHeight) * BackdropBlurSigmaRatio,
                 Optimization = EffectOptimization.Balanced,
                 BorderMode = EffectBorderMode.Soft,
             };

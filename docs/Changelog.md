@@ -2,6 +2,10 @@
 
 新条目加在最上方。
 
+## 2026-09-26 旋转网格背景模糊随窗口尺寸缩放
+
+- `External/AnimatedWin2dControls/AnimatedWin2dControls/Renderer/Background/RotatingMeshBackgroundRenderer.cs`：模糊半径按画布面积的平方根（几何平均边长）同比缩放，以 1920×1080 时的原有效果为基准，避免小窗口过度模糊；横竖屏同面积下模糊强度一致，按宽度缩放会导致竖屏相对失准。裁切、网格和其他渲染参数保持不变。
+
 ## 2026-09-26 修复 OpenList 网盘歌曲误报变化及保存来源卡顿
 
 - `Services/WebDav/WebDavTransport.cs`、`RemoteResourceVersion.cs`、`HttpRangeReadStream.cs`、`RemoteReadSession.cs`：区分 DAV 目录与重定向下载资源的版本，修复播放、标签及封面读取误报“远程文件已变化”；在同一读取中继续校验下载 ETag、修改时间和长度，缺 ETag 不再误判 Range 不支持。
