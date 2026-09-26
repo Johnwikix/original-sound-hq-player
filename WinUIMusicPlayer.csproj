@@ -273,7 +273,6 @@
   </ItemGroup>
   <ItemGroup>
 	  <TrimmerRootAssembly Include="SQLite-net" />
-	  <TrimmerRootAssembly Include="System.IO.Pipes" />
 	  <TrimmerRootAssembly Include="SQLitePCLRaw.core" />
 	  <TrimmerRootDescriptor Include="TrimmerRoots.xml" />
   </ItemGroup>
