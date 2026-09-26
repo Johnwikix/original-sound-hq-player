@@ -17,12 +17,13 @@ public sealed class RemoteReadSession : IAsyncDisposable
     private readonly RemoteAudioCache _cache;
     private RemoteAudioCache.CacheFile? _file;
     private readonly string _resource;
+    private readonly RemoteResourceVersion _version;
     private readonly CancellationTokenSource _stop = new();
     private readonly Dictionary<long, Window> _windows = [];
     private readonly object _gate = new();
     private TaskCompletionSource _changed = Signal();
     private Task _fill = Task.CompletedTask;
-    private bool _playing, _disposed, _rangeSupported = true;
+    private bool _playing, _disposed, _rangeSupported = true, _cacheAllowed = true;
     public WebDavEntry Entry { get; }
     public long NetworkBytes;
     public bool HasCompleteCache => _file?.IsComplete == true;
@@ -38,6 +39,7 @@ public sealed class RemoteReadSession : IAsyncDisposable
         _transport = transport;
         _source = new(source);
         Entry = entry;
+        _version = new(entry);
         _cache = cache;
         _resource = resource;
         _file = cache.Acquire(resource, entry);
@@ -117,20 +119,14 @@ public sealed class RemoteReadSession : IAsyncDisposable
         {
             await using var response = await _transport.OpenAsync(_source.Value, Entry.Href, window.Start, window.Start + window.Count - 1, foreground, _stop.Token).ConfigureAwait(false);
             var range = response.Message.Content.Headers.ContentRange;
-            if (response.Message.StatusCode != HttpStatusCode.PartialContent || range?.From != window.Start || range.To != window.Start + window.Count - 1 || range.Length != Entry.Length)
+            if (response.Message.StatusCode != HttpStatusCode.PartialContent || range?.From != window.Start || range.To != window.Start + window.Count - 1 || range.Length is null)
             {
                 _rangeSupported = false;
                 throw new WebDavException("RangeNotSupported");
             }
-            string etag = response.Message.Headers.ETag?.ToString() ?? "";
-            if (Entry.ETag.Length != 0 && !Entry.ETag.StartsWith("W/", StringComparison.Ordinal) && etag.Length == 0)
-            {
-                _file?.Abandon();
-                _rangeSupported = false;
-                throw new WebDavException("RangeNotSupported");
-            }
-            if (Entry.ETag.Length != 0 && !Entry.ETag.StartsWith("W/", StringComparison.Ordinal) && etag != Entry.ETag)
+            if (range.Length != Entry.Length)
                 throw new WebDavException("ResourceChanged");
+            ValidateVersion(response);
             using var idle = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token);
             int received = 0;
             window.CachedFile = _file;
@@ -153,7 +149,11 @@ public sealed class RemoteReadSession : IAsyncDisposable
                 }
             }
         }
-        catch (Exception ex) { lock (_gate) window.Error = ex; }
+        catch (Exception ex)
+        {
+            if (ex is WebDavException { Code: "ResourceChanged" }) _file?.Abandon();
+            lock (_gate) window.Error = ex;
+        }
         finally { lock (_gate) { window.Done = true; window.Changed.TrySetResult(); Pulse(); } }
     }
 
@@ -169,7 +169,7 @@ public sealed class RemoteReadSession : IAsyncDisposable
                     Task wait;
                     lock (_gate)
                     {
-                        if (!_rangeSupported || _file?.IsComplete == true) return;
+                        if (!_rangeSupported || !_cacheAllowed || _file?.IsComplete == true) return;
                         wait = _changed.Task;
                         if (_playing && _cache.Enabled)
                         {
@@ -210,10 +210,18 @@ public sealed class RemoteReadSession : IAsyncDisposable
     public async Task CopySequentialAsync(Stream destination, CancellationToken token)
     {
         await using var response = await OpenSequentialAsync(token).ConfigureAwait(false);
-        string? etag = response.Message.Headers.ETag?.ToString();
-        if (etag is null) _file?.Abandon();
-        if (Entry.ETag.Length != 0 && !Entry.ETag.StartsWith("W/", StringComparison.Ordinal) && etag is not null && etag != Entry.ETag)
-            throw new WebDavException("ResourceChanged");
+        try
+        {
+            if (Entry.Length >= 0 && response.Message.Content.Headers.ContentLength is { } length && length != Entry.Length)
+                throw new WebDavException("ResourceChanged");
+            ValidateVersion(response);
+        }
+        catch (WebDavException ex)
+        {
+            _file?.Abandon();
+            Volatile.Write(ref _failure, WebDavReadFailure.From(ex));
+            throw;
+        }
         byte[] buffer = ArrayPool<byte>.Shared.Rent(65536);
         using var idle = CancellationTokenSource.CreateLinkedTokenSource(token);
         try
@@ -244,6 +252,16 @@ public sealed class RemoteReadSession : IAsyncDisposable
             }
         }
         finally { ArrayPool<byte>.Shared.Return(buffer); }
+    }
+    private void ValidateVersion(WebDavResponse response)
+    {
+        if (_version.Validate(response)) return;
+        lock (_gate)
+        {
+            _cacheAllowed = false;
+            _file?.Abandon();
+            Pulse();
+        }
     }
     private async Task<WebDavResponse> OpenSequentialAsync(CancellationToken token)
     {

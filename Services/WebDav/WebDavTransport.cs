@@ -189,7 +189,7 @@ public sealed class WebDavTransport : IDisposable
                     if (response.Content.Headers.ContentEncoding.Count != 0)
                         throw new WebDavException("UnexpectedContentEncoding");
                     var stream = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
-                    return new WebDavResponse(response, stream, _all, backgroundHeld ? _background : null, client);
+                    return new WebDavResponse(response, stream, _all, backgroundHeld ? _background : null, client, redirect != 0);
                 }
                 catch { response.Dispose(); throw; }
             }
@@ -209,11 +209,13 @@ public sealed class WebDavTransport : IDisposable
 
 /// <summary>响应与并发名额具有相同生命周期；调用者必须等待读取退出后再释放。</summary>
 public sealed class WebDavResponse(HttpResponseMessage message, Stream stream, SemaphoreSlim all, SemaphoreSlim? background,
-    IDisposable? clientLease = null) : IAsyncDisposable
+    IDisposable? clientLease = null, bool isRedirected = false) : IAsyncDisposable
 {
     private int _disposed;
     public HttpResponseMessage Message { get; } = message;
     public Stream Stream { get; } = stream;
+    // 重定向后的 ETag 属于下载资源，不能与 PROPFIND 返回的 DAV 资源 ETag 直接比较。
+    public bool IsRedirected { get; } = isRedirected;
     public ValueTask DisposeAsync()
     {
         if (Interlocked.Exchange(ref _disposed, 1) == 0)

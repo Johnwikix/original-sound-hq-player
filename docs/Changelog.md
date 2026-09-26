@@ -2,6 +2,13 @@
 
 新条目加在最上方。
 
+## 2026-09-26 修复 OpenList 网盘歌曲误报变化及保存来源卡顿
+
+- `Services/WebDav/WebDavTransport.cs`、`RemoteResourceVersion.cs`、`HttpRangeReadStream.cs`、`RemoteReadSession.cs`：区分 DAV 目录与重定向下载资源的版本，修复播放、标签及封面读取误报“远程文件已变化”；在同一读取中继续校验下载 ETag、修改时间和长度，缺 ETag 不再误判 Range 不支持。
+- `Services/WebDav/RemoteReadSession.cs`：下载版本无法对应目录强版本时停止自动缓存补全且不发布音频磁盘缓存，保留有界内存播放及定位，避免把直链数据错误归入目录版本缓存。
+- `Services/WebDavLibraryService.Sources.cs`、`WebDavLibraryService.cs`：凭据和数据库保存移到后台；新增来源由扫描批次发布曲目，省去保存时整库刷新；通知回到 UI 线程，退出等待在途保存且抑制迟到通知。
+- `_tools/WebDavRegression`、`_tools/WebDavSaveUiRegression`：增加重定向版本/长度/Range 回归及真实 WinUI 凭据保存、UI 心跳、失败和退出收尾验证；真实 OpenList 目录 77 首元信息全部通过，抽样验证标签、封面、音频字节及实际 AudioPlayer 解码和定位。
+
 ## 2026-09-25 播放进度条右侧改显剩余时间
 
 - `Services/PlaybackProgressService.cs`：滑块右侧文本由总时长改为剩余时间（总时长 − 当前进度，倒数归零），`curMs` 越过 `totalMs` 时钳到 0；SMTC 时间线仍上报总时长。

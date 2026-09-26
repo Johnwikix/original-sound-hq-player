@@ -164,18 +164,6 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
             : new WebDavCertificateTrust(source.TrustedCertificateOrigin, source.TrustedCertificateSha256);
         return new(WebDavTransport.NormalizeRoot(source.BaseUri), source.UserName, password, trust);
     }
-    public async Task SaveSourceAsync(WebDavSource source, string password)
-    {
-        source.BaseUri = WebDavTransport.NormalizeRoot(source.BaseUri).AbsoluteUri;
-        if (string.IsNullOrWhiteSpace(source.Name)) throw new WebDavException("NameRequired");
-        foreach (var existing in await database.GetWebDavSourcesAsync())
-            if (existing.Id != source.Id && existing.Name.Equals(source.Name, StringComparison.OrdinalIgnoreCase)) throw new WebDavException("NameExists");
-        if (source.UserName.Length != 0) new PasswordVault().Add(new PasswordCredential("OriginalSoundPlayer.WebDav", source.CredentialKey, password));
-        await database.SaveWebDavSourceAsync(source);
-        if (_library is not null) await _library.RefreshSongsSourceAsync();
-        if (source.Enabled) _ = ProbeAsync(source);
-        SourcesChanged?.Invoke();
-    }
     public Task ScanAsync(WebDavSource source)
     {
         lock (_gate)
@@ -467,6 +455,7 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
             _library.SongsSourceChanged -= OnCacheContentsChanged;
             _library.PropertyChanged -= OnLibraryPropertyChanged;
         }
+        await DrainSourceSavesAsync();
         await _cacheStatusRefresh;
         if (_library is not null) _library.State.Preferences.PropertyChanged -= OnPreferencesChanged;
         Task[] scans;

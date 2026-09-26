@@ -68,6 +68,7 @@ internal static class Regression
         }
         CheckCoverStream();
         using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(20) };
+        await CheckRedirectVersionsAsync(transport, http);
         await using var fixture = new Fixture();
         var fake = new WebDavConnection(new Uri(fixture.Root), "fixture-user", "fixture-password");
         var item = new WebDavEntry("/dav/tone.flac", "tone.flac", false, fixture.Bytes.Length, "\"v1\"", null);
@@ -164,6 +165,80 @@ internal static class Regression
         Check(availability.CompleteProbe(10, availability.Version(10), false) && !availability.IsOffline(10), "successful new probe recovers source");
         Check(!WebDavReadFailure.From(new WebDavException("RequestFailed", HttpStatusCode.NotFound)).SourceUnavailable,
             "missing track does not take entire server offline");
+    }
+
+    private static async Task CheckRedirectVersionsAsync(WebDavTransport transport, HttpClient http)
+    {
+        await using var fixture = new Fixture();
+        var connection = new WebDavConnection(new Uri(fixture.Root), "fixture-user", "fixture-password");
+        var entry = new WebDavEntry("/dav/redirect", "tone.flac", false, fixture.Bytes.Length, "\"dav-v1\"", fixture.CdnModified.AddSeconds(1));
+        using (var input = new HttpRangeReadStream(transport, connection, entry, default))
+        {
+            Check(input.ReadByte() == fixture.Bytes[0], "redirected metadata accepts a separate CDN ETag");
+            input.Position = 128 * 1024;
+            Check(input.ReadByte() == fixture.Bytes[128 * 1024], "redirected metadata retains the download version across blocks");
+            fixture.CdnETag = "\"cdn-v2\"";
+            input.Position = 256 * 1024;
+            try { input.ReadByte(); throw new Exception("Changed CDN metadata accepted."); }
+            catch (WebDavException ex) { Check(ex.Code == "ResourceChanged", "changed CDN ETag rejects mixed metadata blocks"); }
+        }
+        fixture.CdnETag = "\"cdn-v1\"";
+        using (var input = new HttpRangeReadStream(transport, connection, entry, default))
+        {
+            Check(input.ReadByte() == fixture.Bytes[0], "DAV and CDN modification times are independent");
+            fixture.CdnModified = fixture.CdnModified.AddSeconds(1);
+            input.Position = 128 * 1024;
+            try { input.ReadByte(); throw new Exception("Changed CDN modification time accepted."); }
+            catch (WebDavException ex) { Check(ex.Code == "ResourceChanged", "download modification time change rejects mixed blocks"); }
+        }
+        fixture.CdnLengthDelta = 1;
+        using (var input = new HttpRangeReadStream(transport, connection, entry, default))
+        {
+            try { input.ReadByte(); throw new Exception("Changed download length accepted."); }
+            catch (WebDavException ex) { Check(ex.Code == "ResourceChanged", "changed download length is not mistaken for absent Range"); }
+        }
+        fixture.CdnLengthDelta = 0;
+        var cache = new RemoteAudioCache();
+        await using (var session = new RemoteReadSession(transport, connection, entry, cache, "redirect"))
+        {
+            var bytes = new byte[32];
+            Check(await session.ReadAsync(bytes, 0, default) == bytes.Length && bytes.AsSpan().SequenceEqual(fixture.Bytes.AsSpan(0, 32)),
+                "redirected playback accepts a separate CDN ETag");
+            fixture.CdnETag = "\"cdn-v2\"";
+            try { await session.ReadAsync(bytes, 1024 * 1024, default); throw new Exception("Changed CDN playback accepted."); }
+            catch (WebDavException ex) { Check(ex.Code == "ResourceChanged" && session.Failure?.SourceUnavailable == false,
+                "changed CDN ETag rejects mixed playback windows without taking source offline"); }
+        }
+        fixture.CdnETag = "\"cdn-v1\"";
+        fixture.CdnSupportsRange = false;
+        await using (var bridge = new WebDavPlaybackBridge(new RemoteReadSession(transport, connection, entry, cache, "redirect-sequential")))
+        {
+            bridge.Start();
+            Check((await http.GetByteArrayAsync(bridge.Location)).AsSpan().SequenceEqual(fixture.Bytes),
+                "redirected server without Range supports sequential playback with a separate ETag");
+        }
+        fixture.CdnSupportsRange = true;
+        fixture.CdnHasETag = false;
+        using (var input = new HttpRangeReadStream(transport, connection, entry, default))
+            Check(input.ReadByte() == fixture.Bytes[0], "redirected metadata does not mistake a missing CDN ETag for a source change");
+        string temp = Path.Combine(Path.GetTempPath(), "webdav-redirect-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            cache.Configure(true, temp, 32L * 1024 * 1024);
+            await using (var bridge = new WebDavPlaybackBridge(new RemoteReadSession(transport, connection, entry, cache, "redirect-uncacheable")))
+            {
+                bridge.Start();
+                bridge.SetPlaying(true);
+                using var request = new HttpRequestMessage(HttpMethod.Get, bridge.Location);
+                request.Headers.Range = new RangeHeaderValue(1024 * 1024, 1024 * 1024 + 31);
+                using var response = await http.SendAsync(request);
+                Check(response.StatusCode == HttpStatusCode.PartialContent && (await response.Content.ReadAsByteArrayAsync()).AsSpan().SequenceEqual(fixture.Bytes.AsSpan(1024 * 1024, 32)),
+                    "redirected playback keeps seeking when CDN omits ETag");
+            }
+            Check(cache.GetSize() == 0, "unverified redirect version never creates a persistent source-version cache");
+            Check(fixture.UnauthorizedRedirects == 0, "redirected reads never forward source credentials");
+        }
+        finally { if (Directory.Exists(temp)) Directory.Delete(temp, true); }
     }
 
     private static async Task CheckCacheDirectoriesAsync(string temp)

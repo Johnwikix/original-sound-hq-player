@@ -5,6 +5,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../Services/WebDav/*.cs" Link="WebDav/%(Filename)%(Extension)" />
+    <Compile Include="../../External/BassPlayerIpc.Shared/IpcConstants.cs;../../External/BassPlayerIpc.Shared/Streaming.cs" />
     <Compile Include="../../Reader/AudioCoverReader.cs" Link="AudioCoverReader.cs" />
     <Compile Include="../PlaybackSwitchRegression/DsfHttpFixture.cs" Link="DsfHttpFixture.cs" />
     <PackageReference Include="FFmpeg.AutoGen" Version="9.0.1.1" />

@@ -21,9 +21,16 @@ if (args.Contains("--connection-only"))
     await ConnectionProbe.RunAsync(transport);
     return;
 }
-await MetadataRegression.RunAsync(transport);
-await Regression.RunAsync(transport);
-await ConnectionViewModelRegression.RunAsync(transport);
+if (!args.Contains("--integration-only"))
+{
+    await MetadataRegression.RunAsync(transport);
+    await Regression.RunAsync(transport);
+    await ConnectionViewModelRegression.RunAsync(transport);
+}
+ffmpeg.av_log_set_level(ffmpeg.AV_LOG_ERROR);
+string? nativePlayer = Environment.GetEnvironmentVariable("MUSIC_WEBDAV_PLAYER");
+if (nativePlayer is not null)
+    Environment.SetEnvironmentVariable("ORIGINALSOUND_IPC_SCOPE", "webdav-" + Guid.NewGuid().ToString("N"));
 var address = Environment.GetEnvironmentVariable("MUSIC_WEBDAV_URL");
 if (address is null) { Console.WriteLine("Set MUSIC_WEBDAV_URL, MUSIC_WEBDAV_USER and MUSIC_WEBDAV_PASSWORD to run integration checks."); return; }
 var connection = new WebDavConnection(WebDavTransport.NormalizeRoot(address),
@@ -53,6 +60,8 @@ foreach (var entry in entries.Where(e => !e.IsDirectory).Take(2).Concat(entries.
     input.ReadExactly(expected);
     if (!received.AsSpan().SequenceEqual(expected)) throw new Exception("OpenList bridge bytes differ");
     Console.WriteLine("PASS: OpenList bridge serves exact original audio bytes.");
+    if (nativePlayer is not null)
+        await NativePlaybackProbe.RunAsync(nativePlayer, bridge.Location, entry, deadline.Token);
 }
 if (args.Contains("--scan-all"))
 {
@@ -77,7 +86,7 @@ if (args.Contains("--scan-all"))
                 if (result.SampleRate <= 0) throw new Exception("missing sample rate");
                 complete++;
             }
-            catch (Exception ex) { failed++; Console.WriteLine($"Metadata deferred: {extension}, {ex.GetType().Name}"); }
+            catch (Exception ex) { failed++; Console.WriteLine($"Metadata deferred: {entry.Name}, {(ex is WebDavException dav ? dav.Code : ex.GetType().Name)}"); }
             bytes += input.DownloadedBytes;
         }
     Console.WriteLine($"Full metadata pass: complete={complete}, deferred={failed}, elapsed={clock.Elapsed.TotalSeconds:F2}s, audioBytes={bytes}, managedAllocated={GC.GetTotalAllocatedBytes(true)-allocated}, collections={GC.CollectionCount(0)-g0}/{GC.CollectionCount(1)-g1}/{GC.CollectionCount(2)-g2}, runtimeReportedGcPauseMs={(GC.GetTotalPauseDuration()-pause).TotalMilliseconds:F2}");

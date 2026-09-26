@@ -22,7 +22,7 @@ public sealed class HttpRangeReadStream : Stream
     private long _readBytes, _position;
     private int _requests;
     private bool _disposed;
-    private string? _version;
+    private readonly RemoteResourceVersion _version;
     private Exception? _failure;
     public void ThrowIfFailed()
     {
@@ -37,6 +37,7 @@ public sealed class HttpRangeReadStream : Stream
         _transport = transport;
         _source = source;
         _entry = entry;
+        _version = new(entry);
         _budget = budget;
         _maxRequests = maxRequests;
         _deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
@@ -82,13 +83,11 @@ public sealed class HttpRangeReadStream : Stream
         _requests++;
         await using var response = await _transport.OpenAsync(_source, _entry.Href, start, start + count - 1, false, _deadline.Token).ConfigureAwait(false);
         var range = response.Message.Content.Headers.ContentRange;
-        if (response.Message.StatusCode != HttpStatusCode.PartialContent || range?.From != start || range.To != start + count - 1 || range.Length != Length)
+        if (response.Message.StatusCode != HttpStatusCode.PartialContent || range?.From != start || range.To != start + count - 1 || range.Length is null)
             throw new WebDavException("RangeNotSupported");
-        string? version = response.Message.Headers.ETag?.ToString();
-        if (_entry.ETag.Length != 0 && !_entry.ETag.StartsWith("W/", StringComparison.Ordinal) && version != _entry.ETag)
+        if (range.Length != Length)
             throw new WebDavException("ResourceChanged");
-        if (_version is not null && version != _version) throw new WebDavException("ResourceChanged");
-        _version = version;
+        _version.Validate(response);
         byte[] bytes = ArrayPool<byte>.Shared.Rent(count);
         try
         {

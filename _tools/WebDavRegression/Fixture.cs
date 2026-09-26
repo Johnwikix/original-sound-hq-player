@@ -17,6 +17,10 @@ internal sealed class Fixture : IAsyncDisposable
     public readonly byte[] Bytes = new byte[3 * 1024 * 1024 + 137];
     public string Root { get; }
     public int Gets, UnauthorizedRedirects;
+    public string CdnETag = "\"cdn-v1\"";
+    public bool CdnHasETag = true, CdnSupportsRange = true;
+    public DateTimeOffset CdnModified = new(2026, 9, 25, 15, 6, 11, TimeSpan.Zero);
+    public int CdnLengthDelta;
     public Fixture(bool tls = false, bool nameMismatch = false, bool expired = false)
     {
         if (tls)
@@ -92,7 +96,8 @@ internal sealed class Fixture : IAsyncDisposable
             if (path.Contains("redirect")) { await Header(302, 0, $"Location: {Root.Replace("127.0.0.1", "localhost").Replace("/dav/", "/cdn/")}file\r\n"); return; }
             if (path.StartsWith("/cdn/") && auth is not null) Interlocked.Increment(ref UnauthorizedRedirects);
             if (path.Contains("unauthorized")) { await Header(401, 0, ""); return; }
-            bool partial = range is not null && !path.Contains("no-range");
+            bool cdn = path.StartsWith("/cdn/");
+            bool partial = range is not null && !path.Contains("no-range") && (!cdn || CdnSupportsRange);
             int start = 0, end = Bytes.Length - 1;
             if (partial)
             {
@@ -100,9 +105,11 @@ internal sealed class Fixture : IAsyncDisposable
                 start = int.Parse(numbers[0]);
                 if (numbers[1].Length > 0) end = int.Parse(numbers[1]);
             }
-            string etag = path.Contains("changed") ? "\"v2\"" : "\"v1\"";
+            string etag = cdn ? CdnETag : path.Contains("changed") ? "\"v2\"" : "\"v1\"";
             await Header(partial ? 206 : 200, end - start + 1,
-                $"ETag: {etag}\r\n" + (partial ? $"Content-Range: bytes {start}-{end}/{Bytes.Length}\r\n" : ""));
+                (cdn && !CdnHasETag ? "" : $"ETag: {etag}\r\n") +
+                (cdn ? $"Last-Modified: {CdnModified:R}\r\n" : "") +
+                (partial ? $"Content-Range: bytes {start}-{end}/{Bytes.Length + (cdn ? CdnLengthDelta : 0)}\r\n" : ""));
             if (path.Contains("stall")) await Task.Delay(TimeSpan.FromSeconds(30), _stop.Token);
             await stream.WriteAsync(Bytes.AsMemory(start, end - start + 1), _stop.Token);
             async Task Header(int status, int length, string extra) =>
