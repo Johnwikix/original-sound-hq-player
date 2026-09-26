@@ -58,6 +58,12 @@ internal static unsafe partial class Program
             RunExportTests(Path.GetFullPath(args[1]));
             return _failures == 0 ? 0 : 1;
         }
+        if (args.Length == 3 && args[0] == "--test-export-edge")
+        {
+            FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
+            RunExportEdgeTests(Path.GetFullPath(args[1]), Path.GetFullPath(args[2]));
+            return _failures == 0 ? 0 : 1;
+        }
         if (args.Length == 2 && args[0] == "--test-pcm-file")
         {
             FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;

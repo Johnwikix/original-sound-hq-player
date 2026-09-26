@@ -70,7 +70,17 @@ namespace WinUIMusicPlayer.AudioConverters
                     throw new InvalidOperationException($"无法读取流信息: {inputPath}");
 
                 int streamIndex = ffmpeg.av_find_best_stream(inFmt, AVMediaType.AVMEDIA_TYPE_AUDIO, -1, -1, null, 0);
-                if (streamIndex < 0) throw new InvalidOperationException($"文件中没有音频流: {inputPath}");
+                if (streamIndex < 0)
+                {
+                    // 实测存在 RAR/ZIP 改名 .flac、0 字节空文件：把检测到的容器报出来，别只说"没有音频流"
+                    byte* namePtr = inFmt->iformat->name;
+                    int nameLen = 0;
+                    while (namePtr != null && namePtr[nameLen] != 0) nameLen++;
+                    string container = namePtr != null ? Encoding.ASCII.GetString(namePtr, nameLen) : "?";
+                    string size = new FileInfo(inputPath).Length.ToString("N0");
+                    throw new InvalidOperationException(
+                        $"文件中没有音频流: 容器={container}，文件 {size} 字节（疑似非音频文件）: {inputPath}");
+                }
                 AVStream* inStream = inFmt->streams[streamIndex];
 
                 AVCodec* decoder = ffmpeg.avcodec_find_decoder(inStream->codecpar->codec_id);
@@ -139,10 +149,16 @@ namespace WinUIMusicPlayer.AudioConverters
                 ffmpeg.avcodec_parameters_from_context(outStream->codecpar, encCtx);
 
                 // 封面（mp3/flac/m4a）：附加图片流，包数据在 write_header 后首个写入；
-                // ogg/opus 的 muxer 不接受视频流，封面走 METADATA_BLOCK_PICTURE 注释
-                AVStream* picStream = metadata?.CoverBytes is { Length: > 0 } coverBytes && SupportsAttachedPicCover(format)
-                    ? CreateAttachedPicStream(ofmtCtx, coverBytes)
-                    : null;
+                // ogg/opus 的 muxer 不接受视频流，封面走 METADATA_BLOCK_PICTURE 注释。
+                // 损坏封面（解析不出宽高，如截断 JPEG）必须跳过：mp4/m4a 封装器会因
+                // 0x0 尺寸的视频流在 write_header 直接 EINVAL，导致整首歌失败。
+                AVStream* picStream = null;
+                if (metadata?.CoverBytes is { Length: > 0 } coverBytes && SupportsAttachedPicCover(format))
+                {
+                    var (cw, chh) = DetectImageDimensions(coverBytes);
+                    if (cw > 0 && chh > 0)
+                        picStream = CreateAttachedPicStream(ofmtCtx, coverBytes);
+                }
 
                 if ((ofmtCtx->oformat->flags & ffmpeg.AVFMT_NOFILE) == 0)
                 {
@@ -176,6 +192,39 @@ namespace WinUIMusicPlayer.AudioConverters
                 if (swr == null) throw new InvalidOperationException("swresample 创建失败");
                 if (ffmpeg.swr_init(swr) < 0) throw new InvalidOperationException("swresample 初始化失败");
 
+                // 跟踪 swr 实际按什么输入参数初始化：拼接/损坏的 MP3 会在文件中途切换
+                // 采样率/声道数（实测 44.1k 立体声 → 24k、结尾混入单声道帧），固定参数的
+                // swresample 会返回 AVERROR_INPUT_CHANGED 让整首歌失败。参数变化时重建即可
+                // 连续转换（与 ffmpeg CLI 的 aresample 行为一致）。
+                AVSampleFormat swrInFmt = decCtx->sample_fmt;
+                int swrInRate = decCtx->sample_rate;
+                int swrInNbCh = decCtx->ch_layout.nb_channels;
+                int swrInOrder = (int)decCtx->ch_layout.order;
+                ulong swrInMask = decCtx->ch_layout.u.mask;
+
+                bool SwrMatchesFrame(AVFrame* f) =>
+                    (AVSampleFormat)f->format == swrInFmt && f->sample_rate == swrInRate
+                    && f->ch_layout.nb_channels == swrInNbCh && (int)f->ch_layout.order == swrInOrder
+                    && (f->ch_layout.order != AVChannelOrder.AV_CHANNEL_ORDER_NATIVE
+                        || f->ch_layout.u.mask == swrInMask);
+
+                void RebuildSwr(ref SwrContext* swr, AVCodecContext* encoderCtx, AVFrame* f)
+                {
+                    SwrContext* fresh = null;
+                    ffmpeg.swr_alloc_set_opts2(&fresh, &encoderCtx->ch_layout, primaryFmt, outRate,
+                        &f->ch_layout, (AVSampleFormat)f->format, f->sample_rate, 0, null);
+                    if (fresh == null || ffmpeg.swr_init(fresh) < 0)
+                        throw new InvalidOperationException("重采样器按新输入参数重建失败");
+                    SwrContext* old = swr;
+                    swr = fresh;
+                    if (old != null) ffmpeg.swr_free(&old);
+                    swrInFmt = (AVSampleFormat)f->format;
+                    swrInRate = f->sample_rate;
+                    swrInNbCh = f->ch_layout.nb_channels;
+                    swrInOrder = (int)f->ch_layout.order;
+                    swrInMask = f->ch_layout.u.mask;
+                }
+
                 if (gainNeedsFloatStage)
                 {
                     ffmpeg.swr_alloc_set_opts2(&gainSwr, &encCtx->ch_layout, encFmt, outRate,
@@ -203,6 +252,7 @@ namespace WinUIMusicPlayer.AudioConverters
                         ffmpeg.avcodec_send_packet(decCtx, pkt);
                         while (ffmpeg.avcodec_receive_frame(decCtx, decFrame) >= 0)
                         {
+                            if (!SwrMatchesFrame(decFrame)) RebuildSwr(ref swr, encCtx, decFrame);
                             ConvertFrame(decFrame, swr, gainSwr, gainFrame, swrFrame,
                                 applyGain, gainLinear, primaryFmt, encFmt, outRate, &encCtx->ch_layout,
                                 chunker, ref samplesWritten);
@@ -216,6 +266,7 @@ namespace WinUIMusicPlayer.AudioConverters
                 ffmpeg.avcodec_send_packet(decCtx, null);
                 while (ffmpeg.avcodec_receive_frame(decCtx, decFrame) >= 0)
                 {
+                    if (!SwrMatchesFrame(decFrame)) RebuildSwr(ref swr, encCtx, decFrame);
                     ConvertFrame(decFrame, swr, gainSwr, gainFrame, swrFrame,
                         applyGain, gainLinear, primaryFmt, encFmt, outRate, &encCtx->ch_layout,
                         chunker, ref samplesWritten);
@@ -284,6 +335,8 @@ namespace WinUIMusicPlayer.AudioConverters
             // ogg/opus 封面：vorbis comment 标准位图键（FLAC picture block 的 base64）
             if (meta.CoverBytes is { Length: > 0 } cover && SupportsPictureCommentCover(format))
             {
+                var (w, h) = DetectImageDimensions(cover);
+                if (w <= 0 || h <= 0) return; // 损坏封面不写入注释（无意义且膨胀文件）
                 string mime = string.IsNullOrWhiteSpace(meta.CoverMime) ? DetectImageMime(cover) : meta.CoverMime;
                 Set("METADATA_BLOCK_PICTURE", System.Convert.ToBase64String(BuildFlacPictureBlock(mime, cover)));
             }
