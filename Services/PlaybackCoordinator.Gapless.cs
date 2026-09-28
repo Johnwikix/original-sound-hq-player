@@ -138,7 +138,8 @@ public sealed partial class PlaybackCoordinator
         }
         else
         {
-            int index = PlaybackCommands.FindCandidateIndex(state.CurrentPlayingList, state.GetCurrentIndex(), 1);
+            int index = PlaybackCommands.FindCandidateIndex(state.CurrentPlayingList, state.GetCurrentIndex(), 1,
+                allowSingleEntryReplay: true);
             if (index >= 0)
             {
                 _candidateNext = state.CurrentPlayingList[index];

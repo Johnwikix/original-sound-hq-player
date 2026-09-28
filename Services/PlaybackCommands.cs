@@ -113,7 +113,8 @@ public sealed class PlaybackCommands : IDisposable
         foreach (var music in _state.CurrentPlayingList) if (music.IsRemote || music.IsPlayable) return true;
         return false;
     }
-    internal static int FindCandidateIndex(IReadOnlyList<Music> list, int current, int direction)
+    internal static int FindCandidateIndex(IReadOnlyList<Music> list, int current, int direction,
+        bool allowSingleEntryReplay = false)
     {
         if (list.Count == 0) return -1;
         int index = current;
@@ -121,7 +122,8 @@ public sealed class PlaybackCommands : IDisposable
         {
             index = (index + direction + list.Count) % list.Count;
             // 来源状态只是上次探活的结果；实际可用性由协调器重新确认。
-            if ((list[index].IsRemote || list[index].IsPlayable) && index != current) return index;
+            if ((list[index].IsRemote || list[index].IsPlayable) &&
+                (index != current || (allowSingleEntryReplay && list.Count == 1))) return index;
         }
         return -1;
     }

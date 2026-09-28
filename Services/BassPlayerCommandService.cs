@@ -148,7 +148,8 @@ namespace WinUIMusicPlayer.Services
                         break;
                     }
                     int currentIndex = AppViewModel.GetCurrentIndex();
-                    int nextIndex = PlaybackCommands.FindCandidateIndex(playingList, currentIndex, 1);
+                    int nextIndex = PlaybackCommands.FindCandidateIndex(playingList, currentIndex, 1,
+                        allowSingleEntryReplay: true);
                     if (nextIndex >= 0) await App.Services.GetRequiredService<PlaybackCoordinator>().PlayAtAsync(nextIndex, stopWhenUnavailable: true);
                     else MusicEnd();
                     break;

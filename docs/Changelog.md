@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-09-28 修复单曲播放列表曲终停播
+
+- `PlaybackCommands.cs`、`BassPlayerCommandService.cs`、`PlaybackCoordinator.Gapless.cs`：列表循环和随机循环在队列仅有一首歌时允许自然结束后重新播放该曲，并为本地播放预载同一首歌；手动切歌及多曲候选规则保持原样。
+- `_tools/PlaybackNavigationRegression/Program.cs`：覆盖两种模式的曲终续播、无缝切换和手动导航边界。
+- 验证：播放导航及真实 WinUI Dispatcher 回归、Debug x64 与禁用 MSIX 打包的 Release x64 构建通过；标准 Release 打包因本机缺少 `mspdbcmf.exe` 未完成。
+
 ## 2026-09-27 关于页版权年份改为动态
 
 - `AboutSettingsControl.xaml`、`AboutSettingsControl.xaml.cs`：两处 `© 2026 Sennpei Studio` 硬编码改为 `x:Bind` 函数绑定，运行时取 `DateTime.Now.Year`，跨年无需发版更新。
