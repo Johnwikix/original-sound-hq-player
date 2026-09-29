@@ -309,7 +309,7 @@ namespace WinUIMusicPlayer.Utils
             });
         }
 
-        public static void SaveMetaData(Music music, string filePath, byte[]? pic, string? lyricsText = null)
+        public static void SaveMetaData(Music music, string filePath, byte[]? pic, string? lyricsText = null, bool preserveLyrics = false)
         {
             Settings.FileBufferSize = 1024 * 256;
             Track theTrack = new(filePath)
@@ -326,9 +326,12 @@ namespace WinUIMusicPlayer.Utils
                 theTrack.EmbeddedPictures.Clear();
                 theTrack.EmbeddedPictures.Add(PictureInfo.fromBinaryData(pic));
             }
-            var lyricsInfo = new LyricsInfo();
-            lyricsInfo.Parse(lyricsText ?? "");
-            theTrack.Lyrics = new List<LyricsInfo> { lyricsInfo };
+            if (!preserveLyrics)
+            {
+                var lyricsInfo = new LyricsInfo();
+                lyricsInfo.Parse(lyricsText ?? "");
+                theTrack.Lyrics = new List<LyricsInfo> { lyricsInfo };
+            }
             if (!theTrack.Save())
                 throw new IOException("Metadata save failed: " + filePath);
         }

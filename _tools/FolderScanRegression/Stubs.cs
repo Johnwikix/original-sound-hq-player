@@ -82,7 +82,12 @@ namespace WinUIMusicPlayer.Utils
     public static class ToolUtils
     {
         public static Action<Model.Music, string> WriteMetadata = (music, path) => File.WriteAllText(path, music.Title);
-        public static void SaveMetaData(Model.Music music, string path, byte[]? cover, string? lyrics) => WriteMetadata(music, path);
+        public static bool LastPreserveLyrics;
+        public static void SaveMetaData(Model.Music music, string path, byte[]? cover, string? lyrics, bool preserveLyrics = false)
+        {
+            LastPreserveLyrics = preserveLyrics;
+            WriteMetadata(music, path);
+        }
         public static string GetString(string key) => key;
         public static TaskCompletionSource SlowFile = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public static TaskCompletionSource SlowFileEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);

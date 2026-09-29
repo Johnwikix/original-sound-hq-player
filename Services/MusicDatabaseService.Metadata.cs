@@ -15,7 +15,7 @@ public partial class MusicDatabaseService
     private readonly SemaphoreSlim _metadataGate = new(1, 1);
 
     /// <summary>Commit editor fields and lyrics together without overwriting playback-owned columns.</summary>
-    public Task SaveDetailsAsync(Music music, LyricsDocument document, long expectedRevision, CancellationToken token)
+    public Task SaveDetailsAsync(Music music, LyricsDocument document, long expectedRevision, CancellationToken token, bool lyricsChanged = true)
     {
         int id = music.Id;
         string title = music.Title, author = music.Author, album = music.Album;
@@ -26,14 +26,14 @@ public partial class MusicDatabaseService
         return _dbConnection.RunInTransactionAsync(db =>
         {
             token.ThrowIfCancellationRequested();
-            LyricsRepository.SaveInTransaction(db, id, document, expectedRevision, "User");
+            LyricsRepository.SaveInTransaction(db, id, document, expectedRevision, "User", lyricsChanged);
             db.Execute("UPDATE Music SET Title=?,Author=?,Album=?,TrackNumber=?,DiskNumber=?,Year=?,UpdateTime=? WHERE Id=?",
                 title, author, album, track, disk, year, updated, id);
         });
     }
 
     /// <summary>持久化编辑快照，供后台在文件释放后写入；重复编辑替换旧任务。</summary>
-    public async Task QueueMetadataWriteAsync(Music music, byte[]? cover, LyricsDocument document, long expectedRevision, CancellationToken token = default)
+    public async Task QueueMetadataWriteAsync(Music music, byte[]? cover, LyricsDocument document, long expectedRevision, CancellationToken token = default, bool lyricsChanged = true)
     {
         if (music.IsRemote) throw new InvalidOperationException(ToolUtils.GetString("WebDavReadOnly"));
         var request = new PendingMetadataWrite
@@ -45,13 +45,15 @@ public partial class MusicDatabaseService
         };
         int musicId = music.Id;
         var updated = music.UpdateTime;
+        if (!lyricsChanged && !string.IsNullOrWhiteSpace(document.Original.Content))
+            request.PreserveFileLyrics = await Task.Run(() => !new LyricsParser().HasLyrics(document, token), token);
         await _metadataGate.WaitAsync(token);
         try
         {
             await _dbConnection.RunInTransactionAsync(db =>
             {
                 token.ThrowIfCancellationRequested();
-                LyricsRepository.SaveInTransaction(db, musicId, document, expectedRevision, "User");
+                LyricsRepository.SaveInTransaction(db, musicId, document, expectedRevision, "User", lyricsChanged);
                 db.InsertOrReplace(request);
                 db.Execute("UPDATE Music SET Title=?,Author=?,Album=?,TrackNumber=?,DiskNumber=?,Year=?,UpdateTime=? WHERE Id=?",
                     request.Title, request.Author, request.Album, request.TrackNumber, request.DiskNumber, request.Year, updated, musicId);
@@ -84,9 +86,13 @@ public partial class MusicDatabaseService
                         request.LyricsSchemaVersion = 2;
                         await _dbConnection.UpdateAsync(request);
                     }
-                    string export = parser.ExportLrc(new(new(request.Lyrics ?? "", request.LyricsFormat), request.TranslationLrc), cancellationToken);
-                    if (!string.IsNullOrWhiteSpace(request.Lyrics) && string.IsNullOrWhiteSpace(export))
-                        throw new FormatException("Queued lyrics cannot be converted to timed LRC; the original queue snapshot is retained.");
+                    string? export = null;
+                    if (!request.PreserveFileLyrics)
+                    {
+                        export = parser.ExportLrc(new(new(request.Lyrics ?? "", request.LyricsFormat), request.TranslationLrc), cancellationToken);
+                        if (!string.IsNullOrWhiteSpace(request.Lyrics) && string.IsNullOrWhiteSpace(export))
+                            throw new FormatException("Queued lyrics cannot be converted to timed LRC; the original queue snapshot is retained.");
+                    }
                     using var write = AudioFileWriteGate.BeginWrite(request.Path);
                     // 先检查共享锁；暂停播放通常仍持有句柄，必须等真正释放。
                     using (new FileStream(request.Path, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
@@ -94,7 +100,7 @@ public partial class MusicDatabaseService
                     {
                         Title = request.Title, Album = request.Album, Author = request.Author,
                         TrackNumber = request.TrackNumber, DiskNumber = request.DiskNumber, Year = request.Year
-                    }, request.Path, request.Cover, export);
+                    }, request.Path, request.Cover, export, preserveLyrics: request.PreserveFileLyrics);
                     await _dbConnection.DeleteAsync(request);
                 }
                 catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }

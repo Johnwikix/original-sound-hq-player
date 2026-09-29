@@ -80,11 +80,14 @@ public sealed class LyricsRepository(SQLiteAsyncConnection database, LyricsParse
     }
 
     /// <summary>Runs in the metadata transaction so queueing and editor revision checks commit together.</summary>
-    public static void SaveInTransaction(SQLiteConnection db, int musicId, LyricsDocument document, long expectedRevision, string kind)
+    public static void SaveInTransaction(SQLiteConnection db, int musicId, LyricsDocument document, long expectedRevision, string kind, bool lyricsChanged = true)
     {
-        int changed = db.Execute("UPDATE MusicLyricsV2 SET Lyrics=?, LyricsFormat=?, TranslatedLyrics=?, SourceKind=?, SourceKey='', " +
+        // Metadata edits still advance the editor revision, but retain lyric provenance and diagnostics.
+        int changed = lyricsChanged ? db.Execute("UPDATE MusicLyricsV2 SET Lyrics=?, LyricsFormat=?, TranslatedLyrics=?, SourceKind=?, SourceKey='', " +
             "Revision=Revision+1, Diagnostic='' WHERE SchemaVersion=2 AND MusicId=? AND Revision=? AND EXISTS(SELECT 1 FROM Music WHERE Id=?)",
-            document.Original.Content, (int)document.Original.Format, document.TranslationLrc, kind, musicId, expectedRevision, musicId);
+            document.Original.Content, (int)document.Original.Format, document.TranslationLrc, kind, musicId, expectedRevision, musicId)
+            : db.Execute("UPDATE MusicLyricsV2 SET Revision=Revision+1 WHERE SchemaVersion=2 AND MusicId=? AND Revision=? " +
+                "AND EXISTS(SELECT 1 FROM Music WHERE Id=?)", musicId, expectedRevision, musicId);
         if (changed != 1) throw new InvalidOperationException("LyricsEditConflict");
     }
 

@@ -20,6 +20,7 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
         LyricsSnapshot? stored = music.Id > 0 ? await database.Lyrics.GetAsync(music.Id, token).ConfigureAwait(false) : null;
         LyricsDocument? document = null;
         long externalRevision = 0;
+        bool userEdited = stored?.SourceKind == "User";
         if (!music.IsRemote) document = await ReadLocalAsync(music.Path, order, token).ConfigureAwait(false);
         else
         {
@@ -37,9 +38,10 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
         {
             var cached = OneShotLyricsCache.Load(music.Path);
             externalRevision = cached?.Revision ?? 0;
+            userEdited = cached?.SourceKind == "User";
             if (cached is not null && parser.HasLyrics(cached.Document, token)) document = cached.Document;
         }
-        if (document is null && stored?.SourceKind != "User" && AppSettings.IsAutoLyricsEnabled)
+        if (document is null && !userEdited && AppSettings.IsAutoLyricsEnabled)
         {
             document = await online.SearchAsync(music, false, token).ConfigureAwait(false);
             token.ThrowIfCancellationRequested();

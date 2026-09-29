@@ -17,6 +17,7 @@ public sealed class LyricsCacheEntry
     public LyricsDocument Document { get; set; } = LyricsDocument.Empty;
     public DateTime CachedAtUtc { get; set; }
     public string Diagnostic { get; set; } = "";
+    public string SourceKind { get; set; } = "";
 }
 
 internal sealed class LegacyLyricsCacheEntry
@@ -65,7 +66,7 @@ public sealed class LyricsCacheStore(string directory, LyricsParser parser)
         }
     }
 
-    public bool Save(string path, LyricsDocument document, long? expectedRevision = null)
+    public bool Save(string path, LyricsDocument document, long? expectedRevision = null, string sourceKind = "Online")
     {
         lock (_gate)
         {
@@ -85,7 +86,7 @@ public sealed class LyricsCacheStore(string directory, LyricsParser parser)
                 }
             }
             if (expectedRevision is { } expected && revision != expected) return false;
-            Write(new() { Path = path, Document = document, CachedAtUtc = DateTime.UtcNow, Revision = revision + 1 });
+            Write(new() { Path = path, Document = document, CachedAtUtc = DateTime.UtcNow, Revision = revision + 1, SourceKind = sourceKind });
             return true;
         }
     }

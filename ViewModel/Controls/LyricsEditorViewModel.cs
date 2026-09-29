@@ -19,6 +19,7 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
     private readonly LyricsOnlineSearch _online;
     private readonly ApplicationTasks _tasks;
     private readonly CancellationTokenSource _closed = new();
+    private LyricsDocument _savedDocument = LyricsDocument.Empty;
     private long _revision;
     private long _draftVersion;
     private bool _loaded;
@@ -52,13 +53,15 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
         {
             var cached = OneShotLyricsCache.Load(_music.Path);
             _revision = cached?.Revision ?? 0;
-            if (_draftVersion == 0) SetDocument(cached?.Document ?? _parser.Import(_music.EmbeddedLyrics, token: token));
+            _savedDocument = cached?.Document ?? _parser.Import(_music.EmbeddedLyrics, token: token);
+            if (_draftVersion == 0) SetDocument(_savedDocument);
             _loaded = true;
             return;
         }
         var snapshot = await _database.Lyrics.GetAsync(_music.Id, token);
         token.ThrowIfCancellationRequested();
         _revision = snapshot.Revision;
+        _savedDocument = snapshot.Document;
         if (_draftVersion == 0) SetDocument(snapshot.Document);
         var legacy = await _database.GetDbConnection().FindAsync<MusicLyrics>(_music.Id);
         token.ThrowIfCancellationRequested();
@@ -89,20 +92,28 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
         {
             long draft = _draftVersion;
             string original = OriginalText, translation = TranslationText;
-            var document = await Task.Run(() => _parser.Import(original, translation, token), token);
+            bool lyricsChanged = original != _savedDocument.Original.Content || translation != (_savedDocument.TranslationLrc ?? "");
+            // Unknown legacy content remains authoritative when only metadata is edited.
+            var document = lyricsChanged
+                ? await Task.Run(() => _parser.Import(original, translation, token), token)
+                : _savedDocument;
             token.ThrowIfCancellationRequested();
             if (draft != _draftVersion) throw new InvalidOperationException("LyricsEditConflict");
-            if (!string.IsNullOrWhiteSpace(original) && !_parser.HasLyrics(document, token)) throw new FormatException("Invalid original lyrics.");
-            if (string.IsNullOrWhiteSpace(original) && !string.IsNullOrWhiteSpace(translation)) throw new FormatException("Translation requires original lyrics.");
+            if (lyricsChanged)
+            {
+                if (!string.IsNullOrWhiteSpace(original) && !_parser.HasLyrics(document, token)) throw new FormatException("Invalid original lyrics.");
+                if (string.IsNullOrWhiteSpace(original) && !string.IsNullOrWhiteSpace(translation)) throw new FormatException("Translation requires original lyrics.");
+            }
             if (_music.Id <= 0)
             {
                 if (queueMetadata) throw new InvalidOperationException("External tracks must be imported before queuing tag edits.");
                 if (!OneShotLyricsCache.SaveEdited(_music.Path, document, _revision)) throw new InvalidOperationException("LyricsEditConflict");
             }
             else if (queueMetadata)
-                await _database.QueueMetadataWriteAsync(_music, cover, document, _revision, token);
-            else await _database.SaveDetailsAsync(_music, document, _revision, token);
+                await _database.QueueMetadataWriteAsync(_music, cover, document, _revision, token, lyricsChanged: lyricsChanged);
+            else await _database.SaveDetailsAsync(_music, document, _revision, token, lyricsChanged: lyricsChanged);
             _revision++;
+            _savedDocument = document;
             saved = draft == _draftVersion;
             if (!saved && !_disposed) Error = ToolUtils.GetString("LyricsEditConflict");
         });
@@ -132,11 +143,31 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
         long draft = _draftVersion;
         var legacy = await _database.GetDbConnection().FindAsync<MusicLyrics>(_music.Id);
         if (legacy is null) return;
-        var document = await Task.Run(() => _parser.Import(slot == "Krc" ? legacy.Krc : legacy.Lyrics,
-            slot == "Krc" ? legacy.TKrc : legacy.TranslatedLyrics, token), token);
         token.ThrowIfCancellationRequested();
         if (draft != _draftVersion) { Error = ToolUtils.GetString("LyricsEditConflict"); return; }
-        SetDocument(document); // Recovery is a draft until the user saves it.
+        // Recovery must expose the source pair even when normalization fails.
+        string original = slot == "Krc" ? legacy.Krc ?? "" : legacy.Lyrics ?? "";
+        string translation = slot == "Krc" ? legacy.TKrc ?? "" : legacy.TranslatedLyrics ?? "";
+        OriginalText = original;
+        TranslationText = translation;
+        draft = _draftVersion;
+        var imported = await Task.Run(() =>
+        {
+            try { return (Document: (LyricsDocument?)_parser.Import(original, translation, token), Error: ""); }
+            catch (Exception ex) when (ex is FormatException or System.Xml.XmlException or OverflowException or System.Text.RegularExpressions.RegexMatchTimeoutException)
+            { return (Document: (LyricsDocument?)null, Error: ex.Message); }
+        }, token);
+        token.ThrowIfCancellationRequested();
+        if (draft != _draftVersion) { Error = ToolUtils.GetString("LyricsEditConflict"); return; }
+        if (imported.Document is null)
+        {
+            Error = ToolUtils.GetString("LyricsInvalid") + " " + imported.Error;
+            return;
+        }
+        SetDocument(imported.Document); // Recovery is a draft until the user saves it.
+        if ((!string.IsNullOrWhiteSpace(original) && !_parser.HasLyrics(imported.Document, token)) ||
+            (string.IsNullOrWhiteSpace(original) && !string.IsNullOrWhiteSpace(translation)))
+            Error = ToolUtils.GetString("LyricsInvalid");
     });
 
     private void SetDocument(LyricsDocument document)

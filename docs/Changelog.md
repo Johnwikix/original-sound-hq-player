@@ -2,6 +2,14 @@
 
 新条目加在最上方。
 
+## 2026-09-30 修复歌词审查发现的保存、恢复与清空问题
+
+- `LyricsEditorViewModel.cs`、`LyricsRepository.cs`：元数据保存保留未修改的旧歌词、来源及诊断；恢复旧候选先显示原始文本，转换失败仍可编辑修复。
+- `MusicDatabaseService.Metadata.cs`、`PendingMetadataWrite.cs`、`ToolUtils.cs`：无法解析且未修改的歌词不阻止标签写入，队列重启后仍保留文件已有歌词；显式清空继续清除标签。
+- `LyricsCacheStore.cs`、`OneShotLyricsCache.cs`、`LyricsRefreshService.cs`、`OneShotPlaybackService.cs`：一次性缓存记录用户来源，清空后不再自动补回，入库后保留该意图；手动刷新与旧缓存兼容。
+- `_tools/LyricsUiRegression`、`LyricsUnificationRegression`、`FolderScanRegression`：补充对应失败场景、真实 JSON／SQLite 往返与队列重启检查；`docs/LyricsUnificationPlan.md` 同步固定页签名称及修复边界。
+- 验证：修复前新增 WinUI 场景稳定失败，修复后通过；49 项核心检查、扫描／标签队列回归、真实 ATL 标签保留／清空往返、七种语言资源检查与 Debug x64 构建通过（0 错误，389 个警告）。
+
 ## 2026-09-29 移除额外引入的压缩／加密歌词文件导入
 
 - `LyricsFilePolicy.cs`、`WebDavLibraryService.cs`：移除 KRC 解密解压、十六进制 QRC 解密及自动识别入口，本地和 WebDAV 仅按文本读取歌词；在线提供方原有解码保持不变。

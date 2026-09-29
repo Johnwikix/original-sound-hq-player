@@ -23,7 +23,7 @@ public static class OneShotLyricsCache
         catch (Exception ex) { Debug.WriteLine($"Lyrics cache write failed: {ex.Message}"); }
     }
     public static bool SaveEdited(string path, LyricsDocument document, long expectedRevision) =>
-        Store.Value.Save(path, document, expectedRevision);
+        Store.Value.Save(path, document, expectedRevision, sourceKind: "User");
 
     public static bool TrySave(string path, LyricsDocument document, long expectedRevision)
     {

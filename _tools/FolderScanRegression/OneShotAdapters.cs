@@ -34,10 +34,11 @@ namespace WinUIMusicPlayer.Services
     {
         public Task WhenInitialized => Task.CompletedTask;
     }
-    public sealed record CachedLyrics(LyricsDocument Document);
+    public sealed record CachedLyrics(LyricsDocument Document, string SourceKind = "");
     public static class OneShotLyricsCache
     {
-        public static CachedLyrics? Load(string path) => null;
+        public static Dictionary<string, CachedLyrics> Entries { get; } = new(StringComparer.OrdinalIgnoreCase);
+        public static CachedLyrics? Load(string path) => Entries.GetValueOrDefault(path);
     }
 }
 namespace WinUIMusicPlayer.ViewModel

@@ -30,6 +30,8 @@ public sealed class PendingMetadataWrite
     public int LyricsSchemaVersion { get; set; }
     public LyricsFormat LyricsFormat { get; set; }
     public string? TranslationLrc { get; set; }
+    /// <summary>Unchanged, unsupported lyrics must not block metadata writes or erase existing file lyrics.</summary>
+    public bool PreserveFileLyrics { get; set; }
     /// <summary>获取或设置已经报告的错误，避免重复通知。</summary>
     public string? LastError { get; set; }
 }

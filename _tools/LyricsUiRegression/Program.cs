@@ -94,7 +94,8 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
             Check(!await save && editor.OriginalText.Contains("Typed while"), "edits during save remain open as an unsaved draft");
             database.BeforeSave = null;
             Check(await editor.SaveAsync(), "retained draft saves against updated revision");
-            File.WriteAllText(file, "PASS: real WinUI compiled binding, 2 tabs, 24 priorities, late restoration, stale network draft, SQLite edit conflict and edits during save.\nREADY for UI Automation");
+            await EditorRecoveryChecks.RunAsync(db, database, parser, tasks);
+            File.WriteAllText(file, "PASS: real WinUI compiled binding, 2 tabs, 24 priorities, late restoration, stale network draft, SQLite edit conflict and edits during save; unknown-lyrics metadata save, raw legacy recovery, external clear/manual refresh and late-download clear persistence.\nREADY for UI Automation");
             if (Environment.GetCommandLineArgs().Contains("--uia")) await Task.Delay(TimeSpan.FromSeconds(90));
             editor.Dispose();
             lifecycle.TryBeginExit(out _);

@@ -37,12 +37,17 @@ namespace WinUIMusicPlayer.Services
         public LyricsRepository Lyrics { get; } = new(db, parser);
         public SQLiteAsyncConnection GetDbConnection() => db;
         public Func<Task>? BeforeSave;
-        public async Task SaveDetailsAsync(Music music, LyricsDocument document, long revision, CancellationToken token)
+        public async Task SaveDetailsAsync(Music music, LyricsDocument document, long revision, CancellationToken token, bool lyricsChanged = true)
         {
             if (BeforeSave is not null) await BeforeSave();
-            if (!await Lyrics.SaveAsync(music.Id, document, revision, "User", token: token)) throw new InvalidOperationException("LyricsEditConflict");
+            await db.RunInTransactionAsync(connection =>
+            {
+                token.ThrowIfCancellationRequested();
+                LyricsRepository.SaveInTransaction(connection, music.Id, document, revision, "User", lyricsChanged);
+                connection.Execute("UPDATE Music SET Title=? WHERE Id=?", music.Title, music.Id);
+            });
         }
-        public Task QueueMetadataWriteAsync(Music music, byte[]? cover, LyricsDocument document, long revision, CancellationToken token) => SaveDetailsAsync(music, document, revision, token);
+        public Task QueueMetadataWriteAsync(Music music, byte[]? cover, LyricsDocument document, long revision, CancellationToken token, bool lyricsChanged = true) => SaveDetailsAsync(music, document, revision, token, lyricsChanged);
     }
     public class WebDavLibraryService
     {
@@ -51,15 +56,13 @@ namespace WinUIMusicPlayer.Services
     }
     public static class OneShotLyricsCache
     {
-        private static readonly Dictionary<string, LyricsCacheEntry> Data = [];
-        public static LyricsCacheEntry? Load(string path) => Data.GetValueOrDefault(path);
-        public static void Save(string path, LyricsDocument document) => Data[path] = new() { Document = document, Path = path, Revision = (Load(path)?.Revision ?? 0) + 1 };
-        public static bool SaveEdited(string path, LyricsDocument document, long revision) => TrySave(path, document, revision);
-        public static bool TrySave(string path, LyricsDocument document, long revision)
-        {
-            if ((Load(path)?.Revision ?? 0) != revision) return false;
-            Save(path, document); return true;
-        }
+        // Substitute the application storage path, but exercise actual JSON persistence and CAS.
+        private static readonly LyricsCacheStore Store = new(
+            Path.Combine(Path.GetTempPath(), "lyrics-cache-tests-" + Guid.NewGuid().ToString("N")), new());
+        public static LyricsCacheEntry? Load(string path) => Store.Load(path);
+        public static void Save(string path, LyricsDocument document) => Store.Save(path, document);
+        public static bool SaveEdited(string path, LyricsDocument document, long revision) => Store.Save(path, document, revision, sourceKind: "User");
+        public static bool TrySave(string path, LyricsDocument document, long revision) => Store.Save(path, document, revision);
     }
 }
 namespace WinUIMusicPlayer.Services.Lyrics

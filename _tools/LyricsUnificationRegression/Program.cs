@@ -100,6 +100,13 @@ Check(cache.Load(musicPath)?.Document == xmlDoc, "reflection-disabled JSON round
 long cacheRevision = cache.Load(musicPath)!.Revision;
 Check(cache.Save(musicPath, lrc, cacheRevision), "external editor conditionally saves the observed cache revision");
 Check(!cache.Save(musicPath, xmlDoc, cacheRevision) && cache.Load(musicPath)?.Document == lrc, "late external download cannot overwrite a cache edit");
+Check(cache.Save(musicPath, LyricsDocument.Empty, cacheRevision + 1, sourceKind: "User"), "explicit cache clear is recorded as a user edit");
+var reopenedCache = new LyricsCacheStore(cacheDir, parser);
+Check(reopenedCache.Load(musicPath) is { SourceKind: "User", Document.Original.Content: "" }, "user clear survives JSON persistence and a new cache instance");
+Check(!cache.Save(musicPath, qrc, cacheRevision + 1) && reopenedCache.Load(musicPath)?.SourceKind == "User", "late download cannot change cleared cache provenance");
+string beforeSourceKind = File.ReadAllText(cacheFile).Replace(",\"SourceKind\":\"User\"", "");
+await File.WriteAllTextAsync(cacheFile, beforeSourceKind);
+Check(reopenedCache.Load(musicPath) is { SourceKind: "", Document.Original.Content: "" }, "older V2 JSON without provenance remains readable");
 await File.WriteAllTextAsync(cacheFile, "{\"SchemaVersion\":99}");
 cache.Save(musicPath, lrc);
 Check(cache.Load(musicPath) is null && File.ReadAllText(cacheFile).Contains("99"), "unknown future cache version preserved");
@@ -158,5 +165,9 @@ await resolver.SetLyrics(new() { Path = Path.Combine(folder, "A.flac") }, defaul
 await resolver.SetLyrics(new() { Path = Path.Combine(folder, "B.flac") }, default);
 await resolver.SetLyrics(new() { Path = Path.Combine(folder, "A.flac") }, default);
 Check(online.Calls == 2 && await db.Table<MusicLyricsRecord>().CountAsync() == 1, "two external paths have independent caches and never write MusicId zero");
+string emptyAutomaticPath = Path.Combine(folder, "empty-automatic.flac");
+WinUIMusicPlayer.Services.OneShotLyricsCache.Save(emptyAutomaticPath, LyricsDocument.Empty);
+await resolver.SetLyrics(new() { Path = emptyAutomaticPath }, default);
+Check(online.Calls == 3, "empty automatic cache does not suppress a legitimate search");
 await db.CloseAsync();
 Console.WriteLine($"{checks} checks passed; SQLite artifacts: {folder}");
