@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-09-29 移除额外引入的压缩／加密歌词文件导入
+
+- `LyricsFilePolicy.cs`、`WebDavLibraryService.cs`：移除 KRC 解密解压、十六进制 QRC 解密及自动识别入口，本地和 WebDAV 仅按文本读取歌词；在线提供方原有解码保持不变。
+- `_tools/LyricsUnificationRegression`、`docs/LyricsUnificationPlan.md`：删除对应压缩／加密夹具和检查，更新功能范围说明。
+- 验证：剩余 44 项歌词核心回归及 Debug x64 构建通过。
+
 ## 2026-09-29 修复快速切歌时歌词缓存释放竞态
 
 - `LyricsLoader.cs`：恢复 500 ms 防抖，快速切歌仅加载最后一首；等待、在途请求和迟到缓存均受切歌／退出取消保护。

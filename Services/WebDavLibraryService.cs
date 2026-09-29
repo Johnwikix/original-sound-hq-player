@@ -506,7 +506,7 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
                 await using var response = await transport.OpenAsync(connection, entry.Href, null, null, false, linked.Token).ConfigureAwait(false);
                 byte[] bytes = new byte[(int)entry.Length];
                 await response.Stream.ReadExactlyAsync(bytes, linked.Token).ConfigureAwait(false);
-                return LyricsFilePolicy.Decode(bytes);
+                return LyricsFilePolicy.ReadText(bytes);
             }
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested || _stop.IsCancellationRequested) { throw; }

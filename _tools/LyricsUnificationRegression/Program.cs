@@ -37,36 +37,6 @@ old.Krc = qrc.Original.Content; old.TKrc = "untimed";
 Check(LyricsLegacyMigration.Convert(old, parser).Diagnostic.Length > 0, "failed translation normalization is diagnosed");
 
 
-byte[] Compress(string text)
-{
-    using var output = new MemoryStream();
-    using (var zip = new System.IO.Compression.ZLibStream(output, System.IO.Compression.CompressionLevel.Fastest, true))
-        zip.Write(System.Text.Encoding.UTF8.GetBytes(text));
-    return output.ToArray();
-}
-byte[] MakeKrc(string text)
-{
-    byte[] data = Compress(text);
-    byte[] key = [0x40, 0x47, 0x61, 0x77, 0x5e, 0x32, 0x74, 0x47, 0x51, 0x36, 0x31, 0x2d, 0xce, 0xd2, 0x6e, 0x69];
-    for (int i=0;i<data.Length;i++) data[i] ^= key[i % key.Length];
-    return [.. "krc1"u8.ToArray(), ..data];
-}
-Check(LyricsFilePolicy.Decode(MakeKrc(krc.Original.Content)) == krc.Original.Content, "actual compressed KRC bytes decode before format detection");
-try { LyricsFilePolicy.Decode(MakeKrc(new string('a', LyricsParser.MaxContentLength + 1))); throw new Exception("Unbounded decompression"); }
-catch (FormatException) { Check(true, "decompressed lyrics size bound enforced"); }
-byte[] qrcCompressed = Compress(qrc.Original.Content);
-Array.Resize(ref qrcCompressed, (qrcCompressed.Length + 7) / 8 * 8);
-var schedule = new byte[3][][];
-for (int i=0;i<3;i++) { schedule[i] = new byte[16][]; for(int j=0;j<16;j++) schedule[i][j] = new byte[6]; }
-Lyricify.Lyrics.Decrypter.Qrc.DESHelper.TripleDESKeySetup(System.Text.Encoding.ASCII.GetBytes("!@#)(*$%123ZXC!@!@#)(NHL"), schedule, Lyricify.Lyrics.Decrypter.Qrc.DESHelper.ENCRYPT);
-byte[] encrypted = new byte[qrcCompressed.Length];
-for(int i=0;i<encrypted.Length;i+=8)
-{
-    byte[] block = new byte[8];
-    Lyricify.Lyrics.Decrypter.Qrc.DESHelper.TripleDESCrypt(qrcCompressed.AsSpan(i,8).ToArray(), block, schedule);
-    block.CopyTo(encrypted, i);
-}
-Check(LyricsFilePolicy.Decode(System.Text.Encoding.ASCII.GetBytes(Convert.ToHexString(encrypted))) == qrc.Original.Content, "encrypted hex QRC decodes with bounded decompression");
 string folder = Path.Combine(Path.GetTempPath(), "lyrics-v2-regression-" + Guid.NewGuid().ToString("N"));
 Directory.CreateDirectory(folder);
 
