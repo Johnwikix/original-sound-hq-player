@@ -29,6 +29,14 @@
 
                 <TextBlock x:Uid="SettingLyrics" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
+                <controls:SettingsCard x:Uid="LyricsFilePriority">
+                    <ComboBox ItemsSource="{x:Bind ViewModel.LyricsOrderOptions}"
+                              DisplayMemberPath="Label"
+                              SelectedItem="{x:Bind ViewModel.SelectedLyricsOrder, Mode=TwoWay}"
+                              AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsFilePriorityLabel')}"
+                              MinWidth="250" />
+                </controls:SettingsCard>
+
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
                         <TextBlock x:Uid="AutoLyricMatching" TextWrapping="Wrap" />

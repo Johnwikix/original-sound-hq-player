@@ -20,6 +20,8 @@ namespace WinUIMusicPlayer.Services
         public CancellationToken StoppingToken => CancellationToken.None;
         public WebDavSource? Saved { get; private set; }
         public event Action? SourcesChanged;
+        public event Action<int, bool>? SourceAvailabilityChanged { add { } remove { } }
+        public bool IsSourceOffline(int sourceId) => false;
         public event Action<WebDavScanStatus>? StatusChanged { add { } remove { } }
         public WebDavScanStatus? GetStatus(int sourceId) => null;
         public WebDavConnection Connect(WebDavSource source) => new(WebDavTransport.NormalizeRoot(source.BaseUri), source.UserName, "",
@@ -65,6 +67,7 @@ namespace WinUIMusicPlayer.ViewModel
     public sealed class AppViewModel
     {
         public TestState State { get; } = new();
+        public List<Music> SongsSource { get; } = [];
         public string MusicCoverCache => Path.GetTempPath();
         public Music? CurrentPlayingMusic => null;
         public int Refreshes { get; private set; }

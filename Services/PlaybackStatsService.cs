@@ -102,6 +102,18 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
+        /// <summary>Called once by a confirmed playback start, independently of lyric loading and history qualification.</summary>
+        public async Task RecordPlaybackStartAsync(Music music)
+        {
+            if (music.Id <= 0) return;
+            try
+            {
+                if (await Db.ExecuteAsync("UPDATE Music SET PlayCount=PlayCount+1 WHERE Id=?", music.Id) == 1)
+                    App.MainWindow.DispatcherQueue.TryEnqueue(() => { if (_appViewModel.CanPublishState) music.PlayCount++; });
+            }
+            catch (Exception ex) { _logger.LogError(ex, "记录播放次数失败"); }
+        }
+
         /// <summary>结算当前会话（达标则写入数据库并触发更新，未达标丢弃）。幂等，可重复调用。</summary>
         public void FlushSession()
         {

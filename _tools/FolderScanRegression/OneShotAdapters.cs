@@ -33,18 +33,8 @@ namespace WinUIMusicPlayer.Services
     public partial class MusicDatabaseService
     {
         public Task WhenInitialized => Task.CompletedTask;
-        public async Task<(string?, string?, string?, string?)> GetLyricsAsync(int id)
-        {
-            var lyrics = await _dbConnection.FindAsync<MusicLyrics>(id);
-            return (lyrics?.Lyrics, lyrics?.TranslatedLyrics, lyrics?.Krc, lyrics?.TKrc);
-        }
-        public Task SaveLyricsAsync(int id, string? lrc, string? trans, string? krc, string? tkrc) =>
-            _dbConnection.InsertOrReplaceAsync(new MusicLyrics
-            {
-                MusicId = id, Lyrics = lrc ?? "", TranslatedLyrics = trans ?? "", Krc = krc ?? "", TKrc = tkrc ?? ""
-            });
     }
-    public sealed record CachedLyrics(string? Lrc, string? Trans, string? Krc, string? TKrc);
+    public sealed record CachedLyrics(LyricsDocument Document);
     public static class OneShotLyricsCache
     {
         public static CachedLyrics? Load(string path) => null;

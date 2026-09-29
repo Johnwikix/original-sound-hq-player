@@ -97,7 +97,16 @@ namespace WinUIMusicPlayer.Services
             await remoteLibrary.StartAsync(appViewModel);
             await remoteSources.LoadAsync();
             shutdown.RegisterStop(appViewModel.StopAsync);
-            shutdown.RegisterStop(App.Services.GetRequiredService<ApplicationTasks>().DrainAsync);
+            var lyricsLoader = App.Services.GetRequiredService<LyricsLoader>();
+            shutdown.RegisterStop(() => { lyricsLoader.Dispose(); return Task.CompletedTask; });
+            var applicationTasks = App.Services.GetRequiredService<ApplicationTasks>();
+            shutdown.RegisterStop(applicationTasks.DrainAsync);
+            _ = applicationTasks.RunAsync(async token =>
+            {
+                try { await MusicDatabaseService.Lyrics.MigrateRemainingAsync(token); }
+                catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+                catch (Exception ex) { logger.LogError(ex, "歌词后台迁移中断，下次启动继续"); }
+            });
             var folders = App.Services.GetRequiredService<AddFolderViewModel>();
             folders.Start();
             shutdown.RegisterStop(folders.StopAsync);

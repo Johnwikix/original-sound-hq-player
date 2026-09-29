@@ -7,6 +7,9 @@
   </PropertyGroup>
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
+    <Compile Include="../../Model/LyricsDocument.cs;../../Model/MusicLyrics.cs;../../Model/MusicLyricsRecord.cs" />
+    <Compile Include="../../Services/Lyrics/LyricsParser*.cs;../../Services/Lyrics/LyricsRepository.cs;../../Services/Lyrics/LyricsLegacyMigration.cs;../../Services/Lyrics/LyricsOnlineSearch.cs" />
     <ProjectReference Include="../../External/Lyricify.Lyrics.Helper/Lyricify.Lyrics.Helper.csproj" />
     <Compile Include="../../WebService/LrcService.cs" Link="LrcService.cs" />
     <Compile Include="../../Services/LyricsLoader.cs" Link="LyricsLoader.cs" />

@@ -6,6 +6,85 @@ using WinUIMusicPlayer.WebService;
 
 internal static class LoaderCancellationChecks
 {
+    public static void RunSwitching(LrcService service)
+    {
+        var previous = SynchronizationContext.Current;
+        using var context = new UiContext();
+        SynchronizationContext.SetSynchronizationContext(context);
+        WinUIMusicPlayer.App.MainWindow = new(new(context));
+        try
+        {
+            var test = CheckSwitchingAsync(service);
+            while (!test.IsCompleted) context.Pump();
+            test.GetAwaiter().GetResult();
+        }
+        finally { SynchronizationContext.SetSynchronizationContext(previous); }
+    }
+
+    private static async Task CheckSwitchingAsync(LrcService service)
+    {
+        var state = new WinUIMusicPlayer.State.AppState();
+        var tasks = new ApplicationTasks(state.Lifecycle);
+        var parser = new LyricsRefreshService(service)
+        {
+            Handler = (music, _, _) => Task.FromResult(new List<string> { music.Title })
+        };
+        using var loader = new LyricsLoader(state, parser, tasks, NullLogger<LyricsLoader>.Instance);
+        var releaseOld = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        try
+        {
+            loader.Load(new Music { Title = "A" });
+            await Task.Delay(100);
+            loader.Load(new Music { Title = "B" });
+            await Task.Delay(150);
+            loader.Load(new Music { Title = "C" });
+            await Task.Delay(200);
+            if (parser.Calls != 0 || state.Presentation.Publications != 0)
+                throw new Exception("500 ms 防抖到期前已经解析或发布歌词");
+            await Task.Delay(450);
+            if (parser.Calls != 1 || state.Presentation.LastLyrics.Single() != "C")
+                throw new Exception("快速切歌没有仅加载最后一首");
+
+            var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var cancelled = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            parser.Handler = async (music, token, cached) =>
+            {
+                if (music.Title == "Old in-flight")
+                {
+                    using var registration = token.Register(() => cancelled.TrySetResult());
+                    started.TrySetResult();
+                    await releaseOld.Task; // Keep real work alive after cancellation, as an uncooperative provider may do.
+                    cached?.Invoke(["Stale cache"]);
+                }
+                return [music.Title];
+            };
+            loader.Load(new Music { Title = "Old in-flight" });
+            await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            loader.Load(new Music { Title = "Newest" });
+            await cancelled.Task.WaitAsync(TimeSpan.FromSeconds(1));
+            await Task.Delay(650);
+            int publications = state.Presentation.Publications;
+            if (state.Presentation.LastLyrics.Single() != "Newest") throw new Exception("新歌词被旧请求阻塞");
+            releaseOld.TrySetResult();
+            await Task.Delay(100);
+            if (state.Presentation.Publications != publications) throw new Exception("取消后仍发布旧缓存或最终结果");
+
+            int calls = parser.Calls;
+            loader.Load(new Music { Title = "Pending at shutdown" });
+            loader.Dispose();
+            state.Lifecycle.TryBeginExit(out _);
+            await tasks.DrainAsync();
+            if (parser.Calls != calls) throw new Exception("退出时仍执行防抖中的歌词请求");
+        }
+        finally
+        {
+            releaseOld.TrySetResult();
+            loader.Dispose();
+            state.Lifecycle.TryBeginExit(out _);
+            await tasks.DrainAsync();
+        }
+    }
+
     public static void Run(LrcService service, PendingHandler handler)
     {
         var previous = SynchronizationContext.Current;
@@ -80,7 +159,18 @@ namespace WinUIMusicPlayer.State
     {
         public int LastLyricIndex { get; set; }
         public int Publications { get; private set; }
-        public List<string> UILyrics { get => []; set => Publications++; }
+        public List<string> LastLyrics { get; private set; } = [];
+        public List<string> UILyrics
+        {
+            get => LastLyrics;
+            set
+            {
+                if (!WinUIMusicPlayer.App.MainWindow.DispatcherQueue.HasThreadAccess)
+                    throw new Exception("歌词发布离开了 UI 线程");
+                LastLyrics = value;
+                Publications++;
+            }
+        }
     }
 }
 namespace WinUIMusicPlayer.Services
@@ -89,9 +179,11 @@ namespace WinUIMusicPlayer.Services
     public sealed class LyricsRefreshService(LrcService service)
     {
         public int Calls;
-        public async Task<List<string>> SetLyrics(Music music, CancellationToken token)
+        public Func<Music, CancellationToken, Action<List<string>>?, Task<List<string>>>? Handler;
+        public async Task<List<string>> SetLyrics(Music music, CancellationToken token, Action<List<string>>? publishCached = null)
         {
             Interlocked.Increment(ref Calls);
+            if (Handler is not null) return await Handler(music, token, publishCached);
             try { await service.GetMixedLyricsAsync(music, token); }
             catch (OperationCanceledException) when (token.IsCancellationRequested) { }
             return ["late lyrics"];

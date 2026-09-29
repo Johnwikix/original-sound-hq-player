@@ -2307,4 +2307,37 @@ SHA-256: {5}
   <data name="CacheCleanupCard.Header" xml:space="preserve">
     <value>Cache leeren</value>
   </data>
+  <data name="LyricsFilePriority.Header" xml:space="preserve">
+    <value>Priorität der Liedtextdateien</value>
+  </data>
+  <data name="LyricsFilePriority.Description" xml:space="preserve">
+    <value>Die erste gültige passende Datei verwenden. Übersetzungen bevorzugen _Translated.lrc.</value>
+  </data>
+  <data name="LyricsOriginalTab.Text" xml:space="preserve">
+    <value>Songtext</value>
+  </data>
+  <data name="LyricsTranslationTab.Text" xml:space="preserve">
+    <value>Übersetzung</value>
+  </data>
+  <data name="LyricsRestoreLegacyLrc.Content" xml:space="preserve">
+    <value>Alte LRC wiederherstellen</value>
+  </data>
+  <data name="LyricsRestoreLegacyKrc.Content" xml:space="preserve">
+    <value>Alte KRC wiederherstellen</value>
+  </data>
+  <data name="LyricsEditConflict" xml:space="preserve">
+    <value>Der Liedtext wurde anderweitig geändert. Entwurf behalten und vor dem Speichern erneut öffnen.</value>
+  </data>
+  <data name="LyricsInvalid" xml:space="preserve">
+    <value>Ungültiger Liedtext, Zeitstempel oder Dateivorgang.</value>
+  </data>
+  <data name="LyricsMigrationDiagnostic" xml:space="preserve">
+    <value>Einige alte Liedtexte konnten nicht konvertiert werden. Die Originale bleiben über die Wiederherstellung verfügbar.</value>
+  </data>
+  <data name="LyricsFilePriorityLabel" xml:space="preserve">
+    <value>Priorität der Liedtextdateien</value>
+  </data>
+  <data name="LyricsFilesSaved" xml:space="preserve">
+    <value>Liedtextdateien gespeichert:</value>
+  </data>
 </root>

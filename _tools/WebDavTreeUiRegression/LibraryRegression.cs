@@ -22,6 +22,8 @@ public sealed partial class TestApp
             await sqlite.CreateTableAsync<WebDavSource>();
             await sqlite.CreateTableAsync<WebDavCacheSettings>();
             await sqlite.CreateTableAsync<MusicLyrics>();
+            await sqlite.CreateTableAsync<MusicLyricsRecord>();
+            await sqlite.CreateTableAsync<LyricsSearchStateRecord>();
             await sqlite.CreateTableAsync<PlayListMusic>();
             var db = new MusicDatabaseService(sqlite);
             var first = new WebDavSource { Name = "First", BaseUri = "http://localhost/dav/", Roots = "/dav/" };
@@ -31,13 +33,13 @@ public sealed partial class TestApp
             var local = new Music { Title = "Local" };
             await sqlite.InsertAsync(local);
             var inside = (await db.CommitRemoteEntriesAsync(first, "/dav/music/", "initial",
-                [new("/dav/music/keep.flac", "keep.flac", false, 10, "v1", null)]))[0];
+                [new("/dav/music/keep.flac", "keep.flac", false, 10, "v1", null)])).Batch[0];
             var outside = (await db.CommitRemoteEntriesAsync(first, "/dav/music-old/", "initial",
-                [new("/dav/music-old/hidden.flac", "hidden.flac", false, 10, "v1", null)]))[0];
+                [new("/dav/music-old/hidden.flac", "hidden.flac", false, 10, "v1", null)])).Batch[0];
             var direct = (await db.CommitRemoteEntriesAsync(first, "/dav/", "initial",
-                [new("/dav/direct.flac", "direct.flac", false, 10, "v1", null)]))[0];
+                [new("/dav/direct.flac", "direct.flac", false, 10, "v1", null)])).Batch[0];
             var unrelated = (await db.CommitRemoteEntriesAsync(second, "/dav/", "initial",
-                [new("/dav/other.flac", "other.flac", false, 10, "v1", null)]))[0];
+                [new("/dav/other.flac", "other.flac", false, 10, "v1", null)])).Batch[0];
             outside.IsFavorite = true;
             await sqlite.UpdateAsync(outside);
             await sqlite.InsertAsync(new PlayListMusic { PlayListId = 1, MusicId = outside.Id });
@@ -56,7 +58,7 @@ public sealed partial class TestApp
             await db.SaveWebDavSourceAsync(first);
             var restored = await db.CommitRemoteEntriesAsync(first, "/dav/music-old/", "second",
                 [new("/dav/music-old/hidden.flac", "hidden.flac", false, 10, "v1", null)]);
-            Check(restored[0].Id == outside.Id && restored[0].IsFavorite && (await db.GetVisibleMusicAsync()).Count == 4,
+            Check(restored.Batch[0].Id == outside.Id && restored.Batch[0].IsFavorite && (await db.GetVisibleMusicAsync()).Count == 4,
                 "expanded scan restores same track identity");
             await db.MarkRemoteSourceScannedAsync(first.Id, "second");
             visible = await db.GetVisibleMusicAsync();
@@ -80,7 +82,13 @@ public sealed partial class TestApp
                 await sources.LoadAsync();
                 Check(sources.SelectedSource?.Id == first.Id && app.State.Browse.SourceFilterId == first.Id,
                     "refresh keeps existing source selection");
+                await sqlite.InsertAsync(new MusicLyricsRecord { MusicId = outside.Id, Lyrics = "[00:01.00]lyrics" });
+                await sqlite.InsertAsync(new LyricsSearchStateRecord { Key = outside.Id + ":qq-word", MusicId = outside.Id });
+                await sqlite.InsertAsync(new MusicLyrics { MusicId = outside.Id, Lyrics = "legacy" });
                 await library.RemoveSourceAsync(first);
+                Check(await sqlite.FindAsync<MusicLyricsRecord>(outside.Id) is null &&
+                    await sqlite.FindAsync<MusicLyrics>(outside.Id) is null && await sqlite.Table<LyricsSearchStateRecord>().CountAsync() == 0,
+                    "source removal cleans unified lyrics, legacy recovery and search state in one transaction");
                 await UntilAsync(() => sources.SelectedSource?.Id == -1 && app.State.Browse.SourceFilterId == -1
                     && queries.Filter == -1 && combo.SelectedItem is MusicSourceChoice { Id: -1 },
                     "removing selected source resets real ComboBox and both filters to all sources");

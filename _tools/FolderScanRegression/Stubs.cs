@@ -46,6 +46,8 @@ namespace WinUIMusicPlayer.Model
 {
     public class Music
     {
+        public int SourceId { get; set; }
+        [SQLite.Ignore] public bool IsRemote => SourceId != 0;
         [SQLite.Ignore] public string? EmbeddedLyrics { get; set; }
         [SQLite.PrimaryKey, SQLite.AutoIncrement] public int Id { get; set; }
         public string Path { get; set; } = "";
@@ -80,7 +82,7 @@ namespace WinUIMusicPlayer.Utils
     public static class ToolUtils
     {
         public static Action<Model.Music, string> WriteMetadata = (music, path) => File.WriteAllText(path, music.Title);
-        public static void SaveMetaData(Model.Music music, string path, byte[]? cover, string? lyrics, string? krc) => WriteMetadata(music, path);
+        public static void SaveMetaData(Model.Music music, string path, byte[]? cover, string? lyrics) => WriteMetadata(music, path);
         public static string GetString(string key) => key;
         public static TaskCompletionSource SlowFile = new(TaskCreationOptions.RunContinuationsAsynchronously);
         public static TaskCompletionSource SlowFileEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -100,7 +102,7 @@ namespace WinUIMusicPlayer.Utils
                 Path = file.Path, Title = file.Name, FolderPath = global::System.IO.Path.GetDirectoryName(file.Path)!,
                 LastLevelFolderPath = new DirectoryInfo(global::System.IO.Path.GetDirectoryName(file.Path)!).Name,
                 UpdateTime = File.GetLastWriteTime(file.Path), Duration = TimeSpan.FromSeconds(2), SampleRate = 48000
-            }, "lyrics");
+            }, "[00:01.00]lyrics");
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.UI.Dispatching;
 using WinUIMusicPlayer.DesktopLyrics;
 using WinUIMusicPlayer.Model;
@@ -12,7 +12,7 @@ using WinUIMusicPlayer.State;
 namespace WinUIMusicPlayer.Services;
 
 /// <summary>偏好编辑到持久化的应用边界。启动恢复只改内存，Ready 后才接受自动保存。</summary>
-public sealed class SettingsCoordinator(AppState state, MusicDatabaseService database, LyricsPresentationService lyrics, LibraryProjectionService library, DesktopLyricsViewModel desktopLyrics, HotKeyService hotKeys, ILogger<SettingsCoordinator> logger) : IDisposable
+public sealed class SettingsCoordinator(AppState state, MusicDatabaseService database, LyricsPresentationService lyrics, LibraryProjectionService library, DesktopLyricsViewModel desktopLyrics, HotKeyService hotKeys, ILogger<SettingsCoordinator> logger, Lyrics.LyricsOnlineSearch onlineLyrics) : IDisposable
 {
     public event Action? ThemeChanged;
     private bool _started;
@@ -119,8 +119,13 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                     AppSettings.OnOutputSettingsUpdated();
                 }
                 break;
+            case nameof(state.Preferences.LocalLyricsFormatOrder):
+                AppSettings.LocalLyricsFormatOrder = state.Preferences.LocalLyricsFormatOrder;
+                if (state.Lifecycle.IsReady) _ = database.SaveSettingAsync();
+                break;
             case nameof(state.Preferences.IsAutoLyricsEnabled):
                 AppSettings.IsAutoLyricsEnabled = state.Preferences.IsAutoLyricsEnabled;
+                if (!state.Preferences.IsAutoLyricsEnabled) onlineLyrics.CancelAutomaticSearch();
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();

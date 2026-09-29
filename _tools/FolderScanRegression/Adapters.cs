@@ -127,7 +127,12 @@ namespace WinUIMusicPlayer.Services
         private readonly SemaphoreSlim _rescanfolderSemaphore = new(4, 4);
         public Task<Music?> FindMusicByPathAsync(string path) => _dbConnection.FindWithQueryAsync<Music>(
             "SELECT * FROM Music WHERE Path = ? COLLATE NOCASE LIMIT 1", path)!;
-        public MusicDatabaseService(string path) => _dbConnection = new(path);
+        public Lyrics.LyricsRepository Lyrics { get; }
+        public MusicDatabaseService(string path)
+        {
+            _dbConnection = new(path);
+            Lyrics = new(_dbConnection, new Lyrics.LyricsParser());
+        }
         public async Task InitializeAsync()
         {
             await _dbConnection.CreateTableAsync<Music>();
@@ -135,6 +140,7 @@ namespace WinUIMusicPlayer.Services
             await _dbConnection.CreateTableAsync<Folder>();
             await _dbConnection.CreateTableAsync<SubFolder>();
             await _dbConnection.CreateTableAsync<MusicLyrics>();
+            await Lyrics.InitializeAsync(_dbConnection.DatabasePath);
             await _dbConnection.ExecuteAsync("CREATE INDEX IX_Music_Path_NoCase ON Music(Path COLLATE NOCASE)");
         }
         public Task<List<Folder>> GetFolders() => _dbConnection.Table<Folder>().ToListAsync();

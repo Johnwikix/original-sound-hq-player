@@ -211,6 +211,7 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
                 if (reply.Phase != previous)
                 {
                     previous = reply.Phase;
+                    bool countStart = false;
                     await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
                     {
                         if (token.IsCancellationRequested || generation != _generation || !state.CanPublishState) return;
@@ -219,7 +220,7 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
                         if (reply.DurationMs is > 0) music.Duration = TimeSpan.FromMilliseconds(reply.DurationMs.Value);
                         if (state.IsPlaying)
                         {
-                            if (!started) { statistics.StartSession(music); started = true; }
+                            if (!started) { statistics.StartSession(music); started = true; countStart = true; }
                             state.StartProgressTimer();
                         }
                         else state.StopProgressTimer();
@@ -230,6 +231,7 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
                             Ended?.Invoke();
                         }
                     });
+                    if (countStart) await statistics.RecordPlaybackStartAsync(music);
                 }
                 if (reply.Phase is StreamPhase.Failed)
                 {

@@ -2,6 +2,28 @@
 
 新条目加在最上方。
 
+## 2026-09-29 修复快速切歌时歌词缓存释放竞态
+
+- `LyricsLoader.cs`：恢复 500 ms 防抖，快速切歌仅加载最后一首；等待、在途请求和迟到缓存均受切歌／退出取消保护。
+- `LyricsRenderCoordinator.cs`：UI 只提交最新托管快照，渲染帧边界统一替换歌词并回收旧 Win2D 缓存；绘制与关闭清理互斥，暂停重绘也能接收新歌词，清除旧歌曲的索引和滚动状态。
+- `_tools/LyricsCoverRegression`、`_tools/LyricsRenderRegression`：补充防抖、迟到结果及真实 CanvasAnimatedControl 帧内资源存活、快速发布和关闭检查。
+- 验证：修复前原生帧内缓存存活检查稳定失败；修复后 3 轮各 300 次发布、暂停重绘、空歌词和带待发布内容的关闭通过，加载／取消与滚动回归、Debug x64 构建通过。完整音频切歌及用户设备仍需实测。
+
+## 2026-09-29 调整歌词编辑页签与恢复按钮布局
+
+- `MusicDetailsWindow.xaml`、`LyricsEditorViewModel.cs`、七种语言资源：页签固定为“歌词／翻译”，移除标题的格式检测；空状态和错误消息折叠，恢复旧 LRC／KRC 与写入文件按钮放在同一底栏。
+- 验证：Debug x64 构建、现有 WinUI 编译绑定与编辑冲突回归、七种语言资源键检查通过；完整音乐详情窗口的底栏尚未实机目视验收。
+
+## 2026-09-29 统一歌词存储、迁移与 TTML 支持
+
+- `Model/LyricsDocument.cs`、`Services/Lyrics/`：原文保留实际格式，翻译统一为独立逐行 LRC；不增加 Language、不推断同文件双轨 LRC。
+- `LyricsRepository`、`MusicDatabaseService`、`OneShotLyricsCache`：新增版本化存储和条件保存；旧候选整对迁移，保留旧表、一致性备份与有界缓存恢复副本，支持后台续迁和编辑冲突诊断。
+- `LyricsParser`、`LyricsRefreshService`、`WebDavLibraryService`：接入 issue #27 的行／词 TTML、独立译文和四种文件优先级；损坏文件回退，有效内容优先展示，自动搜词按提供方记录结果并可取消。
+- `MusicDetailsWindow`、`LyricsEditorViewModel`、设置与七种语言资源：四个歌词内容区合并为两个，支持旧候选恢复和按格式导出；原文与 `_Translated.lrc` 分别保存，失败时回滚并保留备份。
+- 扫描、标签队列、音频转换和 USB 导出统一使用新文档；标签与 USB 使用兼容 LRC，标签队列保留旧快照；播放次数移至已确认开始的播放路径，歌词重载不再计次。
+- 验证：Debug x64 构建、47 项歌词核心检查、真实 SQLite／文件锁、网络取消／搜索状态、扫描／标签队列、播放导航／远程恢复、设置／共享状态回归通过；隔离 WinUI 编译绑定与 UI Automation 输入保存通过。TTML 附件实测 27 行原文／27 行翻译，逐词版保留 450 片段。
+- 兼容性：默认顺序保持 KRC → QRC → LRC，并追加 TTML；旧版无法看到新版编辑，降级后旧行变化会报告冲突。未操作用户实际数据库；完整音乐库升级与真实设备播放仍需发布前验收。
+
 ## 2026-09-28 修复单曲播放列表曲终停播
 
 - `PlaybackCommands.cs`、`BassPlayerCommandService.cs`、`PlaybackCoordinator.Gapless.cs`：列表循环和随机循环在队列仅有一首歌时允许自然结束后重新播放该曲，并为本地播放预载同一首歌；手动切歌及多曲候选规则保持原样。

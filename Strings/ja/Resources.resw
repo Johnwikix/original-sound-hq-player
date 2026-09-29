@@ -2307,4 +2307,37 @@ SHA-256: {5}
   <data name="CacheCleanupCard.Header" xml:space="preserve">
     <value>キャッシュの削除</value>
   </data>
+  <data name="LyricsFilePriority.Header" xml:space="preserve">
+    <value>歌詞ファイルの優先順位</value>
+  </data>
+  <data name="LyricsFilePriority.Description" xml:space="preserve">
+    <value>この順序で最初の有効な同名ファイルを使用します。翻訳は _Translated.lrc を優先します。</value>
+  </data>
+  <data name="LyricsOriginalTab.Text" xml:space="preserve">
+    <value>歌詞</value>
+  </data>
+  <data name="LyricsTranslationTab.Text" xml:space="preserve">
+    <value>翻訳</value>
+  </data>
+  <data name="LyricsRestoreLegacyLrc.Content" xml:space="preserve">
+    <value>旧 LRC を復元</value>
+  </data>
+  <data name="LyricsRestoreLegacyKrc.Content" xml:space="preserve">
+    <value>旧 KRC を復元</value>
+  </data>
+  <data name="LyricsEditConflict" xml:space="preserve">
+    <value>別の操作で歌詞が変更されました。下書きを保持し、開き直してから保存してください。</value>
+  </data>
+  <data name="LyricsInvalid" xml:space="preserve">
+    <value>歌詞、時刻、またはファイル操作が無効です。</value>
+  </data>
+  <data name="LyricsMigrationDiagnostic" xml:space="preserve">
+    <value>一部の旧歌詞を変換できませんでした。元の内容は保持され、復元ボタンから確認できます。</value>
+  </data>
+  <data name="LyricsFilePriorityLabel" xml:space="preserve">
+    <value>歌詞ファイルの優先順位</value>
+  </data>
+  <data name="LyricsFilesSaved" xml:space="preserve">
+    <value>歌詞ファイルを保存しました：</value>
+  </data>
 </root>

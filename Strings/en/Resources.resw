@@ -2307,4 +2307,37 @@ SHA-256: {5}
   <data name="CacheCleanupCard.Header" xml:space="preserve">
     <value>Clear cache</value>
   </data>
+  <data name="LyricsFilePriority.Header" xml:space="preserve">
+    <value>Lyrics file priority</value>
+  </data>
+  <data name="LyricsFilePriority.Description" xml:space="preserve">
+    <value>Use the first valid matching file in this order. Translation prefers _Translated.lrc.</value>
+  </data>
+  <data name="LyricsOriginalTab.Text" xml:space="preserve">
+    <value>Lyrics</value>
+  </data>
+  <data name="LyricsTranslationTab.Text" xml:space="preserve">
+    <value>Translation</value>
+  </data>
+  <data name="LyricsRestoreLegacyLrc.Content" xml:space="preserve">
+    <value>Restore legacy LRC</value>
+  </data>
+  <data name="LyricsRestoreLegacyKrc.Content" xml:space="preserve">
+    <value>Restore legacy KRC</value>
+  </data>
+  <data name="LyricsEditConflict" xml:space="preserve">
+    <value>Lyrics changed in another operation. Keep your draft and reopen before saving.</value>
+  </data>
+  <data name="LyricsInvalid" xml:space="preserve">
+    <value>Invalid lyrics, timestamps, or file operation.</value>
+  </data>
+  <data name="LyricsMigrationDiagnostic" xml:space="preserve">
+    <value>Some legacy lyrics could not be converted. Original content is preserved and available through the restore buttons.</value>
+  </data>
+  <data name="LyricsFilePriorityLabel" xml:space="preserve">
+    <value>Lyrics file priority</value>
+  </data>
+  <data name="LyricsFilesSaved" xml:space="preserve">
+    <value>Lyrics files saved:</value>
+  </data>
 </root>

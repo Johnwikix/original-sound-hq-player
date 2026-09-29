@@ -2307,4 +2307,37 @@ SHA-256: {5}
   <data name="CacheCleanupCard.Header" xml:space="preserve">
     <value>Önbelleği temizle</value>
   </data>
+  <data name="LyricsFilePriority.Header" xml:space="preserve">
+    <value>Şarkı sözü dosyası önceliği</value>
+  </data>
+  <data name="LyricsFilePriority.Description" xml:space="preserve">
+    <value>Sırayla ilk geçerli eşleşen dosyayı kullan. Çeviri için _Translated.lrc tercih edilir.</value>
+  </data>
+  <data name="LyricsOriginalTab.Text" xml:space="preserve">
+    <value>Şarkı sözleri</value>
+  </data>
+  <data name="LyricsTranslationTab.Text" xml:space="preserve">
+    <value>Çeviri</value>
+  </data>
+  <data name="LyricsRestoreLegacyLrc.Content" xml:space="preserve">
+    <value>Eski LRC dosyasını geri yükle</value>
+  </data>
+  <data name="LyricsRestoreLegacyKrc.Content" xml:space="preserve">
+    <value>Eski KRC dosyasını geri yükle</value>
+  </data>
+  <data name="LyricsEditConflict" xml:space="preserve">
+    <value>Şarkı sözleri başka bir işlemle değiştirildi. Taslağı koruyup kaydetmeden önce yeniden açın.</value>
+  </data>
+  <data name="LyricsInvalid" xml:space="preserve">
+    <value>Geçersiz şarkı sözü, zaman damgası veya dosya işlemi.</value>
+  </data>
+  <data name="LyricsMigrationDiagnostic" xml:space="preserve">
+    <value>Bazı eski şarkı sözleri dönüştürülemedi. Özgün içerik korunur ve geri yükleme düğmeleriyle açılabilir.</value>
+  </data>
+  <data name="LyricsFilePriorityLabel" xml:space="preserve">
+    <value>Şarkı sözü dosyası önceliği</value>
+  </data>
+  <data name="LyricsFilesSaved" xml:space="preserve">
+    <value>Şarkı sözü dosyaları kaydedildi:</value>
+  </data>
 </root>

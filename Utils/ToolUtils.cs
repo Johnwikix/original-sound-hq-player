@@ -1,4 +1,4 @@
-﻿using ATL;
+using ATL;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas.Text;
@@ -309,7 +309,7 @@ namespace WinUIMusicPlayer.Utils
             });
         }
 
-        public static void SaveMetaData(Music music, string filePath, byte[]? pic, string? lyricsText = null, string? krcText = null)
+        public static void SaveMetaData(Music music, string filePath, byte[]? pic, string? lyricsText = null)
         {
             Settings.FileBufferSize = 1024 * 256;
             Track theTrack = new(filePath)
@@ -326,16 +326,9 @@ namespace WinUIMusicPlayer.Utils
                 theTrack.EmbeddedPictures.Clear();
                 theTrack.EmbeddedPictures.Add(PictureInfo.fromBinaryData(pic));
             }
-            string[] lines = (lyricsText ?? "").Split([Environment.NewLine], StringSplitOptions.None);
-            if (lines.Length == 0)
-            {
-                lines = (krcText ?? "").Split([Environment.NewLine], StringSplitOptions.None);
-            }
-            theTrack.Lyrics = new List<LyricsInfo>(lines.Length);
-            foreach (string line in lines)
-            {
-                theTrack.Lyrics.Add(new LyricsInfo { UnsynchronizedLyrics = line });
-            }
+            var lyricsInfo = new LyricsInfo();
+            lyricsInfo.Parse(lyricsText ?? "");
+            theTrack.Lyrics = new List<LyricsInfo> { lyricsInfo };
             if (!theTrack.Save())
                 throw new IOException("Metadata save failed: " + filePath);
         }
@@ -970,18 +963,6 @@ namespace WinUIMusicPlayer.Utils
         }
 
 
-        public static async Task<(string, string)> GetLyricsFromNet(Music musicDetail)
-        {
-            var (lyrics, transLrc, _) = await App.Services.GetRequiredService<LrcService>().GetMixedLyricsAsync(musicDetail);
-            return (lyrics, transLrc);
-        }
-
-        public static async Task<(string, string)> GetKrcFromNet(Music musicDetail)
-        {
-            //string res = await LrcService.GetLyricsFromHelper(musicDetail.Title, musicDetail.Album, musicDetail.Author, musicDetail.Duration);
-            var (krc, tKrc, _) = await App.Services.GetRequiredService<LrcService>().GetKrcLyricsAsync(musicDetail);
-            return (krc, tKrc);
-        }
 
         public static DateTime GetSafeFileCreateTime(string filePath)
         {
@@ -1043,7 +1024,7 @@ namespace WinUIMusicPlayer.Utils
                     {
                         sb.Append('[').Append(EncodeTimecode_ms(phrase.TimestampStart)).Append("] ").Append(phrase.Text).Append('\n');
                     }
-                    lyrics = sb.ToString();
+                    lyrics = synced.Count > 0 ? sb.ToString() : lyricsInfo.UnsynchronizedLyrics;
                 }
                 if (GarbledTextFixer.IsGbkToIso88591Garbled(title))
                 {

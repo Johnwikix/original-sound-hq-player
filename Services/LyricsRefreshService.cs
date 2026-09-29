@@ -1,1242 +1,179 @@
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
-using CommunityToolkit.WinUI;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
-using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.ViewModel;
-using WinUIMusicPlayer.WebService;
+using WinUIMusicPlayer.Services.Lyrics;
 
-namespace WinUIMusicPlayer.Services
+namespace WinUIMusicPlayer.Services;
+
+/// <summary>Source resolution and display projection. The caller owns cancellation and UI publication.</summary>
+public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsParser parser,
+    LyricsOnlineSearch online, WebDavLibraryService webDav, ILogger<LyricsRefreshService> logger)
 {
-    public class LyricsRefreshService : IDisposable
+    public async Task<List<LyricLine>> SetLyrics(Music music, CancellationToken token, Action<List<LyricLine>>? publishCached = null)
     {
-        // ──────────────────────────────────────────────────────────────
-        //  静态 Regex：编译一次，全生命周期复用，避免每次解析重复构建
-        // ──────────────────────────────────────────────────────────────
-
-        // 格式探测：QRC 特征
-        private static readonly Regex s_qrcDetect =
-            new(@"<\d{2}:\d{2}\.\d{2,3}>", RegexOptions.Compiled);
-
-        // 格式探测：KRC 特征
-        private static readonly Regex s_krcDetect =
-            new(@"^\[\d+,\d+\]", RegexOptions.Compiled | RegexOptions.Multiline);
-
-        // 格式探测：增强型逐字 LRC 特征
-        // 新版：行首 [mm:ss.xx] 后出现 <mm:ss.xx>（样例：[00:00.000]<00:00.000>北<00:00.014>的...）
-        // 旧版：行内 [mm:ss.xx]文本[mm:ss.xx]（兼容旧逐字 LRC）
-        private static readonly Regex s_enhancedLrcDetectAngle =
-            new(@"<\d{1,2}:\d{2}[\.:]\d{2,3}>", RegexOptions.Compiled);
-
-        private static readonly Regex s_enhancedLrcDetectOld =
-            new(@"^\[\d{1,2}:\d{2}[\.:]\d{2,3}\][^\r\n\[]+\[\d{1,2}:\d{2}[\.:]\d{2,3}\]",
-                RegexOptions.Compiled | RegexOptions.Multiline);
-
-        // 本地文件扩展名候选（静态，避免每次调用分配 array）
-        private static readonly string[] s_lyricExtensions = [".krc", ".qrc", ".lrc"];
-
-        // 行级时间偏移（ms）：每行动画在 EndMs 前提前结束，确保过渡平滑
-        internal static double LineEndOffsetMs = 300;
-
-        // 在线搜词断路器：连续网络失败达到阈值后进入冷却，冷却期内跳过在线匹配（进程内，不持久化）
-        private static readonly LyricsSearchCircuitBreaker s_searchCircuit = new(3, 10 * 60 * 1000);
-
-        private static readonly ConcurrentBag<LyricLine> s_linePool = new();
-        private static readonly ConcurrentBag<LyricWord> s_wordPool = new();
-        private const int MaxPoolSize = 500;
-        private List<LyricLine>? _previousLyrics;
-
-        private static LyricLine RentLine()
+        string order = AppSettings.LocalLyricsFormatOrder;
+        LyricsSnapshot? stored = music.Id > 0 ? await database.Lyrics.GetAsync(music.Id, token).ConfigureAwait(false) : null;
+        LyricsDocument? document = null;
+        long externalRevision = 0;
+        if (!music.IsRemote) document = await ReadLocalAsync(music.Path, order, token).ConfigureAwait(false);
+        else
         {
-            if (s_linePool.TryTake(out var line))
-            {
-                line.Words.Clear();
-                line.TransLateText = string.Empty;
-                line.IsCurrent = false;
-                line.StartMs = 0;
-                line.EndMs = 0;
-                return line;
-            }
-            return new LyricLine();
+            if (stored is not null && parser.HasLyrics(stored.Document, token))
+                publishCached?.Invoke(Project(stored.Document, music.Duration.TotalMilliseconds, token));
+            document = await webDav.ReadLyricsDocumentAsync(music, order, token).ConfigureAwait(false);
         }
-
-        private static LyricWord RentWord()
+        if (music.IsRemote && document is not null && stored is not null && stored.SourceKind != "User" &&
+            document != stored.Document)
+            await database.Lyrics.SaveAsync(music.Id, document, stored.Revision, "RemoteSidecar", music.Path, token).ConfigureAwait(false);
+        if (document is null && music.Id <= 0 && !string.IsNullOrWhiteSpace(music.EmbeddedLyrics))
+            document = TryImport(music.EmbeddedLyrics, null, token);
+        if (document is null && stored is not null && parser.HasLyrics(stored.Document, token)) document = stored.Document;
+        if (document is null && music.Id <= 0)
         {
-            if (s_wordPool.TryTake(out var word))
-            {
-                word.Word = string.Empty;
-                word.StartMs = 0;
-                word.DurationMs = 0;
-                return word;
-            }
-            return new LyricWord();
+            var cached = OneShotLyricsCache.Load(music.Path);
+            externalRevision = cached?.Revision ?? 0;
+            if (cached is not null && parser.HasLyrics(cached.Document, token)) document = cached.Document;
         }
-
-        public static void ReturnLyrics(List<LyricLine>? lyrics)
+        if (document is null && stored?.SourceKind != "User" && AppSettings.IsAutoLyricsEnabled)
         {
-            if (lyrics is null) return;
-            foreach (var line in lyrics)
+            document = await online.SearchAsync(music, false, token).ConfigureAwait(false);
+            token.ThrowIfCancellationRequested();
+            if (document is not null)
             {
-                if (s_wordPool.Count < MaxPoolSize)
+                if (stored is not null)
                 {
-                    foreach (var word in line.Words)
-                        s_wordPool.Add(word);
+                    bool saved = await database.Lyrics.SaveAsync(music.Id, document, stored.Revision, "Online", token: token).ConfigureAwait(false);
+                    if (!saved) document = (await database.Lyrics.GetAsync(music.Id, token).ConfigureAwait(false)).Document;
                 }
-                line.Words.Clear();
-                if (s_linePool.Count < MaxPoolSize)
-                    s_linePool.Add(line);
+                else if (!OneShotLyricsCache.TrySave(music.Path, document, externalRevision))
+                    document = OneShotLyricsCache.Load(music.Path)?.Document ?? document;
             }
         }
+        token.ThrowIfCancellationRequested();
+        return Project(document ?? LyricsDocument.Empty, music.Duration.TotalMilliseconds, token);
+    }
 
-        // ──────────────────────────────────────────────────────────────
-
-        private readonly object _lyricsCancellationGate = new();
-        private CancellationTokenSource? _lyricsCancellationTokenSource;
-        private bool _disposed;
-        private MusicDatabaseService _musicDatabaseService { get; }
-        private ILogger<LyricsRefreshService> _logger;
-
-        public LyricsRefreshService(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, ILogger<LyricsRefreshService> logger)
+    private async Task<LyricsDocument?> ReadLocalAsync(string musicPath, string order, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(musicPath)) return null;
+        string? folder = Path.GetDirectoryName(musicPath);
+        if (folder is null) return null;
+        string stem = Path.GetFileNameWithoutExtension(musicPath);
+        foreach (string ext in LyricsFilePolicy.Extensions(order))
         {
-            _musicDatabaseService = musicDatabaseService;
-            _logger = logger;
-        }
-
-        // ──────────────────────────────────────────────────────────────
-        //  主入口
-        // ──────────────────────────────────────────────────────────────
-
-        public Task<List<LyricLine>> SetLyrics(Music music) => SetLyrics(music, CancellationToken.None);
-
-        /// <summary>将退出取消与切歌取消合并；等待实际请求结束后由本次调用释放 CTS。</summary>
-        public async Task<List<LyricLine>> SetLyrics(Music music, CancellationToken cancellationToken)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            CancellationTokenSource owner;
-            lock (_lyricsCancellationGate)
-            {
-                if (_disposed) return [];
-                _lyricsCancellationTokenSource?.Cancel();
-                owner = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                _lyricsCancellationTokenSource = owner;
-            }
-            var ct = owner.Token;
-
+            token.ThrowIfCancellationRequested();
+            string file = Path.ChangeExtension(musicPath, ext);
+            if (!File.Exists(file)) continue;
             try
             {
-                ReturnLyrics(Interlocked.Exchange(ref _previousLyrics, null));
-                await Task.Delay(500, ct);
-                // 未入库曲目（非固定盘或入库失败的一次性播放，Id=0）：不查询/写入数据库、不递增播放计数。
-                // 固定盘外部文件在 OneShotPlaybackService 解析阶段已入库并改播库内行（标准库内链路），
-                // 走到本分支的均为不入库的一次性播放：文件旁本地歌词 → 内嵌歌词 → 独立缓存
-                // （OneShotLyricsCache，按路径哈希的 JSON 文件）→ 在线搜索
-                // （受"自动获取歌词"设置与熔断器约束，搜到即写回独立缓存）。
-                if (music.Id <= 0)
+                string content = await LyricsFilePolicy.ReadAsync(file, token).ConfigureAwait(false);
+                var document = TryImport(content, null, token);
+                if (document is null) continue;
+                foreach (string name in LyricsFilePolicy.TranslationNames(stem, ext, order))
                 {
-                    var oneShotLocal = TryParseLocalLyricsFile(music, ct);
-                    if (oneShotLocal is { Count: > 0 })
-                    {
-                        FixEndMs(oneShotLocal, music.Duration.TotalMilliseconds);
-                        _previousLyrics = oneShotLocal;
-                        return oneShotLocal;
-                    }
-
-                    if (!string.IsNullOrWhiteSpace(music.EmbeddedLyrics))
-                    {
-                        var embedded = ParseByFormat(music.EmbeddedLyrics, null, ct);
-                        if (embedded is { Count: > 0 })
-                        {
-                            FixEndMs(embedded, music.Duration.TotalMilliseconds);
-                            _previousLyrics = embedded;
-                            return embedded;
-                        }
-                    }
-
-                    // 独立歌词缓存（按路径哈希，不依赖数据库）：命中直接用原文解析；
-                    // 未命中则在线搜索（下方内部函数在传入文本为空时才搜索），搜到后写回缓存。
-                    var cached = OneShotLyricsCache.Load(music.Path);
-
-                    var (oneShotKrc, oneShotKrcOut, oneShotKrcTrans) = await TryParseKrcLyricsInternal(
-                        music, cached?.Krc ?? "", cached?.TKrc ?? "", ct);
-                    if (oneShotKrc.Count > 0)
-                    {
-                        if (!string.IsNullOrEmpty(oneShotKrcOut)
-                            && !string.Equals(cached?.Krc, oneShotKrcOut, StringComparison.Ordinal))
-                        {
-                            OneShotLyricsCache.Save(music.Path, oneShotKrcOut, oneShotKrcTrans, null, null);
-                        }
-                        FixEndMs(oneShotKrc, music.Duration.TotalMilliseconds);
-                        _previousLyrics = oneShotKrc;
-                        return oneShotKrc;
-                    }
-
-                    var (oneShotLrc, oneShotLrcOut, oneShotLrcTrans) = await ParseLrcLyricsInternal(
-                        music, cached?.Lrc ?? "", cached?.Trans ?? "", null, null, ct);
-                    if (!string.IsNullOrEmpty(oneShotLrcOut)
-                        && !string.Equals(cached?.Lrc, oneShotLrcOut, StringComparison.Ordinal))
-                    {
-                        OneShotLyricsCache.Save(music.Path, null, null, oneShotLrcOut, oneShotLrcTrans);
-                    }
-                    FixEndMs(oneShotLrc, music.Duration.TotalMilliseconds);
-                    if (oneShotLrc.Count == 1 && oneShotLrc[0].Words.Count == 0)
-                    {
-                        var word = RentWord();
-                        word.Word = ToolUtils.GetString("LyricsGetFailed");
-                        oneShotLrc[0].Words.Add(word);
-                    }
-                    _previousLyrics = oneShotLrc;
-                    return oneShotLrc;
-                }
-                var (lyricsText, transLrc, krc, tKrc) = await _musicDatabaseService.GetLyricsAsync(music.Id);
-                if (music.IsRemote && string.IsNullOrWhiteSpace(lyricsText) && string.IsNullOrWhiteSpace(krc))
-                {
-                    lyricsText = await App.Services.GetRequiredService<WebDavLibraryService>().ReadLyricsAsync(music, ct);
-                    if (!string.IsNullOrWhiteSpace(lyricsText))
-                        await _musicDatabaseService.SaveLyricsAsync(music.Id, lyricsText, transLrc, krc, tKrc);
-                }
-
-                // 1. 本地文件（.krc / .qrc / .lrc）
-                var localLyrics = TryParseLocalLyricsFile(music, ct);
-                if (localLyrics is { Count: > 0 })
-                {
-                    music.PlayCount++;
-                    await _musicDatabaseService.UpdateMusicInfo(music);
-                    FixEndMs(localLyrics, music.Duration.TotalMilliseconds);
-                    _previousLyrics = localLyrics;
-                    return localLyrics;
-                }
-
-                // 2. music.Krc 缓存（KRC/QRC 在线）
-                var (krcLyrics, krcOut, tKrcOut) = await TryParseKrcLyricsInternal(music, krc ?? "", tKrc ?? "", ct);
-                if (krcLyrics.Count > 0)
-                {
-                    music.PlayCount++;
-                    await _musicDatabaseService.SaveLyricsAsync(music.Id, lyricsText, transLrc, krcOut, tKrcOut);
-                    await _musicDatabaseService.UpdateMusicInfo(music);
-                    FixEndMs(krcLyrics, music.Duration.TotalMilliseconds);
-                    _previousLyrics = krcLyrics;
-                    return krcLyrics;
-                }
-
-                // 3. LRC 缓存或在线搜索（本地文件已在步骤1处理）
-                lyricsText ??= krcOut;
-                var (lrcLyrics, lrcOut, transOut) = await ParseLrcLyricsInternal(music, lyricsText ?? "", transLrc ?? "", null, null, ct);
-
-                ct.ThrowIfCancellationRequested();
-                music.PlayCount++;
-                await _musicDatabaseService.SaveLyricsAsync(music.Id, lrcOut, transOut, krcOut, tKrcOut);
-                await _musicDatabaseService.UpdateMusicInfo(music);
-                ct.ThrowIfCancellationRequested();
-                FixEndMs(lrcLyrics, music.Duration.TotalMilliseconds);
-                // 仅在全部获取结束后填充空行；不写入缓存，也不为提示生成模拟逐字时间。
-                if (lrcLyrics.Count == 1 && lrcLyrics[0].Words.Count == 0)
-                {
-                    var word = RentWord();
-                    word.Word = ToolUtils.GetString("LyricsGetFailed");
-                    lrcLyrics[0].Words.Add(word);
-                }
-                _previousLyrics = lrcLyrics;
-                return lrcLyrics;
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                return [];
-            }
-            finally
-            {
-                lock (_lyricsCancellationGate)
-                {
-                    if (ReferenceEquals(_lyricsCancellationTokenSource, owner))
-                        _lyricsCancellationTokenSource = null;
-                    owner.Dispose();
-                }
-            }
-        }
-
-        private static void FixEndMs(List<LyricLine> lyrics, double songDurationMs)
-        {
-            if (lyrics.Count == 0) return;
-            double fallbackMs = songDurationMs > 0 ? songDurationMs + 2000 : 10500;
-            for (int i = 0; i < lyrics.Count; i++)
-            {
-                var line = lyrics[i];
-                line.EndMs = (i + 1 < lyrics.Count) ? lyrics[i + 1].StartMs : fallbackMs;
-
-                int wc = line.Words.Count;
-                if (wc > 0)
-                {
-                    var lastWord = line.Words[wc - 1];
-                    double originalSpan = lastWord.StartMs + lastWord.DurationMs - line.StartMs;
-                    if (originalSpan > 0)
-                    {
-                        double reducedMs = Math.Max(0, originalSpan - LineEndOffsetMs);
-                        double scale = reducedMs / originalSpan;
-                        for (int j = 0; j < wc; j++)
-                        {
-                            double offset = line.Words[j].StartMs - line.StartMs;
-                            line.Words[j].StartMs = line.StartMs + offset * scale;
-                            line.Words[j].DurationMs *= scale;
-                        }
-                    }
-                    else
-                    {
-                        double reducedMs = Math.Max(0, line.EndMs - line.StartMs - LineEndOffsetMs);
-                        double perMs = reducedMs / wc;
-                        for (int j = 0; j < wc; j++)
-                        {
-                            line.Words[j].StartMs = line.StartMs + perMs * j;
-                            line.Words[j].DurationMs = perMs;
-                        }
-                    }
-                }
-            }
-        }
-
-        // ──────────────────────────────────────────────────────────────
-        //  本地文件读取
-        // ──────────────────────────────────────────────────────────────
-
-        /// <summary>
-        /// 按 .krc → .qrc → .lrc 顺序查找本地文件，自动识别格式并解析。
-        /// </summary>
-        private List<LyricLine>? TryParseLocalLyricsFile(Music music, CancellationToken ct)
-        {
-            if (music.IsRemote) return null;
-            if (string.IsNullOrWhiteSpace(music.Path)) return null;
-
-            foreach (var ext in s_lyricExtensions)
-            {
-                try
-                {
-                    string filePath = Path.ChangeExtension(music.Path, ext);
-                    if (!File.Exists(filePath)) continue;
-
-                    string content = File.ReadAllText(filePath);
-                    if (string.IsNullOrWhiteSpace(content)) continue;
-
-                    string? transContent = TryReadTranslationFile(music.Path, ext);
-
-                    ct.ThrowIfCancellationRequested();
-
-                    var lyrics = ParseByFormat(content, transContent, ct);
-                    if (lyrics is { Count: > 0 })
-                        return lyrics;
-                }
-                catch (OperationCanceledException) { throw; }
-                catch (Exception ex) { _logger.LogWarning(ex, $"TryParseLocalLyricsFile 读取本地歌词文件失败，继续尝试下一个格式: {ex.Message}"); }
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// 读取翻译文件：原文件名_Translated{ext}，使用 string.Concat 避免插值分配
-        /// </summary>
-        private string? TryReadTranslationFile(string musicPath, string ext)
-        {
-            try
-            {
-                string fileName = Path.GetFileNameWithoutExtension(musicPath);
-                string? dir = Path.GetDirectoryName(musicPath);
-                if (string.IsNullOrEmpty(dir)) return null;
-
-                string transPath = Path.Combine(dir, string.Concat(fileName, "_Translated", ext));
-                return File.Exists(transPath) ? File.ReadAllText(transPath) : null;
-            }
-            catch (Exception ex) { _logger.LogWarning(ex, $"TryReadTranslationFile 读取翻译文件失败: {ex.Message}"); return null; }
-        }
-
-        // ──────────────────────────────────────────────────────────────
-        //  格式判断与分发
-        // ──────────────────────────────────────────────────────────────
-
-        private List<LyricLine>? ParseByFormat(string content, string? transContent, CancellationToken ct)
-        {
-            List<LyricLine> lyrics;
-
-            // KRC 优先（独立格式 ^[int,int]），其次增强型逐字 LRC（支持 <> 新版 + [] 旧版），再 QRC，最后回退普通 LRC
-            if (IsKrcFormat(content))
-                lyrics = ParseKrcLyrics(content, ct);
-            else if (IsEnhancedLrcFormat(content))
-                lyrics = ParseEnhancedLyrics(content, ct);
-            else if (IsQrcFormat(content))
-                lyrics = ParseQrcLyrics(content, ct);
-            else
-                return SpliteContent(content, transContent, new List<LyricLine>());
-
-            if (lyrics.Count > 0 && !string.IsNullOrWhiteSpace(transContent))
-                MergeTranslation(lyrics, transContent);
-
-            return lyrics;
-        }
-
-        private static bool IsQrcFormat(string content) =>
-            !string.IsNullOrWhiteSpace(content) && s_qrcDetect.IsMatch(content);
-
-        private static bool IsKrcFormat(string content) =>
-            !string.IsNullOrWhiteSpace(content) && s_krcDetect.IsMatch(content);
-
-        private static bool IsEnhancedLrcFormat(string content)
-        {
-            if (string.IsNullOrWhiteSpace(content)) return false;
-            // 新版：行内出现 <mm:ss.xx> 即视为增强型（与 QRC 同构但需优先）
-            if (s_enhancedLrcDetectAngle.IsMatch(content)) return true;
-            // 旧版：行内 [mm:ss.xx]文本[mm:ss.xx]
-            return s_enhancedLrcDetectOld.IsMatch(content);
-        }
-
-        // ──────────────────────────────────────────────────────────────
-        //  KRC 解析
-        // ──────────────────────────────────────────────────────────────
-
-        private async Task<(List<LyricLine> lyrics, string? krc, string? tKrc)> TryParseKrcLyricsInternal(
-            Music music, string krc, string tKrc, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(krc) && AppSettings.IsAutoLyricsEnabled && !music.IsKrcSearched &&
-                s_searchCircuit.TryBegin(Environment.TickCount64, out int searchGeneration))
-            {
-                LyricsSearchStatus? outcome = null;
-                try
-                {
-                    var (newKrc, newTKrc, status) = await App.Services.GetRequiredService<LrcService>()
-                        .GetKrcLyricsAsync(music, cancellationToken);
-                    outcome = status;
-                    if (status == LyricsSearchStatus.Found)
-                    {
-                        krc = newKrc;
-                        tKrc = newTKrc ?? "";
-                    }
-                    // 网络失败不置已搜索标志，联网恢复后下次播放自动重试
-                    if (status != LyricsSearchStatus.NetworkError)
-                        music.IsKrcSearched = true;
-                }
-                finally { s_searchCircuit.Complete(searchGeneration, outcome, Environment.TickCount64); }
-            }
-
-            if (string.IsNullOrWhiteSpace(krc)) return ([], krc, tKrc);
-
-            var lyrics = IsQrcFormat(krc)
-                ? ParseQrcLyrics(krc, cancellationToken)
-                : ParseKrcLyrics(krc, cancellationToken);
-
-            if (lyrics.Count > 0 && !string.IsNullOrWhiteSpace(tKrc))
-                MergeTranslation(lyrics, tKrc);
-
-            return (lyrics, krc, tKrc);
-        }
-
-        /// <summary>
-        /// 解析 KRC 格式：完全 Span 解析，零 string 分配
-        /// </summary>
-        private List<LyricLine> ParseKrcLyrics(string krc, CancellationToken cancellationToken = default)
-        {
-            var lyrics = new List<LyricLine>();
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var span = krc.AsSpan();
-            while (!span.IsEmpty)
-            {
-                int nl = span.IndexOfAny('\n', '\r');
-                var lineSpan = nl >= 0 ? span[..nl] : span;
-                span = nl >= 0 ? span[(nl + 1)..] : ReadOnlySpan<char>.Empty;
-
-                var trimmed = lineSpan.Trim();
-                if (trimmed.IsEmpty || trimmed[0] != '[') continue;
-
-                if (trimmed.StartsWith("[ti:", StringComparison.Ordinal) ||
-                    trimmed.StartsWith("[ar:", StringComparison.Ordinal) ||
-                    trimmed.StartsWith("[al:", StringComparison.Ordinal) ||
-                    trimmed.StartsWith("[by:", StringComparison.Ordinal) ||
-                    trimmed.StartsWith("[offset:", StringComparison.Ordinal) ||
-                    trimmed.StartsWith("[kana:", StringComparison.Ordinal))
-                    continue;
-
-                // 手动解析 [startMs,durationMs] 避免 regex + ToString()
-                int bracketClose = trimmed.IndexOf(']');
-                if (bracketClose < 1) continue;
-                int comma = trimmed.Slice(1, bracketClose - 1).IndexOf(',');
-                if (comma < 0) continue;
-                comma++; // relative to trimmed
-
-                if (!long.TryParse(trimmed.Slice(1, comma - 1), out long lineStartMs)) continue;
-
-                var content = trimmed.Slice(bracketClose + 1);
-                if (content.IsEmpty || content.IsWhiteSpace()) continue;
-
-                var lyricLine = RentLine();
-                lyricLine.StartMs = lineStartMs;
-                ParseKrcWords(content, lineStartMs, lyricLine);
-
-                if (lyricLine.Words.Count > 0)
-                    lyrics.Add(lyricLine);
-            }
-
-            return lyrics;
-        }
-
-        /// <summary>
-        /// KRC 字级解析：直接 Span 操作，字词直接加入为 LyricWord，免 SplitSpan 分配
-        /// </summary>
-        private static void ParseKrcWords(ReadOnlySpan<char> content, long lineStartMs, LyricLine lyricLine)
-        {
-            int i = 0;
-            int end = content.Length;
-
-            while (i < end)
-            {
-                int parenOpen = content.Slice(i).IndexOf('(');
-                if (parenOpen == -1)
-                {
-                    var remaining = content.Slice(i);
-                    if (!remaining.IsWhiteSpace())
-                    {
-                        foreach (var ch in SplitSpan(remaining))
-                        {
-                            var w = RentWord();
-                            w.Word = ch;
-                            w.StartMs = lineStartMs;
-                            lyricLine.Words.Add(w);
-                        }
-                    }
-                    break;
-                }
-
-                parenOpen += i;
-                var wordSpan = content.Slice(i, parenOpen - i);
-
-                int parenClose = content.Slice(parenOpen + 1).IndexOf(')');
-                if (parenClose == -1) break;
-                parenClose += parenOpen + 1;
-
-                var timeSpan = content.Slice(parenOpen + 1, parenClose - parenOpen - 1);
-                int commaIdx = timeSpan.IndexOf(',');
-                if (commaIdx < 0) { i = parenClose + 1; continue; }
-
-                if (!long.TryParse(timeSpan[..commaIdx], out long offsetMs) ||
-                    !long.TryParse(timeSpan[(commaIdx + 1)..], out long durationMs))
-                {
-                    i = parenClose + 1;
-                    continue;
-                }
-
-                if (!wordSpan.IsEmpty)
-                {
-                    if (wordSpan.IsWhiteSpace())
-                    {
-                        if (lyricLine.Words.Count > 0)
-                        {
-                            var last = lyricLine.Words[^1];
-                            if (last.Word.Length > 0 && char.IsLetter(last.Word[^1]) && !IsCjkLetter(last.Word[^1]))
-                                last.Word += " ";
-                        }
-                    }
-                    else
-                    {
-                        var subWords = SplitSpan(wordSpan);
-                        int wCount = subWords.Count;
-                        double perMs = wCount > 0 ? (double)durationMs / wCount : durationMs;
-                        for (int k = 0; k < wCount; k++)
-                        {
-                            var w = RentWord();
-                            w.Word = subWords[k];
-                            w.StartMs = offsetMs + perMs * k;
-                            w.DurationMs = perMs;
-                            lyricLine.Words.Add(w);
-                        }
-                    }
-                }
-
-                i = parenClose + 1;
-            }
-        }
-
-        // ──────────────────────────────────────────────────────────────
-        //  QRC 解析
-        // ──────────────────────────────────────────────────────────────
-
-        /// <summary>
-        /// 解析 QRC 格式：完全 Span 解析，零 string 分配
-        /// </summary>
-        private List<LyricLine> ParseQrcLyrics(string qrc, CancellationToken cancellationToken = default)
-        {
-            var lyrics = new List<LyricLine>();
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var span = qrc.AsSpan();
-            while (!span.IsEmpty)
-            {
-                int nl = span.IndexOfAny('\n', '\r');
-                var lineSpan = nl >= 0 ? span[..nl] : span;
-                span = nl >= 0 ? span[(nl + 1)..] : ReadOnlySpan<char>.Empty;
-
-                var trimmed = lineSpan.Trim();
-                if (trimmed.IsEmpty || trimmed[0] != '[') continue;
-
-                if (trimmed.StartsWith("[ti:", StringComparison.Ordinal) ||
-                    trimmed.StartsWith("[ar:", StringComparison.Ordinal) ||
-                    trimmed.StartsWith("[al:", StringComparison.Ordinal) ||
-                    trimmed.StartsWith("[by:", StringComparison.Ordinal) ||
-                    trimmed.StartsWith("[offset:", StringComparison.Ordinal) ||
-                    trimmed.StartsWith("[kana:", StringComparison.Ordinal))
-                    continue;
-
-                // 手动解析 [mm:ss.xx] 避免 regex + ToString()
-                int bracketClose = trimmed.IndexOf(']');
-                if (bracketClose < 1) continue;
-                var timePart = trimmed.Slice(1, bracketClose - 1);
-                int colon = timePart.IndexOf(':');
-                if (colon < 0) continue;
-                int dotRel = timePart.Slice(colon + 1).IndexOf('.');
-                if (dotRel < 0) continue;
-                int dot = colon + 1 + dotRel;
-
-                long lineStartMs = ParseQrcTimeToMs(
-                    timePart.Slice(0, colon),
-                    timePart.Slice(colon + 1, dot - colon - 1),
-                    timePart.Slice(dot + 1));
-
-                var content = trimmed.Slice(bracketClose + 1);
-                if (content.IsEmpty || content.IsWhiteSpace()) continue;
-
-                var lyricLine = RentLine();
-                lyricLine.StartMs = lineStartMs;
-                ParseQrcWords(content, lineStartMs, lyricLine);
-
-                if (lyricLine.Words.Count > 0)
-                    lyrics.Add(lyricLine);
-            }
-
-            return lyrics;
-        }
-
-        /// <summary>
-        /// QRC 字级解析：手动 Span 扫描 &lt;mm:ss.xx&gt; 标签，免 string + regex 分配
-        /// </summary>
-        private static void ParseQrcWords(ReadOnlySpan<char> content, long lineStartMs, LyricLine lyricLine)
-        {
-            int i = 0;
-            while (i < content.Length)
-            {
-                int tagStart = content.Slice(i).IndexOf('<');
-                if (tagStart < 0)
-                {
-                    var remaining = content.Slice(i);
-                    if (!remaining.IsEmpty && !remaining.IsWhiteSpace())
-                    {
-                        foreach (var ch in SplitSpan(remaining))
-                        {
-                            var w = RentWord();
-                            w.Word = ch;
-                            w.StartMs = lineStartMs;
-                            lyricLine.Words.Add(w);
-                        }
-                    }
-                    break;
-                }
-
-                tagStart += i;
-                int tagEnd = content.Slice(tagStart).IndexOf('>');
-                if (tagEnd < 0) break;
-                tagEnd += tagStart;
-
-                if (!TryParseQrcTagTime(content.Slice(tagStart + 1, tagEnd - tagStart - 1), out long segStartMs))
-                {
-                    i = tagEnd + 1;
-                    continue;
-                }
-
-                // 文字在 > 之后到下一个 < 或结尾
-                int textStart = tagEnd + 1;
-                int nextTag = content.Slice(textStart).IndexOf('<');
-                int textEnd = nextTag >= 0 ? textStart + nextTag : content.Length;
-
-                long segEndMs = segStartMs;
-                if (nextTag >= 0)
-                {
-                    int nextTagStart = textEnd;
-                    int nextTagEnd = content.Slice(nextTagStart).IndexOf('>');
-                    if (nextTagEnd >= 0)
-                    {
-                        _ = TryParseQrcTagTime(
-                            content.Slice(nextTagStart + 1, nextTagEnd - 1),
-                            out segEndMs);
-                    }
-                }
-
-                var textSpan = content.Slice(textStart, textEnd - textStart);
-                if (!textSpan.IsEmpty)
-                {
-                    long segDurationMs = Math.Max(0, segEndMs - segStartMs);
-                    var subWords = SplitSpan(textSpan);
-                    int wordCount = subWords.Count;
-                    if (wordCount > 0)
-                    {
-                        double perMs = segDurationMs > 0 ? (double)segDurationMs / wordCount : 0;
-                        for (int k = 0; k < wordCount; k++)
-                        {
-                            var w = RentWord();
-                            w.Word = subWords[k];
-                            w.StartMs = segStartMs + perMs * k;
-                            w.DurationMs = perMs;
-                            lyricLine.Words.Add(w);
-                        }
-                    }
-                }
-
-                i = textEnd;
-            }
-        }
-
-        // ──────────────────────────────────────────────────────────────
-        //  Enhanced LRC 解析
-        // ──────────────────────────────────────────────────────────────
-
-        /// <summary>
-        /// 解析增强型逐字 LRC 格式：完全 Span 解析，零 string 分配
-        /// 支持两种字级标签：
-        /// 新版（样例）：[mm:ss.xxx]&lt;mm:ss.xxx&gt;字&lt;mm:ss.xxx&gt;字  — 尖括号逐字
-        /// 旧版：[mm:ss.xxx]字[mm:ss.xxx]字   — 方括号逐字
-        /// 行首 [mm:ss.xxx] 为行起始时间，行内 &lt;mm:ss.xxx&gt; / [mm:ss.xxx] 为字起始时间，字时长 = 下一标签时间 - 当前标签时间
-        /// 兼容空段 &lt;t1&gt;&lt;t2&gt;字、同毫秒重复、行首纯文本等边界
-        /// </summary>
-        private List<LyricLine> ParseEnhancedLyrics(string content, CancellationToken cancellationToken = default)
-        {
-            var lyrics = new List<LyricLine>();
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var span = content.AsSpan();
-            while (!span.IsEmpty)
-            {
-                int nl = span.IndexOfAny('\n', '\r');
-                var lineSpan = nl >= 0 ? span[..nl] : span;
-                span = nl >= 0 ? span[(nl + 1)..] : ReadOnlySpan<char>.Empty;
-
-                var trimmed = lineSpan.Trim();
-                if (trimmed.IsEmpty || trimmed[0] != '[') continue;
-
-                if (trimmed.StartsWith("[ti:", StringComparison.Ordinal) ||
-                    trimmed.StartsWith("[ar:", StringComparison.Ordinal) ||
-                    trimmed.StartsWith("[al:", StringComparison.Ordinal) ||
-                    trimmed.StartsWith("[by:", StringComparison.Ordinal) ||
-                    trimmed.StartsWith("[offset:", StringComparison.Ordinal) ||
-                    trimmed.StartsWith("[kana:", StringComparison.Ordinal))
-                    continue;
-
-                int lineBracketClose = trimmed.IndexOf(']');
-                if (lineBracketClose < 1) continue;
-                if (!TryParseQrcTagTime(trimmed.Slice(1, lineBracketClose - 1), out long lineStartMs))
-                    continue;
-
-                var contentSpan = trimmed.Slice(lineBracketClose + 1);
-                if (contentSpan.IsWhiteSpace()) continue;
-
-                var lyricLine = RentLine();
-                lyricLine.StartMs = lineStartMs;
-                ParseEnhancedWords(contentSpan, lineStartMs, lyricLine);
-
-                if (lyricLine.Words.Count > 0)
-                {
-                    lyrics.Add(lyricLine);
-                }
-                else
-                {
-                    // 无有效字词则回收
-                    if (s_linePool.Count < MaxPoolSize) s_linePool.Add(lyricLine);
-                }
-            }
-
-            return lyrics;
-        }
-
-        /// <summary>
-        /// 增强型字级解析：扫描 &lt;mm:ss.xxx&gt; 与 [mm:ss.xxx] 两种标签，零分配
-        /// </summary>
-        private static void ParseEnhancedWords(ReadOnlySpan<char> content, long lineStartMs, LyricLine lyricLine)
-        {
-            if (content.IsEmpty || content.IsWhiteSpace()) return;
-
-            // 无任何字标签则整行作为普通文本
-            int firstAngle = content.IndexOf('<');
-            int firstBracket = content.IndexOf('[');
-            bool hasTag = firstAngle >= 0 || firstBracket >= 0;
-            if (!hasTag)
-            {
-                foreach (var w in SplitSpan(content))
-                {
-                    var word = RentWord();
-                    word.Word = w;
-                    word.StartMs = lineStartMs;
-                    lyricLine.Words.Add(word);
-                }
-                return;
-            }
-
-            // 处理行首纯文本（旧版 [line]word1[time]word2 情况）
-            int firstTagPos = -1;
-            bool firstIsAngle = false;
-            if (firstAngle >= 0 && firstBracket >= 0)
-            {
-                if (firstAngle < firstBracket) { firstTagPos = firstAngle; firstIsAngle = true; }
-                else firstTagPos = firstBracket;
-            }
-            else if (firstAngle >= 0) { firstTagPos = firstAngle; firstIsAngle = true; }
-            else firstTagPos = firstBracket;
-
-            if (firstTagPos > 0)
-            {
-                var leading = content.Slice(0, firstTagPos);
-                if (!leading.IsWhiteSpace())
-                {
-                    int peekClose = content.Slice(firstTagPos + 1).IndexOf(firstIsAngle ? '>' : ']');
-                    long nextMs = lineStartMs;
-                    if (peekClose >= 0 && TryParseQrcTagTime(content.Slice(firstTagPos + 1, peekClose), out long parsed)) nextMs = parsed;
-                    long dur = Math.Max(0, nextMs - lineStartMs);
-                    var sub = SplitSpan(leading);
-                    double per = sub.Count > 0 && dur > 0 ? (double)dur / sub.Count : 0;
-                    for (int k = 0; k < sub.Count; k++)
-                    {
-                        var w = RentWord();
-                        w.Word = sub[k];
-                        w.StartMs = lineStartMs + per * k;
-                        w.DurationMs = per;
-                        lyricLine.Words.Add(w);
-                    }
-                }
-            }
-
-            int i = firstTagPos >= 0 ? firstTagPos : 0;
-            int len = content.Length;
-            while (i < len)
-            {
-                int relAngle = content.Slice(i).IndexOf('<');
-                int relBracket = content.Slice(i).IndexOf('[');
-                int openRel = -1;
-                bool isAngle = false;
-                if (relAngle >= 0 && relBracket >= 0)
-                {
-                    if (relAngle < relBracket) { openRel = relAngle; isAngle = true; }
-                    else openRel = relBracket;
-                }
-                else if (relAngle >= 0) { openRel = relAngle; isAngle = true; }
-                else if (relBracket >= 0) openRel = relBracket;
-                else break;
-
-                int open = i + openRel;
-                // 跳过 leading 已处理的情况
-                if (open != i)
-                {
-                    i = open;
-                    continue;
-                }
-
-                int closeRel = content.Slice(open + 1).IndexOf(isAngle ? '>' : ']');
-                if (closeRel < 0) break;
-                int close = open + 1 + closeRel;
-                var tagSpan = content.Slice(open + 1, close - open - 1);
-                if (!TryParseQrcTagTime(tagSpan, out long curMs))
-                {
-                    i = close + 1;
-                    continue;
-                }
-
-                int textStart = close + 1;
-                if (textStart >= len)
-                {
-                    i = len;
-                    break;
-                }
-
-                int nextAngle = content.Slice(textStart).IndexOf('<');
-                int nextBracket = content.Slice(textStart).IndexOf('[');
-                int nextRel = -1;
-                bool nextIsAngle = false;
-                if (nextAngle >= 0 && nextBracket >= 0)
-                {
-                    if (nextAngle < nextBracket) { nextRel = nextAngle; nextIsAngle = true; }
-                    else nextRel = nextBracket;
-                }
-                else if (nextAngle >= 0) { nextRel = nextAngle; nextIsAngle = true; }
-                else if (nextBracket >= 0) nextRel = nextBracket;
-
-                int textEnd = nextRel >= 0 ? textStart + nextRel : len;
-
-                long nextMsForDur = curMs;
-                if (nextRel >= 0)
-                {
-                    int peekClose2 = content.Slice(textEnd + 1).IndexOf(nextIsAngle ? '>' : ']');
-                    if (peekClose2 >= 0 && TryParseQrcTagTime(content.Slice(textEnd + 1, peekClose2), out long nt)) nextMsForDur = nt;
-                }
-
-                var textSpan = content.Slice(textStart, textEnd - textStart);
-                if (!textSpan.IsEmpty)
-                {
-                    // 保留空白字符（如英文单词间的空格），仅跳过纯空段用于 <t1><t2> 情况需通过 IsEmpty 已过滤
-                    // 对纯空白也需保留以正确渲染英文
-                    if (textSpan.IsWhiteSpace())
-                    {
-                        // 空白段若为单个空格且时长为0可忽略，但为保真仍按时长均分
-                        // 此处保留 whitespace 单独成词
-                    }
-                    long dur = Math.Max(0, nextMsForDur - curMs);
-                    var sub = SplitSpan(textSpan);
-                    double per = sub.Count > 0 && dur > 0 ? (double)dur / sub.Count : 0;
-                    for (int k = 0; k < sub.Count; k++)
-                    {
-                        var w = RentWord();
-                        w.Word = sub[k];
-                        w.StartMs = curMs + per * k;
-                        w.DurationMs = per;
-                        lyricLine.Words.Add(w);
-                    }
-                }
-                // 空段 <t1><t2> 自动跳过（textSpan.IsEmpty）
-
-                i = textEnd;
-            }
-        }
-
-        private static bool TryParseQrcTagTime(ReadOnlySpan<char> tagSpan, out long ms)
-        {
-            ms = 0;
-            int colon = tagSpan.IndexOf(':');
-            if (colon < 0) return false;
-            var afterColon = tagSpan.Slice(colon + 1);
-            int dotRel = afterColon.IndexOf('.');
-            int sepRel = dotRel;
-            if (sepRel < 0) sepRel = afterColon.IndexOf(':'); // 兼容 [mm:ss:xx]
-            if (sepRel < 0) return false;
-            int dot = colon + 1 + sepRel;
-            ms = ParseQrcTimeToMs(
-                tagSpan.Slice(0, colon),
-                tagSpan.Slice(colon + 1, dot - colon - 1),
-                tagSpan.Slice(dot + 1));
-            return true;
-        }
-
-        /// <summary>
-        /// QRC 时间转毫秒：接收 ReadOnlySpan&lt;char&gt;，全程无 string 分配
-        /// </summary>
-        private static long ParseQrcTimeToMs(ReadOnlySpan<char> mm, ReadOnlySpan<char> ss, ReadOnlySpan<char> msSpan)
-        {
-            int minutes = int.Parse(mm);
-            int seconds = int.Parse(ss);
-            int milliseconds = msSpan.Length == 2 ? int.Parse(msSpan) * 10 : int.Parse(msSpan);
-            return minutes * 60000L + seconds * 1000L + milliseconds;
-        }
-
-        // ──────────────────────────────────────────────────────────────
-        //  翻译合并（KRC/QRC 共用）
-        // ──────────────────────────────────────────────────────────────
-
-        /// <summary>
-        /// 手动 for loop 替代 LINQ + 匿名型别，零额外分配
-        /// </summary>
-        private void MergeTranslation(List<LyricLine> lyrics, string transContent)
-        {
-            ParseLrcToLines(transContent, (timeMs, transText) =>
-            {
-                double bestDiff = 101.0;
-                LyricLine? bestLine = null;
-                for (int i = 0; i < lyrics.Count; i++)
-                {
-                    double diff = Math.Abs(lyrics[i].StartMs - timeMs);
-                    if (diff < bestDiff)
-                    {
-                        bestDiff = diff;
-                        bestLine = lyrics[i];
-                    }
-                }
-                if (bestLine != null)
-                    bestLine.TransLateText = transText;
-            });
-        }
-
-        // ──────────────────────────────────────────────────────────────
-        //  LRC 解析
-        // ──────────────────────────────────────────────────────────────
-
-        /// <summary>
-        /// 从 music.Lyrics 缓存或在线搜索获取内容，并自动判断格式（LRC/KRC/QRC）解析。
-        /// 本地文件已由 TryParseLocalLyricsFile 处理，此处不再读取本地文件。
-        /// </summary>
-        private async Task<(List<LyricLine> lyrics, string? lrc, string? trans)> ParseLrcLyricsInternal(
-            Music music, string lrcContent, string transLrcStr, string? providedLrc, string? providedTrans, CancellationToken cancellationToken = default)
-        {
-            if (string.IsNullOrWhiteSpace(lrcContent))
-            {
-                lrcContent = providedLrc;
-                transLrcStr = string.IsNullOrWhiteSpace(transLrcStr) ? providedTrans : transLrcStr;
-
-                if (string.IsNullOrWhiteSpace(lrcContent) && AppSettings.IsAutoLyricsEnabled && !music.IsLrcSearched &&
-                    s_searchCircuit.TryBegin(Environment.TickCount64, out int searchGeneration))
-                {
-                    LyricsSearchStatus? outcome = null;
+                    string translationFile = Path.Combine(folder, name);
+                    if (!File.Exists(translationFile)) continue;
                     try
                     {
-                        var (lyric, trans, status) = await App.Services.GetRequiredService<LrcService>()
-                            .GetMixedLyricsAsync(music, cancellationToken);
-                        outcome = status;
-                        if (status == LyricsSearchStatus.Found)
-                        {
-                            lrcContent = lyric;
-                            transLrcStr = trans;
-                        }
-                        // 网络失败不置已搜索标志，联网恢复后下次播放自动重试
-                        if (status != LyricsSearchStatus.NetworkError)
-                            music.IsLrcSearched = true;
+                        string translation = await LyricsFilePolicy.ReadAsync(translationFile, token).ConfigureAwait(false);
+                        string normalized = parser.NormalizeTranslation(translation, token);
+                        if (string.IsNullOrWhiteSpace(normalized)) continue;
+                        document = document with { TranslationLrc = normalized };
+                        break;
                     }
-                    finally { s_searchCircuit.Complete(searchGeneration, outcome, Environment.TickCount64); }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException or System.Xml.XmlException or OverflowException or System.Text.RegularExpressions.RegexMatchTimeoutException)
+                    { logger.LogWarning(ex, "Could not read translation: {Path}", translationFile); }
                 }
+                return document;
             }
-
-            cancellationToken.ThrowIfCancellationRequested();
-
-            if (!string.IsNullOrWhiteSpace(lrcContent))
-            {
-                var parsed = ParseByFormat(lrcContent, transLrcStr, cancellationToken);
-                if (parsed is { Count: > 0 })
-                    return (parsed, lrcContent, transLrcStr);
-            }
-
-            var emptyLine = RentLine();
-            emptyLine.IsCurrent = true;
-            return ([emptyLine], lrcContent, transLrcStr);
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException or System.Xml.XmlException or OverflowException or System.Text.RegularExpressions.RegexMatchTimeoutException)
+            { logger.LogWarning(ex, "Could not read lyrics: {Path}", file); }
         }
+        return null;
+    }
 
-        // ──────────────────────────────────────────────────────────────
-        //  通用工具方法
-        // ──────────────────────────────────────────────────────────────
-
-        /// <summary>
-        /// 零分配分词：手动 Span 扫描，替换 Regex
-        /// </summary>
-        public static List<string> SplitEverything(string input)
+    private LyricsDocument? TryImport(string original, string? translation, CancellationToken token)
+    {
+        try
         {
-            if (string.IsNullOrEmpty(input)) return [];
-            var result = new List<string>();
-            var span = input.AsSpan();
-            int i = 0;
-            int end = span.Length;
-
-            while (i < end)
-            {
-                char c = span[i];
-                if (IsCjkLetter(c)) { result.Add(span.Slice(i++, 1).ToString()); continue; }
-                if (char.IsLetterOrDigit(c))
-                {
-                    int start = i;
-                    i++;
-                    while (i < end && char.IsLetterOrDigit(span[i]) && !IsCjkLetter(span[i])) i++;
-                    result.Add(span.Slice(start, i - start).ToString());
-                    continue;
-                }
-                if (char.IsWhiteSpace(c))
-                {
-                    int start = i;
-                    i++;
-                    while (i < end && char.IsWhiteSpace(span[i])) i++;
-                    result.Add(span.Slice(start, i - start).ToString());
-                    continue;
-                }
-                result.Add(span.Slice(i++, 1).ToString());
-            }
-            return result;
+            var document = parser.Import(original, translation, token, AppData.SystemLanguage);
+            return parser.HasLyrics(document, token) ? document : null;
         }
-
-        private static List<string> SplitSpan(ReadOnlySpan<char> input)
+        catch (Exception ex) when (ex is FormatException or System.Xml.XmlException or OverflowException or System.Text.RegularExpressions.RegexMatchTimeoutException)
         {
-            if (input.IsEmpty) return [];
-            var result = new List<string>();
-            int i = 0;
-            int end = input.Length;
-
-            while (i < end)
-            {
-                char c = input[i];
-                if (IsCjkLetter(c)) { result.Add(input.Slice(i++, 1).ToString()); continue; }
-                if (char.IsLetterOrDigit(c))
-                {
-                    int start = i;
-                    i++;
-                    while (i < end && char.IsLetterOrDigit(input[i]) && !IsCjkLetter(input[i])) i++;
-                    result.Add(input.Slice(start, i - start).ToString());
-                    continue;
-                }
-                if (char.IsWhiteSpace(c))
-                {
-                    int start = i;
-                    i++;
-                    while (i < end && char.IsWhiteSpace(input[i])) i++;
-                    result.Add(input.Slice(start, i - start).ToString());
-                    continue;
-                }
-                result.Add(input.Slice(i++, 1).ToString());
-            }
-            return result;
-        }
-
-        private static bool IsCjkLetter(char c) =>
-            (c >= '\u4E00' && c <= '\u9FFF') ||   // CJK Unified Ideographs
-            (c >= '\u3040' && c <= '\u30FF') ||   // Hiragana + Katakana
-            (c >= '\uAC00' && c <= '\uD7AF');     // Hangul Syllables
-
-        private List<LyricLine> SpliteContent(string lrcContent, string? transLrc, List<LyricLine> lyrics)
-        {
-            lyrics.Clear();
-
-            // 1. 解析原文
-            ParseLrcToLines(lrcContent, (timeMs, text) =>
-            {
-                var line = RentLine();
-                line.StartMs = timeMs;
-                foreach (var w in SplitEverything(text))
-                {
-                    var word = RentWord();
-                    word.Word = w;
-                    line.Words.Add(word);
-                }
-                lyrics.Add(line);
-            });
-
-            if (!string.IsNullOrEmpty(transLrc))
-            {
-                ParseLrcToLines(transLrc, (timeMs, transText) =>
-                {
-                    for (int i = 0; i < lyrics.Count; i++)
-                    {
-                        if (Math.Abs(lyrics[i].StartMs - timeMs) <= 50)
-                        {
-                            lyrics[i].TransLateText = transText;
-                            break;
-                        }
-                    }
-                });
-            }
-
-            lyrics.Sort(static (a, b) => a.StartMs.CompareTo(b.StartMs));
-
-            return lyrics;
-        }
-
-        /// <summary>
-        /// LRC 时间行解析：手动 Span 扫描 [mm:ss.xx]，零 Regex 分配。
-        /// 纠错规则：
-        /// 1. 行首连续多个时间标签视为重复出现行，每个标签各生成一条歌词；
-        /// 2. 只有时间标签、无任何文本的行视为垃圾行，直接丢弃；
-        /// 3. 单标签行行为与旧版完全一致。
-        /// </summary>
-        private void ParseLrcToLines(string content, Action<double, string> onLineParsed)
-        {
-            if (string.IsNullOrEmpty(content)) return;
-
-            var span = content.AsSpan();
-            while (!span.IsEmpty)
-            {
-                int nl = span.IndexOfAny('\n', '\r');
-                var lineSpan = nl >= 0 ? span[..nl] : span;
-                span = nl >= 0 ? span[(nl + 1)..] : ReadOnlySpan<char>.Empty;
-
-                var trimmed = lineSpan.Trim();
-                if (trimmed.IsEmpty || trimmed[0] != '[') continue;
-
-                int tagCount = CountLeadingLrcTags(trimmed, out int textStart);
-                if (tagCount == 0) continue;
-
-                var textSpan = trimmed.Slice(textStart).Trim();
-                if (textSpan.IsEmpty) continue;
-                if (textSpan.Length == 2 && textSpan[0] == '/' && textSpan[1] == '/') continue;
-
-                if (tagCount == 1)
-                {
-                    if (TryParseLrcTime(trimmed.Slice(1, textStart - 2), out double timeMs))
-                        onLineParsed(timeMs, textSpan.ToString());
-                    continue;
-                }
-
-                // 多时间标签：每个标签处各生成一条歌词，同一行内相同时间不重复
-                int pos = 0;
-                long lastTagMs = -1;
-                while (pos < trimmed.Length && trimmed[pos] == '[')
-                {
-                    int bracketClose = trimmed.Slice(pos).IndexOf(']');
-                    if (bracketClose < 1) break;
-                    bracketClose += pos;
-                    if (!TryParseLrcTime(trimmed.Slice(pos + 1, bracketClose - pos - 1), out double tagMs)) break;
-                    if (tagMs != lastTagMs)
-                    {
-                        onLineParsed(tagMs, textSpan.ToString());
-                        lastTagMs = (long)tagMs;
-                    }
-                    pos = bracketClose + 1;
-                }
-            }
-        }
-
-        /// <summary>
-        /// 统计行首连续有效时间标签的数量，textStart 指向最后一个标签之后的位置
-        /// </summary>
-        private static int CountLeadingLrcTags(ReadOnlySpan<char> line, out int textStart)
-        {
-            int pos = 0;
-            int count = 0;
-            while (pos < line.Length && line[pos] == '[')
-            {
-                int bracketClose = line.Slice(pos).IndexOf(']');
-                if (bracketClose < 1) break;
-                bracketClose += pos;
-                if (!TryParseLrcTime(line.Slice(pos + 1, bracketClose - pos - 1), out _)) break;
-                count++;
-                pos = bracketClose + 1;
-            }
-            textStart = pos;
-            return count;
-        }
-
-        /// <summary>
-        /// 解析 [mm:ss.xx] / [mm:ss:xx] 时间标签为毫秒
-        /// </summary>
-        private static bool TryParseLrcTime(ReadOnlySpan<char> timePart, out double timeMs)
-        {
-            timeMs = 0;
-            int colon = timePart.IndexOf(':');
-            if (colon < 0) return false;
-            if (!int.TryParse(timePart.Slice(0, colon), out int minutes)) return false;
-
-            var afterMin = timePart.Slice(colon + 1);
-            int sep = afterMin.IndexOfAny('.', ':');
-            if (sep < 0) return false;
-            if (!int.TryParse(afterMin.Slice(0, sep), out int seconds)) return false;
-
-            var msSpan = afterMin.Slice(sep + 1);
-            if (!int.TryParse(msSpan, out int msRaw)) return false;
-            int milliseconds = msSpan.Length == 2 ? msRaw * 10 : msRaw;
-
-            timeMs = (minutes * 60 + seconds) * 1000.0 + milliseconds;
-            return true;
-        }
-
-        // ──────────────────────────────────────────────────────────────
-        //  取消与释放
-        // ──────────────────────────────────────────────────────────────
-
-        public void Dispose()
-        {
-            lock (_lyricsCancellationGate)
-            {
-                if (_disposed) return;
-                _disposed = true;
-                // 只请求取消；在途调用仍拥有 CTS，直到请求和解析真正结束。
-                _lyricsCancellationTokenSource?.Cancel();
-            }
-            GC.SuppressFinalize(this);
+            logger.LogWarning(ex, "Invalid lyrics input or embedded translation");
+            var raw = new LyricsDocument(new(original, LyricsFormat.Unknown), null);
+            return parser.HasLyrics(raw, token) ? parser.Import(original, token: token, extractEmbeddedTranslation: false) : null;
         }
     }
+
+    private List<LyricLine> Project(LyricsDocument document, double duration, CancellationToken token)
+    {
+        var parsed = parser.Parse(document, duration, token);
+        var result = new List<LyricLine>(parsed.Length);
+        foreach (var source in parsed)
+        {
+            token.ThrowIfCancellationRequested();
+            var line = new LyricLine { StartMs = source.StartMs, EndMs = source.EndMs, TransLateText = source.Translation };
+            if (source.Words.Length > 0)
+            {
+                foreach (var word in source.Words)
+                    line.Words.Add(new LyricWord { Word = word.Text, StartMs = word.StartMs,
+                        DurationMs = Math.Max(0, word.EndMs - word.StartMs) });
+            }
+            else
+            {
+                var words = SplitEverything(source.Text);
+                double span = Math.Max(0, source.EndMs - source.StartMs - 300);
+                for (int i = 0; i < words.Count; i++)
+                    line.Words.Add(new LyricWord { Word = words[i], StartMs = source.StartMs + span * i / words.Count, DurationMs = span / words.Count });
+            }
+            result.Add(line);
+        }
+        return result;
+    }
+
+    public static List<string> SplitEverything(string input)
+    {
+        if (string.IsNullOrEmpty(input)) return [];
+        var result = new List<string>();
+        var span = input.AsSpan();
+        int i = 0;
+        int end = span.Length;
+
+        while (i < end)
+        {
+            char c = span[i];
+            if (IsCjkLetter(c)) { result.Add(span.Slice(i++, 1).ToString()); continue; }
+            if (char.IsLetterOrDigit(c))
+            {
+                int start = i;
+                i++;
+                while (i < end && char.IsLetterOrDigit(span[i]) && !IsCjkLetter(span[i])) i++;
+                result.Add(span.Slice(start, i - start).ToString());
+                continue;
+            }
+            if (char.IsWhiteSpace(c))
+            {
+                int start = i;
+                i++;
+                while (i < end && char.IsWhiteSpace(span[i])) i++;
+                result.Add(span.Slice(start, i - start).ToString());
+                continue;
+            }
+            result.Add(span.Slice(i++, 1).ToString());
+        }
+        return result;
+    }
+
+    private static bool IsCjkLetter(char c) =>
+        (c >= '\u4E00' && c <= '\u9FFF') ||   // CJK Unified Ideographs
+        (c >= '\u3040' && c <= '\u30FF') ||   // Hiragana + Katakana
+        (c >= '\uAC00' && c <= '\uD7AF');     // Hangul Syllables
+
 }

@@ -8,6 +8,7 @@ using Microsoft.UI.Xaml.Input;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.Threading;
 using Windows.Foundation;
 using Windows.UI;
 
@@ -59,9 +60,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         }
 
         private List<RenderLyricsLine> _renderLines = [];
-        private List<RenderLyricsLine>? _pendingDisposeLines;
+        // The UI publishes managed snapshots only. Native caches belong to the render loop;
+        // shutdown waits for its current operation before releasing those caches.
+        private readonly Lock _renderGate = new();
+        private readonly Lock _pendingGate = new();
+        private List<RenderLyricsLine>? _pendingLines;
         private bool _layoutDirty = true;
-        private bool _shutdown;
+        private volatile bool _shutdown;
         private int _currentLineIndex = -1;
         private int _lastCurrentLineIndex = -1;
 
@@ -151,6 +156,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         /// <summary>订阅 Bus 并请求一次同步。owner 应在 Loaded 时调用。</summary>
         public void Attach()
         {
+            if (_shutdown) return;
             // 先设初始默认色，再订阅并请求同步；Request 会同步回灌真实 isDark，
             // 必须早于此默认，避免把正确颜色覆盖回浅色默认（导致暗色模式显示黑字）。
             OnIsDarkChanged(false);
@@ -186,17 +192,21 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         public void PrepareForShutdown()
         {
-            if (_shutdown) return;
-            _shutdown = true;
-            Detach();
-            DisposeRenderLines();
-            if (_pendingDisposeLines != null)
+            lock (_renderGate)
             {
-                DisposeLineList(_pendingDisposeLines);
-                _pendingDisposeLines = null;
+                lock (_pendingGate)
+                {
+                    if (_shutdown) return;
+                    _shutdown = true;
+                    _pendingLines = null; // Unconsumed snapshots have no native resources.
+                }
+                Detach();
+                DisposeRenderLines();
+                _renderLines = [];
+                _lineRenderer.Line = null;
+                _edgeFadeMask.Dispose();
+                Canvas = null;
             }
-            _edgeFadeMask.Dispose();
-            Canvas = null;
         }
 
         public bool HasLyrics => _renderLines.Count > 0;
@@ -262,13 +272,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void OnUILyricsChanged(IList<LyricLine>? newLyrics)
         {
-            // 多次换歌可能发生在下一帧之前。旧实现只保留一个 pending 引用，
-            // 中间列表会被覆盖，导致其中的 CanvasEffect/CommandList 永远不释放。
-            if (_pendingDisposeLines != null)
-                DisposeLineList(_pendingDisposeLines);
-            _pendingDisposeLines = _renderLines;
-
-            var newLines = new List<RenderLyricsLine>();
+            if (_shutdown) return;
+            var newLines = new List<RenderLyricsLine>(newLyrics?.Count ?? 0);
             if (newLyrics != null && newLyrics.Count > 0)
             {
                 for (int i = 0; i < newLyrics.Count; i++)
@@ -280,9 +285,48 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 }
             }
 
-            _renderLines = newLines;
-            _layoutDirty = true;
+            lock (_pendingGate)
+            {
+                if (_shutdown) return;
+                // A newer snapshot can replace an unconsumed one without disposing Win2D objects.
+                _pendingLines = newLines;
+            }
             Canvas?.Invalidate();
+        }
+
+        // Called only at a render callback boundary while holding _renderGate.
+        private bool ApplyPendingLyrics()
+        {
+            List<RenderLyricsLine>? next;
+            lock (_pendingGate)
+            {
+                next = _pendingLines;
+                _pendingLines = null;
+            }
+            if (next is null) return false;
+
+            var previous = _renderLines;
+            _renderLines = next;
+            _lineRenderer.Line = null;
+            DisposeLineList(previous);
+            _currentLineIndex = -1;
+            _lastCurrentLineIndex = -1;
+            _hoveredLineIndex = -1;
+            _cachedVisibleStart = -1;
+            _cachedVisibleEnd = -1;
+            _lastExternalTimeMs = double.NegativeInfinity;
+            _lastScrollPositionMs = double.NaN;
+            _canvasYScrollTransition.JumpTo(0);
+            _mouseYScrollTransition.JumpTo(0);
+            _pendingMouseScrollY = 0;
+            _targetScrollY = 0;
+            _smoothedScrollY = 0;
+            _lastTargetScrollY = 0;
+            _userScrolling = false;
+            _isUserScrollingChanged = false;
+            _userScrollCooldownSec = 0;
+            _layoutDirty = true;
+            return true;
         }
 
         private void OnIsDarkChanged(bool isDark)
@@ -307,12 +351,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void EnsureLayout(ICanvasResourceCreator resourceCreator)
         {
-            if (_pendingDisposeLines != null)
-            {
-                DisposeLineList(_pendingDisposeLines);
-                _pendingDisposeLines = null;
-            }
-
             if (Canvas == null || _renderLines.Count == 0) return;
             var layoutLines = _renderLines;
 
@@ -370,6 +408,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         public void OnUpdate(ICanvasAnimatedControl sender, CanvasAnimatedUpdateEventArgs args)
         {
+            lock (_renderGate)
+            {
+                if (_shutdown) return;
+                ApplyPendingLyrics();
+                UpdateCore(sender, args.Timing.ElapsedTime);
+            }
+        }
+
+        private void UpdateCore(ICanvasResourceCreator sender, TimeSpan elapsedTime)
+        {
             EnsureLayout(sender);
             var lines = _renderLines;
             if (lines.Count == 0) return;
@@ -392,7 +440,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 }
                 else
                 {
-                    _internalTimeMs += args.Timing.ElapsedTime.TotalMilliseconds;
+                    _internalTimeMs += elapsedTime.TotalMilliseconds;
                 }
                 _lastExternalTimeMs = externalTimeMs;
 
@@ -425,7 +473,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 isPrimaryPlayingLineChanged = _lastCurrentLineIndex != _currentLineIndex;
             }
 
-            double dt = args.Timing.ElapsedTime.TotalSeconds;
+            double dt = elapsedTime.TotalSeconds;
             bool isScrollSeek = double.IsFinite(_lastScrollPositionMs)
                 && Math.Abs(currentTimeMs - _lastScrollPositionMs - (_cachedIsPlaying ? dt * 1000 : 0)) > SyncThresholdMs;
             _lastScrollPositionMs = currentTimeMs;
@@ -456,8 +504,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 }
             }
 
-            _canvasYScrollTransition.Update(args.Timing.ElapsedTime);
-            _mouseYScrollTransition.Update(args.Timing.ElapsedTime);
+            _canvasYScrollTransition.Update(elapsedTime);
+            _mouseYScrollTransition.Update(elapsedTime);
 
             _smoothedScrollY = _canvasYScrollTransition.Value;
 
@@ -520,7 +568,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _cachedLongSyllableThreshold,
                 _cachedLyricsBlurAmount,
                 _canvasYScrollTransition,
-                args.Timing.ElapsedTime,
+                elapsedTime,
                 _userScrolling,
                 _isUserScrollingChanged,
                 _layoutDirty,
@@ -609,6 +657,17 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         // ── Draw（不负责清屏，由宿主决定清屏色） ─────────────────────────────────
 
         public void OnDraw(ICanvasAnimatedControl sender, CanvasDrawingSession ds)
+        {
+            lock (_renderGate)
+            {
+                if (_shutdown) return;
+                // Invalidate may request a draw while the animation is paused, without Update.
+                if (ApplyPendingLyrics()) UpdateCore(sender, TimeSpan.Zero);
+                DrawCore(sender, ds);
+            }
+        }
+
+        private void DrawCore(ICanvasAnimatedControl sender, CanvasDrawingSession ds)
         {
             if (_renderLines.Count == 0) return;
 
@@ -740,6 +799,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         public void OnPointerWheelChanged(object sender, PointerRoutedEventArgs e)
         {
+            lock (_renderGate)
+            {
+                if (_shutdown) return;
+                OnPointerWheelChangedCore(e);
+            }
+        }
+
+        private void OnPointerWheelChangedCore(PointerRoutedEventArgs e)
+        {
             if (_renderLines.Count == 0) return;
             if (!IsPointerInLyricsRegion(e.GetCurrentPoint(Canvas).Position)) return;
             var props = e.GetCurrentPoint(Canvas).Properties;
@@ -783,12 +851,24 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         public void OnTapped(object sender, TappedRoutedEventArgs e)
         {
-            if (_renderLines.Count == 0) return;
+            TimeSpan? seekTime;
+            lock (_renderGate)
+            {
+                if (_shutdown) return;
+                seekTime = GetTappedTime(e);
+            }
+            // Host callbacks can trigger playback/UI work; never invoke them under the render lock.
+            if (seekTime is { } time) LyricLineClicked?.Invoke(this, time);
+        }
+
+        private TimeSpan? GetTappedTime(TappedRoutedEventArgs e)
+        {
+            if (_renderLines.Count == 0) return null;
 
             double playingLineTopOffsetFactor = _cachedPlayingLineTopOffset;
             double combinedScroll = _smoothedScrollY + _mouseYScrollTransition.Value;
             var tapPosition = UsesLineScroll ? e.GetPosition(Canvas) : _lastMousePos;
-            if (UsesLineScroll && !IsPointerInLyricsRegion(tapPosition)) return;
+            if (UsesLineScroll && !IsPointerInLyricsRegion(tapPosition)) return null;
             var regionLocalMouse = new Point(tapPosition.X - RegionX, tapPosition.Y - RegionY);
             int hovered = LyricsLayoutManager.FindMouseHoverLineIndex(
                 _renderLines, true, regionLocalMouse, combinedScroll,
@@ -810,8 +890,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
                 var time = line.StartMs + _cachedOffsetMs;
                 if (time < 0) time = 0;
-                LyricLineClicked?.Invoke(this, TimeSpan.FromMilliseconds(time));
+                return TimeSpan.FromMilliseconds(time);
             }
+            return null;
         }
 
         internal void RaiseRenderError(Exception ex) => RenderError?.Invoke(this, ex);

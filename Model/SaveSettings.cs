@@ -44,6 +44,7 @@ namespace WinUIMusicPlayer.Model
         public string AppTheme { get; set; } = "Default";
         public float LyricsBlurAmount { get; set; } = 5f;
         public bool IsRunningBackend { get; set; } = true;
+        public string LocalLyricsFormatOrder { get; set; } = "krc,qrc,lrc,ttml";
         public bool IsAutoLyricsEnabled { get; set; } = true;
         public bool IsAutoCoverEnabled { get; set; } = true;
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

@@ -4,6 +4,8 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
+using WinUIMusicPlayer.Services.Lyrics;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -434,30 +436,82 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
         }
         finally { _coverSlot.Release(); }
     }
-    public async Task<string> ReadLyricsAsync(Music music, CancellationToken token)
+    private sealed record CachedLyrics(long CheckedAt, string Order, string Signature, LyricsDocument? Document);
+    private readonly Dictionary<int, CachedLyrics> _lyricsCache = [];
+
+    public async Task<LyricsDocument?> ReadLyricsDocumentAsync(Music music, string order, CancellationToken token)
     {
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token, token);
         await _lyricsSlot.WaitAsync(linked.Token).ConfigureAwait(false);
+        _lyricsCache.TryGetValue(music.Id, out var previous);
         try
         {
+            if (previous is not null && previous.Order == order && Environment.TickCount64 - previous.CheckedAt < 300000)
+                return previous.Document;
             var (source, track) = await ResolveAsync(music).ConfigureAwait(false);
             var connection = Connect(source);
-            string name = Path.GetFileNameWithoutExtension(Uri.UnescapeDataString(track.Href)) + ".lrc";
+            string stem = Path.GetFileNameWithoutExtension(Uri.UnescapeDataString(track.Href));
             linked.CancelAfter(TimeSpan.FromSeconds(15));
+            var entries = new Dictionary<string, WebDavEntry>(StringComparer.OrdinalIgnoreCase);
             await foreach (var entry in transport.ListAsync(connection, track.ParentHref, linked.Token).ConfigureAwait(false))
+                if (!entry.IsDirectory && entry.Length is > 0 and <= LyricsParser.MaxContentLength &&
+                    (Path.GetFileNameWithoutExtension(entry.Name).Equals(stem, StringComparison.OrdinalIgnoreCase) ||
+                    Path.GetFileNameWithoutExtension(entry.Name).Equals(stem + "_Translated", StringComparison.OrdinalIgnoreCase)))
+                    entries[entry.Name] = entry;
+            string signature = string.Join("|", entries.Values.OrderBy(entry => entry.Name).Select(entry => $"{entry.Href}:{entry.ETag}:{entry.Modified}:{entry.Length}"));
+            if (previous is not null && previous.Order == order && previous.Signature == signature)
             {
-                if (entry.IsDirectory || !entry.Name.Equals(name, StringComparison.OrdinalIgnoreCase) || entry.Length is <= 0 or > 512 * 1024) continue;
+                _lyricsCache[music.Id] = previous with { CheckedAt = Environment.TickCount64 };
+                return previous.Document;
+            }
+            var parser = new LyricsParser();
+            LyricsDocument? document = null;
+            foreach (string ext in LyricsFilePolicy.Extensions(order))
+            {
+                if (!entries.TryGetValue(stem + "." + ext, out var entry)) continue;
+                try
+                {
+                    string content = await ReadEntry(entry);
+                    try { document = parser.Import(content, token: linked.Token, preferredLanguage: AppData.SystemLanguage); }
+                    catch (FormatException ex)
+                    {
+                        logger.LogWarning(ex, "Could not split remote embedded translation");
+                        document = parser.Import(content, token: linked.Token, extractEmbeddedTranslation: false);
+                    }
+                    if (!parser.HasLyrics(document, linked.Token)) { document = null; continue; }
+                    foreach (string name in LyricsFilePolicy.TranslationNames(stem, ext, order))
+                    {
+                        if (!entries.TryGetValue(name, out var translation)) continue;
+                        try
+                        {
+                            string normalized = parser.NormalizeTranslation(await ReadEntry(translation), linked.Token);
+                            if (string.IsNullOrWhiteSpace(normalized)) continue;
+                            document = document with { TranslationLrc = normalized };
+                            break;
+                        }
+                        catch (Exception ex) when (ex is FormatException or System.Xml.XmlException or IOException or OverflowException or System.Text.RegularExpressions.RegexMatchTimeoutException)
+                        { logger.LogWarning(ex, "Could not import remote translation"); }
+                    }
+                    break;
+                }
+                catch (Exception ex) when (ex is FormatException or System.Xml.XmlException or IOException or OverflowException or System.Text.RegularExpressions.RegexMatchTimeoutException)
+                { document = null; logger.LogWarning(ex, "Could not import remote lyrics"); }
+            }
+            if (_lyricsCache.Count >= 128) _lyricsCache.Clear();
+            _lyricsCache[music.Id] = new(Environment.TickCount64, order, signature, document);
+            return document;
+
+            async Task<string> ReadEntry(WebDavEntry entry)
+            {
                 await using var response = await transport.OpenAsync(connection, entry.Href, null, null, false, linked.Token).ConfigureAwait(false);
                 byte[] bytes = new byte[(int)entry.Length];
                 await response.Stream.ReadExactlyAsync(bytes, linked.Token).ConfigureAwait(false);
-                using var input = new MemoryStream(bytes, false);
-                using var reader = new StreamReader(input, Encoding.UTF8, true);
-                return await reader.ReadToEndAsync(linked.Token).ConfigureAwait(false);
+                return LyricsFilePolicy.Decode(bytes);
             }
-            return "";
         }
         catch (OperationCanceledException) when (token.IsCancellationRequested || _stop.IsCancellationRequested) { throw; }
-        catch (Exception ex) when (ex is IOException or System.Net.Http.HttpRequestException or OperationCanceledException) { return ""; }
+        catch (Exception ex) when (ex is IOException or System.Net.Http.HttpRequestException or OperationCanceledException or WebDavException)
+        { return previous?.Document; }
         finally { _lyricsSlot.Release(); }
     }
     public async Task ApplyCacheSettingsAsync(WebDavCacheSettings settings, bool save = true)

@@ -1,6 +1,9 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.UI.Xaml;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using WinUIMusicPlayer.Services.Lyrics;
 
 namespace WinUIMusicPlayer.ViewModel
 {
@@ -14,6 +17,39 @@ namespace WinUIMusicPlayer.ViewModel
         {
             AppViewModel = appViewModel;
             DesktopLyrics = desktopLyrics;
+            // Both objects share the application lifetime; also reflect settings restored after construction.
+            State.Preferences.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(State.Preferences.LocalLyricsFormatOrder)) OnPropertyChanged(nameof(SelectedLyricsOrder));
+            };
+        }
+
+        public sealed record LyricsOrderOption(string Value, string Label);
+        public IReadOnlyList<LyricsOrderOption> LyricsOrderOptions { get; } = BuildLyricsOrders();
+        public LyricsOrderOption SelectedLyricsOrder
+        {
+            get => LyricsOrderOptions.First(option => option.Value == LyricsFilePolicy.NormalizeOrder(State.Preferences.LocalLyricsFormatOrder));
+            set
+            {
+                if (value is null || value.Value == State.Preferences.LocalLyricsFormatOrder) return;
+                State.Preferences.LocalLyricsFormatOrder = value.Value;
+                OnPropertyChanged();
+            }
+        }
+        private static IReadOnlyList<LyricsOrderOption> BuildLyricsOrders()
+        {
+            string[] formats = ["krc", "qrc", "lrc", "ttml"];
+            var result = new List<LyricsOrderOption>();
+            foreach (string first in formats)
+                foreach (string second in formats)
+                    foreach (string third in formats)
+                    {
+                        if (first == second || first == third || second == third) continue;
+                        string fourth = formats.First(value => value != first && value != second && value != third);
+                        string value = $"{first},{second},{third},{fourth}";
+                        result.Add(new(value, value.Replace(",", " → ").ToUpperInvariant()));
+                    }
+            return result;
         }
 
         public Visibility CheckSystemVersion()

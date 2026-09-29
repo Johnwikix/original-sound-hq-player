@@ -151,6 +151,8 @@ namespace WinUIMusicPlayer
                      sp.GetRequiredService<ShutdownCoordinator>().RegisterCleanup(service.Dispose);
                      return service;
                  });
+                 services.AddSingleton<WinUIMusicPlayer.Services.Lyrics.LyricsParser>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.Lyrics.LyricsOnlineSearch>();
                  services.AddSingleton<LyricsRefreshService>();
                  services.AddSingleton<IpcService>();
                  services.AddSingleton<LicenseService>();

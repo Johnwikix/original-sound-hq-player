@@ -145,10 +145,12 @@ namespace WinUIMusicPlayer.Helper
         {
             try
             {
-                var (lyricsText, _, _, _) = await _musicDatabaseService.GetLyricsAsync(music.Id);
+                var document = await _musicDatabaseService.GetLyricsDocumentAsync(music);
+                string lyricsText = new WinUIMusicPlayer.Services.Lyrics.LyricsParser().ExportLrc(document);
                 if (string.IsNullOrEmpty(lyricsText)) return;
                 string lrcFilePath = Path.Combine(targetBasePath, Path.ChangeExtension(sanitizedFileName, ".lrc"));
-                await Task.Run(() => File.WriteAllText(lrcFilePath, ToolUtils.ConvertLyrics(lyricsText)));
+                await WinUIMusicPlayer.Services.Lyrics.LyricsExporter.SaveFilesAsync(lrcFilePath,
+                    document with { Original = new(lyricsText, LyricsFormat.Lrc) }, CancellationToken.None);
             }
             catch (Exception ex)
             {

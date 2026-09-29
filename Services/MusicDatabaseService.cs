@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.WinUI;
+using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
@@ -28,6 +28,7 @@ namespace WinUIMusicPlayer.Services
     public partial class MusicDatabaseService
     {
         private SQLiteAsyncConnection _dbConnection;
+        public WinUIMusicPlayer.Services.Lyrics.LyricsRepository Lyrics { get; private set; } = null!;
         private string DbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
         private string? _settingsPath;
         private string SettingsPath => _settingsPath ??= GetSettingsFilePath();
@@ -55,9 +56,19 @@ namespace WinUIMusicPlayer.Services
         private AppViewModel AppViewModel { get; set; }
         private ILogger<MusicDatabaseService> _logger;
 
-        public MusicDatabaseService(ILogger<MusicDatabaseService> logger)
+        private readonly WinUIMusicPlayer.Services.Lyrics.LyricsParser _lyricsParser;
+
+        public MusicDatabaseService(ILogger<MusicDatabaseService> logger, WinUIMusicPlayer.Services.Lyrics.LyricsParser lyricsParser)
         {
             _logger = logger;
+            _lyricsParser = lyricsParser;
+        }
+
+        public async Task<LyricsDocument> GetLyricsDocumentAsync(Music music, CancellationToken token = default)
+        {
+            if (music.Id > 0) return (await Lyrics.GetAsync(music.Id, token)).Document;
+            token.ThrowIfCancellationRequested();
+            return OneShotLyricsCache.Load(music.Path)?.Document ?? _lyricsParser.Import(music.EmbeddedLyrics, token: token);
         }
 
         // 数据库就绪信号：Begin() 在 OnLaunched 早期启动的一次性解析早于 Host/数据库初始化，
@@ -84,6 +95,8 @@ namespace WinUIMusicPlayer.Services
                     await _dbConnection.CreateTableAsync<PendingMetadataWrite>();
                     await _dbConnection.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Music_Path_NoCase ON Music(Path COLLATE NOCASE)");
                     await _dbConnection.CreateTableAsync<MusicLyrics>();
+                    Lyrics = new WinUIMusicPlayer.Services.Lyrics.LyricsRepository(_dbConnection, _lyricsParser);
+                    await Lyrics.InitializeAsync(DbPath);
                     await _dbConnection.CreateTableAsync<Folder>();
                     await _dbConnection.CreateTableAsync<SaveEqualizer>();
                     await _dbConnection.CreateTableAsync<SaveEqualizerPreset>();
@@ -400,12 +413,6 @@ namespace WinUIMusicPlayer.Services
             public string Name { get; set; }
         }
 
-        public async Task<(string? lyrics, string? transLrc, string? krc, string? tKrc)> GetLyricsAsync(int musicId)
-        {
-            var lyrics = await _dbConnection.FindAsync<MusicLyrics>(musicId);
-            return (lyrics?.Lyrics, lyrics?.TranslatedLyrics, lyrics?.Krc, lyrics?.TKrc);
-        }
-
         /// <summary>
         /// 按路径大小写不敏感匹配库内曲目并返回完整条目（走 IX_Music_Path_NoCase）；
         /// 未匹配或查询失败返回 null。供外部文件打开入口复用库内条目播放。
@@ -424,18 +431,6 @@ namespace WinUIMusicPlayer.Services
                 _logger.LogError(ex, $"FindMusicByPathAsync 按路径查找曲目失败: {path}: {ex.Message}");
                 return null;
             }
-        }
-
-        public async Task SaveLyricsAsync(int musicId, string? lyrics, string? transLrc, string? krc, string? tKrc)
-        {
-            await _dbConnection.InsertOrReplaceAsync(new MusicLyrics
-            {
-                MusicId = musicId,
-                Lyrics = lyrics ?? "",
-                TranslatedLyrics = transLrc ?? "",
-                Krc = krc ?? "",
-                TKrc = tKrc ?? ""
-            });
         }
 
         public IEnumerable<PlayListMusicItem> GetMusicByPlayListIdFromMem(int playListId, string search = null)
@@ -1074,6 +1069,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.DesktopLyricsFontWeight = settings.DesktopLyricsFontWeight;
                 AppSettings.LyricsFontWeight = settings.LyricsFontWeight;
                 AppViewModel.IsAutoLyricsEnabled = settings.IsAutoLyricsEnabled;
+                AppViewModel.State.Preferences.LocalLyricsFormatOrder = WinUIMusicPlayer.Services.Lyrics.LyricsFilePolicy.NormalizeOrder(settings.LocalLyricsFormatOrder);
                 AppViewModel.IsAutoCoverEnabled = settings.IsAutoCoverEnabled;
                 AppViewModel.DsdGain = audio.DsdGain;
                 AppViewModel.DsdPcmFreq = audio.DsdPcmFreq;

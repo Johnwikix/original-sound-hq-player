@@ -269,7 +269,7 @@ public sealed partial class PlaybackCoordinator
             state.State.Queue.SelectEntry(plan.EntryId, plan.Next);
             state.CurrentPlayingMusic = plan.Next;
             state.RemotePlaybackStatus = "";
-            try { statistics.StartSession(plan.Next); }
+            try { statistics.StartSession(plan.Next); _ = tasks.RunAsync(_ => statistics.RecordPlaybackStartAsync(plan.Next)); }
             catch (Exception ex) { logger.LogError(ex, "记录无缝播放统计失败"); }
             state.UILyrics = [];
             state.LoadLyricsToUI(plan.Next);

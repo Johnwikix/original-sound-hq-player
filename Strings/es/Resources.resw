@@ -2307,4 +2307,37 @@ SHA-256: {5}
   <data name="CacheCleanupCard.Header" xml:space="preserve">
     <value>Borrar caché</value>
   </data>
+  <data name="LyricsFilePriority.Header" xml:space="preserve">
+    <value>Prioridad de archivos de letras</value>
+  </data>
+  <data name="LyricsFilePriority.Description" xml:space="preserve">
+    <value>Usar el primer archivo coincidente válido. La traducción prefiere _Translated.lrc.</value>
+  </data>
+  <data name="LyricsOriginalTab.Text" xml:space="preserve">
+    <value>Letra</value>
+  </data>
+  <data name="LyricsTranslationTab.Text" xml:space="preserve">
+    <value>Traducción</value>
+  </data>
+  <data name="LyricsRestoreLegacyLrc.Content" xml:space="preserve">
+    <value>Restaurar LRC anterior</value>
+  </data>
+  <data name="LyricsRestoreLegacyKrc.Content" xml:space="preserve">
+    <value>Restaurar KRC anterior</value>
+  </data>
+  <data name="LyricsEditConflict" xml:space="preserve">
+    <value>Otra operación modificó la letra. Conserva el borrador y vuelve a abrir antes de guardar.</value>
+  </data>
+  <data name="LyricsInvalid" xml:space="preserve">
+    <value>Letra, marcas de tiempo u operación de archivo no válidas.</value>
+  </data>
+  <data name="LyricsMigrationDiagnostic" xml:space="preserve">
+    <value>No se pudieron convertir algunas letras anteriores. Los originales siguen disponibles mediante los botones de restauración.</value>
+  </data>
+  <data name="LyricsFilePriorityLabel" xml:space="preserve">
+    <value>Prioridad de archivos de letras</value>
+  </data>
+  <data name="LyricsFilesSaved" xml:space="preserve">
+    <value>Archivos de letras guardados:</value>
+  </data>
 </root>

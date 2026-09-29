@@ -25,8 +25,30 @@ await work;
 
 internal static class Regression
 {
+    private static async Task ConfirmedStartsAsync()
+    {
+        using var test = new Scenario();
+        var music = new Music(81);
+        test.State.CurrentPlayingList = [music];
+        test.Ipc.Progress = new(1, 10, 0, 10000, System.Diagnostics.Stopwatch.GetTimestamp(), false);
+        await test.Coordinator.PlayAsync(music);
+        await Task.Delay(75);
+        Check(test.Statistics.Starts == 0, "queued/failed playback does not increment play count");
+        test.Ipc.Progress = new(2, 11, 20, 10000, System.Diagnostics.Stopwatch.GetTimestamp(), true);
+        await Task.Delay(100);
+        Check(test.Statistics.Starts == 1, "confirmed local playback increments once");
+        test.Ipc.Progress = new(3, 12, 1000, 10000, System.Diagnostics.Stopwatch.GetTimestamp(), true);
+        await Task.Delay(75);
+        Check(test.Statistics.Starts == 1, "seek and repeated telemetry do not increment play count");
+        await test.Coordinator.PlayAsync(music);
+        test.Ipc.Progress = new(4, 13, 20, 10000, System.Diagnostics.Stopwatch.GetTimestamp(), true);
+        await Task.Delay(100);
+        Check(test.Statistics.Starts == 2, "explicit same-track restart counts a new real playback");
+    }
+
     public static async Task RunAsync()
     {
+        await ConfirmedStartsAsync();
         await CacheSizeRegression.RunAsync();
         await SingleEntryLoopAsync();
         using var test = new Scenario();
@@ -598,10 +620,11 @@ sealed class Scenario : IDisposable
     public AppLifecycle Lifecycle { get; } = new();
     public IpcService Ipc { get; } = new();
     public PlaybackCoordinator Coordinator { get; }
+    public PlaybackStatsService Statistics { get; } = new();
     public Scenario()
     {
         Player.State = State;
-        Coordinator = new(State, Player, new(), new ApplicationTasks(Lifecycle),
+        Coordinator = new(State, Player, Statistics, new ApplicationTasks(Lifecycle),
             new ShutdownCoordinator(Lifecycle, NullLogger<ShutdownCoordinator>.Instance), NullLogger<PlaybackCoordinator>.Instance, Remote, Library, Ipc);
     }
     public void Dispose() => Coordinator.Dispose();

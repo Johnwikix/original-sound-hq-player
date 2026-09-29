@@ -135,7 +135,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             SecondaryText = lyricLine.TransLateText ?? "";
 
             StartMs = lyricLine.StartMs;
-            EndMs = nextLineStartMs;
+            EndMs = lyricLine.EndMs > lyricLine.StartMs ? lyricLine.EndMs : nextLineStartMs;
 
             int charIndex = 0;
             bool hasRealSyllable = false;

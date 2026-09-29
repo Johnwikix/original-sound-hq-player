@@ -15,7 +15,7 @@ namespace WinUIMusicPlayer.WebService
 
     /// <summary>
     /// 在线歌词搜索结果分类：区分"确认无结果"与"网络故障"。
-    /// 前者可永久缓存（置 IsLrcSearched/IsKrcSearched），后者属临时失败，应保留重试机会。
+    /// 前者由统一搜索服务按提供方及匹配元数据保存，后者属临时失败，应保留重试机会。
     /// </summary>
     public enum LyricsSearchStatus
     {
@@ -130,14 +130,14 @@ namespace WinUIMusicPlayer.WebService
                     var res = await ProviderHelper.NeteaseApi.GetLyric(neteaseSearch.Id, cancellationToken);
                     cancellationToken.ThrowIfCancellationRequested();
                     lyrics = res?.Lrc?.Lyric ?? string.Empty;
-                    trans = AppData.SystemLanguage.Contains("zh") == true ? res?.Tlyric?.Lyric ?? string.Empty : string.Empty;
+                    trans = res?.Tlyric?.Lyric ?? string.Empty;
                 }
                 else if (search is QQMusicSearchResult qQMusicSearchResult)
                 {
                     var res = await ProviderHelper.QQMusicApi.GetLyric(qQMusicSearchResult.Mid, cancellationToken);
                     cancellationToken.ThrowIfCancellationRequested();
                     lyrics = res?.Lyric ?? string.Empty;
-                    trans = AppData.SystemLanguage.Contains("zh") == true ? res?.Trans ?? string.Empty : string.Empty;
+                    trans = res?.Trans ?? string.Empty;
                 }
                 else
                 {
@@ -160,7 +160,7 @@ namespace WinUIMusicPlayer.WebService
             }
         }
 
-        public async Task<(string Lyrics, string Trans, LyricsSearchStatus Status)> GetKrcLyricsAsync(Music music, CancellationToken cancellationToken = default)
+        public async Task<(string Lyrics, string Trans, LyricsSearchStatus Status)> GetWordLyricsAsync(Music music, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -179,7 +179,7 @@ namespace WinUIMusicPlayer.WebService
                 var res = await ProviderHelper.QQMusicApi.GetLyricsAsync(qQMusicSearchResult.Id, cancellationToken);
                 cancellationToken.ThrowIfCancellationRequested();
                 var lyrics = res?.Lyrics ?? string.Empty;
-                var trans = AppData.SystemLanguage.Contains("zh") == true ? res?.Trans ?? string.Empty : string.Empty;
+                var trans = res?.Trans ?? string.Empty;
 
                 return string.IsNullOrWhiteSpace(lyrics)
                     ? (string.Empty, string.Empty, LyricsSearchStatus.NoResult)
@@ -192,7 +192,7 @@ namespace WinUIMusicPlayer.WebService
             catch (Exception ex)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                _logger.LogError(ex, $"GetKrcLyricsAsync 歌词获取失败: {ex.Message}");
+                _logger.LogError(ex, $"GetWordLyricsAsync 歌词获取失败: {ex.Message}");
                 return (string.Empty, string.Empty, LyricsSearchStatus.NetworkError);
             }
         }

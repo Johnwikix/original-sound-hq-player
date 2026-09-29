@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using BassPlayerIpc.Shared;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
@@ -23,6 +23,7 @@ public sealed class SettingsSnapshotFactory(AppState state)
         newSettings.WindowBackgroundBlurAmount = state.Preferences.WindowBackgroundBlurAmount;
         newSettings.AppTheme = state.Preferences.ThemeType;
         newSettings.IsRunningBackend = state.Preferences.IsRunningBackend;
+        newSettings.LocalLyricsFormatOrder = state.Preferences.LocalLyricsFormatOrder;
         newSettings.IsAutoLyricsEnabled = state.Preferences.IsAutoLyricsEnabled;
         newSettings.IsAutoCoverEnabled = state.Preferences.IsAutoCoverEnabled;
         newSettings.CoverSize = state.Preferences.CoverSize;

@@ -26,7 +26,9 @@
     <Compile Include="../../Services/MusicDatabaseService.WebDav.cs" />
     <Compile Include="../../ViewModel/Pages/WebDavSourcesViewModel.cs" />
     <Compile Include="../../Helper/CacheSizeCalculator.cs" />
-    <Compile Include="../../Model/Music.cs;../../Model/MusicLyrics.cs;../../Model/PlayListMusic.cs" />
+    <Compile Include="../../Model/Music.cs;../../Model/MusicLyrics.cs;../../Model/PlayListMusic.cs;../../Model/LyricsDocument.cs;../../Model/MusicLyricsRecord.cs" />
+    <Compile Include="../../Services/Lyrics/LyricsParser*.cs;../../Services/Lyrics/LyricsLegacyMigration.cs;../../Services/Lyrics/LyricsRepository.cs" />
+    <ProjectReference Include="../../External/Lyricify.Lyrics.Helper/Lyricify.Lyrics.Helper.csproj" />
     <Compile Include="../../Services/WebDav/WebDavCachePaths.cs" />
     <Compile Include="../../ViewModel/Pages/WebDavTreeItem.cs" Link="WebDavTreeItem.cs" />
     <Page Include="../../View/SubView/WebDavBrowserDialog.xaml" Link="View/SubView/WebDavBrowserDialog.xaml" />

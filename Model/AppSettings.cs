@@ -40,6 +40,7 @@ namespace WinUIMusicPlayer.Model
         public static ElementTheme ElementTheme { get; set; } = ElementTheme.Default;
         public static bool IsRunningBackend { get; set; } = true;
         //public static bool IsDarkMode { get; set; } = false;
+        public static string LocalLyricsFormatOrder { get; set; } = "krc,qrc,lrc,ttml";
         public static bool IsAutoLyricsEnabled { get; set; } = true;
         public static bool AutoHideDesktopLyricsOnPlayingDetail { get; set; } = false;
         public static bool IsDesktopLyricsEnabled { get; set; } = false;

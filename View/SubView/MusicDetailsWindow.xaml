@@ -238,6 +238,15 @@
                         </StackPanel>
                     </Grid>
 
+                    <TextBlock
+                        Text="{x:Bind LyricsEditor.Status, Mode=OneWay}"
+                        Visibility="{x:Bind TextToVisibility(LyricsEditor.Status), Mode=OneWay}"
+                        TextWrapping="Wrap" />
+                    <TextBlock
+                        Text="{x:Bind LyricsEditor.Error, Mode=OneWay}"
+                        Visibility="{x:Bind TextToVisibility(LyricsEditor.Error), Mode=OneWay}"
+                        TextWrapping="Wrap"
+                        Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
                     <Grid Margin="0,4,12,0" ColumnDefinitions="*,Auto,12,Auto">
                         <Pivot
                             Grid.Column="0"
@@ -245,50 +254,28 @@
                             Padding="0,4,0,0">
                             <PivotItem>
                                 <PivotItem.Header>
-                                    <TextBlock FontSize="14" Text="Lrc" />
+                                    <TextBlock x:Uid="LyricsOriginalTab" FontSize="14" />
                                 </PivotItem.Header>
                                 <TextBox
                                     MinHeight="120"
                                     Margin="0,4,0,0"
                                     BorderThickness="0"
                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                    Text="{x:Bind LyricsText, Mode=TwoWay}"
+                                    Text="{x:Bind LyricsEditor.OriginalText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    AcceptsReturn="True"
                                     TextWrapping="Wrap" />
                             </PivotItem>
                             <PivotItem>
                                 <PivotItem.Header>
-                                    <TextBlock x:Uid="LrcTranslation" FontSize="14" />
+                                    <TextBlock x:Uid="LyricsTranslationTab" FontSize="14" />
                                 </PivotItem.Header>
                                 <TextBox
                                     MinHeight="120"
                                     Margin="0,4,0,0"
                                     BorderThickness="0"
                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                    Text="{x:Bind TranslatedLyricsText, Mode=TwoWay}"
-                                    TextWrapping="Wrap" />
-                            </PivotItem>
-                            <PivotItem>
-                                <PivotItem.Header>
-                                    <TextBlock FontSize="14" Text="Krc" />
-                                </PivotItem.Header>
-                                <TextBox
-                                    MinHeight="120"
-                                    Margin="0,4,0,0"
-                                    BorderThickness="0"
-                                    ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                    Text="{x:Bind KrcText, Mode=TwoWay}"
-                                    TextWrapping="Wrap" />
-                            </PivotItem>
-                            <PivotItem>
-                                <PivotItem.Header>
-                                    <TextBlock x:Uid="KrcTranslation" FontSize="14" />
-                                </PivotItem.Header>
-                                <TextBox
-                                    MinHeight="120"
-                                    Margin="0,4,0,0"
-                                    BorderThickness="0"
-                                    ScrollViewer.VerticalScrollBarVisibility="Auto"
-                                    Text="{x:Bind TKrcText, Mode=TwoWay}"
+                                    Text="{x:Bind LyricsEditor.TranslationText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    AcceptsReturn="True"
                                     TextWrapping="Wrap" />
                             </PivotItem>
                         </Pivot>
@@ -319,7 +306,7 @@
                                 Width="36"
                                 Height="36"
                                 Padding="0"
-                                IsEnabled="{x:Bind MusicDetail.CanEditFile}" Click="SaveLyrics_Click">
+                                Command="{x:Bind LyricsEditor.ExportCommand}">
                                 <FontIcon FontSize="14" Glyph="&#xE74E;" />
                                 <ToolTipService.ToolTip>
                                     <ToolTip x:Uid="SaveLyricsTextBox" />
@@ -329,7 +316,7 @@
                                 Width="36"
                                 Height="36"
                                 Padding="0"
-                                Click="GetLyricsFromNet_Click">
+                                Command="{x:Bind LyricsEditor.RefreshCommand}">
                                 <Grid>
                                     <FontIcon FontSize="14" Glyph="&#xF385;" />
                                     <FontIcon FontSize="14" Glyph="&#xF386;" />
@@ -398,37 +385,70 @@
                 </StackPanel>
             </ScrollViewer>
 
-            <StackPanel
+            <Grid
                 Grid.Row="1"
                 Margin="14,4,14,12"
-                HorizontalAlignment="Right"
-                Orientation="Horizontal"
-                Spacing="8">
-                <Button IsEnabled="{x:Bind MusicDetail.CanEditFile}" x:Uid="SaveButton">
-                    <Button.Flyout>
-                        <Flyout x:Name="ConfirmFlyout">
-                            <StackPanel>
-                                <TextBlock
-                                    x:Uid="SaveConfirm"
-                                    Margin="0,0,0,12"
-                                    Style="{ThemeResource BaseTextBlockStyle}" />
-                                <StackPanel Orientation="Horizontal">
-                                    <Button
-                                        x:Uid="ConfirmButton"
-                                        Margin="0,0,10,0"
-                                        Click="ConfirmButton_Click" />
-                                    <Button
-                                        x:Uid="CancelButton"
-                                        Margin="0,0,10,0"
-                                        Click="CloseFlyoutButton_Click" />
+                ColumnDefinitions="*,Auto"
+                ColumnSpacing="16">
+                <Grid
+                    MaxWidth="280"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    ColumnDefinitions="*,*"
+                    ColumnSpacing="8"
+                    Visibility="{x:Bind BoolToVisibility(LyricsEditor.HasLegacy), Mode=OneWay}">
+                    <Grid.Resources>
+                        <DataTemplate x:Key="LyricsRestoreButtonContent">
+                            <TextBlock Text="{Binding}" TextAlignment="Center" TextWrapping="Wrap" />
+                        </DataTemplate>
+                    </Grid.Resources>
+                    <Button
+                        x:Uid="LyricsRestoreLegacyLrc"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        ContentTemplate="{StaticResource LyricsRestoreButtonContent}"
+                        Command="{x:Bind LyricsEditor.RestoreLegacyCommand}"
+                        CommandParameter="Lrc" />
+                    <Button
+                        Grid.Column="1"
+                        x:Uid="LyricsRestoreLegacyKrc"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        ContentTemplate="{StaticResource LyricsRestoreButtonContent}"
+                        Command="{x:Bind LyricsEditor.RestoreLegacyCommand}"
+                        CommandParameter="Krc" />
+                </Grid>
+                <StackPanel
+                    Grid.Column="1"
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal"
+                    Spacing="8">
+                    <Button IsEnabled="{x:Bind MusicDetail.CanEditFile}" x:Uid="SaveButton">
+                        <Button.Flyout>
+                            <Flyout x:Name="ConfirmFlyout">
+                                <StackPanel>
+                                    <TextBlock
+                                        x:Uid="SaveConfirm"
+                                        Margin="0,0,0,12"
+                                        Style="{ThemeResource BaseTextBlockStyle}" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button
+                                            x:Uid="ConfirmButton"
+                                            Margin="0,0,10,0"
+                                            Click="ConfirmButton_Click" />
+                                        <Button
+                                            x:Uid="CancelButton"
+                                            Margin="0,0,10,0"
+                                            Click="CloseFlyoutButton_Click" />
+                                    </StackPanel>
                                 </StackPanel>
-                            </StackPanel>
-                        </Flyout>
-                    </Button.Flyout>
-                </Button>
-                <Button x:Uid="SaveToDataBase" Click="SaveToDataBaseButton_Click" />
-                <Button x:Uid="CloseButtonItem" Click="CloseButton_Click" />
-            </StackPanel>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+                    <Button x:Uid="SaveToDataBase" Click="SaveToDataBaseButton_Click" />
+                    <Button x:Uid="CloseButtonItem" Click="CloseButton_Click" />
+                </StackPanel>
+            </Grid>
         </Grid>
     </Grid>
 </winex:WindowEx>

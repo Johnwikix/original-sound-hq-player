@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using Windows.UI;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
@@ -15,6 +15,7 @@ public sealed class LyricsPreferencesState : ObservableObject
     public FontInfo DesktopLyricsFontFamily { get; set => SetProperty(ref field, value); } = null!;
     public Thickness LyricsMargin { get; set => SetProperty(ref field, value); }
     public bool EnableAdvancedLyricsEffect { get; set => SetProperty(ref field, value); } = true;
+    public string LocalLyricsFormatOrder { get => field; set => SetProperty(ref field, WinUIMusicPlayer.Services.Lyrics.LyricsFilePolicy.NormalizeOrder(value)); } = "krc,qrc,lrc,ttml";
     public bool IsAutoLyricsEnabled { get; set => SetProperty(ref field, value); } = true;
     public bool IsCustomLyricsColorEnabled { get; set => SetProperty(ref field, value); } = false;
     public Color LyricsCustomColor { get; set => SetProperty(ref field, value); } = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
