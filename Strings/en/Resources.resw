@@ -2340,4 +2340,12 @@ SHA-256: {5}
   <data name="LyricsFilesSaved" xml:space="preserve">
     <value>Lyrics files saved:</value>
   </data>
+  <data name="LyricsSourcePriority.Header" xml:space="preserve"><value>Lyrics source priority</value></data>
+  <data name="LyricsSourcePriority.Description" xml:space="preserve"><value>Use valid lyrics from the first source, then try the next source if unavailable.</value></data>
+  <data name="LyricsSourceFile" xml:space="preserve"><value>Lyrics files</value></data>
+  <data name="LyricsSourceDatabase" xml:space="preserve"><value>Database</value></data>
+  <data name="LyricsPriorityFirst" xml:space="preserve"><value>1st priority</value></data>
+  <data name="LyricsPrioritySecond" xml:space="preserve"><value>2nd priority</value></data>
+  <data name="LyricsPriorityThird" xml:space="preserve"><value>3rd priority</value></data>
+  <data name="LyricsPriorityFourth" xml:space="preserve"><value>4th priority</value></data>
 </root>

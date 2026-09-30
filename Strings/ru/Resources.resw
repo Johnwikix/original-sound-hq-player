@@ -2340,4 +2340,12 @@ SHA-256: {5}
   <data name="LyricsFilesSaved" xml:space="preserve">
     <value>Файлы текста песни сохранены:</value>
   </data>
+  <data name="LyricsSourcePriority.Header" xml:space="preserve"><value>Приоритет источников текста</value></data>
+  <data name="LyricsSourcePriority.Description" xml:space="preserve"><value>Использовать корректный текст из первого источника; если его нет, проверить следующий.</value></data>
+  <data name="LyricsSourceFile" xml:space="preserve"><value>Файлы текста</value></data>
+  <data name="LyricsSourceDatabase" xml:space="preserve"><value>База данных</value></data>
+  <data name="LyricsPriorityFirst" xml:space="preserve"><value>Приоритет 1</value></data>
+  <data name="LyricsPrioritySecond" xml:space="preserve"><value>Приоритет 2</value></data>
+  <data name="LyricsPriorityThird" xml:space="preserve"><value>Приоритет 3</value></data>
+  <data name="LyricsPriorityFourth" xml:space="preserve"><value>Приоритет 4</value></data>
 </root>

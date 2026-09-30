@@ -60,16 +60,53 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
             await editor.LoadAsync();
             await Task.Delay(200);
             var pivot = Descendants(panel).OfType<Pivot>().Single();
-            var combo = Descendants(panel).OfType<ComboBox>().First();
+            var formatCombos = new[] { "FirstLyricsFormat", "SecondLyricsFormat", "ThirdLyricsFormat", "FourthLyricsFormat" }
+                .Select(name => (ComboBox)panel.FindName(name)).ToArray();
+            var sourceCombos = new[] { "FirstLyricsSource", "SecondLyricsSource" }
+                .Select(name => (ComboBox)panel.FindName(name)).ToArray();
             Check(pivot.Items.Count == 2, "two editor tabs");
             settings.State.Preferences.LocalLyricsFormatOrder = "ttml,lrc,krc,qrc";
             await Task.Delay(100);
-            Check((combo.SelectedItem as SettingsViewModel.LyricsOrderOption)?.Value == "ttml,lrc,krc,qrc", "late settings restoration updates selection");
-            foreach (var option in settings.LyricsOrderOptions)
+            Check(formatCombos.Select(combo => combo.SelectedIndex).SequenceEqual(new[] { 3, 2, 0, 1 }), "late settings restoration updates all four selections");
+            string[] formats = ["krc", "qrc", "lrc", "ttml"];
+            int permutations = 0;
+            foreach (int first in Enumerable.Range(0, 4))
+            foreach (int secondFormat in Enumerable.Range(0, 4))
+            foreach (int third in Enumerable.Range(0, 4))
+            foreach (int fourth in Enumerable.Range(0, 4))
             {
-                combo.SelectedItem = option;
-                Check(settings.State.Preferences.LocalLyricsFormatOrder == option.Value, "priority binding " + option.Value);
+                int[] order = [first, secondFormat, third, fourth];
+                if (order.Distinct().Count() != 4) continue;
+                settings.State.Preferences.LocalLyricsFormatOrder = string.Join(',', order.Select(index => formats[index]));
+                Check(formatCombos.Select(combo => combo.SelectedIndex).SequenceEqual(order), "format permutation binding");
+                permutations++;
             }
+            Check(permutations == 24, "all 24 permutations restore without duplicate selections");
+            for (int priority = 0; priority < 4; priority++)
+            for (int selected = 0; selected < 4; selected++)
+            {
+                settings.State.Preferences.LocalLyricsFormatOrder = "krc,qrc,lrc,ttml";
+                string[] expected = (string[])formats.Clone();
+                (expected[priority], expected[selected]) = (expected[selected], expected[priority]);
+                formatCombos[priority].SelectedIndex = selected;
+                Check(settings.State.Preferences.LocalLyricsFormatOrder == string.Join(',', expected), "user selection swaps occupied format");
+                Check(formatCombos.Select(combo => formats[combo.SelectedIndex]).SequenceEqual(expected), "compiled two-way binding updates swapped peer");
+            }
+            settings.FirstLyricsFormatIndex = -1;
+            settings.SecondLyricsFormatIndex = 4;
+            Check(formatCombos.All(combo => combo.SelectedIndex >= 0), "transient invalid selections do not change stored order");
+            settings.State.Preferences.PreferDatabaseLyrics = true;
+            Check(sourceCombos[0].SelectedIndex == 1 && sourceCombos[1].SelectedIndex == 0, "late source restoration updates both selections");
+            for (int priority = 0; priority < 2; priority++)
+            for (int selected = 0; selected < 2; selected++)
+            {
+                sourceCombos[priority].SelectedIndex = selected;
+                Check(sourceCombos[0].SelectedIndex != sourceCombos[1].SelectedIndex &&
+                    settings.State.Preferences.PreferDatabaseLyrics == (sourceCombos[0].SelectedIndex == 1), "source selection swaps peer and commits preference");
+            }
+            settings.FirstLyricsSourceIndex = -1;
+            settings.SecondLyricsSourceIndex = 2;
+            Check(sourceCombos[0].SelectedIndex != sourceCombos[1].SelectedIndex, "invalid source indices are ignored");
             var pending = new TaskCompletionSource<LyricsDocument?>(TaskCreationOptions.RunContinuationsAsynchronously);
             online.Handler = (_, _, _) => pending.Task;
             var refresh = editor.RefreshCommand.ExecuteAsync(null);
@@ -95,7 +132,7 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
             database.BeforeSave = null;
             Check(await editor.SaveAsync(), "retained draft saves against updated revision");
             await EditorRecoveryChecks.RunAsync(db, database, parser, tasks);
-            File.WriteAllText(file, "PASS: real WinUI compiled binding, 2 tabs, 24 priorities, late restoration, stale network draft, SQLite edit conflict and edits during save; unknown-lyrics metadata save, raw legacy recovery, external clear/manual refresh and late-download clear persistence.\nREADY for UI Automation");
+            File.WriteAllText(file, "PASS: real WinUI compiled binding, 2 tabs, 4 format/2 source dropdowns, 24 permutations, 16 format swaps, source swaps, invalid selection guards, late restoration, stale network draft, SQLite edit conflict and edits during save; unknown-lyrics metadata save, raw legacy recovery, external clear/manual refresh and late-download clear persistence.\nREADY for UI Automation");
             if (Environment.GetCommandLineArgs().Contains("--uia")) await Task.Delay(TimeSpan.FromSeconds(90));
             editor.Dispose();
             lifecycle.TryBeginExit(out _);

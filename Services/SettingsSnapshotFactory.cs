@@ -24,6 +24,7 @@ public sealed class SettingsSnapshotFactory(AppState state)
         newSettings.AppTheme = state.Preferences.ThemeType;
         newSettings.IsRunningBackend = state.Preferences.IsRunningBackend;
         newSettings.LocalLyricsFormatOrder = state.Preferences.LocalLyricsFormatOrder;
+        newSettings.PreferDatabaseLyrics = state.Preferences.PreferDatabaseLyrics;
         newSettings.IsAutoLyricsEnabled = state.Preferences.IsAutoLyricsEnabled;
         newSettings.IsAutoCoverEnabled = state.Preferences.IsAutoCoverEnabled;
         newSettings.CoverSize = state.Preferences.CoverSize;

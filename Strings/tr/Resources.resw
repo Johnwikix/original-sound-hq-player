@@ -2340,4 +2340,12 @@ SHA-256: {5}
   <data name="LyricsFilesSaved" xml:space="preserve">
     <value>Şarkı sözü dosyaları kaydedildi:</value>
   </data>
+  <data name="LyricsSourcePriority.Header" xml:space="preserve"><value>Şarkı sözü kaynağı önceliği</value></data>
+  <data name="LyricsSourcePriority.Description" xml:space="preserve"><value>İlk kaynaktaki geçerli sözleri kullan; bulunamazsa sonraki kaynağı dene.</value></data>
+  <data name="LyricsSourceFile" xml:space="preserve"><value>Söz dosyaları</value></data>
+  <data name="LyricsSourceDatabase" xml:space="preserve"><value>Veritabanı</value></data>
+  <data name="LyricsPriorityFirst" xml:space="preserve"><value>1. öncelik</value></data>
+  <data name="LyricsPrioritySecond" xml:space="preserve"><value>2. öncelik</value></data>
+  <data name="LyricsPriorityThird" xml:space="preserve"><value>3. öncelik</value></data>
+  <data name="LyricsPriorityFourth" xml:space="preserve"><value>4. öncelik</value></data>
 </root>

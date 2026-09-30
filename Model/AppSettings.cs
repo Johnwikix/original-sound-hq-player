@@ -41,6 +41,7 @@ namespace WinUIMusicPlayer.Model
         public static bool IsRunningBackend { get; set; } = true;
         //public static bool IsDarkMode { get; set; } = false;
         public static string LocalLyricsFormatOrder { get; set; } = "krc,qrc,lrc,ttml";
+        public static bool PreferDatabaseLyrics { get; set; }
         public static bool IsAutoLyricsEnabled { get; set; } = true;
         public static bool AutoHideDesktopLyricsOnPlayingDetail { get; set; } = false;
         public static bool IsDesktopLyricsEnabled { get; set; } = false;

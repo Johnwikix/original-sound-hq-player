@@ -123,6 +123,10 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 AppSettings.LocalLyricsFormatOrder = state.Preferences.LocalLyricsFormatOrder;
                 if (state.Lifecycle.IsReady) _ = database.SaveSettingAsync();
                 break;
+            case nameof(state.Preferences.PreferDatabaseLyrics):
+                AppSettings.PreferDatabaseLyrics = state.Preferences.PreferDatabaseLyrics;
+                if (state.Lifecycle.IsReady) _ = database.SaveSettingAsync();
+                break;
             case nameof(state.Preferences.IsAutoLyricsEnabled):
                 AppSettings.IsAutoLyricsEnabled = state.Preferences.IsAutoLyricsEnabled;
                 if (!state.Preferences.IsAutoLyricsEnabled) onlineLyrics.CancelAutomaticSearch();

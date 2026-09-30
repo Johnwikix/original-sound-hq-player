@@ -1070,6 +1070,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.LyricsFontWeight = settings.LyricsFontWeight;
                 AppViewModel.IsAutoLyricsEnabled = settings.IsAutoLyricsEnabled;
                 AppViewModel.State.Preferences.LocalLyricsFormatOrder = WinUIMusicPlayer.Services.Lyrics.LyricsFilePolicy.NormalizeOrder(settings.LocalLyricsFormatOrder);
+                AppViewModel.State.Preferences.PreferDatabaseLyrics = settings.PreferDatabaseLyrics;
                 AppViewModel.IsAutoCoverEnabled = settings.IsAutoCoverEnabled;
                 AppViewModel.DsdGain = audio.DsdGain;
                 AppViewModel.DsdPcmFreq = audio.DsdPcmFreq;

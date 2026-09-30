@@ -27,6 +27,7 @@ namespace WinUIMusicPlayer.Model
     public static class AppSettings
     {
         public static string LocalLyricsFormatOrder = "krc,qrc,lrc,ttml";
+        public static bool PreferDatabaseLyrics;
         public static bool IsAutoLyricsEnabled = true;
     }
 }
@@ -52,7 +53,17 @@ namespace WinUIMusicPlayer.Services
     public class WebDavLibraryService
     {
         public LyricsDocument? Result;
-        public Task<LyricsDocument?> ReadLyricsDocumentAsync(Music music, string order, CancellationToken token) => Task.FromResult(Result);
+        public int Calls;
+        public string? LastOrder;
+        public Func<CancellationToken, Task<LyricsDocument?>>? Handler;
+        public async Task<LyricsDocument?> ReadLyricsDocumentAsync(Music music, string order, CancellationToken token)
+        {
+            Calls++;
+            LastOrder = order;
+            await Task.Yield();
+            token.ThrowIfCancellationRequested();
+            return Handler is not null ? await Handler(token) : Result;
+        }
     }
     public static class OneShotLyricsCache
     {

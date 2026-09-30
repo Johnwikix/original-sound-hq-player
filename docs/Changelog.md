@@ -2,6 +2,14 @@
 
 新条目加在最上方。
 
+## 2026-09-30 歌词文件与来源优先级组合设置
+
+- `LyricsSettingsControl.xaml`、`SettingsViewModel.cs`：文件顺序改为四个优先级下拉框，选择已占用格式时交换两项；新增文件／数据库的两个来源优先级下拉框，统一由偏好状态驱动。
+- `LyricsPreferencesState.cs`、`PreferencesState.cs`、`AppSettings.cs`、`SaveSettings.cs`、设置保存／恢复服务：持久化来源顺序，保留旧文件排序及默认文件优先行为。
+- `LyricsRefreshService.cs`：按来源顺序使用有效歌词，无效或缺失时回退；数据库优先命中时跳过本地／WebDAV 文件读取，一次性播放使用已保存缓存；保留用户清空与在线搜索取消规则。
+- 七种语言资源、`_tools/LyricsUiRegression`、`LyricsUnificationRegression`、`SettingsPersistenceRegression`：补充本地化、编译绑定、实际文件／SQLite 回退和设置兼容性检查。
+- 验证：120 项歌词核心回归、真实 WinUI 下拉框绑定／交换、设置 JSON 往返、七种语言资源检查及 Debug x64 构建通过（0 错误）；完整播放器设置页目视验收和真实 WebDAV 服务器验证尚未执行。
+
 ## 2026-09-30 修复句间空档中歌词高光提前消失
 
 - `LyricsRefreshService.cs`、`LyricLine.cs`：派生独立的展示高光终点，空档保持到下一次入句，末行保持到歌曲结束；原文、实际行尾及逐字时间不变，保留同起点多行和合法重叠。

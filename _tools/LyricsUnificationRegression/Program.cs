@@ -173,5 +173,6 @@ string emptyAutomaticPath = Path.Combine(folder, "empty-automatic.flac");
 WinUIMusicPlayer.Services.OneShotLyricsCache.Save(emptyAutomaticPath, LyricsDocument.Empty);
 await resolver.SetLyrics(new() { Path = emptyAutomaticPath }, default);
 Check(online.Calls == 3, "empty automatic cache does not suppress a legitimate search");
+await SourcePriorityChecks.RunAsync(parser, Check);
 await db.CloseAsync();
 Console.WriteLine($"{checks} checks passed; SQLite artifacts: {folder}");

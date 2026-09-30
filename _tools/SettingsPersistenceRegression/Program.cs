@@ -26,6 +26,13 @@ try
          "AppTheme":"Dark","AppWidth":1450,"DefualtEntry":"song","PlayOrPauseShortcut":["Ctrl","P"]}
         """;
     var defaults = JsonSerializer.Deserialize("{}", SettingsJsonContext.Default.SaveSettings)!;
+    Check(!defaults.PreferDatabaseLyrics && defaults.LocalLyricsFormatOrder == "krc,qrc,lrc,ttml",
+        "Old settings must retain files-first lyrics and the previous format order.");
+    var lyricsSettings = new SaveSettings { PreferDatabaseLyrics = true, LocalLyricsFormatOrder = "ttml,lrc,qrc,krc" };
+    var lyricsRoundTrip = JsonSerializer.Deserialize(JsonSerializer.Serialize(lyricsSettings, SettingsJsonContext.Default.SaveSettings), SettingsJsonContext.Default.SaveSettings)!;
+    Check(lyricsRoundTrip.PreferDatabaseLyrics && lyricsRoundTrip.LocalLyricsFormatOrder == lyricsSettings.LocalLyricsFormatOrder,
+        "Lyrics source and format priorities must survive restart.");
+    Console.WriteLine("PASS: lyrics priority compatibility defaults and JSON persistence.");
     Check(defaults.WindowBackgroundImagePath == string.Empty && defaults.WindowBackgroundBlurAmount == 20,
         "Old settings must keep the original backdrop without an image.");
     var imageSettings = new SaveSettings { WindowBackgroundImagePath = @"C:\Pictures\背景.png", WindowBackgroundBlurAmount = 37 };

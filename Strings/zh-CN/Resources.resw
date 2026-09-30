@@ -2339,4 +2339,12 @@ SHA-256：{5}
   <data name="LyricsFilesSaved" xml:space="preserve">
     <value>歌词文件已保存：</value>
   </data>
+  <data name="LyricsSourcePriority.Header" xml:space="preserve"><value>歌词来源优先级</value></data>
+  <data name="LyricsSourcePriority.Description" xml:space="preserve"><value>优先使用所选来源的有效歌词，不可用时再尝试下一来源。</value></data>
+  <data name="LyricsSourceFile" xml:space="preserve"><value>歌词文件</value></data>
+  <data name="LyricsSourceDatabase" xml:space="preserve"><value>数据库</value></data>
+  <data name="LyricsPriorityFirst" xml:space="preserve"><value>第 1 优先级</value></data>
+  <data name="LyricsPrioritySecond" xml:space="preserve"><value>第 2 优先级</value></data>
+  <data name="LyricsPriorityThird" xml:space="preserve"><value>第 3 优先级</value></data>
+  <data name="LyricsPriorityFourth" xml:space="preserve"><value>第 4 优先级</value></data>
 </root>

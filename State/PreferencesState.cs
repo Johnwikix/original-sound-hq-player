@@ -53,6 +53,7 @@ public sealed class PreferencesState : ObservableObject
     public int DsdGain { get => Audio.DsdGain; set => Audio.DsdGain = value; }
     public bool IsAutoLyricsEnabled { get => Lyrics.IsAutoLyricsEnabled; set => Lyrics.IsAutoLyricsEnabled = value; }
     public string LocalLyricsFormatOrder { get => Lyrics.LocalLyricsFormatOrder; set => Lyrics.LocalLyricsFormatOrder = value; }
+    public bool PreferDatabaseLyrics { get => Lyrics.PreferDatabaseLyrics; set => Lyrics.PreferDatabaseLyrics = value; }
     public string ArtistSplitSymbols { get => General.ArtistSplitSymbols; set => General.ArtistSplitSymbols = value; }
     public bool IsAutoCoverEnabled { get => General.IsAutoCoverEnabled; set => General.IsAutoCoverEnabled = value; }
     public bool IsRunningBackend { get => General.IsRunningBackend; set => General.IsRunningBackend = value; }

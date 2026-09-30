@@ -17,26 +17,48 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
     public async Task<List<LyricLine>> SetLyrics(Music music, CancellationToken token, Action<List<LyricLine>>? publishCached = null)
     {
         string order = AppSettings.LocalLyricsFormatOrder;
+        bool databaseFirst = AppSettings.PreferDatabaseLyrics;
         LyricsSnapshot? stored = music.Id > 0 ? await database.Lyrics.GetAsync(music.Id, token).ConfigureAwait(false) : null;
+        bool hasStoredLyrics = (databaseFirst || music.IsRemote) && stored is not null && parser.HasLyrics(stored.Document, token);
         LyricsDocument? document = null;
         long externalRevision = 0;
         bool userEdited = stored?.SourceKind == "User";
-        if (!music.IsRemote) document = await ReadLocalAsync(music.Path, order, token).ConfigureAwait(false);
-        else
+        LyricsCacheEntry? cached = null;
+        if (databaseFirst)
         {
-            if (stored is not null && parser.HasLyrics(stored.Document, token))
-                publishCached?.Invoke(Project(stored.Document, music.Duration.TotalMilliseconds, token));
-            document = await webDav.ReadLyricsDocumentAsync(music, order, token).ConfigureAwait(false);
+            if (hasStoredLyrics) document = stored!.Document;
+            else if (music.Id <= 0)
+            {
+                // 一次性播放没有数据库行；已保存的歌词缓存承担相同的来源优先级。
+                cached = OneShotLyricsCache.Load(music.Path);
+                externalRevision = cached?.Revision ?? 0;
+                userEdited = cached?.SourceKind == "User";
+                if (cached is not null && parser.HasLyrics(cached.Document, token)) document = cached.Document;
+            }
+        }
+        if (document is null)
+        {
+            if (!music.IsRemote) document = await ReadLocalAsync(music.Path, order, token).ConfigureAwait(false);
+            else
+            {
+                if (hasStoredLyrics)
+                    publishCached?.Invoke(Project(stored!.Document, music.Duration.TotalMilliseconds, token));
+                document = await webDav.ReadLyricsDocumentAsync(music, order, token).ConfigureAwait(false);
+            }
         }
         if (music.IsRemote && document is not null && stored is not null && stored.SourceKind != "User" &&
             document != stored.Document)
             await database.Lyrics.SaveAsync(music.Id, document, stored.Revision, "RemoteSidecar", music.Path, token).ConfigureAwait(false);
         if (document is null && music.Id <= 0 && !string.IsNullOrWhiteSpace(music.EmbeddedLyrics))
             document = TryImport(music.EmbeddedLyrics, null, token);
-        if (document is null && stored is not null && parser.HasLyrics(stored.Document, token)) document = stored.Document;
-        if (document is null && music.Id <= 0)
+        if (document is null && stored is not null)
         {
-            var cached = OneShotLyricsCache.Load(music.Path);
+            if (!databaseFirst && !music.IsRemote) hasStoredLyrics = parser.HasLyrics(stored.Document, token);
+            if (hasStoredLyrics) document = stored.Document;
+        }
+        if (document is null && music.Id <= 0 && !databaseFirst)
+        {
+            cached = OneShotLyricsCache.Load(music.Path);
             externalRevision = cached?.Revision ?? 0;
             userEdited = cached?.SourceKind == "User";
             if (cached is not null && parser.HasLyrics(cached.Document, token)) document = cached.Document;
