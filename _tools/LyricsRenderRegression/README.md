@@ -14,4 +14,6 @@ dotnet build _tools/LyricsRenderRegression
 
 `DesktopHighlightChecks` 编译生产桌面歌词渲染器，在独立屏幕外 WinUI 窗口通过实际 SetLyrics／SetPlaybackTime 和 Canvas 更新／绘制回调验证相同空档、切句和回拖；两种宿主都消费同一个展示高光边界。
 
+`PlaybackTimingChecks` 使用《The Story of Us》完整旁挂文件，经生产解析器及 `LyricsRefreshService` 生成播放快照，在真实 Win2D 游戏循环线程逐帧绘制 153255–157681ms。检查 brave 的已播填充、重音缩放／发光确实启动并在切句前回落，字浮归位，以及 157681ms 精确切句和向后拖动。`PlaybackTimingAdapters` 仅替代本场景不会调用的数据库／网络／一次性缓存边界，若意外调用直接失败；不替代计时、动画、原生布局或绘制。
+
 修复前可稳定检测到 UI 在帧结束前释放原生缓存；这锁定了崩溃调用链的资源生命周期错误，并不保证每次都触发驱动／运行时的 AccessViolation。反射用于观察生产协调器中的行与资源、调用生产帧更新入口，不替换渲染、线程调度或释放方法。此测试不代替用户设备上的完整播放切歌验收。

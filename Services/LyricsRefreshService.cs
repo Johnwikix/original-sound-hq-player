@@ -14,6 +14,8 @@ namespace WinUIMusicPlayer.Services;
 public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsParser parser,
     LyricsOnlineSearch online, WebDavLibraryService webDav, ILogger<LyricsRefreshService> logger)
 {
+    private const double LineEndOffsetMs = 300;
+
     public async Task<List<LyricLine>> SetLyrics(Music music, CancellationToken token, Action<List<LyricLine>>? publishCached = null)
     {
         string order = AppSettings.LocalLyricsFormatOrder;
@@ -138,6 +140,8 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
 
     private List<LyricLine> Project(LyricsDocument document, double duration, CancellationToken token)
     {
+        // 格式以内容为准，旧缓存可能记录过错误的格式。
+        bool preserveExplicitTiming = parser.Detect(document.Original.Content) == LyricsFormat.Ttml;
         var parsed = parser.Parse(document, duration, token);
         var result = new List<LyricLine>(parsed.Length);
         int nextDistinct = 0;
@@ -151,32 +155,73 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
                 while (nextDistinct < parsed.Length && parsed[nextDistinct].StartMs <= source.StartMs)
                     nextDistinct++;
             }
-            // 只延长展示高光；真实行尾和逐字时间不变。同起点的多行共用下一次入句边界。
+            // 旧格式的展示行尾一直由下一次入句决定；TTML 保留显式行尾及重叠。
+            // 这些兼容处理只作用于发布快照，不改写解析缓存或持久化原文。
             double highlightEnd = nextDistinct < parsed.Length ? parsed[nextDistinct].StartMs
-                : duration > 0 ? duration + 2000 : source.EndMs;
+                : duration > 0 ? duration + 2000
+                : preserveExplicitTiming ? source.EndMs : Math.Max(10500, source.StartMs + 2000);
             var line = new LyricLine
             {
                 StartMs = source.StartMs,
-                EndMs = source.EndMs,
-                HighlightEndMs = Math.Max(source.EndMs, highlightEnd),
+                EndMs = preserveExplicitTiming ? source.EndMs : highlightEnd,
+                HighlightEndMs = preserveExplicitTiming ? Math.Max(source.EndMs, highlightEnd) : highlightEnd,
                 TransLateText = source.Translation
             };
             if (source.Words.Length > 0)
             {
                 foreach (var word in source.Words)
-                    line.Words.Add(new LyricWord { Word = word.Text, StartMs = word.StartMs,
-                        DurationMs = Math.Max(0, word.EndMs - word.StartMs) });
+                {
+                    double wordDuration = Math.Max(0, word.EndMs - word.StartMs);
+                    if (preserveExplicitTiming)
+                        line.Words.Add(new LyricWord { Word = word.Text, StartMs = word.StartMs, DurationMs = wordDuration });
+                    else
+                    {
+                        // 旧分词边界也是字浮／重音效果的音节边界，不能只保持整行文本相同。
+                        var words = SplitEverything(word.Text);
+                        for (int i = 0; i < words.Count; i++)
+                            line.Words.Add(new LyricWord { Word = words[i], StartMs = word.StartMs + wordDuration * i / words.Count,
+                                DurationMs = wordDuration / words.Count });
+                    }
+                }
+                if (!preserveExplicitTiming)
+                    ApplyLegacyWordTiming(line);
             }
             else
             {
                 var words = SplitEverything(source.Text);
-                double span = Math.Max(0, source.EndMs - source.StartMs - 300);
+                double span = Math.Max(0, line.EndMs - source.StartMs - LineEndOffsetMs);
                 for (int i = 0; i < words.Count; i++)
                     line.Words.Add(new LyricWord { Word = words[i], StartMs = source.StartMs + span * i / words.Count, DurationMs = span / words.Count });
             }
             result.Add(line);
         }
         return result;
+    }
+
+    private static void ApplyLegacyWordTiming(LyricLine line)
+    {
+        if (line.Words.Count == 0) return;
+        var lastWord = line.Words[^1];
+        double originalSpan = lastWord.StartMs + lastWord.DurationMs - line.StartMs;
+        if (originalSpan > 0)
+        {
+            // 与旧 FixEndMs 相同：压缩整行的偏移和时长，为末字动画回落留出 300ms。
+            double scale = Math.Max(0, originalSpan - LineEndOffsetMs) / originalSpan;
+            foreach (var word in line.Words)
+            {
+                word.StartMs = line.StartMs + (word.StartMs - line.StartMs) * scale;
+                word.DurationMs *= scale;
+            }
+        }
+        else
+        {
+            double perWord = Math.Max(0, line.EndMs - line.StartMs - LineEndOffsetMs) / line.Words.Count;
+            for (int i = 0; i < line.Words.Count; i++)
+            {
+                line.Words[i].StartMs = line.StartMs + perWord * i;
+                line.Words[i].DurationMs = perWord;
+            }
+        }
     }
 
     public static List<string> SplitEverything(string input)

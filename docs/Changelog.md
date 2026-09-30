@@ -2,6 +2,14 @@
 
 新条目加在最上方。
 
+## 2026-09-30 恢复逐字歌词重构前的播放计时
+
+- `LyricsRefreshService.cs`：恢复已有格式统一的 300ms 逐字提前量、分词音节边界、展示补尾和未知时长兜底，为末字重音动画保留回落时间；TTML 保留显式时间与重叠，源文件及数据库原文不改写。
+- `LyricsParser.cs`：增强 LRC 缺少闭合标签的末字恢复零时长，避免补到下一句后改变原有播放节奏。
+- `_tools/LyricsUnificationRegression`、`LyricsRenderRegression`：加入完整《The Story of Us》及执行重构前代码得到的 62 行冻结基线，真实 Win2D 验证 brave 在 157681ms 切句前完成填充、缩放／发光／字浮回落和回拖。
+- `docs/LyricsRefactorBehaviorAudit.md`、`LyricsUnificationPlan.md`：逐项记录重构前后播放、来源、翻译、迁移、保存、导出、统计及生命周期差异，明确旧格式展示兼容与 TTML 源时间的边界。
+- 验证：修复前 10 项播放兼容断言失败；修复后 202 项核心、29 项提供方／加载／封面回归、主界面与桌面原生回归及 Debug x64 构建通过（0 错误）；完整播放器随真实音频的人工验收尚未执行。
+
 ## 2026-09-30 歌词文件与来源优先级组合设置
 
 - `LyricsSettingsControl.xaml`、`SettingsViewModel.cs`：文件顺序改为四个优先级下拉框，选择已占用格式时交换两项；新增文件／数据库的两个来源优先级下拉框，统一由偏好状态驱动。

@@ -101,6 +101,8 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             await canvas.RunOnGameLoopThreadAsync(() => MotionChecks.Run(canvas));
             await canvas.RunOnGameLoopThreadAsync(() => HighlightChecks.Run(canvas));
             await DesktopHighlightChecks.RunAsync();
+            var timedLyrics = await PlaybackTimingChecks.LoadAsync();
+            await canvas.RunOnGameLoopThreadAsync(() => PlaybackTimingChecks.Run(canvas, timedLyrics));
             for (int i = 0; i < 300; i++)
             {
                 UILyricsBus.Publish(Lyrics("Switch " + i));
@@ -126,7 +128,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             Check(beforeClose!.CachedFill is null && beforeClose.PrimaryTextLayout is null && !coordinator.HasLyrics,
                 "Shutdown must release active resources and discard pending lyrics");
             Check(frames > 2, "Real Win2D drawing must have run");
-            File.WriteAllText(output, $"PASS: main and desktop gap highlight retention with real drawing, completed fill pixels, exact entrance switch, backward seek, paused gap and overlap; shared visible-origin wave, scale/blur/opacity delay, short-line handling, seek/relayout and live CanvasAnimatedControl frame, native cache retirement, 300 rapid publications, paused redraw, empty lyrics and repeated shutdown with pending work; {frames} frames.\n");
+            File.WriteAllText(output, $"PASS: actual The Story of Us sidecar/parser/projection and Win2D brave fill, scale/glow/float return before 157681ms, exact row switch and backward seek; main and desktop gap highlight retention with real drawing, completed fill pixels, exact entrance switch, backward seek, paused gap and overlap; shared visible-origin wave, scale/blur/opacity delay, short-line handling, seek/relayout and live CanvasAnimatedControl frame, native cache retirement, 300 rapid publications, paused redraw, empty lyrics and repeated shutdown with pending work; {frames} frames.\n");
         }
         catch (Exception ex) { File.WriteAllText(output, "FAIL: " + ex); }
         finally

@@ -5,6 +5,8 @@
     <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
   </PropertyGroup>
   <ItemGroup>
+    <None Update="Fixtures/story-of-us.qrc.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Fixtures/story-of-us.playback.json" CopyToOutputDirectory="PreserveNewest" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="z440.atl.core" Version="7.18.0" />

@@ -13,9 +13,13 @@
     <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../../External/Lyricify.Lyrics.Helper/Lyricify.Lyrics.Helper.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
     <ProjectReference Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/AnimatedWin2dControls.csproj" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
     <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.260804.1" />
     <Compile Include="../../DesktopLyrics/CanvasLyricsRenderer.cs;../../DesktopLyrics/DesktopLyricsStyle.cs;../../DesktopLyrics/IDesktopLyricsRenderer.cs" />
+    <Compile Include="../../Model/LyricsDocument.cs;../../Services/Lyrics/LyricsParser*.cs;../../Services/Lyrics/LyricsFilePolicy.cs;../../Services/LyricsRefreshService.cs" />
+    <None Include="../LyricsUnificationRegression/Fixtures/story-of-us.qrc.txt" Link="Fixtures/story-of-us.qrc.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

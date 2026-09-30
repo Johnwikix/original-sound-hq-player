@@ -97,7 +97,8 @@ public sealed partial class LyricsParser
 
     public ImmutableArray<ParsedLyricLine> Parse(LyricsDocument document, double durationMs, CancellationToken token = default)
     {
-        var lines = ParseSource(document.Original.Content, Detect(document.Original.Content), token);
+        var format = Detect(document.Original.Content);
+        var lines = ParseSource(document.Original.Content, format, token);
         // Stable ordering is essential for duplicate timestamps; duplicate rows remain original rows.
         lines = lines.OrderBy(line => line.Start).ToList();
         var translations = string.IsNullOrWhiteSpace(document.TranslationLrc)
@@ -120,7 +121,8 @@ public sealed partial class LyricsParser
                 end = nextDistinct < lines.Count ? lines[nextDistinct].Start : Math.Max(durationMs, line.Start + 2000);
             }
             var words = line.Words;
-            if (words.Length > 0 && words[^1].EndMs <= words[^1].StartMs)
+            // 增强 LRC 无闭合标签的末字沿用旧版零时长；不能把瞬时末字延长到下一句。
+            if (format == LyricsFormat.Ttml && words.Length > 0 && words[^1].EndMs <= words[^1].StartMs)
                 words = words.SetItem(words.Length - 1, words[^1] with { EndMs = Math.Max(end, words[^1].StartMs) });
             result.Add(new(line.Text, line.Start, end, words, attached[i] ?? ""));
         }

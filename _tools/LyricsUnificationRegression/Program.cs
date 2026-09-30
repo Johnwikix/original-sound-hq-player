@@ -131,7 +131,7 @@ await LyricsExporter.SaveFilesAsync(musicPath, xmlDoc with { TranslationLrc = nu
 Check(!File.Exists(translationPath) && File.Exists(translationPath + ".lyrics.bak"), "empty translation removes stale output with recoverable backup");
 Check(parser.Parse(parser.Import("[00:01.000]A\n[00:01.000]B", "[00:01.000]T"), 3000).All(line => line.Translation == ""), "duplicate timestamps do not infer or cross-pair tracks");
 Check(parser.Parse(parser.Import("[00:01.000]A\n[00:01.200]B", "[00:01.100]T"), 3000).All(line => line.Translation == ""), "ambiguous near-match leaves translation unattached");
-Check(parser.Parse(parser.Import("[00:01.000]A<00:01.500>B"), 3000)[0].Words[^1].EndMs == 3000, "enhanced LRC missing word end uses resolved line end");
+Check(parser.Parse(parser.Import("[00:01.000]A<00:01.500>B"), 3000)[0].Words[^1].EndMs == 1500, "enhanced LRC without a closing timestamp preserves the legacy instant final word");
 Check(!parser.HasLyrics(new(new("<!DOCTYPE tt [<!ENTITY e SYSTEM 'file:///secret'>]><tt xmlns='http://www.w3.org/ns/ttml'><body><p begin='1'> &e; </p></body></tt>", LyricsFormat.Ttml), null)), "external XML entities rejected");
 string samples = Path.Combine(Path.GetTempPath(), "music-player-lyrics-issue27");
 foreach (var sample in new[] { ("32505618.ttml", 0), ("32552336.ttml", 450) })
@@ -149,6 +149,7 @@ var online = new LyricsOnlineSearch { Handler = (_, _, _) => Task.FromResult<Lyr
 var resolver = new WinUIMusicPlayer.Services.LyricsRefreshService(new(db, parser), parser, online, new(),
     Microsoft.Extensions.Logging.Abstractions.NullLogger<WinUIMusicPlayer.Services.LyricsRefreshService>.Instance);
 await LineEndingChecks.CheckPlaybackAsync(resolver, repository, db, folder, Check);
+await PlaybackCompatibilityChecks.RunAsync(parser, resolver, folder, Check);
 await HighlightTimingChecks.RunAsync(parser, resolver, repository, db, folder, Check);
 string sourcePath = Path.Combine(folder, "Source.flac");
 await File.WriteAllTextAsync(Path.ChangeExtension(sourcePath, ".krc"), "bad");

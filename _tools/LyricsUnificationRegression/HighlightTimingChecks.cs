@@ -25,14 +25,18 @@ internal static class HighlightTimingChecks
             await File.WriteAllTextAsync(Path.ChangeExtension(path, extension), content);
             var source = parser.Parse(parser.Import(content), 120000);
             var displayed = await resolver.SetLyrics(new() { Path = path, Duration = TimeSpan.FromSeconds(120) }, default);
-            check(displayed.Count == source.Length && displayed.Select((line, i) =>
+            check(displayed.Count == source.Length && parser.Parse(parser.Import(content), 120000).SequenceEqual(source),
+                extension + ": playback projection does not mutate the immutable parsing cache");
+            if (extension == "ttml")
+                check(displayed.Select((line, i) =>
                 line.StartMs == source[i].StartMs && line.EndMs == source[i].EndMs &&
                 (source[i].Words.IsEmpty || line.Words.Select((word, j) =>
                     word.StartMs == source[i].Words[j].StartMs &&
                     word.StartMs + word.DurationMs == source[i].Words[j].EndMs).All(value => value))).All(value => value),
-                extension + ": display retention leaves all source and word times unchanged");
+                    "TTML: display retention leaves explicit line and word times unchanged");
             if (extension != "ttml")
-                check(displayed[0].EndMs == 83675 && displayed[0].HighlightEndMs == 96652,
+                check(displayed[0].EndMs == 96652 && displayed[0].HighlightEndMs == 96652 &&
+                    Math.Abs(displayed[0].Words[^1].StartMs + displayed[0].Words[^1].DurationMs - 83375) < 0.000001,
                     extension + ": Unchained's 12977 ms gap retains the completed row until the next entrance");
             else
                 check(displayed[0].HighlightEndMs == 3000 && displayed[1].HighlightEndMs == 2500 &&
@@ -49,8 +53,8 @@ internal static class HighlightTimingChecks
             "[1000,200]A(1000,200)\n[1200,300]B(1200,300)\n[1500,100]C(1500,100)");
         var shortLines = await resolver.SetLyrics(new() { Path = shortPath, Duration = TimeSpan.Zero }, default);
         check(shortLines[0].HighlightEndMs == 1200 && shortLines[1].HighlightEndMs == 1500 &&
-            shortLines[^1].HighlightEndMs == 1600 && shortLines[0].Words[0].DurationMs == 200,
-            "short consecutive rows and an unknown song duration retain their real boundaries");
+            shortLines[^1].HighlightEndMs == 10500 && shortLines[0].Words[0].DurationMs == 0,
+            "short consecutive legacy rows retain their entrances and clamp 300ms compression at zero");
 
         await database.ExecuteAsync("INSERT INTO Music(Id) VALUES(4)");
         try
@@ -59,7 +63,7 @@ internal static class HighlightTimingChecks
             var snapshot = await repository.GetAsync(4);
             var displayed = await resolver.SetLyrics(new() { Id = 4, Path = Path.Combine(folder, "highlight-stored.flac"),
                 Duration = TimeSpan.FromSeconds(120) }, default);
-            check(displayed[0].EndMs == 83675 && displayed[0].HighlightEndMs == 96652 &&
+            check(displayed[0].EndMs == 96652 && displayed[0].HighlightEndMs == 96652 &&
                 (await repository.GetAsync(4)) == snapshot && (await database.FindAsync<MusicLyrics>(4)).Krc == qrc,
                 "real SQLite migration displays the gap without changing either legacy or V2 lyrics");
         }
