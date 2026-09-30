@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-09-30 修复 CR 换行的 LRC 被合并为一行
+
+- `Services/Lyrics/LyricsParser.cs`：格式检测与解析统一识别 CR、LF、CRLF；修复 CR 下的 offset 和 KRC 翻译元数据移除，旧缓存直接重新解析，LRC 原文保持不变。
+- `_tools/LyricsUnificationRegression/LineEndingChecks.cs`：以完整 65 行样例覆盖四种换行、翻译与导出往返，验证真实本地歌词文件、JSON 缓存和 SQLite 旧文档的播放展示投影。
+- 验证：修复前样例仅解析为 1 行，修复后 78 项回归及 Debug x64 构建通过（0 错误，1738 个警告）；两个历史 TTML 外部附件未提供，跳过其 4 项检查，完整播放详情页尚未实机目视验收。
+
 ## 2026-09-30 修复歌词审查发现的保存、恢复与清空问题
 
 - `LyricsEditorViewModel.cs`、`LyricsRepository.cs`：元数据保存保留未修改的旧歌词、来源及诊断；恢复旧候选先显示原始文本，转换失败仍可编辑修复。

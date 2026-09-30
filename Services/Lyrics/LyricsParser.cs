@@ -19,7 +19,7 @@ public sealed partial class LyricsParser
     private static readonly Regex NumericLine = new(@"^\[(\d+),(\d+)\](.*)$", RegexOptions.CultureInvariant, RegexTimeout);
     private static readonly Regex KrcWord = new(@"<(\d+),(\d+),\d+>([^<]*)", RegexOptions.CultureInvariant, RegexTimeout);
     private static readonly Regex QrcWord = new(@"(.*?)\((\d+),(\d+)\)", RegexOptions.CultureInvariant, RegexTimeout);
-    private static readonly Regex Offset = new(@"(?im)^\[offset:([+-]?\d+)\]", RegexOptions.CultureInvariant, RegexTimeout);
+    private static readonly Regex Offset = new(@"(?i)(?:^|[\r\n])\[offset:([+-]?\d+)\]", RegexOptions.CultureInvariant, RegexTimeout);
 
     private readonly object _parseLock = new();
     private readonly List<(string Content, LyricsFormat Format, List<SourceLine> Lines)> _recent = [];
@@ -33,9 +33,10 @@ public sealed partial class LyricsParser
         CheckSize(content);
         if (content.AsSpan().TrimStart().StartsWith("<", StringComparison.Ordinal))
             return TryReadXml(content)?.Root?.Name.LocalName == "tt" ? LyricsFormat.Ttml : LyricsFormat.Unknown;
-        foreach (string raw in content.Split('\n'))
+        // .NET 10+ 的 Span 行枚举兼容 CR、LF 和 CRLF，分行无需创建数组或改写原文。
+        foreach (var raw in content.AsSpan().EnumerateLines())
         {
-            string line = raw.Trim();
+            string line = raw.Trim().ToString();
             var numeric = NumericLine.Match(line);
             if (numeric.Success)
             {
@@ -73,7 +74,8 @@ public sealed partial class LyricsParser
             }
             if (texts is not null)
                 embedded = GenerateLrc(lines.Select((line, i) => (line.Start, i < texts.Count ? texts[i] : "")));
-            original = string.Join('\n', original.Split('\n').Where(line => !line.TrimStart().StartsWith("[language:", StringComparison.Ordinal)));
+            original = string.Join('\n', original.ReplaceLineEndings("\n").Split('\n')
+                .Where(line => !line.TrimStart().StartsWith("[language:", StringComparison.Ordinal)));
         }
         string? normalized = string.IsNullOrWhiteSpace(translation) ? embedded : NormalizeTranslation(translation, token);
         return new(new(original, format), string.IsNullOrWhiteSpace(normalized) ? null : normalized);
@@ -185,10 +187,10 @@ public sealed partial class LyricsParser
         if (offsetMatch.Success && (!double.TryParse(offsetMatch.Groups[1].Value, NumberStyles.AllowLeadingSign,
             CultureInfo.InvariantCulture, out offset) || !double.IsFinite(offset) || Math.Abs(offset) > 604800000))
             throw new FormatException("Invalid lyrics offset.");
-        foreach (string raw in content.Split('\n'))
+        foreach (var raw in content.AsSpan().EnumerateLines())
         {
             token.ThrowIfCancellationRequested();
-            string line = raw.Trim();
+            string line = raw.Trim().ToString();
             if (line.Length == 0) continue;
             if (format is LyricsFormat.Krc or LyricsFormat.Qrc)
             {

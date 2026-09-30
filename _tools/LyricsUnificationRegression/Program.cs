@@ -11,6 +11,8 @@ void Check(bool condition, string description)
     checks++;
 }
 
+LineEndingChecks.Run(parser, Check);
+
 var lrc = parser.Import("[00:01.00][00:03.000]Hello\n[00:04.00]World", "[00:01.000]译文");
 var parsed = parser.Parse(lrc, 6000);
 Check(parsed.Length == 3 && parsed[0].Translation == "译文" && parsed[1].StartMs == 3000, "LRC repeated timestamps and separate translation");
@@ -146,6 +148,7 @@ foreach (var sample in new[] { ("32505618.ttml", 0), ("32552336.ttml", 450) })
 var online = new LyricsOnlineSearch { Handler = (_, _, _) => Task.FromResult<LyricsDocument?>(qrc) };
 var resolver = new WinUIMusicPlayer.Services.LyricsRefreshService(new(db, parser), parser, online, new(),
     Microsoft.Extensions.Logging.Abstractions.NullLogger<WinUIMusicPlayer.Services.LyricsRefreshService>.Instance);
+await LineEndingChecks.CheckPlaybackAsync(resolver, repository, db, folder, Check);
 string sourcePath = Path.Combine(folder, "Source.flac");
 await File.WriteAllTextAsync(Path.ChangeExtension(sourcePath, ".krc"), "bad");
 await File.WriteAllTextAsync(Path.ChangeExtension(sourcePath, ".lrc"), "[00:01.00]local");
