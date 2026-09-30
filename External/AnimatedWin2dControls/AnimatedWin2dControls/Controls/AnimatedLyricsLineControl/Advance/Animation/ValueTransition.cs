@@ -202,13 +202,18 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         private ref readonly Keyframe<T> CurrentKeyframe()
         {
-            if (_hasDelay && _currentSegment == _segmentCount - 1)
-                return ref _kDelay;
-            if (!_hasK2 || _currentSegment == 0)
+            int segment = _currentSegment;
+            if (_hasDelay)
+            {
+                // 延迟是首段静止帧，不能放到结尾再把数值拉回起点。
+                if (segment == 0) return ref _kDelay;
+                segment--;
+            }
+            if (_extraCount > 0)
+                return ref _extraKeyframes![segment];
+            if (!_hasK2 || segment == 0)
                 return ref _k1;
-            if (_currentSegment == 1)
-                return ref _k2;
-            return ref _extraKeyframes![_currentSegment - 2];
+            return ref _k2;
         }
 
         private void AdvanceToSegment(int seg)

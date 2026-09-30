@@ -48,8 +48,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             var line = lines[index];
             if (time < line.StartMs) return false;
             if (index + 1 < lines.Count && time >= lines[index + 1].StartMs) return false;
-            if (line.EndMs.HasValue && time >= line.EndMs.Value) return false;
-            return true;
+            return line.GetIsHighlighted(time);
         }
     }
 }

@@ -40,7 +40,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             bool isLayoutChanged,
             bool isPrimaryPlayingLineChanged,
             double currentPositionMs,
-            int animationVersion)
+            int animationVersion,
+            LyricScrollTiming? scrollTiming = null)
         {
             if (lines == null || lines.Count == 0) return;
             if (primaryPlayingLineIndex < 0 || primaryPlayingLineIndex >= lines.Count) return;
@@ -73,16 +74,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 double targetCharGlow = lyricsGlowEffectAmount > 0 ? lyricsGlowEffectAmount : lineHeight.Value * 0.2;
                 double targetCharScale = lyricsScaleEffectAmount > 0 ? lyricsScaleEffectAmount : 1.15;
 
-                var maxAnimationDurationMs = Math.Max(line.EndMs ?? 0 - currentPositionMs, 0);
+                var maxAnimationDurationMs = Math.Max((line.HighlightEndMs ?? line.EndMs ?? 0) - currentPositionMs, 0);
 
-                bool isSecondaryLinePlaying = line.GetIsPlaying(currentPositionMs);
+                bool isSecondaryLinePlaying = line.GetIsHighlighted(currentPositionMs);
                 bool isSecondaryLinePlayingChanged = line.IsPlayingLastFrame != isSecondaryLinePlaying;
                 line.IsPlayingLastFrame = isSecondaryLinePlaying;
 
                 var playProgress = line.GetPlayProgress(currentPositionMs);
 
                 if (isLayoutChanged || isPrimaryPlayingLineChanged || isMouseScrollingChanged || isSecondaryLinePlayingChanged
-                    || line.UnplayedPrimaryOpacityTransition.Value == 0
                     || line.LastProcessedVersion < animationVersion - 1)
                 {
                     int lineCountDelta = i - primaryPlayingLineIndex;
@@ -95,17 +95,24 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                         distanceFactor = Math.Clamp(distanceFromPlayingLine / bottomHeightFactor, 0, 1);
 
                     double yScrollDuration = canvasTransDuration + distanceFactor * (0.5 - canvasTransDuration);
+                    double scrollDelay = 0;
+                    if (scrollTiming.HasValue)
+                    {
+                        (yScrollDuration, scrollDelay) = scrollTiming.Value.GetLineTiming(i);
+                    }
 
                     double targetPlayedOpacity = CalculateTargetOpacity(unplayedPrimaryOpacity, isSecondaryLinePlaying ? 1.0 : unplayedPrimaryOpacity, distanceFactor, isMouseScrolling, isLyricsFadeOutEffectEnabled);
                     double targetUnplayedOpacity = CalculateTargetOpacity(unplayedPrimaryOpacity, unplayedPrimaryOpacity, distanceFactor, isMouseScrolling, isLyricsFadeOutEffectEnabled);
                     double targetSecondaryOpacity = CalculateTargetOpacity(secondaryOpacity, secondaryOpacity, distanceFactor, isMouseScrolling, isLyricsFadeOutEffectEnabled);
 
                     line.BlurAmountTransition.SetDuration(yScrollDuration);
+                    line.BlurAmountTransition.SetDelay(scrollDelay);
                     line.BlurAmountTransition.Start(
                         (isMouseScrolling || isSecondaryLinePlaying) ? 0 :
                         (isBlurEnabled ? (blurAmountMax * distanceFactor) : 0));
 
                     line.ScaleTransition.SetDuration(yScrollDuration);
+                    line.ScaleTransition.SetDelay(scrollDelay);
                     line.ScaleTransition.Start(
                         isSecondaryLinePlaying ? _highlightedScale :
                         (isOutOfSightEnabled ?
@@ -113,14 +120,17 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                         _highlightedScale));
 
                     line.PlayedPrimaryOpacityTransition.SetDuration(yScrollDuration);
+                    line.PlayedPrimaryOpacityTransition.SetDelay(scrollDelay);
                     line.PlayedPrimaryOpacityTransition.Start(
                         isSecondaryLinePlaying ? 1.0 : targetPlayedOpacity);
 
                     line.UnplayedPrimaryOpacityTransition.SetDuration(yScrollDuration);
+                    line.UnplayedPrimaryOpacityTransition.SetDelay(scrollDelay);
                     line.UnplayedPrimaryOpacityTransition.Start(
                         isSecondaryLinePlaying ? unplayedPrimaryOpacity : targetUnplayedOpacity);
 
                     line.SecondaryOpacityTransition.SetDuration(yScrollDuration);
+                    line.SecondaryOpacityTransition.SetDelay(scrollDelay);
                     line.SecondaryOpacityTransition.Start(
                         isSecondaryLinePlaying ? secondaryOpacity : targetSecondaryOpacity);
 
@@ -128,6 +138,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     {
                         line.YOffsetTransition.SetInterpolator(canvasYScrollTransition.Interpolator);
                         line.YOffsetTransition.SetDuration(yScrollDuration);
+                        line.YOffsetTransition.SetDelay(scrollDelay);
                         if (isLayoutChanged)
                             line.YOffsetTransition.JumpTo(targetYScrollOffset);
                         else

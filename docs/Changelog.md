@@ -2,6 +2,20 @@
 
 新条目加在最上方。
 
+## 2026-09-30 修复句间空档中歌词高光提前消失
+
+- `LyricsRefreshService.cs`、`LyricLine.cs`：派生独立的展示高光终点，空档保持到下一次入句，末行保持到歌曲结束；原文、实际行尾及逐字时间不变，保留同起点多行和合法重叠。
+- `RenderLyricsLine.cs`、`LyricsAnimator.cs`、`LyricsSynchronizer.cs`、`LyricsRenderCoordinator.cs`、`CanvasLyricsRenderer.cs`：主界面和桌面歌词统一使用展示边界控制高光，修复空档内回拖仍保留其他行的问题；逐字进度沿用真实时间，短句流波处理不变。
+- `_tools/LyricsUnificationRegression`、`LyricsRenderRegression`：覆盖真实文件／SQLite 迁移投影和《Unchained》长空档，真实 Win2D 像素及桌面窗口验证切句、暂停、拖动和重叠。
+- 验证：修复前 83.675 秒的原生高光断言失败；修复后 92 项歌词回归、主界面／桌面原生渲染、流波／短句回归和 Debug x64 构建通过（0 错误）；完整播放器随音频的人工验收尚未执行。
+
+## 2026-09-30 逐字歌词流波节奏对齐 BetterLyrics
+
+- `LyricScrollMotion.cs`、`LyricScrollTiming.cs`、`LyricsRenderCoordinator.cs`：流波从可见区顶部逐行传播，等待新目标时保持位置并保存速度，起动延迟重新计时，对齐 BetterLyrics `dad48ab9`；保留短句削弱／关闭错峰和稳定弹簧响应。
+- `LyricsAnimator.cs`、`ValueTransition.cs`：位移、缩放、模糊和透明度共用逐行时序，修正延迟帧位置及多段索引，避免初始透明行反复重启延迟；桌面单行歌词沿用原路径。
+- `_tools/LyricsEasingRegression`、`LyricsRenderRegression`：覆盖延迟接续、首段等待、多段过渡、真实 Win2D 逐帧效果同步、短句与跳转／重排。
+- 验证：与 `dad48ab9` 的真实运动类数值对照、CPU 回归、真实 Win2D 效果同步／生命周期回归及 Debug x64 构建通过（0 错误）；完整播放器的人工观感对比尚未执行。
+
 ## 2026-09-30 修复 CR 换行的 LRC 被合并为一行
 
 - `Services/Lyrics/LyricsParser.cs`：格式检测与解析统一识别 CR、LF、CRLF；修复 CR 下的 offset 和 KRC 翻译元数据移除，旧缓存直接重新解析，LRC 原文保持不变。

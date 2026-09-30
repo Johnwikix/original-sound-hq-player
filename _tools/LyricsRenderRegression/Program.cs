@@ -98,6 +98,9 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 Check(Lines(coordinator).Single().PrimaryText == "Latest song", "The next frame must use the latest publication");
                 Check(oldLine.CachedFill is null && oldLine.PrimaryTextLayout is null, "Retired native resources must be released");
             });
+            await canvas.RunOnGameLoopThreadAsync(() => MotionChecks.Run(canvas));
+            await canvas.RunOnGameLoopThreadAsync(() => HighlightChecks.Run(canvas));
+            await DesktopHighlightChecks.RunAsync();
             for (int i = 0; i < 300; i++)
             {
                 UILyricsBus.Publish(Lyrics("Switch " + i));
@@ -123,7 +126,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             Check(beforeClose!.CachedFill is null && beforeClose.PrimaryTextLayout is null && !coordinator.HasLyrics,
                 "Shutdown must release active resources and discard pending lyrics");
             Check(frames > 2, "Real Win2D drawing must have run");
-            File.WriteAllText(output, $"PASS: live CanvasAnimatedControl frame, native cache retirement, 300 rapid publications, paused redraw, empty lyrics and repeated shutdown with pending work; {frames} frames.\n");
+            File.WriteAllText(output, $"PASS: main and desktop gap highlight retention with real drawing, completed fill pixels, exact entrance switch, backward seek, paused gap and overlap; shared visible-origin wave, scale/blur/opacity delay, short-line handling, seek/relayout and live CanvasAnimatedControl frame, native cache retirement, 300 rapid publications, paused redraw, empty lyrics and repeated shutdown with pending work; {frames} frames.\n");
         }
         catch (Exception ex) { File.WriteAllText(output, "FAIL: " + ex); }
         finally

@@ -3,8 +3,9 @@ using System;
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 {
     /// <summary>
-    /// One lyric group's scroll position. Delayed targets do not freeze an existing
-    /// movement; spring retargeting preserves velocity. Updated independently of glyph visibility.
+    /// Tracks one lyric group's scroll position. Delayed targets hold the current
+    /// position and preserve spring velocity for resumption, matching BetterLyrics dad48ab9.
+    /// Updated independently of glyph visibility.
     /// </summary>
     public sealed class LyricScrollMotion
     {
@@ -33,8 +34,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             if (target == TargetValue) return;
             if (delay > 0)
             {
-                // Repeated short lines replace the queued destination, not its deadline.
-                _delay = _pending ? Math.Min(_delay, delay) : delay;
+                _delay = delay;
                 _pendingTarget = target;
                 _pendingDuration = duration;
                 _pendingSpring = spring;
@@ -66,7 +66,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             if (_pending)
             {
                 double beforeTarget = Math.Min(seconds, _delay);
-                Advance(beforeTarget);
                 _delay -= beforeTarget;
                 seconds -= beforeTarget;
                 if (_delay > 1e-9) return;
@@ -83,7 +82,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             {
                 // Exact critically damped spring solution; independent of frame rate.
                 // At the configured duration a resting spring has covered about 99.3%.
-                double omega = 7.0 / _duration;
+                double omega = 7.0 / Math.Max(0.01, _duration);
                 double displacement = Value - _target;
                 double coefficient = Velocity + omega * displacement;
                 double decay = Math.Exp(-omega * seconds);
@@ -113,12 +112,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         /// <summary>
         /// Shares the next line's time budget between propagation and tween response.
-        /// The active row and earlier rows follow immediately; short lines lose stagger smoothly.
+        /// The first visible row leads the wave; short lines lose stagger smoothly.
         /// Springs keep their configured response: shrinking it to each short line creates
         /// repeated acceleration pulses. Only propagation is shortened for springs.
         /// </summary>
         public static (double Duration, double Delay) FlowWaveTiming(
-            int index, int currentLineIndex, double duration, double interval,
+            int index, int firstVisibleIndex, double duration, double interval,
             bool spring = false)
         {
             // 值元组和标量运算：逐帧调用无堆分配，沿用项目现有 .NET 版本。
@@ -128,7 +127,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             if (hasInterval) duration = Math.Min(duration, interval * 0.85);
             double strength = hasInterval ? Math.Clamp((interval - 0.25) / 0.25, 0, 1) : 1;
             strength = strength * strength * (3 - 2 * strength);
-            double delay = StaggerDelay(index, currentLineIndex, duration) * strength;
+            double delay = StaggerDelay(index, firstVisibleIndex, duration) * strength;
             if (hasInterval) duration = Math.Min(duration, interval * 0.9 - delay);
             return (spring ? configuredDuration : duration, delay);
         }

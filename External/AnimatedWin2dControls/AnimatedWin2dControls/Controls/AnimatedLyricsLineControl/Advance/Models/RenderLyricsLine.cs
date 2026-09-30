@@ -88,6 +88,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         public bool IsPrimaryHasRealSyllableInfo { get; set; }
 
+        /// <summary>Gets the display highlight boundary without extending word or line playback progress.</summary>
+        public double? HighlightEndMs { get; private set; }
+
+        /// <summary>Determines whether the line retains its display highlight at the given playback position.</summary>
+        /// <param name="currentMs">The playback position in milliseconds.</param>
+        /// <returns><see langword="true"/> while the display interval is active; otherwise, <see langword="false"/>.</returns>
+        public bool GetIsHighlighted(double currentMs) => StartMs <= currentMs && currentMs < (HighlightEndMs ?? EndMs);
+
         public CropEffect? CachedCropEffect { get; private set; }
         public GaussianBlurEffect? CachedBlurEffect { get; private set; }
         public OpacityEffect? CachedOpacityEffect { get; private set; }
@@ -136,6 +144,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
             StartMs = lyricLine.StartMs;
             EndMs = lyricLine.EndMs > lyricLine.StartMs ? lyricLine.EndMs : nextLineStartMs;
+            HighlightEndMs = Math.Max(EndMs ?? StartMs, lyricLine.HighlightEndMs ?? nextLineStartMs);
 
             int charIndex = 0;
             bool hasRealSyllable = false;

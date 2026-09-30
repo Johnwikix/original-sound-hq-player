@@ -9,6 +9,9 @@
     <Compile Include="../../Model/LyricsEasingJsonConverters.cs" />
     <Compile Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedLyricsLineControl/Advance/Layout/LyricsLayoutManager.cs" />
     <Compile Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedLyricsLineControl/Advance/Animation/LyricScrollMotion.cs" />
+    <Compile Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedLyricsLineControl/Advance/Animation/LyricScrollTiming.cs" />
+    <Compile Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedLyricsLineControl/Advance/Animation/ValueTransition.cs" />
+    <Compile Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedLyricsLineControl/Advance/Models/Keyframe.cs" />
     <Compile Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedLyricsLineControl/Advance/Animation/EasingHelper.cs" />
     <Compile Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedLyricsLineControl/Advance/Enums/EaseMode.cs" />
     <Compile Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedLyricsLineControl/Advance/Enums/EasingType.cs" />

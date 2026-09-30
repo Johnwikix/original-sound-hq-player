@@ -75,9 +75,12 @@ var queued = Moving(apple);
 position = queued.Value;
 queued.Start(-240, 0.7, 0.1, true, apple);
 queued.Update(0.04);
-Check(queued.Value < position, "Waiting for the next target must not freeze existing movement.");
+Check(queued.Value == position, "A delayed target must hold the existing position.");
 queued.Start(-360, 0.7, 0.1, true, apple);
 queued.Update(0.061);
+Check(queued.Value == position, "A replacement target must receive its full startup delay.");
+queued.Update(0.04);
+Check(queued.Value < position, "Motion must resume when the replacement delay expires.");
 queued.Update(3);
 Check(queued.Value == -360, "Rapid lines must replace stale queued targets.");
 
@@ -120,7 +123,7 @@ foreach (double interval in new[] { 0.15, 0.25, 0.3, 0.4, 0.5, 0.8 })
             && timing.Duration + timing.Delay <= interval * 0.9 + 1e-12,
             $"Shared response deadline: {interval}, row {index}");
         if (index <= 3 || interval <= 0.25)
-            Check(timing.Delay == 0, "Focus and very short lines must not wait.");
+            Check(timing.Delay == 0, "The wave origin and very short lines must not wait.");
     }
 }
 foreach (double boundary in new[] { 0.25, 0.5 })
@@ -145,7 +148,7 @@ foreach (double[] intervals in new[] {
         double interval = intervals[current], target = -120 * (current + 1);
         for (int row = 0; row < rapidRows.Length; row++)
         {
-            var timing = LyricScrollMotion.FlowWaveTiming(row, current, 0.7, interval, true);
+            var timing = LyricScrollMotion.FlowWaveTiming(row, Math.Max(0, current - 2), 0.7, interval, true);
             double oldPosition = rapidRows[row].Value, oldVelocity = rapidRows[row].Velocity;
             rapidRows[row].Start(target, timing.Duration, timing.Delay, true, apple);
             Check(rapidRows[row].Value == oldPosition && rapidRows[row].Velocity == oldVelocity,
@@ -173,6 +176,32 @@ promoted.Update(0.01);
 Check(promoted.Value < 0, "A queued row becoming active must start immediately.");
 promoted.Update(3);
 Check(promoted.Value == -240, "Promotion must discard the stale pending destination.");
+
+var visibleTiming = new LyricScrollTiming(0.5, 1.5, 0, true);
+Check(visibleTiming.GetLineTiming(0).Delay == 0
+    && Math.Abs(visibleTiming.GetLineTiming(2).Delay - 0.142956) < 1e-6,
+    "The third visible line must follow the top line's exponential propagation.");
+Check(new LyricScrollTiming(0.5, 0.2, 0, true).GetLineTiming(2).Delay == 0,
+    "Very short lines must still disable propagation, including the focus line.");
+
+var linear = EasingHelper.GetInterpolatorByEasingType<double>(EasingType.Linear);
+var effect = new ValueTransition<double>(0, linear, 0.5);
+effect.SetDelay(0.1);
+effect.Start(1);
+effect.Update(TimeSpan.FromSeconds(0.06));
+Check(effect.Value == 0, "Line effects must wait before changing.");
+effect.Update(TimeSpan.FromSeconds(0.29));
+Check(Math.Abs(effect.Value - 0.5) < 1e-12, "A long frame must carry excess time across the delay.");
+effect.Update(TimeSpan.FromSeconds(1));
+Check(effect.Value == 1 && !effect.IsTransitioning, "Delayed effects must finish at the destination, not return to the origin.");
+effect.JumpTo(0);
+effect.Start(new Keyframe<double>(1, 0.2), new Keyframe<double>(0.25, 0.3));
+effect.Update(TimeSpan.FromSeconds(0.6));
+Check(effect.Value == 0.25 && !effect.IsTransitioning, "Delay must precede both explicit keyframes.");
+effect.JumpTo(0);
+effect.Start(1, 0.5, 0.25);
+effect.Update(TimeSpan.FromSeconds(0.6));
+Check(effect.Value == 0.25 && !effect.IsTransitioning, "Delay must precede longer automatic keyframe sequences.");
 
 // Compare the visible speed pulse against the former per-line stiffening at steady cadence.
 foreach (double interval in new[] { 0.15, 0.25, 0.4 })

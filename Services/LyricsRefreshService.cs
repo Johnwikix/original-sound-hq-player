@@ -118,10 +118,27 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
     {
         var parsed = parser.Parse(document, duration, token);
         var result = new List<LyricLine>(parsed.Length);
-        foreach (var source in parsed)
+        int nextDistinct = 0;
+        for (int index = 0; index < parsed.Length; index++)
         {
             token.ThrowIfCancellationRequested();
-            var line = new LyricLine { StartMs = source.StartMs, EndMs = source.EndMs, TransLateText = source.Translation };
+            var source = parsed[index];
+            if (nextDistinct <= index)
+            {
+                nextDistinct = index + 1;
+                while (nextDistinct < parsed.Length && parsed[nextDistinct].StartMs <= source.StartMs)
+                    nextDistinct++;
+            }
+            // 只延长展示高光；真实行尾和逐字时间不变。同起点的多行共用下一次入句边界。
+            double highlightEnd = nextDistinct < parsed.Length ? parsed[nextDistinct].StartMs
+                : duration > 0 ? duration + 2000 : source.EndMs;
+            var line = new LyricLine
+            {
+                StartMs = source.StartMs,
+                EndMs = source.EndMs,
+                HighlightEndMs = Math.Max(source.EndMs, highlightEnd),
+                TransLateText = source.Translation
+            };
             if (source.Words.Length > 0)
             {
                 foreach (var word in source.Words)

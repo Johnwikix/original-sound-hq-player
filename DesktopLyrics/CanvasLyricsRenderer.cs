@@ -319,7 +319,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 // 反相软阴影垫底（与文字同一坐标系），其后共享库绘制填充文字
                 DrawTextShadow(ds);
 
-                _lineRenderer.IsPlaying = line.GetIsPlaying(currentTimeMs);
+                _lineRenderer.IsPlaying = line.GetIsHighlighted(currentTimeMs);
                 _lineRenderer.CurrentProgressMs = currentTimeMs;
                 _lineRenderer.Line = line;
                 _lineRenderer.PlayedFillColor = _color;

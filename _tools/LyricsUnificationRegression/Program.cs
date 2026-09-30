@@ -149,6 +149,7 @@ var online = new LyricsOnlineSearch { Handler = (_, _, _) => Task.FromResult<Lyr
 var resolver = new WinUIMusicPlayer.Services.LyricsRefreshService(new(db, parser), parser, online, new(),
     Microsoft.Extensions.Logging.Abstractions.NullLogger<WinUIMusicPlayer.Services.LyricsRefreshService>.Instance);
 await LineEndingChecks.CheckPlaybackAsync(resolver, repository, db, folder, Check);
+await HighlightTimingChecks.RunAsync(parser, resolver, repository, db, folder, Check);
 string sourcePath = Path.Combine(folder, "Source.flac");
 await File.WriteAllTextAsync(Path.ChangeExtension(sourcePath, ".krc"), "bad");
 await File.WriteAllTextAsync(Path.ChangeExtension(sourcePath, ".lrc"), "[00:01.00]local");

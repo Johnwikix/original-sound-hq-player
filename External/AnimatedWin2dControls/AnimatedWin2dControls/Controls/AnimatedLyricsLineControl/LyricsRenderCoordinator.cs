@@ -82,6 +82,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private double _targetScrollY;
         private double _smoothedScrollY;
         private double _lastTargetScrollY;
+        // Capture the entrance origin once; displacement and later effect updates share it.
+        private LyricScrollTiming _lineScrollTiming;
         private bool _userScrolling;
         private bool _isUserScrollingChanged;
         private double _userScrollCooldownSec;
@@ -456,7 +458,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 if (isPrimaryPlayingLineChanged || _layoutDirty)
                 {
                     _canvasYScrollTransition.SetInterpolator(
-                        EasingHelper.GetInterpolatorByEasingType<double>(_cachedScrollEasingType, _cachedScrollEasingMode));
+                        EasingHelper.GetInterpolatorByEasingType<double>(
+                            _cachedScrollEasingType == EasingType.FlowWave
+                                && _cachedScrollEasingMode != EaseMode.In && _cachedScrollEasingMode != EaseMode.InOut
+                                ? EasingType.Linear : _cachedScrollEasingType,
+                            _cachedScrollEasingMode));
                 }
             }
             else
@@ -525,8 +531,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             double canvasHeight = RegionH > 0 ? RegionH : 400;
             double playingLineTopOffsetFactor = _cachedPlayingLineTopOffset;
 
+            LyricScrollTiming? scrollTiming = null;
             if (UsesLineScroll)
-                UpdateLineScrolls(dt, canvasHeight, isPrimaryPlayingLineChanged && !isScrollSeek);
+                scrollTiming = UpdateLineScrolls(dt, canvasHeight, isPrimaryPlayingLineChanged, isScrollSeek);
 
             var visibleRange = LyricsLayoutManager.CalculateVisibleRange(
                 lines, combinedScroll, 0, canvasHeight, canvasHeight, playingLineTopOffsetFactor,
@@ -574,7 +581,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _layoutDirty,
                 isPrimaryPlayingLineChanged,
                 currentTimeMs,
-                _animationVersion);
+                _animationVersion,
+                scrollTiming);
 
             _layoutDirty = false;
             _isUserScrollingChanged = false;
@@ -582,13 +590,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             HandleHoverUpdates(combinedScroll, canvasHeight, playingLineTopOffsetFactor);
         }
 
-        private void UpdateLineScrolls(double seconds, double canvasHeight, bool lineChanged)
+        private LyricScrollTiming UpdateLineScrolls(double seconds, double canvasHeight, bool lineChanged, bool isSeek)
         {
             double target = _lastTargetScrollY;
             double duration = Math.Max(0, _cachedScrollDurationMs / 1000.0);
             bool spring = _cachedScrollEasingType == EasingType.FlowWave
                 && _cachedScrollEasingMode != EaseMode.In && _cachedScrollEasingMode != EaseMode.InOut;
-            bool regularAdvance = lineChanged && _currentLineIndex == _lastCurrentLineIndex + 1
+            bool regularAdvance = lineChanged && !isSeek && _currentLineIndex == _lastCurrentLineIndex + 1
                 && _lastCurrentLineIndex >= 0;
             double interval = 0;
             // Tweens fit the next entrance; springs keep stable stiffness across short lines.
@@ -600,6 +608,18 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
             bool stagger = _cachedScrollEasingMode == EaseMode.FlowWave && regularAdvance
                 && !_userScrolling && !_isUserScrollingChanged;
+            if (_layoutDirty || lineChanged || isSeek || _isUserScrollingChanged
+                || _renderLines[0].ScrollMotion.TargetValue != target)
+            {
+                // Match BetterLyrics' visible-range origin, without including the glyph buffer rows.
+                int firstVisible = stagger
+                    ? LyricsLayoutManager.CalculateVisibleRange(_renderLines,
+                        _smoothedScrollY + _mouseYScrollTransition.Value, 0, canvasHeight, canvasHeight,
+                        _cachedPlayingLineTopOffset).Start
+                    : -1;
+                _lineScrollTiming = new LyricScrollTiming(duration, interval,
+                    stagger ? Math.Max(0, firstVisible) : -1, spring);
+            }
             var interpolator = EasingHelper.GetInterpolatorByEasingType<double>(
                 _cachedScrollEasingType, _cachedScrollEasingMode);
             if (_layoutDirty)
@@ -611,15 +631,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 var motion = _renderLines[i].ScrollMotion;
                 if (!_userScrolling)
                 {
-                    var timing = stagger
-                        ? LyricScrollMotion.FlowWaveTiming(i, _currentLineIndex, duration, interval, spring)
-                        : (Duration: duration, Delay: 0.0);
+                    var timing = _lineScrollTiming.GetLineTiming(i);
                     motion.Start(target, timing.Duration, timing.Delay, spring, interpolator);
                 }
                 motion.Update(seconds);
             }
             // A stationary pointer can move over a different line while the lines scroll.
             _hoverDirty = true;
+            return _lineScrollTiming;
         }
 
         private void HandleHoverUpdates(double combinedScroll, double canvasHeight, double playingLineTopOffsetFactor)
@@ -722,7 +741,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     ? ry + rh * playingLineTopOffsetFactor + line.ScrollMotion.Value + _mouseYScrollTransition.Value
                     : yOffsetBase;
 
-                bool isPlayingLine = line.GetIsPlaying(currentTimeMs);
+                bool isPlayingLine = line.GetIsHighlighted(currentTimeMs);
 
                 line.EnsureCaches(sender, _cachedStrokeWidth);
                 if (line.CachedFill == null) continue;

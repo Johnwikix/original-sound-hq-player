@@ -8,7 +8,7 @@ dotnet run --project _tools/LyricsEasingRegression/LyricsEasingRegression.csproj
 
 测试链接生产代码的 `LyricScrollMotion`、`EasingHelper` 和 `LyricsLayoutManager`。
 `LayoutFixtures.cs` 只替代 Win2D 文本/GPU 对象，不替代可见范围或命中算法。
-覆盖逐行启动、延迟期间继续运动、快速换行替换目标、速度连续、30/60/120/144 Hz、
+覆盖逐行启动、延迟期间保持位置并保存速度、快速换行替换目标、30/60/120/144 Hz、
 反向目标、布局重置、零时长、不同曲线组合、独立行可见性、缩放/滚轮偏移命中、
 重叠行绘制顺序、两个设置入口、枚举持久化和所有语言资源。
 
@@ -18,8 +18,9 @@ dotnet run --project _tools/LyricsEasingRegression/LyricsEasingRegression.csproj
 - [AMLL 歌词组](https://github.com/amll-dev/applemusic-like-lyrics/blob/main/packages/core/src/lyric-player/base/group.ts)：逐组更新纵向弹簧。
 - [AMLL 弹簧](https://github.com/amll-dev/applemusic-like-lyrics/blob/main/packages/core/src/utils/spring.ts)：切换目标时保持运动速度，等待新目标时继续旧运动。
 
-本实现参考这些机制，独立编写 C# 调度和临界阻尼解析解，没有引入该项目依赖或复制其代码。
-参数按本项目的布局与响应时间独立设定。
+本实现保留独立 C# 调度和临界阻尼解析解；流波组合的传播与配套效果时序对齐
+BetterLyrics 的 `dad48ab9`（2026-09-26），不引入该项目依赖。
+`LyricScrollTiming` 为位移、缩放、模糊和透明度提供同一份时序。
 
 ## 设置语义
 
@@ -28,9 +29,10 @@ dotnet run --project _tools/LyricsEasingRegression/LyricsEasingRegression.csproj
 - 方向 `FlowWave`：逐行错峰；可以搭配原有曲线。标量插值采用 Out。
 - 两项都选流波：独立弹簧和逐行延迟组合，也是新配置的默认值。
 - 兼容读取旧实验名称，保存时统一写入 `FlowWave`；已有的其他曲线选择保持不变。
-- 自动前进逐行传播；跳转、布局重建、手动滚动归位不新增错峰延迟。
+- 自动前进从可见区顶部逐行传播，当前播放行也遵循同一延迟；跳转、布局重建、手动滚动归位不新增错峰延迟。
 - 主歌词和译文作为一个布局组运动。鼠标滚动偏移叠加在每行位置上。
-- 延迟间隔从约 80 ms 逐步收短，总延迟小于 400 ms 且受滚动时长限制；快速歌词缩短弹簧响应时间。
+- 延迟间隔从约 80 ms 逐步收短，总延迟小于 400 ms 且受滚动时长限制；句间隔 250–500 ms 平滑削弱错峰，≤250 ms 关闭错峰。弹簧保留配置的响应时长，其他曲线仍压缩到下一句前完成。
+- 新目标的延迟期间保持位置，启动时沿用保存的速度；新目标替换旧待执行目标并重新计时。
 - 首次布局直接对齐；重排清除待执行动画；屏外行继续更新位置，文字效果仍按可见范围更新。
 
 这些是 CPU 回归检查，不代替 WinUI 实际播放时的视觉验收。
