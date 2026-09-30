@@ -91,6 +91,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         /// <summary>Gets the display highlight boundary without extending word or line playback progress.</summary>
         public double? HighlightEndMs { get; private set; }
 
+        /// <summary>Keeps the outgoing word effects visible during the flow-wave exit, independently of musical focus.</summary>
+        public bool IsWordEffectsRetiring { get; internal set; }
+
         /// <summary>Determines whether the line retains its display highlight at the given playback position.</summary>
         /// <param name="currentMs">The playback position in milliseconds.</param>
         /// <returns><see langword="true"/> while the display interval is active; otherwise, <see langword="false"/>.</returns>

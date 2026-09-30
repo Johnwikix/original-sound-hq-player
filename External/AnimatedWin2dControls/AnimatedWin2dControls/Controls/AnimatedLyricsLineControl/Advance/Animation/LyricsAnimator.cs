@@ -5,6 +5,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 {
     public class LyricsAnimator
     {
+        // 与已有播放投影的 300ms 末字留白衔接；真实长空档不保持重音。
+        private const double FinalWordEffectHoldWindowMs = 300;
         private readonly double _defaultScale = 0.75;
         private readonly double _highlightedScale = 1.0;
 
@@ -41,7 +43,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             bool isPrimaryPlayingLineChanged,
             double currentPositionMs,
             int animationVersion,
-            LyricScrollTiming? scrollTiming = null)
+            LyricScrollTiming? scrollTiming = null,
+            bool isSeek = false,
+            bool useFlowWaveWordExit = false)
         {
             if (lines == null || lines.Count == 0) return;
             if (primaryPlayingLineIndex < 0 || primaryPlayingLineIndex >= lines.Count) return;
@@ -79,6 +83,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 bool isSecondaryLinePlaying = line.GetIsHighlighted(currentPositionMs);
                 bool isSecondaryLinePlayingChanged = line.IsPlayingLastFrame != isSecondaryLinePlaying;
                 line.IsPlayingLastFrame = isSecondaryLinePlaying;
+
+                if ((useFlowWaveWordExit && isSeek) || (line.IsWordEffectsRetiring && (isSeek || isLayoutChanged || isMouseScrollingChanged
+                    || isSecondaryLinePlaying || line.LastProcessedVersion < animationVersion - 1)))
+                    ResetWordEffects(line);
 
                 var playProgress = line.GetPlayProgress(currentPositionMs);
 
@@ -148,6 +156,59 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
                 if (isWordAnimationEnabled)
                 {
+                    var finalSyllable = line.PrimaryRenderSyllables.Count > 0 ? line.PrimaryRenderSyllables[^1] : null;
+                    bool holdFinalWordEffects = useFlowWaveWordExit && isSecondaryLinePlaying
+                        && finalSyllable is not null && i + 1 < lines.Count
+                        && line.HighlightEndMs <= lines[i + 1].StartMs
+                        && line.HighlightEndMs - finalSyllable.EndMs <= FinalWordEffectHoldWindowMs + 0.001
+                        && ((isGlowEnabled && finalSyllable.DurationMs >= lyricsGlowEffectLongSyllableDuration)
+                            || (isScaleEnabled && finalSyllable.DurationMs >= lyricsScaleEffectLongSyllableDuration));
+
+                    if (useFlowWaveWordExit && isSecondaryLinePlayingChanged && !isSecondaryLinePlaying
+                        && !isSeek && !isLayoutChanged && !isMouseScrolling && !isMouseScrollingChanged
+                        && scrollTiming is { } timing)
+                    {
+                        // 音乐时间照常切句；末字从当前画面状态，随该行的流波延迟和退场一起回落。
+                        var (duration, delay) = timing.GetLineTiming(i);
+                        foreach (var character in line.PrimaryRenderChars)
+                        {
+                            if (character.GlowTransition.Value <= 0.01 && Math.Abs(character.ScaleTransition.Value - 1) <= 0.0001
+                                && Math.Abs(character.FloatTransition.Value) <= 0.01)
+                            {
+                                ResetCharacterEffects(character);
+                                continue;
+                            }
+                            character.GlowTransition.SetDelay(delay);
+                            character.GlowTransition.SetDuration(duration);
+                            character.GlowTransition.Start(0);
+                            character.ScaleTransition.SetDelay(delay);
+                            character.ScaleTransition.SetDuration(duration);
+                            character.ScaleTransition.Start(1);
+                            character.FloatTransition.SetDelay(delay);
+                            character.FloatTransition.SetDuration(duration);
+                            character.FloatTransition.Start(0);
+                            character.IsPlayingLastFrame = false;
+                            line.IsWordEffectsRetiring = true;
+                        }
+                        foreach (var syllable in line.PrimaryRenderSyllables) syllable.IsPlayingLastFrame = false;
+                    }
+
+                    if (line.IsWordEffectsRetiring)
+                    {
+                        bool hasPendingEffects = false;
+                        foreach (var character in line.PrimaryRenderChars)
+                        {
+                            character.ProgressPlayed = character.GetPlayProgress(currentPositionMs);
+                            character.Update(elapsedTime);
+                            hasPendingEffects |= character.GlowTransition.IsTransitioning
+                                || character.ScaleTransition.IsTransitioning || character.FloatTransition.IsTransitioning;
+                        }
+                        if (!hasPendingEffects) ResetWordEffects(line);
+                        line.LastProcessedVersion = animationVersion;
+                        line.Update(elapsedTime);
+                        continue;
+                    }
+
                     if (isSecondaryLinePlayingChanged)
                     {
                         if (isFloatEnabled)
@@ -156,6 +217,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                             {
                                 if (isSecondaryLinePlaying)
                                 {
+                                    renderChar.FloatTransition.SetDurationMs(lyricsFloatAnimationDuration);
                                     if (renderChar.EndMs < currentPositionMs)
                                         renderChar.FloatTransition.JumpTo(0);
                                     else
@@ -172,6 +234,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     foreach (var renderChar in line.PrimaryRenderChars)
                     {
                         renderChar.ProgressPlayed = renderChar.GetPlayProgress(currentPositionMs);
+                        bool holdFloat = holdFinalWordEffects && renderChar.StartMs >= finalSyllable!.StartMs;
 
                         bool isCharPlaying = renderChar.GetIsPlaying(currentPositionMs);
                         bool isCharPlayingChanged = renderChar.IsPlayingLastFrame != isCharPlaying;
@@ -180,14 +243,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                         {
                             if (isFloatEnabled)
                             {
-                                renderChar.FloatTransition.SetDurationMs(Math.Min(lyricsFloatAnimationDuration, maxAnimationDurationMs));
-                                renderChar.FloatTransition.Start(0);
+                                renderChar.FloatTransition.SetDurationMs(holdFloat ? lyricsFloatAnimationDuration
+                                    : Math.Min(lyricsFloatAnimationDuration, maxAnimationDurationMs));
+                                renderChar.FloatTransition.Start(holdFloat ? targetCharFloat : 0);
                             }
                             renderChar.IsPlayingLastFrame = isCharPlaying;
                         }
                         else
                         {
-                            if (!isCharPlaying && currentPositionMs > renderChar.EndMs && renderChar.FloatTransition.Value != 0)
+                            if (!holdFloat && !isCharPlaying && currentPositionMs > renderChar.EndMs && renderChar.FloatTransition.Value != 0)
                             {
                                 renderChar.FloatTransition.SetDurationMs(Math.Min(lyricsFloatAnimationDuration, maxAnimationDurationMs));
                                 renderChar.FloatTransition.Start(0);
@@ -209,9 +273,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                                     if (syllable.DurationMs >= lyricsScaleEffectLongSyllableDuration)
                                     {
                                         var (inDuration, outDuration) = CalculateSegmentDuration(syllable.DurationMs / 1000.0, maxAnimationDurationMs / 1000.0);
-                                        renderChar.ScaleTransition.Start(
-                                            new Keyframe<double>(targetCharScale, inDuration),
-                                            new Keyframe<double>(1.0, outDuration));
+                                        if (holdFinalWordEffects && ReferenceEquals(syllable, finalSyllable))
+                                        {
+                                            renderChar.ScaleTransition.SetDuration(inDuration);
+                                            renderChar.ScaleTransition.Start(targetCharScale);
+                                        }
+                                        else
+                                            renderChar.ScaleTransition.Start(
+                                                new Keyframe<double>(targetCharScale, inDuration),
+                                                new Keyframe<double>(1.0, outDuration));
                                     }
                                 }
                             }
@@ -221,9 +291,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                                 foreach (var renderChar in syllable.ChildrenRenderLyricsChars)
                                 {
                                     var (inDuration, outDuration) = CalculateSegmentDuration(syllable.DurationMs / 1000.0, maxAnimationDurationMs / 1000.0);
-                                    renderChar.GlowTransition.Start(
-                                        new Keyframe<double>(targetCharGlow, inDuration),
-                                        new Keyframe<double>(0, outDuration));
+                                    if (holdFinalWordEffects && ReferenceEquals(syllable, finalSyllable))
+                                    {
+                                        renderChar.GlowTransition.SetDuration(inDuration);
+                                        renderChar.GlowTransition.Start(targetCharGlow);
+                                    }
+                                    else
+                                        renderChar.GlowTransition.Start(
+                                            new Keyframe<double>(targetCharGlow, inDuration),
+                                            new Keyframe<double>(0, outDuration));
                                 }
                             }
 
@@ -240,6 +316,25 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 line.LastProcessedVersion = animationVersion;
                 line.Update(elapsedTime);
             }
+        }
+
+        private static void ResetWordEffects(RenderLyricsLine line)
+        {
+            line.IsWordEffectsRetiring = false;
+            foreach (var character in line.PrimaryRenderChars)
+                ResetCharacterEffects(character);
+            foreach (var syllable in line.PrimaryRenderSyllables) syllable.IsPlayingLastFrame = false;
+        }
+
+        private static void ResetCharacterEffects(RenderLyricsChar character)
+        {
+            character.GlowTransition.SetDelay(0);
+            character.GlowTransition.JumpTo(0);
+            character.ScaleTransition.SetDelay(0);
+            character.ScaleTransition.JumpTo(1);
+            character.FloatTransition.SetDelay(0);
+            character.FloatTransition.JumpTo(0);
+            character.IsPlayingLastFrame = false;
         }
 
         private static double CalculateTargetOpacity(double baseOpacity, double baseOpacityWhenZeroDistanceFactor,

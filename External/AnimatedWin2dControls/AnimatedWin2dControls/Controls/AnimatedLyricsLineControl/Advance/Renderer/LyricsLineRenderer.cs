@@ -415,7 +415,18 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     sourceCharRect.Extend(sourceCharRect.Height));
             }
 
-            ds.DrawImage(source, destCharRect, sourceCharRect);
+            if (Line.IsWordEffectsRetiring && Line.BlurAmountTransition.Value > 0)
+            {
+                // 退场仍按字符绘制，复用该字符的原生效果，避免切回整行时突变或逐帧创建资源。
+                renderChar.Crop.Source = source;
+                renderChar.Crop.SourceRectangle = sourceCharRect;
+                renderChar.Glow.BlurAmount = (float)Line.BlurAmountTransition.Value;
+                ds.DrawImage(renderChar.Glow,
+                    destCharRect.Extend(destCharRect.Height),
+                    sourceCharRect.Extend(sourceCharRect.Height));
+            }
+            else
+                ds.DrawImage(source, destCharRect, sourceCharRect);
         }
     }
 }

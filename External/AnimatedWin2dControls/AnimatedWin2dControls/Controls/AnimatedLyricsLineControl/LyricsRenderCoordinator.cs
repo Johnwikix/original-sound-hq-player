@@ -582,7 +582,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 isPrimaryPlayingLineChanged,
                 currentTimeMs,
                 _animationVersion,
-                scrollTiming);
+                scrollTiming,
+                isScrollSeek,
+                _cachedScrollEasingMode == EaseMode.FlowWave && !_userScrolling);
 
             _layoutDirty = false;
             _isUserScrollingChanged = false;
@@ -741,7 +743,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     ? ry + rh * playingLineTopOffsetFactor + line.ScrollMotion.Value + _mouseYScrollTransition.Value
                     : yOffsetBase;
 
-                bool isPlayingLine = line.GetIsHighlighted(currentTimeMs);
+                bool isPlayingLine = line.GetIsHighlighted(currentTimeMs) || line.IsWordEffectsRetiring;
 
                 line.EnsureCaches(sender, _cachedStrokeWidth);
                 if (line.CachedFill == null) continue;

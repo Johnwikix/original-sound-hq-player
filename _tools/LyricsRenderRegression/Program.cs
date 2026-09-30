@@ -99,9 +99,11 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 Check(oldLine.CachedFill is null && oldLine.PrimaryTextLayout is null, "Retired native resources must be released");
             });
             await canvas.RunOnGameLoopThreadAsync(() => MotionChecks.Run(canvas));
+            await canvas.RunOnGameLoopThreadAsync(() => FlowWaveWordExitChecks.Run(canvas));
             await canvas.RunOnGameLoopThreadAsync(() => HighlightChecks.Run(canvas));
             await DesktopHighlightChecks.RunAsync();
             var timedLyrics = await PlaybackTimingChecks.LoadAsync();
+            await canvas.RunOnGameLoopThreadAsync(() => FlowWaveWordExitChecks.RunSong(canvas, timedLyrics));
             await canvas.RunOnGameLoopThreadAsync(() => PlaybackTimingChecks.Run(canvas, timedLyrics));
             var emptyGroupLyrics = await PlaybackTimingChecks.LoadAsync(EmptyTimestampChecks.Sample);
             await canvas.RunOnGameLoopThreadAsync(() => EmptyTimestampChecks.Run(canvas, emptyGroupLyrics));
@@ -130,7 +132,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             Check(beforeClose!.CachedFill is null && beforeClose.PrimaryTextLayout is null && !coordinator.HasLyrics,
                 "Shutdown must release active resources and discard pending lyrics");
             Check(frames > 2, "Real Win2D drawing must have run");
-            File.WriteAllText(output, $"PASS: actual The Story of Us sidecar/parser/projection and Win2D brave fill, scale/glow/float return before 157681ms, exact row switch and backward seek; main and desktop gap highlight retention with real drawing, completed fill pixels, exact entrance switch, backward seek, paused gap and overlap; shared visible-origin wave, scale/blur/opacity delay, short-line handling, seek/relayout and live CanvasAnimatedControl frame, native cache retirement, 300 rapid publications, paused redraw, empty lyrics and repeated shutdown with pending work; {frames} frames.\n");
+            File.WriteAllText(output, $"PASS: flow-wave final-word emphasis hold and native drawing through shared delay/return, original 0/300ms word margins, long-gap settling, pause, forward/backward seek and relayout; actual The Story of Us sidecar/parser/projection with brave flow-wave visual retirement and normal Sine/Out return before 157681ms, exact musical row switch and backward seek; main and desktop gap highlight retention with real drawing, completed fill pixels, exact entrance switch, backward seek, paused gap and overlap; shared visible-origin wave, scale/blur/opacity delay, short-line handling, seek/relayout and live CanvasAnimatedControl frame, native cache retirement, 300 rapid publications, paused redraw, empty lyrics and repeated shutdown with pending work; {frames} frames.\n");
         }
         catch (Exception ex) { File.WriteAllText(output, "FAIL: " + ex); }
         finally
