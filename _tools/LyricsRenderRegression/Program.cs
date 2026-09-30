@@ -103,6 +103,8 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             await DesktopHighlightChecks.RunAsync();
             var timedLyrics = await PlaybackTimingChecks.LoadAsync();
             await canvas.RunOnGameLoopThreadAsync(() => PlaybackTimingChecks.Run(canvas, timedLyrics));
+            var emptyGroupLyrics = await PlaybackTimingChecks.LoadAsync(EmptyTimestampChecks.Sample);
+            await canvas.RunOnGameLoopThreadAsync(() => EmptyTimestampChecks.Run(canvas, emptyGroupLyrics));
             for (int i = 0; i < 300; i++)
             {
                 UILyricsBus.Publish(Lyrics("Switch " + i));

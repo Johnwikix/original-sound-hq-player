@@ -149,6 +149,7 @@ var online = new LyricsOnlineSearch { Handler = (_, _, _) => Task.FromResult<Lyr
 var resolver = new WinUIMusicPlayer.Services.LyricsRefreshService(new(db, parser), parser, online, new(),
     Microsoft.Extensions.Logging.Abstractions.NullLogger<WinUIMusicPlayer.Services.LyricsRefreshService>.Instance);
 await LineEndingChecks.CheckPlaybackAsync(resolver, repository, db, folder, Check);
+await EmptyTimestampChecks.RunAsync(parser, resolver, folder, Check);
 await PlaybackCompatibilityChecks.RunAsync(parser, resolver, folder, Check);
 await HighlightTimingChecks.RunAsync(parser, resolver, repository, db, folder, Check);
 string sourcePath = Path.Combine(folder, "Source.flac");

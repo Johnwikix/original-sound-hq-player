@@ -203,13 +203,18 @@ public sealed partial class LyricsParser
                 var words = ImmutableArray.CreateBuilder<ParsedLyricWord>();
                 foreach (Match word in (format == LyricsFormat.Krc ? KrcWord : QrcWord).Matches(match.Groups[3].Value))
                 {
+                    string text = word.Groups[format == LyricsFormat.Krc ? 3 : 1].Value;
+                    if (text.Length == 0) continue; // 空字标签不属于正文，也不能使空行变成有效歌词。
                     double wordStart = format == LyricsFormat.Krc ? start + Number(word.Groups[1].Value) : offset + Number(word.Groups[2].Value);
                     double wordEnd = wordStart + Number(word.Groups[format == LyricsFormat.Krc ? 2 : 3].Value);
-                    string text = word.Groups[format == LyricsFormat.Krc ? 3 : 1].Value;
                     words.Add(new(text, wordStart, wordEnd));
                 }
                 if (words.Count > 0)
-                    result.Add(new(string.Concat(words.Select(word => word.Text)), start, end, words.ToImmutable()));
+                {
+                    string text = string.Concat(words.Select(word => word.Text));
+                    // 有正文的行保留词间空格和停顿；整行仅空白时不参与来源命中或切句。
+                    if (!string.IsNullOrWhiteSpace(text)) result.Add(new(text, start, end, words.ToImmutable()));
+                }
                 continue;
             }
             var tags = TimeTag.Matches(line);
@@ -230,7 +235,11 @@ public sealed partial class LyricsParser
                     words.Add(new(text, start, Math.Max(start, end)));
                 }
                 if (words.Count > 0)
-                    result.Add(new(string.Concat(words.Select(word => word.Text)), Time(tags[0].Groups[1].Value) + offset, null, words.ToImmutable()));
+                {
+                    string text = string.Concat(words.Select(word => word.Text));
+                    if (!string.IsNullOrWhiteSpace(text))
+                        result.Add(new(text, Time(tags[0].Groups[1].Value) + offset, null, words.ToImmutable()));
+                }
             }
             else
             {

@@ -45,7 +45,10 @@
                 Style="{StaticResource CaptionTextBlockStyle}" />
         </Grid>
 
-        <Grid Margin="0,44,0,0" Visibility="{x:Bind BoolToNVisibility(IsLoading)}" RowDefinitions="*,Auto">
+        <Grid
+            Margin="0,44,0,0"
+            RowDefinitions="*,Auto"
+            Visibility="{x:Bind BoolToNVisibility(IsLoading)}">
 
             <ScrollViewer
                 Grid.Row="0"
@@ -59,8 +62,9 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <TextBox IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
+                            <TextBox
                                 BorderThickness="0"
+                                IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
                                 Text="{x:Bind MusicDetail.Title, Mode=TwoWay}"
                                 TextWrapping="Wrap" />
                         </StackPanel>
@@ -70,8 +74,9 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <TextBox IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
+                            <TextBox
                                 BorderThickness="0"
+                                IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
                                 Text="{x:Bind MusicDetail.Author, Mode=TwoWay}"
                                 TextWrapping="Wrap" />
                         </StackPanel>
@@ -81,8 +86,9 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <TextBox IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
+                            <TextBox
                                 BorderThickness="0"
+                                IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
                                 Text="{x:Bind MusicDetail.Album, Mode=TwoWay}"
                                 TextWrapping="Wrap" />
                         </StackPanel>
@@ -90,16 +96,17 @@
 
                     <Grid
                         Margin="12,0"
+                        ColumnDefinitions="*,*,*,*"
                         ColumnSpacing="14"
-                        RowSpacing="6"
-                        ColumnDefinitions="*,*,*,*">
+                        RowSpacing="6">
                         <StackPanel Grid.Row="0" Grid.Column="0">
                             <TextBlock
                                 x:Uid="YearTextBlock"
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <NumberBox IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
+                            <NumberBox
+                                IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
                                 Minimum="0"
                                 SmallChange="1"
                                 SpinButtonPlacementMode="Compact"
@@ -111,7 +118,8 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <NumberBox IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
+                            <NumberBox
+                                IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
                                 Minimum="0"
                                 SmallChange="1"
                                 SpinButtonPlacementMode="Compact"
@@ -123,7 +131,8 @@
                                 Margin="0,0,0,2"
                                 FontSize="12"
                                 Opacity="0.7" />
-                            <NumberBox IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
+                            <NumberBox
+                                IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
                                 Minimum="0"
                                 SmallChange="1"
                                 SpinButtonPlacementMode="Compact"
@@ -147,9 +156,9 @@
 
                     <Grid
                         Margin="12,0"
+                        ColumnDefinitions="*,*,*,*"
                         ColumnSpacing="14"
-                        RowSpacing="6"
-                        ColumnDefinitions="*,*,*,*">
+                        RowSpacing="6">
                         <StackPanel Grid.Row="0" Grid.Column="0">
                             <TextBlock
                                 x:Uid="DurationTextBlock"
@@ -186,10 +195,10 @@
 
                     <Grid
                         Margin="12,0"
-                        ColumnSpacing="14"
-                        RowSpacing="6"
                         ColumnDefinitions="*,*"
-                        RowDefinitions="Auto,Auto">
+                        ColumnSpacing="14"
+                        RowDefinitions="Auto,Auto"
+                        RowSpacing="6">
                         <StackPanel Grid.Row="0" Grid.Column="0">
                             <TextBlock
                                 x:Uid="LastFolderNameTextBlock"
@@ -240,18 +249,18 @@
 
                     <TextBlock
                         Text="{x:Bind LyricsEditor.Status, Mode=OneWay}"
-                        Visibility="{x:Bind TextToVisibility(LyricsEditor.Status), Mode=OneWay}"
-                        TextWrapping="Wrap" />
-                    <TextBlock
-                        Text="{x:Bind LyricsEditor.Error, Mode=OneWay}"
-                        Visibility="{x:Bind TextToVisibility(LyricsEditor.Error), Mode=OneWay}"
                         TextWrapping="Wrap"
-                        Foreground="{ThemeResource SystemFillColorCriticalBrush}" />
-                    <Grid Margin="0,4,12,0" ColumnDefinitions="*,Auto,12,Auto">
+                        Visibility="{x:Bind TextToVisibility(LyricsEditor.Status), Mode=OneWay}" />
+                    <TextBlock
+                        Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                        Text="{x:Bind LyricsEditor.Error, Mode=OneWay}"
+                        TextWrapping="Wrap"
+                        Visibility="{x:Bind TextToVisibility(LyricsEditor.Error), Mode=OneWay}" />
+                    <Grid Margin="0,0,12,0" ColumnDefinitions="*,Auto,12,Auto">
                         <Pivot
                             Grid.Column="0"
                             Height="300"
-                            Padding="0,4,0,0">
+                            Padding="0">
                             <PivotItem>
                                 <PivotItem.Header>
                                     <TextBlock x:Uid="LyricsOriginalTab" FontSize="14" />
@@ -259,10 +268,10 @@
                                 <TextBox
                                     MinHeight="120"
                                     Margin="0,4,0,0"
+                                    AcceptsReturn="True"
                                     BorderThickness="0"
                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
                                     Text="{x:Bind LyricsEditor.OriginalText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                    AcceptsReturn="True"
                                     TextWrapping="Wrap" />
                             </PivotItem>
                             <PivotItem>
@@ -272,10 +281,10 @@
                                 <TextBox
                                     MinHeight="120"
                                     Margin="0,4,0,0"
+                                    AcceptsReturn="True"
                                     BorderThickness="0"
                                     ScrollViewer.VerticalScrollBarVisibility="Auto"
                                     Text="{x:Bind LyricsEditor.TranslationText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
-                                    AcceptsReturn="True"
                                     TextWrapping="Wrap" />
                             </PivotItem>
                         </Pivot>
@@ -288,15 +297,16 @@
                                 Width="36"
                                 Height="36"
                                 Padding="0"
-                                IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}"
-                                Click="OpenFile_Click">
+                                Click="OpenFile_Click"
+                                IsEnabled="{x:Bind MusicDetail.CanEditFile, Mode=OneWay}">
                                 <FontIcon FontSize="14" Glyph="&#xE838;" />
                             </Button>
                             <Button
                                 Width="36"
                                 Height="36"
                                 Padding="0"
-                                IsEnabled="{x:Bind MusicDetail.CanEditFile}" Click="ReadLyricsFromFile_Click">
+                                Click="ReadLyricsFromFile_Click"
+                                IsEnabled="{x:Bind MusicDetail.CanEditFile}">
                                 <FontIcon FontSize="14" Glyph="&#xE72C;" />
                                 <ToolTipService.ToolTip>
                                     <ToolTip x:Uid="ReadLyricsFromFile" />
@@ -362,7 +372,8 @@
                                     Width="32"
                                     Height="32"
                                     Padding="0"
-                                    IsEnabled="{x:Bind MusicDetail.CanEditFile}" Click="SelectCoverImageButton_Click">
+                                    Click="SelectCoverImageButton_Click"
+                                    IsEnabled="{x:Bind MusicDetail.CanEditFile}">
                                     <FontIcon FontSize="14" Glyph="&#xe70f;" />
                                     <ToolTipService.ToolTip>
                                         <ToolTip x:Uid="SelectCoverImageButton" />
@@ -387,7 +398,7 @@
 
             <Grid
                 Grid.Row="1"
-                Margin="14,4,14,12"
+                Margin="26,4,24,12"
                 ColumnDefinitions="*,Auto"
                 ColumnSpacing="16">
                 <Grid
@@ -399,31 +410,34 @@
                     Visibility="{x:Bind BoolToVisibility(LyricsEditor.HasLegacy), Mode=OneWay}">
                     <Grid.Resources>
                         <DataTemplate x:Key="LyricsRestoreButtonContent">
-                            <TextBlock Text="{Binding}" TextAlignment="Center" TextWrapping="Wrap" />
+                            <TextBlock
+                                Text="{Binding}"
+                                TextAlignment="Center"
+                                TextWrapping="Wrap" />
                         </DataTemplate>
                     </Grid.Resources>
                     <Button
                         x:Uid="LyricsRestoreLegacyLrc"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
-                        ContentTemplate="{StaticResource LyricsRestoreButtonContent}"
                         Command="{x:Bind LyricsEditor.RestoreLegacyCommand}"
-                        CommandParameter="Lrc" />
+                        CommandParameter="Lrc"
+                        ContentTemplate="{StaticResource LyricsRestoreButtonContent}" />
                     <Button
-                        Grid.Column="1"
                         x:Uid="LyricsRestoreLegacyKrc"
+                        Grid.Column="1"
                         HorizontalAlignment="Stretch"
                         VerticalAlignment="Stretch"
-                        ContentTemplate="{StaticResource LyricsRestoreButtonContent}"
                         Command="{x:Bind LyricsEditor.RestoreLegacyCommand}"
-                        CommandParameter="Krc" />
+                        CommandParameter="Krc"
+                        ContentTemplate="{StaticResource LyricsRestoreButtonContent}" />
                 </Grid>
                 <StackPanel
                     Grid.Column="1"
                     VerticalAlignment="Center"
                     Orientation="Horizontal"
                     Spacing="8">
-                    <Button IsEnabled="{x:Bind MusicDetail.CanEditFile}" x:Uid="SaveButton">
+                    <Button x:Uid="SaveButton" IsEnabled="{x:Bind MusicDetail.CanEditFile}">
                         <Button.Flyout>
                             <Flyout x:Name="ConfirmFlyout">
                                 <StackPanel>

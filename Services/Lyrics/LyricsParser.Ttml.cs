@@ -79,14 +79,15 @@ public sealed partial class LyricsParser
             var words = ImmutableArray.CreateBuilder<Model.ParsedLyricWord>();
             var text = new System.Text.StringBuilder();
             Collect(p, start, end, words, text, token);
-            if (text.Length == 0) continue;
+            string lineText = text.ToString();
+            if (string.IsNullOrWhiteSpace(lineText)) continue;
             start ??= words.Count > 0 ? words[0].StartMs : null;
             if (start is null) continue;
             end ??= words.Count > 0 ? words[^1].EndMs : null;
             // Untimed text around timed spans must remain visible. Fall back to line timing
             // when the word stream cannot faithfully represent all body text.
-            if (string.Concat(words.Select(word => word.Text)) != text.ToString()) words.Clear();
-            result.Add(new(text.ToString(), start.Value, end, words.ToImmutable(), (string?)p.Attribute(Itunes + "key")));
+            if (string.Concat(words.Select(word => word.Text)) != lineText) words.Clear();
+            result.Add(new(lineText, start.Value, end, words.ToImmutable(), (string?)p.Attribute(Itunes + "key")));
         }
         return result;
     }

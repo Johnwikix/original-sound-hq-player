@@ -17,14 +17,17 @@ internal static class PlaybackTimingChecks
     private static readonly FieldInfo Lines = typeof(LyricsRenderCoordinator).GetField("_renderLines", BindingFlags.Instance | BindingFlags.NonPublic)!;
     private static readonly FieldInfo Focus = typeof(LyricsRenderCoordinator).GetField("_currentLineIndex", BindingFlags.Instance | BindingFlags.NonPublic)!;
 
-    internal static async Task<List<LyricLine>> LoadAsync()
+    internal static async Task<List<LyricLine>> LoadAsync(string? content = null)
     {
         string directory = Path.Combine(Path.GetTempPath(), "lyrics-word-effects-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         string path = Path.Combine(directory, "song.flac");
         try
         {
-            File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "story-of-us.qrc.txt"), Path.ChangeExtension(path, ".qrc"));
+            if (content is null)
+                File.Copy(Path.Combine(AppContext.BaseDirectory, "Fixtures", "story-of-us.qrc.txt"), Path.ChangeExtension(path, ".qrc"));
+            else
+                await File.WriteAllTextAsync(Path.ChangeExtension(path, ".qrc"), content);
             var resolver = new LyricsRefreshService(new(), new(), new(), new(), NullLogger<LyricsRefreshService>.Instance);
             return await resolver.SetLyrics(new() { Path = path, Duration = TimeSpan.FromSeconds(265) }, default);
         }
