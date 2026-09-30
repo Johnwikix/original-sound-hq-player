@@ -1,31 +1,35 @@
 <UserControl x:Class="LyricsUiRegression.TestPanel" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:tool="using:WinUIMusicPlayer.Utils" xmlns:controls="using:CommunityToolkit.WinUI.Controls"><StackPanel Padding="20" Spacing="8"><controls:SettingsCard xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:controls="using:CommunityToolkit.WinUI.Controls" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Header="歌词文件优先级" Description="按顺序使用第一个有效的同名歌词文件；翻译优先读取 _Translated.lrc。">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <ComboBox x:Name="FirstLyricsFormat" MinWidth="86" Header="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFirst')}" ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}" SelectedIndex="{x:Bind ViewModel.FirstLyricsFormatIndex, Mode=TwoWay}" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFirst')}" />
-                        <ComboBox x:Name="SecondLyricsFormat" MinWidth="86" Header="{x:Bind tool:ToolUtils.GetString('LyricsPrioritySecond')}" ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}" SelectedIndex="{x:Bind ViewModel.SecondLyricsFormatIndex, Mode=TwoWay}" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPrioritySecond')}" />
-                        <ComboBox x:Name="ThirdLyricsFormat" MinWidth="86" Header="{x:Bind tool:ToolUtils.GetString('LyricsPriorityThird')}" ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}" SelectedIndex="{x:Bind ViewModel.ThirdLyricsFormatIndex, Mode=TwoWay}" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityThird')}" />
-                        <ComboBox x:Name="FourthLyricsFormat" MinWidth="86" Header="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFourth')}" ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}" SelectedIndex="{x:Bind ViewModel.FourthLyricsFormatIndex, Mode=TwoWay}" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFourth')}" />
+                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
+                        <ComboBox x:Name="FirstLyricsFormat" MinWidth="86" ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}" SelectedIndex="{x:Bind ViewModel.FirstLyricsFormatIndex, Mode=TwoWay}" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFirst')}" />
+                        <TextBlock VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="→" />
+                        <ComboBox x:Name="SecondLyricsFormat" MinWidth="86" ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}" SelectedIndex="{x:Bind ViewModel.SecondLyricsFormatIndex, Mode=TwoWay}" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPrioritySecond')}" />
+                        <TextBlock VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="→" />
+                        <ComboBox x:Name="ThirdLyricsFormat" MinWidth="86" ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}" SelectedIndex="{x:Bind ViewModel.ThirdLyricsFormatIndex, Mode=TwoWay}" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityThird')}" />
+                        <TextBlock VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="→" />
+                        <ComboBox x:Name="FourthLyricsFormat" MinWidth="86" ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}" SelectedIndex="{x:Bind ViewModel.FourthLyricsFormatIndex, Mode=TwoWay}" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFourth')}" />
                     </StackPanel>
                 </controls:SettingsCard>
 
                 <controls:SettingsCard xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:controls="using:CommunityToolkit.WinUI.Controls" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Header="歌词来源优先级" Description="优先使用所选来源的有效歌词，不可用时再尝试下一来源。">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <ComboBox x:Name="FirstLyricsSource" MinWidth="130" Header="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFirst')}" ItemsSource="{x:Bind ViewModel.LyricsSourceOptions}" SelectedIndex="{x:Bind ViewModel.FirstLyricsSourceIndex, Mode=TwoWay}" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFirst')}" />
-                        <ComboBox x:Name="SecondLyricsSource" MinWidth="130" Header="{x:Bind tool:ToolUtils.GetString('LyricsPrioritySecond')}" ItemsSource="{x:Bind ViewModel.LyricsSourceOptions}" SelectedIndex="{x:Bind ViewModel.SecondLyricsSourceIndex, Mode=TwoWay}" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPrioritySecond')}" />
+                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
+                        <ComboBox x:Name="FirstLyricsSource" MinWidth="130" ItemsSource="{x:Bind ViewModel.LyricsSourceOptions}" SelectedIndex="{x:Bind ViewModel.FirstLyricsSourceIndex, Mode=TwoWay}" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFirst')}" />
+                        <TextBlock VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="→" />
+                        <ComboBox x:Name="SecondLyricsSource" MinWidth="130" ItemsSource="{x:Bind ViewModel.LyricsSourceOptions}" SelectedIndex="{x:Bind ViewModel.SecondLyricsSourceIndex, Mode=TwoWay}" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPrioritySecond')}" />
                     </StackPanel>
                 </controls:SettingsCard>
 
-                <Pivot xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Height="300" Padding="0,4,0,0">
+                <Pivot xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Height="300" Padding="0">
                             <PivotItem>
                                 <PivotItem.Header>
                                     <TextBlock FontSize="14" Text="歌词" />
                                 </PivotItem.Header>
-                                <TextBox MinHeight="120" Margin="0,4,0,0" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Auto" Text="{x:Bind LyricsEditor.OriginalText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" AutomationProperties.AutomationId="OriginalInput" />
+                                <TextBox MinHeight="120" Margin="0,4,0,0" AcceptsReturn="True" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Auto" Text="{x:Bind LyricsEditor.OriginalText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" AutomationProperties.AutomationId="OriginalInput" />
                             </PivotItem>
                             <PivotItem>
                                 <PivotItem.Header>
                                     <TextBlock FontSize="14" Text="翻译" />
                                 </PivotItem.Header>
-                                <TextBox MinHeight="120" Margin="0,4,0,0" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Auto" Text="{x:Bind LyricsEditor.TranslationText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" TextWrapping="Wrap" AutomationProperties.AutomationId="TranslationInput" />
+                                <TextBox MinHeight="120" Margin="0,4,0,0" AcceptsReturn="True" BorderThickness="0" ScrollViewer.VerticalScrollBarVisibility="Auto" Text="{x:Bind LyricsEditor.TranslationText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" TextWrapping="Wrap" AutomationProperties.AutomationId="TranslationInput" />
                             </PivotItem>
                         </Pivot>
                         <Button Content="Save test draft" AutomationProperties.AutomationId="SaveDraft" Click="Save_Click"/><TextBlock x:Name="Status" AutomationProperties.AutomationId="Status"/><TextBlock Text="{x:Bind LyricsEditor.Error, Mode=OneWay}"/></StackPanel></UserControl>

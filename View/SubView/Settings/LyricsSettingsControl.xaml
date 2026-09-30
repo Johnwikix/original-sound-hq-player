@@ -30,24 +30,23 @@
                 <TextBlock x:Uid="SettingLyrics" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
                 <controls:SettingsCard x:Uid="LyricsFilePriority">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
+                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
                         <ComboBox x:Name="FirstLyricsFormat" MinWidth="86"
-                                  Header="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFirst')}"
                                   ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}"
                                   SelectedIndex="{x:Bind ViewModel.FirstLyricsFormatIndex, Mode=TwoWay}"
                                   AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFirst')}" />
+                        <TextBlock VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="→" />
                         <ComboBox x:Name="SecondLyricsFormat" MinWidth="86"
-                                  Header="{x:Bind tool:ToolUtils.GetString('LyricsPrioritySecond')}"
                                   ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}"
                                   SelectedIndex="{x:Bind ViewModel.SecondLyricsFormatIndex, Mode=TwoWay}"
                                   AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPrioritySecond')}" />
+                        <TextBlock VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="→" />
                         <ComboBox x:Name="ThirdLyricsFormat" MinWidth="86"
-                                  Header="{x:Bind tool:ToolUtils.GetString('LyricsPriorityThird')}"
                                   ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}"
                                   SelectedIndex="{x:Bind ViewModel.ThirdLyricsFormatIndex, Mode=TwoWay}"
                                   AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityThird')}" />
+                        <TextBlock VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="→" />
                         <ComboBox x:Name="FourthLyricsFormat" MinWidth="86"
-                                  Header="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFourth')}"
                                   ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}"
                                   SelectedIndex="{x:Bind ViewModel.FourthLyricsFormatIndex, Mode=TwoWay}"
                                   AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFourth')}" />
@@ -55,14 +54,13 @@
                 </controls:SettingsCard>
 
                 <controls:SettingsCard x:Uid="LyricsSourcePriority">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
+                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
                         <ComboBox x:Name="FirstLyricsSource" MinWidth="130"
-                                  Header="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFirst')}"
                                   ItemsSource="{x:Bind ViewModel.LyricsSourceOptions}"
                                   SelectedIndex="{x:Bind ViewModel.FirstLyricsSourceIndex, Mode=TwoWay}"
                                   AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFirst')}" />
+                        <TextBlock VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="→" />
                         <ComboBox x:Name="SecondLyricsSource" MinWidth="130"
-                                  Header="{x:Bind tool:ToolUtils.GetString('LyricsPrioritySecond')}"
                                   ItemsSource="{x:Bind ViewModel.LyricsSourceOptions}"
                                   SelectedIndex="{x:Bind ViewModel.SecondLyricsSourceIndex, Mode=TwoWay}"
                                   AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPrioritySecond')}" />
