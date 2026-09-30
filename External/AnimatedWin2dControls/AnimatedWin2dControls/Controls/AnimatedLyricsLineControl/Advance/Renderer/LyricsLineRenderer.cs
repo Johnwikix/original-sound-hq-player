@@ -410,9 +410,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 renderChar.Crop.SourceRectangle = sourcePlayedCharRect;
                 renderChar.Glow.BlurAmount = (float)glow;
 
+                // 半径趋零时模糊会成为一层普通字形；退场必须同时降低这一层的透明度。
+                // 用退场开始时的实际半径归一化，保证首帧和此前画面连续。
+                float glowOpacity = Line.IsWordEffectsRetiring
+                    ? (renderChar.GlowExitStartAmount > 0 ? (float)Math.Clamp(glow / renderChar.GlowExitStartAmount, 0, 1) : 0)
+                    : 1;
+
                 ds.DrawImage(renderChar.Glow,
                     destCharRect.Extend(destCharRect.Height),
-                    sourceCharRect.Extend(sourceCharRect.Height));
+                    sourceCharRect.Extend(sourceCharRect.Height), glowOpacity);
             }
 
             if (Line.IsWordEffectsRetiring && Line.BlurAmountTransition.Value > 0)

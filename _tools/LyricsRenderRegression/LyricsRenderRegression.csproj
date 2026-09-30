@@ -21,5 +21,6 @@
     <Compile Include="../../DesktopLyrics/CanvasLyricsRenderer.cs;../../DesktopLyrics/DesktopLyricsStyle.cs;../../DesktopLyrics/IDesktopLyricsRenderer.cs" />
     <Compile Include="../../Model/LyricsDocument.cs;../../Services/Lyrics/LyricsParser*.cs;../../Services/Lyrics/LyricsFilePolicy.cs;../../Services/LyricsRefreshService.cs" />
     <None Include="../LyricsUnificationRegression/Fixtures/story-of-us.qrc.txt" Link="Fixtures/story-of-us.qrc.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Fixtures/paint-it-black.qrc.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

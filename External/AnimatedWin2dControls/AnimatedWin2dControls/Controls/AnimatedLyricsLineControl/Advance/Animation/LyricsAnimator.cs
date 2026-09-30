@@ -178,6 +178,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                                 ResetCharacterEffects(character);
                                 continue;
                             }
+                            character.GlowExitStartAmount = character.GlowTransition.Value;
                             character.GlowTransition.SetDelay(delay);
                             character.GlowTransition.SetDuration(duration);
                             character.GlowTransition.Start(0);
@@ -328,6 +329,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         private static void ResetCharacterEffects(RenderLyricsChar character)
         {
+            character.GlowExitStartAmount = 0;
             character.GlowTransition.SetDelay(0);
             character.GlowTransition.JumpTo(0);
             character.ScaleTransition.SetDelay(0);
