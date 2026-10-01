@@ -12,6 +12,30 @@ public static class LyricsExporter
 {
     private static readonly SemaphoreSlim Gate = new(1, 1);
 
+    /// <summary>只写翻译侧车文件，避免自动翻译重新覆盖用户原始歌词文件。</summary>
+    public static async Task<string> SaveTranslationFileAsync(string musicPath, string translationLrc, CancellationToken token)
+    {
+        if (string.IsNullOrWhiteSpace(musicPath)) throw new ArgumentException("Music path is required.", nameof(musicPath));
+        if (string.IsNullOrWhiteSpace(translationLrc)) throw new ArgumentException("Translation is empty.", nameof(translationLrc));
+        string? folder = Path.GetDirectoryName(musicPath);
+        if (folder is null) throw new IOException("The music file has no parent directory.");
+        string target = Path.Combine(folder, Path.GetFileNameWithoutExtension(musicPath) + "_Translated.lrc");
+        await Gate.WaitAsync(token).ConfigureAwait(false);
+        string temporary = target + "." + Guid.NewGuid().ToString("N") + ".tmp";
+        try
+        {
+            await File.WriteAllTextAsync(temporary, translationLrc, new UTF8Encoding(false), token).ConfigureAwait(false);
+            token.ThrowIfCancellationRequested();
+            File.Move(temporary, target, true);
+            return target;
+        }
+        finally
+        {
+            try { if (File.Exists(temporary)) File.Delete(temporary); } catch (IOException) { }
+            Gate.Release();
+        }
+    }
+
     public static async Task<string> SaveFilesAsync(string musicPath, LyricsDocument document, CancellationToken token)
     {
         if (document.Original.Format == LyricsFormat.Unknown) throw new FormatException("The original lyrics format cannot be exported.");

@@ -2363,4 +2363,27 @@ SHA-256: {5}
   <data name="AreUSureDeletePlayLists" xml:space="preserve">
     <value>Seçili çalma listelerini silmek istediğinizden emin misiniz?</value>
   </data>
+
+  <data name="LlmTranslation.Header" xml:space="preserve"><value>Yapay zeka şarkı sözü çevirisi</value></data>
+  <data name="LlmTranslation.Description" xml:space="preserve"><value>Çalma başladığında OpenAI uyumlu veya Anthropic hizmetiyle eksik çevirileri çevirir.</value></data>
+  <data name="LlmBaseUrl.Header" xml:space="preserve"><value>API temel URLsi</value></data>
+  <data name="LlmModel.Header" xml:space="preserve"><value>Model</value></data>
+  <data name="LlmTargetLanguage.Header" xml:space="preserve"><value>Hedef dil</value></data>
+  <data name="LlmThinkingLevel.Header" xml:space="preserve"><value>Düşünme düzeyi</value></data>
+  <data name="LlmApiKey.Header" xml:space="preserve"><value>API anahtarı (Windows Kimlik Bilgisi Yöneticisinde saklanır)</value></data>
+  <data name="LlmSave.Content" xml:space="preserve"><value>Kaydet</value></data>
+  <data name="LlmClearApiKey.Content" xml:space="preserve"><value>Kayıtlı anahtarı temizle</value></data>
+  <data name="LlmSaved" xml:space="preserve"><value>Yapay zeka çeviri ayarları kaydedildi.</value></data>
+  <data name="LlmApiKeyCleared" xml:space="preserve"><value>Kayıtlı API anahtarı temizlendi.</value></data>
+
+  <data name="LlmApiKeyConfigured" xml:space="preserve"><value>Kayıtlı bir API anahtarı var.</value></data>
+  <data name="LlmApiKeyNotConfigured" xml:space="preserve"><value>Kayıtlı API anahtarı yok.</value></data>
+
+  <data name="LlmConfigure.Content" xml:space="preserve"><value>Yapay zekâ çevirisini yapılandır</value></data>
+  <data name="LlmClose.Content" xml:space="preserve"><value>Kapat</value></data>
+  <data name="LlmEnabled.Header" xml:space="preserve"><value>Çalma sırasında eksik çevirileri çevir</value></data>
+  <data name="LlmWorking" xml:space="preserve"><value>Çalışıyor…</value></data>
+  <data name="LlmDialogSaveButton" xml:space="preserve"><value>Kaydet</value></data>
+  <data name="LlmDialogCloseButton" xml:space="preserve"><value>Kapat</value></data>
+  <data name="LlmBaseUrl.Description" xml:space="preserve"><value>Protokol adresden otomatik algılanır: /anthropic Anthropic, diğer uyumlu /v1 adresleri OpenAI kullanır.</value></data>
 </root>

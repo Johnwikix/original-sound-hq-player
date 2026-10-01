@@ -2363,4 +2363,27 @@ SHA-256: {5}
   <data name="AreUSureDeletePlayLists" xml:space="preserve">
     <value>Möchten Sie die ausgewählten Wiedergabelisten wirklich löschen?</value>
   </data>
+
+  <data name="LlmTranslation.Header" xml:space="preserve"><value>KI-Liedtextübersetzung</value></data>
+  <data name="LlmTranslation.Description" xml:space="preserve"><value>Übersetzt beim Start der Wiedergabe fehlende Liedtextübersetzungen über einen OpenAI-kompatiblen oder Anthropic-Dienst.</value></data>
+  <data name="LlmBaseUrl.Header" xml:space="preserve"><value>API-Basis-URL</value></data>
+  <data name="LlmModel.Header" xml:space="preserve"><value>Modell</value></data>
+  <data name="LlmTargetLanguage.Header" xml:space="preserve"><value>Zielsprache</value></data>
+  <data name="LlmThinkingLevel.Header" xml:space="preserve"><value>Denkstufe</value></data>
+  <data name="LlmApiKey.Header" xml:space="preserve"><value>API-Schlüssel (im Windows-Anmeldeinformationsmanager gespeichert)</value></data>
+  <data name="LlmSave.Content" xml:space="preserve"><value>Speichern</value></data>
+  <data name="LlmClearApiKey.Content" xml:space="preserve"><value>Gespeicherten Schlüssel löschen</value></data>
+  <data name="LlmSaved" xml:space="preserve"><value>KI-Übersetzungseinstellungen gespeichert.</value></data>
+  <data name="LlmApiKeyCleared" xml:space="preserve"><value>Gespeicherter API-Schlüssel gelöscht.</value></data>
+
+  <data name="LlmApiKeyConfigured" xml:space="preserve"><value>Ein API-Schlüssel ist gespeichert.</value></data>
+  <data name="LlmApiKeyNotConfigured" xml:space="preserve"><value>Kein API-Schlüssel gespeichert.</value></data>
+
+  <data name="LlmConfigure.Content" xml:space="preserve"><value>Configure AI translation</value></data>
+  <data name="LlmClose.Content" xml:space="preserve"><value>Close</value></data>
+  <data name="LlmEnabled.Header" xml:space="preserve"><value>Translate missing lyrics during playback</value></data>
+  <data name="LlmWorking" xml:space="preserve"><value>Working…</value></data>
+  <data name="LlmDialogSaveButton" xml:space="preserve"><value>Speichern</value></data>
+  <data name="LlmDialogCloseButton" xml:space="preserve"><value>Schließen</value></data>
+  <data name="LlmBaseUrl.Description" xml:space="preserve"><value>Das Protokoll wird automatisch aus der Adresse erkannt: /anthropic verwendet Anthropic, andere kompatible /v1-Adressen OpenAI.</value></data>
 </root>

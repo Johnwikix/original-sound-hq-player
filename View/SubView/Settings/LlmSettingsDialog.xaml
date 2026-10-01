@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ContentDialog
+    x:Class="WinUIMusicPlayer.View.SubView.Settings.LlmSettingsDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:model="using:WinUIMusicPlayer.Model"
+    xmlns:tool="using:WinUIMusicPlayer.Utils"
+    PrimaryButtonText="{x:Bind tool:ToolUtils.GetString('LlmDialogSaveButton')}"
+    CloseButtonText="{x:Bind tool:ToolUtils.GetString('LlmDialogCloseButton')}"
+    DefaultButton="Primary"
+    PrimaryButtonClick="ContentDialog_PrimaryButtonClick">
+    <ScrollViewer MaxHeight="680" VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="12" MinWidth="420">
+            <ToggleSwitch x:Uid="LlmEnabled" IsOn="{x:Bind ViewModel.IsEnabled, Mode=TwoWay}" />
+            <TextBox x:Uid="LlmBaseUrl" Text="{x:Bind ViewModel.BaseUrl, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox x:Uid="LlmModel" Text="{x:Bind ViewModel.Model, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBox x:Uid="LlmTargetLanguage" Text="{x:Bind ViewModel.TargetLanguage, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+            <ComboBox x:Uid="LlmThinkingLevel" ItemsSource="{x:Bind ViewModel.ThinkingOptions, Mode=OneWay}"
+                      SelectedItem="{x:Bind ViewModel.ThinkingLevel, Mode=TwoWay}" />
+            <PasswordBox x:Uid="LlmApiKey" PasswordChanged="ApiKey_PasswordChanged" />
+            <TextBlock Text="{x:Bind ViewModel.ApiKeyStatusText, Mode=OneWay}"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <Button x:Uid="LlmClearApiKey" Command="{x:Bind ViewModel.ClearApiKeyCommand}" HorizontalAlignment="Left" />
+            <InfoBar IsOpen="{x:Bind ViewModel.IsBusy, Mode=OneWay}" IsClosable="False"
+                     Severity="Informational" Message="{x:Bind tool:ToolUtils.GetString('LlmWorking')}" />
+            <TextBlock Text="{x:Bind ViewModel.Status, Mode=OneWay}" TextWrapping="Wrap"
+                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+        </StackPanel>
+    </ScrollViewer>
+</ContentDialog>

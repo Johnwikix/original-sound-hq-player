@@ -10,11 +10,21 @@ using WinUIMusicPlayer.Services.Lyrics;
 
 namespace WinUIMusicPlayer.Services;
 
+public interface ILlmTranslationService
+{
+    Task<string?> TranslateAsync(Music music, LyricsDocument document, CancellationToken token = default);
+}
+
 /// <summary>Source resolution and display projection. The caller owns cancellation and UI publication.</summary>
 public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsParser parser,
-    LyricsOnlineSearch online, WebDavLibraryService webDav, ILogger<LyricsRefreshService> logger)
+    LyricsOnlineSearch online, WebDavLibraryService webDav, ILlmTranslationService? llm, ILogger<LyricsRefreshService> logger)
 {
     private const double LineEndOffsetMs = 300;
+
+    // 保留回归工具和外部宿主的旧构造入口；没有翻译服务时仅执行原有歌词解析链。
+    public LyricsRefreshService(MusicDatabaseService database, LyricsParser parser, LyricsOnlineSearch online,
+        WebDavLibraryService webDav, ILogger<LyricsRefreshService> logger)
+        : this(database, parser, online, webDav, null, logger) { }
 
     public async Task<List<LyricLine>> SetLyrics(Music music, CancellationToken token, Action<List<LyricLine>>? publishCached = null)
     {
@@ -50,7 +60,11 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
         }
         if (music.IsRemote && document is not null && stored is not null && stored.SourceKind != "User" &&
             document != stored.Document)
-            await database.Lyrics.SaveAsync(music.Id, document, stored.Revision, "RemoteSidecar", music.Path, token).ConfigureAwait(false);
+        {
+            bool saved = await database.Lyrics.SaveAsync(music.Id, document, stored.Revision, "RemoteSidecar", music.Path, token).ConfigureAwait(false);
+            stored = await database.Lyrics.GetAsync(music.Id, token).ConfigureAwait(false);
+            if (!saved) document = stored.Document;
+        }
         if (document is null && music.Id <= 0 && !string.IsNullOrWhiteSpace(music.EmbeddedLyrics))
             document = TryImport(music.EmbeddedLyrics, null, token);
         if (document is null && stored is not null)
@@ -78,6 +92,35 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
                 }
                 else if (!OneShotLyricsCache.TrySave(music.Path, document, externalRevision))
                     document = OneShotLyricsCache.Load(music.Path)?.Document ?? document;
+            }
+        }
+        if (llm is not null && document is not null && string.IsNullOrWhiteSpace(document.TranslationLrc) && parser.HasLyrics(document, token))
+        {
+            // 歌词原文先发布，网络请求在 ApplicationTasks 后台执行，不阻塞播放和首屏歌词。
+            publishCached?.Invoke(Project(document, music.Duration.TotalMilliseconds, token));
+            string? translation = await llm.TranslateAsync(music, document, token).ConfigureAwait(false);
+            if (!string.IsNullOrWhiteSpace(translation))
+            {
+                var translated = document with { TranslationLrc = translation };
+                bool accepted = true;
+                if (music.Id > 0 && stored is not null)
+                {
+                    bool saved = await database.Lyrics.SaveAsync(music.Id, translated, stored.Revision,
+                        "Llm", music.IsRemote ? music.Path : "", token).ConfigureAwait(false);
+                    if (!saved)
+                    {
+                        var current = await database.Lyrics.GetAsync(music.Id, token).ConfigureAwait(false);
+                        translated = current.Document;
+                        accepted = false;
+                    }
+                }
+                if (accepted && !music.IsRemote)
+                {
+                    try { await LyricsExporter.SaveTranslationFileAsync(music.Path, translation, token).ConfigureAwait(false); }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+                    { logger.LogWarning(ex, "无法写入大模型翻译侧车文件: {Path}", music.Path); }
+                }
+                document = translated;
             }
         }
         token.ThrowIfCancellationRequested();

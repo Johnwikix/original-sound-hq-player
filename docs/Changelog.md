@@ -2,6 +2,27 @@
 
 新条目加在最上方。
 
+## 2026-10-01 自动识别大模型协议
+
+- `LlmSettingsDialog`、`LlmSettingsViewModel`：移除协议下拉框，依据 API 地址自动选择 Anthropic 或 OpenAI 兼容协议。
+- `LlmTranslationService`：保存和请求前重新归一化旧配置，避免 `/anthropic` 地址继续走 OpenAI 路径。
+
+## 2026-10-01 修复大模型请求体序列化失败
+
+- `Model/LlmSettings.cs`、`LlmTranslationService`：OpenAI 与 Anthropic 请求改用 System.Text.Json 源生成 DTO，兼容发布版禁用反射序列化的配置。
+
+## 2026-10-01 修复大模型配置对话框和 Anthropic 兼容端点
+
+- `LlmTranslationService`：Anthropic 兼容地址自动补齐 `/v1`，改进错误信息、空配置归一化，并将原文规范化为 LRC 后再翻译。
+- `LyricsSettingsControl`、`LlmSettingsDialog`：设置页改为独立对话框，移除不可用的厂商模型列表请求，模型改为手工填写；保留清除系统密钥入口。
+- `App.xaml.cs`：注册 `ILlmTranslationService`，使播放时自动翻译链实际接入服务。
+
+## 2026-10-01 接入大模型歌词翻译
+
+- `LlmTranslationService`、`Llm.json`：新增 OpenAI 兼容与 Anthropic 协议配置、思考强度和目标语言；API 密钥仅保存到 Windows PasswordVault，并提供清除密钥操作。
+- `LyricsRefreshService`、`LyricsExporter`：播放加载歌词时自动翻译缺失的 LRC，先发布原文，成功后按数据库 revision 写回并生成 `_Translated.lrc` 侧车文件。
+- `LyricsSettingsControl`、`LlmSettingsViewModel`、`Strings/*/Resources.resw`：新增歌词翻译设置界面。
+
 ## 2026-10-01 修复歌词边界进度和播放列表排序保存
 
 - `BaseRenderLyrics.cs`：零时长逐字字符在起点边界返回确定的 0/1 进度，避免 NaN 进入 Win2D 裁剪。

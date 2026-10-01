@@ -130,6 +130,9 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<AddFolderViewModel>();
                  services.AddSingleton<FolderAccessService>();
                  services.AddSingleton<SettingsViewModel>();
+                 services.AddTransient<WinUIMusicPlayer.ViewModel.Controls.LlmSettingsViewModel>();
+                 services.AddSingleton<LlmTranslationService>();
+                 services.AddSingleton<ILlmTranslationService>(sp => sp.GetRequiredService<LlmTranslationService>());
                  services.AddTransient<DspSettingsViewModel>();
                  services.AddSingleton<CurvePresetService>();
                  services.AddTransient<ConvolutionCurveViewModel>();

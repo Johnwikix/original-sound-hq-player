@@ -2363,4 +2363,27 @@ SHA-256: {5}
   <data name="AreUSureDeletePlayLists" xml:space="preserve">
     <value>選択したプレイリストを削除してもよろしいですか？</value>
   </data>
+
+  <data name="LlmTranslation.Header" xml:space="preserve"><value>AI歌詞翻訳</value></data>
+  <data name="LlmTranslation.Description" xml:space="preserve"><value>再生開始時、OpenAI互換またはAnthropicサービスで未翻訳の歌詞を翻訳します。</value></data>
+  <data name="LlmBaseUrl.Header" xml:space="preserve"><value>APIベースURL</value></data>
+  <data name="LlmModel.Header" xml:space="preserve"><value>モデル</value></data>
+  <data name="LlmTargetLanguage.Header" xml:space="preserve"><value>対象言語</value></data>
+  <data name="LlmThinkingLevel.Header" xml:space="preserve"><value>思考レベル</value></data>
+  <data name="LlmApiKey.Header" xml:space="preserve"><value>APIキー（Windows資格情報マネージャーに保存）</value></data>
+  <data name="LlmSave.Content" xml:space="preserve"><value>保存</value></data>
+  <data name="LlmClearApiKey.Content" xml:space="preserve"><value>保存済みキーを削除</value></data>
+  <data name="LlmSaved" xml:space="preserve"><value>AI翻訳設定を保存しました。</value></data>
+  <data name="LlmApiKeyCleared" xml:space="preserve"><value>保存済みAPIキーを削除しました。</value></data>
+
+  <data name="LlmApiKeyConfigured" xml:space="preserve"><value>保存済みのAPIキーがあります。</value></data>
+  <data name="LlmApiKeyNotConfigured" xml:space="preserve"><value>APIキーは保存されていません。</value></data>
+
+  <data name="LlmConfigure.Content" xml:space="preserve"><value>AI翻訳を設定</value></data>
+  <data name="LlmClose.Content" xml:space="preserve"><value>閉じる</value></data>
+  <data name="LlmEnabled.Header" xml:space="preserve"><value>再生時に未翻訳の歌詞を翻訳</value></data>
+  <data name="LlmWorking" xml:space="preserve"><value>処理中…</value></data>
+  <data name="LlmDialogSaveButton" xml:space="preserve"><value>保存</value></data>
+  <data name="LlmDialogCloseButton" xml:space="preserve"><value>閉じる</value></data>
+  <data name="LlmBaseUrl.Description" xml:space="preserve"><value>アドレスからプロトコルを自動判定します（/anthropic は Anthropic、それ以外の互換 /v1 は OpenAI）。</value></data>
 </root>
