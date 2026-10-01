@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
@@ -21,6 +22,8 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicBrowseViewModel MusicBrowseViewModel { get; }
 
         public bool IsInDetailMode { get; set => SetProperty(ref field, value); }
+
+        public bool HasPlayLists => AppViewModel.AllPlayList.Count > 0;
 
         public bool IsEditMode
         {
@@ -59,6 +62,12 @@ namespace WinUIMusicPlayer.ViewModel
             MusicDatabaseService = musicDatabaseService;
             MusicBrowseViewModel = musicBrowseViewModel;
             AppViewModel.PropertyChanged += OnAppVmPropertyChanged;
+            AppViewModel.AllPlayList.CollectionChanged += OnAllPlayListsChanged;
+        }
+
+        private void OnAllPlayListsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            OnPropertyChanged(nameof(HasPlayLists));
         }
 
         private void OnAppVmPropertyChanged(object? sender, PropertyChangedEventArgs e)

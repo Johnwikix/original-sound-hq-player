@@ -2,6 +2,11 @@
 
 新条目加在最上方。
 
+## 2026-10-01 对齐播放列表操作栏
+
+- `PlayListPage.xaml`、`PlayListViewModel`：将编辑模式按钮和空状态可见性改为绑定状态，并统一操作栏按钮高度。
+- `ToolUtils`、`AlbumPage`、`ArtistPage`、`FolderBrowsePage`、`PlayListPage`：复用带条件匹配的公共视觉树查询，移除页面内重复实现。
+
 ## 2026-10-01 调整播放列表悬浮操作
 
 - `PlayListPage.xaml.cs`：编辑模式隐藏卡片上的全部悬浮按钮，普通模式恢复播放和更多按钮。

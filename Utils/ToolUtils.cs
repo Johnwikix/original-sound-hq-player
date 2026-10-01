@@ -337,17 +337,21 @@ namespace WinUIMusicPlayer.Utils
         }
 
         public static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+            => FindVisualChild<T>(parent, null);
+
+        public static T? FindVisualChild<T>(DependencyObject parent, Func<T, bool>? match) where T : DependencyObject
         {
+            if (parent is null) return null;
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
                 var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is T typedChild)
+                if (child is T typedChild && (match is null || match(typedChild)))
                 {
                     return typedChild;
                 }
                 else
                 {
-                    var foundChild = FindVisualChild<T>(child);
+                    var foundChild = FindVisualChild<T>(child, match);
                     if (foundChild is not null)
                     {
                         return foundChild;

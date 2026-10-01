@@ -27,7 +27,6 @@ namespace WinUIMusicPlayer.View
             this.InitializeComponent();
             DataContext = this;
             this.NavigationCacheMode = NavigationCacheMode.Disabled;
-            ViewModel.AppViewModel.AllPlayList.CollectionChanged += OnAllPlayListChanged;
             ViewModel.PropertyChanged += OnViewModelPropertyChanged;
             PlayListGridView.SelectionChanged += PlayListGridView_SelectionChanged;
             Unloaded += OnUnloaded;
@@ -35,7 +34,6 @@ namespace WinUIMusicPlayer.View
 
         private void OnUnloaded(object sender, RoutedEventArgs e)
         {
-            ViewModel.AppViewModel.AllPlayList.CollectionChanged -= OnAllPlayListChanged;
             ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             PlayListGridView.SelectionChanged -= PlayListGridView_SelectionChanged;
             _hoveredPlaylistCards.Clear();
@@ -50,18 +48,6 @@ namespace WinUIMusicPlayer.View
             }
         }
 
-        private void OnAllPlayListChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        {
-            DispatcherQueue.TryEnqueue(UpdateState);
-        }
-
-        private void UpdateState()
-        {
-            bool hasPlayLists = ViewModel.AppViewModel.AllPlayList.Count > 0;
-            EmptyGrid.Visibility = hasPlayLists ? Visibility.Collapsed : Visibility.Visible;
-            PlayListGrid.Visibility = hasPlayLists ? Visibility.Visible : Visibility.Collapsed;
-        }
-
         public void ReceiveNavigationParameter(object parameter)
         {
             ViewModel.ReceiveNavigation();
@@ -74,7 +60,6 @@ namespace WinUIMusicPlayer.View
             ViewModel.ReceiveNavigation();
             ViewModel.SetEditMode(false);
             ApplyEditMode();
-            UpdateState();
         }
 
         private void ApplyEditMode()
@@ -95,9 +80,6 @@ namespace WinUIMusicPlayer.View
             PlayListGridView.SelectionMode = isEditMode
                 ? ListViewSelectionMode.Extended
                 : ListViewSelectionMode.None;
-            PlayListGridView.IsItemClickEnabled = !isEditMode;
-            SelectAllPlayListsButton.Visibility = isEditMode ? Visibility.Visible : Visibility.Collapsed;
-            DeleteSelectedPlayListsButton.Visibility = isEditMode ? Visibility.Visible : Visibility.Collapsed;
 
             foreach (var grid in _hoveredPlaylistCards)
             {
@@ -236,21 +218,7 @@ namespace WinUIMusicPlayer.View
         private static Border? FindCoverBorderInItem(GridViewItem? item)
         {
             if (item is null) return null;
-            return FindVisualChild<Border>(item, b => b.Name == "CoverBorder");
-        }
-
-        private static T? FindVisualChild<T>(DependencyObject parent, Func<T, bool>? match = null) where T : DependencyObject
-        {
-            if (parent is null) return null;
-            int count = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(parent);
-            for (int i = 0; i < count; i++)
-            {
-                var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(parent, i);
-                if (child is T t && (match is null || match(t))) return t;
-                var found = FindVisualChild(child, match);
-                if (found is not null) return found;
-            }
-            return null;
+            return ToolUtils.FindVisualChild<Border>(item, b => b.Name == "CoverBorder");
         }
 
         private void SetEntryTransitions()

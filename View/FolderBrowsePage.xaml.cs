@@ -9,6 +9,7 @@ using WinRT;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services.NavigationService;
+using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.View
@@ -121,21 +122,7 @@ namespace WinUIMusicPlayer.View
         private static Border? FindCoverBorderInItem(GridViewItem? item)
         {
             if (item is null) return null;
-            return FindVisualChild<Border>(item, b => b.Name == "CoverBorder");
-        }
-
-        private static T? FindVisualChild<T>(DependencyObject parent, Func<T, bool>? match = null) where T : DependencyObject
-        {
-            if (parent is null) return null;
-            int count = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChildrenCount(parent);
-            for (int i = 0; i < count; i++)
-            {
-                var child = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetChild(parent, i);
-                if (child is T t && (match is null || match(t))) return t;
-                var found = FindVisualChild(child, match);
-                if (found is not null) return found;
-            }
-            return null;
+            return ToolUtils.FindVisualChild<Border>(item, b => b.Name == "CoverBorder");
         }
 
         private void Folder_RightTapped(object sender, RightTappedRoutedEventArgs e)
