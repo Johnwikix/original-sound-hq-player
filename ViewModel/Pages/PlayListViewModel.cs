@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -32,6 +33,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (!SetProperty(ref field, value)) return;
                 OnPropertyChanged(nameof(EditModeText));
+                OnPropertyChanged(nameof(CanReorderPlayLists));
                 if (!value) ClearSelectedPlayLists();
             }
         }
@@ -46,6 +48,12 @@ namespace WinUIMusicPlayer.ViewModel
 
         public bool CanDeleteSelectedPlayLists => HasSelectedPlayLists && !IsPlaylistOperationInProgress;
 
+        public bool CanReorderPlayLists => IsEditMode && !IsPlaylistOperationInProgress;
+
+        private readonly SemaphoreSlim _playlistOperationGate = new(1, 1);
+        private bool _playListOrderPersistRequested;
+        private Task? _playListOrderPersistenceTask;
+
         public bool IsPlaylistOperationInProgress
         {
             get;
@@ -53,6 +61,7 @@ namespace WinUIMusicPlayer.ViewModel
             {
                 if (!SetProperty(ref field, value)) return;
                 OnPropertyChanged(nameof(CanDeleteSelectedPlayLists));
+                OnPropertyChanged(nameof(CanReorderPlayLists));
             }
         }
 
@@ -112,6 +121,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (playList is null || IsPlaylistOperationInProgress) return;
 
             IsPlaylistOperationInProgress = true;
+            await _playlistOperationGate.WaitAsync();
             try
             {
                 await MusicDatabaseService.RemovePlayList(playList);
@@ -133,6 +143,7 @@ namespace WinUIMusicPlayer.ViewModel
             }
             finally
             {
+                _playlistOperationGate.Release();
                 IsPlaylistOperationInProgress = false;
             }
         }
@@ -166,6 +177,7 @@ namespace WinUIMusicPlayer.ViewModel
             if (snapshot.Length == 0 || IsPlaylistOperationInProgress) return;
 
             IsPlaylistOperationInProgress = true;
+            await _playlistOperationGate.WaitAsync();
             try
             {
                 await MusicDatabaseService.RemovePlayLists(snapshot.Select(item => item.Id));
@@ -184,27 +196,39 @@ namespace WinUIMusicPlayer.ViewModel
             }
             finally
             {
+                _playlistOperationGate.Release();
                 IsPlaylistOperationInProgress = false;
             }
         }
 
-        public async Task PersistPlayListOrderAsync()
+        public Task PersistPlayListOrderAsync()
         {
-            if (IsPlaylistOperationInProgress) return;
+            _playListOrderPersistRequested = true;
+            return _playListOrderPersistenceTask ??= PersistRequestedPlayListOrderAsync();
+        }
 
+        private async Task PersistRequestedPlayListOrderAsync()
+        {
+            await _playlistOperationGate.WaitAsync();
             IsPlaylistOperationInProgress = true;
-            var playlists = AppViewModel.AllPlayList;
             try
             {
-                for (int i = 0; i < playlists.Count; i++)
+                while (_playListOrderPersistRequested)
                 {
-                    playlists[i].SortOrder = i + 1;
+                    _playListOrderPersistRequested = false;
+                    var playlists = AppViewModel.AllPlayList;
+                    for (int i = 0; i < playlists.Count; i++)
+                    {
+                        playlists[i].SortOrder = i + 1;
+                    }
+                    await MusicDatabaseService.UpdatePlayListOrderBatch(playlists);
                 }
-                await MusicDatabaseService.UpdatePlayListOrderBatch(playlists);
             }
             finally
             {
+                _playlistOperationGate.Release();
                 IsPlaylistOperationInProgress = false;
+                _playListOrderPersistenceTask = null;
             }
         }
 

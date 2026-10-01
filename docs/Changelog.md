@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-10-01 修复歌词边界进度和播放列表排序保存
+
+- `BaseRenderLyrics.cs`：零时长逐字字符在起点边界返回确定的 0/1 进度，避免 NaN 进入 Win2D 裁剪。
+- `PlayListViewModel.cs`、`PlayListPage.xaml`：连续拖拽排序合并并保存最后一次顺序，保存或其他歌单操作进行中时禁用继续拖拽。
+- `_tools/LyricsRenderRegression`：补充零时长字符边界回归。
+
 ## 2026-10-01 对齐播放列表操作栏
 
 - `PlayListPage.xaml`、`PlayListViewModel`：将编辑模式按钮和空状态可见性改为绑定状态，并统一操作栏按钮高度。

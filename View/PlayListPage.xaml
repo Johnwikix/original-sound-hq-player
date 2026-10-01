@@ -157,8 +157,8 @@
                 <GridView
                     x:Name="PlayListGridView"
                     AllowDrop="True"
-                    CanDragItems="{x:Bind ViewModel.IsEditMode, Mode=OneWay}"
-                    CanReorderItems="{x:Bind ViewModel.IsEditMode, Mode=OneWay}"
+                    CanDragItems="{x:Bind ViewModel.CanReorderPlayLists, Mode=OneWay}"
+                    CanReorderItems="{x:Bind ViewModel.CanReorderPlayLists, Mode=OneWay}"
                     DragItemsCompleted="PlayListGridView_DragItemsCompleted"
                     Margin="6,6,0,0"
                     IsItemClickEnabled="{x:Bind tool:BindUtils.BoolToBoolReConverter(ViewModel.IsEditMode), Mode=OneWay}"

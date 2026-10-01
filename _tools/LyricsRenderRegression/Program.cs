@@ -99,6 +99,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 Check(oldLine.CachedFill is null && oldLine.PrimaryTextLayout is null, "Retired native resources must be released");
             });
             await canvas.RunOnGameLoopThreadAsync(() => MotionChecks.Run(canvas));
+            await canvas.RunOnGameLoopThreadAsync(ZeroDurationChecks.Run);
             await canvas.RunOnGameLoopThreadAsync(() => FlowWaveWordExitChecks.Run(canvas));
             var paintLyrics = await PlaybackTimingChecks.LoadAsync(await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "Fixtures", "paint-it-black.qrc.txt")));
             await canvas.RunOnGameLoopThreadAsync(() => GlowHandoffChecks.Run(canvas, paintLyrics));

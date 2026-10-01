@@ -15,6 +15,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public bool IsPlayingLastFrame { get; set; }
 
         public bool GetIsPlaying(double currentMs) => StartMs <= currentMs && currentMs < EndMs;
-        public double GetPlayProgress(double currentMs) => Math.Clamp((currentMs - StartMs) / DurationMs, 0, 1);
+        public double GetPlayProgress(double currentMs)
+        {
+            var durationMs = DurationMs;
+            if (durationMs <= 0)
+            {
+                return currentMs >= StartMs ? 1 : 0;
+            }
+
+            return Math.Clamp((currentMs - StartMs) / durationMs, 0, 1);
+        }
     }
 }

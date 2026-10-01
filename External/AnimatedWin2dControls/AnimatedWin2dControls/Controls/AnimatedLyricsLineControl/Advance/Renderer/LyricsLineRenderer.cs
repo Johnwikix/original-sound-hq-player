@@ -190,8 +190,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 if (subLineRegion.CharacterIndex < primaryChars.Count)
                     firstCharProgress = Math.Clamp(
                         (float)primaryChars[subLineRegion.CharacterIndex].GetPlayProgress(CurrentProgressMs), 0f, 1f);
-                // DurationMs=0 的字符 GetPlayProgress 会产生 NaN，NaN 会污染 fade
-                // 宽度进而使 CropEffect 的 SourceRectangle 含 NaN（矩形行为未定义）。
+                // Keep malformed timing values from reaching CropEffect's SourceRectangle.
                 if (float.IsNaN(firstCharProgress)) firstCharProgress = 0f;
                 float fade = fadeInRegion * firstCharProgress;
                 if (float.IsNaN(fade)) fade = 0f;
