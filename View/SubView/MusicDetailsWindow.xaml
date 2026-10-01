@@ -247,27 +247,15 @@
                         </StackPanel>
                     </Grid>
 
-                    <Grid MinHeight="26">
-                        <StackPanel
-                            Orientation="Horizontal"
-                            Spacing="8"
-                            Visibility="{x:Bind TextToVisibility(LyricsEditor.Status), Mode=OneWay}">
-                            <ProgressRing
-                                Width="16"
-                                Height="16"
-                                IsActive="{x:Bind LyricsEditor.IsBusy, Mode=OneWay}"
-                                Visibility="{x:Bind BoolToVisibility(LyricsEditor.IsBusy), Mode=OneWay}" />
-                            <TextBlock
-                                VerticalAlignment="Center"
-                                Text="{x:Bind LyricsEditor.Status, Mode=OneWay}"
-                                TextWrapping="Wrap" />
-                        </StackPanel>
-                        <TextBlock
-                            Foreground="{ThemeResource SystemFillColorCriticalBrush}"
-                            Text="{x:Bind LyricsEditor.Error, Mode=OneWay}"
-                            TextWrapping="Wrap"
-                            Visibility="{x:Bind TextToVisibility(LyricsEditor.Error), Mode=OneWay}" />
-                    </Grid>
+                    <TextBlock
+                        Text="{x:Bind LyricsEditor.Status, Mode=OneWay}"
+                        TextWrapping="Wrap"
+                        Visibility="{x:Bind TextToVisibility(LyricsEditor.Status), Mode=OneWay}" />
+                    <TextBlock
+                        Foreground="{ThemeResource SystemFillColorCriticalBrush}"
+                        Text="{x:Bind LyricsEditor.Error, Mode=OneWay}"
+                        TextWrapping="Wrap"
+                        Visibility="{x:Bind TextToVisibility(LyricsEditor.Error), Mode=OneWay}" />
                     <Grid Margin="0,0,12,0" ColumnDefinitions="*,Auto,12,Auto">
                         <Pivot
                             Grid.Column="0"

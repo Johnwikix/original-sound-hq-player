@@ -46,14 +46,5 @@
             HorizontalAlignment="Stretch"
             x:Load="{x:Bind EnableAdvancedLyrics, Mode=OneTime}"
             RenderError="LyricsCanvas_RenderError" />
-
-        <TextBlock
-            x:Name="EmptyStateText"
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            MaxWidth="420"
-            Text="{x:Bind utils:ToolUtils.GetString('LyricsGetFailed')}"
-            TextAlignment="Center"
-            TextWrapping="Wrap" />
     </Grid>
 </UserControl>

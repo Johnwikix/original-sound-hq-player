@@ -1,9 +1,7 @@
-using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Messages;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using System;
-using System.Collections.Generic;
 
 namespace WinUIMusicPlayer.Controls.Lyrics
 {
@@ -11,7 +9,6 @@ namespace WinUIMusicPlayer.Controls.Lyrics
     {
         public event EventHandler<TimeSpan>? LyricInteracted;
         public event EventHandler<Exception>? ExceptionInteracted;
-
         private bool _eventsAttached;
 
         public static readonly DependencyProperty EnableAdvancedLyricsProperty =
@@ -52,7 +49,6 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
             SimpleLyrics?.LyricLineClicked += OnCanvasLyricLineClicked;
             LyricsCanvas?.LyricLineClicked += OnCanvasLyricLineClicked;
-            UILyricsBus.Changed += OnUILyricsChanged;
             _eventsAttached = true;
             LyricsSyncRequestBus.Request();
         }
@@ -63,21 +59,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
             SimpleLyrics?.LyricLineClicked -= OnCanvasLyricLineClicked;
             LyricsCanvas?.LyricLineClicked -= OnCanvasLyricLineClicked;
-            UILyricsBus.Changed -= OnUILyricsChanged;
             _eventsAttached = false;
-        }
-
-        private void OnUILyricsChanged(IList<LyricLine>? lyrics)
-        {
-            void Update()
-            {
-                EmptyStateText.Visibility = lyrics is { Count: > 0 }
-                    ? Visibility.Collapsed
-                    : Visibility.Visible;
-            }
-
-            if (DispatcherQueue.HasThreadAccess) Update();
-            else DispatcherQueue.TryEnqueue(Update);
         }
 
         private void OnCanvasLyricLineClicked(object? sender, TimeSpan ts)

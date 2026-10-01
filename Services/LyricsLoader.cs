@@ -1,9 +1,12 @@
+using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.State;
+using WinUIMusicPlayer.Utils;
 namespace WinUIMusicPlayer.Services;
 
 /// <summary>歌词解析的代次所有者；退出及切歌后不发布过期结果，实际任务由 ApplicationTasks 排空。</summary>
@@ -48,11 +51,11 @@ public sealed class LyricsLoader(AppState state, LyricsRefreshService parser, Ap
                             dispatcher.TryEnqueue(() =>
                             {
                                 if (!finalPublished && !_disposed && state.Lifecycle.Phase != AppPhase.Stopping && !owner.IsCancellationRequested && ticket == Volatile.Read(ref _ticket))
-                                    state.Presentation.UILyrics = cached;
+                                    state.Presentation.UILyrics = EnsureDisplayLyrics(cached, snapshot.Duration);
                             })), linked.Token);
                         finalPublished = true;
                         if (!_disposed && state.Lifecycle.Phase != AppPhase.Stopping && !linked.IsCancellationRequested && ticket == Volatile.Read(ref _ticket))
-                            state.Presentation.UILyrics = lyrics;
+                            state.Presentation.UILyrics = EnsureDisplayLyrics(lyrics, snapshot.Duration);
                     }
                     catch (OperationCanceledException) when (linked.IsCancellationRequested) { }
                     catch (Exception ex) { logger.LogError(ex, "加载歌词失败"); }
@@ -72,5 +75,26 @@ public sealed class LyricsLoader(AppState state, LyricsRefreshService parser, Ap
         _disposed = true;
         Interlocked.Increment(ref _ticket);
         _request?.Cancel();
+    }
+
+    private static List<LyricLine> EnsureDisplayLyrics(List<LyricLine> lyrics, TimeSpan duration)
+    {
+        if (lyrics.Count > 0) return lyrics;
+
+        double endMs = duration.TotalMilliseconds > 0 ? duration.TotalMilliseconds + 2000 : 10500;
+        var placeholder = new LyricLine
+        {
+            IsCurrent = true,
+            StartMs = 0,
+            EndMs = endMs,
+            HighlightEndMs = endMs,
+        };
+        placeholder.Words.Add(new LyricWord
+        {
+            Word = ToolUtils.GetString("LyricsGetFailed"),
+            StartMs = 0,
+            DurationMs = 0,
+        });
+        return [placeholder];
     }
 }
