@@ -2,6 +2,10 @@
 
 新条目加在最上方。
 
+## 2026-10-01 优化 AnimatedTextBlock 循环间距分配
+
+- `External/AnimatedWin2dControls/.../AnimatedTextBlock`：每个文本段布局准备只测量一次空格宽度，移除每行的拼接字符串和字符区域数组分配。
+
 ## 2026-10-01 修复 AnimatedTextBlock 循环间距未生效
 
 - `External/AnimatedWin2dControls/.../AnimatedTextBlock`：显式使用尾部空格的布局宽度计算循环距离，修复重复文本仍然贴连的问题。

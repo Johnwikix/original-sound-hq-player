@@ -218,14 +218,13 @@ public sealed partial class AnimatedTextBlock
             foreach (var metric in metrics) y += metric.Height;
         int textOffset = 0;
         bool scrollable = false;
+        float loopGap = 0;
+        bool loopGapMeasured = false;
         foreach (var metric in metrics)
         {
             if (bottomToTop) y -= metric.Height;
             string lineText = text.Substring(textOffset, metric.CharacterCount - metric.TerminalNewlineCount);
-            // Add one trailing space to trimmed lines so the repeated copy has
-            // a readable gap instead of touching the previous copy.
-            string renderText = metric.IsTrimmed ? lineText + " " : lineText;
-            var layout = new CanvasTextLayout(sender, renderText, format, (float)sender.Size.Width, metric.Height);
+            var layout = new CanvasTextLayout(sender, lineText, format, (float)sender.Size.Width, metric.Height);
             try
             {
                 layout.Options = CanvasDrawTextOptions.EnableColorFont | CanvasDrawTextOptions.NoPixelSnap;
@@ -239,9 +238,12 @@ public sealed partial class AnimatedTextBlock
                 {
                     layout.HorizontalAlignment = CanvasHorizontalAlignment.Left;
                     layout.RequestedSize = new Size(width, metric.Height);
-                    var spaceRegion = layout.GetCharacterRegions(renderText.Length - 1, 1)[0];
-                    float spaceWidth = Math.Max(1, (float)Math.Ceiling(spaceRegion.LayoutBounds.Width));
-                    loopDistance = width + spaceWidth;
+                    if (!loopGapMeasured)
+                    {
+                        loopGap = MeasureHoverLoopGap(sender, format, metric.Height);
+                        loopGapMeasured = true;
+                    }
+                    loopDistance = width + loopGap;
                 }
                 float baseline = layout.LineMetrics[0].Baseline;
                 lines.Add(new HoverLine(layout, y + metric.Baseline - baseline, distance,
@@ -257,6 +259,17 @@ public sealed partial class AnimatedTextBlock
             if (!bottomToTop) y += metric.Height;
         }
         return scrollable;
+    }
+
+    private static float MeasureHoverLoopGap(CanvasControl sender, CanvasTextFormat format, float height)
+    {
+        // Measure one space once per format/paragraph instead of allocating a
+        // concatenated string and a character-region array for every line.
+        using var sample = new CanvasTextLayout(sender, "x x", format, float.MaxValue, height);
+        sample.TrimmingGranularity = CanvasTextTrimmingGranularity.None;
+        sample.TrimmingSign = CanvasTrimmingSign.None;
+        var spaceRegion = sample.GetCharacterRegions(1, 1)[0];
+        return Math.Max(1, (float)Math.Ceiling(spaceRegion.LayoutBounds.Width));
     }
 
     private float GetHoverOffset(float distance, float loopDistance)
