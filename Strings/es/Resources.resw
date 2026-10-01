@@ -2383,7 +2383,12 @@ SHA-256: {5}
   <data name="LlmClose.Content" xml:space="preserve"><value>Cerrar</value></data>
   <data name="LlmEnabled.Header" xml:space="preserve"><value>Traducir letras sin traducción al reproducir</value></data>
   <data name="LlmWorking" xml:space="preserve"><value>Procesando…</value></data>
+  <data name="LlmTranslationInProgress" xml:space="preserve"><value>La traducción con IA está en curso y puede tardar. Espera…</value></data>
   <data name="LlmDialogSaveButton" xml:space="preserve"><value>Guardar</value></data>
   <data name="LlmDialogCloseButton" xml:space="preserve"><value>Cerrar</value></data>
   <data name="LlmBaseUrl.Description" xml:space="preserve"><value>El protocolo se detecta automáticamente: /anthropic usa Anthropic y otras direcciones compatibles /v1 usan OpenAI.</value></data>
+
+  <data name="LlmTranslateButton.Content" xml:space="preserve"><value>Traducir letra con IA</value></data>
+  <data name="LlmManualTranslationFailed" xml:space="preserve"><value>La traducción de la letra con IA falló. Comprueba la configuración y los registros.</value></data>
+  <data name="LlmManualTranslationCompleted" xml:space="preserve"><value>Traducción de la letra generada. Guarda la letra para escribirla en el archivo o la base de datos.</value></data>
 </root>

@@ -22,6 +22,9 @@ namespace WinUIMusicPlayer.Services;
 /// </summary>
 public sealed class LlmTranslationService(ILogger<LlmTranslationService> logger, Lyrics.LyricsParser parser) : ILlmTranslationService, IDisposable
 {
+    // The feature has not been released; keep the service dormant until it is ready to be exposed again.
+    // Existing settings and credentials remain intact, but this gate prevents any request from using them.
+    private static readonly bool FeatureEnabled = false;
     private const string VaultResource = "OriginalSoundPlayer.Llm";
     private const string AnthropicVersion = "2023-06-01";
     private static readonly TimeSpan FailureCooldown = TimeSpan.FromMinutes(10);
@@ -116,15 +119,25 @@ public sealed class LlmTranslationService(ILogger<LlmTranslationService> logger,
         return Task.CompletedTask;
     }
 
-    public async Task<string?> TranslateAsync(Music music, LyricsDocument document, CancellationToken token = default)
+    public Task<string?> TranslateAsync(Music music, LyricsDocument document, CancellationToken token = default)
+        => TranslateCoreAsync(music, document, force: false, trigger: "自动", token);
+
+    /// <summary>手动翻译允许覆盖现有译文，并忽略自动失败冷却，便于用户立即重试。</summary>
+    public Task<string?> TranslateManuallyAsync(Music music, LyricsDocument document, CancellationToken token = default)
+        => TranslateCoreAsync(music, document, force: true, trigger: "手动", token);
+
+    private async Task<string?> TranslateCoreAsync(Music music, LyricsDocument document, bool force, string trigger,
+        CancellationToken token)
     {
-        if (_disposed || document.Original.Content.Length == 0 || !string.IsNullOrWhiteSpace(document.TranslationLrc)) return null;
+        if (!FeatureEnabled) return null;
+        logger.LogInformation("大模型歌词翻译触发: {Trigger}, 曲目: {Title}", trigger, music.Title);
+        if (_disposed || document.Original.Content.Length == 0 || (!force && !string.IsNullOrWhiteSpace(document.TranslationLrc))) return null;
         LlmSettingsFile settings = await GetSettingsAsync(token).ConfigureAwait(false);
         LlmProviderProfile? profile = settings.Profiles.FirstOrDefault(x => x is not null && x.Id == settings.ActiveProfileId)
             ?? settings.Profiles.FirstOrDefault(x => x is not null);
         if (profile is null || !profile.Enabled || string.IsNullOrWhiteSpace(profile.Model)) return null;
         string key = music.Id > 0 ? $"id:{music.Id}" : music.Path;
-        if (_failedUntil.TryGetValue(key, out long until) && until > DateTimeOffset.UtcNow.Ticks) return null;
+        if (!force && _failedUntil.TryGetValue(key, out long until) && until > DateTimeOffset.UtcNow.Ticks) return null;
         string? apiKey = await GetApiKeyAsync(profile.Id, token).ConfigureAwait(false);
         if (profile.Protocol == LlmApiProtocol.Anthropic && string.IsNullOrWhiteSpace(apiKey)) return null;
         await _requestGate.WaitAsync(token).ConfigureAwait(false);

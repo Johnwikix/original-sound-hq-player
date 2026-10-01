@@ -74,10 +74,6 @@
                     <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsAutoLyricsEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
-                <controls:SettingsCard x:Uid="LlmTranslation">
-                    <Button x:Uid="LlmConfigure" Click="ConfigureLlm_Click" HorizontalAlignment="Left" />
-                </controls:SettingsCard>
-
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
                         <TextBlock x:Uid="LyricsFontFamily" TextWrapping="Wrap" />

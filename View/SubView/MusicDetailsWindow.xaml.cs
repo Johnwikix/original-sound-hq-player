@@ -82,7 +82,7 @@ namespace WinUIMusicPlayer.View.SubView
             MusicDetail = music;
             LyricsEditor = new LyricsEditorViewModel(music, App.Services.GetRequiredService<MusicDatabaseService>(),
                 App.Services.GetRequiredService<LyricsParser>(), App.Services.GetRequiredService<LyricsOnlineSearch>(),
-                App.Services.GetRequiredService<ApplicationTasks>());
+                App.Services.GetRequiredService<ApplicationTasks>(), App.Services.GetRequiredService<ILlmTranslationService>());
             this.InitializeComponent();
             AppWindow.TitleBar.PreferredTheme = TitleBarTheme.UseDefaultAppMode;
             AppWindow.TitleBar.ExtendsContentIntoTitleBar = true;

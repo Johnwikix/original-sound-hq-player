@@ -2383,7 +2383,12 @@ SHA-256: {5}
   <data name="LlmClose.Content" xml:space="preserve"><value>Закрыть</value></data>
   <data name="LlmEnabled.Header" xml:space="preserve"><value>Переводить непереведённые тексты при воспроизведении</value></data>
   <data name="LlmWorking" xml:space="preserve"><value>Выполняется…</value></data>
+  <data name="LlmTranslationInProgress" xml:space="preserve"><value>Перевод с ИИ выполняется и может занять некоторое время. Подождите…</value></data>
   <data name="LlmDialogSaveButton" xml:space="preserve"><value>Сохранить</value></data>
   <data name="LlmDialogCloseButton" xml:space="preserve"><value>Закрыть</value></data>
   <data name="LlmBaseUrl.Description" xml:space="preserve"><value>Протокол определяется по адресу: /anthropic использует Anthropic, остальные совместимые адреса /v1 — OpenAI.</value></data>
+
+  <data name="LlmTranslateButton.Content" xml:space="preserve"><value>Перевести текст с ИИ</value></data>
+  <data name="LlmManualTranslationFailed" xml:space="preserve"><value>Перевод текста с ИИ не выполнен. Проверьте настройки и журнал.</value></data>
+  <data name="LlmManualTranslationCompleted" xml:space="preserve"><value>Перевод с ИИ создан. Сохраните текст, чтобы записать его в файл или базу данных.</value></data>
 </root>

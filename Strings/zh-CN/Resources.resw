@@ -2382,7 +2382,12 @@ SHA-256：{5}
   <data name="LlmClose.Content" xml:space="preserve"><value>关闭</value></data>
   <data name="LlmEnabled.Header" xml:space="preserve"><value>播放时翻译缺少译文的歌词</value></data>
   <data name="LlmWorking" xml:space="preserve"><value>处理中…</value></data>
+  <data name="LlmTranslationInProgress" xml:space="preserve"><value>大模型正在翻译，可能需要较长时间，请稍候…</value></data>
   <data name="LlmDialogSaveButton" xml:space="preserve"><value>保存</value></data>
   <data name="LlmDialogCloseButton" xml:space="preserve"><value>关闭</value></data>
   <data name="LlmBaseUrl.Description" xml:space="preserve"><value>协议会根据地址自动识别：包含 /anthropic 使用 Anthropic，其它兼容 /v1 地址使用 OpenAI。</value></data>
+
+  <data name="LlmTranslateButton.Content" xml:space="preserve"><value>使用大模型翻译歌词</value></data>
+  <data name="LlmManualTranslationFailed" xml:space="preserve"><value>大模型歌词翻译失败，请检查配置和日志。</value></data>
+  <data name="LlmManualTranslationCompleted" xml:space="preserve"><value>大模型歌词翻译已生成，请保存歌词以写入文件或数据库。</value></data>
 </root>

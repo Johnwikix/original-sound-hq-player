@@ -2383,7 +2383,12 @@ SHA-256: {5}
   <data name="LlmClose.Content" xml:space="preserve"><value>Kapat</value></data>
   <data name="LlmEnabled.Header" xml:space="preserve"><value>Çalma sırasında eksik çevirileri çevir</value></data>
   <data name="LlmWorking" xml:space="preserve"><value>Çalışıyor…</value></data>
+  <data name="LlmTranslationInProgress" xml:space="preserve"><value>Yapay zekâ çevirisi devam ediyor ve biraz zaman alabilir. Lütfen bekleyin…</value></data>
   <data name="LlmDialogSaveButton" xml:space="preserve"><value>Kaydet</value></data>
   <data name="LlmDialogCloseButton" xml:space="preserve"><value>Kapat</value></data>
   <data name="LlmBaseUrl.Description" xml:space="preserve"><value>Protokol adresden otomatik algılanır: /anthropic Anthropic, diğer uyumlu /v1 adresleri OpenAI kullanır.</value></data>
+
+  <data name="LlmTranslateButton.Content" xml:space="preserve"><value>Şarkı sözlerini yapay zekâyla çevir</value></data>
+  <data name="LlmManualTranslationFailed" xml:space="preserve"><value>Yapay zekâ ile şarkı sözü çevirisi başarısız. Yapılandırmayı ve günlükleri kontrol edin.</value></data>
+  <data name="LlmManualTranslationCompleted" xml:space="preserve"><value>Yapay zekâ çevirisi oluşturuldu. Dosyaya veya veritabanına yazmak için sözleri kaydedin.</value></data>
 </root>

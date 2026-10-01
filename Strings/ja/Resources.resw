@@ -2383,7 +2383,12 @@ SHA-256: {5}
   <data name="LlmClose.Content" xml:space="preserve"><value>閉じる</value></data>
   <data name="LlmEnabled.Header" xml:space="preserve"><value>再生時に未翻訳の歌詞を翻訳</value></data>
   <data name="LlmWorking" xml:space="preserve"><value>処理中…</value></data>
+  <data name="LlmTranslationInProgress" xml:space="preserve"><value>AI翻訳中です。時間がかかる場合があります。お待ちください…</value></data>
   <data name="LlmDialogSaveButton" xml:space="preserve"><value>保存</value></data>
   <data name="LlmDialogCloseButton" xml:space="preserve"><value>閉じる</value></data>
   <data name="LlmBaseUrl.Description" xml:space="preserve"><value>アドレスからプロトコルを自動判定します（/anthropic は Anthropic、それ以外の互換 /v1 は OpenAI）。</value></data>
+
+  <data name="LlmTranslateButton.Content" xml:space="preserve"><value>AIで歌詞を翻訳</value></data>
+  <data name="LlmManualTranslationFailed" xml:space="preserve"><value>AIによる歌詞翻訳に失敗しました。設定とログを確認してください。</value></data>
+  <data name="LlmManualTranslationCompleted" xml:space="preserve"><value>AI翻訳を生成しました。ファイルまたはデータベースに保存するには歌詞を保存してください。</value></data>
 </root>

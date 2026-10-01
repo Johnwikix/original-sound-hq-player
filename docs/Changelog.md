@@ -2,6 +2,26 @@
 
 新条目加在最上方。
 
+## 2026-10-01 移除未发布的大模型歌词翻译界面
+
+- `LyricsSettingsControl`、`MusicDetailsWindow`：移除设置入口、歌曲属性手动翻译按钮及相关对话框。
+- `LlmTranslationService`：保留服务层总开关，确保旧配置不会触发 API 请求；默认配置继续保持关闭。
+
+## 2026-10-01 修复手动大模型翻译后的保存状态
+
+- `LyricsEditorViewModel`、`MusicDetailsWindow`：提交成功后不再因延迟绑定通知误报冲突；大模型翻译期间禁用保存操作，并显示可能耗时较长的提示。
+- `LyricsEditorViewModel`：翻译期间若用户修改原文，丢弃过期结果，避免覆盖用户草稿。
+- `MusicDetailsWindow`：将手动大模型翻译按钮移入歌词操作按钮组，与刷新按钮放在同一处。
+
+## 2026-10-01 恢复歌词空状态提示
+
+- `LyricsControl`：将“暂无歌词，请欣赏音乐”提示放在歌词容器根层，兼容普通和高级歌词渲染路径，并在歌词加载后自动隐藏。
+
+## 2026-10-01 增加手动大模型歌词翻译
+
+- `MusicDetailsWindow`、`LyricsEditorViewModel`：增加单图标手动翻译按钮，结果回填当前歌词草稿并复用现有保存流程。
+- `LlmTranslationService`：自动和手动翻译统一记录一条 `Information` 触发日志；手动翻译允许覆盖译文并立即重试。
+
 ## 2026-10-01 自动识别大模型协议
 
 - `LlmSettingsDialog`、`LlmSettingsViewModel`：移除协议下拉框，依据 API 地址自动选择 Anthropic 或 OpenAI 兼容协议。

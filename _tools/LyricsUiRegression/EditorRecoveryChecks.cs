@@ -102,7 +102,60 @@ internal static class EditorRecoveryChecks
             Check((await resolver.SetLyrics(music, default)).Count == 0 && online.Calls == calls,
                 "future loads also respect the clear");
         });
+        await Scenario("manual llm translation saves its draft", async () =>
+        {
+            var music = new Music { Id = 4, Path = Path.Combine(root, "manual-llm.flac") };
+            await db.InsertAsync(music);
+            var llm = new TestLlmTranslationService { Result = "[00:01.000]Translated" };
+            using var editor = new LyricsEditorViewModel(music, database, parser, online, tasks, llm);
+            await editor.LoadAsync();
+            editor.OriginalText = "[00:01.000]Original";
+            await editor.TranslateCommand.ExecuteAsync(null);
+            Check(editor.TranslationText == llm.Result, "manual llm result must return to the draft");
+            Check(await editor.SaveAsync(), "manual llm draft must save successfully");
+            Check((await database.Lyrics.GetAsync(music.Id)).Document.TranslationLrc == llm.Result + "\n",
+                "manual llm translation must be persisted");
+        });
+
+        await Scenario("manual llm translation does not overwrite a newer draft", async () =>
+        {
+            var music = new Music { Id = 5, Path = Path.Combine(root, "manual-llm-conflict.flac") };
+            await db.InsertAsync(music);
+            var llm = new TestLlmTranslationService
+            {
+                Pending = new(TaskCreationOptions.RunContinuationsAsynchronously)
+            };
+            using var editor = new LyricsEditorViewModel(music, database, parser, online, tasks, llm);
+            await editor.LoadAsync();
+            editor.OriginalText = "[00:01.000]Original";
+            var translating = editor.TranslateCommand.ExecuteAsync(null);
+            await llm.Started.Task;
+            Check(editor.IsBusy && !editor.CanSave, "saving must be disabled while manual llm work is pending");
+            editor.OriginalText = "[00:01.000]New draft";
+            llm.Pending.SetResult("[00:01.000]Stale translation");
+            await translating;
+            Check(editor.OriginalText.Contains("New draft") && editor.TranslationText.Length == 0 && editor.Error.Length > 0,
+                "a late llm result must not replace a newer draft");
+        });
+
         if (failures.Count > 0) throw new Exception(string.Join("\n", failures));
+    }
+
+    private sealed class TestLlmTranslationService : ILlmTranslationService
+    {
+        public string? Result { get; init; }
+        public TaskCompletionSource<string?>? Pending { get; init; }
+        public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        public Task<string?> TranslateAsync(Music music, LyricsDocument document, CancellationToken token = default)
+            => Task.FromResult<string?>(null);
+
+        public async Task<string?> TranslateManuallyAsync(Music music, LyricsDocument document, CancellationToken token = default)
+        {
+            Started.TrySetResult();
+            if (Pending is not null) return await Pending.Task.WaitAsync(token);
+            return Result;
+        }
     }
 
     private static void Check(bool condition, string message)

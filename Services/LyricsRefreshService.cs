@@ -13,6 +13,8 @@ namespace WinUIMusicPlayer.Services;
 public interface ILlmTranslationService
 {
     Task<string?> TranslateAsync(Music music, LyricsDocument document, CancellationToken token = default);
+    Task<string?> TranslateManuallyAsync(Music music, LyricsDocument document, CancellationToken token = default)
+        => TranslateAsync(music, document, token);
 }
 
 /// <summary>Source resolution and display projection. The caller owns cancellation and UI publication.</summary>

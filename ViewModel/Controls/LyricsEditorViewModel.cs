@@ -18,6 +18,7 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
     private readonly LyricsParser _parser;
     private readonly LyricsOnlineSearch _online;
     private readonly ApplicationTasks _tasks;
+    private readonly ILlmTranslationService? _llm;
     private readonly CancellationTokenSource _closed = new();
     private LyricsDocument _savedDocument = LyricsDocument.Empty;
     private long _revision;
@@ -29,21 +30,40 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
     public string TranslationText { get => field; set { if (SetProperty(ref field, value)) _draftVersion++; } } = "";
     public string Status { get => field; private set => SetProperty(ref field, value); } = "";
     public string Error { get => field; private set => SetProperty(ref field, value); } = "";
-    public bool IsBusy { get => field; private set { if (SetProperty(ref field, value)) { RefreshCommand.NotifyCanExecuteChanged(); ExportCommand.NotifyCanExecuteChanged(); RestoreLegacyCommand.NotifyCanExecuteChanged(); } } }
+    public bool IsBusy
+    {
+        get => field;
+        private set
+        {
+            if (!SetProperty(ref field, value)) return;
+            OnPropertyChanged(nameof(CanSave));
+            OnPropertyChanged(nameof(CanSaveFile));
+            RefreshCommand.NotifyCanExecuteChanged();
+            ExportCommand.NotifyCanExecuteChanged();
+            RestoreLegacyCommand.NotifyCanExecuteChanged();
+            TranslateCommand.NotifyCanExecuteChanged();
+        }
+    }
+    public bool CanSave => _loaded && !IsBusy && !_disposed;
+    public bool CanSaveFile => CanSave && !_music.IsRemote;
     public bool HasLegacy { get => field; private set => SetProperty(ref field, value); }
     public IAsyncRelayCommand RefreshCommand { get; }
     public IAsyncRelayCommand ExportCommand { get; }
+    public IAsyncRelayCommand TranslateCommand { get; }
     public IAsyncRelayCommand<string> RestoreLegacyCommand { get; }
 
-    public LyricsEditorViewModel(Music music, MusicDatabaseService database, LyricsParser parser, LyricsOnlineSearch online, ApplicationTasks tasks)
+    public LyricsEditorViewModel(Music music, MusicDatabaseService database, LyricsParser parser, LyricsOnlineSearch online,
+        ApplicationTasks tasks, ILlmTranslationService? llm = null)
     {
         _music = music;
         _database = database;
         _parser = parser;
         _online = online;
         _tasks = tasks;
+        _llm = llm;
         RefreshCommand = new AsyncRelayCommand(RefreshAsync, () => _loaded && !IsBusy && !_disposed);
         ExportCommand = new AsyncRelayCommand(ExportAsync, () => _loaded && !IsBusy && !_disposed && !_music.IsRemote);
+        TranslateCommand = new AsyncRelayCommand(TranslateAsync, () => _loaded && !IsBusy && !_disposed && _llm is not null);
         RestoreLegacyCommand = new AsyncRelayCommand<string>(RestoreAsync, _ => _loaded && !IsBusy && !_disposed);
     }
 
@@ -56,6 +76,9 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
             _savedDocument = cached?.Document ?? _parser.Import(_music.EmbeddedLyrics, token: token);
             if (_draftVersion == 0) SetDocument(_savedDocument);
             _loaded = true;
+            OnPropertyChanged(nameof(CanSave));
+            OnPropertyChanged(nameof(CanSaveFile));
+            TranslateCommand.NotifyCanExecuteChanged();
             return;
         }
         var snapshot = await _database.Lyrics.GetAsync(_music.Id, token);
@@ -68,6 +91,9 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
         HasLegacy = legacy is not null;
         Error = snapshot.Diagnostic.Length == 0 ? "" : ToolUtils.GetString("LyricsMigrationDiagnostic");
         _loaded = true;
+        OnPropertyChanged(nameof(CanSave));
+        OnPropertyChanged(nameof(CanSaveFile));
+        TranslateCommand.NotifyCanExecuteChanged();
     });
 
     public Task ReadEmbeddedAsync() => RunAsync(async token =>
@@ -114,7 +140,12 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
             else await _database.SaveDetailsAsync(_music, document, _revision, token, lyricsChanged: lyricsChanged);
             _revision++;
             _savedDocument = document;
-            saved = draft == _draftVersion;
+            // A binding notification can arrive after the transaction commits. Treat an
+            // unchanged text snapshot as success even if that notification bumped the
+            // draft counter; a real edit during the transaction still keeps the window open.
+            saved = draft == _draftVersion ||
+                (string.Equals(OriginalText, original, StringComparison.Ordinal) &&
+                 string.Equals(TranslationText, translation, StringComparison.Ordinal));
             if (!saved && !_disposed) Error = ToolUtils.GetString("LyricsEditConflict");
         });
         return saved;
@@ -136,6 +167,41 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
         var document = await Task.Run(() => _parser.Import(original, translation, token), token);
         string path = await LyricsExporter.SaveFilesAsync(_music.Path, document, token);
         if (!_disposed) Status = ToolUtils.GetString("LyricsFilesSaved") + " " + path;
+    });
+
+    private Task TranslateAsync() => RunAsync(async token =>
+    {
+        if (_llm is null) return;
+        long draft = _draftVersion;
+        string original = OriginalText;
+        if (string.IsNullOrWhiteSpace(original))
+        {
+            Error = ToolUtils.GetString("LyricsInvalid");
+            return;
+        }
+        LyricsDocument document = await Task.Run(() => _parser.Import(original, null, token), token);
+        token.ThrowIfCancellationRequested();
+        if (!_parser.HasLyrics(document, token))
+        {
+            Error = ToolUtils.GetString("LyricsInvalid");
+            return;
+        }
+        Status = ToolUtils.GetString("LlmTranslationInProgress");
+        string? translation = await _llm.TranslateManuallyAsync(_music, document, token);
+        if (string.IsNullOrWhiteSpace(translation))
+        {
+            Status = "";
+            Error = ToolUtils.GetString("LlmManualTranslationFailed");
+            return;
+        }
+        if (draft != _draftVersion)
+        {
+            Status = "";
+            Error = ToolUtils.GetString("LyricsEditConflict");
+            return;
+        }
+        TranslationText = translation;
+        Status = ToolUtils.GetString("LlmManualTranslationCompleted");
     });
 
     private Task RestoreAsync(string? slot) => RunAsync(async token =>
@@ -190,8 +256,15 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
                 await action(linked.Token);
             });
         }
-        catch (OperationCanceledException) { }
-        catch (Exception ex) { if (!_disposed) Error = ToolUtils.GetString(ex.Message == "LyricsEditConflict" ? "LyricsEditConflict" : "LyricsInvalid") + " " + ex.Message; }
+        catch (OperationCanceledException) { if (!_disposed) Status = ""; }
+        catch (Exception ex)
+        {
+            if (!_disposed)
+            {
+                Status = "";
+                Error = ToolUtils.GetString(ex.Message == "LyricsEditConflict" ? "LyricsEditConflict" : "LyricsInvalid") + " " + ex.Message;
+            }
+        }
         finally
         {
             IsBusy = false;

@@ -2383,7 +2383,12 @@ SHA-256: {5}
   <data name="LlmClose.Content" xml:space="preserve"><value>Close</value></data>
   <data name="LlmEnabled.Header" xml:space="preserve"><value>Translate missing lyrics during playback</value></data>
   <data name="LlmWorking" xml:space="preserve"><value>Working…</value></data>
+  <data name="LlmTranslationInProgress" xml:space="preserve"><value>AI translation is in progress and may take a while. Please wait…</value></data>
   <data name="LlmDialogSaveButton" xml:space="preserve"><value>Save</value></data>
   <data name="LlmDialogCloseButton" xml:space="preserve"><value>Close</value></data>
   <data name="LlmBaseUrl.Description" xml:space="preserve"><value>Protocol is detected automatically from the address (/anthropic uses Anthropic; other compatible /v1 addresses use OpenAI).</value></data>
+
+  <data name="LlmTranslateButton.Content" xml:space="preserve"><value>Translate lyrics with AI</value></data>
+  <data name="LlmManualTranslationFailed" xml:space="preserve"><value>AI lyric translation failed. Check the configuration and logs.</value></data>
+  <data name="LlmManualTranslationCompleted" xml:space="preserve"><value>AI lyric translation generated. Save the lyrics to write it to the file or database.</value></data>
 </root>
