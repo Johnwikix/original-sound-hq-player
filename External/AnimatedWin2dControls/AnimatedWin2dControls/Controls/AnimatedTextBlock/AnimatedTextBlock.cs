@@ -535,7 +535,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
             else
             {
                 foreach (var line in _hoverLines)
-                    DrawTextLayout(ds, line.Layout, GetHoverOffset(line.Distance), line.Y, line.Opacity, line.HasColorGlyphs);
+                    DrawHoverLine(ds, line);
             }
         }
         catch (Exception ex) when (ex is ObjectDisposedException || ex is ArgumentException) { }

@@ -2,6 +2,16 @@
 
 新条目加在最上方。
 
+## 2026-10-01 改为 AnimatedTextBlock 单向循环滚动
+
+- `External/AnimatedWin2dControls/.../AnimatedTextBlock`：悬停文字改为单向首尾相接滚动，使用相邻文本副本消除循环边界空白和反向回弹。
+- `_tools/AnimatedTextRegression`：增加单向运动和完整文本宽度循环回归检查。
+
+## 2026-10-01 修复 AnimatedTextBlock 悬停滚动启动延迟
+
+- `External/AnimatedWin2dControls/.../AnimatedTextBlock`：鼠标进入后立即开始首段滚动，保留到达两端后的短暂停留。
+- `_tools/AnimatedTextRegression`：增加悬停进入后首个时钟帧的即时滚动回归检查。
+
 ## 2026-10-01 修复播放页无歌词占位符缺失
 
 - `LyricsLoader`：无歌词时生成一行仅用于展示的提示歌词，复用普通与高级歌词行的字体、字号和渲染效果。

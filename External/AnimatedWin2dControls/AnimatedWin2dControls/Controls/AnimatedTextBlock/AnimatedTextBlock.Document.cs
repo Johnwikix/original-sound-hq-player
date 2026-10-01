@@ -215,7 +215,7 @@ public sealed partial class AnimatedTextBlock
             if (_hoverLines != null)
             {
                 foreach (var line in _hoverLines)
-                    DrawTextLayout(ds, line.Layout, GetHoverOffset(line.Distance), line.Y, line.Opacity, line.HasColorGlyphs);
+                    DrawHoverLine(ds, line);
                 return;
             }
         }
