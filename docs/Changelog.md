@@ -2,6 +2,14 @@
 
 新条目加在最上方。
 
+## 2026-10-01 修复 AnimatedTextBlock 循环间距未生效
+
+- `External/AnimatedWin2dControls/.../AnimatedTextBlock`：显式使用尾部空格的布局宽度计算循环距离，修复重复文本仍然贴连的问题。
+
+## 2026-10-01 调整 AnimatedTextBlock 循环间距
+
+- `External/AnimatedWin2dControls/.../AnimatedTextBlock`：循环副本之间增加一个空格宽度，避免首尾文字贴连。
+
 ## 2026-10-01 改为 AnimatedTextBlock 单向循环滚动
 
 - `External/AnimatedWin2dControls/.../AnimatedTextBlock`：悬停文字改为单向首尾相接滚动，使用相邻文本副本消除循环边界空白和反向回弹。

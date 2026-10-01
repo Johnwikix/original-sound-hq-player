@@ -222,7 +222,10 @@ public sealed partial class AnimatedTextBlock
         {
             if (bottomToTop) y -= metric.Height;
             string lineText = text.Substring(textOffset, metric.CharacterCount - metric.TerminalNewlineCount);
-            var layout = new CanvasTextLayout(sender, lineText, format, (float)sender.Size.Width, metric.Height);
+            // Add one trailing space to trimmed lines so the repeated copy has
+            // a readable gap instead of touching the previous copy.
+            string renderText = metric.IsTrimmed ? lineText + " " : lineText;
+            var layout = new CanvasTextLayout(sender, renderText, format, (float)sender.Size.Width, metric.Height);
             try
             {
                 layout.Options = CanvasDrawTextOptions.EnableColorFont | CanvasDrawTextOptions.NoPixelSnap;
@@ -231,14 +234,18 @@ public sealed partial class AnimatedTextBlock
                 layout.VerticalAlignment = CanvasVerticalAlignment.Top;
                 float width = (float)Math.Ceiling(layout.LayoutBounds.Width);
                 float distance = metric.IsTrimmed ? Math.Max(0, width - (float)sender.Size.Width) : 0;
+                float loopDistance = 0;
                 if (distance > 0)
                 {
                     layout.HorizontalAlignment = CanvasHorizontalAlignment.Left;
                     layout.RequestedSize = new Size(width, metric.Height);
+                    var spaceRegion = layout.GetCharacterRegions(renderText.Length - 1, 1)[0];
+                    float spaceWidth = Math.Max(1, (float)Math.Ceiling(spaceRegion.LayoutBounds.Width));
+                    loopDistance = width + spaceWidth;
                 }
                 float baseline = layout.LineMetrics[0].Baseline;
                 lines.Add(new HoverLine(layout, y + metric.Baseline - baseline, distance,
-                    distance > 0 ? width : 0, opacity, ShapedText.MayContainColorGlyphs(lineText)));
+                    loopDistance, opacity, ShapedText.MayContainColorGlyphs(lineText)));
                 scrollable |= distance > 0;
             }
             catch
