@@ -101,6 +101,7 @@ namespace WinUIMusicPlayer.Services
                     await _dbConnection.CreateTableAsync<SaveEqualizer>();
                     await _dbConnection.CreateTableAsync<SaveEqualizerPreset>();
                     await _dbConnection.CreateTableAsync<PlayList>();
+                    await EnsurePlayListSortOrderAsync();
                     await _dbConnection.CreateTableAsync<PlayListMusic>();
                     await _dbConnection.CreateTableAsync<LastPlayListState>();
                     await _dbConnection.CreateTableAsync<SubFolder>();
@@ -393,10 +394,40 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                var list = await _dbConnection.Table<PlayList>().ToListAsync();
+                var list = await _dbConnection.Table<PlayList>()
+                    .OrderBy(item => item.SortOrder)
+                    .ToListAsync();
                 await AppViewModel.AllPlayList.AddRangeAsync(list);
             }
             catch (Exception ex) { _logger.LogError(ex, $"InitalPlayListAsync 初始化播放列表失败: {ex.Message}"); }
+        }
+
+        /// <summary>
+        /// 为已有数据库补齐歌单排序列。sqlite-net 的 CreateTable 不会为已存在的表追加新列，
+        /// 因此这里必须执行幂等迁移，并为旧记录按创建 ID 建立稳定的初始顺序。
+        /// </summary>
+        private async Task EnsurePlayListSortOrderAsync()
+        {
+            var columns = await _dbConnection.QueryAsync<TableColumnInfo>("PRAGMA table_info(PlayList)");
+            bool hasSortOrder = columns.Any(column => string.Equals(column.Name, nameof(PlayList.SortOrder), StringComparison.OrdinalIgnoreCase));
+            if (!hasSortOrder)
+            {
+                await _dbConnection.ExecuteAsync("ALTER TABLE PlayList ADD COLUMN [SortOrder] INTEGER NOT NULL DEFAULT 0");
+            }
+
+            var playlists = await _dbConnection.Table<PlayList>().OrderBy(item => item.Id).ToListAsync();
+            if (playlists.Count == 0 || (hasSortOrder && playlists.Any(item => item.SortOrder != 0))) return;
+
+            await _dbConnection.RunInTransactionAsync(connection =>
+            {
+                for (int i = 0; i < playlists.Count; i++)
+                {
+                    connection.Execute(
+                        "UPDATE PlayList SET [SortOrder]=? WHERE Id=?",
+                        i + 1,
+                        playlists[i].Id);
+                }
+            });
         }
 
         public async Task UpdateMusicInfo(Music music)
@@ -615,8 +646,36 @@ namespace WinUIMusicPlayer.Services
 
         public async Task<int> InsertPlayList(PlayList playList)
         {
+            if (playList.SortOrder <= 0)
+            {
+                var last = await _dbConnection.Table<PlayList>()
+                    .OrderByDescending(item => item.SortOrder)
+                    .FirstOrDefaultAsync();
+                playList.SortOrder = (last?.SortOrder ?? 0) + 1;
+            }
             await _dbConnection.InsertAsync(playList);
             return playList.Id;
+        }
+
+        public async Task UpdatePlayListOrderBatch(IEnumerable<PlayList> playlists)
+        {
+            var snapshot = playlists
+                .Where(item => item is not null && item.Id > 0)
+                .Select(item => (item.Id, item.SortOrder))
+                .ToArray();
+            if (snapshot.Length == 0) return;
+
+            await _dbConnection.RunInTransactionAsync(connection =>
+            {
+                for (int i = 0; i < snapshot.Length; i++)
+                {
+                    var item = snapshot[i];
+                    connection.Execute(
+                        "UPDATE PlayList SET [SortOrder]=? WHERE Id=?",
+                        item.SortOrder,
+                        item.Id);
+                }
+            });
         }
 
         public async Task UpdatePlayList(PlayList playList)
@@ -633,14 +692,30 @@ namespace WinUIMusicPlayer.Services
 
         public async Task RemovePlayList(PlayList playList)
         {
-            var playListMusics = await _dbConnection.Table<PlayListMusic>()
-               .Where(plm => plm.PlayListId == playList.Id)
-               .ToListAsync();
-            foreach (var playListMusic in playListMusics)
+            if (playList is null) return;
+            await RemovePlayLists([playList.Id]);
+        }
+
+        public async Task RemovePlayLists(IEnumerable<int> playListIds)
+        {
+            var ids = playListIds
+                .Where(id => id > 0)
+                .Distinct()
+                .ToArray();
+            if (ids.Length == 0) return;
+
+            var placeholders = string.Join(",", Enumerable.Repeat("?", ids.Length));
+            var parameters = ids.Cast<object>().ToArray();
+            await _dbConnection.RunInTransactionAsync(connection =>
             {
-                await _dbConnection.DeleteAsync(playListMusic);
-            }
-            await _dbConnection.DeleteAsync(playList);
+                connection.Execute(
+                    $"DELETE FROM PlayListMusic WHERE PlayListId IN ({placeholders})",
+                    parameters);
+                connection.Execute(
+                    $"DELETE FROM PlayList WHERE Id IN ({placeholders})",
+                    parameters);
+            });
+            await GetPlayListMusic();
         }
 
         public async Task UpdateAllAsync(IEnumerable<Music> musicList)

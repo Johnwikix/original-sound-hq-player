@@ -88,25 +88,67 @@
                             Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
                     </StackPanel>
                 </StackPanel>
-                <Button
-                    x:Name="AddPlayListButton"
+                <StackPanel
                     Grid.Column="2"
-                    Margin="0"
                     VerticalAlignment="Center"
-                    Click="AddPlayList_Click"
-                    Style="{StaticResource AccentButtonStyle}">
-                    <StackPanel Orientation="Horizontal">
-                        <FontIcon
-                            Margin="0,2,0,0"
-                            VerticalAlignment="Center"
-                            Glyph="&#xe948;" />
-                        <TextBlock x:Uid="AddPlayList" VerticalAlignment="Center" />
-                    </StackPanel>
-                </Button>
+                    Orientation="Horizontal">
+                    <Button
+                        x:Name="EditModeButton"
+                        Margin="0,0,8,0"
+                        Click="EditModeButton_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon Glyph="&#xE70F;" />
+                            <TextBlock
+                                Margin="8,0,0,0"
+                                Text="{x:Bind ViewModel.EditModeText, Mode=OneWay}" />
+                        </StackPanel>
+                    </Button>
+                    <Button
+                        x:Name="SelectAllPlayListsButton"
+                        Margin="0,0,8,0"
+                        Click="SelectAllPlayListsButton_Click"
+                        Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon Glyph="&#xE8B3;" />
+                            <TextBlock
+                                x:Uid="PlayListSelectAll"
+                                Margin="8,0,0,0" />
+                        </StackPanel>
+                    </Button>
+                    <Button
+                        x:Name="DeleteSelectedPlayListsButton"
+                        Margin="0,0,8,0"
+                        Click="DeleteSelectedPlayListsButton_Click"
+                        IsEnabled="{x:Bind ViewModel.CanDeleteSelectedPlayLists, Mode=OneWay}"
+                        Visibility="Collapsed">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon Glyph="&#xE74D;" />
+                            <TextBlock
+                                x:Uid="PlayListBatchDelete"
+                                Margin="8,0,0,0" />
+                        </StackPanel>
+                    </Button>
+                    <Button
+                        x:Name="AddPlayListButton"
+                        Style="{StaticResource AccentButtonStyle}"
+                        Click="AddPlayList_Click">
+                        <StackPanel Orientation="Horizontal">
+                            <FontIcon
+                                Margin="0,2,0,0"
+                                VerticalAlignment="Center"
+                                Glyph="&#xe948;" />
+                            <TextBlock x:Uid="AddPlayList" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </Grid>
             <Grid Grid.Row="1" Margin="10,0,10,0">
                 <GridView
                     x:Name="PlayListGridView"
+                    AllowDrop="True"
+                    CanDragItems="{x:Bind ViewModel.IsEditMode, Mode=OneWay}"
+                    CanReorderItems="{x:Bind ViewModel.IsEditMode, Mode=OneWay}"
+                    DragItemsCompleted="PlayListGridView_DragItemsCompleted"
                     Margin="6,6,0,0"
                     IsItemClickEnabled="True"
                     ItemClick="PlayListGridView_ItemClick"

@@ -1,10 +1,12 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
 using System;
+using System.Collections.Generic;
 using WinRT;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
@@ -17,6 +19,7 @@ namespace WinUIMusicPlayer.View
     public sealed partial class PlayListPage : Page, INavigatable
     {
         public PlayListViewModel ViewModel { get; }
+        private readonly HashSet<Grid> _hoveredPlaylistCards = [];
 
         public PlayListPage()
         {
@@ -25,6 +28,26 @@ namespace WinUIMusicPlayer.View
             DataContext = this;
             this.NavigationCacheMode = NavigationCacheMode.Disabled;
             ViewModel.AppViewModel.AllPlayList.CollectionChanged += OnAllPlayListChanged;
+            ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+            PlayListGridView.SelectionChanged += PlayListGridView_SelectionChanged;
+            Unloaded += OnUnloaded;
+        }
+
+        private void OnUnloaded(object sender, RoutedEventArgs e)
+        {
+            ViewModel.AppViewModel.AllPlayList.CollectionChanged -= OnAllPlayListChanged;
+            ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+            PlayListGridView.SelectionChanged -= PlayListGridView_SelectionChanged;
+            _hoveredPlaylistCards.Clear();
+            Unloaded -= OnUnloaded;
+        }
+
+        private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(PlayListViewModel.IsEditMode))
+            {
+                ApplyEditMode();
+            }
         }
 
         private void OnAllPlayListChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
@@ -49,29 +72,74 @@ namespace WinUIMusicPlayer.View
             base.OnNavigatedTo(e);
             DetailView.ViewModel.IsClosingForTransition = false;
             ViewModel.ReceiveNavigation();
+            ViewModel.SetEditMode(false);
+            ApplyEditMode();
             UpdateState();
+        }
+
+        private void ApplyEditMode()
+        {
+            bool isEditMode = ViewModel.IsEditMode;
+            if (!isEditMode)
+            {
+                // WinUI does not allow mutating SelectedItems while SelectionMode=None.
+                // Clear the vector before switching modes; on first navigation it is already None.
+                if (PlayListGridView.SelectionMode != ListViewSelectionMode.None
+                    && PlayListGridView.SelectedItems.Count > 0)
+                {
+                    PlayListGridView.SelectedItems.Clear();
+                }
+                ViewModel.ClearSelectedPlayLists();
+            }
+
+            PlayListGridView.SelectionMode = isEditMode
+                ? ListViewSelectionMode.Extended
+                : ListViewSelectionMode.None;
+            PlayListGridView.IsItemClickEnabled = !isEditMode;
+            SelectAllPlayListsButton.Visibility = isEditMode ? Visibility.Visible : Visibility.Collapsed;
+            DeleteSelectedPlayListsButton.Visibility = isEditMode ? Visibility.Visible : Visibility.Collapsed;
+
+            foreach (var grid in _hoveredPlaylistCards)
+            {
+                SetActionButtonsVisibility(grid, isEditMode ? Visibility.Collapsed : Visibility.Visible);
+            }
+        }
+
+        private void PlayListGridView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!ViewModel.IsEditMode) return;
+            var selected = new List<PlayList>(PlayListGridView.SelectedItems.Count);
+            foreach (var item in PlayListGridView.SelectedItems)
+            {
+                if (item is PlayList playList) selected.Add(playList);
+            }
+            ViewModel.SetSelectedPlayLists(selected);
         }
 
         private void OnCoverPointerEntered(object sender, PointerRoutedEventArgs e)
         {
             if (sender is not Grid grid) return;
+            _hoveredPlaylistCards.Add(grid);
             SetActionButtonsVisibility(grid, Visibility.Visible);
         }
 
         private void OnCoverPointerExited(object sender, PointerRoutedEventArgs e)
         {
             if (sender is not Grid grid) return;
+            _hoveredPlaylistCards.Remove(grid);
             SetActionButtonsVisibility(grid, Visibility.Collapsed);
         }
 
-        private static void SetActionButtonsVisibility(Grid grid, Visibility visibility)
+        private void SetActionButtonsVisibility(Grid grid, Visibility visibility)
         {
-            if (grid.FindName("PlayBtn") is Button playBtn) playBtn.Visibility = visibility;
-            if (grid.FindName("MoreBtn") is Button moreBtn) moreBtn.Visibility = visibility;
+            Visibility actionVisibility = ViewModel.IsEditMode ? Visibility.Collapsed : visibility;
+            if (grid.FindName("PlayBtn") is Button playBtn) playBtn.Visibility = actionVisibility;
+            if (grid.FindName("MoreBtn") is Button moreBtn) moreBtn.Visibility = actionVisibility;
         }
 
         private void PlayListGridView_ItemClick(object sender, ItemClickEventArgs e)
         {
+            if (ViewModel.IsEditMode) return;
             if (DetailView.ViewModel.IsClosingForTransition) return;
             var gridView = sender as GridView;
             var item = gridView?.ContainerFromItem(e.ClickedItem)?.As<GridViewItem>();
@@ -205,12 +273,70 @@ namespace WinUIMusicPlayer.View
             }
         }
 
+        private void EditModeButton_Click(object sender, RoutedEventArgs e)
+        {
+            ViewModel.SetEditMode(!ViewModel.IsEditMode);
+        }
+
+        private void SelectAllPlayListsButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!ViewModel.IsEditMode) return;
+            PlayListGridView.SelectedItems.Clear();
+            foreach (var playList in ViewModel.AppViewModel.AllPlayList)
+            {
+                PlayListGridView.SelectedItems.Add(playList);
+            }
+        }
+
+        private async void DeleteSelectedPlayListsButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!ViewModel.CanDeleteSelectedPlayLists) return;
+            if (!await DialogHelper.ShowConfirmAsync(this.XamlRoot, "AreUSureDeletePlayLists")) return;
+
+            try
+            {
+                await ViewModel.DeleteSelectedPlayListsAsync();
+            }
+            catch (Exception ex)
+            {
+                ReportPlaylistOperationError(ex, "批量删除播放列表失败");
+            }
+        }
+
+        private async void PlayListGridView_DragItemsCompleted(ListViewBase sender, DragItemsCompletedEventArgs args)
+        {
+            if (!ViewModel.IsEditMode) return;
+            try
+            {
+                await ViewModel.PersistPlayListOrderAsync();
+            }
+            catch (Exception ex)
+            {
+                ReportPlaylistOperationError(ex, "保存播放列表排序失败");
+            }
+        }
+
+        private void ReportPlaylistOperationError(Exception exception, string operation)
+        {
+            App.GetLogger<PlayListPage>().LogError(exception, operation);
+            ViewModel.AppViewModel.InfoBarTitle = ToolUtils.GetString("Error");
+            ViewModel.AppViewModel.InfoBarMessage = exception.Message;
+            ViewModel.AppViewModel.InfoBarIsOpen = true;
+        }
+
         private async void RemovePlayListButton_Click(object sender, RoutedEventArgs e)
         {
             if (sender is not MenuFlyoutItem item || item.Tag is not PlayList playList) return;
             if (await DialogHelper.ShowConfirmAsync(this.XamlRoot, "AreUSureDeletePlayList"))
             {
-                await ViewModel.RemovePlayList(playList);
+                try
+                {
+                    await ViewModel.RemovePlayList(playList);
+                }
+                catch (Exception ex)
+                {
+                    ReportPlaylistOperationError(ex, "删除播放列表失败");
+                }
             }
         }
 

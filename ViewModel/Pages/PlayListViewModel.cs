@@ -1,6 +1,10 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.WinUI;
 using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
@@ -17,6 +21,37 @@ namespace WinUIMusicPlayer.ViewModel
         private MusicBrowseViewModel MusicBrowseViewModel { get; }
 
         public bool IsInDetailMode { get; set => SetProperty(ref field, value); }
+
+        public bool IsEditMode
+        {
+            get;
+            set
+            {
+                if (!SetProperty(ref field, value)) return;
+                OnPropertyChanged(nameof(EditModeText));
+                if (!value) ClearSelectedPlayLists();
+            }
+        }
+
+        public string EditModeText => ToolUtils.GetString(IsEditMode ? "PlayListEditDone" : "PlayListEdit");
+
+        public ObservableCollection<PlayList> SelectedPlayLists { get; } = [];
+
+        public int SelectedPlayListsCount => SelectedPlayLists.Count;
+
+        public bool HasSelectedPlayLists => SelectedPlayLists.Count > 0;
+
+        public bool CanDeleteSelectedPlayLists => HasSelectedPlayLists && !IsPlaylistOperationInProgress;
+
+        public bool IsPlaylistOperationInProgress
+        {
+            get;
+            private set
+            {
+                if (!SetProperty(ref field, value)) return;
+                OnPropertyChanged(nameof(CanDeleteSelectedPlayLists));
+            }
+        }
 
         public PlayListViewModel(AppViewModel appViewModel, MusicDatabaseService musicDatabaseService, MusicBrowseViewModel musicBrowseViewModel)
         {
@@ -65,10 +100,103 @@ namespace WinUIMusicPlayer.ViewModel
 
         public async Task RemovePlayList(PlayList playList)
         {
-            if (playList is null) return;
+            if (playList is null || IsPlaylistOperationInProgress) return;
 
-            await MusicDatabaseService.RemovePlayList(playList);
-            AppViewModel.AllPlayList.Remove(playList);
+            IsPlaylistOperationInProgress = true;
+            try
+            {
+                await MusicDatabaseService.RemovePlayList(playList);
+                await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+                {
+                    if (AppViewModel.CurrentPlayList?.Id == playList.Id)
+                    {
+                        AppViewModel.CurrentPlayList = null;
+                        AppViewModel.CurrentPlayListId = 0;
+                    }
+                    AppViewModel.AllPlayList.Remove(playList);
+                    if (SelectedPlayLists.Remove(playList))
+                    {
+                        OnPropertyChanged(nameof(SelectedPlayListsCount));
+                        OnPropertyChanged(nameof(HasSelectedPlayLists));
+                        OnPropertyChanged(nameof(CanDeleteSelectedPlayLists));
+                    }
+                });
+            }
+            finally
+            {
+                IsPlaylistOperationInProgress = false;
+            }
+        }
+
+        public void SetEditMode(bool enabled) => IsEditMode = enabled;
+
+        public void SetSelectedPlayLists(IEnumerable<PlayList> playlists)
+        {
+            SelectedPlayLists.Clear();
+            foreach (var playlist in playlists)
+            {
+                if (playlist is not null && !SelectedPlayLists.Contains(playlist))
+                    SelectedPlayLists.Add(playlist);
+            }
+            OnPropertyChanged(nameof(SelectedPlayListsCount));
+            OnPropertyChanged(nameof(HasSelectedPlayLists));
+            OnPropertyChanged(nameof(CanDeleteSelectedPlayLists));
+        }
+
+        public void ClearSelectedPlayLists()
+        {
+            SelectedPlayLists.Clear();
+            OnPropertyChanged(nameof(SelectedPlayListsCount));
+            OnPropertyChanged(nameof(HasSelectedPlayLists));
+            OnPropertyChanged(nameof(CanDeleteSelectedPlayLists));
+        }
+
+        public async Task DeleteSelectedPlayListsAsync()
+        {
+            var snapshot = SelectedPlayLists.ToArray();
+            if (snapshot.Length == 0 || IsPlaylistOperationInProgress) return;
+
+            IsPlaylistOperationInProgress = true;
+            try
+            {
+                await MusicDatabaseService.RemovePlayLists(snapshot.Select(item => item.Id));
+                await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+                {
+                    if (AppViewModel.CurrentPlayList is { } current
+                        && snapshot.Any(item => item.Id == current.Id))
+                    {
+                        AppViewModel.CurrentPlayList = null;
+                        AppViewModel.CurrentPlayListId = 0;
+                    }
+
+                    AppViewModel.AllPlayList.RemoveRange(snapshot);
+                    ClearSelectedPlayLists();
+                });
+            }
+            finally
+            {
+                IsPlaylistOperationInProgress = false;
+            }
+        }
+
+        public async Task PersistPlayListOrderAsync()
+        {
+            if (IsPlaylistOperationInProgress) return;
+
+            IsPlaylistOperationInProgress = true;
+            var playlists = AppViewModel.AllPlayList;
+            try
+            {
+                for (int i = 0; i < playlists.Count; i++)
+                {
+                    playlists[i].SortOrder = i + 1;
+                }
+                await MusicDatabaseService.UpdatePlayListOrderBatch(playlists);
+            }
+            finally
+            {
+                IsPlaylistOperationInProgress = false;
+            }
         }
 
         public async Task ExportPlayList(PlayList playList)

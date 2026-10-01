@@ -2,6 +2,20 @@
 
 新条目加在最上方。
 
+## 2026-10-01 调整播放列表悬浮操作
+
+- `PlayListPage.xaml.cs`：编辑模式隐藏卡片上的全部悬浮按钮，普通模式恢复播放和更多按钮。
+
+## 2026-10-01 修复播放列表页导航崩溃
+
+- `PlayListPage.xaml.cs`：避免在 `SelectionMode=None` 时清空 `GridView.SelectedItems`，修复首次打开播放列表页触发 `0x8000FFFF` 的问题。
+
+## 2026-10-01 播放列表编辑模式与批量管理
+
+- `PlayListPage`、`PlayListViewModel`：新增编辑模式，保留悬浮播放按钮；编辑模式下支持多选、全选、批量删除和拖拽排序，普通模式点击卡片仍进入歌单详情。
+- `PlayList`、`MusicDatabaseService`：为播放列表增加持久化排序字段，兼容已有数据库并以事务保存批量删除与排序结果。
+- `Strings/*/Resources.resw`：补充编辑模式、批量删除和二次确认文本。
+
 ## 2026-10-01 修复发光退场后末字再次骤暗
 
 - `LyricsAnimator.cs`、`RenderLyricsChar.cs`、`LyricsLineRenderer.cs`：记录视觉退场开始时的实际发光量，退场时同步降低发光层透明度与模糊半径，避免半径归零时叠加一份普通高亮字形，再切换为非当前行而骤暗；沿用已有曲线、逐字时间及退场状态清理。

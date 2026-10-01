@@ -2347,4 +2347,19 @@ SHA-256：{5}
   <data name="LyricsPrioritySecond" xml:space="preserve"><value>第 2 优先级</value></data>
   <data name="LyricsPriorityThird" xml:space="preserve"><value>第 3 优先级</value></data>
   <data name="LyricsPriorityFourth" xml:space="preserve"><value>第 4 优先级</value></data>
+  <data name="PlayListEdit" xml:space="preserve">
+    <value>编辑</value>
+  </data>
+  <data name="PlayListEditDone" xml:space="preserve">
+    <value>完成</value>
+  </data>
+  <data name="PlayListSelectAll.Text" xml:space="preserve">
+    <value>全选</value>
+  </data>
+  <data name="PlayListBatchDelete.Text" xml:space="preserve">
+    <value>删除</value>
+  </data>
+  <data name="AreUSureDeletePlayLists" xml:space="preserve">
+    <value>确定删除选中的播放列表吗？</value>
+  </data>
 </root>

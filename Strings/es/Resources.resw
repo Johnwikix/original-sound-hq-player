@@ -2348,4 +2348,19 @@ SHA-256: {5}
   <data name="LyricsPrioritySecond" xml:space="preserve"><value>2.ª prioridad</value></data>
   <data name="LyricsPriorityThird" xml:space="preserve"><value>3.ª prioridad</value></data>
   <data name="LyricsPriorityFourth" xml:space="preserve"><value>4.ª prioridad</value></data>
+  <data name="PlayListEdit" xml:space="preserve">
+    <value>Editar</value>
+  </data>
+  <data name="PlayListEditDone" xml:space="preserve">
+    <value>Listo</value>
+  </data>
+  <data name="PlayListSelectAll.Text" xml:space="preserve">
+    <value>Seleccionar todo</value>
+  </data>
+  <data name="PlayListBatchDelete.Text" xml:space="preserve">
+    <value>Eliminar</value>
+  </data>
+  <data name="AreUSureDeletePlayLists" xml:space="preserve">
+    <value>¿Seguro que quieres eliminar las listas de reproducción seleccionadas?</value>
+  </data>
 </root>
