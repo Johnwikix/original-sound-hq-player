@@ -297,19 +297,58 @@
                             </ToolTipService.ToolTip>
                         </Button>
                         <Button
-                            x:Name="EqualizerButtonPlayingDetail"
+                            Width="34"
                             Margin="5"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
+                            AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('LyricsTranslationToggle')}"
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
-                            Click="EqualizerButton_Click"
+                            Command="{x:Bind ViewModel.AppViewModel.ToggleLyricsTranslationCommand, Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
-                            <FontIcon
-                                x:Name="EqualizerIconPlayingDetail"
-                                FontSize="18"
-                                Glyph="&#xE9E9;" />
+                            <TextBlock
+                                x:Uid="LyricsTranslationIcon"
+                                FontSize="16"
+                                FontWeight="Normal"
+                                IsHitTestVisible="False"
+                                IsTextScaleFactorEnabled="False"
+                                Opacity="{x:Bind tools:BindUtils.DesktopLyricsButtonOpacity(ViewModel.AppViewModel.IsLyricsTranslationEnabled), Mode=OneWay}"
+                                TextAlignment="Center">
+                                <TextBlock.OpacityTransition>
+                                    <ScalarTransition Duration="0:0:0.2" />
+                                </TextBlock.OpacityTransition>
+                            </TextBlock>
+                            <ToolTipService.ToolTip>
+                                <ToolTip Content="{x:Bind tools:ToolUtils.GetString('LyricsTranslationToggle')}" />
+                            </ToolTipService.ToolTip>
+                        </Button>
+                        <Button
+                            Width="34"
+                            Margin="5"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('LyricsPronunciationToggle')}"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            Command="{x:Bind ViewModel.AppViewModel.ToggleLyricsPronunciationCommand, Mode=OneWay}"
+                            Style="{StaticResource MenuButtonStyle}">
+                            <TextBlock
+                                x:Uid="LyricsPronunciationIcon"
+                                FontSize="16"
+                                FontWeight="Normal"
+                                IsHitTestVisible="False"
+                                IsTextScaleFactorEnabled="False"
+                                Opacity="{x:Bind tools:BindUtils.DesktopLyricsButtonOpacity(ViewModel.AppViewModel.IsLyricsPronunciationEnabled), Mode=OneWay}"
+                                TextAlignment="Center">
+                                <TextBlock.OpacityTransition>
+                                    <ScalarTransition Duration="0:0:0.2" />
+                                </TextBlock.OpacityTransition>
+                            </TextBlock>
+                            <ToolTipService.ToolTip>
+                                <ToolTip Content="{x:Bind tools:ToolUtils.GetString('LyricsPronunciationToggle')}" />
+                            </ToolTipService.ToolTip>
                         </Button>
                     </StackPanel>
                     <Grid
@@ -446,62 +485,19 @@
                                 Glyph="&#xE90B;" />
                         </Button>
                         <Button
+                            x:Name="EqualizerButtonPlayingDetail"
                             Margin="5"
-                            Width="34"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
                             Background="Transparent"
                             BorderBrush="Transparent"
                             BorderThickness="0"
-                            AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('LyricsTranslationToggle')}"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Command="{x:Bind ViewModel.AppViewModel.ToggleLyricsTranslationCommand, Mode=OneWay}"
+                            Click="EqualizerButton_Click"
                             Style="{StaticResource MenuButtonStyle}">
-                            <TextBlock
-                                x:Uid="LyricsTranslationIcon"
-                                Width="18"
-                                Height="18"
-                                FontSize="16"
-                                FontWeight="Normal"
-                                IsHitTestVisible="False"
-                                IsTextScaleFactorEnabled="False"
-                                TextAlignment="Center"
-                                Opacity="{x:Bind tools:BindUtils.DesktopLyricsButtonOpacity(ViewModel.AppViewModel.IsLyricsTranslationEnabled), Mode=OneWay}">
-                                <TextBlock.OpacityTransition>
-                                    <ScalarTransition Duration="0:0:0.2" />
-                                </TextBlock.OpacityTransition>
-                            </TextBlock>
-                            <ToolTipService.ToolTip>
-                                <ToolTip Content="{x:Bind tools:ToolUtils.GetString('LyricsTranslationToggle')}" />
-                            </ToolTipService.ToolTip>
-                        </Button>
-                        <Button
-                            Margin="5"
-                            Width="34"
-                            Background="Transparent"
-                            BorderBrush="Transparent"
-                            BorderThickness="0"
-                            AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('LyricsPronunciationToggle')}"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Command="{x:Bind ViewModel.AppViewModel.ToggleLyricsPronunciationCommand, Mode=OneWay}"
-                            Style="{StaticResource MenuButtonStyle}">
-                            <TextBlock
-                                x:Uid="LyricsPronunciationIcon"
-                                Width="18"
-                                Height="18"
-                                FontSize="16"
-                                FontWeight="Normal"
-                                IsHitTestVisible="False"
-                                IsTextScaleFactorEnabled="False"
-                                TextAlignment="Center"
-                                Opacity="{x:Bind tools:BindUtils.DesktopLyricsButtonOpacity(ViewModel.AppViewModel.IsLyricsPronunciationEnabled), Mode=OneWay}">
-                                <TextBlock.OpacityTransition>
-                                    <ScalarTransition Duration="0:0:0.2" />
-                                </TextBlock.OpacityTransition>
-                            </TextBlock>
-                            <ToolTipService.ToolTip>
-                                <ToolTip Content="{x:Bind tools:ToolUtils.GetString('LyricsPronunciationToggle')}" />
-                            </ToolTipService.ToolTip>
+                            <FontIcon
+                                x:Name="EqualizerIconPlayingDetail"
+                                FontSize="18"
+                                Glyph="&#xE9E9;" />
                         </Button>
                         <TeachingTip
                             x:Name="CurrentPlayListTeachingTipPlayingDetail"
