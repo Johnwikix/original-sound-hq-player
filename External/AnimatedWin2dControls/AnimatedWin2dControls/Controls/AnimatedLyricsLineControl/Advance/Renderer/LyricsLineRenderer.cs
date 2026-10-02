@@ -72,10 +72,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             if (double.IsNaN(opacity) || opacity <= 0) return;
 
             var bounds = Line.SecondaryTextLayout.LayoutBounds;
+            double visibleHeight = Math.Clamp(Line.CurrentSecondaryHeight, 0, bounds.Height);
+            if (visibleHeight <= 0) return;
             var srcRect = new Rect(
-                bounds.X + Line.SecondaryPosition.X - CropHorizonPadding,
-                bounds.Y + Line.SecondaryPosition.Y - CropVerticalPadding,
-                bounds.Width + CropHorizonPadding * 2, bounds.Height + CropVerticalPadding * 2);
+                bounds.X + Line.CachedSecondaryPosition.X - CropHorizonPadding,
+                bounds.Y + Line.CachedSecondaryPosition.Y - CropVerticalPadding,
+                bounds.Width + CropHorizonPadding * 2, visibleHeight + CropVerticalPadding * 2);
 
             if (Line.CachedCropEffect is { } crop && Line.CachedBlurEffect is { } blurFx && Line.CachedOpacityEffect is { } opacityFx)
             {
@@ -93,8 +95,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
             var bounds = Line.PrimaryTextLayout.LayoutBounds;
             var srcRect = new Rect(
-                bounds.X + Line.PrimaryPosition.X - CropHorizonPadding,
-                bounds.Y + Line.PrimaryPosition.Y - CropHorizonPadding,
+                bounds.X + Line.CachedPrimaryPosition.X - CropHorizonPadding,
+                bounds.Y + Line.CachedPrimaryPosition.Y - CropHorizonPadding,
                 bounds.Width + CropHorizonPadding * 2, bounds.Height + CropHorizonPadding * 2);
 
             if (!IsPlaying)
@@ -135,8 +137,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
             var bounds = Line.PrimaryTextLayout.LayoutBounds;
             Rect fullRect = new(
-                bounds.X + Line.PrimaryPosition.X,
-                bounds.Y + Line.PrimaryPosition.Y,
+                bounds.X + Line.CachedPrimaryPosition.X,
+                bounds.Y + Line.CachedPrimaryPosition.Y,
                 bounds.Width, bounds.Height);
             if (fullRect.Width <= 0 || fullRect.Height <= 0) return;
 
@@ -178,8 +180,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 if (subRect.Width <= 0) continue;
 
                 Rect subLineRect = new(
-                    subRect.X + Line.PrimaryPosition.X,
-                    subRect.Y + Line.PrimaryPosition.Y,
+                    subRect.X + Line.CachedPrimaryPosition.X,
+                    subRect.Y + Line.CachedPrimaryPosition.Y,
                     subRect.Width, subRect.Height);
 
                 double playedWidth = ComputeRegionPlayedWidth(subLineRegion);
@@ -383,8 +385,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
             var rect = renderChar.LayoutRect;
             var sourceCharRect = new Rect(
-                rect.X + Line.PrimaryPosition.X,
-                rect.Y + Line.PrimaryPosition.Y,
+                rect.X + Line.CachedPrimaryPosition.X,
+                rect.Y + Line.CachedPrimaryPosition.Y,
                 rect.Width, rect.Height);
 
             double scale = renderChar.ScaleTransition.Value;

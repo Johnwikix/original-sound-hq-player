@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
@@ -28,6 +29,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         private List<LyricLine>? _lyrics;
         private List<LyricDisplayItem> _displayItems = new();
         private readonly Dictionary<LyricDisplayItem, (Border Border, TextBlock LyricTb, TextBlock TransTb, TextBlock PronTb)> _itemMap = new();
+        private readonly Dictionary<TextBlock, Storyboard> _secondaryHeightAnimations = new();
+        private readonly Dictionary<TextBlock, bool> _secondaryVisibilityTargets = new();
 
         private int _currentLineIndex = -1;
         private int _hoveredIndex = -1;
@@ -136,6 +139,10 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             foreach (var item in _displayItems)
                 item.PropertyChanged -= _onItemPropertyChanged;
             _itemMap.Clear();
+            foreach (var storyboard in _secondaryHeightAnimations.Values)
+                storyboard.Stop();
+            _secondaryHeightAnimations.Clear();
+            _secondaryVisibilityTargets.Clear();
             _displayItems.Clear();
             _hoveredIndex = -1;
             _containerScaleTarget.Clear();
@@ -409,20 +416,98 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             lyricTb.Opacity = item.IsCurrent ? 1.0 : _cachedUnplayedOpacity;
 
             transTb.Text = item.TranslationText;
-            transTb.Visibility = item.HasTranslation ? Visibility.Visible : Visibility.Collapsed;
             transTb.FontSize = item.DisplayFontSize * 0.75;
             transTb.TextAlignment = item.DisplayTextAlignment;
             if (!string.IsNullOrEmpty(item.DisplayFontFamily))
                 transTb.FontFamily = GetFontFamily(item.DisplayFontFamily);
-            transTb.Opacity = _showTranslation ? item.DisplayTranslationOpacity : 0;
+            ApplySecondaryBlock(transTb, item.HasTranslation, _showTranslation, item.DisplayTranslationOpacity);
 
             pronTb.Text = item.PronunciationText;
-            pronTb.Visibility = item.HasPronunciation ? Visibility.Visible : Visibility.Collapsed;
             pronTb.FontSize = item.DisplayFontSize * 0.6;
             pronTb.TextAlignment = item.DisplayTextAlignment;
             if (!string.IsNullOrEmpty(item.DisplayFontFamily))
                 pronTb.FontFamily = GetFontFamily(item.DisplayFontFamily);
-            pronTb.Opacity = _showPronunciation ? item.DisplayTranslationOpacity : 0;
+            ApplySecondaryBlock(pronTb, item.HasPronunciation, _showPronunciation, item.DisplayTranslationOpacity);
+        }
+
+        private void ApplySecondaryBlock(TextBlock block, bool hasContent, bool show, double opacity)
+        {
+            bool targetVisible = hasContent && show;
+            if (!_secondaryVisibilityTargets.TryGetValue(block, out bool oldTarget))
+            {
+                _secondaryVisibilityTargets[block] = targetVisible;
+                block.Visibility = targetVisible ? Visibility.Visible : Visibility.Collapsed;
+                block.Height = double.NaN;
+                block.Opacity = targetVisible ? opacity : 0;
+                return;
+            }
+
+            if (oldTarget == targetVisible)
+            {
+                if (targetVisible) block.Visibility = Visibility.Visible;
+                block.Opacity = targetVisible ? opacity : 0;
+                return;
+            }
+
+            _secondaryVisibilityTargets[block] = targetVisible;
+            AnimateSecondaryBlock(block, targetVisible, opacity);
+        }
+
+        private void AnimateSecondaryBlock(TextBlock block, bool targetVisible, double opacity)
+        {
+            if (_secondaryHeightAnimations.Remove(block, out var previous))
+                previous.Stop();
+
+            double currentHeight = block.Visibility == Visibility.Collapsed
+                ? 0
+                : Math.Max(0, block.ActualHeight);
+            block.Visibility = Visibility.Visible;
+
+            double targetHeight = 0;
+            if (targetVisible)
+            {
+                block.Height = double.NaN;
+                double availableWidth = block.ActualWidth > 0 ? block.ActualWidth : LyricList.ActualWidth;
+                block.Measure(new Size(Math.Max(0, availableWidth), double.PositiveInfinity));
+                targetHeight = Math.Max(0, block.DesiredSize.Height);
+                block.Height = currentHeight;
+            }
+            else
+            {
+                block.Height = currentHeight;
+            }
+
+            block.Opacity = targetVisible ? opacity : 0;
+            if (Math.Abs(targetHeight - currentHeight) < 0.5)
+            {
+                block.Height = targetVisible ? double.NaN : 0;
+                if (!targetVisible) block.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            var animation = new DoubleAnimation
+            {
+                From = currentHeight,
+                To = targetHeight,
+                Duration = TimeSpan.FromMilliseconds(200),
+                EnableDependentAnimation = true,
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+            };
+            var storyboard = new Storyboard();
+            storyboard.Children.Add(animation);
+            Storyboard.SetTarget(animation, block);
+            Storyboard.SetTargetProperty(animation, "Height");
+            storyboard.Completed += (_, _) =>
+            {
+                if (!_secondaryHeightAnimations.TryGetValue(block, out var activeStoryboard) ||
+                    !ReferenceEquals(activeStoryboard, storyboard))
+                    return;
+                _secondaryHeightAnimations.Remove(block);
+                block.Height = targetVisible ? double.NaN : 0;
+                block.Visibility = targetVisible ? Visibility.Visible : Visibility.Collapsed;
+            };
+            _secondaryHeightAnimations[block] = storyboard;
+            storyboard.Begin();
         }
 
         private void ApplyBorderSpacing(Border border, TextAlignment alignment)
@@ -463,6 +548,17 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                     if (recycled.Tag is LyricDisplayItem oldItem && oldItem.LineIndex == _hoveredIndex)
                         _hoveredIndex = -1;
                     TeardownBlurForBorder(recycled);
+                    if (recycled.Child is StackPanel recycledPanel)
+                    {
+                        foreach (var child in recycledPanel.Children)
+                        {
+                            if (child is TextBlock block)
+                            {
+                                if (_secondaryHeightAnimations.Remove(block, out var storyboard)) storyboard.Stop();
+                                _secondaryVisibilityTargets.Remove(block);
+                            }
+                        }
+                    }
                 }
                 return;
             }

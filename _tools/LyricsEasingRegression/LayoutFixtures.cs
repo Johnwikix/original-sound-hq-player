@@ -44,7 +44,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public Vector2 TopLeftPosition, BottomRightPosition, CenterPosition, PrimaryPosition, SecondaryPosition;
         public CanvasTextLayout? PrimaryTextLayout { get; set; } = new();
         public CanvasTextLayout? SecondaryTextLayout { get; set; }
+        public double CurrentSecondaryHeight => SecondaryTextLayout?.LayoutBounds.Height ?? 0;
         public void ApplyDisplayOptions(bool showTranslation, bool showPronunciation) { }
+        public void PrepareSecondaryHeightTransition() { }
         public void RecreateTextLayout(ICanvasResourceCreator r, int a, int b, string f,
             double w, double h, CanvasHorizontalAlignment alignment, CanvasTextFormat format)
             => throw new NotSupportedException("GPU font measurement is outside these tests.");

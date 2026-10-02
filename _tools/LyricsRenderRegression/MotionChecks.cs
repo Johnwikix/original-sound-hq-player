@@ -3,6 +3,7 @@ using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
 using AnimatedWin2dControls.Messages;
 using Microsoft.Graphics.Canvas;
+using Microsoft.Graphics.Canvas.Text;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Windows.Foundation;
 
@@ -23,6 +24,11 @@ internal static class MotionChecks
         {
             coordinator.Attach();
             coordinator.OnCreateResources();
+            void PublishSettings(bool showTranslation, bool showPronunciation) =>
+                LyricsSettingsBus.Publish(new("Segoe UI", CanvasHorizontalAlignment.Left, false, 1, 4,
+                    0, 0, 0, 500, true, true, 0.5, 0.6, 0, EasingType.FlowWave, EaseMode.FlowWave,
+                    0.35, 120, false, Microsoft.UI.Colors.White,
+                    showTranslation: showTranslation, showPronunciation: showPronunciation));
             long[] starts = [0, 1500, 3000, 3300, 3500, 5000, 6500, 8000];
             UILyricsBus.Publish(starts.Select((start, index) => new LyricLine
             {
@@ -39,6 +45,11 @@ internal static class MotionChecks
             {
                 position = (long)Math.Round(frame * 1000.0 / 60);
                 Update.Invoke(coordinator, [canvas, TimeSpan.FromSeconds(1.0 / 60)]);
+            }
+            void Draw()
+            {
+                using var drawing = target.CreateDrawingSession();
+                coordinator.OnDraw(canvas, drawing);
             }
             for (int frame = 0; frame < 90; frame++) Step(frame);
             var lines = (List<RenderLyricsLine>)Lines.GetValue(coordinator)!;
@@ -87,6 +98,38 @@ internal static class MotionChecks
             Check(lines.All(line => !line.ScrollMotion.IsMoving), "Relayout must discard every pending destination.");
             using (var drawing = target.CreateDrawingSession()) coordinator.OnDraw(canvas, drawing);
             Check(lines.Any(line => line.CachedFill is not null), "The modified effects must render using real Win2D resources.");
+
+            PublishSettings(true, true);
+            UILyricsBus.Publish(new List<LyricLine>
+            {
+                new() { StartMs = 0, EndMs = 1000, Words = [new LyricWord { Word = "Primary", StartMs = 0, DurationMs = 1000 }],
+                    TransLateText = "Translation", PronunciationText = "Reading" },
+                new() { StartMs = 1000, EndMs = 2000, Words = [new LyricWord { Word = "Next", StartMs = 1000, DurationMs = 1000 }],
+                    TransLateText = "Next translation", PronunciationText = "Next reading" },
+            });
+            position = 0;
+            using (var drawing = target.CreateDrawingSession()) coordinator.OnDraw(canvas, drawing);
+            lines = (List<RenderLyricsLine>)Lines.GetValue(coordinator)!;
+            var heightFocus = lines[0];
+            double fullSecondaryHeight = heightFocus.CurrentSecondaryHeight;
+            Check(fullSecondaryHeight > 0, "A line with translation and pronunciation must have secondary layout height.");
+            PublishSettings(false, true);
+            Step(1);
+            Draw();
+            double pronunciationOnlyHeight = heightFocus.CurrentSecondaryHeight;
+            Check(pronunciationOnlyHeight > 0 && pronunciationOnlyHeight < fullSecondaryHeight,
+                "Hiding translation must animate the advanced row height down to pronunciation-only height.");
+            PublishSettings(false, false);
+            Step(2);
+            Draw();
+            double hiddenSecondaryHeight = heightFocus.CurrentSecondaryHeight;
+            Check(hiddenSecondaryHeight < pronunciationOnlyHeight,
+                "Hiding pronunciation must continue the advanced row height transition to zero.");
+            PublishSettings(true, true);
+            Step(3);
+            Draw();
+            Check(heightFocus.CurrentSecondaryHeight > hiddenSecondaryHeight,
+                "Restoring translation and pronunciation must animate the advanced row height back up.");
         }
         finally
         {

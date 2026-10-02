@@ -430,6 +430,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             var lines = _renderLines;
             if (lines.Count == 0) return;
 
+            foreach (var line in lines)
+                line.UpdateSecondaryTransitions(elapsedTime);
+            LyricsLayoutManager.ArrangeCurrentHeights(
+                lines,
+                (int)_cachedLyricsFontSize,
+                _cachedLyricsTextAlignment,
+                RegionW);
+
             // 单调自增，每帧一格。LyricsAnimator 内部用 animationVersion - 1
             // 来识别"上一帧不在动画范围内"的行，强制重算距离效果。
             _animationVersion++;
@@ -762,8 +770,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     line.UnplayedStrokeTint.Color = _unplayedColor;
 
                 var prevTransform = ds.Transform;
-                ds.Transform *= Matrix3x2.CreateScale((float)line.ScaleTransition.Value, line.CenterPosition);
+                // Render caches are recorded at Cached*Position. Height transitions
+                // move the logical row without forcing per-frame Win2D cache rebuilds.
+                float lineScale = (float)line.ScaleTransition.Value;
+                ds.Transform *= Matrix3x2.CreateScale(lineScale, line.CenterPosition);
                 ds.Transform *= Matrix3x2.CreateTranslation((float)rx, (float)yOffset);
+                ds.Transform *= Matrix3x2.CreateTranslation(0, (float)(line.LayoutOffsetY * lineScale));
 
                 _lineRenderer.IsPlaying = isPlayingLine;
                 _lineRenderer.CurrentProgressMs = currentTimeMs;

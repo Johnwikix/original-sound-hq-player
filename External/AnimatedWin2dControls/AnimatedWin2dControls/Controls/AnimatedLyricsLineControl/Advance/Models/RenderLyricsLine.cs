@@ -23,6 +23,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public ValueTransition<double> UnplayedPrimaryOpacityTransition { get; set; }
         public ValueTransition<double> SecondaryOpacityTransition { get; set; }
         public ValueTransition<double> SecondaryDisplayTransition { get; }
+        public ValueTransition<double> SecondaryHeightTransition { get; }
 
         public ValueTransition<double> PrimaryXOffsetTransition { get; set; }
         public ValueTransition<double> SecondaryXOffsetTransition { get; set; }
@@ -36,6 +37,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public Vector2 PrimaryPosition { get; set; }
         public Vector2 SecondaryPosition { get; set; }
 
+        // Win2D command lists are recorded at a fixed position. During the
+        // secondary-height transition the logical row moves, so rendering uses
+        // this cached origin plus a transform offset instead of sampling the
+        // old cache with the new layout coordinates.
+        public Vector2 CachedPrimaryPosition { get; private set; }
+        public Vector2 CachedSecondaryPosition { get; private set; }
+        public double LayoutOffsetY => PrimaryPosition.Y - CachedPrimaryPosition.Y;
+
         public Vector2 TopLeftPosition { get; set; }
         public Vector2 CenterPosition { get; set; }
         public Vector2 BottomRightPosition { get; set; }
@@ -48,6 +57,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public string TranslationText { get; private set; } = "";
         public string PronunciationText { get; private set; } = "";
         public int SecondaryPronunciationStartIndex { get; private set; } = -1;
+        public double CurrentSecondaryHeight => SecondaryHeightTransition.Value;
+
+        private bool _secondaryHeightInitialized;
 
         public CanvasCommandList? CachedStroke { get; private set; }
         public CanvasCommandList? CachedFill { get; private set; }
@@ -124,6 +136,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             UnplayedPrimaryOpacityTransition = new(0, interpolator, 0.3);
             SecondaryOpacityTransition = new(0, interpolator, 0.3);
             SecondaryDisplayTransition = new(1, interpolator, 0.2);
+            SecondaryHeightTransition = new(0, interpolator, 0.2);
             PrimaryXOffsetTransition = new(0, interpolator, 0.3);
             SecondaryXOffsetTransition = new(0, interpolator, 0.3);
             YOffsetTransition = new(0, interpolator, 0.3);
@@ -205,6 +218,29 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             if (!string.IsNullOrWhiteSpace(desired))
                 SecondaryText = desired;
             SecondaryDisplayTransition.Start(string.IsNullOrWhiteSpace(desired) ? 0 : 1);
+        }
+
+        public void PrepareSecondaryHeightTransition()
+        {
+            double targetHeight = SecondaryDisplayTransition.TargetValue > 0.5 && SecondaryTextLayout is not null
+                ? SecondaryTextLayout.LayoutBounds.Height
+                : 0;
+
+            if (!_secondaryHeightInitialized)
+            {
+                SecondaryHeightTransition.JumpTo(targetHeight);
+                _secondaryHeightInitialized = true;
+            }
+            else if (Math.Abs(SecondaryHeightTransition.TargetValue - targetHeight) > 0.1)
+            {
+                SecondaryHeightTransition.Start(targetHeight);
+            }
+        }
+
+        public void UpdateSecondaryTransitions(TimeSpan elapsedTime)
+        {
+            SecondaryDisplayTransition.Update(elapsedTime);
+            SecondaryHeightTransition.Update(elapsedTime);
         }
 
         public void DisposeTextLayout()
@@ -329,6 +365,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public void EnsureCaches(ICanvasResourceCreator resourceCreator, double strokeWidth)
         {
             if (CachedStroke != null && CachedFill != null) return;
+
+            CachedPrimaryPosition = PrimaryPosition;
+            CachedSecondaryPosition = SecondaryPosition;
 
             CachedFill = new CanvasCommandList(resourceCreator);
             using (var ds = CachedFill.CreateDrawingSession())
