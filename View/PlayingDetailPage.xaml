@@ -314,7 +314,8 @@
                                 IsHitTestVisible="False"
                                 IsTextScaleFactorEnabled="False"
                                 Opacity="{x:Bind tools:BindUtils.DesktopLyricsButtonOpacity(ViewModel.AppViewModel.IsLyricsTranslationEnabled), Mode=OneWay}"
-                                TextAlignment="Center">
+                                TextAlignment="Center"
+                                TextLineBounds="Tight">
                                 <TextBlock.OpacityTransition>
                                     <ScalarTransition Duration="0:0:0.2" />
                                 </TextBlock.OpacityTransition>
@@ -341,7 +342,8 @@
                                 IsHitTestVisible="False"
                                 IsTextScaleFactorEnabled="False"
                                 Opacity="{x:Bind tools:BindUtils.DesktopLyricsButtonOpacity(ViewModel.AppViewModel.IsLyricsPronunciationEnabled), Mode=OneWay}"
-                                TextAlignment="Center">
+                                TextAlignment="Center"
+                                TextLineBounds="Tight">
                                 <TextBlock.OpacityTransition>
                                     <ScalarTransition Duration="0:0:0.2" />
                                 </TextBlock.OpacityTransition>
