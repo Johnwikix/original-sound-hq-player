@@ -456,7 +456,8 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
             await foreach (var entry in transport.ListAsync(connection, track.ParentHref, linked.Token).ConfigureAwait(false))
                 if (!entry.IsDirectory && entry.Length is > 0 and <= LyricsParser.MaxContentLength &&
                     (Path.GetFileNameWithoutExtension(entry.Name).Equals(stem, StringComparison.OrdinalIgnoreCase) ||
-                    Path.GetFileNameWithoutExtension(entry.Name).Equals(stem + "_Translated", StringComparison.OrdinalIgnoreCase)))
+                    Path.GetFileNameWithoutExtension(entry.Name).Equals(stem + "_Translated", StringComparison.OrdinalIgnoreCase) ||
+                    Path.GetFileNameWithoutExtension(entry.Name).Equals(stem + "_Pronunciation", StringComparison.OrdinalIgnoreCase)))
                     entries[entry.Name] = entry;
             string signature = string.Join("|", entries.Values.OrderBy(entry => entry.Name).Select(entry => $"{entry.Href}:{entry.ETag}:{entry.Modified}:{entry.Length}"));
             if (previous is not null && previous.Order == order && previous.Signature == signature)
@@ -491,6 +492,19 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
                         }
                         catch (Exception ex) when (ex is FormatException or System.Xml.XmlException or IOException or OverflowException or System.Text.RegularExpressions.RegexMatchTimeoutException)
                         { logger.LogWarning(ex, "Could not import remote translation"); }
+                    }
+                    foreach (string name in LyricsFilePolicy.PronunciationNames(stem, ext, order))
+                    {
+                        if (!entries.TryGetValue(name, out var pronunciation)) continue;
+                        try
+                        {
+                            string normalized = parser.NormalizeTranslation(await ReadEntry(pronunciation), linked.Token);
+                            if (string.IsNullOrWhiteSpace(normalized)) continue;
+                            document = document with { PronunciationLrc = normalized };
+                            break;
+                        }
+                        catch (Exception ex) when (ex is FormatException or System.Xml.XmlException or IOException or OverflowException or System.Text.RegularExpressions.RegexMatchTimeoutException)
+                        { logger.LogWarning(ex, "Could not import remote pronunciation"); }
                     }
                     break;
                 }

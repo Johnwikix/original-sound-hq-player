@@ -2391,4 +2391,13 @@ SHA-256: {5}
   <data name="LlmTranslateButton.Content" xml:space="preserve"><value>Traducir letra con IA</value></data>
   <data name="LlmManualTranslationFailed" xml:space="preserve"><value>La traducción de la letra con IA falló. Comprueba la configuración y los registros.</value></data>
   <data name="LlmManualTranslationCompleted" xml:space="preserve"><value>Traducción de la letra generada. Guarda la letra para escribirla en el archivo o la base de datos.</value></data>
+  <data name="LyricsPronunciationTab.Text" xml:space="preserve"><value>Pronunciación</value></data>
+  <data name="LyricsShowTranslation.Header" xml:space="preserve"><value>Mostrar traducciones</value></data>
+  <data name="LyricsShowTranslation.Description" xml:space="preserve"><value>Muestra la traducción cuando esté disponible.</value></data>
+  <data name="LyricsShowPronunciation.Header" xml:space="preserve"><value>Mostrar pronunciación</value></data>
+  <data name="LyricsShowPronunciation.Description" xml:space="preserve"><value>Muestra la pronunciación cuando esté disponible.</value></data>
+  <data name="LyricsTranslationToggle" xml:space="preserve"><value>Alternar traducción de la letra</value></data>
+  <data name="LyricsPronunciationToggle" xml:space="preserve"><value>Alternar pronunciación de la letra</value></data>
+  <data name="LyricsTranslationIcon.Text" xml:space="preserve"><value>T</value></data>
+  <data name="LyricsPronunciationIcon.Text" xml:space="preserve"><value>A</value></data>
 </root>

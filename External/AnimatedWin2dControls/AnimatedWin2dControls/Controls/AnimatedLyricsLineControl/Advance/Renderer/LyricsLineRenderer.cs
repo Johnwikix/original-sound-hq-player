@@ -67,7 +67,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         {
             if (Line?.SecondaryTextLayout == null) return;
 
-            var opacity = Line.SecondaryOpacityTransition.Value;
+            var opacity = Line.SecondaryOpacityTransition.Value * Line.SecondaryDisplayTransition.Value;
             var blur = Line.BlurAmountTransition.Value;
             if (double.IsNaN(opacity) || opacity <= 0) return;
 

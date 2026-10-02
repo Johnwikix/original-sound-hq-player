@@ -93,6 +93,7 @@ namespace WinUIMusicPlayer.Services
                     await _dbConnection.CreateTableAsync<WebDavCacheSettings>();
                     await _dbConnection.ExecuteAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_RemoteTrack_Resource ON RemoteTrack(SourceId, Href COLLATE BINARY)");
                     await _dbConnection.CreateTableAsync<PendingMetadataWrite>();
+                    await EnsurePendingMetadataLyricsColumnsAsync();
                     await _dbConnection.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Music_Path_NoCase ON Music(Path COLLATE NOCASE)");
                     await _dbConnection.CreateTableAsync<MusicLyrics>();
                     Lyrics = new WinUIMusicPlayer.Services.Lyrics.LyricsRepository(_dbConnection, _lyricsParser);
@@ -428,6 +429,13 @@ namespace WinUIMusicPlayer.Services
                         playlists[i].Id);
                 }
             });
+        }
+
+        private async Task EnsurePendingMetadataLyricsColumnsAsync()
+        {
+            var columns = await _dbConnection.QueryAsync<TableColumnInfo>("PRAGMA table_info(PendingMetadataWrite)");
+            if (!columns.Any(column => string.Equals(column.Name, nameof(PendingMetadataWrite.PronunciationLrc), StringComparison.OrdinalIgnoreCase)))
+                await _dbConnection.ExecuteAsync("ALTER TABLE PendingMetadataWrite ADD COLUMN PronunciationLrc TEXT NULL");
         }
 
         public async Task UpdateMusicInfo(Music music)
@@ -1144,6 +1152,10 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.DesktopLyricsFontWeight = settings.DesktopLyricsFontWeight;
                 AppSettings.LyricsFontWeight = settings.LyricsFontWeight;
                 AppViewModel.IsAutoLyricsEnabled = settings.IsAutoLyricsEnabled;
+                AppSettings.IsLyricsTranslationEnabled = settings.IsLyricsTranslationEnabled;
+                AppSettings.IsLyricsPronunciationEnabled = settings.IsLyricsPronunciationEnabled;
+                AppViewModel.IsLyricsTranslationEnabled = settings.IsLyricsTranslationEnabled;
+                AppViewModel.IsLyricsPronunciationEnabled = settings.IsLyricsPronunciationEnabled;
                 AppViewModel.State.Preferences.LocalLyricsFormatOrder = WinUIMusicPlayer.Services.Lyrics.LyricsFilePolicy.NormalizeOrder(settings.LocalLyricsFormatOrder);
                 AppViewModel.State.Preferences.PreferDatabaseLyrics = settings.PreferDatabaseLyrics;
                 AppViewModel.IsAutoCoverEnabled = settings.IsAutoCoverEnabled;

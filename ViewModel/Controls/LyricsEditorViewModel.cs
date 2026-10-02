@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using WinUIMusicPlayer.Model;
@@ -28,6 +29,7 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
 
     public string OriginalText { get => field; set { if (SetProperty(ref field, value)) _draftVersion++; } } = "";
     public string TranslationText { get => field; set { if (SetProperty(ref field, value)) _draftVersion++; } } = "";
+    public string PronunciationText { get => field; set { if (SetProperty(ref field, value)) _draftVersion++; } } = "";
     public string Status { get => field; private set => SetProperty(ref field, value); } = "";
     public string Error { get => field; private set => SetProperty(ref field, value); } = "";
     public bool IsBusy
@@ -103,11 +105,31 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
         var result = await Task.Run(async () =>
         {
             var file = await Windows.Storage.StorageFile.GetFileFromPathAsync(path);
-            return await ToolUtils.GetMusicInfo(file);
+            var info = await ToolUtils.GetMusicInfo(file);
+            string? pronunciation = null;
+            string? folder = System.IO.Path.GetDirectoryName(path);
+            if (folder is not null)
+            {
+                string stem = System.IO.Path.GetFileNameWithoutExtension(path);
+                string sidecar = System.IO.Path.Combine(folder, stem + "_Pronunciation.lrc");
+                if (System.IO.File.Exists(sidecar))
+                {
+                    try
+                    {
+                        string content = await LyricsFilePolicy.ReadAsync(sidecar, token);
+                        pronunciation = _parser.NormalizeTranslation(content, token);
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException or System.Xml.XmlException or OverflowException or System.Text.RegularExpressions.RegexMatchTimeoutException)
+                    {
+                        pronunciation = null;
+                    }
+                }
+            }
+            return (Original: info.Item2, Pronunciation: pronunciation);
         }, token);
         token.ThrowIfCancellationRequested();
         if (draft != _draftVersion) { Error = ToolUtils.GetString("LyricsEditConflict"); return; }
-        SetDocument(_parser.Import(result.Item2, token: token));
+        SetDocument(_parser.Import(result.Original, token: token, pronunciation: result.Pronunciation));
     });
 
     public async Task<bool> SaveAsync(byte[]? cover = null, bool queueMetadata = false)
@@ -117,11 +139,12 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
         await RunAsync(async token =>
         {
             long draft = _draftVersion;
-            string original = OriginalText, translation = TranslationText;
-            bool lyricsChanged = original != _savedDocument.Original.Content || translation != (_savedDocument.TranslationLrc ?? "");
+            string original = OriginalText, translation = TranslationText, pronunciation = PronunciationText;
+            bool lyricsChanged = original != _savedDocument.Original.Content || translation != (_savedDocument.TranslationLrc ?? "") ||
+                pronunciation != (_savedDocument.PronunciationLrc ?? "");
             // Unknown legacy content remains authoritative when only metadata is edited.
             var document = lyricsChanged
-                ? await Task.Run(() => _parser.Import(original, translation, token), token)
+                ? await Task.Run(() => _parser.Import(original, translation, token: token, pronunciation: pronunciation), token)
                 : _savedDocument;
             token.ThrowIfCancellationRequested();
             if (draft != _draftVersion) throw new InvalidOperationException("LyricsEditConflict");
@@ -144,8 +167,9 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
             // unchanged text snapshot as success even if that notification bumped the
             // draft counter; a real edit during the transaction still keeps the window open.
             saved = draft == _draftVersion ||
-                (string.Equals(OriginalText, original, StringComparison.Ordinal) &&
-                 string.Equals(TranslationText, translation, StringComparison.Ordinal));
+                 (string.Equals(OriginalText, original, StringComparison.Ordinal) &&
+                 string.Equals(TranslationText, translation, StringComparison.Ordinal) &&
+                 string.Equals(PronunciationText, pronunciation, StringComparison.Ordinal));
             if (!saved && !_disposed) Error = ToolUtils.GetString("LyricsEditConflict");
         });
         return saved;
@@ -163,8 +187,8 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
 
     private Task ExportAsync() => RunAsync(async token =>
     {
-        string original = OriginalText, translation = TranslationText;
-        var document = await Task.Run(() => _parser.Import(original, translation, token), token);
+        string original = OriginalText, translation = TranslationText, pronunciation = PronunciationText;
+        var document = await Task.Run(() => _parser.Import(original, translation, token: token, pronunciation: pronunciation), token);
         string path = await LyricsExporter.SaveFilesAsync(_music.Path, document, token);
         if (!_disposed) Status = ToolUtils.GetString("LyricsFilesSaved") + " " + path;
     });
@@ -240,6 +264,7 @@ public sealed class LyricsEditorViewModel : ObservableObject, IDisposable
     {
         OriginalText = document.Original.Content;
         TranslationText = document.TranslationLrc ?? "";
+        PronunciationText = document.PronunciationLrc ?? "";
     }
 
     private async Task RunAsync(Func<CancellationToken, Task> action)

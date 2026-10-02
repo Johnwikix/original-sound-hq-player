@@ -2391,4 +2391,13 @@ SHA-256: {5}
   <data name="LlmTranslateButton.Content" xml:space="preserve"><value>Liedtext mit KI übersetzen</value></data>
   <data name="LlmManualTranslationFailed" xml:space="preserve"><value>KI-Liedtextübersetzung fehlgeschlagen. Konfiguration und Protokoll prüfen.</value></data>
   <data name="LlmManualTranslationCompleted" xml:space="preserve"><value>KI-Übersetzung erstellt. Liedtext speichern, um ihn in Datei oder Datenbank zu schreiben.</value></data>
+  <data name="LyricsPronunciationTab.Text" xml:space="preserve"><value>Aussprache</value></data>
+  <data name="LyricsShowTranslation.Header" xml:space="preserve"><value>Übersetzungen anzeigen</value></data>
+  <data name="LyricsShowTranslation.Description" xml:space="preserve"><value>Übersetzung anzeigen, wenn sie verfügbar ist.</value></data>
+  <data name="LyricsShowPronunciation.Header" xml:space="preserve"><value>Aussprache anzeigen</value></data>
+  <data name="LyricsShowPronunciation.Description" xml:space="preserve"><value>Aussprache anzeigen, wenn sie verfügbar ist.</value></data>
+  <data name="LyricsTranslationToggle" xml:space="preserve"><value>Liedtextübersetzung umschalten</value></data>
+  <data name="LyricsPronunciationToggle" xml:space="preserve"><value>Liedtextaussprache umschalten</value></data>
+  <data name="LyricsTranslationIcon.Text" xml:space="preserve"><value>T</value></data>
+  <data name="LyricsPronunciationIcon.Text" xml:space="preserve"><value>A</value></data>
 </root>

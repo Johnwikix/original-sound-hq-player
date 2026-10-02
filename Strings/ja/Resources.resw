@@ -2391,4 +2391,13 @@ SHA-256: {5}
   <data name="LlmTranslateButton.Content" xml:space="preserve"><value>AIで歌詞を翻訳</value></data>
   <data name="LlmManualTranslationFailed" xml:space="preserve"><value>AIによる歌詞翻訳に失敗しました。設定とログを確認してください。</value></data>
   <data name="LlmManualTranslationCompleted" xml:space="preserve"><value>AI翻訳を生成しました。ファイルまたはデータベースに保存するには歌詞を保存してください。</value></data>
+  <data name="LyricsPronunciationTab.Text" xml:space="preserve"><value>発音</value></data>
+  <data name="LyricsShowTranslation.Header" xml:space="preserve"><value>歌詞の翻訳を表示</value></data>
+  <data name="LyricsShowTranslation.Description" xml:space="preserve"><value>翻訳がある場合に翻訳トラックを表示します。</value></data>
+  <data name="LyricsShowPronunciation.Header" xml:space="preserve"><value>歌詞の発音を表示</value></data>
+  <data name="LyricsShowPronunciation.Description" xml:space="preserve"><value>発音がある場合に発音トラックを表示します。</value></data>
+  <data name="LyricsTranslationToggle" xml:space="preserve"><value>歌詞の翻訳を切り替え</value></data>
+  <data name="LyricsPronunciationToggle" xml:space="preserve"><value>歌詞の発音を切り替え</value></data>
+  <data name="LyricsTranslationIcon.Text" xml:space="preserve"><value>T</value></data>
+  <data name="LyricsPronunciationIcon.Text" xml:space="preserve"><value>A</value></data>
 </root>

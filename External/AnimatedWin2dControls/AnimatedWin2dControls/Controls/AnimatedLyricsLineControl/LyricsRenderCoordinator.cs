@@ -135,6 +135,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private bool _cachedIsOutOfSightEnabled = true;
         private double _cachedUnplayedOpacity = 0.5;
         private double _cachedTranslatedOpacity = 0.6;
+        private bool _cachedShowTranslation = true;
+        private bool _cachedShowPronunciation = true;
         private double _cachedStrokeWidth;
         private int _cachedFontWeight = 700;
         private EasingType _cachedScrollEasingType = EasingType.FlowWave;
@@ -242,6 +244,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             _cachedIsOutOfSightEnabled = s.IsOutOfSightEnabled;
             _cachedUnplayedOpacity = s.UnplayedOpacity;
             _cachedTranslatedOpacity = s.TranslatedOpacity;
+            _cachedShowTranslation = s.ShowTranslation;
+            _cachedShowPronunciation = s.ShowPronunciation;
             _cachedStrokeWidth = s.StrokeWidth;
             _cachedFontWeight = s.FontWeight;
             _cachedScrollEasingType = s.ScrollEasingType;
@@ -383,7 +387,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     regionW,
                     regionH,
                     effectiveStrokeWidth,
-                    fontWeight);
+                    fontWeight,
+                    _cachedShowTranslation,
+                    _cachedShowPronunciation);
 
                 if (_currentLineIndex >= 0)
                 {
@@ -634,7 +640,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 if (!_userScrolling)
                 {
                     var timing = _lineScrollTiming.GetLineTiming(i);
-                    motion.Start(target, timing.Duration, timing.Delay, spring, interpolator);
+                    motion.Start(target, timing.Duration, timing.Delay, spring, interpolator,
+                        continueCurrentMotionDuringDelay: spring);
                 }
                 motion.Update(seconds);
             }

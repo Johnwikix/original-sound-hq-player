@@ -445,6 +445,64 @@
                                 FontSize="18"
                                 Glyph="&#xE90B;" />
                         </Button>
+                        <Button
+                            Margin="5"
+                            Width="34"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('LyricsTranslationToggle')}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Command="{x:Bind ViewModel.AppViewModel.ToggleLyricsTranslationCommand, Mode=OneWay}"
+                            Style="{StaticResource MenuButtonStyle}">
+                            <TextBlock
+                                x:Uid="LyricsTranslationIcon"
+                                Width="18"
+                                Height="18"
+                                FontSize="16"
+                                FontWeight="Normal"
+                                IsHitTestVisible="False"
+                                IsTextScaleFactorEnabled="False"
+                                TextAlignment="Center"
+                                Opacity="{x:Bind tools:BindUtils.DesktopLyricsButtonOpacity(ViewModel.AppViewModel.IsLyricsTranslationEnabled), Mode=OneWay}">
+                                <TextBlock.OpacityTransition>
+                                    <ScalarTransition Duration="0:0:0.2" />
+                                </TextBlock.OpacityTransition>
+                            </TextBlock>
+                            <ToolTipService.ToolTip>
+                                <ToolTip Content="{x:Bind tools:ToolUtils.GetString('LyricsTranslationToggle')}" />
+                            </ToolTipService.ToolTip>
+                        </Button>
+                        <Button
+                            Margin="5"
+                            Width="34"
+                            Background="Transparent"
+                            BorderBrush="Transparent"
+                            BorderThickness="0"
+                            AutomationProperties.Name="{x:Bind tools:ToolUtils.GetString('LyricsPronunciationToggle')}"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Command="{x:Bind ViewModel.AppViewModel.ToggleLyricsPronunciationCommand, Mode=OneWay}"
+                            Style="{StaticResource MenuButtonStyle}">
+                            <TextBlock
+                                x:Uid="LyricsPronunciationIcon"
+                                Width="18"
+                                Height="18"
+                                FontSize="16"
+                                FontWeight="Normal"
+                                IsHitTestVisible="False"
+                                IsTextScaleFactorEnabled="False"
+                                TextAlignment="Center"
+                                Opacity="{x:Bind tools:BindUtils.DesktopLyricsButtonOpacity(ViewModel.AppViewModel.IsLyricsPronunciationEnabled), Mode=OneWay}">
+                                <TextBlock.OpacityTransition>
+                                    <ScalarTransition Duration="0:0:0.2" />
+                                </TextBlock.OpacityTransition>
+                            </TextBlock>
+                            <ToolTipService.ToolTip>
+                                <ToolTip Content="{x:Bind tools:ToolUtils.GetString('LyricsPronunciationToggle')}" />
+                            </ToolTipService.ToolTip>
+                        </Button>
                         <TeachingTip
                             x:Name="CurrentPlayListTeachingTipPlayingDetail"
                             IsLightDismissEnabled="True"

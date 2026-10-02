@@ -26,6 +26,8 @@ public sealed class SettingsSnapshotFactory(AppState state)
         newSettings.LocalLyricsFormatOrder = state.Preferences.LocalLyricsFormatOrder;
         newSettings.PreferDatabaseLyrics = state.Preferences.PreferDatabaseLyrics;
         newSettings.IsAutoLyricsEnabled = state.Preferences.IsAutoLyricsEnabled;
+        newSettings.IsLyricsTranslationEnabled = state.Preferences.IsLyricsTranslationEnabled;
+        newSettings.IsLyricsPronunciationEnabled = state.Preferences.IsLyricsPronunciationEnabled;
         newSettings.IsAutoCoverEnabled = state.Preferences.IsAutoCoverEnabled;
         newSettings.CoverSize = state.Preferences.CoverSize;
         newSettings.Win2dTextEffectType = state.Preferences.Win2dTextEffectType.Value;

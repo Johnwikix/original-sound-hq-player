@@ -2390,4 +2390,13 @@ SHA-256：{5}
   <data name="LlmTranslateButton.Content" xml:space="preserve"><value>使用大模型翻译歌词</value></data>
   <data name="LlmManualTranslationFailed" xml:space="preserve"><value>大模型歌词翻译失败，请检查配置和日志。</value></data>
   <data name="LlmManualTranslationCompleted" xml:space="preserve"><value>大模型歌词翻译已生成，请保存歌词以写入文件或数据库。</value></data>
+  <data name="LyricsPronunciationTab.Text" xml:space="preserve"><value>发音</value></data>
+  <data name="LyricsShowTranslation.Header" xml:space="preserve"><value>显示歌词翻译</value></data>
+  <data name="LyricsShowTranslation.Description" xml:space="preserve"><value>有可用翻译时显示翻译轨。</value></data>
+  <data name="LyricsShowPronunciation.Header" xml:space="preserve"><value>显示歌词发音</value></data>
+  <data name="LyricsShowPronunciation.Description" xml:space="preserve"><value>有可用发音时显示发音轨。</value></data>
+  <data name="LyricsTranslationToggle" xml:space="preserve"><value>切换歌词翻译</value></data>
+  <data name="LyricsPronunciationToggle" xml:space="preserve"><value>切换歌词发音</value></data>
+  <data name="LyricsTranslationIcon.Text" xml:space="preserve"><value>译</value></data>
+  <data name="LyricsPronunciationIcon.Text" xml:space="preserve"><value>音</value></data>
 </root>

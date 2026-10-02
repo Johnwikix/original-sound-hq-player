@@ -27,7 +27,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         private List<LyricLine>? _lyrics;
         private List<LyricDisplayItem> _displayItems = new();
-        private readonly Dictionary<LyricDisplayItem, (Border Border, TextBlock LyricTb, TextBlock TransTb)> _itemMap = new();
+        private readonly Dictionary<LyricDisplayItem, (Border Border, TextBlock LyricTb, TextBlock TransTb, TextBlock PronTb)> _itemMap = new();
 
         private int _currentLineIndex = -1;
         private int _hoveredIndex = -1;
@@ -59,6 +59,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         private double _cachedPlayingLineTopOffset = 0.4;
         private double _cachedUnplayedOpacity = 0.5;
         private double _cachedTranslatedOpacity = 0.6;
+        private bool _showTranslation = true;
+        private bool _showPronunciation = true;
         private double _cachedOffsetMs;
 
         private bool _shutdown;
@@ -263,6 +265,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             _cachedTextAlignment = CanvasToTextAlignment(s.LyricsTextAlignment);
             _cachedUnplayedOpacity = s.UnplayedOpacity;
             _cachedTranslatedOpacity = s.TranslatedOpacity;
+            _showTranslation = s.ShowTranslation;
+            _showPronunciation = s.ShowPronunciation;
             _cachedPlayingLineTopOffset = s.PlayingLineTopOffset;
 
             double newBlur = Math.Max(0, s.LyricsBlurAmount);
@@ -280,7 +284,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             // 直接刷新所有已实现行（主歌词 Opacity 取最新 _cachedUnplayedOpacity），
             // 不再依赖 IsCurrent 翻转副作用（仅改 UnplayedOpacity 时不会触发 PropertyChanged）。
             foreach (var kv in _itemMap)
-                ApplyItemToBlocks(kv.Key, kv.Value.LyricTb, kv.Value.TransTb);
+                ApplyItemToBlocks(kv.Key, kv.Value.LyricTb, kv.Value.TransTb, kv.Value.PronTb);
 
             if (blurChanged) RefreshAllBlur();
 
@@ -345,7 +349,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             {
                 var line = _lyrics[i];
                 var mainText = ConcatWords(line.Words);
-                var item = new LyricDisplayItem(line, i, mainText, line.TransLateText ?? string.Empty)
+                var item = new LyricDisplayItem(line, i, mainText, line.TransLateText ?? string.Empty, line.PronunciationText ?? string.Empty)
                 {
                     DisplayFontSize = _cachedFontSize,
                     DisplayFontFamily = _cachedFontFamilyName,
@@ -375,7 +379,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         {
             if (sender is not LyricDisplayItem item) return;
             if (!_itemMap.TryGetValue(item, out var pair)) return;
-            ApplyItemToBlocks(item, pair.LyricTb, pair.TransTb);
+            ApplyItemToBlocks(item, pair.LyricTb, pair.TransTb, pair.PronTb);
             if (e.PropertyName == nameof(LyricDisplayItem.IsCurrent))
             {
                 ApplyEmphasis(item.LineIndex, animate: true);
@@ -395,7 +399,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             }
         }
 
-        private void ApplyItemToBlocks(LyricDisplayItem item, TextBlock lyricTb, TextBlock transTb)
+        private void ApplyItemToBlocks(LyricDisplayItem item, TextBlock lyricTb, TextBlock transTb, TextBlock pronTb)
         {
             lyricTb.Text = item.MainText;
             lyricTb.FontSize = item.DisplayFontSize;
@@ -410,7 +414,15 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             transTb.TextAlignment = item.DisplayTextAlignment;
             if (!string.IsNullOrEmpty(item.DisplayFontFamily))
                 transTb.FontFamily = GetFontFamily(item.DisplayFontFamily);
-            transTb.Opacity = item.DisplayTranslationOpacity;
+            transTb.Opacity = _showTranslation ? item.DisplayTranslationOpacity : 0;
+
+            pronTb.Text = item.PronunciationText;
+            pronTb.Visibility = item.HasPronunciation ? Visibility.Visible : Visibility.Collapsed;
+            pronTb.FontSize = item.DisplayFontSize * 0.6;
+            pronTb.TextAlignment = item.DisplayTextAlignment;
+            if (!string.IsNullOrEmpty(item.DisplayFontFamily))
+                pronTb.FontFamily = GetFontFamily(item.DisplayFontFamily);
+            pronTb.Opacity = _showPronunciation ? item.DisplayTranslationOpacity : 0;
         }
 
         private void ApplyBorderSpacing(Border border, TextAlignment alignment)
@@ -460,14 +472,15 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
             if (args.ItemContainer?.ContentTemplateRoot is not Border border) return;
             ApplyBorderSpacing(border, item.DisplayTextAlignment);
-            if (border.Child is not StackPanel panel || panel.Children.Count < 2) return;
-            if (panel.Children[0] is not TextBlock lyricTb || panel.Children[1] is not TextBlock transTb) return;
+            if (border.Child is not StackPanel panel || panel.Children.Count < 3) return;
+            if (panel.Children[0] is not TextBlock lyricTb || panel.Children[1] is not TextBlock transTb ||
+                panel.Children[2] is not TextBlock pronTb) return;
 
-            _itemMap[item] = (border, lyricTb, transTb);
+            _itemMap[item] = (border, lyricTb, transTb, pronTb);
             item.PropertyChanged -= _onItemPropertyChanged;
             item.PropertyChanged += _onItemPropertyChanged;
 
-            ApplyItemToBlocks(item, lyricTb, transTb);
+            ApplyItemToBlocks(item, lyricTb, transTb, pronTb);
 
             var itemContainer = args.ItemContainer as ListViewItem;
 

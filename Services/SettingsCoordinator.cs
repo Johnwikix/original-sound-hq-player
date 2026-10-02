@@ -135,6 +135,22 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                     _ = database.SaveSettingAsync();
                 }
                 break;
+            case nameof(state.Preferences.IsLyricsTranslationEnabled):
+                AppSettings.IsLyricsTranslationEnabled = state.Preferences.IsLyricsTranslationEnabled;
+                if (state.Lifecycle.IsReady)
+                {
+                    _ = database.SaveSettingAsync();
+                    lyrics.SendLyricsSettings();
+                }
+                break;
+            case nameof(state.Preferences.IsLyricsPronunciationEnabled):
+                AppSettings.IsLyricsPronunciationEnabled = state.Preferences.IsLyricsPronunciationEnabled;
+                if (state.Lifecycle.IsReady)
+                {
+                    _ = database.SaveSettingAsync();
+                    lyrics.SendLyricsSettings();
+                }
+                break;
             case nameof(state.Preferences.ArtistSplitSymbols):
                 AppSettings.ArtistSplitSymbols = state.Preferences.ArtistSplitSymbols ?? string.Empty;
                 if (state.Lifecycle.IsReady)

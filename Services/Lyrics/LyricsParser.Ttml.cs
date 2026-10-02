@@ -31,7 +31,7 @@ public sealed partial class LyricsParser
         catch (XmlException) { return null; }
     }
 
-    private (string Original, string? Translation) SplitTtml(string content, string? language, CancellationToken token, bool extractTranslation)
+    private (string Original, string? Translation, string? Pronunciation) SplitTtml(string content, string? language, CancellationToken token, bool extractTranslation)
     {
         var xml = TryReadXml(content) ?? throw new FormatException("Invalid TTML.");
         var lines = ParseSource(content, Model.LyricsFormat.Ttml, token);
@@ -41,6 +41,7 @@ public sealed partial class LyricsParser
             ?? translations.FirstOrDefault(node => language is not null && ((string?)node.Attribute(XNamespace.Xml + "lang"))?.Split('-')[0] == language.Split('-')[0])
             ?? translations.FirstOrDefault();
         string? translation = null;
+        string? pronunciation = null;
         if (extractTranslation && selected is not null)
         {
             var unique = lines.Where(line => line.Key is not null).GroupBy(line => line.Key!).Where(group => group.Count() == 1)
@@ -58,10 +59,31 @@ public sealed partial class LyricsParser
             }
             translation = GenerateLrc(mapped);
         }
+        var transliterations = xml.Descendants(Itunes + "transliteration").ToList();
+        var selectedTransliteration = transliterations.FirstOrDefault(node =>
+                string.Equals((string?)node.Attribute(XNamespace.Xml + "lang"), "ja-Latn", StringComparison.OrdinalIgnoreCase))
+            ?? transliterations.FirstOrDefault();
+        if (extractTranslation && selectedTransliteration is not null)
+        {
+            var unique = lines.Where(line => line.Key is not null).GroupBy(line => line.Key!).Where(group => group.Count() == 1)
+                .ToDictionary(group => group.Key, group => group.First());
+            var starts = lines.GroupBy(line => line.Start).ToDictionary(group => group.Key, group => group.Count());
+            var mapped = new List<(double, string)>();
+            foreach (var text in selectedTransliteration.Elements(Itunes + "text"))
+            {
+                token.ThrowIfCancellationRequested();
+                if (unique.TryGetValue((string?)text.Attribute("for") ?? "", out var line))
+                {
+                    if (starts[line.Start] != 1) throw new FormatException("TTML pronunciation has ambiguous line timestamps.");
+                    mapped.Add((line.Start, text.Value));
+                }
+            }
+            pronunciation = GenerateLrc(mapped);
+        }
         // Only detach known auxiliary metadata; original timing, whitespace and keys stay intact.
         xml.Descendants(Itunes + "translations").Remove();
         xml.Descendants(Itunes + "transliterations").Remove();
-        return (xml.ToString(SaveOptions.DisableFormatting), translation);
+        return (xml.ToString(SaveOptions.DisableFormatting), translation, pronunciation);
     }
 
     private static List<SourceLine> ParseTtml(string content, CancellationToken token)

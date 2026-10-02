@@ -2,6 +2,14 @@
 
 新条目加在最上方。
 
+## 2026-10-02 增加发音歌词轨与显示开关
+
+- `LyricsDocument`、歌词解析／存储／文件读取：支持独立的 `_Pronunciation.lrc` 逐行 LRC，按时间戳与原文对齐，并为旧数据库追加可空发音列。
+- `MusicDetailsWindow`、普通／高级歌词控件：新增发音编辑页签和发音显示，翻译与发音可分别隐藏。
+- `LyricsSettingsControl`、当前播放页底部播放栏：新增翻译／发音开关，状态持久化并即时同步到歌词渲染器；主界面播放栏不显示无歌词上下文的按钮。
+- TTML transliteration 元数据：按正文行时间导入 `PronunciationLrc`；播放栏仅在当前播放页保留开关，普通／高级歌词轨道增加淡入淡出，发音字号为原文 60%。
+- `LyricScrollMotion`：FlowWave 保留未启动行的错峰等待；已有运动的行在重新排队时继续当前运动，避免错峰目标替换造成确定性停顿。
+
 ## 2026-10-01 优化 AnimatedTextBlock 循环间距分配
 
 - `External/AnimatedWin2dControls/.../AnimatedTextBlock`：每个文本段布局准备只测量一次空格宽度，移除每行的拼接字符串和字符区域数组分配。

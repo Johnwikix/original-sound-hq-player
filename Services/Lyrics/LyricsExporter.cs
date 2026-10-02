@@ -41,12 +41,15 @@ public static class LyricsExporter
         if (document.Original.Format == LyricsFormat.Unknown) throw new FormatException("The original lyrics format cannot be exported.");
         string original = Path.ChangeExtension(musicPath, LyricsFilePolicy.Extension(document.Original.Format));
         string translation = Path.Combine(Path.GetDirectoryName(musicPath)!, Path.GetFileNameWithoutExtension(musicPath) + "_Translated.lrc");
+        string pronunciation = Path.Combine(Path.GetDirectoryName(musicPath)!, Path.GetFileNameWithoutExtension(musicPath) + "_Pronunciation.lrc");
         await Gate.WaitAsync(token).ConfigureAwait(false);
         var staged = new List<(string Target, string Temp, string Backup, bool Existed, bool Delete)>();
         var committed = new List<(string Target, string Backup, bool Existed)>();
         try
         {
-            foreach (var item in new[] { (original, document.Original.Content), (translation, document.TranslationLrc) })
+            foreach (var item in new[] { (Target: original, Content: document.Original.Content),
+                (Target: translation, Content: document.TranslationLrc),
+                (Target: pronunciation, Content: document.PronunciationLrc) })
             {
                 token.ThrowIfCancellationRequested();
                 string temporary = item.Item1 + "." + Guid.NewGuid().ToString("N") + ".tmp";

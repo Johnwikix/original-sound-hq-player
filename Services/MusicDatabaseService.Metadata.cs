@@ -41,7 +41,8 @@ public partial class MusicDatabaseService
             Path = Path.GetFullPath(music.Path), Title = music.Title, Album = music.Album,
             Author = music.Author, TrackNumber = music.TrackNumber, DiskNumber = music.DiskNumber,
             Year = music.Year, Cover = cover is null ? null : (byte[])cover.Clone(),
-            Lyrics = document.Original.Content, LyricsFormat = document.Original.Format, TranslationLrc = document.TranslationLrc, LyricsSchemaVersion = 2
+            Lyrics = document.Original.Content, LyricsFormat = document.Original.Format, TranslationLrc = document.TranslationLrc,
+            PronunciationLrc = document.PronunciationLrc, LyricsSchemaVersion = 2
         };
         int musicId = music.Id;
         var updated = music.UpdateTime;
@@ -83,13 +84,14 @@ public partial class MusicDatabaseService
                         request.Lyrics = migrated.Lyrics;
                         request.LyricsFormat = migrated.LyricsFormat;
                         request.TranslationLrc = migrated.TranslatedLyrics;
+                        request.PronunciationLrc = null;
                         request.LyricsSchemaVersion = 2;
                         await _dbConnection.UpdateAsync(request);
                     }
                     string? export = null;
                     if (!request.PreserveFileLyrics)
                     {
-                        export = parser.ExportLrc(new(new(request.Lyrics ?? "", request.LyricsFormat), request.TranslationLrc), cancellationToken);
+                        export = parser.ExportLrc(new(new(request.Lyrics ?? "", request.LyricsFormat), request.TranslationLrc, request.PronunciationLrc), cancellationToken);
                         if (!string.IsNullOrWhiteSpace(request.Lyrics) && string.IsNullOrWhiteSpace(export))
                             throw new FormatException("Queued lyrics cannot be converted to timed LRC; the original queue snapshot is retained.");
                     }

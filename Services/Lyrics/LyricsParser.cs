@@ -53,15 +53,17 @@ public sealed partial class LyricsParser
     }
 
     public LyricsDocument Import(string? original, string? translation = null,
-        CancellationToken token = default, string? preferredLanguage = null, bool extractEmbeddedTranslation = true)
+        CancellationToken token = default, string? preferredLanguage = null, bool extractEmbeddedTranslation = true,
+        string? pronunciation = null)
     {
         token.ThrowIfCancellationRequested();
         original ??= "";
         CheckSize(original);
         LyricsFormat format = Detect(original);
         string? embedded = null;
+        string? embeddedPronunciation = null;
         if (format == LyricsFormat.Ttml)
-            (original, embedded) = SplitTtml(original, preferredLanguage, token, extractEmbeddedTranslation && string.IsNullOrWhiteSpace(translation));
+            (original, embedded, embeddedPronunciation) = SplitTtml(original, preferredLanguage, token, extractEmbeddedTranslation && string.IsNullOrWhiteSpace(translation));
         else if (format == LyricsFormat.Krc && original.Contains("[language:", StringComparison.Ordinal))
         {
             var lines = ParseSource(original, format, token);
@@ -78,7 +80,11 @@ public sealed partial class LyricsParser
                 .Where(line => !line.TrimStart().StartsWith("[language:", StringComparison.Ordinal)));
         }
         string? normalized = string.IsNullOrWhiteSpace(translation) ? embedded : NormalizeTranslation(translation, token);
-        return new(new(original, format), string.IsNullOrWhiteSpace(normalized) ? null : normalized);
+        string? normalizedPronunciation = string.IsNullOrWhiteSpace(pronunciation)
+            ? embeddedPronunciation
+            : NormalizeTranslation(pronunciation, token);
+        return new(new(original, format), string.IsNullOrWhiteSpace(normalized) ? null : normalized,
+            string.IsNullOrWhiteSpace(normalizedPronunciation) ? null : normalizedPronunciation);
     }
 
     public string NormalizeTranslation(string content, CancellationToken token = default)
@@ -103,7 +109,10 @@ public sealed partial class LyricsParser
         lines = lines.OrderBy(line => line.Start).ToList();
         var translations = string.IsNullOrWhiteSpace(document.TranslationLrc)
             ? [] : ParseSource(document.TranslationLrc, LyricsFormat.Lrc, token);
+        var pronunciations = string.IsNullOrWhiteSpace(document.PronunciationLrc)
+            ? [] : ParseSource(document.PronunciationLrc, LyricsFormat.Lrc, token);
         var attached = AlignTranslations(lines, translations);
+        var attachedPronunciations = AlignTranslations(lines, pronunciations);
         var result = ImmutableArray.CreateBuilder<ParsedLyricLine>(lines.Count);
         int nextDistinct = 0;
         for (int i = 0; i < lines.Count; i++)
@@ -124,7 +133,7 @@ public sealed partial class LyricsParser
             // 增强 LRC 无闭合标签的末字沿用旧版零时长；不能把瞬时末字延长到下一句。
             if (format == LyricsFormat.Ttml && words.Length > 0 && words[^1].EndMs <= words[^1].StartMs)
                 words = words.SetItem(words.Length - 1, words[^1] with { EndMs = Math.Max(end, words[^1].StartMs) });
-            result.Add(new(line.Text, line.Start, end, words, attached[i] ?? ""));
+            result.Add(new(line.Text, line.Start, end, words, attached[i] ?? "", attachedPronunciations[i] ?? ""));
         }
         return result.MoveToImmutable();
     }

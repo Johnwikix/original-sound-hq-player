@@ -2391,4 +2391,13 @@ SHA-256: {5}
   <data name="LlmTranslateButton.Content" xml:space="preserve"><value>Şarkı sözlerini yapay zekâyla çevir</value></data>
   <data name="LlmManualTranslationFailed" xml:space="preserve"><value>Yapay zekâ ile şarkı sözü çevirisi başarısız. Yapılandırmayı ve günlükleri kontrol edin.</value></data>
   <data name="LlmManualTranslationCompleted" xml:space="preserve"><value>Yapay zekâ çevirisi oluşturuldu. Dosyaya veya veritabanına yazmak için sözleri kaydedin.</value></data>
+  <data name="LyricsPronunciationTab.Text" xml:space="preserve"><value>Telaffuz</value></data>
+  <data name="LyricsShowTranslation.Header" xml:space="preserve"><value>Şarkı sözü çevirisini göster</value></data>
+  <data name="LyricsShowTranslation.Description" xml:space="preserve"><value>Çeviri varsa çeviri parçasını göster.</value></data>
+  <data name="LyricsShowPronunciation.Header" xml:space="preserve"><value>Şarkı sözü telaffuzunu göster</value></data>
+  <data name="LyricsShowPronunciation.Description" xml:space="preserve"><value>Telaffuz varsa telaffuz parçasını göster.</value></data>
+  <data name="LyricsTranslationToggle" xml:space="preserve"><value>Şarkı sözü çevirisini değiştir</value></data>
+  <data name="LyricsPronunciationToggle" xml:space="preserve"><value>Şarkı sözü telaffuzunu değiştir</value></data>
+  <data name="LyricsTranslationIcon.Text" xml:space="preserve"><value>T</value></data>
+  <data name="LyricsPronunciationIcon.Text" xml:space="preserve"><value>A</value></data>
 </root>

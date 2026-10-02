@@ -47,6 +47,8 @@ namespace WinUIMusicPlayer.Model
         public string LocalLyricsFormatOrder { get; set; } = "krc,qrc,lrc,ttml";
         public bool PreferDatabaseLyrics { get; set; }
         public bool IsAutoLyricsEnabled { get; set; } = true;
+        public bool IsLyricsTranslationEnabled { get; set; } = true;
+        public bool IsLyricsPronunciationEnabled { get; set; } = true;
         public bool IsAutoCoverEnabled { get; set; } = true;
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public bool? IsDopEnabled { get; set; }

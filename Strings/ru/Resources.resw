@@ -2391,4 +2391,13 @@ SHA-256: {5}
   <data name="LlmTranslateButton.Content" xml:space="preserve"><value>Перевести текст с ИИ</value></data>
   <data name="LlmManualTranslationFailed" xml:space="preserve"><value>Перевод текста с ИИ не выполнен. Проверьте настройки и журнал.</value></data>
   <data name="LlmManualTranslationCompleted" xml:space="preserve"><value>Перевод с ИИ создан. Сохраните текст, чтобы записать его в файл или базу данных.</value></data>
+  <data name="LyricsPronunciationTab.Text" xml:space="preserve"><value>Произношение</value></data>
+  <data name="LyricsShowTranslation.Header" xml:space="preserve"><value>Показывать перевод текста</value></data>
+  <data name="LyricsShowTranslation.Description" xml:space="preserve"><value>Показывать перевод, если он доступен.</value></data>
+  <data name="LyricsShowPronunciation.Header" xml:space="preserve"><value>Показывать произношение</value></data>
+  <data name="LyricsShowPronunciation.Description" xml:space="preserve"><value>Показывать произношение, если оно доступно.</value></data>
+  <data name="LyricsTranslationToggle" xml:space="preserve"><value>Переключить перевод текста</value></data>
+  <data name="LyricsPronunciationToggle" xml:space="preserve"><value>Переключить произношение текста</value></data>
+  <data name="LyricsTranslationIcon.Text" xml:space="preserve"><value>T</value></data>
+  <data name="LyricsPronunciationIcon.Text" xml:space="preserve"><value>A</value></data>
 </root>

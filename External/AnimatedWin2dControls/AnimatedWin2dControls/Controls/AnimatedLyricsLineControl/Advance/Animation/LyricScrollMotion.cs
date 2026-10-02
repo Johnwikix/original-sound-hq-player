@@ -3,8 +3,9 @@ using System;
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 {
     /// <summary>
-    /// Tracks one lyric group's scroll position. Delayed targets hold the current
-    /// position and preserve spring velocity for resumption, matching BetterLyrics dad48ab9.
+    /// Tracks one lyric group's scroll position. Delayed targets normally hold the current
+    /// position and preserve spring velocity for resumption; FlowWave may let an already
+    /// moving row finish its current motion while the replacement target waits.
     /// Updated independently of glyph visibility.
     /// </summary>
     public sealed class LyricScrollMotion
@@ -12,6 +13,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         private double _target, _start, _elapsed, _duration;
         private double _pendingTarget, _pendingDuration, _delay;
         private bool _spring, _pendingSpring, _pending, _moving;
+        private bool _advanceWhilePending;
         private Func<double, double, double, double>? _interpolator, _pendingInterpolator;
 
         public double Value { get; private set; }
@@ -25,10 +27,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             Velocity = 0;
             _pending = _moving = false;
             _delay = 0;
+            _advanceWhilePending = false;
         }
 
         public void Start(double target, double duration, double delay, bool spring,
-            Func<double, double, double, double> interpolator)
+            Func<double, double, double, double> interpolator,
+            bool continueCurrentMotionDuringDelay = false)
         {
             if (duration <= 0) { JumpTo(target); return; }
             if (target == TargetValue) return;
@@ -40,10 +44,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 _pendingSpring = spring;
                 _pendingInterpolator = interpolator;
                 _pending = true;
+                _advanceWhilePending = continueCurrentMotionDuringDelay && _moving;
             }
             else
             {
                 _pending = false;
+                _advanceWhilePending = false;
                 Begin(target, duration, spring, interpolator);
             }
         }
@@ -68,8 +74,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 double beforeTarget = Math.Min(seconds, _delay);
                 _delay -= beforeTarget;
                 seconds -= beforeTarget;
+                if (_advanceWhilePending) Advance(beforeTarget);
                 if (_delay > 1e-9) return;
                 _pending = false;
+                _advanceWhilePending = false;
                 Begin(_pendingTarget, _pendingDuration, _pendingSpring, _pendingInterpolator!);
             }
             Advance(seconds);

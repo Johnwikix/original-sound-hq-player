@@ -597,6 +597,12 @@ namespace WinUIMusicPlayer.ViewModel
         }
 
         [RelayCommand]
+        private void ToggleLyricsTranslation() => IsLyricsTranslationEnabled = !IsLyricsTranslationEnabled;
+
+        [RelayCommand]
+        private void ToggleLyricsPronunciation() => IsLyricsPronunciationEnabled = !IsLyricsPronunciationEnabled;
+
+        [RelayCommand]
         private void OnFullScreenButtonChanged()
         {
             ToggleFullScreen();

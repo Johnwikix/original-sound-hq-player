@@ -40,6 +40,13 @@ public static class LyricsFilePolicy
             if (seen.Add(ext)) yield return stem + "_Translated." + ext;
     }
 
+    public static IEnumerable<string> PronunciationNames(string stem, string mainExtension, string order)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (string ext in new[] { "lrc", mainExtension.TrimStart('.'), "krc", "qrc", "ttml" }.Concat(Extensions(order)))
+            if (seen.Add(ext)) yield return stem + "_Pronunciation." + ext;
+    }
+
     public static async Task<string> ReadAsync(string file, CancellationToken token)
     {
         await using var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete, 4096, true);

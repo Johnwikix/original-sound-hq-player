@@ -11,11 +11,11 @@
 - 原文与翻译分别保存为独立文本；导出时各一份文件。翻译只需行级时间，不保留逐字动画数据。
 - 不自动识别文本语言，也不在领域模型或数据库新增 Language 字段。
 - 不识别同一个 LRC 中的双轨组合，不根据同时间戳、行次序、文字语言猜测翻译或发音。
-- 将来支持发音时，再增加一份独立文本及对应文件。本轮不实现发音显示，也不引入任意轨道注册系统。
+- 发音作为与翻译并列的独立文本，使用 `_Pronunciation.lrc` 侧车文件和可空存储列；不识别同一个 LRC 中的双轨组合，也不引入任意轨道注册系统。
 - TTML 是一种输入格式。其明确标注的翻译可在导入边界拆出，进入上述两份内容的模型；不把 TTML 转成普通 LRC 后再作为唯一存档。
 - 此次覆盖统一存储、解析入口、文件优先级和 TTML 接入的设计；不扩展为歌词编辑器或完整 TTML 排版引擎。
 
-对应 [issue #27](https://github.com/Johnwikix/original-sound-hq-player/issues/27)：文件优先级自定义、TTML 支持纳入本轮；同文件双轨 LRC 明确排除；发音作为以后增加独立内容的扩展点。
+对应 [issue #27](https://github.com/Johnwikix/original-sound-hq-player/issues/27)：文件优先级自定义、TTML 支持纳入本轮；同文件双轨 LRC 明确排除；发音通过独立 LRC 侧车接入。
 
 ## 2. 实施前的代码边界
 
@@ -51,9 +51,8 @@ public sealed record LyricsText(
 
 public sealed record LyricsDocument(
     LyricsText Original,
-    string? TranslationLrc);
-
-// 以后确实实现行级发音时，增加 string? PronunciationLrc。
+    string? TranslationLrc,
+    string? PronunciationLrc);
 ```
 
 `LyricsFormat` 区分 Unknown、Lrc、EnhancedLrc、Krc、Qrc、Ttml。普通／增强 LRC 可以共享 `.lrc` 文件后缀，但解析器仍需区分它们。若保留既有特殊语法兼容分支，应在解析器内部明确命名，不把它继续伪装成标准 KRC。
@@ -79,7 +78,7 @@ public sealed record LyricsDocument(
 | `Revision` | 乐观并发版本，阻止迟到下载覆盖用户编辑 |
 | `SchemaVersion`、`MigratedFromHash` | 结构版本与旧数据迁移指纹 |
 
-`SourceKey` 只记录歌曲资源或提供方标识，不包含 WebDAV 密码或带凭据的 URL。无需提前为每个格式建立子表。以后增加行级发音，只增加可空的 LRC 内容字段，旧记录默认无发音；不预先增加语言识别或逐字发音模型。
+`SourceKey` 只记录歌曲资源或提供方标识，不包含 WebDAV 密码或带凭据的 URL。发音使用可空的 LRC 内容字段，旧记录默认无发音；不增加语言识别或逐字发音模型。
 
 一首歌在新结构中只有一组活动内容。旧版两组均有数据时，未选中的一组保留在旧表／备份中用于恢复，不再作为另一套日常播放缓存。
 
@@ -140,7 +139,6 @@ ttml → lrc → krc → qrc
 Song.ttml                 原文
 Song_Translated.lrc       翻译，固定逐行 LRC
 
-// 未来单独实现：
 Song_Pronunciation.lrc    发音
 ```
 
@@ -162,8 +160,8 @@ issue 附件的实测结构：
 
 | 附件 | 原文 | 翻译 | 发音 |
 | --- | --- | --- | --- |
-| [逐行 TTML](https://github.com/user-attachments/files/32505618/50.txt) | 27 个正文 p 节点，带 begin/end 和 itunes:key | 27 条 en-US subtitle，通过 for 关联 | 27 条 ja-Latn transliteration；本轮不显示 |
-| [逐词 TTML](https://github.com/user-attachments/files/32552336/50.txt) | 27 个正文 p，450 个正文逐词 span | 同上 | 元数据还含发音时序；本轮不显示 |
+| [逐行 TTML](https://github.com/user-attachments/files/32505618/50.txt) | 27 个正文 p 节点，带 begin/end 和 itunes:key | 27 条 en-US subtitle，通过 for 关联 | 27 条 ja-Latn transliteration，可导入发音 LRC |
+| [逐词 TTML](https://github.com/user-attachments/files/32552336/50.txt) | 27 个正文 p，450 个正文逐词 span | 同上 | 元数据发音按行时间导入，逐字发音时序仍不导入 |
 | [双轨 LRC](https://github.com/user-attachments/files/32505452/50.txt) | 27 组相同时间戳的双行 | 实际第二行与 TTML 的罗马音相符 | 按本次补充排除这种输入组合 |
 
 TTML 导入步骤：
@@ -175,7 +173,7 @@ TTML 导入步骤：
 5. 若有多种翻译，仅按文件已声明的 `xml:lang` 优先选择与应用语言匹配的一份，匹配不到时取文件中的首个可用翻译；没有标记也不调用语言检测。`xml:lang` 只用于本次导入选择，不新增持久化语言字段，不因系统不是中文而丢弃已有 en-US 翻译。
 6. 首轮覆盖两个附件所用的行／词时间、translation 引用和常见正文嵌套。帧／tick 时间、复杂布局、ruby、完整合唱渲染不作隐含承诺；不支持的输入给出诊断，或在确实可保留正文时降级。
 
-已有 `TtmlParser` 可作为基础，但不能把其“返回了 Lines”当作完整支持证明。需核对正文与元数据隔离、translation 引用、显式行尾保留和未知时间表达式； XML 读取明确禁用外部解析并限制大小。其已有 `Pronunciation` 数据接口未实际读出这两个附件中的 transliteration，本轮不补发音显示。
+已有 `TtmlParser` 可作为基础，但不能把其“返回了 Lines”当作完整支持证明。需核对正文与元数据隔离、translation 引用、transliteration 引用、显式行尾保留和未知时间表达式；XML 读取明确禁用外部解析并限制大小。当前把 TTML transliteration 按正文行时间转换为发音 LRC；其中逐字发音时间仍不进入发音轨。
 
 不对 TTML 原文统一执行旧 `FixEndMs` 的覆盖和压缩：只有缺失行尾时才补齐，使用下一条严格更晚的起始时间／歌曲时长。保留合法重叠；滚动焦点、展示高光与歌词实际有效时间分别处理。播放投影派生 `HighlightEndMs`，至少保持到下一条严格更晚的起点，末行沿用歌曲时长加 2 秒的展示边界；不得缩短重叠行的实际结束时间。TTML 的行进度、字符和音节使用真实 `EndMs`。已有 LRC／增强 LRC／QRC／KRC 保留旧播放投影：展示行尾取下一次入句，逐字偏移和时长按整行跨度统一提前 300ms，保留原分词音节边界；增强 LRC 未闭合的末字保持零时长。上述展示处理不得改写解析快照、数据库或源文件。同起点多行共用下一条严格更晚的入句；未知歌曲时长沿用 10500ms 兜底，但不得生成早于当前行的结束边界。
 
@@ -261,7 +259,7 @@ B = (Lyrics, TranslatedLyrics)
 - 普通保存时原文按真实格式写文件，翻译固定写 `_Translated.lrc`；用户选择“将原文导出 LRC”时才转换原文。TTML 原文的逐词时间转普通 LRC 会损失信息，导出流程说明这个选择的影响。翻译归一化为行级文本属于标准契约，不再为它提供逐字导出选项。
 - 原文、翻译单独写入。两份文件无法天然组成一个原子替换：先生成并校验两个临时文件，再有备份地提交；中途失败报告哪一份成功，保留恢复文件。所有 I/O 被等待并观察，移除现有未观察的 `Task.Run`。
 - 标签写回、音频转换和 USB 导出统一使用导出器。目标标签不支持 TTML／独立翻译时，仅输出兼容的原文表示，完整内容仍保存在数据库或独立文件中；不能把任意 TTML 文本直接塞进要求 LRC 的流程。
-- 主界面普通／高级歌词、桌面普通／逐字歌词均验收同一原文和翻译。未来加发音时再为这些投影增加一份附加文本，不回到按歌词格式扩展 UI。
+- 主界面普通／高级歌词、桌面普通／逐字歌词均验收同一原文和翻译；主界面普通／高级歌词同时消费独立发音文本，不回到按歌词格式扩展 UI。
 - 新增文案遵守项目独立 GetString 资源键要求，全部语言资源逐一核验。实现产生用户行为变化时在 `docs/Changelog.md` 顶部统一记录；本设计文档本身不记功能变更。
 
 ## 10. 实施顺序与验收
@@ -291,7 +289,7 @@ B = (Lyrics, TranslatedLyrics)
 
 已阅读 issue 正文、三条评论和三份附件；已沿本地／库内／一次性／WebDAV 加载、数据库、编辑、刷新、导出和显示输入检查引用。
 
-临时解析探针直接编译当前 `LyricsRefreshService.cs` 与 `TtmlParser.cs` 源码，复用本地 helper 模型程序集；UI 容器与未调用的网络／数据库边界使用桩。两份 TTML 经现有播放解析入口均得到 0 行；显式 helper 解析分别得到 27 行、27 条翻译，以及 0／450 个正文逐词片段。发音均未进入其输出。这个结果支持“已有 TTML 基础，需要接入与补齐边界”，不代表 WinUI 已支持。
+临时解析探针直接编译当前 `LyricsRefreshService.cs` 与 `TtmlParser.cs` 源码，复用本地 helper 模型程序集；UI 容器与未调用的网络／数据库边界使用桩。两份 TTML 经现有播放解析入口得到正文与翻译；逐词版仍只把发音元数据按行转换。WinUI 的独立 `_Pronunciation.lrc` 输入与 TTML transliteration 共用同一发音轨。
 
 同文件双轨 LRC 的现状探针只用于确认范围，不列为本轮修复或验收要求。探针与下载样例保存在系统临时目录，未修改生产代码、用户数据库或源歌词文件。
 
@@ -304,7 +302,7 @@ B = (Lyrics, TranslatedLyrics)
 - 首次升级使用 SQLite Backup API；按需迁移与每批 32 首后台迁移复用同一逻辑，任务纳入退出排空。旧表保留，详情可选择原来的任一整对作为待保存草稿；再次升级时旧行指纹变化报告诊断，不覆盖新内容。
 - 本地及 WebDAV 共用顺序与翻译文件命名策略。WebDAV 每次刷新列目录一次，5 分钟缓存，检查 ETag／修改时间／大小；有持久歌词时先向 UI 发布缓存，再校验远端。内存解析缓存最多 4 份来源结果，WebDAV 最多 128 首，一次性主缓存和恢复目录各最多 300 份。
 - 文件入口保留文本读取、BOM 识别、大小上限及 QRC 文本的 XML 包装提取；已移除额外引入的压缩 KRC、加密十六进制 QRC 导入和解压逻辑。
-- TTML 适配器覆盖 issue 两份附件的 Apple subtitle 引用、行／词时间和显式行尾。帧／tick 时间、ruby、复杂相对时间继承和完整合唱排版仍不在范围；无法完整表示的混合未定时正文降为行级显示，保留正文。发音未实现，仍按后续独立文本扩展。
+- TTML 适配器覆盖 issue 两份附件的 Apple subtitle/transliteration 引用、行／词时间和显式行尾。发音元数据按正文行时间生成 LRC，帧／tick 时间、ruby、复杂相对时间继承和完整合唱排版仍不在范围；无法完整表示的混合未定时正文降为行级显示，保留正文。独立 `_Pronunciation.lrc` 继续作为另一种发音输入。
 - 详情按真实格式导出原文，翻译固定 `_Translated.lrc`；标签／USB 兼容导出原文 LRC，USB 另写独立翻译。两文件提交带备份和失败回滚；断电不承诺跨文件原子性，可从 `.lyrics.bak` 恢复。
 - `ReadLyricsFromFile` 只导入歌词草稿，不再异步改写其他曲目字段。无库 ID 的文档使用带修订号条件写入的一次性缓存，迟到下载不能覆盖编辑，不写 MusicId=0；写回标签需先入库。
 - 切歌入口保留 500 ms 可取消防抖。UI 向高级歌词协调器提交最新托管快照，原生缓存只在渲染帧边界替换／回收；关闭与渲染互斥，未消费快照不持有原生资源。

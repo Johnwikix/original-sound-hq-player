@@ -22,6 +22,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public ValueTransition<double> PlayedPrimaryOpacityTransition { get; set; }
         public ValueTransition<double> UnplayedPrimaryOpacityTransition { get; set; }
         public ValueTransition<double> SecondaryOpacityTransition { get; set; }
+        public ValueTransition<double> SecondaryDisplayTransition { get; }
 
         public ValueTransition<double> PrimaryXOffsetTransition { get; set; }
         public ValueTransition<double> SecondaryXOffsetTransition { get; set; }
@@ -44,6 +45,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         public string PrimaryText { get; set; } = "";
         public string SecondaryText { get; set; } = "";
+        public string TranslationText { get; private set; } = "";
+        public string PronunciationText { get; private set; } = "";
+        public int SecondaryPronunciationStartIndex { get; private set; } = -1;
 
         public CanvasCommandList? CachedStroke { get; private set; }
         public CanvasCommandList? CachedFill { get; private set; }
@@ -119,6 +123,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             PlayedPrimaryOpacityTransition = new(0, interpolator, 0.3);
             UnplayedPrimaryOpacityTransition = new(0, interpolator, 0.3);
             SecondaryOpacityTransition = new(0, interpolator, 0.3);
+            SecondaryDisplayTransition = new(1, interpolator, 0.2);
             PrimaryXOffsetTransition = new(0, interpolator, 0.3);
             SecondaryXOffsetTransition = new(0, interpolator, 0.3);
             YOffsetTransition = new(0, interpolator, 0.3);
@@ -143,7 +148,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     pos += s.Length;
                 }
             });
-            SecondaryText = lyricLine.TransLateText ?? "";
+            TranslationText = lyricLine.TransLateText ?? "";
+            PronunciationText = lyricLine.PronunciationText ?? "";
+            SecondaryText = TranslationText;
 
             StartMs = lyricLine.StartMs;
             EndMs = lyricLine.EndMs > lyricLine.StartMs ? lyricLine.EndMs : nextLineStartMs;
@@ -167,6 +174,37 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     hasRealSyllable = true;
             }
             IsPrimaryHasRealSyllableInfo = lyricLine.Words.Count > 0 && hasRealSyllable;
+        }
+
+        public void ApplyDisplayOptions(bool showTranslation, bool showPronunciation)
+        {
+            bool hasTranslation = showTranslation && !string.IsNullOrWhiteSpace(TranslationText);
+            bool hasPronunciation = showPronunciation && !string.IsNullOrWhiteSpace(PronunciationText);
+            string desired;
+            if (hasTranslation && hasPronunciation)
+            {
+                desired = TranslationText + "\n" + PronunciationText;
+                SecondaryPronunciationStartIndex = TranslationText.Length + 1;
+            }
+            else if (hasTranslation)
+            {
+                desired = TranslationText;
+                SecondaryPronunciationStartIndex = -1;
+            }
+            else if (hasPronunciation)
+            {
+                desired = PronunciationText;
+                SecondaryPronunciationStartIndex = 0;
+            }
+            else
+            {
+                desired = "";
+                SecondaryPronunciationStartIndex = -1;
+            }
+
+            if (!string.IsNullOrWhiteSpace(desired))
+                SecondaryText = desired;
+            SecondaryDisplayTransition.Start(string.IsNullOrWhiteSpace(desired) ? 0 : 1);
         }
 
         public void DisposeTextLayout()
@@ -207,6 +245,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     HorizontalAlignment = horizontalAlignment,
                     Options = CanvasDrawTextOptions.NoPixelSnap,
                 };
+                if (SecondaryPronunciationStartIndex >= 0 && SecondaryPronunciationStartIndex < SecondaryText.Length)
+                {
+                    SecondaryTextLayout.SetFontSize(
+                        SecondaryPronunciationStartIndex,
+                        SecondaryText.Length - SecondaryPronunciationStartIndex,
+                        Math.Max(1, originalTextFontSize * 0.6f));
+                }
             }
 
             format.FontSize = originalTextFontSize;

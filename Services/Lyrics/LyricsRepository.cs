@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using SQLite;
@@ -10,6 +11,7 @@ namespace WinUIMusicPlayer.Services.Lyrics;
 /// <summary>One authoritative row per library track. Legacy data is read-only recovery data.</summary>
 public sealed class LyricsRepository(SQLiteAsyncConnection database, LyricsParser parser)
 {
+    private sealed class TableColumnInfo { public string Name { get; set; } = ""; }
     public async Task InitializeAsync(string databasePath)
     {
         bool exists = await database.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='MusicLyricsV2'") != 0;
@@ -31,6 +33,9 @@ public sealed class LyricsRepository(SQLiteAsyncConnection database, LyricsParse
             }
         }
         await database.CreateTableAsync<MusicLyricsRecord>();
+        var columns = await database.QueryAsync<TableColumnInfo>("PRAGMA table_info(MusicLyricsV2)");
+        if (!columns.Any(column => string.Equals(column.Name, nameof(MusicLyricsRecord.PronunciationLyrics), StringComparison.OrdinalIgnoreCase)))
+            await database.ExecuteAsync("ALTER TABLE MusicLyricsV2 ADD COLUMN PronunciationLyrics TEXT NULL");
         await database.CreateTableAsync<LyricsSearchStateRecord>();
     }
 
@@ -73,9 +78,9 @@ public sealed class LyricsRepository(SQLiteAsyncConnection database, LyricsParse
     {
         token.ThrowIfCancellationRequested();
         return await database.ExecuteAsync(
-            "UPDATE MusicLyricsV2 SET Lyrics=?, LyricsFormat=?, TranslatedLyrics=?, SourceKind=?, SourceKey=?, Revision=Revision+1, Diagnostic='' " +
+            "UPDATE MusicLyricsV2 SET Lyrics=?, LyricsFormat=?, TranslatedLyrics=?, PronunciationLyrics=?, SourceKind=?, SourceKey=?, Revision=Revision+1, Diagnostic='' " +
             "WHERE SchemaVersion=2 AND MusicId=? AND Revision=? AND EXISTS(SELECT 1 FROM Music WHERE Id=?)",
-            document.Original.Content, (int)document.Original.Format, document.TranslationLrc, sourceKind, sourceKey,
+            document.Original.Content, (int)document.Original.Format, document.TranslationLrc, document.PronunciationLrc, sourceKind, sourceKey,
             musicId, expectedRevision, musicId) == 1;
     }
 
@@ -83,9 +88,9 @@ public sealed class LyricsRepository(SQLiteAsyncConnection database, LyricsParse
     public static void SaveInTransaction(SQLiteConnection db, int musicId, LyricsDocument document, long expectedRevision, string kind, bool lyricsChanged = true)
     {
         // Metadata edits still advance the editor revision, but retain lyric provenance and diagnostics.
-        int changed = lyricsChanged ? db.Execute("UPDATE MusicLyricsV2 SET Lyrics=?, LyricsFormat=?, TranslatedLyrics=?, SourceKind=?, SourceKey='', " +
+        int changed = lyricsChanged ? db.Execute("UPDATE MusicLyricsV2 SET Lyrics=?, LyricsFormat=?, TranslatedLyrics=?, PronunciationLyrics=?, SourceKind=?, SourceKey='', " +
             "Revision=Revision+1, Diagnostic='' WHERE SchemaVersion=2 AND MusicId=? AND Revision=? AND EXISTS(SELECT 1 FROM Music WHERE Id=?)",
-            document.Original.Content, (int)document.Original.Format, document.TranslationLrc, kind, musicId, expectedRevision, musicId)
+            document.Original.Content, (int)document.Original.Format, document.TranslationLrc, document.PronunciationLrc, kind, musicId, expectedRevision, musicId)
             : db.Execute("UPDATE MusicLyricsV2 SET Revision=Revision+1 WHERE SchemaVersion=2 AND MusicId=? AND Revision=? " +
                 "AND EXISTS(SELECT 1 FROM Music WHERE Id=?)", musicId, expectedRevision, musicId);
         if (changed != 1) throw new InvalidOperationException("LyricsEditConflict");
@@ -132,7 +137,7 @@ public sealed class LyricsRepository(SQLiteAsyncConnection database, LyricsParse
         if (legacy is not null && (!string.IsNullOrWhiteSpace(legacy.Lyrics) || !string.IsNullOrWhiteSpace(legacy.Krc) ||
             !string.IsNullOrWhiteSpace(legacy.TranslatedLyrics) || !string.IsNullOrWhiteSpace(legacy.TKrc))) return;
         db.Insert(new MusicLyricsRecord { MusicId = id, Lyrics = document.Original.Content,
-            LyricsFormat = document.Original.Format, TranslatedLyrics = document.TranslationLrc, SourceKind = "Embedded",
+            LyricsFormat = document.Original.Format, TranslatedLyrics = document.TranslationLrc, PronunciationLyrics = document.PronunciationLrc, SourceKind = "Embedded",
             MigratedFromHash = LyricsLegacyMigration.Fingerprint(legacy) });
     }
 }

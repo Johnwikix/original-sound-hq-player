@@ -76,7 +76,9 @@ public sealed class LyricsPresentationService(AppState state) : IDisposable
             targetFrameRate: state.Preferences.TargetFrameRate,
             isCustomColorEnabled: state.Preferences.IsCustomLyricsColorEnabled,
             lyricsCustomColor: state.Preferences.LyricsCustomColor,
-            fontWeight: state.Preferences.LyricsFontWeight));
+            fontWeight: state.Preferences.LyricsFontWeight,
+            showTranslation: state.Preferences.IsLyricsTranslationEnabled,
+            showPronunciation: state.Preferences.IsLyricsPronunciationEnabled));
     }
 
     public void SendLyricsFontSize()

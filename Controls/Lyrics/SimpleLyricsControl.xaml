@@ -25,7 +25,21 @@
                         HorizontalAlignment="Stretch"
                         FontWeight="Bold"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        TextWrapping="Wrap" />
+                        TextWrapping="Wrap">
+                        <TextBlock.OpacityTransition>
+                            <ScalarTransition Duration="0:0:0.2" />
+                        </TextBlock.OpacityTransition>
+                    </TextBlock>
+                    <TextBlock
+                        x:Name="PronunciationTextBlock"
+                        HorizontalAlignment="Stretch"
+                        FontWeight="Bold"
+                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                        TextWrapping="Wrap">
+                        <TextBlock.OpacityTransition>
+                            <ScalarTransition Duration="0:0:0.2" />
+                        </TextBlock.OpacityTransition>
+                    </TextBlock>
                 </StackPanel>
             </Border>
         </DataTemplate>

@@ -160,6 +160,21 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
                     catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException or System.Xml.XmlException or OverflowException or System.Text.RegularExpressions.RegexMatchTimeoutException)
                     { logger.LogWarning(ex, "Could not read translation: {Path}", translationFile); }
                 }
+                foreach (string name in LyricsFilePolicy.PronunciationNames(stem, ext, order))
+                {
+                    string pronunciationFile = Path.Combine(folder, name);
+                    if (!File.Exists(pronunciationFile)) continue;
+                    try
+                    {
+                        string pronunciation = await LyricsFilePolicy.ReadAsync(pronunciationFile, token).ConfigureAwait(false);
+                        string normalized = parser.NormalizeTranslation(pronunciation, token);
+                        if (string.IsNullOrWhiteSpace(normalized)) continue;
+                        document = document with { PronunciationLrc = normalized };
+                        break;
+                    }
+                    catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException or System.Xml.XmlException or OverflowException or System.Text.RegularExpressions.RegexMatchTimeoutException)
+                    { logger.LogWarning(ex, "Could not read pronunciation: {Path}", pronunciationFile); }
+                }
                 return document;
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or FormatException or System.Xml.XmlException or OverflowException or System.Text.RegularExpressions.RegexMatchTimeoutException)
@@ -210,7 +225,8 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
                 StartMs = source.StartMs,
                 EndMs = preserveExplicitTiming ? source.EndMs : highlightEnd,
                 HighlightEndMs = preserveExplicitTiming ? Math.Max(source.EndMs, highlightEnd) : highlightEnd,
-                TransLateText = source.Translation
+                TransLateText = source.Translation,
+                PronunciationText = source.Pronunciation
             };
             if (source.Words.Length > 0)
             {

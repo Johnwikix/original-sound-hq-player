@@ -19,7 +19,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             double lyricsWidth,
             double lyricsHeight,
             int strokeWidth,
-            int fontWeight = 700)
+            int fontWeight = 700,
+            bool showTranslation = true,
+            bool showPronunciation = true)
         {
             if (lines == null || resourceCreator == null) return;
 
@@ -39,6 +41,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             foreach (var line in lines)
             {
                 if (line == null) continue;
+
+                line.ApplyDisplayOptions(showTranslation, showPronunciation);
 
                 double actualWidth = 0;
 

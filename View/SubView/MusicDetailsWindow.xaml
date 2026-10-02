@@ -287,6 +287,19 @@
                                     Text="{x:Bind LyricsEditor.TranslationText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                     TextWrapping="Wrap" />
                             </PivotItem>
+                            <PivotItem>
+                                <PivotItem.Header>
+                                    <TextBlock x:Uid="LyricsPronunciationTab" FontSize="14" />
+                                </PivotItem.Header>
+                                <TextBox
+                                    MinHeight="120"
+                                    Margin="0,4,0,0"
+                                    AcceptsReturn="True"
+                                    BorderThickness="0"
+                                    ScrollViewer.VerticalScrollBarVisibility="Auto"
+                                    Text="{x:Bind LyricsEditor.PronunciationText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                    TextWrapping="Wrap" />
+                            </PivotItem>
                         </Pivot>
                         <StackPanel
                             Grid.Column="1"

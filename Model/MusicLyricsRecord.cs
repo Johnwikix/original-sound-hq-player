@@ -9,6 +9,7 @@ public sealed class MusicLyricsRecord
     public string Lyrics { get; set; } = "";
     public LyricsFormat LyricsFormat { get; set; }
     public string? TranslatedLyrics { get; set; }
+    public string? PronunciationLyrics { get; set; }
     public string SourceKind { get; set; } = "";
     public string SourceKey { get; set; } = "";
     public long Revision { get; set; } = 1;
@@ -16,7 +17,7 @@ public sealed class MusicLyricsRecord
     public string MigratedFromHash { get; set; } = "";
     public string Diagnostic { get; set; } = "";
 
-    public LyricsSnapshot Snapshot() => new(new(new(Lyrics, LyricsFormat), TranslatedLyrics), Revision, SourceKind, SourceKey, Diagnostic);
+    public LyricsSnapshot Snapshot() => new(new(new(Lyrics, LyricsFormat), TranslatedLyrics, PronunciationLyrics), Revision, SourceKind, SourceKey, Diagnostic);
 }
 
 [Table("LyricsSearchState")]

@@ -12,6 +12,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             set => SetProperty(ref field, value);
         } = string.Empty;
 
+        public string PronunciationText
+        {
+            get => field;
+            set => SetProperty(ref field, value);
+        } = string.Empty;
+
         public bool IsCurrent
         {
             get => field;

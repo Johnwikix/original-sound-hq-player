@@ -72,6 +72,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 var lineHeight = line.PrimaryLineHeight;
                 if (lineHeight == null || lineHeight <= 0) continue;
 
+                line.SecondaryDisplayTransition.Update(elapsedTime);
+
                 bool isWordAnimationEnabled = line.IsPrimaryHasRealSyllableInfo;
 
                 double targetCharFloat = lyricsFloatAnimationAmount > 0 ? lyricsFloatAnimationAmount : lineHeight.Value * 0.1;

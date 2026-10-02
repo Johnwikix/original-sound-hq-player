@@ -84,6 +84,12 @@ Check(queued.Value < position, "Motion must resume when the replacement delay ex
 queued.Update(3);
 Check(queued.Value == -360, "Rapid lines must replace stale queued targets.");
 
+var continuing = Moving(apple);
+position = continuing.Value;
+continuing.Start(-240, 0.7, 0.1, true, apple, continueCurrentMotionDuringDelay: true);
+continuing.Update(0.05);
+Check(continuing.Value < position, "An active flow-wave row must continue while a delayed target is queued.");
+
 foreach (int fps in new[] { 30, 60, 120, 144 })
 {
     var sampled = new LyricScrollMotion();

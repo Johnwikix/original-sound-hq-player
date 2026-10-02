@@ -57,6 +57,10 @@ namespace WinUIMusicPlayer.ViewModel
 
         public bool IsAutoLyricsEnabled { get => State.Preferences.IsAutoLyricsEnabled; set => State.Preferences.IsAutoLyricsEnabled = value; }
 
+        public bool IsLyricsTranslationEnabled { get => State.Preferences.IsLyricsTranslationEnabled; set => State.Preferences.IsLyricsTranslationEnabled = value; }
+
+        public bool IsLyricsPronunciationEnabled { get => State.Preferences.IsLyricsPronunciationEnabled; set => State.Preferences.IsLyricsPronunciationEnabled = value; }
+
         public string ArtistSplitSymbols { get => State.Preferences.ArtistSplitSymbols; set => State.Preferences.ArtistSplitSymbols = value; }
 
         public bool IsAutoCoverEnabled { get => State.Preferences.IsAutoCoverEnabled; set => State.Preferences.IsAutoCoverEnabled = value; }
