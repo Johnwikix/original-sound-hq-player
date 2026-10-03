@@ -15,13 +15,7 @@
                 Background="Transparent">
                 <StackPanel HorizontalAlignment="Stretch" Orientation="Vertical">
                     <TextBlock
-                        x:Name="LyricTextBlock"
-                        HorizontalAlignment="Stretch"
-                        FontWeight="Bold"
-                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
-                        TextWrapping="Wrap" />
-                    <TextBlock
-                        x:Name="TranslationTextBlock"
+                        x:Name="PronunciationTextBlock"
                         HorizontalAlignment="Stretch"
                         FontWeight="Bold"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -31,7 +25,13 @@
                         </TextBlock.OpacityTransition>
                     </TextBlock>
                     <TextBlock
-                        x:Name="PronunciationTextBlock"
+                        x:Name="LyricTextBlock"
+                        HorizontalAlignment="Stretch"
+                        FontWeight="Bold"
+                        Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                        TextWrapping="Wrap" />
+                    <TextBlock
+                        x:Name="TranslationTextBlock"
                         HorizontalAlignment="Stretch"
                         FontWeight="Bold"
                         Foreground="{ThemeResource TextFillColorSecondaryBrush}"

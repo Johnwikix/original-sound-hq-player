@@ -28,6 +28,10 @@ public sealed class SettingsSnapshotFactory(AppState state)
         newSettings.IsAutoLyricsEnabled = state.Preferences.IsAutoLyricsEnabled;
         newSettings.IsLyricsTranslationEnabled = state.Preferences.IsLyricsTranslationEnabled;
         newSettings.IsLyricsPronunciationEnabled = state.Preferences.IsLyricsPronunciationEnabled;
+        newSettings.IsMandarinPronunciationEnabled = state.Preferences.IsMandarinPronunciationEnabled;
+        newSettings.IsCantonesePronunciationEnabled = state.Preferences.IsCantonesePronunciationEnabled;
+        newSettings.IsJapanesePronunciationEnabled = state.Preferences.IsJapanesePronunciationEnabled;
+        newSettings.IsKoreanPronunciationEnabled = state.Preferences.IsKoreanPronunciationEnabled;
         newSettings.IsAutoCoverEnabled = state.Preferences.IsAutoCoverEnabled;
         newSettings.CoverSize = state.Preferences.CoverSize;
         newSettings.Win2dTextEffectType = state.Preferences.Win2dTextEffectType.Value;

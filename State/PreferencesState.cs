@@ -54,6 +54,10 @@ public sealed class PreferencesState : ObservableObject
     public bool IsAutoLyricsEnabled { get => Lyrics.IsAutoLyricsEnabled; set => Lyrics.IsAutoLyricsEnabled = value; }
     public bool IsLyricsTranslationEnabled { get => Lyrics.IsLyricsTranslationEnabled; set => Lyrics.IsLyricsTranslationEnabled = value; }
     public bool IsLyricsPronunciationEnabled { get => Lyrics.IsLyricsPronunciationEnabled; set => Lyrics.IsLyricsPronunciationEnabled = value; }
+    public bool IsMandarinPronunciationEnabled { get => Lyrics.IsMandarinPronunciationEnabled; set => Lyrics.IsMandarinPronunciationEnabled = value; }
+    public bool IsCantonesePronunciationEnabled { get => Lyrics.IsCantonesePronunciationEnabled; set => Lyrics.IsCantonesePronunciationEnabled = value; }
+    public bool IsJapanesePronunciationEnabled { get => Lyrics.IsJapanesePronunciationEnabled; set => Lyrics.IsJapanesePronunciationEnabled = value; }
+    public bool IsKoreanPronunciationEnabled { get => Lyrics.IsKoreanPronunciationEnabled; set => Lyrics.IsKoreanPronunciationEnabled = value; }
     public string LocalLyricsFormatOrder { get => Lyrics.LocalLyricsFormatOrder; set => Lyrics.LocalLyricsFormatOrder = value; }
     public bool PreferDatabaseLyrics { get => Lyrics.PreferDatabaseLyrics; set => Lyrics.PreferDatabaseLyrics = value; }
     public string ArtistSplitSymbols { get => General.ArtistSplitSymbols; set => General.ArtistSplitSymbols = value; }

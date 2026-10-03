@@ -45,6 +45,10 @@ namespace WinUIMusicPlayer.Model
         public static bool IsAutoLyricsEnabled { get; set; } = true;
         public static bool IsLyricsTranslationEnabled { get; set; } = true;
         public static bool IsLyricsPronunciationEnabled { get; set; } = true;
+        public static bool IsMandarinPronunciationEnabled { get; set; } = true;
+        public static bool IsCantonesePronunciationEnabled { get; set; } = true;
+        public static bool IsJapanesePronunciationEnabled { get; set; } = true;
+        public static bool IsKoreanPronunciationEnabled { get; set; } = true;
         public static bool AutoHideDesktopLyricsOnPlayingDetail { get; set; } = false;
         public static bool IsDesktopLyricsEnabled { get; set; } = false;
         public static bool IsDesktopLyricsLocked { get; set; } = false;

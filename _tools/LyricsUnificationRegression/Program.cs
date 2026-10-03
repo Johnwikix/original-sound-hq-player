@@ -37,6 +37,29 @@ const string ttmlWithPronunciationText = "<tt xmlns=\"http://www.w3.org/ns/ttml\
 var ttmlWithPronunciation = parser.Import(ttmlWithPronunciationText, preferredLanguage: "en-US");
 Check(ttmlWithPronunciation.PronunciationLrc?.Contains("konnichi wa", StringComparison.Ordinal) == true,
     "TTML transliteration metadata imports into pronunciation LRC");
+var ttmlWithBothTracks = parser.Import(ttmlWithPronunciationText, "[00:01.000]Translated\n", preferredLanguage: "en-US");
+Check(ttmlWithBothTracks.TranslationLrc == "[00:01.000]Translated\n"
+    && ttmlWithBothTracks.PronunciationLrc?.Contains("konnichi wa", StringComparison.Ordinal) == true,
+    "TTML pronunciation remains available when translation is supplied separately");
+const string ttmlWithMultiplePronunciations = "<tt xmlns=\"http://www.w3.org/ns/ttml\" xml:lang=\"ja\" xmlns:i=\"http://music.apple.com/lyric-ttml-internal\"><head><metadata><i:transliterations><i:transliteration xml:lang=\"cmn-Latn\"><i:text for=\"L1\">cuān</i:text></i:transliteration><i:transliteration xml:lang=\"ja-Latn\"><i:text for=\"L1\">konnichi wa</i:text></i:transliteration></i:transliterations></metadata></head><body><p begin=\"1.000\" end=\"2.000\" i:key=\"L1\">こんにちは</p></body></tt>";
+var ttmlWithSourceLanguage = parser.Import(ttmlWithMultiplePronunciations, preferredLanguage: "en-US");
+Check(ttmlWithSourceLanguage.PronunciationLrc?.Contains("konnichi wa", StringComparison.Ordinal) == true
+    && !ttmlWithSourceLanguage.PronunciationLrc.Contains("cuān", StringComparison.Ordinal),
+    "TTML pronunciation follows the source language when multiple tracks exist");
+const string ttmlWithInlinePronunciation = "<tt xmlns=\"http://www.w3.org/ns/ttml\" xmlns:ttm=\"http://www.w3.org/ns/ttml#metadata\" xmlns:i=\"http://itunes.apple.com/lyric-ttml-extensions\" xml:lang=\"ja\"><body><p begin=\"1.000\" end=\"2.000\" i:key=\"L1\"><span begin=\"1.000\" end=\"2.000\">こんにちは</span><span ttm:role=\"x-roman\" xml:lang=\"cmn-Latn\">cuān</span><span ttm:role=\"x-roman\" xml:lang=\"ja-Latn\">konnichi wa</span></p></body></tt>";
+var ttmlWithInline = parser.Import(ttmlWithInlinePronunciation, preferredLanguage: "en-US");
+ Check(ttmlWithInline.PronunciationLrc?.Contains("konnichi wa", StringComparison.Ordinal) == true
+     && !ttmlWithInline.PronunciationLrc!.Contains("cuān", StringComparison.Ordinal),
+     "TTML inline x-roman track imports the source-language pronunciation");
+var untaggedTtml = parser.Import("<tt xmlns=\"http://www.w3.org/ns/ttml\"><body><p begin=\"1.000\">歌词</p></body></tt>", pronunciation: "[00:01.000]ge ci");
+Check(LyricsLanguagePolicy.DetectExplicit(untaggedTtml) is null,
+    "TTML without a source language remains unclassified");
+var genericChineseTtml = parser.Import("<tt xmlns=\"http://www.w3.org/ns/ttml\" xml:lang=\"zh\"><body><p begin=\"1.000\">歌词</p></body></tt>", pronunciation: "[00:01.000]ge ci");
+Check(LyricsLanguagePolicy.DetectExplicit(genericChineseTtml) is null,
+    "Generic zh does not guess Mandarin or Cantonese");
+var cantoneseTtml = parser.Import("<tt xmlns=\"http://www.w3.org/ns/ttml\" xml:lang=\"yue\"><body><p begin=\"1.000\">歌詞</p></body></tt>", pronunciation: "[00:01.000]go ci");
+Check(LyricsLanguagePolicy.DetectExplicit(cantoneseTtml) == LyricsLanguage.Cantonese,
+    "Explicit yue is classified as Cantonese");
 Check(LyricsFilePolicy.NormalizeOrder("ttml,lrc,ttml,bad") == "ttml,lrc,krc,qrc", "priority validation and new formats");
 var old = new MusicLyrics { MusicId = 1, Lyrics = "[00:01.000]old", TranslatedLyrics = "[00:01.000]old translation", Krc = qrc.Original.Content, TKrc = qrc.TranslationLrc! };
 var migrated = LyricsLegacyMigration.Convert(old, parser);

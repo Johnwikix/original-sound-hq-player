@@ -20,6 +20,10 @@ public sealed class LyricsPreferencesState : ObservableObject
     public bool IsAutoLyricsEnabled { get; set => SetProperty(ref field, value); } = true;
     public bool IsLyricsTranslationEnabled { get; set => SetProperty(ref field, value); } = true;
     public bool IsLyricsPronunciationEnabled { get; set => SetProperty(ref field, value); } = true;
+    public bool IsMandarinPronunciationEnabled { get; set => SetProperty(ref field, value); } = true;
+    public bool IsCantonesePronunciationEnabled { get; set => SetProperty(ref field, value); } = true;
+    public bool IsJapanesePronunciationEnabled { get; set => SetProperty(ref field, value); } = true;
+    public bool IsKoreanPronunciationEnabled { get; set => SetProperty(ref field, value); } = true;
     public bool IsCustomLyricsColorEnabled { get; set => SetProperty(ref field, value); } = false;
     public Color LyricsCustomColor { get; set => SetProperty(ref field, value); } = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
     public double DesktopLyricsFontSize { get; set => SetProperty(ref field, value); } = 36;

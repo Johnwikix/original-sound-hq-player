@@ -82,6 +82,23 @@
                     <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsLyricsPronunciationEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
+                <controls:SettingsExpander x:Uid="LyricsPronunciationLanguages" IsExpanded="True">
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard x:Uid="LyricsPronunciationMandarin">
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsMandarinPronunciationEnabled, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="LyricsPronunciationCantonese">
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsCantonesePronunciationEnabled, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="LyricsPronunciationJapanese">
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsJapanesePronunciationEnabled, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="LyricsPronunciationKorean">
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsKoreanPronunciationEnabled, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
+
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
                         <TextBlock x:Uid="LyricsFontFamily" TextWrapping="Wrap" />

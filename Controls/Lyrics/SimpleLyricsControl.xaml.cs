@@ -569,8 +569,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             if (args.ItemContainer?.ContentTemplateRoot is not Border border) return;
             ApplyBorderSpacing(border, item.DisplayTextAlignment);
             if (border.Child is not StackPanel panel || panel.Children.Count < 3) return;
-            if (panel.Children[0] is not TextBlock lyricTb || panel.Children[1] is not TextBlock transTb ||
-                panel.Children[2] is not TextBlock pronTb) return;
+            if (panel.Children[0] is not TextBlock pronTb || panel.Children[1] is not TextBlock lyricTb ||
+                panel.Children[2] is not TextBlock transTb) return;
 
             _itemMap[item] = (border, lyricTb, transTb, pronTb);
             item.PropertyChanged -= _onItemPropertyChanged;

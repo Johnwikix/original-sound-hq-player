@@ -53,7 +53,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 if (strokeWidth > 0)
                     line.RecreateTextGeometry();
                 line.DisposeCaches();
-                line.PrepareSecondaryHeightTransition();
                 line.RecreateRenderChars(strokeWidth);
             }
             shareFormat.Dispose();
@@ -89,6 +88,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 double actualWidth = 0;
                 line.TopLeftPosition = new Vector2((float)currentX, (float)currentY);
 
+                line.PronunciationLayer.Position = new Vector2((float)currentX, (float)currentY);
+                currentY += line.PronunciationLayer.SlotHeight(line.LayerSpacing);
+                if (line.PronunciationLayer.Height > 0)
+                    actualWidth = Math.Max(actualWidth, line.PronunciationLayer.Layout!.LayoutBounds.Width);
+
                 if (line.PrimaryTextLayout != null)
                 {
                     line.PrimaryPosition = new Vector2((float)currentX, (float)currentY);
@@ -96,13 +100,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     actualWidth = Math.Max(actualWidth, line.PrimaryTextLayout.LayoutBounds.Width);
                 }
 
-                if (line.SecondaryTextLayout != null)
-                {
-                    currentY += line.PrimaryTextLayout?.LayoutBounds.Height * 0.1 ?? 3;
-                    line.SecondaryPosition = new Vector2((float)currentX, (float)currentY);
-                    currentY += line.CurrentSecondaryHeight;
-                    actualWidth = Math.Max(actualWidth, line.SecondaryTextLayout.LayoutBounds.Width);
-                }
+                line.TranslationLayer.Position = new Vector2((float)currentX,
+                    (float)(currentY + line.LayerSpacing * line.TranslationLayer.Reveal.Value));
+                currentY += line.TranslationLayer.SlotHeight(line.LayerSpacing);
+                if (line.TranslationLayer.Height > 0)
+                    actualWidth = Math.Max(actualWidth, line.TranslationLayer.Layout!.LayoutBounds.Width);
 
                 line.BottomRightPosition = new Vector2((float)currentX + (float)actualWidth, (float)currentY);
                 line.TopLeftPosition = horizontalAlignment switch

@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 {
@@ -22,8 +21,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public ValueTransition<double> PlayedPrimaryOpacityTransition { get; set; }
         public ValueTransition<double> UnplayedPrimaryOpacityTransition { get; set; }
         public ValueTransition<double> SecondaryOpacityTransition { get; set; }
-        public ValueTransition<double> SecondaryDisplayTransition { get; }
-        public ValueTransition<double> SecondaryHeightTransition { get; }
+        public RenderLyricsAuxiliaryLayer PronunciationLayer { get; } = new();
+        public RenderLyricsAuxiliaryLayer TranslationLayer { get; } = new();
 
         public ValueTransition<double> PrimaryXOffsetTransition { get; set; }
         public ValueTransition<double> SecondaryXOffsetTransition { get; set; }
@@ -32,17 +31,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public LyricScrollMotion ScrollMotion { get; } = new();
 
         public CanvasTextLayout? PrimaryTextLayout { get; private set; }
-        public CanvasTextLayout? SecondaryTextLayout { get; private set; }
+        public CanvasTextLayout? SecondaryTextLayout => TranslationLayer.Layout;
 
         public Vector2 PrimaryPosition { get; set; }
-        public Vector2 SecondaryPosition { get; set; }
+        public Vector2 SecondaryPosition => TranslationLayer.Position;
 
         // Win2D command lists are recorded at a fixed position. During the
         // secondary-height transition the logical row moves, so rendering uses
         // this cached origin plus a transform offset instead of sampling the
         // old cache with the new layout coordinates.
         public Vector2 CachedPrimaryPosition { get; private set; }
-        public Vector2 CachedSecondaryPosition { get; private set; }
         public double LayoutOffsetY => PrimaryPosition.Y - CachedPrimaryPosition.Y;
 
         public Vector2 TopLeftPosition { get; set; }
@@ -50,16 +48,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public Vector2 BottomRightPosition { get; set; }
 
         public CanvasGeometry? PrimaryCanvasGeometry { get; private set; }
-        public CanvasGeometry? SecondaryCanvasGeometry { get; private set; }
 
         public string PrimaryText { get; set; } = "";
-        public string SecondaryText { get; set; } = "";
         public string TranslationText { get; private set; } = "";
         public string PronunciationText { get; private set; } = "";
-        public int SecondaryPronunciationStartIndex { get; private set; } = -1;
-        public double CurrentSecondaryHeight => SecondaryHeightTransition.Value;
-
-        private bool _secondaryHeightInitialized;
+        public double LayerSpacing => (PrimaryTextLayout?.LayoutBounds.Height ?? 30) * 0.1;
+        public double CurrentSecondaryHeight => PronunciationLayer.SlotHeight(LayerSpacing) + TranslationLayer.SlotHeight(LayerSpacing);
 
         public CanvasCommandList? CachedStroke { get; private set; }
         public CanvasCommandList? CachedFill { get; private set; }
@@ -135,8 +129,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             PlayedPrimaryOpacityTransition = new(0, interpolator, 0.3);
             UnplayedPrimaryOpacityTransition = new(0, interpolator, 0.3);
             SecondaryOpacityTransition = new(0, interpolator, 0.3);
-            SecondaryDisplayTransition = new(1, interpolator, 0.2);
-            SecondaryHeightTransition = new(0, interpolator, 0.2);
             PrimaryXOffsetTransition = new(0, interpolator, 0.3);
             SecondaryXOffsetTransition = new(0, interpolator, 0.3);
             YOffsetTransition = new(0, interpolator, 0.3);
@@ -163,7 +155,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             });
             TranslationText = lyricLine.TransLateText ?? "";
             PronunciationText = lyricLine.PronunciationText ?? "";
-            SecondaryText = TranslationText;
 
             StartMs = lyricLine.StartMs;
             EndMs = lyricLine.EndMs > lyricLine.StartMs ? lyricLine.EndMs : nextLineStartMs;
@@ -191,56 +182,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         public void ApplyDisplayOptions(bool showTranslation, bool showPronunciation)
         {
-            bool hasTranslation = showTranslation && !string.IsNullOrWhiteSpace(TranslationText);
-            bool hasPronunciation = showPronunciation && !string.IsNullOrWhiteSpace(PronunciationText);
-            string desired;
-            if (hasTranslation && hasPronunciation)
-            {
-                desired = TranslationText + "\n" + PronunciationText;
-                SecondaryPronunciationStartIndex = TranslationText.Length + 1;
-            }
-            else if (hasTranslation)
-            {
-                desired = TranslationText;
-                SecondaryPronunciationStartIndex = -1;
-            }
-            else if (hasPronunciation)
-            {
-                desired = PronunciationText;
-                SecondaryPronunciationStartIndex = 0;
-            }
-            else
-            {
-                desired = "";
-                SecondaryPronunciationStartIndex = -1;
-            }
-
-            if (!string.IsNullOrWhiteSpace(desired))
-                SecondaryText = desired;
-            SecondaryDisplayTransition.Start(string.IsNullOrWhiteSpace(desired) ? 0 : 1);
-        }
-
-        public void PrepareSecondaryHeightTransition()
-        {
-            double targetHeight = SecondaryDisplayTransition.TargetValue > 0.5 && SecondaryTextLayout is not null
-                ? SecondaryTextLayout.LayoutBounds.Height
-                : 0;
-
-            if (!_secondaryHeightInitialized)
-            {
-                SecondaryHeightTransition.JumpTo(targetHeight);
-                _secondaryHeightInitialized = true;
-            }
-            else if (Math.Abs(SecondaryHeightTransition.TargetValue - targetHeight) > 0.1)
-            {
-                SecondaryHeightTransition.Start(targetHeight);
-            }
+            TranslationLayer.SetVisible(showTranslation && !string.IsNullOrWhiteSpace(TranslationText));
+            PronunciationLayer.SetVisible(showPronunciation && !string.IsNullOrWhiteSpace(PronunciationText));
         }
 
         public void UpdateSecondaryTransitions(TimeSpan elapsedTime)
         {
-            SecondaryDisplayTransition.Update(elapsedTime);
-            SecondaryHeightTransition.Update(elapsedTime);
+            TranslationLayer.Reveal.Update(elapsedTime);
+            PronunciationLayer.Reveal.Update(elapsedTime);
         }
 
         public void DisposeTextLayout()
@@ -248,8 +197,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             PrimaryTextLayout?.Dispose();
             PrimaryTextLayout = null;
 
-            SecondaryTextLayout?.Dispose();
-            SecondaryTextLayout = null;
+            TranslationLayer.DisposeLayout();
+            PronunciationLayer.DisposeLayout();
         }
 
         public void RecreateTextLayout(
@@ -273,22 +222,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 WordWrapping = CanvasWordWrapping.WholeWord,
             };
 
-            if (translatedTextFontSize > 0 && !string.IsNullOrWhiteSpace(SecondaryText))
-            {
-                format.FontSize = translatedTextFontSize;
-                SecondaryTextLayout = new CanvasTextLayout(resourceCreator, SecondaryText, format, (float)maxWidth, (float)maxHeight)
-                {
-                    HorizontalAlignment = horizontalAlignment,
-                    Options = CanvasDrawTextOptions.NoPixelSnap,
-                };
-                if (SecondaryPronunciationStartIndex >= 0 && SecondaryPronunciationStartIndex < SecondaryText.Length)
-                {
-                    SecondaryTextLayout.SetFontSize(
-                        SecondaryPronunciationStartIndex,
-                        SecondaryText.Length - SecondaryPronunciationStartIndex,
-                        Math.Max(1, originalTextFontSize * 0.6f));
-                }
-            }
+            format.FontSize = Math.Max(1, originalTextFontSize * 0.6f);
+            PronunciationLayer.Measure(resourceCreator, PronunciationText, format, (float)maxWidth, (float)maxHeight, horizontalAlignment);
+            format.FontSize = Math.Max(1, translatedTextFontSize);
+            TranslationLayer.Measure(resourceCreator, translatedTextFontSize > 0 ? TranslationText : "", format,
+                (float)maxWidth, (float)maxHeight, horizontalAlignment);
 
             format.FontSize = originalTextFontSize;
             PrimaryTextLayout = new CanvasTextLayout(resourceCreator, PrimaryText, format, (float)maxWidth, (float)maxHeight)
@@ -297,15 +235,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 Options = CanvasDrawTextOptions.NoPixelSnap,
             };
             PrimaryTextRegions = PrimaryTextLayout.GetCharacterRegions(0, PrimaryText.Length);
+            if (sharedFormat is null) format.Dispose();
         }
 
         public void DisposeTextGeometry()
         {
             PrimaryCanvasGeometry?.Dispose();
             PrimaryCanvasGeometry = null;
-
-            SecondaryCanvasGeometry?.Dispose();
-            SecondaryCanvasGeometry = null;
+            TranslationLayer.DisposeGeometry();
+            PronunciationLayer.DisposeGeometry();
         }
 
         public void RecreateTextGeometry()
@@ -315,8 +253,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             if (PrimaryTextLayout != null)
                 PrimaryCanvasGeometry = CanvasGeometry.CreateText(PrimaryTextLayout);
 
-            if (SecondaryTextLayout != null)
-                SecondaryCanvasGeometry = CanvasGeometry.CreateText(SecondaryTextLayout);
+            TranslationLayer.CreateGeometry();
+            PronunciationLayer.CreateGeometry();
         }
 
         public void RecreateRenderChars(int strokeWidth)
@@ -367,13 +305,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             if (CachedStroke != null && CachedFill != null) return;
 
             CachedPrimaryPosition = PrimaryPosition;
-            CachedSecondaryPosition = SecondaryPosition;
 
             CachedFill = new CanvasCommandList(resourceCreator);
             using (var ds = CachedFill.CreateDrawingSession())
             {
-                if (SecondaryTextLayout != null)
-                    ds.DrawTextLayout(SecondaryTextLayout, SecondaryPosition, Microsoft.UI.Colors.White);
                 if (PrimaryTextLayout != null)
                     ds.DrawTextLayout(PrimaryTextLayout, PrimaryPosition, Microsoft.UI.Colors.White);
             }
@@ -390,8 +325,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 using var ds = CachedStroke.CreateDrawingSession();
                 if (PrimaryCanvasGeometry != null)
                     ds.DrawGeometry(PrimaryCanvasGeometry, PrimaryPosition, Microsoft.UI.Colors.White, (float)strokeWidth, roundStrokeStyle);
-                if (SecondaryCanvasGeometry != null)
-                    ds.DrawGeometry(SecondaryCanvasGeometry, SecondaryPosition, Microsoft.UI.Colors.White, (float)strokeWidth, roundStrokeStyle);
             }
 
             UnplayedFillTint = new TintEffect { Source = CachedFill, Color = Microsoft.UI.Colors.White };
@@ -501,6 +434,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         public void DisposeCaches()
         {
+            TranslationLayer.DisposeCache();
+            PronunciationLayer.DisposeCache();
             UnplayedComposite?.Dispose();
             UnplayedStrokeTint?.Dispose();
             UnplayedFillTint?.Dispose();

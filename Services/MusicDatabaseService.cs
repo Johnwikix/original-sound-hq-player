@@ -1154,8 +1154,16 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.IsAutoLyricsEnabled = settings.IsAutoLyricsEnabled;
                 AppSettings.IsLyricsTranslationEnabled = settings.IsLyricsTranslationEnabled;
                 AppSettings.IsLyricsPronunciationEnabled = settings.IsLyricsPronunciationEnabled;
+                AppSettings.IsMandarinPronunciationEnabled = settings.IsMandarinPronunciationEnabled;
+                AppSettings.IsCantonesePronunciationEnabled = settings.IsCantonesePronunciationEnabled;
+                AppSettings.IsJapanesePronunciationEnabled = settings.IsJapanesePronunciationEnabled;
+                AppSettings.IsKoreanPronunciationEnabled = settings.IsKoreanPronunciationEnabled;
                 AppViewModel.IsLyricsTranslationEnabled = settings.IsLyricsTranslationEnabled;
                 AppViewModel.IsLyricsPronunciationEnabled = settings.IsLyricsPronunciationEnabled;
+                AppViewModel.IsMandarinPronunciationEnabled = settings.IsMandarinPronunciationEnabled;
+                AppViewModel.IsCantonesePronunciationEnabled = settings.IsCantonesePronunciationEnabled;
+                AppViewModel.IsJapanesePronunciationEnabled = settings.IsJapanesePronunciationEnabled;
+                AppViewModel.IsKoreanPronunciationEnabled = settings.IsKoreanPronunciationEnabled;
                 AppViewModel.State.Preferences.LocalLyricsFormatOrder = WinUIMusicPlayer.Services.Lyrics.LyricsFilePolicy.NormalizeOrder(settings.LocalLyricsFormatOrder);
                 AppViewModel.State.Preferences.PreferDatabaseLyrics = settings.PreferDatabaseLyrics;
                 AppViewModel.IsAutoCoverEnabled = settings.IsAutoCoverEnabled;

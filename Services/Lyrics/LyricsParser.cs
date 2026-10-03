@@ -63,7 +63,10 @@ public sealed partial class LyricsParser
         string? embedded = null;
         string? embeddedPronunciation = null;
         if (format == LyricsFormat.Ttml)
-            (original, embedded, embeddedPronunciation) = SplitTtml(original, preferredLanguage, token, extractEmbeddedTranslation && string.IsNullOrWhiteSpace(translation));
+            (original, embedded, embeddedPronunciation) = SplitTtml(
+                original, preferredLanguage, token,
+                extractEmbeddedTranslation && string.IsNullOrWhiteSpace(translation),
+                extractEmbeddedTranslation);
         else if (format == LyricsFormat.Krc && original.Contains("[language:", StringComparison.Ordinal))
         {
             var lines = ParseSource(original, format, token);

@@ -33,7 +33,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         public void Draw(ICanvasResourceCreator resourceCreator, CanvasDrawingSession ds)
         {
-            DrawSecondaryText(ds);
+            DrawSecondaryText(resourceCreator, ds);
             DrawPrimaryText(resourceCreator, ds);
         }
 
@@ -44,7 +44,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         }
 
         private static readonly float CropHorizonPadding = 10f;
-        private static readonly float CropVerticalPadding = 5f;
         /// <summary>属性更新脏检查阈值：进度变化不足 0.5px 时跳过，肉眼不可见。</summary>
         private const float DirtyEpsilonPx = 0.5f;
 
@@ -63,29 +62,17 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         private float _playedR, _playedG, _playedB, _playedA;
         private float _unplayedR, _unplayedG, _unplayedB, _unplayedA;
 
-        private void DrawSecondaryText(CanvasDrawingSession ds)
+        private void DrawSecondaryText(ICanvasResourceCreator creator, CanvasDrawingSession ds)
         {
-            if (Line?.SecondaryTextLayout == null) return;
-
-            var opacity = Line.SecondaryOpacityTransition.Value * Line.SecondaryDisplayTransition.Value;
-            var blur = Line.BlurAmountTransition.Value;
-            if (double.IsNaN(opacity) || opacity <= 0) return;
-
-            var bounds = Line.SecondaryTextLayout.LayoutBounds;
-            double visibleHeight = Math.Clamp(Line.CurrentSecondaryHeight, 0, bounds.Height);
-            if (visibleHeight <= 0) return;
-            var srcRect = new Rect(
-                bounds.X + Line.CachedSecondaryPosition.X - CropHorizonPadding,
-                bounds.Y + Line.CachedSecondaryPosition.Y - CropVerticalPadding,
-                bounds.Width + CropHorizonPadding * 2, visibleHeight + CropVerticalPadding * 2);
-
-            if (Line.CachedCropEffect is { } crop && Line.CachedBlurEffect is { } blurFx && Line.CachedOpacityEffect is { } opacityFx)
-            {
-                crop.SourceRectangle = srcRect;
-                blurFx.BlurAmount = (float)blur;
-                opacityFx.Opacity = (float)opacity;
-                ds.DrawImage(opacityFx, srcRect, srcRect);
-            }
+            if (Line == null) return;
+            // The host already translates the cached primary origin to its live position.
+            // Auxiliary caches use local coordinates and compensate for that translation.
+            var offset = new Vector2(0, (float)Line.LayoutOffsetY);
+            var color = Line.UnplayedFillTint?.Color ?? UnplayedFillColor;
+            Line.PronunciationLayer.Draw(creator, ds, Line.PronunciationLayer.Position - offset,
+                Line.SecondaryOpacityTransition.Value, Line.BlurAmountTransition.Value, 0, color);
+            Line.TranslationLayer.Draw(creator, ds, Line.TranslationLayer.Position - offset,
+                Line.SecondaryOpacityTransition.Value, Line.BlurAmountTransition.Value, 0, color);
         }
 
         private void DrawPrimaryText(ICanvasResourceCreator resourceCreator, CanvasDrawingSession ds)

@@ -93,6 +93,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private GaussianBlurEffect? _primaryWholeShadowBlur;
         private CanvasCommandList? _secondaryShadowList;
         private GaussianBlurEffect? _secondaryShadowBlur;
+        private CanvasCommandList? _pronunciationShadowList;
+        private GaussianBlurEffect? _pronunciationShadowBlur;
 
         private sealed record CharShadowSlice(RenderLyricsChar Char, CanvasCommandList List, GaussianBlurEffect Blur);
 
@@ -305,7 +307,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 if (line.CachedFill is null || line.UnplayedComposite is null) return;
 
                 if (line.UnplayedFillTint != null)
-                    line.UnplayedFillTint.Color = _color;   // 翻译行/暂停态的填充色
+                    line.UnplayedFillTint.Color = _color;   // 发音/翻译行与暂停态的填充色
 
                 // 未播放填充 = 与歌词色拉开明暗的不透明预混色（亮色向黑压暗/暗色向白提亮）：
                 // 已播放填充保持原色不透明。固定向黑压暗在黑字模式下会与已播放同色，扫光消失
@@ -404,7 +406,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             }
         }
 
-        /// <summary>上报当前行实际绘制边界（元素坐标 DIP，主文本+翻译合并）：
+        /// <summary>上报当前行实际绘制边界（元素坐标 DIP，主文本、发音和翻译合并）：
         /// 布局边界 + 布局内位置偏移，再补上垂直居中平移——OnCanvasDraw 绘制时才加
         /// offsetY（(画布高-块高)/2，见 OnCanvasDraw），此处用同样的公式补偿，
         /// 窗口据此把环境取色采样收窄到歌词实际所在的背景环带。</summary>
@@ -419,10 +421,19 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 bounds = new Rect(b.X + line.PrimaryPosition.X, b.Y + line.PrimaryPosition.Y + offsetY, b.Width, b.Height);
                 hasBounds = true;
             }
-            if (line.SecondaryTextLayout is { } secondary)
+            if (line.PronunciationLayer.Reveal.Value > 0.001 && line.PronunciationLayer.Layout is { } pronunciation)
+            {
+                var b = pronunciation.LayoutBounds;
+                var pronunciationBounds = new Rect(b.X + line.PronunciationLayer.Position.X,
+                    b.Y + line.PronunciationLayer.Position.Y + offsetY, b.Width, b.Height);
+                if (hasBounds) bounds.Union(pronunciationBounds);
+                else bounds = pronunciationBounds;
+                hasBounds = true;
+            }
+            if (line.TranslationLayer.Reveal.Value > 0.001 && line.TranslationLayer.Layout is { } secondary)
             {
                 var b = secondary.LayoutBounds;
-                var translation = new Rect(b.X + line.SecondaryPosition.X, b.Y + line.SecondaryPosition.Y + offsetY, b.Width, b.Height);
+                var translation = new Rect(b.X + line.TranslationLayer.Position.X, b.Y + line.TranslationLayer.Position.Y + offsetY, b.Width, b.Height);
                 if (hasBounds) bounds.Union(translation);
                 else bounds = translation;
                 hasBounds = true;
@@ -446,7 +457,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         /// <summary>按当前行字形重建阴影剪影（渲染线程，仅行构建时调用）。主文本按字符
         /// 垂直分条（在字符布局矩形边界处裁开，相邻字符的光晕互不叠画），模糊后逐字符
-        /// 以与填充一致的映射绘制，阴影跟随字浮/字缩；翻译行无动效，整行一条剪影。</summary>
+        /// 以与填充一致的映射绘制，阴影跟随字浮/字缩；发音和翻译行无动效，各自一条剪影。</summary>
         private void RebuildShadowResources(ICanvasResourceCreator resourceCreator)
         {
             var line = _currentLine;
@@ -508,12 +519,22 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 _primaryWholeShadowBlur = CreateShadowBlur(_primaryWholeShadowList);
             }
 
-            if (line.SecondaryTextLayout is { } secondary)
+            if (line.PronunciationLayer.Layout is { } pronunciation)
+            {
+                _pronunciationShadowList = new CanvasCommandList(resourceCreator);
+                using (var clSession = _pronunciationShadowList.CreateDrawingSession())
+                {
+                    clSession.DrawTextLayout(pronunciation, line.PronunciationLayer.Position, _shadowBrush);
+                }
+                _pronunciationShadowBlur = CreateShadowBlur(_pronunciationShadowList);
+            }
+
+            if (line.TranslationLayer.Layout is { } secondary)
             {
                 _secondaryShadowList = new CanvasCommandList(resourceCreator);
                 using (var clSession = _secondaryShadowList.CreateDrawingSession())
                 {
-                    clSession.DrawTextLayout(secondary, line.SecondaryPosition, _shadowBrush);
+                    clSession.DrawTextLayout(secondary, line.TranslationLayer.Position, _shadowBrush);
                 }
                 _secondaryShadowBlur = CreateShadowBlur(_secondaryShadowList);
             }
@@ -539,7 +560,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             var line = _currentLine;
             if (line is null || _shadowBrush is null) return;
             bool hasSlices = _charSlices is { } slices && slices.Count > 0;
-            if (!hasSlices && _primaryWholeShadowBlur is null && _secondaryShadowBlur is null) return;
+            if (!hasSlices && _primaryWholeShadowBlur is null && _secondaryShadowBlur is null && _pronunciationShadowBlur is null) return;
 
             float baseAlpha = (float)Math.Min(1.0, _shadowStrength);
             float extraAlpha = (float)Math.Max(0.0, _shadowStrength - 1.0);
@@ -574,8 +595,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     ds.DrawImage(whole);
                 }
 
-                if (_secondaryShadowBlur is { } secondaryBlur)
+                if (line.TranslationLayer.Reveal.Value > 0.001 && _secondaryShadowBlur is { } secondaryBlur)
                     ds.DrawImage(secondaryBlur);
+                if (line.PronunciationLayer.Reveal.Value > 0.001 && _pronunciationShadowBlur is { } pronunciationBlur)
+                    ds.DrawImage(pronunciationBlur);
             }
         }
 
@@ -599,6 +622,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _secondaryShadowBlur = null;
             _secondaryShadowList?.Dispose();
             _secondaryShadowList = null;
+            _pronunciationShadowBlur?.Dispose();
+            _pronunciationShadowBlur = null;
+            _pronunciationShadowList?.Dispose();
+            _pronunciationShadowList = null;
             _shadowBrush?.Dispose();
             _shadowBrush = null;
         }

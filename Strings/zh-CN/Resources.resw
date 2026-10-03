@@ -2395,6 +2395,16 @@ SHA-256：{5}
   <data name="LyricsShowTranslation.Description" xml:space="preserve"><value>有可用翻译时显示翻译轨。</value></data>
   <data name="LyricsShowPronunciation.Header" xml:space="preserve"><value>显示歌词发音</value></data>
   <data name="LyricsShowPronunciation.Description" xml:space="preserve"><value>有可用发音时显示发音轨。</value></data>
+  <data name="LyricsPronunciationLanguages.Header" xml:space="preserve"><value>发音语言</value></data>
+  <data name="LyricsPronunciationLanguages.Description" xml:space="preserve"><value>仅对带有明确语言标记的歌词启用对应发音。</value></data>
+  <data name="LyricsPronunciationMandarin.Header" xml:space="preserve"><value>普通话</value></data>
+  <data name="LyricsPronunciationMandarin.Description" xml:space="preserve"><value>显示普通话发音。</value></data>
+  <data name="LyricsPronunciationCantonese.Header" xml:space="preserve"><value>粤语</value></data>
+  <data name="LyricsPronunciationCantonese.Description" xml:space="preserve"><value>显示粤语发音。</value></data>
+  <data name="LyricsPronunciationJapanese.Header" xml:space="preserve"><value>日语</value></data>
+  <data name="LyricsPronunciationJapanese.Description" xml:space="preserve"><value>显示日语发音。</value></data>
+  <data name="LyricsPronunciationKorean.Header" xml:space="preserve"><value>韩语</value></data>
+  <data name="LyricsPronunciationKorean.Description" xml:space="preserve"><value>显示韩语发音。</value></data>
   <data name="LyricsTranslationToggle" xml:space="preserve"><value>切换歌词翻译</value></data>
   <data name="LyricsPronunciationToggle" xml:space="preserve"><value>切换歌词发音</value></data>
   <data name="LyricsTranslationIcon.Text" xml:space="preserve"><value>译</value></data>

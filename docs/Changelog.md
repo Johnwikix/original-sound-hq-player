@@ -2,6 +2,19 @@
 
 新条目加在最上方。
 
+## 2026-10-03 按明确歌词语言控制用户发音轨
+
+- `LyricsSettingsControl`、偏好状态与设置持久化：增加普通话、粤语、日语、韩语发音开关。
+- `LyricsLanguagePolicy`、`LyricsRefreshService`：仅使用 TTML 明确语言标签；无标签或泛化 `zh` 不识别、不自动补取，避免把普通话和粤语混淆。
+- `LrcService`、`LyricsOnlineSearch`、`LyricsRefreshService`：移除网易云在线音译和自动补取；发音只来自用户提供的 TTML 或独立发音 LRC，自动生成的预览结果不写入数据库。
+
+## 2026-10-03 完善发音歌词分层与 TTML 导入
+
+- `RenderLyricsLine`、`RenderLyricsAuxiliaryLayer`、`LyricsLayoutManager`：发音、原文、译文拆为独立渲染层，发音位于原文上方并按原文字号的 60% 显示，切换时同步过渡副行高度。
+- `SimpleLyricsControl`：普通歌词按发音、原文、译文顺序布局，译文和发音隐藏时动画收缩行高。
+- `LyricsParser.Ttml`：TTML transliteration 元数据和正文 `x-roman` 辅助轨独立导入 `PronunciationLrc`，即使存在外部译文也保留，并按源语言筛选发音轨。
+- `CanvasLyricsRenderer`：桌面歌词的文本边界和阴影包含独立发音层。
+
 ## 2026-10-02 修复播放页翻译/发音开关文字垂直不居中
 
 - `PlayingDetailPage`：译/音 两个文字开关按钮的 TextBlock 加 `TextLineBounds="Tight"`，行框改按字墨迹计算，ContentPresenter 居中的即为墨迹本身；修复 CJK 字形因行框上方空隙在按钮内偏低约 2px、与旁边齿轮/时钟图标不对齐的问题（实测与图标中心偏差从约 2 逻辑像素降到 1 物理像素内），对其他语言的 T/A 字母同样适用。

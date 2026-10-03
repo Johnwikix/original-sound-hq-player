@@ -96,6 +96,7 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
                     document = OneShotLyricsCache.Load(music.Path)?.Document ?? document;
             }
         }
+
         if (llm is not null && document is not null && string.IsNullOrWhiteSpace(document.TranslationLrc) && parser.HasLyrics(document, token))
         {
             // 歌词原文先发布，网络请求在 ApplicationTasks 后台执行，不阻塞播放和首屏歌词。
@@ -203,6 +204,10 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
         // 格式以内容为准，旧缓存可能记录过错误的格式。
         bool preserveExplicitTiming = parser.Detect(document.Original.Content) == LyricsFormat.Ttml;
         var parsed = parser.Parse(document, duration, token);
+        // Language-specific switches only apply when the source track carries an
+        // unambiguous language tag. Untagged or generic `zh` lyrics remain usable
+        // and keep an existing pronunciation track visible under the master switch.
+        bool allowPronunciation = LyricsLanguagePolicy.IsEnabledForDocument(document);
         var result = new List<LyricLine>(parsed.Length);
         int nextDistinct = 0;
         for (int index = 0; index < parsed.Length; index++)
@@ -226,7 +231,7 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
                 EndMs = preserveExplicitTiming ? source.EndMs : highlightEnd,
                 HighlightEndMs = preserveExplicitTiming ? Math.Max(source.EndMs, highlightEnd) : highlightEnd,
                 TransLateText = source.Translation,
-                PronunciationText = source.Pronunciation
+                PronunciationText = allowPronunciation ? source.Pronunciation : string.Empty
             };
             if (source.Words.Length > 0)
             {

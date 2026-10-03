@@ -49,6 +49,10 @@ namespace WinUIMusicPlayer.Model
         public bool IsAutoLyricsEnabled { get; set; } = true;
         public bool IsLyricsTranslationEnabled { get; set; } = true;
         public bool IsLyricsPronunciationEnabled { get; set; } = true;
+        public bool IsMandarinPronunciationEnabled { get; set; } = true;
+        public bool IsCantonesePronunciationEnabled { get; set; } = true;
+        public bool IsJapanesePronunciationEnabled { get; set; } = true;
+        public bool IsKoreanPronunciationEnabled { get; set; } = true;
         public bool IsAutoCoverEnabled { get; set; } = true;
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public bool? IsDopEnabled { get; set; }
