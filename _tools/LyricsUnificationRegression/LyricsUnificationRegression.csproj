@@ -11,9 +11,13 @@
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="z440.atl.core" Version="7.18.0" />
     <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
+    <PackageReference Include="csharp-kana" Version="1.0.2" />
+    <PackageReference Include="csharp-pinyin" Version="1.0.1" />
+    <PackageReference Include="LibNMeCab" Version="0.10.2" />
+    <PackageReference Include="LibNMeCab.IpaDicBin" Version="0.10.0" />
     <ProjectReference Include="../../External/Lyricify.Lyrics.Helper/Lyricify.Lyrics.Helper.csproj" />
     <Compile Include="../../Model/LyricsDocument.cs;../../Model/MusicLyrics.cs;../../Model/MusicLyricsRecord.cs" />
-    <Compile Include="../../Services/Lyrics/LyricsCacheStore.cs;../../Services/Lyrics/LyricsExporter.cs;../../Services/Lyrics/LyricsParser*.cs;../../Services/Lyrics/LyricsLegacyMigration.cs;../../Services/Lyrics/LyricsRepository.cs;../../Services/Lyrics/LyricsFilePolicy.cs;../../Services/Lyrics/LyricsLanguagePolicy.cs" />
+    <Compile Include="../../Services/Lyrics/LyricsCacheStore.cs;../../Services/Lyrics/LyricsExporter.cs;../../Services/Lyrics/LyricsParser*.cs;../../Services/Lyrics/LyricsLegacyMigration.cs;../../Services/Lyrics/LyricsRepository.cs;../../Services/Lyrics/LyricsFilePolicy.cs;../../Services/Lyrics/LyricsLanguagePolicy.cs;../../Services/Lyrics/LyricsRomanizer.cs;../../Services/Lyrics/KoreanRomanizer.cs" />
     <Compile Include="../../Services/LyricsRefreshService.cs" />
     <Compile Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedLyricsLineControl/LyricLine.cs;../../External/AnimatedWin2dControls/AnimatedWin2dControls/Controls/AnimatedLyricsLineControl/LyricWord.cs" />
   </ItemGroup>

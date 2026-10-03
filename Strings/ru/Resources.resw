@@ -2397,7 +2397,7 @@ SHA-256: {5}
   <data name="LyricsShowPronunciation.Header" xml:space="preserve"><value>Показывать произношение</value></data>
   <data name="LyricsShowPronunciation.Description" xml:space="preserve"><value>Показывать произношение, если оно доступно.</value></data>
   <data name="LyricsPronunciationLanguages.Header" xml:space="preserve"><value>Языки произношения</value></data>
-  <data name="LyricsPronunciationLanguages.Description" xml:space="preserve"><value>Включать произношение только для текстов с явно указанным языком.</value></data>
+  <data name="LyricsPronunciationLanguages.Description" xml:space="preserve"><value>Выбирать произношение по тегам или письменности; для кантонского нужен явный тег.</value></data>
   <data name="LyricsPronunciationMandarin.Header" xml:space="preserve"><value>Мандаринский</value></data>
   <data name="LyricsPronunciationMandarin.Description" xml:space="preserve"><value>Показывать мандаринское произношение.</value></data>
   <data name="LyricsPronunciationCantonese.Header" xml:space="preserve"><value>Кантонский</value></data>

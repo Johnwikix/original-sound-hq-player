@@ -54,12 +54,37 @@ var ttmlWithInline = parser.Import(ttmlWithInlinePronunciation, preferredLanguag
 var untaggedTtml = parser.Import("<tt xmlns=\"http://www.w3.org/ns/ttml\"><body><p begin=\"1.000\">歌词</p></body></tt>", pronunciation: "[00:01.000]ge ci");
 Check(LyricsLanguagePolicy.DetectExplicit(untaggedTtml) is null,
     "TTML without a source language remains unclassified");
+Check(LyricsLanguagePolicy.Detect(untaggedTtml) == LyricsLanguage.Mandarin,
+    "Han-only lyrics without a tag default to Mandarin");
 var genericChineseTtml = parser.Import("<tt xmlns=\"http://www.w3.org/ns/ttml\" xml:lang=\"zh\"><body><p begin=\"1.000\">歌词</p></body></tt>", pronunciation: "[00:01.000]ge ci");
 Check(LyricsLanguagePolicy.DetectExplicit(genericChineseTtml) is null,
-    "Generic zh does not guess Mandarin or Cantonese");
+    "Generic zh has no explicit Mandarin or Cantonese classification");
+Check(LyricsLanguagePolicy.Detect(genericChineseTtml) == LyricsLanguage.Mandarin,
+    "Generic zh falls back to Mandarin for Han-only lyrics");
+var untaggedJapanese = parser.Import("<tt xmlns=\"http://www.w3.org/ns/ttml\"><body><p begin=\"1.000\">こんにちは</p></body></tt>", pronunciation: "[00:01.000]konnichiwa");
+Check(LyricsLanguagePolicy.Detect(untaggedJapanese) == LyricsLanguage.Japanese,
+    "Kana identifies untagged lyrics as Japanese");
+var untaggedKorean = parser.Import("<tt xmlns=\"http://www.w3.org/ns/ttml\"><body><p begin=\"1.000\">안녕하세요</p></body></tt>", pronunciation: "[00:01.000]annyeonghaseyo");
+Check(LyricsLanguagePolicy.Detect(untaggedKorean) == LyricsLanguage.Korean,
+    "Hangul identifies untagged lyrics as Korean");
 var cantoneseTtml = parser.Import("<tt xmlns=\"http://www.w3.org/ns/ttml\" xml:lang=\"yue\"><body><p begin=\"1.000\">歌詞</p></body></tt>", pronunciation: "[00:01.000]go ci");
 Check(LyricsLanguagePolicy.DetectExplicit(cantoneseTtml) == LyricsLanguage.Cantonese,
     "Explicit yue is classified as Cantonese");
+Check(LyricsLanguagePolicy.Detect(cantoneseTtml) == LyricsLanguage.Cantonese,
+    "Explicit yue overrides the Mandarin script fallback");
+using var romanizer = new LyricsRomanizer();
+Check(romanizer.RomanizeLine("你好世界", LyricsLanguage.Mandarin).Contains("nǐ", StringComparison.Ordinal),
+    "local Mandarin romanizer produces tone-marked pinyin");
+Check(!romanizer.RomanizeLine("안녕하세요", LyricsLanguage.Korean).Contains("안", StringComparison.Ordinal)
+    && romanizer.RomanizeLine("안녕하세요", LyricsLanguage.Korean) == "annyeonghaseyo",
+    "local Korean romanizer follows Revised Romanization");
+Check(romanizer.RomanizeLine("こんにちは", LyricsLanguage.Japanese).Contains("konn", StringComparison.OrdinalIgnoreCase),
+    "local Japanese kana romanizer works without a kanji dictionary");
+var generatedSource = parser.Import("[00:01.000]你好世界\n[00:02.000]第二行");
+string? generatedPronunciation = romanizer.GeneratePronunciationLrc(generatedSource, 5000, parser);
+Check(generatedPronunciation?.StartsWith("[00:01.000]", StringComparison.Ordinal) == true
+    && generatedSource.PronunciationLrc is null,
+    "generated pronunciation is timestamped for display and does not mutate the source document");
 Check(LyricsFilePolicy.NormalizeOrder("ttml,lrc,ttml,bad") == "ttml,lrc,krc,qrc", "priority validation and new formats");
 var old = new MusicLyrics { MusicId = 1, Lyrics = "[00:01.000]old", TranslatedLyrics = "[00:01.000]old translation", Krc = qrc.Original.Content, TKrc = qrc.TranslationLrc! };
 var migrated = LyricsLegacyMigration.Convert(old, parser);
@@ -183,6 +208,18 @@ foreach (var sample in new[] { ("32505618.ttml", 0), ("32552336.ttml", 450) })
 var online = new LyricsOnlineSearch { Handler = (_, _, _) => Task.FromResult<LyricsDocument?>(qrc) };
 var resolver = new WinUIMusicPlayer.Services.LyricsRefreshService(new(db, parser), parser, online, new(),
     Microsoft.Extensions.Logging.Abstractions.NullLogger<WinUIMusicPlayer.Services.LyricsRefreshService>.Instance);
+var generatedDbDocument = parser.Import("[00:01.000]你好世界");
+await db.ExecuteAsync("INSERT INTO Music(Id) VALUES(3)");
+await repository.SaveAsync(3, generatedDbDocument, 0, "User");
+WinUIMusicPlayer.Model.AppSettings.PreferDatabaseLyrics = true;
+var generatedDisplay = await resolver.SetLyrics(new() { Id = 3, Path = "generated-display.flac", Duration = TimeSpan.FromSeconds(5) }, default);
+WinUIMusicPlayer.Model.AppSettings.PreferDatabaseLyrics = false;
+var persistedGenerated = await repository.GetAsync(3);
+Check(generatedDisplay[0].PronunciationText.Contains("nǐ", StringComparison.Ordinal)
+    && persistedGenerated.Document.PronunciationLrc is null,
+    "display-only pronunciation is not saved back to the database");
+await db.RunInTransactionAsync(connection => LyricsRepository.DeleteInTransaction(connection, 3));
+await db.ExecuteAsync("DELETE FROM Music WHERE Id=3");
 await LineEndingChecks.CheckPlaybackAsync(resolver, repository, db, folder, Check);
 await EmptyTimestampChecks.RunAsync(parser, resolver, folder, Check);
 await PlaybackCompatibilityChecks.RunAsync(parser, resolver, folder, Check);

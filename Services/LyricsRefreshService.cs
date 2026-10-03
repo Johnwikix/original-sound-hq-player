@@ -19,14 +19,15 @@ public interface ILlmTranslationService
 
 /// <summary>Source resolution and display projection. The caller owns cancellation and UI publication.</summary>
 public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsParser parser,
-    LyricsOnlineSearch online, WebDavLibraryService webDav, ILlmTranslationService? llm, ILogger<LyricsRefreshService> logger)
+    LyricsOnlineSearch online, WebDavLibraryService webDav, ILlmTranslationService? llm,
+    LyricsRomanizer romanizer, ILogger<LyricsRefreshService> logger)
 {
     private const double LineEndOffsetMs = 300;
 
     // 保留回归工具和外部宿主的旧构造入口；没有翻译服务时仅执行原有歌词解析链。
     public LyricsRefreshService(MusicDatabaseService database, LyricsParser parser, LyricsOnlineSearch online,
         WebDavLibraryService webDav, ILogger<LyricsRefreshService> logger)
-        : this(database, parser, online, webDav, null, logger) { }
+        : this(database, parser, online, webDav, null, new LyricsRomanizer(), logger) { }
 
     public async Task<List<LyricLine>> SetLyrics(Music music, CancellationToken token, Action<List<LyricLine>>? publishCached = null)
     {
@@ -126,8 +127,30 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
                 document = translated;
             }
         }
+        string? generatedPronunciation = null;
+        if (document is not null && string.IsNullOrWhiteSpace(document.PronunciationLrc)
+            && AppSettings.IsLyricsPronunciationEnabled
+            && LyricsLanguagePolicy.IsEnabledForDocument(document)
+            && parser.HasLyrics(document, token))
+        {
+            try
+            {
+                // The generated track exists only in this render snapshot. Never
+                // put it into `document`, because that object is the persistence
+                // boundary for the database, one-shot cache and sidecar exporter.
+                generatedPronunciation = romanizer.GeneratePronunciationLrc(document,
+                    music.Duration.TotalMilliseconds, parser, token);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                logger.LogWarning(ex, "无法生成本地歌词发音: {Path}", music.Path);
+            }
+        }
         token.ThrowIfCancellationRequested();
-        return Project(document ?? LyricsDocument.Empty, music.Duration.TotalMilliseconds, token);
+        LyricsDocument displayDocument = document ?? LyricsDocument.Empty;
+        if (!string.IsNullOrWhiteSpace(generatedPronunciation))
+            displayDocument = displayDocument with { PronunciationLrc = generatedPronunciation };
+        return Project(displayDocument, music.Duration.TotalMilliseconds, token);
     }
 
     private async Task<LyricsDocument?> ReadLocalAsync(string musicPath, string order, CancellationToken token)
@@ -204,9 +227,8 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
         // 格式以内容为准，旧缓存可能记录过错误的格式。
         bool preserveExplicitTiming = parser.Detect(document.Original.Content) == LyricsFormat.Ttml;
         var parsed = parser.Parse(document, duration, token);
-        // Language-specific switches only apply when the source track carries an
-        // unambiguous language tag. Untagged or generic `zh` lyrics remain usable
-        // and keep an existing pronunciation track visible under the master switch.
+        // Explicit tags take precedence; untagged lines are routed by their script.
+        // Han-only lyrics default to Mandarin because script alone cannot prove Yue.
         bool allowPronunciation = LyricsLanguagePolicy.IsEnabledForDocument(document);
         var result = new List<LyricLine>(parsed.Length);
         int nextDistinct = 0;

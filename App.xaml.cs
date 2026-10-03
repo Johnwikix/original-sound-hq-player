@@ -154,6 +154,7 @@ namespace WinUIMusicPlayer
                      return service;
                  });
                  services.AddSingleton<WinUIMusicPlayer.Services.Lyrics.LyricsParser>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.Lyrics.LyricsRomanizer>(_ => new());
                  services.AddSingleton<WinUIMusicPlayer.Services.Lyrics.LyricsOnlineSearch>();
                  services.AddSingleton<LyricsRefreshService>();
                  services.AddSingleton<IpcService>();

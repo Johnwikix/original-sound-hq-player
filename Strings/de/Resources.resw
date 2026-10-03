@@ -2397,7 +2397,7 @@ SHA-256: {5}
   <data name="LyricsShowPronunciation.Header" xml:space="preserve"><value>Aussprache anzeigen</value></data>
   <data name="LyricsShowPronunciation.Description" xml:space="preserve"><value>Aussprache anzeigen, wenn sie verfügbar ist.</value></data>
   <data name="LyricsPronunciationLanguages.Header" xml:space="preserve"><value>Aussprachen-Sprachen</value></data>
-  <data name="LyricsPronunciationLanguages.Description" xml:space="preserve"><value>Aussprache nur bei ausdrücklich gekennzeichneten Liedtextsprachen aktivieren.</value></data>
+  <data name="LyricsPronunciationLanguages.Description" xml:space="preserve"><value>Sprache anhand von Liedtext-Tags oder Schriftsystemen wählen; Kantonesisch benötigt ein ausdrückliches Tag.</value></data>
   <data name="LyricsPronunciationMandarin.Header" xml:space="preserve"><value>Mandarin</value></data>
   <data name="LyricsPronunciationMandarin.Description" xml:space="preserve"><value>Mandarin-Aussprache anzeigen.</value></data>
   <data name="LyricsPronunciationCantonese.Header" xml:space="preserve"><value>Kantonesisch</value></data>

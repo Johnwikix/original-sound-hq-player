@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 using WinUIMusicPlayer.Model;
@@ -25,14 +26,87 @@ public static class LyricsLanguagePolicy
         {
             var xml = XDocument.Parse(document.Original.Content, LoadOptions.PreserveWhitespace);
             XNamespace xmlNamespace = XNamespace.Xml;
-            string? language = (string?)xml.Root?.Attribute(xmlNamespace + "lang")
-                ?? (string?)xml.Root?.Elements().FirstOrDefault()?.Attribute(xmlNamespace + "lang")
-                ?? xml.Descendants().Select(node => (string?)node.Attribute(xmlNamespace + "lang"))
-                    .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
-            return Parse(language);
+            string? rootLanguage = (string?)xml.Root?.Attribute(xmlNamespace + "lang");
+            if (!string.IsNullOrWhiteSpace(rootLanguage)) return Parse(rootLanguage);
+
+            foreach (XElement node in xml.Descendants())
+            {
+                if (IsAuxiliaryNode(node)) continue;
+                string? language = (string?)node.Attribute(xmlNamespace + "lang");
+                if (!string.IsNullOrWhiteSpace(language)) return Parse(language);
+            }
+            return null;
         }
         catch (Exception) { return null; }
     }
+
+    /// <summary>
+    /// Uses an explicit source tag first, then the writing system in the lyric text.
+    /// Han-only text defaults to Mandarin because script alone cannot prove Cantonese.
+    /// </summary>
+    public static LyricsLanguage? Detect(LyricsDocument document)
+        => DetectExplicit(document) ?? DetectScript(document.Original.Content);
+
+    public static LyricsLanguage? DetectLines(IEnumerable<string> lines)
+        => DetectScript(string.Join(string.Empty, lines));
+
+    public static LyricsLanguage? DetectScript(string text)
+    {
+        text = ExtractSourceText(text);
+        bool hasHan = false;
+        bool hasKana = false;
+        bool hasHangul = false;
+        foreach (char c in text)
+        {
+            if (IsKana(c)) hasKana = true;
+            else if (IsHangul(c)) hasHangul = true;
+            else if (IsHan(c)) hasHan = true;
+        }
+
+        // Kana is a reliable Japanese signal, including Japanese lines containing kanji.
+        if (hasKana) return LyricsLanguage.Japanese;
+        if (hasHangul) return LyricsLanguage.Korean;
+        if (hasHan) return LyricsLanguage.Mandarin;
+        return null;
+    }
+
+    private static string ExtractSourceText(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text) || !text.Contains("<", StringComparison.Ordinal)) return text;
+        try
+        {
+            var xml = XDocument.Parse(text, LoadOptions.PreserveWhitespace);
+            var source = xml.Descendants()
+                .Where(node => !IsAuxiliaryNode(node))
+                .Select(node => node.Name.LocalName.Equals("text", StringComparison.OrdinalIgnoreCase)
+                    ? node.Value : node.Nodes().OfType<XText>().FirstOrDefault()?.Value ?? string.Empty);
+            return string.Join(string.Empty, source);
+        }
+        catch (Exception) { return text; }
+    }
+
+    private static bool IsAuxiliaryNode(XElement node)
+        => IsAuxiliaryMarker(node) || node.Ancestors().Any(IsAuxiliaryMarker);
+
+    private static bool IsAuxiliaryMarker(XElement node)
+        => node.Name.LocalName.Equals("transliteration", StringComparison.OrdinalIgnoreCase)
+            || node.Name.LocalName.Equals("transliterations", StringComparison.OrdinalIgnoreCase)
+            || node.Attributes().Any(attribute =>
+                attribute.Name.LocalName.Equals("role", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(attribute.Value, "x-roman", StringComparison.OrdinalIgnoreCase));
+
+    internal static bool IsKana(char c)
+        => c is >= '\u3040' and <= '\u30ff' or >= '\u31f0' and <= '\u31ff';
+
+    internal static bool IsHangul(char c)
+        => c is >= '\u1100' and <= '\u11ff'
+            or >= '\u3130' and <= '\u318f'
+            or >= '\uac00' and <= '\ud7af';
+
+    internal static bool IsHan(char c)
+        => c is >= '\u3400' and <= '\u4dbf'
+            or >= '\u4e00' and <= '\u9fff'
+            or >= '\uf900' and <= '\ufaff';
 
     private static LyricsLanguage? Parse(string? language)
     {
@@ -42,8 +116,8 @@ public static class LyricsLanguagePolicy
         if (code == "yue") return LyricsLanguage.Cantonese;
         return code switch
         {
-            // Generic zh does not distinguish Mandarin from Cantonese; leave it
-            // unclassified until a provider supplies a more specific tag.
+            // Generic zh does not distinguish Mandarin from Cantonese. Script
+            // fallback therefore treats Han-only lyrics as Mandarin.
             "cmn" => LyricsLanguage.Mandarin,
             "ja" => LyricsLanguage.Japanese,
             "ko" => LyricsLanguage.Korean,
@@ -62,5 +136,5 @@ public static class LyricsLanguagePolicy
         };
 
     public static bool IsEnabledForDocument(LyricsDocument document)
-        => DetectExplicit(document) is not { } language || IsEnabled(language);
+        => Detect(document) is { } language && IsEnabled(language);
 }

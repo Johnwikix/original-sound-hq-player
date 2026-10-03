@@ -2397,7 +2397,7 @@ SHA-256: {5}
   <data name="LyricsShowPronunciation.Header" xml:space="preserve"><value>歌詞の発音を表示</value></data>
   <data name="LyricsShowPronunciation.Description" xml:space="preserve"><value>発音がある場合に発音トラックを表示します。</value></data>
   <data name="LyricsPronunciationLanguages.Header" xml:space="preserve"><value>発音の言語</value></data>
-  <data name="LyricsPronunciationLanguages.Description" xml:space="preserve"><value>明示的な言語タグがある歌詞だけに発音を適用します。</value></data>
+  <data name="LyricsPronunciationLanguages.Description" xml:space="preserve"><value>歌詞タグまたは文字体系で発音を選択します。広東語には明示的なタグが必要です。</value></data>
   <data name="LyricsPronunciationMandarin.Header" xml:space="preserve"><value>中国語（普通話）</value></data>
   <data name="LyricsPronunciationMandarin.Description" xml:space="preserve"><value>普通話の発音を表示します。</value></data>
   <data name="LyricsPronunciationCantonese.Header" xml:space="preserve"><value>広東語</value></data>

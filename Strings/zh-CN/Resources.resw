@@ -2396,7 +2396,7 @@ SHA-256：{5}
   <data name="LyricsShowPronunciation.Header" xml:space="preserve"><value>显示歌词发音</value></data>
   <data name="LyricsShowPronunciation.Description" xml:space="preserve"><value>有可用发音时显示发音轨。</value></data>
   <data name="LyricsPronunciationLanguages.Header" xml:space="preserve"><value>发音语言</value></data>
-  <data name="LyricsPronunciationLanguages.Description" xml:space="preserve"><value>仅对带有明确语言标记的歌词启用对应发音。</value></data>
+  <data name="LyricsPronunciationLanguages.Description" xml:space="preserve"><value>根据歌词标签或文字脚本选择发音；粤语需要明确语言标签。</value></data>
   <data name="LyricsPronunciationMandarin.Header" xml:space="preserve"><value>普通话</value></data>
   <data name="LyricsPronunciationMandarin.Description" xml:space="preserve"><value>显示普通话发音。</value></data>
   <data name="LyricsPronunciationCantonese.Header" xml:space="preserve"><value>粤语</value></data>

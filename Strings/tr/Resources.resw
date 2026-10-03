@@ -2397,7 +2397,7 @@ SHA-256: {5}
   <data name="LyricsShowPronunciation.Header" xml:space="preserve"><value>Şarkı sözü telaffuzunu göster</value></data>
   <data name="LyricsShowPronunciation.Description" xml:space="preserve"><value>Telaffuz varsa telaffuz parçasını göster.</value></data>
   <data name="LyricsPronunciationLanguages.Header" xml:space="preserve"><value>Telaffuz dilleri</value></data>
-  <data name="LyricsPronunciationLanguages.Description" xml:space="preserve"><value>Telaffuzu yalnızca açıkça etiketlenmiş şarkı sözü dilleri için etkinleştir.</value></data>
+  <data name="LyricsPronunciationLanguages.Description" xml:space="preserve"><value>Telaffuzu etiketlere veya yazı sistemine göre seçer; Kantonca için açık etiket gerekir.</value></data>
   <data name="LyricsPronunciationMandarin.Header" xml:space="preserve"><value>Mandarin</value></data>
   <data name="LyricsPronunciationMandarin.Description" xml:space="preserve"><value>Mandarin telaffuzunu göster.</value></data>
   <data name="LyricsPronunciationCantonese.Header" xml:space="preserve"><value>Kantonca</value></data>

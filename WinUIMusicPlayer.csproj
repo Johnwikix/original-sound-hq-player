@@ -113,6 +113,10 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
     <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
     <PackageReference Include="Microsoft.PinYinConverter" Version="1.0.0" />
+    <PackageReference Include="csharp-kana" Version="1.0.2" />
+    <PackageReference Include="csharp-pinyin" Version="1.0.1" />
+    <PackageReference Include="LibNMeCab" Version="0.10.2" />
+    <PackageReference Include="LibNMeCab.IpaDicBin" Version="0.10.0" />
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="10.0.12" />
     <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.260804.1" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />

@@ -2,6 +2,17 @@
 
 新条目加在最上方。
 
+## 2026-10-03 移植本地歌词音译引擎
+
+- `LyricsRomanizer`：移植 lyric-romanizer 的整首脚本路由思路，接入本地普通话、粤语、日语和韩语音译；日语使用 IPADIC 读取汉字，缺少词典时保留可用的假名转换。
+- `LyricsRefreshService`：用户发音轨优先；缺失时仅为当前显示快照生成发音，不写入数据库、一次性缓存或侧车文件。
+- `WinUIMusicPlayer.csproj`、回归工具和第三方依赖说明：加入本地音译所需的 csharp-pinyin、csharp-kana 与 LibNMeCab/IPADIC。
+
+## 2026-10-03 标签不明确时按歌词脚本判断发音语言
+
+- `LyricsLanguagePolicy`、`LyricsRefreshService`：明确语言标签优先；缺少或不支持标签时按假名、韩文和汉字脚本判断，汉字无法确认粤语时默认普通话，只有 `yue` 标签启用粤语发音。
+- `LyricsSettingsControl`、各语言资源：更新发音语言设置说明。
+
 ## 2026-10-03 按明确歌词语言控制用户发音轨
 
 - `LyricsSettingsControl`、偏好状态与设置持久化：增加普通话、粤语、日语、韩语发音开关。

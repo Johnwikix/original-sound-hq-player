@@ -2397,7 +2397,7 @@ SHA-256: {5}
   <data name="LyricsShowPronunciation.Header" xml:space="preserve"><value>Mostrar pronunciación</value></data>
   <data name="LyricsShowPronunciation.Description" xml:space="preserve"><value>Muestra la pronunciación cuando esté disponible.</value></data>
   <data name="LyricsPronunciationLanguages.Header" xml:space="preserve"><value>Idiomas de pronunciación</value></data>
-  <data name="LyricsPronunciationLanguages.Description" xml:space="preserve"><value>Activa la pronunciación solo para letras con idioma explícito.</value></data>
+  <data name="LyricsPronunciationLanguages.Description" xml:space="preserve"><value>Elige la pronunciación por etiquetas o escritura; el cantonés requiere una etiqueta explícita.</value></data>
   <data name="LyricsPronunciationMandarin.Header" xml:space="preserve"><value>Mandarín</value></data>
   <data name="LyricsPronunciationMandarin.Description" xml:space="preserve"><value>Mostrar pronunciación en mandarín.</value></data>
   <data name="LyricsPronunciationCantonese.Header" xml:space="preserve"><value>Cantonés</value></data>
