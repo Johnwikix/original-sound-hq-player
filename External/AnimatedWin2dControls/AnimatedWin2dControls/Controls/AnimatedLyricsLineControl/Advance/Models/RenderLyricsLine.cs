@@ -257,9 +257,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             PronunciationLayer.CreateGeometry();
         }
 
-        public void RecreateRenderChars(int strokeWidth)
+        public void RecreateRenderChars(int strokeWidth, bool preserveFloatTransitions = true)
         {
-            PrimaryRenderChars.Clear();
+            // Layout changes recreate the character geometry, but the float
+            // transition is independent of that geometry. Keep it attached to
+            // the same character index so a resize/settings redraw does not
+            // snap an active word back to its baseline.
+            var previousChars = PrimaryRenderChars;
+            PrimaryRenderChars = [];
             foreach (var syllable in PrimaryRenderSyllables)
                 syllable.ChildrenRenderLyricsChars.Clear();
 
@@ -267,6 +272,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
             var textLength = PrimaryText.Length;
             int syllableIdx = 0;
+            int previousCharIdx = 0;
             var syllables = PrimaryRenderSyllables;
 
             for (int startCharIndex = 0; startCharIndex < textLength; startCharIndex++)
@@ -293,6 +299,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     EndMs = charEndMs,
                     StartIndex = startCharIndex,
                 };
+
+                if (preserveFloatTransitions)
+                {
+                    while (previousCharIdx < previousChars.Count
+                        && previousChars[previousCharIdx].StartIndex < startCharIndex)
+                        previousCharIdx++;
+                    if (previousCharIdx < previousChars.Count
+                        && previousChars[previousCharIdx].StartIndex == startCharIndex)
+                        renderChar.FloatTransition = previousChars[previousCharIdx].FloatTransition;
+                }
 
                 syllable.ChildrenRenderLyricsChars.Add(renderChar);
                 PrimaryRenderChars.Add(renderChar);

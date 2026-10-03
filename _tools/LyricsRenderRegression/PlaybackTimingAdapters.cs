@@ -18,6 +18,11 @@ namespace WinUIMusicPlayer.Model
         public static string LocalLyricsFormatOrder => "krc,qrc,lrc,ttml";
         public static bool PreferDatabaseLyrics => false;
         public static bool IsAutoLyricsEnabled => false;
+        public static bool IsLyricsPronunciationEnabled => true;
+        public static bool IsMandarinPronunciationEnabled => true;
+        public static bool IsCantonesePronunciationEnabled => true;
+        public static bool IsJapanesePronunciationEnabled => true;
+        public static bool IsKoreanPronunciationEnabled => true;
     }
 }
 namespace WinUIMusicPlayer.Services

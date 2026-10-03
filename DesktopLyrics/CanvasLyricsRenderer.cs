@@ -389,7 +389,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     width,
                     height,
                     0,   // 描边宽度恒 0（无描边）
-                    _fontWeight);
+                    _fontWeight,
+                    preserveFloatTransitions: _charFloat);
                 ReportTextBounds(line, height);
                 line.PlayedPrimaryOpacityTransition.Start(1.0);
                 line.UnplayedPrimaryOpacityTransition.Start(1.0);

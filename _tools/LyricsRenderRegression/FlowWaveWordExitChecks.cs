@@ -17,9 +17,65 @@ internal static class FlowWaveWordExitChecks
 
     internal static void Run(CanvasAnimatedControl canvas)
     {
+        RunRelayoutFloatCase(canvas);
         RunCase(canvas, 0);
         RunCase(canvas, 300);
         RunCase(canvas, 1500);
+    }
+
+    private static void RunRelayoutFloatCase(CanvasAnimatedControl canvas)
+    {
+        long position = 0;
+        TimeProgressBus.SetClock(() => position);
+        var coordinator = new LyricsRenderCoordinator { Canvas = canvas, LyricsRegion = new Rect(0, 0, 600, 400) };
+        try
+        {
+            coordinator.Attach();
+            coordinator.OnCreateResources();
+            LyricsSettingsBus.Publish(new("Segoe UI", CanvasHorizontalAlignment.Left, false, 1, 5,
+                5, 5, 110, 500, true, true, 0.3, 0.5, 0, EasingType.FlowWave, EaseMode.FlowWave,
+                0.33, 120, false, Microsoft.UI.Colors.White));
+            UILyricsBus.Publish([new LyricLine
+            {
+                StartMs = 0,
+                EndMs = 10000,
+                Words = [new LyricWord { Word = "A", StartMs = 0, DurationMs = 10000 }]
+            }]);
+            IsPlayingBus.Publish(true);
+            using var target = new CanvasRenderTarget(canvas.Device, 600, 400, 96);
+            using (var drawing = target.CreateDrawingSession()) coordinator.OnDraw(canvas, drawing);
+
+            var lines = (List<RenderLyricsLine>)Lines.GetValue(coordinator)!;
+            void Step(long time, double elapsedMs = 8)
+            {
+                position = time;
+                Update.Invoke(coordinator, [canvas, TimeSpan.FromMilliseconds(elapsedMs)]);
+                using var drawing = target.CreateDrawingSession();
+                drawing.Clear(Microsoft.UI.Colors.Transparent);
+                coordinator.OnDraw(canvas, drawing);
+            }
+
+            for (long time = 8; time <= 1000; time += 8) Step(time);
+            if (lines[0].PrimaryRenderChars.Single().FloatTransition.Value <= 0.1)
+                throw new InvalidOperationException("The active word must have a visible float offset before relayout.");
+
+            coordinator.OnSizeChanged();
+            Step(1000, 0);
+            if (lines[0].PrimaryRenderChars.Single().FloatTransition.Value <= 0.1)
+                throw new InvalidOperationException("A size relayout must preserve the active word float offset.");
+
+            LyricsSettingsBus.Publish(new("Segoe UI", CanvasHorizontalAlignment.Left, false, 1, 5,
+                5, 5, 110, 500, true, true, 0.3, 0.5, 0, EasingType.FlowWave, EaseMode.FlowWave,
+                0.33, 120, false, Microsoft.UI.Colors.White));
+            Step(1000, 0);
+            if (lines[0].PrimaryRenderChars.Single().FloatTransition.Value <= 0.1)
+                throw new InvalidOperationException("A settings relayout must preserve the active word float offset.");
+        }
+        finally
+        {
+            coordinator.PrepareForShutdown();
+            TimeProgressBus.SetClock(null);
+        }
     }
 
     private static void RunCase(CanvasAnimatedControl canvas, int wordEndMargin)

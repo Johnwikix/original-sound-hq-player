@@ -2,6 +2,11 @@
 
 新条目加在最上方。
 
+## 2026-10-03 修复高级逐字歌词重绘后浮动效果丢失
+
+- `RenderLyricsLine`、`LyricsLayoutManager`、`LyricsRenderCoordinator`、`CanvasLyricsRenderer`：重建逐字布局时按字符索引保留启用中的浮动过渡状态；窗口尺寸或高级歌词设置触发重绘后，当前字形继续保持浮动，关闭浮动时仍从零开始。
+- `_tools/LyricsRenderRegression/FlowWaveWordExitChecks.cs`：增加播放中重排后浮动偏移保持的回归断言。
+
 ## 2026-10-03 混合语言歌词按行选择发音引擎
 
 - `LyricsRomanizer`：整首语言仅作为无标记汉字行的默认值；每行独立识别假名、韩文和汉字，英语、数字、标点行不再生成重复发音，混合非拉丁脚本的单行交由用户发音轨处理。

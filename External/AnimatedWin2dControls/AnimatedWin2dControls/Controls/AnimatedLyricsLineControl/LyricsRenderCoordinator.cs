@@ -389,7 +389,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     effectiveStrokeWidth,
                     fontWeight,
                     _cachedShowTranslation,
-                    _cachedShowPronunciation);
+                    _cachedShowPronunciation,
+                    _cachedCharFloatAmount > 0);
 
                 if (_currentLineIndex >= 0)
                 {
