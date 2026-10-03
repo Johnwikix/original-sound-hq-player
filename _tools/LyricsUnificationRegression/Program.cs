@@ -85,6 +85,19 @@ string? generatedPronunciation = romanizer.GeneratePronunciationLrc(generatedSou
 Check(generatedPronunciation?.StartsWith("[00:01.000]", StringComparison.Ordinal) == true
     && generatedSource.PronunciationLrc is null,
     "generated pronunciation is timestamped for display and does not mutate the source document");
+var mixedLanguageSource = parser.Import("[00:01.000]And they were never heard\n[00:02.000]そして今日も戻るよ");
+string? mixedLanguagePronunciation = romanizer.GeneratePronunciationLrc(mixedLanguageSource, 5000, parser);
+Check(mixedLanguagePronunciation?.Contains("And they were never heard", StringComparison.Ordinal) != true,
+    "mixed-language English lines are omitted from Japanese pronunciation output");
+var mixedScripts = romanizer.RomanizeLines(["hello 你好", "안녕하세요", "こんにちは", "only English"], LyricsLanguage.Mandarin);
+Check(mixedScripts.Lines[0].Contains("nǐ", StringComparison.Ordinal)
+    && mixedScripts.Lines[1] == "annyeonghaseyo"
+    && mixedScripts.Lines[2].Contains("konn", StringComparison.OrdinalIgnoreCase)
+    && mixedScripts.Lines[3] == "only English",
+    "mixed Chinese, Korean, Japanese and Latin lines use independent line routing");
+var mixedNonLatinLine = romanizer.RomanizeLines(["こんにちは 안녕하세요"], LyricsLanguage.Japanese);
+Check(mixedNonLatinLine.Lines[0] == "こんにちは 안녕하세요" && !mixedNonLatinLine.Fallbacks[0],
+    "a line containing two non-Latin scripts is left for user pronunciation");
 Check(LyricsFilePolicy.NormalizeOrder("ttml,lrc,ttml,bad") == "ttml,lrc,krc,qrc", "priority validation and new formats");
 var old = new MusicLyrics { MusicId = 1, Lyrics = "[00:01.000]old", TranslatedLyrics = "[00:01.000]old translation", Krc = qrc.Original.Content, TKrc = qrc.TranslationLrc! };
 var migrated = LyricsLegacyMigration.Convert(old, parser);
@@ -210,7 +223,9 @@ var resolver = new WinUIMusicPlayer.Services.LyricsRefreshService(new(db, parser
     Microsoft.Extensions.Logging.Abstractions.NullLogger<WinUIMusicPlayer.Services.LyricsRefreshService>.Instance);
 var generatedDbDocument = parser.Import("[00:01.000]你好世界");
 await db.ExecuteAsync("INSERT INTO Music(Id) VALUES(3)");
-await repository.SaveAsync(3, generatedDbDocument, 0, "User");
+var generatedSnapshot = await repository.GetAsync(3);
+Check(await repository.SaveAsync(3, generatedDbDocument, generatedSnapshot.Revision, "User"),
+    "display-only pronunciation fixture is stored as user lyrics");
 WinUIMusicPlayer.Model.AppSettings.PreferDatabaseLyrics = true;
 var generatedDisplay = await resolver.SetLyrics(new() { Id = 3, Path = "generated-display.flac", Duration = TimeSpan.FromSeconds(5) }, default);
 WinUIMusicPlayer.Model.AppSettings.PreferDatabaseLyrics = false;

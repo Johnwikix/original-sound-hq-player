@@ -62,16 +62,17 @@ public sealed class LyricsRomanizer : IDisposable
                 string source = lines[index];
                 string converted = source;
                 bool fallback = false;
-                if (NeedsRomanization(source, selected))
+                LyricsLanguage? lineLanguage = DetectLineLanguage(source, selected);
+                if (lineLanguage is { } languageForLine)
                 {
-                    try { converted = ConvertLine(source, selected); }
+                    try { converted = ConvertLine(source, languageForLine); }
                     catch (Exception ex) when (ex is not OperationCanceledException
                         and not OutOfMemoryException and not AccessViolationException)
                     {
                         // Preserve a failed line and retry on the next call.
                         fallback = true;
                     }
-                    if (NeedsRomanization(converted, selected)) fallback = true;
+                    if (NeedsRomanization(converted, languageForLine)) fallback = true;
                 }
                 output.Add(converted);
                 fallbacks.Add(fallback);
@@ -99,7 +100,11 @@ public sealed class LyricsRomanizer : IDisposable
         for (int index = 0; index < parsed.Length; index++)
         {
             token.ThrowIfCancellationRequested();
-            if (result.Fallbacks[index] || string.IsNullOrWhiteSpace(result.Lines[index])) continue;
+            // A pinned song language does not make every line belong to that
+            // script. Keep English, numbers and punctuation out of the
+            // pronunciation track instead of duplicating them above the lyric.
+            if (DetectLineLanguage(parsed[index].Text, language.Value) is null
+                || result.Fallbacks[index] || string.IsNullOrWhiteSpace(result.Lines[index])) continue;
             int total = Math.Max(0, (int)Math.Round(parsed[index].StartMs, MidpointRounding.AwayFromZero));
             builder.Append('[').Append(string.Create(CultureInfo.InvariantCulture,
                 $"{total / 60000:00}:{total / 1000 % 60:00}.{total % 1000:000}"))
@@ -209,6 +214,34 @@ public sealed class LyricsRomanizer : IDisposable
             if (language == LyricsLanguage.Korean && LyricsLanguagePolicy.IsHangul(c)) return true;
         }
         return false;
+    }
+
+    /// <summary>
+    /// Routes a line independently while retaining the song-level default for
+    /// Han-only Japanese lines. Latin-only lines deliberately return null.
+    /// </summary>
+    internal static LyricsLanguage? DetectLineLanguage(string text, LyricsLanguage songLanguage)
+    {
+        bool hasKana = false;
+        bool hasHangul = false;
+        bool hasHan = false;
+        foreach (char c in text)
+        {
+            hasKana |= LyricsLanguagePolicy.IsKana(c);
+            hasHangul |= LyricsLanguagePolicy.IsHangul(c);
+            hasHan |= LyricsLanguagePolicy.IsHan(c);
+        }
+
+        // A line that mixes two non-Latin writing systems cannot be safely sent
+        // to one engine without segmenting it, so leave it for user-provided
+        // pronunciation instead of producing a partially wrong reading.
+        if (hasHangul && (hasKana || hasHan)) return null;
+        if (hasKana) return LyricsLanguage.Japanese;
+        if (hasHangul) return LyricsLanguage.Korean;
+        if (!hasHan) return null;
+        return songLanguage is LyricsLanguage.Mandarin or LyricsLanguage.Cantonese or LyricsLanguage.Japanese
+            ? songLanguage
+            : LyricsLanguage.Mandarin;
     }
 
     public void Dispose()
