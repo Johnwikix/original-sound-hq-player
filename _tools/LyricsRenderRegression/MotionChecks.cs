@@ -140,6 +140,53 @@ internal static class MotionChecks
             Draw();
             Check(heightFocus.CurrentSecondaryHeight > hiddenSecondaryHeight,
                 "Restoring translation and pronunciation must animate the advanced row height back up.");
+
+            // Regression: changing secondary-row height must keep the playing
+            // line anchored while the rows above it reflow. The old code let
+            // the scroll transition chase the moving layout target, which
+            // made the viewport visibly move up and down during the toggle.
+            PublishSettings(true, true);
+            UILyricsBus.Publish(Enumerable.Range(0, 8).Select(index => new LyricLine
+            {
+                StartMs = index * 1000,
+                EndMs = (index + 1) * 1000,
+                Words = [new LyricWord { Word = "Anchor " + index, StartMs = index * 1000, DurationMs = 1000 }],
+                TransLateText = "Translation " + index,
+                PronunciationText = "Reading " + index,
+            }).ToList());
+            position = 4000;
+            Update.Invoke(coordinator, [canvas, TimeSpan.Zero]);
+            Draw();
+            lines = (List<RenderLyricsLine>)Lines.GetValue(coordinator)!;
+            var anchorLine = lines[4];
+            double InitialScreenCenter() => anchorLine.CenterPosition.Y + anchorLine.ScrollMotion.Value + 400 * 0.35;
+            double anchor = InitialScreenCenter();
+            PublishSettings(false, false);
+            double maxAnchorDeviation = 0;
+            double firstToggledCenter = double.NaN;
+            double lastToggledCenter = double.NaN;
+            for (int i = 0; i < 45; i++)
+            {
+                Update.Invoke(coordinator, [canvas, TimeSpan.FromSeconds(1.0 / 60)]);
+                Draw();
+                double center = InitialScreenCenter();
+                if (i == 0) firstToggledCenter = center;
+                lastToggledCenter = center;
+                maxAnchorDeviation = Math.Max(maxAnchorDeviation, Math.Abs(center - anchor));
+            }
+            Check(maxAnchorDeviation < 4,
+                $"Secondary-row toggles must preserve the playing-line anchor (anchor {anchor:0.##}, first {firstToggledCenter:0.##}, last {lastToggledCenter:0.##}, max deviation {maxAnchorDeviation:0.##} px).");
+
+            PublishSettings(true, true);
+            double maxReopenDeviation = 0;
+            for (int i = 0; i < 45; i++)
+            {
+                Update.Invoke(coordinator, [canvas, TimeSpan.FromSeconds(1.0 / 60)]);
+                Draw();
+                maxReopenDeviation = Math.Max(maxReopenDeviation, Math.Abs(InitialScreenCenter() - anchor));
+            }
+            Check(maxReopenDeviation < 4,
+                $"Restoring secondary rows must preserve the playing-line anchor (max deviation {maxReopenDeviation:0.##} px).");
         }
         finally
         {

@@ -2,6 +2,11 @@
 
 新条目加在最上方。
 
+## 2026-10-03 修复播放页翻译/发音切换时歌词滚动晃动
+
+- `LyricsRenderCoordinator`、`SimpleLyricsControl`：副行翻译／发音展开或收起期间锁定当前歌词的视口锚点，避免布局重算与滚动缓动同时追逐造成上下晃动；用户手动滚动时保留原有行为。
+- `_tools/LyricsRenderRegression/MotionChecks.cs`：增加切换副行期间当前歌词锚点偏移回归断言。
+
 ## 2026-10-03 修复混合语言歌词开关按行生效
 
 - `LyricsRomanizer`、`LyricsRefreshService`：发音生成和已有发音轨展示均按每行语言开关过滤，混合歌词不再被整首歌词的语言设置错误地短路或放行。

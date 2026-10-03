@@ -506,13 +506,19 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 && Math.Abs(currentTimeMs - _lastScrollPositionMs - (_cachedIsPlaying ? dt * 1000 : 0)) > SyncThresholdMs;
             _lastScrollPositionMs = currentTimeMs;
 
-            if (!_userScrolling && (_cachedIsPlaying || UsesLineScroll)
+            if (!_userScrolling && (_cachedIsPlaying || UsesLineScroll || isSecondaryLayoutAnimating)
                 && _currentLineIndex >= 0 && _currentLineIndex < lines.Count)
             {
                 var targetScroll = LyricsLayoutManager.CalculateTargetScrollOffset(lines, _currentLineIndex);
                 if (targetScroll.HasValue)
                 {
-                    if (_layoutDirty)
+                    // Secondary tracks change the row geometry every frame. Keep
+                    // the playing line at the configured viewport anchor while
+                    // that reflow is in progress; letting the normal scroll
+                    // easing chase a moving target makes the line visibly lag
+                    // behind and then overshoot when translation/pronunciation
+                    // is toggled.
+                    if (_layoutDirty || isSecondaryLayoutAnimating)
                     {
                         _canvasYScrollTransition.JumpTo(targetScroll.Value);
                         _targetScrollY = targetScroll.Value;
@@ -555,7 +561,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
             LyricScrollTiming? scrollTiming = null;
             if (UsesLineScroll)
-                scrollTiming = UpdateLineScrolls(dt, canvasHeight, isPrimaryPlayingLineChanged, isScrollSeek);
+                scrollTiming = UpdateLineScrolls(
+                    dt,
+                    canvasHeight,
+                    isPrimaryPlayingLineChanged,
+                    isScrollSeek,
+                    isSecondaryLayoutAnimating && !_userScrolling);
 
             var visibleRange = LyricsLayoutManager.CalculateVisibleRange(
                 lines, combinedScroll, 0, canvasHeight, canvasHeight, playingLineTopOffsetFactor,
@@ -615,7 +626,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             HandleHoverUpdates(combinedScroll, canvasHeight, playingLineTopOffsetFactor);
         }
 
-        private LyricScrollTiming UpdateLineScrolls(double seconds, double canvasHeight, bool lineChanged, bool isSeek)
+        private LyricScrollTiming UpdateLineScrolls(
+            double seconds,
+            double canvasHeight,
+            bool lineChanged,
+            bool isSeek,
+            bool preserveSecondaryLayoutAnchor)
         {
             double target = _lastTargetScrollY;
             double duration = Math.Max(0, _cachedScrollDurationMs / 1000.0);
@@ -644,6 +660,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                     : -1;
                 _lineScrollTiming = new LyricScrollTiming(duration, interval,
                     stagger ? Math.Max(0, firstVisible) : -1, spring);
+            }
+            if (preserveSecondaryLayoutAnchor)
+            {
+                // Each row has its own offset in FlowWave mode. Snap all of
+                // them to the moving layout target so the reflow itself is the
+                // only motion during a secondary-track toggle.
+                foreach (var line in _renderLines)
+                    line.ScrollMotion.JumpTo(target);
+                _hoverDirty = true;
+                return _lineScrollTiming;
             }
             var interpolator = EasingHelper.GetInterpolatorByEasingType<double>(
                 _cachedScrollEasingType, _cachedScrollEasingMode);
