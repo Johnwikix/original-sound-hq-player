@@ -55,7 +55,6 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         // 缓存 ScrollingScrollOptions（immutable WinRT 引用类型），避免每次程序化滚动 new。
         // ScrollTo 不会修改该对象，跨多次调用复用安全。
         private ScrollingScrollOptions? _enabledScrollOptions;
-        private ScrollingScrollOptions? _disabledScrollOptions;
 
         private double _cachedFontSize = 36.0;
         private string _cachedFontFamilyName = "Segoe UI";
@@ -76,8 +75,6 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         private DispatcherQueueTimer? _autoScrollReturnTimer;
         private DispatcherQueueTimer? _scrollRetryTimer;
         private int _scrollRetryCount;
-
-        private bool IsSecondaryLayoutAnimating => _secondaryHeightAnimations.Count > 0;
 
         private FontFamily? _fontFamilyCache;
         private string? _fontFamilyCacheName;
@@ -644,9 +641,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             }
             _scrollRetryCount = 0;
             _scrollRetryTimer ??= DispatcherQueue.CreateTimer();
-            _scrollRetryTimer.Interval = IsSecondaryLayoutAnimating
-                ? TimeSpan.FromMilliseconds(16)
-                : TimeSpan.FromMilliseconds(ScrollRetryIntervalMs);
+            _scrollRetryTimer.Interval = TimeSpan.FromMilliseconds(ScrollRetryIntervalMs);
             _scrollRetryTimer.Tick -= _onScrollRetryTick;
             _scrollRetryTimer.Tick += _onScrollRetryTick;
             _scrollRetryTimer.Start();
@@ -654,17 +649,12 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         private void OnScrollRetryTick(DispatcherQueueTimer sender, object args)
         {
-            bool isSecondaryLayoutAnimating = IsSecondaryLayoutAnimating;
-            sender.Interval = isSecondaryLayoutAnimating
-                ? TimeSpan.FromMilliseconds(16)
-                : TimeSpan.FromMilliseconds(ScrollRetryIntervalMs);
             if (TryScrollToCurrentLine())
             {
-                if (!isSecondaryLayoutAnimating)
-                    sender.Stop();
+                sender.Stop();
                 return;
             }
-            if (!isSecondaryLayoutAnimating && ++_scrollRetryCount >= ScrollRetryMaxCount)
+            if (++_scrollRetryCount >= ScrollRetryMaxCount)
             {
                 sender.Stop();
             }
@@ -704,19 +694,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                 return true;
 
             _isProgrammaticScrolling = true;
-            if (IsSecondaryLayoutAnimating)
-            {
-                // The row height is changing every frame. An animated ScrollTo
-                // would chase a moving target and visibly oscillate; apply the
-                // compensating offset immediately until the row transition ends.
-                _disabledScrollOptions ??= new ScrollingScrollOptions(ScrollingAnimationMode.Disabled);
-                _scrollPresenter.ScrollTo(0, targetOffset, _disabledScrollOptions);
-            }
-            else
-            {
-                _enabledScrollOptions ??= new ScrollingScrollOptions(ScrollingAnimationMode.Enabled);
-                _scrollPresenter.ScrollTo(0, targetOffset, _enabledScrollOptions);
-            }
+            _enabledScrollOptions ??= new ScrollingScrollOptions(ScrollingAnimationMode.Enabled);
+            _scrollPresenter.ScrollTo(0, targetOffset, _enabledScrollOptions);
             return true;
         }
 
