@@ -45,7 +45,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             int animationVersion,
             LyricScrollTiming? scrollTiming = null,
             bool isSeek = false,
-            bool useFlowWaveWordExit = false)
+            bool useFlowWaveWordExit = false,
+            bool isLayoutAnimating = false)
         {
             if (lines == null || lines.Count == 0) return;
             if (primaryPlayingLineIndex < 0 || primaryPlayingLineIndex >= lines.Count) return;
@@ -90,7 +91,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
                 var playProgress = line.GetPlayProgress(currentPositionMs);
 
-                if (isLayoutChanged || isPrimaryPlayingLineChanged || isMouseScrollingChanged || isSecondaryLinePlayingChanged
+                if (isLayoutChanged || isLayoutAnimating || isPrimaryPlayingLineChanged || isMouseScrollingChanged || isSecondaryLinePlayingChanged
                     || line.LastProcessedVersion < animationVersion - 1)
                 {
                     int lineCountDelta = i - primaryPlayingLineIndex;

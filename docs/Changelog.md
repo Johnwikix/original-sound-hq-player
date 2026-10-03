@@ -2,6 +2,11 @@
 
 新条目加在最上方。
 
+## 2026-10-03 修复高级逐字歌词副行收起后透明度未重算
+
+- `RenderLyricsLine`、`LyricsRenderCoordinator`、`LyricsAnimator`：副行翻译/发音的显示过渡期间持续按最新行位置重算透明度距离，副行收起后新进入可视区域的非当前行不再保持错误的透明状态。
+- `_tools/LyricsRenderRegression/MotionChecks.cs`：增加翻译和发音同时关闭后可视行数量及非当前行透明度的回归断言。
+
 ## 2026-10-03 修复高级逐字歌词重绘后浮动效果丢失
 
 - `RenderLyricsLine`、`LyricsLayoutManager`、`LyricsRenderCoordinator`、`CanvasLyricsRenderer`：重建逐字布局时按字符索引保留启用中的浮动过渡状态；窗口尺寸或高级歌词设置触发重绘后，当前字形继续保持浮动，关闭浮动时仍从零开始。

@@ -13,6 +13,7 @@ internal static class MotionChecks
     private static readonly MethodInfo Update = typeof(LyricsRenderCoordinator).GetMethod("UpdateCore", BindingFlags.Instance | BindingFlags.NonPublic)!;
     private static readonly FieldInfo Lines = typeof(LyricsRenderCoordinator).GetField("_renderLines", BindingFlags.Instance | BindingFlags.NonPublic)!;
     private static readonly FieldInfo Timing = typeof(LyricsRenderCoordinator).GetField("_lineScrollTiming", BindingFlags.Instance | BindingFlags.NonPublic)!;
+    private static readonly FieldInfo VisibleEnd = typeof(LyricsRenderCoordinator).GetField("_cachedVisibleEnd", BindingFlags.Instance | BindingFlags.NonPublic)!;
 
     internal static void Run(CanvasAnimatedControl canvas)
     {
@@ -100,13 +101,14 @@ internal static class MotionChecks
             Check(lines.Any(line => line.CachedFill is not null), "The modified effects must render using real Win2D resources.");
 
             PublishSettings(true, true);
-            UILyricsBus.Publish(new List<LyricLine>
+            UILyricsBus.Publish(Enumerable.Range(0, 8).Select(index => new LyricLine
             {
-                new() { StartMs = 0, EndMs = 1000, Words = [new LyricWord { Word = "Primary", StartMs = 0, DurationMs = 1000 }],
-                    TransLateText = "Translation", PronunciationText = "Reading" },
-                new() { StartMs = 1000, EndMs = 2000, Words = [new LyricWord { Word = "Next", StartMs = 1000, DurationMs = 1000 }],
-                    TransLateText = "Next translation", PronunciationText = "Next reading" },
-            });
+                StartMs = index * 1000,
+                EndMs = (index + 1) * 1000,
+                Words = [new LyricWord { Word = "Primary " + index, StartMs = index * 1000, DurationMs = 1000 }],
+                TransLateText = "Translation " + index,
+                PronunciationText = "Reading " + index,
+            }).ToList());
             position = 0;
             using (var drawing = target.CreateDrawingSession()) coordinator.OnDraw(canvas, drawing);
             lines = (List<RenderLyricsLine>)Lines.GetValue(coordinator)!;
@@ -120,11 +122,19 @@ internal static class MotionChecks
             Check(pronunciationOnlyHeight > 0 && pronunciationOnlyHeight < fullSecondaryHeight,
                 "Hiding translation must animate the advanced row height down to pronunciation-only height.");
             PublishSettings(false, false);
-            Step(2);
-            Draw();
+            for (int i = 0; i < 60; i++)
+            {
+                Step(2);
+                Draw();
+            }
             double hiddenSecondaryHeight = heightFocus.CurrentSecondaryHeight;
             Check(hiddenSecondaryHeight < pronunciationOnlyHeight,
                 "Hiding pronunciation must continue the advanced row height transition to zero.");
+            int visibleEnd = (int)VisibleEnd.GetValue(coordinator)!;
+            Check(visibleEnd >= 3,
+                "Collapsing translation and pronunciation must expose additional lyric rows.");
+            Check(lines[2].UnplayedPrimaryOpacityTransition.Value > 0.05,
+                "Rows exposed by the secondary-layout collapse must recalculate non-current opacity.");
             PublishSettings(true, true);
             Step(3);
             Draw();

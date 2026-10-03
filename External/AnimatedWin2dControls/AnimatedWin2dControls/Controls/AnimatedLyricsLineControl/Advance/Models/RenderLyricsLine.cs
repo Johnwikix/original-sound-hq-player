@@ -54,6 +54,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public string PronunciationText { get; private set; } = "";
         public double LayerSpacing => (PrimaryTextLayout?.LayoutBounds.Height ?? 30) * 0.1;
         public double CurrentSecondaryHeight => PronunciationLayer.SlotHeight(LayerSpacing) + TranslationLayer.SlotHeight(LayerSpacing);
+        /// <summary>Indicates that a pronunciation or translation reveal is still changing row geometry.</summary>
+        public bool IsSecondaryLayoutTransitioning =>
+            PronunciationLayer.Reveal.IsTransitioning || TranslationLayer.Reveal.IsTransitioning;
 
         public CanvasCommandList? CachedStroke { get; private set; }
         public CanvasCommandList? CachedFill { get; private set; }

@@ -431,8 +431,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             var lines = _renderLines;
             if (lines.Count == 0) return;
 
+            bool isSecondaryLayoutAnimating = false;
             foreach (var line in lines)
+            {
+                isSecondaryLayoutAnimating |= line.IsSecondaryLayoutTransitioning;
                 line.UpdateSecondaryTransitions(elapsedTime);
+                // Include the completion frame: positions are arranged from the
+                // newly settled reveal values before opacity distance is sampled.
+                isSecondaryLayoutAnimating |= line.IsSecondaryLayoutTransitioning;
+            }
             LyricsLayoutManager.ArrangeCurrentHeights(
                 lines,
                 (int)_cachedLyricsFontSize,
@@ -599,7 +606,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _animationVersion,
                 scrollTiming,
                 isScrollSeek,
-                _cachedScrollEasingMode == EaseMode.FlowWave && !_userScrolling);
+                _cachedScrollEasingMode == EaseMode.FlowWave && !_userScrolling,
+                isSecondaryLayoutAnimating);
 
             _layoutDirty = false;
             _isUserScrollingChanged = false;
