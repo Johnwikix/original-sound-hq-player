@@ -2,6 +2,11 @@
 
 新条目加在最上方。
 
+## 2026-10-03 修复混合语言歌词开关按行生效
+
+- `LyricsRomanizer`、`LyricsRefreshService`：发音生成和已有发音轨展示均按每行语言开关过滤，混合歌词不再被整首歌词的语言设置错误地短路或放行。
+- `_tools/LyricsUnificationRegression/Program.cs`：增加生成发音轨与已有发音轨的混合语言开关回归用例。
+
 ## 2026-10-03 修复高级逐字歌词副行收起后透明度未重算
 
 - `RenderLyricsLine`、`LyricsRenderCoordinator`、`LyricsAnimator`：副行翻译/发音的显示过渡期间持续按最新行位置重算透明度距离，副行收起后新进入可视区域的非当前行不再保持错误的透明状态。

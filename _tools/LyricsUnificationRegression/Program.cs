@@ -98,6 +98,35 @@ Check(mixedScripts.Lines[0].Contains("nǐ", StringComparison.Ordinal)
 var mixedNonLatinLine = romanizer.RomanizeLines(["こんにちは 안녕하세요"], LyricsLanguage.Japanese);
 Check(mixedNonLatinLine.Lines[0] == "こんにちは 안녕하세요" && !mixedNonLatinLine.Fallbacks[0],
     "a line containing two non-Latin scripts is left for user pronunciation");
+var savedMandarinEnabled = AppSettings.IsMandarinPronunciationEnabled;
+var savedCantoneseEnabled = AppSettings.IsCantonesePronunciationEnabled;
+var savedJapaneseEnabled = AppSettings.IsJapanesePronunciationEnabled;
+var savedKoreanEnabled = AppSettings.IsKoreanPronunciationEnabled;
+try
+{
+    AppSettings.IsJapanesePronunciationEnabled = false;
+    AppSettings.IsKoreanPronunciationEnabled = true;
+    var koreanOnly = romanizer.GeneratePronunciationLrc(
+        parser.Import("[00:01.000]こんにちは\n[00:02.000]안녕하세요"), 5000, parser);
+    Check(koreanOnly?.Contains("annyeong", StringComparison.Ordinal) == true
+        && !koreanOnly.Contains("konn", StringComparison.OrdinalIgnoreCase),
+        "mixed-language generation honors the disabled Japanese and enabled Korean switches");
+
+    AppSettings.IsJapanesePronunciationEnabled = true;
+    AppSettings.IsKoreanPronunciationEnabled = false;
+    var japaneseOnly = romanizer.GeneratePronunciationLrc(
+        parser.Import("[00:01.000]こんにちは\n[00:02.000]안녕하세요"), 5000, parser);
+    Check(japaneseOnly?.Contains("konn", StringComparison.OrdinalIgnoreCase) == true
+        && !japaneseOnly.Contains("annyeong", StringComparison.Ordinal),
+        "mixed-language generation omits a disabled Korean line");
+}
+finally
+{
+    AppSettings.IsMandarinPronunciationEnabled = savedMandarinEnabled;
+    AppSettings.IsCantonesePronunciationEnabled = savedCantoneseEnabled;
+    AppSettings.IsJapanesePronunciationEnabled = savedJapaneseEnabled;
+    AppSettings.IsKoreanPronunciationEnabled = savedKoreanEnabled;
+}
 Check(LyricsFilePolicy.NormalizeOrder("ttml,lrc,ttml,bad") == "ttml,lrc,krc,qrc", "priority validation and new formats");
 var old = new MusicLyrics { MusicId = 1, Lyrics = "[00:01.000]old", TranslatedLyrics = "[00:01.000]old translation", Krc = qrc.Original.Content, TKrc = qrc.TranslationLrc! };
 var migrated = LyricsLegacyMigration.Convert(old, parser);
@@ -235,6 +264,28 @@ Check(generatedDisplay[0].PronunciationText.Contains("nǐ", StringComparison.Ord
     "display-only pronunciation is not saved back to the database");
 await db.RunInTransactionAsync(connection => LyricsRepository.DeleteInTransaction(connection, 3));
 await db.ExecuteAsync("DELETE FROM Music WHERE Id=3");
+var mixedPronunciationDocument = parser.Import(
+    "[00:01.000]こんにちは\n[00:02.000]안녕하세요",
+    pronunciation: "[00:01.000]konnichiwa\n[00:02.000]annyeonghaseyo");
+string mixedDisplayPath = Path.Combine(folder, "mixed-pronunciation.flac");
+WinUIMusicPlayer.Services.OneShotLyricsCache.Save(mixedDisplayPath, mixedPronunciationDocument);
+var savedPreferDatabaseLyrics = AppSettings.PreferDatabaseLyrics;
+try
+{
+    AppSettings.PreferDatabaseLyrics = true;
+    AppSettings.IsJapanesePronunciationEnabled = false;
+    AppSettings.IsKoreanPronunciationEnabled = true;
+    var mixedDisplay = await resolver.SetLyrics(new() { Path = mixedDisplayPath, Duration = TimeSpan.FromSeconds(5) }, default);
+    Check(string.IsNullOrEmpty(mixedDisplay[0].PronunciationText)
+        && mixedDisplay[1].PronunciationText.Contains("annyeong", StringComparison.Ordinal),
+        "existing mixed-language pronunciation tracks honor per-language switches per line");
+}
+finally
+{
+    AppSettings.PreferDatabaseLyrics = savedPreferDatabaseLyrics;
+    AppSettings.IsJapanesePronunciationEnabled = savedJapaneseEnabled;
+    AppSettings.IsKoreanPronunciationEnabled = savedKoreanEnabled;
+}
 await LineEndingChecks.CheckPlaybackAsync(resolver, repository, db, folder, Check);
 await EmptyTimestampChecks.RunAsync(parser, resolver, folder, Check);
 await PlaybackCompatibilityChecks.RunAsync(parser, resolver, folder, Check);

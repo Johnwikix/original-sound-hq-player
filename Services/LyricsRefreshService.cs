@@ -130,7 +130,6 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
         string? generatedPronunciation = null;
         if (document is not null && string.IsNullOrWhiteSpace(document.PronunciationLrc)
             && AppSettings.IsLyricsPronunciationEnabled
-            && LyricsLanguagePolicy.IsEnabledForDocument(document)
             && parser.HasLyrics(document, token))
         {
             try
@@ -229,13 +228,21 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
         var parsed = parser.Parse(document, duration, token);
         // Explicit tags take precedence; untagged lines are routed by their script.
         // Han-only lyrics default to Mandarin because script alone cannot prove Yue.
-        bool allowPronunciation = LyricsLanguagePolicy.IsEnabledForDocument(document);
+        LyricsLanguage? documentLanguage = LyricsLanguagePolicy.Detect(document);
+        bool allowPronunciation = documentLanguage is { } language
+            && LyricsLanguagePolicy.IsEnabled(language);
         var result = new List<LyricLine>(parsed.Length);
         int nextDistinct = 0;
         for (int index = 0; index < parsed.Length; index++)
         {
             token.ThrowIfCancellationRequested();
             var source = parsed[index];
+            bool allowLinePronunciation = allowPronunciation;
+            if (documentLanguage is { } songLanguage
+                && LyricsRomanizer.DetectLineLanguage(source.Text, songLanguage) is { } lineLanguage)
+            {
+                allowLinePronunciation = LyricsLanguagePolicy.IsEnabled(lineLanguage);
+            }
             if (nextDistinct <= index)
             {
                 nextDistinct = index + 1;
@@ -253,7 +260,7 @@ public sealed class LyricsRefreshService(MusicDatabaseService database, LyricsPa
                 EndMs = preserveExplicitTiming ? source.EndMs : highlightEnd,
                 HighlightEndMs = preserveExplicitTiming ? Math.Max(source.EndMs, highlightEnd) : highlightEnd,
                 TransLateText = source.Translation,
-                PronunciationText = allowPronunciation ? source.Pronunciation : string.Empty
+                PronunciationText = allowLinePronunciation ? source.Pronunciation : string.Empty
             };
             if (source.Words.Length > 0)
             {

@@ -103,7 +103,8 @@ public sealed class LyricsRomanizer : IDisposable
             // A pinned song language does not make every line belong to that
             // script. Keep English, numbers and punctuation out of the
             // pronunciation track instead of duplicating them above the lyric.
-            if (DetectLineLanguage(parsed[index].Text, language.Value) is null
+            if (DetectLineLanguage(parsed[index].Text, language.Value) is not { } lineLanguage
+                || !LyricsLanguagePolicy.IsEnabled(lineLanguage)
                 || result.Fallbacks[index] || string.IsNullOrWhiteSpace(result.Lines[index])) continue;
             int total = Math.Max(0, (int)Math.Round(parsed[index].StartMs, MidpointRounding.AwayFromZero));
             builder.Append('[').Append(string.Create(CultureInfo.InvariantCulture,
