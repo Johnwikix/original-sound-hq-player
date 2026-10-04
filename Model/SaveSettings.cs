@@ -127,6 +127,7 @@ namespace WinUIMusicPlayer.Model
         public bool IsDesktopLyricsEnabled { get; set; } = false;
         public bool IsDesktopLyricsLocked { get; set; } = false;
         public bool IsDesktopLyricsKaraokeEnabled { get; set; } = true;
+        public string DesktopLyricsMode { get; set; } = "Floating";
         public double DesktopLyricsFontSize { get; set; } = 36;
         public string DesktopLyricsFontFamily { get; set; } = "Segoe UI";
         public uint DesktopLyricsColorRgb { get; set; } = 0x00FFFFFFu;

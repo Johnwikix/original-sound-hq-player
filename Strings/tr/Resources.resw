@@ -1498,6 +1498,15 @@
   <data name="IconDesktopLyrics.Text" xml:space="preserve">
     <value>Masaüstü şarkı sözleri</value>
   </data>
+  <data name="DesktopLyricsModeMenu.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözü modu</value>
+  </data>
+  <data name="DesktopLyricsModeFloating" xml:space="preserve">
+    <value>Yüzen pencere</value>
+  </data>
+  <data name="DesktopLyricsModeTaskbar" xml:space="preserve">
+    <value>Görev çubuğu</value>
+  </data>
   <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>Masaüstü şarkı sözlerini kilitle</value>
   </data>

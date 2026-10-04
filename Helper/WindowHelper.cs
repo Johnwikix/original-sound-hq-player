@@ -11,6 +11,8 @@ namespace WinUIMusicPlayer.Helper
         public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
 
         public const int SW_RESTORE = 9;
+        public const int SW_HIDE = 0;
+        public const int SW_SHOWNOACTIVATE = 4;
 
         public const int GWLP_WNDPROC = -4;
 
@@ -76,7 +78,6 @@ namespace WinUIMusicPlayer.Helper
         private const int WS_EX_LAYERED = 0x00080000;
         private const int WS_EX_TRANSPARENT = 0x00000020;
         private const int WS_EX_TOPMOST = 0x00000008;
-        private const int SW_SHOWNOACTIVATE = 4;
         private static readonly IntPtr HWND_TOPMOST = new(-1);
         private const uint SWP_NOSIZE = 0x0001;
         private const uint SWP_NOMOVE = 0x0002;

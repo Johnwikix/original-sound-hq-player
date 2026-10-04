@@ -186,6 +186,14 @@ namespace WinUIMusicPlayer.Utils
         public static string DesktopLyricsKaraokeTextConverter(bool enabled)
             => enabled ? GetString("IconDisableDesktopLyricsKaraoke") : GetString("IconEnableDesktopLyricsKaraoke");
 
+        public static bool DesktopLyricsModeCheckerConverter(string currentMode, string targetMode)
+            => string.Equals(currentMode, targetMode, StringComparison.OrdinalIgnoreCase);
+
+        public static string DesktopLyricsModeTextConverter(string mode)
+            => mode.Equals(nameof(DesktopLyricsMode.Taskbar), StringComparison.OrdinalIgnoreCase)
+                ? GetString("DesktopLyricsModeTaskbar")
+                : GetString("DesktopLyricsModeFloating");
+
         /// <summary>桌面歌词开关状态 → 播放条按钮透明度（启用 1.0 / 停用 0.4）。</summary>
         public static double DesktopLyricsButtonOpacity(bool enabled)
             => enabled ? 1.0 : 0.4;

@@ -5,6 +5,7 @@ using System;
 using Microsoft.UI.Windowing;
 using WinUIEx;
 using WinUIMusicPlayer.DesktopLyrics;
+using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.View;
 
@@ -25,6 +26,7 @@ public sealed class TrayViewModel : ObservableObject, IDisposable
     public IRelayCommand ToggleDesktopLyricsKaraokeCommand { get; }
     public IRelayCommand ToggleDesktopLyricsLockCommand { get; }
     public IRelayCommand ResetDesktopLyricsBoundsCommand { get; }
+    public IRelayCommand<string> SetDesktopLyricsModeCommand { get; }
 
     public TrayViewModel(AppLifecycle lifecycle, AppViewModel state, DesktopLyricsViewModel lyrics, PlaybackCommands playback)
     {
@@ -37,7 +39,15 @@ public sealed class TrayViewModel : ObservableObject, IDisposable
         ToggleDesktopLyricsKaraokeCommand = ReadyCommand(() => lyrics.IsKaraokeEnabled = !lyrics.IsKaraokeEnabled);
         ToggleDesktopLyricsLockCommand = ReadyCommand(() => lyrics.IsLocked = !lyrics.IsLocked);
         ResetDesktopLyricsBoundsCommand = ReadyCommand(DesktopLyricsManager.ResetWindowBounds);
+        SetDesktopLyricsModeCommand = new RelayCommand<string>(SetDesktopLyricsMode, mode => IsReady);
         lifecycle.Changed += LifecycleChanged;
+    }
+
+    private void SetDesktopLyricsMode(string? mode)
+    {
+        if (!IsReady || !Enum.TryParse(mode, ignoreCase: true, out DesktopLyricsMode parsed) ||
+            parsed is not (DesktopLyricsMode.Floating or DesktopLyricsMode.Taskbar)) return;
+        DesktopLyrics.Mode = parsed;
     }
     private RelayCommand ReadyCommand(Action action) => new(() => { if (IsReady) action(); }, () => IsReady);
     private static void ShowWindow()
@@ -56,6 +66,7 @@ public sealed class TrayViewModel : ObservableObject, IDisposable
         OpenSettingsCommand.NotifyCanExecuteChanged(); ShowPlayingDetailCommand.NotifyCanExecuteChanged();
         ToggleDesktopLyricsCommand.NotifyCanExecuteChanged(); ToggleDesktopLyricsKaraokeCommand.NotifyCanExecuteChanged();
         ToggleDesktopLyricsLockCommand.NotifyCanExecuteChanged(); ResetDesktopLyricsBoundsCommand.NotifyCanExecuteChanged();
+        SetDesktopLyricsModeCommand.NotifyCanExecuteChanged();
     }
     public void Dispose() => _lifecycle.Changed -= LifecycleChanged;
 }

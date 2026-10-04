@@ -30,6 +30,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private void OnSharedStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             OnPropertyChanged(e);
+            if (e.PropertyName == nameof(Mode))
+                OnPropertyChanged(nameof(ModeName));
             if (_restoring) return;
             switch (e.PropertyName)
             {
@@ -49,6 +51,11 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     UpdateWindowVisibility();
                     PersistSettings();
                     break;
+                case nameof(Mode):
+                    AppSettings.DesktopLyricsMode = Mode.ToString();
+                    DesktopLyricsManager.RecreateForMode();
+                    PersistSettings();
+                    break;
                 case nameof(IsMainWindowShown):
                 case nameof(IsPlayingDetailVisible):
                     UpdateWindowVisibility();
@@ -60,6 +67,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
         public bool IsLocked { get => State.DesktopLyrics.IsLocked; set => State.DesktopLyrics.IsLocked = value; }
         public bool IsKaraokeEnabled { get => State.DesktopLyrics.IsKaraokeEnabled; set => State.DesktopLyrics.IsKaraokeEnabled = value; }
         public bool AutoHideOnPlayingDetail { get => State.DesktopLyrics.AutoHideOnPlayingDetail; set => State.DesktopLyrics.AutoHideOnPlayingDetail = value; }
+        public DesktopLyricsMode Mode { get => State.DesktopLyrics.Mode; set => State.DesktopLyrics.Mode = value; }
+        public string ModeName => Mode.ToString();
         public bool IsMainWindowShown { get => State.DesktopLyrics.IsMainWindowShown; set => State.DesktopLyrics.IsMainWindowShown = value; }
         public bool IsPlayingDetailVisible { get => State.DesktopLyrics.IsPlayingDetailVisible; set => State.DesktopLyrics.IsPlayingDetailVisible = value; }
 
@@ -92,6 +101,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 IsLocked = AppSettings.IsDesktopLyricsLocked;
                 IsKaraokeEnabled = AppSettings.IsDesktopLyricsKaraokeEnabled;
                 AutoHideOnPlayingDetail = AppSettings.AutoHideDesktopLyricsOnPlayingDetail;
+                Mode = Enum.TryParse(AppSettings.DesktopLyricsMode, ignoreCase: true, out DesktopLyricsMode mode) &&
+                       mode is DesktopLyricsMode.Floating or DesktopLyricsMode.Taskbar
+                    ? mode
+                    : DesktopLyricsMode.Floating;
             }
             finally { _restoring = false; }
             UpdateWindowVisibility();

@@ -140,6 +140,21 @@
                             <FontIcon Glyph="{x:Bind tools:BindUtils.LockGlyphConverter(ViewModel.DesktopLyrics.IsLocked), Mode=OneWay}" />
                         </MenuFlyoutItem.Icon>
                     </MenuFlyoutItem>
+                    <MenuFlyoutSubItem x:Uid="DesktopLyricsModeMenu">
+                        <MenuFlyoutSubItem.Icon>
+                            <FontIcon Glyph="&#xE7B7;" />
+                        </MenuFlyoutSubItem.Icon>
+                        <ToggleMenuFlyoutItem
+                            Command="{x:Bind ViewModel.SetDesktopLyricsModeCommand}"
+                            CommandParameter="Floating"
+                            IsChecked="{x:Bind tools:BindUtils.DesktopLyricsModeCheckerConverter(ViewModel.DesktopLyrics.ModeName,'Floating'), Mode=OneWay}"
+                            Text="{x:Bind tools:BindUtils.DesktopLyricsModeTextConverter('Floating')}" />
+                        <ToggleMenuFlyoutItem
+                            Command="{x:Bind ViewModel.SetDesktopLyricsModeCommand}"
+                            CommandParameter="Taskbar"
+                            IsChecked="{x:Bind tools:BindUtils.DesktopLyricsModeCheckerConverter(ViewModel.DesktopLyrics.ModeName,'Taskbar'), Mode=OneWay}"
+                            Text="{x:Bind tools:BindUtils.DesktopLyricsModeTextConverter('Taskbar')}" />
+                    </MenuFlyoutSubItem>
                     <MenuFlyoutItem
                         x:Uid="IconResetDesktopLyrics"
                         Command="{x:Bind ViewModel.ResetDesktopLyricsBoundsCommand}">

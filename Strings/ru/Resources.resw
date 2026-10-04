@@ -1495,6 +1495,15 @@
   <data name="IconDesktopLyrics.Text" xml:space="preserve">
     <value>Текст песни на рабочем столе</value>
   </data>
+  <data name="DesktopLyricsModeMenu.Text" xml:space="preserve">
+    <value>Режим текста песни</value>
+  </data>
+  <data name="DesktopLyricsModeFloating" xml:space="preserve">
+    <value>Плавающее окно</value>
+  </data>
+  <data name="DesktopLyricsModeTaskbar" xml:space="preserve">
+    <value>Панель задач</value>
+  </data>
   <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>Заблокировать текст песни</value>
   </data>

@@ -1495,6 +1495,15 @@
   <data name="IconDesktopLyrics.Text" xml:space="preserve">
     <value>Letra en el escritorio</value>
   </data>
+  <data name="DesktopLyricsModeMenu.Text" xml:space="preserve">
+    <value>Modo de letra de escritorio</value>
+  </data>
+  <data name="DesktopLyricsModeFloating" xml:space="preserve">
+    <value>Ventana flotante</value>
+  </data>
+  <data name="DesktopLyricsModeTaskbar" xml:space="preserve">
+    <value>Barra de tareas</value>
+  </data>
   <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>Bloquear letra en el escritorio</value>
   </data>

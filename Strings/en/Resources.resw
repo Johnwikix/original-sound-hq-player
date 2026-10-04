@@ -1498,6 +1498,15 @@
   <data name="IconDesktopLyrics.Text" xml:space="preserve">
     <value>Desktop Lyrics</value>
   </data>
+  <data name="DesktopLyricsModeMenu.Text" xml:space="preserve">
+    <value>Desktop Lyrics Mode</value>
+  </data>
+  <data name="DesktopLyricsModeFloating" xml:space="preserve">
+    <value>Floating window</value>
+  </data>
+  <data name="DesktopLyricsModeTaskbar" xml:space="preserve">
+    <value>Taskbar</value>
+  </data>
   <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>Lock Desktop Lyrics</value>
   </data>

@@ -53,6 +53,8 @@ namespace WinUIMusicPlayer.Model
         public static bool IsDesktopLyricsEnabled { get; set; } = false;
         public static bool IsDesktopLyricsLocked { get; set; } = false;
         public static bool IsDesktopLyricsKaraokeEnabled { get; set; } = true;
+        /// <summary>桌面歌词宿主模式的持久化值；未知值启动时回退到 Floating。</summary>
+        public static string DesktopLyricsMode { get; set; } = nameof(WinUIMusicPlayer.Model.DesktopLyricsMode.Floating);
         public static double DesktopLyricsFontSize { get; set; } = 36;
         public static string DesktopLyricsFontFamily { get; set; } = "Segoe UI";
         public static uint DesktopLyricsColorRgb { get; set; } = 0x00FFFFFFu;

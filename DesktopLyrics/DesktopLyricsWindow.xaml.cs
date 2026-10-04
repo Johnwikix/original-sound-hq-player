@@ -44,6 +44,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private IDesktopLyricsRenderer? _renderer;
         private readonly IntPtr _hwnd;
+        private readonly DesktopLyricsMode _mode;
         private ThemeStyleHelper? _themeStyleHelper;
 
         /// <summary>桌面歌词状态源（锁定图标绑定 / 按钮处理 / 边界与样式读写）。</summary>
@@ -65,8 +66,11 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private bool? _adaptiveIsDarkBackground;    // 上次明暗判定（null=未判定），滞回切换的基准
         private Color? _lastAdaptiveTextColor;      // 当前应用的取色文字色（判定不变则跳过重绘）
 
-        public DesktopLyricsWindow()
+        public DesktopLyricsWindow(DesktopLyricsMode mode = DesktopLyricsMode.Floating)
         {
+            _mode = mode is DesktopLyricsMode.Floating or DesktopLyricsMode.Taskbar
+                ? mode
+                : DesktopLyricsMode.Floating;
             InitializeComponent();
             _hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
 
@@ -113,14 +117,24 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 _renderer?.SetSuspended(true);
                 _isDragging = false;
                 RootGrid.ReleasePointerCaptures();
-                AppWindow.Hide();
+                if (_mode == DesktopLyricsMode.Taskbar)
+                    WindowHelper.ShowWindow(_hwnd, WindowHelper.SW_HIDE);
+                else
+                    AppWindow.Hide();
                 return;
             }
 
             LyricsSyncRequestBus.Request();
             _renderer?.SetSuspended(false);
-            WindowHelper.RestoreOverlay(_hwnd);
-            ApplyLock(ViewModel.IsLocked);
+            if (_mode == DesktopLyricsMode.Taskbar)
+            {
+                WindowHelper.ShowWindow(_hwnd, WindowHelper.SW_SHOWNOACTIVATE);
+            }
+            else
+            {
+                WindowHelper.RestoreOverlay(_hwnd);
+                ApplyLock(ViewModel.IsLocked);
+            }
             UpdateAdaptiveColorMode();
         }
 
@@ -128,6 +142,14 @@ namespace WinUIMusicPlayer.DesktopLyrics
         public void ApplyLock(bool locked)
         {
             _locked = locked;
+            if (_mode == DesktopLyricsMode.Taskbar)
+            {
+                // 任务栏宿主始终是非交互歌词层；保留用户锁定偏好供悬浮模式恢复。
+                WindowHelper.EnsureLayered(_hwnd);
+                ApplyClickThrough(true);
+                UpdateControlPanelVisual();
+                return;
+            }
             // LAYERED 常驻且只在进锁定态时设置一次（穿透开关只切 TRANSPARENT）：
             // 运行期反复增删 LAYERED 会与 DWM 分层合成竞态，前后台切换时偶发整窗隐身
             if (locked) WindowHelper.EnsureLayered(_hwnd);
@@ -300,6 +322,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         /// <summary>恢复默认尺寸并置于主屏工作区底部居中（重置按钮调用）。</summary>
         public void ApplyDefaultBounds()
         {
+            if (_mode == DesktopLyricsMode.Taskbar) return;
             var bounds = ViewModel.BoundsState;
             var work = DisplayArea.Primary.WorkArea;
             int x = work.X + (work.Width - DefaultWidth) / 2;
@@ -330,9 +353,11 @@ namespace WinUIMusicPlayer.DesktopLyrics
             if (AppWindow.Presenter is OverlappedPresenter presenter)
             {
                 presenter.SetBorderAndTitleBar(true, false);
-                presenter.IsAlwaysOnTop = true;
+                presenter.IsAlwaysOnTop = _mode == DesktopLyricsMode.Floating;
             }
             AppWindow.IsShownInSwitchers = false;
+
+            if (_mode == DesktopLyricsMode.Taskbar) return;
 
             var bounds = ViewModel.BoundsState;
             int width = bounds.Width > 0 ? bounds.Width : DefaultWidth;
@@ -359,6 +384,13 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void UpdateControlPanelVisual()
         {
+            if (_mode == DesktopLyricsMode.Taskbar)
+            {
+                StopHoverTimer();
+                StopIdleTimer();
+                ControlPanel.Opacity = 0;
+                return;
+            }
             if (_locked && _isOverlayVisible)
             {
                 _cursorOverPanel = false;
@@ -408,6 +440,11 @@ namespace WinUIMusicPlayer.DesktopLyrics
         /// <summary>锁定态静默期轮询（200ms）：自愈 + 进窗检测；一旦发现光标悬停窗口即切入 50ms 快轮询。</summary>
         private void OnIdleTimerTick(DispatcherQueueTimer sender, object args)
         {
+            if (_mode == DesktopLyricsMode.Taskbar)
+            {
+                sender.Stop();
+                return;
+            }
             if (!_locked || !_isOverlayVisible)
             {
                 sender.Stop();
@@ -556,6 +593,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void OnAppWindowChanged(AppWindow sender, AppWindowChangedEventArgs args)
         {
+            if (_mode == DesktopLyricsMode.Taskbar) return;
             // z 序变动后若被挤出置顶层（其他置顶窗口切换可致），幂等重申，防"被盖住"表现为消失
             if (_isOverlayVisible && args.DidZOrderChange) WindowHelper.EnsureTopmost(_hwnd);
             if (!args.DidPositionChange && !args.DidSizeChange) return;

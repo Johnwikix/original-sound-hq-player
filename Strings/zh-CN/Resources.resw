@@ -1497,6 +1497,15 @@
   <data name="IconDesktopLyrics.Text" xml:space="preserve">
     <value>桌面歌词</value>
   </data>
+  <data name="DesktopLyricsModeMenu.Text" xml:space="preserve">
+    <value>桌面歌词模式</value>
+  </data>
+  <data name="DesktopLyricsModeFloating" xml:space="preserve">
+    <value>悬浮窗口</value>
+  </data>
+  <data name="DesktopLyricsModeTaskbar" xml:space="preserve">
+    <value>任务栏</value>
+  </data>
   <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>锁定桌面歌词</value>
   </data>

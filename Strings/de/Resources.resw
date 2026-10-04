@@ -1495,6 +1495,15 @@
   <data name="IconDesktopLyrics.Text" xml:space="preserve">
     <value>Desktop-Songtext</value>
   </data>
+  <data name="DesktopLyricsModeMenu.Text" xml:space="preserve">
+    <value>Desktop-Songtext-Modus</value>
+  </data>
+  <data name="DesktopLyricsModeFloating" xml:space="preserve">
+    <value>Schwebendes Fenster</value>
+  </data>
+  <data name="DesktopLyricsModeTaskbar" xml:space="preserve">
+    <value>Taskleiste</value>
+  </data>
   <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>Desktop-Songtext sperren</value>
   </data>
