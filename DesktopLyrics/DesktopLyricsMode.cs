@@ -18,6 +18,21 @@ public interface IDesktopLyricsHost : IDisposable
     void Refresh();
 }
 
+/// <summary>宿主提供可选的客户区布局编辑能力；窗口不依赖具体宿主实现。</summary>
+internal interface IDesktopLyricsBoundsHost
+{
+    bool TryGetBounds(out TaskbarWindowBounds bounds);
+
+    void SetUserBounds(TaskbarWindowBounds bounds);
+
+    void ResetUserBounds();
+
+    /// <summary>更新任务栏歌词列宽；宿主负责把设置转换为窗口客户区边界。</summary>
+    void SetLyricsWidth(int width);
+}
+
+internal readonly record struct TaskbarWindowBounds(int X, int Y, int Width, int Height);
+
 /// <summary>顶层悬浮宿主：窗口本身负责位置、可见性和交互。</summary>
 internal sealed class FloatingDesktopLyricsHost : IDesktopLyricsHost
 {

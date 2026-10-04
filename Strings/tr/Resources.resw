@@ -1507,6 +1507,15 @@
   <data name="DesktopLyricsModeTaskbar" xml:space="preserve">
     <value>Görev çubuğu</value>
   </data>
+  <data name="DesktopLyricsPreviousButtonTooltip" xml:space="preserve">
+    <value>Önceki parça</value>
+  </data>
+  <data name="DesktopLyricsPlayPauseButtonTooltip" xml:space="preserve">
+    <value>Oynat veya duraklat</value>
+  </data>
+  <data name="DesktopLyricsNextButtonTooltip" xml:space="preserve">
+    <value>Sonraki parça</value>
+  </data>
   <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>Masaüstü şarkı sözlerini kilitle</value>
   </data>
@@ -1530,6 +1539,12 @@
   </data>
   <data name="DesktopLyricsFontSize.Text" xml:space="preserve">
     <value>Masaüstü şarkı sözleri yazı tipi boyutu</value>
+  </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Header" xml:space="preserve">
+    <value>Görev çubuğu şarkı sözü genişliği</value>
+  </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Description" xml:space="preserve">
+    <value>Medya denetimlerinin yanında şarkı sözleri için ayrılan genişlik (piksel).</value>
   </data>
   <data name="DesktopLyricsFontFamily.Text" xml:space="preserve">
     <value>Masaüstü şarkı sözleri yazı tipi</value>
@@ -1906,6 +1921,24 @@
   </data>
   <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
     <value>Masaüstü şarkı sözleri etkin olduğunda uygulanır. Çalma ayrıntılarından ayrıldığınızda veya oynatıcıyı tepsiye kapattığınızda geri getirilir.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Header" xml:space="preserve">
+    <value>Çalma ayrıntılarında masaüstü sözlerini gizle (yüzen)</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Description" xml:space="preserve">
+    <value>Yalnızca yüzen söz penceresini denetler.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Header" xml:space="preserve">
+    <value>Çalma ayrıntılarında masaüstü sözlerini gizle (görev çubuğu)</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Description" xml:space="preserve">
+    <value>Yalnızca görev çubuğu söz penceresini denetler.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloatingMode.Text" xml:space="preserve">
+    <value>Yüzen pencere</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbarMode.Text" xml:space="preserve">
+    <value>Görev çubuğu penceresi</value>
   </data>
   <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
     <value>Ly</value>

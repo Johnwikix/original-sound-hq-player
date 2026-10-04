@@ -433,9 +433,27 @@
                 <TextBlock x:Uid="IconDesktopLyrics" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
                 <controls:SettingsCard x:Uid="DesktopLyricsAutoHide">
-                    <ToggleSwitch
-                        VerticalAlignment="Center"
-                        IsOn="{x:Bind ViewModel.DesktopLyrics.AutoHideOnPlayingDetail, Mode=TwoWay}" />
+                    <Grid ColumnDefinitions="*,Auto,*,Auto" ColumnSpacing="12">
+                        <TextBlock
+                            x:Uid="DesktopLyricsAutoHideFloatingMode"
+                            VerticalAlignment="Center"
+                            TextWrapping="Wrap" />
+                        <ToggleSwitch
+                            Grid.Column="1"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            IsOn="{x:Bind ViewModel.DesktopLyrics.AutoHideFloatingOnPlayingDetail, Mode=TwoWay}" />
+                        <TextBlock
+                            Grid.Column="2"
+                            x:Uid="DesktopLyricsAutoHideTaskbarMode"
+                            VerticalAlignment="Center"
+                            TextWrapping="Wrap" />
+                        <ToggleSwitch
+                            Grid.Column="3"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            IsOn="{x:Bind ViewModel.DesktopLyrics.AutoHideTaskbarOnPlayingDetail, Mode=TwoWay}" />
+                    </Grid>
                 </controls:SettingsCard>
 
                 <controls:SettingsCard>
@@ -450,6 +468,17 @@
                         SmallChange="1"
                         SpinButtonPlacementMode="Inline"
                         Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsFontSize, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard x:Uid="DesktopLyricsTaskbarLyricsWidth">
+                    <NumberBox
+                        Width="300"
+                        LargeChange="100"
+                        Maximum="2400"
+                        Minimum="240"
+                        SmallChange="10"
+                        SpinButtonPlacementMode="Inline"
+                        Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsTaskbarLyricsWidth, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard>

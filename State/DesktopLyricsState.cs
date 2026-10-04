@@ -9,7 +9,8 @@ public sealed class DesktopLyricsState : ObservableObject
     public bool IsKaraokeEnabled { get; set => SetProperty(ref field, value); } = true;
     public bool IsEnabled { get; set => SetProperty(ref field, value); }
     public bool IsLocked { get; set => SetProperty(ref field, value); } = true;
-    public bool AutoHideOnPlayingDetail { get; set => SetProperty(ref field, value); }
+    public bool AutoHideFloatingOnPlayingDetail { get; set => SetProperty(ref field, value); }
+    public bool AutoHideTaskbarOnPlayingDetail { get; set => SetProperty(ref field, value); }
     public DesktopLyricsMode Mode { get; set => SetProperty(ref field, value); } = DesktopLyricsMode.Floating;
     public bool IsMainWindowShown { get; set => SetProperty(ref field, value); }
     public bool IsPlayingDetailVisible { get; set => SetProperty(ref field, value); }

@@ -249,6 +249,13 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                     ScheduleDesktopLyricsStyleCommit();
                 }
                 break;
+            case nameof(state.Preferences.DesktopLyricsTaskbarLyricsWidth):
+                AppSettings.DesktopLyricsTaskbarLyricsWidth = state.Preferences.DesktopLyricsTaskbarLyricsWidth;
+                if (state.Lifecycle.IsReady)
+                {
+                    _ = database.SaveSettingAsync();
+                }
+                break;
             case nameof(state.Preferences.DesktopLyricsColor):
                 AppSettings.DesktopLyricsColorRgb = (uint)((state.Preferences.DesktopLyricsColor.R << 16) | (state.Preferences.DesktopLyricsColor.G << 8) | state.Preferences.DesktopLyricsColor.B);
                 if (state.Lifecycle.IsReady)

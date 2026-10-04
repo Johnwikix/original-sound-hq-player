@@ -27,6 +27,8 @@ public sealed class LyricsPreferencesState : ObservableObject
     public bool IsCustomLyricsColorEnabled { get; set => SetProperty(ref field, value); } = false;
     public Color LyricsCustomColor { get; set => SetProperty(ref field, value); } = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
     public double DesktopLyricsFontSize { get; set => SetProperty(ref field, value); } = 36;
+    /// <summary>任务栏歌词区域宽度（DIP）；宿主按任务栏 DPI 转换为窗口客户区像素。</summary>
+    public int DesktopLyricsTaskbarLyricsWidth { get => field; set { value = Math.Clamp(value, 240, 2400); SetProperty(ref field, value); } } = 640;
     public Color DesktopLyricsColor { get; set => SetProperty(ref field, value); } = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
     public bool IsDesktopLyricsCustomColorEnabled { get; set => SetProperty(ref field, value); } = false;
     public bool IsDesktopLyricsTranslationEnabled { get; set => SetProperty(ref field, value); } = true;

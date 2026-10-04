@@ -1507,6 +1507,15 @@
   <data name="DesktopLyricsModeTaskbar" xml:space="preserve">
     <value>Taskbar</value>
   </data>
+  <data name="DesktopLyricsPreviousButtonTooltip" xml:space="preserve">
+    <value>Previous track</value>
+  </data>
+  <data name="DesktopLyricsPlayPauseButtonTooltip" xml:space="preserve">
+    <value>Play or pause</value>
+  </data>
+  <data name="DesktopLyricsNextButtonTooltip" xml:space="preserve">
+    <value>Next track</value>
+  </data>
   <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>Lock Desktop Lyrics</value>
   </data>
@@ -1530,6 +1539,12 @@
   </data>
   <data name="DesktopLyricsFontSize.Text" xml:space="preserve">
     <value>Desktop Lyrics Font Size</value>
+  </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Header" xml:space="preserve">
+    <value>Taskbar lyrics width</value>
+  </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Description" xml:space="preserve">
+    <value>Width reserved for lyrics beside the media controls (pixels).</value>
   </data>
   <data name="DesktopLyricsFontFamily.Text" xml:space="preserve">
     <value>Desktop Lyrics Font</value>
@@ -1906,6 +1921,24 @@
   </data>
   <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
     <value>Applies when desktop lyrics are enabled. Restores them when you leave playback details or close the player to the tray.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Header" xml:space="preserve">
+    <value>Hide desktop lyrics in playback details (floating)</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Description" xml:space="preserve">
+    <value>Applies only to the floating desktop lyrics window.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Header" xml:space="preserve">
+    <value>Hide desktop lyrics in playback details (taskbar)</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Description" xml:space="preserve">
+    <value>Applies only to the taskbar desktop lyrics window.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloatingMode.Text" xml:space="preserve">
+    <value>Floating window</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbarMode.Text" xml:space="preserve">
+    <value>Taskbar window</value>
   </data>
   <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
     <value>Ly</value>

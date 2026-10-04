@@ -1504,6 +1504,15 @@
   <data name="DesktopLyricsModeTaskbar" xml:space="preserve">
     <value>Barra de tareas</value>
   </data>
+  <data name="DesktopLyricsPreviousButtonTooltip" xml:space="preserve">
+    <value>Pista anterior</value>
+  </data>
+  <data name="DesktopLyricsPlayPauseButtonTooltip" xml:space="preserve">
+    <value>Reproducir o pausar</value>
+  </data>
+  <data name="DesktopLyricsNextButtonTooltip" xml:space="preserve">
+    <value>Pista siguiente</value>
+  </data>
   <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>Bloquear letra en el escritorio</value>
   </data>
@@ -1527,6 +1536,12 @@
   </data>
   <data name="DesktopLyricsFontSize.Text" xml:space="preserve">
     <value>Tamaño de fuente (letra en el escritorio)</value>
+  </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Header" xml:space="preserve">
+    <value>Ancho de letras en la barra de tareas</value>
+  </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Description" xml:space="preserve">
+    <value>Ancho reservado para las letras junto a los controles multimedia (píxeles).</value>
   </data>
   <data name="DesktopLyricsFontFamily.Text" xml:space="preserve">
     <value>Fuente (letra en el escritorio)</value>
@@ -1906,6 +1921,24 @@
   </data>
   <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
     <value>Se aplica si las letras de escritorio están activadas. Se muestran de nuevo al salir de los detalles o al enviar el reproductor a la bandeja.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Header" xml:space="preserve">
+    <value>Ocultar letras de escritorio en detalles (flotante)</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Description" xml:space="preserve">
+    <value>Solo controla la ventana flotante de letras.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Header" xml:space="preserve">
+    <value>Ocultar letras de escritorio en detalles (barra de tareas)</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Description" xml:space="preserve">
+    <value>Solo controla la ventana de letras de la barra de tareas.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloatingMode.Text" xml:space="preserve">
+    <value>Ventana flotante</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbarMode.Text" xml:space="preserve">
+    <value>Ventana de la barra de tareas</value>
   </data>
   <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
     <value>Ly</value>

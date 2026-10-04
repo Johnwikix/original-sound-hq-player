@@ -73,6 +73,7 @@ public sealed class PreferencesState : ObservableObject
     public bool IsCustomLyricsColorEnabled { get => Lyrics.IsCustomLyricsColorEnabled; set => Lyrics.IsCustomLyricsColorEnabled = value; }
     public Color LyricsCustomColor { get => Lyrics.LyricsCustomColor; set => Lyrics.LyricsCustomColor = value; }
     public double DesktopLyricsFontSize { get => Lyrics.DesktopLyricsFontSize; set => Lyrics.DesktopLyricsFontSize = value; }
+    public int DesktopLyricsTaskbarLyricsWidth { get => Lyrics.DesktopLyricsTaskbarLyricsWidth; set => Lyrics.DesktopLyricsTaskbarLyricsWidth = value; }
     public Color DesktopLyricsColor { get => Lyrics.DesktopLyricsColor; set => Lyrics.DesktopLyricsColor = value; }
     public bool IsDesktopLyricsCustomColorEnabled { get => Lyrics.IsDesktopLyricsCustomColorEnabled; set => Lyrics.IsDesktopLyricsCustomColorEnabled = value; }
     public bool IsDesktopLyricsTranslationEnabled { get => Lyrics.IsDesktopLyricsTranslationEnabled; set => Lyrics.IsDesktopLyricsTranslationEnabled = value; }

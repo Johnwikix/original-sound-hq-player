@@ -50,12 +50,15 @@ namespace WinUIMusicPlayer.Model
         public static bool IsJapanesePronunciationEnabled { get; set; } = true;
         public static bool IsKoreanPronunciationEnabled { get; set; } = true;
         public static bool AutoHideDesktopLyricsOnPlayingDetail { get; set; } = false;
+        public static bool AutoHideDesktopLyricsFloatingOnPlayingDetail { get; set; } = false;
+        public static bool AutoHideDesktopLyricsTaskbarOnPlayingDetail { get; set; } = false;
         public static bool IsDesktopLyricsEnabled { get; set; } = false;
         public static bool IsDesktopLyricsLocked { get; set; } = false;
         public static bool IsDesktopLyricsKaraokeEnabled { get; set; } = true;
         /// <summary>桌面歌词宿主模式的持久化值；未知值启动时回退到 Floating。</summary>
         public static string DesktopLyricsMode { get; set; } = nameof(WinUIMusicPlayer.Model.DesktopLyricsMode.Floating);
         public static double DesktopLyricsFontSize { get; set; } = 36;
+        public static int DesktopLyricsTaskbarLyricsWidth { get; set; } = 640;
         public static string DesktopLyricsFontFamily { get; set; } = "Segoe UI";
         public static uint DesktopLyricsColorRgb { get; set; } = 0x00FFFFFFu;
         /// <summary>false（默认）= 桌面歌词颜色按悬浮窗周围环境自动取黑/白；true = 用户自选颜色覆盖自动取色。</summary>

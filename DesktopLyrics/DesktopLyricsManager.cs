@@ -1,6 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.DesktopLyrics
 {
@@ -34,7 +35,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             if (_isShuttingDown || _window is null) return;
             CloseWindow();
             if (ViewModel.IsEnabled)
-                SetWindowVisible(!(ViewModel.AutoHideOnPlayingDetail &&
+                SetWindowVisible(!(ViewModel.ShouldAutoHideOnPlayingDetail &&
                     ViewModel.IsPlayingDetailVisible && ViewModel.IsMainWindowShown));
         }
 
@@ -43,6 +44,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
             if (_window is not null) return;
             _window = new DesktopLyricsWindow(ViewModel.Mode);
             _host = CreateHost(ViewModel.Mode);
+            if (_host is IDesktopLyricsBoundsHost taskbarHost)
+                _window.AttachTaskbarHost(taskbarHost);
             // 必须先显示再应用锁定：对未激活的窗口做 GWL_STYLE 切 Popup / 加 WS_EX_LAYERED
             // 会破坏 XAML 岛的呈现与输入管线，后续解锁时窗口无响应且内容丢失。
             _window.AppWindow.Show(false);
@@ -50,11 +53,19 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _host!.Attach(WinRT.Interop.WindowNative.GetWindowHandle(_window), _window.DispatcherQueue);
         }
 
-        private static IDesktopLyricsHost CreateHost(DesktopLyricsMode mode) => mode switch
+        private static IDesktopLyricsHost CreateHost(DesktopLyricsMode mode)
         {
-            DesktopLyricsMode.Taskbar => new TaskbarDesktopLyricsHost(),
-            _ => new FloatingDesktopLyricsHost()
-        };
+            if (mode == DesktopLyricsMode.Taskbar)
+            {
+                AppViewModel appViewModel = App.Services.GetRequiredService<AppViewModel>();
+                return new TaskbarDesktopLyricsHost(
+                    ViewModel.BoundsState,
+                    () => ViewModel.IsLocked,
+                    () => appViewModel.DesktopLyricsTaskbarLyricsWidth);
+            }
+
+            return new FloatingDesktopLyricsHost();
+        }
 
         public static void CloseWindow()
         {

@@ -1504,6 +1504,15 @@
   <data name="DesktopLyricsModeTaskbar" xml:space="preserve">
     <value>Taskleiste</value>
   </data>
+  <data name="DesktopLyricsPreviousButtonTooltip" xml:space="preserve">
+    <value>Vorheriger Titel</value>
+  </data>
+  <data name="DesktopLyricsPlayPauseButtonTooltip" xml:space="preserve">
+    <value>Wiedergabe oder Pause</value>
+  </data>
+  <data name="DesktopLyricsNextButtonTooltip" xml:space="preserve">
+    <value>Nächster Titel</value>
+  </data>
   <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>Desktop-Songtext sperren</value>
   </data>
@@ -1527,6 +1536,12 @@
   </data>
   <data name="DesktopLyricsFontSize.Text" xml:space="preserve">
     <value>Schriftgröße (Desktop-Songtext)</value>
+  </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Header" xml:space="preserve">
+    <value>Breite der Taskbar-Lyrics</value>
+  </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Description" xml:space="preserve">
+    <value>Breite des für Lyrics neben den Mediensteuerelementen reservierten Bereichs (Pixel).</value>
   </data>
   <data name="DesktopLyricsFontFamily.Text" xml:space="preserve">
     <value>Schriftart (Desktop-Songtext)</value>
@@ -1906,6 +1921,24 @@
   </data>
   <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
     <value>Gilt bei aktivierten Desktop-Liedtexten. Beim Verlassen der Wiedergabedetails oder beim Verstecken des Players im Tray werden sie wieder angezeigt.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Header" xml:space="preserve">
+    <value>Desktop-Liedtexte im Wiedergabedetail ausblenden (schwebend)</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Description" xml:space="preserve">
+    <value>Gilt nur für das schwebende Desktop-Lyrics-Fenster.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Header" xml:space="preserve">
+    <value>Desktop-Liedtexte im Wiedergabedetail ausblenden (Taskleiste)</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Description" xml:space="preserve">
+    <value>Gilt nur für das Desktop-Lyrics-Fenster in der Taskleiste.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloatingMode.Text" xml:space="preserve">
+    <value>Schwebendes Fenster</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbarMode.Text" xml:space="preserve">
+    <value>Taskleistenfenster</value>
   </data>
   <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
     <value>Ly</value>

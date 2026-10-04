@@ -121,6 +121,8 @@ namespace WinUIMusicPlayer.ViewModel
 
         public double DesktopLyricsFontSize { get => State.Preferences.DesktopLyricsFontSize; set => State.Preferences.DesktopLyricsFontSize = value; }
 
+        public int DesktopLyricsTaskbarLyricsWidth { get => State.Preferences.DesktopLyricsTaskbarLyricsWidth; set => State.Preferences.DesktopLyricsTaskbarLyricsWidth = value; }
+
         public FontInfo DesktopLyricsFontFamily { get => State.Preferences.DesktopLyricsFontFamily; set => State.Preferences.DesktopLyricsFontFamily = value; }
 
         public Color DesktopLyricsColor { get => State.Preferences.DesktopLyricsColor; set => State.Preferences.DesktopLyricsColor = value; }

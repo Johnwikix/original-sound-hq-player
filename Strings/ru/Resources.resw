@@ -1504,6 +1504,15 @@
   <data name="DesktopLyricsModeTaskbar" xml:space="preserve">
     <value>Панель задач</value>
   </data>
+  <data name="DesktopLyricsPreviousButtonTooltip" xml:space="preserve">
+    <value>Предыдущий трек</value>
+  </data>
+  <data name="DesktopLyricsPlayPauseButtonTooltip" xml:space="preserve">
+    <value>Воспроизвести или приостановить</value>
+  </data>
+  <data name="DesktopLyricsNextButtonTooltip" xml:space="preserve">
+    <value>Следующий трек</value>
+  </data>
   <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>Заблокировать текст песни</value>
   </data>
@@ -1527,6 +1536,12 @@
   </data>
   <data name="DesktopLyricsFontSize.Text" xml:space="preserve">
     <value>Размер шрифта текста на рабочем столе</value>
+  </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Header" xml:space="preserve">
+    <value>Ширина текста на панели задач</value>
+  </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Description" xml:space="preserve">
+    <value>Ширина области текста рядом с элементами управления мультимедиа (пиксели).</value>
   </data>
   <data name="DesktopLyricsFontFamily.Text" xml:space="preserve">
     <value>Шрифт текста на рабочем столе</value>
@@ -1906,6 +1921,24 @@
   </data>
   <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
     <value>Действует, если текст на рабочем столе включён. Он появится снова при выходе со страницы воспроизведения или при сворачивании плеера в трей.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Header" xml:space="preserve">
+    <value>Скрывать текст в деталях воспроизведения (плавающий)</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Description" xml:space="preserve">
+    <value>Управляет только плавающим окном текста.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Header" xml:space="preserve">
+    <value>Скрывать текст в деталях воспроизведения (панель задач)</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Description" xml:space="preserve">
+    <value>Управляет только окном текста на панели задач.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloatingMode.Text" xml:space="preserve">
+    <value>Плавающее окно</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbarMode.Text" xml:space="preserve">
+    <value>Окно на панели задач</value>
   </data>
   <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
     <value>Ly</value>

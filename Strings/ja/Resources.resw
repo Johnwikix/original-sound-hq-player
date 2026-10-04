@@ -1504,6 +1504,15 @@
   <data name="DesktopLyricsModeTaskbar" xml:space="preserve">
     <value>タスクバー</value>
   </data>
+  <data name="DesktopLyricsPreviousButtonTooltip" xml:space="preserve">
+    <value>前の曲</value>
+  </data>
+  <data name="DesktopLyricsPlayPauseButtonTooltip" xml:space="preserve">
+    <value>再生または一時停止</value>
+  </data>
+  <data name="DesktopLyricsNextButtonTooltip" xml:space="preserve">
+    <value>次の曲</value>
+  </data>
   <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>デスクトップ歌詞をロック</value>
   </data>
@@ -1527,6 +1536,12 @@
   </data>
   <data name="DesktopLyricsFontSize.Text" xml:space="preserve">
     <value>デスクトップ歌詞フォントサイズ</value>
+  </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Header" xml:space="preserve">
+    <value>タスクバー歌詞の幅</value>
+  </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Description" xml:space="preserve">
+    <value>メディア操作ボタンの横に確保する歌詞領域の幅（ピクセル）。</value>
   </data>
   <data name="DesktopLyricsFontFamily.Text" xml:space="preserve">
     <value>デスクトップ歌詞フォント</value>
@@ -1906,6 +1921,24 @@
   </data>
   <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
     <value>デスクトップ歌詞が有効な場合のみ適用されます。ページを離れるか、プレーヤーをトレイに格納すると再表示します。</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Header" xml:space="preserve">
+    <value>再生詳細でデスクトップ歌詞を隠す（フローティング）</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Description" xml:space="preserve">
+    <value>フローティング歌詞ウィンドウだけを制御します。</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Header" xml:space="preserve">
+    <value>再生詳細でデスクトップ歌詞を隠す（タスクバー）</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Description" xml:space="preserve">
+    <value>タスクバー歌詞ウィンドウだけを制御します。</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloatingMode.Text" xml:space="preserve">
+    <value>フローティングウィンドウ</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbarMode.Text" xml:space="preserve">
+    <value>タスクバーウィンドウ</value>
   </data>
   <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
     <value>词</value>

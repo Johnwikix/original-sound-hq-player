@@ -1140,12 +1140,18 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.WindowBackgroundBlurAmount = settings.WindowBackgroundBlurAmount;
                 AppViewModel.ThemeType = settings.AppTheme;
                 AppViewModel.IsRunningBackend = settings.IsRunningBackend;
+                // 新版本按宿主模式分别保存自动隐藏；旧版本只有一个总开关，首次读取时同时迁移到两个模式。
                 AppSettings.AutoHideDesktopLyricsOnPlayingDetail = settings.AutoHideDesktopLyricsOnPlayingDetail;
+                AppSettings.AutoHideDesktopLyricsFloatingOnPlayingDetail =
+                    settings.AutoHideDesktopLyricsFloatingOnPlayingDetail ?? settings.AutoHideDesktopLyricsOnPlayingDetail;
+                AppSettings.AutoHideDesktopLyricsTaskbarOnPlayingDetail =
+                    settings.AutoHideDesktopLyricsTaskbarOnPlayingDetail ?? settings.AutoHideDesktopLyricsOnPlayingDetail;
                 AppSettings.IsDesktopLyricsEnabled = settings.IsDesktopLyricsEnabled;
                 AppSettings.IsDesktopLyricsLocked = settings.IsDesktopLyricsLocked;
                 AppSettings.IsDesktopLyricsKaraokeEnabled = settings.IsDesktopLyricsKaraokeEnabled;
                 AppSettings.DesktopLyricsMode = settings.DesktopLyricsMode;
                 AppSettings.DesktopLyricsFontSize = settings.DesktopLyricsFontSize;
+                AppSettings.DesktopLyricsTaskbarLyricsWidth = settings.DesktopLyricsTaskbarLyricsWidth;
                 AppSettings.DesktopLyricsFontFamily = settings.DesktopLyricsFontFamily;
                 AppSettings.DesktopLyricsColorRgb = settings.DesktopLyricsColorRgb;
                 AppSettings.IsDesktopLyricsCustomColorEnabled = settings.IsDesktopLyricsCustomColorEnabled;
@@ -1186,6 +1192,7 @@ namespace WinUIMusicPlayer.Services
                     // SaveCurrentSettings 取 GlobalFont 时抛 NRE，导致整个会话所有保存静默失败
                     ?? AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault();
                 AppViewModel.DesktopLyricsFontSize = settings.DesktopLyricsFontSize;
+                AppViewModel.DesktopLyricsTaskbarLyricsWidth = settings.DesktopLyricsTaskbarLyricsWidth;
                 AppViewModel.DesktopLyricsFontFamily = AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(new FontFamily(settings.DesktopLyricsFontFamily).Source))
                     ?? AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault();
                 AppViewModel.DesktopLyricsColor = Color.FromArgb(0xFF,

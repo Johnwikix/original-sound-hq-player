@@ -91,12 +91,17 @@ public sealed class SettingsSnapshotFactory(AppState state)
         newSettings.ArtistSplitSymbols = state.Preferences.ArtistSplitSymbols;
         newSettings.PlayingDetailAlignment = state.Preferences.PlayingDetailAlignment;
         newSettings.UsePlayingDetailAlignmentInPortrait = state.Preferences.UsePlayingDetailAlignmentInPortrait;
-        newSettings.AutoHideDesktopLyricsOnPlayingDetail = AppSettings.AutoHideDesktopLyricsOnPlayingDetail;
+        // 保留旧字段供旧版本读取，新字段按宿主模式保存。
+        newSettings.AutoHideDesktopLyricsOnPlayingDetail =
+            state.DesktopLyrics.AutoHideFloatingOnPlayingDetail && state.DesktopLyrics.AutoHideTaskbarOnPlayingDetail;
+        newSettings.AutoHideDesktopLyricsFloatingOnPlayingDetail = state.DesktopLyrics.AutoHideFloatingOnPlayingDetail;
+        newSettings.AutoHideDesktopLyricsTaskbarOnPlayingDetail = state.DesktopLyrics.AutoHideTaskbarOnPlayingDetail;
         newSettings.IsDesktopLyricsEnabled = AppSettings.IsDesktopLyricsEnabled;
         newSettings.IsDesktopLyricsLocked = AppSettings.IsDesktopLyricsLocked;
         newSettings.IsDesktopLyricsKaraokeEnabled = AppSettings.IsDesktopLyricsKaraokeEnabled;
         newSettings.DesktopLyricsMode = state.DesktopLyrics.Mode.ToString();
         newSettings.DesktopLyricsFontSize = AppSettings.DesktopLyricsFontSize;
+        newSettings.DesktopLyricsTaskbarLyricsWidth = state.Preferences.DesktopLyricsTaskbarLyricsWidth;
         newSettings.DesktopLyricsFontFamily = AppSettings.DesktopLyricsFontFamily;
         newSettings.DesktopLyricsColorRgb = AppSettings.DesktopLyricsColorRgb;
         newSettings.IsDesktopLyricsCustomColorEnabled = AppSettings.IsDesktopLyricsCustomColorEnabled;

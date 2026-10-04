@@ -1,29 +1,43 @@
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Messages;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
+using Microsoft.UI.Input;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Threading;
+using System.Threading.Tasks;
 using Windows.Foundation;
 using Windows.Graphics;
 using WinUIEx;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.Services;
+using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.ViewModel;
 using Windows.UI;
 
 namespace WinUIMusicPlayer.DesktopLyrics
 {
+    public sealed class DesktopLyricsInputGrid : Grid
+    {
+        public void SetCursor(InputCursor? cursor) => ProtectedCursor = cursor;
+    }
+
     /// <summary>
     /// 桌面歌词悬浮窗：透明、置顶、不进任务栏/Alt-Tab。
     /// 基类与 spectrum 一致使用 WinUIEx.WindowEx。
     /// 解锁态：标准窗口（标题栏 + 可调整大小），按住内容区任意位置拖动；
-    /// 锁定态：GWL_STYLE 移除标题栏/边框位 + OR-in WS_POPUP（WinUIEx ToggleWindowStyle，
+    /// 悬浮模式锁定态：GWL_STYLE 移除标题栏/边框位 + OR-in WS_POPUP（WinUIEx ToggleWindowStyle，
     /// 含 SWP_FRAMECHANGED）+ 整窗点击穿透常开（WS_EX_LAYERED 进锁定态一次性设置常驻，
     /// 运行期只切 WS_EX_TRANSPARENT）；鼠标悬停窗口时仅"显示"右上角按钮组，
     /// 光标移到按钮上才临时取消穿透供点击（游标轮询两档：悬停窗口期 50ms 快轮询保证跟手，
@@ -49,6 +63,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         /// <summary>桌面歌词状态源（锁定图标绑定 / 按钮处理 / 边界与样式读写）。</summary>
         public DesktopLyricsViewModel ViewModel { get; } = App.Services.GetRequiredService<DesktopLyricsViewModel>();
+        /// <summary>任务栏模式媒体信息来源。播放命令仍由现有 PlaybackCommands 统一守卫。</summary>
+        public AppViewModel AppViewModel { get; } = App.Services.GetRequiredService<AppViewModel>();
+        public PlaybackCommands Playback { get; } = App.Services.GetRequiredService<PlaybackCommands>();
         private bool _locked = true;
         private bool _clickThrough;              // 当前穿透样式状态（false = 尚未设置）
         private bool _cursorOverPanel;
@@ -57,6 +74,15 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private WindowStyle? _originalWindowStyle;   // 首次锁定前缓存的解锁态样式
         private bool _disposed;
         private bool _isOverlayVisible = true;
+        private CancellationTokenSource? _taskbarCoverCts;
+        private Music? _taskbarCoverMusic;
+        private IDesktopLyricsBoundsHost? _taskbarHost;
+        private bool _isTaskbarManipulating;
+        private TaskbarResizeEdge _taskbarResizeEdge;
+        private InputSystemCursorShape? _taskbarCursorShape;
+        private InputCursor? _taskbarCursor;
+        private WindowHelper.POINT _taskbarStartCursor;
+        private TaskbarWindowBounds _taskbarStartBounds;
 
         private bool _isDragging;
         private WindowHelper.POINT _dragStartCursor;
@@ -66,17 +92,34 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private bool? _adaptiveIsDarkBackground;    // 上次明暗判定（null=未判定），滞回切换的基准
         private Color? _lastAdaptiveTextColor;      // 当前应用的取色文字色（判定不变则跳过重绘）
 
+        [Flags]
+        private enum TaskbarResizeEdge
+        {
+            None = 0,
+            Left = 1,
+            Top = 2,
+            Right = 4,
+            Bottom = 8,
+        }
+
         public DesktopLyricsWindow(DesktopLyricsMode mode = DesktopLyricsMode.Floating)
         {
             _mode = mode is DesktopLyricsMode.Floating or DesktopLyricsMode.Taskbar
                 ? mode
                 : DesktopLyricsMode.Floating;
             InitializeComponent();
+            if (_mode == DesktopLyricsMode.Taskbar)
+            {
+                // 任务栏客户区高度很小，媒体信息和歌词共用一行时不再额外占用上下边距。
+                RootGrid.Padding = new Thickness(0);
+            }
+            ConfigureTaskbarToolTips();
             _hwnd = WinRT.Interop.WindowNative.GetWindowHandle(this);
 
             // 渲染器按"逐字效果"开关选择：CanvasLyricsRenderer（Win2D 逐字扫光）或
             // TextBlockLyricsRenderer（文本描边）。开关变化经 PropertyChanged 热切换（EnsureRenderer）。
-            EnsureRenderer(ViewModel.IsKaraokeEnabled);
+            // 任务栏模式只保留静态歌词，逐字动画会占用额外高度并降低任务栏刷新稳定性。
+            EnsureRenderer(_mode != DesktopLyricsMode.Taskbar && ViewModel.IsKaraokeEnabled);
 
             // 复用 WinUIEx 自带的完全透明背景（与主程序"透明"样式同源）
             SystemBackdrop = new TransparentTintBackdrop();
@@ -98,10 +141,26 @@ namespace WinUIMusicPlayer.DesktopLyrics
             IsPlayingBus.Changed += OnIsPlayingChanged;
             AppWindow.Changed += OnAppWindowChanged;
             ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+            AppViewModel.PropertyChanged += OnAppViewModelPropertyChanged;
+            Playback.PreviousCommand.CanExecuteChanged += OnTaskbarPlaybackCommandAvailabilityChanged;
+            Playback.ToggleCommand.CanExecuteChanged += OnTaskbarPlaybackCommandAvailabilityChanged;
+            Playback.NextCommand.CanExecuteChanged += OnTaskbarPlaybackCommandAvailabilityChanged;
             Closed += OnWindowClosed;
 
             // 拉取全量歌词/进度/样式状态（AppViewModel.SendFullLyricsSync）
             LyricsSyncRequestBus.Request();
+            UpdateTaskbarMedia();
+            UpdateTaskbarCommandStates();
+        }
+
+        internal void AttachTaskbarHost(IDesktopLyricsBoundsHost host) => _taskbarHost = host;
+
+        private void ConfigureTaskbarToolTips()
+        {
+            if (_mode != DesktopLyricsMode.Taskbar) return;
+            ToolTipService.SetToolTip(TaskbarPreviousButton, ToolUtils.GetString("DesktopLyricsPreviousButtonTooltip"));
+            ToolTipService.SetToolTip(TaskbarPlayPauseButton, ToolUtils.GetString("DesktopLyricsPlayPauseButtonTooltip"));
+            ToolTipService.SetToolTip(TaskbarNextButton, ToolUtils.GetString("DesktopLyricsNextButtonTooltip"));
         }
 
         /// <summary>复用窗口和渲染器；隐藏时停止采样、自愈及渲染，恢复时重拉状态。</summary>
@@ -116,6 +175,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 StopAdaptiveColorTimer();
                 _renderer?.SetSuspended(true);
                 _isDragging = false;
+                _isTaskbarManipulating = false;
+                _taskbarResizeEdge = TaskbarResizeEdge.None;
                 RootGrid.ReleasePointerCaptures();
                 if (_mode == DesktopLyricsMode.Taskbar)
                     WindowHelper.ShowWindow(_hwnd, WindowHelper.SW_HIDE);
@@ -144,9 +205,12 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _locked = locked;
             if (_mode == DesktopLyricsMode.Taskbar)
             {
-                // 任务栏宿主始终是非交互歌词层；保留用户锁定偏好供悬浮模式恢复。
-                WindowHelper.EnsureLayered(_hwnd);
-                ApplyClickThrough(true);
+                // 任务栏宿主始终保持锁定布局；媒体控制组仍需接收点击，因此不启用整窗穿透。
+                WindowHelper.SetClickThrough(_hwnd, false);
+                _clickThrough = false;
+                _isTaskbarManipulating = false;
+                _taskbarResizeEdge = TaskbarResizeEdge.None;
+                RootGrid.ReleasePointerCaptures();
                 UpdateControlPanelVisual();
                 return;
             }
@@ -187,11 +251,29 @@ namespace WinUIMusicPlayer.DesktopLyrics
     {
         if (_renderer is null) return;
         DesktopLyricsStyle style = ViewModel.Style;
+        if (_mode == DesktopLyricsMode.Taskbar)
+            style = style with { FontSize = GetTaskbarFontSize(style) };
         if (!style.UseCustomColor && _lastAdaptiveTextColor is { } adaptive)
         {
             style = style with { Color = adaptive };
         }
         _renderer.SetStyle(style);
+    }
+
+    /// <summary>
+    /// 任务栏高度通常只有一行文字的空间。主歌词、翻译、发音会各占一行，
+    /// 因此按实际启用的行数压缩字号，并保留用户设置的较小字号。
+    /// </summary>
+    private static double GetTaskbarFontSize(DesktopLyricsStyle style)
+    {
+        int lineCount = 1 + (style.ShowTranslation ? 1 : 0) + (style.ShowPronunciation ? 1 : 0);
+        double maximum = lineCount switch
+        {
+            3 => 10,
+            2 => 13,
+            _ => 18,
+        };
+        return Math.Min(style.FontSize, maximum);
     }
 
     /// <summary>按样式快照的自定义颜色覆盖开关启停环境取色轮询；任何样式变化都全量推送渲染器。
@@ -310,8 +392,11 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     if (_isOverlayVisible) ApplyLock(ViewModel.IsLocked);
                     break;
                 case nameof(DesktopLyricsViewModel.IsKaraokeEnabled):
-                    EnsureRenderer(ViewModel.IsKaraokeEnabled);
-                    LyricsSyncRequestBus.Request();   // 新渲染器重拉歌词/进度全量快照
+                    if (_mode != DesktopLyricsMode.Taskbar)
+                    {
+                        EnsureRenderer(ViewModel.IsKaraokeEnabled);
+                        LyricsSyncRequestBus.Request();   // 新渲染器重拉歌词/进度全量快照
+                    }
                     break;
                 case nameof(DesktopLyricsViewModel.Style):
                     UpdateAdaptiveColorMode();
@@ -319,10 +404,177 @@ namespace WinUIMusicPlayer.DesktopLyrics
             }
         }
 
+        private void OnAppViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (_mode != DesktopLyricsMode.Taskbar) return;
+            if (e.PropertyName == nameof(AppViewModel.DesktopLyricsTaskbarLyricsWidth))
+            {
+                if (DispatcherQueue.HasThreadAccess)
+                    UpdateTaskbarLyricsWidth();
+                else
+                    DispatcherQueue.TryEnqueue(UpdateTaskbarLyricsWidth);
+                return;
+            }
+            if (e.PropertyName is nameof(AppViewModel.CurrentPlayingMusic)
+                or nameof(AppViewModel.IsPlaying)
+                or nameof(AppViewModel.IsPlaybackEngineReady))
+            {
+                if (DispatcherQueue.HasThreadAccess)
+                    UpdateTaskbarMedia();
+                else
+                    DispatcherQueue.TryEnqueue(UpdateTaskbarMedia);
+            }
+        }
+
+        private void UpdateTaskbarLyricsWidth()
+        {
+            if (_mode != DesktopLyricsMode.Taskbar || _disposed) return;
+            _taskbarHost?.SetLyricsWidth(AppViewModel.DesktopLyricsTaskbarLyricsWidth);
+        }
+
+        private void UpdateTaskbarMedia()
+        {
+            if (_mode != DesktopLyricsMode.Taskbar) return;
+
+            Music? music = AppViewModel.CurrentPlayingMusic;
+            bool visible = music is not null;
+            TaskbarMediaPanel.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+            if (!visible)
+            {
+                TaskbarTitleText.Text = string.Empty;
+                TaskbarArtistText.Text = string.Empty;
+                RefreshTaskbarCover(null);
+                UpdateTaskbarCommandStates();
+                return;
+            }
+
+            TaskbarTitleText.Text = music!.Title;
+            TaskbarArtistText.Text = string.IsNullOrWhiteSpace(music.Author)
+                ? music.Album
+                : string.IsNullOrWhiteSpace(music.Album)
+                    ? music.Author
+                    : $"{music.Author} · {music.Album}";
+            TaskbarPlayIcon.Glyph = BindUtils.PlayStatusToGlyphConverter(AppViewModel.IsPlaying);
+            RefreshTaskbarCover(music);
+            UpdateTaskbarCommandStates();
+        }
+
+        private void OnTaskbarPlaybackCommandAvailabilityChanged(object? sender, EventArgs e)
+        {
+            if (_mode != DesktopLyricsMode.Taskbar) return;
+            if (DispatcherQueue.HasThreadAccess)
+                UpdateTaskbarCommandStates();
+            else
+                DispatcherQueue.TryEnqueue(UpdateTaskbarCommandStates);
+        }
+
+        private void UpdateTaskbarCommandStates()
+        {
+            if (_mode != DesktopLyricsMode.Taskbar || _disposed) return;
+            TaskbarPreviousButton.IsEnabled = Playback.PreviousCommand.CanExecute(null);
+            TaskbarPlayPauseButton.IsEnabled = Playback.ToggleCommand.CanExecute(null);
+            TaskbarNextButton.IsEnabled = Playback.NextCommand.CanExecute(null);
+        }
+
+        // The taskbar host is re-parented after the XAML tree has loaded. Forward
+        // the view event to the shared commands so playback remains available
+        // across that re-parenting boundary; all playback policy stays in MVVM.
+        private void TaskbarPreviousButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (Playback.PreviousCommand.CanExecute(null))
+                _ = ExecutePlaybackCommandAsync(Playback.PreviousCommand);
+        }
+
+        private void TaskbarPlayPauseButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (Playback.ToggleCommand.CanExecute(null))
+                _ = ExecutePlaybackCommandAsync(Playback.ToggleCommand);
+        }
+
+        private void TaskbarNextButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (Playback.NextCommand.CanExecute(null))
+                Playback.NextCommand.Execute(null);
+        }
+
+        private static async Task ExecutePlaybackCommandAsync(IAsyncRelayCommand command)
+        {
+            try
+            {
+                await command.ExecuteAsync(null);
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DesktopLyricsWindow] taskbar playback command failed: {ex}");
+            }
+        }
+
+        private void RefreshTaskbarCover(Music? music)
+        {
+            if (_mode != DesktopLyricsMode.Taskbar || ReferenceEquals(_taskbarCoverMusic, music)) return;
+
+            _taskbarCoverCts?.Cancel();
+            _taskbarCoverCts?.Dispose();
+            _taskbarCoverCts = null;
+            _taskbarCoverMusic = music;
+            ReplaceTaskbarCover(null);
+            if (music is null) return;
+
+            var cts = new CancellationTokenSource();
+            _taskbarCoverCts = cts;
+            _ = LoadTaskbarCoverAsync(music, cts);
+        }
+
+        private async Task LoadTaskbarCoverAsync(Music music, CancellationTokenSource cts)
+        {
+            try
+            {
+                ImageSource? source = await CoverLoadQueue.EnqueueAsync(music, cts.Token);
+                if (cts.IsCancellationRequested || !ReferenceEquals(_taskbarCoverCts, cts)
+                    || !ReferenceEquals(_taskbarCoverMusic, music) || _disposed)
+                {
+                    (source as IDisposable)?.Dispose();
+                    return;
+                }
+                if (DispatcherQueue.HasThreadAccess)
+                {
+                    ReplaceTaskbarCover(source);
+                }
+                else if (!DispatcherQueue.TryEnqueue(() =>
+                    {
+                        if (cts.IsCancellationRequested || !ReferenceEquals(_taskbarCoverCts, cts)
+                            || !ReferenceEquals(_taskbarCoverMusic, music) || _disposed)
+                            (source as IDisposable)?.Dispose();
+                        else
+                            ReplaceTaskbarCover(source);
+                    }))
+                {
+                    (source as IDisposable)?.Dispose();
+                }
+            }
+            catch (OperationCanceledException) { }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"[DesktopLyricsWindow] taskbar cover load failed: {ex}");
+            }
+        }
+
+        private void ReplaceTaskbarCover(ImageSource? source)
+        {
+            (TaskbarCoverImage.Source as IDisposable)?.Dispose();
+            TaskbarCoverImage.Source = source;
+            TaskbarCoverPlaceholder.Visibility = source is null ? Visibility.Visible : Visibility.Collapsed;
+        }
+
         /// <summary>恢复默认尺寸并置于主屏工作区底部居中（重置按钮调用）。</summary>
         public void ApplyDefaultBounds()
         {
-            if (_mode == DesktopLyricsMode.Taskbar) return;
+            if (_mode == DesktopLyricsMode.Taskbar)
+            {
+                _taskbarHost?.ResetUserBounds();
+                ViewModel.PersistBounds();
+                return;
+            }
             var bounds = ViewModel.BoundsState;
             var work = DisplayArea.Primary.WorkArea;
             int x = work.X + (work.Width - DefaultWidth) / 2;
@@ -357,7 +609,15 @@ namespace WinUIMusicPlayer.DesktopLyrics
             }
             AppWindow.IsShownInSwitchers = false;
 
-            if (_mode == DesktopLyricsMode.Taskbar) return;
+            if (_mode == DesktopLyricsMode.Taskbar)
+            {
+                // 任务栏宿主是客户区子窗口，不能让 WinUI 的自定义标题栏命中测试覆盖媒体按钮。
+                // 宿主稍后还会移除 WS_CAPTION/WS_BORDER；这里同步清掉 XAML 标题栏意图。
+                AppWindow.TitleBar.ExtendsContentIntoTitleBar = false;
+                if (AppWindow.Presenter is OverlappedPresenter taskbarPresenter)
+                    taskbarPresenter.SetBorderAndTitleBar(false, false);
+                return;
+            }
 
             var bounds = ViewModel.BoundsState;
             int width = bounds.Width > 0 ? bounds.Width : DefaultWidth;
@@ -388,13 +648,15 @@ namespace WinUIMusicPlayer.DesktopLyrics
             {
                 StopHoverTimer();
                 StopIdleTimer();
-                ControlPanel.Opacity = 0;
+                ControlPanel.Opacity = _locked ? 0 : 1;
+                ControlPanel.IsHitTestVisible = !_locked;
                 return;
             }
             if (_locked && _isOverlayVisible)
             {
                 _cursorOverPanel = false;
                 ControlPanel.Opacity = 0;
+                ControlPanel.IsHitTestVisible = false;
                 StartIdleTimer();
             }
             else
@@ -402,6 +664,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 StopHoverTimer();
                 StopIdleTimer();
                 ControlPanel.Opacity = 1;
+                ControlPanel.IsHitTestVisible = true;
             }
         }
 
@@ -459,6 +722,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             if (WindowHelper.GetCursorPos(out WindowHelper.POINT cursor) && IsCursorOverWindow(cursor))
             {
                 ControlPanel.Opacity = 1.0;   // 悬停窗口 = 仅显示按钮组（穿透保持，绝不因进入窗口而取消）
+                ControlPanel.IsHitTestVisible = true;
                 StartHoverTimer();
             }
         }
@@ -471,6 +735,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 sender.Stop();
                 _cursorOverPanel = false;
                 ControlPanel.Opacity = 0;
+                ControlPanel.IsHitTestVisible = false;
                 ApplyClickThrough(true);
                 return;
             }
@@ -540,6 +805,20 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void RootGrid_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
+            if (_mode == DesktopLyricsMode.Taskbar)
+            {
+                if (_locked || !e.GetCurrentPoint(RootGrid).Properties.IsLeftButtonPressed
+                    || IsTaskbarInteractiveSource(e.OriginalSource as DependencyObject)
+                    || _taskbarHost is null || !_taskbarHost.TryGetBounds(out _taskbarStartBounds))
+                    return;
+                if (!WindowHelper.GetCursorPos(out _taskbarStartCursor)) return;
+                _taskbarResizeEdge = GetTaskbarResizeEdge(e.GetCurrentPoint(RootGrid).Position.X,
+                    e.GetCurrentPoint(RootGrid).Position.Y);
+                _isTaskbarManipulating = true;
+                RootGrid.CapturePointer(e.Pointer);
+                e.Handled = true;
+                return;
+            }
             if (_locked) return;
             if (!e.GetCurrentPoint(RootGrid).Properties.IsLeftButtonPressed) return;
             if (!WindowHelper.GetCursorPos(out _dragStartCursor)) return;
@@ -550,17 +829,147 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void RootGrid_PointerMoved(object sender, PointerRoutedEventArgs e)
         {
-            if (!_isDragging || !WindowHelper.GetCursorPos(out WindowHelper.POINT cursor)) return;
+            if (_mode == DesktopLyricsMode.Taskbar)
+            {
+                if (_isTaskbarManipulating)
+                {
+                    if (WindowHelper.GetCursorPos(out WindowHelper.POINT cursor))
+                    {
+                        int dx = cursor.X - _taskbarStartCursor.X;
+                        int dy = cursor.Y - _taskbarStartCursor.Y;
+                        _taskbarHost?.SetUserBounds(AdjustTaskbarBounds(dx, dy));
+                    }
+                    e.Handled = true;
+                    return;
+                }
+                if (!_locked && !IsTaskbarInteractiveSource(e.OriginalSource as DependencyObject))
+                {
+                    var point = e.GetCurrentPoint(RootGrid).Position;
+                    SetTaskbarCursor(GetTaskbarResizeEdge(point.X, point.Y));
+                }
+                else if (IsTaskbarInteractiveSource(e.OriginalSource as DependencyObject))
+                {
+                    SetTaskbarCursor(TaskbarResizeEdge.None);
+                }
+                return;
+            }
+            if (!_isDragging || !WindowHelper.GetCursorPos(out WindowHelper.POINT floatingCursor)) return;
             AppWindow.Move(new PointInt32(
-                _dragStartWindowPos.X + cursor.X - _dragStartCursor.X,
-                _dragStartWindowPos.Y + cursor.Y - _dragStartCursor.Y));
+                _dragStartWindowPos.X + floatingCursor.X - _dragStartCursor.X,
+                _dragStartWindowPos.Y + floatingCursor.Y - _dragStartCursor.Y));
         }
 
-        private void RootGrid_PointerReleased(object sender, PointerRoutedEventArgs e) => EndDrag(e);
+        private void RootGrid_PointerReleased(object sender, PointerRoutedEventArgs e)
+        {
+            if (_mode == DesktopLyricsMode.Taskbar && _isTaskbarManipulating)
+            {
+                EndTaskbarManipulation(e);
+                return;
+            }
+            EndDrag(e);
+        }
 
-        private void RootGrid_PointerCanceled(object sender, PointerRoutedEventArgs e) => EndDrag(e);
+        private void RootGrid_PointerCanceled(object sender, PointerRoutedEventArgs e)
+        {
+            if (_mode == DesktopLyricsMode.Taskbar && _isTaskbarManipulating)
+            {
+                EndTaskbarManipulation(e);
+                return;
+            }
+            EndDrag(e);
+        }
 
-        private void RootGrid_PointerCaptureLost(object sender, PointerRoutedEventArgs e) => _isDragging = false;
+        private void RootGrid_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
+        {
+            _isDragging = false;
+            if (_mode == DesktopLyricsMode.Taskbar)
+            {
+                if (_isTaskbarManipulating)
+                    ViewModel.PersistBounds();
+                _isTaskbarManipulating = false;
+                _taskbarResizeEdge = TaskbarResizeEdge.None;
+                SetTaskbarCursor(TaskbarResizeEdge.None);
+            }
+        }
+
+        private TaskbarWindowBounds AdjustTaskbarBounds(int dx, int dy)
+        {
+            var bounds = _taskbarStartBounds;
+            if ((_taskbarResizeEdge & TaskbarResizeEdge.Left) != 0)
+            {
+                bounds = bounds with { X = bounds.X + dx, Width = bounds.Width - dx };
+            }
+            else if ((_taskbarResizeEdge & TaskbarResizeEdge.Right) != 0)
+            {
+                bounds = bounds with { Width = bounds.Width + dx };
+            }
+            else if (_taskbarResizeEdge == TaskbarResizeEdge.None)
+            {
+                bounds = bounds with { X = bounds.X + dx, Y = bounds.Y + dy };
+            }
+
+            if ((_taskbarResizeEdge & TaskbarResizeEdge.Top) != 0)
+                bounds = bounds with { Y = bounds.Y + dy, Height = bounds.Height - dy };
+            else if ((_taskbarResizeEdge & TaskbarResizeEdge.Bottom) != 0)
+                bounds = bounds with { Height = bounds.Height + dy };
+            return bounds;
+        }
+
+        private TaskbarResizeEdge GetTaskbarResizeEdge(double x, double y)
+        {
+            const double edge = 10;
+            TaskbarResizeEdge result = TaskbarResizeEdge.None;
+            if (x <= edge) result |= TaskbarResizeEdge.Left;
+            else if (x >= RootGrid.ActualWidth - edge) result |= TaskbarResizeEdge.Right;
+            if (y <= edge) result |= TaskbarResizeEdge.Top;
+            else if (y >= RootGrid.ActualHeight - edge) result |= TaskbarResizeEdge.Bottom;
+            return result;
+        }
+
+        private void SetTaskbarCursor(TaskbarResizeEdge edge)
+        {
+            if (_locked || edge == TaskbarResizeEdge.None)
+            {
+                _taskbarCursorShape = null;
+                _taskbarCursor = null;
+                RootGrid.SetCursor(null);
+                return;
+            }
+            InputSystemCursorShape shape = edge switch
+            {
+                TaskbarResizeEdge.Left or TaskbarResizeEdge.Right => InputSystemCursorShape.SizeWestEast,
+                TaskbarResizeEdge.Top or TaskbarResizeEdge.Bottom => InputSystemCursorShape.SizeNorthSouth,
+                TaskbarResizeEdge.Left | TaskbarResizeEdge.Top
+                    or TaskbarResizeEdge.Right | TaskbarResizeEdge.Bottom => InputSystemCursorShape.SizeNorthwestSoutheast,
+                _ => InputSystemCursorShape.SizeNortheastSouthwest,
+            };
+            if (_taskbarCursorShape != shape)
+            {
+                _taskbarCursorShape = shape;
+                _taskbarCursor = InputSystemCursor.Create(shape);
+            }
+            RootGrid.SetCursor(_taskbarCursor);
+        }
+
+        private static bool IsTaskbarInteractiveSource(DependencyObject? source)
+        {
+            while (source is not null)
+            {
+                if (source is ButtonBase) return true;
+                source = VisualTreeHelper.GetParent(source);
+            }
+            return false;
+        }
+
+        private void EndTaskbarManipulation(PointerRoutedEventArgs e)
+        {
+            ViewModel.PersistBounds();
+            _isTaskbarManipulating = false;
+            _taskbarResizeEdge = TaskbarResizeEdge.None;
+            RootGrid.ReleasePointerCapture(e.Pointer);
+            SetTaskbarCursor(TaskbarResizeEdge.None);
+            e.Handled = true;
+        }
 
         private void EndDrag(PointerRoutedEventArgs e)
         {
@@ -632,10 +1041,19 @@ namespace WinUIMusicPlayer.DesktopLyrics
             IsPlayingBus.Changed -= OnIsPlayingChanged;
             AppWindow.Changed -= OnAppWindowChanged;
             ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
+            AppViewModel.PropertyChanged -= OnAppViewModelPropertyChanged;
+            Playback.PreviousCommand.CanExecuteChanged -= OnTaskbarPlaybackCommandAvailabilityChanged;
+            Playback.ToggleCommand.CanExecuteChanged -= OnTaskbarPlaybackCommandAvailabilityChanged;
+            Playback.NextCommand.CanExecuteChanged -= OnTaskbarPlaybackCommandAvailabilityChanged;
             Closed -= OnWindowClosed;
             StopHoverTimer();
             StopIdleTimer();
             StopAdaptiveColorTimer();
+            _taskbarCoverCts?.Cancel();
+            _taskbarCoverCts?.Dispose();
+            _taskbarCoverCts = null;
+            _taskbarCoverMusic = null;
+            ReplaceTaskbarCover(null);
             ViewModel.PersistBounds();
             _renderer?.Dispose();
             _renderer = null;

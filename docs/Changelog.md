@@ -2,6 +2,26 @@
 
 新条目加在最上方。
 
+## 2026-10-04 固定任务栏媒体区并支持自定义歌词宽度
+- `DesktopLyricsWindow`、`LyricsSettingsControl`：固定任务栏左侧封面和媒体控件列宽，新增任务栏歌词宽度 NumberBox（240–2400 像素）。
+- `TaskbarDesktopLyricsHost`、设置持久化：按歌词宽度计算默认任务栏边界，设置修改后立即调整已打开的任务栏歌词并保留用户解锁后的布局。
+- 各语言 `Resources.resw`：补充任务栏歌词宽度设置的标题和说明。
+
+## 2026-10-04 修复任务栏歌词交互与分模式显示
+- `DesktopLyricsWindow`：任务栏模式改用静态歌词渲染，补齐封面异步加载，保持透明背景和紧凑高度；翻译／发音开关实时刷新并按行数压缩字号。
+- `DesktopLyricsWindow`、`TaskbarDesktopLyricsHost`：播放控件显式转发到共享 `PlaybackCommands`，任务栏模式解锁后支持拖动、边缘缩放和相对位置/尺寸持久化，兼容任务栏居中布局。
+- `DesktopLyricsViewModel`、设置持久化与播放详情设置页：悬浮和任务栏模式分别保存“播放详情页隐藏桌面歌词”开关，旧版单开关设置首次读取时迁移到两种模式。
+
+## 2026-10-04 修复任务栏播放控件导致启动失败
+- `DesktopLyricsWindow`：移除会被 WinUI 当作普通属性解析的 `x:Uid` 提示绑定，改为初始化后设置本地化 `ToolTipService.ToolTip`，避免创建桌面歌词窗口时崩溃。
+- 各语言 `Resources.resw`：将播放控件提示改为无属性后缀资源键，并完成全语言校验。
+
+## 2026-10-04 完善任务栏歌词媒体控件
+- `DesktopLyricsWindow`：任务栏模式新增封面、曲名/艺术家/专辑信息和上一首／播放暂停／下一首控制组，复用现有封面加载队列与 `PlaybackCommands`。
+- `DesktopLyricsWindow`：根据翻译、发音开关的实际行数自动压缩任务栏歌词字号，确保辅助歌词仍能同时显示。
+- `TaskbarDesktopLyricsHost`：取消整窗鼠标穿透，保留歌词托管同时允许任务栏媒体控制交互。
+- 各语言 `Resources.resw`：补充任务栏播放控件的本地化提示文本。
+
 ## 2026-10-04 重构桌面歌词宿主并接入任务栏模式
 
 - `DesktopLyrics`：新增宿主接口与悬浮／任务栏模式，任务栏模式复用现有歌词渲染器并跟随 Explorer 重建；为后续壁纸宿主保留模式契约，不引入频谱和系统指标模块。

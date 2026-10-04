@@ -124,11 +124,16 @@ namespace WinUIMusicPlayer.Model
         public bool IsTrimAfterPlaybackEnabled { get; set; } = false;
         public string ArtistSplitSymbols { get; set; } = ", ; / 、 & feat. :";
         public bool AutoHideDesktopLyricsOnPlayingDetail { get; set; } = false;
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? AutoHideDesktopLyricsFloatingOnPlayingDetail { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? AutoHideDesktopLyricsTaskbarOnPlayingDetail { get; set; }
         public bool IsDesktopLyricsEnabled { get; set; } = false;
         public bool IsDesktopLyricsLocked { get; set; } = false;
         public bool IsDesktopLyricsKaraokeEnabled { get; set; } = true;
         public string DesktopLyricsMode { get; set; } = "Floating";
         public double DesktopLyricsFontSize { get; set; } = 36;
+        public int DesktopLyricsTaskbarLyricsWidth { get; set; } = 640;
         public string DesktopLyricsFontFamily { get; set; } = "Segoe UI";
         public uint DesktopLyricsColorRgb { get; set; } = 0x00FFFFFFu;
         public bool IsDesktopLyricsCustomColorEnabled { get; set; } = false;
