@@ -77,6 +77,7 @@ public sealed class PreferencesState : ObservableObject
     public Color DesktopLyricsColor { get => Lyrics.DesktopLyricsColor; set => Lyrics.DesktopLyricsColor = value; }
     public bool IsDesktopLyricsCustomColorEnabled { get => Lyrics.IsDesktopLyricsCustomColorEnabled; set => Lyrics.IsDesktopLyricsCustomColorEnabled = value; }
     public bool IsDesktopLyricsTranslationEnabled { get => Lyrics.IsDesktopLyricsTranslationEnabled; set => Lyrics.IsDesktopLyricsTranslationEnabled = value; }
+    public bool IsDesktopLyricsPronunciationEnabled { get => Lyrics.IsDesktopLyricsPronunciationEnabled; set => Lyrics.IsDesktopLyricsPronunciationEnabled = value; }
     public bool IsDesktopLyricsGlowEnabled { get => Lyrics.IsDesktopLyricsGlowEnabled; set => Lyrics.IsDesktopLyricsGlowEnabled = value; }
     public bool IsDesktopLyricsCharFloatEnabled { get => Lyrics.IsDesktopLyricsCharFloatEnabled; set => Lyrics.IsDesktopLyricsCharFloatEnabled = value; }
     public bool IsDesktopLyricsCharScaleEnabled { get => Lyrics.IsDesktopLyricsCharScaleEnabled; set => Lyrics.IsDesktopLyricsCharScaleEnabled = value; }

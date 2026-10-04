@@ -3,7 +3,7 @@ using Windows.UI;
 
 namespace WinUIMusicPlayer.DesktopLyrics
 {
-    /// <summary>桌面歌词独立样式（字号/字体/颜色/字重/翻译/发音/逐字动效开关与强度/长音节阈值/阴影强度），与主界面歌词设置互不影响。
+    /// <summary>桌面歌词独立样式（字号/字体/颜色/字重/翻译/发音/逐字动效开关与强度/长音节阈值/阴影强度），翻译和发音开关均使用桌面歌词设置，不跟随普通歌词设置。
     /// 文字带可读性软阴影（颜色 = 文字色反相，强度由 ShadowAmount 控制，0 = 关闭），
     /// 环境自适应取色仍按背景切黑/白文字色（见 DesktopLyricsAdaptiveColor）。
     /// UseCustomColor = false（默认）时悬浮窗忽略 Color，按窗口周围环境自动取黑/白文字色（见 DesktopLyricsAdaptiveColor）。</summary>

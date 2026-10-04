@@ -32,6 +32,7 @@ public sealed class LyricsPreferencesState : ObservableObject
     public Color DesktopLyricsColor { get; set => SetProperty(ref field, value); } = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
     public bool IsDesktopLyricsCustomColorEnabled { get; set => SetProperty(ref field, value); } = false;
     public bool IsDesktopLyricsTranslationEnabled { get; set => SetProperty(ref field, value); } = true;
+    public bool IsDesktopLyricsPronunciationEnabled { get; set => SetProperty(ref field, value); } = true;
     public bool IsDesktopLyricsGlowEnabled { get; set => SetProperty(ref field, value); } = true;
     public bool IsDesktopLyricsCharFloatEnabled { get; set => SetProperty(ref field, value); } = true;
     public bool IsDesktopLyricsCharScaleEnabled { get; set => SetProperty(ref field, value); } = true;

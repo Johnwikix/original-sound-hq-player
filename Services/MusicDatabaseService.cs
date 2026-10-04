@@ -1156,6 +1156,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.DesktopLyricsColorRgb = settings.DesktopLyricsColorRgb;
                 AppSettings.IsDesktopLyricsCustomColorEnabled = settings.IsDesktopLyricsCustomColorEnabled;
                 AppSettings.IsDesktopLyricsTranslationEnabled = settings.IsDesktopLyricsTranslationEnabled;
+                AppSettings.IsDesktopLyricsPronunciationEnabled = settings.IsDesktopLyricsPronunciationEnabled;
                 AppSettings.DesktopLyricsFontWeight = settings.DesktopLyricsFontWeight;
                 AppSettings.LyricsFontWeight = settings.LyricsFontWeight;
                 AppViewModel.IsAutoLyricsEnabled = settings.IsAutoLyricsEnabled;
@@ -1202,6 +1203,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.IsDesktopLyricsCustomColorEnabled = settings.IsDesktopLyricsCustomColorEnabled;
                 AppViewModel.IsDesktopLyricsKaraokeEnabled = settings.IsDesktopLyricsKaraokeEnabled;
                 AppViewModel.IsDesktopLyricsTranslationEnabled = settings.IsDesktopLyricsTranslationEnabled;
+                AppViewModel.IsDesktopLyricsPronunciationEnabled = settings.IsDesktopLyricsPronunciationEnabled;
                 AppViewModel.IsDesktopLyricsGlowEnabled = settings.IsDesktopLyricsGlowEnabled;
                 AppViewModel.IsDesktopLyricsCharFloatEnabled = settings.IsDesktopLyricsCharFloatEnabled;
                 AppViewModel.IsDesktopLyricsCharScaleEnabled = settings.IsDesktopLyricsCharScaleEnabled;

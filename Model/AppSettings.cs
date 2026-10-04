@@ -64,6 +64,7 @@ namespace WinUIMusicPlayer.Model
         /// <summary>false（默认）= 桌面歌词颜色按悬浮窗周围环境自动取黑/白；true = 用户自选颜色覆盖自动取色。</summary>
         public static bool IsDesktopLyricsCustomColorEnabled { get; set; } = false;
         public static bool IsDesktopLyricsTranslationEnabled { get; set; } = true;
+        public static bool IsDesktopLyricsPronunciationEnabled { get; set; } = true;
         public static bool IsDesktopLyricsGlowEnabled { get; set; } = true;
         public static bool IsDesktopLyricsCharFloatEnabled { get; set; } = true;
         public static bool IsDesktopLyricsCharScaleEnabled { get; set; } = true;

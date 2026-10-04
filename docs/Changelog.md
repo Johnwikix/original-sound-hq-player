@@ -2,6 +2,10 @@
 
 新条目加在最上方。
 
+## 2026-10-04 分离桌面歌词的翻译与发音设置
+- `LyricsPreferencesState`、`AppViewModel`、`DesktopLyricsViewModel`：新增独立的桌面歌词发音开关，桌面歌词翻译和发音只消费桌面歌词设置，普通歌词设置不再串联影响。
+- `LyricsSettingsControl`、各语言 `Resources.resw`：新增桌面歌词发音显示开关。
+
 ## 2026-10-04 固定任务栏媒体区并支持自定义歌词宽度
 - `DesktopLyricsWindow`、`LyricsSettingsControl`：固定任务栏左侧封面和媒体控件列宽，新增任务栏歌词宽度 NumberBox（240–2400 像素）。
 - `TaskbarDesktopLyricsHost`、设置持久化：按歌词宽度计算默认任务栏边界，设置修改后立即调整已打开的任务栏歌词并保留用户解锁后的布局。

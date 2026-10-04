@@ -1558,6 +1558,9 @@
   <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
     <value>Masaüstü şarkı sözleri çevirisi</value>
   </data>
+  <data name="DesktopLyricsPronunciation.Text" xml:space="preserve">
+    <value>Masaüstü sözlerinde telaffuzu göster</value>
+  </data>
   <data name="DesktopLyricsKaraoke.Text" xml:space="preserve">
     <value>Masaüstü şarkı sözleri karaoke efekti</value>
   </data>

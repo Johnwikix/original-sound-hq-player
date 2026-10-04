@@ -28,11 +28,11 @@ try
     var defaults = JsonSerializer.Deserialize("{}", SettingsJsonContext.Default.SaveSettings)!;
     Check(!defaults.PreferDatabaseLyrics && defaults.LocalLyricsFormatOrder == "krc,qrc,lrc,ttml",
         "Old settings must retain files-first lyrics and the previous format order.");
-    var lyricsSettings = new SaveSettings { PreferDatabaseLyrics = true, LocalLyricsFormatOrder = "ttml,lrc,qrc,krc", DesktopLyricsTaskbarLyricsWidth = 1024 };
+    var lyricsSettings = new SaveSettings { PreferDatabaseLyrics = true, LocalLyricsFormatOrder = "ttml,lrc,qrc,krc", DesktopLyricsTaskbarLyricsWidth = 1024, IsDesktopLyricsPronunciationEnabled = false };
     var lyricsRoundTrip = JsonSerializer.Deserialize(JsonSerializer.Serialize(lyricsSettings, SettingsJsonContext.Default.SaveSettings), SettingsJsonContext.Default.SaveSettings)!;
     Check(lyricsRoundTrip.PreferDatabaseLyrics && lyricsRoundTrip.LocalLyricsFormatOrder == lyricsSettings.LocalLyricsFormatOrder
-        && lyricsRoundTrip.DesktopLyricsTaskbarLyricsWidth == 1024,
-        "Lyrics source, format priorities, and taskbar lyrics width must survive restart.");
+        && lyricsRoundTrip.DesktopLyricsTaskbarLyricsWidth == 1024 && !lyricsRoundTrip.IsDesktopLyricsPronunciationEnabled,
+        "Lyrics source, format priorities, taskbar lyrics width, and desktop pronunciation must survive restart.");
     Console.WriteLine("PASS: lyrics priority compatibility defaults and JSON persistence.");
     Check(defaults.WindowBackgroundImagePath == string.Empty && defaults.WindowBackgroundBlurAmount == 20,
         "Old settings must keep the original backdrop without an image.");

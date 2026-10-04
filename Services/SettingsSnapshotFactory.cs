@@ -106,6 +106,7 @@ public sealed class SettingsSnapshotFactory(AppState state)
         newSettings.DesktopLyricsColorRgb = AppSettings.DesktopLyricsColorRgb;
         newSettings.IsDesktopLyricsCustomColorEnabled = AppSettings.IsDesktopLyricsCustomColorEnabled;
         newSettings.IsDesktopLyricsTranslationEnabled = AppSettings.IsDesktopLyricsTranslationEnabled;
+        newSettings.IsDesktopLyricsPronunciationEnabled = AppSettings.IsDesktopLyricsPronunciationEnabled;
         newSettings.IsDesktopLyricsGlowEnabled = AppSettings.IsDesktopLyricsGlowEnabled;
         newSettings.IsDesktopLyricsCharFloatEnabled = AppSettings.IsDesktopLyricsCharFloatEnabled;
         newSettings.IsDesktopLyricsCharScaleEnabled = AppSettings.IsDesktopLyricsCharScaleEnabled;

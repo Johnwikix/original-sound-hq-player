@@ -1558,6 +1558,9 @@
   <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
     <value>Desktop Lyrics Translation</value>
   </data>
+  <data name="DesktopLyricsPronunciation.Text" xml:space="preserve">
+    <value>Show pronunciation in desktop lyrics</value>
+  </data>
   <data name="DesktopLyricsKaraoke.Text" xml:space="preserve">
     <value>Desktop Lyrics Karaoke Effect</value>
   </data>

@@ -1555,6 +1555,9 @@
   <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
     <value>デスクトップ歌詞の翻訳</value>
   </data>
+  <data name="DesktopLyricsPronunciation.Text" xml:space="preserve">
+    <value>デスクトップ歌詞に発音を表示</value>
+  </data>
   <data name="DesktopLyricsKaraoke.Text" xml:space="preserve">
     <value>デスクトップ歌詞のカラオケエフェクト</value>
   </data>

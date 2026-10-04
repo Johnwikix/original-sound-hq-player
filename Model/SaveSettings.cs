@@ -138,6 +138,7 @@ namespace WinUIMusicPlayer.Model
         public uint DesktopLyricsColorRgb { get; set; } = 0x00FFFFFFu;
         public bool IsDesktopLyricsCustomColorEnabled { get; set; } = false;
         public bool IsDesktopLyricsTranslationEnabled { get; set; } = true;
+        public bool IsDesktopLyricsPronunciationEnabled { get; set; } = true;
         public bool IsDesktopLyricsGlowEnabled { get; set; } = true;
         public bool IsDesktopLyricsCharFloatEnabled { get; set; } = true;
         public bool IsDesktopLyricsCharScaleEnabled { get; set; } = true;

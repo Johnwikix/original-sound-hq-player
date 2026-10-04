@@ -132,6 +132,8 @@ namespace WinUIMusicPlayer.ViewModel
 
         public bool IsDesktopLyricsTranslationEnabled { get => State.Preferences.IsDesktopLyricsTranslationEnabled; set => State.Preferences.IsDesktopLyricsTranslationEnabled = value; }
 
+        public bool IsDesktopLyricsPronunciationEnabled { get => State.Preferences.IsDesktopLyricsPronunciationEnabled; set => State.Preferences.IsDesktopLyricsPronunciationEnabled = value; }
+
         public bool IsDesktopLyricsGlowEnabled { get => State.Preferences.IsDesktopLyricsGlowEnabled; set => State.Preferences.IsDesktopLyricsGlowEnabled = value; }
 
         public bool IsDesktopLyricsCharFloatEnabled { get => State.Preferences.IsDesktopLyricsCharFloatEnabled; set => State.Preferences.IsDesktopLyricsCharFloatEnabled = value; }

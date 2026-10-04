@@ -149,7 +149,6 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 {
                     _ = database.SaveSettingAsync();
                     lyrics.SendLyricsSettings();
-                    desktopLyrics.RefreshStyleFromSettings();
                 }
                 break;
             case nameof(state.Preferences.IsMandarinPronunciationEnabled):
@@ -272,6 +271,13 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 break;
             case nameof(state.Preferences.IsDesktopLyricsTranslationEnabled):
                 AppSettings.IsDesktopLyricsTranslationEnabled = state.Preferences.IsDesktopLyricsTranslationEnabled;
+                if (state.Lifecycle.IsReady)
+                {
+                    ScheduleDesktopLyricsStyleCommit();
+                }
+                break;
+            case nameof(state.Preferences.IsDesktopLyricsPronunciationEnabled):
+                AppSettings.IsDesktopLyricsPronunciationEnabled = state.Preferences.IsDesktopLyricsPronunciationEnabled;
                 if (state.Lifecycle.IsReady)
                 {
                     ScheduleDesktopLyricsStyleCommit();

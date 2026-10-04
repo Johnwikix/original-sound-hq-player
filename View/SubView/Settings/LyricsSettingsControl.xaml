@@ -531,6 +531,13 @@
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
+                        <TextBlock x:Uid="DesktopLyricsPronunciation" TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsPronunciationEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
                         <TextBlock x:Uid="DesktopLyricsShadowAmount" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <Grid Width="300" ColumnDefinitions="100,*">

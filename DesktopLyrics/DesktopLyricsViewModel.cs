@@ -109,7 +109,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private void OnPreferencesChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             if (e.PropertyName is nameof(State.Preferences.IsDesktopLyricsTranslationEnabled)
-                or nameof(State.Preferences.IsLyricsPronunciationEnabled))
+                or nameof(State.Preferences.IsDesktopLyricsPronunciationEnabled))
             {
                 RefreshStyleFromSettings();
             }
@@ -204,7 +204,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 (byte)(AppSettings.DesktopLyricsColorRgb & 0xFF)),
             AppSettings.DesktopLyricsFontWeight,
             State.Preferences.IsDesktopLyricsTranslationEnabled,
-            State.Preferences.IsLyricsPronunciationEnabled,
+            State.Preferences.IsDesktopLyricsPronunciationEnabled,
             AppSettings.IsDesktopLyricsGlowEnabled,
             AppSettings.IsDesktopLyricsCharFloatEnabled,
             AppSettings.IsDesktopLyricsCharScaleEnabled,
