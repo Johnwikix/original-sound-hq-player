@@ -432,29 +432,20 @@
 
                 <TextBlock x:Uid="IconDesktopLyrics" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
-                <controls:SettingsCard x:Uid="DesktopLyricsAutoHide">
-                    <Grid ColumnDefinitions="*,Auto,*,Auto" ColumnSpacing="12">
-                        <TextBlock
-                            x:Uid="DesktopLyricsAutoHideFloatingMode"
-                            VerticalAlignment="Center"
-                            TextWrapping="Wrap" />
-                        <ToggleSwitch
-                            Grid.Column="1"
-                            MinWidth="0"
-                            VerticalAlignment="Center"
-                            IsOn="{x:Bind ViewModel.DesktopLyrics.AutoHideFloatingOnPlayingDetail, Mode=TwoWay}" />
-                        <TextBlock
-                            Grid.Column="2"
-                            x:Uid="DesktopLyricsAutoHideTaskbarMode"
-                            VerticalAlignment="Center"
-                            TextWrapping="Wrap" />
-                        <ToggleSwitch
-                            Grid.Column="3"
-                            MinWidth="0"
-                            VerticalAlignment="Center"
-                            IsOn="{x:Bind ViewModel.DesktopLyrics.AutoHideTaskbarOnPlayingDetail, Mode=TwoWay}" />
-                    </Grid>
-                </controls:SettingsCard>
+                <controls:SettingsExpander x:Uid="DesktopLyricsAutoHide" IsExpanded="True">
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard x:Uid="DesktopLyricsAutoHideFloating">
+                            <ToggleSwitch
+                                MinWidth="0"
+                                IsOn="{x:Bind ViewModel.DesktopLyrics.AutoHideFloatingOnPlayingDetail, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="DesktopLyricsAutoHideTaskbar">
+                            <ToggleSwitch
+                                MinWidth="0"
+                                IsOn="{x:Bind ViewModel.DesktopLyrics.AutoHideTaskbarOnPlayingDetail, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>

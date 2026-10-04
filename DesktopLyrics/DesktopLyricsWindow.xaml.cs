@@ -644,6 +644,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void UpdateControlPanelVisual()
         {
+            // 任务栏模式把窗口改为 WS_CHILD，WindowEx 不会触发 Activated；
+            // LockIcon 不能依赖窗口级 x:Bind 的首次初始化，始终从同一锁定状态源显式刷新。
+            LockIcon.Glyph = BindUtils.LockGlyphConverter(_locked);
             if (_mode == DesktopLyricsMode.Taskbar)
             {
                 StopHoverTimer();

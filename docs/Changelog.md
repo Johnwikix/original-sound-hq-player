@@ -2,6 +2,10 @@
 
 新条目加在最上方。
 
+## 2026-10-04 重组桌面歌词自动隐藏设置并修复任务栏锁定图标
+- `LyricsSettingsControl`：将桌面歌词自动隐藏改为 `SettingsExpander`，分别承载悬浮和任务栏模式两个 `SettingsCard`。
+- `DesktopLyricsWindow`：任务栏子窗口不再依赖未触发的窗口级 `x:Bind` 初始化锁定 Glyph，改为随锁定状态显式刷新图标。
+
 ## 2026-10-04 分离桌面歌词的翻译与发音设置
 - `LyricsPreferencesState`、`AppViewModel`、`DesktopLyricsViewModel`：新增独立的桌面歌词发音开关，桌面歌词翻译和发音只消费桌面歌词设置，普通歌词设置不再串联影响。
 - `LyricsSettingsControl`、各语言 `Resources.resw`：新增桌面歌词发音显示开关。

@@ -1,19 +1,19 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <winex:WindowEx
     x:Class="WinUIMusicPlayer.DesktopLyrics.DesktopLyricsWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:winex="using:WinUIEx"
     xmlns:desktop="using:WinUIMusicPlayer.DesktopLyrics"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:tools="using:WinUIMusicPlayer.Utils"
-    mc:Ignorable="d"
-    Title="DesktopLyrics">
+    xmlns:winex="using:WinUIEx"
+    Title="DesktopLyrics"
+    mc:Ignorable="d">
     <desktop:DesktopLyricsInputGrid
         x:Name="RootGrid"
-        Background="Transparent"
         Padding="8"
+        Background="Transparent"
         PointerCanceled="RootGrid_PointerCanceled"
         PointerCaptureLost="RootGrid_PointerCaptureLost"
         PointerMoved="RootGrid_PointerMoved"
@@ -22,8 +22,10 @@
         <Grid.Resources>
             <ResourceDictionary>
                 <ResourceDictionary.ThemeDictionaries>
-                    <!--  悬浮按钮覆写默认 Button 主题资源（模板经 ThemeResource 解析，窗口树内生效）：
-                          暗色主题用深色底 + 白色前景，保证在白色歌词背景上的可见度  -->
+                    <!--
+                        悬浮按钮覆写默认 Button 主题资源（模板经 ThemeResource 解析，窗口树内生效）：
+                        暗色主题用深色底 + 白色前景，保证在白色歌词背景上的可见度
+                    -->
                     <ResourceDictionary x:Key="Default">
                         <SolidColorBrush x:Key="ButtonBackground" Color="#8E000000" />
                         <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#CF000000" />
@@ -42,16 +44,19 @@
                 </ResourceDictionary.ThemeDictionaries>
             </ResourceDictionary>
         </Grid.Resources>
-        <Grid x:Name="TaskbarLayoutRoot" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+        <Grid
+            x:Name="TaskbarLayoutRoot"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
-            <!-- Keep this fixed media column aligned with TaskbarDesktopLyricsHost.MediaPanelWidth. -->
+            <!--  Keep this fixed media column aligned with TaskbarDesktopLyricsHost.MediaPanelWidth.  -->
             <Border
                 x:Name="TaskbarMediaPanel"
                 Grid.Column="0"
-                Width="320"
+                Width="280"
                 Margin="0,0,8,0"
                 Visibility="Collapsed">
                 <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6">
@@ -94,24 +99,26 @@
                         Spacing="0">
                         <Button
                             x:Name="TaskbarPreviousButton"
-                            Width="30"
-                            Height="30"
+                            Width="32"
+                            Height="32"
+                            Margin="2"
                             Padding="0"
+                            AutomationProperties.Name="Previous"
                             Background="Transparent"
                             BorderThickness="0"
-                            Click="TaskbarPreviousButton_Click"
-                            AutomationProperties.Name="Previous">
+                            Click="TaskbarPreviousButton_Click">
                             <FontIcon FontSize="14" Glyph="&#xF8AC;" />
                         </Button>
                         <Button
                             x:Name="TaskbarPlayPauseButton"
                             Width="32"
                             Height="32"
+                            Margin="2"
                             Padding="0"
+                            AutomationProperties.Name="Play or pause"
                             Background="Transparent"
                             BorderThickness="0"
-                            Click="TaskbarPlayPauseButton_Click"
-                            AutomationProperties.Name="Play or pause">
+                            Click="TaskbarPlayPauseButton_Click">
                             <FontIcon
                                 x:Name="TaskbarPlayIcon"
                                 FontSize="16"
@@ -119,13 +126,14 @@
                         </Button>
                         <Button
                             x:Name="TaskbarNextButton"
-                            Width="30"
-                            Height="30"
+                            Width="32"
+                            Height="32"
+                            Margin="2"
                             Padding="0"
+                            AutomationProperties.Name="Next"
                             Background="Transparent"
                             BorderThickness="0"
-                            Click="TaskbarNextButton_Click"
-                            AutomationProperties.Name="Next">
+                            Click="TaskbarNextButton_Click">
                             <FontIcon FontSize="14" Glyph="&#xF8AD;" />
                         </Button>
                     </StackPanel>
@@ -145,7 +153,10 @@
             Orientation="Horizontal"
             Spacing="6">
             <Button Click="LockButton_Click">
-                <FontIcon FontSize="14" Glyph="{x:Bind tools:BindUtils.LockGlyphConverter(ViewModel.IsLocked), Mode=OneWay}" />
+                <FontIcon
+                    x:Name="LockIcon"
+                    FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                    FontSize="14" />
             </Button>
             <Button Click="ResetButton_Click">
                 <FontIcon FontSize="14" Glyph="&#xE7A7;" />
