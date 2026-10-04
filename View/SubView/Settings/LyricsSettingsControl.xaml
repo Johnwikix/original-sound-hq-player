@@ -30,40 +30,70 @@
                 <TextBlock x:Uid="SettingLyrics" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
                 <controls:SettingsCard x:Uid="LyricsFilePriority">
-                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
-                        <ComboBox x:Name="FirstLyricsFormat" MinWidth="86"
-                                  ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}"
-                                  SelectedIndex="{x:Bind ViewModel.FirstLyricsFormatIndex, Mode=TwoWay}"
-                                  AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFirst')}" />
-                        <TextBlock VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="→" />
-                        <ComboBox x:Name="SecondLyricsFormat" MinWidth="86"
-                                  ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}"
-                                  SelectedIndex="{x:Bind ViewModel.SecondLyricsFormatIndex, Mode=TwoWay}"
-                                  AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPrioritySecond')}" />
-                        <TextBlock VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="→" />
-                        <ComboBox x:Name="ThirdLyricsFormat" MinWidth="86"
-                                  ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}"
-                                  SelectedIndex="{x:Bind ViewModel.ThirdLyricsFormatIndex, Mode=TwoWay}"
-                                  AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityThird')}" />
-                        <TextBlock VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="→" />
-                        <ComboBox x:Name="FourthLyricsFormat" MinWidth="86"
-                                  ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}"
-                                  SelectedIndex="{x:Bind ViewModel.FourthLyricsFormatIndex, Mode=TwoWay}"
-                                  AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFourth')}" />
+                    <StackPanel
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <ComboBox
+                            x:Name="FirstLyricsFormat"
+                            MinWidth="86"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFirst')}"
+                            ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}"
+                            SelectedIndex="{x:Bind ViewModel.FirstLyricsFormatIndex, Mode=TwoWay}" />
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="→" />
+                        <ComboBox
+                            x:Name="SecondLyricsFormat"
+                            MinWidth="86"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPrioritySecond')}"
+                            ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}"
+                            SelectedIndex="{x:Bind ViewModel.SecondLyricsFormatIndex, Mode=TwoWay}" />
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="→" />
+                        <ComboBox
+                            x:Name="ThirdLyricsFormat"
+                            MinWidth="86"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityThird')}"
+                            ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}"
+                            SelectedIndex="{x:Bind ViewModel.ThirdLyricsFormatIndex, Mode=TwoWay}" />
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="→" />
+                        <ComboBox
+                            x:Name="FourthLyricsFormat"
+                            MinWidth="86"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFourth')}"
+                            ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}"
+                            SelectedIndex="{x:Bind ViewModel.FourthLyricsFormatIndex, Mode=TwoWay}" />
                     </StackPanel>
                 </controls:SettingsCard>
 
                 <controls:SettingsCard x:Uid="LyricsSourcePriority">
-                    <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
-                        <ComboBox x:Name="FirstLyricsSource" MinWidth="130"
-                                  ItemsSource="{x:Bind ViewModel.LyricsSourceOptions}"
-                                  SelectedIndex="{x:Bind ViewModel.FirstLyricsSourceIndex, Mode=TwoWay}"
-                                  AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFirst')}" />
-                        <TextBlock VerticalAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="→" />
-                        <ComboBox x:Name="SecondLyricsSource" MinWidth="130"
-                                  ItemsSource="{x:Bind ViewModel.LyricsSourceOptions}"
-                                  SelectedIndex="{x:Bind ViewModel.SecondLyricsSourceIndex, Mode=TwoWay}"
-                                  AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPrioritySecond')}" />
+                    <StackPanel
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <ComboBox
+                            x:Name="FirstLyricsSource"
+                            MinWidth="130"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFirst')}"
+                            ItemsSource="{x:Bind ViewModel.LyricsSourceOptions}"
+                            SelectedIndex="{x:Bind ViewModel.FirstLyricsSourceIndex, Mode=TwoWay}" />
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="→" />
+                        <ComboBox
+                            x:Name="SecondLyricsSource"
+                            MinWidth="130"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPrioritySecond')}"
+                            ItemsSource="{x:Bind ViewModel.LyricsSourceOptions}"
+                            SelectedIndex="{x:Bind ViewModel.SecondLyricsSourceIndex, Mode=TwoWay}" />
                     </StackPanel>
                 </controls:SettingsCard>
 
@@ -82,7 +112,7 @@
                     <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsLyricsPronunciationEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
-                <controls:SettingsExpander x:Uid="LyricsPronunciationLanguages" IsExpanded="True">
+                <controls:SettingsExpander x:Uid="LyricsPronunciationLanguages">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard x:Uid="LyricsPronunciationMandarin">
                             <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsMandarinPronunciationEnabled, Mode=TwoWay}" />
@@ -432,17 +462,13 @@
 
                 <TextBlock x:Uid="IconDesktopLyrics" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
-                <controls:SettingsExpander x:Uid="DesktopLyricsAutoHide" IsExpanded="True">
+                <controls:SettingsExpander x:Uid="DesktopLyricsAutoHide">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard x:Uid="DesktopLyricsAutoHideFloating">
-                            <ToggleSwitch
-                                MinWidth="0"
-                                IsOn="{x:Bind ViewModel.DesktopLyrics.AutoHideFloatingOnPlayingDetail, Mode=TwoWay}" />
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.DesktopLyrics.AutoHideFloatingOnPlayingDetail, Mode=TwoWay}" />
                         </controls:SettingsCard>
                         <controls:SettingsCard x:Uid="DesktopLyricsAutoHideTaskbar">
-                            <ToggleSwitch
-                                MinWidth="0"
-                                IsOn="{x:Bind ViewModel.DesktopLyrics.AutoHideTaskbarOnPlayingDetail, Mode=TwoWay}" />
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.DesktopLyrics.AutoHideTaskbarOnPlayingDetail, Mode=TwoWay}" />
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
