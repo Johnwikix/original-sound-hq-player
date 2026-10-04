@@ -21,12 +21,13 @@ internal static class DesktopHighlightChecks
         window.AppWindow.Resize(new Windows.Graphics.SizeInt32(650, 400));
         window.AppWindow.Move(new Windows.Graphics.PointInt32(-30000, -30000));
         desktop.SetStyle(new(40, "Segoe UI", Microsoft.UI.Colors.White, 700,
-            false, false, false, false, 1000, 5, 5, 110, true, 0));
+            false, true, false, false, false, 1000, 5, 5, 110, true, 0));
         desktop.SetIsPlaying(false);
         desktop.SetLyrics([
             new LyricLine
             {
                 StartMs = 77396, EndMs = 83675, HighlightEndMs = 96652,
+                PronunciationText = "it carries on",
                 Words = [new LyricWord { Word = "It carries on", StartMs = 77396, DurationMs = 6279 }]
             },
             new LyricLine
@@ -51,6 +52,8 @@ internal static class DesktopHighlightChecks
                         var renderer = (LyricsLineRenderer)Renderer.GetValue(desktop)!;
                         if (line.StartMs != expectedStart || !line.IsPlayingLastFrame || !renderer.IsPlaying)
                             throw new InvalidOperationException($"Desktop highlight/selection disappeared or selected the wrong row at {time} ms.");
+                        if (line.StartMs == 77396 && line.PronunciationLayer.Layout is null)
+                            throw new InvalidOperationException("Desktop renderer must lay out the existing pronunciation track.");
                         if (line.StartMs == 77396 && line.EndMs != 83675)
                             throw new InvalidOperationException("Desktop playback must preserve the original singing end.");
                         completed.TrySetResult();

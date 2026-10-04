@@ -153,6 +153,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 (byte)(AppSettings.DesktopLyricsColorRgb & 0xFF)),
             AppSettings.DesktopLyricsFontWeight,
             AppSettings.IsDesktopLyricsTranslationEnabled,
+            AppSettings.IsLyricsPronunciationEnabled,
             AppSettings.IsDesktopLyricsGlowEnabled,
             AppSettings.IsDesktopLyricsCharFloatEnabled,
             AppSettings.IsDesktopLyricsCharScaleEnabled,

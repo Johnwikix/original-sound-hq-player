@@ -149,6 +149,7 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 {
                     _ = database.SaveSettingAsync();
                     lyrics.SendLyricsSettings();
+                    desktopLyrics.RefreshStyleFromSettings();
                 }
                 break;
             case nameof(state.Preferences.IsMandarinPronunciationEnabled):

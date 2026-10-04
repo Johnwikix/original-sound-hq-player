@@ -70,6 +70,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private Color _color = Colors.White;
         private int _fontWeight = 400;
         private bool _showTranslation = true;
+        private bool _showPronunciation = true;
         private bool _glow = true;
         private bool _charFloat = true;
         private bool _charScale = true;
@@ -128,6 +129,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _color = style.Color;
             _fontWeight = Math.Clamp(style.FontWeight, 100, 900);
             _showTranslation = style.ShowTranslation;
+            _showPronunciation = style.ShowPronunciation;
             _glow = style.Glow;
             _charFloat = style.CharFloat;
             _charScale = style.CharScale;
@@ -390,6 +392,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     height,
                     0,   // 描边宽度恒 0（无描边）
                     _fontWeight,
+                    showPronunciation: _showPronunciation,
                     preserveFloatTransitions: _charFloat);
                 ReportTextBounds(line, height);
                 line.PlayedPrimaryOpacityTransition.Start(1.0);

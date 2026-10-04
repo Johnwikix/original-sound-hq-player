@@ -14,7 +14,7 @@ using WinUIMusicPlayer.Helper.Animations;
 namespace WinUIMusicPlayer.DesktopLyrics
 {
     /// <summary>
-    /// 文本版桌面歌词渲染器：显示当前歌词行（主文本 + 翻译），主色文字。
+    /// 文本版桌面歌词渲染器：显示当前歌词行（发音 + 主文本 + 翻译），主色文字。
     /// 文字带 Composition 软阴影（DevWinUI CompositionShadow，DropShadow + 字形 AlphaMask），
     /// 双层嵌套叠加——强度与 Win2D 渲染器同一条曲线（DesktopLyricsShadow.SplitStrength：
     /// 内层 min(1,s) + 外层 clamp(s-1,0,1)），颜色为文字色反相；混合背景上黑白二选一
@@ -25,7 +25,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
     public sealed class TextBlockLyricsRenderer : IDesktopLyricsRenderer
     {
         private readonly Grid _root = new();
-        private (TextBlock Main, TextBlock Trans)? _mainPair;
+        private (TextBlock Pron, TextBlock Main, TextBlock Trans)? _mainPair;
         // 双层阴影包裹（全限定引用：DevWinUI 命名空间下有同名 LyricLine，不能 using 进来）：
         // 内层贴文字，外层套在内层外（Content = 内层），两者都用文字字形 AlphaMask；
         // 强度 ≤100%（s ≤ 1）时外层透明度为 0 不参与
@@ -33,6 +33,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private DevWinUI.CompositionShadow? _mainShadowOuter;
         private DevWinUI.CompositionShadow? _transShadowInner;
         private DevWinUI.CompositionShadow? _transShadowOuter;
+        private DevWinUI.CompositionShadow? _pronShadowInner;
+        private DevWinUI.CompositionShadow? _pronShadowOuter;
 
         // 换行动画：最外层阴影包裹（而非 TextBlock 本身）交给同一实例，
         // 文字与两层阴影在同一视觉子树里同步淡入淡出/滑入
@@ -41,7 +43,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
         // 当前已呈现的文本，用于过滤无变化更新（样式刷新等）避免无谓的闪烁
         private string _appliedMain = string.Empty;
         private string _appliedTrans = string.Empty;
+        private string _appliedPron = string.Empty;
         private bool _appliedTransVisible;
+        private bool _appliedPronVisible;
 
         private List<LyricLine>? _lyrics;
         private int _currentIndex = -1;
@@ -53,6 +57,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private SolidColorBrush? _mainBrush;
         private int _fontWeight = 400;
         private bool _showTranslation = true;
+        private bool _showPronunciation = true;
         // 阴影强度（0–2，= 滑块百分比 / 50）：内层透明度 = min(1,s)，外层 = clamp(s-1,0,1)；
         // 0 = 关闭（跳过 mask 维护，两层不透明度归零不画）
         private double _shadowStrength = 1.0;
@@ -67,7 +72,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _root.Children.Add(mainPanel);
 
             _switchAnimator = new TextBlockSwitchAnimator(
-                new FrameworkElement[] { _mainShadowOuter!, _transShadowOuter! })
+                new FrameworkElement[] { _pronShadowOuter!, _mainShadowOuter!, _transShadowOuter! })
             {
                 // 新行自下而上轻微滑入，与淡入合成换行动效
                 SlideInDistance = 8,
@@ -93,6 +98,12 @@ namespace WinUIMusicPlayer.DesktopLyrics
                         .TransformBounds(new Rect(0, 0, pair.Trans.ActualWidth, pair.Trans.ActualHeight));
                     bounds.Union(translation);
                 }
+                if (pair.Pron.Visibility == Visibility.Visible && pair.Pron.ActualWidth > 1)
+                {
+                    var pronunciation = pair.Pron.TransformToVisual(null)
+                        .TransformBounds(new Rect(0, 0, pair.Pron.ActualWidth, pair.Pron.ActualHeight));
+                    bounds.Union(pronunciation);
+                }
                 return bounds;
             }
         }
@@ -104,6 +115,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _mainBrush = new SolidColorBrush(style.Color);
             _fontWeight = Math.Clamp(style.FontWeight, 100, 900);
             _showTranslation = style.ShowTranslation;
+            _showPronunciation = style.ShowPronunciation;
             _shadowStrength = Math.Clamp(style.ShadowAmount, 0, 100) / 50.0;
             ApplyFont();
             ApplyColor();
@@ -142,11 +154,21 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
         }
 
-        private (StackPanel Panel, (TextBlock Main, TextBlock Trans) Pair) BuildStack()
+        private (StackPanel Panel, (TextBlock Pron, TextBlock Main, TextBlock Trans) Pair) BuildStack()
         {
             // HorizontalAlignment.Center 让元素宽度贴住文字本身：字形 AlphaMask 与
             // 阴影 SpriteVisual（按 Content 实际尺寸布置）几何完全重合，杜绝
             // mask 拉伸/对齐歧义造成的阴影错位（此前翻译行阴影左偏即源于此）
+            var pron = new TextBlock
+            {
+                HorizontalAlignment = HorizontalAlignment.Center,
+                TextAlignment = TextAlignment.Center,
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = _fontSize * 0.6,
+                Opacity = TransOpacity,
+                Foreground = _mainBrush ?? new SolidColorBrush(Colors.White),
+                Visibility = Visibility.Collapsed,
+            };
             var main = new TextBlock
             {
                 HorizontalAlignment = HorizontalAlignment.Center,
@@ -165,8 +187,6 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 Foreground = _mainBrush ?? new SolidColorBrush(Colors.White),
                 Visibility = Visibility.Collapsed,
             };
-            var pair = (main, trans);
-
             // 双层阴影包裹（内层套文字，外层套内层）：DevWinUI 默认模板为
             // Grid{阴影Border + Content}，影子 SpriteVisual 挂在文字后方的 Border 上，
             // 字形 mask 见 RefreshShadowMask；强度 >50% 时外层以剩余强度叠加
@@ -174,6 +194,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _mainShadowOuter = CreateTextShadow(_mainShadowInner);
             _transShadowInner = CreateTextShadow(trans);
             _transShadowOuter = CreateTextShadow(_transShadowInner);
+            _pronShadowInner = CreateTextShadow(pron);
+            _pronShadowOuter = CreateTextShadow(_pronShadowInner);
 
             // 包裹层自身也要贴住内容宽度（内外两层都要）：SpriteVisual 固定在 Control 原点，
             // 而包裹层在 StackPanel 里默认被拉伸到面板宽度（= 较宽的主行宽度），居中的窄
@@ -183,19 +205,23 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _mainShadowOuter.HorizontalAlignment = HorizontalAlignment.Center;
             _transShadowInner.HorizontalAlignment = HorizontalAlignment.Center;
             _transShadowOuter.HorizontalAlignment = HorizontalAlignment.Center;
+            _pronShadowInner.HorizontalAlignment = HorizontalAlignment.Center;
+            _pronShadowOuter.HorizontalAlignment = HorizontalAlignment.Center;
 
             // 布局尺寸变化（换字/字体/换行）后重取 mask，阴影形状不滞后
             main.SizeChanged += (_, _) => RefreshShadowMask();
             trans.SizeChanged += (_, _) => RefreshShadowMask();
+            pron.SizeChanged += (_, _) => RefreshShadowMask();
 
             var panel = new StackPanel
             {
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
             };
+            panel.Children.Add(_pronShadowOuter);
             panel.Children.Add(_mainShadowOuter);
             panel.Children.Add(_transShadowOuter);
-            return (panel, pair);
+            return (panel, (pron, main, trans));
         }
 
         private static DevWinUI.CompositionShadow CreateTextShadow(FrameworkElement content)
@@ -221,6 +247,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             if (_mainShadowInner is null || _mainShadowOuter is null ||
                 _transShadowInner is null || _transShadowOuter is null ||
+                _pronShadowInner is null || _pronShadowOuter is null ||
                 _shadowStrength <= 0) return;
             ApplyMasks();
             _root.DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, _applyMasksHandler);
@@ -230,13 +257,17 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             if (_mainPair is not { } pair ||
                 _mainShadowInner is null || _mainShadowOuter is null ||
-                _transShadowInner is null || _transShadowOuter is null) return;
+                _transShadowInner is null || _transShadowOuter is null ||
+                _pronShadowInner is null || _pronShadowOuter is null) return;
             var mainMask = pair.Main.GetAlphaMask();
             _mainShadowInner.Mask = mainMask;
             _mainShadowOuter.Mask = mainMask;
             var transMask = pair.Trans.GetAlphaMask();
             _transShadowInner.Mask = transMask;
             _transShadowOuter.Mask = transMask;
+            var pronMask = pair.Pron.GetAlphaMask();
+            _pronShadowInner.Mask = pronMask;
+            _pronShadowOuter.Mask = pronMask;
         }
 
         private void ApplyCurrentLine(double effectiveMs)
@@ -251,29 +282,39 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             string main = string.Empty;
             string trans = string.Empty;
+            string pron = string.Empty;
             if (_lyrics is not null && _currentIndex >= 0 && _currentIndex < _lyrics.Count)
             {
                 var line = _lyrics[_currentIndex];
                 main = ConcatWords(line.Words);
                 trans = line.TransLateText ?? string.Empty;
+                pron = line.PronunciationText ?? string.Empty;
             }
 
             bool transVisible = _showTranslation && !string.IsNullOrEmpty(trans);
-            if (main == _appliedMain && trans == _appliedTrans && transVisible == _appliedTransVisible)
+            bool pronVisible = _showPronunciation && !string.IsNullOrEmpty(pron);
+            if (main == _appliedMain && trans == _appliedTrans && pron == _appliedPron &&
+                transVisible == _appliedTransVisible && pronVisible == _appliedPronVisible)
                 return;
 
             // 上一行有内容才做退场淡出（首行/从空到有直接淡入即可）
             bool fadeOutFirst = _appliedMain.Length > 0;
             _appliedMain = main;
             _appliedTrans = trans;
+            _appliedPron = pron;
             _appliedTransVisible = transVisible;
+            _appliedPronVisible = pronVisible;
 
             _switchAnimator.Switch(() =>
             {
                 if (_mainPair is not { } pair) return;
                 pair.Main.Text = main;
                 pair.Trans.Text = trans;
+                pair.Pron.Text = pron;
                 pair.Trans.Visibility = transVisible
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+                pair.Pron.Visibility = pronVisible
                     ? Visibility.Visible
                     : Visibility.Collapsed;
                 RefreshShadowMask();
@@ -286,12 +327,15 @@ namespace WinUIMusicPlayer.DesktopLyrics
             var fontWeight = new FontWeight { Weight = (ushort)_fontWeight };
             pair.Main.FontSize = _fontSize;
             pair.Trans.FontSize = _fontSize * 0.75;
+            pair.Pron.FontSize = _fontSize * 0.6;
             pair.Main.FontWeight = fontWeight;
             pair.Trans.FontWeight = fontWeight;
+            pair.Pron.FontWeight = fontWeight;
             if (_fontFamily is not null)
             {
                 pair.Main.FontFamily = _fontFamily;
                 pair.Trans.FontFamily = _fontFamily;
+                pair.Pron.FontFamily = _fontFamily;
             }
         }
 
@@ -300,6 +344,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             if (_mainPair is not { } pair || _mainBrush is null) return;
             pair.Main.Foreground = _mainBrush;
             pair.Trans.Foreground = _mainBrush;
+            pair.Pron.Foreground = _mainBrush;
 
             // 阴影色跟随文字色反相；两层透明度公式与 Win2D 渲染器同源
             // （DesktopLyricsShadow.SplitStrength）：内层 = min(1,s)，外层 = clamp(s-1,0,1)
@@ -308,6 +353,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             float outerOpacity = (float)Math.Clamp(_shadowStrength - 1.0, 0.0, 1.0);
             ApplyShadowLayer(_mainShadowInner, _mainShadowOuter, color, innerOpacity, outerOpacity);
             ApplyShadowLayer(_transShadowInner, _transShadowOuter, color, innerOpacity, outerOpacity);
+            ApplyShadowLayer(_pronShadowInner, _pronShadowOuter, color, innerOpacity, outerOpacity);
         }
 
         private static void ApplyShadowLayer(
