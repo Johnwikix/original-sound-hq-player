@@ -202,13 +202,10 @@ namespace WinUIMusicPlayer.Utils
         public static string DesktopLyricsVisualModeTextConverter(string mode)
             => mode.ToLowerInvariant() switch
             {
-                "still" => GetString("DesktopLyricsVisualModeStill"),
                 "classic" => GetString("DesktopLyricsVisualModeClassic"),
                 "cadenza" => GetString("DesktopLyricsVisualModeCadenza"),
                 "partita" => GetString("DesktopLyricsVisualModePartita"),
                 "fume" => GetString("DesktopLyricsVisualModeFume"),
-                "monet" => GetString("DesktopLyricsVisualModeMonet"),
-                "cappella" => GetString("DesktopLyricsVisualModeCappella"),
                 "tilt" => GetString("DesktopLyricsVisualModeTilt"),
                 "claddagh" => GetString("DesktopLyricsVisualModeCladdagh"),
                 "diorama" => GetString("DesktopLyricsVisualModeDiorama"),

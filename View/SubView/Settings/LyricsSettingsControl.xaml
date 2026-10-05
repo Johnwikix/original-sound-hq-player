@@ -51,13 +51,10 @@
                         Width="300"
                         SelectedValue="{x:Bind ViewModel.DesktopLyrics.VisualModeName, Mode=TwoWay}"
                         SelectedValuePath="Tag">
-                        <ComboBoxItem Tag="Still" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Still')}" />
                         <ComboBoxItem Tag="Classic" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Classic')}" />
                         <ComboBoxItem Tag="Cadenza" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Cadenza')}" />
                         <ComboBoxItem Tag="Partita" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Partita')}" />
                         <ComboBoxItem Tag="Fume" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Fume')}" />
-                        <ComboBoxItem Tag="Monet" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Monet')}" />
-                        <ComboBoxItem Tag="Cappella" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Cappella')}" />
                         <ComboBoxItem Tag="Tilt" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Tilt')}" />
                         <ComboBoxItem Tag="Claddagh" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Claddagh')}" />
                         <ComboBoxItem Tag="Diorama" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Diorama')}" />

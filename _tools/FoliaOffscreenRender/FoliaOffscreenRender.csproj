@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net11.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PlatformTarget>x64</PlatformTarget>
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/AnimatedWin2dControls.csproj" />
+    <PackageReference Include="ComputeSharp.Core" Version="3.2.0" />
+    <PackageReference Include="ComputeSharp.D2D1" Version="3.2.0" />
+    <PackageReference Include="ComputeSharp.D2D1.WinUI" Version="3.2.0" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.260804.1" />
+    <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Compile the production sources without importing the player's App.xaml resources. -->
+    <Compile Include="../../DesktopLyrics/FoliaLyricsRenderer.cs" Link="Production/FoliaLyricsRenderer.cs" />
+    <Compile Include="../../DesktopLyrics/IDesktopLyricsRenderer.cs" Link="Production/IDesktopLyricsRenderer.cs" />
+    <Compile Include="../../DesktopLyrics/DesktopLyricsStyle.cs" Link="Production/DesktopLyricsStyle.cs" />
+    <Compile Include="../../DesktopLyrics/DesktopLyricsTheme.cs" Link="Production/DesktopLyricsTheme.cs" />
+    <Compile Include="../../DesktopLyrics/DesktopLyricsAudioSpectrum.cs" Link="Production/DesktopLyricsAudioSpectrum.cs" />
+    <Compile Include="../../Model/DesktopLyricsVisualMode.cs" Link="Production/DesktopLyricsVisualMode.cs" />
+  </ItemGroup>
+</Project>

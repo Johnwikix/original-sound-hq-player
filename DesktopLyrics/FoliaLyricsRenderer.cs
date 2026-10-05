@@ -1,4 +1,5 @@
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+using AnimatedWin2dControls.Renderer.Background;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Text;
@@ -18,22 +19,18 @@ using WinUIMusicPlayer.Model;
 namespace WinUIMusicPlayer.DesktopLyrics;
 
 /// <summary>
-/// Fume-inspired local wallpaper renderer. The scene is an article of lyric blocks,
-/// not a centered line over a full-screen shader: the camera follows the active block,
-/// while old and upcoming blocks remain in the world and fade at different rates.
+/// Local Folia wallpaper renderer. Each visual mode selects an independent ComputeSharp
+/// background branch plus its own lyric spatial composition and camera framing; Win2D remains
+/// responsible for native text rasterization and the foreground geometry overlays.
 /// </summary>
-internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
+public sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer, IDesktopLyricsAudioSpectrumSink
 {
     private const double SyncThresholdMs = 500;
     private const double PassedHoldMs = 12000;
-    private const int StarCount = 150;
-    private const int GeometryCount = 20;
-    private static readonly Color FumeGold = Color.FromArgb(0xFF, 0xE7, 0xB7, 0x6A);
 
-    private readonly CanvasAnimatedControl _canvas = new() { ClearColor = Colors.Transparent };
+    private readonly CanvasAnimatedControl? _canvas;
     private readonly List<LineVisual> _lines = [];
-    private readonly List<StarVisual> _stars = [];
-    private readonly List<GeometryVisual> _geometry = [];
+    private readonly FoliaWallpaperBackgroundRenderer _gpuBackground = new();
 
     private CanvasSolidColorBrush? _textBrush;
     private CanvasSolidColorBrush? _accentBrush;
@@ -63,6 +60,7 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
     private double _lastTotalMs;
     private double _offsetMs;
     private bool _timeSyncValid;
+    private DesktopLyricsAudioSpectrum _audioSpectrum;
     private int _currentIndex = -1;
     private double _phase;
     private float _cameraX;
@@ -113,19 +111,69 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
         public void Dispose() => Layout.Dispose();
     }
 
-    private readonly record struct StarVisual(Vector2 Position, float Radius, float Phase, bool Accent);
-    private readonly record struct GeometryVisual(Vector2 Position, float Size, float Rotation, float Speed, byte Kind);
 
-    public FoliaLyricsRenderer()
+    public FoliaLyricsRenderer(bool createCanvas = true)
     {
-        _canvas.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / 60);
-        _canvas.CreateResources += OnCreateResources;
-        _canvas.Update += OnUpdate;
-        _canvas.Draw += OnDraw;
+        if (createCanvas)
+        {
+            _canvas = new CanvasAnimatedControl { ClearColor = Colors.Transparent };
+            _canvas.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / 60);
+            _canvas.CreateResources += OnCreateResources;
+            _canvas.Update += OnUpdate;
+            _canvas.Draw += OnDraw;
+        }
     }
 
-    public UIElement Content => _canvas;
+    public UIElement Content => _canvas ?? throw new InvalidOperationException("离屏渲染器没有桌面控件内容。");
     public Rect? LastTextBounds => _lastTextBounds?.Value;
+
+    /// <summary>Stores the future audio-reactive input without changing the standard motion curve yet.</summary>
+    public void SetAudioSpectrum(DesktopLyricsAudioSpectrum spectrum) => _audioSpectrum = spectrum.Clamped;
+
+    public DesktopLyricsAudioSpectrum AudioSpectrum => _audioSpectrum;
+
+    /// <summary>
+    /// Renders one deterministic frame into a caller-owned Win2D target. This is used by the
+    /// verifier and follows the same scene rebuild, camera, word timing and mode overlay path as
+    /// the live wallpaper canvas.
+    /// </summary>
+    public void RenderOffscreen(ICanvasResourceCreator creator, CanvasDrawingSession drawingSession,
+        float width, float height, double timeMs)
+    {
+        if (_disposed || width < 100 || height < 50) return;
+
+        EnsureOffscreenResources(creator);
+        _lastTotalMs = timeMs;
+        _internalTimeMs = timeMs;
+        _phase = (float)(timeMs / 1000d * 0.8d);
+        int nextIndex = FindCurrentLineIndex(timeMs);
+        bool lineChanged = nextIndex != _currentIndex;
+        _currentIndex = nextIndex;
+        if (_layoutDirty || lineChanged || Math.Abs(width - _lastLayoutWidth) > 0.5 || Math.Abs(height - _lastLayoutHeight) > 0.5)
+            RebuildScene(creator, nextIndex, width, height);
+
+        ResolveCameraTarget(nextIndex, width, height);
+        _cameraX = _cameraTargetX;
+        _cameraY = _cameraTargetY;
+        _cameraScale = _cameraTargetScale;
+
+        drawingSession.Clear(_theme.Background);
+        _gpuBackground.Draw(drawingSession, width, height);
+        DrawSceneLines(drawingSession, timeMs);
+        DrawModeOverlay(drawingSession);
+        DrawAuxiliaryText(drawingSession);
+    }
+
+    private void EnsureOffscreenResources(ICanvasResourceCreator creator)
+    {
+        if (_resourcesReady) return;
+        _textBrush = new CanvasSolidColorBrush(creator, _theme.Primary);
+        _accentBrush = new CanvasSolidColorBrush(creator, _theme.Accent);
+        _glowBrush = new CanvasSolidColorBrush(creator, _theme.Accent);
+        ConfigureGpuBackground();
+        _gpuBackground.LoadResources();
+        _resourcesReady = true;
+    }
 
     public void SetStyle(DesktopLyricsStyle style)
     {
@@ -140,7 +188,11 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
         {
             _theme = theme;
             _visualMode = theme.VisualMode;
+            if (_textBrush is not null) _textBrush.Color = theme.Primary;
+            if (_accentBrush is not null) _accentBrush.Color = theme.Accent;
+            if (_glowBrush is not null) _glowBrush.Color = theme.Accent;
         }
+        ConfigureGpuBackground();
         _layoutDirty = true;
     }
 
@@ -158,7 +210,8 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
     {
         _suspended = suspended;
         if (!suspended) _timeSyncValid = false;
-        _canvas.Paused = suspended;
+        if (_canvas is not null)
+            _canvas.Paused = suspended;
     }
 
     public void SetIsPlaying(bool isPlaying)
@@ -172,12 +225,16 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
     {
         if (_disposed) return;
         _disposed = true;
-        _canvas.Paused = true;
-        _canvas.CreateResources -= OnCreateResources;
-        _canvas.Update -= OnUpdate;
-        _canvas.Draw -= OnDraw;
+        if (_canvas is not null)
+        {
+            _canvas.Paused = true;
+            _canvas.CreateResources -= OnCreateResources;
+            _canvas.Update -= OnUpdate;
+            _canvas.Draw -= OnDraw;
+        }
         DisposeScene();
         DisposeBrushes();
+        _gpuBackground.Dispose();
     }
 
     private void OnCreateResources(CanvasAnimatedControl sender, Microsoft.Graphics.Canvas.UI.CanvasCreateResourcesEventArgs args)
@@ -189,6 +246,8 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
             _textBrush = new CanvasSolidColorBrush(sender, _theme.Primary);
             _accentBrush = new CanvasSolidColorBrush(sender, _theme.Accent);
             _glowBrush = new CanvasSolidColorBrush(sender, _theme.Accent);
+            ConfigureGpuBackground();
+            _gpuBackground.LoadResources();
             _resourcesReady = true;
             _layoutDirty = true;
         }
@@ -203,6 +262,7 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
         if (_disposed || _suspended) return;
         try
         {
+            _gpuBackground.Update(args.Timing.ElapsedTime);
             if (_lyricsChanged)
             {
                 _lyricsChanged = false;
@@ -228,6 +288,7 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
             int nextIndex = FindCurrentLineIndex(currentTime);
             bool lineChanged = nextIndex != _currentIndex;
             _currentIndex = nextIndex;
+            if (_canvas is null) return;
             double width = _canvas.Size.Width;
             double height = _canvas.Size.Height;
             if (_layoutDirty || lineChanged || Math.Abs(width - _lastLayoutWidth) > 0.5 || Math.Abs(height - _lastLayoutHeight) > 0.5)
@@ -257,7 +318,9 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
                 return;
 
             double currentTime = _internalTimeMs - _offsetMs;
-            DrawFumeBackground(ds);
+            _gpuBackground.Draw(sender, ds);
+            // ComputeSharp owns the shared common background; the Win2D pass is reserved for
+            // mode-specific lyric composition and foreground decorations.
             DrawSceneLines(ds, currentTime);
             DrawModeOverlay(ds);
             DrawAuxiliaryText(ds);
@@ -268,61 +331,28 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
         }
     }
 
-    private void DrawFumeBackground(CanvasDrawingSession ds)
+    private void ConfigureGpuBackground()
     {
-        float width = (float)_lastLayoutWidth;
-        float height = (float)_lastLayoutHeight;
-        Vector2 screenCenter = new(width * 0.5f, height * 0.5f);
+        _gpuBackground.Configure(
+            _theme.Background,
+            _theme.SecondaryBackground,
+            _theme.Primary,
+            _theme.Accent,
+            (int)_visualMode,
+            1f);
+    }
 
-        foreach (StarVisual star in _stars)
-        {
-            Vector2 point = Project(star.Position, 0.72f, screenCenter);
-            float twinkle = 0.55f + 0.45f * MathF.Sin((float)_phase * 1.6f + star.Phase);
-            byte alpha = (byte)Math.Clamp((star.Accent ? 175 : 125) * twinkle, 24, 180);
-            Color color = WithAlpha(star.Accent ? MixColor(_theme.Accent, FumeGold, 0.4) : _theme.Secondary, alpha);
-            ds.DrawEllipse(point, star.Radius, star.Radius, color, star.Accent ? 1.4f : 1f);
-        }
-
-        foreach (GeometryVisual shape in _geometry)
-        {
-            Vector2 point = Project(shape.Position, 0.78f, screenCenter);
-            float rotation = shape.Rotation + (float)_phase * shape.Speed;
-            bool accent = shape.Kind is 1 or 3;
-            byte alpha = (byte)Math.Clamp(shape.Kind == 3 ? 155 : 118, 22, 165);
-            Color color = WithAlpha(accent ? MixColor(_theme.Accent, FumeGold, 0.35) : _theme.Secondary, alpha);
-            Vector2 axis = new(MathF.Cos(rotation), MathF.Sin(rotation));
-            Vector2 perpendicular = new(-axis.Y, axis.X);
-            if (shape.Kind == 0)
-            {
-                ds.DrawEllipse(point, shape.Size, shape.Size, WithAlpha(color, (byte)(alpha * 0.52f)), 0.7f);
-                ds.DrawEllipse(point, shape.Size * 0.96f, shape.Size * 0.96f, color, 1.15f);
-            }
-            else if (shape.Kind == 1)
-            {
-                Vector2 a = point + axis * shape.Size;
-                Vector2 b = point + perpendicular * shape.Size * 0.72f;
-                Vector2 c = point - axis * shape.Size;
-                Vector2 d = point - perpendicular * shape.Size * 0.72f;
-                ds.DrawLine(a, b, color, 1f);
-                ds.DrawLine(b, c, color, 1f);
-                ds.DrawLine(c, d, color, 1f);
-                ds.DrawLine(d, a, color, 1f);
-            }
-            else if (shape.Kind == 2)
-            {
-                float arm = shape.Size * 0.30f;
-                ds.DrawLine(point - perpendicular * shape.Size, point + perpendicular * shape.Size, color, 1f);
-                ds.DrawLine(point - axis * shape.Size, point + axis * shape.Size, color, 1f);
-                ds.DrawLine(point - perpendicular * arm - axis * arm, point + perpendicular * arm - axis * arm, WithAlpha(color, (byte)(alpha * 0.65f)), 0.8f);
-            }
-            else
-            {
-                ds.DrawLine(point - axis * shape.Size, point + axis * shape.Size, color, 1.1f);
-                ds.DrawLine(point - perpendicular * shape.Size, point + perpendicular * shape.Size, color, 1.1f);
-                ds.DrawLine(point - (axis + perpendicular) * shape.Size * 0.68f, point + (axis + perpendicular) * shape.Size * 0.68f, WithAlpha(color, (byte)(alpha * 0.68f)), 0.8f);
-                ds.DrawLine(point - (axis - perpendicular) * shape.Size * 0.68f, point + (axis - perpendicular) * shape.Size * 0.68f, WithAlpha(color, (byte)(alpha * 0.68f)), 0.8f);
-            }
-        }
+    private static void DrawDioramaFrame(CanvasDrawingSession ds, Vector2 center, float width, float height, Color accent, Color secondary)
+    {
+        float frameWidth = width * 0.52f;
+        float frameHeight = height * 0.42f;
+        float left = center.X - frameWidth * 0.5f;
+        float top = center.Y - frameHeight * 0.5f;
+        ds.DrawRectangle(left, top, frameWidth, frameHeight, accent, 1.2f);
+        ds.DrawLine(new Vector2(left, top), new Vector2(center.X - frameWidth * 0.38f, center.Y - frameHeight * 0.30f), secondary, 0.9f);
+        ds.DrawLine(new Vector2(left + frameWidth, top), new Vector2(center.X + frameWidth * 0.38f, center.Y - frameHeight * 0.30f), secondary, 0.9f);
+        ds.DrawLine(new Vector2(left, top + frameHeight), new Vector2(center.X - frameWidth * 0.38f, center.Y + frameHeight * 0.30f), secondary, 0.9f);
+        ds.DrawLine(new Vector2(left + frameWidth, top + frameHeight), new Vector2(center.X + frameWidth * 0.38f, center.Y + frameHeight * 0.30f), secondary, 0.9f);
     }
 
     private void DrawSceneLines(CanvasDrawingSession ds, double currentTime)
@@ -338,6 +368,10 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
 
         foreach (LineVisual line in _lines)
         {
+            bool articleMode = _visualMode == DesktopLyricsVisualMode.Fume;
+            if (!articleMode && (_currentIndex < 0 || line.SourceIndex != _currentIndex))
+                continue;
+
             Vector2 projectedCenter = Project(line.Center, 1f, screenCenter);
             float projectedExtent = MathF.Max((float)line.Layout.LayoutBounds.Width, (float)line.Layout.LayoutBounds.Height)
                 * _cameraScale * 0.62f + 64f;
@@ -347,15 +381,19 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
 
             double progress = ResolveLineProgress(line, currentTime);
             float alpha = progress < 0
-                ? 0.18f
+                ? articleMode ? 0.075f : 0.035f
                 : progress <= 1
-                    ? 0.28f + (float)Math.Sin(progress * Math.PI) * 0.22f
-                    : 0.32f * (float)Math.Exp(-Math.Min((currentTime - line.EndMs) / PassedHoldMs, 7));
+                    ? (articleMode ? 0.12f : 0.08f) + (float)Math.Sin(progress * Math.PI) * (articleMode ? 0.10f : 0.06f)
+                    : (articleMode ? 0.16f : 0.08f) * (float)Math.Exp(-Math.Min((currentTime - line.EndMs) / PassedHoldMs, 7));
             if (alpha <= 0.01f) continue;
 
-            _textBrush!.Color = WithAlpha(_theme.Primary, (byte)Math.Clamp(alpha * 255, 0, 255));
+            bool isCurrent = line.SourceIndex == _currentIndex;
+            _textBrush!.Color = WithAlpha(_theme.Primary,
+                isCurrent ? (byte)(articleMode ? 205 : 220) : (byte)Math.Clamp(alpha * 255, 0, 255));
             bool hasLiveGlyphs = line.Glyphs.Count > 0;
-            if (!hasLiveGlyphs || currentTime > line.EndMs)
+            bool glyphOnlyMode = _visualMode == DesktopLyricsVisualMode.Cadenza
+                || _visualMode == DesktopLyricsVisualMode.Claddagh;
+            if (!glyphOnlyMode && (!hasLiveGlyphs || currentTime > line.EndMs || isCurrent))
                 DrawLayout(ds, line.Layout, line.LayoutCenter, line.Center, line.Rotation, worldToScreen, _textBrush);
 
             if (line.StartMs <= currentTime && currentTime <= line.EndMs && line.Glyphs.Count > 0)
@@ -367,30 +405,79 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
 
     private void DrawLiveGlyphs(CanvasDrawingSession ds, LineVisual line, double currentTime, Matrix3x2 worldToScreen)
     {
-        foreach (GlyphVisual glyph in line.Glyphs)
+        for (int glyphIndex = 0; glyphIndex < line.Glyphs.Count; glyphIndex++)
         {
+            GlyphVisual glyph = line.Glyphs[glyphIndex];
             double progress = (currentTime - glyph.StartMs) / Math.Max(glyph.EndMs - glyph.StartMs, 1);
             bool active = progress >= 0 && progress <= 1;
-            bool passed = progress > 1;
+            // The full current line is drawn once below. Re-drawing passed or pending
+            // glyphs here creates the offset after-image that the upstream canvas avoids.
+            if (!active && _visualMode is not DesktopLyricsVisualMode.Cadenza and not DesktopLyricsVisualMode.Claddagh)
+                continue;
             float envelope = active ? (float)Math.Sin(Math.Clamp(progress, 0, 1) * Math.PI) : 0;
-            float alpha = active ? 0.78f + envelope * 0.22f : passed ? 0.24f : 0.10f;
+            float alpha = active ? 0.78f + envelope * 0.22f : 0.24f;
             float scale = active ? 1f + envelope * 0.06f : 1f;
             Vector2 position = glyph.LocalPosition;
             if (active)
                 position.Y -= envelope * Math.Max(8f, (float)_fontSize * 0.22f);
 
-            Color color = active
-                ? MixColor(glyph.AccentColor, FumeGold, 0.72)
-                : passed ? MixColor(glyph.AccentColor, FumeGold, 0.36) : _theme.Primary;
+            float rotation = line.Rotation;
+            float modeScale = scale;
+            switch (_visualMode)
+            {
+                case DesktopLyricsVisualMode.Cadenza:
+                    position += new Vector2(
+                        MathF.Sin((float)(_phase * 1.15 + glyph.StartMs * 0.006)) * 7f,
+                        MathF.Cos((float)(_phase * 1.37 + glyph.EndMs * 0.004)) * 5f);
+                    modeScale *= 0.92f + envelope * 0.12f;
+                    break;
+                case DesktopLyricsVisualMode.Partita:
+                    position.Y += MathF.Sin((float)(_phase * 0.75 + glyph.StartMs * 0.003)) * 3f;
+                    rotation += MathF.Sin((float)(_phase * 0.6 + glyph.StartMs * 0.002)) * 0.018f;
+                    break;
+                case DesktopLyricsVisualMode.Tilt:
+                    rotation += MathF.Sin((float)(_phase * 0.8 + glyph.StartMs * 0.004)) * 0.035f;
+                    position.X += MathF.Sin((float)(_phase * 0.7 + glyph.EndMs * 0.003)) * 5f;
+                    break;
+                case DesktopLyricsVisualMode.Claddagh:
+                    float orbit = -MathF.PI * 0.86f + glyphIndex / Math.Max(1f, line.Glyphs.Count - 1f) * MathF.PI * 1.72f;
+                    position = new Vector2(
+                        MathF.Cos(orbit) * (float)_lastLayoutWidth * 0.25f,
+                        MathF.Sin(orbit) * (float)_lastLayoutHeight * 0.18f);
+                    rotation = orbit + MathF.PI * 0.5f;
+                    modeScale *= 0.94f + envelope * 0.14f;
+                    break;
+                case DesktopLyricsVisualMode.Diorama:
+                    modeScale *= 0.82f + Math.Clamp(0.18f - Math.Abs(position.Y) / Math.Max(1f, (float)_lastLayoutHeight), 0f, 0.18f);
+                    break;
+                case DesktopLyricsVisualMode.Pendolo:
+                    rotation += MathF.Sin((float)(_phase * 0.9 + glyph.StartMs * 0.003)) * 0.045f;
+                    position.Y += MathF.Sin((float)(_phase * 0.9 + glyph.StartMs * 0.003)) * 4f;
+                    break;
+                case DesktopLyricsVisualMode.Sonnet:
+                    position.X += active ? MathF.Sin((float)(_phase * 8 + glyph.StartMs)) * 1.6f : 0f;
+                    modeScale *= active ? 1.06f : 0.96f;
+                    break;
+                case DesktopLyricsVisualMode.Tempera:
+                    modeScale *= active ? 1.08f : 0.92f;
+                    rotation += (StableHash(glyph.Text) & 1) == 0 ? -0.012f : 0.012f;
+                    break;
+                case DesktopLyricsVisualMode.Lumiere:
+                    modeScale *= 0.98f + envelope * 0.16f;
+                    position.Y -= envelope * 5f;
+                    break;
+            }
+
+            Color color = active ? glyph.AccentColor : _theme.Primary;
             if (_glow && active)
             {
                 byte glowAlpha = (byte)Math.Clamp(alpha * Math.Min(48, 8 + _glowAmount * 5), 0, 255);
                 _glowBrush!.Color = WithAlpha(color, glowAlpha);
-                DrawLayout(ds, glyph.Layout, glyph.LayoutCenter, line.Center + position, line.Rotation, worldToScreen, _glowBrush, scale * 1.045f);
+                DrawLayout(ds, glyph.Layout, glyph.LayoutCenter, line.Center + position, rotation, worldToScreen, _glowBrush, modeScale * 1.045f);
             }
 
             _accentBrush!.Color = WithAlpha(color, (byte)Math.Clamp(alpha * 255, 0, 255));
-            DrawLayout(ds, glyph.Layout, glyph.LayoutCenter, line.Center + position, line.Rotation, worldToScreen, _accentBrush, scale);
+            DrawLayout(ds, glyph.Layout, glyph.LayoutCenter, line.Center + position, rotation, worldToScreen, _accentBrush, modeScale);
         }
     }
 
@@ -398,17 +485,63 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
     {
         float width = (float)_lastLayoutWidth;
         float height = (float)_lastLayoutHeight;
-        Color accent = WithAlpha(MixColor(_theme.Accent, FumeGold, 0.32), 70);
-        Color secondary = WithAlpha(_theme.Secondary, 52);
+        Color accent = WithAlpha(_theme.Accent, 118);
+        Color secondary = WithAlpha(_theme.Secondary, 78);
         Vector2 center = new(width * 0.5f, height * 0.5f);
 
         switch (_visualMode)
         {
+            case DesktopLyricsVisualMode.Classic:
+                float sweep = (float)((_phase * 0.18f) % 1.35f);
+                float sweepX = width * (-0.18f + sweep);
+                Vector2[] classicGraph =
+                [
+                    new(width * 0.08f, height * 0.74f), new(width * 0.27f, height * 0.42f),
+                    new(width * 0.46f, height * 0.64f), new(width * 0.66f, height * 0.25f),
+                    new(width * 0.91f, height * 0.54f),
+                ];
+                for (int i = 1; i < classicGraph.Length; i++)
+                    ds.DrawLine(classicGraph[i - 1], classicGraph[i], accent, 2f);
+                foreach (Vector2 point in classicGraph)
+                    ds.FillEllipse(point, 4f, 4f, accent);
+                ds.DrawLine(new Vector2(sweepX, height * 0.16f), new Vector2(sweepX + width * 0.22f, height * 0.84f), WithAlpha(accent, 70), 1.2f);
+                break;
+            case DesktopLyricsVisualMode.Cadenza:
+                for (int i = 0; i < 16; i++)
+                {
+                    float angle = (float)_phase * 0.25f + i * MathF.Tau / 16f;
+                    Vector2 direction = new(MathF.Cos(angle), MathF.Sin(angle));
+                    ds.DrawLine(center + direction * width * 0.24f, center + direction * width * 0.33f, accent, 1.2f);
+                }
+                ds.DrawEllipse(center, width * 0.22f, height * 0.18f, secondary, 1f);
+                break;
+            case DesktopLyricsVisualMode.Partita:
+                for (int i = 0; i < 7; i++)
+                {
+                    float x = width * (0.12f + i * 0.12f);
+                    float y = height * (0.76f - i * 0.075f);
+                    ds.DrawLine(new Vector2(x, y), new Vector2(x + width * 0.10f, y), accent, 1.5f);
+                }
+                break;
+            case DesktopLyricsVisualMode.Fume:
+                break;
+            case DesktopLyricsVisualMode.Tilt:
+                ds.DrawLine(new Vector2(width * 0.12f, height * 0.79f), new Vector2(width * 0.88f, height * 0.21f), accent, 1.1f);
+                ds.DrawLine(new Vector2(width * 0.12f, height * 0.82f), new Vector2(width * 0.88f, height * 0.24f), WithAlpha(accent, 25), 5f);
+                break;
             case DesktopLyricsVisualMode.Pendolo:
-                Vector2 clock = new(width * 0.18f, height * 0.28f);
-                float radius = Math.Clamp(Math.Min(width, height) * 0.095f, 54f, 118f);
-                ds.DrawEllipse(clock, radius, radius, accent, 1.4f);
-                ds.DrawEllipse(clock, radius * 0.16f, radius * 0.16f, accent, 1.2f);
+                Vector2 clock = new(width * 0.20f, height * 0.54f);
+                float radius = Math.Clamp(Math.Min(width, height) * 0.22f, 110f, 260f);
+                ds.DrawEllipse(clock, radius, radius, accent, 2.2f);
+                ds.DrawEllipse(clock, radius * 0.80f, radius * 0.80f, secondary, 1.2f);
+                ds.DrawEllipse(clock, radius * 0.34f, radius * 0.34f, accent, 1.2f);
+                for (int i = 0; i < 24; i++)
+                {
+                    float angle = i * MathF.Tau / 24f;
+                    Vector2 outer = clock + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * radius;
+                    Vector2 inner = clock + new Vector2(MathF.Cos(angle), MathF.Sin(angle)) * (radius * 0.91f);
+                    ds.DrawLine(inner, outer, secondary, 1.4f);
+                }
                 float hand = (float)_phase * 0.55f;
                 Vector2 handDirection = new(MathF.Cos(hand), MathF.Sin(hand));
                 ds.DrawLine(clock, clock + handDirection * radius * 0.78f, accent, 1.6f);
@@ -418,9 +551,16 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
                 ds.DrawEllipse(center, width * 0.34f, height * 0.18f, secondary, 1.2f);
                 ds.DrawEllipse(center, width * 0.25f, height * 0.11f, accent, 1f);
                 break;
-            case DesktopLyricsVisualMode.Monet:
-                ds.DrawLine(new Vector2(0, height), new Vector2(width, 0), secondary, 1.2f);
-                ds.DrawLine(new Vector2(width * 0.34f, height), new Vector2(width * 0.82f, 0), accent, 0.8f);
+            case DesktopLyricsVisualMode.Diorama:
+                DrawDioramaFrame(ds, center, width, height, accent, secondary);
+                for (int i = 0; i < 3; i++)
+                {
+                    float x = width * (0.18f + i * 0.32f);
+                    float y = height * (0.72f - i * 0.12f);
+                    ds.DrawRectangle(x, y, 58f, 72f, secondary, 1.4f);
+                    ds.DrawLine(new Vector2(x, y), new Vector2(x + 18f, y - 14f), accent, 1f);
+                    ds.DrawLine(new Vector2(x + 58f, y), new Vector2(x + 76f, y - 14f), accent, 1f);
+                }
                 break;
             case DesktopLyricsVisualMode.Sonnet:
                 float margin = Math.Min(width, height) * 0.10f;
@@ -428,16 +568,23 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
                 ds.DrawLine(new Vector2(margin, margin), new Vector2(margin, margin + 90), accent, 1f);
                 ds.DrawLine(new Vector2(width - margin, height - margin), new Vector2(width - margin - 90, height - margin), accent, 1f);
                 ds.DrawLine(new Vector2(width - margin, height - margin), new Vector2(width - margin, height - margin - 90), accent, 1f);
+                for (int i = 0; i < 9; i++)
+                {
+                    float x = width * (0.16f + i * 0.085f);
+                    ds.DrawLine(new Vector2(x, height * 0.08f), new Vector2(x, height * 0.92f), WithAlpha(secondary, 55), 1f);
+                }
                 break;
             case DesktopLyricsVisualMode.Tempera:
-                ds.FillRectangle(0, height * 0.08f, width, height * 0.18f, WithAlpha(_theme.Accent, 18));
-                ds.FillRectangle(0, height * 0.74f, width, height * 0.18f, WithAlpha(_theme.Secondary, 16));
+                ds.DrawLine(new Vector2(-width * 0.1f, height * 0.15f), new Vector2(width * 0.55f, height * 0.95f), WithAlpha(accent, 80), height * 0.18f);
+                ds.FillRectangle(width * 0.64f, height * 0.18f, width * 0.12f, height * 0.20f, WithAlpha(_theme.Secondary, 80));
+                ds.FillRectangle(width * 0.70f, height * 0.48f, width * 0.10f, height * 0.24f, WithAlpha(_theme.Secondary, 60));
                 ds.DrawLine(new Vector2(0, height * 0.52f), new Vector2(width, height * 0.52f), secondary, 1f);
                 break;
             case DesktopLyricsVisualMode.Lumiere:
                 ds.DrawLine(new Vector2(width * 0.43f, 0), new Vector2(width * 0.30f, height * 0.68f), accent, 1f);
                 ds.DrawLine(new Vector2(width * 0.57f, 0), new Vector2(width * 0.70f, height * 0.68f), accent, 1f);
                 ds.DrawLine(new Vector2(width * 0.27f, height * 0.80f), new Vector2(width * 0.73f, height * 0.80f), accent, 1.2f);
+                ds.FillEllipse(new Vector2(width * 0.50f, height * 0.62f), 42f, 42f, WithAlpha(_theme.Accent, 80));
                 break;
         }
     }
@@ -517,23 +664,11 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
             y += jitterY;
             float rotation = (seed / 1000 % 1000 / 1000f - 0.5f) * (hero ? 0.085f : 0.05f);
 
-            if (_visualMode is DesktopLyricsVisualMode.Still or DesktopLyricsVisualMode.Classic)
-            {
-                x = viewportWidth * 0.5f;
-                y = viewportHeight * 0.5f + (lineIndex - index) * viewportHeight * 1.15f;
-                rotation = 0;
-            }
-            else if (_visualMode == DesktopLyricsVisualMode.Partita)
+            if (_visualMode == DesktopLyricsVisualMode.Partita)
             {
                 x = viewportWidth * 0.5f + (lineIndex - index) * viewportWidth * 0.13f;
                 y = viewportHeight * 0.32f + (lineIndex - index) * Math.Max(viewportHeight * 0.25f, 170f);
                 rotation = 0;
-            }
-            else if (_visualMode == DesktopLyricsVisualMode.Cappella)
-            {
-                x = lineIndex % 2 == 0 ? viewportWidth * 0.30f : viewportWidth * 0.70f;
-                y = viewportHeight * 0.30f + (lineIndex - index) * Math.Max(viewportHeight * 0.28f, 190f);
-                rotation = lineIndex % 2 == 0 ? -0.025f : 0.025f;
             }
             else if (_visualMode == DesktopLyricsVisualMode.Tilt)
             {
@@ -544,6 +679,38 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
                 x = viewportWidth * (0.22f + (lineIndex % 3) * 0.28f);
                 y = viewportHeight * 0.26f + (lineIndex - index) * Math.Max(viewportHeight * 0.30f, 210f);
                 rotation = (lineIndex % 3 - 1) * 0.045f;
+            }
+            else if (_visualMode == DesktopLyricsVisualMode.Claddagh)
+            {
+                float orbitAngle = (lineIndex - index) * 0.42f - MathF.PI * 0.5f;
+                x = viewportWidth * 0.5f + MathF.Cos(orbitAngle) * viewportWidth * 0.31f;
+                y = viewportHeight * 0.5f + MathF.Sin(orbitAngle) * viewportHeight * 0.18f;
+                rotation = orbitAngle + MathF.PI * 0.5f;
+            }
+            else if (_visualMode == DesktopLyricsVisualMode.Pendolo)
+            {
+                x = viewportWidth * 0.62f;
+                y = viewportHeight * 0.50f + (lineIndex - index) * Math.Max(viewportHeight * 0.22f, 150f);
+                rotation = (lineIndex - index) * 0.025f;
+            }
+            else if (_visualMode == DesktopLyricsVisualMode.Sonnet)
+            {
+                x = viewportWidth * (lineIndex % 2 == 0 ? 0.36f : 0.64f);
+                y = viewportHeight * 0.26f + (lineIndex - index) * Math.Max(viewportHeight * 0.24f, 160f);
+                rotation = lineIndex % 2 == 0 ? -0.018f : 0.018f;
+            }
+            else if (_visualMode == DesktopLyricsVisualMode.Tempera)
+            {
+                x = viewportWidth * (lineIndex % 2 == 0 ? 0.30f : 0.70f);
+                y = viewportHeight * (lineIndex % 2 == 0 ? 0.24f : 0.76f)
+                    + (lineIndex - index) * Math.Max(viewportHeight * 0.18f, 120f);
+                rotation = lineIndex % 2 == 0 ? -0.035f : 0.035f;
+            }
+            else if (_visualMode == DesktopLyricsVisualMode.Lumiere)
+            {
+                x = viewportWidth * 0.5f + (lineIndex - index) * viewportWidth * 0.12f;
+                y = viewportHeight * 0.66f + (lineIndex - index) * Math.Max(viewportHeight * 0.24f, 160f);
+                rotation = (lineIndex - index) * 0.035f;
             }
 
             var visual = new LineVisual
@@ -564,7 +731,7 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
                 columnHeights[spanColumn] = y + (float)measuredLayout.LayoutBounds.Height * 0.5f + blockGap;
             // Per-grapheme layouts are only needed for the camera's active block. Other blocks use
             // one cached layout and stay cheap while they form the article's ghosted context.
-            if (lineIndex == index && _visualMode != DesktopLyricsVisualMode.Still)
+            if (lineIndex == index)
                 BuildGlyphs(creator, visual, line, graphemes, fontSize);
             _lines.Add(visual);
         }
@@ -572,7 +739,6 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
         float worldHeight = Math.Max(viewportHeight * 2f, 0f);
         foreach (float columnHeight in columnHeights)
             worldHeight = Math.Max(worldHeight, columnHeight + viewportHeight * 0.58f);
-        BuildBackground(worldWidth, worldHeight, StableHash($"{_theme.Name}:{lineCount}"));
         BuildAuxiliaryLayout(creator, index, viewportWidth, viewportHeight);
         if (_lines.Count > 0 && !preserveCamera)
         {
@@ -667,29 +833,6 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
         _auxiliaryText = text;
     }
 
-    private void BuildBackground(float worldWidth, float worldHeight, int seed)
-    {
-        var random = new DeterministicRandom(seed);
-        for (int i = 0; i < StarCount; i++)
-        {
-            _stars.Add(new StarVisual(
-                new Vector2(random.Next(0.04f, 0.96f) * worldWidth, random.Next(0.02f, 0.98f) * worldHeight),
-                random.Next(0.5f, 2.4f), random.Next(0, MathF.PI * 2), i % 7 == 0));
-        }
-        float baseUnit = Math.Clamp(Math.Min((float)_lastLayoutWidth, (float)_lastLayoutHeight) * 0.72f, 320f, 760f);
-        for (int i = 0; i < GeometryCount; i++)
-        {
-            bool spark = i >= 8;
-            float yRatio = (i + 0.5f) / GeometryCount + random.Next(-0.08f, 0.08f);
-            _geometry.Add(new GeometryVisual(
-                new Vector2(random.Next(0.12f, 0.88f) * worldWidth, Math.Clamp(yRatio, 0.05f, 0.95f) * worldHeight),
-                spark ? random.Next(baseUnit * 0.10f, baseUnit * 0.24f) : random.Next(baseUnit * 0.82f, baseUnit * 1.36f),
-                random.Next(-MathF.PI, MathF.PI),
-                random.Next(-0.045f, 0.045f),
-                (byte)(spark ? 3 : i % 3)));
-        }
-    }
-
     private void ResolveCameraTarget(int index, double width, double height)
     {
         if (_lines.Count == 0)
@@ -710,19 +853,27 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
         _cameraTargetY = line.Center.Y + framingY + floatY;
         _cameraTargetScale = _visualMode switch
         {
-            DesktopLyricsVisualMode.Still => 1.0f,
             DesktopLyricsVisualMode.Classic => 1.32f,
             DesktopLyricsVisualMode.Cadenza => 1.0f,
             DesktopLyricsVisualMode.Partita => 1.28f,
-            DesktopLyricsVisualMode.Cappella => 1.2f,
             DesktopLyricsVisualMode.Tilt => 1.45f,
             DesktopLyricsVisualMode.Diorama => 1.35f,
-            _ => line.IsHero ? 1.9f : 1.45f,
+            DesktopLyricsVisualMode.Claddagh => 1.08f,
+            DesktopLyricsVisualMode.Pendolo => 1.22f,
+            DesktopLyricsVisualMode.Sonnet => 1.26f,
+            DesktopLyricsVisualMode.Tempera => 1.12f,
+            DesktopLyricsVisualMode.Lumiere => 1.34f,
+            _ => line.IsHero ? 1.0f : 0.92f,
         };
-        if (_visualMode is DesktopLyricsVisualMode.Still or DesktopLyricsVisualMode.Classic or DesktopLyricsVisualMode.Cadenza)
+        if (_visualMode is DesktopLyricsVisualMode.Classic or DesktopLyricsVisualMode.Cadenza)
         {
             _cameraTargetX = line.Center.X + floatX * 0.35f;
             _cameraTargetY = line.Center.Y + floatY * 0.35f;
+        }
+        else if (_visualMode == DesktopLyricsVisualMode.Pendolo)
+        {
+            _cameraTargetX = line.Center.X + (float)width * 0.08f;
+            _cameraTargetY = line.Center.Y + floatY * 0.55f;
         }
     }
 
@@ -761,8 +912,6 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
         _auxiliaryLayout?.Dispose();
         _auxiliaryLayout = null;
         _auxiliaryText = string.Empty;
-        _stars.Clear();
-        _geometry.Clear();
         _lastTextBounds = null;
     }
 
@@ -849,19 +998,18 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
     {
         float heroRatio = _visualMode switch
         {
-            DesktopLyricsVisualMode.Classic => 0.075f,
+            DesktopLyricsVisualMode.Classic => 0.055f,
             DesktopLyricsVisualMode.Cadenza => 0.055f,
-            DesktopLyricsVisualMode.Still => 0.06f,
             DesktopLyricsVisualMode.Diorama => 0.052f,
             _ => 0.065f,
         };
-        float bodyRatio = _visualMode == DesktopLyricsVisualMode.Still ? 0.025f : 0.028f;
+        const float bodyRatio = 0.028f;
         float baseSize = hero ? height * heroRatio : height * bodyRatio;
         float maxWidth = width * (hero ? 2.65f : 1.9f);
         float estimatedWidth = Math.Max(1, graphemeCount) * baseSize * 0.82f;
         if (estimatedWidth > maxWidth)
             baseSize *= maxWidth / estimatedWidth;
-        return Math.Clamp(baseSize, hero ? 24 : 14, hero ? 84 : 44);
+        return Math.Clamp(baseSize, hero ? 24 : 14, hero ? 54 : 28);
     }
 
     private Color ResolveWordColor(string word)
@@ -920,17 +1068,4 @@ internal sealed class FoliaLyricsRenderer : IDesktopLyricsRenderer
             (byte)Math.Clamp(Math.Round(first.B * firstWeight + second.B * secondWeight), 0, 255));
     }
 
-    private sealed class DeterministicRandom
-    {
-        private uint _state;
-
-        public DeterministicRandom(int seed) => _state = unchecked((uint)seed);
-
-        public float Next(float min, float max)
-        {
-            _state = _state * 1664525u + 1013904223u;
-            float normalized = (_state & 0x00FFFFFF) / 16777215f;
-            return min + (max - min) * normalized;
-        }
-    }
 }

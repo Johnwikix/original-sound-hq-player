@@ -2,10 +2,28 @@
 
 新条目加在最上方。
 
+## 2026-10-05 收敛 Folia 壁纸视觉模式与通用背景
+- `Model/DesktopLyricsVisualMode`、设置页、托盘菜单：移除静止、莫奈、群唱，保留 11 个本地壁纸模式并同步更新模式索引。
+- `FoliaWallpaperEffect`：统一使用 Folia 通用背景的主题底色、15 个低透明度几何体、20 个粒子和暗角；模式索引仍写入常量缓冲，为后续接入其他背景类型保留接口。
+- `DesktopLyricsAudioSpectrum`、`IDesktopLyricsAudioSpectrumSink`：预留频谱输入通道，当前不改变标准歌词运动曲线，也不接入音频驱动。
+- `_tools/FoliaOffscreenRender`：对照清单同步为 11 个模式，继续输出 GPU 离屏验证帧。
+
+## 2026-10-05 增加 Folia 离屏 GPU 对照渲染工具
+- `_tools/FoliaOffscreenRender`：创建隐藏 WinUI 窗口和 `CanvasRenderTarget`，调用生产 `FoliaLyricsRenderer` 与 ComputeSharp D2D1 shader，批量输出 11 个视觉模式在 0、6、37.5 秒的 PNG 与 manifest，便于不打开主程序时检查实际 GPU 像素。
+- `FoliaLyricsRenderer`：移除旧 Win2D 背景与 ComputeSharp 背景的叠加绘制，避免几何线条重复叠加后把稀疏模式误显示成同一种满屏纹理。
+- 验证：工具 Debug 构建 0 错误并成功输出 33 张 1920×1080 PNG；Folia 上游已通过 `npm install` 与 `npm run build`，并使用 common 背景探针实际截图。
+
+## 2026-10-05 用 ComputeSharp 重写 14 个本地 Folia 壁纸效果
+- `External/AnimatedWin2dControls/.../FoliaWallpaperEffect.cs`：新增 ComputeSharp D2D1 像素着色器，为静止、流光、心象、云阶、浮名、莫奈、群唱、倾诉、回环、镜台、时计、商籁、凝彩、绘光分别提供独立空间函数；浮名按仓库实现采用星点与几何挂件黑场。
+- `External/AnimatedWin2dControls/.../FoliaWallpaperBackgroundRenderer.cs`、`FoliaLyricsRenderer`：沿用 `NowPlayingCanvas` 的 CreateResources/Update/Draw/Dispose 生命周期，在壁纸歌词每帧提交 ComputeSharp 常量缓冲，并在设备重建、模式切换和退出时正确重建/释放 shader effect。
+- 验证：ComputeSharp 外部控件 Debug 构建 0 错误；主项目 Release 构建在关闭本机缺失 `mspdbcmf.exe` 的符号包生成后 0 错误。未宣称像素差异已通过运行时截图验收，运行时仍需在支持 D2D1/WinUI 的设备上观察。
+
 ## 2026-10-05 增加纯本地歌词主题与桌面壁纸模式
 - `LocalLyricThemeService`、`DesktopLyricsTheme`：根据歌词或歌曲标题在本机识别情绪词并生成确定性配色与命中词色，结果按内容哈希缓存，不调用网络服务。
 - `FoliaLyricsRenderer`：改为 Fume 风格的本地文章画布，将整首歌词确定性排成多列正文与跨列主行，并用带偏移、弹簧跟随的摄像机追踪当前行；当前字按逐字时间打印、暖金色高亮与柔和光晕，前后行保留并渐隐，背景使用星点、环、方框、十字和火花线条，不再使用 LiquidFlow 液体纹理。
 - `FoliaLyricsRenderer`：修正当前字打印方块过亮、已扫过文字重复叠绘造成重影的问题；新增 Folia 视觉模式的本地构图入口（静止、流光、心象、云阶、浮名、莫奈、群唱、倾诉、回环、镜台、时计、商籁、凝彩、绘光）。
+- `FoliaLyricsRenderer`：按 Folia 各模式拆分本地 Win2D 背景与空间构图，不再让 14 个模式共用 Fume 背景；为莫奈、回环、时计、商籁、凝彩、绘光等模式增加独立文字布局。
+- `FoliaLyricsRenderer`：补齐 14 个模式的前景构图、镜头比例与逐字运动；流光扫光、心象散射、群唱头像、镜台透视、时计齿轮和绘光光束均在本地逐帧绘制，并使用稳定哈希避免重启后动画抖动。
 - `DesktopLyricsViewModel`、设置页、托盘菜单及设置快照：新增壁纸视觉模式选择，切换即时作用并持久化；非壁纸模式下视觉模式控件禁用。
 - `WallpaperDesktopLyricsHost`、`DesktopLyricsWindow`：参考 spectrum 将桌面歌词窗口挂载到 Explorer 壁纸层，支持主屏幕适配、可见性切换、Explorer 重建后的重新附着和退出还原。
 - `NotifyIconControl`、各语言 `Resources.resw`：新增 Wallpaper 桌面歌词模式入口和本地化文案。
