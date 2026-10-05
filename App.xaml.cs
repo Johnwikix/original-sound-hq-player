@@ -130,6 +130,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<AddFolderViewModel>();
                  services.AddSingleton<FolderAccessService>();
                  services.AddSingleton<SettingsViewModel>();
+                 services.AddSingleton<LocalLyricThemeService>();
                  services.AddSingleton<LlmTranslationService>();
                  services.AddSingleton<ILlmTranslationService>(sp => sp.GetRequiredService<LlmTranslationService>());
                  services.AddTransient<DspSettingsViewModel>();

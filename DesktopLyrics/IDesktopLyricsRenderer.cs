@@ -10,9 +10,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
     /// 桌面歌词渲染器抽象。宿主窗口只负责窗口生命周期/锁定/拖动/渲染器选择，
     /// 把数据总线（UILyricsBus / TimeProgressBus / OffsetMsBus / IsPlayingBus）的快照与
     /// 独立样式（DesktopLyricsStyle）推送给渲染器。
-    /// 现有两个实现：<see cref="TextBlockLyricsRenderer"/>（文本渲染，逐字效果关闭时）与
-    /// <see cref="CanvasLyricsRenderer"/>（Win2D 逐字扫光，直接组装库内部件的薄宿主），
-    /// 窗口按 ViewModel.IsKaraokeEnabled 选择并支持热切换。
+    /// 悬浮模式有 <see cref="TextBlockLyricsRenderer"/>（文本渲染，逐字效果关闭时）与
+    /// <see cref="CanvasLyricsRenderer"/>（Win2D 逐字扫光），壁纸模式使用
+    /// <see cref="FoliaLyricsRenderer"/>（背景与歌词共用一个 Win2D 画布）。
+    /// 窗口按宿主模式和 ViewModel.IsKaraokeEnabled 选择并支持热切换。
     /// </summary>
     public interface IDesktopLyricsRenderer : IDisposable
     {

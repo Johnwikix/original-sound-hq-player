@@ -2,6 +2,14 @@
 
 新条目加在最上方。
 
+## 2026-10-05 增加纯本地歌词主题与桌面壁纸模式
+- `LocalLyricThemeService`、`DesktopLyricsTheme`：根据歌词或歌曲标题在本机识别情绪词并生成确定性配色与命中词色，结果按内容哈希缓存，不调用网络服务。
+- `FoliaLyricsRenderer`：改为 Fume 风格的本地文章画布，将整首歌词确定性排成多列正文与跨列主行，并用带偏移、弹簧跟随的摄像机追踪当前行；当前字按逐字时间打印、暖金色高亮与柔和光晕，前后行保留并渐隐，背景使用星点、环、方框、十字和火花线条，不再使用 LiquidFlow 液体纹理。
+- `FoliaLyricsRenderer`：修正当前字打印方块过亮、已扫过文字重复叠绘造成重影的问题；新增 Folia 视觉模式的本地构图入口（静止、流光、心象、云阶、浮名、莫奈、群唱、倾诉、回环、镜台、时计、商籁、凝彩、绘光）。
+- `DesktopLyricsViewModel`、设置页、托盘菜单及设置快照：新增壁纸视觉模式选择，切换即时作用并持久化；非壁纸模式下视觉模式控件禁用。
+- `WallpaperDesktopLyricsHost`、`DesktopLyricsWindow`：参考 spectrum 将桌面歌词窗口挂载到 Explorer 壁纸层，支持主屏幕适配、可见性切换、Explorer 重建后的重新附着和退出还原。
+- `NotifyIconControl`、各语言 `Resources.resw`：新增 Wallpaper 桌面歌词模式入口和本地化文案。
+
 ## 2026-10-04 重组桌面歌词自动隐藏设置并修复任务栏锁定图标
 - `LyricsSettingsControl`：将桌面歌词自动隐藏改为 `SettingsExpander`，分别承载悬浮和任务栏模式两个 `SettingsCard`。
 - `DesktopLyricsWindow`：任务栏子窗口不再依赖未触发的窗口级 `x:Bind` 初始化锁定 Glyph，改为随锁定状态显式刷新图标。

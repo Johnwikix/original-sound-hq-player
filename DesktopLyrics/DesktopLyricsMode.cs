@@ -4,9 +4,7 @@ using WinUIMusicPlayer.Model;
 
 namespace WinUIMusicPlayer.DesktopLyrics;
 
-/// <summary>
-/// 桌面歌词宿主边界。歌词窗口和渲染器不依赖具体宿主，后续壁纸模式只需增加实现。
-/// </summary>
+/// <summary>桌面歌词宿主边界。歌词窗口和渲染器不依赖具体宿主。</summary>
 public interface IDesktopLyricsHost : IDisposable
 {
     DesktopLyricsMode Mode { get; }

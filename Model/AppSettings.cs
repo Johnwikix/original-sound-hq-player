@@ -57,6 +57,8 @@ namespace WinUIMusicPlayer.Model
         public static bool IsDesktopLyricsKaraokeEnabled { get; set; } = true;
         /// <summary>桌面歌词宿主模式的持久化值；未知值启动时回退到 Floating。</summary>
         public static string DesktopLyricsMode { get; set; } = nameof(WinUIMusicPlayer.Model.DesktopLyricsMode.Floating);
+        /// <summary>壁纸歌词视觉模式的持久化值；未知值启动时回退到 Fume。</summary>
+        public static string DesktopLyricsVisualMode { get; set; } = nameof(WinUIMusicPlayer.Model.DesktopLyricsVisualMode.Fume);
         public static double DesktopLyricsFontSize { get; set; } = 36;
         public static int DesktopLyricsTaskbarLyricsWidth { get; set; } = 640;
         public static string DesktopLyricsFontFamily { get; set; } = "Segoe UI";

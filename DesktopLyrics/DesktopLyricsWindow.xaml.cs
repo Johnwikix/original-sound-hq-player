@@ -59,6 +59,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private IDesktopLyricsRenderer? _renderer;
         private readonly IntPtr _hwnd;
         private readonly DesktopLyricsMode _mode;
+        private readonly LocalLyricThemeService _localThemeService =
+            App.Services.GetRequiredService<LocalLyricThemeService>();
+        private DesktopLyricsTheme _localTheme = DesktopLyricsTheme.Default;
         private ThemeStyleHelper? _themeStyleHelper;
 
         /// <summary>桌面歌词状态源（锁定图标绑定 / 按钮处理 / 边界与样式读写）。</summary>
@@ -104,13 +107,13 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         public DesktopLyricsWindow(DesktopLyricsMode mode = DesktopLyricsMode.Floating)
         {
-            _mode = mode is DesktopLyricsMode.Floating or DesktopLyricsMode.Taskbar
+            _mode = mode is DesktopLyricsMode.Floating or DesktopLyricsMode.Taskbar or DesktopLyricsMode.Wallpaper
                 ? mode
                 : DesktopLyricsMode.Floating;
             InitializeComponent();
-            if (_mode == DesktopLyricsMode.Taskbar)
+            if (_mode is DesktopLyricsMode.Taskbar or DesktopLyricsMode.Wallpaper)
             {
-                // 任务栏客户区高度很小，媒体信息和歌词共用一行时不再额外占用上下边距。
+                // 任务栏客户区与壁纸全屏都不需要悬浮窗的内边距。
                 RootGrid.Padding = new Thickness(0);
             }
             ConfigureTaskbarToolTips();
@@ -120,6 +123,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
             // TextBlockLyricsRenderer（文本描边）。开关变化经 PropertyChanged 热切换（EnsureRenderer）。
             // 任务栏模式只保留静态歌词，逐字动画会占用额外高度并降低任务栏刷新稳定性。
             EnsureRenderer(_mode != DesktopLyricsMode.Taskbar && ViewModel.IsKaraokeEnabled);
+
+            ApplyLocalTheme(null);
 
             // 复用 WinUIEx 自带的完全透明背景（与主程序"透明"样式同源）
             SystemBackdrop = new TransparentTintBackdrop();
@@ -155,6 +160,13 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         internal void AttachTaskbarHost(IDesktopLyricsBoundsHost host) => _taskbarHost = host;
 
+        /// <summary>壁纸宿主检测到整屏被覆盖时暂停 Win2D 帧循环，窗口本身仍保留在 Explorer 壁纸层。</summary>
+        internal void SetWallpaperSuspended(bool suspended)
+        {
+            if (_disposed || _mode != DesktopLyricsMode.Wallpaper || !_isOverlayVisible) return;
+            _renderer?.SetSuspended(suspended);
+        }
+
         private void ConfigureTaskbarToolTips()
         {
             if (_mode != DesktopLyricsMode.Taskbar) return;
@@ -178,7 +190,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 _isTaskbarManipulating = false;
                 _taskbarResizeEdge = TaskbarResizeEdge.None;
                 RootGrid.ReleasePointerCaptures();
-                if (_mode == DesktopLyricsMode.Taskbar)
+                if (_mode is DesktopLyricsMode.Taskbar or DesktopLyricsMode.Wallpaper)
                     WindowHelper.ShowWindow(_hwnd, WindowHelper.SW_HIDE);
                 else
                     AppWindow.Hide();
@@ -187,7 +199,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
             LyricsSyncRequestBus.Request();
             _renderer?.SetSuspended(false);
-            if (_mode == DesktopLyricsMode.Taskbar)
+            if (_mode is DesktopLyricsMode.Taskbar or DesktopLyricsMode.Wallpaper)
             {
                 WindowHelper.ShowWindow(_hwnd, WindowHelper.SW_SHOWNOACTIVATE);
             }
@@ -203,6 +215,16 @@ namespace WinUIMusicPlayer.DesktopLyrics
         public void ApplyLock(bool locked)
         {
             _locked = locked;
+            if (_mode == DesktopLyricsMode.Wallpaper)
+            {
+                // 壁纸层始终点击穿透，退出壁纸模式通过托盘/设置入口完成。
+                WindowHelper.SetClickThrough(_hwnd, true);
+                _clickThrough = true;
+                _isTaskbarManipulating = false;
+                RootGrid.ReleasePointerCaptures();
+                UpdateControlPanelVisual();
+                return;
+            }
             if (_mode == DesktopLyricsMode.Taskbar)
             {
                 // 任务栏宿主始终保持锁定布局；媒体控制组仍需接收点击，因此不启用整窗穿透。
@@ -253,7 +275,16 @@ namespace WinUIMusicPlayer.DesktopLyrics
         DesktopLyricsStyle style = ViewModel.Style;
         if (_mode == DesktopLyricsMode.Taskbar)
             style = style with { FontSize = GetTaskbarFontSize(style) };
-        if (!style.UseCustomColor && _lastAdaptiveTextColor is { } adaptive)
+        if (_mode == DesktopLyricsMode.Wallpaper)
+        {
+            style = style with
+            {
+                Color = _localTheme.Primary,
+                UseCustomColor = true,
+                Theme = _localTheme with { VisualMode = ViewModel.VisualMode }
+            };
+        }
+        else if (!style.UseCustomColor && _lastAdaptiveTextColor is { } adaptive)
         {
             style = style with { Color = adaptive };
         }
@@ -276,12 +307,28 @@ namespace WinUIMusicPlayer.DesktopLyrics
         return Math.Min(style.FontSize, maximum);
     }
 
+    private void ApplyLocalTheme(IList<LyricLine>? lyrics)
+    {
+        if (_disposed || _mode != DesktopLyricsMode.Wallpaper) return;
+        if (!DispatcherQueue.HasThreadAccess)
+        {
+            DispatcherQueue.TryEnqueue(() => ApplyLocalTheme(lyrics));
+            return;
+        }
+        DesktopLyricsTheme theme = _localThemeService.GetTheme(lyrics, AppViewModel.CurrentPlayingMusic);
+        if (_localTheme == theme) return;
+        _localTheme = theme;
+
+        // FoliaLyricsRenderer owns the single Win2D surface for the background and lyrics.
+        ApplyEffectiveStyle();
+    }
+
     /// <summary>按样式快照的自定义颜色覆盖开关启停环境取色轮询；任何样式变化都全量推送渲染器。
     /// 注意自适应模式下不能只刷新取色：字号/字重/阴影强度等非颜色样式改动若不显式推送，
     /// 要等到下一次黑白翻转或渲染器切换才生效（曾表现为阴影滑块拖动无效）。</summary>
     private void UpdateAdaptiveColorMode()
     {
-        if (!_isOverlayVisible || ViewModel.Style.UseCustomColor)
+        if (_mode == DesktopLyricsMode.Wallpaper || !_isOverlayVisible || ViewModel.Style.UseCustomColor)
         {
             StopAdaptiveColorTimer();
             _adaptiveIsDarkBackground = null;
@@ -371,14 +418,20 @@ namespace WinUIMusicPlayer.DesktopLyrics
     /// </summary>
     private void EnsureRenderer(bool karaoke)
     {
-        if (_renderer is not null && (_renderer is CanvasLyricsRenderer) == karaoke) return;
+        bool wantsFolia = _mode == DesktopLyricsMode.Wallpaper;
+        bool rendererMatches = wantsFolia
+            ? _renderer is FoliaLyricsRenderer
+            : (_renderer is CanvasLyricsRenderer) == karaoke;
+        if (_renderer is not null && rendererMatches) return;
 
         if (_renderer is not null)
         {
             RendererHost.Content = null;
             _renderer.Dispose();
         }
-        _renderer = karaoke ? new CanvasLyricsRenderer() : new TextBlockLyricsRenderer();
+        _renderer = wantsFolia
+            ? new FoliaLyricsRenderer()
+            : karaoke ? new CanvasLyricsRenderer() : new TextBlockLyricsRenderer();
         _renderer.SetSuspended(!_isOverlayVisible);
         RendererHost.Content = _renderer.Content;
         ApplyEffectiveStyle();
@@ -401,11 +454,19 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 case nameof(DesktopLyricsViewModel.Style):
                     UpdateAdaptiveColorMode();
                     break;
+                case nameof(DesktopLyricsViewModel.VisualMode):
+                    ApplyEffectiveStyle();
+                    break;
             }
         }
 
         private void OnAppViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
+            if (e.PropertyName == nameof(AppViewModel.CurrentPlayingMusic))
+            {
+                ApplyLocalTheme(null);
+            }
+
             if (_mode != DesktopLyricsMode.Taskbar) return;
             if (e.PropertyName == nameof(AppViewModel.DesktopLyricsTaskbarLyricsWidth))
             {
@@ -575,6 +636,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 ViewModel.PersistBounds();
                 return;
             }
+            if (_mode == DesktopLyricsMode.Wallpaper)
+                return;
             var bounds = ViewModel.BoundsState;
             var work = DisplayArea.Primary.WorkArea;
             int x = work.X + (work.Width - DefaultWidth) / 2;
@@ -609,10 +672,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
             }
             AppWindow.IsShownInSwitchers = false;
 
-            if (_mode == DesktopLyricsMode.Taskbar)
+            if (_mode is DesktopLyricsMode.Taskbar or DesktopLyricsMode.Wallpaper)
             {
-                // 任务栏宿主是客户区子窗口，不能让 WinUI 的自定义标题栏命中测试覆盖媒体按钮。
-                // 宿主稍后还会移除 WS_CAPTION/WS_BORDER；这里同步清掉 XAML 标题栏意图。
+                // 任务栏和壁纸宿主都不需要 WinUI 标题栏；具体父窗口和窗口样式由宿主接管。
                 AppWindow.TitleBar.ExtendsContentIntoTitleBar = false;
                 if (AppWindow.Presenter is OverlappedPresenter taskbarPresenter)
                     taskbarPresenter.SetBorderAndTitleBar(false, false);
@@ -647,6 +709,14 @@ namespace WinUIMusicPlayer.DesktopLyrics
             // 任务栏模式把窗口改为 WS_CHILD，WindowEx 不会触发 Activated；
             // LockIcon 不能依赖窗口级 x:Bind 的首次初始化，始终从同一锁定状态源显式刷新。
             LockIcon.Glyph = BindUtils.LockGlyphConverter(_locked);
+            if (_mode == DesktopLyricsMode.Wallpaper)
+            {
+                StopHoverTimer();
+                StopIdleTimer();
+                ControlPanel.Opacity = 0;
+                ControlPanel.IsHitTestVisible = false;
+                return;
+            }
             if (_mode == DesktopLyricsMode.Taskbar)
             {
                 StopHoverTimer();
@@ -706,7 +776,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         /// <summary>锁定态静默期轮询（200ms）：自愈 + 进窗检测；一旦发现光标悬停窗口即切入 50ms 快轮询。</summary>
         private void OnIdleTimerTick(DispatcherQueueTimer sender, object args)
         {
-            if (_mode == DesktopLyricsMode.Taskbar)
+            if (_mode is DesktopLyricsMode.Taskbar or DesktopLyricsMode.Wallpaper)
             {
                 sender.Stop();
                 return;
@@ -808,6 +878,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void RootGrid_PointerPressed(object sender, PointerRoutedEventArgs e)
         {
+            if (_mode == DesktopLyricsMode.Wallpaper) return;
             if (_mode == DesktopLyricsMode.Taskbar)
             {
                 if (_locked || !e.GetCurrentPoint(RootGrid).Properties.IsLeftButtonPressed
@@ -832,6 +903,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void RootGrid_PointerMoved(object sender, PointerRoutedEventArgs e)
         {
+            if (_mode == DesktopLyricsMode.Wallpaper) return;
             if (_mode == DesktopLyricsMode.Taskbar)
             {
                 if (_isTaskbarManipulating)
@@ -864,6 +936,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void RootGrid_PointerReleased(object sender, PointerRoutedEventArgs e)
         {
+            if (_mode == DesktopLyricsMode.Wallpaper) return;
             if (_mode == DesktopLyricsMode.Taskbar && _isTaskbarManipulating)
             {
                 EndTaskbarManipulation(e);
@@ -874,6 +947,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void RootGrid_PointerCanceled(object sender, PointerRoutedEventArgs e)
         {
+            if (_mode == DesktopLyricsMode.Wallpaper) return;
             if (_mode == DesktopLyricsMode.Taskbar && _isTaskbarManipulating)
             {
                 EndTaskbarManipulation(e);
@@ -884,6 +958,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void RootGrid_PointerCaptureLost(object sender, PointerRoutedEventArgs e)
         {
+            if (_mode == DesktopLyricsMode.Wallpaper) return;
             _isDragging = false;
             if (_mode == DesktopLyricsMode.Taskbar)
             {
@@ -985,6 +1060,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void OnUILyricsChanged(IList<LyricLine>? value)
         {
+            ApplyLocalTheme(value);
             if (_isOverlayVisible) _renderer?.SetLyrics(value);
         }
 
@@ -1005,7 +1081,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void OnAppWindowChanged(AppWindow sender, AppWindowChangedEventArgs args)
         {
-            if (_mode == DesktopLyricsMode.Taskbar) return;
+            if (_mode is DesktopLyricsMode.Taskbar or DesktopLyricsMode.Wallpaper) return;
             // z 序变动后若被挤出置顶层（其他置顶窗口切换可致），幂等重申，防"被盖住"表现为消失
             if (_isOverlayVisible && args.DidZOrderChange) WindowHelper.EnsureTopmost(_hwnd);
             if (!args.DidPositionChange && !args.DidSizeChange) return;

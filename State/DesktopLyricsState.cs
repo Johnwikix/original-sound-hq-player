@@ -12,6 +12,7 @@ public sealed class DesktopLyricsState : ObservableObject
     public bool AutoHideFloatingOnPlayingDetail { get; set => SetProperty(ref field, value); }
     public bool AutoHideTaskbarOnPlayingDetail { get; set => SetProperty(ref field, value); }
     public DesktopLyricsMode Mode { get; set => SetProperty(ref field, value); } = DesktopLyricsMode.Floating;
+    public DesktopLyricsVisualMode VisualMode { get; set => SetProperty(ref field, value); } = DesktopLyricsVisualMode.Fume;
     public bool IsMainWindowShown { get; set => SetProperty(ref field, value); }
     public bool IsPlayingDetailVisible { get; set => SetProperty(ref field, value); }
 }

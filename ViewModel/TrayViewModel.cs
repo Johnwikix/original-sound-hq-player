@@ -27,6 +27,7 @@ public sealed class TrayViewModel : ObservableObject, IDisposable
     public IRelayCommand ToggleDesktopLyricsLockCommand { get; }
     public IRelayCommand ResetDesktopLyricsBoundsCommand { get; }
     public IRelayCommand<string> SetDesktopLyricsModeCommand { get; }
+    public IRelayCommand<string> SetDesktopLyricsVisualModeCommand { get; }
 
     public TrayViewModel(AppLifecycle lifecycle, AppViewModel state, DesktopLyricsViewModel lyrics, PlaybackCommands playback)
     {
@@ -40,14 +41,22 @@ public sealed class TrayViewModel : ObservableObject, IDisposable
         ToggleDesktopLyricsLockCommand = ReadyCommand(() => lyrics.IsLocked = !lyrics.IsLocked);
         ResetDesktopLyricsBoundsCommand = ReadyCommand(DesktopLyricsManager.ResetWindowBounds);
         SetDesktopLyricsModeCommand = new RelayCommand<string>(SetDesktopLyricsMode, mode => IsReady);
+        SetDesktopLyricsVisualModeCommand = new RelayCommand<string>(SetDesktopLyricsVisualMode, mode => IsReady);
         lifecycle.Changed += LifecycleChanged;
     }
 
     private void SetDesktopLyricsMode(string? mode)
     {
         if (!IsReady || !Enum.TryParse(mode, ignoreCase: true, out DesktopLyricsMode parsed) ||
-            parsed is not (DesktopLyricsMode.Floating or DesktopLyricsMode.Taskbar)) return;
+            parsed is not (DesktopLyricsMode.Floating or DesktopLyricsMode.Taskbar or DesktopLyricsMode.Wallpaper)) return;
         DesktopLyrics.Mode = parsed;
+    }
+    private void SetDesktopLyricsVisualMode(string? mode)
+    {
+        if (!IsReady || DesktopLyrics.Mode != DesktopLyricsMode.Wallpaper ||
+            !Enum.TryParse(mode, ignoreCase: true, out DesktopLyricsVisualMode parsed) ||
+            !Enum.IsDefined(parsed)) return;
+        DesktopLyrics.VisualMode = parsed;
     }
     private RelayCommand ReadyCommand(Action action) => new(() => { if (IsReady) action(); }, () => IsReady);
     private static void ShowWindow()
@@ -67,6 +76,7 @@ public sealed class TrayViewModel : ObservableObject, IDisposable
         ToggleDesktopLyricsCommand.NotifyCanExecuteChanged(); ToggleDesktopLyricsKaraokeCommand.NotifyCanExecuteChanged();
         ToggleDesktopLyricsLockCommand.NotifyCanExecuteChanged(); ResetDesktopLyricsBoundsCommand.NotifyCanExecuteChanged();
         SetDesktopLyricsModeCommand.NotifyCanExecuteChanged();
+        SetDesktopLyricsVisualModeCommand.NotifyCanExecuteChanged();
     }
     public void Dispose() => _lifecycle.Changed -= LifecycleChanged;
 }

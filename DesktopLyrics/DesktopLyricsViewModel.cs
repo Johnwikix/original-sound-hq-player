@@ -37,6 +37,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 OnPropertyChanged(nameof(ModeName));
                 OnPropertyChanged(nameof(ShouldAutoHideOnPlayingDetail));
             }
+            else if (e.PropertyName == nameof(VisualMode))
+            {
+                OnPropertyChanged(nameof(VisualModeName));
+            }
             else if (e.PropertyName is nameof(AutoHideFloatingOnPlayingDetail) or nameof(AutoHideTaskbarOnPlayingDetail))
             {
                 OnPropertyChanged(nameof(ShouldAutoHideOnPlayingDetail));
@@ -73,6 +77,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     UpdateWindowVisibility();
                     PersistSettings();
                     break;
+                case nameof(VisualMode):
+                    AppSettings.DesktopLyricsVisualMode = VisualMode.ToString();
+                    PersistSettings();
+                    break;
                 case nameof(IsMainWindowShown):
                 case nameof(IsPlayingDetailVisible):
                     UpdateWindowVisibility();
@@ -87,6 +95,17 @@ namespace WinUIMusicPlayer.DesktopLyrics
         public bool AutoHideTaskbarOnPlayingDetail { get => State.DesktopLyrics.AutoHideTaskbarOnPlayingDetail; set => State.DesktopLyrics.AutoHideTaskbarOnPlayingDetail = value; }
         public DesktopLyricsMode Mode { get => State.DesktopLyrics.Mode; set => State.DesktopLyrics.Mode = value; }
         public string ModeName => Mode.ToString();
+        public WinUIMusicPlayer.Model.DesktopLyricsVisualMode VisualMode { get => State.DesktopLyrics.VisualMode; set => State.DesktopLyrics.VisualMode = value; }
+        public string VisualModeName
+        {
+            get => VisualMode.ToString();
+            set
+            {
+                if (Enum.TryParse(value, ignoreCase: true, out WinUIMusicPlayer.Model.DesktopLyricsVisualMode mode)
+                    && Enum.IsDefined(mode))
+                    VisualMode = mode;
+            }
+        }
         public bool IsMainWindowShown { get => State.DesktopLyrics.IsMainWindowShown; set => State.DesktopLyrics.IsMainWindowShown = value; }
         public bool IsPlayingDetailVisible { get => State.DesktopLyrics.IsPlayingDetailVisible; set => State.DesktopLyrics.IsPlayingDetailVisible = value; }
 
@@ -140,9 +159,13 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 AutoHideFloatingOnPlayingDetail = AppSettings.AutoHideDesktopLyricsFloatingOnPlayingDetail;
                 AutoHideTaskbarOnPlayingDetail = AppSettings.AutoHideDesktopLyricsTaskbarOnPlayingDetail;
                 Mode = Enum.TryParse(AppSettings.DesktopLyricsMode, ignoreCase: true, out DesktopLyricsMode mode) &&
-                       mode is DesktopLyricsMode.Floating or DesktopLyricsMode.Taskbar
+                       mode is DesktopLyricsMode.Floating or DesktopLyricsMode.Taskbar or DesktopLyricsMode.Wallpaper
                     ? mode
                     : DesktopLyricsMode.Floating;
+                VisualMode = Enum.TryParse(AppSettings.DesktopLyricsVisualMode, ignoreCase: true, out DesktopLyricsVisualMode visualMode) &&
+                             Enum.IsDefined(visualMode)
+                    ? visualMode
+                    : DesktopLyricsVisualMode.Fume;
             }
             finally { _restoring = false; }
             UpdateWindowVisibility();

@@ -29,6 +29,45 @@
 
                 <TextBlock x:Uid="SettingLyrics" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock Text="{x:Bind tools:ToolUtils.GetString('DesktopLyricsModeLabel')}" TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ComboBox
+                        Width="300"
+                        SelectedValue="{x:Bind ViewModel.DesktopLyrics.Mode, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
+                        SelectedValuePath="Tag">
+                        <ComboBoxItem Tag="Floating" Content="{x:Bind tools:BindUtils.DesktopLyricsModeTextConverter('Floating')}" />
+                        <ComboBoxItem Tag="Taskbar" Content="{x:Bind tools:BindUtils.DesktopLyricsModeTextConverter('Taskbar')}" />
+                        <ComboBoxItem Tag="Wallpaper" Content="{x:Bind tools:BindUtils.DesktopLyricsModeTextConverter('Wallpaper')}" />
+                    </ComboBox>
+                </controls:SettingsCard>
+
+                <controls:SettingsCard IsEnabled="{x:Bind tools:BindUtils.DesktopLyricsModeCheckerConverter(ViewModel.DesktopLyrics.ModeName, 'Wallpaper'), Mode=OneWay}">
+                    <controls:SettingsCard.Header>
+                        <TextBlock Text="{x:Bind tools:ToolUtils.GetString('DesktopLyricsVisualModeLabel')}" TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ComboBox
+                        Width="300"
+                        SelectedValue="{x:Bind ViewModel.DesktopLyrics.VisualModeName, Mode=TwoWay}"
+                        SelectedValuePath="Tag">
+                        <ComboBoxItem Tag="Still" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Still')}" />
+                        <ComboBoxItem Tag="Classic" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Classic')}" />
+                        <ComboBoxItem Tag="Cadenza" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Cadenza')}" />
+                        <ComboBoxItem Tag="Partita" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Partita')}" />
+                        <ComboBoxItem Tag="Fume" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Fume')}" />
+                        <ComboBoxItem Tag="Monet" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Monet')}" />
+                        <ComboBoxItem Tag="Cappella" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Cappella')}" />
+                        <ComboBoxItem Tag="Tilt" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Tilt')}" />
+                        <ComboBoxItem Tag="Claddagh" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Claddagh')}" />
+                        <ComboBoxItem Tag="Diorama" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Diorama')}" />
+                        <ComboBoxItem Tag="Pendolo" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Pendolo')}" />
+                        <ComboBoxItem Tag="Sonnet" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Sonnet')}" />
+                        <ComboBoxItem Tag="Tempera" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Tempera')}" />
+                        <ComboBoxItem Tag="Lumiere" Content="{x:Bind tools:BindUtils.DesktopLyricsVisualModeTextConverter('Lumiere')}" />
+                    </ComboBox>
+                </controls:SettingsCard>
+
                 <controls:SettingsCard x:Uid="LyricsFilePriority">
                     <StackPanel
                         VerticalAlignment="Center"

@@ -1150,6 +1150,7 @@ namespace WinUIMusicPlayer.Services
                 AppSettings.IsDesktopLyricsLocked = settings.IsDesktopLyricsLocked;
                 AppSettings.IsDesktopLyricsKaraokeEnabled = settings.IsDesktopLyricsKaraokeEnabled;
                 AppSettings.DesktopLyricsMode = settings.DesktopLyricsMode;
+                AppSettings.DesktopLyricsVisualMode = settings.DesktopLyricsVisualMode;
                 AppSettings.DesktopLyricsFontSize = settings.DesktopLyricsFontSize;
                 AppSettings.DesktopLyricsTaskbarLyricsWidth = settings.DesktopLyricsTaskbarLyricsWidth;
                 AppSettings.DesktopLyricsFontFamily = settings.DesktopLyricsFontFamily;

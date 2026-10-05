@@ -100,6 +100,7 @@ public sealed class SettingsSnapshotFactory(AppState state)
         newSettings.IsDesktopLyricsLocked = AppSettings.IsDesktopLyricsLocked;
         newSettings.IsDesktopLyricsKaraokeEnabled = AppSettings.IsDesktopLyricsKaraokeEnabled;
         newSettings.DesktopLyricsMode = state.DesktopLyrics.Mode.ToString();
+        newSettings.DesktopLyricsVisualMode = state.DesktopLyrics.VisualMode.ToString();
         newSettings.DesktopLyricsFontSize = AppSettings.DesktopLyricsFontSize;
         newSettings.DesktopLyricsTaskbarLyricsWidth = state.Preferences.DesktopLyricsTaskbarLyricsWidth;
         newSettings.DesktopLyricsFontFamily = AppSettings.DesktopLyricsFontFamily;

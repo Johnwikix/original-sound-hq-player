@@ -192,7 +192,32 @@ namespace WinUIMusicPlayer.Utils
         public static string DesktopLyricsModeTextConverter(string mode)
             => mode.Equals(nameof(DesktopLyricsMode.Taskbar), StringComparison.OrdinalIgnoreCase)
                 ? GetString("DesktopLyricsModeTaskbar")
-                : GetString("DesktopLyricsModeFloating");
+                : mode.Equals(nameof(DesktopLyricsMode.Wallpaper), StringComparison.OrdinalIgnoreCase)
+                    ? GetString("DesktopLyricsModeWallpaper")
+                    : GetString("DesktopLyricsModeFloating");
+
+        public static bool DesktopLyricsVisualModeCheckerConverter(string currentMode, string targetMode)
+            => string.Equals(currentMode, targetMode, StringComparison.OrdinalIgnoreCase);
+
+        public static string DesktopLyricsVisualModeTextConverter(string mode)
+            => mode.ToLowerInvariant() switch
+            {
+                "still" => GetString("DesktopLyricsVisualModeStill"),
+                "classic" => GetString("DesktopLyricsVisualModeClassic"),
+                "cadenza" => GetString("DesktopLyricsVisualModeCadenza"),
+                "partita" => GetString("DesktopLyricsVisualModePartita"),
+                "fume" => GetString("DesktopLyricsVisualModeFume"),
+                "monet" => GetString("DesktopLyricsVisualModeMonet"),
+                "cappella" => GetString("DesktopLyricsVisualModeCappella"),
+                "tilt" => GetString("DesktopLyricsVisualModeTilt"),
+                "claddagh" => GetString("DesktopLyricsVisualModeCladdagh"),
+                "diorama" => GetString("DesktopLyricsVisualModeDiorama"),
+                "pendolo" => GetString("DesktopLyricsVisualModePendolo"),
+                "sonnet" => GetString("DesktopLyricsVisualModeSonnet"),
+                "tempera" => GetString("DesktopLyricsVisualModeTempera"),
+                "lumiere" => GetString("DesktopLyricsVisualModeLumiere"),
+                _ => GetString("DesktopLyricsVisualModeFume"),
+            };
 
         /// <summary>桌面歌词开关状态 → 播放条按钮透明度（启用 1.0 / 停用 0.4）。</summary>
         public static double DesktopLyricsButtonOpacity(bool enabled)

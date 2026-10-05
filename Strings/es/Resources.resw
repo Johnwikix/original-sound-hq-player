@@ -1498,11 +1498,65 @@
   <data name="DesktopLyricsModeMenu.Text" xml:space="preserve">
     <value>Modo de letra de escritorio</value>
   </data>
+  <data name="DesktopLyricsModeLabel" xml:space="preserve">
+    <value>Modo de letra de escritorio</value>
+  </data>
   <data name="DesktopLyricsModeFloating" xml:space="preserve">
     <value>Ventana flotante</value>
   </data>
   <data name="DesktopLyricsModeTaskbar" xml:space="preserve">
     <value>Barra de tareas</value>
+  </data>
+  <data name="DesktopLyricsModeWallpaper" xml:space="preserve">
+    <value>Fondo de escritorio</value>
+  </data>
+  <data name="DesktopLyricsVisualModeLabel" xml:space="preserve">
+    <value>Modo visual</value>
+  </data>
+  <data name="DesktopLyricsVisualModeStill" xml:space="preserve">
+    <value>Estático</value>
+  </data>
+  <data name="DesktopLyricsVisualModeClassic" xml:space="preserve">
+    <value>Flujo</value>
+  </data>
+  <data name="DesktopLyricsVisualModeCadenza" xml:space="preserve">
+    <value>Cadenza</value>
+  </data>
+  <data name="DesktopLyricsVisualModePartita" xml:space="preserve">
+    <value>Escalera</value>
+  </data>
+  <data name="DesktopLyricsVisualModeFume" xml:space="preserve">
+    <value>Fume</value>
+  </data>
+  <data name="DesktopLyricsVisualModeMonet" xml:space="preserve">
+    <value>Monet</value>
+  </data>
+  <data name="DesktopLyricsVisualModeCappella" xml:space="preserve">
+    <value>Coro</value>
+  </data>
+  <data name="DesktopLyricsVisualModeTilt" xml:space="preserve">
+    <value>Confidencia</value>
+  </data>
+  <data name="DesktopLyricsVisualModeCladdagh" xml:space="preserve">
+    <value>Bucle</value>
+  </data>
+  <data name="DesktopLyricsVisualModeDiorama" xml:space="preserve">
+    <value>Diorama</value>
+  </data>
+  <data name="DesktopLyricsVisualModePendolo" xml:space="preserve">
+    <value>Reloj</value>
+  </data>
+  <data name="DesktopLyricsVisualModeSonnet" xml:space="preserve">
+    <value>Soneto</value>
+  </data>
+  <data name="DesktopLyricsVisualModeTempera" xml:space="preserve">
+    <value>Tempera</value>
+  </data>
+  <data name="DesktopLyricsVisualModeLumiere" xml:space="preserve">
+    <value>Lumiere</value>
+  </data>
+  <data name="DesktopLyricsVisualModeMenu.Text" xml:space="preserve">
+    <value>Modo visual</value>
   </data>
   <data name="DesktopLyricsPreviousButtonTooltip" xml:space="preserve">
     <value>Pista anterior</value>

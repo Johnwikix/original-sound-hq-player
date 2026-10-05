@@ -42,18 +42,35 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private static void CreateWindow()
         {
             if (_window is not null) return;
-            _window = new DesktopLyricsWindow(ViewModel.Mode);
-            _host = CreateHost(ViewModel.Mode);
-            if (_host is IDesktopLyricsBoundsHost taskbarHost)
-                _window.AttachTaskbarHost(taskbarHost);
-            // 必须先显示再应用锁定：对未激活的窗口做 GWL_STYLE 切 Popup / 加 WS_EX_LAYERED
-            // 会破坏 XAML 岛的呈现与输入管线，后续解锁时窗口无响应且内容丢失。
-            _window.AppWindow.Show(false);
-            _window.ApplyLock(ViewModel.IsLocked);
-            _host!.Attach(WinRT.Interop.WindowNative.GetWindowHandle(_window), _window.DispatcherQueue);
+            DesktopLyricsWindow? window = null;
+            IDesktopLyricsHost? host = null;
+            try
+            {
+                window = new DesktopLyricsWindow(ViewModel.Mode);
+                host = CreateHost(ViewModel.Mode, window);
+                _window = window;
+                _host = host;
+                if (host is IDesktopLyricsBoundsHost taskbarHost)
+                    window.AttachTaskbarHost(taskbarHost);
+                // 必须先显示再应用锁定：对未激活的窗口做 GWL_STYLE 切 Popup / 加 WS_EX_LAYERED
+                // 会破坏 XAML 岛的呈现与输入管线，后续解锁时窗口无响应且内容丢失。
+                window.AppWindow.Show(false);
+                window.ApplyLock(ViewModel.IsLocked);
+                host.Attach(WinRT.Interop.WindowNative.GetWindowHandle(window), window.DispatcherQueue);
+            }
+            catch (Exception ex)
+            {
+                Serilog.Log.Logger.Warning(ex, "创建桌面歌词宿主失败，已回退到悬浮窗口");
+                _host = null;
+                _window = null;
+                try { host?.Dispose(); } catch { }
+                try { window?.Close(); } catch { }
+                if (ViewModel.Mode == DesktopLyricsMode.Wallpaper)
+                    ViewModel.Mode = DesktopLyricsMode.Floating;
+            }
         }
 
-        private static IDesktopLyricsHost CreateHost(DesktopLyricsMode mode)
+        private static IDesktopLyricsHost CreateHost(DesktopLyricsMode mode, DesktopLyricsWindow window)
         {
             if (mode == DesktopLyricsMode.Taskbar)
             {
@@ -62,6 +79,13 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     ViewModel.BoundsState,
                     () => ViewModel.IsLocked,
                     () => appViewModel.DesktopLyricsTaskbarLyricsWidth);
+            }
+
+            if (mode == DesktopLyricsMode.Wallpaper)
+            {
+                return new WallpaperDesktopLyricsHost(
+                    WinRT.Interop.WindowNative.GetWindowHandle(window),
+                    window.SetWallpaperSuspended);
             }
 
             return new FloatingDesktopLyricsHost();
