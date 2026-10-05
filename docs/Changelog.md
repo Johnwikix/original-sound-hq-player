@@ -2,6 +2,9 @@
 
 新条目加在最上方。
 
+## 2026-10-05 任务栏歌词媒体按钮恢复默认按钮视觉
+- `DesktopLyricsWindow`：将悬浮按钮专用的 Button 主题资源覆写（深/浅底色与悬停前景）从窗口根 `Grid.Resources` 收窄到 `ControlPanel.Resources`，任务栏媒体按钮不再继承覆写，恢复系统默认悬停/按下样式。
+
 ## 2026-10-04 重组桌面歌词自动隐藏设置并修复任务栏锁定图标
 - `LyricsSettingsControl`：将桌面歌词自动隐藏改为 `SettingsExpander`，分别承载悬浮和任务栏模式两个 `SettingsCard`。
 - `DesktopLyricsWindow`：任务栏子窗口不再依赖未触发的窗口级 `x:Bind` 初始化锁定 Glyph，改为随锁定状态显式刷新图标。
