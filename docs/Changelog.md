@@ -2,6 +2,13 @@
 
 新条目加在最上方。
 
+## 2026-10-06 修复图片背景与高级逐字歌词的交换链冲突
+- `PlayingDetailPage`、`NowPlayingCanvas`：保留 `MainWindow` 图片层持续渲染，补齐动态 Win2D 画布的歌词区域初始化，并统一无图模式的 OneWay 切换与资源释放。
+- `NowPlayingCanvas`、`ImageBackgroundRenderer`：将图片背景作为全窗口背景渲染器，与高级歌词在同一个 `CanvasAnimatedControl` 交换链中绘制，避免把整窗图片错误裁剪到歌词区域。
+- `PlayingDetailPage`、`BindUtils`：关闭着色器且启用高级逐字歌词并设置图片时，启用统一画布绘制图片与歌词；`MainWindow` 图片层持续保留，由统一画布覆盖详情页内容。
+- `Strings/*/Resources.resw`：补充图片背景与高级逐字歌词组合时的行为说明。
+- `CustomMicaSystemBackdrop`、`CustomAcrylicSystemBackdrop`、`ThemeStyleHelper`：补充系统支持检查、主题/窗口事件解绑和激活状态同步，不支持时回退透明材质，避免切换主题或窗口重建后残留旧控制器。
+
 ## 2026-10-05 任务栏歌词媒体按钮恢复默认按钮视觉
 - `DesktopLyricsWindow`：将悬浮按钮专用的 Button 主题资源覆写（深/浅底色与悬停前景）从窗口根 `Grid.Resources` 收窄到 `ControlPanel.Resources`，任务栏媒体按钮不再继承覆写，恢复系统默认悬停/按下样式。
 

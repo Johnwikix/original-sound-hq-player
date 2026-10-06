@@ -90,11 +90,38 @@ namespace AnimatedWin2dControls.Controls
             set => SetValue(BackgroundShaderIndexProperty, value);
         }
 
+        public static readonly DependencyProperty UseImageBackgroundProperty =
+            DependencyProperty.Register(nameof(UseImageBackground), typeof(bool),
+                typeof(NowPlayingCanvas), new PropertyMetadata(false, OnImageBackgroundChanged));
+        public bool UseImageBackground
+        {
+            get => (bool)GetValue(UseImageBackgroundProperty);
+            set => SetValue(UseImageBackgroundProperty, value);
+        }
+
+        public static readonly DependencyProperty BackgroundImagePathProperty =
+            DependencyProperty.Register(nameof(BackgroundImagePath), typeof(string),
+                typeof(NowPlayingCanvas), new PropertyMetadata(string.Empty, OnImageBackgroundChanged));
+        public string BackgroundImagePath
+        {
+            get => (string)GetValue(BackgroundImagePathProperty);
+            set => SetValue(BackgroundImagePathProperty, value);
+        }
+
+        public static readonly DependencyProperty BackgroundImageBlurAmountProperty =
+            DependencyProperty.Register(nameof(BackgroundImageBlurAmount), typeof(double),
+                typeof(NowPlayingCanvas), new PropertyMetadata(20d, OnImageBackgroundChanged));
+        public double BackgroundImageBlurAmount
+        {
+            get => (double)GetValue(BackgroundImageBlurAmountProperty);
+            set => SetValue(BackgroundImageBlurAmountProperty, value);
+        }
+
         // ── 歌词侧依赖属性 ────────────────────────────────────────────────────
 
         public static readonly DependencyProperty EnableAdvancedLyricsProperty =
             DependencyProperty.Register(nameof(EnableAdvancedLyrics), typeof(bool),
-                typeof(NowPlayingCanvas), new PropertyMetadata(true));
+                typeof(NowPlayingCanvas), new PropertyMetadata(true, OnAdvancedLyricsChanged));
         public bool EnableAdvancedLyrics
         {
             get => (bool)GetValue(EnableAdvancedLyricsProperty);
@@ -133,6 +160,7 @@ namespace AnimatedWin2dControls.Controls
         private readonly LyricsRenderCoordinator _coordinator = new();
 
         private bool _advanced = true;
+        private bool _coordinatorAttached;
         private bool _pausedByVisibility;
 
         // 背景半帧率：每 (skip+1) 帧才重绘一次不透明合成缓存，其余帧复用。0=全帧率，1=半帧率。
@@ -156,6 +184,9 @@ namespace AnimatedWin2dControls.Controls
         private bool _enableLightWave;
         private bool _isDark = true;
         private bool _useImageDominantTheme;
+        private bool _useImageBackground;
+        private string _backgroundImagePath = string.Empty;
+        private double _backgroundImageBlurAmount = 20;
 
         private bool _pausedByParent;
         private bool _pausedByWindow;
@@ -191,6 +222,71 @@ namespace AnimatedWin2dControls.Controls
             ctrl.SwapBackgroundRenderer();
         }
 
+        private static void OnImageBackgroundChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var ctrl = (NowPlayingCanvas)d;
+            bool wasImageBackground = ctrl._useImageBackground;
+            ctrl._useImageBackground = ctrl.UseImageBackground;
+            ctrl._backgroundImagePath = ctrl.BackgroundImagePath ?? string.Empty;
+            ctrl._backgroundImageBlurAmount = ctrl.BackgroundImageBlurAmount;
+
+            if (wasImageBackground != ctrl._useImageBackground)
+            {
+                ctrl.SwapBackgroundRenderer();
+            }
+            else if (ctrl._background is ImageBackgroundRenderer image)
+            {
+                image.SetSource(ctrl._backgroundImagePath, ctrl._backgroundImageBlurAmount);
+            }
+        }
+
+        private static void OnAdvancedLyricsChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var ctrl = (NowPlayingCanvas)d;
+            ctrl.UpdateAdvancedLyricsState((bool)e.NewValue);
+        }
+
+        private void UpdateAdvancedLyricsState(bool enabled)
+        {
+            _advanced = enabled;
+            if (_canvas is null) return;
+
+            _canvas.IsHitTestVisible = enabled;
+            IsHitTestVisible = enabled;
+            if (enabled)
+            {
+                _canvas.PointerWheelChanged -= OnCanvasPointerWheelChanged;
+                _canvas.PointerMoved -= OnCanvasPointerMoved;
+                _canvas.PointerExited -= OnCanvasPointerExited;
+                _canvas.PointerEntered -= OnCanvasPointerEntered;
+                _canvas.Tapped -= OnCanvasTapped;
+                _canvas.PointerWheelChanged += OnCanvasPointerWheelChanged;
+                _canvas.PointerMoved += OnCanvasPointerMoved;
+                _canvas.PointerExited += OnCanvasPointerExited;
+                _canvas.PointerEntered += OnCanvasPointerEntered;
+                _canvas.Tapped += OnCanvasTapped;
+                _canvas.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / _coordinator.TargetFrameRate);
+                if (IsLoaded && !_coordinatorAttached)
+                {
+                    _coordinator.Attach();
+                    _coordinatorAttached = true;
+                }
+            }
+            else
+            {
+                _canvas.PointerWheelChanged -= OnCanvasPointerWheelChanged;
+                _canvas.PointerMoved -= OnCanvasPointerMoved;
+                _canvas.PointerExited -= OnCanvasPointerExited;
+                _canvas.PointerEntered -= OnCanvasPointerEntered;
+                _canvas.Tapped -= OnCanvasTapped;
+                if (_coordinatorAttached)
+                {
+                    _coordinator.Detach();
+                    _coordinatorAttached = false;
+                }
+            }
+        }
+
         private void SwapBackgroundRenderer()
         {
             bool wasCanvasPaused = _canvas?.Paused ?? true;
@@ -211,7 +307,7 @@ namespace AnimatedWin2dControls.Controls
                 _background = null;
                 oldBg?.Dispose();
 
-                var newBg = CreateBackgroundRenderer(BackgroundShaderIndex);
+                var newBg = CreateActiveBackgroundRenderer();
                 _background = newBg;
                 SyncStateFromProperties();
                 if (_lastPalette is not null) newBg.SetPalette(_lastPalette);
@@ -238,6 +334,11 @@ namespace AnimatedWin2dControls.Controls
             _ => new FluidBackgroundRenderer(),
         };
 
+        private BaseBackgroundRenderer CreateActiveBackgroundRenderer()
+            => _useImageBackground
+                ? new ImageBackgroundRenderer(_backgroundImagePath, _backgroundImageBlurAmount)
+                : CreateBackgroundRenderer(BackgroundShaderIndex);
+
         /// <summary>仅在 UI 线程调用：把依赖属性读入普通字段并下推到各渲染模块。</summary>
         private void SyncStateFromProperties()
         {
@@ -247,6 +348,9 @@ namespace AnimatedWin2dControls.Controls
             _enableLightWave = EnableLightWave;
             _isDark = IsDark;
             _useImageDominantTheme = UseImageDominantTheme;
+            _useImageBackground = UseImageBackground;
+            _backgroundImagePath = BackgroundImagePath ?? string.Empty;
+            _backgroundImageBlurAmount = BackgroundImageBlurAmount;
 
             if (_background is not null)
             {
@@ -286,19 +390,8 @@ namespace AnimatedWin2dControls.Controls
                 _canvas.Update += OnCanvasUpdate;
                 _canvas.Draw += OnCanvasDraw;
 
-                if (_advanced)
-                {
-                    _canvas.PointerWheelChanged += OnCanvasPointerWheelChanged;
-                    _canvas.PointerMoved += OnCanvasPointerMoved;
-                    _canvas.PointerExited += OnCanvasPointerExited;
-                    _canvas.PointerEntered += OnCanvasPointerEntered;
-                    _canvas.Tapped += OnCanvasTapped;
-                    _canvas.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / _coordinator.TargetFrameRate);
-                }
-
-                // 简单歌词模式：宿主对指针透明，让上方 XAML 歌词覆层接管输入
-                _canvas.IsHitTestVisible = _advanced;
-                IsHitTestVisible = _advanced;
+                // 简单歌词模式：宿主对指针透明，让上方 XAML 歌词覆层接管输入。
+                UpdateAdvancedLyricsState(_advanced);
 
                 UpdateCanvasPaused();
             }
@@ -309,6 +402,11 @@ namespace AnimatedWin2dControls.Controls
         private void DetachCanvasEvents()
         {
             if (_canvas is null) return;
+            if (_coordinatorAttached)
+            {
+                _coordinator.Detach();
+                _coordinatorAttached = false;
+            }
             _canvas.CreateResources -= OnCanvasCreateResources;
             _canvas.Update -= OnCanvasUpdate;
             _canvas.Draw -= OnCanvasDraw;
@@ -321,8 +419,11 @@ namespace AnimatedWin2dControls.Controls
 
         private void OnControlLoaded(object sender, RoutedEventArgs e)
         {
-            if (_advanced)
+            if (_advanced && !_coordinatorAttached)
+            {
                 _coordinator.Attach();
+                _coordinatorAttached = true;
+            }
         }
 
         private void OnControlUnloaded(object sender, RoutedEventArgs e)
@@ -371,7 +472,7 @@ namespace AnimatedWin2dControls.Controls
                     _bgCache = null;
                 }
 
-                if (_background == null) _background = CreateBackgroundRenderer(BackgroundShaderIndex);
+                if (_background == null) _background = CreateActiveBackgroundRenderer();
                 _background!.EnableLightWave = _enableLightWave;
                 _background.IsDark = _isDark;
                 _background.UseImageDominantTheme = _useImageDominantTheme;
@@ -545,6 +646,7 @@ namespace AnimatedWin2dControls.Controls
             canvas?.RemoveFromVisualTree();
             _canvas = null;
 
+            _coordinatorAttached = false;
             _coordinator.PrepareForShutdown();
             _background?.Dispose();
             _background = null;

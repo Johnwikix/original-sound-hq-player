@@ -2343,7 +2343,7 @@ SHA-256：{5}
   </data>
   <data name="WindowBackgroundTitle" xml:space="preserve"><value>主窗口图片背景</value></data>
   <data name="WindowBackgroundImage" xml:space="preserve"><value>背景图片</value></data>
-  <data name="WindowBackgroundDescription" xml:space="preserve"><value>选择本地图片作为主窗口背景；清除后恢复原有窗口材质。</value></data>
+  <data name="WindowBackgroundDescription" xml:space="preserve"><value>选择本地图片作为主窗口背景；清除后恢复原有窗口材质。关闭着色器背景并启用高级逐字歌词时，图片会由歌词画布统一绘制。</value></data>
   <data name="WindowBackgroundChoose" xml:space="preserve"><value>选择图片</value></data>
   <data name="WindowBackgroundClear" xml:space="preserve"><value>清除图片</value></data>
   <data name="WindowBackgroundBlur" xml:space="preserve"><value>模糊程度</value></data>

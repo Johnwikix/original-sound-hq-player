@@ -2344,7 +2344,7 @@ SHA-256: {5}
   </data>
   <data name="WindowBackgroundTitle" xml:space="preserve"><value>Bildhintergrund des Hauptfensters</value></data>
   <data name="WindowBackgroundImage" xml:space="preserve"><value>Hintergrundbild</value></data>
-  <data name="WindowBackgroundDescription" xml:space="preserve"><value>Wählen Sie ein lokales Bild für das Hauptfenster. Entfernen Sie es, um das Fenstermaterial wiederherzustellen.</value></data>
+  <data name="WindowBackgroundDescription" xml:space="preserve"><value>Wählen Sie ein lokales Bild für das Hauptfenster. Entfernen Sie es, um das Fenstermaterial wiederherzustellen. Bei deaktiviertem Shader-Hintergrund und aktiviertem Karaoke-Effekt wird das Bild von der Lyrics-Leinwand gezeichnet.</value></data>
   <data name="WindowBackgroundChoose" xml:space="preserve"><value>Bild auswählen</value></data>
   <data name="WindowBackgroundClear" xml:space="preserve"><value>Bild entfernen</value></data>
   <data name="WindowBackgroundBlur" xml:space="preserve"><value>Unschärfe</value></data>

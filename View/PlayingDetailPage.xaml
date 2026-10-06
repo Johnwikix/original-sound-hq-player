@@ -25,9 +25,12 @@
     <Grid>
         <awc:NowPlayingCanvas
             x:Name="NowPlaying"
-            x:Load="{x:Bind ViewModel.AppViewModel.IsFluidBackgroundEnabled, Mode=OneTime}"
+            Loaded="NowPlaying_Loaded"
+            x:Load="{x:Bind tool:BindUtils.IsNowPlayingCanvasEnabled(ViewModel.AppViewModel.IsFluidBackgroundEnabled, ViewModel.AppViewModel.EnableAdvancedLyricsEffect, ViewModel.AppViewModel.WindowBackgroundImagePath), Mode=OneWay}"
             BackgroundShaderIndex="{x:Bind ViewModel.AppViewModel.BackgroundShaderIndex, Mode=OneWay}"
-            EnableAdvancedLyrics="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneTime}"
+            BackgroundImageBlurAmount="{x:Bind ViewModel.AppViewModel.WindowBackgroundBlurAmount, Mode=OneWay}"
+            BackgroundImagePath="{x:Bind ViewModel.AppViewModel.WindowBackgroundImagePath, Mode=OneWay}"
+            EnableAdvancedLyrics="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
             EnableLightWave="{x:Bind ViewModel.AppViewModel.EnableLightWave, Mode=OneWay}"
             ExceptionOccurred="BackGround_ExceptionOccurred"
             IsDark="{x:Bind ViewModel.AppViewModel.IsDarkMode, Mode=OneWay}"
@@ -37,6 +40,7 @@
             LyricLineClicked="NowPlaying_LyricLineClicked"
             RenderError="LyricsView_ExceptionInteracted"
             ThemeResolved="BackGround_ThemeResolved"
+            UseImageBackground="{x:Bind tool:BindUtils.IsImageBackgroundMode(ViewModel.AppViewModel.IsFluidBackgroundEnabled, ViewModel.AppViewModel.EnableAdvancedLyricsEffect, ViewModel.AppViewModel.WindowBackgroundImagePath), Mode=OneWay}"
             UseImageDominantTheme="{x:Bind ViewModel.AppViewModel.UseImageDominantTheme, Mode=OneWay}" />
         <Grid
             x:Name="PlayingDetail"
@@ -188,8 +192,8 @@
                 SizeChanged="LyricsRegionHost_SizeChanged">
                 <lyrics:LyricsControl
                     x:Name="LyricsView"
-                    x:Load="{x:Bind tool:BindUtils.IsLyricsControlEnabled(ViewModel.AppViewModel.IsFluidBackgroundEnabled, ViewModel.AppViewModel.EnableAdvancedLyricsEffect), Mode=OneTime}"
-                    EnableAdvancedLyrics="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneTime}"
+                    x:Load="{x:Bind tool:BindUtils.IsLyricsControlEnabled(ViewModel.AppViewModel.IsFluidBackgroundEnabled, ViewModel.AppViewModel.EnableAdvancedLyricsEffect, ViewModel.AppViewModel.WindowBackgroundImagePath), Mode=OneWay}"
+                    EnableAdvancedLyrics="{x:Bind ViewModel.AppViewModel.EnableAdvancedLyricsEffect, Mode=OneWay}"
                     ExceptionInteracted="LyricsView_ExceptionInteracted"
                     LyricInteracted="LyricsView_LyricInteracted"
                     LyricsMargin="{x:Bind ViewModel.AppViewModel.LyricsMargin, Mode=OneWay}" />

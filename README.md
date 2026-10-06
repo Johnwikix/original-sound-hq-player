@@ -246,6 +246,8 @@ Add-AppxPackage -Register "$layout\AppxManifest.xml"
 - [WindowsMusicPlayer-TheUntamedMusicPlayer](https://github.com/LanZhan-Harmony/WindowsMusicPlayer-TheUntamedMusicPlayer)
 - [HyPlayer](https://github.com/HyPlayer/HyPlayer)
 - [DevWinUI](https://github.com/ghost1372/DevWinUI)
+- [Folia](https://github.com/chthollyphile/folia-major)
+- [AF Media Bar](https://github.com/Fervent-Tempo/AF-Media-Bar)
 
 ## 📄 许可证
 

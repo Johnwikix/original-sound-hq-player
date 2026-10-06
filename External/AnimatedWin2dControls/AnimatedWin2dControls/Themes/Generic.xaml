@@ -64,6 +64,8 @@
 
     <Style TargetType="local:NowPlayingCanvas">
         <Setter Property="IsHitTestVisible" Value="True" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Stretch" />
         <Setter Property="UseSystemFocusVisuals" Value="False" />
         <Setter Property="Template">
             <Setter.Value>
@@ -71,6 +73,7 @@
                     <canvas:CanvasAnimatedControl
                         x:Name="PART_Canvas"
                         ClearColor="Transparent"
+                        HorizontalAlignment="Stretch"
                         IsHitTestVisible="True" />
                 </ControlTemplate>
             </Setter.Value>

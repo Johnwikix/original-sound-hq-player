@@ -1,4 +1,5 @@
 ﻿using Microsoft.UI;
+using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using System;
@@ -60,6 +61,11 @@ namespace WinUIMusicPlayer.Helper
                 switch (AppSettings.AppStyle)
                 {
                     case "Acrylic":
+                        if (!DesktopAcrylicController.IsSupported())
+                        {
+                            _window.SystemBackdrop = _transparentTintBackdrop;
+                            break;
+                        }
                         if (backdrop is not null)
                         {
                             backdrop.UpdateProperties(0.5f, 0.8f, GetUiColor());
@@ -73,6 +79,11 @@ namespace WinUIMusicPlayer.Helper
                         }
                         break;
                     case "TransparentAcrylic":
+                        if (!DesktopAcrylicController.IsSupported())
+                        {
+                            _window.SystemBackdrop = _transparentTintBackdrop;
+                            break;
+                        }
                         if (backdrop is not null)
                         {
                             backdrop.UpdateProperties(0, 0.4f, GetUiColor());
@@ -86,6 +97,11 @@ namespace WinUIMusicPlayer.Helper
                         }
                         break;
                     case "Mica":
+                        if (!MicaController.IsSupported())
+                        {
+                            _window.SystemBackdrop = _transparentTintBackdrop;
+                            break;
+                        }
                         if (_window.SystemBackdrop is not CustomMicaSystemBackdrop)
                         {
                             _window.SystemBackdrop = _micaSystemBackdrop;
@@ -98,6 +114,11 @@ namespace WinUIMusicPlayer.Helper
                         }
                         break;
                     case "CustomAcrylicStyle":
+                        if (!DesktopAcrylicController.IsSupported())
+                        {
+                            _window.SystemBackdrop = _transparentTintBackdrop;
+                            break;
+                        }
                         if (backdrop is not null)
                         {
                             backdrop.UpdateProperties(1.0,

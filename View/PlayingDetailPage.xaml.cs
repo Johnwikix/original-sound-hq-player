@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Windowing;
+using Microsoft.UI.Dispatching;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -115,6 +116,14 @@ namespace WinUIMusicPlayer.View
         private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
         {
             _ = ChangeControlsFontSize();
+        }
+
+        private void NowPlaying_Loaded(object sender, RoutedEventArgs e)
+        {
+            // x:Load can create the Win2D host after LyricsRegionHost has already
+            // raised SizeChanged. Recalculate after the new template has completed
+            // layout so the coordinator receives coordinates in the new canvas.
+            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, UpdateLyricsRegion);
         }
 
         private async Task ChangeControlsFontSize()
@@ -281,6 +290,7 @@ namespace WinUIMusicPlayer.View
 
             PlayingDetail.UpdateLayout();
             LeftControlPanel.UpdateLayout();
+            ScheduleLyricsRegionUpdate();
         }
 
         private void ControlsStack_PointerEntered(object sender, PointerRoutedEventArgs e)
@@ -516,6 +526,11 @@ namespace WinUIMusicPlayer.View
         private void LyricsRegionHost_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             UpdateLyricsRegion();
+        }
+
+        private void ScheduleLyricsRegionUpdate()
+        {
+            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, UpdateLyricsRegion);
         }
 
         private void UpdateLyricsRegion()

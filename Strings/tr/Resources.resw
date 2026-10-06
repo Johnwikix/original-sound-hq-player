@@ -2344,7 +2344,7 @@ SHA-256: {5}
   </data>
   <data name="WindowBackgroundTitle" xml:space="preserve"><value>Ana pencere arka plan resmi</value></data>
   <data name="WindowBackgroundImage" xml:space="preserve"><value>Arka plan resmi</value></data>
-  <data name="WindowBackgroundDescription" xml:space="preserve"><value>Ana pencere için yerel bir resim seçin. Pencere malzemesini geri yüklemek için resmi temizleyin.</value></data>
+  <data name="WindowBackgroundDescription" xml:space="preserve"><value>Ana pencere için yerel bir resim seçin. Pencere malzemesini geri yüklemek için resmi temizleyin. Gölgelendirici arka planı kapalı ve gelişmiş karaoke açıkken resim sözler tuvalinde çizilir.</value></data>
   <data name="WindowBackgroundChoose" xml:space="preserve"><value>Resim seç</value></data>
   <data name="WindowBackgroundClear" xml:space="preserve"><value>Resmi temizle</value></data>
   <data name="WindowBackgroundBlur" xml:space="preserve"><value>Bulanıklık</value></data>
