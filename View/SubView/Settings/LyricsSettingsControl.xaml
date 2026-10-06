@@ -288,7 +288,7 @@
                 </controls:SettingsCard>
 
                 <!--  高级歌词效果:依赖总开关的细项收进二级折叠  -->
-                <controls:SettingsExpander Description="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}">
+                <controls:SettingsExpander>
                     <controls:SettingsExpander.Header>
                         <TextBlock x:Uid="EnableAdvancedLyricsEffect" TextWrapping="Wrap" />
                     </controls:SettingsExpander.Header>

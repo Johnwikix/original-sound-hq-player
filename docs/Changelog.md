@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-10-06 修复着色器切换与高级歌词即时生效
+- `NowPlayingCanvas`、`PlayingDetailPage`：交换链重建或动态加载后重新应用当前曲目的调色板和封面，避免切换着色器后首曲目颜色/图像失真。
+- `NowPlayingCanvas`、`AdvanceLyricsCanvasControl`、`LyricsRenderCoordinator`、`SimpleLyricsControl`：将 x:Load 卸载改为可复用的资源释放，保留最终关闭路径，避免重载后状态和原生资源失配。
+- `LyricsControl`：高级逐字歌词与普通歌词的 x:Load 绑定统一为 OneWay，关闭背景图片时切换高级歌词立即更新。
+- `LyricsSettingsControl`、`SettingsDialog`：移除“重启应用生效”提示。
+
 ## 2026-10-06 修复图片背景与高级逐字歌词的交换链冲突
 - `PlayingDetailPage`、`NowPlayingCanvas`：保留 `MainWindow` 图片层持续渲染，补齐动态 Win2D 画布的歌词区域初始化，并统一无图模式的 OneWay 切换与资源释放。
 - `NowPlayingCanvas`、`ImageBackgroundRenderer`：将图片背景作为全窗口背景渲染器，与高级歌词在同一个 `CanvasAnimatedControl` 交换链中绘制，避免把整窗图片错误裁剪到歌词区域。

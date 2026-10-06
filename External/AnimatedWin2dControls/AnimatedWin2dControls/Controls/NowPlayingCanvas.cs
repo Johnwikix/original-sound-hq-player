@@ -377,6 +377,12 @@ namespace AnimatedWin2dControls.Controls
             base.OnApplyTemplate();
             DetachCanvasEvents();
 
+            if (_visibilityCallbackToken != 0)
+            {
+                UnregisterPropertyChangedCallback(VisibilityProperty, _visibilityCallbackToken);
+                _visibilityCallbackToken = 0;
+            }
+
             _advanced = EnableAdvancedLyrics;
             SyncStateFromProperties();
             _canvas = GetTemplateChild(PartCanvasName) as CanvasAnimatedControl;
@@ -428,7 +434,7 @@ namespace AnimatedWin2dControls.Controls
 
         private void OnControlUnloaded(object sender, RoutedEventArgs e)
         {
-            PrepareForShutdown();
+            ReleaseForUnload();
         }
 
         // ── 暂停管理 ──────────────────────────────────────────────────────────
@@ -461,6 +467,36 @@ namespace AnimatedWin2dControls.Controls
 
         // ── 资源 / 热路径 ─────────────────────────────────────────────────────
 
+        private void ReleaseForUnload()
+        {
+            if (_canvas is not null)
+                _canvas.Paused = true;
+            if (_visibilityCallbackToken != 0)
+            {
+                UnregisterPropertyChangedCallback(VisibilityProperty, _visibilityCallbackToken);
+                _visibilityCallbackToken = 0;
+            }
+
+            var canvas = _canvas;
+            DetachCanvasEvents();
+            canvas?.RemoveFromVisualTree();
+            _canvas = null;
+            _coordinatorAttached = false;
+            _coordinator.ReleaseForUnload();
+
+            _background?.Dispose();
+            _background = null;
+            _fog.Dispose();
+            _snow.Dispose();
+            _raindrop.Dispose();
+
+            lock (_cacheGate)
+            {
+                _bgCache?.Dispose();
+                _bgCache = null;
+            }
+        }
+
         private void OnCanvasCreateResources(CanvasAnimatedControl sender, CanvasCreateResourcesEventArgs args)
         {
             try
@@ -476,6 +512,15 @@ namespace AnimatedWin2dControls.Controls
                 _background!.EnableLightWave = _enableLightWave;
                 _background.IsDark = _isDark;
                 _background.UseImageDominantTheme = _useImageDominantTheme;
+
+                // x:Load 卸载会释放背景渲染器，但保留当前曲目的状态。
+                // 重新创建交换链时必须在 LoadResources 前恢复这两个输入，
+                // 否则首帧会使用默认/旧颜色，直到下一首歌才被刷新。
+                if (_lastPalette is not null)
+                    _background.SetPalette(_lastPalette);
+                else
+                    _background.RefreshColors();
+                _background.SetArtwork(_lastArtwork);
 
                 _background.LoadResources();
                 _fog.LoadResources();
@@ -637,7 +682,11 @@ namespace AnimatedWin2dControls.Controls
         {
             if (_canvas is not null)
                 _canvas.Paused = true;
-            UnregisterPropertyChangedCallback(VisibilityProperty, _visibilityCallbackToken);
+            if (_visibilityCallbackToken != 0)
+            {
+                UnregisterPropertyChangedCallback(VisibilityProperty, _visibilityCallbackToken);
+                _visibilityCallbackToken = 0;
+            }
             var canvas = _canvas;
             DetachCanvasEvents();
             // Win2D controls contain native event sources. Removing the

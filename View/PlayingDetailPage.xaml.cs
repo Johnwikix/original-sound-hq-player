@@ -80,8 +80,7 @@ namespace WinUIMusicPlayer.View
             _ = ChangeControlsFontSize();
             // 首次进入也下发：null 时着色器回退内置配色，避免沿用其它页面的残留状态
             NowPlaying?.SetPalette(ViewModel.AppViewModel.LyricPagePalette);
-            if (ViewModel.AppViewModel.LyricPageArtwork is { } artwork)
-                NowPlaying?.SetArtwork(artwork);
+            NowPlaying?.SetArtwork(ViewModel.AppViewModel.LyricPageArtwork);
             UpdateLyricsRegion();
             Loaded -= PlayingDetailPage_Loaded;
         }
@@ -120,6 +119,12 @@ namespace WinUIMusicPlayer.View
 
         private void NowPlaying_Loaded(object sender, RoutedEventArgs e)
         {
+            // x:Load can create the Win2D host after the page has already published
+            // the current song. Reapply the cached presentation state before the
+            // first frame; otherwise the next song change is the first refresh.
+            NowPlaying?.SetPalette(ViewModel.AppViewModel.LyricPagePalette);
+            NowPlaying?.SetArtwork(ViewModel.AppViewModel.LyricPageArtwork);
+
             // x:Load can create the Win2D host after LyricsRegionHost has already
             // raised SizeChanged. Recalculate after the new template has completed
             // layout so the coordinator receives coordinates in the new canvas.

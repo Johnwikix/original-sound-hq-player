@@ -49,9 +49,20 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         public void PrepareForShutdown()
         {
             if (_shutdown) return;
+            ReleaseForUnload();
             _shutdown = true;
+            _coordinator.PrepareForShutdown();
+        }
 
-            UnregisterPropertyChangedCallback(VisibilityProperty, _visibilityCallbackToken);
+        public void ReleaseForUnload()
+        {
+            if (_shutdown) return;
+
+            if (_visibilityCallbackToken != 0)
+            {
+                UnregisterPropertyChangedCallback(VisibilityProperty, _visibilityCallbackToken);
+                _visibilityCallbackToken = 0;
+            }
 
             if (_canvas != null)
             {
@@ -62,7 +73,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas = null;
             }
 
-            _coordinator.PrepareForShutdown();
+            _coordinator.ReleaseForUnload();
         }
 
         public void PauseRendering()
@@ -104,13 +115,19 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void OnControlUnloaded(object sender, RoutedEventArgs e)
         {
-            PrepareForShutdown();
+            ReleaseForUnload();
         }
 
         protected override void OnApplyTemplate()
         {
             if (_canvas != null)
                 DetachCanvasEvents(_canvas);
+
+            if (_visibilityCallbackToken != 0)
+            {
+                UnregisterPropertyChangedCallback(VisibilityProperty, _visibilityCallbackToken);
+                _visibilityCallbackToken = 0;
+            }
 
             _canvas = GetTemplateChild("PART_Canvas") as CanvasAnimatedControl;
 

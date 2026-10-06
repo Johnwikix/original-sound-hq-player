@@ -21,7 +21,7 @@
             Padding="0"
             HorizontalAlignment="Stretch"
             VerticalAlignment="Stretch"
-            x:Load="{x:Bind utils:BindUtils.BoolToBoolReConverter(EnableAdvancedLyrics), Mode=OneTime}">
+            x:Load="{x:Bind utils:BindUtils.BoolToBoolReConverter(EnableAdvancedLyrics), Mode=OneWay}">
             <local:LyricsMaskView.OpacityMask>
                 <Rectangle Stretch="UniformToFill">
                     <Rectangle.Fill>
@@ -44,7 +44,7 @@
             x:Name="LyricsCanvas"
             Margin="{x:Bind LyricsMargin, Mode=OneWay}"
             HorizontalAlignment="Stretch"
-            x:Load="{x:Bind EnableAdvancedLyrics, Mode=OneTime}"
+            x:Load="{x:Bind EnableAdvancedLyrics, Mode=OneWay}"
             RenderError="LyricsCanvas_RenderError" />
     </Grid>
 </UserControl>

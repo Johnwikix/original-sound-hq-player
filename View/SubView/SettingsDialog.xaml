@@ -559,11 +559,6 @@
                         x:Uid="ShaderBackground"
                         FontSize="14"
                         FontWeight="SemiBold" />
-                    <TextBlock
-                        FontSize="12"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}"
-                        TextWrapping="Wrap" />
                     <Grid
                         Width="250"
                         HorizontalAlignment="Left"
@@ -597,11 +592,6 @@
                         x:Uid="EnableAdvancedLyricsEffect"
                         FontSize="14"
                         FontWeight="SemiBold"
-                        TextWrapping="Wrap" />
-                    <TextBlock
-                        FontSize="12"
-                        Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                        Text="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}"
                         TextWrapping="Wrap" />
                     <ToggleSwitch IsOn="{x:Bind VM.EnableAdvancedLyricsEffect, Mode=TwoWay}" />
                 </StackPanel>

@@ -213,6 +213,34 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
         }
 
+        /// <summary>
+        /// 释放 x:Load 卸载期间的设备资源，但保留协调器可再次 Attach。
+        /// x:Load 可能复用同一个控件实例，不能把这种暂时离树当成最终 shutdown。
+        /// </summary>
+        public void ReleaseForUnload()
+        {
+            lock (_renderGate)
+            {
+                if (_shutdown) return;
+                lock (_pendingGate)
+                {
+                    _pendingLines = null;
+                }
+
+                Detach();
+                DisposeRenderLines();
+                _renderLines = [];
+                _lineRenderer.Line = null;
+                _edgeFadeMask.Reset();
+                Canvas = null;
+                _layoutDirty = true;
+                _cachedEdgeFadeWidth = -1;
+                _cachedEdgeFadeHeight = -1;
+                _currentLineIndex = -1;
+                _lastCurrentLineIndex = -1;
+            }
+        }
+
         public bool HasLyrics => _renderLines.Count > 0;
 
         // ── Bus Handlers ──────────────────────────────────────────────────────

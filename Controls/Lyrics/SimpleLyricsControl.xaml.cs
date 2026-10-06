@@ -119,6 +119,18 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             if (_shutdown) return;
             _shutdown = true;
 
+            ReleaseResources();
+        }
+
+        public void ReleaseForUnload()
+        {
+            if (_shutdown) return;
+            ReleaseResources();
+        }
+
+        private void ReleaseResources()
+        {
+
             TimeProgressBus.CurrentPlayingTimeChanged -= OnCurrentPlayingTimeChanged;
             OffsetMsBus.Changed -= OnOffsetMsChanged;
             LyricsFontSizeBus.Changed -= OnLyricsFontSizeChanged;
@@ -150,6 +162,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             TeardownAllBlur();
             _blurFactory?.Dispose();
             _blurFactory = null;
+            _ps?.Dispose();
+            _ps = null;
             _reusableScaleAnim?.Dispose();
             _reusableScaleAnim = null;
             _reusableBlurAnim?.Dispose();
@@ -191,7 +205,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         private void OnControlUnloaded(object sender, RoutedEventArgs e)
         {
-            PrepareForShutdown();
+            ReleaseForUnload();
         }
 
         private void OnLyricsSyncRequested()
