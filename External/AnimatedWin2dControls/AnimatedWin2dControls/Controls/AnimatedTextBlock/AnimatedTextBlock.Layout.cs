@@ -111,6 +111,30 @@ public sealed partial class AnimatedTextBlock
         control.SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
     }
 
+    private static void OnActiveChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
+        => ((AnimatedTextBlock)sender).UpdateActiveState((bool)args.NewValue);
+
+    private void UpdateActiveState(bool active)
+    {
+        _isActive = active;
+        Opacity = active ? 1 : 0;
+        IsHitTestVisible = active;
+
+        if (!active)
+        {
+            StopHoverScroll();
+            StopRenderingLoop();
+            if (_currentState != AnimatedTextBlockRedrawState.Idle)
+                SetRedrawState(AnimatedTextBlockRedrawState.Idle, false);
+        }
+        else
+        {
+            ApplyTextForeground();
+            _staticLayoutDirty = true;
+            SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
+        }
+    }
+
     private static void OnTextEffectChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
     {
         var control = (AnimatedTextBlock)sender;

@@ -43,8 +43,8 @@ namespace WinUIMusicPlayer.View
         private const double textScale = 1.6;  
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
         {
-            this.InitializeComponent();
             ViewModel = viewModel;
+            this.InitializeComponent();
             DataContext = this;
             Loaded += PlayingDetailPage_Loaded;
             _logger = App.GetLogger<PlayingDetailPage>();
@@ -57,6 +57,7 @@ namespace WinUIMusicPlayer.View
         private void PlayingDetailPage_Loaded(object sender, RoutedEventArgs e)
         {
             _isLoaded = true;
+            ViewModel.RefreshPresentation();
             ApplyAnimatedTextEffect();
             App.MainWindow.SizeChanged += MainWindow_SizeChanged;
             App.MainWindow.AppWindow.Changed += AppWindow_Changed;
@@ -71,6 +72,18 @@ namespace WinUIMusicPlayer.View
 
         private void AppViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
+            if (e.PropertyName is null or ""
+                or nameof(AppViewModel.IsFluidBackgroundEnabled)
+                or nameof(AppViewModel.EnableAdvancedLyricsEffect)
+                or nameof(AppViewModel.WindowBackgroundImagePath)
+                or nameof(AppViewModel.IsWin2dAnimatedText))
+            {
+                if (DispatcherQueue.HasThreadAccess)
+                    ViewModel.RefreshPresentation();
+                else
+                    DispatcherQueue.TryEnqueue(ViewModel.RefreshPresentation);
+            }
+
             if (e.PropertyName == nameof(AppViewModel.LyricPagePalette))
             {
                 // null 也下发：让着色器回退内置配色，避免滞留上一首的调色板
@@ -88,12 +101,15 @@ namespace WinUIMusicPlayer.View
             {
                 ApplyAnimatedTextEffect();
             }
+            else if (e.PropertyName == nameof(AppViewModel.IsWin2dAnimatedText))
+            {
+                ApplyAnimatedTextEffect();
+            }
         }
 
         private void AnimatedPlayingDetailTextBlock_Loaded(object sender, RoutedEventArgs e)
         {
-            // x:Load creates the Win2D control after the page has already loaded.
-            // Reapply the current effect whenever it enters the visual tree.
+            // Reapply the current effect after the Win2D template is ready.
             ApplyAnimatedTextEffect();
         }
 
@@ -135,15 +151,12 @@ namespace WinUIMusicPlayer.View
 
         private void NowPlaying_Loaded(object sender, RoutedEventArgs e)
         {
-            // x:Load can create the Win2D host after the page has already published
-            // the current song. Reapply the cached presentation state before the
-            // first frame; otherwise the next song change is the first refresh.
+            // Reapply the cached presentation state after the Win2D template is ready.
             NowPlaying?.SetPalette(ViewModel.AppViewModel.LyricPagePalette);
             NowPlaying?.SetArtwork(ViewModel.AppViewModel.LyricPageArtwork);
 
-            // x:Load can create the Win2D host after LyricsRegionHost has already
-            // raised SizeChanged. Recalculate after the new template has completed
-            // layout so the coordinator receives coordinates in the new canvas.
+            // Recalculate after the Win2D template has completed layout so the
+            // coordinator receives coordinates in the current canvas.
             DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, UpdateLyricsRegion);
         }
 
@@ -491,6 +504,7 @@ namespace WinUIMusicPlayer.View
                 LyricsView?.LyricInteracted -= LyricsView_LyricInteracted;
                 LyricsView?.ExceptionInteracted -= LyricsView_ExceptionInteracted;
                 LyricsView?.ShutdownLyricsCanvas();
+                AnimatedPlayingDetailTextBlock?.PrepareForShutdown();
                 NowPlaying?.ExceptionOccurred -= BackGround_ExceptionOccurred;
                 NowPlaying?.Dispose();
             }

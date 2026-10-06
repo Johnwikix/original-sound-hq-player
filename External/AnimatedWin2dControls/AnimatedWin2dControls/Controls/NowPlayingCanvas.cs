@@ -36,6 +36,15 @@ namespace AnimatedWin2dControls.Controls
             set => SetValue(EnableLightWaveProperty, value);
         }
 
+        public static readonly DependencyProperty IsActiveProperty =
+            DependencyProperty.Register(nameof(IsActive), typeof(bool),
+                typeof(NowPlayingCanvas), new PropertyMetadata(true, OnActiveChanged));
+        public bool IsActive
+        {
+            get => (bool)GetValue(IsActiveProperty);
+            set => SetValue(IsActiveProperty, value);
+        }
+
         public static readonly DependencyProperty UseImageDominantThemeProperty =
             DependencyProperty.Register(nameof(UseImageDominantTheme), typeof(bool),
                 typeof(NowPlayingCanvas), new PropertyMetadata(false, OnFluidParamChanged));
@@ -147,9 +156,18 @@ namespace AnimatedWin2dControls.Controls
         // ── 私有字段 ──────────────────────────────────────────────────────────
 
         private CanvasAnimatedControl? _canvas;
-        // 急实例化以保证 SetPalette 在 LoadResources 之前被调用时也能落到实例上 (与原 FluidBackgroundRenderer 行为一致)。
+        // 渲染器只在画布激活且设备资源可用时创建；调色板/封面先缓存在宿主。
         // volatile: 渲染线程在 OnCanvasUpdate/Draw 中以快照方式读取,UI 线程在 SwapBackgroundRenderer 中整体替换。
-        private volatile BaseBackgroundRenderer? _background = CreateBackgroundRenderer(0);
+        private volatile BaseBackgroundRenderer? _background;
+        // ComputeSharp.D2D1 3.2.0 的 D2D1ResourceTextureManager 只有终结器，
+        // 没有可调用的 Dispose。复用旋转网格实例把切换过程中的原生资源数量限制为一份，
+        // 并在宿主真正关闭时统一释放其效果和位图。
+        private RotatingMeshBackgroundRenderer? _rotatingMeshBackground;
+        private bool _rotatingMeshResourcesInitialized;
+        // 图片解码和 CanvasBitmap 也按模式复用。反复开关图片背景时只保留一个
+        // 可取消的解码循环和一组位图，避免分配器把每次切换的峰值长期留在进程工作集。
+        private ImageBackgroundRenderer? _imageBackground;
+        private bool _imageBackgroundResourcesInitialized;
         // 缓存最近一次调色板，shader 切换 / 设备重建后用于把新 renderer 重新染上当前调色板。
         private AnimatedWin2dControls.Impressionist.PaletteResult? _lastPalette;
         // 缓存最近一次封面像素，shader 切换后把新 renderer 重新染上当前封面（RotatingMesh 用）。
@@ -160,8 +178,11 @@ namespace AnimatedWin2dControls.Controls
         private readonly LyricsRenderCoordinator _coordinator = new();
 
         private bool _advanced = true;
+        private bool _isActive = true;
         private bool _coordinatorAttached;
         private bool _pausedByVisibility;
+        private bool _canvasResourcesReady;
+        private bool _rendererResourcesLoaded;
 
         // 背景半帧率：每 (skip+1) 帧才重绘一次不透明合成缓存，其余帧复用。0=全帧率，1=半帧率。
         private int _backgroundFrameSkip = 1;
@@ -207,13 +228,23 @@ namespace AnimatedWin2dControls.Controls
         private static void OnFluidParamChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var ctrl = (NowPlayingCanvas)d;
-            ctrl.SyncStateFromProperties();
-            ctrl._background?.RefreshColors();
+            lock (ctrl._cacheGate)
+            {
+                ctrl.SyncStateFromProperties();
+                ctrl._background?.RefreshColors();
+            }
         }
+
+        private static void OnActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+            => ((NowPlayingCanvas)d).UpdateActiveState((bool)e.NewValue);
 
         private static void OnEnableFlagChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            ((NowPlayingCanvas)d).SyncStateFromProperties();
+            var ctrl = (NowPlayingCanvas)d;
+            lock (ctrl._cacheGate)
+            {
+                ctrl.SyncStateFromProperties();
+            }
         }
 
         private static void OnBackgroundShaderIndexChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -251,8 +282,8 @@ namespace AnimatedWin2dControls.Controls
             _advanced = enabled;
             if (_canvas is null) return;
 
-            _canvas.IsHitTestVisible = enabled;
-            IsHitTestVisible = enabled;
+            _canvas.IsHitTestVisible = enabled && _isActive;
+            IsHitTestVisible = enabled && _isActive;
             if (enabled)
             {
                 _canvas.PointerWheelChanged -= OnCanvasPointerWheelChanged;
@@ -287,33 +318,94 @@ namespace AnimatedWin2dControls.Controls
             }
         }
 
+        private void UpdateActiveState(bool active)
+        {
+            _isActive = active;
+            Opacity = active ? 1 : 0;
+            IsHitTestVisible = active && _advanced;
+
+            if (!active)
+            {
+                if (_canvas is not null)
+                    _canvas.Paused = true;
+                if (_coordinatorAttached)
+                {
+                    _coordinator.Detach();
+                    _coordinatorAttached = false;
+                }
+                if (_background is ImageBackgroundRenderer image)
+                    image.SetActive(false);
+            }
+            else if (_advanced && IsLoaded && !_coordinatorAttached)
+            {
+                _coordinator.Attach();
+                _coordinatorAttached = true;
+            }
+
+            if (active)
+            {
+                lock (_cacheGate)
+                {
+                    if (_canvasResourcesReady && !_rendererResourcesLoaded)
+                        LoadActiveResources();
+                    else if (_background is ImageBackgroundRenderer image)
+                        image.SetActive(true);
+                }
+            }
+
+            UpdateCanvasPaused();
+            if (active)
+                _canvas?.Invalidate();
+        }
+
         private void SwapBackgroundRenderer()
         {
+            if (!_isActive)
+                _rendererResourcesLoaded = false;
+
             bool wasCanvasPaused = _canvas?.Paused ?? true;
             if (_canvas is not null)
                 _canvas.Paused = true;
 
             try
             {
-                // 持锁 dispose 缓存,等渲染线程退栈后再释放,杜绝 _bgCache.Dispose 与 ds.DrawImage 并发
+                // Keep renderer disposal and cache replacement in the same critical
+                // section as drawing. Nulling the field alone cannot protect an
+                // already-entered Draw callback that holds a local renderer reference.
                 lock (_cacheGate)
                 {
                     _bgCache?.Dispose();
                     _bgCache = null;
+
+                    var oldBg = _background;
+                    _background = null;
+                    if (oldBg is ImageBackgroundRenderer oldImage)
+                        oldImage.SetActive(false);
+                    if (oldBg is not RotatingMeshBackgroundRenderer &&
+                        oldBg is not ImageBackgroundRenderer)
+                        oldBg?.Dispose();
+
+                    var newBg = CreateActiveBackgroundRenderer();
+                    _background = newBg;
+                    SyncStateFromProperties();
+                    if (_lastPalette is not null) newBg.SetPalette(_lastPalette);
+                    else newBg.RefreshColors();
+                    if (_lastArtwork is not null) newBg.SetArtwork(_lastArtwork);
+                    bool needsResources = newBg switch
+                    {
+                        RotatingMeshBackgroundRenderer => !_rotatingMeshResourcesInitialized,
+                        ImageBackgroundRenderer => !_imageBackgroundResourcesInitialized,
+                        _ => true
+                    };
+                    if (needsResources && _canvasResourcesReady && _isActive)
+                    {
+                        newBg.LoadResources();
+                        if (newBg is RotatingMeshBackgroundRenderer)
+                            _rotatingMeshResourcesInitialized = true;
+                        else if (newBg is ImageBackgroundRenderer)
+                            _imageBackgroundResourcesInitialized = true;
+                    }
                 }
-
-                // null-first: 渲染线程下一帧看到 null 直接跳过旧 renderer,杜绝 _effect.Dispose 与 Draw 并发
-                var oldBg = _background;
-                _background = null;
-                oldBg?.Dispose();
-
-                var newBg = CreateActiveBackgroundRenderer();
-                _background = newBg;
-                SyncStateFromProperties();
-                if (_lastPalette is not null) newBg.SetPalette(_lastPalette);
-                else newBg.RefreshColors();
-                if (_lastArtwork is not null) newBg.SetArtwork(_lastArtwork);
-                newBg.LoadResources();
             }
             finally
             {
@@ -323,10 +415,10 @@ namespace AnimatedWin2dControls.Controls
             }
         }
 
-        private static BaseBackgroundRenderer CreateBackgroundRenderer(int index) => index switch
+        private BaseBackgroundRenderer CreateBackgroundRenderer(int index) => index switch
         {
             1 => new PS3XMBBackgroundRenderer(),
-            2 => new RotatingMeshBackgroundRenderer(),
+            2 => _rotatingMeshBackground ??= new RotatingMeshBackgroundRenderer(),
             3 => new LiquidFlowBackgroundRenderer(),
             4 => new GradientFlowBackgroundRenderer(),
             5 => new WavyBackgroundRenderer(),
@@ -335,9 +427,50 @@ namespace AnimatedWin2dControls.Controls
         };
 
         private BaseBackgroundRenderer CreateActiveBackgroundRenderer()
-            => _useImageBackground
-                ? new ImageBackgroundRenderer(_backgroundImagePath, _backgroundImageBlurAmount)
-                : CreateBackgroundRenderer(BackgroundShaderIndex);
+        {
+            if (!_useImageBackground)
+                return CreateBackgroundRenderer(BackgroundShaderIndex);
+
+            _imageBackground ??= new ImageBackgroundRenderer(
+                _backgroundImagePath, _backgroundImageBlurAmount);
+            _imageBackground.SetSource(_backgroundImagePath, _backgroundImageBlurAmount);
+            _imageBackground.SetActive(_isActive);
+            return _imageBackground;
+        }
+
+        private void LoadActiveResources()
+        {
+            if (!_isActive || !_canvasResourcesReady)
+                return;
+
+            SyncStateFromProperties();
+            if (_background is null)
+                _background = CreateActiveBackgroundRenderer();
+
+            var background = _background;
+            if (background is ImageBackgroundRenderer image)
+                image.SetActive(true);
+            background.EnableLightWave = _enableLightWave;
+            background.IsDark = _isDark;
+            background.UseImageDominantTheme = _useImageDominantTheme;
+            if (_lastPalette is not null)
+                background.SetPalette(_lastPalette);
+            else
+                background.RefreshColors();
+            background.SetArtwork(_lastArtwork);
+
+            background.LoadResources();
+            if (background is RotatingMeshBackgroundRenderer)
+                _rotatingMeshResourcesInitialized = true;
+            else if (background is ImageBackgroundRenderer)
+                _imageBackgroundResourcesInitialized = true;
+            _fog.LoadResources();
+            _snow.LoadResources();
+            _raindrop.LoadResources();
+            if (_advanced)
+                _coordinator.OnCreateResources();
+            _rendererResourcesLoaded = true;
+        }
 
         /// <summary>仅在 UI 线程调用：把依赖属性读入普通字段并下推到各渲染模块。</summary>
         private void SyncStateFromProperties()
@@ -402,6 +535,8 @@ namespace AnimatedWin2dControls.Controls
                 UpdateCanvasPaused();
             }
 
+            UpdateActiveState(_isActive);
+
             _visibilityCallbackToken = RegisterPropertyChangedCallback(VisibilityProperty, OnVisibilityChanged);
         }
 
@@ -425,16 +560,21 @@ namespace AnimatedWin2dControls.Controls
 
         private void OnControlLoaded(object sender, RoutedEventArgs e)
         {
-            if (_advanced && !_coordinatorAttached)
-            {
-                _coordinator.Attach();
-                _coordinatorAttached = true;
-            }
+            UpdateActiveState(_isActive);
         }
 
         private void OnControlUnloaded(object sender, RoutedEventArgs e)
         {
-            ReleaseForUnload();
+            // The page is a singleton and can be temporarily hidden by the
+            // navigation overlay. Keep the template and device resources alive;
+            // final shutdown is handled explicitly by PrepareForShutdown().
+            if (_canvas is not null)
+                _canvas.Paused = true;
+            if (_coordinatorAttached)
+            {
+                _coordinator.Detach();
+                _coordinatorAttached = false;
+            }
         }
 
         // ── 暂停管理 ──────────────────────────────────────────────────────────
@@ -455,7 +595,7 @@ namespace AnimatedWin2dControls.Controls
         private void UpdateCanvasPaused()
         {
             if (_canvas is not null)
-                _canvas.Paused = _pausedByVisibility || _pausedByParent || _pausedByWindow;
+                _canvas.Paused = !_isActive || _pausedByVisibility || _pausedByParent || _pausedByWindow;
         }
 
         private static void OnVisibilityChanged(DependencyObject d, DependencyProperty dp)
@@ -484,14 +624,35 @@ namespace AnimatedWin2dControls.Controls
             _coordinatorAttached = false;
             _coordinator.ReleaseForUnload();
 
-            _background?.Dispose();
-            _background = null;
-            _fog.Dispose();
-            _snow.Dispose();
-            _raindrop.Dispose();
+            ReleaseBackgroundResources();
+            _canvasResourcesReady = false;
+        }
 
+        private void ReleaseBackgroundResources()
+        {
             lock (_cacheGate)
             {
+                var background = _background;
+                _background = null;
+                if (background is ImageBackgroundRenderer image)
+                    image.SetActive(false);
+                background?.Dispose();
+
+                if (_rotatingMeshBackground is not null &&
+                    !ReferenceEquals(background, _rotatingMeshBackground))
+                    _rotatingMeshBackground.Dispose();
+                if (_imageBackground is not null &&
+                    !ReferenceEquals(background, _imageBackground))
+                    _imageBackground.Dispose();
+
+                _rotatingMeshBackground = null;
+                _rotatingMeshResourcesInitialized = false;
+                _imageBackground = null;
+                _imageBackgroundResourcesInitialized = false;
+                _rendererResourcesLoaded = false;
+                _fog.Dispose();
+                _snow.Dispose();
+                _raindrop.Dispose();
                 _bgCache?.Dispose();
                 _bgCache = null;
             }
@@ -501,52 +662,44 @@ namespace AnimatedWin2dControls.Controls
         {
             try
             {
-                // 设备重建（含设备丢失/恢复）：丢弃合成缓存，由下一帧按当前设备/尺寸重建
+                _canvasResourcesReady = true;
                 lock (_cacheGate)
                 {
+                    _rendererResourcesLoaded = false;
+                    // 设备重建（含设备丢失/恢复）：丢弃合成缓存，由下一帧按当前设备/尺寸重建
                     _bgCache?.Dispose();
                     _bgCache = null;
+
+                    _rotatingMeshResourcesInitialized = false;
+                    _imageBackgroundResourcesInitialized = false;
+                    if (_isActive)
+                        LoadActiveResources();
                 }
-
-                if (_background == null) _background = CreateActiveBackgroundRenderer();
-                _background!.EnableLightWave = _enableLightWave;
-                _background.IsDark = _isDark;
-                _background.UseImageDominantTheme = _useImageDominantTheme;
-
-                // x:Load 卸载会释放背景渲染器，但保留当前曲目的状态。
-                // 重新创建交换链时必须在 LoadResources 前恢复这两个输入，
-                // 否则首帧会使用默认/旧颜色，直到下一首歌才被刷新。
-                if (_lastPalette is not null)
-                    _background.SetPalette(_lastPalette);
-                else
-                    _background.RefreshColors();
-                _background.SetArtwork(_lastArtwork);
-
-                _background.LoadResources();
-                _fog.LoadResources();
-                _snow.LoadResources();
-                _raindrop.LoadResources();
-
-                if (_advanced)
-                    _coordinator.OnCreateResources();
             }
             catch (Exception ex) { RaiseException(ex); }
         }
 
         private void OnCanvasUpdate(ICanvasAnimatedControl sender, CanvasAnimatedUpdateEventArgs args)
         {
+            if (!_isActive) return;
+
             // 渲染回调内任何异常都不允许逃逸：会经 Win2D 游戏循环 / DispatcherQueue
             // 转成 stowed exception（0xc000027b）直接闪退。截停 + 记录（限流）。
             try
             {
-                var bg = _background;
-                var elapsed = args.Timing.ElapsedTime;
+                if (!Monitor.TryEnter(_cacheGate, 0)) return;
+                try
+                {
+                    var bg = _background;
+                    var elapsed = args.Timing.ElapsedTime;
 
-                // 渲染线程：只读已缓存到渲染模块的状态，绝不访问依赖属性
-                bg?.Update(elapsed);
-                _fog.Update(elapsed.TotalSeconds);
-                _snow.Update(elapsed.TotalSeconds);
-                _raindrop.Update(elapsed.TotalSeconds);
+                    // 渲染线程：只读已缓存到渲染模块的状态，绝不访问依赖属性
+                    bg?.Update(elapsed);
+                    _fog.Update(elapsed.TotalSeconds);
+                    _snow.Update(elapsed.TotalSeconds);
+                    _raindrop.Update(elapsed.TotalSeconds);
+                }
+                finally { Monitor.Exit(_cacheGate); }
 
                 if (_advanced)
                     _coordinator.OnUpdate(sender, args);
@@ -562,6 +715,8 @@ namespace AnimatedWin2dControls.Controls
 
         private void OnCanvasDraw(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs args)
         {
+            if (!_isActive) return;
+
             // 绘制阶段同步异常截停 + 记录（限流）。注意：主交换链会话的 EndDraw 在
             // Win2D 内部（本方法返回之后），那一层由 App 的 first-chance 过滤兜底记录。
             try
@@ -590,15 +745,23 @@ namespace AnimatedWin2dControls.Controls
         // 流体恒为满屏不透明，缓存整面覆盖交换链，故无需清屏；歌词层每帧叠加其上。
         private void DrawBackground(ICanvasAnimatedControl sender, CanvasDrawingSession ds)
         {
-            var bg = _background;
             _frameCounter++;
 
             if (_backgroundFrameSkip <= 0)
             {
-                bg?.Draw(sender, ds);
-                _snow.Draw(sender, ds);
-                _fog.Draw(sender, ds);
-                _raindrop.Draw(sender, ds);
+                // The UI thread can replace/dispose the renderer while a draw
+                // callback is already in flight. Share the lifecycle gate with
+                // SwapBackgroundRenderer so the local snapshot stays valid.
+                if (!Monitor.TryEnter(_cacheGate, 0)) return;
+                try
+                {
+                    var bg = _background;
+                    bg?.Draw(sender, ds);
+                    _snow.Draw(sender, ds);
+                    _fog.Draw(sender, ds);
+                    _raindrop.Draw(sender, ds);
+                }
+                finally { Monitor.Exit(_cacheGate); }
                 return;
             }
 
@@ -613,6 +776,7 @@ namespace AnimatedWin2dControls.Controls
             if (!Monitor.TryEnter(_cacheGate, 0)) return;
             try
             {
+                var bg = _background;
                 if (_bgCache is null || _bgCacheWidthDip != widthDip || _bgCacheHeightDip != heightDip
                     || _bgCacheDpi != sender.Dpi)
                 {
@@ -653,7 +817,10 @@ namespace AnimatedWin2dControls.Controls
             try
             {
                 _lastPalette = palette;
-                _background?.SetPalette(palette);
+                lock (_cacheGate)
+                {
+                    _background?.SetPalette(palette);
+                }
                 if (UseImageDominantTheme && palette is not null)
                     ThemeResolved?.Invoke(this, palette.PaletteIsDark);
             }
@@ -671,7 +838,10 @@ namespace AnimatedWin2dControls.Controls
             try
             {
                 _lastArtwork = artwork;
-                _background?.SetArtwork(artwork);
+                lock (_cacheGate)
+                {
+                    _background?.SetArtwork(artwork);
+                }
             }
             catch (Exception ex) { RaiseException(ex); }
         }
@@ -697,19 +867,10 @@ namespace AnimatedWin2dControls.Controls
 
             _coordinatorAttached = false;
             _coordinator.PrepareForShutdown();
-            _background?.Dispose();
-            _background = null;
+            ReleaseBackgroundResources();
+            _canvasResourcesReady = false;
             _lastPalette = null;
             _lastArtwork = null;
-            _fog.Dispose();
-            _snow.Dispose();
-            _raindrop.Dispose();
-
-            lock (_cacheGate)
-            {
-                _bgCache?.Dispose();
-                _bgCache = null;
-            }
         }
 
         public void Dispose()

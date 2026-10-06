@@ -2,6 +2,19 @@
 
 新条目加在最上方。
 
+## 2026-10-06 改为复用 Win2D 画布并按激活状态惰性创建资源
+- `PlayingDetailPage`：`NowPlayingCanvas`、动画文本和歌词宿主按需首次激活创建，后续通过激活属性暂停/隐藏渲染，避免开关设置时反复创建 `CanvasAnimatedControl`。
+- `LyricsControl`、`AdvanceLyricsCanvasControl`：歌词宿主与高级歌词画布改为单实例，停用时隐藏并解绑总线和共享动画时钟，重新启用时恢复。
+- `NowPlayingCanvas`、`AnimatedTextBlock`：背景着色器、图片解码、文本布局和画刷在控件首次激活且设备资源就绪后创建，真正关闭宿主时统一释放。
+- `NowPlayingCanvas`：统一背景绘制、更新、替换和释放的生命周期锁，避免渲染回调持有旧原生对象时并发释放。
+- 验证：AnimatedWin2dControls 项目构建通过（0 个错误）；待使用新构建运行进程复测工作集、私有内存、句柄和线程基线。
+
+## 2026-10-06 修复着色器背景反复切换导致内存持续上升
+- `ImageBackgroundRenderer`：将图片解码收敛为单一可取消后台循环，切换或卸载时取消在途 WinRT 操作并在其结束后释放同步资源，避免旧解码任务长期持有像素缓冲区。
+- `ImageBackgroundRenderer`、`NowPlayingCanvas`：为图片位图和效果的绘制、设备重建与释放建立互斥生命周期，避免交换链切换期间并发释放原生资源。
+- `NowPlayingCanvas`：复用图片背景和旋转网格渲染器，避免 `D2D1ResourceTextureManager` 仅能依靠终结器回收时因反复创建造成原生资源堆积；背景停用时停止解码，宿主关闭时统一释放缓存实例。
+- 验证：`dotnet build WinUIMusicPlayer.csproj --no-restore -c Debug -p:Platform=x64`（0 个错误）。
+
 ## 2026-10-06 修复 Win2D 动画文本块开关与资源释放
 - `PlayingDetailPage`：动画文本块的 `x:Load` 与普通文本替代视图的可见性改为 `OneWay`，开关切换即时更新；动态创建后重新应用当前文字特效。
 - `AnimatedTextBlock`：卸载时解除画布事件、移除 Win2D 画布并释放文本布局、画刷和格式资源，避免反复切换留下原生资源。

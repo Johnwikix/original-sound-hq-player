@@ -42,9 +42,9 @@
 
         <alc:AdvanceLyricsCanvasControl
             x:Name="LyricsCanvas"
+            IsActive="{x:Bind utils:BindUtils.BoolAndConverter(IsActive, EnableAdvancedLyrics), Mode=OneWay}"
             Margin="{x:Bind LyricsMargin, Mode=OneWay}"
             HorizontalAlignment="Stretch"
-            x:Load="{x:Bind EnableAdvancedLyrics, Mode=OneWay}"
             RenderError="LyricsCanvas_RenderError" />
     </Grid>
 </UserControl>

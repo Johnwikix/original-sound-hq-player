@@ -39,6 +39,8 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
     private int _cachedFormatVersion;
     private int _formatVersion;
     private bool _isClockRegistered = false;
+    private bool _isActive = true;
+    private bool _shutdown;
     private TimeSpan _totalAnimationTime;       // 替代 CanvasTimingInformation.TotalTime
     private TimeSpan _animationBeginTime;
 
@@ -75,6 +77,15 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
     public static readonly DependencyProperty TextProperty = DependencyProperty.Register(
         nameof(Text), typeof(string), typeof(AnimatedTextBlock), new PropertyMetadata(string.Empty, OnTextChanged));
+
+    public static readonly DependencyProperty IsActiveProperty = DependencyProperty.Register(
+        nameof(IsActive), typeof(bool), typeof(AnimatedTextBlock), new PropertyMetadata(true, OnActiveChanged));
+
+    public bool IsActive
+    {
+        get => (bool)GetValue(IsActiveProperty);
+        set => SetValue(IsActiveProperty, value);
+    }
 
     public string Text
     {
@@ -189,15 +200,19 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         _canvas = GetTemplateChild("AnimatedCanvas") as CanvasControl;
 
         ApplyTextFormatIfNeeded();
-        ApplyTextForeground();
+        if (_isActive)
+            ApplyTextForeground();
 
         AttachCanvas();
-        if (IsLoaded)
+        UpdateActiveState(_isActive);
+        if (IsLoaded && _isActive)
             SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
     }
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        if (_shutdown) return;
+
         // RemoveFromVisualTree() is used during unload to release Win2D's native
         // references. The control template can remain applied when the host is
         // reinserted, so reacquire the template part before reattaching events.
@@ -205,11 +220,14 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         EnsureTextFormat();
         AttachCanvas();
         ApplyTextFormatIfNeeded();
-        ApplyTextForeground();
+        if (_isActive)
+            ApplyTextForeground();
         _newText = Text ?? string.Empty;
         _staticLayoutDirty = true;
         InvalidateMeasure();
-        SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
+        UpdateActiveState(_isActive);
+        if (_isActive)
+            SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
@@ -218,16 +236,27 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         StopHoverScroll();
         StopRenderingLoop();
         _currentState = AnimatedTextBlockRedrawState.Idle;
+    }
 
-        // CanvasControl owns native event sources. x:Load can create and destroy
-        // this subtree repeatedly, so remove the canvas from the visual tree and
-        // release our reference after detaching handlers to break the native cycle.
+    /// <summary>
+    /// Releases the Win2D template and text resources when the page is truly
+    /// shutting down. Ordinary page hiding only stops the shared animation clock.
+    /// </summary>
+    public void PrepareForShutdown()
+    {
+        if (_shutdown) return;
+        _shutdown = true;
+
+        _isPointerOver = false;
+        StopHoverScroll();
+        StopRenderingLoop();
+        _currentState = AnimatedTextBlockRedrawState.Idle;
+
         var canvas = _canvas;
         DetachCanvas();
         canvas?.RemoveFromVisualTree();
         _canvas = null;
 
-        // 释放所有 GPU 资源
         DisposeLayouts();
         _textBrush?.Dispose();
         _textBrush = null;
@@ -347,6 +376,8 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         DisposeLayouts();
         StopHoverScroll();
         _staticLayoutDirty = true;
+        if (!_isActive) return;
+
         if (_currentState == AnimatedTextBlockRedrawState.Animating)
             SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
         if (Foreground is LinearGradientBrush linearGradientBrush)
@@ -366,6 +397,8 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
     private void Canvas_Draw(CanvasControl sender, CanvasDrawEventArgs args)
     {
+        if (!_isActive) return;
+
         // 全部在 UI 线程，无需 lock
         args.DrawingSession.Clear(Colors.Transparent);
 
@@ -436,7 +469,7 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
     private void StartRenderingLoop()
     {
-        if (_isClockRegistered || !IsLoaded) return;
+        if (_isClockRegistered || !IsLoaded || !_isActive) return;
         SharedAnimationClock.Register(this);
         _isClockRegistered = true;
     }
@@ -761,6 +794,8 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
     #endregion
     public void OnSharedTick(TimeSpan elapsed)
     {
+        if (!_isActive) return;
+
         // 空闲状态仅在悬停滚动期间重绘。
         if (_currentState == AnimatedTextBlockRedrawState.Idle)
         {

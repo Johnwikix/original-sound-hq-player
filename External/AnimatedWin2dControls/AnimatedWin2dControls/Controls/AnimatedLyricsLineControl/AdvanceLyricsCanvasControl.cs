@@ -15,6 +15,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         public event EventHandler<TimeSpan>? LyricLineClicked;
         public event EventHandler<Exception>? RenderError;
 
+        public static readonly DependencyProperty IsActiveProperty =
+            DependencyProperty.Register(nameof(IsActive), typeof(bool),
+                typeof(AdvanceLyricsCanvasControl), new PropertyMetadata(true, OnActiveChanged));
+        public bool IsActive
+        {
+            get => (bool)GetValue(IsActiveProperty);
+            set => SetValue(IsActiveProperty, value);
+        }
+
         /// <summary>宿主样式覆盖：字重（null = 跟随 LyricsSettingsBus，默认 700）。变更立即触发重排。</summary>
         public int? FontWeightOverride
         {
@@ -32,6 +41,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private bool _pausedByVisibility;
         private bool _pausedByParent;
         private bool _pausedByWindow;
+        private bool _isActive = true;
+        private bool _coordinatorAttached;
         private long _visibilityCallbackToken;
         private bool _shutdown;
 
@@ -73,6 +84,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas = null;
             }
 
+            _coordinatorAttached = false;
             _coordinator.ReleaseForUnload();
         }
 
@@ -98,7 +110,35 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private void UpdateCanvasPaused()
         {
             if (_canvas is not null)
-                _canvas.Paused = _pausedByVisibility || _pausedByParent || _pausedByWindow;
+                _canvas.Paused = !_isActive || _pausedByVisibility || _pausedByParent || _pausedByWindow;
+        }
+
+        private static void OnActiveChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+            => ((AdvanceLyricsCanvasControl)d).UpdateActiveState((bool)e.NewValue);
+
+        private void UpdateActiveState(bool active)
+        {
+            _isActive = active;
+            Opacity = active ? 1 : 0;
+            IsHitTestVisible = active;
+
+            if (!active)
+            {
+                if (_coordinatorAttached)
+                {
+                    _coordinator.Detach();
+                    _coordinatorAttached = false;
+                }
+            }
+            else if (IsLoaded && !_coordinatorAttached)
+            {
+                _coordinator.Attach();
+                _coordinatorAttached = true;
+            }
+
+            UpdateCanvasPaused();
+            if (active)
+                _canvas?.Invalidate();
         }
 
         private static void OnVisibilityChanged(DependencyObject d, DependencyProperty dp)
@@ -110,16 +150,30 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void OnControlLoaded(object sender, RoutedEventArgs e)
         {
-            _coordinator.Attach();
+            UpdateActiveState(_isActive);
         }
 
         private void OnControlUnloaded(object sender, RoutedEventArgs e)
         {
-            ReleaseForUnload();
+            // LyricsControl lives for the page lifetime and can be temporarily
+            // removed from the visual tree when the page is hidden. Keep native
+            // resources reusable; PrepareForShutdown owns final cleanup.
+            _canvas?.Paused = true;
+            if (_coordinatorAttached)
+            {
+                _coordinator.Detach();
+                _coordinatorAttached = false;
+            }
         }
 
         protected override void OnApplyTemplate()
         {
+            if (_coordinatorAttached)
+            {
+                _coordinator.Detach();
+                _coordinatorAttached = false;
+            }
+
             if (_canvas != null)
                 DetachCanvasEvents(_canvas);
 
@@ -138,6 +192,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
                 _canvas.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / _coordinator.TargetFrameRate);
                 UpdateCanvasPaused();
             }
+
+            UpdateActiveState(_isActive);
 
             _visibilityCallbackToken = RegisterPropertyChangedCallback(VisibilityProperty, OnVisibilityChanged);
         }
@@ -170,10 +226,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             => _coordinator.OnCreateResources();
 
         private void OnCanvasUpdate(ICanvasAnimatedControl sender, CanvasAnimatedUpdateEventArgs args)
-            => _coordinator.OnUpdate(sender, args);
+        {
+            if (_isActive)
+                _coordinator.OnUpdate(sender, args);
+        }
 
         private void OnCanvasDraw(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs args)
         {
+            if (!_isActive) return;
+
             var ds = args.DrawingSession;
             ds.Clear(Microsoft.UI.Colors.Transparent);
             _coordinator.OnDraw(sender, ds);
