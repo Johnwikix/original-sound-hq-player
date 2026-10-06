@@ -22,6 +22,7 @@ public static class BinarySerializer
     public const int EqStateResponseSize = 2; // IsEnabled + IsActive
     public const int VolumeResponseSize = 4;
     public const int TimeProgressSize = 16;
+    public const int FftEnabledSize = 1;
 
     // ──────────────────────── String helpers ────────────────────────
 
@@ -84,6 +85,19 @@ public static class BinarySerializer
     public static ChangeVolumeRequest ReadChangeVolumeRequest(ReadOnlySpan<byte> src)
     {
         return new() { Volume = BinaryPrimitives.ReadDoubleLittleEndian(src) };
+    }
+
+    public static int WriteFftEnabled(Span<byte> dest, bool enabled)
+    {
+        if (dest.Length < FftEnabledSize) throw new ArgumentException("Destination is too small.", nameof(dest));
+        dest[0] = enabled ? (byte)1 : (byte)0;
+        return FftEnabledSize;
+    }
+
+    public static bool ReadFftEnabled(ReadOnlySpan<byte> src)
+    {
+        if (src.Length != FftEnabledSize || src[0] > 1) throw new ArgumentException("Invalid FFT setting payload.", nameof(src));
+        return src[0] != 0;
     }
 
     // ──────────────────────── IpcSetting ────────────────────────

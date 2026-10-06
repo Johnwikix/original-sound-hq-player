@@ -1,3 +1,5 @@
+using System.Buffers.Binary;
+
 namespace BassPlayerIpc.Shared;
 
 /// <summary>Reliable bounded notifications plus one pending snapshot per state type; publishers never wait for I/O.</summary>
@@ -8,9 +10,11 @@ public sealed class PipeStateServer : IDisposable
     private readonly TaskCompletionSource _overflowed = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly Queue<(MessageTypeId Type, byte[] Payload)> _notifications = new();
     private readonly byte[] _dspPayload = new byte[DspProtocol.StateSize];
+    private readonly byte[] _fftPayload = new byte[FftProtocol.MaxPayloadSize];
     private ProgressSnapshot _progress;
     private DspStateSnapshot? _dsp;
-    private bool _progressPending, _dspPending, _overflow, _disposed;
+    private int _fftLength;
+    private bool _progressPending, _dspPending, _fftPending, _preferFft, _overflow, _disposed;
     public DspStateSnapshot? CurrentDspState { get { lock (_gate) return _dsp; } }
 
     public void PublishProgress(ProgressSnapshot snapshot)
@@ -36,6 +40,20 @@ public sealed class PipeStateServer : IDisposable
             payload.CopyTo(_dspPayload);
             _dsp = new(checked((_dsp?.Revision ?? 0) + 1), state);
             _dspPending = true;
+            Wake();
+            return true;
+        }
+    }
+
+    /// <summary>Stores only the newest FFT frame; publishing never waits for pipe I/O.</summary>
+    public bool PublishFft(FftSnapshot snapshot)
+    {
+        lock (_gate)
+        {
+            if (_disposed) return false;
+            int length = FftProtocol.Write(_fftPayload, snapshot);
+            _fftLength = length;
+            _fftPending = true;
             Wake();
             return true;
         }
@@ -94,7 +112,7 @@ public sealed class PipeStateServer : IDisposable
     private async Task PublishAsync(Stream pipe, CancellationToken token)
     {
         var writer = new PipeFrameWriter();
-        byte[] buffer = new byte[IpcConstants.MaxNotificationSize];
+        byte[] buffer = new byte[IpcConstants.MaxStatePayloadSize];
         while (true)
         {
             token.ThrowIfCancellationRequested();
@@ -121,11 +139,33 @@ public sealed class PipeStateServer : IDisposable
                 }
                 else if (_progressPending)
                 {
-                    _progressPending = false;
-                    kind = PipeFrameKind.Progress;
-                    id = _progress.Revision;
-                    ProgressProtocol.Write(buffer, _progress);
-                    payload = buffer.AsMemory(0, ProgressProtocol.Size);
+                    if (_fftPending && _preferFft)
+                    {
+                        _fftPending = false;
+                        _preferFft = false;
+                        kind = PipeFrameKind.FftData;
+                        id = BinaryPrimitives.ReadInt64LittleEndian(_fftPayload);
+                        _fftPayload.AsSpan(0, _fftLength).CopyTo(buffer);
+                        payload = buffer.AsMemory(0, _fftLength);
+                    }
+                    else
+                    {
+                        _progressPending = false;
+                        _preferFft = true;
+                        kind = PipeFrameKind.Progress;
+                        id = _progress.Revision;
+                        ProgressProtocol.Write(buffer, _progress);
+                        payload = buffer.AsMemory(0, ProgressProtocol.Size);
+                    }
+                }
+                else if (_fftPending)
+                {
+                    _fftPending = false;
+                    _preferFft = false;
+                    kind = PipeFrameKind.FftData;
+                    id = BinaryPrimitives.ReadInt64LittleEndian(_fftPayload);
+                    _fftPayload.AsSpan(0, _fftLength).CopyTo(buffer);
+                    payload = buffer.AsMemory(0, _fftLength);
                 }
                 else { kind = 0; payload = default; }
             }

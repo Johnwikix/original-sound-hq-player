@@ -11,11 +11,15 @@ public sealed class PipeStateClient : IDisposable, IAsyncDisposable
     private Task _reader = Task.CompletedTask;
     private ProgressSnapshot _progress;
     private DspStateSnapshot? _dsp;
+    private FftSnapshot? _fft;
     private bool _started, _stopped;
     private int _resourcesDisposed;
     public Guid InstanceId { get; }
     public DspStateSnapshot? CurrentDspState => Volatile.Read(ref _dsp);
+    public FftSnapshot? CurrentFftSnapshot => Volatile.Read(ref _fft);
     public event Action<DspStateSnapshot>? DspStateChanged;
+    /// <summary>Raised on the pipe reader thread. The snapshot is immutable by convention.</summary>
+    public event Action<FftSnapshot>? FftDataChanged;
     /// <summary>Payload is borrowed only for the duration of this callback.</summary>
     public event Action<MessageTypeId, ReadOnlyMemory<byte>>? NotificationReceived;
     public event Action<Exception>? Faulted;
@@ -52,7 +56,7 @@ public sealed class PipeStateClient : IDisposable, IAsyncDisposable
 
     private async Task ReadAsync()
     {
-        using var reader = new PipeFrameReader(IpcConstants.MaxNotificationSize);
+        using var reader = new PipeFrameReader(IpcConstants.MaxStatePayloadSize);
         try
         {
             while (true)
@@ -74,6 +78,12 @@ public sealed class PipeStateClient : IDisposable, IAsyncDisposable
                         var dsp = new DspStateSnapshot(frame.Id, DspProtocol.ReadState(frame.Payload.Span));
                         Volatile.Write(ref _dsp, dsp);
                         DspStateChanged?.Invoke(dsp);
+                        break;
+                    case PipeFrameKind.FftData:
+                        var fft = FftProtocol.Read(frame.Payload.Span);
+                        if (fft.Sequence <= (CurrentFftSnapshot?.Sequence ?? 0)) break;
+                        Volatile.Write(ref _fft, fft);
+                        FftDataChanged?.Invoke(fft);
                         break;
                     case PipeFrameKind.Notification:
                         if (frame.Type is < short.MinValue or > short.MaxValue) throw new InvalidDataException("Invalid notification type.");

@@ -31,6 +31,7 @@ namespace AudioPlayer.Playback;
 public sealed partial class PlaybackEngine : IDisposable
 {
     private readonly PlayerIpcService _ipc;
+    private readonly FftAnalyzer _fftAnalyzer;
 
     private const int FadeMs = 300; // 淡入/淡出斜坡时长
 
@@ -45,6 +46,7 @@ public sealed partial class PlaybackEngine : IDisposable
         if (_session?.Effects is { } oldEffects) oldEffects.StateChanged -= QueueDspState;
         _session = session;
         if (session?.Effects is { } effects) effects.StateChanged += QueueDspState;
+        _fftAnalyzer.Reset(session?.TimelineEpoch ?? 0, session?.Kind == RenderKind.Pcm ? session.SampleRate : 0);
         QueueDspState();
     }
 
@@ -115,10 +117,33 @@ public sealed partial class PlaybackEngine : IDisposable
     public PlaybackEngine(PlayerIpcService ipc)
     {
         _ipc = ipc;
+        _fftAnalyzer = new FftAnalyzer(ipc.PublishFft);
         _endedWatchdog = new Timer(_ => WatchdogTick(), null, 50, 50);
         // "DirectSound 全自动"的设备侧：默认设备/端点格式变化主动通知（注册失败退化为渲染失效探测）
         if (!EndpointNotifications.Start()) Console.WriteLine("[engine] endpoint notifications unavailable");
     }
+
+    /// <summary>Feature hook for a future visualizer; it does not rebuild the audio output.</summary>
+    public void SetFftEnabled(bool enabled)
+    {
+        lock (_streamLock)
+        {
+            if (enabled)
+            {
+                _fftAnalyzer.Reset(_session?.TimelineEpoch ?? 0, _session?.Kind == RenderKind.Pcm ? _session.SampleRate : 0);
+                _fftAnalyzer.SetEnabled(true);
+            }
+            else
+            {
+                _fftAnalyzer.SetEnabled(false);
+            }
+        }
+    }
+
+    internal void ResetFft(long epoch, int sampleRate) => _fftAnalyzer.Reset(epoch, sampleRate);
+
+    internal void CaptureFft(ReadOnlySpan<double> samples, int frames, int channels, uint channelMask, int sampleRate)
+        => _fftAnalyzer.Capture(samples, frames, channels, channelMask, sampleRate);
 
     // ─────────────── 文件类别 ───────────────
 
@@ -1361,6 +1386,7 @@ public sealed partial class PlaybackEngine : IDisposable
             IsPlaying = false;
             DisposeSession();
         }
+        _fftAnalyzer.Dispose();
         if (!StopGaplessAsync().Wait(1500))
             Console.WriteLine("[gapless] preload shutdown pending; worker retains decoder ownership");
     }

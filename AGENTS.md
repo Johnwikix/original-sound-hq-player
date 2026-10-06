@@ -12,6 +12,13 @@
 - 以用户当前布局为基准，保持 MVVM；设置状态和命令放在 ViewModel，视图负责布局和交互转发。
 - SettingsCard 中并列的开关与数值输入优先同一行、垂直居中；不要给横向使用的 ToggleSwitch 添加 Header 导致卡片增高或标题重叠。
 
+## 跨页面 MVVM 与桌面任务栏控件
+
+- 新增或改造桌面歌词、任务栏媒体控件时，状态、命令和输入值必须复用现有 ViewModel；优先使用 `x:Bind` 的 `OneWay`/`TwoWay` 绑定，不在代码后置复制一份状态。事件处理器只转发指针、滚轮等交互到 ViewModel，控件命令沿用 `MainPage` 和 `PlaybackCommands` 的现有入口。
+- 窗口使用 `Show(false)`、不激活显示或改为任务栏 `WS_CHILD` 后，不能依赖 `Window.Activated` 触发 `x:Bind` 初始化；构造完成后必须显式初始化绑定，并在关闭时停止跟踪，保证按钮命令、图标状态和双向输入仍可用。
+- 同类控件优先复用 `View/MainPage.xaml` 的命令、图标转换器、Slider 范围和交互语义，保持透明背景、尺寸、间距、悬停行为一致；音量图标是状态展示时保持纯图标，不额外制造平行按钮或弹出层。
+- 修改 `External/AudioPlayer` 或其 IPC 协议后，必须重新发布 `Player/AudioPlayer.exe`：`dotnet publish External/AudioPlayer/AudioPlayer.csproj -c Release -r win-x64 -p:Platform=x64 --no-restore -o Player`，并重跑对应回归验证。
+
 ## 功能变更记录（docs/Changelog.md）
 
 - 每次功能修改（新功能、行为变更、默认值调整、面向用户的修复）在 `docs/Changelog.md` 顶部追加一条记录，方便 review；全部变更共用这一个文件，不按主题或日期另开新篇。

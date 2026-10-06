@@ -274,6 +274,12 @@ namespace WinUIMusicPlayer.Services
             IpcService.FadeOut();
         }
 
+        /// <summary>Feature hook for future spectrum effects; does not rebuild the output.</summary>
+        public void SetFftEnabled(bool enabled) => IpcService.SetFftEnabled(enabled);
+
+        /// <summary>Latest FFT frame for a visualizer; the snapshot is immutable after IPC parsing.</summary>
+        public FftSnapshot? CurrentFftSnapshot => IpcService.CurrentFftSnapshot;
+
         /// <summary>获取用于持久化与设置传输的稳定 WASAPI 端点 ID。</summary>
         public string? GetWasapiEndpointId(int id) => IpcService.GetWasapiEndpointId(id);
 

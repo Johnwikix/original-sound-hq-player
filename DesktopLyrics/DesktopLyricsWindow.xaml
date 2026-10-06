@@ -36,11 +36,15 @@
                 Visibility="Collapsed">
                 <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6">
                     <Border
-                        Width="38"
-                        Height="38"
+                        x:Name="TaskbarCoverButtonHost"
+                        Width="42"
+                        Height="42"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        CornerRadius="4">
+                        CornerRadius="4"
+                        Background="Transparent"
+                        PointerEntered="TaskbarCoverButtonHost_PointerEntered"
+                        PointerExited="TaskbarCoverButtonHost_PointerExited">
                         <Grid>
                             <FontIcon
                                 x:Name="TaskbarCoverPlaceholder"
@@ -49,69 +53,133 @@
                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                 Glyph="&#xE93C;" />
                             <Image x:Name="TaskbarCoverImage" Stretch="UniformToFill" />
+                            <Button
+                                x:Name="TaskbarCoverPlayPauseButton"
+                                Width="42"
+                                Height="42"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Padding="0"
+                                AutomationProperties.Name="Play or pause"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Command="{x:Bind Playback.ToggleCommand, Mode=OneWay}"
+                                IsEnabled="{x:Bind tools:BindUtils.IsPlayButtonEnabled(AppViewModel.IsPlaybackEngineReady, AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
+                                PointerEntered="TaskbarCoverPlayPauseButton_PointerEntered"
+                                PointerExited="TaskbarCoverPlayPauseButton_PointerExited">
+                                <Button.Resources>
+                                    <SolidColorBrush x:Key="ButtonBackground" Color="Transparent" />
+                                    <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="Transparent" />
+                                    <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="Transparent" />
+                                    <SolidColorBrush x:Key="ButtonBackgroundDisabled" Color="Transparent" />
+                                    <SolidColorBrush x:Key="ButtonBorderBrush" Color="Transparent" />
+                                    <SolidColorBrush x:Key="ButtonBorderBrushPointerOver" Color="Transparent" />
+                                    <SolidColorBrush x:Key="ButtonBorderBrushPressed" Color="Transparent" />
+                                    <SolidColorBrush x:Key="ButtonBorderBrushDisabled" Color="Transparent" />
+                                </Button.Resources>
+                                <FontIcon
+                                    x:Name="TaskbarCoverPlayIcon"
+                                    FontSize="16"
+                                    Opacity="0"
+                                    Foreground="White"
+                                    IsHitTestVisible="False"
+                                    Glyph="{x:Bind tools:BindUtils.PlayStatusToGlyphConverter(AppViewModel.IsPlaying), Mode=OneWay}" />
+                            </Button>
                         </Grid>
                     </Border>
                     <StackPanel
+                        x:Name="TaskbarSongInfoPanel"
                         Grid.Column="1"
                         VerticalAlignment="Center"
-                        Spacing="1">
-                        <TextBlock
-                            x:Name="TaskbarTitleText"
-                            FontSize="12"
-                            FontWeight="SemiBold"
-                            TextTrimming="CharacterEllipsis" />
-                        <TextBlock
-                            x:Name="TaskbarArtistText"
-                            FontSize="10"
-                            Opacity="0.78"
-                            TextTrimming="CharacterEllipsis" />
+                        Background="Transparent"
+                        Spacing="1"
+                        PointerEntered="TaskbarSongInfoPanel_PointerEntered"
+                        PointerExited="TaskbarSongInfoPanel_PointerExited">
+                        <Grid>
+                            <StackPanel x:Name="TaskbarSongMetadata" Spacing="1">
+                                <TextBlock
+                                    x:Name="TaskbarTitleText"
+                                    FontSize="12"
+                                    FontWeight="SemiBold"
+                                    TextTrimming="CharacterEllipsis" />
+                                <TextBlock
+                                    x:Name="TaskbarArtistText"
+                                    FontSize="10"
+                                    Opacity="0.78"
+                                    TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <Border
+                                x:Name="TaskbarSongControls"
+                                Height="42"
+                                Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                CornerRadius="5"
+                                Padding="2"
+                                Visibility="Collapsed">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Spacing="2">
+                                    <Button
+                                        x:Name="TaskbarPreviousButton"
+                                        Width="26"
+                                        Height="26"
+                                        Padding="0"
+                                        AutomationProperties.Name="Previous"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Command="{x:Bind Playback.PreviousCommand, Mode=OneWay}"
+                                        IsEnabled="{x:Bind tools:BindUtils.IsSwitchEntryEnabled(AppViewModel.IsPlaybackEngineReady, AppViewModel.CurrentPlayingList), Mode=OneWay}">
+                                        <FontIcon FontSize="13" Glyph="&#xF8AC;" />
+                                    </Button>
+                                    <Button
+                                        x:Name="TaskbarNextButton"
+                                        Width="26"
+                                        Height="26"
+                                        Padding="0"
+                                        AutomationProperties.Name="Next"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Command="{x:Bind Playback.NextCommand, Mode=OneWay}"
+                                        IsEnabled="{x:Bind tools:BindUtils.IsSwitchEntryEnabled(AppViewModel.IsPlaybackEngineReady, AppViewModel.CurrentPlayingList), Mode=OneWay}">
+                                        <FontIcon FontSize="13" Glyph="&#xF8AD;" />
+                                    </Button>
+                                    <FontIcon
+                                        x:Name="TaskbarVolumeIcon"
+                                        Width="26"
+                                        Height="26"
+                                        Margin="3,0,0,0"
+                                        VerticalAlignment="Center"
+                                        FontSize="13"
+                                        IsHitTestVisible="False"
+                                        Glyph="{x:Bind tools:BindUtils.VolumeToGlyphConverter(AppViewModel.Volume), Mode=OneWay}" />
+                                    <Slider
+                                        x:Name="TaskbarVolumeSlider"
+                                        Width="72"
+                                        Minimum="0"
+                                        Maximum="100"
+                                        StepFrequency="1"
+                                        PointerEntered="TaskbarVolumeSlider_PointerEntered"
+                                        PointerExited="TaskbarVolumeSlider_PointerExited"
+                                        PointerWheelChanged="TaskbarVolumeSlider_PointerWheelChanged"
+                                        VerticalAlignment="Center"
+                                        Value="{x:Bind AppViewModel.Volume, Mode=TwoWay}"
+                                        AutomationProperties.Name="Volume" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
                     </StackPanel>
-                    <StackPanel
+                    <Grid
+                        x:Name="TaskbarSpectrumPanel"
                         Grid.Column="2"
-                        HorizontalAlignment="Right"
                         VerticalAlignment="Center"
-                        Orientation="Horizontal"
-                        Spacing="0">
-                        <Button
-                            x:Name="TaskbarPreviousButton"
-                            Width="32"
-                            Height="32"
-                            Margin="2"
-                            Padding="0"
-                            AutomationProperties.Name="Previous"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Click="TaskbarPreviousButton_Click">
-                            <FontIcon FontSize="14" Glyph="&#xF8AC;" />
-                        </Button>
-                        <Button
-                            x:Name="TaskbarPlayPauseButton"
-                            Width="32"
-                            Height="32"
-                            Margin="2"
-                            Padding="0"
-                            AutomationProperties.Name="Play or pause"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Click="TaskbarPlayPauseButton_Click">
-                            <FontIcon
-                                x:Name="TaskbarPlayIcon"
-                                FontSize="16"
-                                Glyph="&#xE768;" />
-                        </Button>
-                        <Button
-                            x:Name="TaskbarNextButton"
-                            Width="32"
-                            Height="32"
-                            Margin="2"
-                            Padding="0"
-                            AutomationProperties.Name="Next"
-                            Background="Transparent"
-                            BorderThickness="0"
-                            Click="TaskbarNextButton_Click">
-                            <FontIcon FontSize="14" Glyph="&#xF8AD;" />
-                        </Button>
-                    </StackPanel>
+                        Width="38"
+                        Height="30"
+                        Margin="2,0,0,0"
+                        IsHitTestVisible="False">
+                        <Canvas
+                            x:Name="TaskbarSpectrumCanvas"
+                            Width="38"
+                            Height="30"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center" />
+                    </Grid>
                 </Grid>
             </Border>
             <ContentPresenter
@@ -156,7 +224,8 @@
                 <FontIcon
                     x:Name="LockIcon"
                     FontFamily="{ThemeResource SymbolThemeFontFamily}"
-                    FontSize="14" />
+                    FontSize="14"
+                    Glyph="{x:Bind tools:BindUtils.LockGlyphConverter(ViewModel.IsLocked), Mode=OneWay}" />
             </Button>
             <Button Click="ResetButton_Click">
                 <FontIcon FontSize="14" Glyph="&#xE7A7;" />

@@ -1,6 +1,6 @@
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Messages;
-using CommunityToolkit.Mvvm.Input;
+using BassPlayerIpc.Shared;
 using Microsoft.UI;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Input;
@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Shapes;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -66,6 +67,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         /// <summary>任务栏模式媒体信息来源。播放命令仍由现有 PlaybackCommands 统一守卫。</summary>
         public AppViewModel AppViewModel { get; } = App.Services.GetRequiredService<AppViewModel>();
         public PlaybackCommands Playback { get; } = App.Services.GetRequiredService<PlaybackCommands>();
+        private BassPlayerCommandService PlayerService { get; } = App.Services.GetRequiredService<BassPlayerCommandService>();
         private bool _locked = true;
         private bool _clickThrough;              // 当前穿透样式状态（false = 尚未设置）
         private bool _cursorOverPanel;
@@ -91,6 +93,13 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private DispatcherQueueTimer? _adaptiveColorTimer;
         private bool? _adaptiveIsDarkBackground;    // 上次明暗判定（null=未判定），滞回切换的基准
         private Color? _lastAdaptiveTextColor;      // 当前应用的取色文字色（判定不变则跳过重绘）
+        private readonly Rectangle[] _taskbarSpectrumBars = new Rectangle[12];
+        private readonly float[] _taskbarSpectrumTarget = new float[12];
+        private readonly float[] _taskbarSpectrumDisplayed = new float[12];
+        private DispatcherQueueTimer? _taskbarSpectrumTimer;
+        private double _taskbarSpectrumReference;
+        private long _taskbarLastFftSequence;
+        private bool _taskbarFftRequested;
 
         [Flags]
         private enum TaskbarResizeEdge
@@ -108,6 +117,11 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 ? mode
                 : DesktopLyricsMode.Floating;
             InitializeComponent();
+            // Window 的 x:Bind 默认等到 Activated 才初始化；歌词窗口以 Show(false)
+            // 显示，任务栏模式还会成为 WS_CHILD，必须主动连接命令、图标和双向绑定。
+            Bindings.Initialize();
+            if (_mode == DesktopLyricsMode.Taskbar)
+                InitializeTaskbarSpectrum();
             if (_mode == DesktopLyricsMode.Taskbar)
             {
                 // 任务栏客户区高度很小，媒体信息和歌词共用一行时不再额外占用上下边距。
@@ -142,15 +156,198 @@ namespace WinUIMusicPlayer.DesktopLyrics
             AppWindow.Changed += OnAppWindowChanged;
             ViewModel.PropertyChanged += OnViewModelPropertyChanged;
             AppViewModel.PropertyChanged += OnAppViewModelPropertyChanged;
-            Playback.PreviousCommand.CanExecuteChanged += OnTaskbarPlaybackCommandAvailabilityChanged;
-            Playback.ToggleCommand.CanExecuteChanged += OnTaskbarPlaybackCommandAvailabilityChanged;
-            Playback.NextCommand.CanExecuteChanged += OnTaskbarPlaybackCommandAvailabilityChanged;
             Closed += OnWindowClosed;
 
             // 拉取全量歌词/进度/样式状态（AppViewModel.SendFullLyricsSync）
             LyricsSyncRequestBus.Request();
             UpdateTaskbarMedia();
-            UpdateTaskbarCommandStates();
+            UpdateTaskbarSpectrumState();
+        }
+
+        private void InitializeTaskbarSpectrum()
+        {
+            TaskbarSpectrumCanvas.Children.Clear();
+            for (int i = 0; i < _taskbarSpectrumBars.Length; i++)
+            {
+                _taskbarSpectrumBars[i] = CreateSpectrumBar(i);
+                TaskbarSpectrumCanvas.Children.Add(_taskbarSpectrumBars[i]);
+            }
+            _taskbarSpectrumTimer = DispatcherQueue.CreateTimer();
+            _taskbarSpectrumTimer.Interval = TimeSpan.FromMilliseconds(33);
+            _taskbarSpectrumTimer.Tick += (_, _) => UpdateTaskbarSpectrumVisual();
+            _taskbarSpectrumTimer.Start();
+        }
+
+        private void SetTaskbarSpectrumTimerRunning(bool running)
+        {
+            if (_mode != DesktopLyricsMode.Taskbar) return;
+            if (running)
+                _taskbarSpectrumTimer?.Start();
+            else
+                _taskbarSpectrumTimer?.Stop();
+        }
+
+        private Rectangle CreateSpectrumBar(int index)
+        {
+            var bar = new Rectangle
+            {
+                Width = 2,
+                Height = 2,
+                RadiusX = 1,
+                RadiusY = 1,
+                Fill = ResolveTaskbarSpectrumBrush(),
+                Opacity = 0.92,
+            };
+            Canvas.SetLeft(bar, 1 + index * 3);
+            Canvas.SetTop(bar, 14);
+            return bar;
+        }
+
+        private Brush ResolveTaskbarSpectrumBrush() =>
+            TaskbarTitleText.Foreground
+            ?? Application.Current.Resources["TextFillColorPrimaryBrush"] as Brush
+            ?? new SolidColorBrush(Colors.White);
+
+        private void UpdateTaskbarSpectrumBrush()
+        {
+            if (_mode != DesktopLyricsMode.Taskbar) return;
+            Brush brush = ResolveTaskbarSpectrumBrush();
+            foreach (Rectangle bar in _taskbarSpectrumBars) bar.Fill = brush;
+        }
+
+        private void ApplyTaskbarSpectrum(FftSnapshot snapshot)
+        {
+            if (_disposed || !_taskbarFftRequested) return;
+            if (!snapshot.IsAvailable || snapshot.BinCount < 2)
+            {
+                _taskbarSpectrumReference = 0;
+                Array.Clear(_taskbarSpectrumTarget);
+                return;
+            }
+
+            int bins = Math.Min(snapshot.BinCount, Math.Min(snapshot.Left.Length, snapshot.Right.Length));
+            if (snapshot.SampleRate <= 0 || snapshot.FftSize <= 0 || bins < 2)
+            {
+                _taskbarSpectrumReference = 0;
+                Array.Clear(_taskbarSpectrumTarget);
+                return;
+            }
+            double peak = 0;
+            for (int i = 1; i < bins; i++)
+                peak = Math.Max(peak, ToMonoMagnitude(snapshot.Left[i], snapshot.Right[i]));
+            if (!(peak > 0) || !double.IsFinite(peak))
+            {
+                _taskbarSpectrumReference = 0;
+                Array.Clear(_taskbarSpectrumTarget);
+                return;
+            }
+            _taskbarSpectrumReference = Math.Max(peak, _taskbarSpectrumReference * 0.92);
+            // 传输协议保留双声道；任务栏将两侧功率平均为一组频带，再统一归一化。
+            for (int band = 0; band < _taskbarSpectrumTarget.Length; band++)
+            {
+                double lowHz = 45 * Math.Pow(20000d / 45, band / (double)_taskbarSpectrumTarget.Length);
+                double highHz = 45 * Math.Pow(20000d / 45, (band + 1) / (double)_taskbarSpectrumTarget.Length);
+                int first = Math.Clamp((int)Math.Floor(lowHz * snapshot.FftSize / snapshot.SampleRate), 1, bins - 1);
+                int last = Math.Clamp((int)Math.Ceiling(highHz * snapshot.FftSize / snapshot.SampleRate), first, bins - 1);
+                double magnitude = 0;
+                for (int bin = first; bin <= last; bin++)
+                {
+                    magnitude = Math.Max(magnitude, ToMonoMagnitude(snapshot.Left[bin], snapshot.Right[bin]));
+                }
+                _taskbarSpectrumTarget[band] = ToSpectrumLevel(magnitude, _taskbarSpectrumReference);
+            }
+        }
+
+        private static float ToSpectrumLevel(double magnitude, double reference)
+        {
+            if (!(magnitude > 0) || !(reference > 0)) return 0;
+            double db = 20 * Math.Log10(magnitude / reference);
+            return (float)Math.Clamp((db + 40) / 40, 0, 1);
+        }
+
+        private static double ToMonoMagnitude(float left, float right) =>
+            Math.Sqrt(((double)left * left + (double)right * right) * 0.5);
+
+        private void UpdateTaskbarSpectrumVisual()
+        {
+            if (_disposed || _mode != DesktopLyricsMode.Taskbar) return;
+            if (_taskbarFftRequested && PlayerService.CurrentFftSnapshot is { } snapshot &&
+                snapshot.Sequence != _taskbarLastFftSequence)
+            {
+                _taskbarLastFftSequence = snapshot.Sequence;
+                ApplyTaskbarSpectrum(snapshot);
+            }
+            for (int i = 0; i < _taskbarSpectrumBars.Length; i++)
+            {
+                _taskbarSpectrumDisplayed[i] += (_taskbarSpectrumTarget[i] - _taskbarSpectrumDisplayed[i]) * 0.35f;
+                SetSpectrumBar(_taskbarSpectrumBars[i], _taskbarSpectrumDisplayed[i]);
+            }
+        }
+
+        private static void SetSpectrumBar(Rectangle bar, float level)
+        {
+            double height = 2 + Math.Clamp(level, 0, 1) * 26;
+            bar.Height = height;
+            Canvas.SetTop(bar, (30 - height) / 2);
+        }
+
+        private void UpdateTaskbarSpectrumState()
+        {
+            if (_mode != DesktopLyricsMode.Taskbar) return;
+            // Keep the request armed while a local track is selected. The
+            // command service replays it after an audio-process reconnect, and
+            // AudioPlayer emits frames only while a playable PCM stream is
+            // rendering, so paused/non-PCM sources do not produce FFT frames.
+            bool enabled = _isOverlayVisible &&
+                AppViewModel.CurrentPlayingMusic is { IsRemote: false };
+            if (_taskbarFftRequested == enabled) return;
+            _taskbarFftRequested = enabled;
+            PlayerService.SetFftEnabled(enabled);
+            if (!enabled)
+            {
+                _taskbarSpectrumReference = 0;
+                _taskbarLastFftSequence = 0;
+                Array.Clear(_taskbarSpectrumTarget);
+            }
+        }
+
+        private void SetTaskbarMediaHover(bool isOver)
+        {
+            TaskbarSongMetadata.Visibility = isOver ? Visibility.Collapsed : Visibility.Visible;
+            TaskbarSongControls.Visibility = isOver ? Visibility.Visible : Visibility.Collapsed;
+        }
+
+        private void SetTaskbarCoverHover(bool isOver)
+        {
+            TaskbarCoverPlayIcon.Opacity = isOver ? 1 : 0;
+        }
+
+        private void TaskbarSongInfoPanel_PointerEntered(object sender, PointerRoutedEventArgs e) => SetTaskbarMediaHover(true);
+        private void TaskbarSongInfoPanel_PointerExited(object sender, PointerRoutedEventArgs e) => SetTaskbarMediaHover(false);
+        private void TaskbarCoverButtonHost_PointerEntered(object sender, PointerRoutedEventArgs e) => SetTaskbarCoverHover(true);
+        private void TaskbarCoverButtonHost_PointerExited(object sender, PointerRoutedEventArgs e) => SetTaskbarCoverHover(false);
+        private void TaskbarCoverPlayPauseButton_PointerEntered(object sender, PointerRoutedEventArgs e) => SetTaskbarCoverHover(true);
+        private void TaskbarCoverPlayPauseButton_PointerExited(object sender, PointerRoutedEventArgs e) => SetTaskbarCoverHover(false);
+
+        private void TaskbarVolumeSlider_PointerEntered(object sender, PointerRoutedEventArgs e)
+        {
+            AppViewModel.IsMouseOverVolumeSlider = true;
+        }
+
+        private void TaskbarVolumeSlider_PointerExited(object sender, PointerRoutedEventArgs e)
+        {
+            AppViewModel.IsMouseOverVolumeSlider = false;
+        }
+
+        private void TaskbarVolumeSlider_PointerWheelChanged(object sender, PointerRoutedEventArgs e)
+        {
+            if (!AppViewModel.IsMouseOverVolumeSlider) return;
+            int delta = e.GetCurrentPoint(TaskbarVolumeSlider).Properties.MouseWheelDelta;
+            if (delta > 0)
+                AppViewModel.AdjustVolume(1);
+            else if (delta < 0)
+                AppViewModel.AdjustVolume(-1);
+            e.Handled = true;
         }
 
         internal void AttachTaskbarHost(IDesktopLyricsBoundsHost host) => _taskbarHost = host;
@@ -159,7 +356,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             if (_mode != DesktopLyricsMode.Taskbar) return;
             ToolTipService.SetToolTip(TaskbarPreviousButton, ToolUtils.GetString("DesktopLyricsPreviousButtonTooltip"));
-            ToolTipService.SetToolTip(TaskbarPlayPauseButton, ToolUtils.GetString("DesktopLyricsPlayPauseButtonTooltip"));
+            ToolTipService.SetToolTip(TaskbarCoverPlayPauseButton, ToolUtils.GetString("DesktopLyricsPlayPauseButtonTooltip"));
             ToolTipService.SetToolTip(TaskbarNextButton, ToolUtils.GetString("DesktopLyricsNextButtonTooltip"));
         }
 
@@ -179,9 +376,15 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 _taskbarResizeEdge = TaskbarResizeEdge.None;
                 RootGrid.ReleasePointerCaptures();
                 if (_mode == DesktopLyricsMode.Taskbar)
+                {
+                    SetTaskbarMediaHover(false);
+                    SetTaskbarCoverHover(false);
+                    SetTaskbarSpectrumTimerRunning(false);
                     WindowHelper.ShowWindow(_hwnd, WindowHelper.SW_HIDE);
+                }
                 else
                     AppWindow.Hide();
+                UpdateTaskbarSpectrumState();
                 return;
             }
 
@@ -189,6 +392,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _renderer?.SetSuspended(false);
             if (_mode == DesktopLyricsMode.Taskbar)
             {
+                SetTaskbarSpectrumTimerRunning(true);
                 WindowHelper.ShowWindow(_hwnd, WindowHelper.SW_SHOWNOACTIVATE);
             }
             else
@@ -197,6 +401,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 ApplyLock(ViewModel.IsLocked);
             }
             UpdateAdaptiveColorMode();
+            UpdateTaskbarSpectrumState();
         }
 
         /// <summary>窗口创建后由 Manager 以 VM 初值调用一次；后续锁定变化经 ViewModel.PropertyChanged 触发（幂等）。</summary>
@@ -423,6 +628,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     UpdateTaskbarMedia();
                 else
                     DispatcherQueue.TryEnqueue(UpdateTaskbarMedia);
+                UpdateTaskbarSpectrumState();
             }
         }
 
@@ -444,7 +650,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 TaskbarTitleText.Text = string.Empty;
                 TaskbarArtistText.Text = string.Empty;
                 RefreshTaskbarCover(null);
-                UpdateTaskbarCommandStates();
+                SetTaskbarMediaHover(false);
+                SetTaskbarCoverHover(false);
                 return;
             }
 
@@ -454,59 +661,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 : string.IsNullOrWhiteSpace(music.Album)
                     ? music.Author
                     : $"{music.Author} · {music.Album}";
-            TaskbarPlayIcon.Glyph = BindUtils.PlayStatusToGlyphConverter(AppViewModel.IsPlaying);
             RefreshTaskbarCover(music);
-            UpdateTaskbarCommandStates();
-        }
-
-        private void OnTaskbarPlaybackCommandAvailabilityChanged(object? sender, EventArgs e)
-        {
-            if (_mode != DesktopLyricsMode.Taskbar) return;
-            if (DispatcherQueue.HasThreadAccess)
-                UpdateTaskbarCommandStates();
-            else
-                DispatcherQueue.TryEnqueue(UpdateTaskbarCommandStates);
-        }
-
-        private void UpdateTaskbarCommandStates()
-        {
-            if (_mode != DesktopLyricsMode.Taskbar || _disposed) return;
-            TaskbarPreviousButton.IsEnabled = Playback.PreviousCommand.CanExecute(null);
-            TaskbarPlayPauseButton.IsEnabled = Playback.ToggleCommand.CanExecute(null);
-            TaskbarNextButton.IsEnabled = Playback.NextCommand.CanExecute(null);
-        }
-
-        // The taskbar host is re-parented after the XAML tree has loaded. Forward
-        // the view event to the shared commands so playback remains available
-        // across that re-parenting boundary; all playback policy stays in MVVM.
-        private void TaskbarPreviousButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (Playback.PreviousCommand.CanExecute(null))
-                _ = ExecutePlaybackCommandAsync(Playback.PreviousCommand);
-        }
-
-        private void TaskbarPlayPauseButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (Playback.ToggleCommand.CanExecute(null))
-                _ = ExecutePlaybackCommandAsync(Playback.ToggleCommand);
-        }
-
-        private void TaskbarNextButton_Click(object sender, RoutedEventArgs e)
-        {
-            if (Playback.NextCommand.CanExecute(null))
-                Playback.NextCommand.Execute(null);
-        }
-
-        private static async Task ExecutePlaybackCommandAsync(IAsyncRelayCommand command)
-        {
-            try
-            {
-                await command.ExecuteAsync(null);
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"[DesktopLyricsWindow] taskbar playback command failed: {ex}");
-            }
         }
 
         private void RefreshTaskbarCover(Music? music)
@@ -644,9 +799,6 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void UpdateControlPanelVisual()
         {
-            // 任务栏模式把窗口改为 WS_CHILD，WindowEx 不会触发 Activated；
-            // LockIcon 不能依赖窗口级 x:Bind 的首次初始化，始终从同一锁定状态源显式刷新。
-            LockIcon.Glyph = BindUtils.LockGlyphConverter(_locked);
             if (_mode == DesktopLyricsMode.Taskbar)
             {
                 StopHoverTimer();
@@ -958,7 +1110,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             while (source is not null)
             {
-                if (source is ButtonBase) return true;
+                if (source is ButtonBase or RangeBase) return true;
                 source = VisualTreeHelper.GetParent(source);
             }
             return false;
@@ -1030,10 +1182,12 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private void MainWindow_themeChanged(object? sender, EventArgs e)
         {
             _themeStyleHelper?.SetAppTheme();
+            UpdateTaskbarSpectrumBrush();
         }
 
         private void OnWindowClosed(object sender, WindowEventArgs args)
         {
+            Bindings?.StopTracking();
             if (App.MainWindow is not null)
             {
                 App.MainWindow.themeChanged -= MainWindow_themeChanged;
@@ -1045,9 +1199,13 @@ namespace WinUIMusicPlayer.DesktopLyrics
             AppWindow.Changed -= OnAppWindowChanged;
             ViewModel.PropertyChanged -= OnViewModelPropertyChanged;
             AppViewModel.PropertyChanged -= OnAppViewModelPropertyChanged;
-            Playback.PreviousCommand.CanExecuteChanged -= OnTaskbarPlaybackCommandAvailabilityChanged;
-            Playback.ToggleCommand.CanExecuteChanged -= OnTaskbarPlaybackCommandAvailabilityChanged;
-            Playback.NextCommand.CanExecuteChanged -= OnTaskbarPlaybackCommandAvailabilityChanged;
+            if (_taskbarFftRequested)
+            {
+                _taskbarFftRequested = false;
+                PlayerService.SetFftEnabled(false);
+            }
+            _taskbarSpectrumTimer?.Stop();
+            _taskbarSpectrumTimer = null;
             Closed -= OnWindowClosed;
             StopHoverTimer();
             StopIdleTimer();

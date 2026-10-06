@@ -23,11 +23,19 @@ namespace WinUIMusicPlayer.Services
         public void AttachRemoteProgress(Func<ProgressSnapshot?> source) => _remoteProgress = source;
         private readonly object _seekPublishGate = new();
         private DspStateSnapshot? _dspSnapshot;
+        private FftSnapshot? _fftSnapshot;
+        // Placeholder request state for the future spectrum effect. It is not user-facing.
+        private int _fftRequested;
 
         /// <summary>连接内最新完整 DSP 状态；不可变快照可跨线程读取。</summary>
         public DspStateSnapshot? CurrentDspState => Volatile.Read(ref _dspSnapshot);
         /// <summary>在监听线程触发；UI 订阅者必须调度到 DispatcherQueue。</summary>
         public event Action? DspStateChanged;
+
+        /// <summary>Latest FFT snapshot. Subscribers run on the state-pipe reader thread.</summary>
+        public FftSnapshot? CurrentFftSnapshot => Volatile.Read(ref _fftSnapshot);
+        public event Action<FftSnapshot>? FftDataChanged;
+        public bool FftRequested => Volatile.Read(ref _fftRequested) != 0;
 
         private readonly Dictionary<int, string> _wasapiEndpoints = new();
         private readonly Dictionary<int, string> _asioEndpoints = new();
@@ -95,8 +103,18 @@ namespace WinUIMusicPlayer.Services
                     commands.Faulted += OnTransportFault;
                     state.Faulted += OnTransportFault;
                     state.DspStateChanged += OnDspState;
+                    state.FftDataChanged += OnFftData;
                     state.NotificationReceived += OnNotification;
                     Volatile.Write(ref _connected, 1);
+                    // A taskbar visualizer may already be active when the audio
+                    // process is restarted. Replay the in-memory feature request
+                    // after reconnect so it does not silently lose its FFT stream.
+                    if (Volatile.Read(ref _fftRequested) != 0)
+                    {
+                        byte[] fftBuffer = new byte[BinarySerializer.FftEnabledSize];
+                        BinarySerializer.WriteFftEnabled(fftBuffer, enabled: true);
+                        commands.Publish(CommandId.SetFftEnabled, fftBuffer, coalesce: true);
+                    }
                     state.Start();
                     commands = null;
                     state = null;
@@ -123,6 +141,7 @@ namespace WinUIMusicPlayer.Services
             if (Volatile.Read(ref _disposed) != 0 || Interlocked.Exchange(ref _faulted, 1) != 0) return;
             Volatile.Write(ref _connected, 0);
             Volatile.Write(ref _dspSnapshot, null);
+            Volatile.Write(ref _fftSnapshot, null);
             _logger.LogError(exception, "Audio pipe disconnected; exiting.");
             NotifyDspStateChanged();
             QueueShutdown();
@@ -183,6 +202,19 @@ namespace WinUIMusicPlayer.Services
             NotifyDspStateChanged();
         }
 
+        private void OnFftData(FftSnapshot snapshot)
+        {
+            if (Volatile.Read(ref _disposed) != 0 || Volatile.Read(ref _faulted) != 0
+                || snapshot.Sequence <= (CurrentFftSnapshot?.Sequence ?? 0)) return;
+            Volatile.Write(ref _fftSnapshot, snapshot);
+            if (FftDataChanged is not { } handlers) return;
+            foreach (Action<FftSnapshot> handler in handlers.GetInvocationList())
+            {
+                try { handler(snapshot); }
+                catch (Exception ex) { _logger.LogWarning(ex, "FFT data subscriber failed"); }
+            }
+        }
+
         private void OnNotification(MessageTypeId type, ReadOnlyMemory<byte> payload)
         {
             if (Volatile.Read(ref _disposed) != 0 || Volatile.Read(ref _faulted) != 0 || NotificationReceived is not { } handlers) return;
@@ -222,7 +254,7 @@ namespace WinUIMusicPlayer.Services
         /// <summary>同步复制到发送队列；同类高频状态在有序屏障内合并。</summary>
         private void Publish(CommandId commandId, ReadOnlySpan<byte> payload)
         {
-            bool coalesce = commandId is CommandId.ChangeVolume or CommandId.UpdateEq or CommandId.UpdateDsp;
+            bool coalesce = commandId is CommandId.ChangeVolume or CommandId.UpdateEq or CommandId.UpdateDsp or CommandId.SetFftEnabled;
             if (_transport?.Publish(commandId, payload, coalesce) != true)
                 _logger.LogWarning("Audio command {Command} could not be queued", commandId);
         }
@@ -355,6 +387,15 @@ namespace WinUIMusicPlayer.Services
             DspProtocol.WriteSettings(buffer, LicensePolicy.ApplyDspRestrictions(AppSettings.Dsp, _license.RestrictedFeatures));
             Publish(CommandId.UpdateDsp, buffer);
             PublishLiveCorrection();
+        }
+
+        /// <summary>Feature hook for a future visualizer; changing it never rebuilds audio output.</summary>
+        public void SetFftEnabled(bool enabled)
+        {
+            Volatile.Write(ref _fftRequested, enabled ? 1 : 0);
+            Span<byte> buffer = stackalloc byte[BinarySerializer.FftEnabledSize];
+            BinarySerializer.WriteFftEnabled(buffer, enabled);
+            Publish(CommandId.SetFftEnabled, buffer);
         }
 
         /// <summary>许可门控变化时重推输出与音效设置；剩余天数变化不触发重推：
@@ -633,6 +674,7 @@ namespace WinUIMusicPlayer.Services
             {
                 _stateClient.Faulted -= OnTransportFault;
                 _stateClient.DspStateChanged -= OnDspState;
+                _stateClient.FftDataChanged -= OnFftData;
                 _stateClient.NotificationReceived -= OnNotification;
                 try { _stateClient.Dispose(); }
                 catch (Exception ex) { _logger.LogWarning(ex, "Audio state pipe cleanup failed"); }

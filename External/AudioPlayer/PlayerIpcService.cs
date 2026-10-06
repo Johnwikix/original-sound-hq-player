@@ -226,6 +226,9 @@ public class PlayerIpcService : IDisposable
                 case CommandId.UpdateDsp:
                     _engine!.UpdateDsp(DspProtocol.ReadSettings(payload));
                     break;
+                case CommandId.SetFftEnabled:
+                    _engine!.SetFftEnabled(BinarySerializer.ReadFftEnabled(payload));
+                    break;
                 case CommandId.UpdateDeviceCorrections:
                     _engine!.UpdateDeviceCorrections(DeviceCorrectionProtocol.Read(payload));
                     break;
@@ -345,6 +348,8 @@ public class PlayerIpcService : IDisposable
     }
 
     internal void PublishDspState(DspState state) => _stateServer?.PublishDsp(state);
+
+    public void PublishFft(FftSnapshot snapshot) => _stateServer.PublishFft(snapshot);
 
     public void SendNotification(MessageTypeId typeId, scoped ReadOnlySpan<byte> payload)
         => _stateServer?.PublishNotification(typeId, payload);

@@ -2,6 +2,34 @@
 
 新条目加在最上方。
 
+## 2026-10-06 修复任务栏控件绑定与单声道频谱显示
+- `DesktopLyrics/DesktopLyricsWindow.xaml`、`.xaml.cs`：任务栏窗口显式初始化和关闭 `x:Bind` 跟踪，恢复播放、切歌按钮命令、音量双向滑块和图标状态；音量图标改为纯状态图标，不再额外弹出按钮。
+- `DesktopLyrics/DesktopLyricsWindow.xaml.cs`：任务栏仅将双声道 FFT 快照合并为单声道频带绘制，保留传输层双声道数据；封面播放按钮保持透明命中区域，仅悬停显示图标。
+- `AGENTS.md`：补充跨页面 MVVM、非激活窗口绑定初始化、AudioPlayer 发布和任务栏控件风格约定。
+- 验证：共享协议、AudioPlayer 构建、AudioPlayer NativeAOT 发布、FFT 回归和主 WinUI 代码编译通过；当前环境在 MakeAppx 打包阶段失败，未完成 MSIX 包验证。
+
+## 2026-10-06 按 MainPage 统一任务栏音量交互并同步播放端
+- `DesktopLyrics/DesktopLyricsWindow.xaml`、`.xaml.cs`：任务栏播放、上一首、下一首和音量控件改为命令/绑定驱动；音量滑杆复用 MainPage 的 `TwoWay` MVVM 绑定、静音/恢复命令和滚轮调节行为；歌曲信息悬停控制条固定为与封面相同的高度。
+- `Player/AudioPlayer.exe`：发布包含 FFT 命令与双声道 FFT 输出的 NativeAOT 播放端，避免运行时继续使用旧播放进程导致频谱无数据。
+- 验证：AudioPlayer NativeAOT 发布、XAML 结构与事件处理器静态检查通过；主 WinUI 构建仍受当前 SDK Workload resolver 环境限制。
+
+## 2026-10-06 修复任务栏媒体控件交互与频谱刷新
+- `DesktopLyrics/DesktopLyricsWindow.xaml`、`.xaml.cs`：封面播放按钮改为封面同尺寸、默认隐藏、移入显示且全状态透明；音量滑杆复用 `AppViewModel.Volume` 的 MVVM 双向绑定与现有播放器音量命令，并按实际状态回显。
+- `DesktopLyrics/DesktopLyricsWindow.xaml.cs`：任务栏频谱在任务栏可见且选中本地曲目时保持请求，暂停时不产生新的 PCM FFT 帧；隐藏或关闭任务栏歌词时停止请求和界面刷新计时器。
+- 验证：XAML 事件处理器与结构静态检查、共享协议/AudioPlayer/回归工具构建及 FFT 回归通过；主 WinUI 构建仍受当前 SDK Workload resolver 环境限制。
+
+## 2026-10-06 重设计桌面歌词任务栏媒体控制布局
+- `DesktopLyrics/DesktopLyricsWindow.xaml`、`.xaml.cs`：播放/暂停按钮集成到封面，上一首/下一首与音量滑杆在歌曲信息悬停时显示，原控制按钮区域改为双声道频谱可视化。
+- `DesktopLyrics/TaskbarDesktopLyricsHost.cs`：同步任务栏媒体列宽度与新的封面、歌曲信息、频谱布局。
+- 频谱效果在任务栏歌词可见且选中本地曲目时请求 FFT；暂停时不产生新的 PCM 帧，隐藏或关闭任务栏歌词时自动停用。
+- 验证：XAML XML 结构检查通过；主 WinUI 构建受当前 SDK Workload resolver 环境限制，待 Windows 实机验收任务栏、DPI 与悬停交互。
+
+## 2026-10-06 增加 AudioPlayer 双声道 FFT 数据通道
+- `AudioPlayer`：从最终 PCM 渲染块异步计算双声道 FFT；DoP、Native DSD 和 Atmos IEC 61937 直通标记为不可用，不影响音频渲染线程。
+- `BassPlayerIpc.Shared`、`IpcService`：复用状态管道传输可丢弃的最新 FFT 快照，并提供未来频谱效果可调用的启停接口。
+- `_tools/PlaybackSwitchRegression/FftTests.cs`：增加双声道频点、元数据和关闭状态回归验证。
+- 验证：共享协议、AudioPlayer、PlaybackSwitchRegression 构建通过；FFT 回归通过。
+
 ## 2026-10-06 修复普通歌词切换后点击跳转失效
 - `Controls/Lyrics/LyricsControl.xaml`、`Controls/Lyrics/LyricsControl.xaml.cs`：按 `SimpleLyricsControl` 实例的加载/卸载重新绑定点击事件，避免切换高级逐字歌词后普通歌词重建时丢失跳转事件。
 

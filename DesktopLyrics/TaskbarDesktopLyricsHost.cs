@@ -14,7 +14,10 @@ namespace WinUIMusicPlayer.DesktopLyrics;
 /// </summary>
 internal sealed class TaskbarDesktopLyricsHost : IDesktopLyricsHost, IDesktopLyricsBoundsHost
 {
-    private const int MediaPanelWidth = 320;
+    // The taskbar media strip is the compact cover + metadata + spectrum row in
+    // DesktopLyricsWindow.xaml. Keep the host geometry in the same unit as the
+    // visual tree so lyrics do not jump when the mode is first attached.
+    private const int MediaPanelWidth = 280;
     private const int MediaPanelGap = 8;
     private const int MinimumLyricsWidth = 240;
     private const int MaximumLyricsWidth = 2400;

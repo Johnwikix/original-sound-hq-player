@@ -4,7 +4,7 @@ using System.IO.Pipes;
 
 namespace BassPlayerIpc.Shared;
 
-public enum PipeFrameKind : ushort { Hello = 1, HelloAck, Request, Response, Notification, Progress, DspState }
+public enum PipeFrameKind : ushort { Hello = 1, HelloAck, Request, Response, Notification, Progress, DspState, FftData }
 public readonly record struct PipeFrame(PipeFrameKind Kind, long Id, int Type, ReadOnlyMemory<byte> Payload);
 public readonly record struct PipeResponse(MessageTypeId Type, ReadOnlyMemory<byte> Payload);
 public delegate PipeResponse PipeCommandHandler(CommandId command, ReadOnlySpan<byte> payload);
@@ -61,7 +61,7 @@ public sealed class PipeFrameReader(int maxPayload = IpcConstants.MaxPayloadSize
         long id = BinaryPrimitives.ReadInt64LittleEndian(_header.AsSpan(8));
         int type = BinaryPrimitives.ReadInt32LittleEndian(_header.AsSpan(16));
         int length = BinaryPrimitives.ReadInt32LittleEndian(_header.AsSpan(20));
-        if (kind is < PipeFrameKind.Hello or > PipeFrameKind.DspState || length < 0 || length > maxPayload)
+        if (kind is < PipeFrameKind.Hello or > PipeFrameKind.FftData || length < 0 || length > maxPayload)
             throw new InvalidDataException("Invalid audio pipe frame.");
         if (_payload.Length < length)
         {

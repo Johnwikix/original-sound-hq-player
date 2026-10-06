@@ -33,6 +33,7 @@ public enum CommandId : short
     PreviewDsp = 22,
     StreamControl = 23,
     QueueNext = 24,
+    SetFftEnabled = 25,
 }
 
 public enum MessageTypeId : short
@@ -53,6 +54,7 @@ public enum MessageTypeId : short
     EqState = 13,
     DspState = 14,
     GaplessTransition = 15,
+    FftData = 16,
 }
 
 public enum ErrorCode : short

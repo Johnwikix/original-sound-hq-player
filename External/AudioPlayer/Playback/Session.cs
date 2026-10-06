@@ -11,6 +11,7 @@ namespace AudioPlayer.Playback;
 /// </summary>
 internal sealed class Session : IRenderSource, IDisposable
 {
+    private readonly PlaybackEngine _engine;
     private readonly int _positionRate; // 环帧域的每秒帧数（用于 ms 换算）
     private static long _nextTimelineEpoch;
     public long TimelineEpoch { get; private set; } = Interlocked.Increment(ref _nextTimelineEpoch);
@@ -88,6 +89,7 @@ internal sealed class Session : IRenderSource, IDisposable
     private Session(PlaybackEngine engine, RenderKind kind, int channels, int positionRate,
         int deviceRate, long totalMs, int gainRampRate)
     {
+        _engine = engine;
         _isCancelled = Cancelled;
         Kind = kind;
         _channels = Channels = channels;
@@ -281,6 +283,7 @@ internal sealed class Session : IRenderSource, IDisposable
             _iecRing?.BeginSession();
             Interlocked.Exchange(ref _pendingSeekMs, targetMs);
             TimelineEpoch = Interlocked.Increment(ref _nextTimelineEpoch);
+            _engine.ResetFft(TimelineEpoch, Kind == RenderKind.Pcm ? SampleRate : 0);
         }
         WakeProducer();
     }
@@ -536,6 +539,7 @@ internal sealed class Session : IRenderSource, IDisposable
             Effects?.ApplyDynamics(buffer, audible);
         }
         Gain.Apply(buffer, audible, _channels);
+        _engine.CaptureFft(buffer, audible, _channels, ChannelMask, SampleRate);
         return audible;
     }
 

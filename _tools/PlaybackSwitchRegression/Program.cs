@@ -98,6 +98,11 @@ internal static unsafe partial class Program
             RunDspNotificationTests();
             return _failures == 0 ? 0 : 1;
         }
+        if (args.Length == 1 && args[0] == "--test-fft")
+        {
+            RunFftTests();
+            return _failures == 0 ? 0 : 1;
+        }
         if (args.Length == 2 && args[0] == "--ipc-server") return IpcBenchmarkServer(args[1]);
         if (args.Length == 1 && args[0] == "--benchmark-loudness") return BenchmarkLoudness();
         string root = args.Length > 0 ? Path.GetFullPath(args[0]) : Directory.GetCurrentDirectory();
@@ -123,6 +128,7 @@ internal static unsafe partial class Program
         RunDeviceCorrectionTests();
         RunCurveTests();
         RunDspNotificationTests();
+        RunFftTests();
         RunReviewFixTests(root);
         RunWasapiStallTests();
         foreach (string mode in new[] { "ASIO", "WasapiExclusivePush", "WasapiExclusiveEvent" })
