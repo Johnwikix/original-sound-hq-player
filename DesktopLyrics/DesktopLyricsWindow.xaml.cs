@@ -49,9 +49,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
     {
         private const int DefaultWidth = 1800;
         private const int DefaultHeight = 280;
-        private const double TaskbarSpectrumCanvasHeight = 36;
+        private const double TaskbarSpectrumCanvasHeight = 32;
         private const double TaskbarSpectrumBaseHeight = 2;
-        private const double TaskbarSpectrumMaxAmplitude = 20;
+        private const double TaskbarSpectrumMaxAmplitude = 24;
         private const int BottomMargin = 60;
         private const double HoverPollingIntervalMs = 50;    // 悬停窗口期间：按钮组显隐/穿透切换要跟手
         private const double IdlePollingIntervalMs = 200;    // 锁定态静默期：进窗检测 + 自愈
@@ -201,7 +201,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 Fill = ResolveTaskbarSpectrumBrush(),
                 Opacity = 0.92,
             };
-            Canvas.SetLeft(bar, 1 + index * 3);
+            Canvas.SetLeft(bar, 2 + index * 3);
             Canvas.SetTop(bar, 14);
             return bar;
         }

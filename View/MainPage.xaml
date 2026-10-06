@@ -320,7 +320,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.MusicBrowseVM.Playback.PreviousCommand, Mode=OneWay}"
-                            IsEnabled="{x:Bind tools:BindUtils.IsSwitchEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingList), Mode=OneWay}"
+                            IsEnabled="{x:Bind ViewModel.MusicBrowseVM.Playback.CanSwitch, Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="22" Glyph="&#xF8AC;" />
                         </Button>
@@ -354,7 +354,7 @@
                             BorderBrush="Transparent"
                             BorderThickness="0"
                             Command="{x:Bind ViewModel.MusicBrowseVM.Playback.NextCommand, Mode=OneWay}"
-                            IsEnabled="{x:Bind tools:BindUtils.IsSwitchEntryEnabled(ViewModel.AppViewModel.IsPlaybackEngineReady, ViewModel.AppViewModel.CurrentPlayingList), Mode=OneWay}"
+                            IsEnabled="{x:Bind ViewModel.MusicBrowseVM.Playback.CanSwitch, Mode=OneWay}"
                             Style="{StaticResource MenuButtonStyle}">
                             <FontIcon FontSize="22" Glyph="&#xF8AD;" />
                         </Button>

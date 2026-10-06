@@ -2,6 +2,23 @@
 
 新条目加在最上方。
 
+## 2026-10-06 修正深色主题封面按钮对比度
+- `Style/BtnStyle.xaml`：深色主题任务栏封面按钮改用深色悬停背景和白色前景，避免出现亮底暗图标。
+
+## 2026-10-06 最终确定任务栏封面按钮明暗映射
+- `Style/BtnStyle.xaml`：Light 主题使用暗色悬停背景与白色前景，Dark 主题使用亮色悬停背景与黑色前景。
+
+## 2026-10-06 修正任务栏封面按钮明暗主题映射
+- `Style/BtnStyle.xaml`：交换任务栏封面按钮 Light/Dark 主题的悬停、按下和前景画刷，深色主题改用暗色叠层。
+
+## 2026-10-06 修正切歌按钮可用状态回显
+- `Services/PlaybackCommands.cs`、`DesktopLyrics/DesktopLyricsWindow.xaml`、`View/MainPage.xaml`：新增可通知的 `CanSwitch` 状态，任务栏和 MainPage 的上一首/下一首按钮显式绑定共享状态，并与命令执行守卫保持一致。
+
+## 2026-10-06 统一任务栏媒体按钮样式与切歌命令状态
+- `Style/BtnStyle.xaml`：新增 `TaskbarCoverPlayPauseButtonStyle`，任务栏封面按钮悬停状态与普通菜单按钮采用相反明暗方向，并保留主题资源适配。
+- `DesktopLyrics/DesktopLyricsWindow.xaml`、`.xaml.cs`：频谱画布统一为 40×32，柱条水平居中；任务栏上一首/下一首改由共享命令的 `CanExecute` 驱动。
+- `View/MainPage.xaml`：上一首/下一首移除重复的列表启用条件，与任务栏复用相同命令可用状态。
+
 ## 2026-10-06 修复任务栏频谱位置和幅度
 - `DesktopLyrics/DesktopLyricsWindow.xaml.cs`：任务栏频谱柱条改为贴画布底部向上绘制，动态幅度加倍，恢复正确的底部视觉位置。
 

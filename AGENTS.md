@@ -1,5 +1,9 @@
 # 项目约定
 
+## 文件格式
+
+- WinUI 项目中的代码、XAML、配置和文档编辑统一使用 Windows CRLF (\r\n) 行尾，不要混用 LF。
+
 ## WinUI 本地化：避免重复出现资源键直出
 
 - `ToolUtils.GetString` 的调用使用独立、无属性后缀的资源键，例如 `DspAutoPreamp`；在各语言 `Strings/*/Resources.resw` 中定义同名资源。
