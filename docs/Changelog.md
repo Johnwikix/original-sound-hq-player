@@ -2,6 +2,9 @@
 
 新条目加在最上方。
 
+## 2026-10-06 修复普通歌词切换后点击跳转失效
+- `Controls/Lyrics/LyricsControl.xaml`、`Controls/Lyrics/LyricsControl.xaml.cs`：按 `SimpleLyricsControl` 实例的加载/卸载重新绑定点击事件，避免切换高级逐字歌词后普通歌词重建时丢失跳转事件。
+
 ## 2026-10-06 改为复用 Win2D 画布并按激活状态惰性创建资源
 - `PlayingDetailPage`：`NowPlayingCanvas`、动画文本和歌词宿主按需首次激活创建，后续通过激活属性暂停/隐藏渲染，避免开关设置时反复创建 `CanvasAnimatedControl`。
 - `LyricsControl`、`AdvanceLyricsCanvasControl`：歌词宿主与高级歌词画布改为单实例，停用时隐藏并解绑总线和共享动画时钟，重新启用时恢复。

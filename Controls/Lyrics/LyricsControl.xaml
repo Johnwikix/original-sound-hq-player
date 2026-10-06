@@ -36,8 +36,10 @@
             </local:LyricsMaskView.OpacityMask>
             <local:SimpleLyricsControl
                 x:Name="SimpleLyrics"
+                Loaded="SimpleLyrics_Loaded"
                 Margin="{x:Bind LyricsMargin, Mode=OneWay}"
-                HorizontalAlignment="Stretch" />
+                HorizontalAlignment="Stretch"
+                Unloaded="SimpleLyrics_Unloaded" />
         </local:LyricsMaskView>
 
         <alc:AdvanceLyricsCanvasControl

@@ -9,7 +9,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
     {
         public event EventHandler<TimeSpan>? LyricInteracted;
         public event EventHandler<Exception>? ExceptionInteracted;
-        private bool _eventsAttached;
+        private SimpleLyricsControl? _subscribedSimpleLyrics;
+        private bool _lyricsCanvasEventsAttached;
         private bool _isActive = true;
 
         public static readonly DependencyProperty IsActiveProperty =
@@ -77,22 +78,66 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         private void OnControlLoaded(object sender, RoutedEventArgs e)
         {
-            if (_eventsAttached) return;
+            AttachSimpleLyrics(SimpleLyrics);
 
-            SimpleLyrics?.LyricLineClicked += OnCanvasLyricLineClicked;
-            LyricsCanvas?.LyricLineClicked += OnCanvasLyricLineClicked;
-            _eventsAttached = true;
+            if (!_lyricsCanvasEventsAttached && LyricsCanvas is not null)
+            {
+                LyricsCanvas.LyricLineClicked += OnCanvasLyricLineClicked;
+                _lyricsCanvasEventsAttached = true;
+            }
+
             LyricsSyncRequestBus.Request();
             UpdateActiveState(_isActive);
         }
 
         private void OnControlUnloaded(object sender, RoutedEventArgs e)
         {
-            if (!_eventsAttached) return;
+            DetachSimpleLyrics(_subscribedSimpleLyrics);
 
-            SimpleLyrics?.LyricLineClicked -= OnCanvasLyricLineClicked;
-            LyricsCanvas?.LyricLineClicked -= OnCanvasLyricLineClicked;
-            _eventsAttached = false;
+            if (_lyricsCanvasEventsAttached)
+            {
+                LyricsCanvas?.LyricLineClicked -= OnCanvasLyricLineClicked;
+                _lyricsCanvasEventsAttached = false;
+            }
+        }
+
+        private void SimpleLyrics_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is SimpleLyricsControl simpleLyrics)
+            {
+                AttachSimpleLyrics(simpleLyrics);
+            }
+        }
+
+        private void SimpleLyrics_Unloaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is SimpleLyricsControl simpleLyrics)
+            {
+                DetachSimpleLyrics(simpleLyrics);
+            }
+        }
+
+        private void AttachSimpleLyrics(SimpleLyricsControl? simpleLyrics)
+        {
+            if (simpleLyrics is null || ReferenceEquals(_subscribedSimpleLyrics, simpleLyrics))
+            {
+                return;
+            }
+
+            DetachSimpleLyrics(_subscribedSimpleLyrics);
+            simpleLyrics.LyricLineClicked += OnCanvasLyricLineClicked;
+            _subscribedSimpleLyrics = simpleLyrics;
+        }
+
+        private void DetachSimpleLyrics(SimpleLyricsControl? simpleLyrics)
+        {
+            if (simpleLyrics is null || !ReferenceEquals(_subscribedSimpleLyrics, simpleLyrics))
+            {
+                return;
+            }
+
+            simpleLyrics.LyricLineClicked -= OnCanvasLyricLineClicked;
+            _subscribedSimpleLyrics = null;
         }
 
         private void OnCanvasLyricLineClicked(object? sender, TimeSpan ts)
@@ -100,6 +145,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         public void ShutdownLyricsCanvas()
         {
+            DetachSimpleLyrics(_subscribedSimpleLyrics);
             SimpleLyrics?.PrepareForShutdown();
             LyricsCanvas?.PrepareForShutdown();
         }
