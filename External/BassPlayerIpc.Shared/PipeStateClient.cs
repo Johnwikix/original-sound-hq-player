@@ -24,6 +24,8 @@ public sealed class PipeStateClient : IDisposable, IAsyncDisposable
     public event Action<MessageTypeId, ReadOnlyMemory<byte>>? NotificationReceived;
     public event Action<Exception>? Faulted;
 
+    public void ClearFftSnapshot() => Volatile.Write(ref _fft, null);
+
     private PipeStateClient(NamedPipeClientStream pipe, Guid instanceId) { _pipe = pipe; InstanceId = instanceId; }
 
     public static async Task<PipeStateClient> ConnectAsync(string name, CancellationToken token = default)
@@ -117,6 +119,7 @@ public sealed class PipeStateClient : IDisposable, IAsyncDisposable
             }
             reader = _reader;
         }
+        Volatile.Write(ref _fft, null);
         await reader.ConfigureAwait(false);
         if (Interlocked.Exchange(ref _resourcesDisposed, 1) == 0) _stop.Dispose();
     }

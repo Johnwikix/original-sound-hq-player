@@ -10,7 +10,9 @@ public sealed class PipeStateServer : IDisposable
     private readonly TaskCompletionSource _overflowed = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly Queue<(MessageTypeId Type, byte[] Payload)> _notifications = new();
     private readonly byte[] _dspPayload = new byte[DspProtocol.StateSize];
-    private readonly byte[] _fftPayload = new byte[FftProtocol.MaxPayloadSize];
+    // Keep only the unavailable marker while FFT is disabled; the maximum-sized
+    // frame buffer is allocated lazily for an active visualizer.
+    private byte[] _fftPayload = new byte[FftProtocol.HeaderSize];
     private ProgressSnapshot _progress;
     private DspStateSnapshot? _dsp;
     private int _fftLength;
@@ -51,6 +53,9 @@ public sealed class PipeStateServer : IDisposable
         lock (_gate)
         {
             if (_disposed) return false;
+            int capacity = snapshot.IsAvailable ? FftProtocol.MaxPayloadSize : FftProtocol.HeaderSize;
+            if (_fftPayload.Length != capacity)
+                _fftPayload = new byte[capacity];
             int length = FftProtocol.Write(_fftPayload, snapshot);
             _fftLength = length;
             _fftPending = true;
@@ -186,6 +191,7 @@ public sealed class PipeStateServer : IDisposable
             if (_disposed) return;
             _disposed = true;
             _notifications.Clear();
+            _fftPayload = Array.Empty<byte>();
             _changed.Dispose();
         }
     }

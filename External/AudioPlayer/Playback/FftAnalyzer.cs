@@ -15,12 +15,14 @@ internal sealed class FftAnalyzer : IDisposable
 
     private const int QueueCapacity = FftSize * 8;
     private readonly Action<FftSnapshot> _publish;
-    private readonly float[] _leftQueue = new float[QueueCapacity];
-    private readonly float[] _rightQueue = new float[QueueCapacity];
-    private readonly double[] _leftWork = new double[FftSize];
-    private readonly double[] _rightWork = new double[FftSize];
-    private readonly float[] _window = new float[FftSize];
-    private readonly AutoResetEvent _wake = new(false);
+    // Allocate FFT storage only while the feature is enabled. The analyzer itself
+    // lives with the player, so eager buffers would tax every playback session.
+    private float[]? _leftQueue;
+    private float[]? _rightQueue;
+    private double[]? _leftWork;
+    private double[]? _rightWork;
+    private float[]? _window;
+    private AutoResetEvent? _wake;
     private readonly object _lifecycleGate = new();
     private long _write;
     private long _read;
@@ -37,8 +39,6 @@ internal sealed class FftAnalyzer : IDisposable
     internal FftAnalyzer(Action<FftSnapshot> publish)
     {
         _publish = publish;
-        for (int i = 0; i < _window.Length; i++)
-            _window[i] = (float)(0.5 - 0.5 * Math.Cos(2 * Math.PI * i / (_window.Length - 1)));
     }
 
     internal bool IsEnabled => Volatile.Read(ref _enabled) != 0;
@@ -51,7 +51,9 @@ internal sealed class FftAnalyzer : IDisposable
             ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
             if (enabled)
             {
-                if (Interlocked.Exchange(ref _enabled, 1) != 0) return;
+                if (Volatile.Read(ref _enabled) != 0) return;
+                EnsureBuffersLocked();
+                Volatile.Write(ref _enabled, 1);
                 Interlocked.Increment(ref _generation);
                 long write = Interlocked.Read(ref _write);
                 Volatile.Write(ref _read, write);
@@ -68,6 +70,7 @@ internal sealed class FftAnalyzer : IDisposable
 
             if (Interlocked.Exchange(ref _enabled, 0) == 0) return;
             StopWorkerLocked();
+            ReleaseBuffersLocked();
             Interlocked.Increment(ref _generation);
             long current = Interlocked.Read(ref _write);
             Volatile.Write(ref _read, current);
@@ -83,7 +86,7 @@ internal sealed class FftAnalyzer : IDisposable
         long write = Interlocked.Read(ref _write);
         Volatile.Write(ref _read, write);
         if (IsEnabled) PublishUnavailable(discontinuity: true);
-        try { _wake.Set(); }
+        try { Volatile.Read(ref _wake)?.Set(); }
         catch (ObjectDisposedException) { }
     }
 
@@ -91,6 +94,9 @@ internal sealed class FftAnalyzer : IDisposable
     internal void Capture(ReadOnlySpan<double> interleaved, int frames, int channels, uint channelMask, int sampleRate)
     {
         if (Volatile.Read(ref _enabled) == 0 || frames <= 0 || channels <= 0) return;
+        float[]? leftQueue = Volatile.Read(ref _leftQueue);
+        float[]? rightQueue = Volatile.Read(ref _rightQueue);
+        if (leftQueue is null || rightQueue is null) return;
         _ = channelMask; // Channel order is normalized to a stable stereo pair below.
         if (sampleRate > 0 && Volatile.Read(ref _sampleRate) != sampleRate)
             Volatile.Write(ref _sampleRate, sampleRate);
@@ -130,8 +136,8 @@ internal sealed class FftAnalyzer : IDisposable
                 }
             }
             int target = (int)((write + i) % QueueCapacity);
-            _leftQueue[target] = double.IsFinite(left) ? (float)left : 0;
-            _rightQueue[target] = double.IsFinite(right) ? (float)right : 0;
+            leftQueue[target] = double.IsFinite(left) ? (float)left : 0;
+            rightQueue[target] = double.IsFinite(right) ? (float)right : 0;
         }
 
         // Publish the write cursor only after all samples are visible to the worker.
@@ -140,7 +146,7 @@ internal sealed class FftAnalyzer : IDisposable
         // the already active queue and the render callback avoids repeated kernel calls.
         if (used == 0)
         {
-            try { _wake.Set(); }
+            try { Volatile.Read(ref _wake)?.Set(); }
             catch (ObjectDisposedException) { }
         }
     }
@@ -152,13 +158,13 @@ internal sealed class FftAnalyzer : IDisposable
             if (Volatile.Read(ref _enabled) == 0) break;
             if (!TryReadWindow(out long generation, out long epoch, out int sampleRate))
             {
-                try { _wake.WaitOne(20); }
+                try { Volatile.Read(ref _wake)?.WaitOne(20); }
                 catch (ObjectDisposedException) { return; }
                 continue;
             }
 
-            ComputeSpectrum(_leftWork, out float[] left);
-            ComputeSpectrum(_rightWork, out float[] right);
+            ComputeSpectrum(_leftWork!, out float[] left);
+            ComputeSpectrum(_rightWork!, out float[] right);
             if (generation != Volatile.Read(ref _generation) || Volatile.Read(ref _enabled) == 0)
             {
                 ArrayPool<float>.Shared.Return(left);
@@ -188,11 +194,19 @@ internal sealed class FftAnalyzer : IDisposable
         long write = Interlocked.Read(ref _write);
         if (write - read < FftSize) return false;
 
+        float[]? leftQueue = Volatile.Read(ref _leftQueue);
+        float[]? rightQueue = Volatile.Read(ref _rightQueue);
+        double[]? leftWork = Volatile.Read(ref _leftWork);
+        double[]? rightWork = Volatile.Read(ref _rightWork);
+        float[]? window = Volatile.Read(ref _window);
+        if (leftQueue is null || rightQueue is null || leftWork is null || rightWork is null || window is null)
+            return false;
+
         for (int i = 0; i < FftSize; i++)
         {
             int index = (int)((read + i) % QueueCapacity);
-            _leftWork[i] = _leftQueue[index] * _window[i];
-            _rightWork[i] = _rightQueue[index] * _window[i];
+            leftWork[i] = leftQueue[index] * window[i];
+            rightWork[i] = rightQueue[index] * window[i];
         }
         Volatile.Write(ref _read, read + HopSize);
         return true;
@@ -266,12 +280,44 @@ internal sealed class FftAnalyzer : IDisposable
     private void StopWorkerLocked()
     {
         Volatile.Write(ref _stopWorker, 1);
-        try { _wake.Set(); }
+        try { Volatile.Read(ref _wake)?.Set(); }
         catch (ObjectDisposedException) { }
         var worker = _worker;
-        if (worker is not null && worker != Thread.CurrentThread && !worker.Join(1000))
-            Console.WriteLine("[fft] analyzer shutdown pending");
+        // Do not release work arrays until a publisher that may still be using
+        // them has returned. The completed join is the disable lifecycle boundary.
+        if (worker is not null && worker != Thread.CurrentThread)
+            worker.Join();
         _worker = null;
+    }
+
+    private void EnsureBuffersLocked()
+    {
+        if (_leftQueue is not null) return;
+        var leftQueue = new float[QueueCapacity];
+        var rightQueue = new float[QueueCapacity];
+        var leftWork = new double[FftSize];
+        var rightWork = new double[FftSize];
+        var window = new float[FftSize];
+        var wake = new AutoResetEvent(false);
+        for (int i = 0; i < FftSize; i++)
+            window[i] = (float)(0.5 - 0.5 * Math.Cos(2 * Math.PI * i / (FftSize - 1)));
+        _leftQueue = leftQueue;
+        _rightQueue = rightQueue;
+        _leftWork = leftWork;
+        _rightWork = rightWork;
+        _window = window;
+        _wake = wake;
+    }
+
+    private void ReleaseBuffersLocked()
+    {
+        Volatile.Write(ref _leftQueue, null);
+        Volatile.Write(ref _rightQueue, null);
+        Volatile.Write(ref _leftWork, null);
+        Volatile.Write(ref _rightWork, null);
+        Volatile.Write(ref _window, null);
+        AutoResetEvent? wake = Interlocked.Exchange(ref _wake, null);
+        wake?.Dispose();
     }
 
     public void Dispose()
@@ -281,7 +327,7 @@ internal sealed class FftAnalyzer : IDisposable
             if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
             Interlocked.Exchange(ref _enabled, 0);
             StopWorkerLocked();
-            _wake.Dispose();
+            ReleaseBuffersLocked();
         }
     }
 }

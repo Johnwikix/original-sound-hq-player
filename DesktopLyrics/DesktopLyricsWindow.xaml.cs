@@ -286,9 +286,11 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private static void SetSpectrumBar(Rectangle bar, float level)
         {
-            double height = 2 + Math.Clamp(level, 0, 1) * 26;
+            // The taskbar visualizer uses one mono stream. Anchor it to the
+            // center divider and grow upward, leaving the lower half empty.
+            double height = 2 + Math.Clamp(level, 0, 1) * 12;
             bar.Height = height;
-            Canvas.SetTop(bar, (30 - height) / 2);
+            Canvas.SetTop(bar, 14 - height);
         }
 
         private void UpdateTaskbarSpectrumState()

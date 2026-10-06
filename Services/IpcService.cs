@@ -205,6 +205,7 @@ namespace WinUIMusicPlayer.Services
         private void OnFftData(FftSnapshot snapshot)
         {
             if (Volatile.Read(ref _disposed) != 0 || Volatile.Read(ref _faulted) != 0
+                || Volatile.Read(ref _fftRequested) == 0
                 || snapshot.Sequence <= (CurrentFftSnapshot?.Sequence ?? 0)) return;
             Volatile.Write(ref _fftSnapshot, snapshot);
             if (FftDataChanged is not { } handlers) return;
@@ -393,6 +394,11 @@ namespace WinUIMusicPlayer.Services
         public void SetFftEnabled(bool enabled)
         {
             Volatile.Write(ref _fftRequested, enabled ? 1 : 0);
+            if (!enabled)
+            {
+                Volatile.Write(ref _fftSnapshot, null);
+                _stateClient?.ClearFftSnapshot();
+            }
             Span<byte> buffer = stackalloc byte[BinarySerializer.FftEnabledSize];
             BinarySerializer.WriteFftEnabled(buffer, enabled);
             Publish(CommandId.SetFftEnabled, buffer);

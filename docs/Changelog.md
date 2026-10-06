@@ -2,11 +2,14 @@
 
 新条目加在最上方。
 
-## 2026-10-06 修复任务栏控件绑定与单声道频谱显示
+## 2026-10-06 修复任务栏控件绑定、单声道频谱显示与 FFT 生命周期
 - `DesktopLyrics/DesktopLyricsWindow.xaml`、`.xaml.cs`：任务栏窗口显式初始化和关闭 `x:Bind` 跟踪，恢复播放、切歌按钮命令、音量双向滑块和图标状态；音量图标改为纯状态图标，不再额外弹出按钮。
-- `DesktopLyrics/DesktopLyricsWindow.xaml.cs`：任务栏仅将双声道 FFT 快照合并为单声道频带绘制，保留传输层双声道数据；封面播放按钮保持透明命中区域，仅悬停显示图标。
+- `DesktopLyrics/DesktopLyricsWindow.xaml.cs`：任务栏仅将双声道 FFT 快照合并为单声道频带绘制，并固定在中线以上显示，保留传输层双声道数据；封面播放按钮保持透明命中区域，仅悬停显示图标。
+- `External/AudioPlayer/Playback/FftAnalyzer.cs`：FFT 工作数组和唤醒句柄改为启用时创建、停用时等待工作线程退出后释放；关闭桌面歌词或切换悬浮窗后不再持续生成 FFT。
+- `External/BassPlayerIpc.Shared/PipeStateServer.cs`、`PipeStateClient.cs`、`Services/IpcService.cs`：FFT 管道缓存改为按需分配，停用时清除最新快照和大帧缓冲。
+- `_tools/PlaybackSwitchRegression/FftTests.cs`、`_tools/AudioPlayerSmokeTest/Program.cs`：增加 FFT 停用释放、发布者收尾和真实管道启停回归入口。
 - `AGENTS.md`：补充跨页面 MVVM、非激活窗口绑定初始化、AudioPlayer 发布和任务栏控件风格约定。
-- 验证：共享协议、AudioPlayer 构建、AudioPlayer NativeAOT 发布、FFT 回归和主 WinUI 代码编译通过；当前环境在 MakeAppx 打包阶段失败，未完成 MSIX 包验证。
+- 验证：共享协议、AudioPlayer 构建、AudioPlayer NativeAOT 发布和 FFT 生命周期回归通过；当前环境主 WinUI 构建未能完成 ResolvePackageAssets/MSIX 阶段，需在目标 Windows 环境复核。
 
 ## 2026-10-06 按 MainPage 统一任务栏音量交互并同步播放端
 - `DesktopLyrics/DesktopLyricsWindow.xaml`、`.xaml.cs`：任务栏播放、上一首、下一首和音量控件改为命令/绑定驱动；音量滑杆复用 MainPage 的 `TwoWay` MVVM 绑定、静音/恢复命令和滚轮调节行为；歌曲信息悬停控制条固定为与封面相同的高度。

@@ -123,6 +123,47 @@ Console.WriteLine($"[smoke] Play(confirmed) → {t}（已收到执行确认）")
 Thread.Sleep(400); // 观察首段输出与通知
 PumpNotifications();
 
+if (args.Contains("--fft-lifecycle"))
+{
+    try
+    {
+        int frames = 0;
+        states.FftDataChanged += _ => Interlocked.Increment(ref frames);
+        void SampleFftProcess(string phase)
+        {
+            server.Refresh();
+            Console.WriteLine($"[fft-memory] {phase}: private={server.PrivateMemorySize64}, working={server.WorkingSet64}, handles={server.HandleCount}, threads={server.Threads.Count}, frames={Volatile.Read(ref frames)}");
+        }
+        if (!SpinWait.SpinUntil(() => states.TryGetProgress(out var p) && p.Playing, 5000))
+            throw new InvalidOperationException("PCM playback not ready");
+        Thread.Sleep(2000);
+        SampleFftProcess("baseline");
+        for (int cycle = 0; cycle < 3; cycle++)
+        {
+            byte[] enabled = [1];
+            if (Send(CommandId.SetFftEnabled, enabled, out _) != MessageTypeId.Success)
+                throw new InvalidOperationException("FFT enable rejected");
+            if (!SpinWait.SpinUntil(() => states.CurrentFftSnapshot is { IsAvailable: true }, 5000))
+                throw new InvalidOperationException("FFT data missing");
+            Thread.Sleep(2000);
+            SampleFftProcess($"enabled-{cycle}");
+            enabled[0] = 0;
+            if (Send(CommandId.SetFftEnabled, enabled, out _) != MessageTypeId.Success)
+                throw new InvalidOperationException("FFT disable rejected");
+            if (!SpinWait.SpinUntil(() => states.CurrentFftSnapshot is { IsAvailable: false }, 5000))
+                throw new InvalidOperationException("FFT disabled marker missing");
+            int stoppedFrames = Volatile.Read(ref frames);
+            Thread.Sleep(2000);
+            if (Volatile.Read(ref frames) != stoppedFrames)
+                throw new InvalidOperationException("FFT continues transmitting after disable");
+            SampleFftProcess($"disabled-{cycle}");
+        }
+        Console.WriteLine("[smoke] PASS: FFT enable/disable/re-enable over real pipes, no frames after disable");
+        return 0;
+    }
+    finally { StopPlayer(); }
+}
+
 // Memory experiment: one feature at a time; process counters are sampled by the client.
 if (args.Contains("--memory"))
 {

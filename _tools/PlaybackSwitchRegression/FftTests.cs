@@ -6,6 +6,8 @@ internal static partial class Program
     private static void RunFftTests()
     {
         Run("FFT: stereo PCM produces independent L/R spectra", CheckFftStereo);
+        Run("FFT: disabled engine releases analyzer and resumes with increasing sequence", CheckFftLifetime);
+        Run("FFT: disable waits for an in-flight publisher", CheckFftStopWaitsForPublisher);
     }
 
     private static void CheckFftStereo()
@@ -68,6 +70,71 @@ internal static partial class Program
         for (int i = 1; i < count; i++)
             if (values[i] > values[peak]) peak = i;
         return peak;
+    }
+
+    private static void CheckFftLifetime()
+    {
+        using var ipc = new AudioPlayer.PlayerIpcService();
+        using var engine = new PlaybackEngine(ipc);
+        var analyzerField = typeof(PlaybackEngine).GetField("_fftAnalyzer", Private)!;
+        var analyzer = (FftAnalyzer)analyzerField.GetValue(engine)!;
+        var queueField = typeof(FftAnalyzer).GetField("_leftQueue", Private)!;
+        var wakeField = typeof(FftAnalyzer).GetField("_wake", Private)!;
+        Require(queueField.GetValue(analyzer) is null, "disabled engine eagerly owns FFT buffers");
+        Require(wakeField.GetValue(analyzer) is null, "disabled engine eagerly owns FFT wake handle");
+        long sequence = 0;
+        for (int i = 0; i < 5; i++)
+        {
+            var weak = EnableAndReleaseFft(engine, analyzer, queueField, ref sequence);
+            Require(queueField.GetValue(analyzer) is null, "disabled engine retains FFT buffers");
+            Require(wakeField.GetValue(analyzer) is null, "disabled engine retains FFT wake handle");
+            // Test-only collection proves reachability; shipping code must not force a GC.
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            Require(!weak.IsAlive, "FFT worker or publisher retains disabled analyzer");
+        }
+        GC.KeepAlive(engine);
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static WeakReference EnableAndReleaseFft(PlaybackEngine engine, FftAnalyzer analyzer, System.Reflection.FieldInfo queueField, ref long sequence)
+    {
+        engine.SetFftEnabled(true);
+        var queue = (Array)queueField.GetValue(analyzer)!;
+        var weak = new WeakReference(queue);
+        var sequenceField = typeof(FftAnalyzer).GetField("_sequence", Private)!;
+        long current = (long)sequenceField.GetValue(analyzer)!;
+        Require(current > sequence, "FFT sequence restarted after enabling again");
+        engine.SetFftEnabled(false);
+        sequence = (long)sequenceField.GetValue(analyzer)!;
+        return weak;
+    }
+
+    private static void CheckFftStopWaitsForPublisher()
+    {
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        using var analyzer = new FftAnalyzer(snapshot =>
+        {
+            if (!snapshot.IsAvailable) return;
+            entered.Set();
+            release.Wait();
+        });
+        analyzer.Reset(1, 48000);
+        analyzer.SetEnabled(true);
+        analyzer.Capture(new double[2048], 1024, 2, 0, 48000);
+        Require(entered.Wait(2000), "publisher did not enter");
+        var stopping = Task.Run(() => analyzer.SetEnabled(false));
+        try
+        {
+            Require(!stopping.Wait(1200), "disable returned while FFT publisher still used buffers");
+        }
+        finally
+        {
+            release.Set();
+            Require(stopping.Wait(2000), "FFT worker did not stop after publisher returned");
+        }
     }
 
 }
