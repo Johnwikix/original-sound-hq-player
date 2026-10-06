@@ -49,7 +49,7 @@
                         IsOn="{x:Bind ViewModel.AppViewModel.IsAutoCoverEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
-                <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}">
+                <controls:SettingsCard>
                     <controls:SettingsCard.Header>
                         <TextBlock x:Uid="Win2dAnimatedTitle" />
                     </controls:SettingsCard.Header>
@@ -121,7 +121,7 @@
                     x:Uid="ShaderBackgroundExpander"
                     Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
-                <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}">
+                <controls:SettingsCard>
                     <controls:SettingsCard.Header>
                         <TextBlock x:Uid="ShaderBackground" />
                     </controls:SettingsCard.Header>

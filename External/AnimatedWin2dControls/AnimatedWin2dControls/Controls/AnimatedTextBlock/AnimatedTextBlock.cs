@@ -198,6 +198,10 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
+        // RemoveFromVisualTree() is used during unload to release Win2D's native
+        // references. The control template can remain applied when the host is
+        // reinserted, so reacquire the template part before reattaching events.
+        _canvas ??= GetTemplateChild("AnimatedCanvas") as CanvasControl;
         EnsureTextFormat();
         AttachCanvas();
         ApplyTextFormatIfNeeded();
@@ -214,7 +218,14 @@ public sealed partial class AnimatedTextBlock : Control, ISharedTickable
         StopHoverScroll();
         StopRenderingLoop();
         _currentState = AnimatedTextBlockRedrawState.Idle;
+
+        // CanvasControl owns native event sources. x:Load can create and destroy
+        // this subtree repeatedly, so remove the canvas from the visual tree and
+        // release our reference after detaching handlers to break the native cycle.
+        var canvas = _canvas;
         DetachCanvas();
+        canvas?.RemoveFromVisualTree();
+        _canvas = null;
 
         // 释放所有 GPU 资源
         DisposeLayouts();

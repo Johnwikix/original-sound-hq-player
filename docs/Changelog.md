@@ -2,6 +2,11 @@
 
 新条目加在最上方。
 
+## 2026-10-06 修复 Win2D 动画文本块开关与资源释放
+- `PlayingDetailPage`：动画文本块的 `x:Load` 与普通文本替代视图的可见性改为 `OneWay`，开关切换即时更新；动态创建后重新应用当前文字特效。
+- `AnimatedTextBlock`：卸载时解除画布事件、移除 Win2D 画布并释放文本布局、画刷和格式资源，避免反复切换留下原生资源。
+- `CoverBackgroundSettingsControl`：移除动画文本与着色器背景开关已过时的“重启应用生效”说明。
+
 ## 2026-10-06 修复着色器切换与高级歌词即时生效
 - `NowPlayingCanvas`、`PlayingDetailPage`：交换链重建或动态加载后重新应用当前曲目的调色板和封面，避免切换着色器后首曲目颜色/图像失真。
 - `NowPlayingCanvas`、`AdvanceLyricsCanvasControl`、`LyricsRenderCoordinator`、`SimpleLyricsControl`：将 x:Load 卸载改为可复用的资源释放，保留最终关闭路径，避免重载后状态和原生资源失配。

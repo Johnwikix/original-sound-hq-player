@@ -57,23 +57,7 @@ namespace WinUIMusicPlayer.View
         private void PlayingDetailPage_Loaded(object sender, RoutedEventArgs e)
         {
             _isLoaded = true;
-            if (ViewModel.AppViewModel.IsWin2dAnimatedText)
-            {
-                var effectType = ViewModel.AppViewModel.Win2dTextEffectType.Value;
-                // 1. 定义一个简单的局部函数或直接在表达式中实例化
-                AnimatedWin2dControls.Controls.AnimatedTextBlock.ITextEffect CreateEffect(AnimatedTextEffect type) => type switch
-                {
-                    AnimatedTextEffect.TextBlurEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextBlurEffect(),
-                    AnimatedTextEffect.TextElasticEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextElasticEffect(),
-                    AnimatedTextEffect.TextFadeEffect => new TextFadeEffect(),
-                    AnimatedTextEffect.TextMotionBlurEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextMotionBlurEffect(),
-                    AnimatedTextEffect.TextPivotEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextPivotEffect(),
-                    AnimatedTextEffect.TextWipeEffect => new TextWipeEffect(),
-                    AnimatedTextEffect.TextZoomEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextZoomEffect(),
-                    _ => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextDefaultEffect()
-                };
-                AnimatedPlayingDetailTextBlock?.TextEffect = CreateEffect(effectType);
-            }
+            ApplyAnimatedTextEffect();
             App.MainWindow.SizeChanged += MainWindow_SizeChanged;
             App.MainWindow.AppWindow.Changed += AppWindow_Changed;
             ViewModel.AppViewModel.PropertyChanged += AppViewModel_PropertyChanged;
@@ -100,7 +84,39 @@ namespace WinUIMusicPlayer.View
             {
                 UpdateLyricsRegion();
             }
+            else if (e.PropertyName == nameof(AppViewModel.Win2dTextEffectType))
+            {
+                ApplyAnimatedTextEffect();
+            }
         }
+
+        private void AnimatedPlayingDetailTextBlock_Loaded(object sender, RoutedEventArgs e)
+        {
+            // x:Load creates the Win2D control after the page has already loaded.
+            // Reapply the current effect whenever it enters the visual tree.
+            ApplyAnimatedTextEffect();
+        }
+
+        private void ApplyAnimatedTextEffect()
+        {
+            var textBlock = AnimatedPlayingDetailTextBlock;
+            if (textBlock is null || !ViewModel.AppViewModel.IsWin2dAnimatedText)
+                return;
+
+            textBlock.TextEffect = CreateAnimatedTextEffect(ViewModel.AppViewModel.Win2dTextEffectType.Value);
+        }
+
+        private static AnimatedWin2dControls.Controls.AnimatedTextBlock.ITextEffect CreateAnimatedTextEffect(AnimatedTextEffect type) => type switch
+        {
+            AnimatedTextEffect.TextBlurEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextBlurEffect(),
+            AnimatedTextEffect.TextElasticEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextElasticEffect(),
+            AnimatedTextEffect.TextFadeEffect => new TextFadeEffect(),
+            AnimatedTextEffect.TextMotionBlurEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextMotionBlurEffect(),
+            AnimatedTextEffect.TextPivotEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextPivotEffect(),
+            AnimatedTextEffect.TextWipeEffect => new TextWipeEffect(),
+            AnimatedTextEffect.TextZoomEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextZoomEffect(),
+            _ => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextDefaultEffect()
+        };
 
         private void AppWindow_Changed(AppWindow sender, AppWindowChangedEventArgs args)
         {
