@@ -2,6 +2,9 @@
 
 新条目加在最上方。
 
+## 2026-10-06 修复任务栏频谱位置和幅度
+- `DesktopLyrics/DesktopLyricsWindow.xaml.cs`：任务栏频谱柱条改为贴画布底部向上绘制，动态幅度加倍，恢复正确的底部视觉位置。
+
 ## 2026-10-06 修复任务栏控件绑定、单声道频谱显示与 FFT 生命周期
 - `DesktopLyrics/DesktopLyricsWindow.xaml`、`.xaml.cs`：任务栏窗口显式初始化和关闭 `x:Bind` 跟踪，恢复播放、切歌按钮命令、音量双向滑块和图标状态；音量图标改为纯状态图标，不再额外弹出按钮。
 - `DesktopLyrics/DesktopLyricsWindow.xaml.cs`：任务栏仅将双声道 FFT 快照合并为单声道频带绘制，并固定在中线以上显示，保留传输层双声道数据；封面播放按钮保持透明命中区域，仅悬停显示图标。

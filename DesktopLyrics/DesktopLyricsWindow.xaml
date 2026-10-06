@@ -66,8 +66,7 @@
                                 Command="{x:Bind Playback.ToggleCommand, Mode=OneWay}"
                                 IsEnabled="{x:Bind tools:BindUtils.IsPlayButtonEnabled(AppViewModel.IsPlaybackEngineReady, AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
                                 PointerEntered="TaskbarCoverPlayPauseButton_PointerEntered"
-                                PointerExited="TaskbarCoverPlayPauseButton_PointerExited"
-                                Style="{StaticResource SimpleHoverButtonStyle}">
+                                PointerExited="TaskbarCoverPlayPauseButton_PointerExited">
                                 <Button.Resources>
                                     <SolidColorBrush x:Key="ButtonBackground" Color="Transparent" />
                                     <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="Transparent" />

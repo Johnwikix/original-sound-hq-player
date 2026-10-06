@@ -49,6 +49,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
     {
         private const int DefaultWidth = 1800;
         private const int DefaultHeight = 280;
+        private const double TaskbarSpectrumCanvasHeight = 36;
+        private const double TaskbarSpectrumBaseHeight = 2;
+        private const double TaskbarSpectrumMaxAmplitude = 20;
         private const int BottomMargin = 60;
         private const double HoverPollingIntervalMs = 50;    // 悬停窗口期间：按钮组显隐/穿透切换要跟手
         private const double IdlePollingIntervalMs = 200;    // 锁定态静默期：进窗检测 + 自愈
@@ -286,11 +289,12 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private static void SetSpectrumBar(Rectangle bar, float level)
         {
-            // The taskbar visualizer uses one mono stream. Anchor it to the
-            // center divider and grow upward, leaving the lower half empty.
-            double height = 2 + Math.Clamp(level, 0, 1) * 12;
+            // The taskbar visualizer uses one mono stream. Keep every bar on
+            // the canvas bottom edge and use the full available amplitude.
+            double height = TaskbarSpectrumBaseHeight
+                + Math.Clamp(level, 0, 1) * TaskbarSpectrumMaxAmplitude;
             bar.Height = height;
-            Canvas.SetTop(bar, 14 - height);
+            Canvas.SetTop(bar, TaskbarSpectrumCanvasHeight - height);
         }
 
         private void UpdateTaskbarSpectrumState()
