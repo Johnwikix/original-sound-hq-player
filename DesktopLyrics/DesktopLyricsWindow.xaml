@@ -52,7 +52,6 @@
                                 VerticalAlignment="Center"
                                 Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                 Glyph="&#xE93C;" />
-                            <Image x:Name="TaskbarCoverImage" Stretch="UniformToFill" />
                             <Button
                                 x:Name="TaskbarCoverPlayPauseButton"
                                 Width="42"
@@ -68,12 +67,15 @@
                                 PointerEntered="TaskbarCoverPlayPauseButton_PointerEntered"
                                 PointerExited="TaskbarCoverPlayPauseButton_PointerExited"
                                 Style="{StaticResource TaskbarCoverPlayPauseButtonStyle}">
-                                <FontIcon
-                                    x:Name="TaskbarCoverPlayIcon"
-                                    FontSize="16"
-                                    Glyph="{x:Bind tools:BindUtils.PlayStatusToGlyphConverter(AppViewModel.IsPlaying), Mode=OneWay}"
-                                    IsHitTestVisible="False"
-                                    Opacity="0" />
+                                <Grid>
+                                    <Image x:Name="TaskbarCoverImage" Stretch="UniformToFill" />
+                                    <FontIcon
+                                        x:Name="TaskbarCoverPlayIcon"
+                                        FontSize="16"
+                                        Glyph="{x:Bind tools:BindUtils.PlayStatusToGlyphConverter(AppViewModel.IsPlaying), Mode=OneWay}"
+                                        IsHitTestVisible="False"
+                                        Opacity="0" />
+                                </Grid>
                             </Button>
                         </Grid>
                     </Border>

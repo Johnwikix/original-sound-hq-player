@@ -2,6 +2,10 @@
 
 新条目加在最上方。
 
+## 2026-10-07 任务栏封面图移入播放/暂停按钮
+- `DesktopLyrics/DesktopLyricsWindow.xaml`：`TaskbarCoverImage` 移入 `TaskbarCoverPlayPauseButton` 内容，封面与播放图标同层，成为按钮实际内容。
+- `Style/BtnStyle.xaml`：`TaskbarCoverPlayPauseButtonStyle` 模板在 `ContentPresenter` 之上新增 `StateOverlay` 状态层，PointerOver/Pressed/Disabled 压暗背景改画在该层，保持封面悬浮压暗与禁用置灰效果；封面随之获得按压缩放反馈。
+
 ## 2026-10-07 修复播放会话与 ASIO 输出退役时序
 - `External/AudioPlayer/Playback/Session.cs`、`GaplessPreloader.cs`：会话清理等待解码线程完成后再继续无缝预载，避免旧会话资源与新会话重叠。
 - `External/AudioPlayer/Interop/AsioHost.cs`：ASIO 初始化或回调超时后转入后台退役，等待驱动安全返回再释放驱动、回调表和隐藏窗口。

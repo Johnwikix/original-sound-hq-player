@@ -254,6 +254,12 @@
                             x:Name="ContentPresenter"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center" />
+                        <!--  封面图位于按钮内容中，状态背景必须绘制在内容之上才能压暗封面  -->
+                        <Border
+                            x:Name="StateOverlay"
+                            Background="Transparent"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            IsHitTestVisible="False" />
                         <VisualStateManager.VisualStateGroups>
                             <VisualStateGroup
                                 x:Name="CommonStates"
@@ -263,22 +269,19 @@
                                 <VisualState x:Name="PointerOver">
                                     <VisualState.Setters>
                                         <!--  与 MenuButtonStyle 的 PointerOver/Normal 互换。  -->
-                                        <Setter Target="Root.Background" Value="{ThemeResource TaskbarCoverPlayPausePointerOverBackground}" />
-                                        <Setter Target="Root.BorderBrush" Value="{ThemeResource TaskbarCoverPlayPausePointerOverBackground}" />
+                                        <Setter Target="StateOverlay.Background" Value="{ThemeResource TaskbarCoverPlayPausePointerOverBackground}" />
                                         <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource TaskbarCoverPlayPauseForeground}" />
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Pressed">
                                     <VisualState.Setters>
-                                        <Setter Target="Root.Background" Value="{ThemeResource TaskbarCoverPlayPausePressedBackground}" />
-                                        <Setter Target="Root.BorderBrush" Value="{ThemeResource TaskbarCoverPlayPausePressedBackground}" />
+                                        <Setter Target="StateOverlay.Background" Value="{ThemeResource TaskbarCoverPlayPausePressedBackground}" />
                                         <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource TaskbarCoverPlayPauseForeground}" />
                                     </VisualState.Setters>
                                 </VisualState>
                                 <VisualState x:Name="Disabled">
                                     <VisualState.Setters>
-                                        <Setter Target="Root.Background" Value="{ThemeResource TaskbarCoverPlayPauseDisabledBackground}" />
-                                        <Setter Target="Root.BorderBrush" Value="{ThemeResource TaskbarCoverPlayPauseDisabledBackground}" />
+                                        <Setter Target="StateOverlay.Background" Value="{ThemeResource TaskbarCoverPlayPauseDisabledBackground}" />
                                         <Setter Target="ContentPresenter.Foreground" Value="{ThemeResource TaskbarCoverPlayPauseDisabledForeground}" />
                                     </VisualState.Setters>
                                 </VisualState>
