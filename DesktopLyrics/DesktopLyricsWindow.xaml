@@ -137,15 +137,21 @@
                                         Style="{StaticResource MenuButtonStyle}">
                                         <FontIcon FontSize="13" Glyph="&#xF8AD;" />
                                     </Button>
-                                    <FontIcon
-                                        x:Name="TaskbarVolumeIcon"
+                                    <Button
+                                        x:Name="TaskbarVolumeButton"
                                         Width="26"
                                         Height="26"
-                                        Margin="3,0,0,0"
-                                        VerticalAlignment="Center"
-                                        FontSize="13"
-                                        Glyph="{x:Bind tools:BindUtils.VolumeToGlyphConverter(AppViewModel.Volume), Mode=OneWay}"
-                                        IsHitTestVisible="False" />
+                                        Padding="0"
+                                        AutomationProperties.Name="Mute"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Command="{x:Bind AppViewModel.VolumeSliderIconButtonChangedCommand, Mode=OneWay}"
+                                        Style="{StaticResource MenuButtonStyle}">
+                                        <FontIcon
+                                            x:Name="TaskbarVolumeIcon"
+                                            FontSize="13"
+                                            Glyph="{x:Bind tools:BindUtils.VolumeToGlyphConverter(AppViewModel.Volume), Mode=OneWay}" />
+                                    </Button>
                                     <Slider
                                         x:Name="TaskbarVolumeSlider"
                                         Width="72"
