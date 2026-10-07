@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-10-08 修复长时间播放时封面资源持续增长
+- `Controls/ImageSwitcher.xaml.cs`：切换、取消、卸载和动画结束时显式释放不再被控件持有的封面图片源。
+- `Helper/ImageHelper.cs`、`Behaviors/FadeImageBehavior.cs`：解码失败或取消时清理临时图片源引用，释放可关闭的 WinRT 图片源。
+- `Utils/CoverLoadQueue.cs`：封面解码队列改为有界并支持消费者取消，移除永久字符串驻留的缓存键。
+- `Services/CoverPresentationService.cs`：过期或取消的系统媒体封面更新主动清空待发布的原图字节。
+
 ## 2026-10-07 任务栏音量图标支持点击静音
 - `DesktopLyrics/DesktopLyricsWindow.xaml`：`TaskbarVolumeIcon` 外层套上按钮，命令复用 MainPage 音量弹层内静音按钮的 `VolumeSliderIconButtonChangedCommand`，尺寸样式对齐相邻切歌按钮，点击任务栏音量图标即可切换静音。
 

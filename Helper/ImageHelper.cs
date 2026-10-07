@@ -24,13 +24,14 @@ namespace WinUIMusicPlayer.Helper
         internal static async Task<BitmapImage?> DecodeFileToBitmapAsync(
             string path, CancellationToken token, uint maxPixelSize = 0)
         {
+            BitmapImage? bitmap = null;
             try
             {
                 token.ThrowIfCancellationRequested();
                 var file = await StorageFile.GetFileFromPathAsync(path);
                 using var stream = await file.OpenReadAsync();
                 token.ThrowIfCancellationRequested();
-                var bitmap = new BitmapImage { DecodePixelType = DecodePixelType.Physical };
+                bitmap = new BitmapImage { DecodePixelType = DecodePixelType.Physical };
                 if (maxPixelSize > 0)
                 {
                     var decoder = await BitmapDecoder.CreateAsync(stream);
@@ -47,11 +48,18 @@ namespace WinUIMusicPlayer.Helper
                 }
                 await bitmap.SetSourceAsync(stream);
                 token.ThrowIfCancellationRequested();
-                return bitmap;
+                var result = bitmap;
+                bitmap = null;
+                return result;
             }
-            catch (OperationCanceledException) { throw; }
+            catch (OperationCanceledException)
+            {
+                bitmap = null;
+                throw;
+            }
             catch (Exception ex)
             {
+                bitmap = null;
                 _logger.LogError(ex, "DecodeFileToBitmapAsync 失败");
                 return null;
             }
@@ -62,6 +70,7 @@ namespace WinUIMusicPlayer.Helper
         {
             if (bytes is not { Length: > 0 }) return null;
 
+            BitmapImage? bitmap = null;
             try
             {
                 using var memStream = new MemoryStream(bytes, writable: false);
@@ -69,7 +78,7 @@ namespace WinUIMusicPlayer.Helper
 
                 if (token.IsCancellationRequested) return null;
 
-                var bitmap = new BitmapImage
+                bitmap = new BitmapImage
                 {
                     DecodePixelType = DecodePixelType.Logical
                 };
@@ -78,10 +87,19 @@ namespace WinUIMusicPlayer.Helper
                     bitmap.DecodePixelWidth = decodePixelWidth;
 
                 await bitmap.SetSourceAsync(stream);
-                return bitmap;
+                token.ThrowIfCancellationRequested();
+                var result = bitmap;
+                bitmap = null;
+                return result;
+            }
+            catch (OperationCanceledException)
+            {
+                bitmap = null;
+                return null;
             }
             catch (Exception ex)
             {
+                bitmap = null;
                 _logger.LogError(ex, "DecodeToBitmapAsync 失败");
                 return null;
             }

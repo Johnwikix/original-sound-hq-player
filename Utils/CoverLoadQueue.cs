@@ -32,15 +32,16 @@ internal static class CoverLoadQueue
 
     public static int CoverSize { get; set; } = 150;
 
-    private static readonly Channel<CoverLoadRequest> _channel =
-        Channel.CreateUnbounded<CoverLoadRequest>(new UnboundedChannelOptions
+    private static readonly Channel<PendingCover> _channel =
+        Channel.CreateBounded<PendingCover>(new BoundedChannelOptions(64)
         {
             SingleReader = false,
-            SingleWriter = false
+            SingleWriter = false,
+            FullMode = BoundedChannelFullMode.Wait
         });
 
     private static readonly List<Thread> _workers = new();
-    private static readonly Channel<CoverLoadRequest> _remoteChannel = Channel.CreateBounded<CoverLoadRequest>(
+    private static readonly Channel<PendingCover> _remoteChannel = Channel.CreateBounded<PendingCover>(
         new BoundedChannelOptions(64) { SingleReader = true, FullMode = BoundedChannelFullMode.Wait });
     private static readonly CancellationTokenSource _shutdownCts = new();
     private static readonly object _initLock = new();
@@ -53,53 +54,131 @@ internal static class CoverLoadQueue
         public byte[] Pixels { get; } = pixels;
     }
 
-    private static readonly ConcurrentDictionary<string, Task<DecodedCover?>> _pendingTasks = new();
+    private static readonly ConcurrentDictionary<string, PendingCover> _pendingTasks = new();
 
-    private readonly record struct CoverLoadRequest(
+    private sealed class PendingCover(
         Music Music,
         string CacheKey,
-        int CoverSize,
-        TaskCompletionSource<DecodedCover?> Tcs,
-        CancellationToken Token);
+        int CoverSize)
+    {
+        private readonly CancellationTokenSource _workCts = new();
+        private int _waiters;
+        private int _completed;
+        private int _disposed;
+
+        public Music Music { get; } = Music;
+        public string CacheKey { get; } = CacheKey;
+        public int CoverSize { get; } = CoverSize;
+        public TaskCompletionSource<DecodedCover?> Tcs { get; } =
+            new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public CancellationToken Token => _workCts.Token;
+        public int WaiterCount => Volatile.Read(ref _waiters);
+
+        public void AddWaiter() => Interlocked.Increment(ref _waiters);
+
+        public void ReleaseWaiter()
+        {
+            if (Interlocked.Decrement(ref _waiters) == 0 && Volatile.Read(ref _completed) == 0)
+            {
+                try { _workCts.Cancel(); }
+                catch (ObjectDisposedException) { }
+            }
+            DisposeIfComplete();
+        }
+
+        public void Complete()
+        {
+            Volatile.Write(ref _completed, 1);
+            DisposeIfComplete();
+        }
+
+        private void DisposeIfComplete()
+        {
+            if (Volatile.Read(ref _completed) != 0 && Volatile.Read(ref _waiters) == 0
+                && Interlocked.Exchange(ref _disposed, 1) == 0)
+                _workCts.Dispose();
+        }
+    }
 
     public static async Task<ImageSource?> EnqueueAsync(Music music, CancellationToken token)
     {
         EnsureInitialized();
         var cacheKey = CacheKey(music);
-        Task<DecodedCover?> sharedTask;
+        PendingCover pending;
+        bool isNew = false;
         while (true)
         {
             if (_pendingTasks.TryGetValue(cacheKey, out var existing))
             {
-                if (!existing.IsCompleted || existing.Status == TaskStatus.RanToCompletion)
+                if (!existing.Tcs.Task.IsCompleted || existing.Tcs.Task.Status == TaskStatus.RanToCompletion)
                 {
-                    sharedTask = existing;
+                    pending = existing;
                     break;
                 }
 
-                ((ICollection<KeyValuePair<string, Task<DecodedCover?>>>)_pendingTasks)
-                    .Remove(new KeyValuePair<string, Task<DecodedCover?>>(cacheKey, existing));
+                RemovePending(existing);
                 continue;
             }
 
-            var tcs = new TaskCompletionSource<DecodedCover?>(TaskCreationOptions.RunContinuationsAsynchronously);
             // 共享的是有界的解码像素，而不是 SoftwareBitmapSource。
             // 每个消费者随后创建并拥有自己的 WinRT source，可独立 Dispose。
-            var req = new CoverLoadRequest(music, cacheKey, CoverSize, tcs, CancellationToken.None);
+            var candidate = new PendingCover(music, cacheKey, CoverSize);
 
-            if (!_pendingTasks.TryAdd(cacheKey, tcs.Task)) continue;
-            if (!(music.IsRemote ? _remoteChannel : _channel).Writer.TryWrite(req))
-            {
-                _pendingTasks.TryRemove(cacheKey, out _);
-                tcs.TrySetResult(null);
-            }
-            sharedTask = tcs.Task;
+            if (!_pendingTasks.TryAdd(cacheKey, candidate)) continue;
+            pending = candidate;
+            isNew = true;
             break;
         }
 
-        var decoded = await sharedTask.WaitAsync(token);
-        if (decoded is null || token.IsCancellationRequested) return null;
-        return await CreateImageSourceAsync(decoded, token);
+        pending.AddWaiter();
+        try
+        {
+            if (isNew)
+            {
+                var channel = music.IsRemote ? _remoteChannel : _channel;
+                try
+                {
+                    await channel.Writer.WriteAsync(pending, token);
+                }
+                catch (OperationCanceledException)
+                {
+                    // If another consumer joined while this request was waiting
+                    // for queue space, keep the shared request alive and finish
+                    // enqueueing it without the canceled consumer's token.
+                    if (pending.WaiterCount > 1)
+                    {
+                        try { await channel.Writer.WriteAsync(pending, CancellationToken.None); }
+                        catch (ChannelClosedException)
+                        {
+                            RemovePending(pending);
+                            pending.Tcs.TrySetCanceled();
+                            pending.Complete();
+                        }
+                        throw;
+                    }
+
+                    RemovePending(pending);
+                    pending.Tcs.TrySetCanceled(token);
+                    pending.Complete();
+                    throw;
+                }
+                catch (ChannelClosedException)
+                {
+                    RemovePending(pending);
+                    pending.Tcs.TrySetCanceled();
+                    pending.Complete();
+                    return null;
+                }
+            }
+
+            var decoded = await pending.Tcs.Task.WaitAsync(token);
+            if (decoded is null || token.IsCancellationRequested) return null;
+            return await CreateImageSourceAsync(decoded, token);
+        }
+        finally
+        {
+            pending.ReleaseWaiter();
+        }
     }
 
     private static void EnsureInitialized()
@@ -125,7 +204,7 @@ internal static class CoverLoadQueue
         }
     }
 
-    private static void WorkerLoop(Channel<CoverLoadRequest> channel)
+    private static void WorkerLoop(Channel<PendingCover> channel)
     {
         while (!_shutdownCts.IsCancellationRequested)
         {
@@ -141,21 +220,18 @@ internal static class CoverLoadQueue
         }
     }
 
-    private static void InnerLoop(Channel<CoverLoadRequest> channel)
+    private static void InnerLoop(Channel<PendingCover> channel)
     {
         var ct = _shutdownCts.Token;
         while (!ct.IsCancellationRequested)
         {
-            CoverLoadRequest req;
+            PendingCover req;
             try
             {
                 req = channel.Reader.ReadAsync(ct).AsTask().GetAwaiter().GetResult();
             }
             catch (OperationCanceledException) { return; }
             catch (ChannelClosedException) { return; }
-
-            // 注意: req.Token 固定为 CancellationToken.None (EnqueueAsync 不传入消费者 token)
-            // 因此此分支永不成立，已移除。若未来需要取消支持，应改为独立机制。
 
             try
             {
@@ -170,12 +246,13 @@ internal static class CoverLoadQueue
             }
             finally
             {
-                _pendingTasks.TryRemove(req.CacheKey, out _);
+                RemovePending(req);
+                req.Complete();
             }
         }
     }
 
-    private static async Task<DecodedCover?> LoadAndDecodeAsync(CoverLoadRequest req)
+    private static async Task<DecodedCover?> LoadAndDecodeAsync(PendingCover req)
     {
         req.Token.ThrowIfCancellationRequested();
 
@@ -388,7 +465,10 @@ internal static class CoverLoadQueue
                 result = source;
                 source = null;
             });
-            return result;
+            token.ThrowIfCancellationRequested();
+            var completed = result;
+            result = null;
+            return completed;
         }
         catch (OperationCanceledException) { return null; }
         catch (Exception ex)
@@ -399,12 +479,13 @@ internal static class CoverLoadQueue
         finally
         {
             source?.Dispose();
+            (result as IDisposable)?.Dispose();
         }
     }
 
     public static string CacheKey(Music music) =>
         string.IsNullOrEmpty(music.ImageHash)
-            ? string.Intern($"id:{music.Id}")
+            ? $"id:{music.Id}"
             : music.ImageHash;
 
     internal static string GetThumbCachePath(string imageHash, int coverSize)
@@ -421,10 +502,11 @@ internal static class CoverLoadQueue
         _shutdownCts.Cancel();
         _channel.Writer.TryComplete();
         _remoteChannel.Writer.TryComplete();
-        while (_remoteChannel.Reader.TryRead(out var request))
+        while (_channel.Reader.TryRead(out var request) || _remoteChannel.Reader.TryRead(out request))
         {
-            _pendingTasks.TryRemove(request.CacheKey, out _);
+            RemovePending(request);
             request.Tcs.TrySetCanceled();
+            request.Complete();
         }
 
         var t = timeout ?? TimeSpan.FromSeconds(3);
@@ -435,4 +517,8 @@ internal static class CoverLoadQueue
         }
         _workers.Clear();
     }
+
+    private static void RemovePending(PendingCover request) =>
+        ((ICollection<KeyValuePair<string, PendingCover>>)_pendingTasks)
+            .Remove(new KeyValuePair<string, PendingCover>(request.CacheKey, request));
 }

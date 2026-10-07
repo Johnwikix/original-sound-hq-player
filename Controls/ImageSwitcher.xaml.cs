@@ -93,8 +93,8 @@ namespace WinUIMusicPlayer.Controls
         {
             StopPendingWork(clearLastSource: true);
             _loadState.Reset();
-            AlbumArtImage.Source = null;
-            LastAlbumArtImage.Source = null;
+            ReplaceImageSource(AlbumArtImage, null);
+            ReplaceImageSource(LastAlbumArtImage, null);
         }
 
         private static void OnImageHashChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -142,60 +142,68 @@ namespace WinUIMusicPlayer.Controls
             var token = cts.Token;
 
             ImageSource? imageSource = null;
-
-            if (hasData)
+            try
             {
-                string rawPath = ToolUtils.FindRawCachePath(newHash!);
-                if (File.Exists(rawPath))
+                if (hasData)
                 {
-                    try
-                    {
-                        string coverPath = await Task.Run(
-                            () => PlaybackCoverImage.GetOrCreateAsync(rawPath, token), token);
-                        imageSource = await ImageHelper.DecodeFileToBitmapAsync(coverPath, token);
-                    }
-                    catch (OperationCanceledException) { return; }
-                    catch (Exception ex) { _logger.LogWarning(ex, "ImageSwitcher 展示缓存不可用，尝试原图"); }
-                    if (imageSource is null)
+                    string rawPath = ToolUtils.FindRawCachePath(newHash!);
+                    if (File.Exists(rawPath))
                     {
                         try
+                        {
+                            string coverPath = await Task.Run(
+                                () => PlaybackCoverImage.GetOrCreateAsync(rawPath, token), token);
+                            imageSource = await ImageHelper.DecodeFileToBitmapAsync(coverPath, token);
+                        }
+                        catch (OperationCanceledException) { throw; }
+                        catch (Exception ex) { _logger.LogWarning(ex, "ImageSwitcher 展示缓存不可用，尝试原图"); }
+                        if (imageSource is null)
                         {
                             imageSource = await ImageHelper.DecodeFileToBitmapAsync(
                                 rawPath, token, PlaybackCoverImage.MaxPixelSize);
                         }
-                        catch (OperationCanceledException) { return; }
                     }
                 }
+
+                token.ThrowIfCancellationRequested();
+
+                bool usesDefault = imageSource is null;
+                if (usesDefault)
+                    imageSource = await LoadDefaultCoverAsync(isDark, token);
+
+                token.ThrowIfCancellationRequested();
+                if (!_loadState.IsCurrent(version)) return;
+
+                switch (SwitchType)
+                {
+                    case ImageSwitchType.Crossfade:
+                        UpdateSourceCrossfade(imageSource);
+                        break;
+                    case ImageSwitchType.Slide:
+                        UpdateSourceSlide(imageSource);
+                        break;
+                    case ImageSwitchType.ScaleInOut:
+                        UpdateSourceScaleInOut(imageSource);
+                        break;
+                }
+                bool hasImage = imageSource is not null;
+                // The image is now owned by one of the two Image controls.
+                imageSource = null;
+                if (hasImage) _loadState.Commit(version, newHash, usesDefault, isDark);
+                else _loadState.Reset();
             }
-
-            if (token.IsCancellationRequested) return;
-
-            bool usesDefault = imageSource is null;
-            if (usesDefault)
+            catch (OperationCanceledException)
             {
-                imageSource = await LoadDefaultCoverAsync(isDark, token);
             }
-
-            if (token.IsCancellationRequested || !_loadState.IsCurrent(version)) return;
-
-            switch (SwitchType)
+            finally
             {
-                case ImageSwitchType.Crossfade:
-                    UpdateSourceCrossfade(imageSource);
-                    break;
-                case ImageSwitchType.Slide:
-                    UpdateSourceSlide(imageSource);
-                    break;
-                case ImageSwitchType.ScaleInOut:
-                    UpdateSourceScaleInOut(imageSource);
-                    break;
+                DisposeImageSource(imageSource);
             }
-            if (imageSource is not null) _loadState.Commit(version, newHash, usesDefault, isDark);
-            else _loadState.Reset();
         }
 
         private async Task<ImageSource?> LoadDefaultCoverAsync(bool isDark, CancellationToken token)
         {
+            BitmapImage? bitmap = null;
             try
             {
                 string assetName = isDark ? "default_cover_black.png" : "default_cover_white.png";
@@ -208,12 +216,20 @@ namespace WinUIMusicPlayer.Controls
 
                 if (token.IsCancellationRequested) return null;
 
-                var bitmap = new BitmapImage();
+                bitmap = new BitmapImage();
                 await bitmap.SetSourceAsync(stream);
-                return bitmap;
+                var result = bitmap;
+                bitmap = null;
+                return result;
+            }
+            catch (OperationCanceledException)
+            {
+                DisposeImageSource(bitmap);
+                return null;
             }
             catch (Exception ex)
             {
+                DisposeImageSource(bitmap);
                 _logger.LogError(ex, $"LoadDefaultCoverAsync 操作失败: {ex.Message}");
                 return null;
             }
@@ -221,8 +237,7 @@ namespace WinUIMusicPlayer.Controls
 
         private void UpdateSourceCrossfade(ImageSource? source)
         {
-            LastAlbumArtImage.Source = null;
-            LastAlbumArtImage.Source = AlbumArtImage.Source;
+            ReplaceImageSource(LastAlbumArtImage, AlbumArtImage.Source);
             LastAlbumArtImage.TranslationTransition = null;
             LastAlbumArtImage.OpacityTransition = null;
             LastAlbumArtImage.Translation = new();
@@ -234,7 +249,7 @@ namespace WinUIMusicPlayer.Controls
             AlbumArtImage.Translation = new();
             AlbumArtImage.Opacity = 0;
             AlbumArtImage.OpacityTransition = TransitionCache.Default;
-            AlbumArtImage.Source = source;
+            ReplaceImageSource(AlbumArtImage, source);
 
             LastAlbumArtImage.Opacity = 0;
             AlbumArtImage.Opacity = 1;
@@ -243,8 +258,7 @@ namespace WinUIMusicPlayer.Controls
 
         private void UpdateSourceSlide(ImageSource? source)
         {
-            LastAlbumArtImage.Source = null;
-            LastAlbumArtImage.Source = AlbumArtImage.Source;
+            ReplaceImageSource(LastAlbumArtImage, AlbumArtImage.Source);
             LastAlbumArtImage.TranslationTransition = null;
             LastAlbumArtImage.OpacityTransition = null;
             LastAlbumArtImage.Translation = new();
@@ -258,7 +272,7 @@ namespace WinUIMusicPlayer.Controls
             AlbumArtImage.Opacity = 0;
             AlbumArtImage.TranslationTransition = TransitionCache.DefaultVector3;
             AlbumArtImage.OpacityTransition = TransitionCache.Default;
-            AlbumArtImage.Source = source;
+            ReplaceImageSource(AlbumArtImage, source);
 
             LastAlbumArtImage.Opacity = 0;
             AlbumArtImage.Opacity = 1;
@@ -268,8 +282,7 @@ namespace WinUIMusicPlayer.Controls
         }
         private void UpdateSourceScaleInOut(ImageSource? source)
         {
-            LastAlbumArtImage.Source = null;
-            LastAlbumArtImage.Source = AlbumArtImage.Source;
+            ReplaceImageSource(LastAlbumArtImage, AlbumArtImage.Source);
             LastAlbumArtImage.ScaleTransition = null;
             LastAlbumArtImage.OpacityTransition = null;
             AlbumArtImage.ScaleTransition = null;
@@ -285,7 +298,7 @@ namespace WinUIMusicPlayer.Controls
             LastAlbumArtImage.Scale = new(1f, 1f, 1f);
             LastAlbumArtImage.Opacity = 1f;
 
-            AlbumArtImage.Source = source;
+            ReplaceImageSource(AlbumArtImage, source);
             AlbumArtImage.Scale = new(0.85f, 0.85f, 1f);
             AlbumArtImage.Opacity = 0f;
             LastAlbumArtImage.ScaleTransition = TransitionCache.DefaultVector3;
@@ -307,7 +320,7 @@ namespace WinUIMusicPlayer.Controls
             _cts = null;
             StopLastSourceClearTimer();
             if (clearLastSource)
-                LastAlbumArtImage.Source = null;
+                ReplaceImageSource(LastAlbumArtImage, null);
         }
 
         private void ScheduleLastSourceClear()
@@ -325,7 +338,7 @@ namespace WinUIMusicPlayer.Controls
         private void OnLastSourceClearTimerTick(DispatcherQueueTimer sender, object args)
         {
             StopLastSourceClearTimer();
-            LastAlbumArtImage.Source = null;
+            ReplaceImageSource(LastAlbumArtImage, null);
         }
 
         private void StopLastSourceClearTimer()
@@ -333,6 +346,30 @@ namespace WinUIMusicPlayer.Controls
             if (_lastSourceClearTimer is null) return;
             _lastSourceClearTimer.Stop();
             _lastSourceClearTimer.Tick -= OnLastSourceClearTimerTick;
+        }
+
+        private void ReplaceImageSource(ShadowImage image, ImageSource? source)
+        {
+            var previous = image.Source;
+            if (ReferenceEquals(previous, source)) return;
+
+            image.Source = null;
+            image.Source = source;
+
+            // A source can be temporarily shared by the two transition images.
+            // Release it only after neither control owns it anymore.
+            if (previous is not null
+                && !ReferenceEquals(previous, AlbumArtImage.Source)
+                && !ReferenceEquals(previous, LastAlbumArtImage.Source))
+            {
+                DisposeImageSource(previous);
+            }
+        }
+
+        private static void DisposeImageSource(ImageSource? source)
+        {
+            if (source is IDisposable disposable)
+                disposable.Dispose();
         }
     }
 

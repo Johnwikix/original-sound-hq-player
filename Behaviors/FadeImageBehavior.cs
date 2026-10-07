@@ -190,6 +190,7 @@ namespace WinUIMusicPlayer.Behaviors
 
         private async Task<ImageSource?> LoadDefaultCoverAsync(bool isDark, CancellationToken token)
         {
+            BitmapImage? bitmap = null;
             try
             {
                 string assetName = isDark ? "default_cover_black.png" : "default_cover_white.png";
@@ -199,13 +200,20 @@ namespace WinUIMusicPlayer.Behaviors
 
                 if (token.IsCancellationRequested) return null;
 
-                var bitmap = new BitmapImage();
+                bitmap = new BitmapImage();
                 await bitmap.SetSourceAsync(stream);
-                return bitmap;
+                var result = bitmap;
+                bitmap = null;
+                return result;
             }
-            catch (OperationCanceledException) { return null; }
+            catch (OperationCanceledException)
+            {
+                DisposeImageSource(bitmap);
+                return null;
+            }
             catch (Exception ex)
             {
+                DisposeImageSource(bitmap);
                 _logger.LogError(ex, $"LoadDefaultCoverAsync 加载默认封面失败: {ex.Message}");
                 return null;
             }
@@ -214,6 +222,7 @@ namespace WinUIMusicPlayer.Behaviors
         private static async Task<ImageSource?> LoadThumbFromCacheAsync(string cachePath, CancellationToken token)
         {
             byte[]? pixelRented = null;
+            SoftwareBitmapSource? source = null;
             var header = ArrayPool<byte>.Shared.Rent(54);
             try
             {
@@ -251,14 +260,17 @@ namespace WinUIMusicPlayer.Behaviors
                 using var softwareBitmap = new SoftwareBitmap(
                     BitmapPixelFormat.Bgra8, w, h, BitmapAlphaMode.Premultiplied);
                 softwareBitmap.CopyFromBuffer(pixelRented.AsBuffer(0, pixelBytes));
-                var source = new SoftwareBitmapSource();
+                source = new SoftwareBitmapSource();
                 await source.SetBitmapAsync(softwareBitmap);
-                return source;
+                var result = source;
+                source = null;
+                return result;
             }
             catch (OperationCanceledException) { return null; }
             catch { return null; }
             finally
             {
+                source?.Dispose();
                 if (pixelRented is not null)
                     ArrayPool<byte>.Shared.Return(pixelRented, clearArray: false);
             }

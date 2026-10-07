@@ -15,6 +15,15 @@ namespace WinUIMusicPlayer.Services;
 public sealed class CoverPresentationService(AppState state, ApplicationTasks tasks, SystemMediaControlsService media,
     WebDavLibraryService webDav, ILogger<CoverPresentationService> logger) : IDisposable
 {
+    private sealed class CoverFallbackHolder(byte[]? bytes)
+    {
+        private byte[]? _bytes = bytes;
+
+        public byte[]? Take() => Interlocked.Exchange(ref _bytes, null);
+
+        public void Clear() => Interlocked.Exchange(ref _bytes, null);
+    }
+
     private int _coverUpdateVersion, _defaultPaletteVersion;
     private bool _disposed, _started, _usesDefaultPalette;
     private CancellationTokenSource? _coverUpdateCts;
@@ -171,22 +180,38 @@ public sealed class CoverPresentationService(AppState state, ApplicationTasks ta
 
             // --- 阶段 D: 更新系统媒体控制 (SMTC) ---
             // 在 UI 线程提交；实际文件打开由媒体服务的后台任务处理。
-            App.MainWindow.DispatcherQueue.TryEnqueue(() =>
+            var fallbackHolder = new CoverFallbackHolder(mediaFallbackCover);
+            mediaFallbackCover = null;
+            var fallbackRegistration = token.Register(
+                static holder => ((CoverFallbackHolder)holder!).Clear(), fallbackHolder);
+            bool enqueued = App.MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
-                var fallbackCover = mediaFallbackCover;
-                mediaFallbackCover = null;
-                if (_disposed || state.Lifecycle.Phase == AppPhase.Stopping || token.IsCancellationRequested || version != Volatile.Read(ref _coverUpdateVersion) ||
-                    !ReferenceEquals(music, state.Playback.CurrentPlayingMusic)) return;
+                try
+                {
+                    var fallbackCover = fallbackHolder.Take();
+                    if (_disposed || state.Lifecycle.Phase == AppPhase.Stopping || token.IsCancellationRequested || version != Volatile.Read(ref _coverUpdateVersion) ||
+                        !ReferenceEquals(music, state.Playback.CurrentPlayingMusic)) return;
 
-                media.UpdateSystemMediaControlsState();
-                media.UpdateTimelineProperties(TimeSpan.Zero, music.Duration);
-                _ = media.UpdateMediaInfoFromFile(
-                    music.Title,
-                    music.Author,
-                    music.Album,
-                    mediaCoverPath,
-                    fallbackCover);
+                    media.UpdateSystemMediaControlsState();
+                    media.UpdateTimelineProperties(TimeSpan.Zero, music.Duration);
+                    _ = media.UpdateMediaInfoFromFile(
+                        music.Title,
+                        music.Author,
+                        music.Album,
+                        mediaCoverPath,
+                        fallbackCover);
+                }
+                finally
+                {
+                    fallbackHolder.Clear();
+                    fallbackRegistration.Dispose();
+                }
             });
+            if (!enqueued)
+            {
+                fallbackHolder.Clear();
+                fallbackRegistration.Dispose();
+            }
         }
         catch (OperationCanceledException)
         {
