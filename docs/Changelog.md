@@ -2,6 +2,11 @@
 
 新条目加在最上方。
 
+## 2026-10-07 修复播放会话与 ASIO 输出退役时序
+- `External/AudioPlayer/Playback/Session.cs`、`GaplessPreloader.cs`：会话清理等待解码线程完成后再继续无缝预载，避免旧会话资源与新会话重叠。
+- `External/AudioPlayer/Interop/AsioHost.cs`：ASIO 初始化或回调超时后转入后台退役，等待驱动安全返回再释放驱动、回调表和隐藏窗口。
+- `_tools/PlaybackSwitchRegression/Program.cs`、`ReviewFixTests.cs`：增加可单独运行的 ASIO 超时退役回归验证。
+
 ## 2026-10-06 修正深色主题封面按钮对比度
 - `Style/BtnStyle.xaml`：深色主题任务栏封面按钮改用深色悬停背景和白色前景，避免出现亮底暗图标。
 

@@ -35,6 +35,9 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     private int _closing;
     private int _renderUsers;
     private int _disposed;
+    private int _retirementStarted;
+    private int _resourcesReleased;
+    private Thread? _initWorker;
     private readonly OutputDrainTracker _drain = new();
     public long PendingAudioMs => (long)Math.Ceiling(_drain.PendingFrames * 1000.0 / Math.Max(1, _source.SampleRate));
     public bool IsDrained => Volatile.Read(ref _renderUsers) == 0 && _drain.IsDrained;
@@ -129,16 +132,19 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
             if (_driver == null) { Console.WriteLine("[asio] Create failed"); return false; }
             Console.WriteLine($"[asio] Create ok on STA");
             int initRet = -1;
-            var driver = _driver; // 固定本地引用：超时后字段被置 null，worker 仍持有原对象
+            var driver = _driver; // 固定本地引用：超时后退役线程仍等待该对象完成 Init
             var initWorker = new Thread(() => { initRet = driver!.Init(_hwnd); }, 3 * 1024 * 1024)
             { IsBackground = true, Name = "asio-init" };
+            _initWorker = initWorker;
             initWorker.Start();
             if (!initWorker.Join(3000))
             {
                 Console.WriteLine("[asio] Init timed out (驱动挂死或弹出模态框)");
-                // 墓园语义：worker 可能仍阻塞在驱动内部，Release 在途使用的 COM 对象会
-                // use-after-free（WASAPI _initTimedOut 同款）。只丢引用，泄漏给进程退出回收
-                _driver = null;
+                // worker 可能仍阻塞在驱动内部；移交后台退役，等待 Init 返回后再释放驱动。
+                Volatile.Write(ref _closing, 1);
+                Volatile.Write(ref _running, 0);
+                if (_active == this) Volatile.Write(ref _active, null);
+                BeginRetirement();
                 return false;
             }
             if (initRet == 0) { Console.WriteLine("[asio] Init failed"); return false; }
@@ -915,34 +921,58 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
         if (_active == this) Volatile.Write(ref _active, null);
         // 先拒绝新渲染，再等待已取得旧 host 引用的回调退出；不在驱动回调里 Stop/释放。
         // 超时不释放在途指针，避免驱动和渲染线程 use-after-free。
-        if (!SpinWait.SpinUntil(() => Volatile.Read(ref _renderUsers) == 0, 3000))
+        if (!SpinWait.SpinUntil(() => Volatile.Read(ref _renderUsers) == 0, 3000)
+            || _initWorker is { IsAlive: true })
         {
-            Console.WriteLine("[asio] callback drain timed out; retaining driver resources");
+            Console.WriteLine("[asio] shutdown timed out; resources moved to retirement");
+            BeginRetirement();
             return;
         }
-        if (_driver != null)
+        ReleaseResources();
+    }
+
+    private void BeginRetirement()
+    {
+        if (Interlocked.Exchange(ref _retirementStarted, 1) != 0) return;
+        new Thread(RetireResources) { IsBackground = true, Name = "asio-retire" }.Start();
+    }
+
+    private void RetireResources()
+    {
+        var initWorker = _initWorker;
+        if (initWorker is { IsAlive: true } && initWorker != Thread.CurrentThread)
+            initWorker.Join();
+        while (Volatile.Read(ref _renderUsers) != 0)
+            Thread.Sleep(10);
+        ReleaseResources();
+    }
+
+    private void ReleaseResources()
+    {
+        if (Interlocked.Exchange(ref _resourcesReleased, 1) != 0) return;
+        var driver = Interlocked.Exchange(ref _driver, null);
+        if (driver != null)
         {
             try
             {
-                if (_started) { try { _driver.Stop(); } catch { } _started = false; }
-                try { _driver.DisposeBuffers(); } catch { }
+                if (_started) { try { driver.Stop(); } catch { } _started = false; }
+                try { driver.DisposeBuffers(); } catch { }
                 if (_nativeDsdApplied)
                 {
                     byte* format = stackalloc byte[64];
                     ZeroMemory(format, 64);
                     *(int*)format = AsioConstants.KAsioPcmFormat;
-                    try { _driver.Future(AsioConstants.KAsioSetIoFormat, format); } catch { }
+                    try { driver.Future(AsioConstants.KAsioSetIoFormat, format); } catch { }
                 }
             }
             catch { }
-            _driver.Dispose();
-            _driver = null;
+            try { driver.Dispose(); } catch { }
         }
         if (_callbacksPtr != null) { NativeMemory.Free(_callbacksPtr); _callbacksPtr = null; }
-        if (_hwnd != IntPtr.Zero)
+        IntPtr hwnd = Interlocked.Exchange(ref _hwnd, IntPtr.Zero);
+        if (hwnd != IntPtr.Zero)
         {
-            Win32.PostMessageW(_hwnd, 0x0010 /*WM_CLOSE*/, 0, 0); // 窗口线程亲和：经消息泵销毁
-            _hwnd = IntPtr.Zero;
+            Win32.PostMessageW(hwnd, 0x0010 /*WM_CLOSE*/, 0, 0); // 窗口线程亲和：经消息泵销毁
         }
         _windowReady.Dispose();
     }

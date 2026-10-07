@@ -158,6 +158,7 @@ internal static unsafe partial class Program
         });
         Run("WASAPI: timed-out Initialize retires only after worker exits", CheckInitializeRetirement);
         Run("WASAPI: timed-out render retains client until thread exits", CheckRenderRetirement);
+        Run("ASIO: timed-out callback retires driver after callback exits", CheckAsioRetirement);
         Run("IPC: timeout preserves execution order and coalescing respects ordered barriers", CheckPipeOrdering);
         Run("IPC: cross-process confirmed roundtrip latency", BenchmarkConfirmedIpc);
     }
@@ -167,6 +168,8 @@ internal static unsafe partial class Program
     { ReviewInitializeContinue.Wait(); return 0; }
     [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
     private static int ReviewNativeCall(IntPtr self) { Interlocked.Increment(ref _reviewNativeCalls); return 0; }
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvStdcall)])]
+    private static uint ReviewAsioRelease(IntPtr self) { Interlocked.Increment(ref _reviewNativeCalls); return 1; }
 
     private static void CheckInitializeRetirement()
     {
@@ -202,6 +205,33 @@ internal static unsafe partial class Program
         try { output.Dispose(); Require(_reviewNativeCalls == 0, "client released before render exit"); }
         finally { release.Set(); render.Join(); }
         Require(SpinWait.SpinUntil(() => Volatile.Read(ref _reviewNativeCalls) == 2, 2000), "render retirement never completed");
+    }
+
+    private static void CheckAsioRetirement()
+    {
+        using var native = new NativeObject(24);
+        native.Table[2] = (void*)(delegate* unmanaged[Stdcall]<IntPtr, uint>)&ReviewAsioRelease;
+        native.Table[8] = native.Table[20] = (void*)(delegate* unmanaged[Stdcall]<IntPtr, int>)&ReviewNativeCall;
+        var driver = (AsioDriver)Activator.CreateInstance(typeof(AsioDriver), Private, null, [native.Pointer], null)!;
+        var output = new AsioOutput();
+        Set(output, "_driver", driver);
+        Set(output, "_started", true);
+        Set(output, "_renderUsers", 1);
+        _reviewNativeCalls = 0;
+        var dispose = Task.Run(output.Dispose);
+        try
+        {
+            Require(dispose.Wait(4000), "ASIO Dispose did not return after callback timeout");
+            Require(Volatile.Read(ref _reviewNativeCalls) == 0, "ASIO driver released before callback exit");
+            Set(output, "_renderUsers", 0);
+            Require(SpinWait.SpinUntil(() => Volatile.Read(ref _reviewNativeCalls) >= 3, 2000),
+                "ASIO resources were not retired after callback exit");
+        }
+        finally
+        {
+            Set(output, "_renderUsers", 0);
+            dispose.Wait(2000);
+        }
     }
 
     private static void CheckPipeOrdering()

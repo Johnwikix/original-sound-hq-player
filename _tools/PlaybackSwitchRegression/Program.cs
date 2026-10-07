@@ -42,6 +42,12 @@ internal static unsafe partial class Program
             RunPlaybackEffectsTests();
             return _failures == 0 ? 0 : 1;
         }
+        if (args.Length == 1 && args[0] == "--test-review-fixes")
+        {
+            FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
+            RunReviewFixTests(Directory.GetCurrentDirectory());
+            return _failures == 0 ? 0 : 1;
+        }
         if (args.Length == 1 && args[0] is "--test-network-asio" or "--test-nas-dsf")
         {
             FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;

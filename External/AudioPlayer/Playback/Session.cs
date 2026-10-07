@@ -44,6 +44,8 @@ internal sealed class Session : IRenderSource, IDisposable
     private long _decodeEpoch;
     private int _disposed;
     private readonly object _decodeEndGate = new();
+    private readonly TaskCompletionSource<object?> _decodeCompletion =
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     // 解码 scratch（按渲染种类在构造时分配实配，未用种类保持空数组：这些缓冲均超
     // 85KB 直接进 LOH，按需分配避免每会话 ~0.46MB 无谓流失）
@@ -338,6 +340,14 @@ internal sealed class Session : IRenderSource, IDisposable
         _pcm = null; _dsd = null;
     }
 
+    internal Task DecodeCompletion => _decodeCompletion.Task;
+
+    private void CompleteDecodeThread()
+    {
+        try { DisposeDecoder(); }
+        finally { _decodeCompletion.TrySetResult(null); }
+    }
+
     private bool Cancelled() => _cancelled;
 
     private bool WaitForSeekAfterEnd()
@@ -374,7 +384,7 @@ internal sealed class Session : IRenderSource, IDisposable
             }
         }
         catch (Exception ex) { if (!_cancelled) Volatile.Write(ref _decodeFailure, ex); _pcmRing?.MarkInputEnded(_decodeEpoch); }
-        finally { DisposeDecoder(); }
+        finally { CompleteDecodeThread(); }
     }
 
     private void DopDecodeProc()
@@ -419,7 +429,7 @@ internal sealed class Session : IRenderSource, IDisposable
             }
         }
         catch (Exception ex) { if (!_cancelled) Volatile.Write(ref _decodeFailure, ex); _dopRing?.MarkInputEnded(_decodeEpoch); }
-        finally { DisposeDecoder(); }
+        finally { CompleteDecodeThread(); }
     }
 
     /// <summary>把交织 DSD 字节（每帧每声道 1 字节）装配为 DoP uint 采样并推送。
@@ -475,7 +485,7 @@ internal sealed class Session : IRenderSource, IDisposable
             }
         }
         catch (Exception ex) { if (!_cancelled) Volatile.Write(ref _decodeFailure, ex); _dsdRing?.MarkInputEnded(_decodeEpoch); }
-        finally { DisposeDecoder(); }
+        finally { CompleteDecodeThread(); }
     }
 
     // ─────────────── IRenderSource（输出渲染线程调用） ───────────────
@@ -502,7 +512,7 @@ internal sealed class Session : IRenderSource, IDisposable
             Console.WriteLine($"[decode] E-AC-3 bitstream: {ex.Message}");
             Volatile.Write(ref _decodeFailure, ex); // Engine handles failure; never report natural EOF.
         }
-        finally { DisposeDecoder(); }
+        finally { CompleteDecodeThread(); }
     }
 
     public void FillIec61937(Span<byte> buffer, int frames) => _iecRing?.Render(buffer, frames);
@@ -562,7 +572,7 @@ internal sealed class Session : IRenderSource, IDisposable
         _dsdRing?.Dispose();
         _iecRing?.Dispose();
         Effects?.Dispose();
-        if (_thread == null) DisposeDecoder();
+        if (_thread == null || !_thread.IsAlive) CompleteDecodeThread();
         else if (!_thread.Join(1000))
             Console.WriteLine("[decode] shutdown pending; decoder thread retains resource ownership");
     }

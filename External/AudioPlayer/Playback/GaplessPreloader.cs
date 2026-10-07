@@ -74,7 +74,7 @@ internal sealed class GaplessPreloader(object gate,
         _worker = Task.Run(Run);
     }
 
-    private void Run()
+    private async Task Run()
     {
         while (true)
         {
@@ -97,12 +97,12 @@ internal sealed class GaplessPreloader(object gate,
                     _opening = cancellation;
                 }
             }
-            if (retired != null) DisposeSession(retired);
-            else Prepare(work!, cancellation!);
+            if (retired != null) await DisposeSessionAsync(retired).ConfigureAwait(false);
+            else await Prepare(work!, cancellation!).ConfigureAwait(false);
         }
     }
 
-    private void Prepare(Work work, CancellationTokenSource cancellation)
+    private async Task Prepare(Work work, CancellationTokenSource cancellation)
     {
         Session? session = null;
         try
@@ -128,7 +128,7 @@ internal sealed class GaplessPreloader(object gate,
         }
         finally
         {
-            DisposeSession(session);
+            await DisposeSessionAsync(session).ConfigureAwait(false);
             lock (gate)
             {
                 if (ReferenceEquals(_opening, cancellation)) _opening = null;
@@ -137,10 +137,13 @@ internal sealed class GaplessPreloader(object gate,
         }
     }
 
-    private static void DisposeSession(Session? session)
+    private static async Task DisposeSessionAsync(Session? session)
     {
-        try { session?.Dispose(); }
+        if (session == null) return;
+        try { session.Dispose(); }
         catch (Exception ex) { Console.WriteLine($"[gapless] cleanup failed: {ex.Message}"); }
+        try { await session.DecodeCompletion.ConfigureAwait(false); }
+        catch (Exception ex) { Console.WriteLine($"[gapless] decoder completion failed: {ex.Message}"); }
     }
 
     internal Task StopAsync()
