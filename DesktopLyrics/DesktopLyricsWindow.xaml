@@ -22,16 +22,13 @@
         <Grid
             x:Name="TaskbarLayoutRoot"
             HorizontalAlignment="Stretch"
-            VerticalAlignment="Stretch">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="Auto" />
-                <ColumnDefinition Width="*" />
-            </Grid.ColumnDefinitions>
+            VerticalAlignment="Stretch"
+            ColumnDefinitions="Auto,*">
             <!--  Keep this fixed media column aligned with TaskbarDesktopLyricsHost.MediaPanelWidth.  -->
             <Border
                 x:Name="TaskbarMediaPanel"
                 Grid.Column="0"
-                Width="280"
+                Width="265"
                 Margin="0,0,8,0"
                 Visibility="Collapsed">
                 <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6">
@@ -173,7 +170,7 @@
                         Grid.Column="2"
                         Width="40"
                         Height="32"
-                        Margin="2,0,0,0"
+                        Margin="0"
                         VerticalAlignment="Center"
                         IsHitTestVisible="False">
                         <Canvas
