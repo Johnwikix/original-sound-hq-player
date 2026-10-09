@@ -3,12 +3,10 @@ using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
-using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
-using Windows.Storage;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Utils;
 using WinUIMusicPlayer.Constants;
@@ -187,9 +185,10 @@ namespace WinUIMusicPlayer.Controls
                         break;
                 }
                 bool hasImage = imageSource is not null;
-                // The image is now owned by one of the two Image controls.
-                imageSource = null;
-                if (hasImage) _loadState.Commit(version, newHash, usesDefault, isDark);
+                // Transfer ownership only after the target control actually holds it.
+                if (IsSourceOwned(imageSource))
+                    imageSource = null;
+                if (hasImage && imageSource is null) _loadState.Commit(version, newHash, usesDefault, isDark);
                 else _loadState.Reset();
             }
             catch (OperationCanceledException)
@@ -197,42 +196,15 @@ namespace WinUIMusicPlayer.Controls
             }
             finally
             {
-                DisposeImageSource(imageSource);
+                if (!IsSourceOwned(imageSource))
+                    DisposeImageSource(imageSource);
             }
         }
 
         private async Task<ImageSource?> LoadDefaultCoverAsync(bool isDark, CancellationToken token)
         {
-            BitmapImage? bitmap = null;
-            try
-            {
-                string assetName = isDark ? "default_cover_black.png" : "default_cover_white.png";
-                var uri = new Uri($"ms-appx:///Assets/{assetName}");
-
-                if (token.IsCancellationRequested) return null;
-
-                var file = await StorageFile.GetFileFromApplicationUriAsync(uri);
-                using var stream = await file.OpenReadAsync();
-
-                if (token.IsCancellationRequested) return null;
-
-                bitmap = new BitmapImage();
-                await bitmap.SetSourceAsync(stream);
-                var result = bitmap;
-                bitmap = null;
-                return result;
-            }
-            catch (OperationCanceledException)
-            {
-                DisposeImageSource(bitmap);
-                return null;
-            }
-            catch (Exception ex)
-            {
-                DisposeImageSource(bitmap);
-                _logger.LogError(ex, $"LoadDefaultCoverAsync 操作失败: {ex.Message}");
-                return null;
-            }
+            string assetName = isDark ? "default_cover_black.png" : "default_cover_white.png";
+            return await ImageHelper.DecodeApplicationAssetAsync(assetName, token);
         }
 
         private void UpdateSourceCrossfade(ImageSource? source)
@@ -371,6 +343,11 @@ namespace WinUIMusicPlayer.Controls
             if (source is IDisposable disposable)
                 disposable.Dispose();
         }
+
+        private bool IsSourceOwned(ImageSource? source) =>
+            source is not null
+            && (ReferenceEquals(source, AlbumArtImage.Source)
+                || ReferenceEquals(source, LastAlbumArtImage.Source));
     }
 
     public enum ImageSwitchType : byte

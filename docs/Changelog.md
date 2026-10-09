@@ -2,6 +2,12 @@
 
 新条目加在最上方。
 
+## 2026-10-09 修复播放封面原生资源持续增长
+- `Helper/ImageHelper.cs`：文件、字节和默认封面统一解码为可显式释放的 `SoftwareBitmapSource`，取消或失败时释放临时 `SoftwareBitmap`。
+- `Controls/ImageSwitcher.xaml.cs`、`Behaviors/FadeImageBehavior.cs`、`Behaviors/AlbumCoverBehavior.cs`：补齐切换、取消、卸载和异常路径的图片源所有权转移与释放。
+- `Utils/CoverLoadQueue.cs`：修复创建者取消时残留 waiter 阻止共享请求取消的问题，并释放竞争失败的请求。
+- `_tools/SmtcCoverUiRegression/Program.cs`：增加图片源类型、快速切歌、卸载和弱引用回收回归检查。
+
 ## 2026-10-08 修复长时间播放时封面资源持续增长
 - `Controls/ImageSwitcher.xaml.cs`：切换、取消、卸载和动画结束时显式释放不再被控件持有的封面图片源。
 - `Helper/ImageHelper.cs`、`Behaviors/FadeImageBehavior.cs`：解码失败或取消时清理临时图片源引用，释放可关闭的 WinRT 图片源。

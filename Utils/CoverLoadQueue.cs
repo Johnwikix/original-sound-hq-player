@@ -92,6 +92,13 @@ internal static class CoverLoadQueue
             DisposeIfComplete();
         }
 
+        public void Abandon()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+            try { _workCts.Cancel(); }
+            finally { _workCts.Dispose(); }
+        }
+
         private void DisposeIfComplete()
         {
             if (Volatile.Read(ref _completed) != 0 && Volatile.Read(ref _waiters) == 0
@@ -124,13 +131,18 @@ internal static class CoverLoadQueue
             // 每个消费者随后创建并拥有自己的 WinRT source，可独立 Dispose。
             var candidate = new PendingCover(music, cacheKey, CoverSize);
 
-            if (!_pendingTasks.TryAdd(cacheKey, candidate)) continue;
+            if (!_pendingTasks.TryAdd(cacheKey, candidate))
+            {
+                candidate.Abandon();
+                continue;
+            }
             pending = candidate;
             isNew = true;
             break;
         }
 
         pending.AddWaiter();
+        bool waiterReleased = false;
         try
         {
             if (isNew)
@@ -147,7 +159,18 @@ internal static class CoverLoadQueue
                     // enqueueing it without the canceled consumer's token.
                     if (pending.WaiterCount > 1)
                     {
-                        try { await channel.Writer.WriteAsync(pending, CancellationToken.None); }
+                        // This caller no longer waits for the shared result. Drop
+                        // its waiter count before the fallback write so the last
+                        // real consumer can cancel both the work and the write.
+                        pending.ReleaseWaiter();
+                        waiterReleased = true;
+                        try { await channel.Writer.WriteAsync(pending, pending.Token); }
+                        catch (OperationCanceledException)
+                        {
+                            RemovePending(pending);
+                            pending.Tcs.TrySetCanceled();
+                            pending.Complete();
+                        }
                         catch (ChannelClosedException)
                         {
                             RemovePending(pending);
@@ -177,7 +200,8 @@ internal static class CoverLoadQueue
         }
         finally
         {
-            pending.ReleaseWaiter();
+            if (!waiterReleased)
+                pending.ReleaseWaiter();
         }
     }
 

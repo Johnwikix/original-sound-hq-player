@@ -3,7 +3,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.UI.Dispatching;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+using System.IO;
+using System.Runtime.InteropServices.WindowsRuntime;
+using Windows.Graphics.Imaging;
 using WinUIMusicPlayer.Controls;
 using WinUIMusicPlayer.Helper;
 
@@ -39,16 +43,38 @@ namespace WinUIMusicPlayer
             string result;
             try
             {
+                var probe = await ImageHelper.DecodeFileToBitmapAsync(
+                    Utils.ToolUtils.FindRawCachePath("large"),
+                    CancellationToken.None,
+                    PlaybackCoverImage.MaxPixelSize);
+                if (probe is not SoftwareBitmapSource probeSource)
+                    throw new Exception("ImageHelper 未返回 SoftwareBitmapSource");
+                probeSource.Dispose();
+
                 var control = new ImageSwitcher { IsActive = false, Width = 300, Height = 300 };
                 host.Children.Add(control);
                 await WaitAsync(() => control.IsLoaded);
-                control.ImageHash = "large";
+                control.ImageHash = "missing";
                 control.IsActive = true;
-                await WaitAsync(() => Current(control) is { PixelWidth: 1536, PixelHeight: 1536 });
+                await WaitAsync(() => IsSoftwareSource(Current(control)));
+                var defaultSource = Current(control)
+                    ?? throw new Exception("默认封面未发布");
+                control.ImageHash = "large";
+                await WaitAsync(() => IsSoftwareSource(Current(control)) &&
+                    !ReferenceEquals(Current(control), defaultSource));
+                defaultSource = null;
+                var largeSource = Current(control)
+                    ?? throw new Exception("大图封面未发布");
                 control.ImageHash = "portrait";
-                await WaitAsync(() => Current(control) is { PixelWidth: 512, PixelHeight: 1536 });
+                await WaitAsync(() => IsSoftwareSource(Current(control)) &&
+                    !ReferenceEquals(Current(control), largeSource));
+                var portraitSource = Current(control)
+                    ?? throw new Exception("纵向封面未发布");
+                largeSource = null;
                 control.ImageHash = "small";
-                await WaitAsync(() => Current(control) is { PixelWidth: 320, PixelHeight: 200 });
+                await WaitAsync(() => IsSoftwareSource(Current(control)) &&
+                    !ReferenceEquals(Current(control), portraitSource));
+                portraitSource = null;
 
                 await VerifyCacheFallbackAsync(control, "portrait", 800, 2400);
                 await VerifyCacheFallbackAsync(control, "large", 3072, 3072);
@@ -69,33 +95,53 @@ namespace WinUIMusicPlayer
                 control.ImageHash = "large";
                 control.ImageHash = "portrait";
                 control.ImageHash = "small";
-                await WaitAsync(() => Current(control) is { PixelWidth: 320, PixelHeight: 200 });
+                var rapidPrevious = Current(control);
+                await WaitAsync(() => IsSoftwareSource(Current(control)) &&
+                    !ReferenceEquals(Current(control), rapidPrevious));
+                var rapidCurrent = Current(control);
+                rapidPrevious = null;
                 await Task.Delay(500);
-                if (Current(control) is not { PixelWidth: 320, PixelHeight: 200 })
+                if (!IsSoftwareSource(Current(control)) ||
+                    !ReferenceEquals(Current(control), rapidCurrent))
                     throw new Exception("迟到的大图覆盖小图");
                 control.IsActive = false;
                 control.ImageHash = "large";
                 await Task.Delay(100);
-                if (Current(control) is not { PixelWidth: 320, PixelHeight: 200 })
+                if (!IsSoftwareSource(Current(control)))
                     throw new Exception("隐藏详情页仍加载新图");
+                var previousSource = Current(control)
+                    ?? throw new Exception("隐藏详情页没有保留当前封面");
                 control.IsActive = true;
-                await WaitAsync(() => Current(control) is { PixelWidth: 1536, PixelHeight: 1536 });
+                await WaitAsync(() => IsSoftwareSource(Current(control)) &&
+                    !ReferenceEquals(Current(control), previousSource));
                 await Task.Delay(500);
                 if (((ShadowImage)control.FindName("LastAlbumArtImage")).Source is not null)
                     throw new Exception("动画结束后仍保留旧图片");
+                var previousWeak = new WeakReference(previousSource);
+                previousSource = null;
+                rapidCurrent = null;
+                await AssertSourceCollectedAsync(previousWeak, "切歌后的旧封面");
+                var unloadedSource = Current(control)
+                    ?? throw new Exception("卸载前没有当前封面");
+                var unloadedWeak = new WeakReference(unloadedSource);
+                unloadedSource = null;
                 host.Children.Remove(control);
                 // IsLoaded 在 Unloaded 回调之前即可变为 false，等待实际资源清理完成。
                 await WaitAsync(() => !control.IsLoaded && Current(control) is null);
+                await AssertSourceCollectedAsync(unloadedWeak, "卸载后的当前封面");
                 await CoverPipelineRegression.RunAsync();
-                result = "PASS: 真实 ImageSwitcher 与 CoverPresentation/SMTC 缓存失败兜底、解码限制、连续切歌、取消、退出与句柄释放";
+                result = "PASS: 真实 ImageSwitcher 与 CoverPresentation/SMTC 缓存失败兜底、SoftwareBitmapSource 类型与回收、连续切歌、取消、退出与句柄释放";
             }
             catch (Exception ex) { result = "FAIL: " + ex; }
             File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), result);
             window.Close();
             Exit();
         }
-        private static BitmapImage? Current(ImageSwitcher control)
-            => ((ShadowImage)control.FindName("AlbumArtImage")).Source as BitmapImage;
+        private static ImageSource? Current(ImageSwitcher control)
+            => ((ShadowImage)control.FindName("AlbumArtImage")).Source;
+
+        private static bool IsSoftwareSource(ImageSource? source)
+            => source is SoftwareBitmapSource;
 
         private static async Task VerifyCacheFallbackAsync(ImageSwitcher control, string source, int width, int height)
         {
@@ -114,17 +160,12 @@ namespace WinUIMusicPlayer
             }
             try
             {
+                await VerifyFixtureDimensionsAsync(Utils.ToolUtils.FindRawCachePath(source), width, height);
                 var previous = Current(control);
                 control.ImageHash = hash;
                 await WaitAsync(() => Current(control) is { } image &&
                     !ReferenceEquals(image, previous) &&
-                    (width >= height ? image.DecodePixelWidth == 1536 : image.DecodePixelHeight == 1536));
-                var decoded = Current(control)!;
-                // WinUI 的 PixelWidth/Height 仍报告原始尺寸；解码限制由 DecodePixel* 指定。
-                if (decoded.PixelWidth != width || decoded.PixelHeight != height ||
-                    decoded.DecodePixelType != DecodePixelType.Physical ||
-                    (width >= height ? decoded.DecodePixelHeight : decoded.DecodePixelWidth) != 0)
-                    throw new Exception($"{source} 原图兜底尺寸/方向不符: {decoded.PixelWidth}x{decoded.PixelHeight}");
+                    IsSoftwareSource(image));
             }
             finally
             {
@@ -132,6 +173,31 @@ namespace WinUIMusicPlayer
                 if (source == "portrait") Directory.Delete(display);
                 else File.Delete(display);
             }
+        }
+
+        private static async Task VerifyFixtureDimensionsAsync(string path, int width, int height)
+        {
+            await using var file = new FileStream(
+                path, FileMode.Open, FileAccess.Read, FileShare.Read,
+                bufferSize: 64 * 1024, useAsync: true);
+            using var stream = file.AsRandomAccessStream();
+            var decoder = await BitmapDecoder.CreateAsync(stream);
+            if (decoder.OrientedPixelWidth != width || decoder.OrientedPixelHeight != height)
+                throw new Exception($"测试封面尺寸不符: {decoder.OrientedPixelWidth}x{decoder.OrientedPixelHeight}，期望 {width}x{height}");
+        }
+
+        private static async Task AssertSourceCollectedAsync(WeakReference source, string description)
+        {
+            var timeout = DateTime.UtcNow.AddSeconds(2);
+            while (source.IsAlive && DateTime.UtcNow < timeout)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+                await Task.Delay(20);
+            }
+            if (source.IsAlive)
+                throw new Exception($"{description} 清空后仍被 WinUI 引用");
         }
 
         private static async Task WaitAsync(Func<bool> predicate)
