@@ -78,6 +78,7 @@ namespace WinUIMusicPlayer
 
                 await VerifyCacheFallbackAsync(control, "portrait", 800, 2400);
                 await VerifyCacheFallbackAsync(control, "large", 3072, 3072);
+                await VerifyWidthLimitDecodeAsync();
                 await VerifyCacheFallbackAsync(control, "oriented", 2400, 800);
 
                 using (var cancelled = new CancellationTokenSource())
@@ -130,7 +131,7 @@ namespace WinUIMusicPlayer
                 await WaitAsync(() => !control.IsLoaded && Current(control) is null);
                 await AssertSourceCollectedAsync(unloadedWeak, "卸载后的当前封面");
                 await CoverPipelineRegression.RunAsync();
-                result = "PASS: 真实 ImageSwitcher 与 CoverPresentation/SMTC 缓存失败兜底、SoftwareBitmapSource 类型与回收、连续切歌、取消、退出与句柄释放";
+                result = "PASS: 真实 ImageSwitcher 与 CoverPresentation/SMTC 缓存失败兜底、限尺寸解码、SoftwareBitmapSource 类型与回收、连续切歌、取消、退出与句柄释放";
             }
             catch (Exception ex) { result = "FAIL: " + ex; }
             File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), result);
@@ -161,6 +162,7 @@ namespace WinUIMusicPlayer
             try
             {
                 await VerifyFixtureDimensionsAsync(Utils.ToolUtils.FindRawCachePath(source), width, height);
+                await VerifyFallbackDecodeSizeAsync(source, width, height);
                 var previous = Current(control);
                 control.ImageHash = hash;
                 await WaitAsync(() => Current(control) is { } image &&
@@ -184,6 +186,71 @@ namespace WinUIMusicPlayer
             var decoder = await BitmapDecoder.CreateAsync(stream);
             if (decoder.OrientedPixelWidth != width || decoder.OrientedPixelHeight != height)
                 throw new Exception($"测试封面尺寸不符: {decoder.OrientedPixelWidth}x{decoder.OrientedPixelHeight}，期望 {width}x{height}");
+        }
+
+        // 生产原图兜底走最长边 MaxPixelSize 限制（ImageHelper.CreateLongestSideTransform）。
+        // WIC 在未旋转的原始像素上应用 Scaled*，EXIF 旋转在其后应用，
+        // 期望值按同一语义独立重算，防止缩放逻辑与旋转组合回归。
+        private static async Task VerifyFallbackDecodeSizeAsync(string source, int width, int height)
+        {
+            await using var file = new FileStream(
+                Utils.ToolUtils.FindRawCachePath(source), FileMode.Open, FileAccess.Read, FileShare.Read,
+                bufferSize: 64 * 1024, useAsync: true);
+            using var stream = file.AsRandomAccessStream();
+            var decoder = await BitmapDecoder.CreateAsync(stream);
+
+            uint rawW = decoder.PixelWidth, rawH = decoder.PixelHeight;
+            if (decoder.OrientedPixelWidth != width || decoder.OrientedPixelHeight != height)
+                throw new Exception($"{source} 测试封面尺寸不符: {decoder.OrientedPixelWidth}x{decoder.OrientedPixelHeight}，期望 {width}x{height}");
+
+            uint max = PlaybackCoverImage.MaxPixelSize;
+            uint scaledW = rawW, scaledH = rawH;
+            if (Math.Max(rawW, rawH) > max)
+            {
+                if (rawW >= rawH)
+                {
+                    scaledW = max;
+                    scaledH = Math.Max(1u, (uint)Math.Round((double)max * rawH / rawW));
+                }
+                else
+                {
+                    scaledH = max;
+                    scaledW = Math.Max(1u, (uint)Math.Round((double)max * rawW / rawH));
+                }
+            }
+            bool rotated = rawW != rawH && decoder.OrientedPixelWidth == rawH;
+            uint expectedW = rotated ? scaledH : scaledW;
+            uint expectedH = rotated ? scaledW : scaledH;
+
+            var transform = ImageHelper.CreateLongestSideTransform(rawW, rawH, max);
+            using var bitmap = await decoder.GetSoftwareBitmapAsync(
+                BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied, transform,
+                ExifOrientationMode.RespectExifOrientation, ColorManagementMode.DoNotColorManage);
+            if (bitmap.PixelWidth != expectedW || bitmap.PixelHeight != expectedH)
+                throw new Exception($"{source} 限尺寸解码输出 {bitmap.PixelWidth}x{bitmap.PixelHeight}，期望 {expectedW}x{expectedH}");
+        }
+
+        // FadeImageBehavior 原图兜底走固定宽解码（ImageHelper.CreateWidthLimitTransform），
+        // 与缩略图像素缓存同语义；窄于目标宽的图不上采样。
+        private static async Task VerifyWidthLimitDecodeAsync()
+        {
+            var portrait = ImageHelper.CreateWidthLimitTransform(800, 2400, 150);
+            if (portrait.ScaledWidth != 150 || portrait.ScaledHeight != 450)
+                throw new Exception($"纵向封面固定宽变换 {portrait.ScaledWidth}x{portrait.ScaledHeight}，期望 150x450");
+            var narrow = ImageHelper.CreateWidthLimitTransform(100, 200, 150);
+            if (narrow.ScaledWidth != 0 || narrow.ScaledHeight != 0)
+                throw new Exception("窄于目标宽的图不应被上采样");
+
+            await using var file = new FileStream(
+                Utils.ToolUtils.FindRawCachePath("portrait"), FileMode.Open, FileAccess.Read, FileShare.Read,
+                bufferSize: 64 * 1024, useAsync: true);
+            using var stream = file.AsRandomAccessStream();
+            var decoder = await BitmapDecoder.CreateAsync(stream);
+            using var bitmap = await decoder.GetSoftwareBitmapAsync(
+                BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied, portrait,
+                ExifOrientationMode.RespectExifOrientation, ColorManagementMode.DoNotColorManage);
+            if (bitmap.PixelWidth != 150 || bitmap.PixelHeight != 450)
+                throw new Exception($"纵向封面固定宽解码 {bitmap.PixelWidth}x{bitmap.PixelHeight}，期望 150x450");
         }
 
         private static async Task AssertSourceCollectedAsync(WeakReference source, string description)

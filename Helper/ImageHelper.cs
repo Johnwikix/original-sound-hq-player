@@ -38,9 +38,9 @@ namespace WinUIMusicPlayer.Helper
                 token.ThrowIfCancellationRequested();
                 var decoder = await BitmapDecoder.CreateAsync(stream);
                 token.ThrowIfCancellationRequested();
-                var transform = CreateDecodeTransform(
-                    decoder.OrientedPixelWidth,
-                    decoder.OrientedPixelHeight,
+                var transform = CreateLongestSideTransform(
+                    decoder.PixelWidth,
+                    decoder.PixelHeight,
                     maxPixelSize);
                 bitmap = await decoder.GetSoftwareBitmapAsync(
                     BitmapPixelFormat.Bgra8,
@@ -82,9 +82,9 @@ namespace WinUIMusicPlayer.Helper
                 token.ThrowIfCancellationRequested();
                 var decoder = await BitmapDecoder.CreateAsync(stream);
                 token.ThrowIfCancellationRequested();
-                var transform = CreateDecodeTransform(
-                    decoder.OrientedPixelWidth,
-                    decoder.OrientedPixelHeight,
+                var transform = CreateWidthLimitTransform(
+                    decoder.PixelWidth,
+                    decoder.PixelHeight,
                     decodePixelWidth > 0 ? (uint)decodePixelWidth : 0);
                 bitmap = await decoder.GetSoftwareBitmapAsync(
                     BitmapPixelFormat.Bgra8,
@@ -99,7 +99,7 @@ namespace WinUIMusicPlayer.Helper
             }
             catch (OperationCanceledException)
             {
-                return null;
+                throw;
             }
             catch (Exception ex)
             {
@@ -142,7 +142,7 @@ namespace WinUIMusicPlayer.Helper
             }
             catch (OperationCanceledException)
             {
-                return null;
+                throw;
             }
             catch (Exception ex)
             {
@@ -166,22 +166,51 @@ namespace WinUIMusicPlayer.Helper
                 ColorManagementMode.DoNotColorManage);
         }
 
-        private static BitmapTransform CreateDecodeTransform(
-            uint orientedWidth, uint orientedHeight, uint maxPixelSize)
+        // WIC 语义：ScaledWidth/Height 作用于未旋转的原始像素，EXIF 旋转在其后应用
+        // （与 PlaybackCoverImage 展示缓存一致）。传入原始宽高做等比缩放，
+        // 旋转类 EXIF 的图不会被非等比拉伸；宽高都显式给出，不依赖单侧 Scaled* 的默认行为。
+        internal static BitmapTransform CreateLongestSideTransform(
+            uint rawWidth, uint rawHeight, uint maxPixelSize)
         {
             var transform = new BitmapTransform
             {
                 InterpolationMode = BitmapInterpolationMode.Fant
             };
-            if (maxPixelSize > 0 && Math.Max(orientedWidth, orientedHeight) > maxPixelSize)
+            if (maxPixelSize > 0 && Math.Max(rawWidth, rawHeight) > maxPixelSize)
             {
-                if (orientedWidth >= orientedHeight)
+                if (rawWidth >= rawHeight)
+                {
                     transform.ScaledWidth = maxPixelSize;
+                    transform.ScaledHeight = ScaledDimension(maxPixelSize, rawWidth, rawHeight);
+                }
                 else
+                {
                     transform.ScaledHeight = maxPixelSize;
+                    transform.ScaledWidth = ScaledDimension(maxPixelSize, rawHeight, rawWidth);
+                }
             }
             return transform;
         }
+
+        // 目标宽解码，与缩略图像素缓存（固定宽 CoverSize）保持同一语义；窄图不上采样。
+        // 同样按原始宽高计算，见 CreateLongestSideTransform 的 WIC 语义说明。
+        internal static BitmapTransform CreateWidthLimitTransform(
+            uint rawWidth, uint rawHeight, uint targetWidth)
+        {
+            var transform = new BitmapTransform
+            {
+                InterpolationMode = BitmapInterpolationMode.Fant
+            };
+            if (targetWidth > 0 && rawWidth > targetWidth)
+            {
+                transform.ScaledWidth = targetWidth;
+                transform.ScaledHeight = ScaledDimension(targetWidth, rawWidth, rawHeight);
+            }
+            return transform;
+        }
+
+        private static uint ScaledDimension(uint target, uint scaleBase, uint other)
+            => Math.Max(1u, (uint)Math.Round((double)target * other / scaleBase));
 
         private static async Task<ImageSource?> CreateSoftwareBitmapSourceAsync(
             SoftwareBitmap bitmap, CancellationToken token)
