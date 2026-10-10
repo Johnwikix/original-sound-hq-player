@@ -1,7 +1,7 @@
 param(
     [Parameter(Mandatory)][string]$Path,
     [ValidateRange(8000, 768000)][int]$SampleRate = 48000,
-    [ValidateRange(1, 180)][int]$Seconds = 180
+    [ValidateRange(1, 3600)][int]$Seconds = 180
 )
 
 # One reusable second of stereo float PCM; no third-party audio tools required.
@@ -13,7 +13,9 @@ for ($frame = 0; $frame -lt $SampleRate; $frame++) {
 }
 $block = [byte[]]::new($samples.Length * 4)
 [Buffer]::BlockCopy($samples, 0, $block, 0, $block.Length)
-$bytes = [int]($block.Length * $Seconds)
+$bytes = [long]$block.Length * $Seconds
+if ($bytes -gt [int]::MaxValue - 36) { throw 'Fixture exceeds the supported RIFF size; reduce sample rate or duration.' }
+$bytes = [int]$bytes
 $writer = [IO.BinaryWriter]::new([IO.File]::Create($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path)))
 try {
     $writer.Write([Text.Encoding]::ASCII.GetBytes('RIFF'))

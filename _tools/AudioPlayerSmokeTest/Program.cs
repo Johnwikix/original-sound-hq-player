@@ -198,20 +198,68 @@ if (args.Contains("--memory"))
             if (Send(CommandId.QueueNext, request.Write(), out _) != MessageTypeId.Success)
                 throw new InvalidOperationException("Memory scenario preload rejected");
         }
-        for (int second = 0; second < runSeconds; second++)
+        if (!SpinWait.SpinUntil(() => states.TryGetProgress(out var p) && p.Playing && p.CurrentMs > 100, 5000))
+            throw new InvalidOperationException("Memory scenario did not start rendering");
+        Console.WriteLine("[memory-phase] measuring");
+        if (scenario == "trackswitch")
         {
-            if (scenario == "switch") UpdateMemoryDsp(settings with { PlaybackRate = second % 2 == 0 ? 1.5 : 1 });
-            Thread.Sleep(1000);
-            SampleProcess("playing");
+            int ReadPositiveOption(string option, int fallback)
+            {
+                string? value = args.FirstOrDefault(a => a.StartsWith(option, StringComparison.Ordinal))?[option.Length..];
+                int result = value == null ? fallback : int.Parse(value, System.Globalization.CultureInfo.InvariantCulture);
+                if (result <= 0) throw new ArgumentOutOfRangeException(option);
+                return result;
+            }
+            int switches = ReadPositiveOption("--switch-count=", runSeconds);
+            int interval = ReadPositiveOption("--switch-interval-ms=", 1000);
+            string next = Path.GetFullPath(args.FirstOrDefault(a => a.StartsWith("--next="))?[7..] ?? mediaPath);
+            byte[] switchPayload = new byte[BinarySerializer.PlayRequestSize];
+            for (int index = 0; index < switches; index++)
+            {
+                states.TryGetProgress(out var before);
+                var clock = System.Diagnostics.Stopwatch.StartNew();
+                BinarySerializer.WritePlayRequest(switchPayload, new PlayRequest { Url = index % 2 == 0 ? next : mediaPath });
+                if (Send(CommandId.Play, switchPayload, out _) != MessageTypeId.Success)
+                    throw new InvalidOperationException($"Track switch {index + 1} rejected");
+                if (!SpinWait.SpinUntil(() => states.TryGetProgress(out var p) && p.Epoch != before.Epoch
+                    && p.Playing && p.CurrentMs > 100, 5000))
+                    throw new InvalidOperationException($"Track switch {index + 1} did not advance a new session");
+                int remaining = interval - (int)Math.Min(int.MaxValue, clock.ElapsedMilliseconds);
+                if (remaining > 0) Thread.Sleep(remaining);
+                if (!states.TryGetProgress(out var current) || !current.Playing || current.CurrentMs <= 100 || playbackEnds != 0)
+                    throw new InvalidOperationException($"Track switch {index + 1} stopped prematurely");
+                Console.WriteLine($"[memory-switch] {index + 1},{current.Epoch},{current.CurrentMs},{current.TotalMs}");
+                SampleProcess("playing");
+            }
         }
+        else
+        {
+            long previousPosition = -1;
+            for (int second = 0; second < runSeconds; second++)
+            {
+                if (scenario == "switch") UpdateMemoryDsp(settings with { PlaybackRate = second % 2 == 0 ? 1.5 : 1 });
+                Thread.Sleep(1000);
+                if (scenario == "baseline")
+                {
+                    if (!states.TryGetProgress(out var current) || !current.Playing || current.CurrentMs <= previousPosition || playbackEnds != 0)
+                        throw new InvalidOperationException("Continuous playback stopped advancing");
+                    previousPosition = current.CurrentMs;
+                }
+                SampleProcess("playing");
+            }
+        }
+        Console.WriteLine("[smoke] PASS: memory scenario rendered throughout the measurement");
         Send(CommandId.MusicEnd, ReadOnlySpan<byte>.Empty, out _);
         Console.WriteLine("[memory-phase] stopped");
         Thread.Sleep(2000);
         SampleProcess("stopped");
-        using var collect = EventWaitHandle.OpenExisting("Local\\AudioPlayerMemory-" + Environment.GetEnvironmentVariable("ORIGINALSOUND_IPC_SCOPE"));
-        collect.Set();
-        Thread.Sleep(2500);
-        SampleProcess("after-gc");
+        if (!args.Contains("--no-collect"))
+        {
+            using var collect = EventWaitHandle.OpenExisting("Local\\AudioPlayerMemory-" + Environment.GetEnvironmentVariable("ORIGINALSOUND_IPC_SCOPE"));
+            collect.Set();
+            Thread.Sleep(2500);
+            SampleProcess("after-gc");
+        }
         return 0;
     }
     finally { StopPlayer(); }

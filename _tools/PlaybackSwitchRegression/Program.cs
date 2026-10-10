@@ -55,6 +55,12 @@ internal static unsafe partial class Program
             else Run("real NAS DSF bridge seek and cover", CheckNasDsf);
             return _failures == 0 ? 0 : 1;
         }
+        if (args.Length == 1 && args[0] == "--test-audio-memory")
+        {
+            FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
+            RunAudioMemoryTests();
+            return _failures == 0 ? 0 : 1;
+        }
         if (args.Length == 1 && args[0] == "--test-network-dsf")
         {
             FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
@@ -135,6 +141,7 @@ internal static unsafe partial class Program
         RunCurveTests();
         RunDspNotificationTests();
         RunFftTests();
+        RunAudioMemoryTests();
         RunReviewFixTests(root);
         RunWasapiStallTests();
         foreach (string mode in new[] { "ASIO", "WasapiExclusivePush", "WasapiExclusiveEvent" })
@@ -189,6 +196,7 @@ internal static unsafe partial class Program
         engine.IsDopEnabled = true;
         engine.DsdPcmFreq = 88200;
         engine.Latency = 300;
+        Set(engine, "_fftAnalyzer", new FftAnalyzer(static _ => { }));
         Set(engine, "_deviceCorrections", new BassPlayerIpc.Shared.DeviceCorrections());
         engine.BassOutputDeviceId = -1;
         SetPublicArray(engine, "EqGains", new float[10]);

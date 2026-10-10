@@ -366,14 +366,23 @@ internal sealed class WasapiDeviceList
         return list;
     }
 
-    public static string? GetFriendlyName(IMMDevice device)
+    public static unsafe string? GetFriendlyName(IMMDevice device)
     {
         try
         {
             if (device.OpenPropertyStore(0 /* STGM_READ */, out var store) != 0) return null;
             var key = WasapiTypes.PkeyDeviceFriendlyName;
-            store.GetValue(ref key, out var value);
-            return value.AsString();
+            PropVariant value = default;
+            try
+            {
+                store.GetValue(ref key, out value);
+                return value.AsString();
+            }
+            finally
+            {
+                // AsString copies the LPWSTR; the property store's native value is still ours to release.
+                Win32.PropVariantClear((IntPtr)(&value));
+            }
         }
         catch { return null; }
     }

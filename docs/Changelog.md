@@ -2,6 +2,16 @@
 
 新条目加在最上方。
 
+## 2026-10-11 保留播放资源修复并恢复托管 PCM 环
+
+- `External/AudioPlayer/Interop/WasapiInterop.cs`：在成功、失败和异常路径释放设备名称的原生 `PROPVARIANT`。
+- `External/AudioPlayer/Playback/LoudnessScanner.cs`：将扫描取消令牌传给 HTTP 解码器，中断阻塞打开并及时释放扫描锁和解码资源。
+- `_tools/PlaybackSwitchRegression`：补齐 FFT 测试依赖，增加环样本等价、并发释放和真实 HTTP 响度取消回归。
+- `_tools/AudioPlayerMemoryProbe`、`_tools/AudioPlayerSmokeTest/Program.cs`：支持长歌曲、可配置次数/间隔的真实切歌，记录 GC 暂停、实际延迟模式和 GC 类型，确认每次新会话推进。
+- `Player/AudioPlayer.exe`：重新发布 win-x64 Release NativeAOT 产物，使用标准 GC、Interactive。
+
+验证：本地 PCM 原生化试验已撤回，保留 P2 修复。326 项完整回归、16 项 HTTP/DSD 回归及发布 EXE 的切歌/无缝/FFT 检查通过；托管环 Interactive / SustainedLowLatency 各 200 次切歌通过，累计暂停 9.672 / 9.553ms、最长观察段 0.809 / 0.610ms。单次对照不证明稳定收益，详见 `_tools/AudioPlayerMemoryProbe/README.md`。
+
 ## 2026-10-10 独立播放进程启用 Satori GC
 - `External/AudioPlayer/AudioPlayer.csproj`：添加 `PublishWithSatoriGC` SDK（`11.0.0-satori.37965325036.1`），NativeAOT 发布使用 Satori GC。
 - `Player/AudioPlayer.exe`：重新发布 win-x64 Release 产物，供主程序打包部署。

@@ -1,0 +1,4 @@
+"Scenario","CompletedSwitches","SampledSeconds","WorkingMiBAverage","WorkingMiBPeak","WorkingMiBFirstQuarter","WorkingMiBLastQuarter","PrivateMiBPeak","AllocationKiBps","NaturalGen0","NaturalGen1","NaturalGen2","TotalGCPauseMs","ObservedLargestPauseMs","HandlePeak","ThreadPeak"
+"before-200-switches","200","401.281","23.86939453125","26.1953125","23.0646875","24.440625","16.6015625","509.9924912343221","51","50","50","9.074","0.503","347","17"
+"after-200-switches","200","402.194","23.83373046875","24.25","23.163125","24.134609375","13.76953125","281.9271063839838","30","30","30","16.51","1.409","381","16"
+"after-300s-playback","0","302.317","20.0877734375","22.60546875","18.276666666666667","21.930729166666666","12.73828125","15.836543264189576","0","0","0","0","0","291","12"

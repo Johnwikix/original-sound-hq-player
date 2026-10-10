@@ -29,6 +29,7 @@ internal static unsafe partial class Program
         }
         foreach (var mode in new[] { "ASIO", "WasapiExclusivePush", "WasapiShared" })
             Run($"HTTP {mode}: opaque source selects and prepares correct format", () => CheckDsfPreparation(mode));
+        Run("HTTP loudness: cancellation interrupts open and releases the scan gate", CheckLoudnessOpenCancellation);
         Run("HTTP PCM: repeated close releases sessions and native allocations", CheckNetworkDsfMemory);
         Run("Native ring: stop drains copies, rejects late writes and wakes a blocked producer", () =>
         {
@@ -100,7 +101,7 @@ internal static unsafe partial class Program
     private static void CheckDsfCancellation(RenderKind kind)
     {
         using var server = new DsfHttpFixture();
-        using var session = Session.Open(null!, server.Url, kind, 176400, 0, 100, source: DsfSource(server))
+        using var session = Session.Open(Engine("WasapiShared"), server.Url, kind, 176400, 0, 100, source: DsfSource(server))
             ?? throw new Exception("open failed");
         Require(SpinWait.SpinUntil(() => session.ReadyFrames > 0, 4000), "no data");
         server.Stall = true;
@@ -175,7 +176,7 @@ internal static unsafe partial class Program
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
     private static WeakReference PlayCloseDsf(DsfHttpFixture server, int device, RenderKind kind = RenderKind.Pcm)
     {
-        using var session = Session.Open(null!, server.Url, kind, 176400, 0, 100, source: DsfSource(server))
+        using var session = Session.Open(Engine("WasapiShared"), server.Url, kind, 176400, 0, 100, source: DsfSource(server))
             ?? throw new Exception("DSF open failed");
         Require(SpinWait.SpinUntil(() => session.ReadyFrames >= session.InitialBufferFrames, 4000), "prepare failed");
         using var output = new AudioPlayer.Interop.AsioOutput();
@@ -209,7 +210,7 @@ internal static unsafe partial class Program
             bridge.Start();
             foreach (var kind in new[] { RenderKind.Pcm, RenderKind.NativeDsd, RenderKind.Dop })
             {
-                using var session = Session.Open(null!, bridge.Location, kind, 176400, 0, 100,
+                using var session = Session.Open(Engine("WasapiShared"), bridge.Location, kind, 176400, 0, 100,
                     source: new() { Kind = PlaybackSourceKind.Http, Location = bridge.Location, FileExtension = ".dsf" }, cancellationToken: deadline.Token)
                     ?? throw new Exception("NAS DSF open failed");
                 Require(SpinWait.SpinUntil(() => session.ReadyFrames >= session.InitialBufferFrames || session.DecodeFailure != null, 20000), "NAS prebuffer timeout");
@@ -244,7 +245,7 @@ internal static unsafe partial class Program
     private static void CheckNetworkDsfSeek(RenderKind kind)
     {
         using var server = new DsfHttpFixture(32L * 1024 * 1024);
-        using var session = Session.Open(null!, server.Url, kind, 176400, 0, 100, source: DsfSource(server)) ?? throw new Exception("open failed");
+        using var session = Session.Open(Engine("WasapiShared"), server.Url, kind, 176400, 0, 100, source: DsfSource(server)) ?? throw new Exception("open failed");
         Require(SpinWait.SpinUntil(() => session.ReadyFrames > 0 || session.DecodeFailure != null, 5000), "no initial data");
         long before = server.BytesSent;
         var timer = Stopwatch.StartNew();
@@ -260,7 +261,7 @@ internal static unsafe partial class Program
     [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
     private static WeakReference OpenCloseDsf(DsfHttpFixture server)
     {
-        using var session = Session.Open(null!, server.Url, RenderKind.Pcm, 176400, 0, 100, source: DsfSource(server)) ?? throw new Exception("open failed");
+        using var session = Session.Open(Engine("WasapiShared"), server.Url, RenderKind.Pcm, 176400, 0, 100, source: DsfSource(server)) ?? throw new Exception("open failed");
         Require(SpinWait.SpinUntil(() => session.ReadyFrames >= session.InitialBufferFrames || session.DecodeFailure != null, 4000), "prepare timed out");
         Require(session.DecodeFailure == null, "decode failed");
         return new WeakReference(session);
