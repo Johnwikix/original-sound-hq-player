@@ -2,6 +2,11 @@
 
 新条目加在最上方。
 
+## 2026-10-10 独立播放进程启用 Satori GC
+- `External/AudioPlayer/AudioPlayer.csproj`：添加 `PublishWithSatoriGC` SDK（`11.0.0-satori.37965325036.1`），NativeAOT 发布使用 Satori GC。
+- `Player/AudioPlayer.exe`：重新发布 win-x64 Release 产物，供主程序打包部署。
+验证：NativeAOT 发布、真实 WASAPI 共享输出冒烟测试及网络播放集成回归通过；未执行 ASIO/独占输出及长时间性能对比。
+
 ## 2026-10-09 修复播放封面原生资源持续增长
 - `Helper/ImageHelper.cs`：文件、字节和默认封面统一解码为可显式释放的 `SoftwareBitmapSource`，取消或失败时释放临时 `SoftwareBitmap`。
 - `Helper/ImageHelper.cs`：解码取消统一抛出 `OperationCanceledException`；最长边/固定宽缩放显式计算宽高，并按未旋转原始像素应用（与 WIC 及展示缓存语义一致，EXIF 旋转封面不被拉伸），字节路径恢复与缩略缓存一致的固定宽解码（窄图不上采样）。
