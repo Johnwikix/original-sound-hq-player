@@ -2,6 +2,10 @@
 
 新条目加在最上方。
 
+## 2026-10-11 设置页桌面歌词模式切换入口
+
+- `View/SubView/Settings/LyricsSettingsControl.xaml`：在桌面歌词段顶部新增模式选择卡，复用现有 `DesktopLyricsViewModel.Mode` 与 `EnumToStringConverter`，避免与托盘重复实现同一状态。
+
 ## 2026-10-11 保留播放资源修复并恢复托管 PCM 环
 
 - `External/AudioPlayer/Interop/WasapiInterop.cs`：在成功、失败和异常路径释放设备名称的原生 `PROPVARIANT`。

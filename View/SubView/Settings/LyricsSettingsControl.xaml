@@ -108,11 +108,8 @@
                     <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsLyricsTranslationEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
-                <controls:SettingsCard x:Uid="LyricsShowPronunciation">
+                <controls:SettingsExpander x:Uid="LyricsShowPronunciation">
                     <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsLyricsPronunciationEnabled, Mode=TwoWay}" />
-                </controls:SettingsCard>
-
-                <controls:SettingsExpander x:Uid="LyricsPronunciationLanguages">
                     <controls:SettingsExpander.Items>
                         <controls:SettingsCard x:Uid="LyricsPronunciationMandarin">
                             <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsMandarinPronunciationEnabled, Mode=TwoWay}" />
@@ -461,6 +458,24 @@
                 </controls:SettingsExpander>
 
                 <TextBlock x:Uid="IconDesktopLyrics" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock x:Uid="DesktopLyricsModeMenu" TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ComboBox
+                        x:Name="DesktopLyricsMode"
+                        Width="300"
+                        SelectedValue="{x:Bind ViewModel.DesktopLyrics.Mode, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
+                        SelectedValuePath="Tag">
+                        <ComboBoxItem
+                            Content="{x:Bind tool:ToolUtils.GetString('DesktopLyricsModeFloating')}"
+                            Tag="Floating" />
+                        <ComboBoxItem
+                            Content="{x:Bind tool:ToolUtils.GetString('DesktopLyricsModeTaskbar')}"
+                            Tag="Taskbar" />
+                    </ComboBox>
+                </controls:SettingsCard>
 
                 <controls:SettingsExpander x:Uid="DesktopLyricsAutoHide">
                     <controls:SettingsExpander.Items>
