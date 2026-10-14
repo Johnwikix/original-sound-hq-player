@@ -285,8 +285,6 @@ namespace WinUIMusicPlayer
             if (AppSettings.IsRunningBackend)
             {
                 this.Hide();
-                if (AppSettings.IsTrimOnHideEnabled)
-                    _ = WorkingSetCompressor.TrimSelfAsync();
             }
             else
             {
@@ -380,8 +378,6 @@ namespace WinUIMusicPlayer
             if (this.Visible)
             {
                 this.Hide();
-                if (AppSettings.IsTrimOnHideEnabled)
-                    _ = WorkingSetCompressor.TrimSelfAsync();
             }
             else
             {

@@ -1384,18 +1384,6 @@
   <data name="Advanced.Text" xml:space="preserve">
     <value>Gelişmiş</value>
   </data>
-  <data name="TrimOnHide.Text" xml:space="preserve">
-    <value>Pencere gizlendiğinde belleği boşalt</value>
-  </data>
-  <data name="TrimOnHideDescription.Text" xml:space="preserve">
-    <value>Uygulama görev çubuğuna gizlendiğinde veya sistem tepsisine kapatıldığında çalışma kümesini boşaltır.</value>
-  </data>
-  <data name="TrimAfterPlayback.Text" xml:space="preserve">
-    <value>Oynatma sonrası belleği otomatik boşalt</value>
-  </data>
-  <data name="TrimAfterPlaybackDescription.Text" xml:space="preserve">
-    <value>Her parçadan sonra tam çöp toplama (GC) zorlar. Düşük donanımlı cihazlarda UI takılmalarına neden olabilir.</value>
-  </data>
   <data name="ArtistSplitSymbols.Text" xml:space="preserve">
     <value>Sanatçı ayırıcıları</value>
   </data>
@@ -1404,12 +1392,6 @@
   </data>
   <data name="SelectArtist" xml:space="preserve">
     <value>Sanatçı seç</value>
-  </data>
-  <data name="TrimNow.Content" xml:space="preserve">
-    <value>Belleği şimdi boşalt</value>
-  </data>
-  <data name="TrimNowLabel.Text" xml:space="preserve">
-    <value>Belleği şimdi boşalt</value>
   </data>
   <data name="WindowBoundsDescription.Text" xml:space="preserve">
     <value>Ana pencere konumu</value>

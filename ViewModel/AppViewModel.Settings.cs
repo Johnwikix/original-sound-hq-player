@@ -326,10 +326,6 @@ namespace WinUIMusicPlayer.ViewModel
 
         public bool EnableGlobalHotKey { get => State.Preferences.EnableGlobalHotKey; set => State.Preferences.EnableGlobalHotKey = value; }
 
-        public bool IsTrimOnHideEnabled { get => State.Preferences.IsTrimOnHideEnabled; set => State.Preferences.IsTrimOnHideEnabled = value; }
-
-        public bool IsTrimAfterPlaybackEnabled { get => State.Preferences.IsTrimAfterPlaybackEnabled; set => State.Preferences.IsTrimAfterPlaybackEnabled = value; }
-
         public bool HasGlobalHotKeyConflict => State.HotKeys.HasGlobalHotKeyConflict;
         public string GlobalHotKeyConflictTitle => State.HotKeys.GlobalHotKeyConflictTitle;
         public List<string> PlayOrPauseShortcut { get => State.HotKeys.PlayOrPauseShortcut; set => State.HotKeys.PlayOrPauseShortcut = value; }
@@ -373,7 +369,6 @@ namespace WinUIMusicPlayer.ViewModel
         public IRelayCommand OpenMainGitHubCommand => App.Services.GetRequiredService<SettingsActions>().OpenMainGitHubCommand;
         public IAsyncRelayCommand OpenCoverCacheLocationCommand => App.Services.GetRequiredService<SettingsActions>().OpenCoverCacheLocationCommand;
         public IAsyncRelayCommand ClearCoverCacheCommand => App.Services.GetRequiredService<SettingsActions>().ClearCoverCacheCommand;
-        public IAsyncRelayCommand TrimNowCommand => App.Services.GetRequiredService<SettingsActions>().TrimNowCommand;
         public IRelayCommand ResetWindowBoundsCommand => App.Services.GetRequiredService<SettingsActions>().ResetWindowBoundsCommand;
     }
 }

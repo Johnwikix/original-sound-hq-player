@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using Windows.UI;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
@@ -20,6 +20,4 @@ public sealed class GeneralPreferencesState : ObservableObject
     public bool IsRunningBackend { get; set => SetProperty(ref field, value); } = true;
     public string MusicCoverCache { get; set => SetProperty(ref field, value); }
     public bool EnableGlobalHotKey { get; set => SetProperty(ref field, value); } = false;
-    public bool IsTrimOnHideEnabled { get; set => SetProperty(ref field, value); } = false;
-    public bool IsTrimAfterPlaybackEnabled { get; set => SetProperty(ref field, value); } = false;
 }

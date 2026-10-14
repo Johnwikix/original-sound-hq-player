@@ -1269,10 +1269,6 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.ResetDesktopLyricsShortcut = settings.ResetDesktopLyricsShortcut;
                 AppSettings.EnableGlobalHotKey = settings.EnableGlobalHotKey;
                 AppViewModel.EnableGlobalHotKey = settings.EnableGlobalHotKey;
-                AppSettings.IsTrimOnHideEnabled = settings.IsTrimOnHideEnabled;
-                AppViewModel.IsTrimOnHideEnabled = settings.IsTrimOnHideEnabled;
-                AppSettings.IsTrimAfterPlaybackEnabled = settings.IsTrimAfterPlaybackEnabled;
-                AppViewModel.IsTrimAfterPlaybackEnabled = settings.IsTrimAfterPlaybackEnabled;
                 AppViewModel.ArtistSplitSymbols = settings.ArtistSplitSymbols;
                 AppViewModel.PlayingDetailAlignment = settings.PlayingDetailAlignment;
                 AppViewModel.UsePlayingDetailAlignmentInPortrait = settings.UsePlayingDetailAlignmentInPortrait;

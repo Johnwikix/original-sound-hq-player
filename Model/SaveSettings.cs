@@ -120,8 +120,6 @@ namespace WinUIMusicPlayer.Model
         public List<string> ToggleDesktopLyricsKaraokeShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "K" };
         public List<string> ResetDesktopLyricsShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "R" };
         public bool EnableGlobalHotKey { get; set; } = false;
-        public bool IsTrimOnHideEnabled { get; set; } = false;
-        public bool IsTrimAfterPlaybackEnabled { get; set; } = false;
         public string ArtistSplitSymbols { get; set; } = ", ; / 、 & feat. :";
         public bool AutoHideDesktopLyricsOnPlayingDetail { get; set; } = false;
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

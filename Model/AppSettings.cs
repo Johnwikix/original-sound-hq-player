@@ -94,8 +94,6 @@ namespace WinUIMusicPlayer.Model
         public static string MusicCoverCache { get; set; } = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicCoverCache");
         public static ImageSwitchType ImageSwitchType = ImageSwitchType.ScaleInOut;
         public static bool EnableGlobalHotKey { get; set; } = false;
-        public static bool IsTrimOnHideEnabled { get; set; } = false;
-        public static bool IsTrimAfterPlaybackEnabled { get; set; } = false;
         private static string _artistSplitSymbols = ", ; / 、 & feat. :";
         private static string[] _artistSplitters = ParseArtistSplitSymbols(_artistSplitSymbols);
         public static string ArtistSplitSymbols

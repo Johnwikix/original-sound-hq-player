@@ -2,6 +2,17 @@
 
 新条目加在最上方。
 
+## 2026-10-14 移除 WorkingSetCompressor 工作集清理设置
+
+- `Helper/WorkingSetCompressor.cs`：清空为占位注释；底层 `EmptyWorkingSet` / `SetProcessWorkingSetSizeEx` 仅把工作集页移入分页文件，并不会真正释放私有内存，运行时无效。
+- `MainWindow.xaml.cs`、`View/MainPage.xaml.cs`：移除隐藏/关闭到托盘时按 `IsTrimOnHideEnabled` 触发的 `WorkingSetCompressor.TrimSelfAsync()`。
+- `ViewModel/Pages/MusicBrowseViewModel.cs`：移除 `OnTrackStarted → TrimMemory` 路径与 `MemoryTrimThreshold` 阈值。
+- `Services/SettingsActions.cs`、`ViewModel/AppViewModel.Settings.cs`：移除 `TrimNow` 命令及其暴露入口 `TrimNowCommand`。
+- `State/GeneralPreferencesState.cs`、`State/PreferencesState.cs`、`Model/AppSettings.cs`、`Model/SaveSettings.cs`、`Services/SettingsCoordinator.cs`、`Services/SettingsSnapshotFactory.cs`、`Services/MusicDatabaseService.cs`：移除 `IsTrimOnHideEnabled` / `IsTrimAfterPlaybackEnabled` 字段、case 分支、持久化键与恢复赋值。
+- `View/SubView/Settings/GeneralSettingsControl.xaml`：移除“隐藏窗口时释放内存”、“播放后自动释放内存”两个 `SettingsCard` 与“立即释放内存”入口卡。
+- `Strings/{zh-CN,en,ja,de,es,ru,tr}/Resources.resw`：移除 `TrimOnHide(.Text|.Description)`、`TrimAfterPlayback(.Text|.Description)`、`TrimNow(.Content)`、`TrimNowLabel(.Text)` 共 6 条资源。
+- 验证：`dotnet build` 报告 0 编译错误；构建退出码非零由 `MSBuild 服务器不可用` 与项目内重复 `PublishWithSatoriGC.Runtime.win-x64` 包引用引起，与本次改动无关。
+
 ## 2026-10-11 设置页桌面歌词模式切换入口
 
 - `View/SubView/Settings/LyricsSettingsControl.xaml`：在桌面歌词段顶部新增模式选择卡，复用现有 `DesktopLyricsViewModel.Mode` 与 `EnumToStringConverter`，避免与托盘重复实现同一状态。

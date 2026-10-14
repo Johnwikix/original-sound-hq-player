@@ -524,20 +524,6 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                     hotKeys.Refresh();
                 }
                 break;
-            case nameof(state.Preferences.IsTrimOnHideEnabled):
-                AppSettings.IsTrimOnHideEnabled = state.Preferences.IsTrimOnHideEnabled;
-                if (state.Lifecycle.IsReady)
-                {
-                    _ = database.SaveSettingAsync();
-                }
-                break;
-            case nameof(state.Preferences.IsTrimAfterPlaybackEnabled):
-                AppSettings.IsTrimAfterPlaybackEnabled = state.Preferences.IsTrimAfterPlaybackEnabled;
-                if (state.Lifecycle.IsReady)
-                {
-                    _ = database.SaveSettingAsync();
-                }
-                break;
             default:
                 if (state.Lifecycle.IsReady) _ = database.SaveSettingAsync();
                 break;

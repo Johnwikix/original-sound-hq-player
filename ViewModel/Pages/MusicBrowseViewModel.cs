@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
@@ -52,7 +52,6 @@ namespace WinUIMusicPlayer.ViewModel
         private readonly CoverPresentationService _covers;
         private bool _disposed;
         private ILogger<MusicBrowseViewModel> _logger;
-        private const long MemoryTrimThreshold = 400L * 1024 * 1024;
 
         private static readonly DispatcherQueueHandler _clearUILyrics = static () =>
             App.Services.GetRequiredService<MusicBrowseViewModel>().AppViewModel.UILyrics = [];
@@ -277,7 +276,6 @@ namespace WinUIMusicPlayer.ViewModel
             MusicBrowsePage?.UpdateViewList();
             _ = UpdatePlayBar(music, token);
             MainPage?.UpdateCurrentPlayList();
-            TrimMemory();
         }
 
         /// <summary>
@@ -315,22 +313,6 @@ namespace WinUIMusicPlayer.ViewModel
             AppViewModel.SequentialPlayingList = new BulkObservableCollection<Music>(folderSongs);
             _ = PlayMusic(music, IsChangeList: true);
         }
-
-        private void TrimMemory() {
-            try
-            {
-                if (!AppViewModel.IsTrimAfterPlaybackEnabled) return;
-                if (WorkingSetCompressor.GetPrivateWorkingSet() > MemoryTrimThreshold)
-                {
-                    _ = WorkingSetCompressor.TrimSelfAsync();
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"内存清理失败: {ex.Message}");
-            }
-        }
-
 
         [RelayCommand]
         private void OnArtistButton(string? artist)

@@ -395,43 +395,12 @@
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock x:Uid="TrimOnHide" />
-                    </controls:SettingsCard.Header>
-                    <controls:SettingsCard.Description>
-                        <TextBlock x:Uid="TrimOnHideDescription" TextWrapping="Wrap" />
-                    </controls:SettingsCard.Description>
-                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsTrimOnHideEnabled, Mode=TwoWay}" />
-                </controls:SettingsCard>
-
-                <controls:SettingsCard>
-                    <controls:SettingsCard.Header>
-                        <TextBlock x:Uid="TrimAfterPlayback" />
-                    </controls:SettingsCard.Header>
-                    <controls:SettingsCard.Description>
-                        <TextBlock x:Uid="TrimAfterPlaybackDescription" TextWrapping="Wrap" />
-                    </controls:SettingsCard.Description>
-                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsTrimAfterPlaybackEnabled, Mode=TwoWay}" />
-                </controls:SettingsCard>
-
-                <controls:SettingsCard>
-                    <controls:SettingsCard.Header>
                         <TextBlock x:Uid="ArtistSplitSymbols" />
                     </controls:SettingsCard.Header>
                     <controls:SettingsCard.Description>
                         <TextBlock x:Uid="ArtistSplitSymbolsDescription" TextWrapping="Wrap" />
                     </controls:SettingsCard.Description>
                     <TextBox Width="240" Text="{x:Bind ViewModel.AppViewModel.ArtistSplitSymbols, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
-                </controls:SettingsCard>
-
-                <controls:SettingsCard>
-                    <controls:SettingsCard.Header>
-                        <TextBlock x:Uid="TrimNowLabel" TextWrapping="Wrap" />
-                    </controls:SettingsCard.Header>
-                    <Button Command="{x:Bind ViewModel.AppViewModel.TrimNowCommand, Mode=OneWay}">
-                        <Button.Content>
-                            <FontIcon Glyph="&#xE895;" />
-                        </Button.Content>
-                    </Button>
                 </controls:SettingsCard>
 
                 <controls:SettingsCard>

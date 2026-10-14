@@ -182,8 +182,6 @@ namespace WinUIMusicPlayer.View
             if (AppSettings.IsRunningBackend)
             {
                 App.MainWindow.Hide();
-                if (AppSettings.IsTrimOnHideEnabled)
-                    _ = WorkingSetCompressor.TrimSelfAsync();
             }
             else
             {

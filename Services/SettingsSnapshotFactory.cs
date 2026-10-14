@@ -86,8 +86,6 @@ public sealed class SettingsSnapshotFactory(AppState state)
         newSettings.ToggleDesktopLyricsKaraokeShortcut = new(state.HotKeys.ToggleDesktopLyricsKaraokeShortcut);
         newSettings.ResetDesktopLyricsShortcut = new(state.HotKeys.ResetDesktopLyricsShortcut);
         newSettings.EnableGlobalHotKey = state.Preferences.EnableGlobalHotKey;
-        newSettings.IsTrimOnHideEnabled = state.Preferences.IsTrimOnHideEnabled;
-        newSettings.IsTrimAfterPlaybackEnabled = state.Preferences.IsTrimAfterPlaybackEnabled;
         newSettings.ArtistSplitSymbols = state.Preferences.ArtistSplitSymbols;
         newSettings.PlayingDetailAlignment = state.Preferences.PlayingDetailAlignment;
         newSettings.UsePlayingDetailAlignmentInPortrait = state.Preferences.UsePlayingDetailAlignmentInPortrait;

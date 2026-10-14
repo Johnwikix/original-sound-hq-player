@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using Windows.UI;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
@@ -112,6 +112,4 @@ public sealed class PreferencesState : ObservableObject
     public EasingType ScrollEasingType { get => Lyrics.ScrollEasingType; set => Lyrics.ScrollEasingType = value; }
     public EaseMode ScrollEasingMode { get => Lyrics.ScrollEasingMode; set => Lyrics.ScrollEasingMode = value; }
     public bool EnableGlobalHotKey { get => General.EnableGlobalHotKey; set => General.EnableGlobalHotKey = value; }
-    public bool IsTrimOnHideEnabled { get => General.IsTrimOnHideEnabled; set => General.IsTrimOnHideEnabled = value; }
-    public bool IsTrimAfterPlaybackEnabled { get => General.IsTrimAfterPlaybackEnabled; set => General.IsTrimAfterPlaybackEnabled = value; }
 }
