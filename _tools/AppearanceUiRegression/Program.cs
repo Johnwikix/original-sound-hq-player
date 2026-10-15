@@ -61,6 +61,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             Resources.MergedDictionaries.Add(new XamlControlsResources());
             await Task.Delay(300);
             await BackgroundSettingsRegression.RunAsync(host);
+            await SpectralSettingsRegression.RunAsync(host);
             var initial = new DspSettingsViewModel();
             if (initial.PlaybackRate != 1 || initial.PlaybackRateIndex != 3)
                 throw new Exception($"Before Loaded: rate={initial.PlaybackRate}; index={initial.PlaybackRateIndex}; expected 1× at index 3");
@@ -137,7 +138,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 throw new Exception("Dispose retained the background resources");
             File.Delete(fixture);
             File.Delete(invalid);
-            result = "PASS: " + result;
+            result = "PASS: shipping spectral settings card, three choices and two-way selection persistence\nPASS: " + result;
             result += "\nPASS: all 9 saved/user rates, legacy custom rate, initialization guard\nPASS: real composition load, blur, stale request, missing/corrupt image, clear, unload/reload and idempotent disposal";
             result += "\nPASS: shipping background SettingsExpander expansion, collapse/re-expansion and warning visibility";
         }

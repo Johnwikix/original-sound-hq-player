@@ -15,7 +15,7 @@ public static class BinarySerializer
     public const int SetMusicUrlRequestSize = StringHeaderSize + MaxStringBytes;
     public const int ChangePositionRequestSize = 16;
     public const int ChangeVolumeRequestSize = 8;
-    public const int IpcSettingSize = 3 * (StringHeaderSize + MaxStringBytes) + 4 + 4 + 4 + 1 + 4 + 4 + 1 + 4 + 1 + 1 + 2;
+    public const int IpcSettingSize = 3 * (StringHeaderSize + MaxStringBytes) + 4 + 4 + 4 + 1 + 4 + 4 + 1 + 4 + 1 + 1 + 3;
     public const int UpdateEqRequestSize = 1 + 40 + 40; // IsEnabled + 10 gains + 10 Q values (legacy payload: 41 bytes)
     public const int FailedResponseSize = 2;
     public const int PlayStateResponseSize = 1;
@@ -119,6 +119,7 @@ public static class BinarySerializer
         dest[offset++] = s.ExperimentalSurround51 ? (byte)1 : (byte)0;
         dest[offset++] = s.ExperimentalAtmosPassthrough ? (byte)1 : (byte)0;
         offset += WriteString(dest[offset..], s.AtmosEndpointId);
+        dest[offset++] = (byte)s.SpectralEnhancement;
         return offset;
     }
 
@@ -144,7 +145,16 @@ public static class BinarySerializer
         }
         s.ExperimentalSurround51 = offset < src.Length && src[offset++] != 0;
         s.ExperimentalAtmosPassthrough = offset < src.Length && src[offset++] != 0;
-        if (offset < src.Length) s.AtmosEndpointId = ReadString(src[offset..], out _);
+        if (offset < src.Length)
+        {
+            s.AtmosEndpointId = ReadString(src[offset..], out int length);
+            offset += length;
+        }
+        if (offset < src.Length)
+        {
+            s.SpectralEnhancement = (SpectralEnhancementMode)src[offset++];
+            if (!Enum.IsDefined(s.SpectralEnhancement)) throw new ArgumentException("Invalid enhancement mode.");
+        }
         return s;
     }
 

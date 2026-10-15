@@ -93,6 +93,7 @@ int setLen = BinarySerializer.WriteIpcSetting(setBuf, new IpcSetting
     BassOutputDeviceId = devIdx,
     Latency = 300,
     IsDopEnabled = dop,
+    SpectralEnhancement = args.Contains("--enhance") ? SpectralEnhancementMode.LossyAndLowRateLossless : SpectralEnhancementMode.Off,
     DsdGain = 6,
     DsdPcmFreq = 88200,
     IsEqualizerEnabled = false,
@@ -120,6 +121,14 @@ Span<byte> playBuf = new byte[BinarySerializer.PlayRequestSize];
 BinarySerializer.WritePlayRequest(playBuf, new PlayRequest { Url = mediaPath });
 t = Send(CommandId.Play, playBuf, out _);
 Console.WriteLine($"[smoke] Play(confirmed) → {t}（已收到执行确认）");
+string? expectedRateText = args.FirstOrDefault(a => a.StartsWith("--expect-rate="))?[14..];
+if (expectedRateText != null)
+{
+    int expectedRate = int.Parse(expectedRateText, System.Globalization.CultureInfo.InvariantCulture);
+    if (!SpinWait.SpinUntil(() => states.CurrentDspState?.State.SampleRate == expectedRate, 5000))
+        throw new InvalidOperationException($"Expected active device-source rate {expectedRate}, got {states.CurrentDspState?.State.SampleRate}");
+    Console.WriteLine($"[smoke] PASS: actual PCM output rate {expectedRate} Hz");
+}
 Thread.Sleep(400); // 观察首段输出与通知
 PumpNotifications();
 

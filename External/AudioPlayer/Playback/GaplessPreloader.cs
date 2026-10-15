@@ -159,4 +159,5 @@ internal sealed class GaplessPreloader(object gate,
 
 /// <summary>Decoder configuration captured at preparation time; DSP targets are read at publication.</summary>
 internal sealed record GaplessPreparation(GaplessRequest Request, Session Current, GaplessSource Source,
-    int DsdRate, int DsdGain, int Latency, bool Surround, double PlaybackRate, bool BitstreamEnabled);
+    int DsdRate, int DsdGain, int Latency, bool Surround, double PlaybackRate, bool BitstreamEnabled,
+    SpectralEnhancementMode Enhancement = SpectralEnhancementMode.Off, int? EnhancementDeviceRate = null);

@@ -26,4 +26,5 @@
     <None Include="../../Libraries/WavPack/x64/wavpackdll.dll" Link="wavpackdll.dll" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../../Libraries/WavPack/LICENSE.txt" Link="Licenses/WavPack.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup><EmbeddedResource Include="../../External/AudioPlayer/AudioEnhancement/Coefficients/Assets/filters.bin" LogicalName="AudioPlayer.AudioEnhancement.Coefficients.filters.bin" /></ItemGroup>
 </Project>

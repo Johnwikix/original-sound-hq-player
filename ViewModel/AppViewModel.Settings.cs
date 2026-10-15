@@ -213,6 +213,13 @@ namespace WinUIMusicPlayer.ViewModel
 
         public string MusicCoverCache { get => State.Preferences.MusicCoverCache; set => State.Preferences.MusicCoverCache = value; }
 
+        /// <summary>Gets or sets the enhancement ComboBox index and the underlying audio preference.</summary>
+        public int SpectralEnhancement
+        {
+            get => State.Preferences.Audio.SpectralEnhancement;
+            set => State.Preferences.Audio.SpectralEnhancement = Math.Clamp(value, 0, 2);
+        }
+
         public bool IsDopEnabled
         {
             get => State.Preferences.Audio.IsDopEnabled;

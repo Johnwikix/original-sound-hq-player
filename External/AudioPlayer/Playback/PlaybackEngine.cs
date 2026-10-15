@@ -91,6 +91,7 @@ public sealed partial class PlaybackEngine : IDisposable
     public string? WasapiEndpointId;
     public int BassASIODeviceId = 0;
     public int Latency = 300;
+    public SpectralEnhancementMode SpectralEnhancement;
     public bool IsDopEnabled;
     public bool ExperimentalSurround51;
     public bool ExperimentalAtmosPassthrough;
@@ -327,12 +328,14 @@ public sealed partial class PlaybackEngine : IDisposable
     {
         if (_streamSlots.TryGetValue(_currentStream, out var remote) && remote.Source.Location == url)
         {
-            var mix = forceSharedFormat ? GetEndpointMixFormat(OutputMode == "DirectSound" || OutputMode == "ASIO" ? -1 : BassOutputDeviceId) : null;
-            if (forceSharedFormat && mix is null) return null;
+            bool needsMix = forceSharedFormat || (SpectralEnhancement != SpectralEnhancementMode.Off && IsSharedMode(OutputMode));
+            var mix = needsMix ? GetEndpointMixFormat(OutputMode is "DirectSound" or "ASIO" ? -1 : BassOutputDeviceId) : null;
+            if (needsMix && mix is null) return null;
             var remoteKind = forceSharedFormat ? RenderKind.Pcm : kindOverride ?? StreamingKind(remote.Source);
             return Session.Open(this, url, remoteKind, DsdPcmFreq, DsdGain, Latency,
-                forcedRate: mix?.SampleRate, forcedChannels: mix?.Channels, maxChannels: 2,
-                source: remote.Source, cancellationToken: remote.Cancel.Token, playbackRate: EffectivePlaybackRate);
+                forcedRate: forceSharedFormat ? mix?.SampleRate : null, forcedChannels: forceSharedFormat ? mix?.Channels : null, maxChannels: 2,
+                source: remote.Source, cancellationToken: remote.Cancel.Token, playbackRate: EffectivePlaybackRate,
+                enhancement: SpectralEnhancement, enhancementDeviceRate: mix?.SampleRate);
         }
         if (ExperimentalAtmosPassthrough && !forceSharedFormat && !_atmosUseSharedPcm && !_surroundFallback
             && kindOverride is null or RenderKind.Eac3)
@@ -389,7 +392,12 @@ public sealed partial class PlaybackEngine : IDisposable
             }
         }
         bool surround51 = ExperimentalSurround51 && !forceSharedFormat && !_atmosUseSharedPcm && !_surroundFallback && kind == RenderKind.Pcm;
-        var session = Session.Open(this, url, kind, DsdPcmFreq, DsdGain, Latency, forcedRate, forcedChannels, maxChannels, surround51, playbackRate: EffectivePlaybackRate);
+        int? enhancementMix = kind == RenderKind.Pcm ? EnhancementMixRate(forceSharedFormat) : null;
+        if (kind == RenderKind.Pcm && SpectralEnhancement != SpectralEnhancementMode.Off
+            && (forceSharedFormat || IsSharedMode(OutputMode)) && enhancementMix == null) return null;
+        var session = Session.Open(this, url, kind, DsdPcmFreq, DsdGain, Latency, forcedRate, forcedChannels, maxChannels, surround51, playbackRate: EffectivePlaybackRate,
+            enhancement: _atmosUseSharedPcm ? SpectralEnhancementMode.Off : SpectralEnhancement,
+            enhancementDeviceRate: enhancementMix);
         if (session != null)
         {
             session.ConfigureDsp(_deviceCorrections.Enabled
@@ -411,6 +419,10 @@ public sealed partial class PlaybackEngine : IDisposable
     /// <summary>淡出后等待端点缓冲排空的余量（渲染领先可闻播放 LatencyMs）。</summary>
     private int FadeDrainMs => Math.Min(1500, (_output?.LatencyMs ?? 0) + 100);
 
+    private int? EnhancementMixRate(bool forceShared = false)
+        => SpectralEnhancement != SpectralEnhancementMode.Off && (forceShared || IsSharedMode(OutputMode))
+            ? GetEndpointMixFormat(OutputMode is "DirectSound" or "ASIO" ? -1 : BassOutputDeviceId)?.SampleRate : null;
+
     private static bool IsSharedMode(string mode) => mode is not ("WasapiExclusivePush" or "WasapiExclusiveEvent" or "ASIO");
 
     // 不缓存混音格式：系统改"输出音频格式"会变更混音格式而设备 ID 不变，陈旧缓存
@@ -424,6 +436,18 @@ public sealed partial class PlaybackEngine : IDisposable
     private void StartOutputAndPlay()
     {
         var session = _session!;
+        // A paused shared session can outlive a mix-format change. Renegotiate before resuming.
+        if (session.EnhancementActive && IsSharedMode(OutputMode)
+            && EnhancementMixRate() is { } deviceRate
+            && session.SampleRate != SpectralEnhancementPolicy.OutputRate(44100, deviceRate))
+        {
+            long position = session.CurrentMs;
+            DisposeSession();
+            SetSession(OpenSession(MusicUrl!));
+            if (_session == null) { StopAndNotifyLocked(); return; }
+            _session.RequestSeek(position);
+            session = _session;
+        }
         if (session.Kind == RenderKind.Eac3 && session.DecodeFailure != null)
         {
             if (!ResolveAtmosEndpoint()) { StopAtmosForDeviceChange(); return; }
@@ -564,6 +588,7 @@ public sealed partial class PlaybackEngine : IDisposable
     /// 调用方持锁；失败时输出已被释放，由调用方走停机/重试路径。</summary>
     private bool SwapSharedOutput()
     {
+        if (_session is { EnhancementActive: true } enhanced) return TryRebuildOutput(enhanced.CurrentMs);
         CancelGapless();
         try { _output?.Dispose(); } catch { }
         _output = null;
@@ -871,11 +896,13 @@ public sealed partial class PlaybackEngine : IDisposable
     {
         lock (_streamLock)
         {
+            if (!Enum.IsDefined(s.SpectralEnhancement)) throw new ArgumentException("Invalid enhancement mode.");
             if (s.OutputMode is not (null or "DirectSound" or "WasapiShared" or "WasapiExclusivePush" or "WasapiExclusiveEvent" or "ASIO"))
                 throw new ArgumentException("Unknown audio output mode", nameof(s));
             bool rebuild = OutputMode != (s.OutputMode ?? "DirectSound") || BassOutputDeviceId != s.BassOutputDeviceId
                 || WasapiEndpointId != s.WasapiEndpointId || BassASIODeviceId != s.BassASIODeviceId
                 || Latency != Math.Clamp(s.Latency, 10, 2000) || IsDopEnabled != s.IsDopEnabled
+                || SpectralEnhancement != s.SpectralEnhancement
                 || ExperimentalSurround51 != s.ExperimentalSurround51
                 || ExperimentalAtmosPassthrough != s.ExperimentalAtmosPassthrough || AtmosEndpointId != s.AtmosEndpointId
                 || DsdGain != Math.Clamp(s.DsdGain, -24, 24) || DsdPcmFreq != Math.Clamp(s.DsdPcmFreq, 8000, 768000);
@@ -884,6 +911,7 @@ public sealed partial class PlaybackEngine : IDisposable
             WasapiEndpointId = s.WasapiEndpointId;
             BassASIODeviceId = s.BassASIODeviceId;
             Latency = Math.Clamp(s.Latency, 10, 2000);
+            SpectralEnhancement = s.SpectralEnhancement;
             IsDopEnabled = s.IsDopEnabled;
             ExperimentalSurround51 = s.ExperimentalSurround51;
             ExperimentalAtmosPassthrough = s.ExperimentalAtmosPassthrough;

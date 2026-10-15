@@ -21,6 +21,8 @@ internal sealed unsafe class PcmDecoder : IDisposable
     private AVFormatContext* _fmt;
     private AVCodecContext* _dec;
     private SwrContext* _swr;
+    private SpectralPcmStream? _enhancement;
+    private int _decodeRate;
     private AVPacket* _pkt;
     private AVFrame* _frame;
 
@@ -36,6 +38,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
     public uint ChannelMask { get; private set; }
     public long TotalMs => _totalMs;
     public bool IsDsdSource => _dsdSource;
+    internal bool EnhancementActive => _enhancement != null;
 
     private static readonly AVCodecID[] DsdCodecIds =
     {
@@ -52,7 +55,8 @@ internal sealed unsafe class PcmDecoder : IDisposable
     /// <param name="forceChannels">强制输出声道数；null = 源声道数（受 maxChannels 上限约束）。</param>
     /// <param name="maxChannels">普通路径的声道上限；显式启用且识别出 5.1 时保留六声道，供自动独占输出。</param>
     public bool Open(string path, int dsdPcmFreq, int dsdGainDb, int? forceRate = null, int? forceChannels = null,
-        int? maxChannels = null, bool experimentalSurround51 = false, PlaybackSource? source = null, CancellationToken cancellationToken = default)
+        int? maxChannels = null, bool experimentalSurround51 = false, PlaybackSource? source = null, CancellationToken cancellationToken = default,
+        SpectralEnhancementMode enhancement = SpectralEnhancementMode.Off, int? enhancementDeviceRate = null)
     {
         try
         {
@@ -113,11 +117,28 @@ internal sealed unsafe class PcmDecoder : IDisposable
             // A recognized 5.1 layout opts into automatic exclusive output; other layouts keep the ordinary channel limit.
             Channels = surround51 ? 6 : forceChannels ?? (maxChannels is > 0 ? Math.Min(channels, maxChannels.Value) : channels);
 
+            AVCodecDescriptor* descriptor = ffmpeg.avcodec_descriptor_get(par->codec_id);
+            bool lossless = descriptor != null && (descriptor->props & ffmpeg.AV_CODEC_PROP_LOSSLESS) != 0;
+            // E-AC-3/TrueHD can carry Atmos even when falling back to decoded stereo PCM.
+            bool spatial = par->codec_id is AVCodecID.AV_CODEC_ID_EAC3 or AVCodecID.AV_CODEC_ID_TRUEHD;
+            bool enhance = SpectralEnhancementPolicy.IsEligible(enhancement, inRate, channels, lossless, _dsdSource, spatial)
+                && Channels is 1 or 2;
+            _decodeRate = SampleRate;
+            if (enhance)
+            {
+                SampleRate = SpectralEnhancementPolicy.OutputRate(inRate, forceRate ?? enhancementDeviceRate);
+                _decodeRate = inRate % 11025 == 0 ? 44100 : 48000;
+                int bits = par->bits_per_raw_sample is 8 or 16 or 20 or 24 or 32 ? par->bits_per_raw_sample : 16;
+                int bitrate = (int)Math.Clamp(par->bit_rate > 0 ? par->bit_rate : _fmt->bit_rate > 0 ? _fmt->bit_rate : 192000, 4000L, 1020000L);
+                _enhancement = new(_decodeRate, SampleRate, Channels, lossless, bitrate, bits);
+                Console.WriteLine($"[enhancement] {inRate} -> {_decodeRate} -> {SampleRate} Hz; lossless={lossless}");
+            }
+
             AVChannelLayout outLayout = default;
             if (surround51) ffmpeg.av_channel_layout_copy(&outLayout, &_dec->ch_layout);
             else ffmpeg.av_channel_layout_default(&outLayout, Channels);
             SwrContext* swr = null;
-            ffmpeg.swr_alloc_set_opts2(&swr, &outLayout, AVSampleFormat.AV_SAMPLE_FMT_DBL, SampleRate,
+            ffmpeg.swr_alloc_set_opts2(&swr, &outLayout, AVSampleFormat.AV_SAMPLE_FMT_DBL, _decodeRate,
                 &_dec->ch_layout, _dec->sample_fmt, _dec->sample_rate, 0, null);
             ffmpeg.av_channel_layout_uninit(&outLayout);
             _swr = swr;
@@ -144,12 +165,16 @@ internal sealed unsafe class PcmDecoder : IDisposable
         if (ffmpeg.av_seek_frame(_fmt, -1, ms * 1000, ffmpeg.AVSEEK_FLAG_BACKWARD) < 0) return false;
         ffmpeg.avcodec_flush_buffers(_dec);
         ffmpeg.swr_init(_swr);
+        _enhancement?.Reset();
         _eof = false;
         return true;
     }
 
     /// <summary>读取交织 double 块。返回帧数；0 = 本位置流结束（EOF 后恒 0）。</summary>
-    public int Read(Span<double> buffer)
+    public int Read(Span<double> buffer) => _enhancement?.Read(this, buffer) ?? ReadDecoded(buffer);
+
+    /// <summary>Reads PCM before enhancement, using the resampler rate selected at open.</summary>
+    internal int ReadDecoded(Span<double> buffer)
     {
         if (_fmt == null || _dec == null) return 0;
         int maxFrames = buffer.Length / Math.Max(1, Channels);
@@ -215,7 +240,12 @@ internal sealed unsafe class PcmDecoder : IDisposable
         int got;
         fixed (double* p = buffer)
         {
-            got = ffmpeg.swr_convert(_swr, (byte**)&p, frames, null, 0);
+            // A null input pointer flushes the filter tail. Between packets, drain only
+            // buffered output; flushing here repeatedly truncates low-rate resampling.
+            int inputChannels = Math.Max(1, _dec->ch_layout.nb_channels);
+            byte** emptyInput = stackalloc byte*[inputChannels];
+            for (int channel = 0; channel < inputChannels; channel++) emptyInput[channel] = (byte*)p;
+            got = ffmpeg.swr_convert(_swr, (byte**)&p, frames, _eof ? null : emptyInput, 0);
         }
         return got > 0 ? FinishRead(buffer, got) : 0;
     }
@@ -233,6 +263,8 @@ internal sealed unsafe class PcmDecoder : IDisposable
 
     public void Dispose()
     {
+        _enhancement?.Dispose();
+        _enhancement = null;
         if (_frame != null) { AVFrame* f = _frame; _frame = null; ffmpeg.av_frame_free(&f); }
         if (_pkt != null) { AVPacket* p = _pkt; _pkt = null; ffmpeg.av_packet_free(&p); }
         if (_swr != null) { SwrContext* s = _swr; _swr = null; ffmpeg.swr_free(&s); }

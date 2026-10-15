@@ -2437,4 +2437,9 @@ SHA-256: {5}
   <data name="LyricsPronunciationToggle" xml:space="preserve"><value>Şarkı sözü telaffuzunu değiştir</value></data>
   <data name="LyricsTranslationIcon.Text" xml:space="preserve"><value>T</value></data>
   <data name="LyricsPronunciationIcon.Text" xml:space="preserve"><value>A</value></data>
+  <data name="SpectralEnhancementTitle" xml:space="preserve"><value>Spektral iyileştirme</value></data>
+  <data name="SpectralEnhancementDescription" xml:space="preserve"><value>48 kHz ve altındaki mono/stereo PCM sesini iyileştirir. DSD, DoP ve Atmos atlanır. Paylaşımlı çıkış cihaz hızını (en çok 192 kHz), özel/ASIO ise parça hızının 2 katını ister. Değişiklikler geçerli konumdan yeniden başlatır.</value></data>
+  <data name="SpectralEnhancementOff" xml:space="preserve"><value>Kapalı</value></data>
+  <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Yalnızca kayıplı parçalar</value></data>
+  <data name="SpectralEnhancementAll" xml:space="preserve"><value>Kayıplı + 48 kHz ve altı kayıpsız</value></data>
 </root>

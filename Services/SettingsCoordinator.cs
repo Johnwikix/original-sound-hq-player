@@ -108,6 +108,7 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                     _ = database.SaveSettingAsync();
                 }
                 break;
+            case nameof(AudioPreferencesState.SpectralEnhancement):
             case nameof(AudioPreferencesState.IsDopEnabled):
             case nameof(AudioPreferencesState.ExperimentalSurround51):
             case nameof(AudioPreferencesState.ExperimentalAtmosPassthrough):

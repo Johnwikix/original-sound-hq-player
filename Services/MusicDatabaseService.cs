@@ -1231,6 +1231,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.GlobalFontSize = settings.GlobalFontSize;
                 AppViewModel.IsGlobalFontSizeEnabled = settings.IsGlobalFontSizeEnabled;
                 AppViewModel.MusicCoverCache = string.IsNullOrEmpty(settings.MusicCoverCache) ? Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicCoverCache") : settings.MusicCoverCache;
+                AppViewModel.SpectralEnhancement = (int)audio.SpectralEnhancement;
                 AppViewModel.IsDopEnabled = audio.IsDopEnabled;
                 AppViewModel.ExperimentalSurround51 = audio.ExperimentalSurround51;
                 AppViewModel.ExperimentalAtmosPassthrough = audio.ExperimentalAtmosPassthrough;

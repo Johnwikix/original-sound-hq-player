@@ -1,3 +1,10 @@
+## 2026-10-15 实时 PCM 频谱增强
+- `External/AudioPlayer/AudioEnhancement`：增加 SIMD 频谱增强处理，在解码线程补偿延迟、排空尾部并在定位时重置信号历史。
+- `External/AudioPlayer/Decode`、`Playback`：按源编码筛选；跳过 DSD/DoP/Atmos/多声道及 >48 kHz 源，共享输出按设备混音率（最高 192 kHz 的整数约数），独占/ASIO 请求源率 2 倍。
+- `GeneralSettingsControl`、音频偏好和 IPC：新增关闭/仅有损/有损及低采样率无损设置，默认关闭，持久化并在当前位置重建播放。
+- `PcmDecoder.ConvertOut`：仅在真正 EOF 时冲洗重采样尾部，修复低采样率转换提前冲洗导致的帧丢失。
+- `Player/AudioPlayer.exe`：保持 NativeAOT 单文件发布，执行 AOT 性能、分配及实际输出回归。
+
 # 功能变更记录
 
 新条目加在最上方。

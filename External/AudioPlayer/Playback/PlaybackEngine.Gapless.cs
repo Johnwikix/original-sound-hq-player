@@ -110,7 +110,7 @@ public sealed partial class PlaybackEngine
             var (position, duration) = GetTimeProgress();
             if (duration > 0 && (duration - position) / current.PlaybackRate > GaplessLeadTimeMs) return;
             preloader.Start(new(request, current, source, DsdPcmFreq, DsdGain, Latency,
-                ExperimentalSurround51, EffectivePlaybackRate, IsDopEnabled && !IsSharedMode(OutputMode)));
+                ExperimentalSurround51, EffectivePlaybackRate, IsDopEnabled && !IsSharedMode(OutputMode), SpectralEnhancement, EnhancementMixRate()));
         }
     }
 
@@ -123,7 +123,8 @@ public sealed partial class PlaybackEngine
             preparation.DsdRate, preparation.DsdGain, preparation.Latency,
             maxChannels: preparation.Current.Channels <= 2 ? 2 : null,
             experimentalSurround51: preparation.Surround, cancellationToken: token,
-            playbackRate: preparation.PlaybackRate);
+            playbackRate: preparation.PlaybackRate, enhancement: preparation.Enhancement,
+            enhancementDeviceRate: preparation.EnhancementDeviceRate);
     }
 
     // Invoked by the preloader under the stream lock; no rendering/disposal can race ownership transfer.

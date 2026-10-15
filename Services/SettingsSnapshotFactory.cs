@@ -130,6 +130,7 @@ public sealed class SettingsSnapshotFactory(AppState state)
         BassASIODeviceId = AppSettings.BassASIODeviceId,
         DeviceFriendlyName = AppSettings.DeviceName,
         IsFadeEnabled = state.Preferences.IsFadeEnabled,
+        SpectralEnhancement = (SpectralEnhancementMode)state.Preferences.Audio.SpectralEnhancement,
         IsDopEnabled = state.Preferences.Audio.IsDopEnabled,
         ExperimentalSurround51 = state.Preferences.Audio.ExperimentalSurround51,
         ExperimentalAtmosPassthrough = state.Preferences.Audio.ExperimentalAtmosPassthrough,

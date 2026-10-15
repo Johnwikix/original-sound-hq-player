@@ -13,6 +13,8 @@ public sealed record AudioPreferences
     public int BassASIODeviceId { get; init; }
     public string DeviceFriendlyName { get; init; } = "";
     public bool IsFadeEnabled { get; init; }
+    /// <summary>Gets the enhancement scope; disabled for existing settings by default.</summary>
+    public SpectralEnhancementMode SpectralEnhancement { get; init; }
     public bool IsDopEnabled { get; init; }
     public bool ExperimentalSurround51 { get; init; }
     public bool ExperimentalAtmosPassthrough { get; init; }
@@ -33,6 +35,7 @@ public sealed record AudioPreferences
         return this with
         {
             Dsp = Dsp.Sanitize(),
+            SpectralEnhancement = Enum.IsDefined(SpectralEnhancement) ? SpectralEnhancement : SpectralEnhancementMode.Off,
             OutputMode = OutputMode is "DirectSound" or "WasapiShared" or "WasapiExclusiveEvent" or "WasapiExclusivePush" or "ASIO"
                 ? OutputMode : "DirectSound",
             Latency = Math.Clamp(Latency, 10, 2000),

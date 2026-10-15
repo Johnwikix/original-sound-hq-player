@@ -2437,4 +2437,9 @@ SHA-256: {5}
   <data name="LyricsPronunciationToggle" xml:space="preserve"><value>歌詞の発音を切り替え</value></data>
   <data name="LyricsTranslationIcon.Text" xml:space="preserve"><value>T</value></data>
   <data name="LyricsPronunciationIcon.Text" xml:space="preserve"><value>A</value></data>
+  <data name="SpectralEnhancementTitle" xml:space="preserve"><value>スペクトル補完</value></data>
+  <data name="SpectralEnhancementDescription" xml:space="preserve"><value>48 kHz 以下のモノラル／ステレオ PCM を補完します。DSD、DoP、Atmos は対象外です。共有出力はデバイスのレート（最大 192 kHz）、排他／ASIO は曲の 2 倍を要求します。変更時は現在位置で再構築します。</value></data>
+  <data name="SpectralEnhancementOff" xml:space="preserve"><value>オフ</value></data>
+  <data name="SpectralEnhancementLossy" xml:space="preserve"><value>非可逆圧縮の曲のみ</value></data>
+  <data name="SpectralEnhancementAll" xml:space="preserve"><value>非可逆圧縮＋48 kHz 以下の可逆音源</value></data>
 </root>

@@ -296,6 +296,7 @@ namespace WinUIMusicPlayer.Services
                 WasapiEndpointId = AppSettings.WasapiEndpointId,
                 BassASIODeviceId = AppSettings.BassASIODeviceId,
                 Latency = AppViewModel.Latency,
+                SpectralEnhancement = (SpectralEnhancementMode)AppViewModel.SpectralEnhancement,
                 IsDopEnabled = AppViewModel.IsDopEnabled,
                 ExperimentalSurround51 = AppViewModel.ExperimentalSurround51,
                 ExperimentalAtmosPassthrough = AppViewModel.ExperimentalAtmosPassthrough,

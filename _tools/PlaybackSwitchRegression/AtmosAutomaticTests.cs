@@ -167,7 +167,7 @@ internal static unsafe partial class Program
             byte[] settings = new byte[BinarySerializer.IpcSettingSize];
             int n = BinarySerializer.WriteIpcSetting(settings, new() { AtmosEndpointId = "hdmi-id", ExperimentalAtmosPassthrough = true });
             Require(BinarySerializer.ReadIpcSetting(settings.AsSpan(0, n)).AtmosEndpointId == "hdmi-id", "HDMI preference lost");
-            Require(BinarySerializer.ReadIpcSetting(settings.AsSpan(0, n - 9)).ExperimentalAtmosPassthrough, "previous Atmos setting no longer readable");
+            Require(BinarySerializer.ReadIpcSetting(settings.AsSpan(0, n - 10)).ExperimentalAtmosPassthrough, "previous Atmos setting no longer readable");
         });
         Run("Auto Atmos: capability rejection runs off control thread and skips Initialize", () =>
         {

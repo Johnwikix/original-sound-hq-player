@@ -124,6 +124,7 @@ internal static unsafe partial class Program
         RunExportTests(Path.Combine(AppContext.BaseDirectory, "Fixtures", "eac3-5.1.m4a"));
         RunExportTests(Path.Combine(root, "_tools", "test_tone.wav"));
         WriteDsfFixture();
+        RunSpectralSessionTests(root);
         RunSurroundTests(root);
         RunAutomaticSurroundTests(root);
         RunAtmosTests(root);

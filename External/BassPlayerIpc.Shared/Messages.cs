@@ -28,6 +28,8 @@ public struct IpcSetting
     public string? WasapiEndpointId;
     public int BassASIODeviceId;
     public int Latency;
+    /// <summary>Gets or sets the PCM enhancement scope.</summary>
+    public SpectralEnhancementMode SpectralEnhancement;
     public bool IsDopEnabled;
     public int DsdGain;
     public int DsdPcmFreq;

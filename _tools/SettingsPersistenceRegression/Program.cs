@@ -57,14 +57,15 @@ try
 
     var playbackStore = new AudioSettingsStore(Path.Combine(directory, "PlaybackEffects.json"));
     await playbackStore.LoadAsync(new());
-    var playbackPreferences = new AudioPreferences { Dsp = new() { GaplessPlayback = false, PlaybackRate = 1.25,
+    var playbackPreferences = new AudioPreferences { SpectralEnhancement = SpectralEnhancementMode.LossyAndLowRateLossless, Dsp = new() { GaplessPlayback = false, PlaybackRate = 1.25,
         CompressorEnabled = true, CompressorThresholdDb = -22, CompressorRatio = 3.5, CompressorMakeupDb = 8 } };
     await playbackStore.SaveAsync(playbackPreferences);
     Check(await new AudioSettingsStore(Path.Combine(directory, "PlaybackEffects.json")).LoadAsync(new()) == playbackPreferences,
         "Playback effects did not survive restarting the store.");
     Check(legacy.Dsp.GaplessPlayback && legacy.Dsp.PlaybackRate == 1 && !legacy.Dsp.CompressorEnabled,
         "Old settings changed speed or enabled compression.");
-    Console.WriteLine("PASS: gapless/speed/compressor settings survive restart; legacy defaults preserved.");
+    Check(legacy.SpectralEnhancement == SpectralEnhancementMode.Off, "Legacy audio enabled enhancement.");
+    Console.WriteLine("PASS: enhancement/gapless/speed/compressor settings survive restart; legacy defaults preserved.");
 
     string path = Path.Combine(directory, "AudioSettings.json");
     var store = new AudioSettingsStore(path);

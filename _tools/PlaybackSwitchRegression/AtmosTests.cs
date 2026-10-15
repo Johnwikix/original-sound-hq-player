@@ -280,7 +280,7 @@ internal static unsafe partial class Program
             byte[] bytes = new byte[BinarySerializer.IpcSettingSize];
             int size = BinarySerializer.WriteIpcSetting(bytes, new() { ExperimentalAtmosPassthrough = true, ExperimentalSurround51 = true });
             Require(BinarySerializer.ReadIpcSetting(bytes.AsSpan(0, size)).ExperimentalAtmosPassthrough, "flag lost");
-            var legacy = BinarySerializer.ReadIpcSetting(bytes.AsSpan(0, size - 3));
+            var legacy = BinarySerializer.ReadIpcSetting(bytes.AsSpan(0, size - 4));
             Require(!legacy.ExperimentalAtmosPassthrough && legacy.ExperimentalSurround51, "old 5.1 setting changed");
         });
     }

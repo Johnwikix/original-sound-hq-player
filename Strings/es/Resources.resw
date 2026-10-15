@@ -2437,4 +2437,9 @@ SHA-256: {5}
   <data name="LyricsPronunciationToggle" xml:space="preserve"><value>Alternar pronunciación de la letra</value></data>
   <data name="LyricsTranslationIcon.Text" xml:space="preserve"><value>T</value></data>
   <data name="LyricsPronunciationIcon.Text" xml:space="preserve"><value>A</value></data>
+  <data name="SpectralEnhancementTitle" xml:space="preserve"><value>Mejora espectral</value></data>
+  <data name="SpectralEnhancementDescription" xml:space="preserve"><value>Mejora PCM mono/estéreo de hasta 48 kHz. Omite DSD, DoP y Atmos. Salida compartida: frecuencia del dispositivo hasta 192 kHz; exclusiva/ASIO: el doble de la canción. Los cambios reinician la reproducción en la posición actual.</value></data>
+  <data name="SpectralEnhancementOff" xml:space="preserve"><value>Desactivada</value></data>
+  <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Solo canciones con pérdida</value></data>
+  <data name="SpectralEnhancementAll" xml:space="preserve"><value>Con pérdida + sin pérdida hasta 48 kHz</value></data>
 </root>

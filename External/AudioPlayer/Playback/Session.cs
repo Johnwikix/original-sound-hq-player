@@ -80,6 +80,7 @@ internal sealed class Session : IRenderSource, IDisposable
     public int Channels { get; }
     public uint ChannelMask { get; private init; }
     public bool IsAtmos { get; private init; }
+    internal bool EnhancementActive { get; private init; }
     public uint EncodedChannelMask { get; private init; }
     public long TotalMs { get; }
     public long AnchorFrames; // 引擎线程写、渲染线程不读（位置在引擎侧合成）
@@ -127,7 +128,8 @@ internal sealed class Session : IRenderSource, IDisposable
 
     public static Session? Open(PlaybackEngine engine, string path, RenderKind kind,
         int dsdPcmFreq, int dsdGainDb, int latencyMs, int? forcedRate = null, int? forcedChannels = null,
-        int? maxChannels = null, bool experimentalSurround51 = false, AtmosProbeCache? atmosProbeCache = null, PlaybackSource? source = null, CancellationToken cancellationToken = default, double playbackRate = 1)
+        int? maxChannels = null, bool experimentalSurround51 = false, AtmosProbeCache? atmosProbeCache = null, PlaybackSource? source = null, CancellationToken cancellationToken = default, double playbackRate = 1,
+        SpectralEnhancementMode enhancement = SpectralEnhancementMode.Off, int? enhancementDeviceRate = null)
     {
         Session? pending = null;
         IDisposable? input = null;
@@ -139,7 +141,7 @@ internal sealed class Session : IRenderSource, IDisposable
                 {
                     var dec = new PcmDecoder();
                     input = dec;
-                    if (!dec.Open(path, dsdPcmFreq, dsdGainDb, forcedRate, forcedChannels, maxChannels, experimentalSurround51, source, cancellationToken)) { dec.Dispose(); return null; }
+                    if (!dec.Open(path, dsdPcmFreq, dsdGainDb, forcedRate, forcedChannels, maxChannels, experimentalSurround51, source, cancellationToken, enhancement, enhancementDeviceRate)) { dec.Dispose(); return null; }
                     // Non-seekable streams cannot safely rebuild at the audible position after a rate change.
                     if (!dec.CanSeek) playbackRate = 1;
                     int rate = dec.SampleRate;
@@ -151,6 +153,7 @@ internal sealed class Session : IRenderSource, IDisposable
                     var s = new Session(engine, kind, channels, rate, rate, dec.TotalMs, rate)
                     {
                         _pcm = dec,
+                        EnhancementActive = dec.EnhancementActive,
                         PlaybackRate = playbackRate,
                         _tempo = playbackRate == 1 ? null : new TempoProcessor(rate, channels, playbackRate),
                         ChannelMask = dec.ChannelMask,
