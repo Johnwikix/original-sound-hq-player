@@ -2437,8 +2437,8 @@ SHA-256: {5}
   <data name="LyricsPronunciationToggle" xml:space="preserve"><value>Переключить произношение текста</value></data>
   <data name="LyricsTranslationIcon.Text" xml:space="preserve"><value>T</value></data>
   <data name="LyricsPronunciationIcon.Text" xml:space="preserve"><value>A</value></data>
-  <data name="SpectralEnhancementTitle" xml:space="preserve"><value>Спектральное улучшение</value></data>
-  <data name="SpectralEnhancementDescription" xml:space="preserve"><value>Обрабатывает моно/стерео PCM до 48 кГц. DSD, DoP и Atmos пропускаются. Общий режим: частота устройства до 192 кГц; монопольный/ASIO: удвоенная частота трека. Изменение перезапускает воспроизведение с текущей позиции.</value></data>
+  <data name="SpectralEnhancementTitle" xml:space="preserve"><value>Апсемплинг</value></data>
+  <data name="SpectralEnhancementDescription" xml:space="preserve"><value>Восстанавливает высокие частоты и повышает частоту моно/стерео PCM до 48 кГц.</value></data>
   <data name="SpectralEnhancementOff" xml:space="preserve"><value>Выключено</value></data>
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Только сжатие с потерями</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>С потерями и без потерь до 48 кГц</value></data>

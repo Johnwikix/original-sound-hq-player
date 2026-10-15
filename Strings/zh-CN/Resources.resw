@@ -2439,8 +2439,8 @@ SHA-256：{5}
   <data name="LyricsPronunciationToggle" xml:space="preserve"><value>切换歌词发音</value></data>
   <data name="LyricsTranslationIcon.Text" xml:space="preserve"><value>译</value></data>
   <data name="LyricsPronunciationIcon.Text" xml:space="preserve"><value>音</value></data>
-  <data name="SpectralEnhancementTitle" xml:space="preserve"><value>频谱增强</value></data>
-  <data name="SpectralEnhancementDescription" xml:space="preserve"><value>增强不超过 48 kHz 的单声道/立体声 PCM，跳过 DSD、DoP 和 Atmos。共享模式跟随设备采样率（最高 192 kHz）；独占/ASIO 请求歌曲采样率的 2 倍。更改后在当前位置重建播放。</value></data>
+  <data name="SpectralEnhancementTitle" xml:space="preserve"><value>升频</value></data>
+  <data name="SpectralEnhancementDescription" xml:space="preserve"><value>补全高频并升采样，仅适用于 ≤48 kHz 单/双声道 PCM。</value></data>
   <data name="SpectralEnhancementOff" xml:space="preserve"><value>关闭</value></data>
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>仅有损歌曲</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>有损及 ≤48 kHz 无损歌曲</value></data>

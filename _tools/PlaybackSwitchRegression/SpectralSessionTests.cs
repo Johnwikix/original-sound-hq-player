@@ -18,6 +18,13 @@ internal static unsafe partial class Program
                 pcm!.RequestSeek(1000, 77);
                 Require(SpinWait.SpinUntil(() => Volatile.Read(ref pcm.CompletedSeekId) == 77, 3000), "Enhanced seek did not complete");
                 Require(pcm.DecodeFailure == null, "Enhanced decode failed after seeking");
+                Set(engine,"_dspSettings",new DspSettings {IsEnabled=false});
+                using var bypass=(Session?)Invoke(engine,"OpenSession",path,false,null);
+                Require(bypass is {EnhancementActive:false,SampleRate:44100},"DSP off still upsamples");
+                Require(engine.SpectralEnhancement==SpectralEnhancementMode.LossyAndLowRateLossless,"DSP off erased scope preference");
+                Set(engine,"_dspSettings",new DspSettings {IsEnabled=true});
+                using var restored=(Session?)Invoke(engine,"OpenSession",path,false,null);
+                Require(restored is {EnhancementActive:true,SampleRate:88200},"DSP on did not restore upsampling");
                 using var bitstream = (Session?)Invoke(engine, "OpenSession", Path.Combine(AppContext.BaseDirectory, "switch-test.dsf"), false, null);
                 Require(bitstream != null && bitstream.Kind == (mode == "ASIO" ? RenderKind.NativeDsd : RenderKind.Dop)
                     && !bitstream.EnhancementActive, "Enhancement entered a DSD bitstream");

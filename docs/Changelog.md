@@ -1,3 +1,8 @@
+## 2026-10-15 升频并入 DSP 音效
+- `DspSettingsControl`、语言资源：频谱增强更名为升频，移入音效页并缩短说明，复用原音频偏好。
+- `PlaybackEngine`：升频受 DSP 总开关控制，切换时保进度重建并取消旧预加载；关闭时停止增强计算，保留歌曲范围选项。
+- `Player/AudioPlayer.exe`：更新 NativeAOT 播放器。
+
 ## 2026-10-15 实时 PCM 频谱增强
 - `External/AudioPlayer/AudioEnhancement`：增加 SIMD 频谱增强处理，在解码线程补偿延迟、排空尾部并在定位时重置信号历史。
 - `External/AudioPlayer/Decode`、`Playback`：按源编码筛选；跳过 DSD/DoP/Atmos/多声道及 >48 kHz 源，共享输出按设备混音率（最高 192 kHz 的整数约数），独占/ASIO 请求源率 2 倍。

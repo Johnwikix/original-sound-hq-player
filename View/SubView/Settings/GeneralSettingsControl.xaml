@@ -91,18 +91,6 @@
                         Value="{x:Bind ViewModel.AppViewModel.DsdGain, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
-                <controls:SettingsCard
-                    Header="{x:Bind tool:ToolUtils.GetString('SpectralEnhancementTitle')}"
-                    Description="{x:Bind tool:ToolUtils.GetString('SpectralEnhancementDescription')}">
-                    <ComboBox Width="300" VerticalAlignment="Center"
-                        AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('SpectralEnhancementTitle')}"
-                        SelectedIndex="{x:Bind ViewModel.AppViewModel.SpectralEnhancement, Mode=TwoWay}">
-                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('SpectralEnhancementOff')}" />
-                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('SpectralEnhancementLossy')}" />
-                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('SpectralEnhancementAll')}" />
-                    </ComboBox>
-                </controls:SettingsCard>
-
                 <controls:SettingsCard Description="{x:Bind ViewModel.AppViewModel.DsdCardDescription, Mode=OneWay}" Header="DSD Dop / DSD Native">
                     <ToggleSwitch MinWidth="0"
                         IsEnabled="{x:Bind ViewModel.AppViewModel.DsdBitstreamAllowed, Mode=OneWay}"

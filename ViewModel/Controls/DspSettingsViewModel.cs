@@ -29,8 +29,12 @@ public partial class DspSettingsViewModel : ObservableObject
     /// <summary>弹出 Store 购买对话框；完成后许可服务自动刷新并重推设置。</summary>
     public IAsyncRelayCommand PurchaseCommand { get; }
 
+    /// <summary>Gets the existing application preference owner used by the upsampling selector.</summary>
+    public AppViewModel AppViewModel { get; }
+
     public DspSettingsViewModel(IpcService ipc, MusicDatabaseService database, LicenseService license, AppViewModel appViewModel)
     {
+        AppViewModel = appViewModel;
         _ipc = ipc;
         _database = database;
         _license = license;

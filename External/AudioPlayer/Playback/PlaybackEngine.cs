@@ -92,6 +92,8 @@ public sealed partial class PlaybackEngine : IDisposable
     public int BassASIODeviceId = 0;
     public int Latency = 300;
     public SpectralEnhancementMode SpectralEnhancement;
+    private SpectralEnhancementMode EffectiveEnhancement => _dspSettings?.IsEnabled != false
+        ? SpectralEnhancement : SpectralEnhancementMode.Off;
     public bool IsDopEnabled;
     public bool ExperimentalSurround51;
     public bool ExperimentalAtmosPassthrough;
@@ -328,14 +330,14 @@ public sealed partial class PlaybackEngine : IDisposable
     {
         if (_streamSlots.TryGetValue(_currentStream, out var remote) && remote.Source.Location == url)
         {
-            bool needsMix = forceSharedFormat || (SpectralEnhancement != SpectralEnhancementMode.Off && IsSharedMode(OutputMode));
+            bool needsMix = forceSharedFormat || (EffectiveEnhancement != SpectralEnhancementMode.Off && IsSharedMode(OutputMode));
             var mix = needsMix ? GetEndpointMixFormat(OutputMode is "DirectSound" or "ASIO" ? -1 : BassOutputDeviceId) : null;
             if (needsMix && mix is null) return null;
             var remoteKind = forceSharedFormat ? RenderKind.Pcm : kindOverride ?? StreamingKind(remote.Source);
             return Session.Open(this, url, remoteKind, DsdPcmFreq, DsdGain, Latency,
                 forcedRate: forceSharedFormat ? mix?.SampleRate : null, forcedChannels: forceSharedFormat ? mix?.Channels : null, maxChannels: 2,
                 source: remote.Source, cancellationToken: remote.Cancel.Token, playbackRate: EffectivePlaybackRate,
-                enhancement: SpectralEnhancement, enhancementDeviceRate: mix?.SampleRate);
+                enhancement: EffectiveEnhancement, enhancementDeviceRate: mix?.SampleRate);
         }
         if (ExperimentalAtmosPassthrough && !forceSharedFormat && !_atmosUseSharedPcm && !_surroundFallback
             && kindOverride is null or RenderKind.Eac3)
@@ -393,10 +395,10 @@ public sealed partial class PlaybackEngine : IDisposable
         }
         bool surround51 = ExperimentalSurround51 && !forceSharedFormat && !_atmosUseSharedPcm && !_surroundFallback && kind == RenderKind.Pcm;
         int? enhancementMix = kind == RenderKind.Pcm ? EnhancementMixRate(forceSharedFormat) : null;
-        if (kind == RenderKind.Pcm && SpectralEnhancement != SpectralEnhancementMode.Off
+        if (kind == RenderKind.Pcm && EffectiveEnhancement != SpectralEnhancementMode.Off
             && (forceSharedFormat || IsSharedMode(OutputMode)) && enhancementMix == null) return null;
         var session = Session.Open(this, url, kind, DsdPcmFreq, DsdGain, Latency, forcedRate, forcedChannels, maxChannels, surround51, playbackRate: EffectivePlaybackRate,
-            enhancement: _atmosUseSharedPcm ? SpectralEnhancementMode.Off : SpectralEnhancement,
+            enhancement: _atmosUseSharedPcm ? SpectralEnhancementMode.Off : EffectiveEnhancement,
             enhancementDeviceRate: enhancementMix);
         if (session != null)
         {
@@ -420,7 +422,7 @@ public sealed partial class PlaybackEngine : IDisposable
     private int FadeDrainMs => Math.Min(1500, (_output?.LatencyMs ?? 0) + 100);
 
     private int? EnhancementMixRate(bool forceShared = false)
-        => SpectralEnhancement != SpectralEnhancementMode.Off && (forceShared || IsSharedMode(OutputMode))
+        => EffectiveEnhancement != SpectralEnhancementMode.Off && (forceShared || IsSharedMode(OutputMode))
             ? GetEndpointMixFormat(OutputMode is "DirectSound" or "ASIO" ? -1 : BassOutputDeviceId)?.SampleRate : null;
 
     private static bool IsSharedMode(string mode) => mode is not ("WasapiExclusivePush" or "WasapiExclusiveEvent" or "ASIO");
@@ -953,7 +955,7 @@ public sealed partial class PlaybackEngine : IDisposable
                 SetSession(OpenSession(url));
                 if (_session != null)
                 {
-                    _session.RequestSeek(curMs);
+                    if (_session.CanSeek) _session.RequestSeek(curMs);
                     if (wasPlaying || IsPlaying) StartOutputAndPlay();
                 }
                 else
@@ -1029,11 +1031,14 @@ public sealed partial class PlaybackEngine : IDisposable
         {
             AdoptGapless();
             bool rateChanged = _session is { Kind: RenderKind.Pcm, CanSeek: true } pcm && pcm.PlaybackRate != (normalized.IsEnabled ? normalized.PlaybackRate : 1);
-            if (rateChanged || !normalized.GaplessPlayback) CancelGapless();
+            bool enhancementChanged = _session is { Kind: RenderKind.Pcm }
+                && SpectralEnhancement != SpectralEnhancementMode.Off
+                && (_dspSettings?.IsEnabled ?? true) != normalized.IsEnabled;
+            if (rateChanged || enhancementChanged || !normalized.GaplessPlayback) CancelGapless();
             _previewDeviceId = null;
             _previewSettings = null;
             _dspSettings = normalized;
-            if (rateChanged) ChangingSetting();
+            if (rateChanged || enhancementChanged) ChangingSetting();
             ApplyDspToSessions();
             QueueDspState();
         }

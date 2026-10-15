@@ -138,7 +138,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 throw new Exception("Dispose retained the background resources");
             File.Delete(fixture);
             File.Delete(invalid);
-            result = "PASS: shipping spectral settings card, three choices and two-way selection persistence\nPASS: " + result;
+            result = "PASS: shipping DSP upsampling card, master enable/disable, three choices and two-way selection persistence\nPASS: " + result;
             result += "\nPASS: all 9 saved/user rates, legacy custom rate, initialization guard\nPASS: real composition load, blur, stale request, missing/corrupt image, clear, unload/reload and idempotent disposal";
             result += "\nPASS: shipping background SettingsExpander expansion, collapse/re-expansion and warning visibility";
         }

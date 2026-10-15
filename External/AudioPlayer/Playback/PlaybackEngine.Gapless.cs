@@ -110,7 +110,7 @@ public sealed partial class PlaybackEngine
             var (position, duration) = GetTimeProgress();
             if (duration > 0 && (duration - position) / current.PlaybackRate > GaplessLeadTimeMs) return;
             preloader.Start(new(request, current, source, DsdPcmFreq, DsdGain, Latency,
-                ExperimentalSurround51, EffectivePlaybackRate, IsDopEnabled && !IsSharedMode(OutputMode), SpectralEnhancement, EnhancementMixRate()));
+                ExperimentalSurround51, EffectivePlaybackRate, IsDopEnabled && !IsSharedMode(OutputMode), EffectiveEnhancement, EnhancementMixRate()));
         }
     }
 

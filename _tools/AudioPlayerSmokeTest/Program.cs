@@ -274,6 +274,21 @@ if (args.Contains("--memory"))
     finally { StopPlayer(); }
 }
 
+if(args.Contains("--upsampling-master"))
+{
+    byte[] settingsPayload=new byte[DspProtocol.SettingsSize];
+    foreach(bool enabled in new[]{false,true})
+    {
+        DspProtocol.WriteSettings(settingsPayload,new DspSettings{IsEnabled=enabled});
+        if(Send(CommandId.UpdateDsp,settingsPayload,out _)!=MessageTypeId.Success)
+            throw new InvalidOperationException("DSP master update failed");
+        int expected=enabled?int.Parse(expectedRateText!):44100;
+        if(!SpinWait.SpinUntil(()=>states.CurrentDspState?.State is {} state && state.IsEnabled==enabled && state.SampleRate==expected,5000))
+            throw new InvalidOperationException("Upsampling did not follow DSP master");
+        Console.WriteLine($"[smoke] PASS: DSP master {enabled} / actual rate {expected}");
+    }
+}
+
 // Actual NativeAOT + persistent IPC + WASAPI integration for the new playback chain.
 if (args.Contains("--gapless"))
 {

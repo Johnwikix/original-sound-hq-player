@@ -2437,8 +2437,8 @@ SHA-256: {5}
   <data name="LyricsPronunciationToggle" xml:space="preserve"><value>Toggle lyric pronunciation</value></data>
   <data name="LyricsTranslationIcon.Text" xml:space="preserve"><value>T</value></data>
   <data name="LyricsPronunciationIcon.Text" xml:space="preserve"><value>A</value></data>
-  <data name="SpectralEnhancementTitle" xml:space="preserve"><value>Spectral enhancement</value></data>
-  <data name="SpectralEnhancementDescription" xml:space="preserve"><value>Enhances mono/stereo PCM up to 48 kHz. Skips DSD, DoP and Atmos. Shared output follows the device rate (up to 192 kHz); exclusive/ASIO requests 2× the song rate. Changes rebuild playback at the current position.</value></data>
+  <data name="SpectralEnhancementTitle" xml:space="preserve"><value>Upsampling</value></data>
+  <data name="SpectralEnhancementDescription" xml:space="preserve"><value>Restores high frequencies and upsamples mono/stereo PCM up to 48 kHz.</value></data>
   <data name="SpectralEnhancementOff" xml:space="preserve"><value>Off</value></data>
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Lossy songs only</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>Lossy + lossless up to 48 kHz</value></data>

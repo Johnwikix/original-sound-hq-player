@@ -23,5 +23,6 @@
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
     <None Include="../../View/SubView/Settings/GeneralSettingsControl.xaml"
           Link="Fixtures/GeneralSettingsControl.xaml" CopyToOutputDirectory="Always" />
+    <None Include="../../View/SubView/Settings/DspSettingsControl.xaml" Link="Fixtures/DspSettingsControl.xaml" CopyToOutputDirectory="Always" />
   </ItemGroup>
 </Project>
