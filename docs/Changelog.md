@@ -1,3 +1,8 @@
+## 2026-10-16 优化升频处理与资源管理
+- `External/AudioPlayer/AudioEnhancement`：优化处理状态与工作缓冲区组织，保持音频输出一致，完善中文注释。
+- `Coefficients/Assets/dsp-tables.json`、`_tools/PackDspTables.py`：统一系数表配置和资源生成流程，增加资源一致性校验。
+- `Player/AudioPlayer.exe`：更新 NativeAOT 播放器，通过升频、定位、暂停恢复及输出一致性回归。
+
 ## 2026-10-15 升频并入 DSP 音效
 - `DspSettingsControl`、语言资源：频谱增强更名为升频，移入音效页并缩短说明，复用原音频偏好。
 - `PlaybackEngine`：升频受 DSP 总开关控制，切换时保进度重建并取消旧预加载；关闭时停止增强计算，保留歌曲范围选项。

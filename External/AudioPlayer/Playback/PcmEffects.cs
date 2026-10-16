@@ -266,8 +266,8 @@ internal sealed class PcmEffects : IDisposable
         _gainStep = _lowLeft = _lowRight = 0;
     }
 
-    /// <summary>Move render history across a gapless boundary, retaining each track's own loudness target.
-    /// Only the audio thread calls this, after it has stopped rendering the previous session.</summary>
+    /// <summary>跨无缝播放边界转移渲染历史，并保留各曲目自身的响度目标。
+    /// 仅由音频线程在停止渲染前一会话后调用。</summary>
     internal void ContinueFrom(PcmEffects previous)
     {
         _renderTarget = previous._renderTarget;
@@ -280,8 +280,8 @@ internal sealed class PcmEffects : IDisposable
         _lowLeft = previous._lowLeft;
         _lowRight = previous._lowRight;
         _dynamics.ContinueFrom(previous._dynamics);
-        // Reuse only identical filters, transferring exclusive render ownership instead of
-        // copying history. Cached curves use reference equality; file IRs compare coefficients.
+        // 只复用完全相同的滤波器，通过转移独占渲染所有权来保留状态，
+        // 无需复制历史；缓存曲线比较引用，文件脉冲响应比较系数。
         var target = Volatile.Read(ref _target);
         if (target.Filter != null && previous._renderFilter is { } filter
             && target.Filter.HasSameCoefficients(filter))

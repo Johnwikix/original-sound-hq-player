@@ -1,8 +1,8 @@
 namespace AudioPlayer.Playback;
 
-/// <summary>A stable output source: splice at the exact PCM frame boundary without stopping the device.
-/// The engine owns sessions. This gate excludes cancellation/disposal from an in-flight render.
-/// No file I/O, task creation, notifications or disposal happen on the audio thread.</summary>
+/// <summary>稳定的输出音源：在准确的 PCM 帧边界拼接，无需停止设备。
+/// 引擎持有会话；此锁防止取消或释放与在途渲染同时发生。
+/// 音频线程不执行文件 I/O、创建任务、发送通知或释放资源。</summary>
 internal sealed class GaplessSource(Session current) : IRenderSource
 {
     private readonly object _gate = new();

@@ -113,12 +113,12 @@ internal sealed class Session : IRenderSource, IDisposable
         }
         else if (kind == RenderKind.Dop)
         {
-            _dsdLeftover = new byte[ch * 2]; // last byte frame plus one silence frame at EOF
+            _dsdLeftover = new byte[ch * 2]; // 文件末尾最后一个字节帧及一个静音帧。
             _decodeScratchB = new byte[65536 * ch];
             _dopPackBuffer = new uint[32768 * ch];
             _dsdMergeBuffer = new byte[65536 * ch + ch];
         }
-        else // NativeDsd
+        else // 原生 DSD 输出
         {
             _decodeScratchB = new byte[65536 * ch];
         }
@@ -142,7 +142,7 @@ internal sealed class Session : IRenderSource, IDisposable
                     var dec = new PcmDecoder();
                     input = dec;
                     if (!dec.Open(path, dsdPcmFreq, dsdGainDb, forcedRate, forcedChannels, maxChannels, experimentalSurround51, source, cancellationToken, enhancement, enhancementDeviceRate)) { dec.Dispose(); return null; }
-                    // Non-seekable streams cannot safely rebuild at the audible position after a rate change.
+                    // 不可定位的流在采样率变化后无法安全地从可听位置重建。
                     if (!dec.CanSeek) playbackRate = 1;
                     int rate = dec.SampleRate;
                     int channels = dec.Channels;
@@ -234,7 +234,7 @@ internal sealed class Session : IRenderSource, IDisposable
         }
         catch
         {
-            // A failed ring allocation or thread start must not retain a native decoder/callback.
+            // 环形缓冲区分配或线程启动失败时，不得遗留原生解码器或回调。
             if (pending != null) pending.Dispose();
             else input?.Dispose();
             throw;
@@ -355,8 +355,8 @@ internal sealed class Session : IRenderSource, IDisposable
 
     private bool WaitForSeekAfterEnd()
     {
-        // Keep the decoder/bitstream reader alive after EOF: the device may still be draining,
-        // and RequestSeek must be able to restart decoding without replacing the session.
+        // 到达文件末尾后仍保留解码器或位流读取器，因为设备可能仍在排空，
+        // 且 RequestSeek 必须能在不替换会话的情况下重新启动解码。
         lock (_decodeEndGate)
         {
             while (!_cancelled && Interlocked.Read(ref _pendingSeekMs) == _pendingSeekSentinel)
@@ -513,7 +513,7 @@ internal sealed class Session : IRenderSource, IDisposable
         catch (Exception ex)
         {
             Console.WriteLine($"[decode] E-AC-3 bitstream: {ex.Message}");
-            Volatile.Write(ref _decodeFailure, ex); // Engine handles failure; never report natural EOF.
+            Volatile.Write(ref _decodeFailure, ex); // 由引擎处理失败，不能报告为自然结束。
         }
         finally { CompleteDecodeThread(); }
     }
@@ -568,8 +568,8 @@ internal sealed class Session : IRenderSource, IDisposable
         _cancelled = true;
         CancelIo();
         WakeProducer();
-        // Ring locks drain in-flight copies and reject late producers/render callbacks.
-        // Large network pages can be released even if a decoder is still unwinding I/O.
+        // 环形缓冲区锁等待在途复制完成，并拒绝迟到的生产方或渲染回调。
+        // 即使解码器仍在退出 I/O，也可以释放大型网络内存页。
         _pcmRing?.Dispose();
         _dopRing?.Dispose();
         _dsdRing?.Dispose();

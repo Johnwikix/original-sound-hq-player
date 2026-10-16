@@ -5,9 +5,9 @@ namespace AudioPlayer.Interop;
 // ─────────────────────────────────────────────────────────────────
 // ASIO 互操作：IASIO 手动虚表调用（Windows 上 ASIO 的 long=32 位），
 // 驱动经 HKLM\SOFTWARE\ASIO 注册为 COM 组件。虚表序（IUnknown 后 3..23）：
-// 3=init 4=getDriverName 5=getDriverVersion 6=getErrorMessage 7=start 8=stop
-// 9=getChannels 11=getBufferSize 12=canSampleRate 13=getSampleRate 14=setSampleRate
-// 18=getChannelInfo 19=createBuffers 20=disposeBuffers 22=future 23=outputReady
+// 虚表索引：3=初始化，4=驱动名称，5=驱动版本，6=错误信息，7=启动，8=停止。
+// 虚表索引：9=声道数，11=缓冲区大小，12=采样率支持检查，13=获取采样率，14=设置采样率。
+// 虚表索引：18=声道信息，19=创建缓冲区，20=释放缓冲区，22=扩展功能，23=输出就绪。
 // ═══ 曾因漏计 getDriverName/Version/ErrorMessage 三槽整体偏移 3 导致闪退 ═══
 // ─────────────────────────────────────────────────────────────────
 
@@ -39,7 +39,7 @@ internal static class AsioConstants
     public const int AsioStDsdInt8Msb1 = 33; // DSD：首采样在最高位
     public const int AsioStDsdInt8Ner8 = 40; // DSD：每字节 1 个采样
 
-    // asioMessage selector
+    // asioMessage 消息选择编号。
     public const int KAsioSelectorSupported = 1;
     public const int KAsioEngineVersion = 2;
     public const int KAsioResetRequest = 3;

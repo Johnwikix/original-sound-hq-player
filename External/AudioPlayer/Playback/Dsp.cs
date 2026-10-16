@@ -45,7 +45,7 @@ internal sealed class Equalizer
         _history.AsSpan().Clear();
     }
 
-    /// <summary>Audio-thread handoff after the last old-track sample; the old source is no longer rendered.</summary>
+    /// <summary>在旧曲目最后一个样本之后由音频线程交接；此时旧音源已停止渲染。</summary>
     internal void ContinueFrom(Equalizer previous)
     {
         previous._history.AsSpan().CopyTo(_history);

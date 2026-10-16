@@ -3,8 +3,8 @@ using FFmpeg.AutoGen;
 
 namespace AudioPlayer.Decode;
 
-/// <summary>Pulls enhanced PCM on the decoder thread, trims DSP delay and resamples to the negotiated device rate.</summary>
-/// <remarks>Buffers belong to one decoder. Reads reuse storage; seeking resets signal history before new samples enter the ring.</remarks>
+/// <summary>在解码线程读取增强后的 PCM，裁剪 DSP 延迟，并重采样至协商的设备采样率。</summary>
+/// <remarks>缓冲区归单个解码器所有；读取复用存储，定位时先重置信号历史，再向环形缓冲区写入新样本。</remarks>
 internal sealed unsafe class SpectralPcmStream : IDisposable
 {
     private readonly SpectralEnhancer _core;
@@ -130,7 +130,7 @@ internal sealed unsafe class SpectralPcmStream : IDisposable
     private static int ToInteger(double sample) => !double.IsFinite(sample) ? 0
         : (int)Math.Clamp(Math.Round(sample * 2147483648.0), int.MinValue, int.MaxValue);
 
-    /// <summary>Releases the resampler owned by this decoder-thread processor.</summary>
+    /// <summary>释放此解码线程处理器持有的重采样器。</summary>
     public void Dispose()
     {
         if (_post != null) { SwrContext* post = _post; _post = null; ffmpeg.swr_free(&post); }

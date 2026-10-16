@@ -15,8 +15,8 @@ public sealed partial class PlaybackEngine
     private AtmosFailure _lastAtmosFailure;
     private bool _atmosFailureStopped;
 
-    // Reset only for a new track or an explicit output-settings change. Recovery,
-    // pause and seek must not repeatedly reacquire exclusive mode after a failure.
+    // 仅在切换曲目或显式修改输出设置时重置；恢复、
+    // 暂停和定位不得在失败后反复申请独占模式。
     private void ResetAtmosAttempt()
     {
         _atmosResolvedEndpoint = null;
@@ -28,8 +28,8 @@ public sealed partial class PlaybackEngine
 
     private bool ResolveAtmosEndpoint()
     {
-        // Resolve once and pin the ID through capability negotiation, initialization
-        // and PCM fallback. Never fall back to an unrelated default speaker.
+        // 设备 ID 只解析一次，并在能力协商、初始化
+        // 及 PCM 回退期间保持固定，避免切换到无关的默认扬声器。
         if (string.IsNullOrEmpty(_atmosResolvedEndpoint))
         {
             string? requested = !string.IsNullOrEmpty(AtmosEndpointId) ? AtmosEndpointId

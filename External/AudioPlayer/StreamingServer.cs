@@ -4,7 +4,7 @@ using BassPlayerIpc.Shared;
 
 namespace AudioPlayer;
 
-/// <summary>Independent persistent control lanes keep stop/pause available while preparation or seek runs.</summary>
+/// <summary>使用独立的持久控制通道，使准备或定位期间仍可停止和暂停。</summary>
 internal sealed class StreamingServer(PlaybackEngine engine, Guid instanceId)
 {
     public Task RunAsync(CancellationToken token)

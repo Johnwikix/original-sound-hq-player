@@ -3,7 +3,7 @@ using FFmpeg.AutoGen;
 
 namespace AudioPlayer.Decode;
 
-/// <summary>E-AC-3 access units -> IEC 61937 bursts, preserving JOC bytes. No decode/re-encode.</summary>
+/// <summary>将 E-AC-3 访问单元封装为 IEC 61937 突发包，保留 JOC 字节，不进行解码或重新编码。</summary>
 internal sealed unsafe class Eac3BitstreamReader : IDisposable
 {
     public const int BurstBytes = 24576;
@@ -29,7 +29,7 @@ internal sealed unsafe class Eac3BitstreamReader : IDisposable
         AVFormatContext* format = null;
         if (ffmpeg.avformat_open_input(&format, path, null, null) < 0) return false;
         _format = format;
-        // Only immutable metadata is cached; each session owns a new demuxer and packet.
+        // 仅缓存不可变元数据；每个会话单独持有解复用器和数据包。
         if (cachedInfo is { } cached && cached.Index >= 0 && cached.Index < format->nb_streams)
         {
             _stream = cached.Index;
@@ -45,7 +45,7 @@ internal sealed unsafe class Eac3BitstreamReader : IDisposable
         _stream = ffmpeg.av_find_best_stream(format, AVMediaType.AVMEDIA_TYPE_AUDIO, -1, -1, null, 0);
         if (_stream < 0) return false;
         var codec = format->streams[_stream]->codecpar;
-        // Initial experiment is deliberately limited to the 48kHz, six-channel DD+ delivery format.
+        // 初期实验仅支持 48 kHz、六声道的 DD+ 传输格式。
         if (codec->codec_id != AVCodecID.AV_CODEC_ID_EAC3 || codec->sample_rate != 48000
             || codec->ch_layout.nb_channels != 6) return false;
         IsAtmos = codec->profile == ffmpeg.AV_PROFILE_EAC3_DDP_ATMOS;
@@ -78,7 +78,7 @@ internal sealed unsafe class Eac3BitstreamReader : IDisposable
                 int packetBlocks = GetBlocks(packet);
                 if (blocks + packetBlocks > 6 || bytes + packet.Length > BurstBytes - 8)
                     throw new InvalidDataException("Unsupported E-AC-3 access-unit grouping.");
-                // IEC 61937 carries big-endian codec words in little-endian 16-bit carrier samples.
+                // IEC 61937 使用小端 16 位载波样本承载大端编解码字。
                 for (int i = 0; i < packet.Length; i += 2)
                 {
                     destination[8 + bytes + i] = packet[i + 1];

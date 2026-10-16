@@ -18,5 +18,5 @@
     <None Include="../../Libraries/FFmpeg/x64/*.dll;../../Libraries/WavPack/x64/wavpackdll.dll"
           Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
-  <ItemGroup><EmbeddedResource Include="../../External/AudioPlayer/AudioEnhancement/Coefficients/Assets/filters.bin" LogicalName="AudioPlayer.AudioEnhancement.Coefficients.filters.bin" /></ItemGroup>
+  <ItemGroup><EmbeddedResource Include="../../External/AudioPlayer/AudioEnhancement/Coefficients/Assets/dsp-tables.bin" LogicalName="AudioPlayer.AudioEnhancement.Coefficients.dsp-tables.bin" /></ItemGroup>
 </Project>

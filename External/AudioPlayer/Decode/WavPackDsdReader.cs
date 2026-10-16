@@ -4,8 +4,8 @@ using AudioPlayer.Interop;
 namespace AudioPlayer.Decode;
 
 /// <summary>
-/// WavPack DSD lossless decompression, without DSD-to-PCM conversion.
-/// Owns the native context on the session's decoder thread; read buffers are allocated once on open.
+/// 对 WavPack DSD 进行无损解压，不执行 DSD 到 PCM 的转换。
+/// 在会话解码线程持有原生上下文；读取缓冲区仅在打开时分配一次。
 /// </summary>
 internal sealed unsafe class WavPackDsdReader : IDisposable
 {
@@ -51,10 +51,10 @@ internal sealed unsafe class WavPackDsdReader : IDisposable
                 return false;
             }
             if ((WavPackNative.WavpackGetQualifyMode(_context) & WavPackNative.QModeDsdAudio) == 0)
-                return false; // PCM WV must stay on the FFmpeg PCM path.
+                return false; // PCM 类型的 WV 文件必须继续走 FFmpeg PCM 路径。
 
             Channels = WavPackNative.WavpackGetNumChannels(_context);
-            uint rate = WavPackNative.WavpackGetSampleRate(_context); // byte frames/sec, NOT DSD bits/sec
+            uint rate = WavPackNative.WavpackGetSampleRate(_context); // 单位为字节帧每秒，而非 DSD 比特每秒。
             if (Channels is <= 0 or > 64 || rate == 0 || rate > int.MaxValue / 8) return false;
             ByteRatePerChannel = (int)rate;
             _totalFrames = WavPackNative.WavpackGetNumSamples64(_context);
@@ -85,8 +85,8 @@ internal sealed unsafe class WavPackDsdReader : IDisposable
             throw new InvalidDataException("WavPack DSD stream ended before its declared sample count.");
 
         int count = (int)read * Channels;
-        // WavPack already normalizes LSBF/MSBF source files to MSB-first interleaved bytes.
-        // Do not reverse bits here (the ASIO output handles any driver-specific bit order).
+        // WavPack 已将 LSBF/MSBF 源文件统一为最高有效位优先的交织字节。
+        // 此处不反转位序，驱动特定的位序由 ASIO 输出处理。
         for (int i = 0; i < count; i++) destination[i] = (byte)_samples[i];
         return count;
     }

@@ -6,6 +6,7 @@ using BassPlayerIpc.Shared;
 using FFmpeg.AutoGen;
 
 ffmpeg.RootPath = AppContext.BaseDirectory;
+LayoutCompatibilityVerifier.Verify();
 string work = Path.GetFullPath(args.FirstOrDefault() ?? "artifacts/spectral-regression");
 Directory.CreateDirectory(work);
 int passed = 0;

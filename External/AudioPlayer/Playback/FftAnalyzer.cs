@@ -4,8 +4,8 @@ using BassPlayerIpc.Shared;
 namespace AudioPlayer.Playback;
 
 /// <summary>
-/// Pulls stereo PCM from the render callback into a bounded SPSC queue and computes
-/// windows off the audio thread. The render callback never waits for this worker.
+/// 将渲染回调中的立体声 PCM 写入有界单生产者单消费者队列，
+/// 并在音频线程之外计算分析窗口；渲染回调不等待此工作线程。
 /// </summary>
 internal sealed class FftAnalyzer : IDisposable
 {
@@ -15,8 +15,8 @@ internal sealed class FftAnalyzer : IDisposable
 
     private const int QueueCapacity = FftSize * 8;
     private readonly Action<FftSnapshot> _publish;
-    // Allocate FFT storage only while the feature is enabled. The analyzer itself
-    // lives with the player, so eager buffers would tax every playback session.
+    // 仅在功能启用时分配 FFT 存储。分析器对象与播放器同生命周期，
+    // 若提前分配缓冲区，会让每次播放会话都承担额外开销。
     private float[]? _leftQueue;
     private float[]? _rightQueue;
     private double[]? _leftWork;
@@ -90,14 +90,14 @@ internal sealed class FftAnalyzer : IDisposable
         catch (ObjectDisposedException) { }
     }
 
-    /// <summary>Called by the active PCM render callback. It must remain non-blocking.</summary>
+    /// <summary>由当前 PCM 渲染回调调用，必须保持非阻塞。</summary>
     internal void Capture(ReadOnlySpan<double> interleaved, int frames, int channels, uint channelMask, int sampleRate)
     {
         if (Volatile.Read(ref _enabled) == 0 || frames <= 0 || channels <= 0) return;
         float[]? leftQueue = Volatile.Read(ref _leftQueue);
         float[]? rightQueue = Volatile.Read(ref _rightQueue);
         if (leftQueue is null || rightQueue is null) return;
-        _ = channelMask; // Channel order is normalized to a stable stereo pair below.
+        _ = channelMask; // 下方将声道顺序统一为固定的立体声声道对。
         if (sampleRate > 0 && Volatile.Read(ref _sampleRate) != sampleRate)
             Volatile.Write(ref _sampleRate, sampleRate);
 
@@ -140,10 +140,10 @@ internal sealed class FftAnalyzer : IDisposable
             rightQueue[target] = double.IsFinite(right) ? (float)right : 0;
         }
 
-        // Publish the write cursor only after all samples are visible to the worker.
+        // 所有样本对工作线程可见后，才发布写游标。
         Volatile.Write(ref _write, write + take);
-        // Wake only on an empty-to-nonempty transition; the worker otherwise polls
-        // the already active queue and the render callback avoids repeated kernel calls.
+        // 仅在队列由空变为非空时唤醒；其他情况下工作线程轮询
+        // 已经活动的队列，避免渲染回调重复调用内核。
         if (used == 0)
         {
             try { Volatile.Read(ref _wake)?.Set(); }
@@ -283,8 +283,8 @@ internal sealed class FftAnalyzer : IDisposable
         try { Volatile.Read(ref _wake)?.Set(); }
         catch (ObjectDisposedException) { }
         var worker = _worker;
-        // Do not release work arrays until a publisher that may still be using
-        // them has returned. The completed join is the disable lifecycle boundary.
+        // 发布方可能仍在使用工作数组，必须等它返回后才能释放。
+        // 完成线程汇合后，才算到达功能禁用的生命周期边界。
         if (worker is not null && worker != Thread.CurrentThread)
             worker.Join();
         _worker = null;

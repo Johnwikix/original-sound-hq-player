@@ -3,9 +3,9 @@ using System.Runtime.InteropServices;
 
 namespace AudioPlayer.Playback;
 
-/// <summary>Large network rings own committed pages instead of per-track LOH arrays.
-/// The ring lock serializes all copies with Dispose; SafeHandle covers abandoned construction.
-/// No Span escapes a copy, and KeepAlive prevents finalization during native memory access.</summary>
+/// <summary>大型网络环形缓冲区直接持有已提交的内存页，避免为每首曲目分配大对象堆数组。
+/// 环形缓冲区锁使复制与 Dispose 串行执行；SafeHandle 负责构造未完成时的资源回收。
+/// Span 不会逃逸复制操作的作用域；KeepAlive 防止访问原生内存期间对象被终结。</summary>
 internal sealed unsafe class AudioRingMemory<T> : SafeHandleZeroOrMinusOneIsInvalid where T : unmanaged
 {
     private readonly int _length;

@@ -6,8 +6,8 @@ using FFmpeg.AutoGen;
 
 namespace AudioPlayer.Decode;
 
-/// <summary>HTTP options and interrupt lifetime shared by PCM and raw DSD readers.
-/// The decoder owns AVFormatContext and must close it before releasing this callback.</summary>
+/// <summary>PCM 和原始 DSD 读取器共用的 HTTP 选项及中断回调生命周期。
+/// 解码器持有 AVFormatContext，必须先关闭上下文，再释放该回调。</summary>
 internal sealed unsafe class FfmpegHttpInput(PlaybackSource source, CancellationToken token) : IDisposable
 {
     private readonly CancellationToken _token = token;

@@ -27,7 +27,7 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     private bool _nativeDsdApplied;
     private int _dsdRateDomain; // NativeDSD：驱动接受的采样率（位率或字节率，厂商各异）
     private bool _started;
-    private int _failed; // Interlocked
+    private int _failed; // 使用 Interlocked 原子访问
     private int _running;
     private long _lastCallbackTick;
     private int _restartReason;

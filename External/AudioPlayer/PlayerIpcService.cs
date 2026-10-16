@@ -4,7 +4,7 @@ using BassPlayerIpc.Shared;
 
 namespace AudioPlayer;
 
-/// <summary>Owns the playback engine and its ordered command, streaming-control and state pipes.</summary>
+/// <summary>持有播放引擎，以及有序命令、流控制和状态管道。</summary>
 public class PlayerIpcService : IDisposable
 {
     private PlaybackEngine? _engine;
@@ -15,7 +15,7 @@ public class PlayerIpcService : IDisposable
     private int _disposed;
     private bool _stopping;
     private Mutex? _instanceMutex;
-    // Only the single ordered control connection accesses this reusable response buffer.
+    // 仅由单个有序控制连接访问这个可复用的响应缓冲区。
     private readonly byte[] _responseBuffer = new byte[IpcConstants.MaxResponseSize];
     private MessageTypeId _responseType;
     private int _responseLength;

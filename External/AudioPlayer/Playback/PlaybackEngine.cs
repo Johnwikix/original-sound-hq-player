@@ -40,7 +40,7 @@ public sealed partial class PlaybackEngine : IDisposable
     private AtmosProbeCache? _atmosProbeCache;
     private int _dspPublishQueued;
 
-    // All session assignments use this hook, including fallback and device recovery.
+    // 所有会话赋值均经过此入口，包括回退和设备恢复。
     private void SetSession(Session? session)
     {
         if (_session?.Effects is { } oldEffects) oldEffects.StateChanged -= QueueDspState;
@@ -59,8 +59,8 @@ public sealed partial class PlaybackEngine : IDisposable
             {
                 Interlocked.Exchange(ref engine._dspPublishQueued, 0);
                 if (Volatile.Read(ref engine._disposed) != 0) return;
-                // Read only after the mutation's stream lock has been released. Serializing
-                // read + publish also prevents a late worker from publishing an older state.
+                // 状态变更释放流锁后才读取；将读取与发布串行化，
+                // 也能防止迟到的工作线程发布较旧状态。
                 try { engine._ipc?.PublishDspState(engine.GetDspState()); }
                 catch (Exception ex) { Console.WriteLine($"DSP state publication failed: {ex.Message}"); }
             }
@@ -70,7 +70,7 @@ public sealed partial class PlaybackEngine : IDisposable
     private IAudioOutput? _output;
     private Timer? _endedWatchdog;
     private int _disposed;
-    private int _fadeBusy; // Interlocked：换曲淡出任务单飞行（在途时新请求只更新 MusicUrl）
+    private int _fadeBusy; // 使用 Interlocked 原子访问：换曲淡出任务单飞行（在途时新请求只更新 MusicUrl）
     private volatile bool _pauseFadeActive; // 暂停淡出进行中（音量同步让路）
     private int _pauseFadeToken; // 暂停淡出停机令牌：恢复播放/再次暂停递增，使在途延迟停机作废
     private long _playGen; // 用户操作代数（切歌/换设置/停止递增）：使在途失效恢复计划作废
@@ -126,7 +126,7 @@ public sealed partial class PlaybackEngine : IDisposable
         if (!EndpointNotifications.Start()) Console.WriteLine("[engine] endpoint notifications unavailable");
     }
 
-    /// <summary>Feature hook for a future visualizer; it does not rebuild the audio output.</summary>
+    /// <summary>供后续可视化功能使用的入口，不重建音频输出。</summary>
     public void SetFftEnabled(bool enabled)
     {
         lock (_streamLock)
@@ -274,7 +274,7 @@ public sealed partial class PlaybackEngine : IDisposable
                 if (!string.Equals(wasapi.DeviceId, requestedEndpoint, StringComparison.OrdinalIgnoreCase)) return false;
             }
             else if (wasapi.DeviceIndex != requestedIndex) return false;
-            // Automatic exclusive pins a resolved ID, but the preference may still follow default.
+            // 自动独占模式固定已解析的设备 ID，但用户偏好仍可设为跟随默认设备。
             bool followsDefault = wasapi.FollowsDefaultDevice || (surround && requestedIndex < 0 && string.IsNullOrEmpty(requestedEndpoint));
             if (followsDefault && _lastDefaultDeviceId != null
                 && !string.Equals(_lastDefaultDeviceId, wasapi.DeviceId ?? "", StringComparison.OrdinalIgnoreCase))
@@ -438,7 +438,7 @@ public sealed partial class PlaybackEngine : IDisposable
     private void StartOutputAndPlay()
     {
         var session = _session!;
-        // A paused shared session can outlive a mix-format change. Renegotiate before resuming.
+        // 共享模式会话暂停期间混音格式可能变化，恢复播放前需重新协商。
         if (session.EnhancementActive && IsSharedMode(OutputMode)
             && EnhancementMixRate() is { } deviceRate
             && session.SampleRate != SpectralEnhancementPolicy.OutputRate(44100, deviceRate))
@@ -509,7 +509,7 @@ public sealed partial class PlaybackEngine : IDisposable
         }
     }
 
-    /// <summary>Control-lock only. Retry once as PCM, preserving audible position and user settings.</summary>
+    /// <summary>仅在控制锁内调用；保留可听位置和用户设置，以 PCM 模式重试一次。</summary>
     private bool RebuildBitstreamAsPcm(Session failed)
     {
         if (!ReferenceEquals(failed, _session) || failed.Kind != RenderKind.Eac3 || failed.DecodeFailure == null) return false;
@@ -539,7 +539,7 @@ public sealed partial class PlaybackEngine : IDisposable
                 output.Dispose();
                 return null;
             }
-            default: // DirectSound / WasapiShared → WASAPI 共享
+            default: // DirectSound 回退路径 / WasapiShared → WASAPI 共享
                 return CreateSharedOutput(session, OutputMode == "WasapiShared" ? BassOutputDeviceId : -1);
         }
     }
@@ -823,7 +823,7 @@ public sealed partial class PlaybackEngine : IDisposable
                 bool restartCarrier = _session?.Kind == RenderKind.Eac3 && _output != null;
                 if (restartCarrier) { _output!.Dispose(); _output = null; }
                 _session?.RequestSeek(Math.Max(0, positionMs));
-                // Flush the old receiver carrier before starting a different burst sequence.
+                // 开始不同的突发包序列前，先排空接收器的旧载波。
                 if (restartCarrier && IsPlaying) StartOutputAndPlay();
             }
             catch { }
@@ -861,7 +861,7 @@ public sealed partial class PlaybackEngine : IDisposable
             case "ASIO":
                 session.Gain?.RampTo(Volume, 20); // PCM 才有 Gain；位流忽略
                 break;
-            default: // DirectSound
+            default: // DirectSound 回退路径
                 session.Gain?.RampTo(Volume, 20);
                 break;
         }
@@ -878,7 +878,7 @@ public sealed partial class PlaybackEngine : IDisposable
         return (cur, total);
     }
 
-    // Timer/control thread only. Skip busy device rebuilds instead of delaying commands/rendering.
+    // 仅供定时器或控制线程调用；设备正在重建时跳过，避免延误命令和渲染。
     public bool TryCaptureProgress(out ProgressSnapshot snapshot)
     {
         snapshot = default;
@@ -1176,7 +1176,7 @@ public sealed partial class PlaybackEngine : IDisposable
                     if (RebuildBitstreamAsPcm(session)) StartOutputAndPlay();
                     else StopAndNotifyLocked();
                 }
-                return; // A transport failure must never emit PlayEnded or advance the playlist.
+                return; // 传输失败不得触发 PlayEnded 或推进播放列表。
             }
             if (output is { IsFailed: true })
             {
@@ -1282,7 +1282,7 @@ public sealed partial class PlaybackEngine : IDisposable
             foreach (var (kind, deviceId) in events)
             {
                 if (!string.Equals(deviceId, wasapi.DeviceId, StringComparison.OrdinalIgnoreCase)) continue;
-                if (kind != EndpointEventKind.StateChanged) relevant = true; // Removed / FormatChanged
+                if (kind != EndpointEventKind.StateChanged) relevant = true; // 设备移除或格式改变。
             }
             if (IsSurroundSession(_session) || _surroundFallback)
             {
@@ -1298,8 +1298,8 @@ public sealed partial class PlaybackEngine : IDisposable
             {
                 foreach (var (_, deviceId) in events)
                     if (string.Equals(deviceId, wasapi.DeviceId, StringComparison.OrdinalIgnoreCase)) relevant = true;
-                // A default-route change requires a new user decision, not silent migration
-                // from an HDMI receiver to an unrelated speaker.
+                // 默认路由变化时需要用户重新决定，不能静默地从 HDMI 接收器
+                // 切换到无关的扬声器。
                 bool followsDefault = string.IsNullOrEmpty(AtmosEndpointId)
                     && (OutputMode == "DirectSound" || (BassOutputDeviceId < 0 && string.IsNullOrEmpty(WasapiEndpointId)));
                 if (followsDefault && defaultId != null
