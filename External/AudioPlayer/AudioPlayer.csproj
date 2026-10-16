@@ -1,4 +1,5 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  <Sdk Name="PublishWithSatoriGC" Version="11.0.0-satori.38707303131.1" />
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <!-- 拼装名 = 进程名：发布产物直接部署为 Player\AudioPlayer.exe -->
