@@ -306,7 +306,8 @@ namespace WinUIMusicPlayer.Services
                 IsEqualizerEnabled = AppSettings.IsEqualizerEnabled,
                 Volume = (float)(App.Services.GetRequiredService<AppViewModel>().Volume / 100.0),
                 IsSettingChanged = isSettingChanged,
-                IsFadeEnabled = AppViewModel.IsFadeEnabled,
+                IsFadeEnabled = AppViewModel.TrackTransitionIndex >= 2,
+                TrackTransition = (TrackTransitionMode)AppViewModel.TrackTransitionIndex,
             };
             // 受限时关闭高级输出，沿用引擎的保进度重建及 PCM/立体声回退。
             _license.ApplyOutputRestrictions(ref settings);

@@ -13,6 +13,13 @@ public sealed record AudioPreferences
     public int BassASIODeviceId { get; init; }
     public string DeviceFriendlyName { get; init; } = "";
     public bool IsFadeEnabled { get; init; }
+    /// <summary>Null imports the two legacy switches without silently enabling AutoMix.</summary>
+    public TrackTransitionMode? TrackTransition { get; init; }
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public TrackTransitionMode EffectiveTrackTransition => TrackTransition is { } mode && Enum.IsDefined(mode)
+        ? mode : IsFadeEnabled ? TrackTransitionMode.Crossfade
+        : Dsp.GaplessPlayback ? TrackTransitionMode.Gapless : TrackTransitionMode.Normal;
     /// <summary>Gets the enhancement scope; disabled for existing settings by default.</summary>
     public SpectralEnhancementMode SpectralEnhancement { get; init; }
     public bool IsDopEnabled { get; init; }
@@ -34,6 +41,7 @@ public sealed record AudioPreferences
             throw new ArgumentException("Invalid output device name.");
         return this with
         {
+            TrackTransition = TrackTransition is { } mode && !Enum.IsDefined(mode) ? null : TrackTransition,
             Dsp = Dsp.Sanitize(),
             SpectralEnhancement = Enum.IsDefined(SpectralEnhancement) ? SpectralEnhancement : SpectralEnhancementMode.Off,
             OutputMode = OutputMode is "DirectSound" or "WasapiShared" or "WasapiExclusiveEvent" or "WasapiExclusivePush" or "ASIO"

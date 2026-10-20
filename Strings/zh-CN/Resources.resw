@@ -2444,4 +2444,10 @@ SHA-256：{5}
   <data name="SpectralEnhancementOff" xml:space="preserve"><value>关闭</value></data>
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>仅有损歌曲</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>有损及 ≤48 kHz 无损歌曲</value></data>
+  <data name="TrackTransitionTitle" xml:space="preserve"><value>曲目过渡</value></data>
+  <data name="TrackTransitionDescription" xml:space="preserve"><value>智能混音分析本地立体声歌曲的首尾与节拍，自动平滑衔接；连续专辑曲保持无缝。</value></data>
+  <data name="TrackTransitionNormal" xml:space="preserve"><value>普通切换</value></data>
+  <data name="TrackTransitionGapless" xml:space="preserve"><value>无缝播放</value></data>
+  <data name="TrackTransitionCrossfade" xml:space="preserve"><value>淡入淡出</value></data>
+  <data name="TrackTransitionAutoMix" xml:space="preserve"><value>智能混音</value></data>
 </root>

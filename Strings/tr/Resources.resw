@@ -2442,4 +2442,10 @@ SHA-256: {5}
   <data name="SpectralEnhancementOff" xml:space="preserve"><value>Kapalı</value></data>
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Yalnızca kayıplı parçalar</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>Kayıplı + 48 kHz ve altı kayıpsız</value></data>
+  <data name="TrackTransitionTitle" xml:space="preserve"><value>Parça geçişi</value></data>
+  <data name="TrackTransitionDescription" xml:space="preserve"><value>Akıllı miks, yumuşak geçişler için yerel stereo parçaların başını, sonunu ve ritmini analiz eder; ardışık albüm parçalarını kesintisiz çalar.</value></data>
+  <data name="TrackTransitionNormal" xml:space="preserve"><value>Normal</value></data>
+  <data name="TrackTransitionGapless" xml:space="preserve"><value>Kesintisiz</value></data>
+  <data name="TrackTransitionCrossfade" xml:space="preserve"><value>Çapraz geçiş</value></data>
+  <data name="TrackTransitionAutoMix" xml:space="preserve"><value>Akıllı miks</value></data>
 </root>

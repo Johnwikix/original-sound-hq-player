@@ -20,6 +20,6 @@ public sealed class AudioPreferencesState : ObservableObject
     public string AtmosEndpointId { get; set => SetProperty(ref field, value); } = "";
     public int Latency { get; set => SetProperty(ref field, value); } = 300;
     public int DsdGain { get; set => SetProperty(ref field, value); } = 6;
-    public bool IsFadeEnabled { get; set => SetProperty(ref field, value); }
+    public int TrackTransitionIndex { get; set => SetProperty(ref field, value); } = 1;
     public int DsdPcmFreq { get; set => SetProperty(ref field, value); } = 88200;
 }

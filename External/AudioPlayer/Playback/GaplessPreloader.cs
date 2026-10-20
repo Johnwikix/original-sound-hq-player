@@ -160,4 +160,5 @@ internal sealed class GaplessPreloader(object gate,
 /// <summary>准备时捕获解码器配置，发布时读取 DSP 目标设置。</summary>
 internal sealed record GaplessPreparation(GaplessRequest Request, Session Current, GaplessSource Source,
     int DsdRate, int DsdGain, int Latency, bool Surround, double PlaybackRate, bool BitstreamEnabled,
-    SpectralEnhancementMode Enhancement = SpectralEnhancementMode.Off, int? EnhancementDeviceRate = null);
+    SpectralEnhancementMode Enhancement = SpectralEnhancementMode.Off, int? EnhancementDeviceRate = null,
+    TrackTransitionMode Transition = TrackTransitionMode.Gapless, string? CurrentPath = null, bool PreserveNativeRate = false);

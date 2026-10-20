@@ -122,14 +122,15 @@ public sealed class SettingsSnapshotFactory(AppState state)
     // 在 UI 线程读取偏好一次；后台序列化期间不再访问 ViewModel。
     public AudioPreferences CaptureAudio() => new()
     {
-        Dsp = AppSettings.Dsp,
+        Dsp = AppSettings.Dsp with { GaplessPlayback = state.Preferences.Audio.TrackTransitionIndex != 0 },
         OutputMode = AppSettings.OutputMode,
         Latency = state.Preferences.Latency,
         BassOutputDeviceId = AppSettings.BassOutputDeviceId,
         WasapiEndpointId = AppSettings.WasapiEndpointId,
         BassASIODeviceId = AppSettings.BassASIODeviceId,
         DeviceFriendlyName = AppSettings.DeviceName,
-        IsFadeEnabled = state.Preferences.IsFadeEnabled,
+        IsFadeEnabled = state.Preferences.Audio.TrackTransitionIndex >= 2,
+        TrackTransition = (TrackTransitionMode)state.Preferences.Audio.TrackTransitionIndex,
         SpectralEnhancement = (SpectralEnhancementMode)state.Preferences.Audio.SpectralEnhancement,
         IsDopEnabled = state.Preferences.Audio.IsDopEnabled,
         ExperimentalSurround51 = state.Preferences.Audio.ExperimentalSurround51,

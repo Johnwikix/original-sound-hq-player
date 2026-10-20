@@ -109,6 +109,7 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 }
                 break;
             case nameof(AudioPreferencesState.SpectralEnhancement):
+            case nameof(AudioPreferencesState.TrackTransitionIndex):
             case nameof(AudioPreferencesState.IsDopEnabled):
             case nameof(AudioPreferencesState.ExperimentalSurround51):
             case nameof(AudioPreferencesState.ExperimentalAtmosPassthrough):
@@ -424,13 +425,6 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
-                }
-                break;
-            case nameof(state.Preferences.IsFadeEnabled):
-                if (state.Lifecycle.IsReady)
-                {
-                    _ = database.SaveSettingAsync();
-                    AppSettings.OnOutputSettingsUpdated();
                 }
                 break;
             case nameof(state.Preferences.DsdPcmFreq):

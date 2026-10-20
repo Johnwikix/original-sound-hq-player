@@ -66,6 +66,18 @@ try
         "Old settings changed speed or enabled compression.");
     Check(legacy.SpectralEnhancement == SpectralEnhancementMode.Off, "Legacy audio enabled enhancement.");
     Console.WriteLine("PASS: enhancement/gapless/speed/compressor settings survive restart; legacy defaults preserved.");
+    foreach (var mode in Enum.GetValues<TrackTransitionMode>())
+    {
+        var unified = playbackPreferences with { TrackTransition = mode };
+        await playbackStore.SaveAsync(unified);
+        var roundTrip = await new AudioSettingsStore(Path.Combine(directory, "PlaybackEffects.json")).LoadAsync(new());
+        Check(roundTrip.TrackTransition == mode && roundTrip.EffectiveTrackTransition == mode,
+            "Unified track transition did not survive restarting the store.");
+    }
+    Check(legacy.EffectiveTrackTransition == TrackTransitionMode.Crossfade
+        && new AudioPreferences().EffectiveTrackTransition == TrackTransitionMode.Gapless,
+        "Legacy preferences silently enabled intelligent mixing.");
+    Console.WriteLine("PASS: four transition modes persist independently; legacy fade/gapless defaults migrate without enabling AutoMix.");
 
     string path = Path.Combine(directory, "AudioSettings.json");
     var store = new AudioSettingsStore(path);

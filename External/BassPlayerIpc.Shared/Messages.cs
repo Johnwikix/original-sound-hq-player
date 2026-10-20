@@ -37,6 +37,7 @@ public struct IpcSetting
     public float Volume;
     public bool IsSettingChanged;
     public bool IsFadeEnabled;
+    public TrackTransitionMode? TrackTransition;
     public bool ExperimentalSurround51;
     public bool ExperimentalAtmosPassthrough;
     public string? AtmosEndpointId;

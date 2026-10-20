@@ -1236,7 +1236,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.ExperimentalSurround51 = audio.ExperimentalSurround51;
                 AppViewModel.ExperimentalAtmosPassthrough = audio.ExperimentalAtmosPassthrough;
                 AppViewModel.AtmosEndpointId = audio.AtmosEndpointId ?? "";
-                AppViewModel.IsFadeEnabled = audio.IsFadeEnabled;
+                AppViewModel.TrackTransitionIndex = (int)audio.EffectiveTrackTransition;
                 AppViewModel.LyricsBlurAmount = settings.LyricsBlurAmount;
                 AppViewModel.UseImageDominantTheme = settings.UseImageDominantTheme;
                 AppViewModel.EnableLightWave = settings.EnableLightWave;

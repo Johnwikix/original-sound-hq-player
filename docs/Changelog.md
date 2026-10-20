@@ -1,3 +1,11 @@
+## 2026-10-20 曲目过渡与智能混音
+- `GeneralSettingsControl`、音频偏好与七种语言资源：合并为“普通切换 / 无缝播放 / 淡入淡出 / 智能混音”下拉框；旧淡入淡出和无缝偏好按原模式迁移，智能混音默认不启用。
+- `External/AudioPlayer/Playback`：复用解码环和输出音源，增加本地双声道 PCM 的首尾静音分析、保守节拍检测、等功率交叉渐变、混合后限幅和保调对拍；变速平滑恢复后退出 WSOLA，连续专辑曲保留无缝。
+- `PlaybackCoordinator.Gapless`、IPC、`PcmDecoder`：复用队列令牌与取消确认同步曲目/进度，增加可选模式与专辑连续标志、准确预定位，并将 seek ID 传递到解码完成边界。
+- `Player/AudioPlayer.exe`：更新 NativeAOT 独立引擎；混音只增加固定 8 KiB 工作缓冲，首尾分析窗口固定为 24 秒，不缓存整曲 PCM。
+- `PlaybackEngine.Gapless`：独占/ASIO 的跨采样率曲目保留原生格式切换，不为混音强制整曲重采样；共享模式允许统一两路采样率；DoP/原生 DSD 位流继续旁路分析与混音。
+- `_tools/PlaybackSwitchRegression`、导航/设置回归与 `AudioPlayerSmokeTest`：覆盖节拍、回退、取消、资源回收、进度时钟、分配及真实 WASAPI 过渡；性能测试范围与命令见播放回归 README。
+
 ## 2026-10-16 优化升频处理与资源管理
 - `External/AudioPlayer/AudioEnhancement`：优化处理状态与工作缓冲区组织，保持音频输出一致，完善中文注释。
 - `Coefficients/Assets/dsp-tables.json`、`_tools/PackDspTables.py`：统一系数表配置和资源生成流程，增加资源一致性校验。

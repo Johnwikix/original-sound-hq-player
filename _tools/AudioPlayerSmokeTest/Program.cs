@@ -93,6 +93,7 @@ int setLen = BinarySerializer.WriteIpcSetting(setBuf, new IpcSetting
     BassOutputDeviceId = devIdx,
     Latency = 300,
     IsDopEnabled = dop,
+    TrackTransition = args.Contains("--automix") ? TrackTransitionMode.AutoMix : null,
     SpectralEnhancement = args.Contains("--enhance") ? SpectralEnhancementMode.LossyAndLowRateLossless : SpectralEnhancementMode.Off,
     DsdGain = 6,
     DsdPcmFreq = 88200,
@@ -287,6 +288,66 @@ if(args.Contains("--upsampling-master"))
             throw new InvalidOperationException("Upsampling did not follow DSP master");
         Console.WriteLine($"[smoke] PASS: DSP master {enabled} / actual rate {expected}");
     }
+}
+
+// Actual published NativeAOT engine, persistent pipes and a real WASAPI output.
+if (args.Contains("--automix"))
+{
+    try
+    {
+        string nextPath = Path.GetFullPath(args.FirstOrDefault(a => a.StartsWith("--next="))?[7..]
+            ?? throw new ArgumentException("AutoMix integration requires --next=PATH"));
+        if (!SpinWait.SpinUntil(() => states.TryGetProgress(out var p) && p.Playing && p.TotalMs > 10000, 5000))
+            throw new InvalidOperationException("AutoMix source not ready");
+        states.TryGetProgress(out var beforeSeek);
+        Span<byte> seekBytes = stackalloc byte[16];
+        BinarySerializer.WriteChangePositionRequest(seekBytes, new() { PositionMs = Math.Max(0, beforeSeek.TotalMs - 24000), SeekId = 601 });
+        if (Send(CommandId.ChangePosition, seekBytes, out _) != MessageTypeId.Success)
+            throw new InvalidOperationException("AutoMix setup seek failed");
+        if (!SpinWait.SpinUntil(() => states.TryGetProgress(out var p) && p.Epoch != beforeSeek.Epoch && p.Playing, 5000))
+            throw new InvalidOperationException("Seek epoch missing");
+        states.TryGetProgress(out var initial);
+        long generation = states.CurrentDspState!.State.OutputGeneration;
+        int transitionNotifications = 0;
+        states.NotificationReceived += (type, payload) =>
+        {
+            if (type == MessageTypeId.GaplessTransition && payload.Length == 16
+                && System.Buffers.Binary.BinaryPrimitives.ReadInt64LittleEndian(payload.Span) == 177)
+                Interlocked.Increment(ref transitionNotifications);
+        };
+        server.Refresh();
+        long beforePrivate = server.PrivateMemorySize64;
+        var cpuBefore = server.TotalProcessorTime;
+        if (Send(CommandId.QueueNext, new GaplessRequest(initial.Epoch, 177, nextPath).Write(), out _) != MessageTypeId.Success)
+            throw new InvalidOperationException("AutoMix plan rejected");
+        if (!SpinWait.SpinUntil(() => states.TryGetProgress(out var p) && p.GaplessToken == 177, 35000))
+            throw new InvalidOperationException("AutoMix did not commit");
+        states.TryGetProgress(out var mixed);
+        if (!mixed.Playing || mixed.Epoch == initial.Epoch || mixed.PlaybackRate is < 0.94 or > 1.06
+            || Math.Abs(mixed.PlaybackRate - 1) < 0.001 || playbackEnds != 0)
+            throw new InvalidOperationException($"Invalid beat transition: {mixed}");
+        if (!SpinWait.SpinUntil(() => states.TryGetProgress(out var p) && p.CurrentMs > 8000 && Math.Abs(p.PlaybackRate - 1) < 0.0001, 15000))
+            throw new InvalidOperationException("AutoMix did not restore normal speed");
+        if (states.CurrentDspState!.State.OutputGeneration != generation || transitionNotifications != 1 || playbackEnds != 0)
+            throw new InvalidOperationException("Output rebuilt or transition/end notification duplicated");
+        server.Refresh();
+        Console.WriteLine($"[smoke] PASS: beat alignment at {mixed.PlaybackRate:0.0000}x, smooth return to 1x, one commit, unchanged WASAPI output");
+        Console.WriteLine($"[smoke] AutoMix process observation: private delta={server.PrivateMemorySize64 - beforePrivate} B, CPU delta={(server.TotalProcessorTime - cpuBefore).TotalMilliseconds:0.0} ms (includes decode/preload and elapsed playback)");
+        BinarySerializer.WriteChangePositionRequest(seekBytes, new() { PositionMs = 1000, SeekId = 602 });
+        Send(CommandId.ChangePosition, seekBytes, out _);
+        if (!SpinWait.SpinUntil(() => states.TryGetProgress(out var p) && p.SeekId == 602 && p.CurrentMs is >= 1000 and < 4000 && p.PlaybackRate == 1, 5000))
+            throw new InvalidOperationException("Seek retained automatic timing");
+        var pause = Send(CommandId.PlayButton, [], out var paused);
+        if (pause != MessageTypeId.PlayState || BinarySerializer.ReadPlayStateResponse(paused).IsPlaying)
+            throw new InvalidOperationException("AutoMix pause failed");
+        var resume = Send(CommandId.PlayButton, [], out var resumed);
+        if (resume != MessageTypeId.PlayState || !BinarySerializer.ReadPlayStateResponse(resumed).IsPlaying)
+            throw new InvalidOperationException("AutoMix resume failed");
+        Console.WriteLine("[smoke] PASS: seek clears automatic clock; pause/resume and shutdown after AutoMix");
+        Send(CommandId.MusicEnd, [], out _);
+        return 0;
+    }
+    finally { StopPlayer(); }
 }
 
 // Actual NativeAOT + persistent IPC + WASAPI integration for the new playback chain.

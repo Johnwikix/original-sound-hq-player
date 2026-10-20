@@ -30,6 +30,13 @@ internal static unsafe partial class Program
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(WasapiOutput))]
     private static int Main(string[] args)
     {
+        if (args.Length == 1 && args[0] == "--test-automix")
+        {
+            FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
+            RunAutoMixTests();
+            Console.WriteLine($"AutoMix regressions: {_tests - _failures}/{_tests} passed");
+            return _failures == 0 ? 0 : 1;
+        }
         if (args.Length == 1 && args[0] == "--measure-playback-memory")
         {
             FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
@@ -137,6 +144,7 @@ internal static unsafe partial class Program
         RunEqualizerQTests();
         RunDspTests();
         RunPlaybackEffectsTests();
+        RunAutoMixTests();
         RunConvolutionTests();
         RunDeviceCorrectionTests();
         RunCurveTests();
@@ -187,12 +195,7 @@ internal static unsafe partial class Program
     private static PlaybackEngine Engine(string mode)
     {
         // Bypass the constructor's endpoint listener/watchdog; all exercised methods are production code.
-        var engine = (PlaybackEngine)RuntimeHelpers.GetUninitializedObject(typeof(PlaybackEngine));
-        foreach (string name in new[] { "_streamSlots", "_streamWork", "_streamCommandLock" })
-        {
-            var field = typeof(PlaybackEngine).GetField(name, Private)!;
-            field.SetValue(engine, Activator.CreateInstance(field.FieldType));
-        }
+        var engine = new PlaybackEngine();
         engine.OutputMode = mode;
         engine.IsDopEnabled = true;
         engine.DsdPcmFreq = 88200;

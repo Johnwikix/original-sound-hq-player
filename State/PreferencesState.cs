@@ -98,7 +98,6 @@ public sealed class PreferencesState : ObservableObject
     public double GlobalFontSize { get => Lyrics.GlobalFontSize; set => Lyrics.GlobalFontSize = value; }
     public double LyricsFontSize { get => Lyrics.LyricsFontSize; set => Lyrics.LyricsFontSize = value; }
     public string MusicCoverCache { get => General.MusicCoverCache; set => General.MusicCoverCache = value; }
-    public bool IsFadeEnabled { get => Audio.IsFadeEnabled; set => Audio.IsFadeEnabled = value; }
     public int DsdPcmFreq { get => Audio.DsdPcmFreq; set => Audio.DsdPcmFreq = value; }
     public float LyricsBlurAmount { get => Lyrics.LyricsBlurAmount; set => Lyrics.LyricsBlurAmount = value; }
     public double CharFloatAmount { get => Lyrics.CharFloatAmount; set => Lyrics.CharFloatAmount = value; }

@@ -58,6 +58,10 @@ namespace WinUIMusicPlayer.Model
 {
     public sealed class Music(int id, int source = 0) : CommunityToolkit.Mvvm.ComponentModel.ObservableObject
     {
+        public string Album { get; set => SetProperty(ref field, value); } = "";
+        public string FolderPath { get; set; } = "";
+        public int TrackNumber { get; set; }
+        public int DiskNumber { get; set; }
         public string Path { get; set => SetProperty(ref field, value); } = source == 0 ? System.IO.Path.GetFullPath($"track-{id}.wav") : $"webdav://{source}/dav/tone.flac";
         public TimeSpan Duration { get; set; }
         public int Id => id;
@@ -146,6 +150,12 @@ namespace WinUIMusicPlayer.ViewModel
         public int CurrentIndexLookups;
         public int GetCurrentIndex() { CurrentIndexLookups++; return State.Queue.IndexOf(CurrentPlayingMusic); }
         public bool IsPlaying { get; set => SetProperty(ref field, value); }
+        private int? _transitionIndex;
+        public int TrackTransitionIndex
+        {
+            get => _transitionIndex ?? (WinUIMusicPlayer.Model.AppSettings.Dsp.GaplessPlayback ? 1 : 0);
+            set { if (_transitionIndex != value) { _transitionIndex = value; OnPropertyChanged(); } }
+        }
         public double ProgressSlider { get; set; }
         public double ProgressSliderMax { get; set; }
         public string RemotePlaybackStatus { get; set; } = "";

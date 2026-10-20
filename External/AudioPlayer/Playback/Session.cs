@@ -19,6 +19,11 @@ internal sealed class Session : IRenderSource, IDisposable
     private PcmDecoder? _pcm;
     private TempoProcessor? _tempo;
     public double PlaybackRate { get; private init; } = 1;
+    internal AutoMixPlan TransitionPlan { get; private init; }
+    internal int SourceSampleRate { get; private init; }
+    private TempoEnvelope _automaticTempo;
+    private long _automaticStartMs;
+    private volatile bool _automaticTempoActive;
     public bool CanSeek { get; private set; } = true;
     public bool InputEnded => _pcmRing?.InputEnded ?? _dopRing?.InputEnded ?? _dsdRing?.InputEnded ?? _iecRing?.InputEnded ?? false;
     public bool IsBuffering => _pcmRing?.IsBuffering ?? _dopRing?.IsBuffering ?? _dsdRing?.IsBuffering ?? _iecRing?.IsBuffering ?? false;
@@ -129,7 +134,8 @@ internal sealed class Session : IRenderSource, IDisposable
     public static Session? Open(PlaybackEngine engine, string path, RenderKind kind,
         int dsdPcmFreq, int dsdGainDb, int latencyMs, int? forcedRate = null, int? forcedChannels = null,
         int? maxChannels = null, bool experimentalSurround51 = false, AtmosProbeCache? atmosProbeCache = null, PlaybackSource? source = null, CancellationToken cancellationToken = default, double playbackRate = 1,
-        SpectralEnhancementMode enhancement = SpectralEnhancementMode.Off, int? enhancementDeviceRate = null)
+        SpectralEnhancementMode enhancement = SpectralEnhancementMode.Off, int? enhancementDeviceRate = null,
+        AutoMixPlan transitionPlan = default)
     {
         Session? pending = null;
         IDisposable? input = null;
@@ -150,12 +156,19 @@ internal sealed class Session : IRenderSource, IDisposable
                         ? checked((int)Math.Min((long)rate * source.Buffer.CapacityMs / 1000, 64 * 1024 * 1024 / (sizeof(double) * channels)))
                         : RingCapacity(rate, latencyMs);
                     int initialFrames = source?.Kind == PlaybackSourceKind.Http ? Math.Min(ringFrames, (int)((long)rate * source.Buffer.InitialMs / 1000)) : PrebufferFrames(rate);
+                    var envelope = transitionPlan.Envelope(rate);
+                    if (transitionPlan.EntryMs > 0 && !dec.SeekToMs(transitionPlan.EntryMs, accurate: true)) { dec.Dispose(); return null; }
                     var s = new Session(engine, kind, channels, rate, rate, dec.TotalMs, rate)
                     {
                         _pcm = dec,
                         EnhancementActive = dec.EnhancementActive,
                         PlaybackRate = playbackRate,
-                        _tempo = playbackRate == 1 ? null : new TempoProcessor(rate, channels, playbackRate),
+                        _tempo = playbackRate == 1 && !envelope.IsActive ? null : new TempoProcessor(rate, channels, playbackRate, envelope),
+                        TransitionPlan = transitionPlan,
+                        SourceSampleRate = dec.SourceSampleRate,
+                        _automaticTempo = envelope,
+                        _automaticStartMs = transitionPlan.EntryMs,
+                        _automaticTempoActive = envelope.IsActive,
                         ChannelMask = dec.ChannelMask,
                         _pcmRing = new PcmRing(channels, ringFrames, initialFrames, source?.Kind == PlaybackSourceKind.Http ? -1 : 300,
                             source?.Kind == PlaybackSourceKind.Http ? Math.Min(ringFrames, (int)((long)rate * source.Buffer.ResumeMs / 1000)) : 0,
@@ -165,6 +178,7 @@ internal sealed class Session : IRenderSource, IDisposable
                     };
                     s.Effects!.SetFile(path, dsdPcmFreq, dsdGainDb, source);
                     pending = s;
+                    s.AnchorFrames = s.MsToFrames(transitionPlan.EntryMs);
                     s.StartThread(s.PcmDecodeProc);
                     return s;
                 }
@@ -279,6 +293,7 @@ internal sealed class Session : IRenderSource, IDisposable
         lock (_seekGate)
         {
             _pendingSeekId = seekId;
+            _automaticTempoActive = false;
             Effects?.RequestReset();
             Interlocked.Increment(ref _dspResetVersion);
             Volatile.Write(ref AnchorFrames, MsToFrames(targetMs));
@@ -302,7 +317,26 @@ internal sealed class Session : IRenderSource, IDisposable
         lock (_decodeEndGate) Monitor.PulseAll(_decodeEndGate);
     }
 
-    public long CurrentMs => FramesToMs(Volatile.Read(ref AnchorFrames) + FramesPlayed);
+    public long CurrentMs => PositionMs(FramesPlayed);
+
+    private long PositionMs(long renderedFrames) => _automaticTempoActive
+        ? _automaticStartMs + (long)Math.Round(_automaticTempo.SourceFrames(renderedFrames) * 1000 / _positionRate)
+        : FramesToMs(Volatile.Read(ref AnchorFrames) + renderedFrames);
+
+    internal long AudiblePositionMs(long pendingMs) => PositionMs(Math.Max(0, FramesPlayed - pendingMs * _positionRate / 1000));
+    internal double AudiblePlaybackRate(long pendingMs) => _automaticTempoActive
+        ? _automaticTempo.RateAt(Math.Max(0, FramesPlayed - pendingMs * _positionRate / 1000)) : PlaybackRate;
+
+    internal bool TempoSettledBy(long sourceMs) => !_automaticTempoActive
+        || sourceMs >= _automaticStartMs + _automaticTempo.SourceFrames(_automaticTempo.EndFrames) * 1000 / _positionRate;
+
+    internal long FramesUntilPosition(long positionMs)
+    {
+        double target = _automaticTempoActive
+            ? _automaticTempo.OutputFrames((positionMs - _automaticStartMs) * _positionRate / 1000.0)
+            : MsToFrames(positionMs) - Volatile.Read(ref AnchorFrames);
+        return (long)Math.Round(target) - FramesPlayed;
+    }
 
     public long MsToFrames(long ms) => (long)Math.Round(ms * _positionRate / (1000.0 * PlaybackRate));
 
@@ -327,7 +361,7 @@ internal sealed class Session : IRenderSource, IDisposable
             {
                 bool ok = _pcm?.SeekToMs(ms) ?? _dsd?.SeekToMs(ms) ?? _eac3?.SeekToMs(ms) ?? false;
                 if (!ok) throw new IOException("Seek failed.");
-                _tempo?.Reset();
+                _tempo?.Reset(clearEnvelope: true);
                 Volatile.Write(ref CompletedSeekId, _pendingSeekId);
                 _dsdLeftoverBytes = 0;
             }
@@ -373,6 +407,7 @@ internal sealed class Session : IRenderSource, IDisposable
             {
                 HandleSeek();
                 int frames = _tempo?.Read(_pcm!, _decodeScratchF) ?? _pcm!.Read(_decodeScratchF);
+                if (_tempo?.CanDetach == true) _tempo = null;
                 if (frames <= 0)
                 {
                     if (!_pcmRing!.MarkInputEnded(_decodeEpoch)) continue;
@@ -531,7 +566,7 @@ internal sealed class Session : IRenderSource, IDisposable
         _renderDspResetVersion = Volatile.Read(ref _dspResetVersion);
     }
 
-    internal int RenderPcm(Span<double> buffer, int frames)
+    internal int RenderPcm(Span<double> buffer, int frames, bool captureFft = true)
     {
         if (_pcmRing == null || Gain == null) { buffer[..(frames * _channels)].Clear(); return 0; }
         int audible = _pcmRing.Render(buffer, frames);
@@ -552,9 +587,12 @@ internal sealed class Session : IRenderSource, IDisposable
             Effects?.ApplyDynamics(buffer, audible);
         }
         Gain.Apply(buffer, audible, _channels);
-        _engine.CaptureFft(buffer, audible, _channels, ChannelMask, SampleRate);
+        if (captureFft) CapturePcm(buffer, audible);
         return audible;
     }
+
+    internal void CapturePcm(ReadOnlySpan<double> buffer, int frames)
+        => _engine.CaptureFft(buffer, frames, _channels, ChannelMask, SampleRate);
 
     public void FillDop(Span<uint> buffer, int frames)
         => _dopRing?.Render(buffer, frames);

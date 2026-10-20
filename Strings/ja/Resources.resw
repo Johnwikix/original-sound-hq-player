@@ -2442,4 +2442,10 @@ SHA-256: {5}
   <data name="SpectralEnhancementOff" xml:space="preserve"><value>オフ</value></data>
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>非可逆圧縮の曲のみ</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>非可逆圧縮＋48 kHz 以下の可逆音源</value></data>
+  <data name="TrackTransitionTitle" xml:space="preserve"><value>曲の切り替え</value></data>
+  <data name="TrackTransitionDescription" xml:space="preserve"><value>ローカルのステレオ曲の冒頭・末尾とビートを分析して滑らかにつなぎ、連続するアルバム曲はギャップレスで再生します。</value></data>
+  <data name="TrackTransitionNormal" xml:space="preserve"><value>通常</value></data>
+  <data name="TrackTransitionGapless" xml:space="preserve"><value>ギャップレス</value></data>
+  <data name="TrackTransitionCrossfade" xml:space="preserve"><value>クロスフェード</value></data>
+  <data name="TrackTransitionAutoMix" xml:space="preserve"><value>スマートミックス</value></data>
 </root>

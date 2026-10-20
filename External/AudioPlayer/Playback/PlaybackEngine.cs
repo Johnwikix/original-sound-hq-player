@@ -822,7 +822,7 @@ public sealed partial class PlaybackEngine : IDisposable
                 if (_session is { CanSeek: false }) return;
                 bool restartCarrier = _session?.Kind == RenderKind.Eac3 && _output != null;
                 if (restartCarrier) { _output!.Dispose(); _output = null; }
-                _session?.RequestSeek(Math.Max(0, positionMs));
+                _session?.RequestSeek(Math.Max(0, positionMs), seekId);
                 // 开始不同的突发包序列前，先排空接收器的旧载波。
                 if (restartCarrier && IsPlaying) StartOutputAndPlay();
             }
@@ -847,6 +847,7 @@ public sealed partial class PlaybackEngine : IDisposable
     {
         if (_pauseFadeActive) return; // 暂停淡出进行中：音量同步会让淡出斜坡跳回，等暂停完成后再说
         _gaplessSource?.Pending?.Gain?.SetImmediately(GainVolumeTarget);
+        _gaplessSource?.Outgoing?.Gain?.RampTo(GainVolumeTarget, 20);
         var session = _gaplessSource?.Current ?? _session;
         var output = _output;
         if (session == null || output == null) return;
@@ -873,7 +874,7 @@ public sealed partial class PlaybackEngine : IDisposable
         if (session == null) return (0, 0);
         long total = session.TotalMs;
         long anchor = session.FramesToMs(Volatile.Read(ref session.AnchorFrames));
-        long cur = Math.Min(Math.Max(anchor, session.CurrentMs - (long)((_output?.PendingAudioMs ?? 0) * session.PlaybackRate)),
+        long cur = Math.Min(Math.Max(anchor, session.AudiblePositionMs(_output?.PendingAudioMs ?? 0)),
             total > 0 ? total : long.MaxValue);
         return (cur, total);
     }
@@ -888,7 +889,8 @@ public sealed partial class PlaybackEngine : IDisposable
             AdoptGapless();
             var (current, total) = GetTimeProgress();
             snapshot = new(0, _session?.TimelineEpoch ?? 0, current, total,
-                System.Diagnostics.Stopwatch.GetTimestamp(), IsPlaying && _output is { IsFailed: false }, _lastProgressSeekId, _session?.PlaybackRate ?? 1, _currentGaplessToken);
+                System.Diagnostics.Stopwatch.GetTimestamp(), IsPlaying && _output is { IsFailed: false }, _lastProgressSeekId,
+                _session?.AudiblePlaybackRate(_output?.PendingAudioMs ?? 0) ?? 1, _currentGaplessToken);
             return true;
         }
         finally { Monitor.Exit(_streamLock); }
@@ -921,7 +923,15 @@ public sealed partial class PlaybackEngine : IDisposable
             DsdGain = Math.Clamp(s.DsdGain, -24, 24);
             DsdPcmFreq = Math.Clamp(s.DsdPcmFreq, 8000, 768000);
             Volume = float.IsFinite(s.Volume) ? Math.Clamp(s.Volume, 0, 1) : 0;
-            IsFadingEnabled = s.IsFadeEnabled;
+            if (_trackTransition != s.TrackTransition)
+            {
+                CancelGapless();
+                _trackTransition = s.TrackTransition;
+                // Notify the coordinator that confirmations for the previous policy are stale.
+                Interlocked.Increment(ref _outputGeneration);
+            }
+            IsFadingEnabled = s.TrackTransition is { } transition
+                ? transition is TrackTransitionMode.Crossfade or TrackTransitionMode.AutoMix : s.IsFadeEnabled;
             IsEqualizerEnabled = s.IsEqualizerEnabled;
             ApplyEqToSession();
             if (s.IsSettingChanged || (rebuild && _session != null)) ChangingSetting();
@@ -1018,6 +1028,8 @@ public sealed partial class PlaybackEngine : IDisposable
     {
         if (_gaplessSource?.Pending is { } next)
             next.Eq.Configure(next.SampleRate, IsEqualizerEnabled, EqGains, EqQ);
+        if (_gaplessSource?.Outgoing is { } outgoing)
+            outgoing.Eq.Configure(outgoing.SampleRate, IsEqualizerEnabled, EqGains, EqQ);
         var session = _gaplessSource?.Current ?? _session;
         if (session == null || session.Kind != RenderKind.Pcm) return;
         session.Eq.Configure(session.SampleRate, IsEqualizerEnabled, EqGains, EqQ);
@@ -1034,7 +1046,7 @@ public sealed partial class PlaybackEngine : IDisposable
             bool enhancementChanged = _session is { Kind: RenderKind.Pcm }
                 && SpectralEnhancement != SpectralEnhancementMode.Off
                 && (_dspSettings?.IsEnabled ?? true) != normalized.IsEnabled;
-            if (rateChanged || enhancementChanged || !normalized.GaplessPlayback) CancelGapless();
+            if (rateChanged || enhancementChanged || _trackTransition == null && !normalized.GaplessPlayback) CancelGapless();
             _previewDeviceId = null;
             _previewSettings = null;
             _dspSettings = normalized;

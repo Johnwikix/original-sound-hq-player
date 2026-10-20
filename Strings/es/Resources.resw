@@ -2442,4 +2442,10 @@ SHA-256: {5}
   <data name="SpectralEnhancementOff" xml:space="preserve"><value>Desactivada</value></data>
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Solo canciones con pérdida</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>Con pérdida + sin pérdida hasta 48 kHz</value></data>
+  <data name="TrackTransitionTitle" xml:space="preserve"><value>Transición de pistas</value></data>
+  <data name="TrackTransitionDescription" xml:space="preserve"><value>La mezcla inteligente analiza los extremos y el ritmo de pistas estéreo locales para transiciones suaves y mantiene álbumes sin pausas.</value></data>
+  <data name="TrackTransitionNormal" xml:space="preserve"><value>Normal</value></data>
+  <data name="TrackTransitionGapless" xml:space="preserve"><value>Sin pausas</value></data>
+  <data name="TrackTransitionCrossfade" xml:space="preserve"><value>Fundido cruzado</value></data>
+  <data name="TrackTransitionAutoMix" xml:space="preserve"><value>Mezcla inteligente</value></data>
 </root>

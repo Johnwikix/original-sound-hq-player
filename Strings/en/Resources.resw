@@ -2442,4 +2442,10 @@ SHA-256: {5}
   <data name="SpectralEnhancementOff" xml:space="preserve"><value>Off</value></data>
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Lossy songs only</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>Lossy + lossless up to 48 kHz</value></data>
+  <data name="TrackTransitionTitle" xml:space="preserve"><value>Track transition</value></data>
+  <data name="TrackTransitionDescription" xml:space="preserve"><value>Smart mixing analyzes the edges and beats of local stereo tracks for smooth transitions and preserves gapless album sequences.</value></data>
+  <data name="TrackTransitionNormal" xml:space="preserve"><value>Normal</value></data>
+  <data name="TrackTransitionGapless" xml:space="preserve"><value>Gapless</value></data>
+  <data name="TrackTransitionCrossfade" xml:space="preserve"><value>Crossfade</value></data>
+  <data name="TrackTransitionAutoMix" xml:space="preserve"><value>Smart mixing</value></data>
 </root>

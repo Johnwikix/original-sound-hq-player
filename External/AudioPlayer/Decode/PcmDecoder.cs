@@ -31,10 +31,13 @@ internal sealed unsafe class PcmDecoder : IDisposable
     private double _dsdGainLinear = 1.0;
     private long _totalMs;
     private bool _eof;
+    private long _preciseSeekMs = -1, _preciseDropFrames;
 
     // 输出格式（重采样后）
     public int SampleRate { get; private set; }
     public int Channels { get; private set; }
+    internal int SourceChannels { get; private set; }
+    internal int SourceSampleRate { get; private set; }
     public uint ChannelMask { get; private set; }
     public long TotalMs => _totalMs;
     public bool IsDsdSource => _dsdSource;
@@ -98,6 +101,8 @@ internal sealed unsafe class PcmDecoder : IDisposable
             ffmpeg.avcodec_parameters_to_context(_dec, par);
             int or2 = ffmpeg.avcodec_open2(_dec, decoder, null);
             if (or2 < 0) { Console.WriteLine($"[decode] avcodec_open2 ret={or2}"); return false; }
+            SourceChannels = _dec->ch_layout.nb_channels;
+            SourceSampleRate = _dec->sample_rate;
 
             // WAV/PCM 解码器常给 UNSPEC 布局，swr 需规范化（转换器同款注释）
             int channels = Math.Max(1, _dec->ch_layout.nb_channels);
@@ -157,8 +162,8 @@ internal sealed unsafe class PcmDecoder : IDisposable
         }
     }
 
-    /// <summary>seek（BACKWARD 到关键包），清空解码器与重采样器。仅解码线程调用。</summary>
-    public bool SeekToMs(long ms)
+    /// <summary>定位到前一个关键包并重置解码状态；准确定位按时间戳丢弃包内前读样本。仅解码线程调用。</summary>
+    public bool SeekToMs(long ms, bool accurate = false)
     {
         if (_fmt == null || _dec == null || !CanSeek) return false;
         _network?.BeginRead();
@@ -167,11 +172,25 @@ internal sealed unsafe class PcmDecoder : IDisposable
         ffmpeg.swr_init(_swr);
         _enhancement?.Reset();
         _eof = false;
+        _preciseSeekMs = accurate ? Math.Max(0, ms) : -1;
+        _preciseDropFrames = 0;
         return true;
     }
 
     /// <summary>读取交织 double 块。返回帧数；0 = 本位置流结束（EOF 后恒 0）。</summary>
-    public int Read(Span<double> buffer) => _enhancement?.Read(this, buffer) ?? ReadDecoded(buffer);
+    public int Read(Span<double> buffer)
+    {
+        while (true)
+        {
+            int frames = _enhancement?.Read(this, buffer) ?? ReadDecoded(buffer);
+            if (frames <= 0 || _preciseDropFrames <= 0) return frames;
+            int skip = (int)Math.Min(frames, _preciseDropFrames);
+            _preciseDropFrames -= skip;
+            if (skip == frames) continue;
+            buffer.Slice(skip * Channels, (frames - skip) * Channels).CopyTo(buffer);
+            return frames - skip;
+        }
+    }
 
     /// <summary>按打开时选定的重采样率读取增强处理之前的 PCM。</summary>
     internal int ReadDecoded(Span<double> buffer)
@@ -194,6 +213,16 @@ internal sealed unsafe class PcmDecoder : IDisposable
             if (ret == 0)
             {
                 invalidFrames = 0;
+                if (_preciseSeekMs >= 0)
+                {
+                    var stream = _fmt->streams[_streamIndex];
+                    long timestamp = _frame->best_effort_timestamp;
+                    if (timestamp == ffmpeg.AV_NOPTS_VALUE) throw new IOException("Accurate seek requires audio timestamps.");
+                    long origin = stream->start_time == ffmpeg.AV_NOPTS_VALUE ? 0 : stream->start_time;
+                    double seconds = (timestamp - origin) * (double)stream->time_base.num / stream->time_base.den;
+                    _preciseDropFrames = Math.Max(0, (long)Math.Round((_preciseSeekMs / 1000.0 - seconds) * SampleRate));
+                    _preciseSeekMs = -1;
+                }
                 fixed (double* p = buffer)
                 {
                     got = ffmpeg.swr_convert(_swr, (byte**)&p, maxFrames,

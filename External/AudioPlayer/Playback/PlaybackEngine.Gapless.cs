@@ -9,6 +9,9 @@ public sealed partial class PlaybackEngine
     private GaplessPreloader? _gaplessPreloader;
     private long _currentGaplessToken;
     private bool _gaplessStopping;
+    private TrackTransitionMode? _trackTransition;
+    private TrackTransitionMode EffectiveTransition => _trackTransition
+        ?? (_dspSettings?.GaplessPlayback == true ? TrackTransitionMode.Gapless : TrackTransitionMode.Normal);
 
     private double EffectivePlaybackRate => _dspSettings is { IsEnabled: true } dsp ? dsp.PlaybackRate : 1;
 
@@ -51,19 +54,22 @@ public sealed partial class PlaybackEngine
     {
         if (_gaplessSource is not { } source) return;
         var rendered = source.Snapshot();
-        if (rendered.Current == _session || rendered.CompletedToken == 0) return;
-        var old = _session;
-        var request = _gaplessPreloader?.Request;
-        SetSession(rendered.Current);
-        if (request != null && request.Token == rendered.CompletedToken)
+        if (rendered.Current != _session && rendered.CompletedToken != 0)
         {
-            MusicUrl = request.Path;
-            _currentGaplessToken = request.Token;
-            _lastProgressSeekId = 0;
-            _ipc?.GaplessTransition(request.Token, rendered.Current.TimelineEpoch);
+            var old = _session;
+            var request = _gaplessPreloader?.Request;
+            SetSession(rendered.Current);
+            if (request != null && request.Token == rendered.CompletedToken)
+            {
+                MusicUrl = request.Path;
+                _currentGaplessToken = request.Token;
+                _lastProgressSeekId = 0;
+                _ipc?.GaplessTransition(request.Token, rendered.Current.TimelineEpoch);
+            }
+            _gaplessPreloader?.Cancel();
+            if (old != null && !source.Retains(old)) RetireGaplessSession(old);
         }
-        _gaplessPreloader?.Cancel();
-        RetireGaplessSession(old);
+        RetireGaplessSession(source.TakeRetired());
     }
 
     private void RetireGaplessSession(Session? session)
@@ -85,8 +91,9 @@ public sealed partial class PlaybackEngine
             if (request.Path.Length == 0) { CancelGapless(); return true; }
             if (request.Epoch != _session?.TimelineEpoch) return false;
             if (request == _gaplessPreloader?.Request) return true;
+            if (_gaplessSource?.IsTransitioning == true) return false;
             CancelGapless();
-            if (!IsPlaying || _dspSettings?.GaplessPlayback != true
+            if (!IsPlaying || EffectiveTransition == TrackTransitionMode.Normal
                 || _session is not { Kind: RenderKind.Pcm } || _gaplessSource == null
                 || ExperimentalAtmosPassthrough || _currentStream != Guid.Empty
                 || !Path.IsPathFullyQualified(request.Path)) return false;
@@ -103,14 +110,19 @@ public sealed partial class PlaybackEngine
         lock (_streamLock)
         {
             AdoptGapless();
-            if (Volatile.Read(ref _disposed) != 0 || _gaplessStopping || !IsPlaying || _dspSettings?.GaplessPlayback != true
+            if (Volatile.Read(ref _disposed) != 0 || _gaplessStopping || !IsPlaying || EffectiveTransition == TrackTransitionMode.Normal
                 || _gaplessPreloader is not { State: GaplessPreparationState.Waiting, Request: { } request } preloader
                 || _session is not { Kind: RenderKind.Pcm } current || _gaplessSource is not { } source) return;
             if (request.Epoch != current.TimelineEpoch) { CancelGapless(); return; }
             var (position, duration) = GetTimeProgress();
-            if (duration > 0 && (duration - position) / current.PlaybackRate > GaplessLeadTimeMs) return;
+            var mode = EffectiveTransition;
+            bool mixRequested = mode is TrackTransitionMode.Crossfade or TrackTransitionMode.AutoMix
+                && current.Channels == 2 && EffectivePlaybackRate == 1 && !request.PreserveContinuity;
+            double leadTime = mixRequested ? 30_000 : GaplessLeadTimeMs;
+            if (duration > 0 && (duration - position) / current.PlaybackRate > leadTime) return;
             preloader.Start(new(request, current, source, DsdPcmFreq, DsdGain, Latency,
-                ExperimentalSurround51, EffectivePlaybackRate, IsDopEnabled && !IsSharedMode(OutputMode), EffectiveEnhancement, EnhancementMixRate()));
+                ExperimentalSurround51, EffectivePlaybackRate, IsDopEnabled && !IsSharedMode(OutputMode), EffectiveEnhancement, EnhancementMixRate(),
+                mode, MusicUrl, PreserveNativeRate: !IsSharedMode(OutputMode)));
         }
     }
 
@@ -118,13 +130,35 @@ public sealed partial class PlaybackEngine
     {
         token.ThrowIfCancellationRequested();
         if (preparation.BitstreamEnabled && IsRawDsdContainer(preparation.Request.Path)) return null;
+        AutoMixPlan plan = default;
+        if (preparation.Transition is TrackTransitionMode.Crossfade or TrackTransitionMode.AutoMix
+            && !preparation.Request.PreserveContinuity && preparation.Current.Channels == 2
+            && preparation.PlaybackRate == 1 && preparation.CurrentPath is { Length: > 0 } currentPath)
+        {
+            bool align = preparation.Transition == TrackTransitionMode.AutoMix;
+            int requiredRate = preparation.PreserveNativeRate ? preparation.Current.SourceSampleRate : 0;
+            var b = AutoMixAnalyzer.Analyze(preparation.Request.Path, outro: false, align, token, requiredRate);
+            // Exclusive/ASIO keep each file's native rate. A mismatch needs the normal output rebuild,
+            // not an entire next track resampled to the previous file's rate.
+            if (requiredRate > 0 && b.SourceSampleRate != requiredRate) return null;
+            var a = AutoMixAnalyzer.Analyze(currentPath, outro: true, align, token);
+            plan = AutoMixPlanner.Plan(a, b, align);
+            // Short tracks can reach another transition before their previous tempo ramp has ended.
+            if (plan.BeatAligned && !preparation.Current.TempoSettledBy(plan.ExitMs))
+                plan = AutoMixPlanner.Plan(a, b, alignBeats: false);
+            // A slow file probe must not publish a beat plan whose start has already passed.
+            if (preparation.Current.CurrentMs >= plan.ExitMs - 500) plan = default;
+        }
+        token.ThrowIfCancellationRequested();
         // 解码器探测在此工作线程执行，包括慢速 UNC 路径上的本地文件。
         return Session.Open(this, preparation.Request.Path, RenderKind.Pcm,
             preparation.DsdRate, preparation.DsdGain, preparation.Latency,
+            forcedRate: plan.IsMix && !preparation.PreserveNativeRate ? preparation.Current.SampleRate : null,
+            forcedChannels: plan.IsMix && !preparation.PreserveNativeRate ? 2 : null,
             maxChannels: preparation.Current.Channels <= 2 ? 2 : null,
             experimentalSurround51: preparation.Surround, cancellationToken: token,
             playbackRate: preparation.PlaybackRate, enhancement: preparation.Enhancement,
-            enhancementDeviceRate: preparation.EnhancementDeviceRate);
+            enhancementDeviceRate: preparation.EnhancementDeviceRate, transitionPlan: plan);
     }
 
     // 由预加载器在流锁内调用，避免渲染或释放与所有权转移发生竞争。
@@ -148,6 +182,7 @@ public sealed partial class PlaybackEngine
             var rendered = source.Snapshot();
             rendered.Current.ConfigureDsp(settings);
             rendered.Pending?.ConfigureDsp(settings);
+            source.Outgoing?.ConfigureDsp(settings);
         }
         else _session?.ConfigureDsp(settings);
     }

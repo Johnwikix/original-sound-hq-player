@@ -284,7 +284,15 @@ namespace WinUIMusicPlayer.ViewModel
             return true;
         }
 
-        public bool IsFadeEnabled { get => State.Preferences.IsFadeEnabled; set => State.Preferences.IsFadeEnabled = value; }
+        public int TrackTransitionIndex
+        {
+            get => State.Preferences.Audio.TrackTransitionIndex;
+            set
+            {
+                // Ignore ComboBox's transient cleared selection during binding initialization.
+                if ((uint)value <= 3) State.Preferences.Audio.TrackTransitionIndex = value;
+            }
+        }
         public ObservableCollection<int> DsdPcmFreqs
         {
             get => field;

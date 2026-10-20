@@ -2442,4 +2442,10 @@ SHA-256: {5}
   <data name="SpectralEnhancementOff" xml:space="preserve"><value>Aus</value></data>
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Nur verlustbehaftete Titel</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>Verlustbehaftet + verlustfrei bis 48 kHz</value></data>
+  <data name="TrackTransitionTitle" xml:space="preserve"><value>Titelübergang</value></data>
+  <data name="TrackTransitionDescription" xml:space="preserve"><value>Intelligentes Mischen analysiert Anfang, Ende und Beats lokaler Stereotitel für fließende Übergänge und erhält nahtlose Albumfolgen.</value></data>
+  <data name="TrackTransitionNormal" xml:space="preserve"><value>Normal</value></data>
+  <data name="TrackTransitionGapless" xml:space="preserve"><value>Nahtlos</value></data>
+  <data name="TrackTransitionCrossfade" xml:space="preserve"><value>Überblenden</value></data>
+  <data name="TrackTransitionAutoMix" xml:space="preserve"><value>Intelligentes Mischen</value></data>
 </root>

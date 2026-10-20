@@ -146,11 +146,16 @@
                     </controls:SettingsCard.Header>
                 </controls:SettingsCard>
 
-                <controls:SettingsCard>
-                    <controls:SettingsCard.Header>
-                        <TextBlock x:Uid="FadeInOut" TextWrapping="Wrap" />
-                    </controls:SettingsCard.Header>
-                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsFadeEnabled, Mode=TwoWay}" />
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('TrackTransitionTitle')}"
+                    Description="{x:Bind tool:ToolUtils.GetString('TrackTransitionDescription')}">
+                    <ComboBox Width="180" VerticalAlignment="Center"
+                        AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('TrackTransitionTitle')}"
+                        SelectedIndex="{x:Bind ViewModel.AppViewModel.TrackTransitionIndex, Mode=TwoWay}">
+                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('TrackTransitionNormal')}" />
+                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('TrackTransitionGapless')}" />
+                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('TrackTransitionCrossfade')}" />
+                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('TrackTransitionAutoMix')}" />
+                    </ComboBox>
                 </controls:SettingsCard>
 
                 <TextBlock x:Uid="SettingInterface" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />

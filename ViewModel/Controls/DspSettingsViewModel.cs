@@ -332,7 +332,6 @@ public partial class DspSettingsViewModel : ObservableObject
         _syncing = true;
         DspSettings settings = AppSettings.Dsp.ToUnifiedGain();
         bool effectsActive = _available && settings.IsEnabled;
-        GaplessPlayback = settings.GaplessPlayback;
         PlaybackRate = settings.PlaybackRate;
         CompressorEnabled = effectsActive && settings.CompressorEnabled;
         CompressorThresholdDb = settings.CompressorThresholdDb;

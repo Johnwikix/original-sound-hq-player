@@ -218,9 +218,9 @@ internal static unsafe partial class Program
         });
     }
 
-    private static Session BufferedSource(PlaybackEngine engine, double[] samples)
+    private static Session BufferedSource(PlaybackEngine engine, double[] samples, int sampleRate = 48000)
     {
-        var session = Source(engine, RenderKind.Pcm, 48000);
+        var session = Source(engine, RenderKind.Pcm, sampleRate);
         var ring = new PcmRing(2, Math.Max(1, samples.Length / 2), 0, 0);
         Set(session, "_pcmRing", ring);
         session.Gain!.SetImmediately(1);

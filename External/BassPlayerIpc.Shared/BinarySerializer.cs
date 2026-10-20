@@ -15,7 +15,7 @@ public static class BinarySerializer
     public const int SetMusicUrlRequestSize = StringHeaderSize + MaxStringBytes;
     public const int ChangePositionRequestSize = 16;
     public const int ChangeVolumeRequestSize = 8;
-    public const int IpcSettingSize = 3 * (StringHeaderSize + MaxStringBytes) + 4 + 4 + 4 + 1 + 4 + 4 + 1 + 4 + 1 + 1 + 3;
+    public const int IpcSettingSize = 3 * (StringHeaderSize + MaxStringBytes) + 4 + 4 + 4 + 1 + 4 + 4 + 1 + 4 + 1 + 1 + 4;
     public const int UpdateEqRequestSize = 1 + 40 + 40; // IsEnabled + 10 gains + 10 Q values (legacy payload: 41 bytes)
     public const int FailedResponseSize = 2;
     public const int PlayStateResponseSize = 1;
@@ -120,6 +120,11 @@ public static class BinarySerializer
         dest[offset++] = s.ExperimentalAtmosPassthrough ? (byte)1 : (byte)0;
         offset += WriteString(dest[offset..], s.AtmosEndpointId);
         dest[offset++] = (byte)s.SpectralEnhancement;
+        if (s.TrackTransition is { } transition)
+        {
+            if (!Enum.IsDefined(transition)) throw new ArgumentException("Invalid track transition mode.");
+            dest[offset++] = (byte)((byte)transition + 1);
+        }
         return offset;
     }
 
@@ -154,6 +159,12 @@ public static class BinarySerializer
         {
             s.SpectralEnhancement = (SpectralEnhancementMode)src[offset++];
             if (!Enum.IsDefined(s.SpectralEnhancement)) throw new ArgumentException("Invalid enhancement mode.");
+        }
+        if (offset < src.Length)
+        {
+            byte transition = src[offset++];
+            if (transition > 4) throw new ArgumentException("Invalid track transition mode.");
+            s.TrackTransition = transition == 0 ? null : (TrackTransitionMode)(transition - 1);
         }
         return s;
     }

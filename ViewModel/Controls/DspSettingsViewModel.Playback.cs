@@ -7,19 +7,6 @@ public partial class DspSettingsViewModel
 {
     private static readonly double[] PlaybackRates = [0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 5];
 
-    public bool GaplessPlayback
-    {
-        get => field;
-        set
-        {
-            if (!SetProperty(ref field, value) || _syncing || !_loaded) return;
-            AppSettings.Dsp = AppSettings.Dsp with { GaplessPlayback = value };
-            _dirty = true;
-            _commitTimer.Stop();
-            _ = CommitAsync();
-        }
-    }
-
     public bool PlaybackRateEditable => EffectsActive && (_lastState?.CanChangePlaybackRate ?? false);
 
     public double PlaybackRate

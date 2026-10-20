@@ -321,6 +321,7 @@ internal static class Regression
             "playback toggle pauses remote current track without starting the pending remote track");
 
         await GaplessAsync();
+        await TransitionPoliciesAsync();
 
         using var responsive = new Scenario();
         responsive.State.CurrentPlayingList = [current, offline, nextLocal];
@@ -363,6 +364,28 @@ internal static class Regression
             await Task.Delay(5);
         }
     }
+    private static async Task TransitionPoliciesAsync()
+    {
+        using var test = new Scenario();
+        var first = new Music(201) { Album = "Continuous", TrackNumber = 1, DiskNumber = 1 };
+        var second = new Music(202) { Album = "Continuous", TrackNumber = 2, DiskNumber = 1 };
+        test.State.TrackTransitionIndex = 3;
+        test.State.CurrentPlayingList = [first, second];
+        test.Ipc.Progress = new(1, 10, 0, 30000, 0, true);
+        await test.Coordinator.PlayAtAsync(0);
+        test.State.IsPlaying = true;
+        await WaitAsync(() => test.Ipc.Queued.Any(r => r.Path == second.Path));
+        Check(test.Ipc.Queued.Last().PreserveContinuity, "smart mixing preserves adjacent album tracks");
+        test.State.TrackTransitionIndex = 0;
+        await WaitAsync(() => test.Ipc.Queued.Last().Path.Length == 0);
+        int cancelled = test.Ipc.Queued.Count;
+        await Task.Delay(600);
+        Check(test.Ipc.Queued.Count == cancelled, "normal transition stops background next-track planning");
+        test.State.TrackTransitionIndex = 2;
+        await WaitAsync(() => test.Ipc.Queued.Last().Path == second.Path);
+        Check(!test.Ipc.Queued.Last().PreserveContinuity, "explicit crossfade keeps the chosen policy for album tracks");
+    }
+
     private static async Task GaplessAsync()
     {
         using var test = new Scenario();

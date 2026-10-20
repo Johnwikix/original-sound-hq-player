@@ -15,7 +15,7 @@ public sealed partial class PlaybackCoordinator
     // SelectionVersion rejects an old user intent; Epoch rejects an old engine timeline;
     // Token identifies this exact plan, including duplicate queue entries.
     private sealed record NextPlan(long Token, long SelectionVersion, Music From, Music Next,
-        long EntryId, long Epoch, string Path);
+        long EntryId, long Epoch, string Path, bool PreserveContinuity);
     private NextPlan? _nextPlan;
     private NextPlan? _cancellingPlan;
     private IpcService? _gaplessIpc;
@@ -51,7 +51,7 @@ public sealed partial class PlaybackCoordinator
 
     private void UpdateGaplessTimer()
     {
-        if (!_disposed && AppSettings.Dsp.GaplessPlayback && state.IsPlaying
+        if (!_disposed && state.TrackTransitionIndex != 0 && state.IsPlaying
             && state.CurrentPlayingMusic is { IsRemote: false } && state.CurrentPlayMode != PlayMode.RepeatOff)
             _gaplessTimer?.Start();
         else _gaplessTimer?.Stop();
@@ -85,6 +85,13 @@ public sealed partial class PlaybackCoordinator
     private void GaplessStateChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (_acceptingGapless) return;
+        if (e.PropertyName == nameof(state.TrackTransitionIndex))
+        {
+            CancelGaplessPlan();
+            // Let the settings coordinator publish the new policy before submitting its next plan.
+            App.MainWindow.DispatcherQueue.TryEnqueue(RefreshGaplessPreferences);
+            return;
+        }
         if (e.PropertyName is nameof(state.IsPlaying) or nameof(state.CurrentPlayingMusic))
         {
             UpdateGaplessTimer();
@@ -105,7 +112,7 @@ public sealed partial class PlaybackCoordinator
 
     private void CandidateMusicChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is not (nameof(Music.Path) or nameof(Music.IsPlayable))) return;
+        if (e.PropertyName is not (nameof(Music.Path) or nameof(Music.IsPlayable) or nameof(Music.Album))) return;
         _candidateDirty = true;
         CancelGaplessPlan();
         RefreshGaplessPlan();
@@ -164,7 +171,7 @@ public sealed partial class PlaybackCoordinator
                 _ = CancelGaplessPlanAsync(cancelling);
             return;
         }
-        if (!state.IsPlaying || !AppSettings.Dsp.GaplessPlayback || state.State.Playback.PendingSelection != null
+        if (!state.IsPlaying || state.TrackTransitionIndex == 0 || state.State.Playback.PendingSelection != null
             || state.CurrentPlayingMusic is not { IsRemote: false, IsPlayable: true } current
             || state.CurrentPlayMode == PlayMode.RepeatOff)
         {
@@ -182,7 +189,11 @@ public sealed partial class PlaybackCoordinator
         if (_nextPlan is not { } plan || plan.Epoch != progress.Epoch || plan.EntryId != _candidateEntry
             || plan.From != current || plan.Next != next || plan.SelectionVersion != _selectionVersion || plan.Path != next.Path)
         {
-            _nextPlan = new(++_nextToken, _selectionVersion, current, next, _candidateEntry, progress.Epoch, next.Path);
+            bool continuation = state.TrackTransitionIndex == 3 && (current == next
+                || !string.IsNullOrWhiteSpace(current.Album) && current.Album == next.Album
+                && current.FolderPath == next.FolderPath && current.DiskNumber == next.DiskNumber
+                && current.TrackNumber > 0 && next.TrackNumber == current.TrackNumber + 1);
+            _nextPlan = new(++_nextToken, _selectionVersion, current, next, _candidateEntry, progress.Epoch, next.Path, continuation);
             _planConfirmed = false;
             _planSending = false;
             _retryAfter = 0;
@@ -195,7 +206,7 @@ public sealed partial class PlaybackCoordinator
     private async Task SendGaplessPlanAsync(NextPlan plan)
     {
         bool accepted = false;
-        try { accepted = await _gaplessIpc!.QueueNextAsync(new(plan.Epoch, plan.Token, plan.Path)); }
+        try { accepted = await _gaplessIpc!.QueueNextAsync(new(plan.Epoch, plan.Token, plan.Path, plan.PreserveContinuity)); }
         catch (Exception ex) { logger.LogWarning(ex, "无法提交下一曲预载计划，保留普通切歌"); }
         if (_disposed || !ReferenceEquals(_nextPlan, plan)) return;
         _planSending = false;
