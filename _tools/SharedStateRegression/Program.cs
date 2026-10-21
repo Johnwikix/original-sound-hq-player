@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.State;
@@ -250,6 +250,33 @@ static async Task RunAsync()
     await pendingProjection;
     Check(list.FillCount == fillsBeforeStop, "Stopping must suppress delayed list publication.");
     Console.WriteLine("PASS: library cache, version invalidation, shared refresh barrier, latest search and stop suppression.");
+
+    // 原始文件名检索：标签字段不含搜索词时按文件名命中；目录段不属于文件名。
+    var nameState = new AppState();
+    nameState.Library.Replace([
+        new(20, @"D:\Music\Live\needle-file.flac") { Title = "unrelated" },
+        new(21, "webdav://1/dav/My%20Needle%20Song.flac") { Title = "unrelated", SourceId = 1 },
+        new(22, @"D:\needle\decoy.flac") { Title = "unrelated" }
+    ]);
+    var nameProjections = new LibraryProjectionService(nameState, new LibraryQueries(nameState.Library),
+        Microsoft.Extensions.Logging.Abstractions.NullLogger<LibraryProjectionService>.Instance);
+    var nameList = new BulkObservableCollection<Music>();
+    nameState.Browse.SearchText = "needle-FILE";
+    await nameProjections.UpdateSongCollectionsAsync(nameList, SongViewType.All);
+    Check(nameList.Count == 1 && nameList[0].Id == 20, "Original file names must match case-insensitively.");
+    nameState.Browse.SearchText = "%20Needle%20";
+    await nameProjections.UpdateSongCollectionsAsync(nameList, SongViewType.All);
+    Check(nameList.Count == 1 && nameList[0].Id == 21, "Raw URL-encoded remote file names must match.");
+    nameState.Browse.SearchText = "My Needle Song";
+    await nameProjections.UpdateSongCollectionsAsync(nameList, SongViewType.All);
+    Check(nameList.Count == 1 && nameList[0].Id == 21, "Remote file names must match after percent-decoding.");
+    nameState.Browse.SearchText = "decoy";
+    await nameProjections.UpdateSongCollectionsAsync(nameList, SongViewType.All);
+    Check(nameList.Count == 1 && nameList[0].Id == 22, "File name match must include the extension.");
+    nameState.Browse.SearchText = @"\needle\";
+    await nameProjections.UpdateSongCollectionsAsync(nameList, SongViewType.All);
+    Check(nameList.Count == 0, "Directory segments must not match as file names.");
+    Console.WriteLine("PASS: original file name search covers case, remote encoding and directory boundaries.");
 }
 
 sealed class TestContext : SynchronizationContext, IDisposable

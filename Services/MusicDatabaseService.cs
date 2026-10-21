@@ -488,13 +488,7 @@ namespace WinUIMusicPlayer.Services
                     ref readonly var plm = ref plmSpan[i];
                     if (plm.PlayListId != playListId) continue;
                     if (!AppViewModel.TryFindById(plm.MusicId, out var m) || m is null) continue;
-                    if (hasSearch)
-                    {
-                        bool match = (m.Title is not null && m.Title.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
-                                     (m.Album is not null && m.Album.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
-                                     (m.Author is not null && m.Author.Contains(search, StringComparison.OrdinalIgnoreCase));
-                        if (!match) continue;
-                    }
+                    if (hasSearch && !LibraryProjectionService.MusicMatchesSearch(m, search)) continue;
                     buf[written++] = new PlayListMusicItem { Music = m, PlayListOrder = plm.Order };
                 }
 

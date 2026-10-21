@@ -1,3 +1,8 @@
+## 2026-10-21 搜索框支持原始文件名检索
+- `Services/LibraryProjectionService.cs`：全部搜索匹配（歌曲列表、专辑/艺人/文件夹分组页、歌单映射、增量入列）新增原始文件名维度，按最后路径段（含扩展名）匹配；本地路径切片零分配，WebDAV 远程路径百分号解码后再匹配；`SongRow` 增加构造期 `Path` 快照，后台匹配不读可变属性。
+- `Services/MusicDatabaseService.cs`：歌单内存过滤复用 `MusicMatchesSearch`，与全局搜索口径一致。
+- `_tools/SharedStateRegression`：新增文件名检索回归（大小写、远程 URL 编码、目录段边界）；补上工具缺失的 `Model/DesktopLyricsMode.cs` 源引用（既有编译破损）。
+
 ## 2026-10-16 优化升频处理与资源管理
 - `External/AudioPlayer/AudioEnhancement`：优化处理状态与工作缓冲区组织，保持音频输出一致，完善中文注释。
 - `Coefficients/Assets/dsp-tables.json`、`_tools/PackDspTables.py`：统一系数表配置和资源生成流程，增加资源一致性校验。
