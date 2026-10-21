@@ -1,10 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <Sdk Name="PublishWithSatoriGC" Version="11.0.0-satori.38707303131.1" />
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net11.0-windows10.0.26100.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
     <RootNamespace>WinUIMusicPlayer</RootNamespace>
+    <!-- Runtime Async：运行时驱动 async 状态机（preview 特性，BCL 已默认编译为该模型） -->
+    <Features>$(Features);runtime-async=on</Features>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x64;ARM64</Platforms>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>

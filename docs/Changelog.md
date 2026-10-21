@@ -1,3 +1,7 @@
+## 2026-10-21 开启 Runtime Async 编译
+- `WinUIMusicPlayer.csproj`：新增 `<Features>$(Features);runtime-async=on</Features>`，应用自身 async 方法改由运行时驱动状态机（.NET 11 preview 特性；运行时侧默认启用，BCL 已采用该模型）。
+- 验证：Debug x64 构建与 Release 发布（裁剪 + R2R + Satori 运行时包）均通过，产物中 `AsyncTaskMethodBuilder` 引用清零、async 状态机类型消失（残留 `d__` 为 yield 迭代器，不在覆盖范围）；`artifacts/runtime-async-smoke` 语义冒烟（同步/真异步完成、异常传播、try/catch/finally、循环 await、ConfigureAwait、WhenAll、上下文回发）全部通过。未做真机 UI 运行验证。
+
 ## 2026-10-21 搜索框支持原始文件名检索
 - `Services/LibraryProjectionService.cs`：全部搜索匹配（歌曲列表、专辑/艺人/文件夹分组页、歌单映射、增量入列）新增原始文件名维度，按最后路径段（含扩展名）匹配；本地路径切片零分配，WebDAV 远程路径百分号解码后再匹配；`SongRow` 增加构造期 `Path` 快照，后台匹配不读可变属性。
 - `Services/MusicDatabaseService.cs`：歌单内存过滤复用 `MusicMatchesSearch`，与全局搜索口径一致。
