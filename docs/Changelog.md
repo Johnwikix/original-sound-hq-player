@@ -1,3 +1,9 @@
+## 2026-10-23 修复首次播放等待解码库冷加载
+- `External/AudioPlayer/Decode/DecoderRuntime.cs`、`PlayerIpcService.cs`：启动时后台加载 FFmpeg 的四个原生库，与主界面初始化并行；解码依赖就绪后开放 IPC，避免已连接后的首次播放承担冷加载；提前监控客户端，启动中退出等待加载收尾且不发布就绪。
+- `_tools/PlaybackSwitchRegression/StartupTests.cs`、`_tools/AudioPlayerSmokeTest/StartupTimingProbe.cs`：增加真实跨进程慢加载、失败、启动中退出回归，以及立即播放和连接后首次播放计时。
+- `Player/AudioPlayer.exe`：重新发布 win-x64 Release NativeAOT 产物。
+- 验证：332 项完整回归及真实 WASAPI 共享输出的定位、暂停恢复通过；三种首次播放场景确认约 42～48ms、进度推进约 340～389ms。未清空系统文件缓存，未做重启电脑后的磁盘冷启动及 WinUI 点击验证。
+
 ## 2026-10-21 开启 Runtime Async 编译
 - `WinUIMusicPlayer.csproj`：新增 `<Features>$(Features);runtime-async=on</Features>`，应用自身 async 方法改由运行时驱动状态机（.NET 11 preview 特性；运行时侧默认启用，BCL 已采用该模型）。
 - 验证：Debug x64 构建与 Release 发布（裁剪 + R2R + Satori 运行时包）均通过，产物中 `AsyncTaskMethodBuilder` 引用清零、async 状态机类型消失（残留 `d__` 为 yield 迭代器，不在覆盖范围）；`artifacts/runtime-async-smoke` 语义冒烟（同步/真异步完成、异常传播、try/catch/finally、循环 await、ConfigureAwait、WhenAll、上下文回发）全部通过。未做真机 UI 运行验证。

@@ -30,6 +30,12 @@ internal static unsafe partial class Program
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(WasapiOutput))]
     private static int Main(string[] args)
     {
+        if (args.Length == 2 && args[0] == "--startup-server") return StartupServer(args[1]);
+        if (args.Length == 1 && args[0] == "--test-startup")
+        {
+            RunStartupTests();
+            return _failures == 0 ? 0 : 1;
+        }
         if (args.Length == 1 && args[0] == "--measure-playback-memory")
         {
             FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
@@ -131,6 +137,7 @@ internal static unsafe partial class Program
         RunAtmosAutomaticTests(root);
         RunProgressTests();
         RunPipeProtocolTests();
+        RunStartupTests();
         RunWavPackTests();
         RunBufferPolicyTests();
         RunAsioNotificationTests();

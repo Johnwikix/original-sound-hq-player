@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using BassPlayerIpc.Shared;
 
+if (args.Contains("--startup-timing")) return StartupTimingProbe.Run(args);
+
 // AudioPlayer（BassPlayerSharp 替代）AOT 版冒烟测试：
 // 充当主程序客户端：握手 IPC → SetMusicUrl → Play → 轮询进度 → EQ → 设备枚举 → MusicEnd。
 // 用法: AudioPlayerSmokeTest <AOT AudioPlayer.exe 路径> <音频文件路径> [持续秒数]

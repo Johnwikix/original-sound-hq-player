@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using AudioPlayer.Decode;
 using AudioPlayer.Playback;
 using BassPlayerIpc.Shared;
 
@@ -40,6 +41,11 @@ public class PlayerIpcService : IDisposable
             _instanceMutex = new Mutex(true, IpcConstants.MutexName, out bool created);
             if (!created) return;
             var instanceId = Guid.NewGuid();
+            monitor = MonitorClientAliveAsync(_stop.Token);
+            // 与主程序启动并行加载解码依赖；握手完成后首次播放不再承担冷加载。
+            // 原生加载不可中断，保持任务所有权，退出时等它完成再释放服务资源。
+            await Task.Run(DecoderRuntime.Initialize, _stop.Token).ConfigureAwait(false);
+            _stop.Token.ThrowIfCancellationRequested();
             _engine = new PlaybackEngine(this);
             PublishDspState(_engine.GetDspState());
             commands = new PipeCommandServer(IpcConstants.ControlPipeName, instanceId, HandleCommand)
@@ -47,7 +53,6 @@ public class PlayerIpcService : IDisposable
             streaming = new StreamingServer(_engine, instanceId).RunAsync(_stop.Token);
             state = _stateServer.RunAsync(IpcConstants.StatePipeName, instanceId, _stop.Token);
             progress = PublishProgressAsync(_stop.Token);
-            monitor = MonitorClientAliveAsync(_stop.Token);
             Console.WriteLine($"Server ready. Pipe protocol {PipeProtocol.Version}");
             var completed = await Task.WhenAny(commands, streaming, state, progress, monitor).ConfigureAwait(false);
             await completed.ConfigureAwait(false);

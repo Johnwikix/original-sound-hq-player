@@ -39,8 +39,8 @@ namespace WinUIMusicPlayer.Services
             cancellationToken = startupCancellation.Token;
             var startup = Stopwatch.StartNew();
             var logger = App.GetLogger<StartupCoordinator>();
-            // 音频进程与 IPC 连接最先启动（先于用户协议）：服务端首个动作即创建共享内存，
-            // 连接等待与数据库初始化、协议阅读并行；连接完成不阻塞主界面，进度由标题栏指示。
+            // 音频进程与解码库预热先于用户协议启动，IPC 在解码依赖就绪后完成握手。
+            // 连接等待与数据库初始化、协议阅读并行；进度由标题栏指示。
             var shutdown = App.Services.GetRequiredService<ShutdownCoordinator>();
             var lifecycle = App.Services.GetRequiredService<AppLifecycle>();
             var settings = App.Services.GetRequiredService<SettingsCoordinator>();
