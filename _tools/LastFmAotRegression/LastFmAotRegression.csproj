@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net11.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><LangVersion>preview</LangVersion>
+    <Features>$(Features);runtime-async=on</Features><RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PublishTrimmed>true</PublishTrimmed><TrimMode>link</TrimMode><JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles><CompilerGeneratedFilesOutputPath>obj/generated</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
+    <TrimmerRootAssembly Include="SQLite-net" /><TrimmerRootAssembly Include="SQLitePCLRaw.core" />
+    <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
+    <Compile Include="../../Model/Stats/PlaybackHistory.cs" />
+    <Compile Include="../../Services/LastFm/*.cs" Exclude="../../Services/LastFm/LastFmPlaybackBridge.cs;../../Services/LastFm/WindowsLastFmCredentialVault.cs" />
+  </ItemGroup>
+</Project>

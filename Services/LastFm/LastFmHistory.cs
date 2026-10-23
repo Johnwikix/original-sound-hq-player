@@ -10,10 +10,10 @@ namespace WinUIMusicPlayer.Services.LastFm;
 
 public sealed record LastFmHistoryEntry(int Id, string Title, string Artist, string Album, double TotalDurationMs,
     double DurationPlayedMs, DateTime StartedAt, DateTime EndedAt);
-public sealed record LastFmKnownPlay(string ApiKey, string Account, string TrackKey, long StartedAt);
+public sealed record LastFmKnownPlay(string ApiKey, string Account, string TrackKey, long StartedAt, bool Retimed = false, bool Uncertain = false);
 public sealed record LastFmRecentPlay(string Title, string Artist, long StartedAt);
 public sealed record LastFmRecentPage(IReadOnlyList<LastFmRecentPlay> Plays, int TotalPages);
-public sealed record LastFmHistoryImportResult(int Queued, int AlreadyPresent, int TooOld, int Ineligible, int Deferred, int Retimed = 0);
+public sealed record LastFmHistoryImportResult(int Queued, int AlreadyPresent, int TooOld, int Ineligible, int Deferred, int Retimed = 0, int Uncertain = 0);
 internal sealed record LastFmHistoryCandidate(LastFmTrack Track, long StartedAt, string Key, bool Retimed);
 internal sealed record LastFmHistoryBatch(List<LastFmHistoryCandidate> Candidates, int AlreadyPresent, int TooOld, int Ineligible, int Deferred);
 
@@ -46,7 +46,8 @@ internal static class LastFmHistory
     }
 
     internal static async Task<LastFmHistoryBatch> ReadAsync(ILastFmHistorySource source, bool includeOlder,
-        DateTimeOffset from, DateTimeOffset to, HashSet<string> receipts, CancellationToken token)
+        DateTimeOffset from, DateTimeOffset to, HashSet<string> pendingKeys, CancellationToken token,
+        ILastFmStore? store = null, string account = "")
     {
         int tooOld = includeOlder ? 0 : await source.CountOlderAsync(from.UtcDateTime, token).ConfigureAwait(false);
         int ineligible = 0, deferred = 0, alreadyPresent = 0;
@@ -59,15 +60,32 @@ internal static class LastFmHistory
 
         async Task ReadRangeAsync(DateTime start, DateTime end, bool retimed)
         {
+            var rows = new List<LastFmHistoryEntry>(500);
             await foreach (var entry in source.ReadAsync(start, end, token).ConfigureAwait(false))
             {
-                string key = SourceKey(entry);
-                if (receipts.Contains(key)) { alreadyPresent++; continue; }
-                var track = QualifiedTrack(entry);
-                long timestamp = new DateTimeOffset(AsUtc(entry.StartedAt)).ToUnixTimeSeconds();
-                if (track is null || timestamp <= 0) { ineligible++; continue; }
-                if (candidates.Count >= 100000) { deferred++; continue; }
-                candidates.Add(new(track, timestamp, key, retimed));
+                rows.Add(entry);
+                if (rows.Count == 500) await FlushAsync().ConfigureAwait(false);
+            }
+            if (rows.Count != 0) await FlushAsync().ConfigureAwait(false);
+
+            async Task FlushAsync()
+            {
+                var keys = new List<string>(rows.Count);
+                foreach (var entry in rows) keys.Add(SourceKey(entry));
+                var mappings = store is null ? null : await store.ReadMappingsAsync(account, keys, token).ConfigureAwait(false);
+                for (int i = 0; i < rows.Count; i++)
+                {
+                    token.ThrowIfCancellationRequested();
+                    var entry = rows[i];
+                    string key = keys[i];
+                    if (pendingKeys.Contains(key) || (mappings?.TryGetValue(key, out var mapping) == true && mapping.Accepted)) { alreadyPresent++; continue; }
+                    var track = QualifiedTrack(entry);
+                    long timestamp = new DateTimeOffset(AsUtc(entry.StartedAt)).ToUnixTimeSeconds();
+                    if (track is null || timestamp <= 0) { ineligible++; continue; }
+                    if (candidates.Count >= 100000) { deferred++; continue; }
+                    candidates.Add(new(track, timestamp, key, retimed));
+                }
+                rows.Clear();
             }
         }
     }
@@ -103,7 +121,13 @@ internal sealed class LastFmImportDay
         {
             // Some zones advance at midnight. Start at the first valid local minute of that day.
             while (zone.IsInvalidTime(midnight)) midnight = midnight.AddMinutes(1);
-            _next = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(midnight, zone)).ToUnixTimeSeconds();
+            if (zone.IsAmbiguousTime(midnight))
+            {
+                var offsets = zone.GetAmbiguousTimeOffsets(midnight);
+                var earliestOffset = offsets[0] > offsets[1] ? offsets[0] : offsets[1];
+                _next = new DateTimeOffset(midnight, earliestOffset).ToUnixTimeSeconds();
+            }
+            else _next = new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(midnight, zone)).ToUnixTimeSeconds();
         }
         _last = now.ToUnixTimeSeconds();
     }
@@ -130,14 +154,21 @@ internal sealed class LastFmHistoryIndex
         times.Add(timestamp);
     }
 
-    internal bool Take(string key, long timestamp)
+    internal bool Take(string key, long timestamp) => TryTake(key, timestamp, out _);
+
+    internal bool TryTake(string key, long timestamp, out long matched)
     {
+        matched = 0;
         if (!_tracks.TryGetValue(key, out var times)) return false;
         // Local statistics start just before decoder confirmation. Keep that bounded discrepancy
         // out of the duplicate history imported by the first Last.fm release.
         long? closest = null;
         foreach (long candidate in times.GetViewBetween(timestamp - 10, timestamp + 10))
             if (closest is null || Math.Abs(candidate - timestamp) < Math.Abs(closest.Value - timestamp)) closest = candidate;
-        return closest is long match && times.Remove(match);
+        if (closest is not long match || !times.Remove(match)) return false;
+        matched = match;
+        return true;
     }
+
+    internal bool TakeExact(string key, long timestamp) => _tracks.TryGetValue(key, out var times) && times.Remove(timestamp);
 }

@@ -35,7 +35,7 @@ internal static class HistoryRegression
         await File.WriteAllTextAsync(Path.Combine(folder, "LastFm.json"), "{\"Version\":1,\"Enabled\":false,\"HasCredentials\":false,\"Pending\":[]}");
         check((await store.LoadAsync(default)).Known.Count == 0, "Existing queue files without import bookkeeping stopped loading.");
         await using var server = new ApiServer { ScrobbleFailure = 503 };
-        server.DurableProbe = timestamp => File.ReadAllText(Path.Combine(folder, "LastFm.json")).Contains(timestamp);
+        server.DurableProbe = timestamp => StoreChecks.ReadState(store).Contains(timestamp);
         server.RecentNowPlaying = new(first.Title, first.Author, new DateTimeOffset(first.StartedAt).ToUnixTimeSeconds());
         server.RemoteHistory.Add(new(existing.Title, existing.Author, new DateTimeOffset(existing.StartedAt).ToUnixTimeSeconds() + 2));
         using var api = new LastFmApiClient(new HttpClient(), server.Endpoint);
@@ -80,7 +80,7 @@ internal static class HistoryRegression
             await service.RetryAsync();
             await WaitFor(() => service.Status.PendingCount == 0);
             check(server.Accepted.Count == 2 && server.DurableBeforeSend, "Imported plays were not submitted through the durable queue.");
-            check((await store.LoadAsync(default)).Known.Count == 2, "Successful uploads lost their local acknowledgement markers.");
+            check((await store.ReadKnownAsync("alice", new string('a', 32), default)).Count == 2, "Successful uploads lost their local acknowledgement markers.");
             await service.StopAsync();
             service = new(api, store);
             await service.StartAsync();
@@ -90,13 +90,11 @@ internal static class HistoryRegression
 
             var next = Play("Next import", yesterday.AddHours(2));
             await database.InsertAsync(next);
-            File.SetAttributes(Path.Combine(folder, "LastFm.json"), FileAttributes.ReadOnly);
-            try
+            using (var blocked = new StoreWriteBlocker(store))
             {
                 try { await service.ImportHistoryAsync(source); throw new Exception("Failed import commit succeeded."); }
-                catch (UnauthorizedAccessException) { check(service.Status.PendingCount == 0, "Failed import commit acknowledged an unsaved queue."); }
+                catch (SQLiteException) { check(service.Status.PendingCount == 0, "Failed import commit acknowledged an unsaved queue."); }
             }
-            finally { File.SetAttributes(Path.Combine(folder, "LastFm.json"), FileAttributes.Normal); }
 
             server.HoldRecent = true;
             server.ScrobbleFailure = 503;

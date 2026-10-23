@@ -1,3 +1,10 @@
+## 2026-10-23 修复 Last.fm 历史补报去重与持久化开销
+- `LastFmStore`、`LastFmModels`：SQLite 事务保存队列、源记录分配与成功标记；长期标记增量写入、500 键分批查询，队列序列化放后台，旧 JSON 一次性迁移并保留备份，后续启动不加载全部长期标记。
+- `LastFmService`、`LastFmHistory`：区分改写时间和真实播放，保存失败后的明确确认在解绑/换号前提交，跨天重连保留分配并准确核对；分页请求释放共享网络槽，修复夏令时重复午夜分配。
+- `LastFmSettingsViewModel`、七种语言资源：旧版缺失映射的模糊命中暂缓并单独提示，保留现有 MVVM 与自动行高；不更改本地统计。
+- `_tools/LastFmRegression`、`_tools/LastFmAotRegression`、`_tools/LastFmUiRegression`、`docs/LastFm.md`：补充故障注入、账号/重启、迁移与性能回归，裁剪及 NativeAOT 真实发布验证；真实 Last.fm 账号联调未执行。
+- 验证：101 项核心、30 项真实 WinUI（Runtime Async）、裁剪/NativeAOT 各 514 项检查通过，Debug x64 构建通过；独立功能、性能和 AOT 复审完成，性能复审发现的 UI 同步序列化已修复并复核。
+
 ## 2026-10-23 允许按导入当天补报更早的 Last.fm 历史
 - `LastFmSettingsControl.xaml`、`LastFmSettingsViewModel`、七种语言资源：新增默认关闭的“允许按导入当天补报更早历史”开关；仅对手动导入生效，显示改用当天时间的数量，保持默认控件高度。
 - `Services/LastFm`：超过 14 天的合格记录分配导入当天已过去且未占用的秒数，保留本地原始统计及队列原始时间；增加跨天持久、按账号隔离的源记录去重标记，原子保存、离线重启和同账号重连不重新生成时间。

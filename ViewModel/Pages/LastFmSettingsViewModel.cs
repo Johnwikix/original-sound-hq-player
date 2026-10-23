@@ -88,7 +88,7 @@ public sealed class LastFmSettingsViewModel : ObservableObject
     public string QueueText => string.Format(CultureInfo.CurrentCulture, ToolUtils.GetString("LastFmPendingCount"), _status.PendingCount);
     public string HistoryResultText => _status.HistoryImport is { } result
         ? string.Format(CultureInfo.CurrentCulture, ToolUtils.GetString("LastFmHistoryResult"),
-            result.Queued, result.AlreadyPresent, result.TooOld, result.Ineligible, result.Deferred, result.Retimed)
+            result.Queued, result.AlreadyPresent, result.TooOld, result.Ineligible, result.Deferred, result.Retimed, result.Uncertain)
         : "";
     public InfoBarSeverity Severity => _message.Length != 0 || _status.Problem is not (LastFmProblem.None or LastFmProblem.AuthorizationPending)
         ? InfoBarSeverity.Warning : InfoBarSeverity.Informational;

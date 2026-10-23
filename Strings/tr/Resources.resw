@@ -2477,7 +2477,7 @@ SHA-256: {5}
   <data name="LastFmHistoryHelp" xml:space="preserve"><value>Varsayılan olarak son 14 günün kayıtlarını özgün zamanlarıyla gönderir. Daha eski kayıtları eklemek için yukarıdaki seçeneği açın. Göndermeden önce mevcut kayıtlar çevrimiçi denetlenir.</value></data>
   <data name="LastFmImportHistory" xml:space="preserve"><value>Yerel geçmişi gönder</value></data>
   <data name="LastFmCancelHistory" xml:space="preserve"><value>İçe aktarmayı iptal et</value></data>
-  <data name="LastFmHistoryResult" xml:space="preserve"><value>Kuyruğa alınan: {0}; içe aktarma gününe atanan: {5}; zaten mevcut: {1}; 14 günden eski ve hariç tutulan: {2}; uygun olmayan veya eksik: {3}; kapasite veya bugünün kullanılabilir zamanları nedeniyle ertelenen: {4}.</value></data>
+  <data name="LastFmHistoryResult" xml:space="preserve"><value>Kuyruğa alınan: {0}; içe aktarma gününe atanan: {5}; zaten mevcut: {1}; 14 günden eski ve hariç tutulan: {2}; uygun olmayan veya eksik: {3}; ertelenen: {4} (eski sürümdeki eşleştirmesi belirsiz ve doğrulama gereken {6} kayıt dahil).</value></data>
   <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>Eski geçmişi içe aktarma tarihiyle gönder</value></data>
   <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>Varsayılan olarak kapalıdır. Eski dinlemeler Last.fm istatistiklerinde içe aktarma gününe sayılır; özgün yerel zamanlar korunur. Yalnızca elle geçmiş aktarımı için geçerlidir.</value></data>
 </root>

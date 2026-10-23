@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
+using SQLite;
 using BassPlayerIpc.Shared;
 using WinUIMusicPlayer.Services.LastFm;
 
@@ -56,8 +57,7 @@ var credentials = new LastFmCredentials(new string('a', 32), new string('b', 32)
 var vault = new TestVault();
 var store = new LastFmStore(vault, Path.Combine(folder, "LastFm.json"));
 await using var server = new ApiServer();
-server.DurableProbe = timestamp => File.Exists(Path.Combine(folder, "LastFm.json"))
-    && File.ReadAllText(Path.Combine(folder, "LastFm.json")).Contains(timestamp);
+server.DurableProbe = timestamp => StoreChecks.ReadState(store).Contains(timestamp);
 using var client = new LastFmApiClient(new HttpClient(), server.Endpoint);
 LastFmService service = new(client, store);
 await service.StartAsync();
@@ -72,20 +72,18 @@ catch (LastFmApiException ex) { Check(ex.Code == 14 && service.Status.Authorizat
 server.AuthorizationGranted = true;
 await service.CompleteAuthorizationAsync();
 Check(service.Status.IsAuthenticated && service.Status.UserName == "alice" && service.Status.Enabled, "Authorized account was not connected.");
-Check(!File.ReadAllText(Path.Combine(folder, "LastFm.json")).Contains(credentials.SharedSecret), "Shared secret leaked into queue file.");
+Check(!StoreChecks.ReadState(store).Contains(credentials.SharedSecret), "Shared secret leaked into queue file.");
 await service.NowPlayingAsync(song, service.Status.Revision, CancellationToken.None);
 await WaitFor(() => server.NowPlaying.Count == 1);
 Check(server.NowPlaying[0]["artist"] == song.Artist && server.NowPlaying[0]["track"] == song.Title,
     "Form encoding damaged Unicode, ampersands or plus signs.");
 Check(!server.SignatureError, "HTTP requests did not contain a valid Last.fm signature.");
 
-File.SetAttributes(Path.Combine(folder, "LastFm.json"), FileAttributes.ReadOnly);
-try
+using (var blocked = new StoreWriteBlocker(store))
 {
     try { await service.EnqueueAsync(song, 1699999999, Guid.NewGuid(), service.Status.Revision); throw new Exception("Failed commit acknowledged."); }
-    catch (UnauthorizedAccessException) { Check(service.Status.PendingCount == 0 && server.ScrobbleRequests == 0, "Uncommitted record was sent or acknowledged."); }
+    catch (SQLiteException) { Check(service.Status.PendingCount == 0 && server.ScrobbleRequests == 0, "Uncommitted record was sent or acknowledged."); }
 }
-finally { File.SetAttributes(Path.Combine(folder, "LastFm.json"), FileAttributes.Normal); }
 
 server.ScrobbleFailure = 503;
 Guid first = Guid.NewGuid();
@@ -144,14 +142,16 @@ await service.EnqueueAsync(song, 1700000004, Guid.NewGuid(), service.Status.Revi
 await WaitFor(() => service.Status.PendingCount == 0);
 Check(service.Status.Problem == LastFmProblem.Rejected, "HTTP success hid Last.fm metadata rejection.");
 server.IgnoreScrobble = false;
-server.BeforeScrobbleResponse = () => File.SetAttributes(Path.Combine(folder, "LastFm.json"), FileAttributes.ReadOnly);
+StoreWriteBlocker? blockedWrite = null;
+server.BeforeScrobbleResponse = () => blockedWrite = new StoreWriteBlocker(store);
 try
 {
     await service.EnqueueAsync(song, 1700000005, Guid.NewGuid(), service.Status.Revision);
     await WaitFor(() => service.Status.Problem == LastFmProblem.Storage && service.Status.PendingCount == 1);
     int acknowledgedCount = server.Accepted.Count;
     server.BeforeScrobbleResponse = null;
-    File.SetAttributes(Path.Combine(folder, "LastFm.json"), FileAttributes.Normal);
+    blockedWrite?.Dispose();
+    blockedWrite = null;
     await service.RetryAsync();
     await WaitFor(() => service.Status.PendingCount == 0);
     Check(server.Accepted.Count == acknowledgedCount, "Failed local removal resent an already acknowledged scrobble.");
@@ -159,7 +159,8 @@ try
 finally
 {
     server.BeforeScrobbleResponse = null;
-    File.SetAttributes(Path.Combine(folder, "LastFm.json"), FileAttributes.Normal);
+    blockedWrite?.Dispose();
+    blockedWrite = null;
 }
 server.HoldNowPlaying = true;
 var held = service.NowPlayingAsync(song, service.Status.Revision, CancellationToken.None);
@@ -171,11 +172,13 @@ await service.StopAsync().WaitAsync(TimeSpan.FromSeconds(5));
 server.ReleaseNowPlaying.TrySetResult();
 Check((await store.ReadIdentityAsync(default))?.Account is null, "Disconnect left a stored session key.");
 
-await File.WriteAllTextAsync(Path.Combine(folder, "LastFm.json"), "{broken");
-service = new(client, store);
+string corruptPath = Path.Combine(folder, "Corrupt.json");
+var corruptStore = new LastFmStore(vault, corruptPath);
+await File.WriteAllTextAsync(corruptPath, "{broken");
+service = new(client, corruptStore);
 try { await service.StartAsync(); throw new Exception("Corrupt queue silently accepted."); }
 catch (JsonException) { Check(!service.Status.IsReady, "Corrupt queue became writable."); }
-Check(await File.ReadAllTextAsync(Path.Combine(folder, "LastFm.json")) == "{broken", "Corrupt queue was overwritten with an empty one.");
+Check(await File.ReadAllTextAsync(corruptPath) == "{broken", "Corrupt queue was overwritten with an empty one.");
 await service.StopAsync();
 await store.SaveAsync(new LastFmSavedState { HasCredentials = true }, default);
 var delayedVault = new DelayedVault();
@@ -187,6 +190,7 @@ try { await starting; throw new Exception("Canceled startup completed."); }
 catch (OperationCanceledException) { Check(!service.Status.IsReady, "Shutdown during startup published ready state."); }
 await HistoryRegression.RunAsync(Check);
 await OldHistoryRegression.RunAsync(Check);
+await HistoryFixRegression.RunAsync(Check);
 Console.WriteLine($"PASS: {checks} checks; listening, seeking, authorization, signed loopback HTTP, real SQLite history import, pagination, deduplication, persistence, cancellation, account isolation and shutdown.");
 
 static async Task WaitFor(Func<bool> condition)
@@ -221,6 +225,7 @@ sealed class ApiServer : IAsyncDisposable
     public Action? BeforeScrobbleResponse;
     public int ScrobbleFailure, ScrobbleRequests;
     public int RecentFailure, RecentRequests;
+    public Action<int>? RecentPageRequested;
     public bool HoldRecent, MalformedRecent, SingleRecent;
     public LastFmRecentPlay? RecentNowPlaying;
     public List<LastFmRecentPlay> RemoteHistory { get; } = [];
@@ -287,6 +292,7 @@ sealed class ApiServer : IAsyncDisposable
                     break;
                 case "user.getRecentTracks":
                     Interlocked.Increment(ref RecentRequests);
+                    RecentPageRequested?.Invoke(int.Parse(data["page"]));
                     if (HoldRecent) { RecentEntered.TrySetResult(); await ReleaseRecent.Task; }
                     if (RecentFailure != 0) { status = RecentFailure; response = "{}"; break; }
                     if (MalformedRecent) { response = "{\"recenttracks\":{}}"; break; }

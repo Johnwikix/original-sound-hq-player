@@ -2479,7 +2479,7 @@ SHA-256：{5}
   <data name="LastFmHistoryHelp" xml:space="preserve"><value>默认按原时间补报最近 14 天的已保存记录。可开启上方选项补报更早历史；联网核对已有记录后再上传。</value></data>
   <data name="LastFmImportHistory" xml:space="preserve"><value>补报本地历史</value></data>
   <data name="LastFmCancelHistory" xml:space="preserve"><value>取消补报</value></data>
-  <data name="LastFmHistoryResult" xml:space="preserve"><value>已入队 {0} 条；其中按导入当天 {5} 条；已有 {1} 条；超过 14 天未导入 {2} 条；不达标或缺少信息 {3} 条；因容量或当天可用时间不足暂缓 {4} 条。</value></data>
+  <data name="LastFmHistoryResult" xml:space="preserve"><value>已入队 {0} 条；其中按导入当天 {5} 条；已有 {1} 条；超过 14 天未导入 {2} 条；不达标或缺少信息 {3} 条；暂缓 {4} 条（其中旧版映射不明、待核对 {6} 条）。</value></data>
   <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>允许按导入当天补报更早历史</value></data>
   <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>默认关闭。开启后，超过 14 天的记录会计入 Last.fm 导入当天的统计，本地原始播放时间保持不变；此选项仅对手动补报生效。</value></data>
 </root>

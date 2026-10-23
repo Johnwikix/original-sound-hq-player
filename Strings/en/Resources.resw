@@ -2477,7 +2477,7 @@ SHA-256: {5}
   <data name="LastFmHistoryHelp" xml:space="preserve"><value>By default, submit saved plays from the last 14 days with their original times. Enable the option above to include older plays. Existing plays are checked online before submission.</value></data>
   <data name="LastFmImportHistory" xml:space="preserve"><value>Submit local history</value></data>
   <data name="LastFmCancelHistory" xml:space="preserve"><value>Cancel import</value></data>
-  <data name="LastFmHistoryResult" xml:space="preserve"><value>Queued: {0}; assigned to import day: {5}; already present: {1}; older than 14 days and excluded: {2}; ineligible or incomplete: {3}; deferred by capacity or available time slots today: {4}.</value></data>
+  <data name="LastFmHistoryResult" xml:space="preserve"><value>Queued: {0}; assigned to import day: {5}; already present: {1}; older than 14 days and excluded: {2}; ineligible or incomplete: {3}; deferred: {4} (including {6} with ambiguous legacy mappings requiring verification).</value></data>
   <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>Submit older history using the import date</value></data>
   <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>Off by default. Older plays count toward the import day on Last.fm; original local times stay unchanged. Applies only to manual history imports.</value></data>
 </root>

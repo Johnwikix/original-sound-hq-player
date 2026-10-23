@@ -35,10 +35,11 @@ internal static class OldHistoryRegression
         var source = new SqliteLastFmHistorySource(() => database, new HashSet<string> { "Unknown Artist" });
         await using var server = new ApiServer { ScrobbleFailure = 503 };
         server.RemoteHistory.Add(new(rows[2].Title, rows[2].Author, new DateTimeOffset(rows[2].StartedAt).ToUnixTimeSeconds()));
-        server.DurableProbe = stamp => File.ReadAllText(path).Contains(stamp);
         var store = new LastFmStore(new TestVault(), path);
+        server.DurableProbe = stamp => StoreChecks.ReadState(store).Contains(stamp);
         using var api = new LastFmApiClient(new HttpClient(), server.Endpoint);
         var service = new LastFmService(api, store);
+        StoreWriteBlocker? blocker = null;
         try
         {
             await service.StartAsync();
@@ -49,18 +50,16 @@ internal static class OldHistoryRegression
             check(service.Status.HistoryImport == new LastFmHistoryImportResult(1, 0, 5, 0, 0),
                 "Default import uploaded records older than 14 days.");
 
-            File.SetAttributes(path, FileAttributes.ReadOnly);
-            try
+            using (var blocked = new StoreWriteBlocker(store))
             {
                 try { await service.ImportHistoryAsync(source, true); throw new Exception("Failed old-history import commit was acknowledged."); }
-                catch (UnauthorizedAccessException)
+                catch (SQLiteException)
                 {
                     var failed = await store.LoadAsync(default);
                     check(failed.Pending.Count == 1 && failed.HistoryReceipts.Count == 0,
                         "Failed commit left source deduplication markers for unqueued plays.");
                 }
             }
-            finally { File.SetAttributes(path, FileAttributes.Normal); }
             DateTime before = DateTime.Now.Date;
             await service.ImportHistoryAsync(source, true);
             check(service.Status.HistoryImport == new LastFmHistoryImportResult(2, 2, 0, 2, 0, 2),
@@ -92,12 +91,12 @@ internal static class OldHistoryRegression
             server.ScrobbleFailure = 0;
             await service.RetryAsync();
             await WaitFor(() => service.Status.PendingCount == 0);
-            check(server.Accepted.Count == 3 && server.DurableBeforeSend && (await store.LoadAsync(default)).HistoryReceipts.Count == 4,
+            check(server.Accepted.Count == 3 && server.DurableBeforeSend && await store.CountHistoryAsync(true, default) == 4,
                 "Successful uploads did not durably retain per-source deduplication receipts.");
 
             // Simulate recent caches expiring and remote history being unavailable for duplicate matching.
             await service.StopAsync();
-            await store.SaveAsync((await store.LoadAsync(default)) with { Known = [] }, default);
+            using (var connection = new SQLiteConnection(store.DatabasePath)) connection.Execute("DELETE FROM LastFmKnown");
             server.RemoteHistory.Clear();
             server.Accepted.Clear();
             rows[0].Title = "Metadata corrected later";
@@ -124,22 +123,23 @@ internal static class OldHistoryRegression
             check(service.Status.PendingCount == 4 && service.Status.HistoryImport?.Retimed == 3,
                 "One account's permanent receipts suppressed another account's history.");
             server.ScrobbleFailure = 0;
-            server.BeforeScrobbleResponse = () => File.SetAttributes(path, FileAttributes.ReadOnly);
+            server.BeforeScrobbleResponse = () => blocker = new StoreWriteBlocker(store);
             await service.RetryAsync();
             await WaitFor(() => service.Status.Problem == LastFmProblem.Storage);
-            check(server.Accepted.Count == 1 && (await store.LoadAsync(default)).HistoryReceipts.Count == 4,
+            check(server.Accepted.Count == 1 && await store.CountHistoryAsync(true, default) == 4,
                 "Failed acknowledgement cleanup partially committed a history receipt.");
             server.BeforeScrobbleResponse = null;
-            File.SetAttributes(path, FileAttributes.Normal);
+            blocker?.Dispose();
+            blocker = null;
             await service.RetryAsync();
             await WaitFor(() => service.Status.PendingCount == 0);
-            check(server.Accepted.Count == 4 && (await store.LoadAsync(default)).HistoryReceipts.Count == 8,
+            check(server.Accepted.Count == 4 && await store.CountHistoryAsync(true, default) == 8,
                 "Acknowledgement cleanup resent an accepted play or lost an account's receipts.");
         }
         finally
         {
             server.BeforeScrobbleResponse = null;
-            if (File.Exists(path)) File.SetAttributes(path, FileAttributes.Normal);
+            blocker?.Dispose();
             await service.StopAsync();
             await database.CloseAsync();
         }
