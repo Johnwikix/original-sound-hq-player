@@ -2480,4 +2480,19 @@ SHA-256: {5}
   <data name="LastFmHistoryResult" xml:space="preserve"><value>キュー追加：{0}件、うちインポート日の時刻に変更：{5}件、登録済み：{1}件、14日超で除外：{2}件、条件未達または情報不足：{3}件、保留：{4}件（うち旧版の対応関係が不明で要確認：{6}件）。</value></data>
   <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>古い履歴をインポート日の時刻で送信</value></data>
   <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>既定ではオフです。14日を超える履歴は Last.fm でインポート日の統計に加算されます。元のローカル再生時刻は変更されません。手動の履歴送信にのみ適用されます。</value></data>
+  <data name="ApplicationFont" xml:space="preserve">
+    <value>アプリのフォント</value>
+  </data>
+  <data name="UseIndependentLyricsFont" xml:space="preserve">
+    <value>歌詞専用のフォントを使用</value>
+  </data>
+  <data name="IndependentLyricsFontDescription" xml:space="preserve">
+    <value>オフの場合、歌詞はアプリのフォントを使用します。選択済みの専用フォントは保持されます。</value>
+  </data>
+  <data name="UseIndependentDesktopLyricsFont" xml:space="preserve">
+    <value>デスクトップ歌詞専用のフォントを使用</value>
+  </data>
+  <data name="IndependentDesktopLyricsFontDescription" xml:space="preserve">
+    <value>オフの場合、デスクトップ歌詞はアプリのフォントを使用します。選択済みの専用フォントは保持されます。</value>
+  </data>
 </root>

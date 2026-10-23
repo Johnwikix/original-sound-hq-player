@@ -16,7 +16,7 @@
     <winex:WindowEx.SystemBackdrop>
         <DesktopAcrylicBackdrop />
     </winex:WindowEx.SystemBackdrop>
-    <Grid>
+    <Grid tool:ApplicationFont.IsEnabled="True">
         <controls:WindowBackgroundImage
             x:Name="WindowBackground"
             BlurAmount="{x:Bind ViewModel.WindowBackgroundBlurAmount, Mode=OneWay}"

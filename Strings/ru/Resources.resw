@@ -2480,4 +2480,19 @@ SHA-256: {5}
   <data name="LastFmHistoryResult" xml:space="preserve"><value>В очереди: {0}; с датой импорта: {5}; уже есть: {1}; старше 14 дней и исключены: {2}; не подходят или неполные: {3}; отложены: {4} (из них {6} с неоднозначными связями старой версии требуют проверки).</value></data>
   <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>Отправлять старую историю с датой импорта</value></data>
   <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>По умолчанию выключено. Старые прослушивания учитываются в Last.fm за день импорта; исходное локальное время сохраняется. Применяется только к ручному импорту истории.</value></data>
+  <data name="ApplicationFont" xml:space="preserve">
+    <value>Шрифт приложения</value>
+  </data>
+  <data name="UseIndependentLyricsFont" xml:space="preserve">
+    <value>Использовать отдельный шрифт текста песен</value>
+  </data>
+  <data name="IndependentLyricsFontDescription" xml:space="preserve">
+    <value>Когда выключено, используется шрифт приложения. Выбранный отдельный шрифт сохраняется.</value>
+  </data>
+  <data name="UseIndependentDesktopLyricsFont" xml:space="preserve">
+    <value>Использовать отдельный шрифт текста песен на рабочем столе</value>
+  </data>
+  <data name="IndependentDesktopLyricsFontDescription" xml:space="preserve">
+    <value>Когда выключено, текст песен на рабочем столе использует шрифт приложения. Выбранный отдельный шрифт сохраняется.</value>
+  </data>
 </root>

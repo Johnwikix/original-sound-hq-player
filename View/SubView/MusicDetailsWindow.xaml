@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:WinUIMusicPlayer.View.SubView"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:tool="using:WinUIMusicPlayer.Utils"
     xmlns:winex="using:WinUIEx"
     Title="音乐属性"
     MinWidth="650"
@@ -16,7 +17,7 @@
         <DesktopAcrylicBackdrop />
     </winex:WindowEx.SystemBackdrop>
 
-    <Grid>
+    <Grid tool:ApplicationFont.IsEnabled="True">
         <Grid Visibility="{x:Bind BoolToVisibility(IsLoading)}">
             <ProgressRing
                 Width="100"

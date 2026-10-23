@@ -44,6 +44,8 @@ public sealed class SettingsSnapshotFactory(AppState state)
         newSettings.IsCustomAppSize = state.Preferences.IsCustomAppSize;
         newSettings.AppHeight = state.Preferences.AppHeight;
         newSettings.AppWidth = state.Preferences.AppWidth;
+        newSettings.ApplicationFont = state.Preferences.ApplicationFontFamily.FontFamily.Source;
+        newSettings.UseIndependentLyricsFont = state.Preferences.UseIndependentLyricsFont;
         newSettings.GlobalFont = state.Preferences.FontFamily.FontFamily.Source;
         newSettings.CustomAcrylicOpacity = state.Preferences.CustomOpacity;
         newSettings.CustomColorArgb = (uint)((state.Preferences.CustomColor.A << 24) | (state.Preferences.CustomColor.R << 16) | (state.Preferences.CustomColor.G << 8) | state.Preferences.CustomColor.B);
@@ -100,6 +102,7 @@ public sealed class SettingsSnapshotFactory(AppState state)
         newSettings.DesktopLyricsMode = state.DesktopLyrics.Mode.ToString();
         newSettings.DesktopLyricsFontSize = AppSettings.DesktopLyricsFontSize;
         newSettings.DesktopLyricsTaskbarLyricsWidth = state.Preferences.DesktopLyricsTaskbarLyricsWidth;
+        newSettings.UseIndependentDesktopLyricsFont = state.Preferences.UseIndependentDesktopLyricsFont;
         newSettings.DesktopLyricsFontFamily = AppSettings.DesktopLyricsFontFamily;
         newSettings.DesktopLyricsColorRgb = AppSettings.DesktopLyricsColorRgb;
         newSettings.IsDesktopLyricsCustomColorEnabled = AppSettings.IsDesktopLyricsCustomColorEnabled;

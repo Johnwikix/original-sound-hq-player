@@ -53,7 +53,7 @@ public sealed class LyricsPresentationService(AppState state) : IDisposable
     {
         if (_disposed) return;
 
-        string fontFamilyName = state.Preferences.FontFamily?.FontFamily?.Source ?? "Segoe UI";
+        string fontFamilyName = state.Preferences.EffectiveLyricsFontFamilyName;
         AnimatedWin2dControls.Messages.LyricsSettingsBus.Publish(new AnimatedWin2dControls.Messages.LyricsSettingsBus.Settings(
             fontFamilyName: fontFamilyName,
             lyricsTextAlignment: state.Preferences.LyricsAlignment,

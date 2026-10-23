@@ -12,7 +12,26 @@ namespace WinUIMusicPlayer.State;
 /// <summary>Lyrics 领域偏好的可观察状态；不执行 I/O 或启动后台任务。</summary>
 public sealed class LyricsPreferencesState : ObservableObject
 {
-    public FontInfo DesktopLyricsFontFamily { get; set => SetProperty(ref field, value); } = null!;
+    public FontInfo FontFamily
+    {
+        get => field;
+        set
+        {
+            // ComboBox 更换 ItemsSource 时的临时空选择不能清除有效偏好。
+            if (value is not null) SetProperty(ref field, value);
+        }
+    } = FontInfo.CreateDefault();
+    public bool UseIndependentLyricsFont { get; set => SetProperty(ref field, value); }
+    public bool UseIndependentDesktopLyricsFont { get; set => SetProperty(ref field, value); }
+    public FontInfo DesktopLyricsFontFamily
+    {
+        get => field;
+        set
+        {
+            // 下拉框重建期间的空选择不能清除已保存的独立字体。
+            if (value is not null) SetProperty(ref field, value);
+        }
+    } = FontInfo.CreateDefault();
     public Thickness LyricsMargin { get; set => SetProperty(ref field, value); }
     public bool EnableAdvancedLyricsEffect { get; set => SetProperty(ref field, value); } = true;
     public string LocalLyricsFormatOrder { get => field; set => SetProperty(ref field, WinUIMusicPlayer.Services.Lyrics.LyricsFilePolicy.NormalizeOrder(value)); } = "krc,qrc,lrc,ttml";

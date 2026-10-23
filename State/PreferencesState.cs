@@ -30,6 +30,8 @@ public sealed class PreferencesState : ObservableObject
     public string ThemeType { get => Appearance.ThemeType; set => Appearance.ThemeType = value; }
     public string WindowBackgroundImagePath { get => Appearance.WindowBackgroundImagePath; set => Appearance.WindowBackgroundImagePath = value; }
     public double WindowBackgroundBlurAmount { get => Appearance.WindowBackgroundBlurAmount; set => Appearance.WindowBackgroundBlurAmount = value; }
+    public bool UseIndependentDesktopLyricsFont { get => Lyrics.UseIndependentDesktopLyricsFont; set => Lyrics.UseIndependentDesktopLyricsFont = value; }
+    public string EffectiveDesktopLyricsFontFamilyName => (UseIndependentDesktopLyricsFont ? DesktopLyricsFontFamily : ApplicationFontFamily)?.FontFamily?.Source ?? "Segoe UI";
     public FontInfo DesktopLyricsFontFamily { get => Lyrics.DesktopLyricsFontFamily; set => Lyrics.DesktopLyricsFontFamily = value; }
     private void ForwardChange(object? sender, PropertyChangedEventArgs e) => OnPropertyChanged(e);
 
@@ -68,7 +70,10 @@ public sealed class PreferencesState : ObservableObject
     public int AppHeight { get => Appearance.AppHeight; set => Appearance.AppHeight = value; }
     public string BackdropType { get => Appearance.BackdropType; set => Appearance.BackdropType = value; }
     public bool IsDarkMode { get => Appearance.IsDarkMode; set => Appearance.IsDarkMode = value; }
-    public FontInfo FontFamily { get => Appearance.FontFamily; set => Appearance.FontFamily = value; }
+    public FontInfo ApplicationFontFamily { get => Appearance.ApplicationFontFamily; set => Appearance.ApplicationFontFamily = value; }
+    public FontInfo FontFamily { get => Lyrics.FontFamily; set => Lyrics.FontFamily = value; }
+    public bool UseIndependentLyricsFont { get => Lyrics.UseIndependentLyricsFont; set => Lyrics.UseIndependentLyricsFont = value; }
+    public string EffectiveLyricsFontFamilyName => (UseIndependentLyricsFont ? FontFamily : ApplicationFontFamily)?.FontFamily?.Source ?? "Segoe UI";
     public Color CustomColor { get => Appearance.CustomColor; set => Appearance.CustomColor = value; }
     public bool IsCustomLyricsColorEnabled { get => Lyrics.IsCustomLyricsColorEnabled; set => Lyrics.IsCustomLyricsColorEnabled = value; }
     public Color LyricsCustomColor { get => Lyrics.LyricsCustomColor; set => Lyrics.LyricsCustomColor = value; }

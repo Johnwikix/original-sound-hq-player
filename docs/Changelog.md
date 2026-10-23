@@ -1,3 +1,14 @@
+## 2026-10-23 增加桌面歌词独立字体开关
+- `LyricsSettingsControl.xaml`、偏好/ViewModel 与七种语言资源：桌面歌词字体旁新增独立开关，默认关闭；关闭时跟随程序字体并置灰下拉框，开启后恢复独立选择，悬浮和任务栏模式共用同一状态。
+- `DesktopLyricsViewModel`、设置恢复/快照：通过现有样式通知即时更新有效字体；分别保存独立选择与开关，切换程序字体不覆盖原有桌面歌词字体。存量配置缺失开关时默认跟随程序字体。
+- 验证：66 项真实 WinUI 字体检查（含生产桌面歌词 ViewModel、两种模式样式通知、选择保留和 JSON 恢复）、Debug x64 构建、七语言资源键与 CRLF 检查通过；未人工验收实际任务栏嵌入显示。
+
+## 2026-10-23 增加程序字体与独立歌词字体开关
+- `CustomFontStyle.xaml`、`ApplicationFontService`、窗口根节点与播放详情动画文字：程序字体默认 Segoe UI，统一普通文字与 WinUI 排版样式，切换时刷新已打开窗口，保留图标及显式字体。
+- `GeneralSettingsControl`、`LyricsSettingsControl`、`SettingsDialog`、偏好与七种语言资源：外观设置新增程序字体；独立歌词字体默认关闭，关闭时歌词跟随程序字体且下拉框置灰，开启后使用原有选择。
+- `SaveSettings`、设置恢复/快照：分别保存程序字体、歌词字体与开关，保留旧 `GlobalFont` 作为歌词选择；缺失或已卸载字体回退 Segoe UI，桌面歌词继续使用其已有独立字体。
+- `_tools/FontUiRegression`：40 项真实 WinUI 检查覆盖编译绑定、浅/深/跟随系统主题、独立字体保留及多窗口卸载；设置持久化回归、Debug x64 构建与七种语言资源键/CRLF 检查通过。未做完整播放器人工字形及高对比度验收。
+
 ## 2026-10-23 修复 Last.fm 真实上报成功后误报存储失败
 - `LastFmApiClient`：兼容真实服务端数字及数字字符串形式的成功数量、拒绝码与错误码；畸形/矛盾响应保留队列并归类响应错误，失败分支释放 JSON 文档。
 - `_tools/LastFmRegression/ApiResponseRegression.cs`、`_tools/LastFmAotRegression`：新增 82 种响应、574 项断言，覆盖生产工作者和真实 SQLite 的成功确认、拒绝、配额、授权失效及重启持久化；修复前同一矩阵 132 处失败。

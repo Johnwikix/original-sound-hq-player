@@ -12,7 +12,7 @@ using WinUIMusicPlayer.State;
 namespace WinUIMusicPlayer.Services;
 
 /// <summary>偏好编辑到持久化的应用边界。启动恢复只改内存，Ready 后才接受自动保存。</summary>
-public sealed class SettingsCoordinator(AppState state, MusicDatabaseService database, LyricsPresentationService lyrics, LyricsLoader lyricsLoader, LibraryProjectionService library, DesktopLyricsViewModel desktopLyrics, HotKeyService hotKeys, ILogger<SettingsCoordinator> logger, Lyrics.LyricsOnlineSearch onlineLyrics) : IDisposable
+public sealed class SettingsCoordinator(AppState state, MusicDatabaseService database, LyricsPresentationService lyrics, LyricsLoader lyricsLoader, LibraryProjectionService library, DesktopLyricsViewModel desktopLyrics, HotKeyService hotKeys, ILogger<SettingsCoordinator> logger, Lyrics.LyricsOnlineSearch onlineLyrics, ApplicationFontService applicationFont) : IDisposable
 {
     public event Action? ThemeChanged;
     private bool _started;
@@ -50,6 +50,7 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
     {
         switch (e.PropertyName)
         {
+            case nameof(state.Preferences.UseIndependentDesktopLyricsFont):
             case nameof(state.Preferences.WindowBackgroundImagePath):
             case nameof(state.Preferences.WindowBackgroundBlurAmount):
                 if (state.Lifecycle.IsReady)
@@ -212,6 +213,16 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 if (state.Lifecycle.IsReady)
                 lyrics.SendLyricsSettings();
                 break;
+            case nameof(state.Preferences.ApplicationFontFamily):
+                // 启动恢复发生在窗口创建之前，必须先发布资源；Ready 仅控制保存与歌词广播。
+                applicationFont.Apply(state.Preferences.ApplicationFontFamily.FontFamily);
+                if (state.Lifecycle.IsReady)
+                {
+                    _ = database.SaveSettingAsync();
+                    if (!state.Preferences.UseIndependentLyricsFont) lyrics.SendLyricsSettings();
+                }
+                break;
+            case nameof(state.Preferences.UseIndependentLyricsFont):
             case nameof(state.Preferences.FontFamily):
                 if (state.Lifecycle.IsReady)
                 {

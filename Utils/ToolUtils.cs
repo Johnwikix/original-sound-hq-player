@@ -1250,6 +1250,22 @@ namespace WinUIMusicPlayer.Utils
         private static string? _cachedCultureName;
         private static string[]? _cachedCultureArray;
 
+        public static FontInfo ResolveFont(IList<FontInfo> fonts, string? savedName)
+        {
+            string name = GetCleanFontName(savedName ?? string.Empty);
+            FontInfo? fallback = null;
+            foreach (var font in fonts)
+            {
+                if (string.Equals(font.Name, name, StringComparison.OrdinalIgnoreCase)) return font;
+                if (string.Equals(font.Name, "Segoe UI", StringComparison.OrdinalIgnoreCase)) fallback = font;
+            }
+            if (fallback is not null) return fallback;
+            // 枚举失败或已保存字体被卸载时仍提供可选默认项，避免空选择使整份设置保存失败。
+            fallback = FontInfo.CreateDefault();
+            fonts.Add(fallback);
+            return fallback;
+        }
+
         public static List<FontInfo> GetSystemFontsInternal()
         {
             try

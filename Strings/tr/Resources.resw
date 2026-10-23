@@ -2480,4 +2480,19 @@ SHA-256: {5}
   <data name="LastFmHistoryResult" xml:space="preserve"><value>Kuyruğa alınan: {0}; içe aktarma gününe atanan: {5}; zaten mevcut: {1}; 14 günden eski ve hariç tutulan: {2}; uygun olmayan veya eksik: {3}; ertelenen: {4} (eski sürümdeki eşleştirmesi belirsiz ve doğrulama gereken {6} kayıt dahil).</value></data>
   <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>Eski geçmişi içe aktarma tarihiyle gönder</value></data>
   <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>Varsayılan olarak kapalıdır. Eski dinlemeler Last.fm istatistiklerinde içe aktarma gününe sayılır; özgün yerel zamanlar korunur. Yalnızca elle geçmiş aktarımı için geçerlidir.</value></data>
+  <data name="ApplicationFont" xml:space="preserve">
+    <value>Uygulama yazı tipi</value>
+  </data>
+  <data name="UseIndependentLyricsFont" xml:space="preserve">
+    <value>Şarkı sözleri için ayrı yazı tipi kullan</value>
+  </data>
+  <data name="IndependentLyricsFontDescription" xml:space="preserve">
+    <value>Kapalıyken şarkı sözleri uygulama yazı tipini kullanır. Ayrı yazı tipi seçiminiz korunur.</value>
+  </data>
+  <data name="UseIndependentDesktopLyricsFont" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri için ayrı yazı tipi kullan</value>
+  </data>
+  <data name="IndependentDesktopLyricsFontDescription" xml:space="preserve">
+    <value>Kapalıyken masaüstü şarkı sözleri uygulama yazı tipini kullanır. Ayrı yazı tipi seçiminiz korunur.</value>
+  </data>
 </root>

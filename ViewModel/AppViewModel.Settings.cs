@@ -109,6 +109,10 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref field, value);
         }
 
+        public FontInfo ApplicationFontFamily { get => State.Preferences.ApplicationFontFamily; set => State.Preferences.ApplicationFontFamily = value; }
+
+        public bool UseIndependentLyricsFont { get => State.Preferences.UseIndependentLyricsFont; set => State.Preferences.UseIndependentLyricsFont = value; }
+
         public FontInfo FontFamily { get => State.Preferences.FontFamily; set => State.Preferences.FontFamily = value; }
 
         public bool IsColorPickerVisible { get => State.Shell.IsColorPickerVisible; set => State.Shell.IsColorPickerVisible = value; }
@@ -122,6 +126,8 @@ namespace WinUIMusicPlayer.ViewModel
         public double DesktopLyricsFontSize { get => State.Preferences.DesktopLyricsFontSize; set => State.Preferences.DesktopLyricsFontSize = value; }
 
         public int DesktopLyricsTaskbarLyricsWidth { get => State.Preferences.DesktopLyricsTaskbarLyricsWidth; set => State.Preferences.DesktopLyricsTaskbarLyricsWidth = value; }
+
+        public bool UseIndependentDesktopLyricsFont { get => State.Preferences.UseIndependentDesktopLyricsFont; set => State.Preferences.UseIndependentDesktopLyricsFont = value; }
 
         public FontInfo DesktopLyricsFontFamily { get => State.Preferences.DesktopLyricsFontFamily; set => State.Preferences.DesktopLyricsFontFamily = value; }
 

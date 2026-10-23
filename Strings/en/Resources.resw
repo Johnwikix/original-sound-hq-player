@@ -2480,4 +2480,19 @@ SHA-256: {5}
   <data name="LastFmHistoryResult" xml:space="preserve"><value>Queued: {0}; assigned to import day: {5}; already present: {1}; older than 14 days and excluded: {2}; ineligible or incomplete: {3}; deferred: {4} (including {6} with ambiguous legacy mappings requiring verification).</value></data>
   <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>Submit older history using the import date</value></data>
   <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>Off by default. Older plays count toward the import day on Last.fm; original local times stay unchanged. Applies only to manual history imports.</value></data>
+  <data name="ApplicationFont" xml:space="preserve">
+    <value>Application font</value>
+  </data>
+  <data name="UseIndependentLyricsFont" xml:space="preserve">
+    <value>Use a separate lyrics font</value>
+  </data>
+  <data name="IndependentLyricsFontDescription" xml:space="preserve">
+    <value>When off, lyrics use the application font. Your separate font selection is kept.</value>
+  </data>
+  <data name="UseIndependentDesktopLyricsFont" xml:space="preserve">
+    <value>Use a separate desktop lyrics font</value>
+  </data>
+  <data name="IndependentDesktopLyricsFontDescription" xml:space="preserve">
+    <value>When off, desktop lyrics use the application font. Your separate font selection is kept.</value>
+  </data>
 </root>

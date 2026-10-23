@@ -1182,14 +1182,13 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.AppWidth = settings.AppWidth;
                 AppViewModel.AppHeight = settings.AppHeight;
                 AppViewModel.FontFamilyList = new ObservableCollection<FontInfo>(ToolUtils.GetSystemFontsInternal());
-                AppViewModel.FontFamily = AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(new FontFamily(settings.GlobalFont).Source))
-                    // 找不到已保存字体（被卸载/名称不匹配）时必须兜底：FontFamily 为 null 会让
-                    // SaveCurrentSettings 取 GlobalFont 时抛 NRE，导致整个会话所有保存静默失败
-                    ?? AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault();
+                AppViewModel.ApplicationFontFamily = ToolUtils.ResolveFont(AppViewModel.FontFamilyList, settings.ApplicationFont);
+                AppViewModel.FontFamily = ToolUtils.ResolveFont(AppViewModel.FontFamilyList, settings.GlobalFont);
+                AppViewModel.UseIndependentLyricsFont = settings.UseIndependentLyricsFont;
                 AppViewModel.DesktopLyricsFontSize = settings.DesktopLyricsFontSize;
                 AppViewModel.DesktopLyricsTaskbarLyricsWidth = settings.DesktopLyricsTaskbarLyricsWidth;
-                AppViewModel.DesktopLyricsFontFamily = AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(new FontFamily(settings.DesktopLyricsFontFamily).Source))
-                    ?? AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault();
+                AppViewModel.UseIndependentDesktopLyricsFont = settings.UseIndependentDesktopLyricsFont;
+                AppViewModel.DesktopLyricsFontFamily = ToolUtils.ResolveFont(AppViewModel.FontFamilyList, settings.DesktopLyricsFontFamily);
                 AppViewModel.DesktopLyricsColor = Color.FromArgb(0xFF,
                     (byte)((settings.DesktopLyricsColorRgb >> 16) & 0xFF),
                     (byte)((settings.DesktopLyricsColorRgb >> 8) & 0xFF),

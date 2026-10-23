@@ -212,6 +212,21 @@
 
                 <TextBlock x:Uid="Appearance" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('ApplicationFont')}">
+                    <ComboBox
+                        x:Name="ApplicationFontComboBox"
+                        Width="300"
+                        AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('ApplicationFont')}"
+                        ItemsSource="{x:Bind ViewModel.AppViewModel.FontFamilyList, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.AppViewModel.ApplicationFontFamily, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="model:FontInfo">
+                                <TextBlock FontFamily="{x:Bind FontFamily}" Text="{x:Bind DisplayName}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </controls:SettingsCard>
+
                 <controls:SettingsExpander>
                     <controls:SettingsExpander.Header>
                         <TextBlock x:Uid="AppStyle" TextWrapping="Wrap" />

@@ -126,16 +126,29 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
 
-                <controls:SettingsCard>
+                <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('IndependentLyricsFontDescription')}">
                     <controls:SettingsCard.Header>
                         <TextBlock x:Uid="LyricsFontFamily" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
-                    <ComboBox
-                        x:Name="LyricsFontFamily"
-                        Width="300"
-                        ItemTemplate="{StaticResource FontComboboxTemplate}"
-                        ItemsSource="{x:Bind ViewModel.AppViewModel.FontFamilyList, Mode=OneWay}"
-                        SelectedValue="{x:Bind ViewModel.AppViewModel.FontFamily, Mode=TwoWay}" />
+                    <Grid Width="300" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                        <ToggleSwitch
+                            x:Name="IndependentLyricsFontToggle"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('UseIndependentLyricsFont')}"
+                            ToolTipService.ToolTip="{x:Bind tool:ToolUtils.GetString('UseIndependentLyricsFont')}"
+                            IsOn="{x:Bind ViewModel.AppViewModel.UseIndependentLyricsFont, Mode=TwoWay}" />
+                        <ComboBox
+                            x:Name="LyricsFontFamily"
+                            Grid.Column="1"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('UseIndependentLyricsFont')}"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.UseIndependentLyricsFont, Mode=OneWay}"
+                            ItemTemplate="{StaticResource FontComboboxTemplate}"
+                            ItemsSource="{x:Bind ViewModel.AppViewModel.FontFamilyList, Mode=OneWay}"
+                            SelectedItem="{x:Bind ViewModel.AppViewModel.FontFamily, Mode=TwoWay}" />
+                    </Grid>
                 </controls:SettingsCard>
 
                 <controls:SettingsCard>
@@ -513,15 +526,29 @@
                         Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsTaskbarLyricsWidth, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
-                <controls:SettingsCard>
+                <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('IndependentDesktopLyricsFontDescription')}">
                     <controls:SettingsCard.Header>
                         <TextBlock x:Uid="DesktopLyricsFontFamily" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
-                    <ComboBox
-                        Width="300"
-                        ItemTemplate="{StaticResource FontComboboxTemplate}"
-                        ItemsSource="{x:Bind ViewModel.AppViewModel.FontFamilyList, Mode=OneWay}"
-                        SelectedValue="{x:Bind ViewModel.AppViewModel.DesktopLyricsFontFamily, Mode=TwoWay}" />
+                    <Grid Width="300" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                        <ToggleSwitch
+                            x:Name="IndependentDesktopLyricsFontToggle"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('UseIndependentDesktopLyricsFont')}"
+                            ToolTipService.ToolTip="{x:Bind tool:ToolUtils.GetString('UseIndependentDesktopLyricsFont')}"
+                            IsOn="{x:Bind ViewModel.AppViewModel.UseIndependentDesktopLyricsFont, Mode=TwoWay}" />
+                        <ComboBox
+                            x:Name="DesktopLyricsFontComboBox"
+                            Grid.Column="1"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('UseIndependentDesktopLyricsFont')}"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.UseIndependentDesktopLyricsFont, Mode=OneWay}"
+                            ItemTemplate="{StaticResource FontComboboxTemplate}"
+                            ItemsSource="{x:Bind ViewModel.AppViewModel.FontFamilyList, Mode=OneWay}"
+                            SelectedItem="{x:Bind ViewModel.AppViewModel.DesktopLyricsFontFamily, Mode=TwoWay}" />
+                    </Grid>
                 </controls:SettingsCard>
 
                 <controls:SettingsCard>

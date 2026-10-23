@@ -2480,4 +2480,19 @@ SHA-256: {5}
   <data name="LastFmHistoryResult" xml:space="preserve"><value>En cola: {0}; con fecha de importación: {5}; ya existentes: {1}; más de 14 días y excluidos: {2}; no aptos o incompletos: {3}; aplazados: {4} (incluidos {6} con correspondencias antiguas ambiguas que requieren revisión).</value></data>
   <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>Enviar historial antiguo con la fecha de importación</value></data>
   <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>Desactivado de forma predeterminada. Las reproducciones antiguas cuentan para el día de importación en Last.fm; las horas locales originales se conservan. Solo se aplica a la importación manual.</value></data>
+  <data name="ApplicationFont" xml:space="preserve">
+    <value>Fuente de la aplicación</value>
+  </data>
+  <data name="UseIndependentLyricsFont" xml:space="preserve">
+    <value>Usar una fuente independiente para las letras</value>
+  </data>
+  <data name="IndependentLyricsFontDescription" xml:space="preserve">
+    <value>Al desactivarlo, las letras usan la fuente de la aplicación. Se conserva la selección independiente.</value>
+  </data>
+  <data name="UseIndependentDesktopLyricsFont" xml:space="preserve">
+    <value>Usar una fuente independiente para las letras del escritorio</value>
+  </data>
+  <data name="IndependentDesktopLyricsFontDescription" xml:space="preserve">
+    <value>Al desactivarlo, las letras del escritorio usan la fuente de la aplicación. Se conserva la selección independiente.</value>
+  </data>
 </root>

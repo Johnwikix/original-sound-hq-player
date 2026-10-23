@@ -79,6 +79,7 @@
                     RowDefinitions="Auto,Auto,Auto">
                     <atb:AnimatedTextBlock
                         x:Name="AnimatedPlayingDetailTextBlock"
+                        FontFamily="{x:Bind ViewModel.AppViewModel.ApplicationFontFamily.FontFamily, Mode=OneWay}"
                         x:Load="{x:Bind ViewModel.IsAnimatedTextCreated, Mode=OneWay}"
                         Loaded="AnimatedPlayingDetailTextBlock_Loaded"
                         Grid.Row="0"

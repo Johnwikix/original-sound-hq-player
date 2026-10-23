@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using Windows.UI;
@@ -109,7 +109,10 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private void OnPreferencesChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             if (e.PropertyName is nameof(State.Preferences.IsDesktopLyricsTranslationEnabled)
-                or nameof(State.Preferences.IsDesktopLyricsPronunciationEnabled))
+                or nameof(State.Preferences.IsDesktopLyricsPronunciationEnabled)
+                or nameof(State.Preferences.UseIndependentDesktopLyricsFont)
+                || (e.PropertyName == nameof(State.Preferences.ApplicationFontFamily) && !State.Preferences.UseIndependentDesktopLyricsFont)
+                || (e.PropertyName == nameof(State.Preferences.DesktopLyricsFontFamily) && State.Preferences.UseIndependentDesktopLyricsFont))
             {
                 RefreshStyleFromSettings();
             }
@@ -197,7 +200,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private DesktopLyricsStyle BuildStyleFromSettings() => new(
             AppSettings.DesktopLyricsFontSize,
-            AppSettings.DesktopLyricsFontFamily,
+            State.Preferences.EffectiveDesktopLyricsFontFamilyName,
             Color.FromArgb(0xFF,
                 (byte)((AppSettings.DesktopLyricsColorRgb >> 16) & 0xFF),
                 (byte)((AppSettings.DesktopLyricsColorRgb >> 8) & 0xFF),

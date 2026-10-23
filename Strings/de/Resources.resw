@@ -2480,4 +2480,19 @@ SHA-256: {5}
   <data name="LastFmHistoryResult" xml:space="preserve"><value>Eingereiht: {0}; auf den Importtag datiert: {5}; bereits vorhanden: {1}; älter als 14 Tage und ausgeschlossen: {2}; ungeeignet oder unvollständig: {3}; zurückgestellt: {4} (davon {6} mit unklarer Zuordnung aus älteren Versionen zur Prüfung).</value></data>
   <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>Älteren Verlauf mit dem Importdatum senden</value></data>
   <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>Standardmäßig aus. Ältere Wiedergaben zählen bei Last.fm zum Importtag; die ursprünglichen lokalen Zeiten bleiben erhalten. Gilt nur für den manuellen Verlaufimport.</value></data>
+  <data name="ApplicationFont" xml:space="preserve">
+    <value>Programmschriftart</value>
+  </data>
+  <data name="UseIndependentLyricsFont" xml:space="preserve">
+    <value>Separate Schriftart für Liedtexte verwenden</value>
+  </data>
+  <data name="IndependentLyricsFontDescription" xml:space="preserve">
+    <value>Wenn deaktiviert, verwenden Liedtexte die Programmschriftart. Die separate Auswahl bleibt gespeichert.</value>
+  </data>
+  <data name="UseIndependentDesktopLyricsFont" xml:space="preserve">
+    <value>Separate Schriftart für Desktop-Liedtexte verwenden</value>
+  </data>
+  <data name="IndependentDesktopLyricsFontDescription" xml:space="preserve">
+    <value>Wenn deaktiviert, verwenden Desktop-Liedtexte die Programmschriftart. Die separate Auswahl bleibt gespeichert.</value>
+  </data>
 </root>

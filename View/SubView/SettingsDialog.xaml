@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <ContentDialog
     x:Class="WinUIMusicPlayer.View.SubView.SettingsDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -126,12 +126,22 @@
                         x:Uid="LyricsFontFamily"
                         FontSize="14"
                         FontWeight="SemiBold" />
-                    <ComboBox
-                        Width="250"
-                        HorizontalAlignment="Left"
-                        ItemTemplate="{StaticResource FontComboboxTemplate}"
-                        ItemsSource="{x:Bind VM.FontFamilyList, Mode=OneWay}"
-                        SelectedValue="{x:Bind VM.FontFamily, Mode=TwoWay}" />
+                    <Grid Width="250" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                        <ToggleSwitch
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('UseIndependentLyricsFont')}"
+                            ToolTipService.ToolTip="{x:Bind tool:ToolUtils.GetString('UseIndependentLyricsFont')}"
+                            IsOn="{x:Bind VM.UseIndependentLyricsFont, Mode=TwoWay}" />
+                        <ComboBox
+                            Grid.Column="1"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Center"
+                            IsEnabled="{x:Bind VM.UseIndependentLyricsFont, Mode=OneWay}"
+                            ItemTemplate="{StaticResource FontComboboxTemplate}"
+                            ItemsSource="{x:Bind VM.FontFamilyList, Mode=OneWay}"
+                            SelectedItem="{x:Bind VM.FontFamily, Mode=TwoWay}" />
+                    </Grid>
                 </StackPanel>
                 <StackPanel
                     Grid.Row="1"

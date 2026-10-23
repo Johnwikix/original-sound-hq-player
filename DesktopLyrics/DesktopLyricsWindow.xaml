@@ -12,6 +12,7 @@
     mc:Ignorable="d">
     <desktop:DesktopLyricsInputGrid
         x:Name="RootGrid"
+        tools:ApplicationFont.IsEnabled="True"
         Padding="8"
         Background="Transparent"
         PointerCanceled="RootGrid_PointerCanceled"
