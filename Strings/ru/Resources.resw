@@ -2472,4 +2472,12 @@ SHA-256: {5}
   <data name="LastFmErrorRejected" xml:space="preserve"><value>Last.fm отклонил запись из-за неверных метаданных или старой даты. Запись пропущена.</value></data>
   <data name="LastFmErrorStorage" xml:space="preserve"><value>Не удалось прочитать или сохранить настройки либо очередь. Проверьте доступ к файлам и повторите. Существующие файлы сохранены.</value></data>
   <data name="LastFmErrorQueueFull" xml:space="preserve"><value>Очередь заполнена. Подключитесь к интернету для отправки. Существующие записи сохраняются.</value></data>
+  <data name="LastFmAccountActions" xml:space="preserve"><value>Авторизация аккаунта</value></data>
+  <data name="LastFmHistoryTitle" xml:space="preserve"><value>Локальная история прослушиваний</value></data>
+  <data name="LastFmHistoryHelp" xml:space="preserve"><value>По умолчанию отправляются записи за последние 14 дней с исходным временем. Включите настройку выше для более старых записей. Перед отправкой выполняется онлайн-проверка существующих записей.</value></data>
+  <data name="LastFmImportHistory" xml:space="preserve"><value>Отправить локальную историю</value></data>
+  <data name="LastFmCancelHistory" xml:space="preserve"><value>Отменить импорт</value></data>
+  <data name="LastFmHistoryResult" xml:space="preserve"><value>В очереди: {0}; с датой импорта: {5}; уже есть: {1}; старше 14 дней и исключены: {2}; не подходят или неполные: {3}; отложены из-за ёмкости или отсутствия свободного времени сегодня: {4}.</value></data>
+  <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>Отправлять старую историю с датой импорта</value></data>
+  <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>По умолчанию выключено. Старые прослушивания учитываются в Last.fm за день импорта; исходное локальное время сохраняется. Применяется только к ручному импорту истории.</value></data>
 </root>

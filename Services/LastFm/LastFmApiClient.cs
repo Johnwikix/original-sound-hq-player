@@ -53,6 +53,40 @@ public sealed class LastFmApiClient : IDisposable
             identity.Account!.SessionKey, token).ConfigureAwait(false);
     }
 
+    public async Task<LastFmRecentPage> RecentPlaysAsync(LastFmIdentity identity, long from, long to, int page, CancellationToken token)
+    {
+        using var reply = await RequestAsync(identity.Credentials, "user.getRecentTracks", new()
+        {
+            ["user"] = identity.Account!.Name, ["from"] = from.ToString(CultureInfo.InvariantCulture),
+            ["to"] = to.ToString(CultureInfo.InvariantCulture), ["page"] = page.ToString(CultureInfo.InvariantCulture), ["limit"] = "200"
+        }, null, token).ConfigureAwait(false);
+        var recent = reply.RootElement.GetProperty("recenttracks");
+        var result = new List<LastFmRecentPlay>();
+        var tracks = recent.GetProperty("track");
+        if (tracks.ValueKind == JsonValueKind.Array)
+            foreach (var track in tracks.EnumerateArray()) Add(track);
+        else if (tracks.ValueKind == JsonValueKind.Object) Add(tracks);
+        else throw new JsonException();
+        var total = recent.GetProperty("@attr").GetProperty("totalPages");
+        if (!int.TryParse(total.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out int pages) || pages < 0)
+            throw new JsonException();
+        return new(result, pages);
+
+        void Add(JsonElement track)
+        {
+            // Some responses include a date even on the Now Playing item. It is never history.
+            if (track.TryGetProperty("@attr", out var flags) && flags.TryGetProperty("nowplaying", out var nowPlaying)
+                && string.Equals(nowPlaying.ToString(), "true", StringComparison.OrdinalIgnoreCase)) return;
+            if (!track.TryGetProperty("date", out var date) || !date.TryGetProperty("uts", out var uts)) return;
+            if (!long.TryParse(uts.ToString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out long timestamp)) throw new JsonException();
+            if (timestamp < from || timestamp > to) return;
+            string title = track.GetProperty("name").GetString() ?? "";
+            var artist = track.GetProperty("artist");
+            string name = artist.ValueKind == JsonValueKind.String ? artist.GetString() ?? "" : artist.GetProperty("#text").GetString() ?? "";
+            if (title.Length != 0 && name.Length != 0) result.Add(new(title, name, timestamp));
+        }
+    }
+
     /// <returns>Whether Last.fm accepted the play. Metadata rejection is a successful HTTP response.</returns>
     public async Task<bool> ScrobbleAsync(LastFmIdentity identity, LastFmScrobble play, CancellationToken token)
     {

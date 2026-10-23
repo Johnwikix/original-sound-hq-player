@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
@@ -33,11 +34,19 @@ public sealed class LastFmStore(ILastFmCredentialVault vault, string path) : ILa
         if (new FileInfo(_path).Length > 160 * 1024 * 1024) throw new IOException("Last.fm queue is too large.");
         var state = JsonSerializer.Deserialize(await File.ReadAllTextAsync(_path, token).ConfigureAwait(false),
             LastFmJsonContext.Default.LastFmSavedState) ?? throw new JsonException();
-        if (state.Version != 1 || state.Pending is null || state.Pending.Count > 10000) throw new JsonException();
+        if (state.Version != 1 || state.Pending is null || state.Pending.Count > 10000
+            || state.Known is null || state.Known.Count > 100000
+            || state.HistoryReceipts is null || state.HistoryReceipts.Count > LastFmHistory.ReceiptLimit) throw new JsonException();
+        foreach (var receipt in state.HistoryReceipts)
+            if (receipt is null || string.IsNullOrWhiteSpace(receipt.Account) || receipt.HistoryKey is not { Length: 64 }) throw new JsonException();
+        foreach (var known in state.Known)
+            if (known is null || string.IsNullOrEmpty(known.ApiKey) || string.IsNullOrEmpty(known.Account)
+                || known.TrackKey is not { Length: 64 } || known.StartedAt <= 0) throw new JsonException();
         foreach (var play in state.Pending)
             if (play is null || play.Id == Guid.Empty || play.Track is null || string.IsNullOrEmpty(play.ApiKey) || string.IsNullOrEmpty(play.Account)
                 || string.IsNullOrWhiteSpace(play.Track.Title) || string.IsNullOrWhiteSpace(play.Track.Artist)
-                || play.Track.Album is null || play.StartedAt <= 0) throw new JsonException();
+                || play.Track.Album is null || play.StartedAt <= 0
+                || (play.HistoryKey is not null && (play.HistoryKey.Length != 64 || play.OriginalStartedAt <= 0))) throw new JsonException();
         return state;
     }, token);
 
@@ -47,7 +56,9 @@ public sealed class LastFmStore(ILastFmCredentialVault vault, string path) : ILa
         string temporary = _path + ".tmp";
         try
         {
-            await File.WriteAllTextAsync(temporary, JsonSerializer.Serialize(state, LastFmJsonContext.Default.LastFmSavedState), token).ConfigureAwait(false);
+            string json = JsonSerializer.Serialize(state, LastFmJsonContext.Default.LastFmSavedState);
+            if (Encoding.UTF8.GetByteCount(json) > 160 * 1024 * 1024) throw new IOException("Last.fm state is too large.");
+            await File.WriteAllTextAsync(temporary, json, token).ConfigureAwait(false);
             File.Move(temporary, _path, true);
         }
         finally { if (File.Exists(temporary)) File.Delete(temporary); }

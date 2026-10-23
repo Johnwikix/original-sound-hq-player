@@ -2474,4 +2474,12 @@ SHA-256：{5}
   <data name="LastFmErrorRejected" xml:space="preserve"><value>Last.fm 未接受一条记录（例如歌曲信息无效或时间过旧），已跳过该条。</value></data>
   <data name="LastFmErrorStorage" xml:space="preserve"><value>无法读取或保存 Last.fm 配置或队列。请检查文件访问权限后重试；原有文件会保留。</value></data>
   <data name="LastFmErrorQueueFull" xml:space="preserve"><value>待补报队列已满。请联网完成补报后继续；已有记录会保留。</value></data>
+  <data name="LastFmAccountActions" xml:space="preserve"><value>账号授权</value></data>
+  <data name="LastFmHistoryTitle" xml:space="preserve"><value>本地播放历史</value></data>
+  <data name="LastFmHistoryHelp" xml:space="preserve"><value>默认按原时间补报最近 14 天的已保存记录。可开启上方选项补报更早历史；联网核对已有记录后再上传。</value></data>
+  <data name="LastFmImportHistory" xml:space="preserve"><value>补报本地历史</value></data>
+  <data name="LastFmCancelHistory" xml:space="preserve"><value>取消补报</value></data>
+  <data name="LastFmHistoryResult" xml:space="preserve"><value>已入队 {0} 条；其中按导入当天 {5} 条；已有 {1} 条；超过 14 天未导入 {2} 条；不达标或缺少信息 {3} 条；因容量或当天可用时间不足暂缓 {4} 条。</value></data>
+  <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>允许按导入当天补报更早历史</value></data>
+  <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>默认关闭。开启后，超过 14 天的记录会计入 Last.fm 导入当天的统计，本地原始播放时间保持不变；此选项仅对手动补报生效。</value></data>
 </root>

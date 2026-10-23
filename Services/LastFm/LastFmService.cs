@@ -22,6 +22,8 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
     private string? _authToken;
     private DateTimeOffset _authExpires, _retryAt;
     private LastFmProblem _problem;
+    private LastFmHistoryImportResult? _historyImport;
+    private readonly HashSet<LastFmHistoryReceipt> _historyReceipts = [];
     private long _revision;
     private int _failures;
     private bool _ready, _blocked;
@@ -39,6 +41,7 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
         // Fresh installs do not touch the Windows credential service for a disabled integration.
         var identity = saved.HasCredentials ? await store.ReadIdentityAsync(token).ConfigureAwait(false) : null;
         _saved = saved;
+        foreach (var receipt in saved.HistoryReceipts) _historyReceipts.Add(ReceiptFor(receipt.Account, receipt.HistoryKey));
         _identity = identity;
         _ready = true;
         _problem = LastFmProblem.None;
@@ -56,7 +59,7 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
         var credentials = new LastFmCredentials(apiKey, sharedSecret);
         if (_identity?.Credentials == credentials) return;
         RotateIdentity();
-        var replacement = new LastFmSavedState { HasCredentials = true };
+        var replacement = new LastFmSavedState { HasCredentials = true, HistoryReceipts = _saved.HistoryReceipts };
         await store.SaveAsync(replacement, token).ConfigureAwait(false);
         _saved = replacement;
         var identity = new LastFmIdentity(credentials);
@@ -104,7 +107,9 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
         // Pending plays belong to both an API application and an account, never to the next login.
         var pending = _saved.Pending.FindAll(play => play.ApiKey == credentials.ApiKey
             && string.Equals(play.Account, account.Name, StringComparison.OrdinalIgnoreCase));
-        var saved = _saved with { Enabled = true, Pending = pending };
+        var known = _saved.Known.FindAll(play => play.ApiKey == credentials.ApiKey
+            && string.Equals(play.Account, account.Name, StringComparison.OrdinalIgnoreCase));
+        var saved = _saved with { Enabled = true, Pending = pending, Known = known };
         await store.SaveAsync(saved, token).ConfigureAwait(false);
         await store.SaveIdentityAsync(identity, token).ConfigureAwait(false);
         RotateIdentity();
@@ -122,7 +127,7 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
         return CommandAsync(async token =>
         {
             RotateIdentity();
-            var saved = new LastFmSavedState { HasCredentials = _identity is not null };
+            var saved = new LastFmSavedState { HasCredentials = _identity is not null, HistoryReceipts = _saved.HistoryReceipts };
             await store.SaveAsync(saved, token).ConfigureAwait(false);
             _saved = saved;
             _identity = _identity is null ? null : new(_identity.Credentials);
@@ -156,6 +161,166 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
         Wake();
         return Task.CompletedTask;
     });
+
+    /// <summary>Explicitly imports existing local history. Queue retry never initiates an import.</summary>
+    public Task ImportHistoryAsync(ILastFmHistorySource source, CancellationToken cancellation = default)
+        => ImportHistoryAsync(source, false, cancellation);
+
+    public Task ImportHistoryAsync(ILastFmHistorySource source, bool includeOlder, CancellationToken cancellation = default) => CommandAsync(async token =>
+    {
+        LastFmIdentity identity;
+        long revision;
+        CancellationToken identityToken;
+        var receipts = new HashSet<string>(StringComparer.Ordinal);
+        await _gate.WaitAsync(token).ConfigureAwait(false);
+        try
+        {
+            if (!CanSend(_revision)) throw new InvalidOperationException("Connect and enable Last.fm before importing history.");
+            identity = _identity!;
+            revision = _revision;
+            identityToken = _identityRequests.Token;
+            foreach (var receipt in _historyReceipts)
+                if (string.Equals(receipt.Account, identity.Account!.Name, StringComparison.OrdinalIgnoreCase)) receipts.Add(receipt.HistoryKey);
+            foreach (var play in _saved.Pending)
+                if (BelongsTo(play.ApiKey, play.Account, identity) && play.HistoryKey is not null) receipts.Add(play.HistoryKey);
+        }
+        finally { _gate.Release(); }
+        var commandToken = token;
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, identityToken);
+        token = linked.Token;
+        try
+        {
+            var to = DateTimeOffset.UtcNow;
+            var from = to.AddDays(-LastFmHistory.LookbackDays);
+            var batch = await LastFmHistory.ReadAsync(source, includeOlder, from, to, receipts, token).ConfigureAwait(false);
+            long remoteFrom = from.ToUnixTimeSeconds();
+            foreach (var candidate in batch.Candidates) remoteFrom = Math.Min(remoteFrom, candidate.StartedAt);
+            var remote = await ReadRemoteHistoryAsync(identity, remoteFrom - 11, to.ToUnixTimeSeconds() + 1,
+                batch.Candidates.Count != 0, token).ConfigureAwait(false);
+            await CommitHistoryAsync(identity, revision, batch, remote.Index, remote.Timestamps, token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (identityToken.IsCancellationRequested && !commandToken.IsCancellationRequested)
+        {
+            // Account invalidation already published its own status; never replace it with a network error.
+        }
+    }, cancellation: cancellation, holdState: false);
+
+    private async Task<(LastFmHistoryIndex Index, HashSet<long> Timestamps)> ReadRemoteHistoryAsync(
+        LastFmIdentity identity, long from, long to, bool needed, CancellationToken token)
+    {
+        var index = new LastFmHistoryIndex();
+        var times = new HashSet<long>();
+        if (!needed) return (index, times);
+        await _network.WaitAsync(token).ConfigureAwait(false);
+        try
+        {
+            int page = 1, pages;
+            do
+            {
+                // Read every page before committing anything: incomplete reconciliation can create duplicates.
+                var recent = await api.RecentPlaysAsync(identity, from, to, page, token).ConfigureAwait(false);
+                pages = recent.TotalPages;
+                if (pages is < 0 or > 500) throw new JsonException("Unexpected Last.fm history page count.");
+                foreach (var play in recent.Plays)
+                {
+                    index.Add(LastFmHistory.TrackKey(play.Title, play.Artist), play.StartedAt);
+                    times.Add(play.StartedAt);
+                }
+                if (page < pages) await Task.Delay(250, token).ConfigureAwait(false);
+            } while (++page <= pages);
+        }
+        finally { _network.Release(); }
+        return (index, times);
+    }
+
+    private async Task CommitHistoryAsync(LastFmIdentity identity, long revision, LastFmHistoryBatch batch,
+        LastFmHistoryIndex remote, HashSet<long> remoteTimes, CancellationToken token)
+    {
+        // Playback can continue queuing and acknowledging records while database/API history is read.
+        await _gate.WaitAsync(token).ConfigureAwait(false);
+        try
+        {
+            if (!CanSend(revision)) return;
+            var acknowledged = new LastFmHistoryIndex();
+            var queuedPlays = new LastFmHistoryIndex();
+            var queuedKeys = new HashSet<string>(StringComparer.Ordinal);
+            var importDay = new LastFmImportDay(DateTimeOffset.Now, TimeZoneInfo.Local);
+            foreach (long time in remoteTimes) importDay.Reserve(time);
+            foreach (var play in _saved.Known)
+                if (BelongsTo(play.ApiKey, play.Account, identity))
+                {
+                    acknowledged.Add(play.TrackKey, play.StartedAt);
+                    importDay.Reserve(play.StartedAt);
+                }
+            int reservedReceipts = _saved.HistoryReceipts.Count;
+            foreach (var play in _saved.Pending)
+            {
+                if (play.HistoryKey is not null) reservedReceipts++;
+                if (!BelongsTo(play.ApiKey, play.Account, identity)) continue;
+                queuedPlays.Add(LastFmHistory.TrackKey(play.Track.Title, play.Track.Artist), play.OriginalStartedAt > 0 ? play.OriginalStartedAt : play.StartedAt);
+                importDay.Reserve(play.StartedAt);
+                if (play.HistoryKey is not null) queuedKeys.Add(play.HistoryKey);
+            }
+            var pending = new List<LastFmScrobble>(_saved.Pending);
+            var addedReceipts = new HashSet<LastFmHistoryReceipt>();
+            int queued = 0, retimed = 0, alreadyPresent = batch.AlreadyPresent, deferred = batch.Deferred;
+            foreach (var candidate in batch.Candidates)
+            {
+                token.ThrowIfCancellationRequested();
+                var receipt = ReceiptFor(identity.Account!.Name, candidate.Key);
+                string key = LastFmHistory.TrackKey(candidate.Track.Title, candidate.Track.Artist);
+                // Consume all overlapping snapshots, so one existing play cannot suppress separate repeat listens.
+                bool knownAccepted = acknowledged.Take(key, candidate.StartedAt);
+                bool knownPending = queuedPlays.Take(key, candidate.StartedAt);
+                bool knownRemote = remote.Take(key, candidate.StartedAt);
+                if (_historyReceipts.Contains(receipt) || queuedKeys.Contains(candidate.Key) || knownAccepted || knownPending || knownRemote)
+                {
+                    alreadyPresent++;
+                    if ((knownAccepted || knownRemote) && !_historyReceipts.Contains(receipt) && !addedReceipts.Contains(receipt)
+                        && reservedReceipts < LastFmHistory.ReceiptLimit)
+                    {
+                        addedReceipts.Add(receipt);
+                        reservedReceipts++;
+                    }
+                    continue;
+                }
+                if (pending.Count >= 10000 || reservedReceipts >= LastFmHistory.ReceiptLimit) { deferred++; continue; }
+                long timestamp = candidate.StartedAt;
+                if (candidate.Retimed && !importDay.TryAllocate(out timestamp)) { deferred++; continue; }
+                importDay.Reserve(timestamp);
+                pending.Add(new(Guid.NewGuid(), identity.Credentials.ApiKey, identity.Account.Name, candidate.Track, timestamp,
+                    candidate.Key, candidate.StartedAt));
+                queuedKeys.Add(candidate.Key);
+                reservedReceipts++;
+                queued++;
+                if (candidate.Retimed) retimed++;
+            }
+            var savedReceipts = _saved.HistoryReceipts;
+            if (addedReceipts.Count != 0)
+            {
+                savedReceipts = new List<LastFmHistoryReceipt>(savedReceipts);
+                savedReceipts.AddRange(addedReceipts);
+            }
+            token.ThrowIfCancellationRequested();
+            // Preserve FIFO head and store source identities with their assigned upload times atomically.
+            var saved = _saved with { Pending = pending, HistoryReceipts = savedReceipts };
+            if (queued != 0 || addedReceipts.Count != 0) await store.SaveAsync(saved, token).ConfigureAwait(false);
+            _saved = saved;
+            _historyReceipts.UnionWith(addedReceipts);
+            _historyImport = new(queued, alreadyPresent, batch.TooOld, batch.Ineligible, deferred, retimed);
+            _problem = LastFmProblem.None;
+            _blocked = false;
+            _retryAt = default;
+            Publish();
+            Wake();
+        }
+        finally { _gate.Release(); }
+    }
+
+    private static LastFmHistoryReceipt ReceiptFor(string account, string key) => new(account.ToUpperInvariant(), key);
+
+    private static bool BelongsTo(string apiKey, string account, LastFmIdentity identity) => apiKey == identity.Credentials.ApiKey
+        && string.Equals(account, identity.Account!.Name, StringComparison.OrdinalIgnoreCase);
 
     public async Task<bool> EnqueueAsync(LastFmTrack track, long startedAt, Guid id, long revision)
     {
@@ -298,9 +463,27 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
         {
             if (revision != _revision) return;
             var pending = _saved.Pending.FindAll(play => play.Id != id);
-            var saved = _saved with { Pending = pending };
+            long oldest = LastFmHistory.OldestTimestamp;
+            var known = _saved.Known.FindAll(play => play.StartedAt >= oldest);
+            var removed = _saved.Pending.Find(play => play.Id == id);
+            if (accepted && removed is not null && removed.StartedAt >= oldest)
+            {
+                var marker = new LastFmKnownPlay(removed.ApiKey, removed.Account,
+                    LastFmHistory.TrackKey(removed.Track.Title, removed.Track.Artist), removed.StartedAt);
+                if (!known.Contains(marker)) known.Add(marker);
+            }
+            if (known.Count > 100000) known.RemoveRange(0, known.Count - 100000);
+            var receipts = _saved.HistoryReceipts;
+            LastFmHistoryReceipt? receipt = accepted && removed?.HistoryKey is { } key ? ReceiptFor(removed.Account, key) : null;
+            if (receipt is not null && !_historyReceipts.Contains(receipt))
+            {
+                if (receipts.Count >= LastFmHistory.ReceiptLimit) throw new IOException("Last.fm history receipt limit reached.");
+                receipts = new List<LastFmHistoryReceipt>(receipts) { receipt };
+            }
+            var saved = _saved with { Pending = pending, Known = known, HistoryReceipts = receipts };
             await store.SaveAsync(saved, CancellationToken.None).ConfigureAwait(false);
             _saved = saved;
+            if (receipt is not null) _historyReceipts.Add(receipt);
             _failures = 0;
             _retryAt = default;
             _problem = accepted ? LastFmProblem.None : LastFmProblem.Rejected;
@@ -342,28 +525,40 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
     private bool CanSend(long revision) => !_stopped && _ready && revision == _revision && _saved.Enabled
         && !string.IsNullOrEmpty(_identity?.Account?.SessionKey);
 
-    private async Task CommandAsync(Func<CancellationToken, Task> action, bool requireReady = true)
+    private async Task CommandAsync(Func<CancellationToken, Task> action, bool requireReady = true, CancellationToken cancellation = default, bool holdState = true)
     {
         if (_stopped) throw new OperationCanceledException();
-        await _commands.WaitAsync(_stop.Token).ConfigureAwait(false);
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token, cancellation);
+        await _commands.WaitAsync(linked.Token).ConfigureAwait(false);
         try
         {
-            await _gate.WaitAsync(_stop.Token).ConfigureAwait(false);
+            await _gate.WaitAsync(linked.Token).ConfigureAwait(false);
+            bool gateHeld = true;
             try
             {
                 if (requireReady && !_ready) throw new IOException("Last.fm storage is not ready.");
-                await action(_stop.Token).ConfigureAwait(false);
+                if (!holdState)
+                {
+                    _gate.Release();
+                    gateHeld = false;
+                }
+                await action(linked.Token).ConfigureAwait(false);
             }
-            catch (OperationCanceledException) when (_stop.IsCancellationRequested) { throw; }
+            catch (OperationCanceledException) when (linked.IsCancellationRequested || _identityRequests.IsCancellationRequested) { throw; }
             catch (Exception ex)
             {
+                if (!gateHeld)
+                {
+                    await _gate.WaitAsync().ConfigureAwait(false);
+                    gateHeld = true;
+                }
                 if (ex is LastFmApiException { Code: 4 or 15 }) _authToken = null;
                 _problem = requireReady && ex is (JsonException or System.Collections.Generic.KeyNotFoundException)
                     ? LastFmProblem.Network : ProblemFor(ex);
                 Publish();
                 throw;
             }
-            finally { _gate.Release(); }
+            finally { if (gateHeld) _gate.Release(); }
         }
         finally { _commands.Release(); }
     }
@@ -390,7 +585,7 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
         if (identityChanged) _revision++;
         var status = new LastFmStatus(_identity?.Credentials.ApiKey ?? "", !string.IsNullOrEmpty(_identity?.Credentials.SharedSecret),
             _identity?.Account?.Name ?? "", !string.IsNullOrEmpty(_identity?.Account?.SessionKey), _saved.Enabled,
-            _saved.Pending.Count, _authToken is not null, _problem, _revision, _ready);
+            _saved.Pending.Count, _authToken is not null, _problem, _revision, _ready, _historyImport);
         Volatile.Write(ref _status, status);
         Changed?.Invoke(status);
     }
@@ -406,6 +601,7 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
 
     private void RotateIdentity()
     {
+        _historyImport = null;
         CancelRequests();
         _identityRequests.Dispose();
         _identityRequests = new();

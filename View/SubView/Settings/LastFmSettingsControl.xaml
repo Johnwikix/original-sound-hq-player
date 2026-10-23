@@ -15,8 +15,9 @@
                 IsEnabled="{x:Bind ViewModel.CanToggle, Mode=OneWay}"
                 IsOn="{x:Bind ViewModel.Enabled, Mode=TwoWay}" />
         </controls:SettingsCard>
-        <controls:SettingsExpander Header="{x:Bind tool:ToolUtils.GetString('LastFmCredentials')}"
-                                  Description="{x:Bind tool:ToolUtils.GetString('LastFmCredentialsHelp')}">
+        <controls:SettingsExpander AutomationProperties.AutomationId="LastFmCredentialsExpander"
+                                   Header="{x:Bind tool:ToolUtils.GetString('LastFmCredentials')}"
+                                   Description="{x:Bind tool:ToolUtils.GetString('LastFmCredentialsHelp')}">
             <controls:SettingsExpander.Items>
                 <controls:SettingsCard Header="API Key">
                     <TextBox Width="280" MaxLength="32" AutomationProperties.AutomationId="LastFmApiKey"
@@ -38,22 +39,27 @@
                 </controls:SettingsCard>
             </controls:SettingsExpander.Items>
         </controls:SettingsExpander>
-        <controls:SettingsCard ContentAlignment="Left">
-            <StackPanel Spacing="8">
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button Content="{x:Bind tool:ToolUtils.GetString('LastFmAuthorize')}"
-                        AutomationProperties.AutomationId="LastFmAuthorize" Command="{x:Bind ViewModel.AuthorizeCommand}" />
-                    <Button Content="{x:Bind tool:ToolUtils.GetString('LastFmCompleteAuthorization')}"
-                        AutomationProperties.AutomationId="LastFmCompleteAuthorization" Command="{x:Bind ViewModel.CompleteAuthorizationCommand}" />
-                    <Button Content="{x:Bind tool:ToolUtils.GetString('LastFmDisconnect')}"
-                        AutomationProperties.AutomationId="LastFmDisconnect" Command="{x:Bind ViewModel.DisconnectCommand}" />
-                </StackPanel>
-                <TextBlock TextWrapping="Wrap" Text="{x:Bind tool:ToolUtils.GetString('LastFmDisconnectHelp')}" />
-                <HyperlinkButton Padding="0" HorizontalAlignment="Left"
-                    Content="{x:Bind tool:ToolUtils.GetString('LastFmManageApplications')}"
-                    NavigateUri="https://www.last.fm/settings/applications" />
-            </StackPanel>
-        </controls:SettingsCard>
+        <controls:SettingsExpander AutomationProperties.AutomationId="LastFmAccountExpander"
+                                   Header="{x:Bind tool:ToolUtils.GetString('LastFmAccountActions')}">
+            <controls:SettingsExpander.Items>
+                <controls:SettingsCard ContentAlignment="Left">
+                    <StackPanel Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="{x:Bind tool:ToolUtils.GetString('LastFmAuthorize')}"
+                                AutomationProperties.AutomationId="LastFmAuthorize" Command="{x:Bind ViewModel.AuthorizeCommand}" />
+                            <Button Content="{x:Bind tool:ToolUtils.GetString('LastFmCompleteAuthorization')}"
+                                AutomationProperties.AutomationId="LastFmCompleteAuthorization" Command="{x:Bind ViewModel.CompleteAuthorizationCommand}" />
+                            <Button Content="{x:Bind tool:ToolUtils.GetString('LastFmDisconnect')}"
+                                AutomationProperties.AutomationId="LastFmDisconnect" Command="{x:Bind ViewModel.DisconnectCommand}" />
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" Text="{x:Bind tool:ToolUtils.GetString('LastFmDisconnectHelp')}" />
+                        <HyperlinkButton Padding="0" HorizontalAlignment="Left"
+                            Content="{x:Bind tool:ToolUtils.GetString('LastFmManageApplications')}"
+                            NavigateUri="https://www.last.fm/settings/applications" />
+                    </StackPanel>
+                </controls:SettingsCard>
+            </controls:SettingsExpander.Items>
+        </controls:SettingsExpander>
         <InfoBar IsOpen="True" IsClosable="False" Severity="{x:Bind ViewModel.Severity, Mode=OneWay}"
             AutomationProperties.AutomationId="LastFmStatus" Message="{x:Bind ViewModel.StatusText, Mode=OneWay}" />
         <controls:SettingsCard Header="{x:Bind ViewModel.QueueText, Mode=OneWay}"
@@ -61,5 +67,30 @@
             <Button Content="{x:Bind tool:ToolUtils.GetString('LastFmRetry')}"
                 AutomationProperties.AutomationId="LastFmRetry" Command="{x:Bind ViewModel.RetryCommand}" />
         </controls:SettingsCard>
+        <controls:SettingsExpander AutomationProperties.AutomationId="LastFmHistoryExpander"
+                                   Header="{x:Bind tool:ToolUtils.GetString('LastFmHistoryTitle')}">
+            <controls:SettingsExpander.Items>
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('LastFmIncludeOlderHistory')}"
+                                       Description="{x:Bind tool:ToolUtils.GetString('LastFmIncludeOlderHistoryHelp')}">
+                    <ToggleSwitch MinWidth="0" VerticalAlignment="Center" AutomationProperties.AutomationId="LastFmIncludeOlderHistory"
+                        AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LastFmIncludeOlderHistory')}"
+                        IsEnabled="{x:Bind ViewModel.CanInteract, Mode=OneWay}"
+                        IsOn="{x:Bind ViewModel.IncludeOlderHistory, Mode=TwoWay}" />
+                </controls:SettingsCard>
+                <controls:SettingsCard ContentAlignment="Left">
+                    <StackPanel Spacing="8">
+                        <TextBlock TextWrapping="Wrap" Text="{x:Bind tool:ToolUtils.GetString('LastFmHistoryHelp')}" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="{x:Bind tool:ToolUtils.GetString('LastFmImportHistory')}"
+                                AutomationProperties.AutomationId="LastFmImportHistory" Command="{x:Bind ViewModel.ImportHistoryCommand}" />
+                            <Button Content="{x:Bind tool:ToolUtils.GetString('LastFmCancelHistory')}"
+                                AutomationProperties.AutomationId="LastFmCancelHistory" Command="{x:Bind ViewModel.CancelHistoryImportCommand}" />
+                        </StackPanel>
+                        <TextBlock TextWrapping="Wrap" AutomationProperties.AutomationId="LastFmHistoryResult"
+                            Text="{x:Bind ViewModel.HistoryResultText, Mode=OneWay}" />
+                    </StackPanel>
+                </controls:SettingsCard>
+            </controls:SettingsExpander.Items>
+        </controls:SettingsExpander>
     </StackPanel>
 </UserControl>

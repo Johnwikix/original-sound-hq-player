@@ -1,3 +1,15 @@
+## 2026-10-23 允许按导入当天补报更早的 Last.fm 历史
+- `LastFmSettingsControl.xaml`、`LastFmSettingsViewModel`、七种语言资源：新增默认关闭的“允许按导入当天补报更早历史”开关；仅对手动导入生效，显示改用当天时间的数量，保持默认控件高度。
+- `Services/LastFm`：超过 14 天的合格记录分配导入当天已过去且未占用的秒数，保留本地原始统计及队列原始时间；增加跨天持久、按账号隔离的源记录去重标记，原子保存、离线重启和同账号重连不重新生成时间。
+- `_tools/LastFmRegression/OldHistoryRegression.cs`、`_tools/LastFmUiRegression`、`docs/LastFm.md`：覆盖默认关闭、重复歌曲、原始数据不变、去重/账号隔离、写入失败、当天时间耗尽/DST 及真实编译绑定；未使用真实 Last.fm 账号联调。
+- 验证：77 项核心、30 项真实 WinUI 回归、七种语言取词及格式占位符检查、CRLF 检查和 Debug x64 构建通过（0 错误，保留项目既有警告）。
+
+## 2026-10-23 增加 Last.fm 本地历史补报入口
+- `Services/LastFm`、`App.xaml.cs`：手动读取原有本地播放历史，按原时间补报最近 14 天的达标记录；核对远端历史、队列和账号指纹，保留本地统计及现有队列顺序，支持取消、容量提示与原子提交。
+- `LastFmSettingsViewModel`、`LastFmSettingsControl.xaml`、七种语言资源：新增“本地播放历史 → 补报本地历史”入口及结果计数；账号操作区域改为默认 Expander，保留控件自动高度，不修改全局样式。
+- `_tools/LastFmRegression`、`_tools/LastFmUiRegression`、`docs/LastFm.md`：补充真实 SQLite/HTTP 导入、分页、去重、取消、失败与并发回归及使用说明；历史不会在启动、授权或队列重试时自动上传。
+- 验证：61 项核心、25 项真实 WinUI 回归、七种语言资源键与 CRLF 检查及 Debug x64 构建通过；未使用真实 Last.fm 账号联调。
+
 ## 2026-10-23 修复首行和末词的歌词浮动效果丢失
 - `LyricsAnimator.cs`：流波效果因播放时钟校正而重置时，同步恢复仍在高亮中的行的浮动入场，避免首行索引未变化导致浮动不再启动。
 - `LyricsAnimator.cs`：末尾长音节仅保持发光和缩放重音，浮动继续按逐字时间上浮，修复 `repetition`、`mess` 等末词不浮起。

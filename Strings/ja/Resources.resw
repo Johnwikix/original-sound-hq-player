@@ -2472,4 +2472,12 @@ SHA-256: {5}
   <data name="LastFmErrorRejected" xml:space="preserve"><value>Last.fm が無効な曲情報や古い日時の履歴を拒否したため、その履歴をスキップしました。</value></data>
   <data name="LastFmErrorStorage" xml:space="preserve"><value>設定または履歴を読み書きできません。ファイルのアクセス権を確認して再試行してください。既存ファイルは保持します。</value></data>
   <data name="LastFmErrorQueueFull" xml:space="preserve"><value>未送信履歴が上限に達しました。オンラインにして送信してください。既存履歴は保持します。</value></data>
+  <data name="LastFmAccountActions" xml:space="preserve"><value>アカウント認証</value></data>
+  <data name="LastFmHistoryTitle" xml:space="preserve"><value>ローカル再生履歴</value></data>
+  <data name="LastFmHistoryHelp" xml:space="preserve"><value>既定では過去14日間の履歴を元の時刻で送信します。上の設定で古い履歴も含められます。送信前にオンラインで既存の履歴を照合します。</value></data>
+  <data name="LastFmImportHistory" xml:space="preserve"><value>ローカル履歴を送信</value></data>
+  <data name="LastFmCancelHistory" xml:space="preserve"><value>送信準備を中止</value></data>
+  <data name="LastFmHistoryResult" xml:space="preserve"><value>キュー追加：{0}件、うちインポート日の時刻に変更：{5}件、登録済み：{1}件、14日超で除外：{2}件、条件未達または情報不足：{3}件、容量または本日の空き時刻不足で保留：{4}件。</value></data>
+  <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>古い履歴をインポート日の時刻で送信</value></data>
+  <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>既定ではオフです。14日を超える履歴は Last.fm でインポート日の統計に加算されます。元のローカル再生時刻は変更されません。手動の履歴送信にのみ適用されます。</value></data>
 </root>

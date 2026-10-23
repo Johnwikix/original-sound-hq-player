@@ -185,7 +185,9 @@ await delayedVault.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
 await service.StopAsync().WaitAsync(TimeSpan.FromSeconds(5));
 try { await starting; throw new Exception("Canceled startup completed."); }
 catch (OperationCanceledException) { Check(!service.Status.IsReady, "Shutdown during startup published ready state."); }
-Console.WriteLine($"PASS: {checks} checks; listening, seeking, buffering, rate, authorization, signed loopback HTTP, real file persistence, retry order, account isolation, disconnect and shutdown.");
+await HistoryRegression.RunAsync(Check);
+await OldHistoryRegression.RunAsync(Check);
+Console.WriteLine($"PASS: {checks} checks; listening, seeking, authorization, signed loopback HTTP, real SQLite history import, pagination, deduplication, persistence, cancellation, account isolation and shutdown.");
 
 static async Task WaitFor(Func<bool> condition)
 {
@@ -218,6 +220,12 @@ sealed class ApiServer : IAsyncDisposable
     public Func<string, bool>? DurableProbe;
     public Action? BeforeScrobbleResponse;
     public int ScrobbleFailure, ScrobbleRequests;
+    public int RecentFailure, RecentRequests;
+    public bool HoldRecent, MalformedRecent, SingleRecent;
+    public LastFmRecentPlay? RecentNowPlaying;
+    public List<LastFmRecentPlay> RemoteHistory { get; } = [];
+    public TaskCompletionSource RecentEntered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    public TaskCompletionSource ReleaseRecent { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
     public string UserName = "alice";
     public List<Dictionary<string, string>> Accepted { get; } = [];
     public List<Dictionary<string, string>> NowPlaying { get; } = [];
@@ -277,6 +285,29 @@ sealed class ApiServer : IAsyncDisposable
                     if (HoldNowPlaying) { NowPlayingEntered.TrySetResult(); await ReleaseNowPlaying.Task; }
                     response = "{\"nowplaying\":{}}";
                     break;
+                case "user.getRecentTracks":
+                    Interlocked.Increment(ref RecentRequests);
+                    if (HoldRecent) { RecentEntered.TrySetResult(); await ReleaseRecent.Task; }
+                    if (RecentFailure != 0) { status = RecentFailure; response = "{}"; break; }
+                    if (MalformedRecent) { response = "{\"recenttracks\":{}}"; break; }
+                    var plays = new List<LastFmRecentPlay>(RemoteHistory);
+                    lock (Accepted) plays.AddRange(Accepted.Select(play => new LastFmRecentPlay(play["track"], play["artist"], long.Parse(play["timestamp"]))));
+                    plays = plays.Where(play => play.StartedAt > long.Parse(data["from"]) && play.StartedAt < long.Parse(data["to"]))
+                        .OrderByDescending(play => play.StartedAt).ToList();
+                    var items = plays.Skip((int.Parse(data["page"]) - 1) * 200).Take(200).Select(play => new Dictionary<string, object>
+                    {
+                        ["name"] = play.Title, ["artist"] = new Dictionary<string, string> { ["#text"] = play.Artist },
+                        ["date"] = new { uts = play.StartedAt.ToString() }
+                    }).ToList();
+                    // A Now Playing item is not part of scrobble history.
+                    items.Insert(0, new() { ["name"] = "Before Last.fm", ["artist"] = "Artist", ["@attr"] = new { nowplaying = "true" },
+                        ["date"] = new { uts = (RecentNowPlaying?.StartedAt ?? 0).ToString() } });
+                    response = JsonSerializer.Serialize(new { recenttracks = new Dictionary<string, object>
+                    {
+                        ["track"] = SingleRecent ? (object)items.Last() : items,
+                        ["@attr"] = new { totalPages = Math.Max(1, (plays.Count + 199) / 200).ToString() }
+                    } });
+                    break;
                 default:
                     DurableBeforeSend &= DurableProbe?.Invoke(data["timestamp"]) == true;
                     Interlocked.Increment(ref ScrobbleRequests);
@@ -303,6 +334,7 @@ sealed class ApiServer : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         ReleaseNowPlaying.TrySetResult();
+        ReleaseRecent.TrySetResult();
         _listener.Stop();
         await _loop;
         await Task.WhenAll(_requests);

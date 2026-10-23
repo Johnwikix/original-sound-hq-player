@@ -2472,4 +2472,12 @@ SHA-256: {5}
   <data name="LastFmErrorRejected" xml:space="preserve"><value>Last.fm geçersiz parça bilgisi veya eski zaman damgası nedeniyle bir kaydı reddetti. Kayıt atlandı.</value></data>
   <data name="LastFmErrorStorage" xml:space="preserve"><value>Ayarlar veya kuyruk okunamadı ya da kaydedilemedi. Dosya erişimini kontrol edip yeniden deneyin. Mevcut dosyalar korunur.</value></data>
   <data name="LastFmErrorQueueFull" xml:space="preserve"><value>Kuyruk dolu. Kaydedilen kayıtları göndermek için internete bağlanın; mevcut kayıtlar korunur.</value></data>
+  <data name="LastFmAccountActions" xml:space="preserve"><value>Hesap yetkilendirmesi</value></data>
+  <data name="LastFmHistoryTitle" xml:space="preserve"><value>Yerel dinleme geçmişi</value></data>
+  <data name="LastFmHistoryHelp" xml:space="preserve"><value>Varsayılan olarak son 14 günün kayıtlarını özgün zamanlarıyla gönderir. Daha eski kayıtları eklemek için yukarıdaki seçeneği açın. Göndermeden önce mevcut kayıtlar çevrimiçi denetlenir.</value></data>
+  <data name="LastFmImportHistory" xml:space="preserve"><value>Yerel geçmişi gönder</value></data>
+  <data name="LastFmCancelHistory" xml:space="preserve"><value>İçe aktarmayı iptal et</value></data>
+  <data name="LastFmHistoryResult" xml:space="preserve"><value>Kuyruğa alınan: {0}; içe aktarma gününe atanan: {5}; zaten mevcut: {1}; 14 günden eski ve hariç tutulan: {2}; uygun olmayan veya eksik: {3}; kapasite veya bugünün kullanılabilir zamanları nedeniyle ertelenen: {4}.</value></data>
+  <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>Eski geçmişi içe aktarma tarihiyle gönder</value></data>
+  <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>Varsayılan olarak kapalıdır. Eski dinlemeler Last.fm istatistiklerinde içe aktarma gününe sayılır; özgün yerel zamanlar korunur. Yalnızca elle geçmiş aktarımı için geçerlidir.</value></data>
 </root>

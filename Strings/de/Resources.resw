@@ -2472,4 +2472,12 @@ SHA-256: {5}
   <data name="LastFmErrorRejected" xml:space="preserve"><value>Last.fm hat einen Eintrag wegen ungültiger Metadaten oder eines alten Zeitstempels abgelehnt. Er wurde übersprungen.</value></data>
   <data name="LastFmErrorStorage" xml:space="preserve"><value>Einstellungen oder Warteschlange konnten nicht gelesen oder gespeichert werden. Dateizugriff prüfen und erneut versuchen. Vorhandene Dateien bleiben erhalten.</value></data>
   <data name="LastFmErrorQueueFull" xml:space="preserve"><value>Warteschlange voll. Internetverbindung herstellen, um Einträge zu senden. Gespeicherte Einträge bleiben erhalten.</value></data>
+  <data name="LastFmAccountActions" xml:space="preserve"><value>Kontoautorisierung</value></data>
+  <data name="LastFmHistoryTitle" xml:space="preserve"><value>Lokaler Wiedergabeverlauf</value></data>
+  <data name="LastFmHistoryHelp" xml:space="preserve"><value>Standardmäßig werden gespeicherte Wiedergaben der letzten 14 Tage mit ihrer ursprünglichen Zeit gesendet. Die Option oben schließt ältere Einträge ein. Vor dem Senden erfolgt ein Online-Abgleich.</value></data>
+  <data name="LastFmImportHistory" xml:space="preserve"><value>Lokalen Verlauf senden</value></data>
+  <data name="LastFmCancelHistory" xml:space="preserve"><value>Import abbrechen</value></data>
+  <data name="LastFmHistoryResult" xml:space="preserve"><value>Eingereiht: {0}; auf den Importtag datiert: {5}; bereits vorhanden: {1}; älter als 14 Tage und ausgeschlossen: {2}; ungeeignet oder unvollständig: {3}; wegen Kapazität oder fehlender Zeitplätze heute zurückgestellt: {4}.</value></data>
+  <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>Älteren Verlauf mit dem Importdatum senden</value></data>
+  <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>Standardmäßig aus. Ältere Wiedergaben zählen bei Last.fm zum Importtag; die ursprünglichen lokalen Zeiten bleiben erhalten. Gilt nur für den manuellen Verlaufimport.</value></data>
 </root>

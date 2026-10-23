@@ -2472,4 +2472,12 @@ SHA-256: {5}
   <data name="LastFmErrorRejected" xml:space="preserve"><value>Last.fm rechazó un registro, por metadatos no válidos o una fecha antigua. Se ha omitido.</value></data>
   <data name="LastFmErrorStorage" xml:space="preserve"><value>No se pudieron leer o guardar los ajustes o la cola. Revisa los permisos y reintenta. Los archivos existentes se conservan.</value></data>
   <data name="LastFmErrorQueueFull" xml:space="preserve"><value>La cola está llena. Conéctate a internet para enviar los registros guardados; se conservan los existentes.</value></data>
+  <data name="LastFmAccountActions" xml:space="preserve"><value>Autorización de cuenta</value></data>
+  <data name="LastFmHistoryTitle" xml:space="preserve"><value>Historial de reproducción local</value></data>
+  <data name="LastFmHistoryHelp" xml:space="preserve"><value>De forma predeterminada, envía los registros de los últimos 14 días con su hora original. Activa la opción superior para incluir los más antiguos. Se comprueban los registros existentes en línea antes de enviarlos.</value></data>
+  <data name="LastFmImportHistory" xml:space="preserve"><value>Enviar historial local</value></data>
+  <data name="LastFmCancelHistory" xml:space="preserve"><value>Cancelar importación</value></data>
+  <data name="LastFmHistoryResult" xml:space="preserve"><value>En cola: {0}; con fecha de importación: {5}; ya existentes: {1}; más de 14 días y excluidos: {2}; no aptos o incompletos: {3}; aplazados por capacidad o falta de horas disponibles hoy: {4}.</value></data>
+  <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>Enviar historial antiguo con la fecha de importación</value></data>
+  <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>Desactivado de forma predeterminada. Las reproducciones antiguas cuentan para el día de importación en Last.fm; las horas locales originales se conservan. Solo se aplica a la importación manual.</value></data>
 </root>
