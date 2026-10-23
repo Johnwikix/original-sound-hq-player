@@ -94,14 +94,39 @@ public sealed class LastFmApiClient : IDisposable
         parameters["timestamp"] = play.StartedAt.ToString(CultureInfo.InvariantCulture);
         using var reply = await RequestAsync(identity.Credentials, "track.scrobble", parameters,
             identity.Account!.SessionKey, token).ConfigureAwait(false);
-        var scrobbles = reply.RootElement.GetProperty("scrobbles");
-        if (scrobbles.GetProperty("@attr").GetProperty("accepted").GetString() == "1") return true;
-        var item = scrobbles.GetProperty("scrobble");
-        if (item.ValueKind == JsonValueKind.Array) item = item[0];
-        string? ignored = item.GetProperty("ignoredMessage").GetProperty("code").GetString();
-        // Daily quota is temporary; malformed metadata and stale timestamps cannot be repaired by retries.
-        if (ignored == "5") throw new LastFmApiException(29, true);
-        return false;
+        try
+        {
+            var scrobbles = reply.RootElement.GetProperty("scrobbles");
+            int accepted = ReadInteger(scrobbles.GetProperty("@attr").GetProperty("accepted"));
+            if (accepted == 1) return true;
+            if (accepted != 0) throw new JsonException("Unexpected single-scrobble acceptance count.");
+            var item = scrobbles.GetProperty("scrobble");
+            if (item.ValueKind == JsonValueKind.Array)
+            {
+                if (item.GetArrayLength() != 1) throw new JsonException("Unexpected single-scrobble response count.");
+                item = item[0];
+            }
+            int ignored = ReadInteger(item.GetProperty("ignoredMessage").GetProperty("code"));
+            // Daily quota is temporary; known metadata/time rejections cannot be repaired by retries.
+            if (ignored == 5) throw new LastFmApiException(29, true);
+            if (ignored is >= 1 and <= 4) return false;
+            // Preserve the queue on contradictory or unknown responses instead of inventing an ACK.
+            throw new JsonException("Unexpected Last.fm ignored code.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            // JSON container/type errors describe a remote response, not a local storage failure.
+            throw new JsonException("Invalid Last.fm scrobble response structure.", ex);
+        }
+    }
+
+    private static int ReadInteger(JsonElement value)
+    {
+        // Last.fm's live JSON uses numbers here; older responses and clients also use strings.
+        if (value.ValueKind == JsonValueKind.Number && value.TryGetInt32(out int number)) return number;
+        if (value.ValueKind == JsonValueKind.String
+            && int.TryParse(value.GetString(), NumberStyles.Integer, CultureInfo.InvariantCulture, out number)) return number;
+        throw new JsonException("Invalid Last.fm integer value.");
     }
 
     private static Dictionary<string, string> TrackParameters(LastFmTrack track)
@@ -137,13 +162,21 @@ public sealed class LastFmApiClient : IDisposable
                 response.StatusCode is HttpStatusCode.RequestTimeout or HttpStatusCode.TooManyRequests || (int)response.StatusCode >= 500);
         using var stream = await response.Content.ReadAsStreamAsync(token).ConfigureAwait(false);
         var document = await JsonDocument.ParseAsync(stream, cancellationToken: token).ConfigureAwait(false);
-        if (document.RootElement.TryGetProperty("error", out var error))
+        try
         {
-            int code = error.GetInt32();
-            document.Dispose();
-            throw new LastFmApiException(code, code is 8 or 11 or 16 or 29);
+            if (document.RootElement.ValueKind != JsonValueKind.Object) throw new JsonException("Invalid Last.fm response root.");
+            if (document.RootElement.TryGetProperty("error", out var error))
+            {
+                int code = ReadInteger(error);
+                throw new LastFmApiException(code, code is 8 or 11 or 16 or 29);
+            }
+            return document;
         }
-        return document;
+        catch
+        {
+            document.Dispose();
+            throw;
+        }
     }
 
     public void Dispose() => _http.Dispose();

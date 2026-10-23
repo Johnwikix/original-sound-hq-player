@@ -263,7 +263,7 @@ internal sealed class TestHttp : HttpMessageHandler
         {
             LastTimestamp = long.Parse(body.Split('&').Single(pair => pair.StartsWith("timestamp=")).Split('=')[1]);
             Interlocked.Increment(ref Scrobbles);
-            result = "{\"scrobbles\":{\"@attr\":{\"accepted\":\"1\"}}}";
+            result = "{\"scrobbles\":{\"@attr\":{\"accepted\":1}}}";
         }
         return new(HttpStatusCode.OK) { Content = new StringContent(result, Encoding.UTF8, "application/json") };
     }

@@ -52,12 +52,12 @@
 - `_tools/LastFmRegression`：生产核心代码 + 真实本机 HTTP / SQLite 事务持久化，使用虚构凭据。
 - `_tools/LastFmUiRegression`：生产 XAML、ViewModel、会话观察桥及真实 WinUI 调度/绑定；音频与 Last.fm 服务端为异步边界夹具。
 
-真实 Last.fm 账号授权、服务器接收结果与完整播放器在真实设备/WebDAV 服务器上的长时间试听仍需具备用户凭据后验证。
+已使用 Windows 保存的真实授权会话联调：真实服务端的成功数量/拒绝数量返回 JSON 数字，旧解析器按字符串读取导致 HTTP 200 后误报存储失败。修复后，原有 25 条待补报记录经远端准确核对、补报及再次逐条核对，均各存在一条，本地队列为 0；未修改已保存凭据或本地播放统计。随后实际注册 Release 播放器完成额外 569 条本地历史补报，历史成功映射共 594 条且分配秒数均不同；远端对这 594 个原始秒数各有唯一记录，其中 590 条元数据严格一致、4 条远端元数据不同。通过 lvt 验证真实连接状态、开启上报、重试命令、队列归零及无存储错误。新账号浏览器授权全流程和完整播放器在真实设备/WebDAV 服务器上的长时间试听尚未覆盖。
 
-本次验证：101 项核心回归、30 项真实 WinUI 检查；关闭 JSON 反射回退的裁剪发布及 NativeAOT 发布各通过 514 项检查，覆盖真实 SQLite 行映射、事务存储、源生成 JSON、分页及取消。新增回归覆盖改写时间与真实播放分离、成功后写入失败再解绑/换号并重启、跨天分配保留、旧版迁移、分页期间实时发送和夏令时重复午夜。主程序 Debug x64 构建通过；七种语言的取词键与格式占位符检查通过。UI 布局与 MVVM 边界保持现有实现。
+本次验证：675 项核心回归（含 82 种响应、574 项生产服务与 SQLite 断言）；关闭 JSON 反射回退的裁剪发布及 NativeAOT 发布各通过 1088 项检查，覆盖真实 SQLite 行映射、事务存储、源生成 JSON、分页及取消。新增回归覆盖改写时间与真实播放分离、成功后写入失败再解绑/换号并重启、跨天分配保留、旧版迁移、分页期间实时发送和夏令时重复午夜。主程序 Debug x64 构建通过；七种语言的取词键与格式占位符检查通过。UI 布局与 MVVM 边界保持现有实现。
 
 性能夹具使用独立 SQLite 数据库、10 万条长期标记及空发送队列，预热后 5 次状态保存累计托管分配约 10 KB，重新打开约 10 KB；12 页远端核对期间，正在播放请求约等待 2 ms。这些是该夹具的观测值，不代表完整播放器内存、磁盘实际写入量或真实 Last.fm 网络延迟。已有发送队列仍按上限 10,000 条保存状态 JSON；其序列化开销随队列大小增长，长期标记不再加入该文档。首次大 JSON 迁移和大规模手动核对属于冷路径，仍有一次性工作与有界候选/索引内存。队列验证、序列化及索引准备在后台完成，避免暖提交回到 UI 采样线程。
 
-可重复执行：`dotnet run --project _tools/LastFmRegression -c Release`；裁剪/AOT 发布命令见 `_tools/LastFmAotRegression/README.md`。高对比度、真实 Last.fm 账号和真实设备/WebDAV 长时间试听未执行。
+可重复执行：`dotnet run --project _tools/LastFmRegression -c Release`；裁剪/AOT 发布命令见 `_tools/LastFmAotRegression/README.md`。已有 30 项真实 WinUI 检查覆盖布局、MVVM 与 Runtime Async。高对比度、新账号浏览器授权全流程和真实设备/WebDAV 长时间试听未执行。
 
 官方参考：[桌面授权](https://www.last.fm/api/desktopauth)、[Scrobbling 规则](https://www.last.fm/api/scrobbling)、[track.scrobble](https://www.last.fm/api/show/track.scrobble)、[user.getRecentTracks](https://www.last.fm/api/show/user.getRecentTracks)。

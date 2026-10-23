@@ -69,6 +69,7 @@ loaded = await store.LoadAsync(default);
 Check(loaded.Pending.Count == 501 && loaded.Pending.All(play => play.HistoryKey is {Length:64} && play.OriginalStartedAt > 0),"Imported durable queue metadata failed");
 await service.StopAsync();
 await database.CloseAsync();
+await ApiResponseRegression.RunAsync(Check);
 Console.WriteLine($"PASS {checks} checks. JSON reflection disabled; source-generated legacy/new JSON; SQLite 501-row mapping/paging; interface async cancellation and service import.");
 
 sealed class TestVault : ILastFmCredentialVault
