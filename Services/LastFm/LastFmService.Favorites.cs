@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -9,6 +10,12 @@ public sealed partial class LastFmService
     private int _favoritePending;
     private bool _favoriteTurn = true;
     private LastFmFavoriteImportResult? _favoriteImport;
+    private sealed class FavoriteImportSession(long revision)
+    {
+        public long Revision { get; } = revision;
+        public HashSet<string> ChangedTracks { get; } = new(StringComparer.Ordinal);
+    }
+    private FavoriteImportSession? _favoriteImportSession;
     private sealed record FavoriteAcknowledgement(LastFmFavoriteIntent Intent, bool Accepted);
     private FavoriteAcknowledgement? _favoriteAcknowledged;
     public bool SupportsFavorites => favorites is not null;
@@ -32,6 +39,9 @@ public sealed partial class LastFmService
                 && string.Equals(owner.UserName, _identity?.Account?.Name, StringComparison.OrdinalIgnoreCase);
             _favoritePending = await favorites.SaveLocalAsync(change, sameOwner ? owner.ApiKey : null,
                 sameOwner ? owner.UserName : null).ConfigureAwait(false);
+            if (sameOwner && _favoriteImportSession is { } importing && importing.Revision == _revision
+                && favorites.EligibleTrackKey(change.Track) is { } key)
+                importing.ChangedTracks.Add(key);
             Publish();
             Wake();
         }
@@ -44,13 +54,90 @@ public sealed partial class LastFmService
         finally { _gate.Release(); }
     }
 
-    public Task ImportFavoritesAsync() => CommandAsync(async _ =>
+    public async Task SaveFavoriteOrderAsync(IReadOnlyList<LastFmFavoriteOrder> orders)
     {
-        if (!CanSend(_revision) || favorites is null) throw new InvalidOperationException("Connect and enable Last.fm before reporting favorites.");
-        (_favoritePending, _favoriteImport) = await favorites.ImportAsync(_identity!.Credentials.ApiKey, _identity.Account!.Name).ConfigureAwait(false);
-        Publish();
-        Wake();
-    });
+        if (favorites is null) throw new InvalidOperationException("The library favorite store is not configured.");
+        await _gate.WaitAsync().ConfigureAwait(false);
+        try { await favorites.SaveOrderAsync(orders).ConfigureAwait(false); }
+        catch
+        {
+            _problem = LastFmProblem.Storage;
+            Publish();
+            throw;
+        }
+        finally { _gate.Release(); }
+    }
+
+    public Task ImportFavoritesAsync(CancellationToken cancellation = default) => CommandAsync(async token =>
+    {
+        LastFmIdentity identity;
+        CancellationToken identityToken;
+        FavoriteImportSession importing;
+        int endId;
+        await _gate.WaitAsync(token).ConfigureAwait(false);
+        try
+        {
+            if (!CanSend(_revision) || favorites is null) throw new InvalidOperationException("Connect and enable Last.fm before reporting favorites.");
+            identity = _identity!;
+            identityToken = _identityRequests.Token;
+            endId = await favorites.ReadImportEndAsync().ConfigureAwait(false);
+            importing = new(_revision);
+            _favoriteImportSession = importing;
+            _favoriteImport = new(0, 0);
+            Publish();
+        }
+        finally { _gate.Release(); }
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, identityToken);
+        int afterId = 0, queued = 0, ineligible = 0;
+        try
+        {
+            while (true)
+            {
+                LastFmFavoriteImportBatch batch;
+                await _gate.WaitAsync(linked.Token).ConfigureAwait(false);
+                try
+                {
+                    if (!CanSend(importing.Revision)) return;
+                    batch = await favorites!.ImportBatchAsync(identity.Credentials.ApiKey, identity.Account!.Name,
+                        afterId, endId, importing.ChangedTracks, linked.Token).ConfigureAwait(false);
+                    queued += batch.Queued;
+                    ineligible += batch.Ineligible;
+                    // All count-changing service operations own this gate. Replacements do not
+                    // grow the queue; apply the committed insert delta instead of recounting the
+                    // increasingly large table after every page.
+                    _favoritePending += batch.Added;
+                    _favoriteImport = new(queued, ineligible);
+                    Publish();
+                    Wake();
+                }
+                finally { _gate.Release(); }
+                if (batch.Scanned < LastFmFavoriteStore.ImportBatchSize || batch.LastId >= endId) break;
+                afterId = batch.LastId;
+                // Each committed page releases both the shared library connection and service gate.
+                await Task.Yield();
+            }
+        }
+        catch (OperationCanceledException) when (linked.IsCancellationRequested)
+        {
+            await _gate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                if (_revision == importing.Revision)
+                {
+                    _favoriteImport = new(queued, ineligible, Canceled: true);
+                    Publish();
+                }
+            }
+            finally { _gate.Release(); }
+            if (!identityToken.IsCancellationRequested || token.IsCancellationRequested) throw;
+        }
+        finally
+        {
+            await _gate.WaitAsync().ConfigureAwait(false);
+            try { if (ReferenceEquals(_favoriteImportSession, importing)) _favoriteImportSession = null; }
+            finally { _gate.Release(); }
+        }
+    }, cancellation: cancellation, holdState: false);
 
     private async Task SendFavoriteAsync(LastFmFavoriteIntent intent, long revision)
     {

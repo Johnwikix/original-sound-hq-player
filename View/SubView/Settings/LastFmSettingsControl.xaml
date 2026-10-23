@@ -101,8 +101,12 @@
                         <TextBlock TextWrapping="Wrap" Text="{x:Bind tool:ToolUtils.GetString('LastFmFavoritesHelp')}" />
                         <TextBlock AutomationProperties.AutomationId="LastFmFavoriteQueue"
                             Text="{x:Bind ViewModel.FavoriteQueueText, Mode=OneWay}" />
-                        <Button Content="{x:Bind tool:ToolUtils.GetString('LastFmImportFavorites')}"
-                            AutomationProperties.AutomationId="LastFmImportFavorites" Command="{x:Bind ViewModel.ImportFavoritesCommand}" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="{x:Bind tool:ToolUtils.GetString('LastFmImportFavorites')}"
+                                AutomationProperties.AutomationId="LastFmImportFavorites" Command="{x:Bind ViewModel.ImportFavoritesCommand}" />
+                            <Button Content="{x:Bind tool:ToolUtils.GetString('LastFmCancelFavoriteImport')}"
+                                AutomationProperties.AutomationId="LastFmCancelFavoriteImport" Command="{x:Bind ViewModel.CancelFavoriteImportCommand}" />
+                        </StackPanel>
                         <TextBlock TextWrapping="Wrap" AutomationProperties.AutomationId="LastFmFavoriteResult"
                             Visibility="{x:Bind ViewModel.FavoriteResultVisibility, Mode=OneWay}"
                             Text="{x:Bind ViewModel.FavoriteResultText, Mode=OneWay}" />

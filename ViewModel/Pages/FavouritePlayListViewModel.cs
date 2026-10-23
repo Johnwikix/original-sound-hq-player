@@ -112,7 +112,7 @@ namespace WinUIMusicPlayer.ViewModel
                 {
                     AppViewModel.FavoriteSongs[i].Order = AppViewModel.FavoriteSongs.Count - i;
                 }
-                await _musicDatabaseService.UpdateAllAsync(AppViewModel.FavoriteSongs);
+                await _musicDatabaseService.SaveFavoriteOrderAsync(AppViewModel.FavoriteSongs);
             }
         }
 

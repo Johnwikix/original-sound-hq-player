@@ -721,9 +721,14 @@ namespace WinUIMusicPlayer.Services
             await GetPlayListMusic();
         }
 
-        public async Task UpdateAllAsync(IEnumerable<Music> musicList)
+        public Task SaveFavoriteOrderAsync(IEnumerable<Music> musicList)
         {
-            await _dbConnection.UpdateAllAsync(musicList);
+            // Snapshot on the UI thread, then join the same sequence as favorite toggles. A delayed
+            // older toggle must commit before a later drag, and sorting must only write Order.
+            var orders = new List<LastFmFavoriteOrder>();
+            foreach (var music in musicList) orders.Add(new(music.Id, music.Order));
+            var lastFm = App.Services.GetRequiredService<LastFmService>();
+            return App.Services.GetRequiredService<ApplicationTasks>().RunCommittedAsync(() => lastFm.SaveFavoriteOrderAsync(orders));
         }
 
         private BassPlayerIpc.Shared.AudioCorrectionStore? _audioCorrectionStore;

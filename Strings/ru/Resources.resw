@@ -2500,4 +2500,6 @@ SHA-256: {5}
   <data name="LastFmFavoritePendingCount" xml:space="preserve"><value>Ожидающие изменения избранного: {0}</value></data>
   <data name="LastFmImportFavorites" xml:space="preserve"><value>Отправить существующее избранное</value></data>
   <data name="LastFmFavoriteResult" xml:space="preserve"><value>В очереди: {0}; без названия или исполнителя: {1}.</value></data>
+  <data name="LastFmCancelFavoriteImport" xml:space="preserve"><value>Отменить импорт</value></data>
+  <data name="LastFmFavoriteImportCanceled" xml:space="preserve"><value>Импорт отменён; избранное, уже добавленное в очередь, будет отправлено.</value></data>
 </root>

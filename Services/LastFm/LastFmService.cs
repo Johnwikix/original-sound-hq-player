@@ -33,6 +33,16 @@ public sealed partial class LastFmService(LastFmApiClient api, ILastFmStore stor
     public LastFmStatus Status => Volatile.Read(ref _status);
     public event Action<LastFmStatus>? Changed;
 
+    private readonly double _retryUnitSeconds = 30;
+    // A bounded timing seam for asynchronous error-path regressions; the application keeps the
+    // public constructor and its original 60..900 second exponential retry policy.
+    internal LastFmService(LastFmApiClient api, ILastFmStore store, LastFmFavoriteStore? favorites, TimeSpan retryUnit)
+        : this(api, store, favorites)
+    {
+        if (retryUnit <= TimeSpan.Zero) throw new ArgumentOutOfRangeException(nameof(retryUnit));
+        _retryUnitSeconds = retryUnit.TotalSeconds;
+    }
+
     public Task StartAsync() => CommandAsync(async token =>
     {
         if (_ready) return;
@@ -465,12 +475,12 @@ public sealed partial class LastFmService(LastFmApiClient api, ILastFmStore stor
                             try { favorite = await favorites!.PeekAsync(_identity!.Credentials.ApiKey, _identity.Account!.Name).ConfigureAwait(false); }
                             catch (Exception ex) { favoriteReadError = ex; }
                         }
-                        _favoriteTurn = !_favoriteTurn;
                         retryAt = _retryAt;
                     }
                     finally { _gate.Release(); }
                     if (favoriteReadError is not null)
                     {
+                        _favoriteTurn = false;
                         await FailedAsync(favoriteReadError, revision).ConfigureAwait(false);
                         continue;
                     }
@@ -483,10 +493,12 @@ public sealed partial class LastFmService(LastFmApiClient api, ILastFmStore stor
                     }
                     if (favorite is not null)
                     {
+                        _favoriteTurn = false;
                         await SendFavoriteAsync(favorite, revision).ConfigureAwait(false);
                         continue;
                     }
                     if (play is null) break;
+                    _favoriteTurn = true;
                     // A known server acknowledgement survives a failed local queue rewrite.
                     // Retry the commit, not the already accepted HTTP submission, in this process.
                     var acknowledgement = Volatile.Read(ref _acknowledged);
@@ -561,7 +573,7 @@ public sealed partial class LastFmService(LastFmApiClient api, ILastFmStore stor
             if (_stopped || revision != _revision) return;
             _problem = error is JsonException or System.Collections.Generic.KeyNotFoundException
                 ? LastFmProblem.Network : ProblemFor(error);
-            _retryAt = DateTimeOffset.UtcNow.AddSeconds(Math.Min(900, 30 * Math.Pow(2, Math.Min(++_failures, 5))));
+            _retryAt = DateTimeOffset.UtcNow.AddSeconds(Math.Min(900, _retryUnitSeconds * Math.Pow(2, Math.Min(++_failures, 5))));
             if (error is LastFmApiException { Code: 9 })
             {
                 RotateIdentity();

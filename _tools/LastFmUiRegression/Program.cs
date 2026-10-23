@@ -98,11 +98,13 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
             var cancelImport = Find<Button>("LastFmCancelHistory");
             var includeOlder = Find<ToggleSwitch>("LastFmIncludeOlderHistory");
             var favoriteImport = Find<Button>("LastFmImportFavorites");
+            var cancelFavoriteImport = Find<Button>("LastFmCancelFavoriteImport");
             var historyResult = Find<TextBlock>("LastFmHistoryResult");
             var favoriteResult = Find<TextBlock>("LastFmFavoriteResult");
             Check(historyResult.Visibility == Visibility.Collapsed && favoriteResult.Visibility == Visibility.Collapsed,
                 "Empty history/favorite results must collapse without a blank layout slot.");
             Check(!favoriteImport.IsEnabled, "Favorite import was enabled without authorization.");
+            Check(!cancelFavoriteImport.IsEnabled, "Favorite cancellation was enabled without an import.");
             Check(!includeOlder.IsOn && !vm.IncludeOlderHistory && includeOlder.Header is null,
                 "Old-history opt-in must default to off and use a normal inline toggle.");
             Check(!import.IsEnabled && !cancelImport.IsEnabled, "History import was enabled without authorization.");
@@ -215,6 +217,52 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
             cancelImport.Command.Execute(null);
             await importing.WaitAsync(TimeSpan.FromSeconds(5));
             Check(!vm.IsBusy && import.IsEnabled && service.Status.PendingCount == 0, "Cancel did not finish the import or restore UI readiness.");
+
+            await library.RunInTransactionAsync(tx =>
+            {
+                for (int i = 2; i <= 2050; i++) tx.Execute("INSERT INTO Music VALUES (?, ?, 'Artist', 1, ?)", i, "Cancel favorite " + i, i);
+            });
+            handler.FailFavorites = true;
+            var canceledFavorites = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            bool cancellationPosted = false;
+            void CancelAfterFirstPage(LastFmStatus status)
+            {
+                if (status.FavoriteImport is not { Canceled: false, Queued: >= 512 } || cancellationPosted) return;
+                cancellationPosted = true;
+                void CancelOnUi()
+                {
+                    try
+                    {
+                        Check(cancelFavoriteImport.IsEnabled && !favoriteImport.IsEnabled,
+                            "Compiled favorite import/cancel readiness did not reach the controls.");
+                        cancelFavoriteImport.Command.Execute(null);
+                        canceledFavorites.TrySetResult();
+                    }
+                    catch (Exception error) { canceledFavorites.TrySetException(error); }
+                }
+                var dispatcher = DispatcherQueue.GetForCurrentThread();
+                if (dispatcher?.HasThreadAccess == true) CancelOnUi();
+                else
+                {
+                    // Hold this observer until the actual UI command runs. Cancellation is
+                    // synchronous and cannot wait for the service gate held by Publish.
+                    window.DispatcherQueue.TryEnqueue(CancelOnUi);
+                    canceledFavorites.Task.WaitAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+                }
+            }
+            service.Changed += CancelAfterFirstPage;
+            await vm.ImportFavoritesCommand.ExecuteAsync(null);
+            await canceledFavorites.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            service.Changed -= CancelAfterFirstPage;
+            await Task.Delay(60);
+            Check(service.Status.FavoriteImport is { Queued: 512, Canceled: true } && !vm.IsBusy,
+                "Favorite UI cancellation continued importing later pages or did not finish.");
+            Check(favoriteResult.Visibility == Visibility.Visible && favoriteResult.Text.Contains("已取消")
+                && favoriteImport.IsEnabled && !cancelFavoriteImport.IsEnabled,
+                "Partial/canceled favorite result or restored command states did not bind to the UI.");
+            Check(await library.ExecuteScalarAsync<int>("SELECT COUNT(*) FROM Music WHERE IsFavorite = 1") == 2050,
+                "Canceling favorite reporting modified the local library.");
+
             await vm.DisconnectCommand.ExecuteAsync(null);
             await Task.Delay(100);
             Check(!enabled.IsOn && !enabled.IsEnabled && !vm.AccountText.Contains("alice"), "Disconnect left stale account state or an enabled toggle.");
@@ -270,6 +318,7 @@ internal sealed class TestVault : ILastFmCredentialVault
 }
 internal sealed class TestHttp : HttpMessageHandler
 {
+    public bool FailFavorites;
     public int Scrobbles, NowPlaying, Favorites;
     public long LastTimestamp;
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
@@ -281,7 +330,11 @@ internal sealed class TestHttp : HttpMessageHandler
         else if (body.Contains("auth.getSession")) result = "{\"session\":{\"name\":\"alice\",\"key\":\"test-session\"}}";
         else if (body.Contains("track.updateNowPlaying")) { Interlocked.Increment(ref NowPlaying); result = "{\"nowplaying\":{}}"; }
         else if (body.Contains("user.getRecentTracks")) result = "{\"recenttracks\":{\"track\":[],\"@attr\":{\"totalPages\":\"0\"}}}";
-        else if (body.Contains("track.love") || body.Contains("track.unlove")) { Interlocked.Increment(ref Favorites); result = "{}"; }
+        else if (body.Contains("track.love") || body.Contains("track.unlove"))
+        {
+            Interlocked.Increment(ref Favorites);
+            result = FailFavorites ? "{\"error\":11}" : "{}";
+        }
         else
         {
             LastTimestamp = long.Parse(body.Split('&').Single(pair => pair.StartsWith("timestamp=")).Split('=')[1]);

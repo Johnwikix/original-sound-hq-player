@@ -2,18 +2,22 @@ using SQLite;
 using System;
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace WinUIMusicPlayer.Services.LastFm;
 
 /// <summary>An immutable UI snapshot; later clicks must not mutate an earlier database write.</summary>
 public sealed record LastFmFavoriteChange(int MusicId, LastFmTrack Track, bool Loved, int Order);
-public sealed record LastFmFavoriteImportResult(int Queued, int Ineligible);
+public sealed record LastFmFavoriteImportResult(int Queued, int Ineligible, bool Canceled = false);
 public sealed record LastFmFavoriteIntent(string Key, string Version, LastFmTrack Track, bool Loved, bool Attempted);
+public readonly record struct LastFmFavoriteOrder(int MusicId, int Order);
+public sealed record LastFmFavoriteImportBatch(int LastId, int Scanned, int Queued, int Ineligible, int Added);
 
 /// <summary>Borrows the library connection. Local changes and their outbox entry share one transaction.</summary>
 public sealed class LastFmFavoriteStore(Func<SQLiteAsyncConnection> connection, HashSet<string>? unknownArtists = null)
 {
+    internal const int ImportBatchSize = 512;
     // Schema initialization is lazy: the library must already be initialized. Never close its connection.
     private Task? _schema;
     private readonly object _schemaGate = new();
@@ -43,36 +47,74 @@ public sealed class LastFmFavoriteStore(Func<SQLiteAsyncConnection> connection, 
         {
             int changed = tx.Execute("UPDATE Music SET IsFavorite = ?, [Order] = ? WHERE Id = ?", change.Loved, change.Order, change.MusicId);
             if (changed != 0 && !string.IsNullOrEmpty(account) && !string.IsNullOrEmpty(apiKey) && Eligible(change.Track))
-                Put(tx, apiKey, account, change.Track, change.Loved);
+                Put(tx, apiKey, account, change.Track, change.Loved, out _);
         }).ConfigureAwait(false);
         return await CountAsync().ConfigureAwait(false);
     }
 
-    public async Task<(int Pending, LastFmFavoriteImportResult Result)> ImportAsync(string apiKey, string account)
+    public async Task SaveOrderAsync(IReadOnlyList<LastFmFavoriteOrder> orders)
     {
         await InitializeAsync().ConfigureAwait(false);
-        var db = connection();
-        int queued = 0, ineligible = 0;
-        // The transaction reads the current library, not an earlier UI snapshot. An unlove cannot
-        // interleave halfway through an import and be overwritten by stale favorite data.
-        await db.RunInTransactionAsync(tx =>
+        await connection().RunInTransactionAsync(tx =>
         {
-            int afterId = 0;
-            while (true)
-            {
-                var page = tx.Query<FavoriteMusicRow>("SELECT Id, Title, Author FROM Music WHERE IsFavorite = 1 AND Id > ? ORDER BY Id LIMIT 512", afterId);
-                foreach (var music in page)
-                {
-                    var track = new LastFmTrack(music.Title?.Trim() ?? "", music.Author?.Trim() ?? "", "", 0);
-                    if (!Eligible(track)) { ineligible++; continue; }
-                    // Duplicate files representing one artist/title share the same desired state.
-                    if (Put(tx, apiKey, account, track, true)) queued++;
-                }
-                if (page.Count < 512) break;
-                afterId = page[^1].Id;
-            }
+            foreach (var item in orders)
+                tx.Execute("UPDATE Music SET [Order] = ? WHERE Id = ? AND IsFavorite = 1", item.Order, item.MusicId);
         }).ConfigureAwait(false);
-        return (await CountAsync().ConfigureAwait(false), new(queued, ineligible));
+    }
+
+    public async Task<int> ReadImportEndAsync()
+    {
+        await InitializeAsync().ConfigureAwait(false);
+        return await connection().ExecuteScalarAsync<int>("SELECT COALESCE(MAX(Id), 0) FROM Music").ConfigureAwait(false);
+    }
+
+    public async Task<LastFmFavoriteImportBatch> ImportBatchAsync(string apiKey, string account, int afterId, int endId,
+        IReadOnlySet<string>? changedTracks = null, CancellationToken cancellation = default)
+    {
+        await InitializeAsync().ConfigureAwait(false);
+        cancellation.ThrowIfCancellationRequested();
+        int queued = 0, ineligible = 0, added = 0, lastId = afterId, scanned = 0;
+        // Read membership and stage this bounded page in the same transaction. The service yields
+        // its gate between pages; tracks edited since import began must also stay protected after
+        // an unlove has been acknowledged/deleted, including duplicate files on later pages.
+        await connection().RunInTransactionAsync(tx =>
+        {
+            cancellation.ThrowIfCancellationRequested();
+            var page = tx.Query<FavoriteMusicRow>(
+                "SELECT Id, Title, Author FROM Music WHERE IsFavorite = 1 AND Id > ? AND Id <= ? ORDER BY Id LIMIT ?",
+                afterId, endId, ImportBatchSize);
+            foreach (var music in page)
+            {
+                cancellation.ThrowIfCancellationRequested();
+                var track = new LastFmTrack(music.Title?.Trim() ?? "", music.Author?.Trim() ?? "", "", 0);
+                if (!Eligible(track)) { ineligible++; continue; }
+                string? trackKey = changedTracks is { Count: > 0 } ? LastFmHistory.TrackKey(track.Title, track.Artist) : null;
+                if (trackKey is not null && changedTracks!.Contains(trackKey)) continue;
+                if (Put(tx, apiKey, account, track, true, out bool newEntry, trackKey)) queued++;
+                if (newEntry) added++;
+            }
+            scanned = page.Count;
+            if (scanned != 0) lastId = page[^1].Id;
+            cancellation.ThrowIfCancellationRequested();
+        }).ConfigureAwait(false);
+        return new(lastId, scanned, queued, ineligible, added);
+    }
+
+    public async Task<(int Pending, LastFmFavoriteImportResult Result)> ImportAsync(string apiKey, string account,
+        CancellationToken cancellation = default)
+    {
+        int endId = await ReadImportEndAsync().ConfigureAwait(false);
+        int afterId = 0, queued = 0, ineligible = 0;
+        while (true)
+        {
+            var batch = await ImportBatchAsync(apiKey, account, afterId, endId, cancellation: cancellation).ConfigureAwait(false);
+            queued += batch.Queued;
+            ineligible += batch.Ineligible;
+            if (batch.Scanned < ImportBatchSize || batch.LastId >= endId)
+                return (await CountAsync().ConfigureAwait(false), new(queued, ineligible));
+            afterId = batch.LastId;
+            await Task.Yield();
+        }
     }
 
     public async Task<LastFmFavoriteIntent?> PeekAsync(string apiKey, string account)
@@ -104,13 +146,15 @@ public sealed class LastFmFavoriteStore(Func<SQLiteAsyncConnection> connection, 
     }
     private bool Eligible(LastFmTrack track) => track.Title.Length is > 0 and <= 512 && track.Artist.Length is > 0 and <= 512
         && !(unknownArtists?.Contains(track.Artist) ?? false);
+    internal string? EligibleTrackKey(LastFmTrack track) => Eligible(track) ? LastFmHistory.TrackKey(track.Title, track.Artist) : null;
     private static string AccountKey(string? account) => account?.ToUpperInvariant() ?? "";
-    private static string Key(string apiKey, string account, LastFmTrack track)
-        => apiKey + ":" + AccountKey(account) + ":" + LastFmHistory.TrackKey(track.Title, track.Artist);
-    private static bool Put(SQLiteConnection tx, string apiKey, string account, LastFmTrack track, bool loved)
+    private static bool Put(SQLiteConnection tx, string apiKey, string account, LastFmTrack track, bool loved,
+        out bool added, string? trackKey = null)
     {
-        string key = Key(apiKey, account, track);
-        if (tx.Find<FavoriteRow>(key)?.Loved == loved) return false;
+        string key = apiKey + ":" + AccountKey(account) + ":" + (trackKey ?? LastFmHistory.TrackKey(track.Title, track.Artist));
+        var existing = tx.Find<FavoriteRow>(key);
+        added = existing is null;
+        if (existing?.Loved == loved) return false;
         tx.InsertOrReplace(new FavoriteRow
         {
             Key = key, ApiKey = apiKey, Account = AccountKey(account),

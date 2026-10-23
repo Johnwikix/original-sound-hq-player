@@ -54,8 +54,10 @@ public sealed class LastFmSettingsViewModel : ObservableObject
         CancelHistoryImportCommand = new RelayCommand(ImportHistoryCommand.Cancel, () => ImportHistoryCommand.CanBeCanceled);
         ImportHistoryCommand.PropertyChanged += (_, _) => CancelHistoryImportCommand.NotifyCanExecuteChanged();
         bool CanImportFavorites() => CanInteract && service.SupportsFavorites && _status.IsAuthenticated && _status.Enabled;
-        ImportFavoritesCommand = new AsyncRelayCommand(() => CanImportFavorites()
-            ? RunAsync(service.ImportFavoritesAsync) : Task.CompletedTask, CanImportFavorites);
+        ImportFavoritesCommand = new AsyncRelayCommand(token => CanImportFavorites()
+            ? RunAsync(() => service.ImportFavoritesAsync(token)) : Task.CompletedTask, CanImportFavorites);
+        CancelFavoriteImportCommand = new RelayCommand(ImportFavoritesCommand.Cancel, () => ImportFavoritesCommand.CanBeCanceled);
+        ImportFavoritesCommand.PropertyChanged += (_, _) => CancelFavoriteImportCommand.NotifyCanExecuteChanged();
     }
 
     public IAsyncRelayCommand SaveCredentialsCommand { get; }
@@ -66,6 +68,7 @@ public sealed class LastFmSettingsViewModel : ObservableObject
     public IAsyncRelayCommand ImportHistoryCommand { get; }
     public IRelayCommand CancelHistoryImportCommand { get; }
     public IAsyncRelayCommand ImportFavoritesCommand { get; }
+    public IRelayCommand CancelFavoriteImportCommand { get; }
     public bool CanInteract => !_busy && !_stopped && !_lifecycle.StoppingToken.IsCancellationRequested;
     public bool CanToggle => CanInteract && _status.IsAuthenticated;
     public bool IsBusy => _busy;
@@ -93,7 +96,8 @@ public sealed class LastFmSettingsViewModel : ObservableObject
     public string QueueText => string.Format(CultureInfo.CurrentCulture, ToolUtils.GetString("LastFmPendingCount"), _status.PendingCount);
     public string FavoriteQueueText => string.Format(CultureInfo.CurrentCulture, ToolUtils.GetString("LastFmFavoritePendingCount"), _status.FavoritePendingCount);
     public string FavoriteResultText => _status.FavoriteImport is { } result
-        ? string.Format(CultureInfo.CurrentCulture, ToolUtils.GetString("LastFmFavoriteResult"), result.Queued, result.Ineligible) : "";
+        ? string.Format(CultureInfo.CurrentCulture, ToolUtils.GetString("LastFmFavoriteResult"), result.Queued, result.Ineligible)
+            + (result.Canceled ? " " + ToolUtils.GetString("LastFmFavoriteImportCanceled") : "") : "";
     public Visibility FavoriteResultVisibility => FavoriteResultText.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
     public Visibility HistoryResultVisibility => HistoryResultText.Length == 0 ? Visibility.Collapsed : Visibility.Visible;
     public string HistoryResultText => _status.HistoryImport is { } result
@@ -176,12 +180,14 @@ public sealed class LastFmSettingsViewModel : ObservableObject
         RetryCommand.NotifyCanExecuteChanged();
         ImportHistoryCommand.NotifyCanExecuteChanged();
         ImportFavoritesCommand.NotifyCanExecuteChanged();
+        CancelFavoriteImportCommand.NotifyCanExecuteChanged();
     }
 
     public async Task StopAsync()
     {
         _stopped = true;
         ImportHistoryCommand.Cancel();
+        ImportFavoritesCommand.Cancel();
         _service.Changed -= Changed;
         _lifecycle.Changed -= LifecycleChanged;
         await _operation;

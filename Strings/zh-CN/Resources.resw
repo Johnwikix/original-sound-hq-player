@@ -2502,4 +2502,6 @@ SHA-256：{5}
   <data name="LastFmFavoritePendingCount" xml:space="preserve"><value>收藏待上报：{0} 首</value></data>
   <data name="LastFmImportFavorites" xml:space="preserve"><value>上报现有收藏</value></data>
   <data name="LastFmFavoriteResult" xml:space="preserve"><value>已加入上报队列 {0} 首；缺少歌曲或歌手信息 {1} 首。</value></data>
+  <data name="LastFmCancelFavoriteImport" xml:space="preserve"><value>取消导入</value></data>
+  <data name="LastFmFavoriteImportCanceled" xml:space="preserve"><value>已取消继续导入；已入队的收藏会继续上报。</value></data>
 </root>

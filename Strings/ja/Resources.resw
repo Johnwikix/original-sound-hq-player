@@ -2500,4 +2500,6 @@ SHA-256: {5}
   <data name="LastFmFavoritePendingCount" xml:space="preserve"><value>送信待ちのお気に入り変更：{0} 件</value></data>
   <data name="LastFmImportFavorites" xml:space="preserve"><value>既存のお気に入りを送信</value></data>
   <data name="LastFmFavoriteResult" xml:space="preserve"><value>{0} 曲を追加しました。曲名・アーティスト情報の不足：{1} 曲。</value></data>
+  <data name="LastFmCancelFavoriteImport" xml:space="preserve"><value>読み込みをキャンセル</value></data>
+  <data name="LastFmFavoriteImportCanceled" xml:space="preserve"><value>読み込みを中止しました。追加済みのお気に入りは引き続き送信します。</value></data>
 </root>

@@ -14,6 +14,7 @@
     <Compile Include="../../Services/AppLifecycle.cs;../../Services/ApplicationTasks.cs" />
     <Compile Include="../LastFmRegression/ApiResponseRegression.cs" Link="ApiResponseRegression.cs" />
     <Compile Include="../LastFmRegression/FavoriteRegression.cs" Link="FavoriteRegression.cs" />
+    <Compile Include="../LastFmRegression/FavoriteFixRegression.cs" Link="FavoriteFixRegression.cs" />
     <Compile Include="../../Services/LastFm/*.cs" Exclude="../../Services/LastFm/LastFmPlaybackBridge.cs;../../Services/LastFm/WindowsLastFmCredentialVault.cs" />
   </ItemGroup>
 </Project>

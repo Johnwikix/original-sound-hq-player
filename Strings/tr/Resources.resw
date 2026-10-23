@@ -2500,4 +2500,6 @@ SHA-256: {5}
   <data name="LastFmFavoritePendingCount" xml:space="preserve"><value>Bekleyen favori değişikliği: {0}</value></data>
   <data name="LastFmImportFavorites" xml:space="preserve"><value>Mevcut favorileri bildir</value></data>
   <data name="LastFmFavoriteResult" xml:space="preserve"><value>{0} parça sıraya alındı; {1} parçada ad veya sanatçı eksik.</value></data>
+  <data name="LastFmCancelFavoriteImport" xml:space="preserve"><value>İçe aktarmayı iptal et</value></data>
+  <data name="LastFmFavoriteImportCanceled" xml:space="preserve"><value>İçe aktarma iptal edildi; sıraya alınmış favoriler bildirilmeye devam edecek.</value></data>
 </root>

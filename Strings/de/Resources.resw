@@ -2500,4 +2500,6 @@ SHA-256: {5}
   <data name="LastFmFavoritePendingCount" xml:space="preserve"><value>Ausstehende Favoritenänderungen: {0}</value></data>
   <data name="LastFmImportFavorites" xml:space="preserve"><value>Vorhandene Favoriten melden</value></data>
   <data name="LastFmFavoriteResult" xml:space="preserve"><value>{0} Titel eingereiht; bei {1} fehlen Titel- oder Künstlerangaben.</value></data>
+  <data name="LastFmCancelFavoriteImport" xml:space="preserve"><value>Import abbrechen</value></data>
+  <data name="LastFmFavoriteImportCanceled" xml:space="preserve"><value>Import abgebrochen; bereits eingereihte Favoriten werden weiterhin gemeldet.</value></data>
 </root>
