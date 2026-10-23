@@ -153,7 +153,7 @@ internal static class FlowWaveWordExitChecks
                 throw new InvalidOperationException("The word effect must hold and remain drawn during the shared wave delay.");
             for (long time = 5088; time <= 5200; time += 8) Step(time);
             if (!outgoing.IsWordEffectsRetiring || character.GlowTransition.Value <= 0
-                || character.GlowTransition.Value >= glow || character.FloatTransition.Value <= 0
+                || character.GlowTransition.Value >= glow
                 || outgoing.ScrollMotion.Value >= offset || outgoing.BlurAmountTransition.Value <= 0
                 || Math.Abs(character.Glow.BlurAmount - outgoing.BlurAmountTransition.Value) > 0.001)
                 throw new InvalidOperationException("Word return, real per-character blur and row displacement must progress together.");
@@ -220,8 +220,8 @@ internal static class FlowWaveWordExitChecks
             Step(157680, 9);
             if (Math.Abs(brave.EndMs!.Value - 157381) > 0.001
                 || brave.ChildrenRenderLyricsChars.Any(character => character.GetPlayProgress(position) != 1
-                    || character.GlowTransition.Value < 4.99 || character.FloatTransition.Value < 4.99))
-                throw new InvalidOperationException("Actual brave must preserve its 300ms word timing while retaining the final word's flow-wave visual emphasis.");
+                    || character.GlowTransition.Value < 4.99 || Math.Abs(character.FloatTransition.Value) > 0.01))
+                throw new InvalidOperationException("Actual brave must finish floating with its 300ms word timing while retaining the final word's flow-wave glow emphasis.");
             Step(157681, 1);
             if (!outgoing.IsWordEffectsRetiring || outgoing.IsPlayingLastFrame
                 || (int)Focus.GetValue(coordinator)! != lines.IndexOf(outgoing) + 1)

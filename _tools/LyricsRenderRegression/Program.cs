@@ -98,6 +98,9 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
                 Check(Lines(coordinator).Single().PrimaryText == "Latest song", "The next frame must use the latest publication");
                 Check(oldLine.CachedFill is null && oldLine.PrimaryTextLayout is null, "Retired native resources must be released");
             });
+            await canvas.RunOnGameLoopThreadAsync(() => FirstLineFloatChecks.Run(canvas));
+            var finalWordLyrics = await PlaybackTimingChecks.LoadAsync(FinalWordFloatChecks.Sample);
+            await canvas.RunOnGameLoopThreadAsync(() => FinalWordFloatChecks.Run(canvas, finalWordLyrics));
             await canvas.RunOnGameLoopThreadAsync(() => MotionChecks.Run(canvas));
             var creditsLyrics = await PlaybackTimingChecks.LoadAsync(await File.ReadAllTextAsync(Path.Combine(AppContext.BaseDirectory, "Fixtures", "lulu.qrc.txt")));
             await canvas.RunOnGameLoopThreadAsync(() => DenseCreditsChecks.Run(canvas, creditsLyrics));
@@ -137,7 +140,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             Check(beforeClose!.CachedFill is null && beforeClose.PrimaryTextLayout is null && !coordinator.HasLyrics,
                 "Shutdown must release active resources and discard pending lyrics");
             Check(frames > 2, "Real Win2D drawing must have run");
-            File.WriteAllText(output, $"PASS: Paint It Black complete sidecar/parser/projection with six black glow-to-inactive handoffs, real final/earlier glyph pixels, light/dark colors and 4/8ms sampling; flow-wave final-word emphasis hold and native drawing through shared delay/return, original 0/300ms word margins, long-gap settling, pause, forward/backward seek and relayout; actual The Story of Us sidecar/parser/projection with brave flow-wave visual retirement and normal Sine/Out return before 157681ms, exact musical row switch and backward seek; main and desktop gap highlight retention with real drawing, completed fill pixels, exact entrance switch, backward seek, paused gap and overlap; shared visible-origin wave, scale/blur/opacity delay, short-line handling, seek/relayout and live CanvasAnimatedControl frame, native cache retirement, 300 rapid publications, paused redraw, empty lyrics and repeated shutdown with pending work; {frames} frames.\n");
+            File.WriteAllText(output, $"PASS: 16 first-line startup/song-switch/clock cases with same-row bidirectional seek and pause; reported LRC repetition/mess final-word and last-character float with independent glow/scale hold in flow-wave and normal modes; Paint It Black complete sidecar/parser/projection with six black glow-to-inactive handoffs, real final/earlier glyph pixels, light/dark colors and 4/8ms sampling; flow-wave final-word emphasis hold and native drawing through shared delay/return, original 0/300ms word margins, long-gap settling, pause, forward/backward seek and relayout; actual The Story of Us sidecar/parser/projection with brave flow-wave visual retirement and normal Sine/Out return before 157681ms, exact musical row switch and backward seek; main and desktop gap highlight retention with real drawing, completed fill pixels, exact entrance switch, backward seek, paused gap and overlap; shared visible-origin wave, scale/blur/opacity delay, short-line handling, seek/relayout and live CanvasAnimatedControl frame, native cache retirement, 300 rapid publications, paused redraw, empty lyrics and repeated shutdown with pending work; {frames} frames.\n");
         }
         catch (Exception ex) { File.WriteAllText(output, "FAIL: " + ex); }
         finally

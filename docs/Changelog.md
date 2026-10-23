@@ -1,3 +1,10 @@
+## 2026-10-23 修复首行和末词的歌词浮动效果丢失
+- `LyricsAnimator.cs`：流波效果因播放时钟校正而重置时，同步恢复仍在高亮中的行的浮动入场，避免首行索引未变化导致浮动不再启动。
+- `LyricsAnimator.cs`：末尾长音节仅保持发光和缩放重音，浮动继续按逐字时间上浮，修复 `repetition`、`mess` 等末词不浮起。
+- `_tools/LyricsRenderRegression/FirstLineFloatChecks.cs`：增加真实 Win2D 首帧后时钟校正、保留协调器切歌、零秒/延迟首行、同一行双向定位和暂停回归，并保留常规滚动对照。
+- `_tools/LyricsRenderRegression/FinalWordFloatChecks.cs`、`FlowWaveWordExitChecks.cs`：通过用户 LRC 样例验证末词逐字上浮、末字动作及发光/缩放保持，并更新完整歌曲的退场回归预期。
+- 验证：Debug x64 主项目构建、16 组首行场景、4 组样例末词场景和完整原生渲染回归通过；未做完整播放器详情页切歌的人工观感验收。
+
 ## 2026-10-23 接入 Last.fm 授权与离线听歌记录
 - `Services/LastFm`、`LastFmSettingsViewModel`、常规设置与七种语言资源：支持用户自备应用凭据、浏览器授权/本地解绑、正在播放、达标上报及持久化离线补报；凭据与 Session Key 使用 Windows PasswordVault。
 - `PlaybackCoordinator`、`RemotePlaybackService`、启动/退出协调器：复用实际播放确认与状态，隔离定位、暂停、缓冲、无缝重复和 WebDAV 恢复；保留现有本地统计口径，不修改音频引擎与 IPC。

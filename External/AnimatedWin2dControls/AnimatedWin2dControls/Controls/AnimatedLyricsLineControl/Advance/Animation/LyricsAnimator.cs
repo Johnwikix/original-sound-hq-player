@@ -85,8 +85,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 bool isSecondaryLinePlayingChanged = line.IsPlayingLastFrame != isSecondaryLinePlaying;
                 line.IsPlayingLastFrame = isSecondaryLinePlaying;
 
-                if ((useFlowWaveWordExit && isSeek) || (line.IsWordEffectsRetiring && (isSeek || isLayoutChanged || isMouseScrollingChanged
-                    || isSecondaryLinePlaying || line.LastProcessedVersion < animationVersion - 1)))
+                bool resetWordEffects = (useFlowWaveWordExit && isSeek) || (line.IsWordEffectsRetiring && (isSeek || isLayoutChanged || isMouseScrollingChanged
+                    || isSecondaryLinePlaying || line.LastProcessedVersion < animationVersion - 1));
+                if (resetWordEffects)
                     ResetWordEffects(line);
 
                 var playProgress = line.GetPlayProgress(currentPositionMs);
@@ -211,7 +212,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                         continue;
                     }
 
-                    if (isSecondaryLinePlayingChanged)
+                    // A clock correction can clear word effects without changing the
+                    // highlighted row, especially just after switching songs at 0ms.
+                    // Restart the active row's float entrance after that reset too.
+                    if (isSecondaryLinePlayingChanged || (resetWordEffects && isSecondaryLinePlaying))
                     {
                         if (isFloatEnabled)
                         {
@@ -236,7 +240,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     foreach (var renderChar in line.PrimaryRenderChars)
                     {
                         renderChar.ProgressPlayed = renderChar.GetPlayProgress(currentPositionMs);
-                        bool holdFloat = holdFinalWordEffects && renderChar.StartMs >= finalSyllable!.StartMs;
 
                         bool isCharPlaying = renderChar.GetIsPlaying(currentPositionMs);
                         bool isCharPlayingChanged = renderChar.IsPlayingLastFrame != isCharPlaying;
@@ -245,15 +248,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                         {
                             if (isFloatEnabled)
                             {
-                                renderChar.FloatTransition.SetDurationMs(holdFloat ? lyricsFloatAnimationDuration
-                                    : Math.Min(lyricsFloatAnimationDuration, maxAnimationDurationMs));
-                                renderChar.FloatTransition.Start(holdFloat ? targetCharFloat : 0);
+                                // Float follows character playback even while the final
+                                // syllable's glow/scale is held for the flow-wave exit.
+                                renderChar.FloatTransition.SetDurationMs(Math.Min(lyricsFloatAnimationDuration, maxAnimationDurationMs));
+                                renderChar.FloatTransition.Start(0);
                             }
                             renderChar.IsPlayingLastFrame = isCharPlaying;
                         }
                         else
                         {
-                            if (!holdFloat && !isCharPlaying && currentPositionMs > renderChar.EndMs && renderChar.FloatTransition.Value != 0)
+                            if (!isCharPlaying && currentPositionMs > renderChar.EndMs && renderChar.FloatTransition.Value != 0)
                             {
                                 renderChar.FloatTransition.SetDurationMs(Math.Min(lyricsFloatAnimationDuration, maxAnimationDurationMs));
                                 renderChar.FloatTransition.Start(0);
