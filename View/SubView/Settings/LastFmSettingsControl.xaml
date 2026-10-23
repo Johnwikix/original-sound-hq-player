@@ -87,7 +87,25 @@
                                 AutomationProperties.AutomationId="LastFmCancelHistory" Command="{x:Bind ViewModel.CancelHistoryImportCommand}" />
                         </StackPanel>
                         <TextBlock TextWrapping="Wrap" AutomationProperties.AutomationId="LastFmHistoryResult"
+                            Visibility="{x:Bind ViewModel.HistoryResultVisibility, Mode=OneWay}"
                             Text="{x:Bind ViewModel.HistoryResultText, Mode=OneWay}" />
+                    </StackPanel>
+                </controls:SettingsCard>
+            </controls:SettingsExpander.Items>
+        </controls:SettingsExpander>
+        <controls:SettingsExpander AutomationProperties.AutomationId="LastFmFavoritesExpander"
+                                   Header="{x:Bind tool:ToolUtils.GetString('LastFmFavoritesTitle')}">
+            <controls:SettingsExpander.Items>
+                <controls:SettingsCard ContentAlignment="Left">
+                    <StackPanel Spacing="8">
+                        <TextBlock TextWrapping="Wrap" Text="{x:Bind tool:ToolUtils.GetString('LastFmFavoritesHelp')}" />
+                        <TextBlock AutomationProperties.AutomationId="LastFmFavoriteQueue"
+                            Text="{x:Bind ViewModel.FavoriteQueueText, Mode=OneWay}" />
+                        <Button Content="{x:Bind tool:ToolUtils.GetString('LastFmImportFavorites')}"
+                            AutomationProperties.AutomationId="LastFmImportFavorites" Command="{x:Bind ViewModel.ImportFavoritesCommand}" />
+                        <TextBlock TextWrapping="Wrap" AutomationProperties.AutomationId="LastFmFavoriteResult"
+                            Visibility="{x:Bind ViewModel.FavoriteResultVisibility, Mode=OneWay}"
+                            Text="{x:Bind ViewModel.FavoriteResultText, Mode=OneWay}" />
                     </StackPanel>
                 </controls:SettingsCard>
             </controls:SettingsExpander.Items>

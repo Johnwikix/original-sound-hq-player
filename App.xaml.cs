@@ -86,6 +86,9 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<WinUIMusicPlayer.Services.LastFm.LastFmApiClient>();
                  services.AddSingleton<WinUIMusicPlayer.Services.LastFm.ILastFmCredentialVault, WinUIMusicPlayer.Services.LastFm.WindowsLastFmCredentialVault>();
                  services.AddSingleton<WinUIMusicPlayer.Services.LastFm.ILastFmStore, WinUIMusicPlayer.Services.LastFm.LastFmStore>();
+                 services.AddSingleton(sp => new WinUIMusicPlayer.Services.LastFm.LastFmFavoriteStore(
+                     sp.GetRequiredService<MusicDatabaseService>().GetDbConnection,
+                     new System.Collections.Generic.HashSet<string>(AppData.UnknownArtists) { ToolUtils.GetString("UnknownArtist") }));
                  services.AddSingleton<WinUIMusicPlayer.Services.LastFm.LastFmService>();
                  services.AddSingleton<WinUIMusicPlayer.Services.LastFm.LastFmPlaybackBridge>();
                  services.AddSingleton<WinUIMusicPlayer.Services.LastFm.ILastFmHistorySource>(sp =>

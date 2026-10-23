@@ -11,7 +11,9 @@
     <TrimmerRootAssembly Include="SQLite-net" /><TrimmerRootAssembly Include="SQLitePCLRaw.core" />
     <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
     <Compile Include="../../Model/Stats/PlaybackHistory.cs" />
+    <Compile Include="../../Services/AppLifecycle.cs;../../Services/ApplicationTasks.cs" />
     <Compile Include="../LastFmRegression/ApiResponseRegression.cs" Link="ApiResponseRegression.cs" />
+    <Compile Include="../LastFmRegression/FavoriteRegression.cs" Link="FavoriteRegression.cs" />
     <Compile Include="../../Services/LastFm/*.cs" Exclude="../../Services/LastFm/LastFmPlaybackBridge.cs;../../Services/LastFm/WindowsLastFmCredentialVault.cs" />
   </ItemGroup>
 </Project>

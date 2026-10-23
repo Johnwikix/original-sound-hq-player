@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Media;
 using System.Diagnostics;
 using System.Net;
 using System.Text;
+using SQLite;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Services;
 using WinUIMusicPlayer.Services.LastFm;
@@ -57,7 +58,11 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
         var store = new LastFmStore(vault, path);
         using var handler = new TestHttp();
         using var api = new LastFmApiClient(new HttpClient(handler), new Uri("https://lastfm.invalid/"));
-        var service = new LastFmService(api, store);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        var library = new SQLiteAsyncConnection(Path.Combine(Path.GetDirectoryName(path)!, "library.db"));
+        await library.ExecuteAsync("CREATE TABLE Music (Id INTEGER PRIMARY KEY, Title TEXT, Author TEXT, IsFavorite INTEGER, [Order] INTEGER)");
+        await library.ExecuteAsync("INSERT INTO Music VALUES (1, 'Favorite fixture', 'Artist', 1, 7)");
+        var service = new LastFmService(api, store, new LastFmFavoriteStore(() => library));
         var history = new TestHistory();
         var vm = new LastFmSettingsViewModel(service, lifecycle, history);
         var state = new AppState();
@@ -80,7 +85,7 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
             var topRows = ((StackPanel)control.Content).Children.OfType<FrameworkElement>()
                 .Where(row => row is CommunityToolkit.WinUI.Controls.SettingsCard or CommunityToolkit.WinUI.Controls.SettingsExpander).ToList();
             var expanders = topRows.OfType<CommunityToolkit.WinUI.Controls.SettingsExpander>().ToList();
-            Check(expanders.Count == 3 && expanders.All(item => !item.IsExpanded), "Account, credentials and history must start collapsed.");
+            Check(expanders.Count == 4 && expanders.All(item => !item.IsExpanded), "Account, credentials, history and favorites must start collapsed.");
             Check(topRows.All(row => double.IsNaN(row.Height)), "Settings rows must retain their default automatic height.");
             foreach (var expander in expanders) expander.IsExpanded = true;
             await Task.Delay(150);
@@ -92,6 +97,12 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
             var import = Find<Button>("LastFmImportHistory");
             var cancelImport = Find<Button>("LastFmCancelHistory");
             var includeOlder = Find<ToggleSwitch>("LastFmIncludeOlderHistory");
+            var favoriteImport = Find<Button>("LastFmImportFavorites");
+            var historyResult = Find<TextBlock>("LastFmHistoryResult");
+            var favoriteResult = Find<TextBlock>("LastFmFavoriteResult");
+            Check(historyResult.Visibility == Visibility.Collapsed && favoriteResult.Visibility == Visibility.Collapsed,
+                "Empty history/favorite results must collapse without a blank layout slot.");
+            Check(!favoriteImport.IsEnabled, "Favorite import was enabled without authorization.");
             Check(!includeOlder.IsOn && !vm.IncludeOlderHistory && includeOlder.Header is null,
                 "Old-history opt-in must default to off and use a normal inline toggle.");
             Check(!import.IsEnabled && !cancelImport.IsEnabled, "History import was enabled without authorization.");
@@ -108,6 +119,13 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
             await Task.Delay(100);
             Check(enabled.IsOn && enabled.IsEnabled && vm.AccountText.Contains("alice"), "Authorization did not update compiled account/toggle bindings.");
             Check(import.IsEnabled && history.Reads == 0, "Connecting an account imported history automatically or left the manual entry disabled.");
+            Check(favoriteImport.IsEnabled && handler.Favorites == 0, "Connecting imported favorites automatically or left the manual command disabled.");
+            await vm.ImportFavoritesCommand.ExecuteAsync(null);
+            await WaitFor(() => handler.Favorites == 1 && service.Status.FavoritePendingCount == 0 && !vm.IsBusy);
+            await Task.Delay(50);
+            Check(favoriteResult.Visibility == Visibility.Visible && favoriteResult.Text.Contains("1"), "Favorite result compiled binding did not become visible.");
+            Check(Find<TextBlock>("LastFmFavoriteQueue").Text.Contains("0"), "Favorite queue count did not reach the UI dispatcher.");
+            Check(await library.ExecuteScalarAsync<int>("SELECT [Order] FROM Music WHERE Id = 1") == 7, "Favorite reporting changed local ordering.");
 
             var music = new Music();
             state.Playback.CurrentPlayingMusic = music;
@@ -164,6 +182,7 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
             await WaitFor(() => !service.Status.Enabled && !vm.IsBusy);
             Check(!enabled.IsOn, "Toggle did not persist through MVVM.");
             Check(!import.IsEnabled, "Disabled Last.fm still allowed a history import.");
+            Check(!favoriteImport.IsEnabled, "Disabled Last.fm still allowed a favorite import.");
             enabled.IsOn = true;
             await WaitFor(() => service.Status.Enabled && !vm.IsBusy);
             for (int second = 49; second <= 150; second++) { Set(45000 + second * 1000, 600000 + second * 1000, epoch: -2); bridge.Sample(); }
@@ -202,6 +221,8 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
             Check(vm.SharedSecret.Length == 0 && service.Status.PendingCount == 0, "Disconnect retained a secret draft or pending plays.");
             Check(!import.IsEnabled, "Disconnected account still offered history submission.");
             Check(!includeOlder.IsOn && !vm.IncludeOlderHistory, "Disconnect retained the old-history opt-in for the next account.");
+            Check(!favoriteImport.IsEnabled && historyResult.Visibility == Visibility.Collapsed && favoriteResult.Visibility == Visibility.Collapsed,
+                "Unlink retained favorite command readiness or blank/previous-account result slots.");
             foreach (var expander in expanders) expander.IsExpanded = false;
             control.RequestedTheme = ElementTheme.Dark;
             await Task.Delay(80);
@@ -219,6 +240,7 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
             await bridge.StopAsync();
             await service.StopAsync();
             await vm.StopAsync();
+            await library.CloseAsync();
             window.Close();
             Exit();
         }
@@ -248,7 +270,7 @@ internal sealed class TestVault : ILastFmCredentialVault
 }
 internal sealed class TestHttp : HttpMessageHandler
 {
-    public int Scrobbles, NowPlaying;
+    public int Scrobbles, NowPlaying, Favorites;
     public long LastTimestamp;
     protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken token)
     {
@@ -259,6 +281,7 @@ internal sealed class TestHttp : HttpMessageHandler
         else if (body.Contains("auth.getSession")) result = "{\"session\":{\"name\":\"alice\",\"key\":\"test-session\"}}";
         else if (body.Contains("track.updateNowPlaying")) { Interlocked.Increment(ref NowPlaying); result = "{\"nowplaying\":{}}"; }
         else if (body.Contains("user.getRecentTracks")) result = "{\"recenttracks\":{\"track\":[],\"@attr\":{\"totalPages\":\"0\"}}}";
+        else if (body.Contains("track.love") || body.Contains("track.unlove")) { Interlocked.Increment(ref Favorites); result = "{}"; }
         else
         {
             LastTimestamp = long.Parse(body.Split('&').Single(pair => pair.StartsWith("timestamp=")).Split('=')[1]);

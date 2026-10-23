@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace WinUIMusicPlayer.Services.LastFm;
 
 /// <summary>Owns authorization and a durable FIFO. No work starts in the constructor.</summary>
-public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
+public sealed partial class LastFmService(LastFmApiClient api, ILastFmStore store, LastFmFavoriteStore? favorites = null)
 {
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly SemaphoreSlim _commands = new(1, 1);
@@ -42,6 +42,7 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
         var identity = saved.HasCredentials ? await store.ReadIdentityAsync(token).ConfigureAwait(false) : null;
         _saved = saved;
         _identity = identity;
+        await RetainFavoritesAsync(identity).ConfigureAwait(false);
         _ready = true;
         _problem = LastFmProblem.None;
         Publish(true);
@@ -60,6 +61,7 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
         CancelRequests();
         await DrainNetworkAsync(token).ConfigureAwait(false);
         RotateIdentity();
+        await RetainFavoritesAsync(null).ConfigureAwait(false);
         var replacement = new LastFmSavedState { HasCredentials = true };
         replacement = await SaveStateAsync(replacement, token).ConfigureAwait(false);
         _saved = replacement;
@@ -113,6 +115,7 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
         var saved = _saved with { Enabled = true, Pending = pending, Known = known };
         saved = await SaveStateAsync(saved, token).ConfigureAwait(false);
         await store.SaveIdentityAsync(identity, token).ConfigureAwait(false);
+        await RetainFavoritesAsync(identity).ConfigureAwait(false);
         RotateIdentity();
         _identity = identity;
         _saved = saved;
@@ -129,6 +132,7 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
         {
             await DrainNetworkAsync(token).ConfigureAwait(false);
             RotateIdentity();
+            await RetainFavoritesAsync(null).ConfigureAwait(false);
             var saved = new LastFmSavedState { HasCredentials = _identity is not null };
             saved = await SaveStateAsync(saved, token).ConfigureAwait(false);
             _saved = saved;
@@ -156,12 +160,15 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
         });
     }
 
-    public Task RetryAsync() => CommandAsync(_ =>
+    public Task RetryAsync() => CommandAsync(async _ =>
     {
+        // A write may have committed even if the subsequent count/read failed. Retry must discover
+        // those durable intents rather than rely on an out-of-date in-memory count until restart.
+        if (favorites is not null) _favoritePending = await favorites.ReadPendingCountAsync().ConfigureAwait(false);
         _blocked = false;
         _retryAt = default;
+        Publish();
         Wake();
-        return Task.CompletedTask;
     });
 
     /// <summary>Explicitly imports existing local history. Queue retry never initiates an import.</summary>
@@ -442,6 +449,9 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
                 while (!_stop.IsCancellationRequested)
                 {
                     LastFmScrobble? play;
+                    LastFmFavoriteIntent? favorite = null;
+                    bool hasFavorite = false;
+                    Exception? favoriteReadError = null;
                     long revision;
                     DateTimeOffset retryAt;
                     await _gate.WaitAsync(_stop.Token).ConfigureAwait(false);
@@ -449,20 +459,38 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
                     {
                         revision = _revision;
                         play = CanSend(revision) && !_blocked && _saved.Pending.Count > 0 ? _saved.Pending[0] : null;
+                        hasFavorite = CanSend(revision) && !_blocked && _favoritePending > 0 && (play is null || _favoriteTurn);
+                        if (hasFavorite && _retryAt <= DateTimeOffset.UtcNow)
+                        {
+                            try { favorite = await favorites!.PeekAsync(_identity!.Credentials.ApiKey, _identity.Account!.Name).ConfigureAwait(false); }
+                            catch (Exception ex) { favoriteReadError = ex; }
+                        }
+                        _favoriteTurn = !_favoriteTurn;
                         retryAt = _retryAt;
                     }
                     finally { _gate.Release(); }
-                    if (play is null) break;
+                    if (favoriteReadError is not null)
+                    {
+                        await FailedAsync(favoriteReadError, revision).ConfigureAwait(false);
+                        continue;
+                    }
+                    if (play is null && favorite is null && !hasFavorite) break;
                     var delay = retryAt - DateTimeOffset.UtcNow;
                     if (delay > TimeSpan.Zero)
                     {
                         await _wake.WaitAsync(delay, _stop.Token).ConfigureAwait(false);
                         continue;
                     }
+                    if (favorite is not null)
+                    {
+                        await SendFavoriteAsync(favorite, revision).ConfigureAwait(false);
+                        continue;
+                    }
+                    if (play is null) break;
                     // A known server acknowledgement survives a failed local queue rewrite.
                     // Retry the commit, not the already accepted HTTP submission, in this process.
                     var acknowledgement = Volatile.Read(ref _acknowledged);
-                    if (play.Id == acknowledgement?.Play.Id)
+                    if (play!.Id == acknowledgement?.Play.Id)
                     {
                         try { await RemoveAsync(play.Id, revision, acknowledgement.Accepted).ConfigureAwait(false); }
                         catch (Exception ex) { await FailedAsync(ex, revision).ConfigureAwait(false); }
@@ -618,7 +646,7 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
         if (identityChanged) _revision++;
         var status = new LastFmStatus(_identity?.Credentials.ApiKey ?? "", !string.IsNullOrEmpty(_identity?.Credentials.SharedSecret),
             _identity?.Account?.Name ?? "", !string.IsNullOrEmpty(_identity?.Account?.SessionKey), _saved.Enabled,
-            _saved.Pending.Count, _authToken is not null, _problem, _revision, _ready, _historyImport);
+            _saved.Pending.Count, _authToken is not null, _problem, _revision, _ready, _historyImport, _favoritePending, _favoriteImport);
         Volatile.Write(ref _status, status);
         Changed?.Invoke(status);
     }
@@ -635,6 +663,7 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
     private void RotateIdentity()
     {
         _historyImport = null;
+        _favoriteImport = null;
         CancelRequests();
         _identityRequests.Dispose();
         _identityRequests = new();
@@ -670,6 +699,8 @@ public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
         {
             if (Volatile.Read(ref _acknowledged) is not null)
                 _saved = await SaveStateAsync(_saved, CancellationToken.None).ConfigureAwait(false);
+            if (_favoriteAcknowledged is { } favorite)
+                await CompleteFavoriteAsync(favorite.Intent, favorite.Accepted).ConfigureAwait(false);
         }
         finally
         {

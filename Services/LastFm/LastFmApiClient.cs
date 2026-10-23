@@ -53,6 +53,25 @@ public sealed class LastFmApiClient : IDisposable
             identity.Account!.SessionKey, token).ConfigureAwait(false);
     }
 
+    public async Task SetLovedAsync(LastFmIdentity identity, LastFmTrack track, bool loved, CancellationToken token)
+    {
+        using var reply = await RequestAsync(identity.Credentials, loved ? "track.love" : "track.unlove",
+            new() { ["artist"] = track.Artist, ["track"] = track.Title }, identity.Account!.SessionKey, token).ConfigureAwait(false);
+    }
+
+    // Delivery confirmation for an interrupted request only. Never imports remote state into the library.
+    public async Task<bool> IsLovedAsync(LastFmIdentity identity, LastFmTrack track, CancellationToken token)
+    {
+        using var reply = await RequestAsync(identity.Credentials, "track.getInfo", new()
+        {
+            ["artist"] = track.Artist, ["track"] = track.Title, ["username"] = identity.Account!.Name
+        }, null, token).ConfigureAwait(false);
+        var item = reply.RootElement.GetProperty("track");
+        if (item.ValueKind != JsonValueKind.Object) throw new JsonException("Unexpected track information.");
+        int loved = ReadInteger(item.GetProperty("userloved"));
+        return loved switch { 0 => false, 1 => true, _ => throw new JsonException("Unexpected loved state.") };
+    }
+
     public async Task<LastFmRecentPage> RecentPlaysAsync(LastFmIdentity identity, long from, long to, int page, CancellationToken token)
     {
         using var reply = await RequestAsync(identity.Credentials, "user.getRecentTracks", new()

@@ -2443,7 +2443,7 @@ SHA-256: {5}
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>非可逆圧縮の曲のみ</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>非可逆圧縮＋48 kHz 以下の可逆音源</value></data>
   <data name="LastFmEnable" xml:space="preserve"><value>Last.fm に送信</value></data>
-  <data name="LastFmEnableDescription" xml:space="preserve"><value>再生中の曲と条件を満たす再生履歴を共有します。既存のローカル統計は保持します。</value></data>
+  <data name="LastFmEnableDescription" xml:space="preserve"><value>再生中・条件を満たした再生履歴・お気に入りの変更を送信し、ローカル統計を保持します。</value></data>
   <data name="LastFmCredentials" xml:space="preserve"><value>アプリの認証情報</value></data>
   <data name="LastFmCredentialsHelp" xml:space="preserve"><value>API Key と Shared Secret をご自身で取得し、保存してからアカウントを接続してください。認証情報を変更すると接続と未送信履歴が削除されます。</value></data>
   <data name="LastFmSecretSaved" xml:space="preserve"><value>安全に保存済みです。空欄のままなら保存済みの Secret を使用します。</value></data>
@@ -2495,4 +2495,9 @@ SHA-256: {5}
   <data name="IndependentDesktopLyricsFontDescription" xml:space="preserve">
     <value>オフの場合、デスクトップ歌詞はアプリのフォントを使用します。選択済みの専用フォントは保持されます。</value>
   </data>
+  <data name="LastFmFavoritesTitle" xml:space="preserve"><value>お気に入りの送信</value></data>
+  <data name="LastFmFavoritesHelp" xml:space="preserve"><value>ローカルのお気に入り追加・解除を Last.fm に送信します。リモートのお気に入りは取得せず、ローカルのリストや順序は変更しません。オフラインや送信停止中は最新の操作を保持し、再開後に送信します。連携解除やアカウント切り替え時は待機中の操作を削除します。既存のお気に入りは手動で送信できます。</value></data>
+  <data name="LastFmFavoritePendingCount" xml:space="preserve"><value>送信待ちのお気に入り変更：{0} 件</value></data>
+  <data name="LastFmImportFavorites" xml:space="preserve"><value>既存のお気に入りを送信</value></data>
+  <data name="LastFmFavoriteResult" xml:space="preserve"><value>{0} 曲を追加しました。曲名・アーティスト情報の不足：{1} 曲。</value></data>
 </root>

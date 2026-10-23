@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.UI;
 using WinUIMusicPlayer.Helper;
+using WinUIMusicPlayer.Services.LastFm;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Model.Stats;
 using WinUIMusicPlayer.Utils;
@@ -547,7 +548,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 music.IsFavorite = true;
                 music.Order = maxOrder + 1;
-                await _dbConnection.UpdateAsync(music);
+                await AddToFavourite(music);
             }
         }
 
@@ -1410,7 +1411,19 @@ namespace WinUIMusicPlayer.Services
 
         public async Task AddToFavourite(Music music)
         {
-            await _dbConnection.UpdateAsync(music);
+            // Capture before the first await: the UI may immediately toggle this same model again.
+            var change = new LastFmFavoriteChange(music.Id,
+                new(music.Title?.Trim() ?? "", music.Author?.Trim() ?? "", "", 0), music.IsFavorite, music.Order);
+            try
+            {
+                // The library connection is ready before Last.fm starts. Resolve only at this legacy
+                // command boundary, avoiding a constructor cycle with the borrowed library store.
+                await App.Services.GetRequiredService<LastFmService>().SaveFavoriteAsync(change);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "保存本地收藏及 Last.fm 待上报操作失败");
+            }
         }
 
         public Music? LoadCurrentPlayingMusic(int? lastPlayedMusicId)

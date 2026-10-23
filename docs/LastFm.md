@@ -61,3 +61,13 @@
 可重复执行：`dotnet run --project _tools/LastFmRegression -c Release`；裁剪/AOT 发布命令见 `_tools/LastFmAotRegression/README.md`。已有 30 项真实 WinUI 检查覆盖布局、MVVM 与 Runtime Async。高对比度、新账号浏览器授权全流程和真实设备/WebDAV 长时间试听未执行。
 
 官方参考：[桌面授权](https://www.last.fm/api/desktopauth)、[Scrobbling 规则](https://www.last.fm/api/scrobbling)、[track.scrobble](https://www.last.fm/api/show/track.scrobble)、[user.getRecentTracks](https://www.last.fm/api/show/user.getRecentTracks)。
+
+## 收藏单向上报
+
+连接账号后，本地收藏发送 `track.love`，取消收藏发送 `track.unlove`。不下载远端收藏，不同步播放列表，不改变本地收藏顺序或播放统计。相同歌手和歌名视为 Last.fm 的同一首歌，多个文件的操作以最后一次为准。
+
+已有收藏不会在连接时自动上传，可在设置 → Last.fm → 收藏上报点击“上报现有收藏”。入口读取当时数据库中的收藏，按 512 行分页处理；缺少有效歌名或歌手的条目跳过。重复导入时合并尚未完成的同曲操作。导入的本地入队事务提交前强制退出会整批回滚，可重新点击手动上报；事务提交后，未发送完的条目会在重启后继续。单首网络写入串行进行，与听歌上报交替使用同一个通道。
+
+收藏变更和上报意图在音乐库数据库的同一事务中保存，仅写收藏和排序列。队列按应用和账号隔离，常驻内存只保留当前请求，数据库按歌曲合并最新状态，不随切换次数无限增长。关闭上报时仍保存已连接账号的最新收藏操作，重新开启后发送；未连接账号的操作仅保存在本地，可在连接后手动上报现有收藏。解绑、更换账号或应用凭据会清除旧账号待上报操作；同账号会话过期后重新授权保留队列。
+
+发送前持久化“已尝试”，收到成功响应后按操作版本删除；发送期间的新操作不会被旧响应删除。断网、重启或响应丢失留下的未确认请求，通过 `track.getInfo(username)` 核对该账号这一首歌的收藏状态；已达到目标状态时直接确认，否则重发 love/unlove。查询仅用于确认投递，不改变任何本地收藏。Last.fm 不提供跨本地数据库和远端的分布式事务；极端网络时序下允许重试相同目标状态，但不会由此增加播放历史。正常退出先等待已接受的本地写入，再停止 Last.fm。

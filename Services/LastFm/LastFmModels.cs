@@ -33,7 +33,8 @@ public enum LastFmProblem { None, Network, Credentials, AuthorizationPending, Au
 public sealed record LastFmStatus(string ApiKey = "", bool HasSecret = false, string UserName = "",
     bool IsAuthenticated = false, bool Enabled = false, int PendingCount = 0, bool AuthorizationPending = false,
     LastFmProblem Problem = LastFmProblem.None, long Revision = 0, bool IsReady = false,
-    LastFmHistoryImportResult? HistoryImport = null);
+    LastFmHistoryImportResult? HistoryImport = null, int FavoritePendingCount = 0,
+    LastFmFavoriteImportResult? FavoriteImport = null);
 
 [JsonSerializable(typeof(LastFmSavedState))]
 [JsonSerializable(typeof(LastFmIdentity))]

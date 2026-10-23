@@ -60,20 +60,23 @@ namespace WinUIMusicPlayer.Services
                 app.RemoveFromFavoriteSongs(music);
                 music.Order = 0;
             }
-            _ = App.Services.GetRequiredService<MusicDatabaseService>().AddToFavourite(music);
+            PersistFavorite(music);
         }
 
         private static void AddToFavourite(Music? music)
         {
-            if (music is null) return;
-            if (!music.IsFavorite)
-            {
-                music.IsFavorite = true;
-                var app = App.Services.GetRequiredService<AppViewModel>();
-                music.Order = ComputeNextFavoriteOrder(app);
-                app.AddToFavoriteSongs(music);
-            }
-            _ = App.Services.GetRequiredService<MusicDatabaseService>().AddToFavourite(music);
+            if (music is null || music.IsFavorite) return;
+            music.IsFavorite = true;
+            var app = App.Services.GetRequiredService<AppViewModel>();
+            music.Order = ComputeNextFavoriteOrder(app);
+            app.AddToFavoriteSongs(music);
+            PersistFavorite(music);
+        }
+
+        private static void PersistFavorite(Music music)
+        {
+            var database = App.Services.GetRequiredService<MusicDatabaseService>();
+            _ = App.Services.GetRequiredService<ApplicationTasks>().RunCommittedAsync(() => database.AddToFavourite(music));
         }
 
         private static void AddToCurrentPlayList(Music? music)

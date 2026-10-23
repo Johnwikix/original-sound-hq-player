@@ -76,7 +76,7 @@ namespace WinUIMusicPlayer.View.SubView.Settings
                 };
                 _thirdPartyDialog.RequestedTheme = AppSettings.ElementTheme;
             }
-            _thirdPartyDialog?.ShowAsync();
+            _ = _thirdPartyDialog.ShowThemedAsync(XamlRoot);
         }
 
         private async void ClearCoverCache_Click(object sender, RoutedEventArgs e)

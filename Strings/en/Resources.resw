@@ -2443,7 +2443,7 @@ SHA-256: {5}
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Lossy songs only</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>Lossy + lossless up to 48 kHz</value></data>
   <data name="LastFmEnable" xml:space="preserve"><value>Submit to Last.fm</value></data>
-  <data name="LastFmEnableDescription" xml:space="preserve"><value>Share Now Playing and qualified listens; keep existing local statistics.</value></data>
+  <data name="LastFmEnableDescription" xml:space="preserve"><value>Report Now Playing, qualified plays and favorite changes; retain local statistics.</value></data>
   <data name="LastFmCredentials" xml:space="preserve"><value>Application credentials</value></data>
   <data name="LastFmCredentialsHelp" xml:space="preserve"><value>Apply for your own API Key and Shared Secret. Save them before connecting an account. Changing credentials disconnects the account and clears pending submissions.</value></data>
   <data name="LastFmSecretSaved" xml:space="preserve"><value>Stored securely; leave blank to keep the saved secret.</value></data>
@@ -2495,4 +2495,9 @@ SHA-256: {5}
   <data name="IndependentDesktopLyricsFontDescription" xml:space="preserve">
     <value>When off, desktop lyrics use the application font. Your separate font selection is kept.</value>
   </data>
+  <data name="LastFmFavoritesTitle" xml:space="preserve"><value>Favorite reporting</value></data>
+  <data name="LastFmFavoritesHelp" xml:space="preserve"><value>Local favorites and removals are reported to Last.fm only; remote favorites are never downloaded and local lists and order stay unchanged. Offline or paused reporting keeps the latest changes for later. Unlinking or switching accounts clears pending changes. Report existing favorites manually.</value></data>
+  <data name="LastFmFavoritePendingCount" xml:space="preserve"><value>Pending favorite changes: {0}</value></data>
+  <data name="LastFmImportFavorites" xml:space="preserve"><value>Report existing favorites</value></data>
+  <data name="LastFmFavoriteResult" xml:space="preserve"><value>Queued {0} tracks; {1} missing track or artist information.</value></data>
 </root>

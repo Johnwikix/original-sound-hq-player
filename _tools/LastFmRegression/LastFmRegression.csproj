@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
     <Compile Include="../../Model/Stats/PlaybackHistory.cs" />
+    <Compile Include="../../Services/AppLifecycle.cs;../../Services/ApplicationTasks.cs" />
     <Compile Include="../../Services/LastFm/*.cs" Exclude="../../Services/LastFm/LastFmPlaybackBridge.cs;../../Services/LastFm/WindowsLastFmCredentialVault.cs" />
     <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
   </ItemGroup>

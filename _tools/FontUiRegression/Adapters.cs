@@ -2,6 +2,7 @@ namespace WinUIMusicPlayer.Model
 {
     public static class AppSettings
     {
+        public static Microsoft.UI.Xaml.ElementTheme ElementTheme { get; set; }
         public static string ArtistSplitSymbols => ";";
         public static bool AutoHideDesktopLyricsFloatingOnPlayingDetail { get; set; } = false;
         public static bool AutoHideDesktopLyricsOnPlayingDetail { get; set; } = false;

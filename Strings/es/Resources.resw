@@ -2443,7 +2443,7 @@ SHA-256: {5}
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Solo canciones con pérdida</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>Con pérdida + sin pérdida hasta 48 kHz</value></data>
   <data name="LastFmEnable" xml:space="preserve"><value>Enviar a Last.fm</value></data>
-  <data name="LastFmEnableDescription" xml:space="preserve"><value>Compartir la reproducción actual y las escuchas válidas; conservar las estadísticas locales.</value></data>
+  <data name="LastFmEnableDescription" xml:space="preserve"><value>Enviar la reproducción actual, escuchas válidas y cambios de favoritos; conservar estadísticas locales.</value></data>
   <data name="LastFmCredentials" xml:space="preserve"><value>Credenciales de la aplicación</value></data>
   <data name="LastFmCredentialsHelp" xml:space="preserve"><value>Solicita tu propia API Key y Shared Secret y guárdalas antes de conectar una cuenta. Cambiarlas desconecta la cuenta y elimina los envíos pendientes.</value></data>
   <data name="LastFmSecretSaved" xml:space="preserve"><value>Guardado de forma segura; deja el campo vacío para conservar el Secret.</value></data>
@@ -2495,4 +2495,9 @@ SHA-256: {5}
   <data name="IndependentDesktopLyricsFontDescription" xml:space="preserve">
     <value>Al desactivarlo, las letras del escritorio usan la fuente de la aplicación. Se conserva la selección independiente.</value>
   </data>
+  <data name="LastFmFavoritesTitle" xml:space="preserve"><value>Enviar favoritos</value></data>
+  <data name="LastFmFavoritesHelp" xml:space="preserve"><value>Los favoritos locales y sus eliminaciones solo se envían a Last.fm; no se descargan favoritos remotos ni se cambia el orden local. Sin conexión o con los envíos pausados se conserva el último cambio. Al desvincular o cambiar de cuenta se borran los cambios pendientes. Los favoritos existentes se envían manualmente.</value></data>
+  <data name="LastFmFavoritePendingCount" xml:space="preserve"><value>Cambios de favoritos pendientes: {0}</value></data>
+  <data name="LastFmImportFavorites" xml:space="preserve"><value>Enviar favoritos existentes</value></data>
+  <data name="LastFmFavoriteResult" xml:space="preserve"><value>{0} pistas en cola; {1} sin título o artista.</value></data>
 </root>

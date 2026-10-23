@@ -2443,7 +2443,7 @@ SHA-256: {5}
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Nur verlustbehaftete Titel</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>Verlustbehaftet + verlustfrei bis 48 kHz</value></data>
   <data name="LastFmEnable" xml:space="preserve"><value>An Last.fm senden</value></data>
-  <data name="LastFmEnableDescription" xml:space="preserve"><value>Aktuelle Titel und gewertete Wiedergaben teilen; lokale Statistiken bleiben erhalten.</value></data>
+  <data name="LastFmEnableDescription" xml:space="preserve"><value>Aktuelle Wiedergabe, qualifizierte Wiedergaben und Favoritenänderungen melden; lokale Statistiken behalten.</value></data>
   <data name="LastFmCredentials" xml:space="preserve"><value>Anwendungszugangsdaten</value></data>
   <data name="LastFmCredentialsHelp" xml:space="preserve"><value>Eigenen API Key und Shared Secret beantragen und vor dem Verbinden speichern. Änderungen trennen das Konto und löschen ausstehende Übermittlungen.</value></data>
   <data name="LastFmSecretSaved" xml:space="preserve"><value>Sicher gespeichert; leer lassen, um das gespeicherte Secret zu behalten.</value></data>
@@ -2495,4 +2495,9 @@ SHA-256: {5}
   <data name="IndependentDesktopLyricsFontDescription" xml:space="preserve">
     <value>Wenn deaktiviert, verwenden Desktop-Liedtexte die Programmschriftart. Die separate Auswahl bleibt gespeichert.</value>
   </data>
+  <data name="LastFmFavoritesTitle" xml:space="preserve"><value>Favoriten melden</value></data>
+  <data name="LastFmFavoritesHelp" xml:space="preserve"><value>Lokale Favoriten und Entfernungen werden nur an Last.fm gemeldet. Remote-Favoriten werden nicht geladen; lokale Listen und Reihenfolge bleiben erhalten. Offline oder bei pausierter Übertragung bleibt die letzte Änderung gespeichert. Beim Trennen oder Kontowechsel werden ausstehende Änderungen gelöscht. Vorhandene Favoriten können manuell gemeldet werden.</value></data>
+  <data name="LastFmFavoritePendingCount" xml:space="preserve"><value>Ausstehende Favoritenänderungen: {0}</value></data>
+  <data name="LastFmImportFavorites" xml:space="preserve"><value>Vorhandene Favoriten melden</value></data>
+  <data name="LastFmFavoriteResult" xml:space="preserve"><value>{0} Titel eingereiht; bei {1} fehlen Titel- oder Künstlerangaben.</value></data>
 </root>

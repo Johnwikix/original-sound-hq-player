@@ -1,3 +1,16 @@
+## 2026-10-23 增加 Last.fm 收藏单向上报
+- `MusicCommands`、`MusicDatabaseService`、`LastFmFavoriteStore`：本地收藏/取消收藏与按歌曲合并的上报队列在同一 SQLite 事务中保存；仅更新收藏与排序列，保留本地统计和列表顺序。
+- `LastFmService`、`LastFmApiClient`：收藏与听歌记录共用串行网络通道，离线及重启后继续；按账号和应用隔离，解绑清队列。未确认的请求重试前核对远端状态，旧确认不能删除新操作；关闭上报暂停发送并保留最新收藏操作。
+- `LastFmSettingsViewModel`、设置 XAML 与七语言资源：新增默认收起的“收藏上报”及手动上报现有收藏入口；历史和收藏结果为空时折叠，不占空白高度。
+- `_tools/LastFmRegression`、`LastFmAotRegression`、`LastFmUiRegression`：增加离线、连接重开、响应丢失、换号竞态、会话失效、连续切换、事务回滚、分批导入与结果显隐回归。
+- 验证：718 项核心回归、38 项真实 WinUI 检查、Last.fm 核心裁剪/NativeAOT 各 1131 项检查与 Debug x64 构建通过；新增代码无裁剪/AOT 警告，主程序保留既有警告。使用隔离数据库与模拟 HTTP，未向真实账号写入收藏。
+
+## 2026-10-23 修复缓存对话框重开后的字体残留
+- `DialogHelper`：统一显示入口在显示前及首次打开后更新标准模板的标题/内容呈现器字体，修复切换程序字体后复用 ContentDialog 标题仍保留旧字体；保留实例、输入内容及显式字体，不累积事件订阅。
+- `AboutSettingsControl`：缓存的第三方组件对话框也使用统一显示入口。
+- `_tools/FontUiRegression`：增加同一实例在浅/深/跟随系统主题下反复换字体重开、局部文字样式继承、图标/显式字体与输入内容保留回归。
+- 验证：新增回归修复前确认标题保留 Consolas、资源已为 Arial；修复后 99 项真实 WinUI 检查通过。
+
 ## 2026-10-23 增加桌面歌词独立字体开关
 - `LyricsSettingsControl.xaml`、偏好/ViewModel 与七种语言资源：桌面歌词字体旁新增独立开关，默认关闭；关闭时跟随程序字体并置灰下拉框，开启后恢复独立选择，悬浮和任务栏模式共用同一状态。
 - `DesktopLyricsViewModel`、设置恢复/快照：通过现有样式通知即时更新有效字体；分别保存独立选择与开关，切换程序字体不覆盖原有桌面歌词字体。存量配置缺失开关时默认跟随程序字体。

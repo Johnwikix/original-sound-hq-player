@@ -2443,7 +2443,7 @@ SHA-256: {5}
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Только сжатие с потерями</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>С потерями и без потерь до 48 кГц</value></data>
   <data name="LastFmEnable" xml:space="preserve"><value>Отправлять в Last.fm</value></data>
-  <data name="LastFmEnableDescription" xml:space="preserve"><value>Передавать текущий трек и зачтённые прослушивания; локальная статистика сохраняется.</value></data>
+  <data name="LastFmEnableDescription" xml:space="preserve"><value>Отправлять текущий трек, прослушивания и изменения избранного; сохранять локальную статистику.</value></data>
   <data name="LastFmCredentials" xml:space="preserve"><value>Данные приложения</value></data>
   <data name="LastFmCredentialsHelp" xml:space="preserve"><value>Получите собственные API Key и Shared Secret и сохраните их перед подключением аккаунта. Изменение отключает аккаунт и очищает очередь.</value></data>
   <data name="LastFmSecretSaved" xml:space="preserve"><value>Надёжно сохранено; оставьте поле пустым, чтобы использовать сохранённый Secret.</value></data>
@@ -2495,4 +2495,9 @@ SHA-256: {5}
   <data name="IndependentDesktopLyricsFontDescription" xml:space="preserve">
     <value>Когда выключено, текст песен на рабочем столе использует шрифт приложения. Выбранный отдельный шрифт сохраняется.</value>
   </data>
+  <data name="LastFmFavoritesTitle" xml:space="preserve"><value>Отправка избранного</value></data>
+  <data name="LastFmFavoritesHelp" xml:space="preserve"><value>Добавление и удаление избранного передаётся только в Last.fm. Удалённое избранное не загружается; местные списки и порядок сохраняются. Без сети или при отключённой отправке сохраняется последнее изменение. Отключение или смена аккаунта очищает очередь. Существующее избранное отправляется вручную.</value></data>
+  <data name="LastFmFavoritePendingCount" xml:space="preserve"><value>Ожидающие изменения избранного: {0}</value></data>
+  <data name="LastFmImportFavorites" xml:space="preserve"><value>Отправить существующее избранное</value></data>
+  <data name="LastFmFavoriteResult" xml:space="preserve"><value>В очереди: {0}; без названия или исполнителя: {1}.</value></data>
 </root>

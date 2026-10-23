@@ -124,6 +124,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             var restored = JsonSerializer.Deserialize(JsonSerializer.Serialize(saved, SettingsJsonContext.Default.SaveSettings), SettingsJsonContext.Default.SaveSettings)!;
             Check(restored.ApplicationFont == saved.ApplicationFont && restored.GlobalFont == saved.GlobalFont && restored.UseIndependentLyricsFont, "Font settings did not survive source-generated JSON serialization.");
             DesktopFontRegression.Run(preferences, settings, segoe, arial, consolas, Check);
+            await DialogFontRegression.RunAsync(host, service, consolas, arial, Check);
             ApplicationFont.SetIsEnabled(host, false);
             int themeChanges = 0;
             host.ActualThemeChanged += (_, _) => themeChanges++;
@@ -151,7 +152,7 @@ internal sealed partial class RegressionApplication : Application, IXamlMetadata
             service.Dispose();
             service.Apply(segoe.FontFamily);
             Check(((FontFamily)Resources["ContentControlThemeFontFamily"]).Source == "Consolas", "Disposed service accepted a late font change.");
-            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), $"PASS: {_checks} checks; real compiled settings bindings, live plain/styled/control fonts in Light/Dark/Default, icon and explicit-font preservation, independent ordinary/desktop lyrics, production desktop style updates in both modes, cleanup and serialization.");
+            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), $"PASS: {_checks} checks; real compiled settings bindings, live plain/styled/control fonts in Light/Dark/Default, icon and explicit-font preservation, independent ordinary/desktop lyrics, production desktop style updates in both modes, cleanup, serialization and cached ContentDialog title/content fonts.");
         }
         catch (Exception ex)
         {

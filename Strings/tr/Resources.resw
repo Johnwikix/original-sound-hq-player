@@ -2443,7 +2443,7 @@ SHA-256: {5}
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Yalnızca kayıplı parçalar</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>Kayıplı + 48 kHz ve altı kayıpsız</value></data>
   <data name="LastFmEnable" xml:space="preserve"><value>Last.fm’e gönder</value></data>
-  <data name="LastFmEnableDescription" xml:space="preserve"><value>Çalan parçayı ve geçerli dinlemeleri paylaş; mevcut yerel istatistikleri koru.</value></data>
+  <data name="LastFmEnableDescription" xml:space="preserve"><value>Çalan parçayı, uygun dinlemeleri ve favori değişikliklerini bildir; yerel istatistikleri koru.</value></data>
   <data name="LastFmCredentials" xml:space="preserve"><value>Uygulama kimlik bilgileri</value></data>
   <data name="LastFmCredentialsHelp" xml:space="preserve"><value>Kendi API Key ve Shared Secret bilgilerinizi alın ve hesabı bağlamadan önce kaydedin. Değiştirmek hesabı ayırır ve bekleyen kayıtları temizler.</value></data>
   <data name="LastFmSecretSaved" xml:space="preserve"><value>Güvenli biçimde kaydedildi; mevcut Secret için boş bırakın.</value></data>
@@ -2495,4 +2495,9 @@ SHA-256: {5}
   <data name="IndependentDesktopLyricsFontDescription" xml:space="preserve">
     <value>Kapalıyken masaüstü şarkı sözleri uygulama yazı tipini kullanır. Ayrı yazı tipi seçiminiz korunur.</value>
   </data>
+  <data name="LastFmFavoritesTitle" xml:space="preserve"><value>Favorileri bildir</value></data>
+  <data name="LastFmFavoritesHelp" xml:space="preserve"><value>Yerel favoriler ve kaldırmalar yalnızca Last.fm hesabına bildirilir; uzak favoriler indirilmez ve yerel liste veya sıralama değişmez. Çevrimdışıyken veya bildirim duraklatıldığında son değişiklik saklanır. Hesap bağlantısı kesilince veya hesap değiştirilince bekleyen değişiklikler silinir. Mevcut favoriler elle bildirilir.</value></data>
+  <data name="LastFmFavoritePendingCount" xml:space="preserve"><value>Bekleyen favori değişikliği: {0}</value></data>
+  <data name="LastFmImportFavorites" xml:space="preserve"><value>Mevcut favorileri bildir</value></data>
+  <data name="LastFmFavoriteResult" xml:space="preserve"><value>{0} parça sıraya alındı; {1} parçada ad veya sanatçı eksik.</value></data>
 </root>

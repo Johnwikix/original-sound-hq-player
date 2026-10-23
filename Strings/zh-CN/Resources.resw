@@ -2445,7 +2445,7 @@ SHA-256：{5}
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>仅有损歌曲</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>有损及 ≤48 kHz 无损歌曲</value></data>
   <data name="LastFmEnable" xml:space="preserve"><value>上报到 Last.fm</value></data>
-  <data name="LastFmEnableDescription" xml:space="preserve"><value>同步正在播放和达标听歌记录；保留现有本地统计。</value></data>
+  <data name="LastFmEnableDescription" xml:space="preserve"><value>上报正在播放、达标听歌记录和收藏状态；保留现有本地统计。</value></data>
   <data name="LastFmCredentials" xml:space="preserve"><value>应用凭据</value></data>
   <data name="LastFmCredentialsHelp" xml:space="preserve"><value>请自行申请 API Key 和 Shared Secret。保存后再授权账号；更换凭据会解绑并清空待补报记录。</value></data>
   <data name="LastFmSecretSaved" xml:space="preserve"><value>已安全保存；留空可继续使用已保存的 Secret。</value></data>
@@ -2497,4 +2497,9 @@ SHA-256：{5}
   <data name="IndependentDesktopLyricsFontDescription" xml:space="preserve">
     <value>关闭时桌面歌词跟随程序字体，保留已选的独立字体。</value>
   </data>
+  <data name="LastFmFavoritesTitle" xml:space="preserve"><value>收藏上报</value></data>
+  <data name="LastFmFavoritesHelp" xml:space="preserve"><value>本地收藏和取消收藏会单向上报到 Last.fm；不下载远端收藏，也不改变本地列表或顺序。断网或关闭上报时保留最新操作，恢复后继续；解绑或切换账号会清空待上报操作。原有收藏需手动上报。</value></data>
+  <data name="LastFmFavoritePendingCount" xml:space="preserve"><value>收藏待上报：{0} 首</value></data>
+  <data name="LastFmImportFavorites" xml:space="preserve"><value>上报现有收藏</value></data>
+  <data name="LastFmFavoriteResult" xml:space="preserve"><value>已加入上报队列 {0} 首；缺少歌曲或歌手信息 {1} 首。</value></data>
 </root>

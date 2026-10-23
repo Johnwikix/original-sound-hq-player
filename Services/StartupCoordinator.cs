@@ -93,10 +93,16 @@ namespace WinUIMusicPlayer.Services
             var lastFm = App.Services.GetRequiredService<LastFm.LastFmService>();
             var lastFmPlayback = App.Services.GetRequiredService<LastFm.LastFmPlaybackBridge>();
             var lastFmSettings = App.Services.GetRequiredService<WinUIMusicPlayer.ViewModel.Pages.LastFmSettingsViewModel>();
+            var applicationTasks = App.Services.GetRequiredService<ApplicationTasks>();
             lastFmPlayback.Start(App.MainWindow.DispatcherQueue);
             lastFmSettings.Start(App.MainWindow.DispatcherQueue);
             shutdown.RegisterStop(lastFmPlayback.StopAsync);
-            shutdown.RegisterStop(lastFm.StopAsync);
+            // Register before the first startup await, including the initialization-failure path.
+            shutdown.RegisterStop(async () =>
+            {
+                try { await applicationTasks.DrainCommittedAsync(); }
+                finally { await lastFm.StopAsync(); }
+            });
             shutdown.RegisterStop(lastFmSettings.StopAsync);
             try { await lastFm.StartAsync(); }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
@@ -110,7 +116,6 @@ namespace WinUIMusicPlayer.Services
             shutdown.RegisterStop(appViewModel.StopAsync);
             var lyricsLoader = App.Services.GetRequiredService<LyricsLoader>();
             shutdown.RegisterStop(() => { lyricsLoader.Dispose(); return Task.CompletedTask; });
-            var applicationTasks = App.Services.GetRequiredService<ApplicationTasks>();
             shutdown.RegisterStop(applicationTasks.DrainAsync);
             _ = applicationTasks.RunAsync(async token =>
             {

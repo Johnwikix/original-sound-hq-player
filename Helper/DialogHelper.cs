@@ -4,14 +4,14 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
 using Windows.Foundation;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Utils;
 
 namespace WinUIMusicPlayer.Helper
 {
-    // 零分配 ContentDialog 辅助：ConditionalWeakTable 按 XamlRoot 缓存实例，
-    // 避免每次 new ContentDialog 的堆分配；static lambda 无闭包捕获
+    // 按 XamlRoot 缓存对话框，复用实例和输入控件；显示时同步程序主题与字体。
     internal static class DialogHelper
     {
         private static readonly ConditionalWeakTable<XamlRoot, ContentDialog> s_confirmCache = new();
@@ -26,8 +26,7 @@ namespace WinUIMusicPlayer.Helper
             dialog.Content = null;
             dialog.PrimaryButtonText = ToolUtils.GetString("PrimaryButton");
             dialog.CloseButtonText = ToolUtils.GetString("CloseButton");
-            dialog.RequestedTheme = AppSettings.ElementTheme;
-            return await dialog.ShowAsync() == ContentDialogResult.Primary;
+            return await dialog.ShowThemedAsync(xamlRoot) == ContentDialogResult.Primary;
         }
 
         public static async Task<string> ShowInputAsync(XamlRoot xamlRoot, string titleKey, string prefillText)
@@ -36,7 +35,6 @@ namespace WinUIMusicPlayer.Helper
             dialog.Title = ToolUtils.GetString(titleKey);
             dialog.PrimaryButtonText = ToolUtils.GetString("PrimaryButton");
             dialog.CloseButtonText = ToolUtils.GetString("CloseButton");
-            dialog.RequestedTheme = AppSettings.ElementTheme;
 
             if (dialog.Content is not TextBox textBox)
             {
@@ -45,20 +43,38 @@ namespace WinUIMusicPlayer.Helper
             }
             textBox.Text = prefillText;
 
-            if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+            if (await dialog.ShowThemedAsync(xamlRoot) == ContentDialogResult.Primary)
                 return textBox.Text;
 
             return string.Empty;
         }
 
-        // 单例 Dialog（Equalizer/Settings/Progress）统一 show 样板：
-        // 设置主题 + XamlRoot 后直接 ShowAsync，零分配（静态扩展方法，无闭包）
+        // 缓存和新建对话框统一设置主题、XamlRoot 及模板字体，再交给 WinUI 显示。
         public static IAsyncOperation<ContentDialogResult> ShowThemedAsync(
             this ContentDialog dialog, XamlRoot xamlRoot)
         {
             dialog.RequestedTheme = AppSettings.ElementTheme;
             dialog.XamlRoot = xamlRoot;
+            // 首次 ShowAsync 前模板可能尚未生成；Opened 补齐首次初始化。
+            // 先移除再添加，重复显示同一实例不会累积订阅。处理器不捕获窗口或服务。
+            dialog.Opened -= OnDialogOpened;
+            dialog.Opened += OnDialogOpened;
+            RefreshTemplateFont(dialog);
             return dialog.ShowAsync();
+        }
+
+        private static void OnDialogOpened(ContentDialog sender, ContentDialogOpenedEventArgs args) => RefreshTemplateFont(sender);
+
+        private static void RefreshTemplateFont(ContentDialog dialog)
+        {
+            if (Application.Current.Resources["ContentControlThemeFontFamily"] is not FontFamily font
+                || VisualTreeHelper.GetChildrenCount(dialog) == 0
+                || VisualTreeHelper.GetChild(dialog, 0) is not FrameworkElement templateRoot) return;
+
+            // WinUI 标准模板的这两个呈现器使用 StaticResource；窗口主题翻转不会
+            // 更新缓存的字体。只修改模板字体边界，内容中的图标和显式字体仍可自行覆盖。
+            if (templateRoot.FindName("Title") is ContentControl title) title.FontFamily = font;
+            if (templateRoot.FindName("Content") is ContentPresenter content) content.FontFamily = font;
         }
 
         public static async Task<string?> ShowArtistPickerAsync(XamlRoot xamlRoot, IReadOnlyList<string> names)
@@ -84,11 +100,10 @@ namespace WinUIMusicPlayer.Helper
             dialog.PrimaryButtonText = null;
             dialog.CloseButtonText = ToolUtils.GetString("CloseButton");
             dialog.DefaultButton = ContentDialogButton.Close;
-            dialog.RequestedTheme = AppSettings.ElementTheme;
             ((ListView)dialog.Content).ItemsSource = names;
 
             s_artistPickerResult = null;
-            await dialog.ShowAsync();
+            await dialog.ShowThemedAsync(xamlRoot);
             return s_artistPickerResult;
         }
     }

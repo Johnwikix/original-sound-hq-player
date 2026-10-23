@@ -192,6 +192,7 @@ await HistoryRegression.RunAsync(Check);
 await OldHistoryRegression.RunAsync(Check);
 await HistoryFixRegression.RunAsync(Check);
 await ApiResponseRegression.RunAsync(Check);
+await FavoriteRegression.RunAsync(Check);
 Console.WriteLine($"PASS: {checks} checks; listening, seeking, authorization, signed loopback HTTP, real SQLite history import, pagination, deduplication, persistence, cancellation, account isolation and shutdown.");
 
 static async Task WaitFor(Func<bool> condition)
