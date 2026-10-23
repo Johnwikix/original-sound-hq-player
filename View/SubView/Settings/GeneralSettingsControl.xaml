@@ -9,6 +9,7 @@
     xmlns:dev="using:DevWinUI"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
+    xmlns:settings="using:WinUIMusicPlayer.View.SubView.Settings"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
     xmlns:tools="using:WinUIMusicPlayer.Utils"
     xmlns:ui="using:CommunityToolkit.WinUI"
@@ -383,6 +384,8 @@
                         </controls:SettingsCard>
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
+
+                <settings:LastFmSettingsControl />
 
                 <TextBlock x:Uid="Advanced" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 

@@ -31,6 +31,7 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
     private Music? _music;
     private sealed record Snapshot(ProgressSnapshot Progress);
     public event Action? Ended;
+    public event Action<Music, ProgressSnapshot, bool>? PlaybackStarted;
     public event Action<Music, long, bool>? Failed;
     public bool IsActive { get { lock (_gate) return _active; } }
     public bool WantsPlay { get { lock (_gate) return _intent; } }
@@ -220,7 +221,13 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
                         if (reply.DurationMs is > 0) music.Duration = TimeSpan.FromMilliseconds(reply.DurationMs.Value);
                         if (state.IsPlaying)
                         {
-                            if (!started) { statistics.StartSession(music); started = true; countStart = true; }
+                            if (!started)
+                            {
+                                statistics.StartSession(music);
+                                started = true;
+                                countStart = true;
+                                if (GetProgress() is { } confirmed) PlaybackStarted?.Invoke(music, confirmed, _startPositionMs > 0);
+                            }
                             state.StartProgressTimer();
                         }
                         else state.StopProgressTimer();

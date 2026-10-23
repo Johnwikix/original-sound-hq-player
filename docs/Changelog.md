@@ -1,3 +1,9 @@
+## 2026-10-23 接入 Last.fm 授权与离线听歌记录
+- `Services/LastFm`、`LastFmSettingsViewModel`、常规设置与七种语言资源：支持用户自备应用凭据、浏览器授权/本地解绑、正在播放、达标上报及持久化离线补报；凭据与 Session Key 使用 Windows PasswordVault。
+- `PlaybackCoordinator`、`RemotePlaybackService`、启动/退出协调器：复用实际播放确认与状态，隔离定位、暂停、缓冲、无缝重复和 WebDAV 恢复；保留现有本地统计口径，不修改音频引擎与 IPC。
+- `_tools/LastFmRegression`、`_tools/LastFmUiRegression`、`docs/LastFm.md`：增加网络/磁盘/生命周期回归、真实 WinUI 编译绑定和配置说明。默认关闭，授权成功后启用；解绑或更换应用凭据会清空待补报记录。
+- 验证：40 项 Last.fm 核心、15 项真实 WinUI 检查、84 项导航与 35 项 WebDAV 集成检查通过；七种语言资源键匹配、Debug x64 构建通过（0 错误，仍有项目既有警告）。未使用真实 Last.fm 账号联调，未做真实设备/WebDAV 服务器长时间试听与高对比度人工验收。
+
 ## 2026-10-23 修复首次播放等待解码库冷加载
 - `External/AudioPlayer/Decode/DecoderRuntime.cs`、`PlayerIpcService.cs`：启动时后台加载 FFmpeg 的四个原生库，与主界面初始化并行；解码依赖就绪后开放 IPC，避免已连接后的首次播放承担冷加载；提前监控客户端，启动中退出等待加载收尾且不发布就绪。
 - `_tools/PlaybackSwitchRegression/StartupTests.cs`、`_tools/AudioPlayerSmokeTest/StartupTimingProbe.cs`：增加真实跨进程慢加载、失败、启动中退出回归，以及立即播放和连接后首次播放计时。

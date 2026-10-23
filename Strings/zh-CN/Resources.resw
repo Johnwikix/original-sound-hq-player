@@ -2444,4 +2444,34 @@ SHA-256：{5}
   <data name="SpectralEnhancementOff" xml:space="preserve"><value>关闭</value></data>
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>仅有损歌曲</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>有损及 ≤48 kHz 无损歌曲</value></data>
+  <data name="LastFmEnable" xml:space="preserve"><value>上报到 Last.fm</value></data>
+  <data name="LastFmEnableDescription" xml:space="preserve"><value>同步正在播放和达标听歌记录；保留现有本地统计。</value></data>
+  <data name="LastFmCredentials" xml:space="preserve"><value>应用凭据</value></data>
+  <data name="LastFmCredentialsHelp" xml:space="preserve"><value>请自行申请 API Key 和 Shared Secret。保存后再授权账号；更换凭据会解绑并清空待补报记录。</value></data>
+  <data name="LastFmSecretSaved" xml:space="preserve"><value>已安全保存；留空可继续使用已保存的 Secret。</value></data>
+  <data name="LastFmSecretRequired" xml:space="preserve"><value>请填写申请应用时获得的 Shared Secret。</value></data>
+  <data name="LastFmSaveCredentials" xml:space="preserve"><value>保存凭据</value></data>
+  <data name="LastFmApplyCredentials" xml:space="preserve"><value>申请凭据</value></data>
+  <data name="LastFmAuthorize" xml:space="preserve"><value>连接账号</value></data>
+  <data name="LastFmCompleteAuthorization" xml:space="preserve"><value>完成授权</value></data>
+  <data name="LastFmDisconnect" xml:space="preserve"><value>解绑</value></data>
+  <data name="LastFmDisconnectHelp" xml:space="preserve"><value>解绑会停止上报并清空待补报记录。若要撤销账号权限，请同时在 Last.fm 的应用设置中移除授权。</value></data>
+  <data name="LastFmManageApplications" xml:space="preserve"><value>管理 Last.fm 应用授权</value></data>
+  <data name="LastFmWorking" xml:space="preserve"><value>正在处理…</value></data>
+  <data name="LastFmAuthorizationHelp" xml:space="preserve"><value>请在浏览器中允许访问，然后回到播放器点击“完成授权”。</value></data>
+  <data name="LastFmUsageHelp" xml:space="preserve"><value>仅实际收听计入上报：歌曲超过 30 秒，听满一半或 4 分钟（取较早者）。缺少歌手信息的歌曲不上传。</value></data>
+  <data name="LastFmPendingCount" xml:space="preserve"><value>待补报：{0} 条</value></data>
+  <data name="LastFmQueueHelp" xml:space="preserve"><value>联网后自动按顺序补报。关闭上报会暂停补报，重新开启后继续；队列最多保存 10,000 条。</value></data>
+  <data name="LastFmRetry" xml:space="preserve"><value>立即重试</value></data>
+  <data name="LastFmBrowserError" xml:space="preserve"><value>无法打开浏览器，请重新点击“连接账号”。</value></data>
+  <data name="LastFmConnected" xml:space="preserve"><value>已连接：{0}</value></data>
+  <data name="LastFmNotConnected" xml:space="preserve"><value>尚未连接 Last.fm</value></data>
+  <data name="LastFmErrorNetwork" xml:space="preserve"><value>暂时无法连接 Last.fm。听歌记录会保存在本地，稍后自动重试。</value></data>
+  <data name="LastFmErrorCredentials" xml:space="preserve"><value>请检查 API Key 和 Shared Secret 是否正确，并重新保存凭据。</value></data>
+  <data name="LastFmErrorAuthorizationPending" xml:space="preserve"><value>尚未获得授权。请在浏览器中允许访问后再次点击“完成授权”。</value></data>
+  <data name="LastFmErrorAuthorizationExpired" xml:space="preserve"><value>授权请求已失效，请重新点击“连接账号”。</value></data>
+  <data name="LastFmErrorSessionExpired" xml:space="preserve"><value>账号授权已失效，请重新连接。已有待补报记录会为原账号保留。</value></data>
+  <data name="LastFmErrorRejected" xml:space="preserve"><value>Last.fm 未接受一条记录（例如歌曲信息无效或时间过旧），已跳过该条。</value></data>
+  <data name="LastFmErrorStorage" xml:space="preserve"><value>无法读取或保存 Last.fm 配置或队列。请检查文件访问权限后重试；原有文件会保留。</value></data>
+  <data name="LastFmErrorQueueFull" xml:space="preserve"><value>待补报队列已满。请联网完成补报后继续；已有记录会保留。</value></data>
 </root>

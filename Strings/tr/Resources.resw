@@ -2442,4 +2442,34 @@ SHA-256: {5}
   <data name="SpectralEnhancementOff" xml:space="preserve"><value>Kapalı</value></data>
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Yalnızca kayıplı parçalar</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>Kayıplı + 48 kHz ve altı kayıpsız</value></data>
+  <data name="LastFmEnable" xml:space="preserve"><value>Last.fm’e gönder</value></data>
+  <data name="LastFmEnableDescription" xml:space="preserve"><value>Çalan parçayı ve geçerli dinlemeleri paylaş; mevcut yerel istatistikleri koru.</value></data>
+  <data name="LastFmCredentials" xml:space="preserve"><value>Uygulama kimlik bilgileri</value></data>
+  <data name="LastFmCredentialsHelp" xml:space="preserve"><value>Kendi API Key ve Shared Secret bilgilerinizi alın ve hesabı bağlamadan önce kaydedin. Değiştirmek hesabı ayırır ve bekleyen kayıtları temizler.</value></data>
+  <data name="LastFmSecretSaved" xml:space="preserve"><value>Güvenli biçimde kaydedildi; mevcut Secret için boş bırakın.</value></data>
+  <data name="LastFmSecretRequired" xml:space="preserve"><value>Uygulamanızın Shared Secret bilgisini girin.</value></data>
+  <data name="LastFmSaveCredentials" xml:space="preserve"><value>Bilgileri kaydet</value></data>
+  <data name="LastFmApplyCredentials" xml:space="preserve"><value>Bilgileri al</value></data>
+  <data name="LastFmAuthorize" xml:space="preserve"><value>Hesabı bağla</value></data>
+  <data name="LastFmCompleteAuthorization" xml:space="preserve"><value>Yetkilendirmeyi tamamla</value></data>
+  <data name="LastFmDisconnect" xml:space="preserve"><value>Bağlantıyı kes</value></data>
+  <data name="LastFmDisconnectHelp" xml:space="preserve"><value>Bağlantıyı kesmek gönderimi durdurur ve bekleyen kayıtları temizler. Erişimi iptal etmek için uygulamayı Last.fm ayarlarından da kaldırın.</value></data>
+  <data name="LastFmManageApplications" xml:space="preserve"><value>Last.fm uygulamalarını yönet</value></data>
+  <data name="LastFmWorking" xml:space="preserve"><value>İşleniyor…</value></data>
+  <data name="LastFmAuthorizationHelp" xml:space="preserve"><value>Tarayıcıda erişime izin verin, ardından buraya dönüp yetkilendirmeyi tamamlayın.</value></data>
+  <data name="LastFmUsageHelp" xml:space="preserve"><value>Yalnızca gerçek dinleme sayılır: 30 saniyeden uzun parçalar, yarısı veya 4 dakika dinlenince gönderilir. Sanatçı bilgisi olmayan parçalar atlanır.</value></data>
+  <data name="LastFmPendingCount" xml:space="preserve"><value>Bekleyen gönderim: {0}</value></data>
+  <data name="LastFmQueueHelp" xml:space="preserve"><value>Çevrimiçiyken kayıtlar sırayla otomatik gönderilir. Kapatmak kuyruğu duraklatır; açmak sürdürür. En fazla 10.000 kayıt saklanır.</value></data>
+  <data name="LastFmRetry" xml:space="preserve"><value>Şimdi yeniden dene</value></data>
+  <data name="LastFmBrowserError" xml:space="preserve"><value>Tarayıcı açılamadı. Hesabı bağlamayı tekrar deneyin.</value></data>
+  <data name="LastFmConnected" xml:space="preserve"><value>Bağlandı: {0}</value></data>
+  <data name="LastFmNotConnected" xml:space="preserve"><value>Last.fm hesabı bağlı değil</value></data>
+  <data name="LastFmErrorNetwork" xml:space="preserve"><value>Last.fm geçici olarak kullanılamıyor. Kayıtlar yerelde saklanır ve otomatik yeniden denenir.</value></data>
+  <data name="LastFmErrorCredentials" xml:space="preserve"><value>API Key ve Shared Secret bilgilerini kontrol edip tekrar kaydedin.</value></data>
+  <data name="LastFmErrorAuthorizationPending" xml:space="preserve"><value>Erişim henüz onaylanmadı. Tarayıcıda izin verip yetkilendirmeyi tamamlayın.</value></data>
+  <data name="LastFmErrorAuthorizationExpired" xml:space="preserve"><value>Yetkilendirme isteğinin süresi doldu. Hesabı yeniden bağlayın.</value></data>
+  <data name="LastFmErrorSessionExpired" xml:space="preserve"><value>Hesap yetkisi geçersiz. Hesabı yeniden bağlayın; bekleyen kayıtlar korunur.</value></data>
+  <data name="LastFmErrorRejected" xml:space="preserve"><value>Last.fm geçersiz parça bilgisi veya eski zaman damgası nedeniyle bir kaydı reddetti. Kayıt atlandı.</value></data>
+  <data name="LastFmErrorStorage" xml:space="preserve"><value>Ayarlar veya kuyruk okunamadı ya da kaydedilemedi. Dosya erişimini kontrol edip yeniden deneyin. Mevcut dosyalar korunur.</value></data>
+  <data name="LastFmErrorQueueFull" xml:space="preserve"><value>Kuyruk dolu. Kaydedilen kayıtları göndermek için internete bağlanın; mevcut kayıtlar korunur.</value></data>
 </root>

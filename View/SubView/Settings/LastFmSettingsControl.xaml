@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="WinUIMusicPlayer.View.SubView.Settings.LastFmSettingsControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+    xmlns:tool="using:WinUIMusicPlayer.Utils">
+    <StackPanel Spacing="{StaticResource SettingsCardSpacing}">
+        <TextBlock Text="Last.fm" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
+        <controls:SettingsCard Header="{x:Bind ViewModel.AccountText, Mode=OneWay}"
+                               Description="{x:Bind tool:ToolUtils.GetString('LastFmEnableDescription')}">
+            <ToggleSwitch AutomationProperties.AutomationId="LastFmEnabled"
+                AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LastFmEnable')}"
+                MinWidth="0" VerticalAlignment="Center"
+                IsEnabled="{x:Bind ViewModel.CanToggle, Mode=OneWay}"
+                IsOn="{x:Bind ViewModel.Enabled, Mode=TwoWay}" />
+        </controls:SettingsCard>
+        <controls:SettingsExpander Header="{x:Bind tool:ToolUtils.GetString('LastFmCredentials')}"
+                                  Description="{x:Bind tool:ToolUtils.GetString('LastFmCredentialsHelp')}">
+            <controls:SettingsExpander.Items>
+                <controls:SettingsCard Header="API Key">
+                    <TextBox Width="280" MaxLength="32" AutomationProperties.AutomationId="LastFmApiKey"
+                        AutomationProperties.Name="API Key" IsEnabled="{x:Bind ViewModel.CanInteract, Mode=OneWay}"
+                        Text="{x:Bind ViewModel.ApiKey, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </controls:SettingsCard>
+                <controls:SettingsCard Header="Shared Secret" Description="{x:Bind ViewModel.SecretHint, Mode=OneWay}">
+                    <PasswordBox Width="280" MaxLength="32" AutomationProperties.AutomationId="LastFmSharedSecret"
+                        AutomationProperties.Name="Shared Secret" IsEnabled="{x:Bind ViewModel.CanInteract, Mode=OneWay}"
+                        Password="{x:Bind ViewModel.SharedSecret, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                </controls:SettingsCard>
+                <controls:SettingsCard ContentAlignment="Left">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="{x:Bind tool:ToolUtils.GetString('LastFmSaveCredentials')}"
+                            AutomationProperties.AutomationId="LastFmSaveCredentials" Command="{x:Bind ViewModel.SaveCredentialsCommand}" />
+                        <HyperlinkButton Content="{x:Bind tool:ToolUtils.GetString('LastFmApplyCredentials')}"
+                            NavigateUri="https://www.last.fm/api/account/create" />
+                    </StackPanel>
+                </controls:SettingsCard>
+            </controls:SettingsExpander.Items>
+        </controls:SettingsExpander>
+        <controls:SettingsCard ContentAlignment="Left">
+            <StackPanel Spacing="8">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button Content="{x:Bind tool:ToolUtils.GetString('LastFmAuthorize')}"
+                        AutomationProperties.AutomationId="LastFmAuthorize" Command="{x:Bind ViewModel.AuthorizeCommand}" />
+                    <Button Content="{x:Bind tool:ToolUtils.GetString('LastFmCompleteAuthorization')}"
+                        AutomationProperties.AutomationId="LastFmCompleteAuthorization" Command="{x:Bind ViewModel.CompleteAuthorizationCommand}" />
+                    <Button Content="{x:Bind tool:ToolUtils.GetString('LastFmDisconnect')}"
+                        AutomationProperties.AutomationId="LastFmDisconnect" Command="{x:Bind ViewModel.DisconnectCommand}" />
+                </StackPanel>
+                <TextBlock TextWrapping="Wrap" Text="{x:Bind tool:ToolUtils.GetString('LastFmDisconnectHelp')}" />
+                <HyperlinkButton Padding="0" HorizontalAlignment="Left"
+                    Content="{x:Bind tool:ToolUtils.GetString('LastFmManageApplications')}"
+                    NavigateUri="https://www.last.fm/settings/applications" />
+            </StackPanel>
+        </controls:SettingsCard>
+        <InfoBar IsOpen="True" IsClosable="False" Severity="{x:Bind ViewModel.Severity, Mode=OneWay}"
+            AutomationProperties.AutomationId="LastFmStatus" Message="{x:Bind ViewModel.StatusText, Mode=OneWay}" />
+        <controls:SettingsCard Header="{x:Bind ViewModel.QueueText, Mode=OneWay}"
+                               Description="{x:Bind tool:ToolUtils.GetString('LastFmQueueHelp')}">
+            <Button Content="{x:Bind tool:ToolUtils.GetString('LastFmRetry')}"
+                AutomationProperties.AutomationId="LastFmRetry" Command="{x:Bind ViewModel.RetryCommand}" />
+        </controls:SettingsCard>
+    </StackPanel>
+</UserControl>

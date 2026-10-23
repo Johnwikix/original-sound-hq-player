@@ -90,6 +90,17 @@ namespace WinUIMusicPlayer.Services
             var remoteLibrary = App.Services.GetRequiredService<WebDavLibraryService>();
             var remotePlayback = App.Services.GetRequiredService<RemotePlaybackService>();
             ipcService.AttachRemoteProgress(remotePlayback.GetProgress);
+            var lastFm = App.Services.GetRequiredService<LastFm.LastFmService>();
+            var lastFmPlayback = App.Services.GetRequiredService<LastFm.LastFmPlaybackBridge>();
+            var lastFmSettings = App.Services.GetRequiredService<WinUIMusicPlayer.ViewModel.Pages.LastFmSettingsViewModel>();
+            lastFmPlayback.Start(App.MainWindow.DispatcherQueue);
+            lastFmSettings.Start(App.MainWindow.DispatcherQueue);
+            shutdown.RegisterStop(lastFmPlayback.StopAsync);
+            shutdown.RegisterStop(lastFm.StopAsync);
+            shutdown.RegisterStop(lastFmSettings.StopAsync);
+            try { await lastFm.StartAsync(); }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            catch (Exception ex) { logger.LogWarning("Last.fm initialization failed: {Type}", ex.GetType().Name); }
             shutdown.RegisterStop(remotePlayback.StopAsync);
             var remoteSources = App.Services.GetRequiredService<WebDavSourcesViewModel>();
             shutdown.RegisterStop(remoteSources.StopAsync);

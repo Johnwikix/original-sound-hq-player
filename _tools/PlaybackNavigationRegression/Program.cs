@@ -29,21 +29,32 @@ internal static class Regression
     {
         using var test = new Scenario();
         var music = new Music(81);
+        int confirmations = 0;
+        test.Coordinator.PlaybackConfirmed += (confirmed, snapshot) =>
+        {
+            Check(App.MainWindow.DispatcherQueue.HasThreadAccess && confirmed == music && snapshot.Playing,
+                "Last.fm playback confirmation publishes the actual occurrence on UI dispatcher");
+            confirmations++;
+        };
         test.State.CurrentPlayingList = [music];
         test.Ipc.Progress = new(1, 10, 0, 10000, System.Diagnostics.Stopwatch.GetTimestamp(), false);
         await test.Coordinator.PlayAsync(music);
         await Task.Delay(75);
         Check(test.Statistics.Starts == 0, "queued/failed playback does not increment play count");
+        Check(confirmations == 0, "queued playback does not publish Last.fm confirmation");
         test.Ipc.Progress = new(2, 11, 20, 10000, System.Diagnostics.Stopwatch.GetTimestamp(), true);
         await Task.Delay(100);
         Check(test.Statistics.Starts == 1, "confirmed local playback increments once");
+        Check(confirmations == 1, "confirmed playback publishes exactly one Last.fm occurrence");
         test.Ipc.Progress = new(3, 12, 1000, 10000, System.Diagnostics.Stopwatch.GetTimestamp(), true);
         await Task.Delay(75);
         Check(test.Statistics.Starts == 1, "seek and repeated telemetry do not increment play count");
+        Check(confirmations == 1, "seek does not publish a new Last.fm occurrence");
         await test.Coordinator.PlayAsync(music);
         test.Ipc.Progress = new(4, 13, 20, 10000, System.Diagnostics.Stopwatch.GetTimestamp(), true);
         await Task.Delay(100);
         Check(test.Statistics.Starts == 2, "explicit same-track restart counts a new real playback");
+        Check(confirmations == 2, "explicit restart publishes a fresh Last.fm occurrence");
     }
 
     public static async Task RunAsync()
@@ -365,6 +376,24 @@ internal static class Regression
     }
     private static async Task GaplessAsync()
     {
+        using (var notificationFirst = new Scenario())
+        {
+            var old = new Music(801);
+            var next = new Music(802);
+            notificationFirst.State.CurrentPlayingList = [old, next];
+            notificationFirst.Ipc.Progress = new(1, 80, 2500, 3000, 0, true);
+            await notificationFirst.Coordinator.PlayAtAsync(0);
+            notificationFirst.State.IsPlaying = true;
+            await Task.Yield();
+            var plan = notificationFirst.Ipc.Queued.Last();
+            BassPlayerIpc.Shared.ProgressSnapshot? confirmed = null;
+            notificationFirst.Coordinator.PlaybackConfirmed += (_, snapshot) => confirmed = snapshot;
+            await Task.Run(() => notificationFirst.Ipc.Transition(plan.Token, 81));
+            await Task.Delay(50);
+            Check(notificationFirst.State.CurrentPlayingMusic == next && confirmed is { } occurrence
+                && occurrence.GaplessToken == plan.Token && occurrence.CurrentMs == 0,
+                "notification-first gapless confirmation uses committed token rather than old state-pipe progress");
+        }
         using var test = new Scenario();
         var first = new Music(101);
         var second = new Music(102);

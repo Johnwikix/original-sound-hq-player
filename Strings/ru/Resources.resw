@@ -2442,4 +2442,34 @@ SHA-256: {5}
   <data name="SpectralEnhancementOff" xml:space="preserve"><value>Выключено</value></data>
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Только сжатие с потерями</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>С потерями и без потерь до 48 кГц</value></data>
+  <data name="LastFmEnable" xml:space="preserve"><value>Отправлять в Last.fm</value></data>
+  <data name="LastFmEnableDescription" xml:space="preserve"><value>Передавать текущий трек и зачтённые прослушивания; локальная статистика сохраняется.</value></data>
+  <data name="LastFmCredentials" xml:space="preserve"><value>Данные приложения</value></data>
+  <data name="LastFmCredentialsHelp" xml:space="preserve"><value>Получите собственные API Key и Shared Secret и сохраните их перед подключением аккаунта. Изменение отключает аккаунт и очищает очередь.</value></data>
+  <data name="LastFmSecretSaved" xml:space="preserve"><value>Надёжно сохранено; оставьте поле пустым, чтобы использовать сохранённый Secret.</value></data>
+  <data name="LastFmSecretRequired" xml:space="preserve"><value>Введите Shared Secret вашего приложения.</value></data>
+  <data name="LastFmSaveCredentials" xml:space="preserve"><value>Сохранить данные</value></data>
+  <data name="LastFmApplyCredentials" xml:space="preserve"><value>Получить данные</value></data>
+  <data name="LastFmAuthorize" xml:space="preserve"><value>Подключить аккаунт</value></data>
+  <data name="LastFmCompleteAuthorization" xml:space="preserve"><value>Завершить авторизацию</value></data>
+  <data name="LastFmDisconnect" xml:space="preserve"><value>Отключить</value></data>
+  <data name="LastFmDisconnectHelp" xml:space="preserve"><value>Отключение прекращает отправку и очищает очередь. Для отзыва доступа также удалите приложение в настройках Last.fm.</value></data>
+  <data name="LastFmManageApplications" xml:space="preserve"><value>Приложения Last.fm</value></data>
+  <data name="LastFmWorking" xml:space="preserve"><value>Обработка…</value></data>
+  <data name="LastFmAuthorizationHelp" xml:space="preserve"><value>Разрешите доступ в браузере, затем вернитесь и завершите авторизацию.</value></data>
+  <data name="LastFmUsageHelp" xml:space="preserve"><value>Учитывается только реальное прослушивание: трек длиннее 30 секунд, прослушанный наполовину или 4 минуты. Треки без исполнителя пропускаются.</value></data>
+  <data name="LastFmPendingCount" xml:space="preserve"><value>Ожидают отправки: {0}</value></data>
+  <data name="LastFmQueueHelp" xml:space="preserve"><value>При подключении записи отправляются по порядку. Выключение приостанавливает очередь, включение возобновляет её. Хранится до 10 000 записей.</value></data>
+  <data name="LastFmRetry" xml:space="preserve"><value>Повторить сейчас</value></data>
+  <data name="LastFmBrowserError" xml:space="preserve"><value>Не удалось открыть браузер. Подключите аккаунт повторно.</value></data>
+  <data name="LastFmConnected" xml:space="preserve"><value>Подключён: {0}</value></data>
+  <data name="LastFmNotConnected" xml:space="preserve"><value>Аккаунт Last.fm не подключён</value></data>
+  <data name="LastFmErrorNetwork" xml:space="preserve"><value>Last.fm временно недоступен. Записи сохраняются локально и будут отправлены автоматически.</value></data>
+  <data name="LastFmErrorCredentials" xml:space="preserve"><value>Проверьте API Key и Shared Secret и сохраните их повторно.</value></data>
+  <data name="LastFmErrorAuthorizationPending" xml:space="preserve"><value>Доступ ещё не разрешён. Подтвердите его в браузере и завершите авторизацию.</value></data>
+  <data name="LastFmErrorAuthorizationExpired" xml:space="preserve"><value>Запрос авторизации истёк. Подключите аккаунт повторно.</value></data>
+  <data name="LastFmErrorSessionExpired" xml:space="preserve"><value>Авторизация недействительна. Подключите аккаунт снова; очередь сохраняется.</value></data>
+  <data name="LastFmErrorRejected" xml:space="preserve"><value>Last.fm отклонил запись из-за неверных метаданных или старой даты. Запись пропущена.</value></data>
+  <data name="LastFmErrorStorage" xml:space="preserve"><value>Не удалось прочитать или сохранить настройки либо очередь. Проверьте доступ к файлам и повторите. Существующие файлы сохранены.</value></data>
+  <data name="LastFmErrorQueueFull" xml:space="preserve"><value>Очередь заполнена. Подключитесь к интернету для отправки. Существующие записи сохраняются.</value></data>
 </root>

@@ -2442,4 +2442,34 @@ SHA-256: {5}
   <data name="SpectralEnhancementOff" xml:space="preserve"><value>Off</value></data>
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Lossy songs only</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>Lossy + lossless up to 48 kHz</value></data>
+  <data name="LastFmEnable" xml:space="preserve"><value>Submit to Last.fm</value></data>
+  <data name="LastFmEnableDescription" xml:space="preserve"><value>Share Now Playing and qualified listens; keep existing local statistics.</value></data>
+  <data name="LastFmCredentials" xml:space="preserve"><value>Application credentials</value></data>
+  <data name="LastFmCredentialsHelp" xml:space="preserve"><value>Apply for your own API Key and Shared Secret. Save them before connecting an account. Changing credentials disconnects the account and clears pending submissions.</value></data>
+  <data name="LastFmSecretSaved" xml:space="preserve"><value>Stored securely; leave blank to keep the saved secret.</value></data>
+  <data name="LastFmSecretRequired" xml:space="preserve"><value>Enter the Shared Secret issued for your application.</value></data>
+  <data name="LastFmSaveCredentials" xml:space="preserve"><value>Save credentials</value></data>
+  <data name="LastFmApplyCredentials" xml:space="preserve"><value>Get credentials</value></data>
+  <data name="LastFmAuthorize" xml:space="preserve"><value>Connect account</value></data>
+  <data name="LastFmCompleteAuthorization" xml:space="preserve"><value>Complete authorization</value></data>
+  <data name="LastFmDisconnect" xml:space="preserve"><value>Disconnect</value></data>
+  <data name="LastFmDisconnectHelp" xml:space="preserve"><value>Disconnecting stops submissions and clears pending plays. To revoke account access, also remove this application in Last.fm settings.</value></data>
+  <data name="LastFmManageApplications" xml:space="preserve"><value>Manage Last.fm applications</value></data>
+  <data name="LastFmWorking" xml:space="preserve"><value>Working…</value></data>
+  <data name="LastFmAuthorizationHelp" xml:space="preserve"><value>Allow access in your browser, then return here and select Complete authorization.</value></data>
+  <data name="LastFmUsageHelp" xml:space="preserve"><value>Only actual listening counts: tracks longer than 30 seconds qualify after half their duration or 4 minutes, whichever comes first. Tracks without artist metadata are skipped.</value></data>
+  <data name="LastFmPendingCount" xml:space="preserve"><value>Pending submissions: {0}</value></data>
+  <data name="LastFmQueueHelp" xml:space="preserve"><value>Pending plays are submitted automatically in order when online. Turning submission off pauses the queue until enabled again. Up to 10,000 plays are retained.</value></data>
+  <data name="LastFmRetry" xml:space="preserve"><value>Retry now</value></data>
+  <data name="LastFmBrowserError" xml:space="preserve"><value>The browser could not be opened. Select Connect account again.</value></data>
+  <data name="LastFmConnected" xml:space="preserve"><value>Connected: {0}</value></data>
+  <data name="LastFmNotConnected" xml:space="preserve"><value>Not connected to Last.fm</value></data>
+  <data name="LastFmErrorNetwork" xml:space="preserve"><value>Last.fm is temporarily unavailable. Plays remain saved locally and will be retried automatically.</value></data>
+  <data name="LastFmErrorCredentials" xml:space="preserve"><value>Check your API Key and Shared Secret, then save the credentials again.</value></data>
+  <data name="LastFmErrorAuthorizationPending" xml:space="preserve"><value>Access is not authorized yet. Allow access in the browser, then select Complete authorization again.</value></data>
+  <data name="LastFmErrorAuthorizationExpired" xml:space="preserve"><value>The authorization request expired. Select Connect account again.</value></data>
+  <data name="LastFmErrorSessionExpired" xml:space="preserve"><value>Account authorization expired. Reconnect the account; its pending plays are retained.</value></data>
+  <data name="LastFmErrorRejected" xml:space="preserve"><value>Last.fm rejected a play, for example because of invalid metadata or an old timestamp. That play was skipped.</value></data>
+  <data name="LastFmErrorStorage" xml:space="preserve"><value>Last.fm settings or pending plays could not be read or saved. Check file access and retry. Existing files are preserved.</value></data>
+  <data name="LastFmErrorQueueFull" xml:space="preserve"><value>The pending queue is full. Connect to the internet to submit saved plays. Existing records are retained.</value></data>
 </root>

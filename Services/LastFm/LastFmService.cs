@@ -1,0 +1,443 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Net.Http;
+using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace WinUIMusicPlayer.Services.LastFm;
+
+/// <summary>Owns authorization and a durable FIFO. No work starts in the constructor.</summary>
+public sealed class LastFmService(LastFmApiClient api, ILastFmStore store)
+{
+    private readonly SemaphoreSlim _gate = new(1, 1);
+    private readonly SemaphoreSlim _commands = new(1, 1);
+    private readonly SemaphoreSlim _network = new(1, 1);
+    private readonly SemaphoreSlim _wake = new(0, 1);
+    private readonly CancellationTokenSource _stop = new();
+    private CancellationTokenSource _identityRequests = new();
+    private LastFmSavedState _saved = new();
+    private LastFmIdentity? _identity;
+    private string? _authToken;
+    private DateTimeOffset _authExpires, _retryAt;
+    private LastFmProblem _problem;
+    private long _revision;
+    private int _failures;
+    private bool _ready, _blocked;
+    private volatile bool _stopped;
+    private Task? _worker, _stopTask;
+    private LastFmStatus _status = new();
+    public LastFmStatus Status => Volatile.Read(ref _status);
+    public event Action<LastFmStatus>? Changed;
+
+    public Task StartAsync() => CommandAsync(async token =>
+    {
+        if (_ready) return;
+        // A failed read is never replaced with an empty queue. The user can retry initialization.
+        var saved = await store.LoadAsync(token).ConfigureAwait(false);
+        // Fresh installs do not touch the Windows credential service for a disabled integration.
+        var identity = saved.HasCredentials ? await store.ReadIdentityAsync(token).ConfigureAwait(false) : null;
+        _saved = saved;
+        _identity = identity;
+        _ready = true;
+        _problem = LastFmProblem.None;
+        Publish(true);
+        _worker ??= WorkerAsync();
+        Wake();
+    }, requireReady: false);
+
+    public Task ConfigureAsync(string apiKey, string sharedSecret) => CommandAsync(async token =>
+    {
+        apiKey = apiKey.Trim();
+        sharedSecret = sharedSecret.Trim();
+        if (sharedSecret.Length == 0 && apiKey == _identity?.Credentials.ApiKey) sharedSecret = _identity.Credentials.SharedSecret;
+        if (!IsHexKey(apiKey) || !IsHexKey(sharedSecret)) throw new ArgumentException("Last.fm keys must contain 32 hexadecimal characters.");
+        var credentials = new LastFmCredentials(apiKey, sharedSecret);
+        if (_identity?.Credentials == credentials) return;
+        RotateIdentity();
+        var replacement = new LastFmSavedState { HasCredentials = true };
+        await store.SaveAsync(replacement, token).ConfigureAwait(false);
+        _saved = replacement;
+        var identity = new LastFmIdentity(credentials);
+        await store.SaveIdentityAsync(identity, token).ConfigureAwait(false);
+        _identity = identity;
+        _authToken = null;
+        _problem = LastFmProblem.None;
+        Publish(true);
+    });
+
+    public async Task<Uri> BeginAuthorizationAsync()
+    {
+        Uri? uri = null;
+        await CommandAsync(async token =>
+        {
+            var credentials = _identity?.Credentials ?? throw new InvalidOperationException("Last.fm credentials are required.");
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, _identityRequests.Token);
+            await _network.WaitAsync(linked.Token).ConfigureAwait(false);
+            try { _authToken = await api.GetTokenAsync(credentials, linked.Token).ConfigureAwait(false); }
+            finally { _network.Release(); }
+            _authExpires = DateTimeOffset.UtcNow.AddMinutes(60);
+            _problem = LastFmProblem.None;
+            Publish();
+            uri = new Uri($"https://www.last.fm/api/auth/?api_key={Uri.EscapeDataString(credentials.ApiKey)}&token={Uri.EscapeDataString(_authToken)}");
+        }).ConfigureAwait(false);
+        return uri!;
+    }
+
+    public Task CompleteAuthorizationAsync() => CommandAsync(async token =>
+    {
+        if (_authToken is null || DateTimeOffset.UtcNow >= _authExpires)
+        {
+            _authToken = null;
+            _problem = LastFmProblem.AuthorizationExpired;
+            Publish();
+            return;
+        }
+        var credentials = _identity!.Credentials;
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, _identityRequests.Token);
+        await _network.WaitAsync(linked.Token).ConfigureAwait(false);
+        LastFmAccount account;
+        try { account = await api.GetSessionAsync(credentials, _authToken, linked.Token).ConfigureAwait(false); }
+        finally { _network.Release(); }
+        var identity = new LastFmIdentity(credentials, account);
+        // Pending plays belong to both an API application and an account, never to the next login.
+        var pending = _saved.Pending.FindAll(play => play.ApiKey == credentials.ApiKey
+            && string.Equals(play.Account, account.Name, StringComparison.OrdinalIgnoreCase));
+        var saved = _saved with { Enabled = true, Pending = pending };
+        await store.SaveAsync(saved, token).ConfigureAwait(false);
+        await store.SaveIdentityAsync(identity, token).ConfigureAwait(false);
+        RotateIdentity();
+        _identity = identity;
+        _saved = saved;
+        _authToken = null;
+        _problem = LastFmProblem.None;
+        Publish(true);
+        Wake();
+    });
+
+    public Task DisconnectAsync()
+    {
+        CancelRequests();
+        return CommandAsync(async token =>
+        {
+            RotateIdentity();
+            var saved = new LastFmSavedState { HasCredentials = _identity is not null };
+            await store.SaveAsync(saved, token).ConfigureAwait(false);
+            _saved = saved;
+            _identity = _identity is null ? null : new(_identity.Credentials);
+            _authToken = null;
+            Publish(true);
+            await store.SaveIdentityAsync(_identity, token).ConfigureAwait(false);
+            _problem = LastFmProblem.None;
+            Publish();
+        });
+    }
+
+    public Task SetEnabledAsync(bool enabled)
+    {
+        if (!enabled) CancelRequests();
+        return CommandAsync(async token =>
+        {
+            if (_saved.Enabled == enabled) return;
+            RotateIdentity();
+            var saved = _saved with { Enabled = enabled };
+            await store.SaveAsync(saved, token).ConfigureAwait(false);
+            _saved = saved;
+            Publish(true);
+            Wake();
+        });
+    }
+
+    public Task RetryAsync() => CommandAsync(_ =>
+    {
+        _blocked = false;
+        _retryAt = default;
+        Wake();
+        return Task.CompletedTask;
+    });
+
+    public async Task<bool> EnqueueAsync(LastFmTrack track, long startedAt, Guid id, long revision)
+    {
+        if (_stopped) return false;
+        await _gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            if (!CanSend(revision)) return false;
+            if (_saved.Pending.Exists(play => play.Id == id)) return true;
+            if (_saved.Pending.Count >= 10000)
+            {
+                _problem = LastFmProblem.QueueFull;
+                Publish();
+                return false;
+            }
+            var pending = new List<LastFmScrobble>(_saved.Pending)
+            {
+                new(id, _identity!.Credentials.ApiKey, _identity.Account!.Name, track, startedAt)
+            };
+            var saved = _saved with { Pending = pending };
+            // Commit before acknowledging qualification or attempting any network request.
+            await store.SaveAsync(saved, CancellationToken.None).ConfigureAwait(false);
+            _saved = saved;
+            Publish();
+            Wake();
+            return true;
+        }
+        catch
+        {
+            _problem = LastFmProblem.Storage;
+            Publish();
+            throw;
+        }
+        finally { _gate.Release(); }
+    }
+
+    public async Task NowPlayingAsync(LastFmTrack track, long revision, CancellationToken selection)
+    {
+        if (_stopped) return;
+        var request = await GetRequestAsync(revision).ConfigureAwait(false);
+        if (request is null) return;
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token, request.Value.Token, selection);
+        bool entered = false;
+        Exception? failure = null;
+        try
+        {
+            await _network.WaitAsync(linked.Token).ConfigureAwait(false);
+            entered = true;
+            await api.NowPlayingAsync(request.Value.Identity, track, linked.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (linked.IsCancellationRequested) { }
+        catch (Exception ex) { failure = ex; }
+        finally { if (entered) _network.Release(); }
+        if (failure is not null) await FailedAsync(failure, revision).ConfigureAwait(false);
+    }
+
+    private async Task WorkerAsync()
+    {
+        Guid acknowledged = Guid.Empty;
+        bool acknowledgedAccepted = false;
+        try
+        {
+            while (true)
+            {
+                await _wake.WaitAsync(_stop.Token).ConfigureAwait(false);
+                while (!_stop.IsCancellationRequested)
+                {
+                    LastFmScrobble? play;
+                    long revision;
+                    DateTimeOffset retryAt;
+                    await _gate.WaitAsync(_stop.Token).ConfigureAwait(false);
+                    try
+                    {
+                        revision = _revision;
+                        play = CanSend(revision) && !_blocked && _saved.Pending.Count > 0 ? _saved.Pending[0] : null;
+                        retryAt = _retryAt;
+                    }
+                    finally { _gate.Release(); }
+                    if (play is null) break;
+                    var delay = retryAt - DateTimeOffset.UtcNow;
+                    if (delay > TimeSpan.Zero)
+                    {
+                        await _wake.WaitAsync(delay, _stop.Token).ConfigureAwait(false);
+                        continue;
+                    }
+                    // A known server acknowledgement survives a failed local queue rewrite.
+                    // Retry the commit, not the already accepted HTTP submission, in this process.
+                    if (play.Id == acknowledged)
+                    {
+                        try { await RemoveAsync(play.Id, revision, acknowledgedAccepted).ConfigureAwait(false); }
+                        catch (Exception ex) { await FailedAsync(ex, revision).ConfigureAwait(false); }
+                        continue;
+                    }
+                    var request = await GetRequestAsync(revision).ConfigureAwait(false);
+                    if (request is null) break;
+                    if (play.ApiKey != request.Value.Identity.Credentials.ApiKey
+                        || !string.Equals(play.Account, request.Value.Identity.Account!.Name, StringComparison.OrdinalIgnoreCase))
+                    {
+                        await RemoveAsync(play.Id, revision, false).ConfigureAwait(false);
+                        continue;
+                    }
+                    using var linked = CancellationTokenSource.CreateLinkedTokenSource(_stop.Token, request.Value.Token);
+                    bool entered = false;
+                    bool? accepted = null;
+                    Exception? failure = null;
+                    try
+                    {
+                        await _network.WaitAsync(linked.Token).ConfigureAwait(false);
+                        entered = true;
+                        accepted = await api.ScrobbleAsync(request.Value.Identity, play, linked.Token).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException) when (linked.IsCancellationRequested) { }
+                    catch (Exception ex) { failure = ex; }
+                    finally { if (entered) _network.Release(); }
+                    if (accepted is bool result)
+                    {
+                        acknowledged = play.Id;
+                        acknowledgedAccepted = result;
+                        try { await RemoveAsync(play.Id, revision, result).ConfigureAwait(false); }
+                        catch (Exception ex) { failure = ex; }
+                    }
+                    if (failure is LastFmApiException { Code: 6 or 7 })
+                    {
+                        acknowledged = play.Id;
+                        acknowledgedAccepted = false;
+                        try { await RemoveAsync(play.Id, revision, false).ConfigureAwait(false); failure = null; }
+                        catch (Exception ex) { failure = ex; }
+                    }
+                    if (failure is not null) await FailedAsync(failure, revision).ConfigureAwait(false);
+                }
+            }
+        }
+        catch (OperationCanceledException) when (_stop.IsCancellationRequested) { }
+    }
+
+    private async Task RemoveAsync(Guid id, long revision, bool accepted)
+    {
+        await _gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            if (revision != _revision) return;
+            var pending = _saved.Pending.FindAll(play => play.Id != id);
+            var saved = _saved with { Pending = pending };
+            await store.SaveAsync(saved, CancellationToken.None).ConfigureAwait(false);
+            _saved = saved;
+            _failures = 0;
+            _retryAt = default;
+            _problem = accepted ? LastFmProblem.None : LastFmProblem.Rejected;
+            Publish();
+        }
+        finally { _gate.Release(); }
+    }
+
+    private async Task FailedAsync(Exception error, long revision)
+    {
+        await _gate.WaitAsync().ConfigureAwait(false);
+        try
+        {
+            if (_stopped || revision != _revision) return;
+            _problem = error is JsonException or System.Collections.Generic.KeyNotFoundException
+                ? LastFmProblem.Network : ProblemFor(error);
+            _retryAt = DateTimeOffset.UtcNow.AddSeconds(Math.Min(900, 30 * Math.Pow(2, Math.Min(++_failures, 5))));
+            if (error is LastFmApiException { Code: 9 })
+            {
+                RotateIdentity();
+                _identity = _identity! with { Account = new(_identity!.Account!.Name, "") };
+                Publish(true);
+                try { await store.SaveIdentityAsync(_identity, _stop.Token).ConfigureAwait(false); }
+                catch (Exception) when (!_stop.IsCancellationRequested) { _problem = LastFmProblem.Storage; }
+            }
+            else if (error is LastFmApiException { Retryable: false }) _blocked = true;
+            Publish();
+        }
+        finally { _gate.Release(); }
+    }
+
+    private async Task<(LastFmIdentity Identity, CancellationToken Token)?> GetRequestAsync(long revision)
+    {
+        await _gate.WaitAsync().ConfigureAwait(false);
+        try { return CanSend(revision) ? (_identity!, _identityRequests.Token) : null; }
+        finally { _gate.Release(); }
+    }
+
+    private bool CanSend(long revision) => !_stopped && _ready && revision == _revision && _saved.Enabled
+        && !string.IsNullOrEmpty(_identity?.Account?.SessionKey);
+
+    private async Task CommandAsync(Func<CancellationToken, Task> action, bool requireReady = true)
+    {
+        if (_stopped) throw new OperationCanceledException();
+        await _commands.WaitAsync(_stop.Token).ConfigureAwait(false);
+        try
+        {
+            await _gate.WaitAsync(_stop.Token).ConfigureAwait(false);
+            try
+            {
+                if (requireReady && !_ready) throw new IOException("Last.fm storage is not ready.");
+                await action(_stop.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (_stop.IsCancellationRequested) { throw; }
+            catch (Exception ex)
+            {
+                if (ex is LastFmApiException { Code: 4 or 15 }) _authToken = null;
+                _problem = requireReady && ex is (JsonException or System.Collections.Generic.KeyNotFoundException)
+                    ? LastFmProblem.Network : ProblemFor(ex);
+                Publish();
+                throw;
+            }
+            finally { _gate.Release(); }
+        }
+        finally { _commands.Release(); }
+    }
+
+    private static LastFmProblem ProblemFor(Exception error) => error switch
+    {
+        LastFmApiException { Code: 9 } => LastFmProblem.SessionExpired,
+        LastFmApiException { Code: 14 } => LastFmProblem.AuthorizationPending,
+        LastFmApiException { Code: 4 or 15 } => LastFmProblem.AuthorizationExpired,
+        LastFmApiException { Retryable: false } or ArgumentException => LastFmProblem.Credentials,
+        LastFmApiException or HttpRequestException or OperationCanceledException => LastFmProblem.Network,
+        _ => LastFmProblem.Storage
+    };
+
+    private static bool IsHexKey(string key)
+    {
+        if (key.Length != 32) return false;
+        foreach (char character in key) if (!Uri.IsHexDigit(character)) return false;
+        return true;
+    }
+
+    private void Publish(bool identityChanged = false)
+    {
+        if (identityChanged) _revision++;
+        var status = new LastFmStatus(_identity?.Credentials.ApiKey ?? "", !string.IsNullOrEmpty(_identity?.Credentials.SharedSecret),
+            _identity?.Account?.Name ?? "", !string.IsNullOrEmpty(_identity?.Account?.SessionKey), _saved.Enabled,
+            _saved.Pending.Count, _authToken is not null, _problem, _revision, _ready);
+        Volatile.Write(ref _status, status);
+        Changed?.Invoke(status);
+    }
+
+    private void CancelRequests()
+    {
+        // Cancellation must not wait behind a slow HTTP response holding a command gate.
+        try { _identityRequests.Cancel(); }
+        catch (ObjectDisposedException) { }
+    }
+
+    internal void CancelNetworkRequests() => CancelRequests();
+
+    private void RotateIdentity()
+    {
+        CancelRequests();
+        _identityRequests.Dispose();
+        _identityRequests = new();
+        _blocked = false;
+        _failures = 0;
+        _retryAt = default;
+    }
+
+    private void Wake()
+    {
+        try { _wake.Release(); }
+        catch (SemaphoreFullException) { }
+    }
+
+    public Task StopAsync()
+    {
+        lock (_stop) return _stopTask ??= StopCoreAsync();
+    }
+
+    private async Task StopCoreAsync()
+    {
+        _stopped = true;
+        _stop.Cancel();
+        CancelRequests();
+        if (_worker is not null) await _worker.ConfigureAwait(false);
+        // Wait for configuration, queue commits and in-flight Now Playing requests before releasing HTTP.
+        await _commands.WaitAsync().ConfigureAwait(false);
+        _commands.Release();
+        await _network.WaitAsync().ConfigureAwait(false);
+        _network.Release();
+        await _gate.WaitAsync().ConfigureAwait(false);
+        _gate.Release();
+        Changed = null;
+    }
+}

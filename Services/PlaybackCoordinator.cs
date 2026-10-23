@@ -24,6 +24,8 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
     private readonly HashSet<long> _failedEntries = [];
     private (Music Music, long Generation, bool Advance)? _deferredFailure;
     public event Action<Music, CancellationToken>? TrackStarted;
+    /// <summary>UI-thread notification after the engine confirms this playback occurrence.</summary>
+    public event Action<Music, BassPlayerIpc.Shared.ProgressSnapshot>? PlaybackConfirmed;
     public event Action? SelectionChanged;
 
     /// <summary>连续点击上下首从正在探测的条目继续，不反复命中尚未开始播放的同一首。</summary>
@@ -235,6 +237,12 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
                 if (_disposed || !ReferenceEquals(state.CurrentPlayingMusic, music)) return;
                 if (ipc.TryGetProgressSnapshot(out var progress) && progress.Playing && progress.Epoch != previousEpoch)
                 {
+                    await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+                    {
+                        if (!_disposed && state.CanPublishState && !token.IsCancellationRequested
+                            && ReferenceEquals(state.CurrentPlayingMusic, music))
+                            PlaybackConfirmed?.Invoke(music, progress);
+                    });
                     await statistics.RecordPlaybackStartAsync(music);
                     return;
                 }
@@ -257,5 +265,6 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         state.State.Playback.PendingSelection = null;
         SelectionChanged = null;
         TrackStarted = null;
+        PlaybackConfirmed = null;
     }
 }

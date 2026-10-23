@@ -83,6 +83,12 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<LibraryProjectionService>();
                  services.AddSingleton<PlaybackProgressService>();
                  services.AddSingleton<PlaybackCoordinator>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.LastFm.LastFmApiClient>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.LastFm.ILastFmCredentialVault, WinUIMusicPlayer.Services.LastFm.WindowsLastFmCredentialVault>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.LastFm.ILastFmStore, WinUIMusicPlayer.Services.LastFm.LastFmStore>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.LastFm.LastFmService>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.LastFm.LastFmPlaybackBridge>();
+                 services.AddSingleton<LastFmSettingsViewModel>();
                  services.AddSingleton<WinUIMusicPlayer.Services.WebDav.WebDavTransport>();
                  services.AddSingleton<WinUIMusicPlayer.Services.WebDav.RemoteAudioCache>();
                  services.AddSingleton<WebDavLibraryService>();

@@ -2442,4 +2442,34 @@ SHA-256: {5}
   <data name="SpectralEnhancementOff" xml:space="preserve"><value>オフ</value></data>
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>非可逆圧縮の曲のみ</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>非可逆圧縮＋48 kHz 以下の可逆音源</value></data>
+  <data name="LastFmEnable" xml:space="preserve"><value>Last.fm に送信</value></data>
+  <data name="LastFmEnableDescription" xml:space="preserve"><value>再生中の曲と条件を満たす再生履歴を共有します。既存のローカル統計は保持します。</value></data>
+  <data name="LastFmCredentials" xml:space="preserve"><value>アプリの認証情報</value></data>
+  <data name="LastFmCredentialsHelp" xml:space="preserve"><value>API Key と Shared Secret をご自身で取得し、保存してからアカウントを接続してください。認証情報を変更すると接続と未送信履歴が削除されます。</value></data>
+  <data name="LastFmSecretSaved" xml:space="preserve"><value>安全に保存済みです。空欄のままなら保存済みの Secret を使用します。</value></data>
+  <data name="LastFmSecretRequired" xml:space="preserve"><value>アプリの Shared Secret を入力してください。</value></data>
+  <data name="LastFmSaveCredentials" xml:space="preserve"><value>認証情報を保存</value></data>
+  <data name="LastFmApplyCredentials" xml:space="preserve"><value>認証情報を取得</value></data>
+  <data name="LastFmAuthorize" xml:space="preserve"><value>アカウントを接続</value></data>
+  <data name="LastFmCompleteAuthorization" xml:space="preserve"><value>認証を完了</value></data>
+  <data name="LastFmDisconnect" xml:space="preserve"><value>接続を解除</value></data>
+  <data name="LastFmDisconnectHelp" xml:space="preserve"><value>接続解除で送信を停止し、未送信履歴を削除します。アクセス権の取り消しは Last.fm のアプリ設定でも行ってください。</value></data>
+  <data name="LastFmManageApplications" xml:space="preserve"><value>Last.fm のアプリ認証を管理</value></data>
+  <data name="LastFmWorking" xml:space="preserve"><value>処理中…</value></data>
+  <data name="LastFmAuthorizationHelp" xml:space="preserve"><value>ブラウザーでアクセスを許可した後、ここに戻って「認証を完了」を選択してください。</value></data>
+  <data name="LastFmUsageHelp" xml:space="preserve"><value>実際の再生時間のみを記録します。30 秒を超える曲を半分または 4 分間聴くと送信します。アーティスト情報のない曲は送信しません。</value></data>
+  <data name="LastFmPendingCount" xml:space="preserve"><value>未送信：{0} 件</value></data>
+  <data name="LastFmQueueHelp" xml:space="preserve"><value>オンライン時に古い履歴から自動送信します。送信をオフにすると一時停止し、再度オンにすると再開します。最大 10,000 件を保持します。</value></data>
+  <data name="LastFmRetry" xml:space="preserve"><value>今すぐ再試行</value></data>
+  <data name="LastFmBrowserError" xml:space="preserve"><value>ブラウザーを開けませんでした。もう一度アカウントを接続してください。</value></data>
+  <data name="LastFmConnected" xml:space="preserve"><value>接続済み：{0}</value></data>
+  <data name="LastFmNotConnected" xml:space="preserve"><value>Last.fm に未接続</value></data>
+  <data name="LastFmErrorNetwork" xml:space="preserve"><value>Last.fm に接続できません。履歴はローカルに保持し、自動で再試行します。</value></data>
+  <data name="LastFmErrorCredentials" xml:space="preserve"><value>API Key と Shared Secret を確認し、再保存してください。</value></data>
+  <data name="LastFmErrorAuthorizationPending" xml:space="preserve"><value>まだ認証されていません。ブラウザーで許可してから、認証を完了してください。</value></data>
+  <data name="LastFmErrorAuthorizationExpired" xml:space="preserve"><value>認証要求の期限が切れました。再度接続してください。</value></data>
+  <data name="LastFmErrorSessionExpired" xml:space="preserve"><value>アカウントの認証が無効です。再接続してください。未送信履歴は保持されます。</value></data>
+  <data name="LastFmErrorRejected" xml:space="preserve"><value>Last.fm が無効な曲情報や古い日時の履歴を拒否したため、その履歴をスキップしました。</value></data>
+  <data name="LastFmErrorStorage" xml:space="preserve"><value>設定または履歴を読み書きできません。ファイルのアクセス権を確認して再試行してください。既存ファイルは保持します。</value></data>
+  <data name="LastFmErrorQueueFull" xml:space="preserve"><value>未送信履歴が上限に達しました。オンラインにして送信してください。既存履歴は保持します。</value></data>
 </root>

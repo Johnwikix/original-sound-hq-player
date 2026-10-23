@@ -275,6 +275,13 @@ public sealed partial class PlaybackCoordinator
             state.LoadLyricsToUI(plan.Next);
             state.UpdateProgressTimerUI();
             TrackStarted?.Invoke(plan.Next, cancellation);
+            // The transition notification can beat the state-pipe snapshot. Its committed token,
+            // not the previous track's cached position, identifies this occurrence.
+            bool hasProgress = ipc.TryGetProgressSnapshot(out var confirmed) && confirmed.GaplessToken == plan.Token;
+            if (!hasProgress)
+                confirmed = new(0, 0, 0, (long)plan.Next.Duration.TotalMilliseconds,
+                    System.Diagnostics.Stopwatch.GetTimestamp(), true, GaplessToken: plan.Token);
+            PlaybackConfirmed?.Invoke(plan.Next, confirmed);
         }
         finally { _acceptingGapless = false; }
         RefreshGaplessPlan();

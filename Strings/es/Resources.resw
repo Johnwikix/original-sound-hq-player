@@ -2442,4 +2442,34 @@ SHA-256: {5}
   <data name="SpectralEnhancementOff" xml:space="preserve"><value>Desactivada</value></data>
   <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Solo canciones con pérdida</value></data>
   <data name="SpectralEnhancementAll" xml:space="preserve"><value>Con pérdida + sin pérdida hasta 48 kHz</value></data>
+  <data name="LastFmEnable" xml:space="preserve"><value>Enviar a Last.fm</value></data>
+  <data name="LastFmEnableDescription" xml:space="preserve"><value>Compartir la reproducción actual y las escuchas válidas; conservar las estadísticas locales.</value></data>
+  <data name="LastFmCredentials" xml:space="preserve"><value>Credenciales de la aplicación</value></data>
+  <data name="LastFmCredentialsHelp" xml:space="preserve"><value>Solicita tu propia API Key y Shared Secret y guárdalas antes de conectar una cuenta. Cambiarlas desconecta la cuenta y elimina los envíos pendientes.</value></data>
+  <data name="LastFmSecretSaved" xml:space="preserve"><value>Guardado de forma segura; deja el campo vacío para conservar el Secret.</value></data>
+  <data name="LastFmSecretRequired" xml:space="preserve"><value>Introduce el Shared Secret de tu aplicación.</value></data>
+  <data name="LastFmSaveCredentials" xml:space="preserve"><value>Guardar credenciales</value></data>
+  <data name="LastFmApplyCredentials" xml:space="preserve"><value>Obtener credenciales</value></data>
+  <data name="LastFmAuthorize" xml:space="preserve"><value>Conectar cuenta</value></data>
+  <data name="LastFmCompleteAuthorization" xml:space="preserve"><value>Completar autorización</value></data>
+  <data name="LastFmDisconnect" xml:space="preserve"><value>Desconectar</value></data>
+  <data name="LastFmDisconnectHelp" xml:space="preserve"><value>Al desconectar se detienen los envíos y se borran los pendientes. Para revocar el acceso, elimina también la aplicación en los ajustes de Last.fm.</value></data>
+  <data name="LastFmManageApplications" xml:space="preserve"><value>Gestionar aplicaciones de Last.fm</value></data>
+  <data name="LastFmWorking" xml:space="preserve"><value>Procesando…</value></data>
+  <data name="LastFmAuthorizationHelp" xml:space="preserve"><value>Permite el acceso en el navegador, vuelve aquí y completa la autorización.</value></data>
+  <data name="LastFmUsageHelp" xml:space="preserve"><value>Solo cuenta el tiempo escuchado: canciones de más de 30 segundos, tras escuchar la mitad o 4 minutos. Se omiten canciones sin artista.</value></data>
+  <data name="LastFmPendingCount" xml:space="preserve"><value>Envíos pendientes: {0}</value></data>
+  <data name="LastFmQueueHelp" xml:space="preserve"><value>Los registros se envían por orden al recuperar la conexión. Desactivar pausa la cola; activar la reanuda. Se conservan hasta 10.000 registros.</value></data>
+  <data name="LastFmRetry" xml:space="preserve"><value>Reintentar ahora</value></data>
+  <data name="LastFmBrowserError" xml:space="preserve"><value>No se pudo abrir el navegador. Vuelve a conectar la cuenta.</value></data>
+  <data name="LastFmConnected" xml:space="preserve"><value>Conectado: {0}</value></data>
+  <data name="LastFmNotConnected" xml:space="preserve"><value>Sin conexión con Last.fm</value></data>
+  <data name="LastFmErrorNetwork" xml:space="preserve"><value>Last.fm no está disponible temporalmente. Los registros se guardan y se reintentan automáticamente.</value></data>
+  <data name="LastFmErrorCredentials" xml:space="preserve"><value>Revisa la API Key y el Shared Secret y vuelve a guardarlos.</value></data>
+  <data name="LastFmErrorAuthorizationPending" xml:space="preserve"><value>Aún no se ha autorizado el acceso. Permítelo en el navegador y completa la autorización.</value></data>
+  <data name="LastFmErrorAuthorizationExpired" xml:space="preserve"><value>La solicitud ha caducado. Vuelve a conectar la cuenta.</value></data>
+  <data name="LastFmErrorSessionExpired" xml:space="preserve"><value>La autorización ha caducado. Reconecta la cuenta; los registros pendientes se conservan.</value></data>
+  <data name="LastFmErrorRejected" xml:space="preserve"><value>Last.fm rechazó un registro, por metadatos no válidos o una fecha antigua. Se ha omitido.</value></data>
+  <data name="LastFmErrorStorage" xml:space="preserve"><value>No se pudieron leer o guardar los ajustes o la cola. Revisa los permisos y reintenta. Los archivos existentes se conservan.</value></data>
+  <data name="LastFmErrorQueueFull" xml:space="preserve"><value>La cola está llena. Conéctate a internet para enviar los registros guardados; se conservan los existentes.</value></data>
 </root>
