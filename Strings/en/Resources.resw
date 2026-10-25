@@ -168,6 +168,9 @@
   <data name="StatsRangePastYear.Content" xml:space="preserve">
     <value>Past Year</value>
   </data>
+  <data name="StatsRangeAllTime.Content" xml:space="preserve">
+    <value>All Time</value>
+  </data>
   <data name="StatsRangeCustom.Content" xml:space="preserve">
     <value>Custom</value>
   </data>

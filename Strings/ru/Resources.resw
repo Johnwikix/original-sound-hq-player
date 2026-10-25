@@ -168,6 +168,9 @@
   <data name="StatsRangePastYear.Content" xml:space="preserve">
     <value>Прошлый год</value>
   </data>
+  <data name="StatsRangeAllTime.Content" xml:space="preserve">
+    <value>За всё время</value>
+  </data>
   <data name="StatsRangeCustom.Content" xml:space="preserve">
     <value>Свой диапазон</value>
   </data>

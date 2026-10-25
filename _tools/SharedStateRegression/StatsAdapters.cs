@@ -60,10 +60,12 @@ namespace WinUIMusicPlayer.Services
     {
         public event Action? StatsUpdated;
         public readonly List<TaskCompletionSource<StatsSnapshot>> Queries = [];
+        public readonly List<(DateTime Start, DateTime End)> QueryRanges = [];
         public int HeatmapQueries;
         public void Notify() => StatsUpdated?.Invoke();
         public Task<StatsSnapshot> GetStatsSnapshotAsync(DateTime start, DateTime end)
         {
+            QueryRanges.Add((start, end));
             var completion = new TaskCompletionSource<StatsSnapshot>(TaskCreationOptions.RunContinuationsAsynchronously);
             Queries.Add(completion);
             return completion.Task;

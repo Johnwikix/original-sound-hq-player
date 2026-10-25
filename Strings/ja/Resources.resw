@@ -168,6 +168,9 @@
   <data name="StatsRangePastYear.Content" xml:space="preserve">
     <value>過去1年</value>
   </data>
+  <data name="StatsRangeAllTime.Content" xml:space="preserve">
+    <value>全期間</value>
+  </data>
   <data name="StatsRangeCustom.Content" xml:space="preserve">
     <value>カスタム</value>
   </data>
