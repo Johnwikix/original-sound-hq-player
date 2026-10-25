@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using System;
+using WinUIMusicPlayer.Model;
+using WinUIMusicPlayer.ViewModel;
 
 namespace WinUIMusicPlayer.DesktopLyrics
 {
@@ -12,6 +14,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
     public static class DesktopLyricsManager
     {
         private static DesktopLyricsWindow? _window;
+        private static IDesktopLyricsHost? _host;
         private static bool _isShuttingDown;
 
         private static DesktopLyricsViewModel ViewModel =>
@@ -23,22 +26,61 @@ namespace WinUIMusicPlayer.DesktopLyrics
             if (_isShuttingDown) return;
             if (visible) CreateWindow();
             _window?.SetOverlayVisible(visible);
+            _host?.SetVisible(visible);
+        }
+
+        /// <summary>模式变化时重建宿主窗口；歌词渲染器状态通过总线重新同步。</summary>
+        public static void RecreateForMode()
+        {
+            if (_isShuttingDown || _window is null) return;
+            CloseWindow();
+            if (ViewModel.IsEnabled)
+                SetWindowVisible(!(ViewModel.ShouldAutoHideOnPlayingDetail &&
+                    ViewModel.IsPlayingDetailVisible && ViewModel.IsMainWindowShown));
         }
 
         private static void CreateWindow()
         {
             if (_window is not null) return;
-            _window = new DesktopLyricsWindow();
+            _window = new DesktopLyricsWindow(ViewModel.Mode);
+            _host = CreateHost(ViewModel.Mode);
+            if (_host is IDesktopLyricsBoundsHost taskbarHost)
+                _window.AttachTaskbarHost(taskbarHost);
             // 必须先显示再应用锁定：对未激活的窗口做 GWL_STYLE 切 Popup / 加 WS_EX_LAYERED
             // 会破坏 XAML 岛的呈现与输入管线，后续解锁时窗口无响应且内容丢失。
             _window.AppWindow.Show(false);
             _window.ApplyLock(ViewModel.IsLocked);
+            _host!.Attach(WinRT.Interop.WindowNative.GetWindowHandle(_window), _window.DispatcherQueue);
+        }
+
+        private static IDesktopLyricsHost CreateHost(DesktopLyricsMode mode)
+        {
+            if (mode == DesktopLyricsMode.Taskbar)
+            {
+                AppViewModel appViewModel = App.Services.GetRequiredService<AppViewModel>();
+                return new TaskbarDesktopLyricsHost(
+                    ViewModel.BoundsState,
+                    () => ViewModel.IsLocked,
+                    () => appViewModel.DesktopLyricsTaskbarLyricsWidth);
+            }
+
+            return new FloatingDesktopLyricsHost();
         }
 
         public static void CloseWindow()
         {
             var window = _window;
             _window = null;
+            var host = _host;
+            _host = null;
+            try
+            {
+                host?.Dispose();
+            }
+            catch
+            {
+                // 宿主清理失败不能阻止窗口本身释放。
+            }
             if (window is null) return;
             try
             {

@@ -83,6 +83,20 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<LibraryProjectionService>();
                  services.AddSingleton<PlaybackProgressService>();
                  services.AddSingleton<PlaybackCoordinator>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.LastFm.LastFmApiClient>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.LastFm.ILastFmCredentialVault, WinUIMusicPlayer.Services.LastFm.WindowsLastFmCredentialVault>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.LastFm.ILastFmStore, WinUIMusicPlayer.Services.LastFm.LastFmStore>();
+                 services.AddSingleton(sp => new WinUIMusicPlayer.Services.LastFm.LastFmFavoriteStore(
+                     sp.GetRequiredService<MusicDatabaseService>().GetDbConnection,
+                     new System.Collections.Generic.HashSet<string>(AppData.UnknownArtists) { ToolUtils.GetString("UnknownArtist") }));
+                 services.AddSingleton<WinUIMusicPlayer.Services.LastFm.LastFmService>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.LastFm.LastFmPlaybackBridge>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.LastFm.ILastFmHistorySource>(sp =>
+                     new WinUIMusicPlayer.Services.LastFm.SqliteLastFmHistorySource(
+                         sp.GetRequiredService<MusicDatabaseService>().GetDbConnection,
+                         new System.Collections.Generic.HashSet<string>(AppData.UnknownArtists) { ToolUtils.GetString("UnknownArtist") },
+                         new System.Collections.Generic.HashSet<string>(AppData.UnknownAlbums) { ToolUtils.GetString("UnknownAlbum") }));
+                 services.AddSingleton<LastFmSettingsViewModel>();
                  services.AddSingleton<WinUIMusicPlayer.Services.WebDav.WebDavTransport>();
                  services.AddSingleton<WinUIMusicPlayer.Services.WebDav.RemoteAudioCache>();
                  services.AddSingleton<WebDavLibraryService>();
@@ -91,6 +105,7 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<ApplicationTasks>();
                  services.AddSingleton<UsbExportCoordinator>();
                  services.AddSingleton<SettingsCoordinator>();
+                 services.AddSingleton<ApplicationFontService>();
                  services.AddSingleton<HotKeyService>();
                  services.AddSingleton<ShellService>();
                  services.AddSingleton<LibraryTrackActions>();
@@ -130,6 +145,8 @@ namespace WinUIMusicPlayer
                  services.AddSingleton<AddFolderViewModel>();
                  services.AddSingleton<FolderAccessService>();
                  services.AddSingleton<SettingsViewModel>();
+                 services.AddSingleton<LlmTranslationService>();
+                 services.AddSingleton<ILlmTranslationService>(sp => sp.GetRequiredService<LlmTranslationService>());
                  services.AddTransient<DspSettingsViewModel>();
                  services.AddSingleton<CurvePresetService>();
                  services.AddTransient<ConvolutionCurveViewModel>();
@@ -151,6 +168,9 @@ namespace WinUIMusicPlayer
                      sp.GetRequiredService<ShutdownCoordinator>().RegisterCleanup(service.Dispose);
                      return service;
                  });
+                 services.AddSingleton<WinUIMusicPlayer.Services.Lyrics.LyricsParser>();
+                 services.AddSingleton<WinUIMusicPlayer.Services.Lyrics.LyricsRomanizer>(_ => new());
+                 services.AddSingleton<WinUIMusicPlayer.Services.Lyrics.LyricsOnlineSearch>();
                  services.AddSingleton<LyricsRefreshService>();
                  services.AddSingleton<IpcService>();
                  services.AddSingleton<LicenseService>();

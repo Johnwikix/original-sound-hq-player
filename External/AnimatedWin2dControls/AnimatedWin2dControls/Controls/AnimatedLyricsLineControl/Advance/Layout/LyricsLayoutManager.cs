@@ -19,13 +19,14 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             double lyricsWidth,
             double lyricsHeight,
             int strokeWidth,
-            int fontWeight = 700)
+            int fontWeight = 700,
+            bool showTranslation = true,
+            bool showPronunciation = true,
+            bool preserveFloatTransitions = true)
         {
             if (lines == null || resourceCreator == null) return;
 
             const float horizontalPadding = 20f;
-            double currentX = horizontalPadding;
-            double currentY = 0;
             double layoutWidth = lyricsWidth - horizontalPadding * 2;
 
             var shareFormat = new CanvasTextFormat
@@ -40,7 +41,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             {
                 if (line == null) continue;
 
-                double actualWidth = 0;
+                line.ApplyDisplayOptions(showTranslation, showPronunciation);
 
                 line.RecreateTextLayout(
                     resourceCreator,
@@ -53,8 +54,45 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 if (strokeWidth > 0)
                     line.RecreateTextGeometry();
                 line.DisposeCaches();
+                line.RecreateRenderChars(strokeWidth, preserveFloatTransitions);
+            }
+            shareFormat.Dispose();
+            ArrangeCurrentHeights(lines, originalFontSize, horizontalAlignment, lyricsWidth, layoutWidth);
+        }
 
+        public static void ArrangeCurrentHeights(
+            IList<RenderLyricsLine>? lines,
+            int originalFontSize,
+            CanvasHorizontalAlignment horizontalAlignment,
+            double lyricsWidth)
+        {
+            if (lines == null) return;
+            const float horizontalPadding = 20f;
+            ArrangeCurrentHeights(lines, originalFontSize, horizontalAlignment, lyricsWidth,
+                lyricsWidth - horizontalPadding * 2);
+        }
+
+        private static void ArrangeCurrentHeights(
+            IList<RenderLyricsLine> lines,
+            int originalFontSize,
+            CanvasHorizontalAlignment horizontalAlignment,
+            double lyricsWidth,
+            double layoutWidth)
+        {
+            const float horizontalPadding = 20f;
+            double currentX = horizontalPadding;
+            double currentY = 0;
+
+            foreach (var line in lines)
+            {
+                if (line == null) continue;
+                double actualWidth = 0;
                 line.TopLeftPosition = new Vector2((float)currentX, (float)currentY);
+
+                line.PronunciationLayer.Position = new Vector2((float)currentX, (float)currentY);
+                currentY += line.PronunciationLayer.SlotHeight(line.LayerSpacing);
+                if (line.PronunciationLayer.Height > 0)
+                    actualWidth = Math.Max(actualWidth, line.PronunciationLayer.Layout!.LayoutBounds.Width);
 
                 if (line.PrimaryTextLayout != null)
                 {
@@ -63,16 +101,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     actualWidth = Math.Max(actualWidth, line.PrimaryTextLayout.LayoutBounds.Width);
                 }
 
-                if (line.SecondaryTextLayout != null)
-                {
-                    currentY += line.PrimaryTextLayout?.LayoutBounds.Height * 0.1 ?? 3;
-                    line.SecondaryPosition = new Vector2((float)currentX, (float)currentY);
-                    currentY += line.SecondaryTextLayout.LayoutBounds.Height;
-                    actualWidth = Math.Max(actualWidth, line.SecondaryTextLayout.LayoutBounds.Width);
-                }
+                line.TranslationLayer.Position = new Vector2((float)currentX,
+                    (float)(currentY + line.LayerSpacing * line.TranslationLayer.Reveal.Value));
+                currentY += line.TranslationLayer.SlotHeight(line.LayerSpacing);
+                if (line.TranslationLayer.Height > 0)
+                    actualWidth = Math.Max(actualWidth, line.TranslationLayer.Layout!.LayoutBounds.Width);
 
                 line.BottomRightPosition = new Vector2((float)currentX + (float)actualWidth, (float)currentY);
-
                 line.TopLeftPosition = horizontalAlignment switch
                 {
                     CanvasHorizontalAlignment.Left => line.TopLeftPosition,
@@ -80,7 +115,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     CanvasHorizontalAlignment.Right => line.TopLeftPosition.AddX((float)(layoutWidth - actualWidth)),
                     _ => line.TopLeftPosition
                 };
-
                 line.BottomRightPosition = horizontalAlignment switch
                 {
                     CanvasHorizontalAlignment.Left => line.BottomRightPosition,
@@ -94,15 +128,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 {
                     CanvasHorizontalAlignment.Left => new Vector2(0, (float)centerY),
                     CanvasHorizontalAlignment.Center => new Vector2((float)(lyricsWidth / 2), (float)centerY),
-                    CanvasHorizontalAlignment.Right => new Vector2((float)(lyricsWidth), (float)centerY),
+                    CanvasHorizontalAlignment.Right => new Vector2((float)lyricsWidth, (float)centerY),
                     _ => new Vector2(0, (float)centerY),
                 };
-
                 currentY += originalFontSize * 0.75;
-
-                line.RecreateRenderChars(strokeWidth);
             }
-            shareFormat.Dispose();
         }
 
         public static double? CalculateTargetScrollOffset(IList<RenderLyricsLine>? lines, int playingLineIndex)

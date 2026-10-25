@@ -9,6 +9,7 @@ using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Windowing;
+using Microsoft.UI.Dispatching;
 using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -42,8 +43,8 @@ namespace WinUIMusicPlayer.View
         private const double textScale = 1.6;  
         public PlayingDetailPage(PlayingDetailViewModel viewModel)
         {
-            this.InitializeComponent();
             ViewModel = viewModel;
+            this.InitializeComponent();
             DataContext = this;
             Loaded += PlayingDetailPage_Loaded;
             _logger = App.GetLogger<PlayingDetailPage>();
@@ -56,37 +57,33 @@ namespace WinUIMusicPlayer.View
         private void PlayingDetailPage_Loaded(object sender, RoutedEventArgs e)
         {
             _isLoaded = true;
-            if (ViewModel.AppViewModel.IsWin2dAnimatedText)
-            {
-                var effectType = ViewModel.AppViewModel.Win2dTextEffectType.Value;
-                // 1. 定义一个简单的局部函数或直接在表达式中实例化
-                AnimatedWin2dControls.Controls.AnimatedTextBlock.ITextEffect CreateEffect(AnimatedTextEffect type) => type switch
-                {
-                    AnimatedTextEffect.TextBlurEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextBlurEffect(),
-                    AnimatedTextEffect.TextElasticEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextElasticEffect(),
-                    AnimatedTextEffect.TextFadeEffect => new TextFadeEffect(),
-                    AnimatedTextEffect.TextMotionBlurEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextMotionBlurEffect(),
-                    AnimatedTextEffect.TextPivotEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextPivotEffect(),
-                    AnimatedTextEffect.TextWipeEffect => new TextWipeEffect(),
-                    AnimatedTextEffect.TextZoomEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextZoomEffect(),
-                    _ => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextDefaultEffect()
-                };
-                AnimatedPlayingDetailTextBlock?.TextEffect = CreateEffect(effectType);
-            }
+            ViewModel.RefreshPresentation();
+            ApplyAnimatedTextEffect();
             App.MainWindow.SizeChanged += MainWindow_SizeChanged;
             App.MainWindow.AppWindow.Changed += AppWindow_Changed;
             ViewModel.AppViewModel.PropertyChanged += AppViewModel_PropertyChanged;
             _ = ChangeControlsFontSize();
             // 首次进入也下发：null 时着色器回退内置配色，避免沿用其它页面的残留状态
             NowPlaying?.SetPalette(ViewModel.AppViewModel.LyricPagePalette);
-            if (ViewModel.AppViewModel.LyricPageArtwork is { } artwork)
-                NowPlaying?.SetArtwork(artwork);
+            NowPlaying?.SetArtwork(ViewModel.AppViewModel.LyricPageArtwork);
             UpdateLyricsRegion();
             Loaded -= PlayingDetailPage_Loaded;
         }
 
         private void AppViewModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
+            if (e.PropertyName is null or ""
+                or nameof(AppViewModel.IsFluidBackgroundEnabled)
+                or nameof(AppViewModel.EnableAdvancedLyricsEffect)
+                or nameof(AppViewModel.WindowBackgroundImagePath)
+                or nameof(AppViewModel.IsWin2dAnimatedText))
+            {
+                if (DispatcherQueue.HasThreadAccess)
+                    ViewModel.RefreshPresentation();
+                else
+                    DispatcherQueue.TryEnqueue(ViewModel.RefreshPresentation);
+            }
+
             if (e.PropertyName == nameof(AppViewModel.LyricPagePalette))
             {
                 // null 也下发：让着色器回退内置配色，避免滞留上一首的调色板
@@ -100,7 +97,42 @@ namespace WinUIMusicPlayer.View
             {
                 UpdateLyricsRegion();
             }
+            else if (e.PropertyName == nameof(AppViewModel.Win2dTextEffectType))
+            {
+                ApplyAnimatedTextEffect();
+            }
+            else if (e.PropertyName == nameof(AppViewModel.IsWin2dAnimatedText))
+            {
+                ApplyAnimatedTextEffect();
+            }
         }
+
+        private void AnimatedPlayingDetailTextBlock_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Reapply the current effect after the Win2D template is ready.
+            ApplyAnimatedTextEffect();
+        }
+
+        private void ApplyAnimatedTextEffect()
+        {
+            var textBlock = AnimatedPlayingDetailTextBlock;
+            if (textBlock is null || !ViewModel.AppViewModel.IsWin2dAnimatedText)
+                return;
+
+            textBlock.TextEffect = CreateAnimatedTextEffect(ViewModel.AppViewModel.Win2dTextEffectType.Value);
+        }
+
+        private static AnimatedWin2dControls.Controls.AnimatedTextBlock.ITextEffect CreateAnimatedTextEffect(AnimatedTextEffect type) => type switch
+        {
+            AnimatedTextEffect.TextBlurEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextBlurEffect(),
+            AnimatedTextEffect.TextElasticEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextElasticEffect(),
+            AnimatedTextEffect.TextFadeEffect => new TextFadeEffect(),
+            AnimatedTextEffect.TextMotionBlurEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextMotionBlurEffect(),
+            AnimatedTextEffect.TextPivotEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextPivotEffect(),
+            AnimatedTextEffect.TextWipeEffect => new TextWipeEffect(),
+            AnimatedTextEffect.TextZoomEffect => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextZoomEffect(),
+            _ => new AnimatedWin2dControls.Controls.AnimatedTextBlock.Effects.TextDefaultEffect()
+        };
 
         private void AppWindow_Changed(AppWindow sender, AppWindowChangedEventArgs args)
         {
@@ -115,6 +147,17 @@ namespace WinUIMusicPlayer.View
         private void MainWindow_SizeChanged(object sender, WindowSizeChangedEventArgs args)
         {
             _ = ChangeControlsFontSize();
+        }
+
+        private void NowPlaying_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Reapply the cached presentation state after the Win2D template is ready.
+            NowPlaying?.SetPalette(ViewModel.AppViewModel.LyricPagePalette);
+            NowPlaying?.SetArtwork(ViewModel.AppViewModel.LyricPageArtwork);
+
+            // Recalculate after the Win2D template has completed layout so the
+            // coordinator receives coordinates in the current canvas.
+            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, UpdateLyricsRegion);
         }
 
         private async Task ChangeControlsFontSize()
@@ -135,13 +178,13 @@ namespace WinUIMusicPlayer.View
             double driver = windowSize.Width / _dpiScale;
             var (lyrics, title, artist,info, topHeight) = driver switch
             {
-                <= 1024 => (36, 26, 22, 10,  260),
-                < 1280 => (42, 32, 24, 11,  280),
-                < 1600 => (48, 36, 26, 13, 300),
-                < 1920 => (56, 42, 32,  14, 320),
-                < 2560 => (68, 48, 36, 15, 340),
-                < 2880 => (76, 56, 40, 16, 360),
-                _ => (90, 64, 48, 18, 380)
+                <= 1024 => (32, 24, 20, 10,  260),
+                < 1280 => (36, 26, 22, 11,  280),
+                < 1600 => (42, 32, 24, 13, 300),
+                < 1920 => (48, 36, 30,  14, 320),
+                < 2560 => (56, 42, 34, 15, 340),
+                < 2880 => (64, 48, 38, 16, 360),
+                _ => (76, 56, 44, 18, 380)
             };
 
             if (portrait)
@@ -281,6 +324,7 @@ namespace WinUIMusicPlayer.View
 
             PlayingDetail.UpdateLayout();
             LeftControlPanel.UpdateLayout();
+            ScheduleLyricsRegionUpdate();
         }
 
         private void ControlsStack_PointerEntered(object sender, PointerRoutedEventArgs e)
@@ -460,6 +504,7 @@ namespace WinUIMusicPlayer.View
                 LyricsView?.LyricInteracted -= LyricsView_LyricInteracted;
                 LyricsView?.ExceptionInteracted -= LyricsView_ExceptionInteracted;
                 LyricsView?.ShutdownLyricsCanvas();
+                AnimatedPlayingDetailTextBlock?.PrepareForShutdown();
                 NowPlaying?.ExceptionOccurred -= BackGround_ExceptionOccurred;
                 NowPlaying?.Dispose();
             }
@@ -516,6 +561,11 @@ namespace WinUIMusicPlayer.View
         private void LyricsRegionHost_SizeChanged(object sender, SizeChangedEventArgs e)
         {
             UpdateLyricsRegion();
+        }
+
+        private void ScheduleLyricsRegionUpdate()
+        {
+            DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, UpdateLyricsRegion);
         }
 
         private void UpdateLyricsRegion()

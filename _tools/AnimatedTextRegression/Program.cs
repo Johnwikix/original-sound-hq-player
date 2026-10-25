@@ -54,7 +54,8 @@ public sealed partial class TestApp : Application
         return (T)line.GetType().GetProperty(name).GetValue(line);
     }
     private static float HoverOffset(AnimatedTextBlock c, int index) =>
-        (float)typeof(AnimatedTextBlock).GetMethod("GetHoverOffset", Private).Invoke(c, new object[] { LineValue<float>(c, index, "Distance") });
+        (float)typeof(AnimatedTextBlock).GetMethod("GetHoverOffset", Private).Invoke(c,
+            new object[] { LineValue<float>(c, index, "Distance"), LineValue<float>(c, index, "LoopDistance") });
     private static string DescribeLayout(DependencyObject node, int depth)
     {
         string text = new string(' ', depth * 2) + node.GetType().Name;
@@ -196,6 +197,9 @@ public sealed partial class TestApp : Application
             Check(Field(c, "_hoverLines") == null, "Disabled hover must not scroll");
             c.IsHoverScrollEnabled = true;
             await Until(() => Field(c, "_hoverLines") != null, "hover starts for trimmed text");
+            typeof(AnimatedTextBlock).GetField("_hoverElapsed", Private).SetValue(c, 0d);
+            c.OnSharedTick(TimeSpan.FromMilliseconds(100));
+            Check(HoverOffset(c, 0) < 0, "Hover must start moving immediately after entry");
             c.OnSharedTick(TimeSpan.FromSeconds(2));
             float offset = HoverOffset(c, 0);
             Check(offset < 0, "Hover must advance text horizontally");
@@ -265,9 +269,16 @@ public sealed partial class TestApp : Application
             float firstDistance = LineValue<float>(c, 0, "Distance");
             float secondDistance = LineValue<float>(c, 1, "Distance");
             Check(secondDistance > firstDistance && firstDistance > 0, "Each long line has its own travel distance");
-            typeof(AnimatedTextBlock).GetField("_hoverElapsed", Private).SetValue(c, 0.8 + firstDistance / 36 + 0.4);
-            Check(Math.Abs(HoverOffset(c, 0) + firstDistance) < 0.01 && HoverOffset(c, 1) < -firstDistance,
-                "One line can pause at its end while the other continues");
+            float firstLoopDistance = LineValue<float>(c, 0, "LoopDistance");
+            typeof(AnimatedTextBlock).GetField("_hoverElapsed", Private).SetValue(c, 0d);
+            float startOffset = HoverOffset(c, 0);
+            typeof(AnimatedTextBlock).GetField("_hoverElapsed", Private).SetValue(c, firstLoopDistance / 36 * 0.5);
+            float middleOffset = HoverOffset(c, 0);
+            Check(startOffset == 0 && middleOffset < startOffset,
+                "LTR marquee keeps moving in one direction");
+            typeof(AnimatedTextBlock).GetField("_hoverElapsed", Private).SetValue(c, firstLoopDistance / 36 + 0.01);
+            Check(HoverOffset(c, 0) > -firstLoopDistance * 0.1,
+                "LTR marquee wraps to the beginning after the full text width");
             c.TextEffect = new TextFadeEffect { AnimationDuration = TimeSpan.FromMilliseconds(160) };
             c.Text = LongText + " album\r\n" + LongText + " artist";
             Check(Field(c, "_hoverLines") == null, "Two-line text change disposes all scrolling layouts");

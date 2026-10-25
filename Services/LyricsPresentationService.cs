@@ -29,7 +29,9 @@ public sealed class LyricsPresentationService(AppState state) : IDisposable
         IsPlayingBus.Publish(state.Playback.IsPlaying);
         TimeProgressBus.Publish((long)state.Playback.CurrentPlayingTime.TotalMilliseconds);
         OffsetMsBus.Publish(state.Playback.CurrentPlayingMusic?.LyricsOffsetMs ?? 0);
-        if (state.Presentation.UILyrics.Count > 0) UILyricsBus.Publish(state.Presentation.UILyrics);
+        // Replay the empty snapshot as well. New lyric controls must clear their
+        // renderer and empty-state UI even when the current track has no lyrics.
+        UILyricsBus.Publish(state.Presentation.UILyrics);
     }
     private DispatcherQueueTimer? _settingsDebounceTimer;
 
@@ -51,7 +53,7 @@ public sealed class LyricsPresentationService(AppState state) : IDisposable
     {
         if (_disposed) return;
 
-        string fontFamilyName = state.Preferences.FontFamily?.FontFamily?.Source ?? "Segoe UI";
+        string fontFamilyName = state.Preferences.EffectiveLyricsFontFamilyName;
         AnimatedWin2dControls.Messages.LyricsSettingsBus.Publish(new AnimatedWin2dControls.Messages.LyricsSettingsBus.Settings(
             fontFamilyName: fontFamilyName,
             lyricsTextAlignment: state.Preferences.LyricsAlignment,
@@ -74,7 +76,9 @@ public sealed class LyricsPresentationService(AppState state) : IDisposable
             targetFrameRate: state.Preferences.TargetFrameRate,
             isCustomColorEnabled: state.Preferences.IsCustomLyricsColorEnabled,
             lyricsCustomColor: state.Preferences.LyricsCustomColor,
-            fontWeight: state.Preferences.LyricsFontWeight));
+            fontWeight: state.Preferences.LyricsFontWeight,
+            showTranslation: state.Preferences.IsLyricsTranslationEnabled,
+            showPronunciation: state.Preferences.IsLyricsPronunciationEnabled));
     }
 
     public void SendLyricsFontSize()

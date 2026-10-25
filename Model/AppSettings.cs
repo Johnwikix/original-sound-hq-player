@@ -40,17 +40,31 @@ namespace WinUIMusicPlayer.Model
         public static ElementTheme ElementTheme { get; set; } = ElementTheme.Default;
         public static bool IsRunningBackend { get; set; } = true;
         //public static bool IsDarkMode { get; set; } = false;
+        public static string LocalLyricsFormatOrder { get; set; } = "krc,qrc,lrc,ttml";
+        public static bool PreferDatabaseLyrics { get; set; }
         public static bool IsAutoLyricsEnabled { get; set; } = true;
+        public static bool IsLyricsTranslationEnabled { get; set; } = true;
+        public static bool IsLyricsPronunciationEnabled { get; set; } = true;
+        public static bool IsMandarinPronunciationEnabled { get; set; } = true;
+        public static bool IsCantonesePronunciationEnabled { get; set; } = true;
+        public static bool IsJapanesePronunciationEnabled { get; set; } = true;
+        public static bool IsKoreanPronunciationEnabled { get; set; } = true;
         public static bool AutoHideDesktopLyricsOnPlayingDetail { get; set; } = false;
+        public static bool AutoHideDesktopLyricsFloatingOnPlayingDetail { get; set; } = false;
+        public static bool AutoHideDesktopLyricsTaskbarOnPlayingDetail { get; set; } = false;
         public static bool IsDesktopLyricsEnabled { get; set; } = false;
         public static bool IsDesktopLyricsLocked { get; set; } = false;
         public static bool IsDesktopLyricsKaraokeEnabled { get; set; } = true;
+        /// <summary>桌面歌词宿主模式的持久化值；未知值启动时回退到 Floating。</summary>
+        public static string DesktopLyricsMode { get; set; } = nameof(WinUIMusicPlayer.Model.DesktopLyricsMode.Floating);
         public static double DesktopLyricsFontSize { get; set; } = 36;
+        public static int DesktopLyricsTaskbarLyricsWidth { get; set; } = 640;
         public static string DesktopLyricsFontFamily { get; set; } = "Segoe UI";
         public static uint DesktopLyricsColorRgb { get; set; } = 0x00FFFFFFu;
         /// <summary>false（默认）= 桌面歌词颜色按悬浮窗周围环境自动取黑/白；true = 用户自选颜色覆盖自动取色。</summary>
         public static bool IsDesktopLyricsCustomColorEnabled { get; set; } = false;
         public static bool IsDesktopLyricsTranslationEnabled { get; set; } = true;
+        public static bool IsDesktopLyricsPronunciationEnabled { get; set; } = true;
         public static bool IsDesktopLyricsGlowEnabled { get; set; } = true;
         public static bool IsDesktopLyricsCharFloatEnabled { get; set; } = true;
         public static bool IsDesktopLyricsCharScaleEnabled { get; set; } = true;
@@ -80,8 +94,6 @@ namespace WinUIMusicPlayer.Model
         public static string MusicCoverCache { get; set; } = System.IO.Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "MusicCoverCache");
         public static ImageSwitchType ImageSwitchType = ImageSwitchType.ScaleInOut;
         public static bool EnableGlobalHotKey { get; set; } = false;
-        public static bool IsTrimOnHideEnabled { get; set; } = false;
-        public static bool IsTrimAfterPlaybackEnabled { get; set; } = false;
         private static string _artistSplitSymbols = ", ; / 、 & feat. :";
         private static string[] _artistSplitters = ParseArtistSplitSymbols(_artistSplitSymbols);
         public static string ArtistSplitSymbols

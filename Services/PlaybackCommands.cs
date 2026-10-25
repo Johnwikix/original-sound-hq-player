@@ -12,7 +12,7 @@ using WinUIMusicPlayer.ViewModel;
 namespace WinUIMusicPlayer.Services;
 
 /// <summary>所有交互入口共用命令与就绪判定。执行时才进入现有播放实现。</summary>
-public sealed class PlaybackCommands : IDisposable
+public sealed class PlaybackCommands : IDisposable, INotifyPropertyChanged
 {
     private readonly AppLifecycle _lifecycle;
     private readonly AppViewModel _state;
@@ -33,8 +33,11 @@ public sealed class PlaybackCommands : IDisposable
     // 退出转 Stopping 后不会复位，生命周期守卫须单独保留。
     private bool CanPlay => !_disposed && _lifecycle.IsReady && _state.IsPlaybackEngineReady && _state.CurrentPlayingMusic is not null;
     private bool CanSeek => CanPlay && _state.CurrentPlayingMusic is { IsPlayable: true };
-    private bool CanSwitch => !_disposed && _lifecycle.IsReady && _state.IsPlaybackEngineReady && HasCandidateEntry();
+    /// <summary>切歌按钮在 UI 上显示的可用状态，与 Next/PreviousCommand 共用同一守卫。</summary>
+    public bool CanSwitch => !_disposed && _lifecycle.IsReady && _state.IsPlaybackEngineReady && HasCandidateEntry();
     private BassPlayerCommandService Player => _services.GetRequiredService<BassPlayerCommandService>();
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 
     public PlaybackCommands(AppLifecycle lifecycle, AppViewModel state, IServiceProvider services)
     {
@@ -113,7 +116,8 @@ public sealed class PlaybackCommands : IDisposable
         foreach (var music in _state.CurrentPlayingList) if (music.IsRemote || music.IsPlayable) return true;
         return false;
     }
-    internal static int FindCandidateIndex(IReadOnlyList<Music> list, int current, int direction)
+    internal static int FindCandidateIndex(IReadOnlyList<Music> list, int current, int direction,
+        bool allowSingleEntryReplay = false)
     {
         if (list.Count == 0) return -1;
         int index = current;
@@ -121,7 +125,8 @@ public sealed class PlaybackCommands : IDisposable
         {
             index = (index + direction + list.Count) % list.Count;
             // 来源状态只是上次探活的结果；实际可用性由协调器重新确认。
-            if ((list[index].IsRemote || list[index].IsPlayable) && index != current) return index;
+            if ((list[index].IsRemote || list[index].IsPlayable) &&
+                (index != current || (allowSingleEntryReplay && list.Count == 1))) return index;
         }
         return -1;
     }
@@ -171,6 +176,7 @@ public sealed class PlaybackCommands : IDisposable
         NextCommand.NotifyCanExecuteChanged();
         PreviousCommand.NotifyCanExecuteChanged();
         SeekCommand.NotifyCanExecuteChanged();
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanSwitch)));
     }
     public void Dispose()
     {

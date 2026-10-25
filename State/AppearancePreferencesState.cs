@@ -40,7 +40,15 @@ public sealed class AppearancePreferencesState : ObservableObject
         }
     } = 20;
     public bool IsDarkMode { get; set => SetProperty(ref field, value); } = false;
-    public FontInfo FontFamily { get; set => SetProperty(ref field, value); }
+    public FontInfo ApplicationFontFamily
+    {
+        get => field;
+        set
+        {
+            // ComboBox 更换 ItemsSource 时的临时空选择不能清除有效偏好。
+            if (value is not null) SetProperty(ref field, value);
+        }
+    } = FontInfo.CreateDefault();
     public Color CustomColor { get; set => SetProperty(ref field, value); } = Color.FromArgb(0xFF, 0x80, 0x80, 0x80);
     public float CustomOpacity { get; set => SetProperty(ref field, value); } = 50f;
     public bool IsUpdateBackDrop { get; set => SetProperty(ref field, value); } = false;

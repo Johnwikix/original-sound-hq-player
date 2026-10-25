@@ -17,8 +17,8 @@
     <PackageReference Include="ComputeSharp.D2D1" Version="3.2.0" />
     <PackageReference Include="ComputeSharp.D2D1.WinUI" Version="3.2.0" />
     <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2270" />
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.3.1" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
     <PackageReference Include="Serilog" Version="4.4.0" />
     <PackageReference Include="ZLinq" Version="1.5.6" />
   </ItemGroup>

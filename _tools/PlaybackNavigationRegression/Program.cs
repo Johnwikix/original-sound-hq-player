@@ -25,9 +25,43 @@ await work;
 
 internal static class Regression
 {
+    private static async Task ConfirmedStartsAsync()
+    {
+        using var test = new Scenario();
+        var music = new Music(81);
+        int confirmations = 0;
+        test.Coordinator.PlaybackConfirmed += (confirmed, snapshot) =>
+        {
+            Check(App.MainWindow.DispatcherQueue.HasThreadAccess && confirmed == music && snapshot.Playing,
+                "Last.fm playback confirmation publishes the actual occurrence on UI dispatcher");
+            confirmations++;
+        };
+        test.State.CurrentPlayingList = [music];
+        test.Ipc.Progress = new(1, 10, 0, 10000, System.Diagnostics.Stopwatch.GetTimestamp(), false);
+        await test.Coordinator.PlayAsync(music);
+        await Task.Delay(75);
+        Check(test.Statistics.Starts == 0, "queued/failed playback does not increment play count");
+        Check(confirmations == 0, "queued playback does not publish Last.fm confirmation");
+        test.Ipc.Progress = new(2, 11, 20, 10000, System.Diagnostics.Stopwatch.GetTimestamp(), true);
+        await Task.Delay(100);
+        Check(test.Statistics.Starts == 1, "confirmed local playback increments once");
+        Check(confirmations == 1, "confirmed playback publishes exactly one Last.fm occurrence");
+        test.Ipc.Progress = new(3, 12, 1000, 10000, System.Diagnostics.Stopwatch.GetTimestamp(), true);
+        await Task.Delay(75);
+        Check(test.Statistics.Starts == 1, "seek and repeated telemetry do not increment play count");
+        Check(confirmations == 1, "seek does not publish a new Last.fm occurrence");
+        await test.Coordinator.PlayAsync(music);
+        test.Ipc.Progress = new(4, 13, 20, 10000, System.Diagnostics.Stopwatch.GetTimestamp(), true);
+        await Task.Delay(100);
+        Check(test.Statistics.Starts == 2, "explicit same-track restart counts a new real playback");
+        Check(confirmations == 2, "explicit restart publishes a fresh Last.fm occurrence");
+    }
+
     public static async Task RunAsync()
     {
+        await ConfirmedStartsAsync();
         await CacheSizeRegression.RunAsync();
+        await SingleEntryLoopAsync();
         using var test = new Scenario();
         var current = new Music(1);
         var offline = new Music(2, 10);
@@ -342,6 +376,24 @@ internal static class Regression
     }
     private static async Task GaplessAsync()
     {
+        using (var notificationFirst = new Scenario())
+        {
+            var old = new Music(801);
+            var next = new Music(802);
+            notificationFirst.State.CurrentPlayingList = [old, next];
+            notificationFirst.Ipc.Progress = new(1, 80, 2500, 3000, 0, true);
+            await notificationFirst.Coordinator.PlayAtAsync(0);
+            notificationFirst.State.IsPlaying = true;
+            await Task.Yield();
+            var plan = notificationFirst.Ipc.Queued.Last();
+            BassPlayerIpc.Shared.ProgressSnapshot? confirmed = null;
+            notificationFirst.Coordinator.PlaybackConfirmed += (_, snapshot) => confirmed = snapshot;
+            await Task.Run(() => notificationFirst.Ipc.Transition(plan.Token, 81));
+            await Task.Delay(50);
+            Check(notificationFirst.State.CurrentPlayingMusic == next && confirmed is { } occurrence
+                && occurrence.GaplessToken == plan.Token && occurrence.CurrentMs == 0,
+                "notification-first gapless confirmation uses committed token rather than old state-pipe progress");
+        }
         using var test = new Scenario();
         var first = new Music(101);
         var second = new Music(102);
@@ -529,6 +581,63 @@ internal static class Regression
         await explicitSelection;
     }
 
+    private static async Task SingleEntryLoopAsync()
+    {
+        foreach (var mode in new[] { WinUIMusicPlayer.Utils.ToolUtils.PlayMode.ListLoop,
+                     WinUIMusicPlayer.Utils.ToolUtils.PlayMode.RandomLoop })
+        {
+            using var test = new Scenario();
+            var only = new Music(105);
+            test.State.CurrentPlayingList = [only];
+            test.State.CurrentPlayMode = mode;
+            test.Ipc.Progress = new(1, 10, 0, 3000, 0, true);
+            await test.Coordinator.PlayAtAsync(0);
+            test.State.IsPlaying = true;
+            Check(test.Ipc.Queued.Last().Path == only.Path,
+                $"{mode}: gapless preloads the only song");
+            Check(PlaybackCommands.FindCandidateIndex(test.State.CurrentPlayingList,
+                test.State.GetCurrentIndex(), 1) == -1,
+                $"{mode}: manual navigation still excludes the current entry");
+            int next = PlaybackCommands.FindCandidateIndex(test.State.CurrentPlayingList,
+                test.State.GetCurrentIndex(), 1, allowSingleEntryReplay: true);
+            Check(next == 0, $"{mode}: natural end selects the only queue entry");
+            await test.Coordinator.PlayAtAsync(next, stopWhenUnavailable: true);
+            Check(test.Player.Played.SequenceEqual([only, only]),
+                $"{mode}: natural end restarts the only song");
+
+            using var gapless = new Scenario();
+            gapless.State.CurrentPlayingList = [only];
+            gapless.State.CurrentPlayMode = mode;
+            gapless.Ipc.Progress = new(1, 10, 0, 3000, 0, true);
+            await gapless.Coordinator.PlayAtAsync(0);
+            int presentations = 0;
+            gapless.Coordinator.TrackStarted += (_, _) => presentations++;
+            gapless.State.IsPlaying = true;
+            var queued = gapless.Ipc.Queued.Last();
+            gapless.Ipc.Progress = new(2, 11, 0, 3000, 0, true, 0, 1, queued.Token);
+            await Task.Run(() => gapless.Ipc.Transition(queued.Token, 11));
+            await WaitAsync(() => presentations == 1 && gapless.Ipc.Queued.Count >= 2);
+            Check(gapless.Player.Played.Count == 1 && gapless.State.CurrentPlayingMusic == only &&
+                  gapless.Ipc.Queued.Last().Path == only.Path,
+                $"{mode}: gapless transition presents and preloads the same song again");
+
+            using var remote = new Scenario();
+            var remoteOnly = new Music(106, 10);
+            remote.State.CurrentPlayingList = [remoteOnly];
+            remote.State.CurrentPlayMode = mode;
+            await remote.Coordinator.PlayAtAsync(0);
+            int remoteNext = PlaybackCommands.FindCandidateIndex(remote.State.CurrentPlayingList,
+                remote.State.GetCurrentIndex(), 1, allowSingleEntryReplay: true);
+            await remote.Coordinator.PlayAtAsync(remoteNext, stopWhenUnavailable: true);
+            Check(remote.Remote.Played.SequenceEqual([remoteOnly, remoteOnly]),
+                $"{mode}: natural end restarts the only remote song");
+            remote.Library.Probe = (_, _) => Task.FromResult(false);
+            await remote.Coordinator.PlayAtAsync(remoteNext, stopWhenUnavailable: true);
+            Check(remote.Player.Ends == 1 && remote.Remote.Played.Count == 2,
+                $"{mode}: unavailable remote song ends after one bounded probe");
+        }
+    }
+
     static void Check(bool value, string message) { if (!value) throw new Exception(message); Console.WriteLine("PASS: " + message); }
 }
 sealed class Scenario : IDisposable
@@ -540,10 +649,11 @@ sealed class Scenario : IDisposable
     public AppLifecycle Lifecycle { get; } = new();
     public IpcService Ipc { get; } = new();
     public PlaybackCoordinator Coordinator { get; }
+    public PlaybackStatsService Statistics { get; } = new();
     public Scenario()
     {
         Player.State = State;
-        Coordinator = new(State, Player, new(), new ApplicationTasks(Lifecycle),
+        Coordinator = new(State, Player, Statistics, new ApplicationTasks(Lifecycle),
             new ShutdownCoordinator(Lifecycle, NullLogger<ShutdownCoordinator>.Instance), NullLogger<PlaybackCoordinator>.Instance, Remote, Library, Ipc);
     }
     public void Dispose() => Coordinator.Dispose();

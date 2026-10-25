@@ -1,47 +1,194 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <winex:WindowEx
     x:Class="WinUIMusicPlayer.DesktopLyrics.DesktopLyricsWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:desktop="using:WinUIMusicPlayer.DesktopLyrics"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:winex="using:WinUIEx"
     xmlns:tools="using:WinUIMusicPlayer.Utils"
-    mc:Ignorable="d"
-    Title="DesktopLyrics">
-    <Grid
+    xmlns:winex="using:WinUIEx"
+    Title="DesktopLyrics"
+    mc:Ignorable="d">
+    <desktop:DesktopLyricsInputGrid
         x:Name="RootGrid"
-        Background="Transparent"
+        tools:ApplicationFont.IsEnabled="True"
         Padding="8"
+        Background="Transparent"
         PointerCanceled="RootGrid_PointerCanceled"
         PointerCaptureLost="RootGrid_PointerCaptureLost"
         PointerMoved="RootGrid_PointerMoved"
         PointerPressed="RootGrid_PointerPressed"
         PointerReleased="RootGrid_PointerReleased">
-        <Grid.Resources>
-            <ResourceDictionary>
-                <ResourceDictionary.ThemeDictionaries>
-                    <!--  悬浮按钮覆写默认 Button 主题资源（模板经 ThemeResource 解析，窗口树内生效）：
-                          暗色主题用深色底 + 白色前景，保证在白色歌词背景上的可见度  -->
-                    <ResourceDictionary x:Key="Default">
-                        <SolidColorBrush x:Key="ButtonBackground" Color="#8E000000" />
-                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#CF000000" />
-                        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#D3000000" />
-                        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#FFFFFFFF" />
-                        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#FFFFFFFF" />
-                    </ResourceDictionary>
-                    <!--  亮色主题镜像：浅色底 + 黑色前景，与窗口 RequestedTheme（themeChanged 同步）联动  -->
-                    <ResourceDictionary x:Key="Light">
-                        <SolidColorBrush x:Key="ButtonBackground" Color="#8EFFFFFF" />
-                        <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#CFFFFFFF" />
-                        <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#D3FFFFFF" />
-                        <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#FF000000" />
-                        <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#FF000000" />
-                    </ResourceDictionary>
-                </ResourceDictionary.ThemeDictionaries>
-            </ResourceDictionary>
-        </Grid.Resources>
-        <ContentPresenter x:Name="RendererHost" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+        <Grid
+            x:Name="TaskbarLayoutRoot"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            ColumnDefinitions="Auto,*">
+            <!--  Keep this fixed media column aligned with TaskbarDesktopLyricsHost.MediaPanelWidth.  -->
+            <Border
+                x:Name="TaskbarMediaPanel"
+                Grid.Column="0"
+                Width="265"
+                Margin="0,0,8,0"
+                Visibility="Collapsed">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="6">
+                    <Border
+                        x:Name="TaskbarCoverButtonHost"
+                        Width="42"
+                        Height="42"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        CornerRadius="4"
+                        PointerEntered="TaskbarCoverButtonHost_PointerEntered"
+                        PointerExited="TaskbarCoverButtonHost_PointerExited">
+                        <Grid>
+                            <FontIcon
+                                x:Name="TaskbarCoverPlaceholder"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                Glyph="&#xE93C;" />
+                            <Button
+                                x:Name="TaskbarCoverPlayPauseButton"
+                                Width="42"
+                                Height="42"
+                                Padding="0"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                AutomationProperties.Name="Play or pause"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Command="{x:Bind Playback.ToggleCommand, Mode=OneWay}"
+                                IsEnabled="{x:Bind tools:BindUtils.IsPlayButtonEnabled(AppViewModel.IsPlaybackEngineReady, AppViewModel.CurrentPlayingMusic), Mode=OneWay}"
+                                PointerEntered="TaskbarCoverPlayPauseButton_PointerEntered"
+                                PointerExited="TaskbarCoverPlayPauseButton_PointerExited"
+                                Style="{StaticResource TaskbarCoverPlayPauseButtonStyle}">
+                                <Grid>
+                                    <Image x:Name="TaskbarCoverImage" Stretch="UniformToFill" />
+                                    <FontIcon
+                                        x:Name="TaskbarCoverPlayIcon"
+                                        FontSize="16"
+                                        Glyph="{x:Bind tools:BindUtils.PlayStatusToGlyphConverter(AppViewModel.IsPlaying), Mode=OneWay}"
+                                        IsHitTestVisible="False"
+                                        Opacity="0" />
+                                </Grid>
+                            </Button>
+                        </Grid>
+                    </Border>
+                    <StackPanel
+                        x:Name="TaskbarSongInfoPanel"
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Background="Transparent"
+                        PointerEntered="TaskbarSongInfoPanel_PointerEntered"
+                        PointerExited="TaskbarSongInfoPanel_PointerExited"
+                        Spacing="1">
+                        <Grid>
+                            <StackPanel x:Name="TaskbarSongMetadata" Spacing="1">
+                                <TextBlock
+                                    x:Name="TaskbarTitleText"
+                                    FontSize="12"
+                                    FontWeight="SemiBold"
+                                    TextTrimming="CharacterEllipsis" />
+                                <TextBlock
+                                    x:Name="TaskbarArtistText"
+                                    FontSize="10"
+                                    Opacity="0.78"
+                                    TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <Border
+                                x:Name="TaskbarSongControls"
+                                Height="42"
+                                Padding="2"
+                                Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                CornerRadius="5"
+                                Visibility="Collapsed">
+                                <StackPanel
+                                    VerticalAlignment="Center"
+                                    Orientation="Horizontal"
+                                    Spacing="2">
+                                    <Button
+                                        x:Name="TaskbarPreviousButton"
+                                        Width="26"
+                                        Height="26"
+                                        Padding="0"
+                                        AutomationProperties.Name="Previous"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Command="{x:Bind Playback.PreviousCommand, Mode=OneWay}"
+                                        IsEnabled="{x:Bind Playback.CanSwitch, Mode=OneWay}"
+                                        Style="{StaticResource MenuButtonStyle}">
+                                        <FontIcon FontSize="13" Glyph="&#xF8AC;" />
+                                    </Button>
+                                    <Button
+                                        x:Name="TaskbarNextButton"
+                                        Width="26"
+                                        Height="26"
+                                        Padding="0"
+                                        AutomationProperties.Name="Next"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Command="{x:Bind Playback.NextCommand, Mode=OneWay}"
+                                        IsEnabled="{x:Bind Playback.CanSwitch, Mode=OneWay}"
+                                        Style="{StaticResource MenuButtonStyle}">
+                                        <FontIcon FontSize="13" Glyph="&#xF8AD;" />
+                                    </Button>
+                                    <Button
+                                        x:Name="TaskbarVolumeButton"
+                                        Width="26"
+                                        Height="26"
+                                        Padding="0"
+                                        AutomationProperties.Name="Mute"
+                                        Background="Transparent"
+                                        BorderThickness="0"
+                                        Command="{x:Bind AppViewModel.VolumeSliderIconButtonChangedCommand, Mode=OneWay}"
+                                        Style="{StaticResource MenuButtonStyle}">
+                                        <FontIcon
+                                            x:Name="TaskbarVolumeIcon"
+                                            FontSize="13"
+                                            Glyph="{x:Bind tools:BindUtils.VolumeToGlyphConverter(AppViewModel.Volume), Mode=OneWay}" />
+                                    </Button>
+                                    <Slider
+                                        x:Name="TaskbarVolumeSlider"
+                                        Width="72"
+                                        VerticalAlignment="Center"
+                                        AutomationProperties.Name="Volume"
+                                        Maximum="100"
+                                        Minimum="0"
+                                        PointerEntered="TaskbarVolumeSlider_PointerEntered"
+                                        PointerExited="TaskbarVolumeSlider_PointerExited"
+                                        PointerWheelChanged="TaskbarVolumeSlider_PointerWheelChanged"
+                                        StepFrequency="1"
+                                        Value="{x:Bind AppViewModel.Volume, Mode=TwoWay}" />
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+                    <Grid
+                        x:Name="TaskbarSpectrumPanel"
+                        Grid.Column="2"
+                        Width="40"
+                        Height="32"
+                        Margin="0"
+                        VerticalAlignment="Center"
+                        IsHitTestVisible="False">
+                        <Canvas
+                            x:Name="TaskbarSpectrumCanvas"
+                            Width="40"
+                            Height="32"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center" />
+                    </Grid>
+                </Grid>
+            </Border>
+            <ContentPresenter
+                x:Name="RendererHost"
+                Grid.Column="1"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch" />
+        </Grid>
         <StackPanel
             x:Name="ControlPanel"
             HorizontalAlignment="Right"
@@ -49,8 +196,37 @@
             Opacity="0"
             Orientation="Horizontal"
             Spacing="6">
+            <StackPanel.Resources>
+                <ResourceDictionary>
+                    <ResourceDictionary.ThemeDictionaries>
+                        <!--
+                            仅悬浮控制按钮覆写默认 Button 主题资源（模板经 ThemeResource 解析，ControlPanel 子树内生效，
+                            不影响任务栏媒体按钮）：暗色主题用深色底 + 白色前景，保证在白色歌词背景上的可见度
+                        -->
+                        <ResourceDictionary x:Key="Default">
+                            <SolidColorBrush x:Key="ButtonBackground" Color="#8E000000" />
+                            <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#CF000000" />
+                            <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#D3000000" />
+                            <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#FFFFFFFF" />
+                            <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#FFFFFFFF" />
+                        </ResourceDictionary>
+                        <!--  亮色主题镜像：浅色底 + 黑色前景，与窗口 RequestedTheme（themeChanged 同步）联动  -->
+                        <ResourceDictionary x:Key="Light">
+                            <SolidColorBrush x:Key="ButtonBackground" Color="#8EFFFFFF" />
+                            <SolidColorBrush x:Key="ButtonBackgroundPointerOver" Color="#CFFFFFFF" />
+                            <SolidColorBrush x:Key="ButtonBackgroundPressed" Color="#D3FFFFFF" />
+                            <SolidColorBrush x:Key="ButtonForegroundPointerOver" Color="#FF000000" />
+                            <SolidColorBrush x:Key="ButtonForegroundPressed" Color="#FF000000" />
+                        </ResourceDictionary>
+                    </ResourceDictionary.ThemeDictionaries>
+                </ResourceDictionary>
+            </StackPanel.Resources>
             <Button Click="LockButton_Click">
-                <FontIcon FontSize="14" Glyph="{x:Bind tools:BindUtils.LockGlyphConverter(ViewModel.IsLocked), Mode=OneWay}" />
+                <FontIcon
+                    x:Name="LockIcon"
+                    FontFamily="{ThemeResource SymbolThemeFontFamily}"
+                    FontSize="14"
+                    Glyph="{x:Bind tools:BindUtils.LockGlyphConverter(ViewModel.IsLocked), Mode=OneWay}" />
             </Button>
             <Button Click="ResetButton_Click">
                 <FontIcon FontSize="14" Glyph="&#xE7A7;" />
@@ -59,5 +235,5 @@
                 <FontIcon FontSize="14" Glyph="&#xE711;" />
             </Button>
         </StackPanel>
-    </Grid>
+    </desktop:DesktopLyricsInputGrid>
 </winex:WindowEx>

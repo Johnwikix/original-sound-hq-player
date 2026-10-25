@@ -168,6 +168,9 @@
   <data name="StatsRangePastYear.Content" xml:space="preserve">
     <value>过去一年</value>
   </data>
+  <data name="StatsRangeAllTime.Content" xml:space="preserve">
+    <value>全部时间</value>
+  </data>
   <data name="StatsRangeCustom.Content" xml:space="preserve">
     <value>自定义</value>
   </data>
@@ -1383,17 +1386,8 @@
   <data name="Advanced.Text" xml:space="preserve">
     <value>高级</value>
   </data>
-  <data name="TrimOnHide.Text" xml:space="preserve">
-    <value>隐藏窗口时释放内存</value>
-  </data>
-  <data name="TrimOnHideDescription.Text" xml:space="preserve">
-    <value>应用最小化到任务栏或关闭到托盘时释放进程工作集。</value>
-  </data>
-  <data name="TrimAfterPlayback.Text" xml:space="preserve">
-    <value>播放后自动释放内存</value>
-  </data>
-  <data name="TrimAfterPlaybackDescription.Text" xml:space="preserve">
-    <value>每首歌曲播放结束后强制完整 GC，可能导致低端设备 UI 卡顿。</value>
+  <data name="ArtistSplitSymbols.Text" xml:space="preserve">
+    <value>艺术家分隔符号</value>
   </data>
   <data name="ArtistSplitSymbols.Text" xml:space="preserve">
     <value>艺术家分隔符号</value>
@@ -1403,12 +1397,6 @@
   </data>
   <data name="SelectArtist" xml:space="preserve">
     <value>选择艺术家</value>
-  </data>
-  <data name="TrimNow.Content" xml:space="preserve">
-    <value>立即释放内存</value>
-  </data>
-  <data name="TrimNowLabel.Text" xml:space="preserve">
-    <value>立即释放内存</value>
   </data>
   <data name="WindowBoundsDescription.Text" xml:space="preserve">
     <value>主窗口位置</value>
@@ -1497,6 +1485,24 @@
   <data name="IconDesktopLyrics.Text" xml:space="preserve">
     <value>桌面歌词</value>
   </data>
+  <data name="DesktopLyricsModeMenu.Text" xml:space="preserve">
+    <value>桌面歌词模式</value>
+  </data>
+  <data name="DesktopLyricsModeFloating" xml:space="preserve">
+    <value>悬浮窗口</value>
+  </data>
+  <data name="DesktopLyricsModeTaskbar" xml:space="preserve">
+    <value>任务栏</value>
+  </data>
+  <data name="DesktopLyricsPreviousButtonTooltip" xml:space="preserve">
+    <value>上一首</value>
+  </data>
+  <data name="DesktopLyricsPlayPauseButtonTooltip" xml:space="preserve">
+    <value>播放或暂停</value>
+  </data>
+  <data name="DesktopLyricsNextButtonTooltip" xml:space="preserve">
+    <value>下一首</value>
+  </data>
   <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>锁定桌面歌词</value>
   </data>
@@ -1521,6 +1527,12 @@
   <data name="DesktopLyricsFontSize.Text" xml:space="preserve">
     <value>桌面歌词字号</value>
   </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Header" xml:space="preserve">
+    <value>任务栏歌词宽度</value>
+  </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Description" xml:space="preserve">
+    <value>调整任务栏媒体控件右侧预留的歌词区域宽度（像素）。</value>
+  </data>
   <data name="DesktopLyricsFontFamily.Text" xml:space="preserve">
     <value>桌面歌词字体</value>
   </data>
@@ -1532,6 +1544,9 @@
   </data>
   <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
     <value>桌面歌词翻译</value>
+  </data>
+  <data name="DesktopLyricsPronunciation.Text" xml:space="preserve">
+    <value>桌面歌词发音</value>
   </data>
   <data name="DesktopLyricsKaraoke.Text" xml:space="preserve">
     <value>桌面歌词逐字效果</value>
@@ -1896,6 +1911,24 @@
   </data>
   <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
     <value>仅在桌面歌词已开启时生效；离开播放详情页或将播放器收进托盘后自动恢复。</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Header" xml:space="preserve">
+    <value>播放详情页隐藏悬浮桌面歌词</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Description" xml:space="preserve">
+    <value>仅控制悬浮桌面歌词窗口。</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Header" xml:space="preserve">
+    <value>播放详情页隐藏任务栏桌面歌词</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Description" xml:space="preserve">
+    <value>仅控制任务栏桌面歌词窗口。</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloatingMode.Text" xml:space="preserve">
+    <value>悬浮窗口</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbarMode.Text" xml:space="preserve">
+    <value>任务栏窗口</value>
   </data>
   <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
     <value>词</value>
@@ -2298,7 +2331,7 @@ SHA-256：{5}
   </data>
   <data name="WindowBackgroundTitle" xml:space="preserve"><value>主窗口图片背景</value></data>
   <data name="WindowBackgroundImage" xml:space="preserve"><value>背景图片</value></data>
-  <data name="WindowBackgroundDescription" xml:space="preserve"><value>选择本地图片作为主窗口背景；清除后恢复原有窗口材质。</value></data>
+  <data name="WindowBackgroundDescription" xml:space="preserve"><value>选择本地图片作为主窗口背景；清除后恢复原有窗口材质。关闭着色器背景并启用高级逐字歌词时，图片会由歌词画布统一绘制。</value></data>
   <data name="WindowBackgroundChoose" xml:space="preserve"><value>选择图片</value></data>
   <data name="WindowBackgroundClear" xml:space="preserve"><value>清除图片</value></data>
   <data name="WindowBackgroundBlur" xml:space="preserve"><value>模糊程度</value></data>
@@ -2306,4 +2339,172 @@ SHA-256：{5}
   <data name="CacheCleanupCard.Header" xml:space="preserve">
     <value>清理缓存</value>
   </data>
+  <data name="LyricsFilePriority.Header" xml:space="preserve">
+    <value>歌词文件优先级</value>
+  </data>
+  <data name="LyricsFilePriority.Description" xml:space="preserve">
+    <value>按顺序使用第一个有效的同名歌词文件；翻译优先读取 _Translated.lrc。</value>
+  </data>
+  <data name="LyricsOriginalTab.Text" xml:space="preserve">
+    <value>歌词</value>
+  </data>
+  <data name="LyricsTranslationTab.Text" xml:space="preserve">
+    <value>翻译</value>
+  </data>
+  <data name="LyricsRestoreLegacyLrc.Content" xml:space="preserve">
+    <value>恢复旧 LRC</value>
+  </data>
+  <data name="LyricsRestoreLegacyKrc.Content" xml:space="preserve">
+    <value>恢复旧 KRC</value>
+  </data>
+  <data name="LyricsEditConflict" xml:space="preserve">
+    <value>歌词已被其他操作修改。请保留当前草稿，重新打开后再保存。</value>
+  </data>
+  <data name="LyricsInvalid" xml:space="preserve">
+    <value>歌词格式、时间或文件操作无效。</value>
+  </data>
+  <data name="LyricsMigrationDiagnostic" xml:space="preserve">
+    <value>部分旧歌词无法转换，原始内容仍保留，可使用恢复按钮查看。</value>
+  </data>
+  <data name="LyricsFilePriorityLabel" xml:space="preserve">
+    <value>歌词文件优先级</value>
+  </data>
+  <data name="LyricsFilesSaved" xml:space="preserve">
+    <value>歌词文件已保存：</value>
+  </data>
+  <data name="LyricsSourcePriority.Header" xml:space="preserve"><value>歌词来源优先级</value></data>
+  <data name="LyricsSourcePriority.Description" xml:space="preserve"><value>优先使用所选来源的有效歌词，不可用时再尝试下一来源。</value></data>
+  <data name="LyricsSourceFile" xml:space="preserve"><value>歌词文件</value></data>
+  <data name="LyricsSourceDatabase" xml:space="preserve"><value>数据库</value></data>
+  <data name="LyricsPriorityFirst" xml:space="preserve"><value>第 1 优先级</value></data>
+  <data name="LyricsPrioritySecond" xml:space="preserve"><value>第 2 优先级</value></data>
+  <data name="LyricsPriorityThird" xml:space="preserve"><value>第 3 优先级</value></data>
+  <data name="LyricsPriorityFourth" xml:space="preserve"><value>第 4 优先级</value></data>
+  <data name="PlayListEdit" xml:space="preserve">
+    <value>编辑</value>
+  </data>
+  <data name="PlayListEditDone" xml:space="preserve">
+    <value>完成</value>
+  </data>
+  <data name="PlayListSelectAll.Text" xml:space="preserve">
+    <value>全选</value>
+  </data>
+  <data name="PlayListBatchDelete.Text" xml:space="preserve">
+    <value>删除</value>
+  </data>
+  <data name="AreUSureDeletePlayLists" xml:space="preserve">
+    <value>确定删除选中的播放列表吗？</value>
+  </data>
+
+  <data name="LlmTranslation.Header" xml:space="preserve"><value>大模型歌词翻译</value></data>
+  <data name="LlmTranslation.Description" xml:space="preserve"><value>播放开始时，为缺少翻译的歌词调用 OpenAI 兼容或 Anthropic 服务。</value></data>
+  <data name="LlmBaseUrl.Header" xml:space="preserve"><value>API 地址</value></data>
+  <data name="LlmModel.Header" xml:space="preserve"><value>模型</value></data>
+  <data name="LlmTargetLanguage.Header" xml:space="preserve"><value>目标语言</value></data>
+  <data name="LlmThinkingLevel.Header" xml:space="preserve"><value>思考强度</value></data>
+  <data name="LlmApiKey.Header" xml:space="preserve"><value>API 密钥（保存在 Windows 凭据管理器）</value></data>
+  <data name="LlmSave.Content" xml:space="preserve"><value>保存</value></data>
+  <data name="LlmClearApiKey.Content" xml:space="preserve"><value>清除已保存密钥</value></data>
+  <data name="LlmSaved" xml:space="preserve"><value>大模型翻译设置已保存。</value></data>
+  <data name="LlmApiKeyCleared" xml:space="preserve"><value>已清除保存的 API 密钥。</value></data>
+
+  <data name="LlmApiKeyConfigured" xml:space="preserve"><value>已配置保存的 API 密钥。</value></data>
+  <data name="LlmApiKeyNotConfigured" xml:space="preserve"><value>未保存 API 密钥。</value></data>
+
+  <data name="LlmConfigure.Content" xml:space="preserve"><value>配置大模型翻译</value></data>
+  <data name="LlmClose.Content" xml:space="preserve"><value>关闭</value></data>
+  <data name="LlmEnabled.Header" xml:space="preserve"><value>播放时翻译缺少译文的歌词</value></data>
+  <data name="LlmWorking" xml:space="preserve"><value>处理中…</value></data>
+  <data name="LlmTranslationInProgress" xml:space="preserve"><value>大模型正在翻译，可能需要较长时间，请稍候…</value></data>
+  <data name="LlmDialogSaveButton" xml:space="preserve"><value>保存</value></data>
+  <data name="LlmDialogCloseButton" xml:space="preserve"><value>关闭</value></data>
+  <data name="LlmBaseUrl.Description" xml:space="preserve"><value>协议会根据地址自动识别：包含 /anthropic 使用 Anthropic，其它兼容 /v1 地址使用 OpenAI。</value></data>
+
+  <data name="LlmTranslateButton.Content" xml:space="preserve"><value>使用大模型翻译歌词</value></data>
+  <data name="LlmManualTranslationFailed" xml:space="preserve"><value>大模型歌词翻译失败，请检查配置和日志。</value></data>
+  <data name="LlmManualTranslationCompleted" xml:space="preserve"><value>大模型歌词翻译已生成，请保存歌词以写入文件或数据库。</value></data>
+  <data name="LyricsPronunciationTab.Text" xml:space="preserve"><value>发音</value></data>
+  <data name="LyricsShowTranslation.Header" xml:space="preserve"><value>显示歌词翻译</value></data>
+  <data name="LyricsShowTranslation.Description" xml:space="preserve"><value>有可用翻译时显示翻译轨。</value></data>
+  <data name="LyricsShowPronunciation.Header" xml:space="preserve"><value>显示歌词发音</value></data>
+  <data name="LyricsShowPronunciation.Description" xml:space="preserve"><value>有可用发音时显示发音轨。</value></data>
+  <data name="LyricsPronunciationLanguages.Header" xml:space="preserve"><value>发音语言</value></data>
+  <data name="LyricsPronunciationLanguages.Description" xml:space="preserve"><value>根据歌词标签或文字脚本选择发音；粤语需要明确语言标签。</value></data>
+  <data name="LyricsPronunciationMandarin.Header" xml:space="preserve"><value>普通话</value></data>
+  <data name="LyricsPronunciationMandarin.Description" xml:space="preserve"><value>显示普通话发音。</value></data>
+  <data name="LyricsPronunciationCantonese.Header" xml:space="preserve"><value>粤语</value></data>
+  <data name="LyricsPronunciationCantonese.Description" xml:space="preserve"><value>显示粤语发音。</value></data>
+  <data name="LyricsPronunciationJapanese.Header" xml:space="preserve"><value>日语</value></data>
+  <data name="LyricsPronunciationJapanese.Description" xml:space="preserve"><value>显示日语发音。</value></data>
+  <data name="LyricsPronunciationKorean.Header" xml:space="preserve"><value>韩语</value></data>
+  <data name="LyricsPronunciationKorean.Description" xml:space="preserve"><value>显示韩语发音。</value></data>
+  <data name="LyricsTranslationToggle" xml:space="preserve"><value>切换歌词翻译</value></data>
+  <data name="LyricsPronunciationToggle" xml:space="preserve"><value>切换歌词发音</value></data>
+  <data name="LyricsTranslationIcon.Text" xml:space="preserve"><value>译</value></data>
+  <data name="LyricsPronunciationIcon.Text" xml:space="preserve"><value>音</value></data>
+  <data name="SpectralEnhancementTitle" xml:space="preserve"><value>升频</value></data>
+  <data name="SpectralEnhancementDescription" xml:space="preserve"><value>补全高频并升采样，仅适用于 ≤48 kHz 单/双声道 PCM。</value></data>
+  <data name="SpectralEnhancementOff" xml:space="preserve"><value>关闭</value></data>
+  <data name="SpectralEnhancementLossy" xml:space="preserve"><value>仅有损歌曲</value></data>
+  <data name="SpectralEnhancementAll" xml:space="preserve"><value>有损及 ≤48 kHz 无损歌曲</value></data>
+  <data name="LastFmEnable" xml:space="preserve"><value>上报到 Last.fm</value></data>
+  <data name="LastFmEnableDescription" xml:space="preserve"><value>上报正在播放、达标听歌记录和收藏状态；保留现有本地统计。</value></data>
+  <data name="LastFmCredentials" xml:space="preserve"><value>应用凭据</value></data>
+  <data name="LastFmCredentialsHelp" xml:space="preserve"><value>请自行申请 API Key 和 Shared Secret。保存后再授权账号；更换凭据会解绑并清空待补报记录。</value></data>
+  <data name="LastFmSecretSaved" xml:space="preserve"><value>已安全保存；留空可继续使用已保存的 Secret。</value></data>
+  <data name="LastFmSecretRequired" xml:space="preserve"><value>请填写申请应用时获得的 Shared Secret。</value></data>
+  <data name="LastFmSaveCredentials" xml:space="preserve"><value>保存凭据</value></data>
+  <data name="LastFmApplyCredentials" xml:space="preserve"><value>申请凭据</value></data>
+  <data name="LastFmAuthorize" xml:space="preserve"><value>连接账号</value></data>
+  <data name="LastFmCompleteAuthorization" xml:space="preserve"><value>完成授权</value></data>
+  <data name="LastFmDisconnect" xml:space="preserve"><value>解绑</value></data>
+  <data name="LastFmDisconnectHelp" xml:space="preserve"><value>解绑会停止上报并清空待补报记录。若要撤销账号权限，请同时在 Last.fm 的应用设置中移除授权。</value></data>
+  <data name="LastFmManageApplications" xml:space="preserve"><value>管理 Last.fm 应用授权</value></data>
+  <data name="LastFmWorking" xml:space="preserve"><value>正在处理…</value></data>
+  <data name="LastFmAuthorizationHelp" xml:space="preserve"><value>请在浏览器中允许访问，然后回到播放器点击“完成授权”。</value></data>
+  <data name="LastFmUsageHelp" xml:space="preserve"><value>仅实际收听计入上报：歌曲超过 30 秒，听满一半或 4 分钟（取较早者）。缺少歌手信息的歌曲不上传。</value></data>
+  <data name="LastFmPendingCount" xml:space="preserve"><value>待补报：{0} 条</value></data>
+  <data name="LastFmQueueHelp" xml:space="preserve"><value>联网后自动按顺序补报。关闭上报会暂停补报，重新开启后继续；队列最多保存 10,000 条。</value></data>
+  <data name="LastFmRetry" xml:space="preserve"><value>立即重试</value></data>
+  <data name="LastFmBrowserError" xml:space="preserve"><value>无法打开浏览器，请重新点击“连接账号”。</value></data>
+  <data name="LastFmConnected" xml:space="preserve"><value>已连接：{0}</value></data>
+  <data name="LastFmNotConnected" xml:space="preserve"><value>尚未连接 Last.fm</value></data>
+  <data name="LastFmErrorNetwork" xml:space="preserve"><value>暂时无法连接 Last.fm。听歌记录会保存在本地，稍后自动重试。</value></data>
+  <data name="LastFmErrorCredentials" xml:space="preserve"><value>请检查 API Key 和 Shared Secret 是否正确，并重新保存凭据。</value></data>
+  <data name="LastFmErrorAuthorizationPending" xml:space="preserve"><value>尚未获得授权。请在浏览器中允许访问后再次点击“完成授权”。</value></data>
+  <data name="LastFmErrorAuthorizationExpired" xml:space="preserve"><value>授权请求已失效，请重新点击“连接账号”。</value></data>
+  <data name="LastFmErrorSessionExpired" xml:space="preserve"><value>账号授权已失效，请重新连接。已有待补报记录会为原账号保留。</value></data>
+  <data name="LastFmErrorRejected" xml:space="preserve"><value>Last.fm 未接受一条记录（例如歌曲信息无效或时间过旧），已跳过该条。</value></data>
+  <data name="LastFmErrorStorage" xml:space="preserve"><value>无法读取或保存 Last.fm 配置或队列。请检查文件访问权限后重试；原有文件会保留。</value></data>
+  <data name="LastFmErrorQueueFull" xml:space="preserve"><value>待补报队列已满。请联网完成补报后继续；已有记录会保留。</value></data>
+  <data name="LastFmAccountActions" xml:space="preserve"><value>账号授权</value></data>
+  <data name="LastFmHistoryTitle" xml:space="preserve"><value>本地播放历史</value></data>
+  <data name="LastFmHistoryHelp" xml:space="preserve"><value>默认按原时间补报最近 14 天的已保存记录。可开启上方选项补报更早历史；联网核对已有记录后再上传。</value></data>
+  <data name="LastFmImportHistory" xml:space="preserve"><value>补报本地历史</value></data>
+  <data name="LastFmCancelHistory" xml:space="preserve"><value>取消补报</value></data>
+  <data name="LastFmHistoryResult" xml:space="preserve"><value>已入队 {0} 条；其中按导入当天 {5} 条；已有 {1} 条；超过 14 天未导入 {2} 条；不达标或缺少信息 {3} 条；暂缓 {4} 条（其中旧版映射不明、待核对 {6} 条）。</value></data>
+  <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>允许按导入当天补报更早历史</value></data>
+  <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>默认关闭。开启后，超过 14 天的记录会计入 Last.fm 导入当天的统计，本地原始播放时间保持不变；此选项仅对手动补报生效。</value></data>
+  <data name="ApplicationFont" xml:space="preserve">
+    <value>程序字体</value>
+  </data>
+  <data name="UseIndependentLyricsFont" xml:space="preserve">
+    <value>使用独立歌词字体</value>
+  </data>
+  <data name="IndependentLyricsFontDescription" xml:space="preserve">
+    <value>关闭时歌词跟随程序字体，保留已选的独立字体。</value>
+  </data>
+  <data name="UseIndependentDesktopLyricsFont" xml:space="preserve">
+    <value>使用独立桌面歌词字体</value>
+  </data>
+  <data name="IndependentDesktopLyricsFontDescription" xml:space="preserve">
+    <value>关闭时桌面歌词跟随程序字体，保留已选的独立字体。</value>
+  </data>
+  <data name="LastFmFavoritesTitle" xml:space="preserve"><value>收藏上报</value></data>
+  <data name="LastFmFavoritesHelp" xml:space="preserve"><value>本地收藏和取消收藏会单向上报到 Last.fm；不下载远端收藏，也不改变本地列表或顺序。断网或关闭上报时保留最新操作，恢复后继续；解绑或切换账号会清空待上报操作。原有收藏需手动上报。</value></data>
+  <data name="LastFmFavoritePendingCount" xml:space="preserve"><value>收藏待上报：{0} 首</value></data>
+  <data name="LastFmImportFavorites" xml:space="preserve"><value>上报现有收藏</value></data>
+  <data name="LastFmFavoriteResult" xml:space="preserve"><value>已加入上报队列 {0} 首；缺少歌曲或歌手信息 {1} 首。</value></data>
+  <data name="LastFmCancelFavoriteImport" xml:space="preserve"><value>取消导入</value></data>
+  <data name="LastFmFavoriteImportCanceled" xml:space="preserve"><value>已取消继续导入；已入队的收藏会继续上报。</value></data>
 </root>

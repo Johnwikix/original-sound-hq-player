@@ -24,6 +24,8 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
     private readonly HashSet<long> _failedEntries = [];
     private (Music Music, long Generation, bool Advance)? _deferredFailure;
     public event Action<Music, CancellationToken>? TrackStarted;
+    /// <summary>UI-thread notification after the engine confirms this playback occurrence.</summary>
+    public event Action<Music, BassPlayerIpc.Shared.ProgressSnapshot>? PlaybackConfirmed;
     public event Action? SelectionChanged;
 
     /// <summary>连续点击上下首从正在探测的条目继续，不反复命中尚未开始播放的同一首。</summary>
@@ -185,6 +187,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
     {
         token.ThrowIfCancellationRequested();
         if (_disposed || !state.CanStartPlayback) return;
+        long previousEpoch = 0;
         long remoteGeneration = music.IsRemote ? remote.BeginSelection(music, resumeInterrupted) : 0;
         _playingGeneration = remoteGeneration;
         _playingVersion = _selectionVersion;
@@ -194,6 +197,7 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
             // 服务同步登记停止代次，后台执行可能同步 Flush(true) 的缓存收尾。
             await remote.StopAsync().WaitAsync(token);
             token.ThrowIfCancellationRequested();
+            previousEpoch = ipc.TryGetProgressSnapshot(out var before) ? before.Epoch : 0;
             player.PlayMusic(music);
         }
         await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
@@ -214,6 +218,39 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         // 远程准备包含 PasswordVault 和缓存文件前置工作；只有展示发布回 UI 线程。
         if (music.IsRemote && !token.IsCancellationRequested)
             await Task.Run(() => remote.PlayAsync(music, remoteGeneration, token), token);
+        else if (!music.IsRemote)
+            _ = tasks.RunAsync(stopping => ConfirmLocalStartAsync(music, previousEpoch, token, stopping));
+    }
+
+    private async Task ConfirmLocalStartAsync(Music music, long previousEpoch, CancellationToken selection, CancellationToken stopping)
+    {
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(selection, stopping);
+        var token = linked.Token;
+        try
+        {
+            // Enqueueing a command alone does not prove the decoder started. Seek and
+            // lyric reload never enter this path. Keep confirmation outside selection arbitration.
+            long deadline = Environment.TickCount64 + 10000;
+            while (Environment.TickCount64 < deadline)
+            {
+                token.ThrowIfCancellationRequested();
+                if (_disposed || !ReferenceEquals(state.CurrentPlayingMusic, music)) return;
+                if (ipc.TryGetProgressSnapshot(out var progress) && progress.Playing && progress.Epoch != previousEpoch)
+                {
+                    await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
+                    {
+                        if (!_disposed && state.CanPublishState && !token.IsCancellationRequested
+                            && ReferenceEquals(state.CurrentPlayingMusic, music))
+                            PlaybackConfirmed?.Invoke(music, progress);
+                    });
+                    await statistics.RecordPlaybackStartAsync(music);
+                    return;
+                }
+                await Task.Delay(50, token);
+            }
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (Exception ex) { logger.LogError(ex, "确认播放开始失败"); }
     }
 
     public void Dispose()
@@ -228,5 +265,6 @@ public sealed partial class PlaybackCoordinator(AppViewModel state, BassPlayerCo
         state.State.Playback.PendingSelection = null;
         SelectionChanged = null;
         TrackStarted = null;
+        PlaybackConfirmed = null;
     }
 }

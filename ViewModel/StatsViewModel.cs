@@ -14,14 +14,15 @@ using WinUIMusicPlayer.ViewModel.Pages;
 
 namespace WinUIMusicPlayer.ViewModel
 {
-    /// <summary>统计时间段（滚动口径，含今天）。</summary>
+    /// <summary>统计时间段（滚动口径含今天；AllTime 为全部历史记录）。</summary>
     public enum StatsRange
     {
         PastWeek = 0,
         PastMonth = 1,
         PastQuarter = 2,
         PastYear = 3,
-        Custom = 4,
+        AllTime = 4,
+        Custom = 5,
     }
 
     /// <summary>
@@ -178,6 +179,13 @@ namespace WinUIMusicPlayer.ViewModel
                 return (customStart.ToUniversalTime(), customEnd.ToUniversalTime());
             }
 
+            if ((StatsRange)SelectedTimeRangeIndex == StatsRange.AllTime)
+            {
+                // 全部历史记录：起点用 UTC 纪元下限覆盖所有入库会话；必须构造 UTC Kind，本地 Kind 的下限转 UTC 会溢出。
+                var allTimeStart = new DateTime(0, DateTimeKind.Utc);
+                return (allTimeStart, now.Date.AddDays(1).AddTicks(-1).ToUniversalTime());
+            }
+
             // 滚动口径：过去 N 天（含今天）。
             DateTime startLocal = SelectedTimeRangeIndex switch
             {
@@ -214,9 +222,27 @@ namespace WinUIMusicPlayer.ViewModel
                         var snapshot = await _statsService.GetStatsSnapshotAsync(startUtc, endUtc);
                         if (!_active) return;
                         if (version != _requestedVersion) continue;
-                        var dailyCounts = range == (int)StatsRange.PastYear
-                            ? snapshot.DailyCounts
-                            : await _statsService.GetDailyCountsAsync(heatmapStart, heatmapEnd);
+                        Dictionary<DateTime, int> dailyCounts;
+                        if (range == (int)StatsRange.PastYear)
+                        {
+                            dailyCounts = snapshot.DailyCounts;
+                        }
+                        else if (range == (int)StatsRange.AllTime)
+                        {
+                            // 全部时间的快照已含全量每日计数，直接筛出热度图的年度区间，不再扫一遍库。
+                            dailyCounts = [];
+                            foreach (var pair in snapshot.DailyCounts)
+                            {
+                                if (pair.Key >= heatmapStart && pair.Key <= heatmapEnd)
+                                {
+                                    dailyCounts[pair.Key] = pair.Value;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            dailyCounts = await _statsService.GetDailyCountsAsync(heatmapStart, heatmapEnd);
+                        }
                         if (!_active) return;
                         if (version != _requestedVersion) continue;
 

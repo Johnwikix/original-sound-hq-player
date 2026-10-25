@@ -15,13 +15,14 @@ public static class BinarySerializer
     public const int SetMusicUrlRequestSize = StringHeaderSize + MaxStringBytes;
     public const int ChangePositionRequestSize = 16;
     public const int ChangeVolumeRequestSize = 8;
-    public const int IpcSettingSize = 3 * (StringHeaderSize + MaxStringBytes) + 4 + 4 + 4 + 1 + 4 + 4 + 1 + 4 + 1 + 1 + 2;
+    public const int IpcSettingSize = 3 * (StringHeaderSize + MaxStringBytes) + 4 + 4 + 4 + 1 + 4 + 4 + 1 + 4 + 1 + 1 + 3;
     public const int UpdateEqRequestSize = 1 + 40 + 40; // IsEnabled + 10 gains + 10 Q values (legacy payload: 41 bytes)
     public const int FailedResponseSize = 2;
     public const int PlayStateResponseSize = 1;
     public const int EqStateResponseSize = 2; // IsEnabled + IsActive
     public const int VolumeResponseSize = 4;
     public const int TimeProgressSize = 16;
+    public const int FftEnabledSize = 1;
 
     // ──────────────────────── String helpers ────────────────────────
 
@@ -86,6 +87,19 @@ public static class BinarySerializer
         return new() { Volume = BinaryPrimitives.ReadDoubleLittleEndian(src) };
     }
 
+    public static int WriteFftEnabled(Span<byte> dest, bool enabled)
+    {
+        if (dest.Length < FftEnabledSize) throw new ArgumentException("Destination is too small.", nameof(dest));
+        dest[0] = enabled ? (byte)1 : (byte)0;
+        return FftEnabledSize;
+    }
+
+    public static bool ReadFftEnabled(ReadOnlySpan<byte> src)
+    {
+        if (src.Length != FftEnabledSize || src[0] > 1) throw new ArgumentException("Invalid FFT setting payload.", nameof(src));
+        return src[0] != 0;
+    }
+
     // ──────────────────────── IpcSetting ────────────────────────
 
     public static int WriteIpcSetting(Span<byte> dest, IpcSetting s)
@@ -105,6 +119,7 @@ public static class BinarySerializer
         dest[offset++] = s.ExperimentalSurround51 ? (byte)1 : (byte)0;
         dest[offset++] = s.ExperimentalAtmosPassthrough ? (byte)1 : (byte)0;
         offset += WriteString(dest[offset..], s.AtmosEndpointId);
+        dest[offset++] = (byte)s.SpectralEnhancement;
         return offset;
     }
 
@@ -130,7 +145,16 @@ public static class BinarySerializer
         }
         s.ExperimentalSurround51 = offset < src.Length && src[offset++] != 0;
         s.ExperimentalAtmosPassthrough = offset < src.Length && src[offset++] != 0;
-        if (offset < src.Length) s.AtmosEndpointId = ReadString(src[offset..], out _);
+        if (offset < src.Length)
+        {
+            s.AtmosEndpointId = ReadString(src[offset..], out int length);
+            offset += length;
+        }
+        if (offset < src.Length)
+        {
+            s.SpectralEnhancement = (SpectralEnhancementMode)src[offset++];
+            if (!Enum.IsDefined(s.SpectralEnhancement)) throw new ArgumentException("Invalid enhancement mode.");
+        }
         return s;
     }
 

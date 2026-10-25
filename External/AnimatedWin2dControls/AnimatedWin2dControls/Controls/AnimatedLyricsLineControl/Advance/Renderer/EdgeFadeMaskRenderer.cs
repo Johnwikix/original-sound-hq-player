@@ -94,6 +94,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         {
             _maskBrush?.Dispose();
             _maskCommandList?.Dispose();
+            _maskBrush = null;
+            _maskCommandList = null;
+        }
+
+        public void Reset()
+        {
+            Dispose();
+            _lastBounds = default;
+            _lastStops = null;
+            _lastIsVertical = false;
         }
     }
 }

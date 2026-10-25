@@ -10,6 +10,7 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Hosting;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Navigation;
 using System;
 using System.Collections.Generic;
@@ -27,7 +28,9 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         private List<LyricLine>? _lyrics;
         private List<LyricDisplayItem> _displayItems = new();
-        private readonly Dictionary<LyricDisplayItem, (Border Border, TextBlock LyricTb, TextBlock TransTb)> _itemMap = new();
+        private readonly Dictionary<LyricDisplayItem, (Border Border, TextBlock LyricTb, TextBlock TransTb, TextBlock PronTb)> _itemMap = new();
+        private readonly Dictionary<TextBlock, Storyboard> _secondaryHeightAnimations = new();
+        private readonly Dictionary<TextBlock, bool> _secondaryVisibilityTargets = new();
 
         private int _currentLineIndex = -1;
         private int _hoveredIndex = -1;
@@ -59,6 +62,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         private double _cachedPlayingLineTopOffset = 0.4;
         private double _cachedUnplayedOpacity = 0.5;
         private double _cachedTranslatedOpacity = 0.6;
+        private bool _showTranslation = true;
+        private bool _showPronunciation = true;
         private double _cachedOffsetMs;
 
         private bool _shutdown;
@@ -114,6 +119,18 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             if (_shutdown) return;
             _shutdown = true;
 
+            ReleaseResources();
+        }
+
+        public void ReleaseForUnload()
+        {
+            if (_shutdown) return;
+            ReleaseResources();
+        }
+
+        private void ReleaseResources()
+        {
+
             TimeProgressBus.CurrentPlayingTimeChanged -= OnCurrentPlayingTimeChanged;
             OffsetMsBus.Changed -= OnOffsetMsChanged;
             LyricsFontSizeBus.Changed -= OnLyricsFontSizeChanged;
@@ -134,6 +151,10 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             foreach (var item in _displayItems)
                 item.PropertyChanged -= _onItemPropertyChanged;
             _itemMap.Clear();
+            foreach (var storyboard in _secondaryHeightAnimations.Values)
+                storyboard.Stop();
+            _secondaryHeightAnimations.Clear();
+            _secondaryVisibilityTargets.Clear();
             _displayItems.Clear();
             _hoveredIndex = -1;
             _containerScaleTarget.Clear();
@@ -141,6 +162,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             TeardownAllBlur();
             _blurFactory?.Dispose();
             _blurFactory = null;
+            _ps?.Dispose();
+            _ps = null;
             _reusableScaleAnim?.Dispose();
             _reusableScaleAnim = null;
             _reusableBlurAnim?.Dispose();
@@ -182,7 +205,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         private void OnControlUnloaded(object sender, RoutedEventArgs e)
         {
-            PrepareForShutdown();
+            ReleaseForUnload();
         }
 
         private void OnLyricsSyncRequested()
@@ -263,6 +286,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             _cachedTextAlignment = CanvasToTextAlignment(s.LyricsTextAlignment);
             _cachedUnplayedOpacity = s.UnplayedOpacity;
             _cachedTranslatedOpacity = s.TranslatedOpacity;
+            _showTranslation = s.ShowTranslation;
+            _showPronunciation = s.ShowPronunciation;
             _cachedPlayingLineTopOffset = s.PlayingLineTopOffset;
 
             double newBlur = Math.Max(0, s.LyricsBlurAmount);
@@ -280,7 +305,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             // 直接刷新所有已实现行（主歌词 Opacity 取最新 _cachedUnplayedOpacity），
             // 不再依赖 IsCurrent 翻转副作用（仅改 UnplayedOpacity 时不会触发 PropertyChanged）。
             foreach (var kv in _itemMap)
-                ApplyItemToBlocks(kv.Key, kv.Value.LyricTb, kv.Value.TransTb);
+                ApplyItemToBlocks(kv.Key, kv.Value.LyricTb, kv.Value.TransTb, kv.Value.PronTb);
 
             if (blurChanged) RefreshAllBlur();
 
@@ -345,7 +370,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             {
                 var line = _lyrics[i];
                 var mainText = ConcatWords(line.Words);
-                var item = new LyricDisplayItem(line, i, mainText, line.TransLateText ?? string.Empty)
+                var item = new LyricDisplayItem(line, i, mainText, line.TransLateText ?? string.Empty, line.PronunciationText ?? string.Empty)
                 {
                     DisplayFontSize = _cachedFontSize,
                     DisplayFontFamily = _cachedFontFamilyName,
@@ -375,7 +400,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         {
             if (sender is not LyricDisplayItem item) return;
             if (!_itemMap.TryGetValue(item, out var pair)) return;
-            ApplyItemToBlocks(item, pair.LyricTb, pair.TransTb);
+            ApplyItemToBlocks(item, pair.LyricTb, pair.TransTb, pair.PronTb);
             if (e.PropertyName == nameof(LyricDisplayItem.IsCurrent))
             {
                 ApplyEmphasis(item.LineIndex, animate: true);
@@ -395,7 +420,7 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             }
         }
 
-        private void ApplyItemToBlocks(LyricDisplayItem item, TextBlock lyricTb, TextBlock transTb)
+        private void ApplyItemToBlocks(LyricDisplayItem item, TextBlock lyricTb, TextBlock transTb, TextBlock pronTb)
         {
             lyricTb.Text = item.MainText;
             lyricTb.FontSize = item.DisplayFontSize;
@@ -405,12 +430,98 @@ namespace WinUIMusicPlayer.Controls.Lyrics
             lyricTb.Opacity = item.IsCurrent ? 1.0 : _cachedUnplayedOpacity;
 
             transTb.Text = item.TranslationText;
-            transTb.Visibility = item.HasTranslation ? Visibility.Visible : Visibility.Collapsed;
             transTb.FontSize = item.DisplayFontSize * 0.75;
             transTb.TextAlignment = item.DisplayTextAlignment;
             if (!string.IsNullOrEmpty(item.DisplayFontFamily))
                 transTb.FontFamily = GetFontFamily(item.DisplayFontFamily);
-            transTb.Opacity = item.DisplayTranslationOpacity;
+            ApplySecondaryBlock(transTb, item.HasTranslation, _showTranslation, item.DisplayTranslationOpacity);
+
+            pronTb.Text = item.PronunciationText;
+            pronTb.FontSize = item.DisplayFontSize * 0.6;
+            pronTb.TextAlignment = item.DisplayTextAlignment;
+            if (!string.IsNullOrEmpty(item.DisplayFontFamily))
+                pronTb.FontFamily = GetFontFamily(item.DisplayFontFamily);
+            ApplySecondaryBlock(pronTb, item.HasPronunciation, _showPronunciation, item.DisplayTranslationOpacity);
+        }
+
+        private void ApplySecondaryBlock(TextBlock block, bool hasContent, bool show, double opacity)
+        {
+            bool targetVisible = hasContent && show;
+            if (!_secondaryVisibilityTargets.TryGetValue(block, out bool oldTarget))
+            {
+                _secondaryVisibilityTargets[block] = targetVisible;
+                block.Visibility = targetVisible ? Visibility.Visible : Visibility.Collapsed;
+                block.Height = double.NaN;
+                block.Opacity = targetVisible ? opacity : 0;
+                return;
+            }
+
+            if (oldTarget == targetVisible)
+            {
+                if (targetVisible) block.Visibility = Visibility.Visible;
+                block.Opacity = targetVisible ? opacity : 0;
+                return;
+            }
+
+            _secondaryVisibilityTargets[block] = targetVisible;
+            AnimateSecondaryBlock(block, targetVisible, opacity);
+        }
+
+        private void AnimateSecondaryBlock(TextBlock block, bool targetVisible, double opacity)
+        {
+            if (_secondaryHeightAnimations.Remove(block, out var previous))
+                previous.Stop();
+
+            double currentHeight = block.Visibility == Visibility.Collapsed
+                ? 0
+                : Math.Max(0, block.ActualHeight);
+            block.Visibility = Visibility.Visible;
+
+            double targetHeight = 0;
+            if (targetVisible)
+            {
+                block.Height = double.NaN;
+                double availableWidth = block.ActualWidth > 0 ? block.ActualWidth : LyricList.ActualWidth;
+                block.Measure(new Size(Math.Max(0, availableWidth), double.PositiveInfinity));
+                targetHeight = Math.Max(0, block.DesiredSize.Height);
+                block.Height = currentHeight;
+            }
+            else
+            {
+                block.Height = currentHeight;
+            }
+
+            block.Opacity = targetVisible ? opacity : 0;
+            if (Math.Abs(targetHeight - currentHeight) < 0.5)
+            {
+                block.Height = targetVisible ? double.NaN : 0;
+                if (!targetVisible) block.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            var animation = new DoubleAnimation
+            {
+                From = currentHeight,
+                To = targetHeight,
+                Duration = TimeSpan.FromMilliseconds(200),
+                EnableDependentAnimation = true,
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+            };
+            var storyboard = new Storyboard();
+            storyboard.Children.Add(animation);
+            Storyboard.SetTarget(animation, block);
+            Storyboard.SetTargetProperty(animation, "Height");
+            storyboard.Completed += (_, _) =>
+            {
+                if (!_secondaryHeightAnimations.TryGetValue(block, out var activeStoryboard) ||
+                    !ReferenceEquals(activeStoryboard, storyboard))
+                    return;
+                _secondaryHeightAnimations.Remove(block);
+                block.Height = targetVisible ? double.NaN : 0;
+                block.Visibility = targetVisible ? Visibility.Visible : Visibility.Collapsed;
+            };
+            _secondaryHeightAnimations[block] = storyboard;
+            storyboard.Begin();
         }
 
         private void ApplyBorderSpacing(Border border, TextAlignment alignment)
@@ -451,6 +562,17 @@ namespace WinUIMusicPlayer.Controls.Lyrics
                     if (recycled.Tag is LyricDisplayItem oldItem && oldItem.LineIndex == _hoveredIndex)
                         _hoveredIndex = -1;
                     TeardownBlurForBorder(recycled);
+                    if (recycled.Child is StackPanel recycledPanel)
+                    {
+                        foreach (var child in recycledPanel.Children)
+                        {
+                            if (child is TextBlock block)
+                            {
+                                if (_secondaryHeightAnimations.Remove(block, out var storyboard)) storyboard.Stop();
+                                _secondaryVisibilityTargets.Remove(block);
+                            }
+                        }
+                    }
                 }
                 return;
             }
@@ -460,14 +582,15 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
             if (args.ItemContainer?.ContentTemplateRoot is not Border border) return;
             ApplyBorderSpacing(border, item.DisplayTextAlignment);
-            if (border.Child is not StackPanel panel || panel.Children.Count < 2) return;
-            if (panel.Children[0] is not TextBlock lyricTb || panel.Children[1] is not TextBlock transTb) return;
+            if (border.Child is not StackPanel panel || panel.Children.Count < 3) return;
+            if (panel.Children[0] is not TextBlock pronTb || panel.Children[1] is not TextBlock lyricTb ||
+                panel.Children[2] is not TextBlock transTb) return;
 
-            _itemMap[item] = (border, lyricTb, transTb);
+            _itemMap[item] = (border, lyricTb, transTb, pronTb);
             item.PropertyChanged -= _onItemPropertyChanged;
             item.PropertyChanged += _onItemPropertyChanged;
 
-            ApplyItemToBlocks(item, lyricTb, transTb);
+            ApplyItemToBlocks(item, lyricTb, transTb, pronTb);
 
             var itemContainer = args.ItemContainer as ListViewItem;
 

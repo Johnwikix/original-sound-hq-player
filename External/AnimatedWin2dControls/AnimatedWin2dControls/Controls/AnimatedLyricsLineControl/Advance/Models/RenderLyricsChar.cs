@@ -12,6 +12,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public ValueTransition<double> GlowTransition { get; set; }
         public ValueTransition<double> FloatTransition { get; set; }
 
+        /// <summary>Captures the outgoing glow radius so its opacity can fade from the current image state.</summary>
+        public double GlowExitStartAmount { get; internal set; }
+
         public CropEffect Crop { get; }
         public GaussianBlurEffect Glow { get; }
 

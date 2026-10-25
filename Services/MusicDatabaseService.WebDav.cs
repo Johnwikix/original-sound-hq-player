@@ -188,7 +188,7 @@ public partial class MusicDatabaseService
         foreach (int id in db.QueryScalars<int>("SELECT MusicId FROM RemoteTrack WHERE SourceId = ?", sourceId))
         {
             db.Execute("DELETE FROM PlayListMusic WHERE MusicId = ?", id);
-            db.Delete<MusicLyrics>(id);
+            WinUIMusicPlayer.Services.Lyrics.LyricsRepository.DeleteInTransaction(db, id);
             db.Delete<Music>(id);
         }
         db.Execute("DELETE FROM RemoteTrack WHERE SourceId = ?", sourceId);

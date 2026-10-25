@@ -26,6 +26,14 @@ try
          "AppTheme":"Dark","AppWidth":1450,"DefualtEntry":"song","PlayOrPauseShortcut":["Ctrl","P"]}
         """;
     var defaults = JsonSerializer.Deserialize("{}", SettingsJsonContext.Default.SaveSettings)!;
+    Check(!defaults.PreferDatabaseLyrics && defaults.LocalLyricsFormatOrder == "krc,qrc,lrc,ttml",
+        "Old settings must retain files-first lyrics and the previous format order.");
+    var lyricsSettings = new SaveSettings { PreferDatabaseLyrics = true, LocalLyricsFormatOrder = "ttml,lrc,qrc,krc", DesktopLyricsTaskbarLyricsWidth = 1024, IsDesktopLyricsPronunciationEnabled = false };
+    var lyricsRoundTrip = JsonSerializer.Deserialize(JsonSerializer.Serialize(lyricsSettings, SettingsJsonContext.Default.SaveSettings), SettingsJsonContext.Default.SaveSettings)!;
+    Check(lyricsRoundTrip.PreferDatabaseLyrics && lyricsRoundTrip.LocalLyricsFormatOrder == lyricsSettings.LocalLyricsFormatOrder
+        && lyricsRoundTrip.DesktopLyricsTaskbarLyricsWidth == 1024 && !lyricsRoundTrip.IsDesktopLyricsPronunciationEnabled,
+        "Lyrics source, format priorities, taskbar lyrics width, and desktop pronunciation must survive restart.");
+    Console.WriteLine("PASS: lyrics priority compatibility defaults and JSON persistence.");
     Check(defaults.WindowBackgroundImagePath == string.Empty && defaults.WindowBackgroundBlurAmount == 20,
         "Old settings must keep the original backdrop without an image.");
     var imageSettings = new SaveSettings { WindowBackgroundImagePath = @"C:\Pictures\背景.png", WindowBackgroundBlurAmount = 37 };
@@ -49,14 +57,15 @@ try
 
     var playbackStore = new AudioSettingsStore(Path.Combine(directory, "PlaybackEffects.json"));
     await playbackStore.LoadAsync(new());
-    var playbackPreferences = new AudioPreferences { Dsp = new() { GaplessPlayback = false, PlaybackRate = 1.25,
+    var playbackPreferences = new AudioPreferences { SpectralEnhancement = SpectralEnhancementMode.LossyAndLowRateLossless, Dsp = new() { GaplessPlayback = false, PlaybackRate = 1.25,
         CompressorEnabled = true, CompressorThresholdDb = -22, CompressorRatio = 3.5, CompressorMakeupDb = 8 } };
     await playbackStore.SaveAsync(playbackPreferences);
     Check(await new AudioSettingsStore(Path.Combine(directory, "PlaybackEffects.json")).LoadAsync(new()) == playbackPreferences,
         "Playback effects did not survive restarting the store.");
     Check(legacy.Dsp.GaplessPlayback && legacy.Dsp.PlaybackRate == 1 && !legacy.Dsp.CompressorEnabled,
         "Old settings changed speed or enabled compression.");
-    Console.WriteLine("PASS: gapless/speed/compressor settings survive restart; legacy defaults preserved.");
+    Check(legacy.SpectralEnhancement == SpectralEnhancementMode.Off, "Legacy audio enabled enhancement.");
+    Console.WriteLine("PASS: enhancement/gapless/speed/compressor settings survive restart; legacy defaults preserved.");
 
     string path = Path.Combine(directory, "AudioSettings.json");
     var store = new AudioSettingsStore(path);

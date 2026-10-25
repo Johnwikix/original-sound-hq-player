@@ -127,16 +127,17 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
         _published.Clear();
     }
 
-    private readonly record struct SongRow(Music Music, string? Title, string? Author, string? Album, string? Folder,
+    private readonly record struct SongRow(Music Music, string? Title, string? Author, string? Album, string? Folder, string? Path,
         int Disk, int Track, int Order, DateTime Created, DateTime Updated)
     {
-        public SongRow(Music music) : this(music, music.Title, music.Author, music.Album, music.LastLevelFolderPath,
+        public SongRow(Music music) : this(music, music.Title, music.Author, music.Album, music.LastLevelFolderPath, music.Path,
             music.DiskNumber, music.TrackNumber, music.Order, music.CreateTime, music.UpdateTime)
         { }
         public bool Matches(string search, bool folder) => string.IsNullOrWhiteSpace(search) ||
             (Title?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
             (Author?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
             (Album?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            FileNameMatchesSearch(Path, search) ||
             (folder && (Folder?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false));
         public static IComparer<SongRow> Comparer(string sort, SongViewType kind) => System.Collections.Generic.Comparer<SongRow>.Create((a, b) =>
         {
@@ -237,9 +238,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
 
     private static bool MatchesSearchShape(Music m, string search)
     {
-        return (m.Title?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
-               (m.Album?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
-               (m.Author?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+        return MusicMatchesSearch(m, search) ||
                (m.LastLevelFolderPath?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false);
     }
 
@@ -344,7 +343,21 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
     {
         return (m.Title is not null && m.Title.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
                (m.Album is not null && m.Album.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
-               (m.Author is not null && m.Author.Contains(search, StringComparison.OrdinalIgnoreCase));
+               (m.Author is not null && m.Author.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+               FileNameMatchesSearch(m.Path, search);
+    }
+
+    private static readonly char[] _pathSeparators = ['/', '\\'];
+
+    /// <summary>按原始文件名（最后一个路径段，含扩展名）匹配搜索词；本地路径用切片零分配匹配。</summary>
+    internal static bool FileNameMatchesSearch(string? path, string search)
+    {
+        if (string.IsNullOrEmpty(path)) return false;
+        ReadOnlySpan<char> fileName = path.AsSpan(path.LastIndexOfAny(_pathSeparators) + 1);
+        if (fileName.Contains(search, StringComparison.OrdinalIgnoreCase)) return true;
+        // WebDAV 远程曲目的 Path 是 URL 编码的 href（空格等为 %XX 转义），解码后再匹配一次。
+        if (fileName.IndexOf('%') < 0 || !path.StartsWith("webdav://", StringComparison.OrdinalIgnoreCase)) return false;
+        return Uri.UnescapeDataString(fileName.ToString()).Contains(search, StringComparison.OrdinalIgnoreCase);
     }
 
     private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byPlayListOrderDesc =

@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using Windows.UI;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
@@ -30,6 +30,8 @@ public sealed class PreferencesState : ObservableObject
     public string ThemeType { get => Appearance.ThemeType; set => Appearance.ThemeType = value; }
     public string WindowBackgroundImagePath { get => Appearance.WindowBackgroundImagePath; set => Appearance.WindowBackgroundImagePath = value; }
     public double WindowBackgroundBlurAmount { get => Appearance.WindowBackgroundBlurAmount; set => Appearance.WindowBackgroundBlurAmount = value; }
+    public bool UseIndependentDesktopLyricsFont { get => Lyrics.UseIndependentDesktopLyricsFont; set => Lyrics.UseIndependentDesktopLyricsFont = value; }
+    public string EffectiveDesktopLyricsFontFamilyName => (UseIndependentDesktopLyricsFont ? DesktopLyricsFontFamily : ApplicationFontFamily)?.FontFamily?.Source ?? "Segoe UI";
     public FontInfo DesktopLyricsFontFamily { get => Lyrics.DesktopLyricsFontFamily; set => Lyrics.DesktopLyricsFontFamily = value; }
     private void ForwardChange(object? sender, PropertyChangedEventArgs e) => OnPropertyChanged(e);
 
@@ -52,6 +54,14 @@ public sealed class PreferencesState : ObservableObject
     public int CoverSize { get => Appearance.CoverSize; set => Appearance.CoverSize = value; }
     public int DsdGain { get => Audio.DsdGain; set => Audio.DsdGain = value; }
     public bool IsAutoLyricsEnabled { get => Lyrics.IsAutoLyricsEnabled; set => Lyrics.IsAutoLyricsEnabled = value; }
+    public bool IsLyricsTranslationEnabled { get => Lyrics.IsLyricsTranslationEnabled; set => Lyrics.IsLyricsTranslationEnabled = value; }
+    public bool IsLyricsPronunciationEnabled { get => Lyrics.IsLyricsPronunciationEnabled; set => Lyrics.IsLyricsPronunciationEnabled = value; }
+    public bool IsMandarinPronunciationEnabled { get => Lyrics.IsMandarinPronunciationEnabled; set => Lyrics.IsMandarinPronunciationEnabled = value; }
+    public bool IsCantonesePronunciationEnabled { get => Lyrics.IsCantonesePronunciationEnabled; set => Lyrics.IsCantonesePronunciationEnabled = value; }
+    public bool IsJapanesePronunciationEnabled { get => Lyrics.IsJapanesePronunciationEnabled; set => Lyrics.IsJapanesePronunciationEnabled = value; }
+    public bool IsKoreanPronunciationEnabled { get => Lyrics.IsKoreanPronunciationEnabled; set => Lyrics.IsKoreanPronunciationEnabled = value; }
+    public string LocalLyricsFormatOrder { get => Lyrics.LocalLyricsFormatOrder; set => Lyrics.LocalLyricsFormatOrder = value; }
+    public bool PreferDatabaseLyrics { get => Lyrics.PreferDatabaseLyrics; set => Lyrics.PreferDatabaseLyrics = value; }
     public string ArtistSplitSymbols { get => General.ArtistSplitSymbols; set => General.ArtistSplitSymbols = value; }
     public bool IsAutoCoverEnabled { get => General.IsAutoCoverEnabled; set => General.IsAutoCoverEnabled = value; }
     public bool IsRunningBackend { get => General.IsRunningBackend; set => General.IsRunningBackend = value; }
@@ -60,14 +70,19 @@ public sealed class PreferencesState : ObservableObject
     public int AppHeight { get => Appearance.AppHeight; set => Appearance.AppHeight = value; }
     public string BackdropType { get => Appearance.BackdropType; set => Appearance.BackdropType = value; }
     public bool IsDarkMode { get => Appearance.IsDarkMode; set => Appearance.IsDarkMode = value; }
-    public FontInfo FontFamily { get => Appearance.FontFamily; set => Appearance.FontFamily = value; }
+    public FontInfo ApplicationFontFamily { get => Appearance.ApplicationFontFamily; set => Appearance.ApplicationFontFamily = value; }
+    public FontInfo FontFamily { get => Lyrics.FontFamily; set => Lyrics.FontFamily = value; }
+    public bool UseIndependentLyricsFont { get => Lyrics.UseIndependentLyricsFont; set => Lyrics.UseIndependentLyricsFont = value; }
+    public string EffectiveLyricsFontFamilyName => (UseIndependentLyricsFont ? FontFamily : ApplicationFontFamily)?.FontFamily?.Source ?? "Segoe UI";
     public Color CustomColor { get => Appearance.CustomColor; set => Appearance.CustomColor = value; }
     public bool IsCustomLyricsColorEnabled { get => Lyrics.IsCustomLyricsColorEnabled; set => Lyrics.IsCustomLyricsColorEnabled = value; }
     public Color LyricsCustomColor { get => Lyrics.LyricsCustomColor; set => Lyrics.LyricsCustomColor = value; }
     public double DesktopLyricsFontSize { get => Lyrics.DesktopLyricsFontSize; set => Lyrics.DesktopLyricsFontSize = value; }
+    public int DesktopLyricsTaskbarLyricsWidth { get => Lyrics.DesktopLyricsTaskbarLyricsWidth; set => Lyrics.DesktopLyricsTaskbarLyricsWidth = value; }
     public Color DesktopLyricsColor { get => Lyrics.DesktopLyricsColor; set => Lyrics.DesktopLyricsColor = value; }
     public bool IsDesktopLyricsCustomColorEnabled { get => Lyrics.IsDesktopLyricsCustomColorEnabled; set => Lyrics.IsDesktopLyricsCustomColorEnabled = value; }
     public bool IsDesktopLyricsTranslationEnabled { get => Lyrics.IsDesktopLyricsTranslationEnabled; set => Lyrics.IsDesktopLyricsTranslationEnabled = value; }
+    public bool IsDesktopLyricsPronunciationEnabled { get => Lyrics.IsDesktopLyricsPronunciationEnabled; set => Lyrics.IsDesktopLyricsPronunciationEnabled = value; }
     public bool IsDesktopLyricsGlowEnabled { get => Lyrics.IsDesktopLyricsGlowEnabled; set => Lyrics.IsDesktopLyricsGlowEnabled = value; }
     public bool IsDesktopLyricsCharFloatEnabled { get => Lyrics.IsDesktopLyricsCharFloatEnabled; set => Lyrics.IsDesktopLyricsCharFloatEnabled = value; }
     public bool IsDesktopLyricsCharScaleEnabled { get => Lyrics.IsDesktopLyricsCharScaleEnabled; set => Lyrics.IsDesktopLyricsCharScaleEnabled = value; }
@@ -102,6 +117,4 @@ public sealed class PreferencesState : ObservableObject
     public EasingType ScrollEasingType { get => Lyrics.ScrollEasingType; set => Lyrics.ScrollEasingType = value; }
     public EaseMode ScrollEasingMode { get => Lyrics.ScrollEasingMode; set => Lyrics.ScrollEasingMode = value; }
     public bool EnableGlobalHotKey { get => General.EnableGlobalHotKey; set => General.EnableGlobalHotKey = value; }
-    public bool IsTrimOnHideEnabled { get => General.IsTrimOnHideEnabled; set => General.IsTrimOnHideEnabled = value; }
-    public bool IsTrimAfterPlaybackEnabled { get => General.IsTrimAfterPlaybackEnabled; set => General.IsTrimAfterPlaybackEnabled = value; }
 }

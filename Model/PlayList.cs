@@ -22,6 +22,13 @@ namespace WinUIMusicPlayer.Model
             set => SetProperty(ref field, value);
         }
 
+        /// <summary>用户自定义的播放列表顺序；数值越小越靠前。</summary>
+        public int SortOrder
+        {
+            get;
+            set => SetProperty(ref field, value);
+        }
+
         /// <summary>按歌单顺序选出的封面曲目；随库和成员映射更新，不持久化图片或曲目副本。</summary>
         [Ignore]
         public Music? CoverMusic { get; set => SetProperty(ref field, value); }

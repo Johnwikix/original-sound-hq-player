@@ -30,6 +30,8 @@ public static class LyricsSettingsBus
         public readonly bool IsCustomColorEnabled;
         public readonly Color LyricsCustomColor;
         public readonly int FontWeight;
+        public readonly bool ShowTranslation;
+        public readonly bool ShowPronunciation;
 
         public Settings(
             string fontFamilyName,
@@ -52,7 +54,9 @@ public static class LyricsSettingsBus
             double targetFrameRate,
             bool isCustomColorEnabled,
             Color lyricsCustomColor,
-            int fontWeight = 700)
+            int fontWeight = 700,
+            bool showTranslation = true,
+            bool showPronunciation = true)
         {
             FontFamilyName = fontFamilyName;
             LyricsTextAlignment = lyricsTextAlignment;
@@ -75,6 +79,8 @@ public static class LyricsSettingsBus
             IsCustomColorEnabled = isCustomColorEnabled;
             LyricsCustomColor = lyricsCustomColor;
             FontWeight = fontWeight;
+            ShowTranslation = showTranslation;
+            ShowPronunciation = showPronunciation;
         }
     }
 

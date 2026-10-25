@@ -1,4 +1,4 @@
-﻿using ATL;
+using ATL;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Graphics.Canvas.Text;
@@ -309,7 +309,7 @@ namespace WinUIMusicPlayer.Utils
             });
         }
 
-        public static void SaveMetaData(Music music, string filePath, byte[]? pic, string? lyricsText = null, string? krcText = null)
+        public static void SaveMetaData(Music music, string filePath, byte[]? pic, string? lyricsText = null, bool preserveLyrics = false)
         {
             Settings.FileBufferSize = 1024 * 256;
             Track theTrack = new(filePath)
@@ -326,32 +326,32 @@ namespace WinUIMusicPlayer.Utils
                 theTrack.EmbeddedPictures.Clear();
                 theTrack.EmbeddedPictures.Add(PictureInfo.fromBinaryData(pic));
             }
-            string[] lines = (lyricsText ?? "").Split([Environment.NewLine], StringSplitOptions.None);
-            if (lines.Length == 0)
+            if (!preserveLyrics)
             {
-                lines = (krcText ?? "").Split([Environment.NewLine], StringSplitOptions.None);
-            }
-            theTrack.Lyrics = new List<LyricsInfo>(lines.Length);
-            foreach (string line in lines)
-            {
-                theTrack.Lyrics.Add(new LyricsInfo { UnsynchronizedLyrics = line });
+                var lyricsInfo = new LyricsInfo();
+                lyricsInfo.Parse(lyricsText ?? "");
+                theTrack.Lyrics = new List<LyricsInfo> { lyricsInfo };
             }
             if (!theTrack.Save())
                 throw new IOException("Metadata save failed: " + filePath);
         }
 
         public static T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+            => FindVisualChild<T>(parent, null);
+
+        public static T? FindVisualChild<T>(DependencyObject parent, Func<T, bool>? match) where T : DependencyObject
         {
+            if (parent is null) return null;
             for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
             {
                 var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is T typedChild)
+                if (child is T typedChild && (match is null || match(typedChild)))
                 {
                     return typedChild;
                 }
                 else
                 {
-                    var foundChild = FindVisualChild<T>(child);
+                    var foundChild = FindVisualChild<T>(child, match);
                     if (foundChild is not null)
                     {
                         return foundChild;
@@ -970,18 +970,6 @@ namespace WinUIMusicPlayer.Utils
         }
 
 
-        public static async Task<(string, string)> GetLyricsFromNet(Music musicDetail)
-        {
-            var (lyrics, transLrc, _) = await App.Services.GetRequiredService<LrcService>().GetMixedLyricsAsync(musicDetail);
-            return (lyrics, transLrc);
-        }
-
-        public static async Task<(string, string)> GetKrcFromNet(Music musicDetail)
-        {
-            //string res = await LrcService.GetLyricsFromHelper(musicDetail.Title, musicDetail.Album, musicDetail.Author, musicDetail.Duration);
-            var (krc, tKrc, _) = await App.Services.GetRequiredService<LrcService>().GetKrcLyricsAsync(musicDetail);
-            return (krc, tKrc);
-        }
 
         public static DateTime GetSafeFileCreateTime(string filePath)
         {
@@ -1043,7 +1031,7 @@ namespace WinUIMusicPlayer.Utils
                     {
                         sb.Append('[').Append(EncodeTimecode_ms(phrase.TimestampStart)).Append("] ").Append(phrase.Text).Append('\n');
                     }
-                    lyrics = sb.ToString();
+                    lyrics = synced.Count > 0 ? sb.ToString() : lyricsInfo.UnsynchronizedLyrics;
                 }
                 if (GarbledTextFixer.IsGbkToIso88591Garbled(title))
                 {
@@ -1261,6 +1249,22 @@ namespace WinUIMusicPlayer.Utils
         }
         private static string? _cachedCultureName;
         private static string[]? _cachedCultureArray;
+
+        public static FontInfo ResolveFont(IList<FontInfo> fonts, string? savedName)
+        {
+            string name = GetCleanFontName(savedName ?? string.Empty);
+            FontInfo? fallback = null;
+            foreach (var font in fonts)
+            {
+                if (string.Equals(font.Name, name, StringComparison.OrdinalIgnoreCase)) return font;
+                if (string.Equals(font.Name, "Segoe UI", StringComparison.OrdinalIgnoreCase)) fallback = font;
+            }
+            if (fallback is not null) return fallback;
+            // 枚举失败或已保存字体被卸载时仍提供可选默认项，避免空选择使整份设置保存失败。
+            fallback = FontInfo.CreateDefault();
+            fonts.Add(fallback);
+            return fallback;
+        }
 
         public static List<FontInfo> GetSystemFontsInternal()
         {

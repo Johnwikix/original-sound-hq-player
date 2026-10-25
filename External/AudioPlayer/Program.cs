@@ -11,7 +11,7 @@ public static class Program
         {
             try { e.SetObserved(); } catch { }
         };
-        GCSettings.LatencyMode = GCLatencyMode.SustainedLowLatency;
+        GCSettings.LatencyMode = GCLatencyMode.Interactive;
         Win32.timeBeginPeriod(1);
         try
         {

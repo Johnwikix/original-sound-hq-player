@@ -253,7 +253,13 @@ namespace WinUIMusicPlayer.Services
             NotificationReceived?.Invoke(BassPlayerIpc.Shared.MessageTypeId.GaplessTransition, bytes);
         }
     }
-    public sealed class PlaybackStatsService { public void FlushSession() { } public void StartSession(Music music) { } }
+    public sealed class PlaybackStatsService
+    {
+        public int Starts;
+        public void FlushSession() { }
+        public void StartSession(Music music) { }
+        public Task RecordPlaybackStartAsync(Music music) { Starts++; return Task.CompletedTask; }
+    }
     #if !REAL_REMOTE
     public sealed class RemotePlaybackService
     {

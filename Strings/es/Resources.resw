@@ -168,6 +168,9 @@
   <data name="StatsRangePastYear.Content" xml:space="preserve">
     <value>Último año</value>
   </data>
+  <data name="StatsRangeAllTime.Content" xml:space="preserve">
+    <value>Todo el tiempo</value>
+  </data>
   <data name="StatsRangeCustom.Content" xml:space="preserve">
     <value>Personalizado</value>
   </data>
@@ -1384,18 +1387,6 @@
   <data name="Advanced.Text" xml:space="preserve">
     <value>Avanzado</value>
   </data>
-  <data name="TrimOnHide.Text" xml:space="preserve">
-    <value>Liberar memoria al ocultar ventana</value>
-  </data>
-  <data name="TrimOnHideDescription.Text" xml:space="preserve">
-    <value>Libera el conjunto de trabajo cuando la app se minimiza a la barra de tareas o se cierra a la bandeja.</value>
-  </data>
-  <data name="TrimAfterPlayback.Text" xml:space="preserve">
-    <value>Liberar memoria automáticamente tras reproducción</value>
-  </data>
-  <data name="TrimAfterPlaybackDescription.Text" xml:space="preserve">
-    <value>Fuerza un GC completo tras cada pista. Puede causar tirones de UI en dispositivos de gama baja.</value>
-  </data>
   <data name="ArtistSplitSymbols.Text" xml:space="preserve">
     <value>Separadores de artistas</value>
   </data>
@@ -1404,12 +1395,6 @@
   </data>
   <data name="SelectArtist" xml:space="preserve">
     <value>Elegir artista</value>
-  </data>
-  <data name="TrimNow.Content" xml:space="preserve">
-    <value>Liberar memoria ahora</value>
-  </data>
-  <data name="TrimNowLabel.Text" xml:space="preserve">
-    <value>Liberar memoria ahora</value>
   </data>
   <data name="WindowBoundsDescription.Text" xml:space="preserve">
     <value>Posición de la ventana principal</value>
@@ -1495,6 +1480,24 @@
   <data name="IconDesktopLyrics.Text" xml:space="preserve">
     <value>Letra en el escritorio</value>
   </data>
+  <data name="DesktopLyricsModeMenu.Text" xml:space="preserve">
+    <value>Modo de letra de escritorio</value>
+  </data>
+  <data name="DesktopLyricsModeFloating" xml:space="preserve">
+    <value>Ventana flotante</value>
+  </data>
+  <data name="DesktopLyricsModeTaskbar" xml:space="preserve">
+    <value>Barra de tareas</value>
+  </data>
+  <data name="DesktopLyricsPreviousButtonTooltip" xml:space="preserve">
+    <value>Pista anterior</value>
+  </data>
+  <data name="DesktopLyricsPlayPauseButtonTooltip" xml:space="preserve">
+    <value>Reproducir o pausar</value>
+  </data>
+  <data name="DesktopLyricsNextButtonTooltip" xml:space="preserve">
+    <value>Pista siguiente</value>
+  </data>
   <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>Bloquear letra en el escritorio</value>
   </data>
@@ -1519,6 +1522,12 @@
   <data name="DesktopLyricsFontSize.Text" xml:space="preserve">
     <value>Tamaño de fuente (letra en el escritorio)</value>
   </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Header" xml:space="preserve">
+    <value>Ancho de letras en la barra de tareas</value>
+  </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Description" xml:space="preserve">
+    <value>Ancho reservado para las letras junto a los controles multimedia (píxeles).</value>
+  </data>
   <data name="DesktopLyricsFontFamily.Text" xml:space="preserve">
     <value>Fuente (letra en el escritorio)</value>
   </data>
@@ -1530,6 +1539,9 @@
   </data>
   <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
     <value>Traducción (letra en el escritorio)</value>
+  </data>
+  <data name="DesktopLyricsPronunciation.Text" xml:space="preserve">
+    <value>Mostrar pronunciación en letras de escritorio</value>
   </data>
   <data name="DesktopLyricsKaraoke.Text" xml:space="preserve">
     <value>Efecto karaoke (letra en el escritorio)</value>
@@ -1897,6 +1909,24 @@
   </data>
   <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
     <value>Se aplica si las letras de escritorio están activadas. Se muestran de nuevo al salir de los detalles o al enviar el reproductor a la bandeja.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Header" xml:space="preserve">
+    <value>Ocultar letras de escritorio en detalles (flotante)</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Description" xml:space="preserve">
+    <value>Solo controla la ventana flotante de letras.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Header" xml:space="preserve">
+    <value>Ocultar letras de escritorio en detalles (barra de tareas)</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Description" xml:space="preserve">
+    <value>Solo controla la ventana de letras de la barra de tareas.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloatingMode.Text" xml:space="preserve">
+    <value>Ventana flotante</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbarMode.Text" xml:space="preserve">
+    <value>Ventana de la barra de tareas</value>
   </data>
   <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
     <value>Ly</value>
@@ -2299,7 +2329,7 @@ SHA-256: {5}
   </data>
   <data name="WindowBackgroundTitle" xml:space="preserve"><value>Imagen de fondo de la ventana principal</value></data>
   <data name="WindowBackgroundImage" xml:space="preserve"><value>Imagen de fondo</value></data>
-  <data name="WindowBackgroundDescription" xml:space="preserve"><value>Elige una imagen local para la ventana principal. Bórrala para restaurar el material de la ventana.</value></data>
+  <data name="WindowBackgroundDescription" xml:space="preserve"><value>Elige una imagen local para la ventana principal. Bórrala para restaurar el material de la ventana. Con el fondo de shader desactivado y el karaoke avanzado activado, la imagen se dibuja en el lienzo de letras.</value></data>
   <data name="WindowBackgroundChoose" xml:space="preserve"><value>Elegir imagen</value></data>
   <data name="WindowBackgroundClear" xml:space="preserve"><value>Borrar imagen</value></data>
   <data name="WindowBackgroundBlur" xml:space="preserve"><value>Desenfoque</value></data>
@@ -2307,4 +2337,172 @@ SHA-256: {5}
   <data name="CacheCleanupCard.Header" xml:space="preserve">
     <value>Borrar caché</value>
   </data>
+  <data name="LyricsFilePriority.Header" xml:space="preserve">
+    <value>Prioridad de archivos de letras</value>
+  </data>
+  <data name="LyricsFilePriority.Description" xml:space="preserve">
+    <value>Usar el primer archivo coincidente válido. La traducción prefiere _Translated.lrc.</value>
+  </data>
+  <data name="LyricsOriginalTab.Text" xml:space="preserve">
+    <value>Letra</value>
+  </data>
+  <data name="LyricsTranslationTab.Text" xml:space="preserve">
+    <value>Traducción</value>
+  </data>
+  <data name="LyricsRestoreLegacyLrc.Content" xml:space="preserve">
+    <value>Restaurar LRC anterior</value>
+  </data>
+  <data name="LyricsRestoreLegacyKrc.Content" xml:space="preserve">
+    <value>Restaurar KRC anterior</value>
+  </data>
+  <data name="LyricsEditConflict" xml:space="preserve">
+    <value>Otra operación modificó la letra. Conserva el borrador y vuelve a abrir antes de guardar.</value>
+  </data>
+  <data name="LyricsInvalid" xml:space="preserve">
+    <value>Letra, marcas de tiempo u operación de archivo no válidas.</value>
+  </data>
+  <data name="LyricsMigrationDiagnostic" xml:space="preserve">
+    <value>No se pudieron convertir algunas letras anteriores. Los originales siguen disponibles mediante los botones de restauración.</value>
+  </data>
+  <data name="LyricsFilePriorityLabel" xml:space="preserve">
+    <value>Prioridad de archivos de letras</value>
+  </data>
+  <data name="LyricsFilesSaved" xml:space="preserve">
+    <value>Archivos de letras guardados:</value>
+  </data>
+  <data name="LyricsSourcePriority.Header" xml:space="preserve"><value>Prioridad de fuentes de letras</value></data>
+  <data name="LyricsSourcePriority.Description" xml:space="preserve"><value>Usar letras válidas de la primera fuente; si no están disponibles, probar la siguiente.</value></data>
+  <data name="LyricsSourceFile" xml:space="preserve"><value>Archivos de letras</value></data>
+  <data name="LyricsSourceDatabase" xml:space="preserve"><value>Base de datos</value></data>
+  <data name="LyricsPriorityFirst" xml:space="preserve"><value>1.ª prioridad</value></data>
+  <data name="LyricsPrioritySecond" xml:space="preserve"><value>2.ª prioridad</value></data>
+  <data name="LyricsPriorityThird" xml:space="preserve"><value>3.ª prioridad</value></data>
+  <data name="LyricsPriorityFourth" xml:space="preserve"><value>4.ª prioridad</value></data>
+  <data name="PlayListEdit" xml:space="preserve">
+    <value>Editar</value>
+  </data>
+  <data name="PlayListEditDone" xml:space="preserve">
+    <value>Listo</value>
+  </data>
+  <data name="PlayListSelectAll.Text" xml:space="preserve">
+    <value>Seleccionar todo</value>
+  </data>
+  <data name="PlayListBatchDelete.Text" xml:space="preserve">
+    <value>Eliminar</value>
+  </data>
+  <data name="AreUSureDeletePlayLists" xml:space="preserve">
+    <value>¿Seguro que quieres eliminar las listas de reproducción seleccionadas?</value>
+  </data>
+
+  <data name="LlmTranslation.Header" xml:space="preserve"><value>Traducción de letras con IA</value></data>
+  <data name="LlmTranslation.Description" xml:space="preserve"><value>Traduce letras sin traducción al iniciar la reproducción mediante un servicio compatible con OpenAI o Anthropic.</value></data>
+  <data name="LlmBaseUrl.Header" xml:space="preserve"><value>URL base de API</value></data>
+  <data name="LlmModel.Header" xml:space="preserve"><value>Modelo</value></data>
+  <data name="LlmTargetLanguage.Header" xml:space="preserve"><value>Idioma de destino</value></data>
+  <data name="LlmThinkingLevel.Header" xml:space="preserve"><value>Nivel de razonamiento</value></data>
+  <data name="LlmApiKey.Header" xml:space="preserve"><value>Clave API (guardada en el Administrador de credenciales de Windows)</value></data>
+  <data name="LlmSave.Content" xml:space="preserve"><value>Guardar</value></data>
+  <data name="LlmClearApiKey.Content" xml:space="preserve"><value>Borrar clave guardada</value></data>
+  <data name="LlmSaved" xml:space="preserve"><value>Configuración de traducción guardada.</value></data>
+  <data name="LlmApiKeyCleared" xml:space="preserve"><value>Clave API guardada borrada.</value></data>
+
+  <data name="LlmApiKeyConfigured" xml:space="preserve"><value>Hay una clave API guardada.</value></data>
+  <data name="LlmApiKeyNotConfigured" xml:space="preserve"><value>No hay ninguna clave API guardada.</value></data>
+
+  <data name="LlmConfigure.Content" xml:space="preserve"><value>Configurar traducción IA</value></data>
+  <data name="LlmClose.Content" xml:space="preserve"><value>Cerrar</value></data>
+  <data name="LlmEnabled.Header" xml:space="preserve"><value>Traducir letras sin traducción al reproducir</value></data>
+  <data name="LlmWorking" xml:space="preserve"><value>Procesando…</value></data>
+  <data name="LlmTranslationInProgress" xml:space="preserve"><value>La traducción con IA está en curso y puede tardar. Espera…</value></data>
+  <data name="LlmDialogSaveButton" xml:space="preserve"><value>Guardar</value></data>
+  <data name="LlmDialogCloseButton" xml:space="preserve"><value>Cerrar</value></data>
+  <data name="LlmBaseUrl.Description" xml:space="preserve"><value>El protocolo se detecta automáticamente: /anthropic usa Anthropic y otras direcciones compatibles /v1 usan OpenAI.</value></data>
+
+  <data name="LlmTranslateButton.Content" xml:space="preserve"><value>Traducir letra con IA</value></data>
+  <data name="LlmManualTranslationFailed" xml:space="preserve"><value>La traducción de la letra con IA falló. Comprueba la configuración y los registros.</value></data>
+  <data name="LlmManualTranslationCompleted" xml:space="preserve"><value>Traducción de la letra generada. Guarda la letra para escribirla en el archivo o la base de datos.</value></data>
+  <data name="LyricsPronunciationTab.Text" xml:space="preserve"><value>Pronunciación</value></data>
+  <data name="LyricsShowTranslation.Header" xml:space="preserve"><value>Mostrar traducciones</value></data>
+  <data name="LyricsShowTranslation.Description" xml:space="preserve"><value>Muestra la traducción cuando esté disponible.</value></data>
+  <data name="LyricsShowPronunciation.Header" xml:space="preserve"><value>Mostrar pronunciación</value></data>
+  <data name="LyricsShowPronunciation.Description" xml:space="preserve"><value>Muestra la pronunciación cuando esté disponible.</value></data>
+  <data name="LyricsPronunciationLanguages.Header" xml:space="preserve"><value>Idiomas de pronunciación</value></data>
+  <data name="LyricsPronunciationLanguages.Description" xml:space="preserve"><value>Elige la pronunciación por etiquetas o escritura; el cantonés requiere una etiqueta explícita.</value></data>
+  <data name="LyricsPronunciationMandarin.Header" xml:space="preserve"><value>Mandarín</value></data>
+  <data name="LyricsPronunciationMandarin.Description" xml:space="preserve"><value>Mostrar pronunciación en mandarín.</value></data>
+  <data name="LyricsPronunciationCantonese.Header" xml:space="preserve"><value>Cantonés</value></data>
+  <data name="LyricsPronunciationCantonese.Description" xml:space="preserve"><value>Mostrar pronunciación en cantonés.</value></data>
+  <data name="LyricsPronunciationJapanese.Header" xml:space="preserve"><value>Japonés</value></data>
+  <data name="LyricsPronunciationJapanese.Description" xml:space="preserve"><value>Mostrar pronunciación japonesa.</value></data>
+  <data name="LyricsPronunciationKorean.Header" xml:space="preserve"><value>Coreano</value></data>
+  <data name="LyricsPronunciationKorean.Description" xml:space="preserve"><value>Mostrar pronunciación coreana.</value></data>
+  <data name="LyricsTranslationToggle" xml:space="preserve"><value>Alternar traducción de la letra</value></data>
+  <data name="LyricsPronunciationToggle" xml:space="preserve"><value>Alternar pronunciación de la letra</value></data>
+  <data name="LyricsTranslationIcon.Text" xml:space="preserve"><value>T</value></data>
+  <data name="LyricsPronunciationIcon.Text" xml:space="preserve"><value>A</value></data>
+  <data name="SpectralEnhancementTitle" xml:space="preserve"><value>Sobremuestreo</value></data>
+  <data name="SpectralEnhancementDescription" xml:space="preserve"><value>Restaura agudos y remuestrea PCM mono/estéreo de hasta 48 kHz.</value></data>
+  <data name="SpectralEnhancementOff" xml:space="preserve"><value>Desactivada</value></data>
+  <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Solo canciones con pérdida</value></data>
+  <data name="SpectralEnhancementAll" xml:space="preserve"><value>Con pérdida + sin pérdida hasta 48 kHz</value></data>
+  <data name="LastFmEnable" xml:space="preserve"><value>Enviar a Last.fm</value></data>
+  <data name="LastFmEnableDescription" xml:space="preserve"><value>Enviar la reproducción actual, escuchas válidas y cambios de favoritos; conservar estadísticas locales.</value></data>
+  <data name="LastFmCredentials" xml:space="preserve"><value>Credenciales de la aplicación</value></data>
+  <data name="LastFmCredentialsHelp" xml:space="preserve"><value>Solicita tu propia API Key y Shared Secret y guárdalas antes de conectar una cuenta. Cambiarlas desconecta la cuenta y elimina los envíos pendientes.</value></data>
+  <data name="LastFmSecretSaved" xml:space="preserve"><value>Guardado de forma segura; deja el campo vacío para conservar el Secret.</value></data>
+  <data name="LastFmSecretRequired" xml:space="preserve"><value>Introduce el Shared Secret de tu aplicación.</value></data>
+  <data name="LastFmSaveCredentials" xml:space="preserve"><value>Guardar credenciales</value></data>
+  <data name="LastFmApplyCredentials" xml:space="preserve"><value>Obtener credenciales</value></data>
+  <data name="LastFmAuthorize" xml:space="preserve"><value>Conectar cuenta</value></data>
+  <data name="LastFmCompleteAuthorization" xml:space="preserve"><value>Completar autorización</value></data>
+  <data name="LastFmDisconnect" xml:space="preserve"><value>Desconectar</value></data>
+  <data name="LastFmDisconnectHelp" xml:space="preserve"><value>Al desconectar se detienen los envíos y se borran los pendientes. Para revocar el acceso, elimina también la aplicación en los ajustes de Last.fm.</value></data>
+  <data name="LastFmManageApplications" xml:space="preserve"><value>Gestionar aplicaciones de Last.fm</value></data>
+  <data name="LastFmWorking" xml:space="preserve"><value>Procesando…</value></data>
+  <data name="LastFmAuthorizationHelp" xml:space="preserve"><value>Permite el acceso en el navegador, vuelve aquí y completa la autorización.</value></data>
+  <data name="LastFmUsageHelp" xml:space="preserve"><value>Solo cuenta el tiempo escuchado: canciones de más de 30 segundos, tras escuchar la mitad o 4 minutos. Se omiten canciones sin artista.</value></data>
+  <data name="LastFmPendingCount" xml:space="preserve"><value>Envíos pendientes: {0}</value></data>
+  <data name="LastFmQueueHelp" xml:space="preserve"><value>Los registros se envían por orden al recuperar la conexión. Desactivar pausa la cola; activar la reanuda. Se conservan hasta 10.000 registros.</value></data>
+  <data name="LastFmRetry" xml:space="preserve"><value>Reintentar ahora</value></data>
+  <data name="LastFmBrowserError" xml:space="preserve"><value>No se pudo abrir el navegador. Vuelve a conectar la cuenta.</value></data>
+  <data name="LastFmConnected" xml:space="preserve"><value>Conectado: {0}</value></data>
+  <data name="LastFmNotConnected" xml:space="preserve"><value>Sin conexión con Last.fm</value></data>
+  <data name="LastFmErrorNetwork" xml:space="preserve"><value>Last.fm no está disponible temporalmente. Los registros se guardan y se reintentan automáticamente.</value></data>
+  <data name="LastFmErrorCredentials" xml:space="preserve"><value>Revisa la API Key y el Shared Secret y vuelve a guardarlos.</value></data>
+  <data name="LastFmErrorAuthorizationPending" xml:space="preserve"><value>Aún no se ha autorizado el acceso. Permítelo en el navegador y completa la autorización.</value></data>
+  <data name="LastFmErrorAuthorizationExpired" xml:space="preserve"><value>La solicitud ha caducado. Vuelve a conectar la cuenta.</value></data>
+  <data name="LastFmErrorSessionExpired" xml:space="preserve"><value>La autorización ha caducado. Reconecta la cuenta; los registros pendientes se conservan.</value></data>
+  <data name="LastFmErrorRejected" xml:space="preserve"><value>Last.fm rechazó un registro, por metadatos no válidos o una fecha antigua. Se ha omitido.</value></data>
+  <data name="LastFmErrorStorage" xml:space="preserve"><value>No se pudieron leer o guardar los ajustes o la cola. Revisa los permisos y reintenta. Los archivos existentes se conservan.</value></data>
+  <data name="LastFmErrorQueueFull" xml:space="preserve"><value>La cola está llena. Conéctate a internet para enviar los registros guardados; se conservan los existentes.</value></data>
+  <data name="LastFmAccountActions" xml:space="preserve"><value>Autorización de cuenta</value></data>
+  <data name="LastFmHistoryTitle" xml:space="preserve"><value>Historial de reproducción local</value></data>
+  <data name="LastFmHistoryHelp" xml:space="preserve"><value>De forma predeterminada, envía los registros de los últimos 14 días con su hora original. Activa la opción superior para incluir los más antiguos. Se comprueban los registros existentes en línea antes de enviarlos.</value></data>
+  <data name="LastFmImportHistory" xml:space="preserve"><value>Enviar historial local</value></data>
+  <data name="LastFmCancelHistory" xml:space="preserve"><value>Cancelar importación</value></data>
+  <data name="LastFmHistoryResult" xml:space="preserve"><value>En cola: {0}; con fecha de importación: {5}; ya existentes: {1}; más de 14 días y excluidos: {2}; no aptos o incompletos: {3}; aplazados: {4} (incluidos {6} con correspondencias antiguas ambiguas que requieren revisión).</value></data>
+  <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>Enviar historial antiguo con la fecha de importación</value></data>
+  <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>Desactivado de forma predeterminada. Las reproducciones antiguas cuentan para el día de importación en Last.fm; las horas locales originales se conservan. Solo se aplica a la importación manual.</value></data>
+  <data name="ApplicationFont" xml:space="preserve">
+    <value>Fuente de la aplicación</value>
+  </data>
+  <data name="UseIndependentLyricsFont" xml:space="preserve">
+    <value>Usar una fuente independiente para las letras</value>
+  </data>
+  <data name="IndependentLyricsFontDescription" xml:space="preserve">
+    <value>Al desactivarlo, las letras usan la fuente de la aplicación. Se conserva la selección independiente.</value>
+  </data>
+  <data name="UseIndependentDesktopLyricsFont" xml:space="preserve">
+    <value>Usar una fuente independiente para las letras del escritorio</value>
+  </data>
+  <data name="IndependentDesktopLyricsFontDescription" xml:space="preserve">
+    <value>Al desactivarlo, las letras del escritorio usan la fuente de la aplicación. Se conserva la selección independiente.</value>
+  </data>
+  <data name="LastFmFavoritesTitle" xml:space="preserve"><value>Enviar favoritos</value></data>
+  <data name="LastFmFavoritesHelp" xml:space="preserve"><value>Los favoritos locales y sus eliminaciones solo se envían a Last.fm; no se descargan favoritos remotos ni se cambia el orden local. Sin conexión o con los envíos pausados se conserva el último cambio. Al desvincular o cambiar de cuenta se borran los cambios pendientes. Los favoritos existentes se envían manualmente.</value></data>
+  <data name="LastFmFavoritePendingCount" xml:space="preserve"><value>Cambios de favoritos pendientes: {0}</value></data>
+  <data name="LastFmImportFavorites" xml:space="preserve"><value>Enviar favoritos existentes</value></data>
+  <data name="LastFmFavoriteResult" xml:space="preserve"><value>{0} pistas en cola; {1} sin título o artista.</value></data>
+  <data name="LastFmCancelFavoriteImport" xml:space="preserve"><value>Cancelar importación</value></data>
+  <data name="LastFmFavoriteImportCanceled" xml:space="preserve"><value>Importación cancelada; los favoritos ya en cola se seguirán enviando.</value></data>
 </root>

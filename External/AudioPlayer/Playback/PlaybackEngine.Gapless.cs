@@ -23,8 +23,8 @@ public sealed partial class PlaybackEngine
         return _gaplessSource;
     }
 
-    // Stream lock -> render gate, never the reverse. Detach drains an in-flight splice;
-    // adoption must precede invalidating its plan so a committed track keeps its identity.
+    // 加锁顺序为流锁后渲染锁，不能反向；分离操作等待在途拼接完成，
+    // 必须先接管再使计划失效，确保已提交曲目的身份保持不变。
     private void CancelGapless()
     {
         var cancelled = _gaplessSource?.Cancel();
@@ -75,7 +75,7 @@ public sealed partial class PlaybackEngine
 
     public void QueueNext(GaplessRequest request) => TryQueueNext(request);
 
-    // Acknowledgement accepts a lightweight plan, not an already opened decoder.
+    // 确认响应接受的是轻量计划，解码器尚未打开。
     public bool TryQueueNext(GaplessRequest request)
     {
         lock (_streamLock)
@@ -97,7 +97,7 @@ public sealed partial class PlaybackEngine
         }
     }
 
-    // Called by the existing control watchdog. No file probes or allocations outside the window.
+    // 由现有控制看门狗调用；窗口外不探测文件，也不产生额外分配。
     private void PrepareGaplessIfDue()
     {
         lock (_streamLock)
@@ -110,7 +110,7 @@ public sealed partial class PlaybackEngine
             var (position, duration) = GetTimeProgress();
             if (duration > 0 && (duration - position) / current.PlaybackRate > GaplessLeadTimeMs) return;
             preloader.Start(new(request, current, source, DsdPcmFreq, DsdGain, Latency,
-                ExperimentalSurround51, EffectivePlaybackRate, IsDopEnabled && !IsSharedMode(OutputMode)));
+                ExperimentalSurround51, EffectivePlaybackRate, IsDopEnabled && !IsSharedMode(OutputMode), EffectiveEnhancement, EnhancementMixRate()));
         }
     }
 
@@ -118,15 +118,16 @@ public sealed partial class PlaybackEngine
     {
         token.ThrowIfCancellationRequested();
         if (preparation.BitstreamEnabled && IsRawDsdContainer(preparation.Request.Path)) return null;
-        // Decoder probing belongs on this worker, including local files on slow UNC paths.
+        // 解码器探测在此工作线程执行，包括慢速 UNC 路径上的本地文件。
         return Session.Open(this, preparation.Request.Path, RenderKind.Pcm,
             preparation.DsdRate, preparation.DsdGain, preparation.Latency,
             maxChannels: preparation.Current.Channels <= 2 ? 2 : null,
             experimentalSurround51: preparation.Surround, cancellationToken: token,
-            playbackRate: preparation.PlaybackRate);
+            playbackRate: preparation.PlaybackRate, enhancement: preparation.Enhancement,
+            enhancementDeviceRate: preparation.EnhancementDeviceRate);
     }
 
-    // Invoked by the preloader under the stream lock; no rendering/disposal can race ownership transfer.
+    // 由预加载器在流锁内调用，避免渲染或释放与所有权转移发生竞争。
     private bool PublishGaplessSession(GaplessPreparation preparation, Session next)
     {
         if (Volatile.Read(ref _disposed) != 0 || _session != preparation.Current
@@ -137,8 +138,8 @@ public sealed partial class PlaybackEngine
         return preparation.Source.Queue(next, preparation.Request.Token);
     }
 
-    // Snapshot both borrowed references atomically with respect to a render-boundary splice.
-    // Stream lock prevents disposal while targets are published outside the render gate.
+    // 相对于渲染边界的拼接操作，原子地快照两个借用引用。
+    // 在渲染锁外发布目标时，由流锁防止对象被释放。
     private void ApplyDspToSessions()
     {
         var settings = ResolveDsp(_output?.DeviceId);

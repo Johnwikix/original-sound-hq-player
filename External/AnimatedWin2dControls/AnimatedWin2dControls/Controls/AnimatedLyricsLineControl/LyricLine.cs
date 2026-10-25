@@ -12,6 +12,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             set => SetProperty(ref field, value);
         } = string.Empty;
 
+        public string PronunciationText
+        {
+            get => field;
+            set => SetProperty(ref field, value);
+        } = string.Empty;
+
         public bool IsCurrent
         {
             get => field;
@@ -29,5 +35,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             get => field;
             set => SetProperty(ref field, value);
         } = 0;
+
+        /// <summary>Gets or sets the display highlight boundary, independently of the actual lyric end.</summary>
+        /// <remarks>The playback projection derives this value; it is not stored in the lyrics database.</remarks>
+        public double? HighlightEndMs { get; set; }
     }
 }

@@ -89,7 +89,7 @@ internal static partial class Win32
         public int ptY;
     }
 
-    // ─────────────── COM ───────────────
+    // ─────────────── COM 接口 ───────────────
 
     public const uint COINIT_APARTMENTTHREADED = 0x2;
     public const uint COINIT_MULTITHREADED = 0x0;

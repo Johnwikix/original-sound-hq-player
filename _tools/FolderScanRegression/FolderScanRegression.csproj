@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net11.0</TargetFramework>
+    <TargetFramework>net11.0-windows10.0.26100.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -24,7 +24,9 @@
     <Compile Include="../../ViewModel/Pages/AddFolderViewModel.cs" />
     <Compile Include="../../Model/Folder.cs" />
     <Compile Include="../../Model/SubFolder.cs" />
-    <Compile Include="../../Model/MusicLyrics.cs" />
+    <Compile Include="../../Model/MusicLyrics.cs;../../Model/LyricsDocument.cs;../../Model/MusicLyricsRecord.cs" />
+    <Compile Include="../../Services/Lyrics/LyricsParser*.cs;../../Services/Lyrics/LyricsRepository.cs;../../Services/Lyrics/LyricsLegacyMigration.cs" />
+    <ProjectReference Include="../../External/Lyricify.Lyrics.Helper/Lyricify.Lyrics.Helper.csproj" />
     <Compile Include="../../AudioConverters/FFmpegMetadataProbe.cs" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.11" />

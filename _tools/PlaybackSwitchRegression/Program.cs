@@ -30,6 +30,12 @@ internal static unsafe partial class Program
     [DynamicDependency(DynamicallyAccessedMemberTypes.All, typeof(WasapiOutput))]
     private static int Main(string[] args)
     {
+        if (args.Length == 2 && args[0] == "--startup-server") return StartupServer(args[1]);
+        if (args.Length == 1 && args[0] == "--test-startup")
+        {
+            RunStartupTests();
+            return _failures == 0 ? 0 : 1;
+        }
         if (args.Length == 1 && args[0] == "--measure-playback-memory")
         {
             FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
@@ -42,11 +48,23 @@ internal static unsafe partial class Program
             RunPlaybackEffectsTests();
             return _failures == 0 ? 0 : 1;
         }
+        if (args.Length == 1 && args[0] == "--test-review-fixes")
+        {
+            FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
+            RunReviewFixTests(Directory.GetCurrentDirectory());
+            return _failures == 0 ? 0 : 1;
+        }
         if (args.Length == 1 && args[0] is "--test-network-asio" or "--test-nas-dsf")
         {
             FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
             if (args[0] == "--test-network-asio") Run("real ASIO network switches", CheckRealAsioNetworkMemory);
             else Run("real NAS DSF bridge seek and cover", CheckNasDsf);
+            return _failures == 0 ? 0 : 1;
+        }
+        if (args.Length == 1 && args[0] == "--test-audio-memory")
+        {
+            FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
+            RunAudioMemoryTests();
             return _failures == 0 ? 0 : 1;
         }
         if (args.Length == 1 && args[0] == "--test-network-dsf")
@@ -98,6 +116,11 @@ internal static unsafe partial class Program
             RunDspNotificationTests();
             return _failures == 0 ? 0 : 1;
         }
+        if (args.Length == 1 && args[0] == "--test-fft")
+        {
+            RunFftTests();
+            return _failures == 0 ? 0 : 1;
+        }
         if (args.Length == 2 && args[0] == "--ipc-server") return IpcBenchmarkServer(args[1]);
         if (args.Length == 1 && args[0] == "--benchmark-loudness") return BenchmarkLoudness();
         string root = args.Length > 0 ? Path.GetFullPath(args[0]) : Directory.GetCurrentDirectory();
@@ -107,12 +130,14 @@ internal static unsafe partial class Program
         RunExportTests(Path.Combine(AppContext.BaseDirectory, "Fixtures", "eac3-5.1.m4a"));
         RunExportTests(Path.Combine(root, "_tools", "test_tone.wav"));
         WriteDsfFixture();
+        RunSpectralSessionTests(root);
         RunSurroundTests(root);
         RunAutomaticSurroundTests(root);
         RunAtmosTests(root);
         RunAtmosAutomaticTests(root);
         RunProgressTests();
         RunPipeProtocolTests();
+        RunStartupTests();
         RunWavPackTests();
         RunBufferPolicyTests();
         RunAsioNotificationTests();
@@ -123,6 +148,8 @@ internal static unsafe partial class Program
         RunDeviceCorrectionTests();
         RunCurveTests();
         RunDspNotificationTests();
+        RunFftTests();
+        RunAudioMemoryTests();
         RunReviewFixTests(root);
         RunWasapiStallTests();
         foreach (string mode in new[] { "ASIO", "WasapiExclusivePush", "WasapiExclusiveEvent" })
@@ -177,6 +204,7 @@ internal static unsafe partial class Program
         engine.IsDopEnabled = true;
         engine.DsdPcmFreq = 88200;
         engine.Latency = 300;
+        Set(engine, "_fftAnalyzer", new FftAnalyzer(static _ => { }));
         Set(engine, "_deviceCorrections", new BassPlayerIpc.Shared.DeviceCorrections());
         engine.BassOutputDeviceId = -1;
         SetPublicArray(engine, "EqGains", new float[10]);

@@ -28,21 +28,21 @@ public sealed partial class PlaybackEngine
 
     public StreamReply HandleStreamCommand(StreamCommand command)
     {
-        // Stop must interrupt native seek/recovery before waiting for either control lock.
+        // 停止操作必须先中断原生定位或恢复，再等待任一控制锁。
         if (command.Version == 1 && command.Method == "stop" &&
             _streamSlots.TryGetValue(command.SessionId, out var stopping))
         {
             try { stopping.Cancel.Cancel(); } catch (ObjectDisposedException) { }
         }
-        // Serialize source replacement validation and cancellation.
-        // The watchdog uses only _streamLock.
+        // 串行执行音源替换校验与取消。
+        // 看门狗仅使用 _streamLock。
         lock (_streamCommandLock) return HandleStreamCommandCore(command);
     }
 
     private StreamReply HandleStreamCommandCore(StreamCommand command)
     {
         if (command.Version != 1) return Reject(command, "ProtocolVersion");
-        // Interrupt native I/O before acquiring the engine lock; recovery may currently be opening a source.
+        // 获取引擎锁前先中断原生 I/O，因为恢复流程可能正在打开音源。
         if (command.Method == "refresh")
         {
             if (_streamWork.Count >= 2) return Reject(command, "PreparationLimit");
@@ -97,8 +97,8 @@ public sealed partial class PlaybackEngine
                         if (slot.Phase == StreamPhase.Ended) { slot.WantsPlay = false; return Reject(command, "SeekOrPrepareRequired"); }
                         ResumeCore();
                     }
-                    // A prepared seek may still be refilling. The ring gates output until its
-                    // threshold is reached; play intent must not depend on a later status poll.
+                    // 已准备的定位操作可能仍在补充数据；环形缓冲区达到阈值后才允许输出，
+                    // 播放意图不能依赖后续状态轮询才能生效。
                     else if (slot.Prepared is not null) CommitStream(slot);
                     break;
                 case "pause":
@@ -177,7 +177,7 @@ public sealed partial class PlaybackEngine
                     slot.Cancel.Token.ThrowIfCancellationRequested();
                     if (_disposed != 0 || !_streamSlots.TryGetValue(slot.Id, out var current) || !ReferenceEquals(slot, current)) return;
                     slot.Prepared = prepared;
-                    prepared = null; // ownership transfers to slot, then to the engine when committed
+                    prepared = null; // 所有权先转移到槽位，提交时再转移给引擎。
                     slot.Phase = StreamPhase.Ready;
                     if (slot.WantsPlay && _requestedStream == slot.Id) CommitStream(slot);
                 }
@@ -249,7 +249,7 @@ public sealed partial class PlaybackEngine
         slot.Phase = StreamPhase.Stopped;
         _streamSlots.TryRemove(slot.Id, out _);
         if (_requestedStream == slot.Id) _requestedStream = Guid.Empty;
-        // Cancellation source remains valid until the preparation task has released all native callbacks.
+        // 准备任务释放所有原生回调之前，取消源必须保持有效。
         _ = DisposeSlotTokenAsync(slot);
     }
 

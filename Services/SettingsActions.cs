@@ -9,7 +9,6 @@ using Windows.System;
 using WinUIEx;
 using WinUIMusicPlayer.State;
 using WinUIMusicPlayer.Utils;
-using WinUIMusicPlayer.Helper;
 namespace WinUIMusicPlayer.Services;
 
 /// <summary>设置页面的平台操作；共享偏好通过 AppState 发布。</summary>
@@ -162,12 +161,6 @@ public sealed partial class SettingsActions(AppState state, MusicDatabaseService
         {
             logger.LogError(ex, $"清空封面缓存失败: {ex.Message}");
         }
-    }
-
-    [RelayCommand]
-    private static async Task TrimNow()
-    {
-        await WorkingSetCompressor.TrimSelfAsync();
     }
 
     [RelayCommand]

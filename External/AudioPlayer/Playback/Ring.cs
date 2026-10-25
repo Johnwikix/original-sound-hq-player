@@ -146,7 +146,7 @@ internal abstract class FrameRingBase<T> : IDisposable where T : unmanaged
         int readTotal = 0;
         lock (_gate)
         {
-            if (_disposed) return 0; // output is already filled with format-appropriate silence
+            if (_disposed) return 0; // 输出已填充为与格式匹配的静音。
             int needed = frameCount;
             int outFrame = 0;
             while (needed > 0)
@@ -303,7 +303,7 @@ internal sealed class DsdByteRing : FrameRingBase<byte>
 internal sealed class Iec61937Ring(int capacityFrames, int prebufferFrames)
     : FrameRingBase<byte>(4, capacityFrames, prebufferFrames, 300, wholeWrites: true)
 {
-    // Publish complete IEC bursts so an underrun cannot insert silence inside a payload.
+    // 仅发布完整的 IEC 突发包，避免缓冲欠载时在载荷内部插入静音。
     protected override void FillSilence(Span<byte> output, int frameCount, long phaseBase)
         => output[..(frameCount * 4)].Clear();
 }

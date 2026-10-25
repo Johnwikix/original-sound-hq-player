@@ -17,6 +17,8 @@ const string qqEmpty = """{"code":0,"req_1":{"code":0,"data":{"code":0,"body":{"
 const string neteaseEmpty = """{"code":200,"result":{"songCount":0,"songs":[]}}""";
 int failed = 0;
 using var service = new LrcService(NullLogger<LrcService>.Instance);
+await Run("切歌 500 ms 防抖、在途取消与迟到缓存守卫", () => Task.Run(() => LoaderCancellationChecks.RunSwitching(service)));
+await Run("统一在线搜索状态、强制请求与自动取消", () => UnifiedSearchChecks.RunAsync(service));
 await Run("网易云不可用仍回退 QQ", async () =>
 {
     SetHttp(request => request.RequestUri!.Host.Contains("163.com")
@@ -40,7 +42,7 @@ await Run("QQ 搜索业务错误不能记为无结果", async () =>
 {
     SetHttp(_ => Json("""{"code":0,"req_1":{"code":1000}}"""));
     Check((await service.GetLyricsAsync(new Music(), Searchers.QQMusic)).Status == LyricsSearchStatus.NetworkError);
-    Check((await service.GetKrcLyricsAsync(new Music())).Status == LyricsSearchStatus.NetworkError);
+    Check((await service.GetWordLyricsAsync(new Music())).Status == LyricsSearchStatus.NetworkError);
 });
 await Run("QQ 歌词业务错误不能记为无结果", async () =>
 {
@@ -135,10 +137,10 @@ await Run("QQ 逐字歌词协议错误保留重试", async () =>
     foreach (string response in new[] { "<result><retcode>1</retcode></result>", "<result/>", "<result><content>broken</content></result>" })
     {
         SetHttp(request => Json(request.RequestUri!.AbsolutePath.Contains("musicu.fcg") ? qqSong : response));
-        Check((await service.GetKrcLyricsAsync(new Music())).Status == LyricsSearchStatus.NetworkError);
+        Check((await service.GetWordLyricsAsync(new Music())).Status == LyricsSearchStatus.NetworkError);
     }
     SetHttp(request => Json(request.RequestUri!.AbsolutePath.Contains("musicu.fcg") ? qqSong : "<result><retcode>0</retcode><content/></result>"));
-    Check((await service.GetKrcLyricsAsync(new Music())).Status == LyricsSearchStatus.NoResult);
+    Check((await service.GetWordLyricsAsync(new Music())).Status == LyricsSearchStatus.NoResult);
 });
 BaseApi.HttpClient.Dispose();
 await Run("断路器只允许一个并发探测且取消后可重试", () =>

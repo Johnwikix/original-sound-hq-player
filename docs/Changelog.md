@@ -1,6 +1,558 @@
+## 2026-10-25 统计页时间范围新增全部时间
+- `StatsViewModel`、`StatsPage`：时间范围下拉在“过去一年”与“自定义”之间新增“全部时间”；总时长、曲目数、活跃天数、时段分布与 Top 歌曲/歌手/专辑覆盖全部历史记录（查询起点为 UTC 纪元下限）。
+- `StatsViewModel`：全部时间时热度图仍固定展示最近一年，但改为直接从快照每日计数筛选年度区间，不再重复查库。
+- 七语言资源：新增 `StatsRangeAllTime`。
+- `_tools/SharedStateRegression`：桩记录每次快照查询范围；新增全部时间下限、覆盖今天与热度图零重复查询回归。
+- 验证：核心回归全部通过（含新增全部时间断言）、Debug x64 构建 0 错误（184 个既有警告）、七语言资源键与 CRLF 检查通过。
+
+## 2026-10-23 修复 Last.fm 收藏上报审查中的三项 P2
+- `LastFmService`：退避等待不再切换发送轮次，持续失败的收藏或听歌请求不会饿死另一类队列；保留现有生产退避时长。
+- `MusicDatabaseService`、`FavouritePlayListViewModel`、收藏服务/存储：收藏变更和拖动排序进入同一写入序列；排序仅更新仍在收藏中的歌曲的 Order，避免旧快照覆盖新顺序或误写其他字段。
+- `LastFmFavoriteStore`、收藏服务：每批最多 512 行独立事务并释放服务门；限制导入 ID 上界，取消/退出不再等待整库事务；仅暂存导入期间实际修改的歌曲键，防止跨批重复文件覆盖新的取消收藏。
+- 设置 ViewModel/XAML、七语言资源：新增“取消导入”，显示已提交批次进度；取消后已入队的收藏继续上报，保留空结果折叠及控件默认高度。
+- `_tools/LastFmRegression/FavoriteFixRegression.cs`、裁剪/AOT 与 WinUI 回归：覆盖失败轮次公平性、慢授权排序、跨批并发及重复文件、取消重启与解绑中断。
+- 验证：742 项核心、43 项真实 WinUI、重新发布的裁剪/NativeAOT 各 1155 项检查及 Debug x64 构建通过，新增核心无裁剪/AOT 警告；未访问真实账号。10 万首短元数据实测每批最多 512 行，读库/入队/收藏保存等待约 0.9/6.3/10.1ms；分批提交总耗时约 8s，保留取消能力。
+
+## 2026-10-23 增加 Last.fm 收藏单向上报
+- `MusicCommands`、`MusicDatabaseService`、`LastFmFavoriteStore`：本地收藏/取消收藏与按歌曲合并的上报队列在同一 SQLite 事务中保存；仅更新收藏与排序列，保留本地统计和列表顺序。
+- `LastFmService`、`LastFmApiClient`：收藏与听歌记录共用串行网络通道，离线及重启后继续；按账号和应用隔离，解绑清队列。未确认的请求重试前核对远端状态，旧确认不能删除新操作；关闭上报暂停发送并保留最新收藏操作。
+- `LastFmSettingsViewModel`、设置 XAML 与七语言资源：新增默认收起的“收藏上报”及手动上报现有收藏入口；历史和收藏结果为空时折叠，不占空白高度。
+- `_tools/LastFmRegression`、`LastFmAotRegression`、`LastFmUiRegression`：增加离线、连接重开、响应丢失、换号竞态、会话失效、连续切换、事务回滚、分批导入与结果显隐回归。
+- 验证：718 项核心回归、38 项真实 WinUI 检查、Last.fm 核心裁剪/NativeAOT 各 1131 项检查与 Debug x64 构建通过；新增代码无裁剪/AOT 警告，主程序保留既有警告。使用隔离数据库与模拟 HTTP，未向真实账号写入收藏。
+
+## 2026-10-23 修复缓存对话框重开后的字体残留
+- `DialogHelper`：统一显示入口在显示前及首次打开后更新标准模板的标题/内容呈现器字体，修复切换程序字体后复用 ContentDialog 标题仍保留旧字体；保留实例、输入内容及显式字体，不累积事件订阅。
+- `AboutSettingsControl`：缓存的第三方组件对话框也使用统一显示入口。
+- `_tools/FontUiRegression`：增加同一实例在浅/深/跟随系统主题下反复换字体重开、局部文字样式继承、图标/显式字体与输入内容保留回归。
+- 验证：新增回归修复前确认标题保留 Consolas、资源已为 Arial；修复后 99 项真实 WinUI 检查通过。
+
+## 2026-10-23 增加桌面歌词独立字体开关
+- `LyricsSettingsControl.xaml`、偏好/ViewModel 与七种语言资源：桌面歌词字体旁新增独立开关，默认关闭；关闭时跟随程序字体并置灰下拉框，开启后恢复独立选择，悬浮和任务栏模式共用同一状态。
+- `DesktopLyricsViewModel`、设置恢复/快照：通过现有样式通知即时更新有效字体；分别保存独立选择与开关，切换程序字体不覆盖原有桌面歌词字体。存量配置缺失开关时默认跟随程序字体。
+- 验证：66 项真实 WinUI 字体检查（含生产桌面歌词 ViewModel、两种模式样式通知、选择保留和 JSON 恢复）、Debug x64 构建、七语言资源键与 CRLF 检查通过；未人工验收实际任务栏嵌入显示。
+
+## 2026-10-23 增加程序字体与独立歌词字体开关
+- `CustomFontStyle.xaml`、`ApplicationFontService`、窗口根节点与播放详情动画文字：程序字体默认 Segoe UI，统一普通文字与 WinUI 排版样式，切换时刷新已打开窗口，保留图标及显式字体。
+- `GeneralSettingsControl`、`LyricsSettingsControl`、`SettingsDialog`、偏好与七种语言资源：外观设置新增程序字体；独立歌词字体默认关闭，关闭时歌词跟随程序字体且下拉框置灰，开启后使用原有选择。
+- `SaveSettings`、设置恢复/快照：分别保存程序字体、歌词字体与开关，保留旧 `GlobalFont` 作为歌词选择；缺失或已卸载字体回退 Segoe UI，桌面歌词继续使用其已有独立字体。
+- `_tools/FontUiRegression`：40 项真实 WinUI 检查覆盖编译绑定、浅/深/跟随系统主题、独立字体保留及多窗口卸载；设置持久化回归、Debug x64 构建与七种语言资源键/CRLF 检查通过。未做完整播放器人工字形及高对比度验收。
+
+## 2026-10-23 修复 Last.fm 真实上报成功后误报存储失败
+- `LastFmApiClient`：兼容真实服务端数字及数字字符串形式的成功数量、拒绝码与错误码；畸形/矛盾响应保留队列并归类响应错误，失败分支释放 JSON 文档。
+- `_tools/LastFmRegression/ApiResponseRegression.cs`、`_tools/LastFmAotRegression`：新增 82 种响应、574 项断言，覆盖生产工作者和真实 SQLite 的成功确认、拒绝、配额、授权失效及重启持久化；修复前同一矩阵 132 处失败。
+- 真实联调：读取 Windows 已保存会话，先核对已存在记录再补报其余记录；原有 25 条逐条在远端确认各仅一条，本地队列归零，凭据和本地播放统计保持不变。
+- 真实注册包：备份原 AppX 后发布 Release 修复；lvt 验证连接/重试与正常提示。随后 569 条原有本地历史补报完成，594 个历史成功标记与远端原始秒数逐一对应且各唯一（其中 4 条远端元数据不同）。
+- 验证：675 项核心、30 项真实 WinUI、裁剪/NativeAOT 各 1088 项检查、Debug/Release 构建及独立复审通过，保留项目既有警告。
+
+## 2026-10-23 修复 Last.fm 历史补报去重与持久化开销
+- `LastFmStore`、`LastFmModels`：SQLite 事务保存队列、源记录分配与成功标记；长期标记增量写入、500 键分批查询，队列序列化放后台，旧 JSON 一次性迁移并保留备份，后续启动不加载全部长期标记。
+- `LastFmService`、`LastFmHistory`：区分改写时间和真实播放，保存失败后的明确确认在解绑/换号前提交，跨天重连保留分配并准确核对；分页请求释放共享网络槽，修复夏令时重复午夜分配。
+- `LastFmSettingsViewModel`、七种语言资源：旧版缺失映射的模糊命中暂缓并单独提示，保留现有 MVVM 与自动行高；不更改本地统计。
+- `_tools/LastFmRegression`、`_tools/LastFmAotRegression`、`_tools/LastFmUiRegression`、`docs/LastFm.md`：补充故障注入、账号/重启、迁移与性能回归，裁剪及 NativeAOT 真实发布验证；真实 Last.fm 账号联调未执行。
+- 验证：101 项核心、30 项真实 WinUI（Runtime Async）、裁剪/NativeAOT 各 514 项检查通过，Debug x64 构建通过；独立功能、性能和 AOT 复审完成，性能复审发现的 UI 同步序列化已修复并复核。
+
+## 2026-10-23 允许按导入当天补报更早的 Last.fm 历史
+- `LastFmSettingsControl.xaml`、`LastFmSettingsViewModel`、七种语言资源：新增默认关闭的“允许按导入当天补报更早历史”开关；仅对手动导入生效，显示改用当天时间的数量，保持默认控件高度。
+- `Services/LastFm`：超过 14 天的合格记录分配导入当天已过去且未占用的秒数，保留本地原始统计及队列原始时间；增加跨天持久、按账号隔离的源记录去重标记，原子保存、离线重启和同账号重连不重新生成时间。
+- `_tools/LastFmRegression/OldHistoryRegression.cs`、`_tools/LastFmUiRegression`、`docs/LastFm.md`：覆盖默认关闭、重复歌曲、原始数据不变、去重/账号隔离、写入失败、当天时间耗尽/DST 及真实编译绑定；未使用真实 Last.fm 账号联调。
+- 验证：77 项核心、30 项真实 WinUI 回归、七种语言取词及格式占位符检查、CRLF 检查和 Debug x64 构建通过（0 错误，保留项目既有警告）。
+
+## 2026-10-23 增加 Last.fm 本地历史补报入口
+- `Services/LastFm`、`App.xaml.cs`：手动读取原有本地播放历史，按原时间补报最近 14 天的达标记录；核对远端历史、队列和账号指纹，保留本地统计及现有队列顺序，支持取消、容量提示与原子提交。
+- `LastFmSettingsViewModel`、`LastFmSettingsControl.xaml`、七种语言资源：新增“本地播放历史 → 补报本地历史”入口及结果计数；账号操作区域改为默认 Expander，保留控件自动高度，不修改全局样式。
+- `_tools/LastFmRegression`、`_tools/LastFmUiRegression`、`docs/LastFm.md`：补充真实 SQLite/HTTP 导入、分页、去重、取消、失败与并发回归及使用说明；历史不会在启动、授权或队列重试时自动上传。
+- 验证：61 项核心、25 项真实 WinUI 回归、七种语言资源键与 CRLF 检查及 Debug x64 构建通过；未使用真实 Last.fm 账号联调。
+
+## 2026-10-23 修复首行和末词的歌词浮动效果丢失
+- `LyricsAnimator.cs`：流波效果因播放时钟校正而重置时，同步恢复仍在高亮中的行的浮动入场，避免首行索引未变化导致浮动不再启动。
+- `LyricsAnimator.cs`：末尾长音节仅保持发光和缩放重音，浮动继续按逐字时间上浮，修复 `repetition`、`mess` 等末词不浮起。
+- `_tools/LyricsRenderRegression/FirstLineFloatChecks.cs`：增加真实 Win2D 首帧后时钟校正、保留协调器切歌、零秒/延迟首行、同一行双向定位和暂停回归，并保留常规滚动对照。
+- `_tools/LyricsRenderRegression/FinalWordFloatChecks.cs`、`FlowWaveWordExitChecks.cs`：通过用户 LRC 样例验证末词逐字上浮、末字动作及发光/缩放保持，并更新完整歌曲的退场回归预期。
+- 验证：Debug x64 主项目构建、16 组首行场景、4 组样例末词场景和完整原生渲染回归通过；未做完整播放器详情页切歌的人工观感验收。
+
+## 2026-10-23 接入 Last.fm 授权与离线听歌记录
+- `Services/LastFm`、`LastFmSettingsViewModel`、常规设置与七种语言资源：支持用户自备应用凭据、浏览器授权/本地解绑、正在播放、达标上报及持久化离线补报；凭据与 Session Key 使用 Windows PasswordVault。
+- `PlaybackCoordinator`、`RemotePlaybackService`、启动/退出协调器：复用实际播放确认与状态，隔离定位、暂停、缓冲、无缝重复和 WebDAV 恢复；保留现有本地统计口径，不修改音频引擎与 IPC。
+- `_tools/LastFmRegression`、`_tools/LastFmUiRegression`、`docs/LastFm.md`：增加网络/磁盘/生命周期回归、真实 WinUI 编译绑定和配置说明。默认关闭，授权成功后启用；解绑或更换应用凭据会清空待补报记录。
+- 验证：40 项 Last.fm 核心、15 项真实 WinUI 检查、84 项导航与 35 项 WebDAV 集成检查通过；七种语言资源键匹配、Debug x64 构建通过（0 错误，仍有项目既有警告）。未使用真实 Last.fm 账号联调，未做真实设备/WebDAV 服务器长时间试听与高对比度人工验收。
+
+## 2026-10-23 修复首次播放等待解码库冷加载
+- `External/AudioPlayer/Decode/DecoderRuntime.cs`、`PlayerIpcService.cs`：启动时后台加载 FFmpeg 的四个原生库，与主界面初始化并行；解码依赖就绪后开放 IPC，避免已连接后的首次播放承担冷加载；提前监控客户端，启动中退出等待加载收尾且不发布就绪。
+- `_tools/PlaybackSwitchRegression/StartupTests.cs`、`_tools/AudioPlayerSmokeTest/StartupTimingProbe.cs`：增加真实跨进程慢加载、失败、启动中退出回归，以及立即播放和连接后首次播放计时。
+- `Player/AudioPlayer.exe`：重新发布 win-x64 Release NativeAOT 产物。
+- 验证：332 项完整回归及真实 WASAPI 共享输出的定位、暂停恢复通过；三种首次播放场景确认约 42～48ms、进度推进约 340～389ms。未清空系统文件缓存，未做重启电脑后的磁盘冷启动及 WinUI 点击验证。
+
+## 2026-10-21 开启 Runtime Async 编译
+- `WinUIMusicPlayer.csproj`：新增 `<Features>$(Features);runtime-async=on</Features>`，应用自身 async 方法改由运行时驱动状态机（.NET 11 preview 特性；运行时侧默认启用，BCL 已采用该模型）。
+- 验证：Debug x64 构建与 Release 发布（裁剪 + R2R + Satori 运行时包）均通过，产物中 `AsyncTaskMethodBuilder` 引用清零、async 状态机类型消失（残留 `d__` 为 yield 迭代器，不在覆盖范围）；`artifacts/runtime-async-smoke` 语义冒烟（同步/真异步完成、异常传播、try/catch/finally、循环 await、ConfigureAwait、WhenAll、上下文回发）全部通过。未做真机 UI 运行验证。
+
+## 2026-10-21 搜索框支持原始文件名检索
+- `Services/LibraryProjectionService.cs`：全部搜索匹配（歌曲列表、专辑/艺人/文件夹分组页、歌单映射、增量入列）新增原始文件名维度，按最后路径段（含扩展名）匹配；本地路径切片零分配，WebDAV 远程路径百分号解码后再匹配；`SongRow` 增加构造期 `Path` 快照，后台匹配不读可变属性。
+- `Services/MusicDatabaseService.cs`：歌单内存过滤复用 `MusicMatchesSearch`，与全局搜索口径一致。
+- `_tools/SharedStateRegression`：新增文件名检索回归（大小写、远程 URL 编码、目录段边界）；补上工具缺失的 `Model/DesktopLyricsMode.cs` 源引用（既有编译破损）。
+
+## 2026-10-16 优化升频处理与资源管理
+- `External/AudioPlayer/AudioEnhancement`：优化处理状态与工作缓冲区组织，保持音频输出一致，完善中文注释。
+- `Coefficients/Assets/dsp-tables.json`、`_tools/PackDspTables.py`：统一系数表配置和资源生成流程，增加资源一致性校验。
+- `Player/AudioPlayer.exe`：更新 NativeAOT 播放器，通过升频、定位、暂停恢复及输出一致性回归。
+
+## 2026-10-15 升频并入 DSP 音效
+- `DspSettingsControl`、语言资源：频谱增强更名为升频，移入音效页并缩短说明，复用原音频偏好。
+- `PlaybackEngine`：升频受 DSP 总开关控制，切换时保进度重建并取消旧预加载；关闭时停止增强计算，保留歌曲范围选项。
+- `Player/AudioPlayer.exe`：更新 NativeAOT 播放器。
+
+## 2026-10-15 实时 PCM 频谱增强
+- `External/AudioPlayer/AudioEnhancement`：增加 SIMD 频谱增强处理，在解码线程补偿延迟、排空尾部并在定位时重置信号历史。
+- `External/AudioPlayer/Decode`、`Playback`：按源编码筛选；跳过 DSD/DoP/Atmos/多声道及 >48 kHz 源，共享输出按设备混音率（最高 192 kHz 的整数约数），独占/ASIO 请求源率 2 倍。
+- `GeneralSettingsControl`、音频偏好和 IPC：新增关闭/仅有损/有损及低采样率无损设置，默认关闭，持久化并在当前位置重建播放。
+- `PcmDecoder.ConvertOut`：仅在真正 EOF 时冲洗重采样尾部，修复低采样率转换提前冲洗导致的帧丢失。
+- `Player/AudioPlayer.exe`：保持 NativeAOT 单文件发布，执行 AOT 性能、分配及实际输出回归。
+
 # 功能变更记录
 
 新条目加在最上方。
+
+## 2026-10-14 移除 WorkingSetCompressor 工作集清理设置
+
+- `Helper/WorkingSetCompressor.cs`：清空为占位注释；底层 `EmptyWorkingSet` / `SetProcessWorkingSetSizeEx` 仅把工作集页移入分页文件，并不会真正释放私有内存，运行时无效。
+- `MainWindow.xaml.cs`、`View/MainPage.xaml.cs`：移除隐藏/关闭到托盘时按 `IsTrimOnHideEnabled` 触发的 `WorkingSetCompressor.TrimSelfAsync()`。
+- `ViewModel/Pages/MusicBrowseViewModel.cs`：移除 `OnTrackStarted → TrimMemory` 路径与 `MemoryTrimThreshold` 阈值。
+- `Services/SettingsActions.cs`、`ViewModel/AppViewModel.Settings.cs`：移除 `TrimNow` 命令及其暴露入口 `TrimNowCommand`。
+- `State/GeneralPreferencesState.cs`、`State/PreferencesState.cs`、`Model/AppSettings.cs`、`Model/SaveSettings.cs`、`Services/SettingsCoordinator.cs`、`Services/SettingsSnapshotFactory.cs`、`Services/MusicDatabaseService.cs`：移除 `IsTrimOnHideEnabled` / `IsTrimAfterPlaybackEnabled` 字段、case 分支、持久化键与恢复赋值。
+- `View/SubView/Settings/GeneralSettingsControl.xaml`：移除“隐藏窗口时释放内存”、“播放后自动释放内存”两个 `SettingsCard` 与“立即释放内存”入口卡。
+- `Strings/{zh-CN,en,ja,de,es,ru,tr}/Resources.resw`：移除 `TrimOnHide(.Text|.Description)`、`TrimAfterPlayback(.Text|.Description)`、`TrimNow(.Content)`、`TrimNowLabel(.Text)` 共 6 条资源。
+- 验证：`dotnet build` 报告 0 编译错误；构建退出码非零由 `MSBuild 服务器不可用` 与项目内重复 `PublishWithSatoriGC.Runtime.win-x64` 包引用引起，与本次改动无关。
+
+## 2026-10-11 设置页桌面歌词模式切换入口
+
+- `View/SubView/Settings/LyricsSettingsControl.xaml`：在桌面歌词段顶部新增模式选择卡，复用现有 `DesktopLyricsViewModel.Mode` 与 `EnumToStringConverter`，避免与托盘重复实现同一状态。
+
+## 2026-10-11 保留播放资源修复并恢复托管 PCM 环
+
+- `External/AudioPlayer/Interop/WasapiInterop.cs`：在成功、失败和异常路径释放设备名称的原生 `PROPVARIANT`。
+- `External/AudioPlayer/Playback/LoudnessScanner.cs`：将扫描取消令牌传给 HTTP 解码器，中断阻塞打开并及时释放扫描锁和解码资源。
+- `_tools/PlaybackSwitchRegression`：补齐 FFT 测试依赖，增加环样本等价、并发释放和真实 HTTP 响度取消回归。
+- `_tools/AudioPlayerMemoryProbe`、`_tools/AudioPlayerSmokeTest/Program.cs`：支持长歌曲、可配置次数/间隔的真实切歌，记录 GC 暂停、实际延迟模式和 GC 类型，确认每次新会话推进。
+- `Player/AudioPlayer.exe`：重新发布 win-x64 Release NativeAOT 产物，使用标准 GC、Interactive。
+
+验证：本地 PCM 原生化试验已撤回，保留 P2 修复。326 项完整回归、16 项 HTTP/DSD 回归及发布 EXE 的切歌/无缝/FFT 检查通过；托管环 Interactive / SustainedLowLatency 各 200 次切歌通过，累计暂停 9.672 / 9.553ms、最长观察段 0.809 / 0.610ms。单次对照不证明稳定收益，详见 `_tools/AudioPlayerMemoryProbe/README.md`。
+
+## 2026-10-10 独立播放进程启用 Satori GC
+- `External/AudioPlayer/AudioPlayer.csproj`：添加 `PublishWithSatoriGC` SDK（`11.0.0-satori.37965325036.1`），NativeAOT 发布使用 Satori GC。
+- `Player/AudioPlayer.exe`：重新发布 win-x64 Release 产物，供主程序打包部署。
+验证：NativeAOT 发布、真实 WASAPI 共享输出冒烟测试及网络播放集成回归通过；未执行 ASIO/独占输出及长时间性能对比。
+
+## 2026-10-09 修复播放封面原生资源持续增长
+- `Helper/ImageHelper.cs`：文件、字节和默认封面统一解码为可显式释放的 `SoftwareBitmapSource`，取消或失败时释放临时 `SoftwareBitmap`。
+- `Helper/ImageHelper.cs`：解码取消统一抛出 `OperationCanceledException`；最长边/固定宽缩放显式计算宽高，并按未旋转原始像素应用（与 WIC 及展示缓存语义一致，EXIF 旋转封面不被拉伸），字节路径恢复与缩略缓存一致的固定宽解码（窄图不上采样）。
+- `Controls/ImageSwitcher.xaml.cs`、`Behaviors/FadeImageBehavior.cs`、`Behaviors/AlbumCoverBehavior.cs`：补齐切换、取消、卸载和异常路径的图片源所有权转移与释放。
+- `Utils/CoverLoadQueue.cs`：修复创建者取消时残留 waiter 阻止共享请求取消的问题，并释放竞争失败的请求。
+- `_tools/SmtcCoverUiRegression/Program.cs`：增加图片源类型、快速切歌、卸载和弱引用回收回归检查，并恢复最长边/固定宽限尺寸解码断言。
+
+## 2026-10-08 修复长时间播放时封面资源持续增长
+- `Controls/ImageSwitcher.xaml.cs`：切换、取消、卸载和动画结束时显式释放不再被控件持有的封面图片源。
+- `Helper/ImageHelper.cs`、`Behaviors/FadeImageBehavior.cs`：解码失败或取消时清理临时图片源引用，释放可关闭的 WinRT 图片源。
+- `Utils/CoverLoadQueue.cs`：封面解码队列改为有界并支持消费者取消，移除永久字符串驻留的缓存键。
+- `Services/CoverPresentationService.cs`：过期或取消的系统媒体封面更新主动清空待发布的原图字节。
+
+## 2026-10-07 任务栏音量图标支持点击静音
+- `DesktopLyrics/DesktopLyricsWindow.xaml`：`TaskbarVolumeIcon` 外层套上按钮，命令复用 MainPage 音量弹层内静音按钮的 `VolumeSliderIconButtonChangedCommand`，尺寸样式对齐相邻切歌按钮，点击任务栏音量图标即可切换静音。
+
+## 2026-10-07 任务栏封面图移入播放/暂停按钮
+- `DesktopLyrics/DesktopLyricsWindow.xaml`：`TaskbarCoverImage` 移入 `TaskbarCoverPlayPauseButton` 内容，封面与播放图标同层，成为按钮实际内容。
+- `Style/BtnStyle.xaml`：`TaskbarCoverPlayPauseButtonStyle` 模板在 `ContentPresenter` 之上新增 `StateOverlay` 状态层，PointerOver/Pressed/Disabled 压暗背景改画在该层，保持封面悬浮压暗与禁用置灰效果；封面随之获得按压缩放反馈。
+
+## 2026-10-07 修复播放会话与 ASIO 输出退役时序
+- `External/AudioPlayer/Playback/Session.cs`、`GaplessPreloader.cs`：会话清理等待解码线程完成后再继续无缝预载，避免旧会话资源与新会话重叠。
+- `External/AudioPlayer/Interop/AsioHost.cs`：ASIO 初始化或回调超时后转入后台退役，等待驱动安全返回再释放驱动、回调表和隐藏窗口。
+- `_tools/PlaybackSwitchRegression/Program.cs`、`ReviewFixTests.cs`：增加可单独运行的 ASIO 超时退役回归验证。
+
+## 2026-10-06 修正深色主题封面按钮对比度
+- `Style/BtnStyle.xaml`：深色主题任务栏封面按钮改用深色悬停背景和白色前景，避免出现亮底暗图标。
+
+## 2026-10-06 最终确定任务栏封面按钮明暗映射
+- `Style/BtnStyle.xaml`：Light 主题使用暗色悬停背景与白色前景，Dark 主题使用亮色悬停背景与黑色前景。
+
+## 2026-10-06 修正任务栏封面按钮明暗主题映射
+- `Style/BtnStyle.xaml`：交换任务栏封面按钮 Light/Dark 主题的悬停、按下和前景画刷，深色主题改用暗色叠层。
+
+## 2026-10-06 修正切歌按钮可用状态回显
+- `Services/PlaybackCommands.cs`、`DesktopLyrics/DesktopLyricsWindow.xaml`、`View/MainPage.xaml`：新增可通知的 `CanSwitch` 状态，任务栏和 MainPage 的上一首/下一首按钮显式绑定共享状态，并与命令执行守卫保持一致。
+
+## 2026-10-06 统一任务栏媒体按钮样式与切歌命令状态
+- `Style/BtnStyle.xaml`：新增 `TaskbarCoverPlayPauseButtonStyle`，任务栏封面按钮悬停状态与普通菜单按钮采用相反明暗方向，并保留主题资源适配。
+- `DesktopLyrics/DesktopLyricsWindow.xaml`、`.xaml.cs`：频谱画布统一为 40×32，柱条水平居中；任务栏上一首/下一首改由共享命令的 `CanExecute` 驱动。
+- `View/MainPage.xaml`：上一首/下一首移除重复的列表启用条件，与任务栏复用相同命令可用状态。
+
+## 2026-10-06 修复任务栏频谱位置和幅度
+- `DesktopLyrics/DesktopLyricsWindow.xaml.cs`：任务栏频谱柱条改为贴画布底部向上绘制，动态幅度加倍，恢复正确的底部视觉位置。
+
+## 2026-10-06 修复任务栏控件绑定、单声道频谱显示与 FFT 生命周期
+- `DesktopLyrics/DesktopLyricsWindow.xaml`、`.xaml.cs`：任务栏窗口显式初始化和关闭 `x:Bind` 跟踪，恢复播放、切歌按钮命令、音量双向滑块和图标状态；音量图标改为纯状态图标，不再额外弹出按钮。
+- `DesktopLyrics/DesktopLyricsWindow.xaml.cs`：任务栏仅将双声道 FFT 快照合并为单声道频带绘制，并固定在中线以上显示，保留传输层双声道数据；封面播放按钮保持透明命中区域，仅悬停显示图标。
+- `External/AudioPlayer/Playback/FftAnalyzer.cs`：FFT 工作数组和唤醒句柄改为启用时创建、停用时等待工作线程退出后释放；关闭桌面歌词或切换悬浮窗后不再持续生成 FFT。
+- `External/BassPlayerIpc.Shared/PipeStateServer.cs`、`PipeStateClient.cs`、`Services/IpcService.cs`：FFT 管道缓存改为按需分配，停用时清除最新快照和大帧缓冲。
+- `_tools/PlaybackSwitchRegression/FftTests.cs`、`_tools/AudioPlayerSmokeTest/Program.cs`：增加 FFT 停用释放、发布者收尾和真实管道启停回归入口。
+- `AGENTS.md`：补充跨页面 MVVM、非激活窗口绑定初始化、AudioPlayer 发布和任务栏控件风格约定。
+- 验证：共享协议、AudioPlayer 构建、AudioPlayer NativeAOT 发布和 FFT 生命周期回归通过；当前环境主 WinUI 构建未能完成 ResolvePackageAssets/MSIX 阶段，需在目标 Windows 环境复核。
+
+## 2026-10-06 按 MainPage 统一任务栏音量交互并同步播放端
+- `DesktopLyrics/DesktopLyricsWindow.xaml`、`.xaml.cs`：任务栏播放、上一首、下一首和音量控件改为命令/绑定驱动；音量滑杆复用 MainPage 的 `TwoWay` MVVM 绑定、静音/恢复命令和滚轮调节行为；歌曲信息悬停控制条固定为与封面相同的高度。
+- `Player/AudioPlayer.exe`：发布包含 FFT 命令与双声道 FFT 输出的 NativeAOT 播放端，避免运行时继续使用旧播放进程导致频谱无数据。
+- 验证：AudioPlayer NativeAOT 发布、XAML 结构与事件处理器静态检查通过；主 WinUI 构建仍受当前 SDK Workload resolver 环境限制。
+
+## 2026-10-06 修复任务栏媒体控件交互与频谱刷新
+- `DesktopLyrics/DesktopLyricsWindow.xaml`、`.xaml.cs`：封面播放按钮改为封面同尺寸、默认隐藏、移入显示且全状态透明；音量滑杆复用 `AppViewModel.Volume` 的 MVVM 双向绑定与现有播放器音量命令，并按实际状态回显。
+- `DesktopLyrics/DesktopLyricsWindow.xaml.cs`：任务栏频谱在任务栏可见且选中本地曲目时保持请求，暂停时不产生新的 PCM FFT 帧；隐藏或关闭任务栏歌词时停止请求和界面刷新计时器。
+- 验证：XAML 事件处理器与结构静态检查、共享协议/AudioPlayer/回归工具构建及 FFT 回归通过；主 WinUI 构建仍受当前 SDK Workload resolver 环境限制。
+
+## 2026-10-06 重设计桌面歌词任务栏媒体控制布局
+- `DesktopLyrics/DesktopLyricsWindow.xaml`、`.xaml.cs`：播放/暂停按钮集成到封面，上一首/下一首与音量滑杆在歌曲信息悬停时显示，原控制按钮区域改为双声道频谱可视化。
+- `DesktopLyrics/TaskbarDesktopLyricsHost.cs`：同步任务栏媒体列宽度与新的封面、歌曲信息、频谱布局。
+- 频谱效果在任务栏歌词可见且选中本地曲目时请求 FFT；暂停时不产生新的 PCM 帧，隐藏或关闭任务栏歌词时自动停用。
+- 验证：XAML XML 结构检查通过；主 WinUI 构建受当前 SDK Workload resolver 环境限制，待 Windows 实机验收任务栏、DPI 与悬停交互。
+
+## 2026-10-06 增加 AudioPlayer 双声道 FFT 数据通道
+- `AudioPlayer`：从最终 PCM 渲染块异步计算双声道 FFT；DoP、Native DSD 和 Atmos IEC 61937 直通标记为不可用，不影响音频渲染线程。
+- `BassPlayerIpc.Shared`、`IpcService`：复用状态管道传输可丢弃的最新 FFT 快照，并提供未来频谱效果可调用的启停接口。
+- `_tools/PlaybackSwitchRegression/FftTests.cs`：增加双声道频点、元数据和关闭状态回归验证。
+- 验证：共享协议、AudioPlayer、PlaybackSwitchRegression 构建通过；FFT 回归通过。
+
+## 2026-10-06 修复普通歌词切换后点击跳转失效
+- `Controls/Lyrics/LyricsControl.xaml`、`Controls/Lyrics/LyricsControl.xaml.cs`：按 `SimpleLyricsControl` 实例的加载/卸载重新绑定点击事件，避免切换高级逐字歌词后普通歌词重建时丢失跳转事件。
+
+## 2026-10-06 改为复用 Win2D 画布并按激活状态惰性创建资源
+- `PlayingDetailPage`：`NowPlayingCanvas`、动画文本和歌词宿主按需首次激活创建，后续通过激活属性暂停/隐藏渲染，避免开关设置时反复创建 `CanvasAnimatedControl`。
+- `LyricsControl`、`AdvanceLyricsCanvasControl`：歌词宿主与高级歌词画布改为单实例，停用时隐藏并解绑总线和共享动画时钟，重新启用时恢复。
+- `NowPlayingCanvas`、`AnimatedTextBlock`：背景着色器、图片解码、文本布局和画刷在控件首次激活且设备资源就绪后创建，真正关闭宿主时统一释放。
+- `NowPlayingCanvas`：统一背景绘制、更新、替换和释放的生命周期锁，避免渲染回调持有旧原生对象时并发释放。
+- 验证：AnimatedWin2dControls 项目构建通过（0 个错误）；待使用新构建运行进程复测工作集、私有内存、句柄和线程基线。
+
+## 2026-10-06 修复着色器背景反复切换导致内存持续上升
+- `ImageBackgroundRenderer`：将图片解码收敛为单一可取消后台循环，切换或卸载时取消在途 WinRT 操作并在其结束后释放同步资源，避免旧解码任务长期持有像素缓冲区。
+- `ImageBackgroundRenderer`、`NowPlayingCanvas`：为图片位图和效果的绘制、设备重建与释放建立互斥生命周期，避免交换链切换期间并发释放原生资源。
+- `NowPlayingCanvas`：复用图片背景和旋转网格渲染器，避免 `D2D1ResourceTextureManager` 仅能依靠终结器回收时因反复创建造成原生资源堆积；背景停用时停止解码，宿主关闭时统一释放缓存实例。
+- 验证：`dotnet build WinUIMusicPlayer.csproj --no-restore -c Debug -p:Platform=x64`（0 个错误）。
+
+## 2026-10-06 修复 Win2D 动画文本块开关与资源释放
+- `PlayingDetailPage`：动画文本块的 `x:Load` 与普通文本替代视图的可见性改为 `OneWay`，开关切换即时更新；动态创建后重新应用当前文字特效。
+- `AnimatedTextBlock`：卸载时解除画布事件、移除 Win2D 画布并释放文本布局、画刷和格式资源，避免反复切换留下原生资源。
+- `CoverBackgroundSettingsControl`：移除动画文本与着色器背景开关已过时的“重启应用生效”说明。
+
+## 2026-10-06 修复着色器切换与高级歌词即时生效
+- `NowPlayingCanvas`、`PlayingDetailPage`：交换链重建或动态加载后重新应用当前曲目的调色板和封面，避免切换着色器后首曲目颜色/图像失真。
+- `NowPlayingCanvas`、`AdvanceLyricsCanvasControl`、`LyricsRenderCoordinator`、`SimpleLyricsControl`：将 x:Load 卸载改为可复用的资源释放，保留最终关闭路径，避免重载后状态和原生资源失配。
+- `LyricsControl`：高级逐字歌词与普通歌词的 x:Load 绑定统一为 OneWay，关闭背景图片时切换高级歌词立即更新。
+- `LyricsSettingsControl`、`SettingsDialog`：移除“重启应用生效”提示。
+
+## 2026-10-06 修复图片背景与高级逐字歌词的交换链冲突
+- `PlayingDetailPage`、`NowPlayingCanvas`：保留 `MainWindow` 图片层持续渲染，补齐动态 Win2D 画布的歌词区域初始化，并统一无图模式的 OneWay 切换与资源释放。
+- `NowPlayingCanvas`、`ImageBackgroundRenderer`：将图片背景作为全窗口背景渲染器，与高级歌词在同一个 `CanvasAnimatedControl` 交换链中绘制，避免把整窗图片错误裁剪到歌词区域。
+- `PlayingDetailPage`、`BindUtils`：关闭着色器且启用高级逐字歌词并设置图片时，启用统一画布绘制图片与歌词；`MainWindow` 图片层持续保留，由统一画布覆盖详情页内容。
+- `Strings/*/Resources.resw`：补充图片背景与高级逐字歌词组合时的行为说明。
+- `CustomMicaSystemBackdrop`、`CustomAcrylicSystemBackdrop`、`ThemeStyleHelper`：补充系统支持检查、主题/窗口事件解绑和激活状态同步，不支持时回退透明材质，避免切换主题或窗口重建后残留旧控制器。
+
+## 2026-10-05 任务栏歌词媒体按钮恢复默认按钮视觉
+- `DesktopLyricsWindow`：将悬浮按钮专用的 Button 主题资源覆写（深/浅底色与悬停前景）从窗口根 `Grid.Resources` 收窄到 `ControlPanel.Resources`，任务栏媒体按钮不再继承覆写，恢复系统默认悬停/按下样式。
+
+## 2026-10-04 重组桌面歌词自动隐藏设置并修复任务栏锁定图标
+- `LyricsSettingsControl`：将桌面歌词自动隐藏改为 `SettingsExpander`，分别承载悬浮和任务栏模式两个 `SettingsCard`。
+- `DesktopLyricsWindow`：任务栏子窗口不再依赖未触发的窗口级 `x:Bind` 初始化锁定 Glyph，改为随锁定状态显式刷新图标。
+
+## 2026-10-04 分离桌面歌词的翻译与发音设置
+- `LyricsPreferencesState`、`AppViewModel`、`DesktopLyricsViewModel`：新增独立的桌面歌词发音开关，桌面歌词翻译和发音只消费桌面歌词设置，普通歌词设置不再串联影响。
+- `LyricsSettingsControl`、各语言 `Resources.resw`：新增桌面歌词发音显示开关。
+
+## 2026-10-04 固定任务栏媒体区并支持自定义歌词宽度
+- `DesktopLyricsWindow`、`LyricsSettingsControl`：固定任务栏左侧封面和媒体控件列宽，新增任务栏歌词宽度 NumberBox（240–2400 像素）。
+- `TaskbarDesktopLyricsHost`、设置持久化：按歌词宽度计算默认任务栏边界，设置修改后立即调整已打开的任务栏歌词并保留用户解锁后的布局。
+- 各语言 `Resources.resw`：补充任务栏歌词宽度设置的标题和说明。
+
+## 2026-10-04 修复任务栏歌词交互与分模式显示
+- `DesktopLyricsWindow`：任务栏模式改用静态歌词渲染，补齐封面异步加载，保持透明背景和紧凑高度；翻译／发音开关实时刷新并按行数压缩字号。
+- `DesktopLyricsWindow`、`TaskbarDesktopLyricsHost`：播放控件显式转发到共享 `PlaybackCommands`，任务栏模式解锁后支持拖动、边缘缩放和相对位置/尺寸持久化，兼容任务栏居中布局。
+- `DesktopLyricsViewModel`、设置持久化与播放详情设置页：悬浮和任务栏模式分别保存“播放详情页隐藏桌面歌词”开关，旧版单开关设置首次读取时迁移到两种模式。
+
+## 2026-10-04 修复任务栏播放控件导致启动失败
+- `DesktopLyricsWindow`：移除会被 WinUI 当作普通属性解析的 `x:Uid` 提示绑定，改为初始化后设置本地化 `ToolTipService.ToolTip`，避免创建桌面歌词窗口时崩溃。
+- 各语言 `Resources.resw`：将播放控件提示改为无属性后缀资源键，并完成全语言校验。
+
+## 2026-10-04 完善任务栏歌词媒体控件
+- `DesktopLyricsWindow`：任务栏模式新增封面、曲名/艺术家/专辑信息和上一首／播放暂停／下一首控制组，复用现有封面加载队列与 `PlaybackCommands`。
+- `DesktopLyricsWindow`：根据翻译、发音开关的实际行数自动压缩任务栏歌词字号，确保辅助歌词仍能同时显示。
+- `TaskbarDesktopLyricsHost`：取消整窗鼠标穿透，保留歌词托管同时允许任务栏媒体控制交互。
+- 各语言 `Resources.resw`：补充任务栏播放控件的本地化提示文本。
+
+## 2026-10-04 重构桌面歌词宿主并接入任务栏模式
+
+- `DesktopLyrics`：新增宿主接口与悬浮／任务栏模式，任务栏模式复用现有歌词渲染器并跟随 Explorer 重建；为后续壁纸宿主保留模式契约，不引入频谱和系统指标模块。
+- `TrayViewModel`、`NotifyIconControl`、各语言资源：托盘菜单新增桌面歌词模式切换，并持久化当前模式。
+
+## 2026-10-04 修复桌面歌词未接入发音轨
+
+- `DesktopLyricsStyle`、桌面歌词两个渲染器：接入现有发音歌词快照与显示开关，桌面歌词按“发音、原文、翻译”顺序渲染，并随播放页发音开关即时更新。
+
+## 2026-10-03 修复播放页翻译/发音切换时歌词滚动晃动
+
+- `LyricsRenderCoordinator`：副行翻译／发音展开或收起期间锁定当前歌词的视口锚点，避免布局重算与滚动缓动同时追逐造成上下晃动；用户手动滚动时保留原有行为。
+- `_tools/LyricsRenderRegression/MotionChecks.cs`：增加切换副行期间当前歌词锚点偏移回归断言。
+
+## 2026-10-03 修复混合语言歌词开关按行生效
+
+- `LyricsRomanizer`、`LyricsRefreshService`：发音生成和已有发音轨展示均按每行语言开关过滤，混合歌词不再被整首歌词的语言设置错误地短路或放行。
+- `_tools/LyricsUnificationRegression/Program.cs`：增加生成发音轨与已有发音轨的混合语言开关回归用例。
+
+## 2026-10-03 修复高级逐字歌词副行收起后透明度未重算
+
+- `RenderLyricsLine`、`LyricsRenderCoordinator`、`LyricsAnimator`：副行翻译/发音的显示过渡期间持续按最新行位置重算透明度距离，副行收起后新进入可视区域的非当前行不再保持错误的透明状态。
+- `_tools/LyricsRenderRegression/MotionChecks.cs`：增加翻译和发音同时关闭后可视行数量及非当前行透明度的回归断言。
+
+## 2026-10-03 修复高级逐字歌词重绘后浮动效果丢失
+
+- `RenderLyricsLine`、`LyricsLayoutManager`、`LyricsRenderCoordinator`、`CanvasLyricsRenderer`：重建逐字布局时按字符索引保留启用中的浮动过渡状态；窗口尺寸或高级歌词设置触发重绘后，当前字形继续保持浮动，关闭浮动时仍从零开始。
+- `_tools/LyricsRenderRegression/FlowWaveWordExitChecks.cs`：增加播放中重排后浮动偏移保持的回归断言。
+
+## 2026-10-03 混合语言歌词按行选择发音引擎
+
+- `LyricsRomanizer`：整首语言仅作为无标记汉字行的默认值；每行独立识别假名、韩文和汉字，英语、数字、标点行不再生成重复发音，混合非拉丁脚本的单行交由用户发音轨处理。
+- `_tools/LyricsUnificationRegression/Program.cs`：增加中、日、韩与拉丁文字混搭的音译回归用例。
+
+## 2026-10-03 移植本地歌词音译引擎
+
+- `LyricsRomanizer`：移植 lyric-romanizer 的整首脚本路由思路，接入本地普通话、粤语、日语和韩语音译；日语使用 IPADIC 读取汉字，缺少词典时保留可用的假名转换。
+- `LyricsRefreshService`：用户发音轨优先；缺失时仅为当前显示快照生成发音，不写入数据库、一次性缓存或侧车文件。
+- `WinUIMusicPlayer.csproj`、回归工具和第三方依赖说明：加入本地音译所需的 csharp-pinyin、csharp-kana 与 LibNMeCab/IPADIC。
+
+## 2026-10-03 标签不明确时按歌词脚本判断发音语言
+
+- `LyricsLanguagePolicy`、`LyricsRefreshService`：明确语言标签优先；缺少或不支持标签时按假名、韩文和汉字脚本判断，汉字无法确认粤语时默认普通话，只有 `yue` 标签启用粤语发音。
+- `LyricsSettingsControl`、各语言资源：更新发音语言设置说明。
+
+## 2026-10-03 按明确歌词语言控制用户发音轨
+
+- `LyricsSettingsControl`、偏好状态与设置持久化：增加普通话、粤语、日语、韩语发音开关。
+- `LyricsLanguagePolicy`、`LyricsRefreshService`：仅使用 TTML 明确语言标签；无标签或泛化 `zh` 不识别、不自动补取，避免把普通话和粤语混淆。
+- `LrcService`、`LyricsOnlineSearch`、`LyricsRefreshService`：移除网易云在线音译和自动补取；发音只来自用户提供的 TTML 或独立发音 LRC，自动生成的预览结果不写入数据库。
+
+## 2026-10-03 完善发音歌词分层与 TTML 导入
+
+- `RenderLyricsLine`、`RenderLyricsAuxiliaryLayer`、`LyricsLayoutManager`：发音、原文、译文拆为独立渲染层，发音位于原文上方并按原文字号的 60% 显示，切换时同步过渡副行高度。
+- `SimpleLyricsControl`：普通歌词按发音、原文、译文顺序布局，译文和发音隐藏时动画收缩行高。
+- `LyricsParser.Ttml`：TTML transliteration 元数据和正文 `x-roman` 辅助轨独立导入 `PronunciationLrc`，即使存在外部译文也保留，并按源语言筛选发音轨。
+- `CanvasLyricsRenderer`：桌面歌词的文本边界和阴影包含独立发音层。
+
+## 2026-10-02 修复播放页翻译/发音开关文字垂直不居中
+
+- `PlayingDetailPage`：译/音 两个文字开关按钮的 TextBlock 加 `TextLineBounds="Tight"`，行框改按字墨迹计算，ContentPresenter 居中的即为墨迹本身；修复 CJK 字形因行框上方空隙在按钮内偏低约 2px、与旁边齿轮/时钟图标不对齐的问题（实测与图标中心偏差从约 2 逻辑像素降到 1 物理像素内），对其他语言的 T/A 字母同样适用。
+
+## 2026-10-02 增加发音歌词轨与显示开关
+
+- `LyricsDocument`、歌词解析／存储／文件读取：支持独立的 `_Pronunciation.lrc` 逐行 LRC，按时间戳与原文对齐，并为旧数据库追加可空发音列。
+- `MusicDetailsWindow`、普通／高级歌词控件：新增发音编辑页签和发音显示，翻译与发音可分别隐藏。
+- `LyricsSettingsControl`、当前播放页底部播放栏：新增翻译／发音开关，状态持久化并即时同步到歌词渲染器；主界面播放栏不显示无歌词上下文的按钮。
+- TTML transliteration 元数据：按正文行时间导入 `PronunciationLrc`；播放栏仅在当前播放页保留开关，普通／高级歌词轨道增加淡入淡出，发音字号为原文 60%。
+- 普通与高级歌词切换翻译／发音时同步动画收缩或展开副行高度，后续歌词行随布局平滑移动，不再只淡出文字而保留空行。
+- 修复高级歌词副行高度动画期间沿用旧 Win2D 文本缓存坐标导致主歌词被裁掉或只剩空白背景的问题；改用行级平移保持缓存稳定。
+- `LyricScrollMotion`：FlowWave 保留未启动行的错峰等待；已有运动的行在重新排队时继续当前运动，避免错峰目标替换造成确定性停顿。
+
+## 2026-10-01 优化 AnimatedTextBlock 循环间距分配
+
+- `External/AnimatedWin2dControls/.../AnimatedTextBlock`：每个文本段布局准备只测量一次空格宽度，移除每行的拼接字符串和字符区域数组分配。
+
+## 2026-10-01 修复 AnimatedTextBlock 循环间距未生效
+
+- `External/AnimatedWin2dControls/.../AnimatedTextBlock`：显式使用尾部空格的布局宽度计算循环距离，修复重复文本仍然贴连的问题。
+
+## 2026-10-01 调整 AnimatedTextBlock 循环间距
+
+- `External/AnimatedWin2dControls/.../AnimatedTextBlock`：循环副本之间增加一个空格宽度，避免首尾文字贴连。
+
+## 2026-10-01 改为 AnimatedTextBlock 单向循环滚动
+
+- `External/AnimatedWin2dControls/.../AnimatedTextBlock`：悬停文字改为单向首尾相接滚动，使用相邻文本副本消除循环边界空白和反向回弹。
+- `_tools/AnimatedTextRegression`：增加单向运动和完整文本宽度循环回归检查。
+
+## 2026-10-01 修复 AnimatedTextBlock 悬停滚动启动延迟
+
+- `External/AnimatedWin2dControls/.../AnimatedTextBlock`：鼠标进入后立即开始首段滚动，保留到达两端后的短暂停留。
+- `_tools/AnimatedTextRegression`：增加悬停进入后首个时钟帧的即时滚动回归检查。
+
+## 2026-10-01 修复播放页无歌词占位符缺失
+
+- `LyricsLoader`：无歌词时生成一行仅用于展示的提示歌词，复用普通与高级歌词行的字体、字号和渲染效果。
+- `LyricsPresentationService`：同步空歌词快照，避免新建歌词控件保留旧内容。
+
+## 2026-10-01 清理歌曲属性中的大模型状态控件
+
+- `MusicDetailsWindow.xaml`：移除翻译状态区域的固定高度容器和进度环，恢复歌词导出结果与编辑错误的原有文本布局。
+
+## 2026-10-01 移除未发布的大模型歌词翻译界面
+
+- `LyricsSettingsControl`、`MusicDetailsWindow`：移除设置入口、歌曲属性手动翻译按钮及相关对话框。
+- `LlmTranslationService`：保留服务层总开关，确保旧配置不会触发 API 请求；默认配置继续保持关闭。
+
+## 2026-10-01 修复手动大模型翻译后的保存状态
+
+- `LyricsEditorViewModel`、`MusicDetailsWindow`：提交成功后不再因延迟绑定通知误报冲突；大模型翻译期间禁用保存操作，并显示可能耗时较长的提示。
+- `LyricsEditorViewModel`：翻译期间若用户修改原文，丢弃过期结果，避免覆盖用户草稿。
+- `MusicDetailsWindow`：将手动大模型翻译按钮移入歌词操作按钮组，与刷新按钮放在同一处。
+
+## 2026-10-01 恢复歌词空状态提示
+
+- `LyricsControl`：将“暂无歌词，请欣赏音乐”提示放在歌词容器根层，兼容普通和高级歌词渲染路径，并在歌词加载后自动隐藏。
+
+## 2026-10-01 增加手动大模型歌词翻译
+
+- `MusicDetailsWindow`、`LyricsEditorViewModel`：增加单图标手动翻译按钮，结果回填当前歌词草稿并复用现有保存流程。
+- `LlmTranslationService`：自动和手动翻译统一记录一条 `Information` 触发日志；手动翻译允许覆盖译文并立即重试。
+
+## 2026-10-01 自动识别大模型协议
+
+- `LlmSettingsDialog`、`LlmSettingsViewModel`：移除协议下拉框，依据 API 地址自动选择 Anthropic 或 OpenAI 兼容协议。
+- `LlmTranslationService`：保存和请求前重新归一化旧配置，避免 `/anthropic` 地址继续走 OpenAI 路径。
+
+## 2026-10-01 修复大模型请求体序列化失败
+
+- `Model/LlmSettings.cs`、`LlmTranslationService`：OpenAI 与 Anthropic 请求改用 System.Text.Json 源生成 DTO，兼容发布版禁用反射序列化的配置。
+
+## 2026-10-01 修复大模型配置对话框和 Anthropic 兼容端点
+
+- `LlmTranslationService`：Anthropic 兼容地址自动补齐 `/v1`，改进错误信息、空配置归一化，并将原文规范化为 LRC 后再翻译。
+- `LyricsSettingsControl`、`LlmSettingsDialog`：设置页改为独立对话框，移除不可用的厂商模型列表请求，模型改为手工填写；保留清除系统密钥入口。
+- `App.xaml.cs`：注册 `ILlmTranslationService`，使播放时自动翻译链实际接入服务。
+
+## 2026-10-01 接入大模型歌词翻译
+
+- `LlmTranslationService`、`Llm.json`：新增 OpenAI 兼容与 Anthropic 协议配置、思考强度和目标语言；API 密钥仅保存到 Windows PasswordVault，并提供清除密钥操作。
+- `LyricsRefreshService`、`LyricsExporter`：播放加载歌词时自动翻译缺失的 LRC，先发布原文，成功后按数据库 revision 写回并生成 `_Translated.lrc` 侧车文件。
+- `LyricsSettingsControl`、`LlmSettingsViewModel`、`Strings/*/Resources.resw`：新增歌词翻译设置界面。
+
+## 2026-10-01 修复歌词边界进度和播放列表排序保存
+
+- `BaseRenderLyrics.cs`：零时长逐字字符在起点边界返回确定的 0/1 进度，避免 NaN 进入 Win2D 裁剪。
+- `PlayListViewModel.cs`、`PlayListPage.xaml`：连续拖拽排序合并并保存最后一次顺序，保存或其他歌单操作进行中时禁用继续拖拽。
+- `_tools/LyricsRenderRegression`：补充零时长字符边界回归。
+
+## 2026-10-01 对齐播放列表操作栏
+
+- `PlayListPage.xaml`、`PlayListViewModel`：将编辑模式按钮和空状态可见性改为绑定状态，并统一操作栏按钮高度。
+- `ToolUtils`、`AlbumPage`、`ArtistPage`、`FolderBrowsePage`、`PlayListPage`：复用带条件匹配的公共视觉树查询，移除页面内重复实现。
+
+## 2026-10-01 调整播放列表悬浮操作
+
+- `PlayListPage.xaml.cs`：编辑模式隐藏卡片上的全部悬浮按钮，普通模式恢复播放和更多按钮。
+
+## 2026-10-01 修复播放列表页导航崩溃
+
+- `PlayListPage.xaml.cs`：避免在 `SelectionMode=None` 时清空 `GridView.SelectedItems`，修复首次打开播放列表页触发 `0x8000FFFF` 的问题。
+
+## 2026-10-01 播放列表编辑模式与批量管理
+
+- `PlayListPage`、`PlayListViewModel`：新增编辑模式，保留悬浮播放按钮；编辑模式下支持多选、全选、批量删除和拖拽排序，普通模式点击卡片仍进入歌单详情。
+- `PlayList`、`MusicDatabaseService`：为播放列表增加持久化排序字段，兼容已有数据库并以事务保存批量删除与排序结果。
+- `Strings/*/Resources.resw`：补充编辑模式、批量删除和二次确认文本。
+
+## 2026-10-01 修复发光退场后末字再次骤暗
+
+- `LyricsAnimator.cs`、`RenderLyricsChar.cs`、`LyricsLineRenderer.cs`：记录视觉退场开始时的实际发光量，退场时同步降低发光层透明度与模糊半径，避免半径归零时叠加一份普通高亮字形，再切换为非当前行而骤暗；沿用已有曲线、逐字时间及退场状态清理。
+- `_tools/LyricsRenderRegression`：加入完整《Paint It Black》旁挂夹具，真实 Win2D 对六处 black 的末字和前字做交接帧像素检查，覆盖明／暗文字及 4／8ms 采样；首次复现末字 alpha 总量下降约 48%，前字约 1%。
+- 验证：六处交接像素及既有原生回归、主程序 Debug x64 构建通过（0 错误）；固定采样下首处末字变化由 48.13% 降至约 0.93%。完整播放器随真实音频的人工验收尚未执行。
+
+## 2026-09-30 修复流波切句时末字重音突变
+
+- `LyricsAnimator.cs`、`RenderLyricsLine.cs`：流波末尾长音节在已有 300ms 留白内保持视觉重音，切句后从当前状态沿同一行的传播延迟及退场时长回落；音乐索引、逐字填充与源时间不延长，真实长空档正常收尾，跳转／重排清理残留状态。
+- `LyricsRenderCoordinator.cs`、`LyricsLineRenderer.cs`：独立保存视觉退场状态，末字退出完成前继续逐字绘制并随行模糊，复用现有原生效果，避免先变成普通高亮再切行；既有流波曲线和位移时序不改动。
+- `_tools/LyricsRenderRegression/FlowWaveWordExitChecks.cs`：真实 Win2D 覆盖无留白／300ms 留白、长空档、共享退场、暂停、双向跳转、重排及完整样例 brave；常规样式提前收尾、桌面高光、短句与资源生命周期回归继续通过。
+- 验证：修复前原生复现发光 4.999901→0、旧行全亮静止并等待 143ms；修复后原生回归、BetterLyrics 运动基线与 Debug x64 构建通过（0 错误）；完整播放器随真实音频的人工观感验收尚未执行。
+
+## 2026-09-30 统一歌词优先级卡片布局
+
+- `LyricsSettingsControl.xaml`：移除文件／来源优先级下拉框上方的序号标题，控件垂直居中并以箭头表示从左到右的优先顺序，消除标题造成的额外卡片高度；保留无障碍名称与原有交换逻辑。
+- 验证：刷新生产 XAML 夹具后，真实 WinUI 编译绑定、顺序恢复／交换回归及主程序 Debug x64 构建通过（0 错误）。
+
+## 2026-09-30 跳过逐字歌词中的空字与空行
+
+- `LyricsParser.cs`、`LyricsParser.Ttml.cs`：忽略 QRC／KRC 空字标签和各逐字格式整行纯空白内容，避免空行触发切句或占用来源优先级；保留有效正文中的空格、词间停顿及有正文的零时长字，原文不改写。
+- `_tools/LyricsUnificationRegression`、`LyricsRenderRegression`：覆盖重复空时间戳、逐字中间空字组、纯空白行、来源回退及真实 Win2D 切句／暂停／回拖，普通 LRC 空行继续沿用旧版忽略行为。
+- 验证：修复前 13 项空字／空行断言失败；修复后 245 项核心回归、原生渲染回归及 Debug x64 构建通过（0 错误）；完整播放器随真实音频的人工验收尚未执行。
+
+## 2026-09-30 恢复逐字歌词重构前的播放计时
+
+- `LyricsRefreshService.cs`：恢复已有格式统一的 300ms 逐字提前量、分词音节边界、展示补尾和未知时长兜底，为末字重音动画保留回落时间；TTML 保留显式时间与重叠，源文件及数据库原文不改写。
+- `LyricsParser.cs`：增强 LRC 缺少闭合标签的末字恢复零时长，避免补到下一句后改变原有播放节奏。
+- `_tools/LyricsUnificationRegression`、`LyricsRenderRegression`：加入完整《The Story of Us》及执行重构前代码得到的 62 行冻结基线，真实 Win2D 验证 brave 在 157681ms 切句前完成填充、缩放／发光／字浮回落和回拖。
+- `docs/LyricsRefactorBehaviorAudit.md`、`LyricsUnificationPlan.md`：逐项记录重构前后播放、来源、翻译、迁移、保存、导出、统计及生命周期差异，明确旧格式展示兼容与 TTML 源时间的边界。
+- 验证：修复前 10 项播放兼容断言失败；修复后 202 项核心、29 项提供方／加载／封面回归、主界面与桌面原生回归及 Debug x64 构建通过（0 错误）；完整播放器随真实音频的人工验收尚未执行。
+
+## 2026-09-30 歌词文件与来源优先级组合设置
+
+- `LyricsSettingsControl.xaml`、`SettingsViewModel.cs`：文件顺序改为四个优先级下拉框，选择已占用格式时交换两项；新增文件／数据库的两个来源优先级下拉框，统一由偏好状态驱动。
+- `LyricsPreferencesState.cs`、`PreferencesState.cs`、`AppSettings.cs`、`SaveSettings.cs`、设置保存／恢复服务：持久化来源顺序，保留旧文件排序及默认文件优先行为。
+- `LyricsRefreshService.cs`：按来源顺序使用有效歌词，无效或缺失时回退；数据库优先命中时跳过本地／WebDAV 文件读取，一次性播放使用已保存缓存；保留用户清空与在线搜索取消规则。
+- 七种语言资源、`_tools/LyricsUiRegression`、`LyricsUnificationRegression`、`SettingsPersistenceRegression`：补充本地化、编译绑定、实际文件／SQLite 回退和设置兼容性检查。
+- 验证：120 项歌词核心回归、真实 WinUI 下拉框绑定／交换、设置 JSON 往返、七种语言资源检查及 Debug x64 构建通过（0 错误）；完整播放器设置页目视验收和真实 WebDAV 服务器验证尚未执行。
+
+## 2026-09-30 修复句间空档中歌词高光提前消失
+
+- `LyricsRefreshService.cs`、`LyricLine.cs`：派生独立的展示高光终点，空档保持到下一次入句，末行保持到歌曲结束；原文、实际行尾及逐字时间不变，保留同起点多行和合法重叠。
+- `RenderLyricsLine.cs`、`LyricsAnimator.cs`、`LyricsSynchronizer.cs`、`LyricsRenderCoordinator.cs`、`CanvasLyricsRenderer.cs`：主界面和桌面歌词统一使用展示边界控制高光，修复空档内回拖仍保留其他行的问题；逐字进度沿用真实时间，短句流波处理不变。
+- `_tools/LyricsUnificationRegression`、`LyricsRenderRegression`：覆盖真实文件／SQLite 迁移投影和《Unchained》长空档，真实 Win2D 像素及桌面窗口验证切句、暂停、拖动和重叠。
+- 验证：修复前 83.675 秒的原生高光断言失败；修复后 92 项歌词回归、主界面／桌面原生渲染、流波／短句回归和 Debug x64 构建通过（0 错误）；完整播放器随音频的人工验收尚未执行。
+
+## 2026-09-30 逐字歌词流波节奏对齐 BetterLyrics
+
+- `LyricScrollMotion.cs`、`LyricScrollTiming.cs`、`LyricsRenderCoordinator.cs`：流波从可见区顶部逐行传播，等待新目标时保持位置并保存速度，起动延迟重新计时，对齐 BetterLyrics `dad48ab9`；保留短句削弱／关闭错峰和稳定弹簧响应。
+- `LyricsAnimator.cs`、`ValueTransition.cs`：位移、缩放、模糊和透明度共用逐行时序，修正延迟帧位置及多段索引，避免初始透明行反复重启延迟；桌面单行歌词沿用原路径。
+- `_tools/LyricsEasingRegression`、`LyricsRenderRegression`：覆盖延迟接续、首段等待、多段过渡、真实 Win2D 逐帧效果同步、短句与跳转／重排。
+- 验证：与 `dad48ab9` 的真实运动类数值对照、CPU 回归、真实 Win2D 效果同步／生命周期回归及 Debug x64 构建通过（0 错误）；完整播放器的人工观感对比尚未执行。
+
+## 2026-09-30 修复 CR 换行的 LRC 被合并为一行
+
+- `Services/Lyrics/LyricsParser.cs`：格式检测与解析统一识别 CR、LF、CRLF；修复 CR 下的 offset 和 KRC 翻译元数据移除，旧缓存直接重新解析，LRC 原文保持不变。
+- `_tools/LyricsUnificationRegression/LineEndingChecks.cs`：以完整 65 行样例覆盖四种换行、翻译与导出往返，验证真实本地歌词文件、JSON 缓存和 SQLite 旧文档的播放展示投影。
+- 验证：修复前样例仅解析为 1 行，修复后 78 项回归及 Debug x64 构建通过（0 错误，1738 个警告）；两个历史 TTML 外部附件未提供，跳过其 4 项检查，完整播放详情页尚未实机目视验收。
+
+## 2026-09-30 修复歌词审查发现的保存、恢复与清空问题
+
+- `LyricsEditorViewModel.cs`、`LyricsRepository.cs`：元数据保存保留未修改的旧歌词、来源及诊断；恢复旧候选先显示原始文本，转换失败仍可编辑修复。
+- `MusicDatabaseService.Metadata.cs`、`PendingMetadataWrite.cs`、`ToolUtils.cs`：无法解析且未修改的歌词不阻止标签写入，队列重启后仍保留文件已有歌词；显式清空继续清除标签。
+- `LyricsCacheStore.cs`、`OneShotLyricsCache.cs`、`LyricsRefreshService.cs`、`OneShotPlaybackService.cs`：一次性缓存记录用户来源，清空后不再自动补回，入库后保留该意图；手动刷新与旧缓存兼容。
+- `_tools/LyricsUiRegression`、`LyricsUnificationRegression`、`FolderScanRegression`：补充对应失败场景、真实 JSON／SQLite 往返与队列重启检查；`docs/LyricsUnificationPlan.md` 同步固定页签名称及修复边界。
+- 验证：修复前新增 WinUI 场景稳定失败，修复后通过；49 项核心检查、扫描／标签队列回归、真实 ATL 标签保留／清空往返、七种语言资源检查与 Debug x64 构建通过（0 错误，389 个警告）。
+
+## 2026-09-29 移除额外引入的压缩／加密歌词文件导入
+
+- `LyricsFilePolicy.cs`、`WebDavLibraryService.cs`：移除 KRC 解密解压、十六进制 QRC 解密及自动识别入口，本地和 WebDAV 仅按文本读取歌词；在线提供方原有解码保持不变。
+- `_tools/LyricsUnificationRegression`、`docs/LyricsUnificationPlan.md`：删除对应压缩／加密夹具和检查，更新功能范围说明。
+- 验证：剩余 44 项歌词核心回归及 Debug x64 构建通过。
+
+## 2026-09-29 修复快速切歌时歌词缓存释放竞态
+
+- `LyricsLoader.cs`：恢复 500 ms 防抖，快速切歌仅加载最后一首；等待、在途请求和迟到缓存均受切歌／退出取消保护。
+- `LyricsRenderCoordinator.cs`：UI 只提交最新托管快照，渲染帧边界统一替换歌词并回收旧 Win2D 缓存；绘制与关闭清理互斥，暂停重绘也能接收新歌词，清除旧歌曲的索引和滚动状态。
+- `_tools/LyricsCoverRegression`、`_tools/LyricsRenderRegression`：补充防抖、迟到结果及真实 CanvasAnimatedControl 帧内资源存活、快速发布和关闭检查。
+- 验证：修复前原生帧内缓存存活检查稳定失败；修复后 3 轮各 300 次发布、暂停重绘、空歌词和带待发布内容的关闭通过，加载／取消与滚动回归、Debug x64 构建通过。完整音频切歌及用户设备仍需实测。
+
+## 2026-09-29 调整歌词编辑页签与恢复按钮布局
+
+- `MusicDetailsWindow.xaml`、`LyricsEditorViewModel.cs`、七种语言资源：页签固定为“歌词／翻译”，移除标题的格式检测；空状态和错误消息折叠，恢复旧 LRC／KRC 与写入文件按钮放在同一底栏。
+- 验证：Debug x64 构建、现有 WinUI 编译绑定与编辑冲突回归、七种语言资源键检查通过；完整音乐详情窗口的底栏尚未实机目视验收。
+
+## 2026-09-29 统一歌词存储、迁移与 TTML 支持
+
+- `Model/LyricsDocument.cs`、`Services/Lyrics/`：原文保留实际格式，翻译统一为独立逐行 LRC；不增加 Language、不推断同文件双轨 LRC。
+- `LyricsRepository`、`MusicDatabaseService`、`OneShotLyricsCache`：新增版本化存储和条件保存；旧候选整对迁移，保留旧表、一致性备份与有界缓存恢复副本，支持后台续迁和编辑冲突诊断。
+- `LyricsParser`、`LyricsRefreshService`、`WebDavLibraryService`：接入 issue #27 的行／词 TTML、独立译文和四种文件优先级；损坏文件回退，有效内容优先展示，自动搜词按提供方记录结果并可取消。
+- `MusicDetailsWindow`、`LyricsEditorViewModel`、设置与七种语言资源：四个歌词内容区合并为两个，支持旧候选恢复和按格式导出；原文与 `_Translated.lrc` 分别保存，失败时回滚并保留备份。
+- 扫描、标签队列、音频转换和 USB 导出统一使用新文档；标签与 USB 使用兼容 LRC，标签队列保留旧快照；播放次数移至已确认开始的播放路径，歌词重载不再计次。
+- 验证：Debug x64 构建、47 项歌词核心检查、真实 SQLite／文件锁、网络取消／搜索状态、扫描／标签队列、播放导航／远程恢复、设置／共享状态回归通过；隔离 WinUI 编译绑定与 UI Automation 输入保存通过。TTML 附件实测 27 行原文／27 行翻译，逐词版保留 450 片段。
+- 兼容性：默认顺序保持 KRC → QRC → LRC，并追加 TTML；旧版无法看到新版编辑，降级后旧行变化会报告冲突。未操作用户实际数据库；完整音乐库升级与真实设备播放仍需发布前验收。
+
+## 2026-09-28 修复单曲播放列表曲终停播
+
+- `PlaybackCommands.cs`、`BassPlayerCommandService.cs`、`PlaybackCoordinator.Gapless.cs`：列表循环和随机循环在队列仅有一首歌时允许自然结束后重新播放该曲，并为本地播放预载同一首歌；手动切歌及多曲候选规则保持原样。
+- `_tools/PlaybackNavigationRegression/Program.cs`：覆盖两种模式的曲终续播、无缝切换和手动导航边界。
+- 验证：播放导航及真实 WinUI Dispatcher 回归、Debug x64 与禁用 MSIX 打包的 Release x64 构建通过；标准 Release 打包因本机缺少 `mspdbcmf.exe` 未完成。
 
 ## 2026-09-27 关于页版权年份改为动态
 

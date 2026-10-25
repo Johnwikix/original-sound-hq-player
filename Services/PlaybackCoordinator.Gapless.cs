@@ -138,7 +138,8 @@ public sealed partial class PlaybackCoordinator
         }
         else
         {
-            int index = PlaybackCommands.FindCandidateIndex(state.CurrentPlayingList, state.GetCurrentIndex(), 1);
+            int index = PlaybackCommands.FindCandidateIndex(state.CurrentPlayingList, state.GetCurrentIndex(), 1,
+                allowSingleEntryReplay: true);
             if (index >= 0)
             {
                 _candidateNext = state.CurrentPlayingList[index];
@@ -268,12 +269,19 @@ public sealed partial class PlaybackCoordinator
             state.State.Queue.SelectEntry(plan.EntryId, plan.Next);
             state.CurrentPlayingMusic = plan.Next;
             state.RemotePlaybackStatus = "";
-            try { statistics.StartSession(plan.Next); }
+            try { statistics.StartSession(plan.Next); _ = tasks.RunAsync(_ => statistics.RecordPlaybackStartAsync(plan.Next)); }
             catch (Exception ex) { logger.LogError(ex, "记录无缝播放统计失败"); }
             state.UILyrics = [];
             state.LoadLyricsToUI(plan.Next);
             state.UpdateProgressTimerUI();
             TrackStarted?.Invoke(plan.Next, cancellation);
+            // The transition notification can beat the state-pipe snapshot. Its committed token,
+            // not the previous track's cached position, identifies this occurrence.
+            bool hasProgress = ipc.TryGetProgressSnapshot(out var confirmed) && confirmed.GaplessToken == plan.Token;
+            if (!hasProgress)
+                confirmed = new(0, 0, 0, (long)plan.Next.Duration.TotalMilliseconds,
+                    System.Diagnostics.Stopwatch.GetTimestamp(), true, GaplessToken: plan.Token);
+            PlaybackConfirmed?.Invoke(plan.Next, confirmed);
         }
         finally { _acceptingGapless = false; }
         RefreshGaplessPlan();

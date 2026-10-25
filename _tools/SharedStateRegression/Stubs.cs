@@ -71,7 +71,7 @@ namespace WinUIMusicPlayer.Services
     }
     public sealed class MusicDatabaseService
     {
-        public Task<(string?, string?, string?, string?)> GetLyricsAsync(int id) => Task.FromResult<(string?, string?, string?, string?)>((null, null, null, null));
+        public Task<Model.LyricsDocument> GetLyricsDocumentAsync(Model.Music music) => Task.FromResult(Model.LyricsDocument.Empty);
     }
 }
 namespace WinUIMusicPlayer.Extensions
@@ -80,5 +80,15 @@ namespace WinUIMusicPlayer.Extensions
     {
         public static WinUIMusicPlayer.Model.BulkObservableCollection<T> CreateShuffled<T>(this ObservableCollection<T> items)
             => new(items.Reverse());
+    }
+}
+
+// USB progress/lifecycle tests do not request lyric content; format/IO behavior is covered by LyricsUnificationRegression.
+namespace WinUIMusicPlayer.Services.Lyrics
+{
+    public class LyricsParser { public string ExportLrc(Model.LyricsDocument document) => ""; }
+    public static class LyricsExporter
+    {
+        public static Task<string> SaveFilesAsync(string path, Model.LyricsDocument document, CancellationToken token) => Task.FromResult(path);
     }
 }

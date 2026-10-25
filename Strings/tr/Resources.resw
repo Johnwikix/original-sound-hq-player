@@ -168,6 +168,9 @@
   <data name="StatsRangePastYear.Content" xml:space="preserve">
     <value>Son bir yıl</value>
   </data>
+  <data name="StatsRangeAllTime.Content" xml:space="preserve">
+    <value>Tüm zamanlar</value>
+  </data>
   <data name="StatsRangeCustom.Content" xml:space="preserve">
     <value>Özel</value>
   </data>
@@ -1384,18 +1387,6 @@
   <data name="Advanced.Text" xml:space="preserve">
     <value>Gelişmiş</value>
   </data>
-  <data name="TrimOnHide.Text" xml:space="preserve">
-    <value>Pencere gizlendiğinde belleği boşalt</value>
-  </data>
-  <data name="TrimOnHideDescription.Text" xml:space="preserve">
-    <value>Uygulama görev çubuğuna gizlendiğinde veya sistem tepsisine kapatıldığında çalışma kümesini boşaltır.</value>
-  </data>
-  <data name="TrimAfterPlayback.Text" xml:space="preserve">
-    <value>Oynatma sonrası belleği otomatik boşalt</value>
-  </data>
-  <data name="TrimAfterPlaybackDescription.Text" xml:space="preserve">
-    <value>Her parçadan sonra tam çöp toplama (GC) zorlar. Düşük donanımlı cihazlarda UI takılmalarına neden olabilir.</value>
-  </data>
   <data name="ArtistSplitSymbols.Text" xml:space="preserve">
     <value>Sanatçı ayırıcıları</value>
   </data>
@@ -1404,12 +1395,6 @@
   </data>
   <data name="SelectArtist" xml:space="preserve">
     <value>Sanatçı seç</value>
-  </data>
-  <data name="TrimNow.Content" xml:space="preserve">
-    <value>Belleği şimdi boşalt</value>
-  </data>
-  <data name="TrimNowLabel.Text" xml:space="preserve">
-    <value>Belleği şimdi boşalt</value>
   </data>
   <data name="WindowBoundsDescription.Text" xml:space="preserve">
     <value>Ana pencere konumu</value>
@@ -1498,6 +1483,24 @@
   <data name="IconDesktopLyrics.Text" xml:space="preserve">
     <value>Masaüstü şarkı sözleri</value>
   </data>
+  <data name="DesktopLyricsModeMenu.Text" xml:space="preserve">
+    <value>Masaüstü şarkı sözü modu</value>
+  </data>
+  <data name="DesktopLyricsModeFloating" xml:space="preserve">
+    <value>Yüzen pencere</value>
+  </data>
+  <data name="DesktopLyricsModeTaskbar" xml:space="preserve">
+    <value>Görev çubuğu</value>
+  </data>
+  <data name="DesktopLyricsPreviousButtonTooltip" xml:space="preserve">
+    <value>Önceki parça</value>
+  </data>
+  <data name="DesktopLyricsPlayPauseButtonTooltip" xml:space="preserve">
+    <value>Oynat veya duraklat</value>
+  </data>
+  <data name="DesktopLyricsNextButtonTooltip" xml:space="preserve">
+    <value>Sonraki parça</value>
+  </data>
   <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>Masaüstü şarkı sözlerini kilitle</value>
   </data>
@@ -1522,6 +1525,12 @@
   <data name="DesktopLyricsFontSize.Text" xml:space="preserve">
     <value>Masaüstü şarkı sözleri yazı tipi boyutu</value>
   </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Header" xml:space="preserve">
+    <value>Görev çubuğu şarkı sözü genişliği</value>
+  </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Description" xml:space="preserve">
+    <value>Medya denetimlerinin yanında şarkı sözleri için ayrılan genişlik (piksel).</value>
+  </data>
   <data name="DesktopLyricsFontFamily.Text" xml:space="preserve">
     <value>Masaüstü şarkı sözleri yazı tipi</value>
   </data>
@@ -1533,6 +1542,9 @@
   </data>
   <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
     <value>Masaüstü şarkı sözleri çevirisi</value>
+  </data>
+  <data name="DesktopLyricsPronunciation.Text" xml:space="preserve">
+    <value>Masaüstü sözlerinde telaffuzu göster</value>
   </data>
   <data name="DesktopLyricsKaraoke.Text" xml:space="preserve">
     <value>Masaüstü şarkı sözleri karaoke efekti</value>
@@ -1897,6 +1909,24 @@
   </data>
   <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
     <value>Masaüstü şarkı sözleri etkin olduğunda uygulanır. Çalma ayrıntılarından ayrıldığınızda veya oynatıcıyı tepsiye kapattığınızda geri getirilir.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Header" xml:space="preserve">
+    <value>Çalma ayrıntılarında masaüstü sözlerini gizle (yüzen)</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Description" xml:space="preserve">
+    <value>Yalnızca yüzen söz penceresini denetler.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Header" xml:space="preserve">
+    <value>Çalma ayrıntılarında masaüstü sözlerini gizle (görev çubuğu)</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Description" xml:space="preserve">
+    <value>Yalnızca görev çubuğu söz penceresini denetler.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloatingMode.Text" xml:space="preserve">
+    <value>Yüzen pencere</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbarMode.Text" xml:space="preserve">
+    <value>Görev çubuğu penceresi</value>
   </data>
   <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
     <value>Ly</value>
@@ -2299,7 +2329,7 @@ SHA-256: {5}
   </data>
   <data name="WindowBackgroundTitle" xml:space="preserve"><value>Ana pencere arka plan resmi</value></data>
   <data name="WindowBackgroundImage" xml:space="preserve"><value>Arka plan resmi</value></data>
-  <data name="WindowBackgroundDescription" xml:space="preserve"><value>Ana pencere için yerel bir resim seçin. Pencere malzemesini geri yüklemek için resmi temizleyin.</value></data>
+  <data name="WindowBackgroundDescription" xml:space="preserve"><value>Ana pencere için yerel bir resim seçin. Pencere malzemesini geri yüklemek için resmi temizleyin. Gölgelendirici arka planı kapalı ve gelişmiş karaoke açıkken resim sözler tuvalinde çizilir.</value></data>
   <data name="WindowBackgroundChoose" xml:space="preserve"><value>Resim seç</value></data>
   <data name="WindowBackgroundClear" xml:space="preserve"><value>Resmi temizle</value></data>
   <data name="WindowBackgroundBlur" xml:space="preserve"><value>Bulanıklık</value></data>
@@ -2307,4 +2337,172 @@ SHA-256: {5}
   <data name="CacheCleanupCard.Header" xml:space="preserve">
     <value>Önbelleği temizle</value>
   </data>
+  <data name="LyricsFilePriority.Header" xml:space="preserve">
+    <value>Şarkı sözü dosyası önceliği</value>
+  </data>
+  <data name="LyricsFilePriority.Description" xml:space="preserve">
+    <value>Sırayla ilk geçerli eşleşen dosyayı kullan. Çeviri için _Translated.lrc tercih edilir.</value>
+  </data>
+  <data name="LyricsOriginalTab.Text" xml:space="preserve">
+    <value>Şarkı sözleri</value>
+  </data>
+  <data name="LyricsTranslationTab.Text" xml:space="preserve">
+    <value>Çeviri</value>
+  </data>
+  <data name="LyricsRestoreLegacyLrc.Content" xml:space="preserve">
+    <value>Eski LRC dosyasını geri yükle</value>
+  </data>
+  <data name="LyricsRestoreLegacyKrc.Content" xml:space="preserve">
+    <value>Eski KRC dosyasını geri yükle</value>
+  </data>
+  <data name="LyricsEditConflict" xml:space="preserve">
+    <value>Şarkı sözleri başka bir işlemle değiştirildi. Taslağı koruyup kaydetmeden önce yeniden açın.</value>
+  </data>
+  <data name="LyricsInvalid" xml:space="preserve">
+    <value>Geçersiz şarkı sözü, zaman damgası veya dosya işlemi.</value>
+  </data>
+  <data name="LyricsMigrationDiagnostic" xml:space="preserve">
+    <value>Bazı eski şarkı sözleri dönüştürülemedi. Özgün içerik korunur ve geri yükleme düğmeleriyle açılabilir.</value>
+  </data>
+  <data name="LyricsFilePriorityLabel" xml:space="preserve">
+    <value>Şarkı sözü dosyası önceliği</value>
+  </data>
+  <data name="LyricsFilesSaved" xml:space="preserve">
+    <value>Şarkı sözü dosyaları kaydedildi:</value>
+  </data>
+  <data name="LyricsSourcePriority.Header" xml:space="preserve"><value>Şarkı sözü kaynağı önceliği</value></data>
+  <data name="LyricsSourcePriority.Description" xml:space="preserve"><value>İlk kaynaktaki geçerli sözleri kullan; bulunamazsa sonraki kaynağı dene.</value></data>
+  <data name="LyricsSourceFile" xml:space="preserve"><value>Söz dosyaları</value></data>
+  <data name="LyricsSourceDatabase" xml:space="preserve"><value>Veritabanı</value></data>
+  <data name="LyricsPriorityFirst" xml:space="preserve"><value>1. öncelik</value></data>
+  <data name="LyricsPrioritySecond" xml:space="preserve"><value>2. öncelik</value></data>
+  <data name="LyricsPriorityThird" xml:space="preserve"><value>3. öncelik</value></data>
+  <data name="LyricsPriorityFourth" xml:space="preserve"><value>4. öncelik</value></data>
+  <data name="PlayListEdit" xml:space="preserve">
+    <value>Düzenle</value>
+  </data>
+  <data name="PlayListEditDone" xml:space="preserve">
+    <value>Bitti</value>
+  </data>
+  <data name="PlayListSelectAll.Text" xml:space="preserve">
+    <value>Tümünü seç</value>
+  </data>
+  <data name="PlayListBatchDelete.Text" xml:space="preserve">
+    <value>Sil</value>
+  </data>
+  <data name="AreUSureDeletePlayLists" xml:space="preserve">
+    <value>Seçili çalma listelerini silmek istediğinizden emin misiniz?</value>
+  </data>
+
+  <data name="LlmTranslation.Header" xml:space="preserve"><value>Yapay zeka şarkı sözü çevirisi</value></data>
+  <data name="LlmTranslation.Description" xml:space="preserve"><value>Çalma başladığında OpenAI uyumlu veya Anthropic hizmetiyle eksik çevirileri çevirir.</value></data>
+  <data name="LlmBaseUrl.Header" xml:space="preserve"><value>API temel URLsi</value></data>
+  <data name="LlmModel.Header" xml:space="preserve"><value>Model</value></data>
+  <data name="LlmTargetLanguage.Header" xml:space="preserve"><value>Hedef dil</value></data>
+  <data name="LlmThinkingLevel.Header" xml:space="preserve"><value>Düşünme düzeyi</value></data>
+  <data name="LlmApiKey.Header" xml:space="preserve"><value>API anahtarı (Windows Kimlik Bilgisi Yöneticisinde saklanır)</value></data>
+  <data name="LlmSave.Content" xml:space="preserve"><value>Kaydet</value></data>
+  <data name="LlmClearApiKey.Content" xml:space="preserve"><value>Kayıtlı anahtarı temizle</value></data>
+  <data name="LlmSaved" xml:space="preserve"><value>Yapay zeka çeviri ayarları kaydedildi.</value></data>
+  <data name="LlmApiKeyCleared" xml:space="preserve"><value>Kayıtlı API anahtarı temizlendi.</value></data>
+
+  <data name="LlmApiKeyConfigured" xml:space="preserve"><value>Kayıtlı bir API anahtarı var.</value></data>
+  <data name="LlmApiKeyNotConfigured" xml:space="preserve"><value>Kayıtlı API anahtarı yok.</value></data>
+
+  <data name="LlmConfigure.Content" xml:space="preserve"><value>Yapay zekâ çevirisini yapılandır</value></data>
+  <data name="LlmClose.Content" xml:space="preserve"><value>Kapat</value></data>
+  <data name="LlmEnabled.Header" xml:space="preserve"><value>Çalma sırasında eksik çevirileri çevir</value></data>
+  <data name="LlmWorking" xml:space="preserve"><value>Çalışıyor…</value></data>
+  <data name="LlmTranslationInProgress" xml:space="preserve"><value>Yapay zekâ çevirisi devam ediyor ve biraz zaman alabilir. Lütfen bekleyin…</value></data>
+  <data name="LlmDialogSaveButton" xml:space="preserve"><value>Kaydet</value></data>
+  <data name="LlmDialogCloseButton" xml:space="preserve"><value>Kapat</value></data>
+  <data name="LlmBaseUrl.Description" xml:space="preserve"><value>Protokol adresden otomatik algılanır: /anthropic Anthropic, diğer uyumlu /v1 adresleri OpenAI kullanır.</value></data>
+
+  <data name="LlmTranslateButton.Content" xml:space="preserve"><value>Şarkı sözlerini yapay zekâyla çevir</value></data>
+  <data name="LlmManualTranslationFailed" xml:space="preserve"><value>Yapay zekâ ile şarkı sözü çevirisi başarısız. Yapılandırmayı ve günlükleri kontrol edin.</value></data>
+  <data name="LlmManualTranslationCompleted" xml:space="preserve"><value>Yapay zekâ çevirisi oluşturuldu. Dosyaya veya veritabanına yazmak için sözleri kaydedin.</value></data>
+  <data name="LyricsPronunciationTab.Text" xml:space="preserve"><value>Telaffuz</value></data>
+  <data name="LyricsShowTranslation.Header" xml:space="preserve"><value>Şarkı sözü çevirisini göster</value></data>
+  <data name="LyricsShowTranslation.Description" xml:space="preserve"><value>Çeviri varsa çeviri parçasını göster.</value></data>
+  <data name="LyricsShowPronunciation.Header" xml:space="preserve"><value>Şarkı sözü telaffuzunu göster</value></data>
+  <data name="LyricsShowPronunciation.Description" xml:space="preserve"><value>Telaffuz varsa telaffuz parçasını göster.</value></data>
+  <data name="LyricsPronunciationLanguages.Header" xml:space="preserve"><value>Telaffuz dilleri</value></data>
+  <data name="LyricsPronunciationLanguages.Description" xml:space="preserve"><value>Telaffuzu etiketlere veya yazı sistemine göre seçer; Kantonca için açık etiket gerekir.</value></data>
+  <data name="LyricsPronunciationMandarin.Header" xml:space="preserve"><value>Mandarin</value></data>
+  <data name="LyricsPronunciationMandarin.Description" xml:space="preserve"><value>Mandarin telaffuzunu göster.</value></data>
+  <data name="LyricsPronunciationCantonese.Header" xml:space="preserve"><value>Kantonca</value></data>
+  <data name="LyricsPronunciationCantonese.Description" xml:space="preserve"><value>Kantonca telaffuzunu göster.</value></data>
+  <data name="LyricsPronunciationJapanese.Header" xml:space="preserve"><value>Japonca</value></data>
+  <data name="LyricsPronunciationJapanese.Description" xml:space="preserve"><value>Japonca telaffuzunu göster.</value></data>
+  <data name="LyricsPronunciationKorean.Header" xml:space="preserve"><value>Korece</value></data>
+  <data name="LyricsPronunciationKorean.Description" xml:space="preserve"><value>Korece telaffuzunu göster.</value></data>
+  <data name="LyricsTranslationToggle" xml:space="preserve"><value>Şarkı sözü çevirisini değiştir</value></data>
+  <data name="LyricsPronunciationToggle" xml:space="preserve"><value>Şarkı sözü telaffuzunu değiştir</value></data>
+  <data name="LyricsTranslationIcon.Text" xml:space="preserve"><value>T</value></data>
+  <data name="LyricsPronunciationIcon.Text" xml:space="preserve"><value>A</value></data>
+  <data name="SpectralEnhancementTitle" xml:space="preserve"><value>Üst örnekleme</value></data>
+  <data name="SpectralEnhancementDescription" xml:space="preserve"><value>48 kHz ve altındaki mono/stereo PCM sesinin yüksek frekanslarını tamamlar.</value></data>
+  <data name="SpectralEnhancementOff" xml:space="preserve"><value>Kapalı</value></data>
+  <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Yalnızca kayıplı parçalar</value></data>
+  <data name="SpectralEnhancementAll" xml:space="preserve"><value>Kayıplı + 48 kHz ve altı kayıpsız</value></data>
+  <data name="LastFmEnable" xml:space="preserve"><value>Last.fm’e gönder</value></data>
+  <data name="LastFmEnableDescription" xml:space="preserve"><value>Çalan parçayı, uygun dinlemeleri ve favori değişikliklerini bildir; yerel istatistikleri koru.</value></data>
+  <data name="LastFmCredentials" xml:space="preserve"><value>Uygulama kimlik bilgileri</value></data>
+  <data name="LastFmCredentialsHelp" xml:space="preserve"><value>Kendi API Key ve Shared Secret bilgilerinizi alın ve hesabı bağlamadan önce kaydedin. Değiştirmek hesabı ayırır ve bekleyen kayıtları temizler.</value></data>
+  <data name="LastFmSecretSaved" xml:space="preserve"><value>Güvenli biçimde kaydedildi; mevcut Secret için boş bırakın.</value></data>
+  <data name="LastFmSecretRequired" xml:space="preserve"><value>Uygulamanızın Shared Secret bilgisini girin.</value></data>
+  <data name="LastFmSaveCredentials" xml:space="preserve"><value>Bilgileri kaydet</value></data>
+  <data name="LastFmApplyCredentials" xml:space="preserve"><value>Bilgileri al</value></data>
+  <data name="LastFmAuthorize" xml:space="preserve"><value>Hesabı bağla</value></data>
+  <data name="LastFmCompleteAuthorization" xml:space="preserve"><value>Yetkilendirmeyi tamamla</value></data>
+  <data name="LastFmDisconnect" xml:space="preserve"><value>Bağlantıyı kes</value></data>
+  <data name="LastFmDisconnectHelp" xml:space="preserve"><value>Bağlantıyı kesmek gönderimi durdurur ve bekleyen kayıtları temizler. Erişimi iptal etmek için uygulamayı Last.fm ayarlarından da kaldırın.</value></data>
+  <data name="LastFmManageApplications" xml:space="preserve"><value>Last.fm uygulamalarını yönet</value></data>
+  <data name="LastFmWorking" xml:space="preserve"><value>İşleniyor…</value></data>
+  <data name="LastFmAuthorizationHelp" xml:space="preserve"><value>Tarayıcıda erişime izin verin, ardından buraya dönüp yetkilendirmeyi tamamlayın.</value></data>
+  <data name="LastFmUsageHelp" xml:space="preserve"><value>Yalnızca gerçek dinleme sayılır: 30 saniyeden uzun parçalar, yarısı veya 4 dakika dinlenince gönderilir. Sanatçı bilgisi olmayan parçalar atlanır.</value></data>
+  <data name="LastFmPendingCount" xml:space="preserve"><value>Bekleyen gönderim: {0}</value></data>
+  <data name="LastFmQueueHelp" xml:space="preserve"><value>Çevrimiçiyken kayıtlar sırayla otomatik gönderilir. Kapatmak kuyruğu duraklatır; açmak sürdürür. En fazla 10.000 kayıt saklanır.</value></data>
+  <data name="LastFmRetry" xml:space="preserve"><value>Şimdi yeniden dene</value></data>
+  <data name="LastFmBrowserError" xml:space="preserve"><value>Tarayıcı açılamadı. Hesabı bağlamayı tekrar deneyin.</value></data>
+  <data name="LastFmConnected" xml:space="preserve"><value>Bağlandı: {0}</value></data>
+  <data name="LastFmNotConnected" xml:space="preserve"><value>Last.fm hesabı bağlı değil</value></data>
+  <data name="LastFmErrorNetwork" xml:space="preserve"><value>Last.fm geçici olarak kullanılamıyor. Kayıtlar yerelde saklanır ve otomatik yeniden denenir.</value></data>
+  <data name="LastFmErrorCredentials" xml:space="preserve"><value>API Key ve Shared Secret bilgilerini kontrol edip tekrar kaydedin.</value></data>
+  <data name="LastFmErrorAuthorizationPending" xml:space="preserve"><value>Erişim henüz onaylanmadı. Tarayıcıda izin verip yetkilendirmeyi tamamlayın.</value></data>
+  <data name="LastFmErrorAuthorizationExpired" xml:space="preserve"><value>Yetkilendirme isteğinin süresi doldu. Hesabı yeniden bağlayın.</value></data>
+  <data name="LastFmErrorSessionExpired" xml:space="preserve"><value>Hesap yetkisi geçersiz. Hesabı yeniden bağlayın; bekleyen kayıtlar korunur.</value></data>
+  <data name="LastFmErrorRejected" xml:space="preserve"><value>Last.fm geçersiz parça bilgisi veya eski zaman damgası nedeniyle bir kaydı reddetti. Kayıt atlandı.</value></data>
+  <data name="LastFmErrorStorage" xml:space="preserve"><value>Ayarlar veya kuyruk okunamadı ya da kaydedilemedi. Dosya erişimini kontrol edip yeniden deneyin. Mevcut dosyalar korunur.</value></data>
+  <data name="LastFmErrorQueueFull" xml:space="preserve"><value>Kuyruk dolu. Kaydedilen kayıtları göndermek için internete bağlanın; mevcut kayıtlar korunur.</value></data>
+  <data name="LastFmAccountActions" xml:space="preserve"><value>Hesap yetkilendirmesi</value></data>
+  <data name="LastFmHistoryTitle" xml:space="preserve"><value>Yerel dinleme geçmişi</value></data>
+  <data name="LastFmHistoryHelp" xml:space="preserve"><value>Varsayılan olarak son 14 günün kayıtlarını özgün zamanlarıyla gönderir. Daha eski kayıtları eklemek için yukarıdaki seçeneği açın. Göndermeden önce mevcut kayıtlar çevrimiçi denetlenir.</value></data>
+  <data name="LastFmImportHistory" xml:space="preserve"><value>Yerel geçmişi gönder</value></data>
+  <data name="LastFmCancelHistory" xml:space="preserve"><value>İçe aktarmayı iptal et</value></data>
+  <data name="LastFmHistoryResult" xml:space="preserve"><value>Kuyruğa alınan: {0}; içe aktarma gününe atanan: {5}; zaten mevcut: {1}; 14 günden eski ve hariç tutulan: {2}; uygun olmayan veya eksik: {3}; ertelenen: {4} (eski sürümdeki eşleştirmesi belirsiz ve doğrulama gereken {6} kayıt dahil).</value></data>
+  <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>Eski geçmişi içe aktarma tarihiyle gönder</value></data>
+  <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>Varsayılan olarak kapalıdır. Eski dinlemeler Last.fm istatistiklerinde içe aktarma gününe sayılır; özgün yerel zamanlar korunur. Yalnızca elle geçmiş aktarımı için geçerlidir.</value></data>
+  <data name="ApplicationFont" xml:space="preserve">
+    <value>Uygulama yazı tipi</value>
+  </data>
+  <data name="UseIndependentLyricsFont" xml:space="preserve">
+    <value>Şarkı sözleri için ayrı yazı tipi kullan</value>
+  </data>
+  <data name="IndependentLyricsFontDescription" xml:space="preserve">
+    <value>Kapalıyken şarkı sözleri uygulama yazı tipini kullanır. Ayrı yazı tipi seçiminiz korunur.</value>
+  </data>
+  <data name="UseIndependentDesktopLyricsFont" xml:space="preserve">
+    <value>Masaüstü şarkı sözleri için ayrı yazı tipi kullan</value>
+  </data>
+  <data name="IndependentDesktopLyricsFontDescription" xml:space="preserve">
+    <value>Kapalıyken masaüstü şarkı sözleri uygulama yazı tipini kullanır. Ayrı yazı tipi seçiminiz korunur.</value>
+  </data>
+  <data name="LastFmFavoritesTitle" xml:space="preserve"><value>Favorileri bildir</value></data>
+  <data name="LastFmFavoritesHelp" xml:space="preserve"><value>Yerel favoriler ve kaldırmalar yalnızca Last.fm hesabına bildirilir; uzak favoriler indirilmez ve yerel liste veya sıralama değişmez. Çevrimdışıyken veya bildirim duraklatıldığında son değişiklik saklanır. Hesap bağlantısı kesilince veya hesap değiştirilince bekleyen değişiklikler silinir. Mevcut favoriler elle bildirilir.</value></data>
+  <data name="LastFmFavoritePendingCount" xml:space="preserve"><value>Bekleyen favori değişikliği: {0}</value></data>
+  <data name="LastFmImportFavorites" xml:space="preserve"><value>Mevcut favorileri bildir</value></data>
+  <data name="LastFmFavoriteResult" xml:space="preserve"><value>{0} parça sıraya alındı; {1} parçada ad veya sanatçı eksik.</value></data>
+  <data name="LastFmCancelFavoriteImport" xml:space="preserve"><value>İçe aktarmayı iptal et</value></data>
+  <data name="LastFmFavoriteImportCanceled" xml:space="preserve"><value>İçe aktarma iptal edildi; sıraya alınmış favoriler bildirilmeye devam edecek.</value></data>
 </root>

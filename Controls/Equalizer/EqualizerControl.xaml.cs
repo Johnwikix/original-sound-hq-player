@@ -4,7 +4,6 @@ using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Shapes;
 using Microsoft.UI.Xaml.Automation;
-using Microsoft.UI.Xaml.Media;
 using Windows.Globalization.NumberFormatting;
 using System;
 using WinUIMusicPlayer.Model;
@@ -134,18 +133,18 @@ namespace WinUIMusicPlayer.Controls.Equalizer
             numberBox.ApplyTemplate();
             // 使用原生 NumberBox，避免派生类型在 WinRT 样式匹配时退化为 Control。
             // 默认模板不转发 VerticalContentAlignment，待模板创建后调整内部文本框。
-            if (FindTemplatePart<TextBox>(numberBox, "InputBox") is TextBox input)
+            if (ToolUtils.FindVisualChild<TextBox>(numberBox, element => element.Name == "InputBox") is TextBox input)
             {
                 input.ApplyTemplate();
                 input.VerticalContentAlignment = VerticalAlignment.Center;
                 input.TextAlignment = TextAlignment.Center;
                 // NumberBoxTextBoxStyle 的 ContentElement 不绑定 VerticalContentAlignment。
-                if (FindTemplatePart<ScrollViewer>(input, "ContentElement") is ScrollViewer content)
+                if (ToolUtils.FindVisualChild<ScrollViewer>(input, element => element.Name == "ContentElement") is ScrollViewer content)
                 {
                     content.VerticalAlignment = VerticalAlignment.Center;
                     content.VerticalContentAlignment = VerticalAlignment.Center;
                 }
-                if (FindTemplatePart<Button>(input, "DeleteButton") is Button clearButton)
+                if (ToolUtils.FindVisualChild<Button>(input, element => element.Name == "DeleteButton") is Button clearButton)
                 {
                     clearButton.Visibility = Visibility.Collapsed;
                     clearButton.Opacity = 0;
@@ -158,17 +157,6 @@ namespace WinUIMusicPlayer.Controls.Equalizer
                     clearButton.IsTabStop = false;
                 }
             }
-        }
-
-        private static T? FindTemplatePart<T>(DependencyObject parent, string name) where T : FrameworkElement
-        {
-            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-            {
-                var child = VisualTreeHelper.GetChild(parent, i);
-                if (child is T element && element.Name == name) return element;
-                if (FindTemplatePart<T>(child, name) is T nested) return nested;
-            }
-            return null;
         }
 
         private void OnSliderPointerWheel(object sender, PointerRoutedEventArgs e)
@@ -185,12 +173,12 @@ namespace WinUIMusicPlayer.Controls.Equalizer
         {
             var slider = _sliders[0];
             slider.ApplyTemplate();
-            if (FindTemplatePart<FrameworkElement>(slider, "VerticalTemplate") is FrameworkElement track)
+            if (ToolUtils.FindVisualChild<FrameworkElement>(slider, element => element.Name == "VerticalTemplate") is FrameworkElement track)
             {
                 track.SizeChanged -= OnScaleGeometryChanged;
                 track.SizeChanged += OnScaleGeometryChanged;
             }
-            if (FindTemplatePart<Thumb>(slider, "VerticalThumb") is Thumb thumb)
+            if (ToolUtils.FindVisualChild<Thumb>(slider, element => element.Name == "VerticalThumb") is Thumb thumb)
             {
                 thumb.SizeChanged -= OnScaleGeometryChanged;
                 thumb.SizeChanged += OnScaleGeometryChanged;
@@ -205,8 +193,8 @@ namespace WinUIMusicPlayer.Controls.Equalizer
         {
             var slider = _sliders[0];
             if (slider == null || !slider.IsLoaded || !DbScaleCanvas.IsLoaded) return;
-            var track = FindTemplatePart<FrameworkElement>(slider, "VerticalTemplate");
-            var thumb = FindTemplatePart<Thumb>(slider, "VerticalThumb");
+            var track = ToolUtils.FindVisualChild<FrameworkElement>(slider, element => element.Name == "VerticalTemplate");
+            var thumb = ToolUtils.FindVisualChild<Thumb>(slider, element => element.Name == "VerticalThumb");
             if (track == null || thumb == null || thumb.ActualHeight <= 0 || track.ActualHeight <= thumb.ActualHeight) return;
             double top = track.TransformToVisual(DbScaleCanvas).TransformPoint(new Windows.Foundation.Point()).Y;
             double travel = track.ActualHeight - thumb.ActualHeight;

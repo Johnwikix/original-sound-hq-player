@@ -3,15 +3,15 @@ using System.Numerics;
 
 namespace AudioPlayer.Playback;
 
-/// <summary>Zero-latency FIR. Preparation is off-thread; history belongs exclusively to the renderer.</summary>
+/// <summary>零附加延迟的 FIR；准备工作在后台线程执行，渲染器独占历史状态。</summary>
 internal sealed class ConvolutionFilter
 {
     private const int Block = 128, FftSize = Block * 2;
     private readonly double[][] _taps, _history;
     private readonly int _length, _channels;
     private readonly bool _useSimd;
-    // Structure-of-arrays spectra: contiguous real bins followed by imaginary bins.
-    // This avoids lane shuffles in the partition multiply-accumulate hot loop.
+    // 采用分数组频谱布局：连续实部频点之后存放连续虚部频点。
+    // 避免在分区乘加的热点循环中重排向量通道。
     private readonly double[][][] _kernels, _spectra;
     private readonly Complex[][] _input, _work;
     private readonly double[][] _tail, _sum;
@@ -26,8 +26,8 @@ internal sealed class ConvolutionFilter
     internal bool HasSameCoefficients(ConvolutionFilter other)
     {
         if (ReferenceEquals(Prepared, other.Prepared)) return true;
-        // File IRs are deliberately not cached. Compare the bounded, immutable coefficients
-        // once at a track boundary so unchanged files can transfer their render history too.
+        // 文件脉冲响应不进入缓存。在曲目边界只比较一次有界且不可变的系数，
+        // 使内容未变的文件也能转移渲染历史。
         if (_channels != other._channels || _length != other._length || _partitions != other._partitions) return false;
         for (int ch = 0; ch < _channels; ch++)
         {
@@ -139,8 +139,8 @@ internal sealed class ConvolutionFilter
         }
     }
 
-    // The first partition is direct, so the FFT tail is ready one block before it is needed.
-    // This retains zero added latency and supports arbitrary render callback sizes.
+    // 首个分区采用直接卷积，使 FFT 尾部结果提前一个块就绪。
+    // 因此不会增加延迟，并支持任意大小的渲染回调。
     private void ProcessTail()
     {
         for (int ch = 0; ch < _channels; ch++)

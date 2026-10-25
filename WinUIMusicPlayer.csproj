@@ -1,9 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
+  <Sdk Name="PublishWithSatoriGC" Version="11.0.0-satori.39292159428.1" />
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net11.0-windows10.0.26100.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
     <RootNamespace>WinUIMusicPlayer</RootNamespace>
+    <!-- Runtime Async：运行时驱动 async 状态机（preview 特性，BCL 已默认编译为该模型） -->
+    <Features>$(Features);runtime-async=on</Features>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <Platforms>x64;ARM64</Platforms>
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
@@ -107,13 +110,17 @@
     <PackageReference Include="CommunityToolkit.WinUI.Controls.ColorPicker" Version="8.2.251219" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.Primitives" Version="8.2.251219" />
     <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
-    <PackageReference Include="DevWinUI" Version="10.4.1" />
+    <PackageReference Include="DevWinUI" Version="10.8.0" />
     <PackageReference Include="H.NotifyIcon.WinUI" Version="2.4.1" />
     <PackageReference Include="FFmpeg.AutoGen" Version="9.0.1.1" />
-    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.13" />
     <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
     <PackageReference Include="Microsoft.PinYinConverter" Version="1.0.0" />
-    <PackageReference Include="Microsoft.Windows.Compatibility" Version="10.0.12" />
+    <PackageReference Include="csharp-kana" Version="1.0.2" />
+    <PackageReference Include="csharp-pinyin" Version="1.0.1" />
+    <PackageReference Include="LibNMeCab" Version="0.10.2" />
+    <PackageReference Include="LibNMeCab.IpaDicBin" Version="0.10.0" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="10.0.13" />
     <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.260804.1" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.2705" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
@@ -123,10 +130,10 @@
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
     <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
     <PackageReference Include="System.Data.SqlClient" Version="4.9.1" />
-    <PackageReference Include="System.IO.Hashing" Version="10.0.12" />
-    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.12" />
+    <PackageReference Include="System.IO.Hashing" Version="10.0.13" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
     <PackageReference Include="WinUIEx" Version="2.9.3" />
-    <PackageReference Include="z440.atl.core" Version="7.17.0" />
+    <PackageReference Include="z440.atl.core" Version="7.18.0" />
     <PackageReference Include="ZLinq" Version="1.5.6" />
   </ItemGroup>
   <ItemGroup>
@@ -309,7 +316,6 @@
     <AppxBundlePlatforms>x64</AppxBundlePlatforms>
     <PackageIcon>Music.png</PackageIcon>
     <ApplicationIcon>Assets\icon.ico</ApplicationIcon>
-    <PublishAot>False</PublishAot>
     <PlatformTarget>x64</PlatformTarget>
     <NuGetAuditMode>all</NuGetAuditMode>
     <AssemblyName>OriginalSound HIFI Player</AssemblyName>
@@ -376,4 +382,20 @@
     <Content Include="UpdateNotes.json" />
     <Content Include="Legal\*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
+  <!-- Satori 的资产路径混用分隔符；统一为 FullPath，确保 MSIX 能按优化快照排除 R2R/裁剪前的输入。 -->
+  <Target Name="NormalizeSatoriAssetPathsForMsix" AfterTargets="UseSatoriGC" Condition="'$(UseSatoriGC)' == 'true' and '$(PublishAot)' != 'true'">
+    <ItemGroup>
+      <_SatoriNormalizedRuntimeAsset Include="@(RuntimePackAsset->'%(FullPath)')" />
+      <_SatoriNormalizedCopyLocal Include="@(ReferenceCopyLocalPaths->'%(FullPath)')" />
+
+      <RuntimePackAsset Remove="@(RuntimePackAsset)" />
+      <RuntimePackAsset Include="@(_SatoriNormalizedRuntimeAsset)" />
+
+      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" />
+      <ReferenceCopyLocalPaths Include="@(_SatoriNormalizedCopyLocal)" />
+
+      <_SatoriNormalizedRuntimeAsset Remove="@(_SatoriNormalizedRuntimeAsset)" />
+      <_SatoriNormalizedCopyLocal Remove="@(_SatoriNormalizedCopyLocal)" />
+    </ItemGroup>
+  </Target>
 </Project>

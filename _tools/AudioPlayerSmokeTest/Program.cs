@@ -1,6 +1,8 @@
 using System.Collections.Concurrent;
 using BassPlayerIpc.Shared;
 
+if (args.Contains("--startup-timing")) return StartupTimingProbe.Run(args);
+
 // AudioPlayer（BassPlayerSharp 替代）AOT 版冒烟测试：
 // 充当主程序客户端：握手 IPC → SetMusicUrl → Play → 轮询进度 → EQ → 设备枚举 → MusicEnd。
 // 用法: AudioPlayerSmokeTest <AOT AudioPlayer.exe 路径> <音频文件路径> [持续秒数]
@@ -93,6 +95,7 @@ int setLen = BinarySerializer.WriteIpcSetting(setBuf, new IpcSetting
     BassOutputDeviceId = devIdx,
     Latency = 300,
     IsDopEnabled = dop,
+    SpectralEnhancement = args.Contains("--enhance") ? SpectralEnhancementMode.LossyAndLowRateLossless : SpectralEnhancementMode.Off,
     DsdGain = 6,
     DsdPcmFreq = 88200,
     IsEqualizerEnabled = false,
@@ -120,8 +123,57 @@ Span<byte> playBuf = new byte[BinarySerializer.PlayRequestSize];
 BinarySerializer.WritePlayRequest(playBuf, new PlayRequest { Url = mediaPath });
 t = Send(CommandId.Play, playBuf, out _);
 Console.WriteLine($"[smoke] Play(confirmed) → {t}（已收到执行确认）");
+string? expectedRateText = args.FirstOrDefault(a => a.StartsWith("--expect-rate="))?[14..];
+if (expectedRateText != null)
+{
+    int expectedRate = int.Parse(expectedRateText, System.Globalization.CultureInfo.InvariantCulture);
+    if (!SpinWait.SpinUntil(() => states.CurrentDspState?.State.SampleRate == expectedRate, 5000))
+        throw new InvalidOperationException($"Expected active device-source rate {expectedRate}, got {states.CurrentDspState?.State.SampleRate}");
+    Console.WriteLine($"[smoke] PASS: actual PCM output rate {expectedRate} Hz");
+}
 Thread.Sleep(400); // 观察首段输出与通知
 PumpNotifications();
+
+if (args.Contains("--fft-lifecycle"))
+{
+    try
+    {
+        int frames = 0;
+        states.FftDataChanged += _ => Interlocked.Increment(ref frames);
+        void SampleFftProcess(string phase)
+        {
+            server.Refresh();
+            Console.WriteLine($"[fft-memory] {phase}: private={server.PrivateMemorySize64}, working={server.WorkingSet64}, handles={server.HandleCount}, threads={server.Threads.Count}, frames={Volatile.Read(ref frames)}");
+        }
+        if (!SpinWait.SpinUntil(() => states.TryGetProgress(out var p) && p.Playing, 5000))
+            throw new InvalidOperationException("PCM playback not ready");
+        Thread.Sleep(2000);
+        SampleFftProcess("baseline");
+        for (int cycle = 0; cycle < 3; cycle++)
+        {
+            byte[] enabled = [1];
+            if (Send(CommandId.SetFftEnabled, enabled, out _) != MessageTypeId.Success)
+                throw new InvalidOperationException("FFT enable rejected");
+            if (!SpinWait.SpinUntil(() => states.CurrentFftSnapshot is { IsAvailable: true }, 5000))
+                throw new InvalidOperationException("FFT data missing");
+            Thread.Sleep(2000);
+            SampleFftProcess($"enabled-{cycle}");
+            enabled[0] = 0;
+            if (Send(CommandId.SetFftEnabled, enabled, out _) != MessageTypeId.Success)
+                throw new InvalidOperationException("FFT disable rejected");
+            if (!SpinWait.SpinUntil(() => states.CurrentFftSnapshot is { IsAvailable: false }, 5000))
+                throw new InvalidOperationException("FFT disabled marker missing");
+            int stoppedFrames = Volatile.Read(ref frames);
+            Thread.Sleep(2000);
+            if (Volatile.Read(ref frames) != stoppedFrames)
+                throw new InvalidOperationException("FFT continues transmitting after disable");
+            SampleFftProcess($"disabled-{cycle}");
+        }
+        Console.WriteLine("[smoke] PASS: FFT enable/disable/re-enable over real pipes, no frames after disable");
+        return 0;
+    }
+    finally { StopPlayer(); }
+}
 
 // Memory experiment: one feature at a time; process counters are sampled by the client.
 if (args.Contains("--memory"))
@@ -157,23 +209,86 @@ if (args.Contains("--memory"))
             if (Send(CommandId.QueueNext, request.Write(), out _) != MessageTypeId.Success)
                 throw new InvalidOperationException("Memory scenario preload rejected");
         }
-        for (int second = 0; second < runSeconds; second++)
+        if (!SpinWait.SpinUntil(() => states.TryGetProgress(out var p) && p.Playing && p.CurrentMs > 100, 5000))
+            throw new InvalidOperationException("Memory scenario did not start rendering");
+        Console.WriteLine("[memory-phase] measuring");
+        if (scenario == "trackswitch")
         {
-            if (scenario == "switch") UpdateMemoryDsp(settings with { PlaybackRate = second % 2 == 0 ? 1.5 : 1 });
-            Thread.Sleep(1000);
-            SampleProcess("playing");
+            int ReadPositiveOption(string option, int fallback)
+            {
+                string? value = args.FirstOrDefault(a => a.StartsWith(option, StringComparison.Ordinal))?[option.Length..];
+                int result = value == null ? fallback : int.Parse(value, System.Globalization.CultureInfo.InvariantCulture);
+                if (result <= 0) throw new ArgumentOutOfRangeException(option);
+                return result;
+            }
+            int switches = ReadPositiveOption("--switch-count=", runSeconds);
+            int interval = ReadPositiveOption("--switch-interval-ms=", 1000);
+            string next = Path.GetFullPath(args.FirstOrDefault(a => a.StartsWith("--next="))?[7..] ?? mediaPath);
+            byte[] switchPayload = new byte[BinarySerializer.PlayRequestSize];
+            for (int index = 0; index < switches; index++)
+            {
+                states.TryGetProgress(out var before);
+                var clock = System.Diagnostics.Stopwatch.StartNew();
+                BinarySerializer.WritePlayRequest(switchPayload, new PlayRequest { Url = index % 2 == 0 ? next : mediaPath });
+                if (Send(CommandId.Play, switchPayload, out _) != MessageTypeId.Success)
+                    throw new InvalidOperationException($"Track switch {index + 1} rejected");
+                if (!SpinWait.SpinUntil(() => states.TryGetProgress(out var p) && p.Epoch != before.Epoch
+                    && p.Playing && p.CurrentMs > 100, 5000))
+                    throw new InvalidOperationException($"Track switch {index + 1} did not advance a new session");
+                int remaining = interval - (int)Math.Min(int.MaxValue, clock.ElapsedMilliseconds);
+                if (remaining > 0) Thread.Sleep(remaining);
+                if (!states.TryGetProgress(out var current) || !current.Playing || current.CurrentMs <= 100 || playbackEnds != 0)
+                    throw new InvalidOperationException($"Track switch {index + 1} stopped prematurely");
+                Console.WriteLine($"[memory-switch] {index + 1},{current.Epoch},{current.CurrentMs},{current.TotalMs}");
+                SampleProcess("playing");
+            }
         }
+        else
+        {
+            long previousPosition = -1;
+            for (int second = 0; second < runSeconds; second++)
+            {
+                if (scenario == "switch") UpdateMemoryDsp(settings with { PlaybackRate = second % 2 == 0 ? 1.5 : 1 });
+                Thread.Sleep(1000);
+                if (scenario == "baseline")
+                {
+                    if (!states.TryGetProgress(out var current) || !current.Playing || current.CurrentMs <= previousPosition || playbackEnds != 0)
+                        throw new InvalidOperationException("Continuous playback stopped advancing");
+                    previousPosition = current.CurrentMs;
+                }
+                SampleProcess("playing");
+            }
+        }
+        Console.WriteLine("[smoke] PASS: memory scenario rendered throughout the measurement");
         Send(CommandId.MusicEnd, ReadOnlySpan<byte>.Empty, out _);
         Console.WriteLine("[memory-phase] stopped");
         Thread.Sleep(2000);
         SampleProcess("stopped");
-        using var collect = EventWaitHandle.OpenExisting("Local\\AudioPlayerMemory-" + Environment.GetEnvironmentVariable("ORIGINALSOUND_IPC_SCOPE"));
-        collect.Set();
-        Thread.Sleep(2500);
-        SampleProcess("after-gc");
+        if (!args.Contains("--no-collect"))
+        {
+            using var collect = EventWaitHandle.OpenExisting("Local\\AudioPlayerMemory-" + Environment.GetEnvironmentVariable("ORIGINALSOUND_IPC_SCOPE"));
+            collect.Set();
+            Thread.Sleep(2500);
+            SampleProcess("after-gc");
+        }
         return 0;
     }
     finally { StopPlayer(); }
+}
+
+if(args.Contains("--upsampling-master"))
+{
+    byte[] settingsPayload=new byte[DspProtocol.SettingsSize];
+    foreach(bool enabled in new[]{false,true})
+    {
+        DspProtocol.WriteSettings(settingsPayload,new DspSettings{IsEnabled=enabled});
+        if(Send(CommandId.UpdateDsp,settingsPayload,out _)!=MessageTypeId.Success)
+            throw new InvalidOperationException("DSP master update failed");
+        int expected=enabled?int.Parse(expectedRateText!):44100;
+        if(!SpinWait.SpinUntil(()=>states.CurrentDspState?.State is {} state && state.IsEnabled==enabled && state.SampleRate==expected,5000))
+            throw new InvalidOperationException("Upsampling did not follow DSP master");
+        Console.WriteLine($"[smoke] PASS: DSP master {enabled} / actual rate {expected}");
+    }
 }
 
 // Actual NativeAOT + persistent IPC + WASAPI integration for the new playback chain.

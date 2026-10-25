@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net11.0-windows10.0.26100.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <PlatformTarget>x64</PlatformTarget>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>preview</LangVersion>
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../DesktopLyrics/DesktopLyricsViewModel.cs;../../DesktopLyrics/DesktopLyricsStyle.cs;../../State/DesktopLyricsState.cs;../../Model/DesktopLyricsMode.cs;../../Model/SaveDesktopLyricsState.cs;../../Services/AppLifecycle.cs" />
+    <Page Include="../../Style/CustomFontStyle.xaml" Link="CustomFontStyle.xaml" />
+    <Compile Include="../../Helper/DialogHelper.cs;../../Services/ApplicationFontService.cs;../../Utils/ApplicationFont.cs;../../Model/FontInfo.cs;../../Model/EffectComboBoxItem.cs" />
+    <Compile Include="../../State/*PreferencesState.cs;../../State/PreferencesState.cs" />
+    <Compile Include="../../Model/SaveSettings.cs;../../Model/SaveSettings.Audio.cs;../../Model/LyricsEasingJsonConverters.cs;../../Helper/SettingsJsonContext.cs" />
+    <ProjectReference Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/AnimatedWin2dControls.csproj" />
+    <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.260804.1" />
+    <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+  </ItemGroup>
+</Project>

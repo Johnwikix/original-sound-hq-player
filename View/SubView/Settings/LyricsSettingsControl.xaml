@@ -29,6 +29,74 @@
 
                 <TextBlock x:Uid="SettingLyrics" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
+                <controls:SettingsCard x:Uid="LyricsFilePriority">
+                    <StackPanel
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <ComboBox
+                            x:Name="FirstLyricsFormat"
+                            MinWidth="86"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFirst')}"
+                            ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}"
+                            SelectedIndex="{x:Bind ViewModel.FirstLyricsFormatIndex, Mode=TwoWay}" />
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="→" />
+                        <ComboBox
+                            x:Name="SecondLyricsFormat"
+                            MinWidth="86"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPrioritySecond')}"
+                            ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}"
+                            SelectedIndex="{x:Bind ViewModel.SecondLyricsFormatIndex, Mode=TwoWay}" />
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="→" />
+                        <ComboBox
+                            x:Name="ThirdLyricsFormat"
+                            MinWidth="86"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityThird')}"
+                            ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}"
+                            SelectedIndex="{x:Bind ViewModel.ThirdLyricsFormatIndex, Mode=TwoWay}" />
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="→" />
+                        <ComboBox
+                            x:Name="FourthLyricsFormat"
+                            MinWidth="86"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFourth')}"
+                            ItemsSource="{x:Bind ViewModel.LyricsFormatOptions}"
+                            SelectedIndex="{x:Bind ViewModel.FourthLyricsFormatIndex, Mode=TwoWay}" />
+                    </StackPanel>
+                </controls:SettingsCard>
+
+                <controls:SettingsCard x:Uid="LyricsSourcePriority">
+                    <StackPanel
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <ComboBox
+                            x:Name="FirstLyricsSource"
+                            MinWidth="130"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPriorityFirst')}"
+                            ItemsSource="{x:Bind ViewModel.LyricsSourceOptions}"
+                            SelectedIndex="{x:Bind ViewModel.FirstLyricsSourceIndex, Mode=TwoWay}" />
+                        <TextBlock
+                            VerticalAlignment="Center"
+                            Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                            Text="→" />
+                        <ComboBox
+                            x:Name="SecondLyricsSource"
+                            MinWidth="130"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('LyricsPrioritySecond')}"
+                            ItemsSource="{x:Bind ViewModel.LyricsSourceOptions}"
+                            SelectedIndex="{x:Bind ViewModel.SecondLyricsSourceIndex, Mode=TwoWay}" />
+                    </StackPanel>
+                </controls:SettingsCard>
+
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
                         <TextBlock x:Uid="AutoLyricMatching" TextWrapping="Wrap" />
@@ -36,16 +104,51 @@
                     <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsAutoLyricsEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
-                <controls:SettingsCard>
+                <controls:SettingsCard x:Uid="LyricsShowTranslation">
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsLyricsTranslationEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsExpander x:Uid="LyricsShowPronunciation">
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsLyricsPronunciationEnabled, Mode=TwoWay}" />
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard x:Uid="LyricsPronunciationMandarin">
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsMandarinPronunciationEnabled, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="LyricsPronunciationCantonese">
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsCantonesePronunciationEnabled, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="LyricsPronunciationJapanese">
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsJapanesePronunciationEnabled, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="LyricsPronunciationKorean">
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsKoreanPronunciationEnabled, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
+
+                <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('IndependentLyricsFontDescription')}">
                     <controls:SettingsCard.Header>
                         <TextBlock x:Uid="LyricsFontFamily" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
-                    <ComboBox
-                        x:Name="LyricsFontFamily"
-                        Width="300"
-                        ItemTemplate="{StaticResource FontComboboxTemplate}"
-                        ItemsSource="{x:Bind ViewModel.AppViewModel.FontFamilyList, Mode=OneWay}"
-                        SelectedValue="{x:Bind ViewModel.AppViewModel.FontFamily, Mode=TwoWay}" />
+                    <Grid Width="300" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                        <ToggleSwitch
+                            x:Name="IndependentLyricsFontToggle"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('UseIndependentLyricsFont')}"
+                            ToolTipService.ToolTip="{x:Bind tool:ToolUtils.GetString('UseIndependentLyricsFont')}"
+                            IsOn="{x:Bind ViewModel.AppViewModel.UseIndependentLyricsFont, Mode=TwoWay}" />
+                        <ComboBox
+                            x:Name="LyricsFontFamily"
+                            Grid.Column="1"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('UseIndependentLyricsFont')}"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.UseIndependentLyricsFont, Mode=OneWay}"
+                            ItemTemplate="{StaticResource FontComboboxTemplate}"
+                            ItemsSource="{x:Bind ViewModel.AppViewModel.FontFamilyList, Mode=OneWay}"
+                            SelectedItem="{x:Bind ViewModel.AppViewModel.FontFamily, Mode=TwoWay}" />
+                    </Grid>
                 </controls:SettingsCard>
 
                 <controls:SettingsCard>
@@ -195,7 +298,7 @@
                 </controls:SettingsCard>
 
                 <!--  高级歌词效果:依赖总开关的细项收进二级折叠  -->
-                <controls:SettingsExpander Description="{x:Bind tool:ToolUtils.GetString('RebootToApply'), Mode=OneWay}">
+                <controls:SettingsExpander>
                     <controls:SettingsExpander.Header>
                         <TextBlock x:Uid="EnableAdvancedLyricsEffect" TextWrapping="Wrap" />
                     </controls:SettingsExpander.Header>
@@ -369,11 +472,34 @@
 
                 <TextBlock x:Uid="IconDesktopLyrics" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
-                <controls:SettingsCard x:Uid="DesktopLyricsAutoHide">
-                    <ToggleSwitch
-                        VerticalAlignment="Center"
-                        IsOn="{x:Bind ViewModel.DesktopLyrics.AutoHideOnPlayingDetail, Mode=TwoWay}" />
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock x:Uid="DesktopLyricsModeMenu" TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ComboBox
+                        x:Name="DesktopLyricsMode"
+                        Width="300"
+                        SelectedValue="{x:Bind ViewModel.DesktopLyrics.Mode, Mode=TwoWay, Converter={StaticResource EnumToStringConverter}}"
+                        SelectedValuePath="Tag">
+                        <ComboBoxItem
+                            Content="{x:Bind tool:ToolUtils.GetString('DesktopLyricsModeFloating')}"
+                            Tag="Floating" />
+                        <ComboBoxItem
+                            Content="{x:Bind tool:ToolUtils.GetString('DesktopLyricsModeTaskbar')}"
+                            Tag="Taskbar" />
+                    </ComboBox>
                 </controls:SettingsCard>
+
+                <controls:SettingsExpander x:Uid="DesktopLyricsAutoHide">
+                    <controls:SettingsExpander.Items>
+                        <controls:SettingsCard x:Uid="DesktopLyricsAutoHideFloating">
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.DesktopLyrics.AutoHideFloatingOnPlayingDetail, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                        <controls:SettingsCard x:Uid="DesktopLyricsAutoHideTaskbar">
+                            <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.DesktopLyrics.AutoHideTaskbarOnPlayingDetail, Mode=TwoWay}" />
+                        </controls:SettingsCard>
+                    </controls:SettingsExpander.Items>
+                </controls:SettingsExpander>
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
@@ -389,15 +515,40 @@
                         Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsFontSize, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
-                <controls:SettingsCard>
+                <controls:SettingsCard x:Uid="DesktopLyricsTaskbarLyricsWidth">
+                    <NumberBox
+                        Width="300"
+                        LargeChange="100"
+                        Maximum="2400"
+                        Minimum="240"
+                        SmallChange="10"
+                        SpinButtonPlacementMode="Inline"
+                        Value="{x:Bind ViewModel.AppViewModel.DesktopLyricsTaskbarLyricsWidth, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('IndependentDesktopLyricsFontDescription')}">
                     <controls:SettingsCard.Header>
                         <TextBlock x:Uid="DesktopLyricsFontFamily" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
-                    <ComboBox
-                        Width="300"
-                        ItemTemplate="{StaticResource FontComboboxTemplate}"
-                        ItemsSource="{x:Bind ViewModel.AppViewModel.FontFamilyList, Mode=OneWay}"
-                        SelectedValue="{x:Bind ViewModel.AppViewModel.DesktopLyricsFontFamily, Mode=TwoWay}" />
+                    <Grid Width="300" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                        <ToggleSwitch
+                            x:Name="IndependentDesktopLyricsFontToggle"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('UseIndependentDesktopLyricsFont')}"
+                            ToolTipService.ToolTip="{x:Bind tool:ToolUtils.GetString('UseIndependentDesktopLyricsFont')}"
+                            IsOn="{x:Bind ViewModel.AppViewModel.UseIndependentDesktopLyricsFont, Mode=TwoWay}" />
+                        <ComboBox
+                            x:Name="DesktopLyricsFontComboBox"
+                            Grid.Column="1"
+                            HorizontalAlignment="Stretch"
+                            VerticalAlignment="Center"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('UseIndependentDesktopLyricsFont')}"
+                            IsEnabled="{x:Bind ViewModel.AppViewModel.UseIndependentDesktopLyricsFont, Mode=OneWay}"
+                            ItemTemplate="{StaticResource FontComboboxTemplate}"
+                            ItemsSource="{x:Bind ViewModel.AppViewModel.FontFamilyList, Mode=OneWay}"
+                            SelectedItem="{x:Bind ViewModel.AppViewModel.DesktopLyricsFontFamily, Mode=TwoWay}" />
+                    </Grid>
                 </controls:SettingsCard>
 
                 <controls:SettingsCard>
@@ -435,6 +586,13 @@
                         <TextBlock x:Uid="DesktopLyricsTranslation" TextWrapping="Wrap" />
                     </controls:SettingsCard.Header>
                     <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsTranslationEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
+                <controls:SettingsCard>
+                    <controls:SettingsCard.Header>
+                        <TextBlock x:Uid="DesktopLyricsPronunciation" TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsDesktopLyricsPronunciationEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
 
                 <controls:SettingsCard>

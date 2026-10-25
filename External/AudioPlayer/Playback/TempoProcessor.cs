@@ -2,16 +2,16 @@ using AudioPlayer.Decode;
 
 namespace AudioPlayer.Playback;
 
-/// <summary>Streaming WSOLA time stretch on the decoder thread. Channels share one alignment.
-/// A 20 ms window and bounded waveform search preserve pitch; 1x bypasses this processor.
-/// Storage is bounded independently of track duration and reused after seeking.</summary>
+/// <summary>在解码线程执行流式 WSOLA 时间伸缩；所有声道共用对齐位置。
+/// 使用 20 毫秒窗口和有界波形搜索保持音高；一倍速时旁路此处理器。
+/// 存储空间有界且与曲目时长无关，定位后继续复用。</summary>
 internal sealed class TempoProcessor
 {
     private readonly int _channels;
     private readonly int _hopFrames, _searchFrames, _searchStride;
     private readonly double _playbackRate;
     private readonly double[] _input, _tail, _output;
-    // Source frames and output frames are different time domains when rate != 1.
+    // 速率不为一时，源帧和输出帧属于不同的时间域。
     private long _inputStartFrame;
     private long _outputFramesProduced;
     private int _inputFrameCount, _outputReadOffset, _outputFrameCount;
@@ -24,7 +24,7 @@ internal sealed class TempoProcessor
         _hopFrames = Math.Max(16, sampleRate / 100);
         _searchFrames = Math.Max(8, sampleRate / 200);
         _searchStride = Math.Max(1, sampleRate / 12000);
-        // Hold the next analysis hop plus its search window, including large source skips at 5x.
+        // 保留下一个分析步及其搜索窗口，包括五倍速时较大的源数据跳跃。
         _input = new double[(_hopFrames * ((int)Math.Ceiling(rate) + 4) + _searchFrames * 2 + 16384) * channels];
         _tail = new double[_hopFrames * channels];
         _output = new double[_hopFrames * channels];
@@ -84,7 +84,7 @@ internal sealed class TempoProcessor
         {
             int low = Math.Max(0, center - _searchFrames), high = Math.Min(_inputFrameCount - 2 * _hopFrames, center + _searchFrames);
             double best = double.NegativeInfinity;
-            // Coarse search followed by sample-accurate refinement keeps high-rate input bounded.
+            // 先粗搜索，再精确到样本细化，限制高采样率输入的搜索开销。
             for (int candidate = low; candidate <= high; candidate += _searchStride)
             {
                 double score = Correlation(candidate);

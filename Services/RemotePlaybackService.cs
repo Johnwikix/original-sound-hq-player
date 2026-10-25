@@ -31,6 +31,7 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
     private Music? _music;
     private sealed record Snapshot(ProgressSnapshot Progress);
     public event Action? Ended;
+    public event Action<Music, ProgressSnapshot, bool>? PlaybackStarted;
     public event Action<Music, long, bool>? Failed;
     public bool IsActive { get { lock (_gate) return _active; } }
     public bool WantsPlay { get { lock (_gate) return _intent; } }
@@ -211,6 +212,7 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
                 if (reply.Phase != previous)
                 {
                     previous = reply.Phase;
+                    bool countStart = false;
                     await App.MainWindow.DispatcherQueue.EnqueueAsync(() =>
                     {
                         if (token.IsCancellationRequested || generation != _generation || !state.CanPublishState) return;
@@ -219,7 +221,13 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
                         if (reply.DurationMs is > 0) music.Duration = TimeSpan.FromMilliseconds(reply.DurationMs.Value);
                         if (state.IsPlaying)
                         {
-                            if (!started) { statistics.StartSession(music); started = true; }
+                            if (!started)
+                            {
+                                statistics.StartSession(music);
+                                started = true;
+                                countStart = true;
+                                if (GetProgress() is { } confirmed) PlaybackStarted?.Invoke(music, confirmed, _startPositionMs > 0);
+                            }
                             state.StartProgressTimer();
                         }
                         else state.StopProgressTimer();
@@ -230,6 +238,7 @@ public sealed class RemotePlaybackService(WebDavLibraryService library, WebDavTr
                             Ended?.Invoke();
                         }
                     });
+                    if (countStart) await statistics.RecordPlaybackStartAsync(music);
                 }
                 if (reply.Phase is StreamPhase.Failed)
                 {

@@ -18,6 +18,9 @@ public static class IpcConstants
     public const int MaxRequestSize = 2048;
     public const int MaxResponseSize = 512;
     public const int MaxNotificationSize = 512;
+    // FFT snapshots are coalesced state, not reliable notifications. Keep their
+    // limit separate so the existing notification contract remains unchanged.
+    public const int MaxStatePayloadSize = 64 * 1024;
 
     public const int MaxPayloadSize = 256 * 1024;
 }

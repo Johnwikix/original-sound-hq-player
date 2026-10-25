@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:WinUIMusicPlayer.View.SubView"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:tool="using:WinUIMusicPlayer.Utils"
     xmlns:winex="using:WinUIEx"
     Title="专辑属性"
     MinWidth="550"
@@ -15,7 +16,7 @@
     <winex:WindowEx.SystemBackdrop>
         <DesktopAcrylicBackdrop />
     </winex:WindowEx.SystemBackdrop>
-    <Grid>
+    <Grid tool:ApplicationFont.IsEnabled="True">
         <Grid
             x:Name="AlbumDetailTitleBar"
             Height="44"

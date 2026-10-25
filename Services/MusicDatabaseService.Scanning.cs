@@ -1,5 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection;
 using System;
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -71,6 +72,14 @@ public partial class MusicDatabaseService
         private async Task<(List<Music> Added, int Updated)> CommitScanBatchAsync(IReadOnlyList<(Music Music, string Lyrics)> batch,
             Func<IReadOnlyList<Music>, Task>? onBatchInserted)
         {
+            var parser = new WinUIMusicPlayer.Services.Lyrics.LyricsParser();
+            var embedded = new Dictionary<Music, LyricsDocument>();
+            foreach (var entry in batch)
+            {
+                if (entry.Music is null || string.IsNullOrWhiteSpace(entry.Lyrics)) continue;
+                try { embedded[entry.Music] = parser.Import(entry.Lyrics); }
+                catch (Exception ex) when (ex is FormatException or OverflowException or System.Xml.XmlException or System.Text.RegularExpressions.RegexMatchTimeoutException) { _logger.LogWarning(ex, "Embedded lyrics could not be imported: {Path}", entry.Music.Path); }
+            }
             var added = new List<Music>(batch.Count);
             int updated = 0;
             await _dbConnection.RunInTransactionAsync(db =>
@@ -99,12 +108,8 @@ public partial class MusicDatabaseService
                             music.Extension, music.BitDepth, music.BitRate, music.SampleRate, music.Channel,
                             music.TrackNumber, music.DiskNumber, music.Year, music.CreateTime, music.UpdateTime, music.Id);
                     }
-                    if (string.IsNullOrWhiteSpace(lyrics)) continue;
-                    var existing = db.Find<MusicLyrics>(music.Id);
-                    if (existing is null || (string.IsNullOrWhiteSpace(existing.Lyrics)
-                        && string.IsNullOrWhiteSpace(existing.TranslatedLyrics)
-                        && string.IsNullOrWhiteSpace(existing.Krc) && string.IsNullOrWhiteSpace(existing.TKrc)))
-                        db.InsertOrReplace(new MusicLyrics { MusicId = music.Id, Lyrics = lyrics });
+                    if (embedded.TryGetValue(music, out var document))
+                        WinUIMusicPlayer.Services.Lyrics.LyricsRepository.AddEmbeddedInTransaction(db, music.Id, document);
                 }
             });
             if (added.Count > 0 && onBatchInserted is not null)
@@ -140,7 +145,7 @@ public partial class MusicDatabaseService
                 foreach (var music in songs)
                 {
                     db.Delete<Music>(music.Id);
-                    db.Delete<MusicLyrics>(music.Id);
+                    WinUIMusicPlayer.Services.Lyrics.LyricsRepository.DeleteInTransaction(db, music.Id);
                 }
                 db.Execute("DELETE FROM SubFolder WHERE FolderId = ?", folderId);
                 db.Delete<Folder>(folderId);
@@ -256,7 +261,7 @@ public partial class MusicDatabaseService
                     foreach (var music in missing)
                     {
                         db.Delete<Music>(music.Id);
-                        db.Delete<MusicLyrics>(music.Id);
+                        WinUIMusicPlayer.Services.Lyrics.LyricsRepository.DeleteInTransaction(db, music.Id);
                     }
                 });
                 changes += missing.Count;
@@ -293,7 +298,7 @@ public partial class MusicDatabaseService
                     foreach (var music in batch)
                     {
                         db.Delete<Music>(music.Id);
-                        db.Delete<MusicLyrics>(music.Id);
+                        WinUIMusicPlayer.Services.Lyrics.LyricsRepository.DeleteInTransaction(db, music.Id);
                     }
                 });
         }
@@ -382,7 +387,7 @@ public partial class MusicDatabaseService
                 foreach (var music in owned)
                 {
                     db.Delete<Music>(music.Id);
-                    db.Delete<MusicLyrics>(music.Id);
+                    WinUIMusicPlayer.Services.Lyrics.LyricsRepository.DeleteInTransaction(db, music.Id);
                 }
                 db.Delete<Folder>(external.Id);
             });

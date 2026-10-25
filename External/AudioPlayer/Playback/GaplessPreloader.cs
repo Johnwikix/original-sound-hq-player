@@ -4,8 +4,8 @@ namespace AudioPlayer.Playback;
 
 internal enum GaplessPreparationState { Empty, Waiting, Preparing, Ready, Failed }
 
-/// <summary>One running open plus one replaceable request. The stream lock serializes publication
-/// with engine mutations. Until publication succeeds, the worker owns the session and its cleanup.</summary>
+/// <summary>同时保留一个正在打开的操作和一个可替换请求；流锁使结果发布
+/// 与引擎状态变更串行执行；发布成功前，会话及其清理归工作线程负责。</summary>
 internal sealed class GaplessPreloader(object gate,
     Func<GaplessPreparation, CancellationToken, Session?> open,
     Func<GaplessPreparation, Session, bool> publish)
@@ -17,7 +17,7 @@ internal sealed class GaplessPreloader(object gate,
     private Task _worker = Task.CompletedTask;
     private bool _running, _stopped;
     private long _generation;
-    // Read under the same gate as the engine; no second copy of the accepted plan.
+    // 在与引擎相同的锁内读取，不另存已接受计划的副本。
     internal GaplessRequest? Request { get; private set; }
     internal GaplessPreparationState State { get; private set; }
     internal Task Completion { get { lock (gate) return _worker; } }
@@ -56,8 +56,8 @@ internal sealed class GaplessPreloader(object gate,
         }
     }
 
-    // Detached sessions have no renderer borrowers. Cleanup shares the open worker,
-    // so replacing a ready plan cannot queue unbounded opens behind slow decoder shutdown.
+    // 分离的会话已无渲染器借用；清理复用打开操作的工作线程，
+    // 避免替换就绪计划时，在缓慢的解码器关闭操作之后无限堆积打开请求。
     internal void Retire(Session session)
     {
         lock (gate)
@@ -74,7 +74,7 @@ internal sealed class GaplessPreloader(object gate,
         _worker = Task.Run(Run);
     }
 
-    private void Run()
+    private async Task Run()
     {
         while (true)
         {
@@ -97,12 +97,12 @@ internal sealed class GaplessPreloader(object gate,
                     _opening = cancellation;
                 }
             }
-            if (retired != null) DisposeSession(retired);
-            else Prepare(work!, cancellation!);
+            if (retired != null) await DisposeSessionAsync(retired).ConfigureAwait(false);
+            else await Prepare(work!, cancellation!).ConfigureAwait(false);
         }
     }
 
-    private void Prepare(Work work, CancellationTokenSource cancellation)
+    private async Task Prepare(Work work, CancellationTokenSource cancellation)
     {
         Session? session = null;
         try
@@ -113,7 +113,7 @@ internal sealed class GaplessPreloader(object gate,
                 if (_stopped || work.Generation != _generation || cancellation.IsCancellationRequested) return;
                 if (session is not null && publish(work.Preparation, session))
                 {
-                    session = null; // engine now owns the published session
+                    session = null; // 已发布会话的所有权现归引擎。
                     State = GaplessPreparationState.Ready;
                 }
                 else State = GaplessPreparationState.Failed;
@@ -128,7 +128,7 @@ internal sealed class GaplessPreloader(object gate,
         }
         finally
         {
-            DisposeSession(session);
+            await DisposeSessionAsync(session).ConfigureAwait(false);
             lock (gate)
             {
                 if (ReferenceEquals(_opening, cancellation)) _opening = null;
@@ -137,10 +137,13 @@ internal sealed class GaplessPreloader(object gate,
         }
     }
 
-    private static void DisposeSession(Session? session)
+    private static async Task DisposeSessionAsync(Session? session)
     {
-        try { session?.Dispose(); }
+        if (session == null) return;
+        try { session.Dispose(); }
         catch (Exception ex) { Console.WriteLine($"[gapless] cleanup failed: {ex.Message}"); }
+        try { await session.DecodeCompletion.ConfigureAwait(false); }
+        catch (Exception ex) { Console.WriteLine($"[gapless] decoder completion failed: {ex.Message}"); }
     }
 
     internal Task StopAsync()
@@ -154,6 +157,7 @@ internal sealed class GaplessPreloader(object gate,
     }
 }
 
-/// <summary>Decoder configuration captured at preparation time; DSP targets are read at publication.</summary>
+/// <summary>准备时捕获解码器配置，发布时读取 DSP 目标设置。</summary>
 internal sealed record GaplessPreparation(GaplessRequest Request, Session Current, GaplessSource Source,
-    int DsdRate, int DsdGain, int Latency, bool Surround, double PlaybackRate, bool BitstreamEnabled);
+    int DsdRate, int DsdGain, int Latency, bool Surround, double PlaybackRate, bool BitstreamEnabled,
+    SpectralEnhancementMode Enhancement = SpectralEnhancementMode.Off, int? EnhancementDeviceRate = null);

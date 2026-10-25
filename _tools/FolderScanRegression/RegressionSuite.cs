@@ -207,7 +207,7 @@ internal static class RegressionSuite
             string rejected = Path.Combine(root, "reject.mp3");
             File.WriteAllText(rejected, "");
             await database.Connection.ExecuteAsync(
-                "CREATE TRIGGER RejectLyrics BEFORE INSERT ON MusicLyrics " +
+                "CREATE TRIGGER RejectLyrics BEFORE INSERT ON MusicLyricsV2 " +
                 "WHEN (SELECT Title FROM Music WHERE Id=NEW.MusicId) = 'reject.mp3' " +
                 "BEGIN SELECT RAISE(ABORT, 'test rollback'); END");
             try

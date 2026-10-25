@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using Windows.UI;
@@ -22,7 +22,9 @@ namespace WinUIMusicPlayer.DesktopLyrics
             State = state;
             _database = database;
             shutdown.RegisterCleanup(() => State.DesktopLyrics.PropertyChanged -= OnSharedStateChanged);
+            shutdown.RegisterCleanup(() => State.Preferences.PropertyChanged -= OnPreferencesChanged);
             State.DesktopLyrics.PropertyChanged += OnSharedStateChanged;
+            State.Preferences.PropertyChanged += OnPreferencesChanged;
         }
 
         private bool _restoring;
@@ -30,6 +32,15 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private void OnSharedStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
         {
             OnPropertyChanged(e);
+            if (e.PropertyName == nameof(Mode))
+            {
+                OnPropertyChanged(nameof(ModeName));
+                OnPropertyChanged(nameof(ShouldAutoHideOnPlayingDetail));
+            }
+            else if (e.PropertyName is nameof(AutoHideFloatingOnPlayingDetail) or nameof(AutoHideTaskbarOnPlayingDetail))
+            {
+                OnPropertyChanged(nameof(ShouldAutoHideOnPlayingDetail));
+            }
             if (_restoring) return;
             switch (e.PropertyName)
             {
@@ -44,8 +55,21 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     AppSettings.IsDesktopLyricsLocked = IsLocked;
                     PersistSettings();
                     break;
-                case nameof(AutoHideOnPlayingDetail):
-                    AppSettings.AutoHideDesktopLyricsOnPlayingDetail = AutoHideOnPlayingDetail;
+                case nameof(AutoHideFloatingOnPlayingDetail):
+                    AppSettings.AutoHideDesktopLyricsFloatingOnPlayingDetail = AutoHideFloatingOnPlayingDetail;
+                    UpdateLegacyAutoHideSetting();
+                    UpdateWindowVisibility();
+                    PersistSettings();
+                    break;
+                case nameof(AutoHideTaskbarOnPlayingDetail):
+                    AppSettings.AutoHideDesktopLyricsTaskbarOnPlayingDetail = AutoHideTaskbarOnPlayingDetail;
+                    UpdateLegacyAutoHideSetting();
+                    UpdateWindowVisibility();
+                    PersistSettings();
+                    break;
+                case nameof(Mode):
+                    AppSettings.DesktopLyricsMode = Mode.ToString();
+                    DesktopLyricsManager.RecreateForMode();
                     UpdateWindowVisibility();
                     PersistSettings();
                     break;
@@ -59,14 +83,39 @@ namespace WinUIMusicPlayer.DesktopLyrics
         public bool IsEnabled { get => State.DesktopLyrics.IsEnabled; set => State.DesktopLyrics.IsEnabled = value; }
         public bool IsLocked { get => State.DesktopLyrics.IsLocked; set => State.DesktopLyrics.IsLocked = value; }
         public bool IsKaraokeEnabled { get => State.DesktopLyrics.IsKaraokeEnabled; set => State.DesktopLyrics.IsKaraokeEnabled = value; }
-        public bool AutoHideOnPlayingDetail { get => State.DesktopLyrics.AutoHideOnPlayingDetail; set => State.DesktopLyrics.AutoHideOnPlayingDetail = value; }
+        public bool AutoHideFloatingOnPlayingDetail { get => State.DesktopLyrics.AutoHideFloatingOnPlayingDetail; set => State.DesktopLyrics.AutoHideFloatingOnPlayingDetail = value; }
+        public bool AutoHideTaskbarOnPlayingDetail { get => State.DesktopLyrics.AutoHideTaskbarOnPlayingDetail; set => State.DesktopLyrics.AutoHideTaskbarOnPlayingDetail = value; }
+        public DesktopLyricsMode Mode { get => State.DesktopLyrics.Mode; set => State.DesktopLyrics.Mode = value; }
+        public string ModeName => Mode.ToString();
         public bool IsMainWindowShown { get => State.DesktopLyrics.IsMainWindowShown; set => State.DesktopLyrics.IsMainWindowShown = value; }
         public bool IsPlayingDetailVisible { get => State.DesktopLyrics.IsPlayingDetailVisible; set => State.DesktopLyrics.IsPlayingDetailVisible = value; }
 
         private void UpdateWindowVisibility()
         {
             if (!IsEnabled || State.Lifecycle.Phase == AppPhase.Stopping) return;
-            DesktopLyricsManager.SetWindowVisible(!(AutoHideOnPlayingDetail && IsPlayingDetailVisible && IsMainWindowShown));
+            DesktopLyricsManager.SetWindowVisible(!(ShouldAutoHideOnPlayingDetail && IsPlayingDetailVisible && IsMainWindowShown));
+        }
+
+        public bool ShouldAutoHideOnPlayingDetail => Mode == DesktopLyricsMode.Taskbar
+            ? AutoHideTaskbarOnPlayingDetail
+            : AutoHideFloatingOnPlayingDetail;
+
+        private void UpdateLegacyAutoHideSetting()
+        {
+            AppSettings.AutoHideDesktopLyricsOnPlayingDetail =
+                AutoHideFloatingOnPlayingDetail && AutoHideTaskbarOnPlayingDetail;
+        }
+
+        private void OnPreferencesChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName is nameof(State.Preferences.IsDesktopLyricsTranslationEnabled)
+                or nameof(State.Preferences.IsDesktopLyricsPronunciationEnabled)
+                or nameof(State.Preferences.UseIndependentDesktopLyricsFont)
+                || (e.PropertyName == nameof(State.Preferences.ApplicationFontFamily) && !State.Preferences.UseIndependentDesktopLyricsFont)
+                || (e.PropertyName == nameof(State.Preferences.DesktopLyricsFontFamily) && State.Preferences.UseIndependentDesktopLyricsFont))
+            {
+                RefreshStyleFromSettings();
+            }
         }
 
         private DesktopLyricsStyle _style;
@@ -91,7 +140,12 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 IsEnabled = AppSettings.IsDesktopLyricsEnabled;
                 IsLocked = AppSettings.IsDesktopLyricsLocked;
                 IsKaraokeEnabled = AppSettings.IsDesktopLyricsKaraokeEnabled;
-                AutoHideOnPlayingDetail = AppSettings.AutoHideDesktopLyricsOnPlayingDetail;
+                AutoHideFloatingOnPlayingDetail = AppSettings.AutoHideDesktopLyricsFloatingOnPlayingDetail;
+                AutoHideTaskbarOnPlayingDetail = AppSettings.AutoHideDesktopLyricsTaskbarOnPlayingDetail;
+                Mode = Enum.TryParse(AppSettings.DesktopLyricsMode, ignoreCase: true, out DesktopLyricsMode mode) &&
+                       mode is DesktopLyricsMode.Floating or DesktopLyricsMode.Taskbar
+                    ? mode
+                    : DesktopLyricsMode.Floating;
             }
             finally { _restoring = false; }
             UpdateWindowVisibility();
@@ -144,15 +198,16 @@ namespace WinUIMusicPlayer.DesktopLyrics
             }
         }
 
-        private static DesktopLyricsStyle BuildStyleFromSettings() => new(
+        private DesktopLyricsStyle BuildStyleFromSettings() => new(
             AppSettings.DesktopLyricsFontSize,
-            AppSettings.DesktopLyricsFontFamily,
+            State.Preferences.EffectiveDesktopLyricsFontFamilyName,
             Color.FromArgb(0xFF,
                 (byte)((AppSettings.DesktopLyricsColorRgb >> 16) & 0xFF),
                 (byte)((AppSettings.DesktopLyricsColorRgb >> 8) & 0xFF),
                 (byte)(AppSettings.DesktopLyricsColorRgb & 0xFF)),
             AppSettings.DesktopLyricsFontWeight,
-            AppSettings.IsDesktopLyricsTranslationEnabled,
+            State.Preferences.IsDesktopLyricsTranslationEnabled,
+            State.Preferences.IsDesktopLyricsPronunciationEnabled,
             AppSettings.IsDesktopLyricsGlowEnabled,
             AppSettings.IsDesktopLyricsCharFloatEnabled,
             AppSettings.IsDesktopLyricsCharScaleEnabled,

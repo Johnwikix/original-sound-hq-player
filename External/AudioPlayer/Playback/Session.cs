@@ -11,6 +11,7 @@ namespace AudioPlayer.Playback;
 /// </summary>
 internal sealed class Session : IRenderSource, IDisposable
 {
+    private readonly PlaybackEngine _engine;
     private readonly int _positionRate; // 环帧域的每秒帧数（用于 ms 换算）
     private static long _nextTimelineEpoch;
     public long TimelineEpoch { get; private set; } = Interlocked.Increment(ref _nextTimelineEpoch);
@@ -43,6 +44,8 @@ internal sealed class Session : IRenderSource, IDisposable
     private long _decodeEpoch;
     private int _disposed;
     private readonly object _decodeEndGate = new();
+    private readonly TaskCompletionSource<object?> _decodeCompletion =
+        new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     // 解码 scratch（按渲染种类在构造时分配实配，未用种类保持空数组：这些缓冲均超
     // 85KB 直接进 LOH，按需分配避免每会话 ~0.46MB 无谓流失）
@@ -77,6 +80,7 @@ internal sealed class Session : IRenderSource, IDisposable
     public int Channels { get; }
     public uint ChannelMask { get; private init; }
     public bool IsAtmos { get; private init; }
+    internal bool EnhancementActive { get; private init; }
     public uint EncodedChannelMask { get; private init; }
     public long TotalMs { get; }
     public long AnchorFrames; // 引擎线程写、渲染线程不读（位置在引擎侧合成）
@@ -88,6 +92,7 @@ internal sealed class Session : IRenderSource, IDisposable
     private Session(PlaybackEngine engine, RenderKind kind, int channels, int positionRate,
         int deviceRate, long totalMs, int gainRampRate)
     {
+        _engine = engine;
         _isCancelled = Cancelled;
         Kind = kind;
         _channels = Channels = channels;
@@ -108,12 +113,12 @@ internal sealed class Session : IRenderSource, IDisposable
         }
         else if (kind == RenderKind.Dop)
         {
-            _dsdLeftover = new byte[ch * 2]; // last byte frame plus one silence frame at EOF
+            _dsdLeftover = new byte[ch * 2]; // 文件末尾最后一个字节帧及一个静音帧。
             _decodeScratchB = new byte[65536 * ch];
             _dopPackBuffer = new uint[32768 * ch];
             _dsdMergeBuffer = new byte[65536 * ch + ch];
         }
-        else // NativeDsd
+        else // 原生 DSD 输出
         {
             _decodeScratchB = new byte[65536 * ch];
         }
@@ -123,7 +128,8 @@ internal sealed class Session : IRenderSource, IDisposable
 
     public static Session? Open(PlaybackEngine engine, string path, RenderKind kind,
         int dsdPcmFreq, int dsdGainDb, int latencyMs, int? forcedRate = null, int? forcedChannels = null,
-        int? maxChannels = null, bool experimentalSurround51 = false, AtmosProbeCache? atmosProbeCache = null, PlaybackSource? source = null, CancellationToken cancellationToken = default, double playbackRate = 1)
+        int? maxChannels = null, bool experimentalSurround51 = false, AtmosProbeCache? atmosProbeCache = null, PlaybackSource? source = null, CancellationToken cancellationToken = default, double playbackRate = 1,
+        SpectralEnhancementMode enhancement = SpectralEnhancementMode.Off, int? enhancementDeviceRate = null)
     {
         Session? pending = null;
         IDisposable? input = null;
@@ -135,8 +141,8 @@ internal sealed class Session : IRenderSource, IDisposable
                 {
                     var dec = new PcmDecoder();
                     input = dec;
-                    if (!dec.Open(path, dsdPcmFreq, dsdGainDb, forcedRate, forcedChannels, maxChannels, experimentalSurround51, source, cancellationToken)) { dec.Dispose(); return null; }
-                    // Non-seekable streams cannot safely rebuild at the audible position after a rate change.
+                    if (!dec.Open(path, dsdPcmFreq, dsdGainDb, forcedRate, forcedChannels, maxChannels, experimentalSurround51, source, cancellationToken, enhancement, enhancementDeviceRate)) { dec.Dispose(); return null; }
+                    // 不可定位的流在采样率变化后无法安全地从可听位置重建。
                     if (!dec.CanSeek) playbackRate = 1;
                     int rate = dec.SampleRate;
                     int channels = dec.Channels;
@@ -147,6 +153,7 @@ internal sealed class Session : IRenderSource, IDisposable
                     var s = new Session(engine, kind, channels, rate, rate, dec.TotalMs, rate)
                     {
                         _pcm = dec,
+                        EnhancementActive = dec.EnhancementActive,
                         PlaybackRate = playbackRate,
                         _tempo = playbackRate == 1 ? null : new TempoProcessor(rate, channels, playbackRate),
                         ChannelMask = dec.ChannelMask,
@@ -227,7 +234,7 @@ internal sealed class Session : IRenderSource, IDisposable
         }
         catch
         {
-            // A failed ring allocation or thread start must not retain a native decoder/callback.
+            // 环形缓冲区分配或线程启动失败时，不得遗留原生解码器或回调。
             if (pending != null) pending.Dispose();
             else input?.Dispose();
             throw;
@@ -281,6 +288,7 @@ internal sealed class Session : IRenderSource, IDisposable
             _iecRing?.BeginSession();
             Interlocked.Exchange(ref _pendingSeekMs, targetMs);
             TimelineEpoch = Interlocked.Increment(ref _nextTimelineEpoch);
+            _engine.ResetFft(TimelineEpoch, Kind == RenderKind.Pcm ? SampleRate : 0);
         }
         WakeProducer();
     }
@@ -335,12 +343,20 @@ internal sealed class Session : IRenderSource, IDisposable
         _pcm = null; _dsd = null;
     }
 
+    internal Task DecodeCompletion => _decodeCompletion.Task;
+
+    private void CompleteDecodeThread()
+    {
+        try { DisposeDecoder(); }
+        finally { _decodeCompletion.TrySetResult(null); }
+    }
+
     private bool Cancelled() => _cancelled;
 
     private bool WaitForSeekAfterEnd()
     {
-        // Keep the decoder/bitstream reader alive after EOF: the device may still be draining,
-        // and RequestSeek must be able to restart decoding without replacing the session.
+        // 到达文件末尾后仍保留解码器或位流读取器，因为设备可能仍在排空，
+        // 且 RequestSeek 必须能在不替换会话的情况下重新启动解码。
         lock (_decodeEndGate)
         {
             while (!_cancelled && Interlocked.Read(ref _pendingSeekMs) == _pendingSeekSentinel)
@@ -371,7 +387,7 @@ internal sealed class Session : IRenderSource, IDisposable
             }
         }
         catch (Exception ex) { if (!_cancelled) Volatile.Write(ref _decodeFailure, ex); _pcmRing?.MarkInputEnded(_decodeEpoch); }
-        finally { DisposeDecoder(); }
+        finally { CompleteDecodeThread(); }
     }
 
     private void DopDecodeProc()
@@ -416,7 +432,7 @@ internal sealed class Session : IRenderSource, IDisposable
             }
         }
         catch (Exception ex) { if (!_cancelled) Volatile.Write(ref _decodeFailure, ex); _dopRing?.MarkInputEnded(_decodeEpoch); }
-        finally { DisposeDecoder(); }
+        finally { CompleteDecodeThread(); }
     }
 
     /// <summary>把交织 DSD 字节（每帧每声道 1 字节）装配为 DoP uint 采样并推送。
@@ -472,7 +488,7 @@ internal sealed class Session : IRenderSource, IDisposable
             }
         }
         catch (Exception ex) { if (!_cancelled) Volatile.Write(ref _decodeFailure, ex); _dsdRing?.MarkInputEnded(_decodeEpoch); }
-        finally { DisposeDecoder(); }
+        finally { CompleteDecodeThread(); }
     }
 
     // ─────────────── IRenderSource（输出渲染线程调用） ───────────────
@@ -497,9 +513,9 @@ internal sealed class Session : IRenderSource, IDisposable
         catch (Exception ex)
         {
             Console.WriteLine($"[decode] E-AC-3 bitstream: {ex.Message}");
-            Volatile.Write(ref _decodeFailure, ex); // Engine handles failure; never report natural EOF.
+            Volatile.Write(ref _decodeFailure, ex); // 由引擎处理失败，不能报告为自然结束。
         }
-        finally { DisposeDecoder(); }
+        finally { CompleteDecodeThread(); }
     }
 
     public void FillIec61937(Span<byte> buffer, int frames) => _iecRing?.Render(buffer, frames);
@@ -536,6 +552,7 @@ internal sealed class Session : IRenderSource, IDisposable
             Effects?.ApplyDynamics(buffer, audible);
         }
         Gain.Apply(buffer, audible, _channels);
+        _engine.CaptureFft(buffer, audible, _channels, ChannelMask, SampleRate);
         return audible;
     }
 
@@ -551,14 +568,14 @@ internal sealed class Session : IRenderSource, IDisposable
         _cancelled = true;
         CancelIo();
         WakeProducer();
-        // Ring locks drain in-flight copies and reject late producers/render callbacks.
-        // Large network pages can be released even if a decoder is still unwinding I/O.
+        // 环形缓冲区锁等待在途复制完成，并拒绝迟到的生产方或渲染回调。
+        // 即使解码器仍在退出 I/O，也可以释放大型网络内存页。
         _pcmRing?.Dispose();
         _dopRing?.Dispose();
         _dsdRing?.Dispose();
         _iecRing?.Dispose();
         Effects?.Dispose();
-        if (_thread == null) DisposeDecoder();
+        if (_thread == null || !_thread.IsAlive) CompleteDecodeThread();
         else if (!_thread.Join(1000))
             Console.WriteLine("[decode] shutdown pending; decoder thread retains resource ownership");
     }

@@ -13,7 +13,6 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using System.Threading;
 using System.Threading.Tasks;
 using Windows.Graphics.Imaging;
-using Windows.Storage;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Utils;
 
@@ -166,8 +165,11 @@ namespace WinUIMusicPlayer.Behaviors
 
                     if (!token.IsCancellationRequested && _loadState.IsCurrent(version))
                     {
+                        bool hasSource = source is not null;
                         TransitionToNewSource(source);
-                        if (source is not null) _loadState.Commit(version, hash, usesDefault, isDark);
+                        if (IsSourceOwned(source))
+                            source = null;
+                        if (hasSource && source is null) _loadState.Commit(version, hash, usesDefault, isDark);
                         else _loadState.Reset();
                     }
                     else
@@ -176,12 +178,17 @@ namespace WinUIMusicPlayer.Behaviors
                         // superseded request must release it instead of waiting for
                         // the next image assignment or GC finalization.
                         DisposeImageSource(source);
+                        source = null;
                     }
                 }
                 catch (OperationCanceledException)
                 {
-                    DisposeImageSource(source);
                     throw;
+                }
+                finally
+                {
+                    if (!IsSourceOwned(source))
+                        DisposeImageSource(source);
                 }
             }
             catch (OperationCanceledException) { }
@@ -190,30 +197,14 @@ namespace WinUIMusicPlayer.Behaviors
 
         private async Task<ImageSource?> LoadDefaultCoverAsync(bool isDark, CancellationToken token)
         {
-            try
-            {
-                string assetName = isDark ? "default_cover_black.png" : "default_cover_white.png";
-                var file = await StorageFile.GetFileFromApplicationUriAsync(
-                    new Uri($"ms-appx:///Assets/{assetName}"));
-                using var stream = await file.OpenReadAsync();
-
-                if (token.IsCancellationRequested) return null;
-
-                var bitmap = new BitmapImage();
-                await bitmap.SetSourceAsync(stream);
-                return bitmap;
-            }
-            catch (OperationCanceledException) { return null; }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"LoadDefaultCoverAsync 加载默认封面失败: {ex.Message}");
-                return null;
-            }
+            string assetName = isDark ? "default_cover_black.png" : "default_cover_white.png";
+            return await ImageHelper.DecodeApplicationAssetAsync(assetName, token);
         }
 
         private static async Task<ImageSource?> LoadThumbFromCacheAsync(string cachePath, CancellationToken token)
         {
             byte[]? pixelRented = null;
+            SoftwareBitmapSource? source = null;
             var header = ArrayPool<byte>.Shared.Rent(54);
             try
             {
@@ -251,14 +242,17 @@ namespace WinUIMusicPlayer.Behaviors
                 using var softwareBitmap = new SoftwareBitmap(
                     BitmapPixelFormat.Bgra8, w, h, BitmapAlphaMode.Premultiplied);
                 softwareBitmap.CopyFromBuffer(pixelRented.AsBuffer(0, pixelBytes));
-                var source = new SoftwareBitmapSource();
+                source = new SoftwareBitmapSource();
                 await source.SetBitmapAsync(softwareBitmap);
-                return source;
+                var result = source;
+                source = null;
+                return result;
             }
             catch (OperationCanceledException) { return null; }
             catch { return null; }
             finally
             {
+                source?.Dispose();
                 if (pixelRented is not null)
                     ArrayPool<byte>.Shared.Return(pixelRented, clearArray: false);
             }
@@ -406,5 +400,10 @@ namespace WinUIMusicPlayer.Behaviors
             if (source is IDisposable disposable)
                 disposable.Dispose();
         }
+
+        private bool IsSourceOwned(ImageSource? source) =>
+            source is not null
+            && (ReferenceEquals(source, AssociatedObject?.Source)
+                || ReferenceEquals(source, _tempOverlayImage?.Source));
     }
 }

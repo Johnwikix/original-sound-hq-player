@@ -10,7 +10,21 @@ public sealed class ApplicationTasks(AppLifecycle lifecycle)
 {
     private readonly Lock _gate = new();
     private readonly HashSet<Task> _tasks = [];
-    private bool _closed;
+    private readonly HashSet<Task> _committed = [];
+    private bool _closed, _committedClosed;
+
+    /// <summary>Accepted local edits start immediately and drain before their database owner stops.</summary>
+    public Task RunCommittedAsync(Func<Task> operation)
+    {
+        lock (_gate)
+        {
+            if (_closed || _committedClosed || lifecycle.StoppingToken.IsCancellationRequested) return Task.CompletedTask;
+            var task = operation();
+            _tasks.Add(task);
+            _committed.Add(task);
+            return ObserveCompletionAsync(task);
+        }
+    }
 
     public Task RunAsync(Func<CancellationToken, Task> operation)
     {
@@ -32,7 +46,26 @@ public sealed class ApplicationTasks(AppLifecycle lifecycle)
     private async Task ObserveCompletionAsync(Task task)
     {
         try { await task; }
-        finally { lock (_gate) _tasks.Remove(task); }
+        finally
+        {
+            lock (_gate)
+            {
+                _tasks.Remove(task);
+                _committed.Remove(task);
+            }
+        }
+    }
+
+    public Task DrainCommittedAsync()
+    {
+        Task[] pending;
+        lock (_gate)
+        {
+            _committedClosed = true;
+            pending = new Task[_committed.Count];
+            _committed.CopyTo(pending);
+        }
+        return Task.WhenAll(pending);
     }
 
     public async Task DrainAsync()

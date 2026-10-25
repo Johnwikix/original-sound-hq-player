@@ -41,6 +41,19 @@
                         IsEnabled="{x:Bind ViewModel.MasterAvailable, Mode=OneWay}"
                         IsOn="{x:Bind ViewModel.MasterEnabled, Mode=TwoWay}" />
                 </controls:SettingsCard>
+                <controls:SettingsCard
+                    Header="{x:Bind tool:ToolUtils.GetString('SpectralEnhancementTitle')}"
+                    IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}"
+                    Description="{x:Bind tool:ToolUtils.GetString('SpectralEnhancementDescription')}">
+                    <ComboBox Width="220" VerticalAlignment="Center"
+                        AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('SpectralEnhancementTitle')}"
+                        SelectedIndex="{x:Bind ViewModel.AppViewModel.SpectralEnhancement, Mode=TwoWay}">
+                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('SpectralEnhancementOff')}" />
+                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('SpectralEnhancementLossy')}" />
+                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('SpectralEnhancementAll')}" />
+                    </ComboBox>
+                </controls:SettingsCard>
+
                 <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspPlaybackRate')}"
                     Description="{x:Bind tool:ToolUtils.GetString('DspPlaybackRateDescription')}"
                     IsEnabled="{x:Bind ViewModel.PlaybackRateEditable, Mode=OneWay}">

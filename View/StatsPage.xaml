@@ -58,6 +58,7 @@
                     <ComboBoxItem x:Uid="StatsRangePastMonth" />
                     <ComboBoxItem x:Uid="StatsRangePastQuarter" />
                     <ComboBoxItem x:Uid="StatsRangePastYear" />
+                    <ComboBoxItem x:Uid="StatsRangeAllTime" />
                     <ComboBoxItem x:Uid="StatsRangeCustom" />
                 </ComboBox>
             </StackPanel>

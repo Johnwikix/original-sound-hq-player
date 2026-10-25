@@ -57,7 +57,7 @@ internal static class LoudnessScanner
         try
         {
             using var decoder = new PcmDecoder();
-            if (!decoder.Open(path, dsdRate, dsdGain, rate, channels, source: source)) return null;
+            if (!decoder.Open(path, dsdRate, dsdGain, rate, channels, source: source, cancellationToken: token)) return null;
             var meter = new LoudnessMeter(rate, channels);
             double[] scratch = ArrayPool<double>.Shared.Rent(16384 * channels);
             long frames = 0;

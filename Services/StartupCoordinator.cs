@@ -39,8 +39,8 @@ namespace WinUIMusicPlayer.Services
             cancellationToken = startupCancellation.Token;
             var startup = Stopwatch.StartNew();
             var logger = App.GetLogger<StartupCoordinator>();
-            // 音频进程与 IPC 连接最先启动（先于用户协议）：服务端首个动作即创建共享内存，
-            // 连接等待与数据库初始化、协议阅读并行；连接完成不阻塞主界面，进度由标题栏指示。
+            // 音频进程与解码库预热先于用户协议启动，IPC 在解码依赖就绪后完成握手。
+            // 连接等待与数据库初始化、协议阅读并行；进度由标题栏指示。
             var shutdown = App.Services.GetRequiredService<ShutdownCoordinator>();
             var lifecycle = App.Services.GetRequiredService<AppLifecycle>();
             var settings = App.Services.GetRequiredService<SettingsCoordinator>();
@@ -90,6 +90,23 @@ namespace WinUIMusicPlayer.Services
             var remoteLibrary = App.Services.GetRequiredService<WebDavLibraryService>();
             var remotePlayback = App.Services.GetRequiredService<RemotePlaybackService>();
             ipcService.AttachRemoteProgress(remotePlayback.GetProgress);
+            var lastFm = App.Services.GetRequiredService<LastFm.LastFmService>();
+            var lastFmPlayback = App.Services.GetRequiredService<LastFm.LastFmPlaybackBridge>();
+            var lastFmSettings = App.Services.GetRequiredService<WinUIMusicPlayer.ViewModel.Pages.LastFmSettingsViewModel>();
+            var applicationTasks = App.Services.GetRequiredService<ApplicationTasks>();
+            lastFmPlayback.Start(App.MainWindow.DispatcherQueue);
+            lastFmSettings.Start(App.MainWindow.DispatcherQueue);
+            shutdown.RegisterStop(lastFmPlayback.StopAsync);
+            // Register before the first startup await, including the initialization-failure path.
+            shutdown.RegisterStop(async () =>
+            {
+                try { await applicationTasks.DrainCommittedAsync(); }
+                finally { await lastFm.StopAsync(); }
+            });
+            shutdown.RegisterStop(lastFmSettings.StopAsync);
+            try { await lastFm.StartAsync(); }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested) { throw; }
+            catch (Exception ex) { logger.LogWarning("Last.fm initialization failed: {Type}", ex.GetType().Name); }
             shutdown.RegisterStop(remotePlayback.StopAsync);
             var remoteSources = App.Services.GetRequiredService<WebDavSourcesViewModel>();
             shutdown.RegisterStop(remoteSources.StopAsync);
@@ -97,7 +114,15 @@ namespace WinUIMusicPlayer.Services
             await remoteLibrary.StartAsync(appViewModel);
             await remoteSources.LoadAsync();
             shutdown.RegisterStop(appViewModel.StopAsync);
-            shutdown.RegisterStop(App.Services.GetRequiredService<ApplicationTasks>().DrainAsync);
+            var lyricsLoader = App.Services.GetRequiredService<LyricsLoader>();
+            shutdown.RegisterStop(() => { lyricsLoader.Dispose(); return Task.CompletedTask; });
+            shutdown.RegisterStop(applicationTasks.DrainAsync);
+            _ = applicationTasks.RunAsync(async token =>
+            {
+                try { await MusicDatabaseService.Lyrics.MigrateRemainingAsync(token); }
+                catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+                catch (Exception ex) { logger.LogError(ex, "歌词后台迁移中断，下次启动继续"); }
+            });
             var folders = App.Services.GetRequiredService<AddFolderViewModel>();
             folders.Start();
             shutdown.RegisterStop(folders.StopAsync);

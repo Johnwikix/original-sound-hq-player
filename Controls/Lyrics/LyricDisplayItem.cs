@@ -11,6 +11,8 @@ namespace WinUIMusicPlayer.Controls.Lyrics
         public string MainText { get; }
         public string TranslationText { get; }
         public bool HasTranslation => !string.IsNullOrEmpty(TranslationText);
+        public string PronunciationText { get; }
+        public bool HasPronunciation => !string.IsNullOrEmpty(PronunciationText);
 
         public bool IsCurrent { get => field; set => SetProperty(ref field, value); }
         public double DisplayOpacity { get => field; set => SetProperty(ref field, value); } = 0.5;
@@ -31,12 +33,13 @@ namespace WinUIMusicPlayer.Controls.Lyrics
 
         public double DisplayTranslationFontSize => DisplayFontSize * 0.75;
 
-        public LyricDisplayItem(LyricLine source, int index, string mainText, string translationText)
+        public LyricDisplayItem(LyricLine source, int index, string mainText, string translationText, string pronunciationText = "")
         {
             Source = source;
             LineIndex = index;
             MainText = mainText;
             TranslationText = translationText;
+            PronunciationText = pronunciationText;
         }
     }
 }

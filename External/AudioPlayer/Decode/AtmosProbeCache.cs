@@ -1,6 +1,6 @@
 namespace AudioPlayer.Decode;
 
-/// <summary>Engine-owned, bounded metadata cache. Access is serialized by the engine control lock.</summary>
+/// <summary>由引擎持有的有界元数据缓存；通过引擎控制锁串行访问。</summary>
 internal sealed class AtmosProbeCache
 {
     internal const int Capacity = 128;
@@ -18,7 +18,7 @@ internal sealed class AtmosProbeCache
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {
-            return null; // Unavailable files and non-file URLs are never negatively cached.
+            return null; // 不缓存文件不可用或非文件 URL 的失败结果。
         }
     }
 
@@ -35,7 +35,7 @@ internal sealed class AtmosProbeCache
         try
         {
             bool opened = reader.Open(path, cachedInfo);
-            // Probe failures are transient. Cache only completed probes of an unchanged local file.
+            // 探测失败可能是暂时的；仅缓存内容未变的本地文件已完成的探测结果。
             if (reader.ProbeCompleted && identity is { } before && Identify(path) == identity)
             {
                 if (!_entries.ContainsKey(before.Path))

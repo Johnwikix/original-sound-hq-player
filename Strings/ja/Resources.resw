@@ -168,6 +168,9 @@
   <data name="StatsRangePastYear.Content" xml:space="preserve">
     <value>過去1年</value>
   </data>
+  <data name="StatsRangeAllTime.Content" xml:space="preserve">
+    <value>全期間</value>
+  </data>
   <data name="StatsRangeCustom.Content" xml:space="preserve">
     <value>カスタム</value>
   </data>
@@ -1384,18 +1387,6 @@
   <data name="Advanced.Text" xml:space="preserve">
     <value>詳細設定</value>
   </data>
-  <data name="TrimOnHide.Text" xml:space="preserve">
-    <value>ウィンドウ非表示時にメモリを解放</value>
-  </data>
-  <data name="TrimOnHideDescription.Text" xml:space="preserve">
-    <value>アプリをタスクバーに最小化またはトレイに閉じるときにワーキングセットを解放します。</value>
-  </data>
-  <data name="TrimAfterPlayback.Text" xml:space="preserve">
-    <value>再生後にメモリを自動解放</value>
-  </data>
-  <data name="TrimAfterPlaybackDescription.Text" xml:space="preserve">
-    <value>各トラックの後にフル GC を強制します。低スペックデバイスでは UI の引っ掛かりが発生する可能性があります。</value>
-  </data>
   <data name="ArtistSplitSymbols.Text" xml:space="preserve">
     <value>アーティスト区切り記号</value>
   </data>
@@ -1404,12 +1395,6 @@
   </data>
   <data name="SelectArtist" xml:space="preserve">
     <value>アーティストを選択</value>
-  </data>
-  <data name="TrimNow.Content" xml:space="preserve">
-    <value>今すぐメモリを解放</value>
-  </data>
-  <data name="TrimNowLabel.Text" xml:space="preserve">
-    <value>今すぐメモリを解放</value>
   </data>
   <data name="WindowBoundsDescription.Text" xml:space="preserve">
     <value>メインウィンドウの位置</value>
@@ -1495,6 +1480,24 @@
   <data name="IconDesktopLyrics.Text" xml:space="preserve">
     <value>デスクトップ歌詞</value>
   </data>
+  <data name="DesktopLyricsModeMenu.Text" xml:space="preserve">
+    <value>デスクトップ歌詞モード</value>
+  </data>
+  <data name="DesktopLyricsModeFloating" xml:space="preserve">
+    <value>フローティングウィンドウ</value>
+  </data>
+  <data name="DesktopLyricsModeTaskbar" xml:space="preserve">
+    <value>タスクバー</value>
+  </data>
+  <data name="DesktopLyricsPreviousButtonTooltip" xml:space="preserve">
+    <value>前の曲</value>
+  </data>
+  <data name="DesktopLyricsPlayPauseButtonTooltip" xml:space="preserve">
+    <value>再生または一時停止</value>
+  </data>
+  <data name="DesktopLyricsNextButtonTooltip" xml:space="preserve">
+    <value>次の曲</value>
+  </data>
   <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>デスクトップ歌詞をロック</value>
   </data>
@@ -1519,6 +1522,12 @@
   <data name="DesktopLyricsFontSize.Text" xml:space="preserve">
     <value>デスクトップ歌詞フォントサイズ</value>
   </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Header" xml:space="preserve">
+    <value>タスクバー歌詞の幅</value>
+  </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Description" xml:space="preserve">
+    <value>メディア操作ボタンの横に確保する歌詞領域の幅（ピクセル）。</value>
+  </data>
   <data name="DesktopLyricsFontFamily.Text" xml:space="preserve">
     <value>デスクトップ歌詞フォント</value>
   </data>
@@ -1530,6 +1539,9 @@
   </data>
   <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
     <value>デスクトップ歌詞の翻訳</value>
+  </data>
+  <data name="DesktopLyricsPronunciation.Text" xml:space="preserve">
+    <value>デスクトップ歌詞に発音を表示</value>
   </data>
   <data name="DesktopLyricsKaraoke.Text" xml:space="preserve">
     <value>デスクトップ歌詞のカラオケエフェクト</value>
@@ -1897,6 +1909,24 @@
   </data>
   <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
     <value>デスクトップ歌詞が有効な場合のみ適用されます。ページを離れるか、プレーヤーをトレイに格納すると再表示します。</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Header" xml:space="preserve">
+    <value>再生詳細でデスクトップ歌詞を隠す（フローティング）</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Description" xml:space="preserve">
+    <value>フローティング歌詞ウィンドウだけを制御します。</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Header" xml:space="preserve">
+    <value>再生詳細でデスクトップ歌詞を隠す（タスクバー）</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Description" xml:space="preserve">
+    <value>タスクバー歌詞ウィンドウだけを制御します。</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloatingMode.Text" xml:space="preserve">
+    <value>フローティングウィンドウ</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbarMode.Text" xml:space="preserve">
+    <value>タスクバーウィンドウ</value>
   </data>
   <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
     <value>词</value>
@@ -2299,7 +2329,7 @@ SHA-256: {5}
   </data>
   <data name="WindowBackgroundTitle" xml:space="preserve"><value>メインウィンドウの画像背景</value></data>
   <data name="WindowBackgroundImage" xml:space="preserve"><value>背景画像</value></data>
-  <data name="WindowBackgroundDescription" xml:space="preserve"><value>メインウィンドウの背景にローカル画像を選択します。解除すると元のウィンドウ素材に戻ります。</value></data>
+  <data name="WindowBackgroundDescription" xml:space="preserve"><value>メインウィンドウの背景にローカル画像を選択します。解除すると元のウィンドウ素材に戻ります。シェーダー背景を無効にして高度な歌詞効果を有効にすると、画像は歌詞キャンバスで描画されます。</value></data>
   <data name="WindowBackgroundChoose" xml:space="preserve"><value>画像を選択</value></data>
   <data name="WindowBackgroundClear" xml:space="preserve"><value>画像を解除</value></data>
   <data name="WindowBackgroundBlur" xml:space="preserve"><value>ぼかしの強さ</value></data>
@@ -2307,4 +2337,172 @@ SHA-256: {5}
   <data name="CacheCleanupCard.Header" xml:space="preserve">
     <value>キャッシュの削除</value>
   </data>
+  <data name="LyricsFilePriority.Header" xml:space="preserve">
+    <value>歌詞ファイルの優先順位</value>
+  </data>
+  <data name="LyricsFilePriority.Description" xml:space="preserve">
+    <value>この順序で最初の有効な同名ファイルを使用します。翻訳は _Translated.lrc を優先します。</value>
+  </data>
+  <data name="LyricsOriginalTab.Text" xml:space="preserve">
+    <value>歌詞</value>
+  </data>
+  <data name="LyricsTranslationTab.Text" xml:space="preserve">
+    <value>翻訳</value>
+  </data>
+  <data name="LyricsRestoreLegacyLrc.Content" xml:space="preserve">
+    <value>旧 LRC を復元</value>
+  </data>
+  <data name="LyricsRestoreLegacyKrc.Content" xml:space="preserve">
+    <value>旧 KRC を復元</value>
+  </data>
+  <data name="LyricsEditConflict" xml:space="preserve">
+    <value>別の操作で歌詞が変更されました。下書きを保持し、開き直してから保存してください。</value>
+  </data>
+  <data name="LyricsInvalid" xml:space="preserve">
+    <value>歌詞、時刻、またはファイル操作が無効です。</value>
+  </data>
+  <data name="LyricsMigrationDiagnostic" xml:space="preserve">
+    <value>一部の旧歌詞を変換できませんでした。元の内容は保持され、復元ボタンから確認できます。</value>
+  </data>
+  <data name="LyricsFilePriorityLabel" xml:space="preserve">
+    <value>歌詞ファイルの優先順位</value>
+  </data>
+  <data name="LyricsFilesSaved" xml:space="preserve">
+    <value>歌詞ファイルを保存しました：</value>
+  </data>
+  <data name="LyricsSourcePriority.Header" xml:space="preserve"><value>歌詞ソースの優先順位</value></data>
+  <data name="LyricsSourcePriority.Description" xml:space="preserve"><value>最初のソースの有効な歌詞を使用し、見つからない場合は次のソースを試します。</value></data>
+  <data name="LyricsSourceFile" xml:space="preserve"><value>歌詞ファイル</value></data>
+  <data name="LyricsSourceDatabase" xml:space="preserve"><value>データベース</value></data>
+  <data name="LyricsPriorityFirst" xml:space="preserve"><value>優先順位 1</value></data>
+  <data name="LyricsPrioritySecond" xml:space="preserve"><value>優先順位 2</value></data>
+  <data name="LyricsPriorityThird" xml:space="preserve"><value>優先順位 3</value></data>
+  <data name="LyricsPriorityFourth" xml:space="preserve"><value>優先順位 4</value></data>
+  <data name="PlayListEdit" xml:space="preserve">
+    <value>編集</value>
+  </data>
+  <data name="PlayListEditDone" xml:space="preserve">
+    <value>完了</value>
+  </data>
+  <data name="PlayListSelectAll.Text" xml:space="preserve">
+    <value>すべて選択</value>
+  </data>
+  <data name="PlayListBatchDelete.Text" xml:space="preserve">
+    <value>削除</value>
+  </data>
+  <data name="AreUSureDeletePlayLists" xml:space="preserve">
+    <value>選択したプレイリストを削除してもよろしいですか？</value>
+  </data>
+
+  <data name="LlmTranslation.Header" xml:space="preserve"><value>AI歌詞翻訳</value></data>
+  <data name="LlmTranslation.Description" xml:space="preserve"><value>再生開始時、OpenAI互換またはAnthropicサービスで未翻訳の歌詞を翻訳します。</value></data>
+  <data name="LlmBaseUrl.Header" xml:space="preserve"><value>APIベースURL</value></data>
+  <data name="LlmModel.Header" xml:space="preserve"><value>モデル</value></data>
+  <data name="LlmTargetLanguage.Header" xml:space="preserve"><value>対象言語</value></data>
+  <data name="LlmThinkingLevel.Header" xml:space="preserve"><value>思考レベル</value></data>
+  <data name="LlmApiKey.Header" xml:space="preserve"><value>APIキー（Windows資格情報マネージャーに保存）</value></data>
+  <data name="LlmSave.Content" xml:space="preserve"><value>保存</value></data>
+  <data name="LlmClearApiKey.Content" xml:space="preserve"><value>保存済みキーを削除</value></data>
+  <data name="LlmSaved" xml:space="preserve"><value>AI翻訳設定を保存しました。</value></data>
+  <data name="LlmApiKeyCleared" xml:space="preserve"><value>保存済みAPIキーを削除しました。</value></data>
+
+  <data name="LlmApiKeyConfigured" xml:space="preserve"><value>保存済みのAPIキーがあります。</value></data>
+  <data name="LlmApiKeyNotConfigured" xml:space="preserve"><value>APIキーは保存されていません。</value></data>
+
+  <data name="LlmConfigure.Content" xml:space="preserve"><value>AI翻訳を設定</value></data>
+  <data name="LlmClose.Content" xml:space="preserve"><value>閉じる</value></data>
+  <data name="LlmEnabled.Header" xml:space="preserve"><value>再生時に未翻訳の歌詞を翻訳</value></data>
+  <data name="LlmWorking" xml:space="preserve"><value>処理中…</value></data>
+  <data name="LlmTranslationInProgress" xml:space="preserve"><value>AI翻訳中です。時間がかかる場合があります。お待ちください…</value></data>
+  <data name="LlmDialogSaveButton" xml:space="preserve"><value>保存</value></data>
+  <data name="LlmDialogCloseButton" xml:space="preserve"><value>閉じる</value></data>
+  <data name="LlmBaseUrl.Description" xml:space="preserve"><value>アドレスからプロトコルを自動判定します（/anthropic は Anthropic、それ以外の互換 /v1 は OpenAI）。</value></data>
+
+  <data name="LlmTranslateButton.Content" xml:space="preserve"><value>AIで歌詞を翻訳</value></data>
+  <data name="LlmManualTranslationFailed" xml:space="preserve"><value>AIによる歌詞翻訳に失敗しました。設定とログを確認してください。</value></data>
+  <data name="LlmManualTranslationCompleted" xml:space="preserve"><value>AI翻訳を生成しました。ファイルまたはデータベースに保存するには歌詞を保存してください。</value></data>
+  <data name="LyricsPronunciationTab.Text" xml:space="preserve"><value>発音</value></data>
+  <data name="LyricsShowTranslation.Header" xml:space="preserve"><value>歌詞の翻訳を表示</value></data>
+  <data name="LyricsShowTranslation.Description" xml:space="preserve"><value>翻訳がある場合に翻訳トラックを表示します。</value></data>
+  <data name="LyricsShowPronunciation.Header" xml:space="preserve"><value>歌詞の発音を表示</value></data>
+  <data name="LyricsShowPronunciation.Description" xml:space="preserve"><value>発音がある場合に発音トラックを表示します。</value></data>
+  <data name="LyricsPronunciationLanguages.Header" xml:space="preserve"><value>発音の言語</value></data>
+  <data name="LyricsPronunciationLanguages.Description" xml:space="preserve"><value>歌詞タグまたは文字体系で発音を選択します。広東語には明示的なタグが必要です。</value></data>
+  <data name="LyricsPronunciationMandarin.Header" xml:space="preserve"><value>中国語（普通話）</value></data>
+  <data name="LyricsPronunciationMandarin.Description" xml:space="preserve"><value>普通話の発音を表示します。</value></data>
+  <data name="LyricsPronunciationCantonese.Header" xml:space="preserve"><value>広東語</value></data>
+  <data name="LyricsPronunciationCantonese.Description" xml:space="preserve"><value>広東語の発音を表示します。</value></data>
+  <data name="LyricsPronunciationJapanese.Header" xml:space="preserve"><value>日本語</value></data>
+  <data name="LyricsPronunciationJapanese.Description" xml:space="preserve"><value>日本語の発音を表示します。</value></data>
+  <data name="LyricsPronunciationKorean.Header" xml:space="preserve"><value>韓国語</value></data>
+  <data name="LyricsPronunciationKorean.Description" xml:space="preserve"><value>韓国語の発音を表示します。</value></data>
+  <data name="LyricsTranslationToggle" xml:space="preserve"><value>歌詞の翻訳を切り替え</value></data>
+  <data name="LyricsPronunciationToggle" xml:space="preserve"><value>歌詞の発音を切り替え</value></data>
+  <data name="LyricsTranslationIcon.Text" xml:space="preserve"><value>T</value></data>
+  <data name="LyricsPronunciationIcon.Text" xml:space="preserve"><value>A</value></data>
+  <data name="SpectralEnhancementTitle" xml:space="preserve"><value>アップサンプリング</value></data>
+  <data name="SpectralEnhancementDescription" xml:space="preserve"><value>48 kHz 以下のモノラル／ステレオ PCM の高域を補完・アップサンプリングします。</value></data>
+  <data name="SpectralEnhancementOff" xml:space="preserve"><value>オフ</value></data>
+  <data name="SpectralEnhancementLossy" xml:space="preserve"><value>非可逆圧縮の曲のみ</value></data>
+  <data name="SpectralEnhancementAll" xml:space="preserve"><value>非可逆圧縮＋48 kHz 以下の可逆音源</value></data>
+  <data name="LastFmEnable" xml:space="preserve"><value>Last.fm に送信</value></data>
+  <data name="LastFmEnableDescription" xml:space="preserve"><value>再生中・条件を満たした再生履歴・お気に入りの変更を送信し、ローカル統計を保持します。</value></data>
+  <data name="LastFmCredentials" xml:space="preserve"><value>アプリの認証情報</value></data>
+  <data name="LastFmCredentialsHelp" xml:space="preserve"><value>API Key と Shared Secret をご自身で取得し、保存してからアカウントを接続してください。認証情報を変更すると接続と未送信履歴が削除されます。</value></data>
+  <data name="LastFmSecretSaved" xml:space="preserve"><value>安全に保存済みです。空欄のままなら保存済みの Secret を使用します。</value></data>
+  <data name="LastFmSecretRequired" xml:space="preserve"><value>アプリの Shared Secret を入力してください。</value></data>
+  <data name="LastFmSaveCredentials" xml:space="preserve"><value>認証情報を保存</value></data>
+  <data name="LastFmApplyCredentials" xml:space="preserve"><value>認証情報を取得</value></data>
+  <data name="LastFmAuthorize" xml:space="preserve"><value>アカウントを接続</value></data>
+  <data name="LastFmCompleteAuthorization" xml:space="preserve"><value>認証を完了</value></data>
+  <data name="LastFmDisconnect" xml:space="preserve"><value>接続を解除</value></data>
+  <data name="LastFmDisconnectHelp" xml:space="preserve"><value>接続解除で送信を停止し、未送信履歴を削除します。アクセス権の取り消しは Last.fm のアプリ設定でも行ってください。</value></data>
+  <data name="LastFmManageApplications" xml:space="preserve"><value>Last.fm のアプリ認証を管理</value></data>
+  <data name="LastFmWorking" xml:space="preserve"><value>処理中…</value></data>
+  <data name="LastFmAuthorizationHelp" xml:space="preserve"><value>ブラウザーでアクセスを許可した後、ここに戻って「認証を完了」を選択してください。</value></data>
+  <data name="LastFmUsageHelp" xml:space="preserve"><value>実際の再生時間のみを記録します。30 秒を超える曲を半分または 4 分間聴くと送信します。アーティスト情報のない曲は送信しません。</value></data>
+  <data name="LastFmPendingCount" xml:space="preserve"><value>未送信：{0} 件</value></data>
+  <data name="LastFmQueueHelp" xml:space="preserve"><value>オンライン時に古い履歴から自動送信します。送信をオフにすると一時停止し、再度オンにすると再開します。最大 10,000 件を保持します。</value></data>
+  <data name="LastFmRetry" xml:space="preserve"><value>今すぐ再試行</value></data>
+  <data name="LastFmBrowserError" xml:space="preserve"><value>ブラウザーを開けませんでした。もう一度アカウントを接続してください。</value></data>
+  <data name="LastFmConnected" xml:space="preserve"><value>接続済み：{0}</value></data>
+  <data name="LastFmNotConnected" xml:space="preserve"><value>Last.fm に未接続</value></data>
+  <data name="LastFmErrorNetwork" xml:space="preserve"><value>Last.fm に接続できません。履歴はローカルに保持し、自動で再試行します。</value></data>
+  <data name="LastFmErrorCredentials" xml:space="preserve"><value>API Key と Shared Secret を確認し、再保存してください。</value></data>
+  <data name="LastFmErrorAuthorizationPending" xml:space="preserve"><value>まだ認証されていません。ブラウザーで許可してから、認証を完了してください。</value></data>
+  <data name="LastFmErrorAuthorizationExpired" xml:space="preserve"><value>認証要求の期限が切れました。再度接続してください。</value></data>
+  <data name="LastFmErrorSessionExpired" xml:space="preserve"><value>アカウントの認証が無効です。再接続してください。未送信履歴は保持されます。</value></data>
+  <data name="LastFmErrorRejected" xml:space="preserve"><value>Last.fm が無効な曲情報や古い日時の履歴を拒否したため、その履歴をスキップしました。</value></data>
+  <data name="LastFmErrorStorage" xml:space="preserve"><value>設定または履歴を読み書きできません。ファイルのアクセス権を確認して再試行してください。既存ファイルは保持します。</value></data>
+  <data name="LastFmErrorQueueFull" xml:space="preserve"><value>未送信履歴が上限に達しました。オンラインにして送信してください。既存履歴は保持します。</value></data>
+  <data name="LastFmAccountActions" xml:space="preserve"><value>アカウント認証</value></data>
+  <data name="LastFmHistoryTitle" xml:space="preserve"><value>ローカル再生履歴</value></data>
+  <data name="LastFmHistoryHelp" xml:space="preserve"><value>既定では過去14日間の履歴を元の時刻で送信します。上の設定で古い履歴も含められます。送信前にオンラインで既存の履歴を照合します。</value></data>
+  <data name="LastFmImportHistory" xml:space="preserve"><value>ローカル履歴を送信</value></data>
+  <data name="LastFmCancelHistory" xml:space="preserve"><value>送信準備を中止</value></data>
+  <data name="LastFmHistoryResult" xml:space="preserve"><value>キュー追加：{0}件、うちインポート日の時刻に変更：{5}件、登録済み：{1}件、14日超で除外：{2}件、条件未達または情報不足：{3}件、保留：{4}件（うち旧版の対応関係が不明で要確認：{6}件）。</value></data>
+  <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>古い履歴をインポート日の時刻で送信</value></data>
+  <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>既定ではオフです。14日を超える履歴は Last.fm でインポート日の統計に加算されます。元のローカル再生時刻は変更されません。手動の履歴送信にのみ適用されます。</value></data>
+  <data name="ApplicationFont" xml:space="preserve">
+    <value>アプリのフォント</value>
+  </data>
+  <data name="UseIndependentLyricsFont" xml:space="preserve">
+    <value>歌詞専用のフォントを使用</value>
+  </data>
+  <data name="IndependentLyricsFontDescription" xml:space="preserve">
+    <value>オフの場合、歌詞はアプリのフォントを使用します。選択済みの専用フォントは保持されます。</value>
+  </data>
+  <data name="UseIndependentDesktopLyricsFont" xml:space="preserve">
+    <value>デスクトップ歌詞専用のフォントを使用</value>
+  </data>
+  <data name="IndependentDesktopLyricsFontDescription" xml:space="preserve">
+    <value>オフの場合、デスクトップ歌詞はアプリのフォントを使用します。選択済みの専用フォントは保持されます。</value>
+  </data>
+  <data name="LastFmFavoritesTitle" xml:space="preserve"><value>お気に入りの送信</value></data>
+  <data name="LastFmFavoritesHelp" xml:space="preserve"><value>ローカルのお気に入り追加・解除を Last.fm に送信します。リモートのお気に入りは取得せず、ローカルのリストや順序は変更しません。オフラインや送信停止中は最新の操作を保持し、再開後に送信します。連携解除やアカウント切り替え時は待機中の操作を削除します。既存のお気に入りは手動で送信できます。</value></data>
+  <data name="LastFmFavoritePendingCount" xml:space="preserve"><value>送信待ちのお気に入り変更：{0} 件</value></data>
+  <data name="LastFmImportFavorites" xml:space="preserve"><value>既存のお気に入りを送信</value></data>
+  <data name="LastFmFavoriteResult" xml:space="preserve"><value>{0} 曲を追加しました。曲名・アーティスト情報の不足：{1} 曲。</value></data>
+  <data name="LastFmCancelFavoriteImport" xml:space="preserve"><value>読み込みをキャンセル</value></data>
+  <data name="LastFmFavoriteImportCanceled" xml:space="preserve"><value>読み込みを中止しました。追加済みのお気に入りは引き続き送信します。</value></data>
 </root>

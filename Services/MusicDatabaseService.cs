@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.WinUI;
+using CommunityToolkit.WinUI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.UI.Xaml;
@@ -16,6 +16,7 @@ using System.Threading.Tasks;
 using Windows.Storage;
 using Windows.UI;
 using WinUIMusicPlayer.Helper;
+using WinUIMusicPlayer.Services.LastFm;
 using WinUIMusicPlayer.Model;
 using WinUIMusicPlayer.Model.Stats;
 using WinUIMusicPlayer.Utils;
@@ -28,6 +29,7 @@ namespace WinUIMusicPlayer.Services
     public partial class MusicDatabaseService
     {
         private SQLiteAsyncConnection _dbConnection;
+        public WinUIMusicPlayer.Services.Lyrics.LyricsRepository Lyrics { get; private set; } = null!;
         private string DbPath = Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicDatabase.db");
         private string? _settingsPath;
         private string SettingsPath => _settingsPath ??= GetSettingsFilePath();
@@ -55,9 +57,19 @@ namespace WinUIMusicPlayer.Services
         private AppViewModel AppViewModel { get; set; }
         private ILogger<MusicDatabaseService> _logger;
 
-        public MusicDatabaseService(ILogger<MusicDatabaseService> logger)
+        private readonly WinUIMusicPlayer.Services.Lyrics.LyricsParser _lyricsParser;
+
+        public MusicDatabaseService(ILogger<MusicDatabaseService> logger, WinUIMusicPlayer.Services.Lyrics.LyricsParser lyricsParser)
         {
             _logger = logger;
+            _lyricsParser = lyricsParser;
+        }
+
+        public async Task<LyricsDocument> GetLyricsDocumentAsync(Music music, CancellationToken token = default)
+        {
+            if (music.Id > 0) return (await Lyrics.GetAsync(music.Id, token)).Document;
+            token.ThrowIfCancellationRequested();
+            return OneShotLyricsCache.Load(music.Path)?.Document ?? _lyricsParser.Import(music.EmbeddedLyrics, token: token);
         }
 
         // 数据库就绪信号：Begin() 在 OnLaunched 早期启动的一次性解析早于 Host/数据库初始化，
@@ -82,12 +94,16 @@ namespace WinUIMusicPlayer.Services
                     await _dbConnection.CreateTableAsync<WebDavCacheSettings>();
                     await _dbConnection.ExecuteAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_RemoteTrack_Resource ON RemoteTrack(SourceId, Href COLLATE BINARY)");
                     await _dbConnection.CreateTableAsync<PendingMetadataWrite>();
+                    await EnsurePendingMetadataLyricsColumnsAsync();
                     await _dbConnection.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Music_Path_NoCase ON Music(Path COLLATE NOCASE)");
                     await _dbConnection.CreateTableAsync<MusicLyrics>();
+                    Lyrics = new WinUIMusicPlayer.Services.Lyrics.LyricsRepository(_dbConnection, _lyricsParser);
+                    await Lyrics.InitializeAsync(DbPath);
                     await _dbConnection.CreateTableAsync<Folder>();
                     await _dbConnection.CreateTableAsync<SaveEqualizer>();
                     await _dbConnection.CreateTableAsync<SaveEqualizerPreset>();
                     await _dbConnection.CreateTableAsync<PlayList>();
+                    await EnsurePlayListSortOrderAsync();
                     await _dbConnection.CreateTableAsync<PlayListMusic>();
                     await _dbConnection.CreateTableAsync<LastPlayListState>();
                     await _dbConnection.CreateTableAsync<SubFolder>();
@@ -380,10 +396,47 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                var list = await _dbConnection.Table<PlayList>().ToListAsync();
+                var list = await _dbConnection.Table<PlayList>()
+                    .OrderBy(item => item.SortOrder)
+                    .ToListAsync();
                 await AppViewModel.AllPlayList.AddRangeAsync(list);
             }
             catch (Exception ex) { _logger.LogError(ex, $"InitalPlayListAsync 初始化播放列表失败: {ex.Message}"); }
+        }
+
+        /// <summary>
+        /// 为已有数据库补齐歌单排序列。sqlite-net 的 CreateTable 不会为已存在的表追加新列，
+        /// 因此这里必须执行幂等迁移，并为旧记录按创建 ID 建立稳定的初始顺序。
+        /// </summary>
+        private async Task EnsurePlayListSortOrderAsync()
+        {
+            var columns = await _dbConnection.QueryAsync<TableColumnInfo>("PRAGMA table_info(PlayList)");
+            bool hasSortOrder = columns.Any(column => string.Equals(column.Name, nameof(PlayList.SortOrder), StringComparison.OrdinalIgnoreCase));
+            if (!hasSortOrder)
+            {
+                await _dbConnection.ExecuteAsync("ALTER TABLE PlayList ADD COLUMN [SortOrder] INTEGER NOT NULL DEFAULT 0");
+            }
+
+            var playlists = await _dbConnection.Table<PlayList>().OrderBy(item => item.Id).ToListAsync();
+            if (playlists.Count == 0 || (hasSortOrder && playlists.Any(item => item.SortOrder != 0))) return;
+
+            await _dbConnection.RunInTransactionAsync(connection =>
+            {
+                for (int i = 0; i < playlists.Count; i++)
+                {
+                    connection.Execute(
+                        "UPDATE PlayList SET [SortOrder]=? WHERE Id=?",
+                        i + 1,
+                        playlists[i].Id);
+                }
+            });
+        }
+
+        private async Task EnsurePendingMetadataLyricsColumnsAsync()
+        {
+            var columns = await _dbConnection.QueryAsync<TableColumnInfo>("PRAGMA table_info(PendingMetadataWrite)");
+            if (!columns.Any(column => string.Equals(column.Name, nameof(PendingMetadataWrite.PronunciationLrc), StringComparison.OrdinalIgnoreCase)))
+                await _dbConnection.ExecuteAsync("ALTER TABLE PendingMetadataWrite ADD COLUMN PronunciationLrc TEXT NULL");
         }
 
         public async Task UpdateMusicInfo(Music music)
@@ -398,12 +451,6 @@ namespace WinUIMusicPlayer.Services
         private class TableColumnInfo
         {
             public string Name { get; set; }
-        }
-
-        public async Task<(string? lyrics, string? transLrc, string? krc, string? tKrc)> GetLyricsAsync(int musicId)
-        {
-            var lyrics = await _dbConnection.FindAsync<MusicLyrics>(musicId);
-            return (lyrics?.Lyrics, lyrics?.TranslatedLyrics, lyrics?.Krc, lyrics?.TKrc);
         }
 
         /// <summary>
@@ -426,18 +473,6 @@ namespace WinUIMusicPlayer.Services
             }
         }
 
-        public async Task SaveLyricsAsync(int musicId, string? lyrics, string? transLrc, string? krc, string? tKrc)
-        {
-            await _dbConnection.InsertOrReplaceAsync(new MusicLyrics
-            {
-                MusicId = musicId,
-                Lyrics = lyrics ?? "",
-                TranslatedLyrics = transLrc ?? "",
-                Krc = krc ?? "",
-                TKrc = tKrc ?? ""
-            });
-        }
-
         public IEnumerable<PlayListMusicItem> GetMusicByPlayListIdFromMem(int playListId, string search = null)
         {
             var plmSpan = System.Runtime.InteropServices.CollectionsMarshal.AsSpan(AppData.AllPlayListMusics);
@@ -454,13 +489,7 @@ namespace WinUIMusicPlayer.Services
                     ref readonly var plm = ref plmSpan[i];
                     if (plm.PlayListId != playListId) continue;
                     if (!AppViewModel.TryFindById(plm.MusicId, out var m) || m is null) continue;
-                    if (hasSearch)
-                    {
-                        bool match = (m.Title is not null && m.Title.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
-                                     (m.Album is not null && m.Album.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
-                                     (m.Author is not null && m.Author.Contains(search, StringComparison.OrdinalIgnoreCase));
-                        if (!match) continue;
-                    }
+                    if (hasSearch && !LibraryProjectionService.MusicMatchesSearch(m, search)) continue;
                     buf[written++] = new PlayListMusicItem { Music = m, PlayListOrder = plm.Order };
                 }
 
@@ -519,7 +548,7 @@ namespace WinUIMusicPlayer.Services
                 }
                 music.IsFavorite = true;
                 music.Order = maxOrder + 1;
-                await _dbConnection.UpdateAsync(music);
+                await AddToFavourite(music);
             }
         }
 
@@ -620,8 +649,36 @@ namespace WinUIMusicPlayer.Services
 
         public async Task<int> InsertPlayList(PlayList playList)
         {
+            if (playList.SortOrder <= 0)
+            {
+                var last = await _dbConnection.Table<PlayList>()
+                    .OrderByDescending(item => item.SortOrder)
+                    .FirstOrDefaultAsync();
+                playList.SortOrder = (last?.SortOrder ?? 0) + 1;
+            }
             await _dbConnection.InsertAsync(playList);
             return playList.Id;
+        }
+
+        public async Task UpdatePlayListOrderBatch(IEnumerable<PlayList> playlists)
+        {
+            var snapshot = playlists
+                .Where(item => item is not null && item.Id > 0)
+                .Select(item => (item.Id, item.SortOrder))
+                .ToArray();
+            if (snapshot.Length == 0) return;
+
+            await _dbConnection.RunInTransactionAsync(connection =>
+            {
+                for (int i = 0; i < snapshot.Length; i++)
+                {
+                    var item = snapshot[i];
+                    connection.Execute(
+                        "UPDATE PlayList SET [SortOrder]=? WHERE Id=?",
+                        item.SortOrder,
+                        item.Id);
+                }
+            });
         }
 
         public async Task UpdatePlayList(PlayList playList)
@@ -638,19 +695,40 @@ namespace WinUIMusicPlayer.Services
 
         public async Task RemovePlayList(PlayList playList)
         {
-            var playListMusics = await _dbConnection.Table<PlayListMusic>()
-               .Where(plm => plm.PlayListId == playList.Id)
-               .ToListAsync();
-            foreach (var playListMusic in playListMusics)
-            {
-                await _dbConnection.DeleteAsync(playListMusic);
-            }
-            await _dbConnection.DeleteAsync(playList);
+            if (playList is null) return;
+            await RemovePlayLists([playList.Id]);
         }
 
-        public async Task UpdateAllAsync(IEnumerable<Music> musicList)
+        public async Task RemovePlayLists(IEnumerable<int> playListIds)
         {
-            await _dbConnection.UpdateAllAsync(musicList);
+            var ids = playListIds
+                .Where(id => id > 0)
+                .Distinct()
+                .ToArray();
+            if (ids.Length == 0) return;
+
+            var placeholders = string.Join(",", Enumerable.Repeat("?", ids.Length));
+            var parameters = ids.Cast<object>().ToArray();
+            await _dbConnection.RunInTransactionAsync(connection =>
+            {
+                connection.Execute(
+                    $"DELETE FROM PlayListMusic WHERE PlayListId IN ({placeholders})",
+                    parameters);
+                connection.Execute(
+                    $"DELETE FROM PlayList WHERE Id IN ({placeholders})",
+                    parameters);
+            });
+            await GetPlayListMusic();
+        }
+
+        public Task SaveFavoriteOrderAsync(IEnumerable<Music> musicList)
+        {
+            // Snapshot on the UI thread, then join the same sequence as favorite toggles. A delayed
+            // older toggle must commit before a later drag, and sorting must only write Order.
+            var orders = new List<LastFmFavoriteOrder>();
+            foreach (var music in musicList) orders.Add(new(music.Id, music.Order));
+            var lastFm = App.Services.GetRequiredService<LastFmService>();
+            return App.Services.GetRequiredService<ApplicationTasks>().RunCommittedAsync(() => lastFm.SaveFavoriteOrderAsync(orders));
         }
 
         private BassPlayerIpc.Shared.AudioCorrectionStore? _audioCorrectionStore;
@@ -1062,18 +1140,40 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.WindowBackgroundBlurAmount = settings.WindowBackgroundBlurAmount;
                 AppViewModel.ThemeType = settings.AppTheme;
                 AppViewModel.IsRunningBackend = settings.IsRunningBackend;
+                // 新版本按宿主模式分别保存自动隐藏；旧版本只有一个总开关，首次读取时同时迁移到两个模式。
                 AppSettings.AutoHideDesktopLyricsOnPlayingDetail = settings.AutoHideDesktopLyricsOnPlayingDetail;
+                AppSettings.AutoHideDesktopLyricsFloatingOnPlayingDetail =
+                    settings.AutoHideDesktopLyricsFloatingOnPlayingDetail ?? settings.AutoHideDesktopLyricsOnPlayingDetail;
+                AppSettings.AutoHideDesktopLyricsTaskbarOnPlayingDetail =
+                    settings.AutoHideDesktopLyricsTaskbarOnPlayingDetail ?? settings.AutoHideDesktopLyricsOnPlayingDetail;
                 AppSettings.IsDesktopLyricsEnabled = settings.IsDesktopLyricsEnabled;
                 AppSettings.IsDesktopLyricsLocked = settings.IsDesktopLyricsLocked;
                 AppSettings.IsDesktopLyricsKaraokeEnabled = settings.IsDesktopLyricsKaraokeEnabled;
+                AppSettings.DesktopLyricsMode = settings.DesktopLyricsMode;
                 AppSettings.DesktopLyricsFontSize = settings.DesktopLyricsFontSize;
+                AppSettings.DesktopLyricsTaskbarLyricsWidth = settings.DesktopLyricsTaskbarLyricsWidth;
                 AppSettings.DesktopLyricsFontFamily = settings.DesktopLyricsFontFamily;
                 AppSettings.DesktopLyricsColorRgb = settings.DesktopLyricsColorRgb;
                 AppSettings.IsDesktopLyricsCustomColorEnabled = settings.IsDesktopLyricsCustomColorEnabled;
                 AppSettings.IsDesktopLyricsTranslationEnabled = settings.IsDesktopLyricsTranslationEnabled;
+                AppSettings.IsDesktopLyricsPronunciationEnabled = settings.IsDesktopLyricsPronunciationEnabled;
                 AppSettings.DesktopLyricsFontWeight = settings.DesktopLyricsFontWeight;
                 AppSettings.LyricsFontWeight = settings.LyricsFontWeight;
                 AppViewModel.IsAutoLyricsEnabled = settings.IsAutoLyricsEnabled;
+                AppSettings.IsLyricsTranslationEnabled = settings.IsLyricsTranslationEnabled;
+                AppSettings.IsLyricsPronunciationEnabled = settings.IsLyricsPronunciationEnabled;
+                AppSettings.IsMandarinPronunciationEnabled = settings.IsMandarinPronunciationEnabled;
+                AppSettings.IsCantonesePronunciationEnabled = settings.IsCantonesePronunciationEnabled;
+                AppSettings.IsJapanesePronunciationEnabled = settings.IsJapanesePronunciationEnabled;
+                AppSettings.IsKoreanPronunciationEnabled = settings.IsKoreanPronunciationEnabled;
+                AppViewModel.IsLyricsTranslationEnabled = settings.IsLyricsTranslationEnabled;
+                AppViewModel.IsLyricsPronunciationEnabled = settings.IsLyricsPronunciationEnabled;
+                AppViewModel.IsMandarinPronunciationEnabled = settings.IsMandarinPronunciationEnabled;
+                AppViewModel.IsCantonesePronunciationEnabled = settings.IsCantonesePronunciationEnabled;
+                AppViewModel.IsJapanesePronunciationEnabled = settings.IsJapanesePronunciationEnabled;
+                AppViewModel.IsKoreanPronunciationEnabled = settings.IsKoreanPronunciationEnabled;
+                AppViewModel.State.Preferences.LocalLyricsFormatOrder = WinUIMusicPlayer.Services.Lyrics.LyricsFilePolicy.NormalizeOrder(settings.LocalLyricsFormatOrder);
+                AppViewModel.State.Preferences.PreferDatabaseLyrics = settings.PreferDatabaseLyrics;
                 AppViewModel.IsAutoCoverEnabled = settings.IsAutoCoverEnabled;
                 AppViewModel.DsdGain = audio.DsdGain;
                 AppViewModel.DsdPcmFreq = audio.DsdPcmFreq;
@@ -1088,13 +1188,13 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.AppWidth = settings.AppWidth;
                 AppViewModel.AppHeight = settings.AppHeight;
                 AppViewModel.FontFamilyList = new ObservableCollection<FontInfo>(ToolUtils.GetSystemFontsInternal());
-                AppViewModel.FontFamily = AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(new FontFamily(settings.GlobalFont).Source))
-                    // 找不到已保存字体（被卸载/名称不匹配）时必须兜底：FontFamily 为 null 会让
-                    // SaveCurrentSettings 取 GlobalFont 时抛 NRE，导致整个会话所有保存静默失败
-                    ?? AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault();
+                AppViewModel.ApplicationFontFamily = ToolUtils.ResolveFont(AppViewModel.FontFamilyList, settings.ApplicationFont);
+                AppViewModel.FontFamily = ToolUtils.ResolveFont(AppViewModel.FontFamilyList, settings.GlobalFont);
+                AppViewModel.UseIndependentLyricsFont = settings.UseIndependentLyricsFont;
                 AppViewModel.DesktopLyricsFontSize = settings.DesktopLyricsFontSize;
-                AppViewModel.DesktopLyricsFontFamily = AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault(f => f.Name == ToolUtils.GetCleanFontName(new FontFamily(settings.DesktopLyricsFontFamily).Source))
-                    ?? AppViewModel.FontFamilyList.AsValueEnumerable().FirstOrDefault();
+                AppViewModel.DesktopLyricsTaskbarLyricsWidth = settings.DesktopLyricsTaskbarLyricsWidth;
+                AppViewModel.UseIndependentDesktopLyricsFont = settings.UseIndependentDesktopLyricsFont;
+                AppViewModel.DesktopLyricsFontFamily = ToolUtils.ResolveFont(AppViewModel.FontFamilyList, settings.DesktopLyricsFontFamily);
                 AppViewModel.DesktopLyricsColor = Color.FromArgb(0xFF,
                     (byte)((settings.DesktopLyricsColorRgb >> 16) & 0xFF),
                     (byte)((settings.DesktopLyricsColorRgb >> 8) & 0xFF),
@@ -1102,6 +1202,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.IsDesktopLyricsCustomColorEnabled = settings.IsDesktopLyricsCustomColorEnabled;
                 AppViewModel.IsDesktopLyricsKaraokeEnabled = settings.IsDesktopLyricsKaraokeEnabled;
                 AppViewModel.IsDesktopLyricsTranslationEnabled = settings.IsDesktopLyricsTranslationEnabled;
+                AppViewModel.IsDesktopLyricsPronunciationEnabled = settings.IsDesktopLyricsPronunciationEnabled;
                 AppViewModel.IsDesktopLyricsGlowEnabled = settings.IsDesktopLyricsGlowEnabled;
                 AppViewModel.IsDesktopLyricsCharFloatEnabled = settings.IsDesktopLyricsCharFloatEnabled;
                 AppViewModel.IsDesktopLyricsCharScaleEnabled = settings.IsDesktopLyricsCharScaleEnabled;
@@ -1129,6 +1230,7 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.GlobalFontSize = settings.GlobalFontSize;
                 AppViewModel.IsGlobalFontSizeEnabled = settings.IsGlobalFontSizeEnabled;
                 AppViewModel.MusicCoverCache = string.IsNullOrEmpty(settings.MusicCoverCache) ? Path.Combine(ApplicationData.Current.LocalFolder.Path, "MusicCoverCache") : settings.MusicCoverCache;
+                AppViewModel.SpectralEnhancement = (int)audio.SpectralEnhancement;
                 AppViewModel.IsDopEnabled = audio.IsDopEnabled;
                 AppViewModel.ExperimentalSurround51 = audio.ExperimentalSurround51;
                 AppViewModel.ExperimentalAtmosPassthrough = audio.ExperimentalAtmosPassthrough;
@@ -1167,10 +1269,6 @@ namespace WinUIMusicPlayer.Services
                 AppViewModel.ResetDesktopLyricsShortcut = settings.ResetDesktopLyricsShortcut;
                 AppSettings.EnableGlobalHotKey = settings.EnableGlobalHotKey;
                 AppViewModel.EnableGlobalHotKey = settings.EnableGlobalHotKey;
-                AppSettings.IsTrimOnHideEnabled = settings.IsTrimOnHideEnabled;
-                AppViewModel.IsTrimOnHideEnabled = settings.IsTrimOnHideEnabled;
-                AppSettings.IsTrimAfterPlaybackEnabled = settings.IsTrimAfterPlaybackEnabled;
-                AppViewModel.IsTrimAfterPlaybackEnabled = settings.IsTrimAfterPlaybackEnabled;
                 AppViewModel.ArtistSplitSymbols = settings.ArtistSplitSymbols;
                 AppViewModel.PlayingDetailAlignment = settings.PlayingDetailAlignment;
                 AppViewModel.UsePlayingDetailAlignmentInPortrait = settings.UsePlayingDetailAlignmentInPortrait;
@@ -1318,7 +1416,19 @@ namespace WinUIMusicPlayer.Services
 
         public async Task AddToFavourite(Music music)
         {
-            await _dbConnection.UpdateAsync(music);
+            // Capture before the first await: the UI may immediately toggle this same model again.
+            var change = new LastFmFavoriteChange(music.Id,
+                new(music.Title?.Trim() ?? "", music.Author?.Trim() ?? "", "", 0), music.IsFavorite, music.Order);
+            try
+            {
+                // The library connection is ready before Last.fm starts. Resolve only at this legacy
+                // command boundary, avoiding a constructor cycle with the borrowed library store.
+                await App.Services.GetRequiredService<LastFmService>().SaveFavoriteAsync(change);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "保存本地收藏及 Last.fm 待上报操作失败");
+            }
         }
 
         public Music? LoadCurrentPlayingMusic(int? lastPlayedMusicId)

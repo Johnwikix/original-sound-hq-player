@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 {
@@ -22,6 +21,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public ValueTransition<double> PlayedPrimaryOpacityTransition { get; set; }
         public ValueTransition<double> UnplayedPrimaryOpacityTransition { get; set; }
         public ValueTransition<double> SecondaryOpacityTransition { get; set; }
+        public RenderLyricsAuxiliaryLayer PronunciationLayer { get; } = new();
+        public RenderLyricsAuxiliaryLayer TranslationLayer { get; } = new();
 
         public ValueTransition<double> PrimaryXOffsetTransition { get; set; }
         public ValueTransition<double> SecondaryXOffsetTransition { get; set; }
@@ -30,20 +31,32 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         public LyricScrollMotion ScrollMotion { get; } = new();
 
         public CanvasTextLayout? PrimaryTextLayout { get; private set; }
-        public CanvasTextLayout? SecondaryTextLayout { get; private set; }
+        public CanvasTextLayout? SecondaryTextLayout => TranslationLayer.Layout;
 
         public Vector2 PrimaryPosition { get; set; }
-        public Vector2 SecondaryPosition { get; set; }
+        public Vector2 SecondaryPosition => TranslationLayer.Position;
+
+        // Win2D command lists are recorded at a fixed position. During the
+        // secondary-height transition the logical row moves, so rendering uses
+        // this cached origin plus a transform offset instead of sampling the
+        // old cache with the new layout coordinates.
+        public Vector2 CachedPrimaryPosition { get; private set; }
+        public double LayoutOffsetY => PrimaryPosition.Y - CachedPrimaryPosition.Y;
 
         public Vector2 TopLeftPosition { get; set; }
         public Vector2 CenterPosition { get; set; }
         public Vector2 BottomRightPosition { get; set; }
 
         public CanvasGeometry? PrimaryCanvasGeometry { get; private set; }
-        public CanvasGeometry? SecondaryCanvasGeometry { get; private set; }
 
         public string PrimaryText { get; set; } = "";
-        public string SecondaryText { get; set; } = "";
+        public string TranslationText { get; private set; } = "";
+        public string PronunciationText { get; private set; } = "";
+        public double LayerSpacing => (PrimaryTextLayout?.LayoutBounds.Height ?? 30) * 0.1;
+        public double CurrentSecondaryHeight => PronunciationLayer.SlotHeight(LayerSpacing) + TranslationLayer.SlotHeight(LayerSpacing);
+        /// <summary>Indicates that a pronunciation or translation reveal is still changing row geometry.</summary>
+        public bool IsSecondaryLayoutTransitioning =>
+            PronunciationLayer.Reveal.IsTransitioning || TranslationLayer.Reveal.IsTransitioning;
 
         public CanvasCommandList? CachedStroke { get; private set; }
         public CanvasCommandList? CachedFill { get; private set; }
@@ -87,6 +100,17 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         private double _cachedPrimaryLineHeight;
 
         public bool IsPrimaryHasRealSyllableInfo { get; set; }
+
+        /// <summary>Gets the display highlight boundary without extending word or line playback progress.</summary>
+        public double? HighlightEndMs { get; private set; }
+
+        /// <summary>Keeps the outgoing word effects visible during the flow-wave exit, independently of musical focus.</summary>
+        public bool IsWordEffectsRetiring { get; internal set; }
+
+        /// <summary>Determines whether the line retains its display highlight at the given playback position.</summary>
+        /// <param name="currentMs">The playback position in milliseconds.</param>
+        /// <returns><see langword="true"/> while the display interval is active; otherwise, <see langword="false"/>.</returns>
+        public bool GetIsHighlighted(double currentMs) => StartMs <= currentMs && currentMs < (HighlightEndMs ?? EndMs);
 
         public CropEffect? CachedCropEffect { get; private set; }
         public GaussianBlurEffect? CachedBlurEffect { get; private set; }
@@ -132,10 +156,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     pos += s.Length;
                 }
             });
-            SecondaryText = lyricLine.TransLateText ?? "";
+            TranslationText = lyricLine.TransLateText ?? "";
+            PronunciationText = lyricLine.PronunciationText ?? "";
 
             StartMs = lyricLine.StartMs;
-            EndMs = nextLineStartMs;
+            EndMs = lyricLine.EndMs > lyricLine.StartMs ? lyricLine.EndMs : nextLineStartMs;
+            HighlightEndMs = Math.Max(EndMs ?? StartMs, lyricLine.HighlightEndMs ?? nextLineStartMs);
 
             int charIndex = 0;
             bool hasRealSyllable = false;
@@ -157,13 +183,25 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             IsPrimaryHasRealSyllableInfo = lyricLine.Words.Count > 0 && hasRealSyllable;
         }
 
+        public void ApplyDisplayOptions(bool showTranslation, bool showPronunciation)
+        {
+            TranslationLayer.SetVisible(showTranslation && !string.IsNullOrWhiteSpace(TranslationText));
+            PronunciationLayer.SetVisible(showPronunciation && !string.IsNullOrWhiteSpace(PronunciationText));
+        }
+
+        public void UpdateSecondaryTransitions(TimeSpan elapsedTime)
+        {
+            TranslationLayer.Reveal.Update(elapsedTime);
+            PronunciationLayer.Reveal.Update(elapsedTime);
+        }
+
         public void DisposeTextLayout()
         {
             PrimaryTextLayout?.Dispose();
             PrimaryTextLayout = null;
 
-            SecondaryTextLayout?.Dispose();
-            SecondaryTextLayout = null;
+            TranslationLayer.DisposeLayout();
+            PronunciationLayer.DisposeLayout();
         }
 
         public void RecreateTextLayout(
@@ -187,15 +225,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 WordWrapping = CanvasWordWrapping.WholeWord,
             };
 
-            if (translatedTextFontSize > 0 && !string.IsNullOrWhiteSpace(SecondaryText))
-            {
-                format.FontSize = translatedTextFontSize;
-                SecondaryTextLayout = new CanvasTextLayout(resourceCreator, SecondaryText, format, (float)maxWidth, (float)maxHeight)
-                {
-                    HorizontalAlignment = horizontalAlignment,
-                    Options = CanvasDrawTextOptions.NoPixelSnap,
-                };
-            }
+            format.FontSize = Math.Max(1, originalTextFontSize * 0.6f);
+            PronunciationLayer.Measure(resourceCreator, PronunciationText, format, (float)maxWidth, (float)maxHeight, horizontalAlignment);
+            format.FontSize = Math.Max(1, translatedTextFontSize);
+            TranslationLayer.Measure(resourceCreator, translatedTextFontSize > 0 ? TranslationText : "", format,
+                (float)maxWidth, (float)maxHeight, horizontalAlignment);
 
             format.FontSize = originalTextFontSize;
             PrimaryTextLayout = new CanvasTextLayout(resourceCreator, PrimaryText, format, (float)maxWidth, (float)maxHeight)
@@ -204,15 +238,15 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 Options = CanvasDrawTextOptions.NoPixelSnap,
             };
             PrimaryTextRegions = PrimaryTextLayout.GetCharacterRegions(0, PrimaryText.Length);
+            if (sharedFormat is null) format.Dispose();
         }
 
         public void DisposeTextGeometry()
         {
             PrimaryCanvasGeometry?.Dispose();
             PrimaryCanvasGeometry = null;
-
-            SecondaryCanvasGeometry?.Dispose();
-            SecondaryCanvasGeometry = null;
+            TranslationLayer.DisposeGeometry();
+            PronunciationLayer.DisposeGeometry();
         }
 
         public void RecreateTextGeometry()
@@ -222,13 +256,18 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
             if (PrimaryTextLayout != null)
                 PrimaryCanvasGeometry = CanvasGeometry.CreateText(PrimaryTextLayout);
 
-            if (SecondaryTextLayout != null)
-                SecondaryCanvasGeometry = CanvasGeometry.CreateText(SecondaryTextLayout);
+            TranslationLayer.CreateGeometry();
+            PronunciationLayer.CreateGeometry();
         }
 
-        public void RecreateRenderChars(int strokeWidth)
+        public void RecreateRenderChars(int strokeWidth, bool preserveFloatTransitions = true)
         {
-            PrimaryRenderChars.Clear();
+            // Layout changes recreate the character geometry, but the float
+            // transition is independent of that geometry. Keep it attached to
+            // the same character index so a resize/settings redraw does not
+            // snap an active word back to its baseline.
+            var previousChars = PrimaryRenderChars;
+            PrimaryRenderChars = [];
             foreach (var syllable in PrimaryRenderSyllables)
                 syllable.ChildrenRenderLyricsChars.Clear();
 
@@ -236,6 +275,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
             var textLength = PrimaryText.Length;
             int syllableIdx = 0;
+            int previousCharIdx = 0;
             var syllables = PrimaryRenderSyllables;
 
             for (int startCharIndex = 0; startCharIndex < textLength; startCharIndex++)
@@ -263,6 +303,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                     StartIndex = startCharIndex,
                 };
 
+                if (preserveFloatTransitions)
+                {
+                    while (previousCharIdx < previousChars.Count
+                        && previousChars[previousCharIdx].StartIndex < startCharIndex)
+                        previousCharIdx++;
+                    if (previousCharIdx < previousChars.Count
+                        && previousChars[previousCharIdx].StartIndex == startCharIndex)
+                        renderChar.FloatTransition = previousChars[previousCharIdx].FloatTransition;
+                }
+
                 syllable.ChildrenRenderLyricsChars.Add(renderChar);
                 PrimaryRenderChars.Add(renderChar);
             }
@@ -273,11 +323,11 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         {
             if (CachedStroke != null && CachedFill != null) return;
 
+            CachedPrimaryPosition = PrimaryPosition;
+
             CachedFill = new CanvasCommandList(resourceCreator);
             using (var ds = CachedFill.CreateDrawingSession())
             {
-                if (SecondaryTextLayout != null)
-                    ds.DrawTextLayout(SecondaryTextLayout, SecondaryPosition, Microsoft.UI.Colors.White);
                 if (PrimaryTextLayout != null)
                     ds.DrawTextLayout(PrimaryTextLayout, PrimaryPosition, Microsoft.UI.Colors.White);
             }
@@ -294,8 +344,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 using var ds = CachedStroke.CreateDrawingSession();
                 if (PrimaryCanvasGeometry != null)
                     ds.DrawGeometry(PrimaryCanvasGeometry, PrimaryPosition, Microsoft.UI.Colors.White, (float)strokeWidth, roundStrokeStyle);
-                if (SecondaryCanvasGeometry != null)
-                    ds.DrawGeometry(SecondaryCanvasGeometry, SecondaryPosition, Microsoft.UI.Colors.White, (float)strokeWidth, roundStrokeStyle);
             }
 
             UnplayedFillTint = new TintEffect { Source = CachedFill, Color = Microsoft.UI.Colors.White };
@@ -405,6 +453,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         public void DisposeCaches()
         {
+            TranslationLayer.DisposeCache();
+            PronunciationLayer.DisposeCache();
             UnplayedComposite?.Dispose();
             UnplayedStrokeTint?.Dispose();
             UnplayedFillTint?.Dispose();

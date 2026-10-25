@@ -19,11 +19,13 @@ public sealed partial class AnimatedTextBlock
     private bool _hoverChecked;
     private HoverLine[] _hoverLines;
 
-    private readonly struct HoverLine(CanvasTextLayout layout, float y, float distance, float opacity, bool hasColorGlyphs)
+    private readonly struct HoverLine(CanvasTextLayout layout, float y, float distance, float loopDistance,
+        float opacity, bool hasColorGlyphs)
     {
         public CanvasTextLayout Layout { get; } = layout;
         public float Y { get; } = y;
         public float Distance { get; } = distance;
+        public float LoopDistance { get; } = loopDistance;
         public float Opacity { get; } = opacity;
         public bool HasColorGlyphs { get; } = hasColorGlyphs;
     }
@@ -107,6 +109,30 @@ public sealed partial class AnimatedTextBlock
         control._staticLayoutDirty = true;
         control.InvalidateMeasure();
         control.SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
+    }
+
+    private static void OnActiveChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
+        => ((AnimatedTextBlock)sender).UpdateActiveState((bool)args.NewValue);
+
+    private void UpdateActiveState(bool active)
+    {
+        _isActive = active;
+        Opacity = active ? 1 : 0;
+        IsHitTestVisible = active;
+
+        if (!active)
+        {
+            StopHoverScroll();
+            StopRenderingLoop();
+            if (_currentState != AnimatedTextBlockRedrawState.Idle)
+                SetRedrawState(AnimatedTextBlockRedrawState.Idle, false);
+        }
+        else
+        {
+            ApplyTextForeground();
+            _staticLayoutDirty = true;
+            SetRedrawState(AnimatedTextBlockRedrawState.TextChanged, false);
+        }
     }
 
     private static void OnTextEffectChanged(DependencyObject sender, DependencyPropertyChangedEventArgs args)
@@ -216,6 +242,8 @@ public sealed partial class AnimatedTextBlock
             foreach (var metric in metrics) y += metric.Height;
         int textOffset = 0;
         bool scrollable = false;
+        float loopGap = 0;
+        bool loopGapMeasured = false;
         foreach (var metric in metrics)
         {
             if (bottomToTop) y -= metric.Height;
@@ -229,13 +257,21 @@ public sealed partial class AnimatedTextBlock
                 layout.VerticalAlignment = CanvasVerticalAlignment.Top;
                 float width = (float)Math.Ceiling(layout.LayoutBounds.Width);
                 float distance = metric.IsTrimmed ? Math.Max(0, width - (float)sender.Size.Width) : 0;
+                float loopDistance = 0;
                 if (distance > 0)
                 {
                     layout.HorizontalAlignment = CanvasHorizontalAlignment.Left;
                     layout.RequestedSize = new Size(width, metric.Height);
+                    if (!loopGapMeasured)
+                    {
+                        loopGap = MeasureHoverLoopGap(sender, format, metric.Height);
+                        loopGapMeasured = true;
+                    }
+                    loopDistance = width + loopGap;
                 }
                 float baseline = layout.LineMetrics[0].Baseline;
-                lines.Add(new HoverLine(layout, y + metric.Baseline - baseline, distance, opacity, ShapedText.MayContainColorGlyphs(lineText)));
+                lines.Add(new HoverLine(layout, y + metric.Baseline - baseline, distance,
+                    loopDistance, opacity, ShapedText.MayContainColorGlyphs(lineText)));
                 scrollable |= distance > 0;
             }
             catch
@@ -249,18 +285,36 @@ public sealed partial class AnimatedTextBlock
         return scrollable;
     }
 
-    private float GetHoverOffset(float distance)
+    private static float MeasureHoverLoopGap(CanvasControl sender, CanvasTextFormat format, float height)
     {
-        if (distance <= 0) return 0;
-        const double pauseSeconds = 0.8;
+        // Measure one space once per format/paragraph instead of allocating a
+        // concatenated string and a character-region array for every line.
+        using var sample = new CanvasTextLayout(sender, "x x", format, float.MaxValue, height);
+        sample.TrimmingGranularity = CanvasTextTrimmingGranularity.None;
+        sample.TrimmingSign = CanvasTrimmingSign.None;
+        var spaceRegion = sample.GetCharacterRegions(1, 1)[0];
+        return Math.Max(1, (float)Math.Ceiling(spaceRegion.LayoutBounds.Width));
+    }
+
+    private float GetHoverOffset(float distance, float loopDistance)
+    {
+        if (distance <= 0 || loopDistance <= 0) return 0;
         const double pixelsPerSecond = 36;
-        double travelSeconds = distance / pixelsPerSecond;
-        double phase = _hoverElapsed % (2 * (pauseSeconds + travelSeconds));
-        double progress = phase < pauseSeconds + travelSeconds
-            ? Math.Clamp((phase - pauseSeconds) / travelSeconds, 0, 1)
-            : 1 - Math.Clamp((phase - 2 * pauseSeconds - travelSeconds) / travelSeconds, 0, 1);
+        double travelSeconds = loopDistance / pixelsPerSecond;
+        double progress = (_hoverElapsed % travelSeconds) / travelSeconds;
         bool rightToLeft = TextDirection == AnimatedTextBlockTextDirection.RightToLeftThenTopToBottom
             || TextDirection == AnimatedTextBlockTextDirection.RightToLeftThenBottomToTop;
-        return (float)(-distance * (rightToLeft ? 1 - progress : progress));
+        return (float)(rightToLeft
+            ? -loopDistance + loopDistance * progress
+            : -loopDistance * progress);
+    }
+
+    private void DrawHoverLine(CanvasDrawingSession ds, HoverLine line)
+    {
+        float offset = GetHoverOffset(line.Distance, line.LoopDistance);
+        DrawTextLayout(ds, line.Layout, offset, line.Y, line.Opacity, line.HasColorGlyphs);
+        if (line.LoopDistance > 0)
+            DrawTextLayout(ds, line.Layout, offset + line.LoopDistance, line.Y,
+                line.Opacity, line.HasColorGlyphs);
     }
 }

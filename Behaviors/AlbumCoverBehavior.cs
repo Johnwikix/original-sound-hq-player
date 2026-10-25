@@ -113,15 +113,22 @@ public class AlbumCoverBehavior : Behavior<Image>
             try
             {
                 var source = await task.WaitAsync(token);
-                if (token.IsCancellationRequested || AssociatedObject == null || source == null)
+                try
                 {
-                    DisposeImageSource(source);
+                    if (token.IsCancellationRequested || AssociatedObject == null || source == null)
+                        return;
+
+                    SetSource(source);
+                    if (IsSourceOwned(source))
+                        source = null;
+                    FadeIn();
                     return;
                 }
-
-                SetSource(source);
-                FadeIn();
-                return;
+                finally
+                {
+                    if (!IsSourceOwned(source))
+                        DisposeImageSource(source);
+                }
             }
             catch (OperationCanceledException)
             {
@@ -170,6 +177,9 @@ public class AlbumCoverBehavior : Behavior<Image>
         if (source is IDisposable disposable)
             disposable.Dispose();
     }
+
+    private bool IsSourceOwned(ImageSource? source) =>
+        source is not null && ReferenceEquals(source, AssociatedObject?.Source);
 
     public static void ClearImagesInContainer(DependencyObject parent) { }
 }

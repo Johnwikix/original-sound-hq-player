@@ -3,11 +3,11 @@
     x:Class="WinUIMusicPlayer.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:controls="using:WinUIMusicPlayer.Controls"
-    xmlns:tool="using:WinUIMusicPlayer.Utils"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:WinUIMusicPlayer"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:tool="using:WinUIMusicPlayer.Utils"
     xmlns:view="using:WinUIMusicPlayer.View"
     xmlns:winex="using:WinUIEx"
     Title="OriginalSound HQ Player"
@@ -16,15 +16,18 @@
     <winex:WindowEx.SystemBackdrop>
         <DesktopAcrylicBackdrop />
     </winex:WindowEx.SystemBackdrop>
-    <Grid>
-        <controls:WindowBackgroundImage x:Name="WindowBackground"
-            SourcePath="{x:Bind ViewModel.WindowBackgroundImagePath, Mode=OneWay}"
-            BlurAmount="{x:Bind ViewModel.WindowBackgroundBlurAmount, Mode=OneWay}" />
-        <Border Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Opacity="0.8"
+    <Grid tool:ApplicationFont.IsEnabled="True">
+        <controls:WindowBackgroundImage
+            x:Name="WindowBackground"
+            BlurAmount="{x:Bind ViewModel.WindowBackgroundBlurAmount, Mode=OneWay}"
+            SourcePath="{x:Bind ViewModel.WindowBackgroundImagePath, Mode=OneWay}" />
+        <Border
+            Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
             IsHitTestVisible="False"
+            Opacity="0.8"
             Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(WindowBackground.HasImage), Mode=OneWay}" />
         <Frame x:Name="ShellFrame" />
-        <!-- 托盘随主窗口显式创建；命令可用性由生命周期控制。 -->
+        <!--  托盘随主窗口显式创建；命令可用性由生命周期控制。  -->
         <Grid x:Name="TrayHost" />
     </Grid>
 </winex:WindowEx>

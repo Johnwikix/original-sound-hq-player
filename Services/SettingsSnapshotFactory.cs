@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using BassPlayerIpc.Shared;
 using WinUIMusicPlayer.Helper;
 using WinUIMusicPlayer.Model;
@@ -23,7 +23,15 @@ public sealed class SettingsSnapshotFactory(AppState state)
         newSettings.WindowBackgroundBlurAmount = state.Preferences.WindowBackgroundBlurAmount;
         newSettings.AppTheme = state.Preferences.ThemeType;
         newSettings.IsRunningBackend = state.Preferences.IsRunningBackend;
+        newSettings.LocalLyricsFormatOrder = state.Preferences.LocalLyricsFormatOrder;
+        newSettings.PreferDatabaseLyrics = state.Preferences.PreferDatabaseLyrics;
         newSettings.IsAutoLyricsEnabled = state.Preferences.IsAutoLyricsEnabled;
+        newSettings.IsLyricsTranslationEnabled = state.Preferences.IsLyricsTranslationEnabled;
+        newSettings.IsLyricsPronunciationEnabled = state.Preferences.IsLyricsPronunciationEnabled;
+        newSettings.IsMandarinPronunciationEnabled = state.Preferences.IsMandarinPronunciationEnabled;
+        newSettings.IsCantonesePronunciationEnabled = state.Preferences.IsCantonesePronunciationEnabled;
+        newSettings.IsJapanesePronunciationEnabled = state.Preferences.IsJapanesePronunciationEnabled;
+        newSettings.IsKoreanPronunciationEnabled = state.Preferences.IsKoreanPronunciationEnabled;
         newSettings.IsAutoCoverEnabled = state.Preferences.IsAutoCoverEnabled;
         newSettings.CoverSize = state.Preferences.CoverSize;
         newSettings.Win2dTextEffectType = state.Preferences.Win2dTextEffectType.Value;
@@ -36,6 +44,8 @@ public sealed class SettingsSnapshotFactory(AppState state)
         newSettings.IsCustomAppSize = state.Preferences.IsCustomAppSize;
         newSettings.AppHeight = state.Preferences.AppHeight;
         newSettings.AppWidth = state.Preferences.AppWidth;
+        newSettings.ApplicationFont = state.Preferences.ApplicationFontFamily.FontFamily.Source;
+        newSettings.UseIndependentLyricsFont = state.Preferences.UseIndependentLyricsFont;
         newSettings.GlobalFont = state.Preferences.FontFamily.FontFamily.Source;
         newSettings.CustomAcrylicOpacity = state.Preferences.CustomOpacity;
         newSettings.CustomColorArgb = (uint)((state.Preferences.CustomColor.A << 24) | (state.Preferences.CustomColor.R << 16) | (state.Preferences.CustomColor.G << 8) | state.Preferences.CustomColor.B);
@@ -78,20 +88,26 @@ public sealed class SettingsSnapshotFactory(AppState state)
         newSettings.ToggleDesktopLyricsKaraokeShortcut = new(state.HotKeys.ToggleDesktopLyricsKaraokeShortcut);
         newSettings.ResetDesktopLyricsShortcut = new(state.HotKeys.ResetDesktopLyricsShortcut);
         newSettings.EnableGlobalHotKey = state.Preferences.EnableGlobalHotKey;
-        newSettings.IsTrimOnHideEnabled = state.Preferences.IsTrimOnHideEnabled;
-        newSettings.IsTrimAfterPlaybackEnabled = state.Preferences.IsTrimAfterPlaybackEnabled;
         newSettings.ArtistSplitSymbols = state.Preferences.ArtistSplitSymbols;
         newSettings.PlayingDetailAlignment = state.Preferences.PlayingDetailAlignment;
         newSettings.UsePlayingDetailAlignmentInPortrait = state.Preferences.UsePlayingDetailAlignmentInPortrait;
-        newSettings.AutoHideDesktopLyricsOnPlayingDetail = AppSettings.AutoHideDesktopLyricsOnPlayingDetail;
+        // 保留旧字段供旧版本读取，新字段按宿主模式保存。
+        newSettings.AutoHideDesktopLyricsOnPlayingDetail =
+            state.DesktopLyrics.AutoHideFloatingOnPlayingDetail && state.DesktopLyrics.AutoHideTaskbarOnPlayingDetail;
+        newSettings.AutoHideDesktopLyricsFloatingOnPlayingDetail = state.DesktopLyrics.AutoHideFloatingOnPlayingDetail;
+        newSettings.AutoHideDesktopLyricsTaskbarOnPlayingDetail = state.DesktopLyrics.AutoHideTaskbarOnPlayingDetail;
         newSettings.IsDesktopLyricsEnabled = AppSettings.IsDesktopLyricsEnabled;
         newSettings.IsDesktopLyricsLocked = AppSettings.IsDesktopLyricsLocked;
         newSettings.IsDesktopLyricsKaraokeEnabled = AppSettings.IsDesktopLyricsKaraokeEnabled;
+        newSettings.DesktopLyricsMode = state.DesktopLyrics.Mode.ToString();
         newSettings.DesktopLyricsFontSize = AppSettings.DesktopLyricsFontSize;
+        newSettings.DesktopLyricsTaskbarLyricsWidth = state.Preferences.DesktopLyricsTaskbarLyricsWidth;
+        newSettings.UseIndependentDesktopLyricsFont = state.Preferences.UseIndependentDesktopLyricsFont;
         newSettings.DesktopLyricsFontFamily = AppSettings.DesktopLyricsFontFamily;
         newSettings.DesktopLyricsColorRgb = AppSettings.DesktopLyricsColorRgb;
         newSettings.IsDesktopLyricsCustomColorEnabled = AppSettings.IsDesktopLyricsCustomColorEnabled;
         newSettings.IsDesktopLyricsTranslationEnabled = AppSettings.IsDesktopLyricsTranslationEnabled;
+        newSettings.IsDesktopLyricsPronunciationEnabled = AppSettings.IsDesktopLyricsPronunciationEnabled;
         newSettings.IsDesktopLyricsGlowEnabled = AppSettings.IsDesktopLyricsGlowEnabled;
         newSettings.IsDesktopLyricsCharFloatEnabled = AppSettings.IsDesktopLyricsCharFloatEnabled;
         newSettings.IsDesktopLyricsCharScaleEnabled = AppSettings.IsDesktopLyricsCharScaleEnabled;
@@ -117,6 +133,7 @@ public sealed class SettingsSnapshotFactory(AppState state)
         BassASIODeviceId = AppSettings.BassASIODeviceId,
         DeviceFriendlyName = AppSettings.DeviceName,
         IsFadeEnabled = state.Preferences.IsFadeEnabled,
+        SpectralEnhancement = (SpectralEnhancementMode)state.Preferences.Audio.SpectralEnhancement,
         IsDopEnabled = state.Preferences.Audio.IsDopEnabled,
         ExperimentalSurround51 = state.Preferences.Audio.ExperimentalSurround51,
         ExperimentalAtmosPassthrough = state.Preferences.Audio.ExperimentalAtmosPassthrough,

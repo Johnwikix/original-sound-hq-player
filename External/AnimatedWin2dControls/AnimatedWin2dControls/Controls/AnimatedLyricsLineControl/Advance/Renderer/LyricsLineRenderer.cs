@@ -33,7 +33,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
         public void Draw(ICanvasResourceCreator resourceCreator, CanvasDrawingSession ds)
         {
-            DrawSecondaryText(ds);
+            DrawSecondaryText(resourceCreator, ds);
             DrawPrimaryText(resourceCreator, ds);
         }
 
@@ -44,7 +44,6 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         }
 
         private static readonly float CropHorizonPadding = 10f;
-        private static readonly float CropVerticalPadding = 5f;
         /// <summary>属性更新脏检查阈值：进度变化不足 0.5px 时跳过，肉眼不可见。</summary>
         private const float DirtyEpsilonPx = 0.5f;
 
@@ -63,27 +62,17 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
         private float _playedR, _playedG, _playedB, _playedA;
         private float _unplayedR, _unplayedG, _unplayedB, _unplayedA;
 
-        private void DrawSecondaryText(CanvasDrawingSession ds)
+        private void DrawSecondaryText(ICanvasResourceCreator creator, CanvasDrawingSession ds)
         {
-            if (Line?.SecondaryTextLayout == null) return;
-
-            var opacity = Line.SecondaryOpacityTransition.Value;
-            var blur = Line.BlurAmountTransition.Value;
-            if (double.IsNaN(opacity) || opacity <= 0) return;
-
-            var bounds = Line.SecondaryTextLayout.LayoutBounds;
-            var srcRect = new Rect(
-                bounds.X + Line.SecondaryPosition.X - CropHorizonPadding,
-                bounds.Y + Line.SecondaryPosition.Y - CropVerticalPadding,
-                bounds.Width + CropHorizonPadding * 2, bounds.Height + CropVerticalPadding * 2);
-
-            if (Line.CachedCropEffect is { } crop && Line.CachedBlurEffect is { } blurFx && Line.CachedOpacityEffect is { } opacityFx)
-            {
-                crop.SourceRectangle = srcRect;
-                blurFx.BlurAmount = (float)blur;
-                opacityFx.Opacity = (float)opacity;
-                ds.DrawImage(opacityFx, srcRect, srcRect);
-            }
+            if (Line == null) return;
+            // The host already translates the cached primary origin to its live position.
+            // Auxiliary caches use local coordinates and compensate for that translation.
+            var offset = new Vector2(0, (float)Line.LayoutOffsetY);
+            var color = Line.UnplayedFillTint?.Color ?? UnplayedFillColor;
+            Line.PronunciationLayer.Draw(creator, ds, Line.PronunciationLayer.Position - offset,
+                Line.SecondaryOpacityTransition.Value, Line.BlurAmountTransition.Value, 0, color);
+            Line.TranslationLayer.Draw(creator, ds, Line.TranslationLayer.Position - offset,
+                Line.SecondaryOpacityTransition.Value, Line.BlurAmountTransition.Value, 0, color);
         }
 
         private void DrawPrimaryText(ICanvasResourceCreator resourceCreator, CanvasDrawingSession ds)
@@ -93,8 +82,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
             var bounds = Line.PrimaryTextLayout.LayoutBounds;
             var srcRect = new Rect(
-                bounds.X + Line.PrimaryPosition.X - CropHorizonPadding,
-                bounds.Y + Line.PrimaryPosition.Y - CropHorizonPadding,
+                bounds.X + Line.CachedPrimaryPosition.X - CropHorizonPadding,
+                bounds.Y + Line.CachedPrimaryPosition.Y - CropHorizonPadding,
                 bounds.Width + CropHorizonPadding * 2, bounds.Height + CropHorizonPadding * 2);
 
             if (!IsPlaying)
@@ -135,8 +124,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
             var bounds = Line.PrimaryTextLayout.LayoutBounds;
             Rect fullRect = new(
-                bounds.X + Line.PrimaryPosition.X,
-                bounds.Y + Line.PrimaryPosition.Y,
+                bounds.X + Line.CachedPrimaryPosition.X,
+                bounds.Y + Line.CachedPrimaryPosition.Y,
                 bounds.Width, bounds.Height);
             if (fullRect.Width <= 0 || fullRect.Height <= 0) return;
 
@@ -178,8 +167,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 if (subRect.Width <= 0) continue;
 
                 Rect subLineRect = new(
-                    subRect.X + Line.PrimaryPosition.X,
-                    subRect.Y + Line.PrimaryPosition.Y,
+                    subRect.X + Line.CachedPrimaryPosition.X,
+                    subRect.Y + Line.CachedPrimaryPosition.Y,
                     subRect.Width, subRect.Height);
 
                 double playedWidth = ComputeRegionPlayedWidth(subLineRegion);
@@ -190,8 +179,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 if (subLineRegion.CharacterIndex < primaryChars.Count)
                     firstCharProgress = Math.Clamp(
                         (float)primaryChars[subLineRegion.CharacterIndex].GetPlayProgress(CurrentProgressMs), 0f, 1f);
-                // DurationMs=0 的字符 GetPlayProgress 会产生 NaN，NaN 会污染 fade
-                // 宽度进而使 CropEffect 的 SourceRectangle 含 NaN（矩形行为未定义）。
+                // Keep malformed timing values from reaching CropEffect's SourceRectangle.
                 if (float.IsNaN(firstCharProgress)) firstCharProgress = 0f;
                 float fade = fadeInRegion * firstCharProgress;
                 if (float.IsNaN(fade)) fade = 0f;
@@ -384,8 +372,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
 
             var rect = renderChar.LayoutRect;
             var sourceCharRect = new Rect(
-                rect.X + Line.PrimaryPosition.X,
-                rect.Y + Line.PrimaryPosition.Y,
+                rect.X + Line.CachedPrimaryPosition.X,
+                rect.Y + Line.CachedPrimaryPosition.Y,
                 rect.Width, rect.Height);
 
             double scale = renderChar.ScaleTransition.Value;
@@ -410,12 +398,29 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance
                 renderChar.Crop.SourceRectangle = sourcePlayedCharRect;
                 renderChar.Glow.BlurAmount = (float)glow;
 
+                // 半径趋零时模糊会成为一层普通字形；退场必须同时降低这一层的透明度。
+                // 用退场开始时的实际半径归一化，保证首帧和此前画面连续。
+                float glowOpacity = Line.IsWordEffectsRetiring
+                    ? (renderChar.GlowExitStartAmount > 0 ? (float)Math.Clamp(glow / renderChar.GlowExitStartAmount, 0, 1) : 0)
+                    : 1;
+
+                ds.DrawImage(renderChar.Glow,
+                    destCharRect.Extend(destCharRect.Height),
+                    sourceCharRect.Extend(sourceCharRect.Height), glowOpacity);
+            }
+
+            if (Line.IsWordEffectsRetiring && Line.BlurAmountTransition.Value > 0)
+            {
+                // 退场仍按字符绘制，复用该字符的原生效果，避免切回整行时突变或逐帧创建资源。
+                renderChar.Crop.Source = source;
+                renderChar.Crop.SourceRectangle = sourceCharRect;
+                renderChar.Glow.BlurAmount = (float)Line.BlurAmountTransition.Value;
                 ds.DrawImage(renderChar.Glow,
                     destCharRect.Extend(destCharRect.Height),
                     sourceCharRect.Extend(sourceCharRect.Height));
             }
-
-            ds.DrawImage(source, destCharRect, sourceCharRect);
+            else
+                ds.DrawImage(source, destCharRect, sourceCharRect);
         }
     }
 }

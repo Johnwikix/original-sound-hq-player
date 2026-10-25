@@ -168,6 +168,9 @@
   <data name="StatsRangePastYear.Content" xml:space="preserve">
     <value>Прошлый год</value>
   </data>
+  <data name="StatsRangeAllTime.Content" xml:space="preserve">
+    <value>За всё время</value>
+  </data>
   <data name="StatsRangeCustom.Content" xml:space="preserve">
     <value>Свой диапазон</value>
   </data>
@@ -1384,18 +1387,6 @@
   <data name="Advanced.Text" xml:space="preserve">
     <value>Дополнительно</value>
   </data>
-  <data name="TrimOnHide.Text" xml:space="preserve">
-    <value>Освобождать память при скрытии окна</value>
-  </data>
-  <data name="TrimOnHideDescription.Text" xml:space="preserve">
-    <value>Освобождает рабочий набор при сворачивании приложения в панель задач или в трей.</value>
-  </data>
-  <data name="TrimAfterPlayback.Text" xml:space="preserve">
-    <value>Автоматически освобождать память после воспроизведения</value>
-  </data>
-  <data name="TrimAfterPlaybackDescription.Text" xml:space="preserve">
-    <value>Принудительно выполняет полный GC после каждого трека. Может вызвать подёргивания интерфейса на слабых устройствах.</value>
-  </data>
   <data name="ArtistSplitSymbols.Text" xml:space="preserve">
     <value>Разделители артистов</value>
   </data>
@@ -1404,12 +1395,6 @@
   </data>
   <data name="SelectArtist" xml:space="preserve">
     <value>Выбрать артиста</value>
-  </data>
-  <data name="TrimNow.Content" xml:space="preserve">
-    <value>Освободить память сейчас</value>
-  </data>
-  <data name="TrimNowLabel.Text" xml:space="preserve">
-    <value>Освободить память сейчас</value>
   </data>
   <data name="WindowBoundsDescription.Text" xml:space="preserve">
     <value>Положение главного окна</value>
@@ -1495,6 +1480,24 @@
   <data name="IconDesktopLyrics.Text" xml:space="preserve">
     <value>Текст песни на рабочем столе</value>
   </data>
+  <data name="DesktopLyricsModeMenu.Text" xml:space="preserve">
+    <value>Режим текста песни</value>
+  </data>
+  <data name="DesktopLyricsModeFloating" xml:space="preserve">
+    <value>Плавающее окно</value>
+  </data>
+  <data name="DesktopLyricsModeTaskbar" xml:space="preserve">
+    <value>Панель задач</value>
+  </data>
+  <data name="DesktopLyricsPreviousButtonTooltip" xml:space="preserve">
+    <value>Предыдущий трек</value>
+  </data>
+  <data name="DesktopLyricsPlayPauseButtonTooltip" xml:space="preserve">
+    <value>Воспроизвести или приостановить</value>
+  </data>
+  <data name="DesktopLyricsNextButtonTooltip" xml:space="preserve">
+    <value>Следующий трек</value>
+  </data>
   <data name="IconLockDesktopLyrics" xml:space="preserve">
     <value>Заблокировать текст песни</value>
   </data>
@@ -1519,6 +1522,12 @@
   <data name="DesktopLyricsFontSize.Text" xml:space="preserve">
     <value>Размер шрифта текста на рабочем столе</value>
   </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Header" xml:space="preserve">
+    <value>Ширина текста на панели задач</value>
+  </data>
+  <data name="DesktopLyricsTaskbarLyricsWidth.Description" xml:space="preserve">
+    <value>Ширина области текста рядом с элементами управления мультимедиа (пиксели).</value>
+  </data>
   <data name="DesktopLyricsFontFamily.Text" xml:space="preserve">
     <value>Шрифт текста на рабочем столе</value>
   </data>
@@ -1530,6 +1539,9 @@
   </data>
   <data name="DesktopLyricsTranslation.Text" xml:space="preserve">
     <value>Перевод текста на рабочем столе</value>
+  </data>
+  <data name="DesktopLyricsPronunciation.Text" xml:space="preserve">
+    <value>Показывать произношение в тексте рабочего стола</value>
   </data>
   <data name="DesktopLyricsKaraoke.Text" xml:space="preserve">
     <value>Караоке-эффект текста на рабочем столе</value>
@@ -1897,6 +1909,24 @@
   </data>
   <data name="DesktopLyricsAutoHide.Description" xml:space="preserve">
     <value>Действует, если текст на рабочем столе включён. Он появится снова при выходе со страницы воспроизведения или при сворачивании плеера в трей.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Header" xml:space="preserve">
+    <value>Скрывать текст в деталях воспроизведения (плавающий)</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloating.Description" xml:space="preserve">
+    <value>Управляет только плавающим окном текста.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Header" xml:space="preserve">
+    <value>Скрывать текст в деталях воспроизведения (панель задач)</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbar.Description" xml:space="preserve">
+    <value>Управляет только окном текста на панели задач.</value>
+  </data>
+  <data name="DesktopLyricsAutoHideFloatingMode.Text" xml:space="preserve">
+    <value>Плавающее окно</value>
+  </data>
+  <data name="DesktopLyricsAutoHideTaskbarMode.Text" xml:space="preserve">
+    <value>Окно на панели задач</value>
   </data>
   <data name="DesktopLyricsIconLabel.Text" xml:space="preserve">
     <value>Ly</value>
@@ -2299,7 +2329,7 @@ SHA-256: {5}
   </data>
   <data name="WindowBackgroundTitle" xml:space="preserve"><value>Фоновое изображение главного окна</value></data>
   <data name="WindowBackgroundImage" xml:space="preserve"><value>Фоновое изображение</value></data>
-  <data name="WindowBackgroundDescription" xml:space="preserve"><value>Выберите локальное изображение для главного окна. Удалите его, чтобы восстановить материал окна.</value></data>
+  <data name="WindowBackgroundDescription" xml:space="preserve"><value>Выберите локальное изображение для главного окна. Удалите его, чтобы восстановить материал окна. При отключённом фоне шейдера и включённых расширенных караоке-эффектах изображение рисуется на холсте текста.</value></data>
   <data name="WindowBackgroundChoose" xml:space="preserve"><value>Выбрать изображение</value></data>
   <data name="WindowBackgroundClear" xml:space="preserve"><value>Убрать изображение</value></data>
   <data name="WindowBackgroundBlur" xml:space="preserve"><value>Размытие</value></data>
@@ -2307,4 +2337,172 @@ SHA-256: {5}
   <data name="CacheCleanupCard.Header" xml:space="preserve">
     <value>Очистка кэша</value>
   </data>
+  <data name="LyricsFilePriority.Header" xml:space="preserve">
+    <value>Приоритет файлов текстов</value>
+  </data>
+  <data name="LyricsFilePriority.Description" xml:space="preserve">
+    <value>Использовать первый подходящий корректный файл. Для перевода приоритет имеет _Translated.lrc.</value>
+  </data>
+  <data name="LyricsOriginalTab.Text" xml:space="preserve">
+    <value>Текст песни</value>
+  </data>
+  <data name="LyricsTranslationTab.Text" xml:space="preserve">
+    <value>Перевод</value>
+  </data>
+  <data name="LyricsRestoreLegacyLrc.Content" xml:space="preserve">
+    <value>Восстановить старый LRC</value>
+  </data>
+  <data name="LyricsRestoreLegacyKrc.Content" xml:space="preserve">
+    <value>Восстановить старый KRC</value>
+  </data>
+  <data name="LyricsEditConflict" xml:space="preserve">
+    <value>Текст изменён другой операцией. Сохраните черновик и откройте окно заново перед сохранением.</value>
+  </data>
+  <data name="LyricsInvalid" xml:space="preserve">
+    <value>Некорректный текст, время или файловая операция.</value>
+  </data>
+  <data name="LyricsMigrationDiagnostic" xml:space="preserve">
+    <value>Некоторые старые тексты не удалось преобразовать. Оригиналы сохранены и доступны через кнопки восстановления.</value>
+  </data>
+  <data name="LyricsFilePriorityLabel" xml:space="preserve">
+    <value>Приоритет файлов текстов</value>
+  </data>
+  <data name="LyricsFilesSaved" xml:space="preserve">
+    <value>Файлы текста песни сохранены:</value>
+  </data>
+  <data name="LyricsSourcePriority.Header" xml:space="preserve"><value>Приоритет источников текста</value></data>
+  <data name="LyricsSourcePriority.Description" xml:space="preserve"><value>Использовать корректный текст из первого источника; если его нет, проверить следующий.</value></data>
+  <data name="LyricsSourceFile" xml:space="preserve"><value>Файлы текста</value></data>
+  <data name="LyricsSourceDatabase" xml:space="preserve"><value>База данных</value></data>
+  <data name="LyricsPriorityFirst" xml:space="preserve"><value>Приоритет 1</value></data>
+  <data name="LyricsPrioritySecond" xml:space="preserve"><value>Приоритет 2</value></data>
+  <data name="LyricsPriorityThird" xml:space="preserve"><value>Приоритет 3</value></data>
+  <data name="LyricsPriorityFourth" xml:space="preserve"><value>Приоритет 4</value></data>
+  <data name="PlayListEdit" xml:space="preserve">
+    <value>Изменить</value>
+  </data>
+  <data name="PlayListEditDone" xml:space="preserve">
+    <value>Готово</value>
+  </data>
+  <data name="PlayListSelectAll.Text" xml:space="preserve">
+    <value>Выбрать все</value>
+  </data>
+  <data name="PlayListBatchDelete.Text" xml:space="preserve">
+    <value>Удалить</value>
+  </data>
+  <data name="AreUSureDeletePlayLists" xml:space="preserve">
+    <value>Удалить выбранные плейлисты?</value>
+  </data>
+
+  <data name="LlmTranslation.Header" xml:space="preserve"><value>Перевод текста ИИ</value></data>
+  <data name="LlmTranslation.Description" xml:space="preserve"><value>При начале воспроизведения переводит тексты без перевода через совместимый с OpenAI или Anthropic сервис.</value></data>
+  <data name="LlmBaseUrl.Header" xml:space="preserve"><value>Базовый URL API</value></data>
+  <data name="LlmModel.Header" xml:space="preserve"><value>Модель</value></data>
+  <data name="LlmTargetLanguage.Header" xml:space="preserve"><value>Язык перевода</value></data>
+  <data name="LlmThinkingLevel.Header" xml:space="preserve"><value>Уровень рассуждений</value></data>
+  <data name="LlmApiKey.Header" xml:space="preserve"><value>Ключ API (хранится в диспетчере учетных данных Windows)</value></data>
+  <data name="LlmSave.Content" xml:space="preserve"><value>Сохранить</value></data>
+  <data name="LlmClearApiKey.Content" xml:space="preserve"><value>Удалить сохраненный ключ</value></data>
+  <data name="LlmSaved" xml:space="preserve"><value>Настройки перевода сохранены.</value></data>
+  <data name="LlmApiKeyCleared" xml:space="preserve"><value>Сохраненный ключ API удален.</value></data>
+
+  <data name="LlmApiKeyConfigured" xml:space="preserve"><value>Ключ API сохранен.</value></data>
+  <data name="LlmApiKeyNotConfigured" xml:space="preserve"><value>Ключ API не сохранен.</value></data>
+
+  <data name="LlmConfigure.Content" xml:space="preserve"><value>Настроить перевод ИИ</value></data>
+  <data name="LlmClose.Content" xml:space="preserve"><value>Закрыть</value></data>
+  <data name="LlmEnabled.Header" xml:space="preserve"><value>Переводить непереведённые тексты при воспроизведении</value></data>
+  <data name="LlmWorking" xml:space="preserve"><value>Выполняется…</value></data>
+  <data name="LlmTranslationInProgress" xml:space="preserve"><value>Перевод с ИИ выполняется и может занять некоторое время. Подождите…</value></data>
+  <data name="LlmDialogSaveButton" xml:space="preserve"><value>Сохранить</value></data>
+  <data name="LlmDialogCloseButton" xml:space="preserve"><value>Закрыть</value></data>
+  <data name="LlmBaseUrl.Description" xml:space="preserve"><value>Протокол определяется по адресу: /anthropic использует Anthropic, остальные совместимые адреса /v1 — OpenAI.</value></data>
+
+  <data name="LlmTranslateButton.Content" xml:space="preserve"><value>Перевести текст с ИИ</value></data>
+  <data name="LlmManualTranslationFailed" xml:space="preserve"><value>Перевод текста с ИИ не выполнен. Проверьте настройки и журнал.</value></data>
+  <data name="LlmManualTranslationCompleted" xml:space="preserve"><value>Перевод с ИИ создан. Сохраните текст, чтобы записать его в файл или базу данных.</value></data>
+  <data name="LyricsPronunciationTab.Text" xml:space="preserve"><value>Произношение</value></data>
+  <data name="LyricsShowTranslation.Header" xml:space="preserve"><value>Показывать перевод текста</value></data>
+  <data name="LyricsShowTranslation.Description" xml:space="preserve"><value>Показывать перевод, если он доступен.</value></data>
+  <data name="LyricsShowPronunciation.Header" xml:space="preserve"><value>Показывать произношение</value></data>
+  <data name="LyricsShowPronunciation.Description" xml:space="preserve"><value>Показывать произношение, если оно доступно.</value></data>
+  <data name="LyricsPronunciationLanguages.Header" xml:space="preserve"><value>Языки произношения</value></data>
+  <data name="LyricsPronunciationLanguages.Description" xml:space="preserve"><value>Выбирать произношение по тегам или письменности; для кантонского нужен явный тег.</value></data>
+  <data name="LyricsPronunciationMandarin.Header" xml:space="preserve"><value>Мандаринский</value></data>
+  <data name="LyricsPronunciationMandarin.Description" xml:space="preserve"><value>Показывать мандаринское произношение.</value></data>
+  <data name="LyricsPronunciationCantonese.Header" xml:space="preserve"><value>Кантонский</value></data>
+  <data name="LyricsPronunciationCantonese.Description" xml:space="preserve"><value>Показывать кантонское произношение.</value></data>
+  <data name="LyricsPronunciationJapanese.Header" xml:space="preserve"><value>Японский</value></data>
+  <data name="LyricsPronunciationJapanese.Description" xml:space="preserve"><value>Показывать японское произношение.</value></data>
+  <data name="LyricsPronunciationKorean.Header" xml:space="preserve"><value>Корейский</value></data>
+  <data name="LyricsPronunciationKorean.Description" xml:space="preserve"><value>Показывать корейское произношение.</value></data>
+  <data name="LyricsTranslationToggle" xml:space="preserve"><value>Переключить перевод текста</value></data>
+  <data name="LyricsPronunciationToggle" xml:space="preserve"><value>Переключить произношение текста</value></data>
+  <data name="LyricsTranslationIcon.Text" xml:space="preserve"><value>T</value></data>
+  <data name="LyricsPronunciationIcon.Text" xml:space="preserve"><value>A</value></data>
+  <data name="SpectralEnhancementTitle" xml:space="preserve"><value>Апсемплинг</value></data>
+  <data name="SpectralEnhancementDescription" xml:space="preserve"><value>Восстанавливает высокие частоты и повышает частоту моно/стерео PCM до 48 кГц.</value></data>
+  <data name="SpectralEnhancementOff" xml:space="preserve"><value>Выключено</value></data>
+  <data name="SpectralEnhancementLossy" xml:space="preserve"><value>Только сжатие с потерями</value></data>
+  <data name="SpectralEnhancementAll" xml:space="preserve"><value>С потерями и без потерь до 48 кГц</value></data>
+  <data name="LastFmEnable" xml:space="preserve"><value>Отправлять в Last.fm</value></data>
+  <data name="LastFmEnableDescription" xml:space="preserve"><value>Отправлять текущий трек, прослушивания и изменения избранного; сохранять локальную статистику.</value></data>
+  <data name="LastFmCredentials" xml:space="preserve"><value>Данные приложения</value></data>
+  <data name="LastFmCredentialsHelp" xml:space="preserve"><value>Получите собственные API Key и Shared Secret и сохраните их перед подключением аккаунта. Изменение отключает аккаунт и очищает очередь.</value></data>
+  <data name="LastFmSecretSaved" xml:space="preserve"><value>Надёжно сохранено; оставьте поле пустым, чтобы использовать сохранённый Secret.</value></data>
+  <data name="LastFmSecretRequired" xml:space="preserve"><value>Введите Shared Secret вашего приложения.</value></data>
+  <data name="LastFmSaveCredentials" xml:space="preserve"><value>Сохранить данные</value></data>
+  <data name="LastFmApplyCredentials" xml:space="preserve"><value>Получить данные</value></data>
+  <data name="LastFmAuthorize" xml:space="preserve"><value>Подключить аккаунт</value></data>
+  <data name="LastFmCompleteAuthorization" xml:space="preserve"><value>Завершить авторизацию</value></data>
+  <data name="LastFmDisconnect" xml:space="preserve"><value>Отключить</value></data>
+  <data name="LastFmDisconnectHelp" xml:space="preserve"><value>Отключение прекращает отправку и очищает очередь. Для отзыва доступа также удалите приложение в настройках Last.fm.</value></data>
+  <data name="LastFmManageApplications" xml:space="preserve"><value>Приложения Last.fm</value></data>
+  <data name="LastFmWorking" xml:space="preserve"><value>Обработка…</value></data>
+  <data name="LastFmAuthorizationHelp" xml:space="preserve"><value>Разрешите доступ в браузере, затем вернитесь и завершите авторизацию.</value></data>
+  <data name="LastFmUsageHelp" xml:space="preserve"><value>Учитывается только реальное прослушивание: трек длиннее 30 секунд, прослушанный наполовину или 4 минуты. Треки без исполнителя пропускаются.</value></data>
+  <data name="LastFmPendingCount" xml:space="preserve"><value>Ожидают отправки: {0}</value></data>
+  <data name="LastFmQueueHelp" xml:space="preserve"><value>При подключении записи отправляются по порядку. Выключение приостанавливает очередь, включение возобновляет её. Хранится до 10 000 записей.</value></data>
+  <data name="LastFmRetry" xml:space="preserve"><value>Повторить сейчас</value></data>
+  <data name="LastFmBrowserError" xml:space="preserve"><value>Не удалось открыть браузер. Подключите аккаунт повторно.</value></data>
+  <data name="LastFmConnected" xml:space="preserve"><value>Подключён: {0}</value></data>
+  <data name="LastFmNotConnected" xml:space="preserve"><value>Аккаунт Last.fm не подключён</value></data>
+  <data name="LastFmErrorNetwork" xml:space="preserve"><value>Last.fm временно недоступен. Записи сохраняются локально и будут отправлены автоматически.</value></data>
+  <data name="LastFmErrorCredentials" xml:space="preserve"><value>Проверьте API Key и Shared Secret и сохраните их повторно.</value></data>
+  <data name="LastFmErrorAuthorizationPending" xml:space="preserve"><value>Доступ ещё не разрешён. Подтвердите его в браузере и завершите авторизацию.</value></data>
+  <data name="LastFmErrorAuthorizationExpired" xml:space="preserve"><value>Запрос авторизации истёк. Подключите аккаунт повторно.</value></data>
+  <data name="LastFmErrorSessionExpired" xml:space="preserve"><value>Авторизация недействительна. Подключите аккаунт снова; очередь сохраняется.</value></data>
+  <data name="LastFmErrorRejected" xml:space="preserve"><value>Last.fm отклонил запись из-за неверных метаданных или старой даты. Запись пропущена.</value></data>
+  <data name="LastFmErrorStorage" xml:space="preserve"><value>Не удалось прочитать или сохранить настройки либо очередь. Проверьте доступ к файлам и повторите. Существующие файлы сохранены.</value></data>
+  <data name="LastFmErrorQueueFull" xml:space="preserve"><value>Очередь заполнена. Подключитесь к интернету для отправки. Существующие записи сохраняются.</value></data>
+  <data name="LastFmAccountActions" xml:space="preserve"><value>Авторизация аккаунта</value></data>
+  <data name="LastFmHistoryTitle" xml:space="preserve"><value>Локальная история прослушиваний</value></data>
+  <data name="LastFmHistoryHelp" xml:space="preserve"><value>По умолчанию отправляются записи за последние 14 дней с исходным временем. Включите настройку выше для более старых записей. Перед отправкой выполняется онлайн-проверка существующих записей.</value></data>
+  <data name="LastFmImportHistory" xml:space="preserve"><value>Отправить локальную историю</value></data>
+  <data name="LastFmCancelHistory" xml:space="preserve"><value>Отменить импорт</value></data>
+  <data name="LastFmHistoryResult" xml:space="preserve"><value>В очереди: {0}; с датой импорта: {5}; уже есть: {1}; старше 14 дней и исключены: {2}; не подходят или неполные: {3}; отложены: {4} (из них {6} с неоднозначными связями старой версии требуют проверки).</value></data>
+  <data name="LastFmIncludeOlderHistory" xml:space="preserve"><value>Отправлять старую историю с датой импорта</value></data>
+  <data name="LastFmIncludeOlderHistoryHelp" xml:space="preserve"><value>По умолчанию выключено. Старые прослушивания учитываются в Last.fm за день импорта; исходное локальное время сохраняется. Применяется только к ручному импорту истории.</value></data>
+  <data name="ApplicationFont" xml:space="preserve">
+    <value>Шрифт приложения</value>
+  </data>
+  <data name="UseIndependentLyricsFont" xml:space="preserve">
+    <value>Использовать отдельный шрифт текста песен</value>
+  </data>
+  <data name="IndependentLyricsFontDescription" xml:space="preserve">
+    <value>Когда выключено, используется шрифт приложения. Выбранный отдельный шрифт сохраняется.</value>
+  </data>
+  <data name="UseIndependentDesktopLyricsFont" xml:space="preserve">
+    <value>Использовать отдельный шрифт текста песен на рабочем столе</value>
+  </data>
+  <data name="IndependentDesktopLyricsFontDescription" xml:space="preserve">
+    <value>Когда выключено, текст песен на рабочем столе использует шрифт приложения. Выбранный отдельный шрифт сохраняется.</value>
+  </data>
+  <data name="LastFmFavoritesTitle" xml:space="preserve"><value>Отправка избранного</value></data>
+  <data name="LastFmFavoritesHelp" xml:space="preserve"><value>Добавление и удаление избранного передаётся только в Last.fm. Удалённое избранное не загружается; местные списки и порядок сохраняются. Без сети или при отключённой отправке сохраняется последнее изменение. Отключение или смена аккаунта очищает очередь. Существующее избранное отправляется вручную.</value></data>
+  <data name="LastFmFavoritePendingCount" xml:space="preserve"><value>Ожидающие изменения избранного: {0}</value></data>
+  <data name="LastFmImportFavorites" xml:space="preserve"><value>Отправить существующее избранное</value></data>
+  <data name="LastFmFavoriteResult" xml:space="preserve"><value>В очереди: {0}; без названия или исполнителя: {1}.</value></data>
+  <data name="LastFmCancelFavoriteImport" xml:space="preserve"><value>Отменить импорт</value></data>
+  <data name="LastFmFavoriteImportCanceled" xml:space="preserve"><value>Импорт отменён; избранное, уже добавленное в очередь, будет отправлено.</value></data>
 </root>

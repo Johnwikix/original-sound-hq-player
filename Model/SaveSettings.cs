@@ -44,7 +44,15 @@ namespace WinUIMusicPlayer.Model
         public string AppTheme { get; set; } = "Default";
         public float LyricsBlurAmount { get; set; } = 5f;
         public bool IsRunningBackend { get; set; } = true;
+        public string LocalLyricsFormatOrder { get; set; } = "krc,qrc,lrc,ttml";
+        public bool PreferDatabaseLyrics { get; set; }
         public bool IsAutoLyricsEnabled { get; set; } = true;
+        public bool IsLyricsTranslationEnabled { get; set; } = true;
+        public bool IsLyricsPronunciationEnabled { get; set; } = true;
+        public bool IsMandarinPronunciationEnabled { get; set; } = true;
+        public bool IsCantonesePronunciationEnabled { get; set; } = true;
+        public bool IsJapanesePronunciationEnabled { get; set; } = true;
+        public bool IsKoreanPronunciationEnabled { get; set; } = true;
         public bool IsAutoCoverEnabled { get; set; } = true;
         [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
         public bool? IsDopEnabled { get; set; }
@@ -68,7 +76,10 @@ namespace WinUIMusicPlayer.Model
         public bool IsCustomAppSize { get; set; } = false;
         public int AppWidth { get; set; } = 1280;
         public int AppHeight { get; set; } = 810;
-        public string GlobalFont { get; set; } = "Segoe UI, sans-serif";
+        public string ApplicationFont { get; set; } = "Segoe UI";
+        public bool UseIndependentLyricsFont { get; set; }
+        // 保留旧键：GlobalFont 历来保存普通歌词字体，与程序字体分别持久化。
+        public string GlobalFont { get; set; } = "Segoe UI";
         public bool IsGlobalFontSizeEnabled { get; set; } = false;
         public double GlobalFontSize { get; set; } = 32;
         public bool IsUpdateBackDrop { get; set; } = false;
@@ -112,18 +123,24 @@ namespace WinUIMusicPlayer.Model
         public List<string> ToggleDesktopLyricsKaraokeShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "K" };
         public List<string> ResetDesktopLyricsShortcut { get; set; } = new List<string> { "Ctrl", "Alt", "R" };
         public bool EnableGlobalHotKey { get; set; } = false;
-        public bool IsTrimOnHideEnabled { get; set; } = false;
-        public bool IsTrimAfterPlaybackEnabled { get; set; } = false;
         public string ArtistSplitSymbols { get; set; } = ", ; / 、 & feat. :";
         public bool AutoHideDesktopLyricsOnPlayingDetail { get; set; } = false;
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? AutoHideDesktopLyricsFloatingOnPlayingDetail { get; set; }
+        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        public bool? AutoHideDesktopLyricsTaskbarOnPlayingDetail { get; set; }
         public bool IsDesktopLyricsEnabled { get; set; } = false;
         public bool IsDesktopLyricsLocked { get; set; } = false;
         public bool IsDesktopLyricsKaraokeEnabled { get; set; } = true;
+        public string DesktopLyricsMode { get; set; } = "Floating";
         public double DesktopLyricsFontSize { get; set; } = 36;
+        public int DesktopLyricsTaskbarLyricsWidth { get; set; } = 640;
+        public bool UseIndependentDesktopLyricsFont { get; set; }
         public string DesktopLyricsFontFamily { get; set; } = "Segoe UI";
         public uint DesktopLyricsColorRgb { get; set; } = 0x00FFFFFFu;
         public bool IsDesktopLyricsCustomColorEnabled { get; set; } = false;
         public bool IsDesktopLyricsTranslationEnabled { get; set; } = true;
+        public bool IsDesktopLyricsPronunciationEnabled { get; set; } = true;
         public bool IsDesktopLyricsGlowEnabled { get; set; } = true;
         public bool IsDesktopLyricsCharFloatEnabled { get; set; } = true;
         public bool IsDesktopLyricsCharScaleEnabled { get; set; } = true;

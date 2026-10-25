@@ -21,6 +21,8 @@ internal sealed unsafe class PcmDecoder : IDisposable
     private AVFormatContext* _fmt;
     private AVCodecContext* _dec;
     private SwrContext* _swr;
+    private SpectralPcmStream? _enhancement;
+    private int _decodeRate;
     private AVPacket* _pkt;
     private AVFrame* _frame;
 
@@ -36,6 +38,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
     public uint ChannelMask { get; private set; }
     public long TotalMs => _totalMs;
     public bool IsDsdSource => _dsdSource;
+    internal bool EnhancementActive => _enhancement != null;
 
     private static readonly AVCodecID[] DsdCodecIds =
     {
@@ -52,7 +55,8 @@ internal sealed unsafe class PcmDecoder : IDisposable
     /// <param name="forceChannels">强制输出声道数；null = 源声道数（受 maxChannels 上限约束）。</param>
     /// <param name="maxChannels">普通路径的声道上限；显式启用且识别出 5.1 时保留六声道，供自动独占输出。</param>
     public bool Open(string path, int dsdPcmFreq, int dsdGainDb, int? forceRate = null, int? forceChannels = null,
-        int? maxChannels = null, bool experimentalSurround51 = false, PlaybackSource? source = null, CancellationToken cancellationToken = default)
+        int? maxChannels = null, bool experimentalSurround51 = false, PlaybackSource? source = null, CancellationToken cancellationToken = default,
+        SpectralEnhancementMode enhancement = SpectralEnhancementMode.Off, int? enhancementDeviceRate = null)
     {
         try
         {
@@ -110,14 +114,31 @@ internal sealed unsafe class PcmDecoder : IDisposable
 
             int inRate = _dec->sample_rate != 0 ? _dec->sample_rate : 48000;
             SampleRate = forceRate ?? (_dsdSource && dsdPcmFreq > 0 ? dsdPcmFreq : inRate);
-            // A recognized 5.1 layout opts into automatic exclusive output; other layouts keep the ordinary channel limit.
+            // 识别到的 5.1 布局使用自动独占输出；其他布局保留常规声道数限制。
             Channels = surround51 ? 6 : forceChannels ?? (maxChannels is > 0 ? Math.Min(channels, maxChannels.Value) : channels);
+
+            AVCodecDescriptor* descriptor = ffmpeg.avcodec_descriptor_get(par->codec_id);
+            bool lossless = descriptor != null && (descriptor->props & ffmpeg.AV_CODEC_PROP_LOSSLESS) != 0;
+            // 即使回退为解码后的立体声 PCM，E-AC-3/TrueHD 音源仍可能携带 Atmos 信息。
+            bool spatial = par->codec_id is AVCodecID.AV_CODEC_ID_EAC3 or AVCodecID.AV_CODEC_ID_TRUEHD;
+            bool enhance = SpectralEnhancementPolicy.IsEligible(enhancement, inRate, channels, lossless, _dsdSource, spatial)
+                && Channels is 1 or 2;
+            _decodeRate = SampleRate;
+            if (enhance)
+            {
+                SampleRate = SpectralEnhancementPolicy.OutputRate(inRate, forceRate ?? enhancementDeviceRate);
+                _decodeRate = inRate % 11025 == 0 ? 44100 : 48000;
+                int bits = par->bits_per_raw_sample is 8 or 16 or 20 or 24 or 32 ? par->bits_per_raw_sample : 16;
+                int bitrate = (int)Math.Clamp(par->bit_rate > 0 ? par->bit_rate : _fmt->bit_rate > 0 ? _fmt->bit_rate : 192000, 4000L, 1020000L);
+                _enhancement = new(_decodeRate, SampleRate, Channels, lossless, bitrate, bits);
+                Console.WriteLine($"[enhancement] {inRate} -> {_decodeRate} -> {SampleRate} Hz; lossless={lossless}");
+            }
 
             AVChannelLayout outLayout = default;
             if (surround51) ffmpeg.av_channel_layout_copy(&outLayout, &_dec->ch_layout);
             else ffmpeg.av_channel_layout_default(&outLayout, Channels);
             SwrContext* swr = null;
-            ffmpeg.swr_alloc_set_opts2(&swr, &outLayout, AVSampleFormat.AV_SAMPLE_FMT_DBL, SampleRate,
+            ffmpeg.swr_alloc_set_opts2(&swr, &outLayout, AVSampleFormat.AV_SAMPLE_FMT_DBL, _decodeRate,
                 &_dec->ch_layout, _dec->sample_fmt, _dec->sample_rate, 0, null);
             ffmpeg.av_channel_layout_uninit(&outLayout);
             _swr = swr;
@@ -144,12 +165,16 @@ internal sealed unsafe class PcmDecoder : IDisposable
         if (ffmpeg.av_seek_frame(_fmt, -1, ms * 1000, ffmpeg.AVSEEK_FLAG_BACKWARD) < 0) return false;
         ffmpeg.avcodec_flush_buffers(_dec);
         ffmpeg.swr_init(_swr);
+        _enhancement?.Reset();
         _eof = false;
         return true;
     }
 
     /// <summary>读取交织 double 块。返回帧数；0 = 本位置流结束（EOF 后恒 0）。</summary>
-    public int Read(Span<double> buffer)
+    public int Read(Span<double> buffer) => _enhancement?.Read(this, buffer) ?? ReadDecoded(buffer);
+
+    /// <summary>按打开时选定的重采样率读取增强处理之前的 PCM。</summary>
+    internal int ReadDecoded(Span<double> buffer)
     {
         if (_fmt == null || _dec == null) return 0;
         int maxFrames = buffer.Length / Math.Max(1, Channels);
@@ -186,10 +211,10 @@ internal sealed unsafe class PcmDecoder : IDisposable
                 got = ConvertOut(buffer, maxFrames);
                 return got; // 剩余样本一次给足（缓冲区足够大，通常一次排空）
             }
-            // A damaged packet (including junk after valid FLAC audio) need not end the
-            // decoder's lifetime. Drain its remaining output and keep reading to real EOF,
-            // so the session can finish normally and still service a later seek.
-            // Bound recovery in case a codec keeps returning errors without making progress.
+            // 损坏的数据包，包括有效 FLAC 音频后的垃圾数据，不应直接结束
+            // 解码器的生命周期。先取完剩余输出，再继续读取到真正的文件末尾，
+            // 使会话正常结束后仍能响应后续定位请求。
+            // 限制恢复次数，避免编解码器持续报错且无法推进时陷入循环。
             if (ret == ffmpeg.AVERROR_INVALIDDATA && ++invalidFrames <= MaxConsecutiveInvalidFrames) continue;
             if (ret != EAgain) throw new IOException($"Decoder error {ret}.");
 
@@ -200,7 +225,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
             if (pr < 0 && pr != ffmpeg.AVERROR_EOF) throw new IOException($"Input read error {pr}.");
             if (pr == ffmpeg.AVERROR_EOF)
             {
-                // Only confirmed EOF drains the decoder; a transport failure is not a track end.
+                // 仅在确认文件结束后排空解码器；传输失败不表示曲目结束。
                 ffmpeg.avcodec_send_packet(_dec, null);
                 continue;
             }
@@ -215,7 +240,12 @@ internal sealed unsafe class PcmDecoder : IDisposable
         int got;
         fixed (double* p = buffer)
         {
-            got = ffmpeg.swr_convert(_swr, (byte**)&p, frames, null, 0);
+            // 空输入指针会冲刷滤波器尾部；数据包之间只应取出
+            // 已缓冲的输出，否则反复冲刷会截断低采样率重采样的结果。
+            int inputChannels = Math.Max(1, _dec->ch_layout.nb_channels);
+            byte** emptyInput = stackalloc byte*[inputChannels];
+            for (int channel = 0; channel < inputChannels; channel++) emptyInput[channel] = (byte*)p;
+            got = ffmpeg.swr_convert(_swr, (byte**)&p, frames, _eof ? null : emptyInput, 0);
         }
         return got > 0 ? FinishRead(buffer, got) : 0;
     }
@@ -233,6 +263,8 @@ internal sealed unsafe class PcmDecoder : IDisposable
 
     public void Dispose()
     {
+        _enhancement?.Dispose();
+        _enhancement = null;
         if (_frame != null) { AVFrame* f = _frame; _frame = null; ffmpeg.av_frame_free(&f); }
         if (_pkt != null) { AVPacket* p = _pkt; _pkt = null; ffmpeg.av_packet_free(&p); }
         if (_swr != null) { SwrContext* s = _swr; _swr = null; ffmpeg.swr_free(&s); }

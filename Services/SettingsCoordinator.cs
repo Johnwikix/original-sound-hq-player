@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Microsoft.UI.Dispatching;
 using WinUIMusicPlayer.DesktopLyrics;
 using WinUIMusicPlayer.Model;
@@ -12,7 +12,7 @@ using WinUIMusicPlayer.State;
 namespace WinUIMusicPlayer.Services;
 
 /// <summary>偏好编辑到持久化的应用边界。启动恢复只改内存，Ready 后才接受自动保存。</summary>
-public sealed class SettingsCoordinator(AppState state, MusicDatabaseService database, LyricsPresentationService lyrics, LibraryProjectionService library, DesktopLyricsViewModel desktopLyrics, HotKeyService hotKeys, ILogger<SettingsCoordinator> logger) : IDisposable
+public sealed class SettingsCoordinator(AppState state, MusicDatabaseService database, LyricsPresentationService lyrics, LyricsLoader lyricsLoader, LibraryProjectionService library, DesktopLyricsViewModel desktopLyrics, HotKeyService hotKeys, ILogger<SettingsCoordinator> logger, Lyrics.LyricsOnlineSearch onlineLyrics, ApplicationFontService applicationFont) : IDisposable
 {
     public event Action? ThemeChanged;
     private bool _started;
@@ -50,6 +50,7 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
     {
         switch (e.PropertyName)
         {
+            case nameof(state.Preferences.UseIndependentDesktopLyricsFont):
             case nameof(state.Preferences.WindowBackgroundImagePath):
             case nameof(state.Preferences.WindowBackgroundBlurAmount):
                 if (state.Lifecycle.IsReady)
@@ -108,6 +109,7 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                     _ = database.SaveSettingAsync();
                 }
                 break;
+            case nameof(AudioPreferencesState.SpectralEnhancement):
             case nameof(AudioPreferencesState.IsDopEnabled):
             case nameof(AudioPreferencesState.ExperimentalSurround51):
             case nameof(AudioPreferencesState.ExperimentalAtmosPassthrough):
@@ -119,12 +121,43 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                     AppSettings.OnOutputSettingsUpdated();
                 }
                 break;
+            case nameof(state.Preferences.LocalLyricsFormatOrder):
+                AppSettings.LocalLyricsFormatOrder = state.Preferences.LocalLyricsFormatOrder;
+                if (state.Lifecycle.IsReady) _ = database.SaveSettingAsync();
+                break;
+            case nameof(state.Preferences.PreferDatabaseLyrics):
+                AppSettings.PreferDatabaseLyrics = state.Preferences.PreferDatabaseLyrics;
+                if (state.Lifecycle.IsReady) _ = database.SaveSettingAsync();
+                break;
             case nameof(state.Preferences.IsAutoLyricsEnabled):
                 AppSettings.IsAutoLyricsEnabled = state.Preferences.IsAutoLyricsEnabled;
+                if (!state.Preferences.IsAutoLyricsEnabled) onlineLyrics.CancelAutomaticSearch();
                 if (state.Lifecycle.IsReady)
                 {
                     _ = database.SaveSettingAsync();
                 }
+                break;
+            case nameof(state.Preferences.IsLyricsTranslationEnabled):
+                AppSettings.IsLyricsTranslationEnabled = state.Preferences.IsLyricsTranslationEnabled;
+                if (state.Lifecycle.IsReady)
+                {
+                    _ = database.SaveSettingAsync();
+                    lyrics.SendLyricsSettings();
+                }
+                break;
+            case nameof(state.Preferences.IsLyricsPronunciationEnabled):
+                AppSettings.IsLyricsPronunciationEnabled = state.Preferences.IsLyricsPronunciationEnabled;
+                if (state.Lifecycle.IsReady)
+                {
+                    _ = database.SaveSettingAsync();
+                    lyrics.SendLyricsSettings();
+                }
+                break;
+            case nameof(state.Preferences.IsMandarinPronunciationEnabled):
+            case nameof(state.Preferences.IsCantonesePronunciationEnabled):
+            case nameof(state.Preferences.IsJapanesePronunciationEnabled):
+            case nameof(state.Preferences.IsKoreanPronunciationEnabled):
+                ApplyPronunciationLanguageSetting(e.PropertyName!);
                 break;
             case nameof(state.Preferences.ArtistSplitSymbols):
                 AppSettings.ArtistSplitSymbols = state.Preferences.ArtistSplitSymbols ?? string.Empty;
@@ -180,6 +213,16 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 if (state.Lifecycle.IsReady)
                 lyrics.SendLyricsSettings();
                 break;
+            case nameof(state.Preferences.ApplicationFontFamily):
+                // 启动恢复发生在窗口创建之前，必须先发布资源；Ready 仅控制保存与歌词广播。
+                applicationFont.Apply(state.Preferences.ApplicationFontFamily.FontFamily);
+                if (state.Lifecycle.IsReady)
+                {
+                    _ = database.SaveSettingAsync();
+                    if (!state.Preferences.UseIndependentLyricsFont) lyrics.SendLyricsSettings();
+                }
+                break;
+            case nameof(state.Preferences.UseIndependentLyricsFont):
             case nameof(state.Preferences.FontFamily):
                 if (state.Lifecycle.IsReady)
                 {
@@ -217,6 +260,13 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                     ScheduleDesktopLyricsStyleCommit();
                 }
                 break;
+            case nameof(state.Preferences.DesktopLyricsTaskbarLyricsWidth):
+                AppSettings.DesktopLyricsTaskbarLyricsWidth = state.Preferences.DesktopLyricsTaskbarLyricsWidth;
+                if (state.Lifecycle.IsReady)
+                {
+                    _ = database.SaveSettingAsync();
+                }
+                break;
             case nameof(state.Preferences.DesktopLyricsColor):
                 AppSettings.DesktopLyricsColorRgb = (uint)((state.Preferences.DesktopLyricsColor.R << 16) | (state.Preferences.DesktopLyricsColor.G << 8) | state.Preferences.DesktopLyricsColor.B);
                 if (state.Lifecycle.IsReady)
@@ -233,6 +283,13 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                 break;
             case nameof(state.Preferences.IsDesktopLyricsTranslationEnabled):
                 AppSettings.IsDesktopLyricsTranslationEnabled = state.Preferences.IsDesktopLyricsTranslationEnabled;
+                if (state.Lifecycle.IsReady)
+                {
+                    ScheduleDesktopLyricsStyleCommit();
+                }
+                break;
+            case nameof(state.Preferences.IsDesktopLyricsPronunciationEnabled):
+                AppSettings.IsDesktopLyricsPronunciationEnabled = state.Preferences.IsDesktopLyricsPronunciationEnabled;
                 if (state.Lifecycle.IsReady)
                 {
                     ScheduleDesktopLyricsStyleCommit();
@@ -479,23 +536,35 @@ public sealed class SettingsCoordinator(AppState state, MusicDatabaseService dat
                     hotKeys.Refresh();
                 }
                 break;
-            case nameof(state.Preferences.IsTrimOnHideEnabled):
-                AppSettings.IsTrimOnHideEnabled = state.Preferences.IsTrimOnHideEnabled;
-                if (state.Lifecycle.IsReady)
-                {
-                    _ = database.SaveSettingAsync();
-                }
-                break;
-            case nameof(state.Preferences.IsTrimAfterPlaybackEnabled):
-                AppSettings.IsTrimAfterPlaybackEnabled = state.Preferences.IsTrimAfterPlaybackEnabled;
-                if (state.Lifecycle.IsReady)
-                {
-                    _ = database.SaveSettingAsync();
-                }
-                break;
             default:
                 if (state.Lifecycle.IsReady) _ = database.SaveSettingAsync();
                 break;
+        }
+    }
+
+    private void ApplyPronunciationLanguageSetting(string propertyName)
+    {
+        switch (propertyName)
+        {
+            case nameof(state.Preferences.IsMandarinPronunciationEnabled):
+                AppSettings.IsMandarinPronunciationEnabled = state.Preferences.IsMandarinPronunciationEnabled;
+                break;
+            case nameof(state.Preferences.IsCantonesePronunciationEnabled):
+                AppSettings.IsCantonesePronunciationEnabled = state.Preferences.IsCantonesePronunciationEnabled;
+                break;
+            case nameof(state.Preferences.IsJapanesePronunciationEnabled):
+                AppSettings.IsJapanesePronunciationEnabled = state.Preferences.IsJapanesePronunciationEnabled;
+                break;
+            case nameof(state.Preferences.IsKoreanPronunciationEnabled):
+                AppSettings.IsKoreanPronunciationEnabled = state.Preferences.IsKoreanPronunciationEnabled;
+                break;
+        }
+        if (state.Lifecycle.IsReady)
+        {
+            _ = database.SaveSettingAsync();
+            lyrics.SendLyricsSettings();
+            if (state.Playback.CurrentPlayingMusic is { } music)
+                lyricsLoader.Load(music);
         }
     }
 

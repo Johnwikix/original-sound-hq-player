@@ -11,10 +11,9 @@ namespace WinUIMusicPlayer.Helper
         private MicaController _micaController;
         private SystemBackdropConfiguration _backdropConfiguration;
         private Microsoft.UI.Dispatching.DispatcherQueue _dispatcherQueue;
-
-        // 保存 window 对象引用
-        private ICompositionSupportsSystemBackdrop _currentTarget;
+        private FrameworkElement _rootElement;
         private bool _isConnected = false;
+        private bool _windowIsActive = true;
         private Window _window;
         // Mica效果属性
         public MicaKind MicaKind { get; set; } = MicaKind.Base;
@@ -29,7 +28,8 @@ namespace WinUIMusicPlayer.Helper
 
         protected override void OnTargetConnected(ICompositionSupportsSystemBackdrop connectedTarget, XamlRoot xamlRoot)
         {
-            _currentTarget = connectedTarget;
+            if (!MicaController.IsSupported()) return;
+
             _isConnected = true;
 
             // 获取当前线程的 DispatcherQueue
@@ -37,11 +37,12 @@ namespace WinUIMusicPlayer.Helper
             _backdropConfiguration = new SystemBackdropConfiguration();
 
             // 根据应用当前主题设置背景配置
-            Microsoft.UI.Xaml.FrameworkElement rootElement = xamlRoot.Content as Microsoft.UI.Xaml.FrameworkElement;
-            SetConfigurationSourceTheme(rootElement);
+            _rootElement = xamlRoot?.Content as FrameworkElement;
+            SetConfigurationSourceTheme(_rootElement);
 
             // 监听主题变更事件
-            rootElement.ActualThemeChanged += RootElement_ActualThemeChanged;
+            if (_rootElement is not null)
+                _rootElement.ActualThemeChanged += RootElement_ActualThemeChanged;
 
             // 监听窗口状态变更
             _window?.Closed += Window_Closed;
@@ -76,17 +77,13 @@ namespace WinUIMusicPlayer.Helper
         {
             // 清理资源和事件监听
             _isConnected = false;
-            _currentTarget = null;
-
-
-            if (disconnectedTarget is FrameworkElement element)
+            if (_rootElement is not null)
+                _rootElement.ActualThemeChanged -= RootElement_ActualThemeChanged;
+            _rootElement = null;
+            if (_window is not null)
             {
-                element.ActualThemeChanged -= RootElement_ActualThemeChanged;
-
-                if (_currentTarget is Window window)
-                {
-                    window.Closed += Window_Closed;
-                }
+                _window.Closed -= Window_Closed;
+                _window.Activated -= Window_Activated;
             }
 
             if (_micaController is not null)
@@ -97,18 +94,13 @@ namespace WinUIMusicPlayer.Helper
             }
 
             _backdropConfiguration = null;
+            _dispatcherQueue = null;
         }
 
         private void Window_Activated(object sender, WindowActivatedEventArgs args)
         {
-            if (IsInputActive)
-            {
-                _backdropConfiguration?.IsInputActive = args.WindowActivationState != WindowActivationState.Deactivated;
-            }
-            else
-            {
-                _backdropConfiguration?.IsInputActive = true;
-            }
+            _windowIsActive = args.WindowActivationState != WindowActivationState.Deactivated;
+            UpdateInputActiveState();
         }
 
         private void Window_Closed(object sender, WindowEventArgs args)
@@ -116,13 +108,20 @@ namespace WinUIMusicPlayer.Helper
             _micaController?.Dispose();
             _micaController = null;
             _backdropConfiguration = null;
-            _window.Closed -= Window_Closed;
-            _window.Activated -= Window_Activated;
+            _isConnected = false;
+            if (_rootElement is not null)
+                _rootElement.ActualThemeChanged -= RootElement_ActualThemeChanged;
+            _rootElement = null;
+            if (_window is not null)
+            {
+                _window.Closed -= Window_Closed;
+                _window.Activated -= Window_Activated;
+            }
         }
 
         private void SetConfigurationSourceTheme(FrameworkElement element)
         {
-            if (_backdropConfiguration is null) return;
+            if (_backdropConfiguration is null || element is null) return;
 
             _backdropConfiguration.Theme = element.ActualTheme switch
             {
@@ -132,6 +131,12 @@ namespace WinUIMusicPlayer.Helper
                 _ => SystemBackdropTheme.Default
             };
             UpdateUiColor(element.ActualTheme);
+        }
+
+        private void UpdateInputActiveState()
+        {
+            if (_backdropConfiguration is not null)
+                _backdropConfiguration.IsInputActive = !IsInputActive || _windowIsActive;
         }
 
         // 设置云母效果的属性

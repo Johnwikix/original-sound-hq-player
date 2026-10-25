@@ -9,6 +9,7 @@
     xmlns:dev="using:DevWinUI"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:model="using:WinUIMusicPlayer.Model"
+    xmlns:settings="using:WinUIMusicPlayer.View.SubView.Settings"
     xmlns:tool="using:WinUIMusicPlayer.Utils"
     xmlns:tools="using:WinUIMusicPlayer.Utils"
     xmlns:ui="using:CommunityToolkit.WinUI"
@@ -211,6 +212,21 @@
 
                 <TextBlock x:Uid="Appearance" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('ApplicationFont')}">
+                    <ComboBox
+                        x:Name="ApplicationFontComboBox"
+                        Width="300"
+                        AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('ApplicationFont')}"
+                        ItemsSource="{x:Bind ViewModel.AppViewModel.FontFamilyList, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.AppViewModel.ApplicationFontFamily, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="model:FontInfo">
+                                <TextBlock FontFamily="{x:Bind FontFamily}" Text="{x:Bind DisplayName}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </controls:SettingsCard>
+
                 <controls:SettingsExpander>
                     <controls:SettingsExpander.Header>
                         <TextBlock x:Uid="AppStyle" TextWrapping="Wrap" />
@@ -384,6 +400,8 @@
                     </controls:SettingsExpander.Items>
                 </controls:SettingsExpander>
 
+                <settings:LastFmSettingsControl />
+
                 <TextBlock x:Uid="Advanced" Style="{StaticResource SettingsSectionHeaderTextBlockStyle}" />
 
                 <controls:SettingsCard>
@@ -395,43 +413,12 @@
 
                 <controls:SettingsCard>
                     <controls:SettingsCard.Header>
-                        <TextBlock x:Uid="TrimOnHide" />
-                    </controls:SettingsCard.Header>
-                    <controls:SettingsCard.Description>
-                        <TextBlock x:Uid="TrimOnHideDescription" TextWrapping="Wrap" />
-                    </controls:SettingsCard.Description>
-                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsTrimOnHideEnabled, Mode=TwoWay}" />
-                </controls:SettingsCard>
-
-                <controls:SettingsCard>
-                    <controls:SettingsCard.Header>
-                        <TextBlock x:Uid="TrimAfterPlayback" />
-                    </controls:SettingsCard.Header>
-                    <controls:SettingsCard.Description>
-                        <TextBlock x:Uid="TrimAfterPlaybackDescription" TextWrapping="Wrap" />
-                    </controls:SettingsCard.Description>
-                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.AppViewModel.IsTrimAfterPlaybackEnabled, Mode=TwoWay}" />
-                </controls:SettingsCard>
-
-                <controls:SettingsCard>
-                    <controls:SettingsCard.Header>
                         <TextBlock x:Uid="ArtistSplitSymbols" />
                     </controls:SettingsCard.Header>
                     <controls:SettingsCard.Description>
                         <TextBlock x:Uid="ArtistSplitSymbolsDescription" TextWrapping="Wrap" />
                     </controls:SettingsCard.Description>
                     <TextBox Width="240" Text="{x:Bind ViewModel.AppViewModel.ArtistSplitSymbols, Mode=TwoWay, UpdateSourceTrigger=LostFocus}" />
-                </controls:SettingsCard>
-
-                <controls:SettingsCard>
-                    <controls:SettingsCard.Header>
-                        <TextBlock x:Uid="TrimNowLabel" TextWrapping="Wrap" />
-                    </controls:SettingsCard.Header>
-                    <Button Command="{x:Bind ViewModel.AppViewModel.TrimNowCommand, Mode=OneWay}">
-                        <Button.Content>
-                            <FontIcon Glyph="&#xE895;" />
-                        </Button.Content>
-                    </Button>
                 </controls:SettingsCard>
 
                 <controls:SettingsCard>

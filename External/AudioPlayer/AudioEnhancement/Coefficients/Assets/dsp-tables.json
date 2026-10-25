@@ -1,0 +1,888 @@
+{
+  "formatVersion": 1,
+  "tables": [
+    {
+      "name": "BandWeightScales",
+      "data": "0000803f0000003f0000803e0000003e0000803d0000003d0000803c0000003c0000803b0000003b0000803a0000003a00008039000000390000803800000038000080370000003700000040f304b53f00000000f304b5bf000000c0f304b5bf00000000f304b53f0000004000000000000000c0000000000000004000000000000000c000000000000000c00000803fb1c0bebfeb951a3fd9e2443fd9e2443f0000803f000000002609793e00000000890cd13f0000803fcfafd23ef258153eb398813f0000803f8b597b3ea0b1c33eba43263f0000803fbfe1e33d2a853f3f0000803f00000000591aab3e000000000878df3f0000803f16d21d3f2dfb403e7d91a33f0000803f59e5013f1c58cf3eccb87a3f0000803fe893e63eb44d413f0000803f000000005fd7d83e00000000371aea3f0000803fb203513f89037d3efb21bf3f0000803fa101433fc9f1e23e96c2a13f0000803fd916473fc437453f0000803f00000000b852033f0000000099f1f13f0000803fbad3813f2a0aa53ef102d53f0000803f6406813f3a92fe3e7421c03f0000803fa2e68a3f95354b3f0000803f00000000a0aa1a3f0000000044a5f73f0000803f3c289b3f2cdfd43e2fd5e53f0000803f06529f3f183f113fe86ed83f0000803f598eae3fdf2d533f0000803f00000000c108333f00000000c1abfb3f0000803fd9ebb43f5edc073fa534f23f0000803fc042bc3f13ba273fc8ddea3f0000803f2a81cd3f060a5d3f0000803f00000000ccd94c3f000000009849fe3f0000803f6648cf3fcfc42b3f1f7bfa3f0000803f3144d73f70ff423f1978f73f0000803f1b63e63fdc8d683f0000803f00000000a6ed683f0000000089b0ff3f0000803f26a8ea3f10fb573f54fefe3f0000803ff0ceef3fb9a8633fc46ffe3f0000803f641ff83fe785753f6eeace3d91260e3ee392413e58cc823ece8daf3e669bea3e7f091c3f3e244f3f000080bf00000000011d78be0000000020fdebbf0000803f3372efbe22bcff3d0545c4bf0000803fd93ee0be0119a83eecc4a8bf0000803f5c16eabe1bd4343f000080bf00000000d37b07be00000000231ce1bf0000803f876d6bbef6c2b63da4aca7bf0000803fb71418be74589c3e40a882bf0000803f2e22a1bd917a323f000080bf00000000dde0f9bc000000009cd2d2bf0000803fd27521bc04a29f3de99485bf0000803f5b19f23d5cca9b3e4ae32fbf0000803fc30b893e083b333f000080bf00000000319c893d0000000079e6bfbf0000803f84174d3ecc2bb13dee203bbf0000803f0e98bc3edd30a43ed9eda4be0000803fbc27153f295f363f000080bf000000000001253e00000000e451a7bf0000803f3313cd3e5f0be63de2e6c2be0000803f1d8d193ffde7b33e47a6653d0000803f5b2b5c3fad473b3f",
+      "references": []
+    },
+    {
+      "name": "BitrateRows1",
+      "data": "100080000c0060000b0040000a00300008002000100080000c0060000a00400009003000080020000d00a0000c0070000b0050000a00400009003000080028000d0080000c0070000b0040000a00380009003000080028000e0080000d0060000c0050000b0038000900280008001800080010000b0010000c0060000b0050000a0040000d0020000a0010000e00c0000d0090000c0078000b00540009003c00080018000e0080000c0070000b0060000a005000090040000e0080000c0070000b0060000a004000090038000e0080000d0060000c0050000b0038000900280008001800100070000e0060000c0050000b0040000a002c0010006c000e0060000d0054000c0050000b00300010001000100010000b002c00090020001000100010001000100010000a00680009004000100040010e0000010d00c0000c00a0000b0080000a003000100040010f0000010c00a0000a0040000d0040010c00e0000b00c0000a00800009006000080040000d0000010c00e0000b0080000a0060000900500008003c000e0000010d00c0000b00a0000b005000080030000b00c0000a00800009004000080030000b0020000c00c0000b00a0000a0080000d0040000a0020000e0080010d0020010b00f0000a007800080030000e00c0000b00a0000a008000090060000e00c0000d00b0000b00a0000a0060000e0000010d00c0000b00a0000a005000080030001000c0000e00a0000d0080000c0070000b00400009002c001000c0000e00a0000d0080000c0070000b0050000a002c0010001000100010000b002c0009002000100010001000100010001000",
+      "references": []
+    },
+    {
+      "name": "CrossfadeWindow",
+      "data": "00000040f304b53f00000000f304b5bf000000c0f304b5bf00000000f304b53f0000004000000000000000c0000000000000004000000000000000c000000000",
+      "references": []
+    },
+    {
+      "name": "DenormalLowerBound",
+      "data": "9c577727266ca1b7",
+      "references": []
+    },
+    {
+      "name": "DenormalUpperBound",
+      "data": "9c577727266ca137",
+      "references": []
+    },
+    {
+      "name": "EnergyNormalization",
+      "data": "0000000000003040",
+      "references": []
+    },
+    {
+      "name": "ExcitationScale",
+      "data": "000000000000003f",
+      "references": []
+    },
+    {
+      "name": "ExponentScales",
+      "data": "0000803f0000003f0000803e0000003e0000803d0000003d0000803c0000003c0000803b0000003b0000803a0000003a00008039000000390000803800000038000080370000003700000040f304b53f00000000f304b5bf000000c0f304b5bf00000000f304b53f0000004000000000000000c0000000000000004000000000000000c000000000000000c00000803fb1c0bebfeb951a3fd9e2443fd9e2443f0000803f000000002609793e00000000890cd13f0000803fcfafd23ef258153eb398813f0000803f8b597b3ea0b1c33eba43263f0000803fbfe1e33d2a853f3f0000803f00000000591aab3e000000000878df3f0000803f16d21d3f2dfb403e7d91a33f0000803f59e5013f1c58cf3eccb87a3f0000803fe893e63eb44d413f0000803f000000005fd7d83e00000000371aea3f0000803fb203513f89037d3efb21bf3f0000803fa101433fc9f1e23e96c2a13f0000803fd916473fc437453f0000803f00000000b852033f0000000099f1f13f0000803fbad3813f2a0aa53ef102d53f0000803f6406813f3a92fe3e7421c03f0000803fa2e68a3f95354b3f0000803f00000000a0aa1a3f0000000044a5f73f0000803f3c289b3f2cdfd43e2fd5e53f0000803f06529f3f183f113fe86ed83f0000803f598eae3fdf2d533f0000803f00000000c108333f00000000c1abfb3f0000803fd9ebb43f5edc073fa534f23f0000803fc042bc3f13ba273fc8ddea3f0000803f2a81cd3f060a5d3f0000803f00000000ccd94c3f000000009849fe3f0000803f6648cf3fcfc42b3f1f7bfa3f0000803f3144d73f70ff423f1978f73f0000803f1b63e63fdc8d683f0000803f00000000a6ed683f0000000089b0ff3f0000803f26a8ea3f10fb573f54fefe3f0000803ff0ceef3fb9a8633fc46ffe3f0000803f641ff83fe785753f6eeace3d91260e3ee392413e58cc823ece8daf3e669bea3e7f091c3f3e244f3f000080bf00000000011d78be0000000020fdebbf0000803f3372efbe22bcff3d0545c4bf0000803fd93ee0be0119a83eecc4a8bf0000803f5c16eabe1bd4343f000080bf00000000d37b07be00000000231ce1bf0000803f876d6bbef6c2b63da4aca7bf0000803fb71418be74589c3e40a882bf0000803f2e22a1bd917a323f000080bf00000000dde0f9bc000000009cd2d2bf0000803fd27521bc04a29f3de99485bf0000803f5b19f23d5cca9b3e4ae32fbf0000803fc30b893e083b333f000080bf00000000319c893d0000000079e6bfbf0000803f84174d3ecc2bb13dee203bbf0000803f0e98bc3edd30a43ed9eda4be0000803fbc27153f295f363f000080bf000000000001253e00000000e451a7bf0000803f3313cd3e5f0be63de2e6c2be0000803f1d8d193ffde7b33e47a6653d0000803f5b2b5c3fad473b3f",
+      "references": []
+    },
+    {
+      "name": "ExtensionAnalysisBanks",
+      "data": "000000c00000803fb1c0bebfeb951a3f0000000091ff223e9702233ea7d2223ef16c213e430dabbc83e6c2bd6be5febd664113be8a2814be4f2322bdfac9203d773bd93d2a035e3db1f0033e3d12573dee6e5fbda066db3db26adbbd0bacdbbde9991e3b42db87bda65b4e3c2f8fd93df86d1c3d30ca7abd2968813da58480bdecd274bd71d45f3dad9889bd57be1d3c6bd47a3df569bd3c796dbd3c44e8bf3c7c8a42bd2a3adebcc9b4403cb589dabc9ccadd3c71f437bb17923fbcf0e33e3c128f10bc",
+      "references": []
+    },
+    {
+      "name": "ExtensionSynthesisBanks",
+      "data": "6c00f0bb6b8323bc1f399f3beed6523c1f4194ba080f75bc486f79bb7b52813c0e54203c5aaa73bc8e7987bcd6c03f3ccd24c23cfd52babb8caefcbc1b1484bb46ac193da63e9c3cb73a31bde5ca32bd5c5f433da4b8bf3d13cf4ebd0acda0be762b0d3f0acda0be13cf4ebda4b8bf3d5c5f433de5ca32bdb73a31bda63e9c3c46ac193d1b1484bb8caefcbcfd52babbcd24c23cd6c03f3c8e7987bc5aaa73bc0e54203c7b52813c486f79bb080f75bc1f4194baeed6523c1f399f3b6b8323bc6c00f0bbb830dc3b66720c3c63a562bba22e0fbc56e1023a486f033c8d96fe3a2a49dabb10df74bba0dea03bfa8b9e3bfa2a45bbd2d9acbb7069993a2907a83b4962e839be2994bba290e1bad0c66b3b4b162b3b1e6124bbc91b4bbbb95cb53ae614533bd1cfb0b90c9c46bbb01a12bae9fc2a3ba40ca43ac0ab05bbda43e2baa247b73a3877023b26c045ba363e07bbadfb1639c308033be288ca393d78efbaedd55cba91acd33aa3ad9d3abae6b4ba3c37c7ba3be19d3a76f2eb3ad2dd95ba175b08bb7eb0ac3a69851a3b969a01bbffe81dbb10936a3bfe9d8c3a5990cbbbb750e33bf7f589bbe7f5c23a12958bb9d05d463700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000a67d853bb0de3f3c703a103b070c43bcc5e319bcee60033ceeb67b3ca58f39b9e86591bc890328bc45156f3c58a9a93c9abfa0bb41ace3bc8da032bce2e7e23c06aefd3c92ca86bc95e455bdce5839bcee76913d2d85913d79eeabbd66a99cbe92ab163f66a99cbe79eeabbd2d85913dee76913dce5839bc95e455bd92ca86bc06aefd3ce2e7e23c8da032bc41ace3bc9abfa0bb58a9a93c45156f3c890328bce86591bca58f39b9eeb67b3cee60033cc5e319bc070c43bc703a103bb0de3f3ca67d853b2a1309bc7b6702bcc7fd5e3ba4f5113c71b4c73ab63aedbb5428a7bb1533803be8ded83befa10cb9298ec6bb2a9e43bb08ac813b1d0c9b3bf75c99ba810da0bb46c0bbba2293723b0ca0503bef18e4bab59877bb0206adb92d09563b9185ff3a585902bb73d235bb7133d9394ea6333bc4c3823ac4c603bb4057fcbad9316a3a67b8113bfc0f913924abfdba67c29fba9e06a13a6f9fe73a8126abb90c64f6ba439313ba7fc1d33a0698aa3afd8790ba3424efba80e4f4394bd60e3b80af1839713a20bba81b32ba5c2d3d3be3d9743a68cb80bb8b53ffb82b16cd3b3187f2bb7c82883b8e6e92ba135c1c387883173800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b952413cf859cd3bbff340bb4c7a3ebcb6637cbc3a4742bc4a27fabad7ca273c78d5993c24279b3c8b871a3c14b2d2bb63a8b1bcd575e9bce722b2bcdcf5fdbafe18c43c4a2f353dc5813f3d24dbc03c34b3cfbc6007babd7ac720bea60553be189d463fa60553be7ac720be6007babd34b3cfbc24dbc03cc5813f3d4a2f353dfe18c43cdcf5fdbae722b2bcd575e9bc63a8b1bc14b2d2bb8b871a3c24279b3c78d5993cd7ca273c4a27faba3a4742bcb6637cbc4c7a3ebcbff340bbf859cd3bb952413c11ed3b3cce68c23b8481f4ba3c2d06bcfc5628bcea67f5bb9ab1c0baca3e9d3bebf6093c21a9013c395d783bb09fecbafa4dcbbb1975f4bbc42faabbc2c52cba2e00803b765ad13bc9d4bc3b7e25243bb897e2bae735a1bbc21db9bba12a73bb236c22b99eaf563b27b5a33b9c0f8d3b3cd5d73aa92cd7baaad182bbc0bf8ebb62332fbb67ad2e3960a9363b2838823b696f543be18e873a99e3c9ba562956bbcc0a5ebbda7cfaba025ac839a4f21b3bdecb4f3be319203bc4d51c3ad2bfbbba0e2d30bb53712cbba11eb0bac2a6083a9cac053bc4f3253b3050ee3a6eb68f392172acbad4b110bbc45905bb22476bbab48e1c3ab4f1e33a8b6c043b16ccac3a7b1b553862689dbaa791edba323fcbba9e8d13ba339c273a8375c23af245d03ab31d763a300700b9cb518dba551dc2baa2dd98baad3ea3b9fa5d2a3a5d9ea53a70e0a33ab812293aba767eb947ed7fba52739fba91d262ba0d4bf6b840852c3ab6a38e3abb13813a2f65d73916e8b1b98a9e6cba73a384baa58d25ba9af739380b59323a4f157f3a519e4d3addac613931aeedb9232169bab58e66ba3713e1b959487639513f4d3a17f3743a95161f3a61a12ab84dd431ba57647fbaaf3b46ba1d43ffb867f01e3a0cbf863a061d6a3aabd075399db01dbabf5995bae36386ba74a38ab91653413ae0f1b13afdb9943aed72c738788196ba510fe1ba202688bac9bb1e3a5067063bb0f6fc3afff000b9fb382cbb459839bb728a3d3ae9a1a03b4e83023b5b8a1bbc914dd33ba730b8ba00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000e4b31fbb110922bc3d7463bc42ee4abcb6c2b2bbf505963bb998623c78f2953c7aa77d3c68e3b63b6f9706bcd8e5a8bc65dcd5bce7c4acbc447db9bbdc62813c636b113d0248363d1788113db850bb3b20e32bbd0c99cabdaea91cbe134a44be09554b3f134a44beaea91cbe0c99cabd20e32bbdb850bb3b1788113d0248363d636b113ddc62813c447db9bbe7c4acbc65dcd5bcd8e5a8bc6f9706bc68e3b63b7aa77d3c78f2953cb998623cf505963bb6c2b2bb42ee4abc3d7463bc110922bce4b31fbb74efad3b1581293cc28d333cf65bee3bb916893a4ee5a7bb41fa10bcfb0b11bcd6f9b0bbeff2a0b8de23a13b5e15fb3b05e9ec3b22c4823b119620ba31ae99bb8ad6dabb822ac2bb37803dbbddd6903ad878913b7a4bbf3bf70a9f3bf1e3033bbed8bfba8ba488bb92cba6bb8e6781bb5c8dabba2010e03abdbe7e3b4cd4903b9e67503b871b433ac77bf4ba2de86bbb0a4b7abb1a1025bb9bf895b9d014003bba72583b3f76563ba661ff3a1f17a7b83bf301bb2cce44bbafe735bb16b2bfbabf2dbf39911c013bdb5a313b5e72183b8a57893add971abab6d1fbba2ddf1dbb95e3fbbae3d835ba42ac473a5e4af03a1a050b3bb2f1cc3a7ac8ca3991a563baf69fe2ba397bf3ba25e5a0babbb41eb9c366793aaaa0d23a00f9d13a7fe6763ad8e868b80d0682bac40ec2bab5ddb1ba83fd34ba2c4e66392fb2833a40a5b03a46d6943ab1a5f739579fb7b9a21883ba338b9fba2d0d75bace2694b964efef39d03c813a8cfc8e3a64ae443a42a0ee386a320fbabae97cba6b2f7fbacbe918bac09f2538ca36253a2bff783ae50b633a6a50dd391cc14db9a3513eba55fd77ba2be346ba9d837eb9f17cc93939805e3ad175773a9588213af5c9ec35f0fe25bac06082ba2eab6cba14d8c3b9fad9bf3905ae7d3ad0a3923a6a84383acbd7f1b8e23177ba1d03aebaa62282ba530819b818e18a3a002ad63a5d9f9f3a9139dbb857c9cfba80690cbb3d6b8bba90eca03a917f433b9b42093ba4b2e5bade23a2bb008c84ba76081d3cbf92e3bb4990ca3a0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000051135f3e3a155f3dbf1428be8306e6bd06b37c3d21b5ae3da400a323887806bdbf9010bc9b8ab43b36ae1a3b35c72bb90000008000000080000000000000000000000080000000800000000000000000000000000000008000000080000000000000000051135f3e25eca4bdd33c09be7845163e40e72925441aa7bd7e2f273daa19553cbf9090bca86a433b9b97fc3a6f4b19ba0000008000000000000000800000008000000000000000800000008000000000000000000000008000000000000000000000008051135f3ecc9c3abe5015c23d2945602406b37cbd74a39c3d9f6f6cbd6220f13cbf9010bca59cf622139cb23afab10fba000000000000008000000000000000800000008000000000000000800000000000000080000000000000000000000080000000000763b13e904d553ee946503ed9080dbd000050a5513ea4bd42808a3c4d781dbcbf90103df71f0bbc0624b9bb9bf7a93a000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001209e13d15f4b03dafd4e03c05f61ebd62eda8bd9b50b2bd892766bdb7d516bc065ffb3cd4f1453d66a32c3d6c77b13c1f082023795e5bbcfb6c83bc974238bcce6e8dbba2e0493a0d2e333b89c51c3b6922a13a4ca79b39d6a2d0b83d3c09b9e5d873b81209e13d92d5773df13626bdabb3cbbdb5ed89bdca598c3c0a5b963da735703da602a9243e2532bd981f25bdcb7de3bb7423a43ce8b6b03c4846d03b969bddbbce6e0dbc38d156bb62f1c13a0a161b3bd290833af4b31eb9c82fbab926d40fb931f738a01209e13dc1e9e63c1b13bcbd5fdc92bd770f433da5b9ad3d5c65e023df868bbd065ffbbc1280173d82c81a3df4e616bc7c20e8bc4f88babb87aa6b3ccf060d3cce6e8dbb2bbebabb88c0742288bc183bdf0f3a3a1bce0fba0987aeb95c153338e5d87338999c2b3fa74c33be68f9d63d8605573e5b53d13de6fb73bc181d8dbc071b993c0000d0a4a84c2bbd504c22bdfc91b4bb0efa073cbf2c23bb6be799bb94091a3cce6e8d3c5975063c5f138abb0e4ce8bb95dd40bbe34ed339c36f4e3a0c4b6c3900003820862f013f6cb6a1bec57994bb2288ca3dd3f68a3b66ec55bdda6378bb2fc3fa3c24b0523b84c293bc988929bb83ad263cc472fa3af55baabb3268afba3b26283b00a79e3a00000000ec8d403ffd7464be20ba21be38189abde4e10bbbce99293d86924a3dcb40fb3cede9013b5b6ea3bcc53ad6bc33868ebc91afeaba52b4363c141f7b3cf6972e3c3495c43a9524cebbb6a014bc6862d4bb2283a1baa3a65f3be8f8a63b300b7a3b9c41683adccdd3bab8e72ebbad9b03bb8d6426badeb23c3a5f28a13a6567973aa2f4323a00000000",
+      "references": []
+    },
+    {
+      "name": "InitialEmphasisGain",
+      "data": "0050c347",
+      "references": []
+    },
+    {
+      "name": "InputInterpolationBanks",
+      "data": "9cd1ef3efda4a13e1610fe3c12b1c9bd4504f0bc9b01533d8210da3c3635f2bccf31bebce066883ca3cf9e3c9e470abcb9db7cbcf9db523b98c33e3ce9e5a6b83d1c07bcf4b8cdbae109b13b818b0f3ba6e350bb9a280dbbbcd9d13a5cb9e63a763318baff50a2bac2fea237ee1b453a492167398666e0b9aec8f4b99fc052b949ba0eb800000000f54cdd3e37c59e3e4fdd843d6c74a9bd0f1b69bdab22e83c2a1f393d39623ebb09f402bdbc561cbcff069d3cecd1623c08ec0dbccf5058bc33719f3adc28213ced6f3a3bf990bfbbaeb58bbb35f6173b5f92763bd299b4b8903b26bb3f1f85ba180e963a2f908d3a073988b9f95851ba1af184b926f0b6399e63de3966245739b568313800000000c8dc723e62ac5c3ea678213e18caa83dcbd04c3cd2450abd28c547bde1b717bd4a5b3dbc0d1d503c2094cd3c9369ba3c79c9253ca0b797bbd59f66bcdc3b73bc58f908bc112c533a8856fd3b52c21c3c9a5ed43b95d57a3ac59e7dbbabeabfbb331999bb181dcdba9516cf3a9039573bbe5c4a3bcba4c83aa089b3b9628ad1ba3b4eefba2cfc9bbaab3357b9852d1d3ace97723abc0c4a3a42ddb239f6d7e1b8b8ccd0b9bdbffbb95915d4b9d09489b9ae9708b95faf3ab8234bb8b605ae8e36d27042360000000043dd5f3e955c4e3e26da1e3edc31bd3d18b8f43c606490bc83a52abde52a2cbd4680d2bc01e959bbb8dc743cccd3bb3c3921a23c134b173cab583dbb4b8339bc9c595bbcb4641cbcebc528bb4ffe833bae3bfa3bb74bf23bd2d2893bbfa4a7b628cd58bb779395bb011274bb90e0d1ba8e762c3a83240b3b9ae41d3b6a9ede3a2c0f093a47f30dbabe7992ba4f1a93baed883bbae6ca2bb95fbd9a395c8a0c3a95a5113a0f66e139c6708639d883e3380cf1953720679db7a887b8b71d9b58b7d8ec95b6",
+      "references": []
+    },
+    {
+      "name": "LogEnergyOffset",
+      "data": "0000000000000000",
+      "references": []
+    },
+    {
+      "name": "LogEnergyScale",
+      "data": "0000000000002440",
+      "references": []
+    },
+    {
+      "name": "MaximumEnergy",
+      "data": "00008041",
+      "references": []
+    },
+    {
+      "name": "MinimumEnergy",
+      "data": "ccbc8c2b",
+      "references": []
+    },
+    {
+      "name": "ModulationAngles",
+      "data": "000000000000903f00000060fb211940",
+      "references": []
+    },
+    {
+      "name": "PackedParameters",
+      "data": "0209080906f6302b8044e72733e433d62e23fb2fc74525e32fbb5130cf32a86c2dd024996b2be11c816034df1d0105e221dc20d41dcc1cc41dbf18ba15ad150000c80107800000000000000001000f010005500204055002040ccd0f0000000100001f00007f0800000100ff000000030fa40b9a0fa40000006000080b0a00ff0209080906f10e3b913dde1830062dd12c23f430c74120ce37b17d05fc269f7f03011e887f06fb1f0105df20d71dcf1cc71dc218bc16b0150209080906eefa36aa3cde0d1e2831d5110e3c36bc330b3029a84e032b21925bff25230105db1ed31dcc1fc519bf16b2160209080906f2e13fb140e8ca47003bcded3ad034b7022fcf2c9f0f26fa290105d91ed220ca1ac316b7160209080906f8f42d824bdc1a090934c31e05052dac1919f22c0105db21d21bc917bd170209080906e9f034c237d00023072ab91f19eb2d0105db1bd118c6180209080906e9e7249c41d0f010df3c0105e21ad61a0209080906eace369c460105f71d000000c802090907f9474b54e60b7549e4df4d3880000000020a0907ff2a5a61ebec6250e3ac3a2f8000000002090907f9474b54e60b7549e4df4d3880000000020a0907ff2a5a61ebec6250e3ac3a2f80000000faec0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+      "references": []
+    },
+    {
+      "name": "PcmInputScale",
+      "data": "000000000000003e",
+      "references": []
+    },
+    {
+      "name": "PcmOutputScale",
+      "data": "000000000000e041",
+      "references": []
+    },
+    {
+      "name": "PcmUpperBound",
+      "data": "000000e0ffffef3f",
+      "references": []
+    },
+    {
+      "name": "PowerThreshold",
+      "data": "11ea2d819997713d",
+      "references": []
+    },
+    {
+      "name": "RepairAnalysisBanks",
+      "data": "0000803f000000002609793e00000000890cd13f0000803fcfafd23ef258153eb398813f0000803f8b597b3ea0b1c33eba43263f0000803fbfe1e33d2a853f3f0000803f00000000591aab3e000000000878df3f0000803f16d21d3f2dfb403e7d91a33f0000803f59e5013f1c58cf3eccb87a3f0000803fe893e63eb44d413f0000803f000000005fd7d83e00000000371aea3f0000803fb203513f89037d3efb21bf3f0000803fa101433fc9f1e23e96c2a13f0000803fd916473fc437453f0000803f00000000b852033f0000000099f1f13f0000803fbad3813f2a0aa53ef102d53f0000803f6406813f3a92fe3e7421c03f0000803fa2e68a3f95354b3f0000803f00000000a0aa1a3f0000000044a5f73f0000803f3c289b3f2cdfd43e2fd5e53f0000803f06529f3f183f113fe86ed83f0000803f598eae3fdf2d533f0000803f00000000c108333f00000000c1abfb3f0000803fd9ebb43f5edc073fa534f23f0000803fc042bc3f13ba273fc8ddea3f0000803f2a81cd3f060a5d3f0000803f00000000ccd94c3f000000009849fe3f0000803f6648cf3fcfc42b3f1f7bfa3f0000803f3144d73f70ff423f1978f73f0000803f1b63e63fdc8d683f0000803f00000000a6ed683f0000000089b0ff3f0000803f26a8ea3f10fb573f54fefe3f0000803ff0ceef3fb9a8633fc46ffe3f0000803f641ff83fe785753f6eeace3d91260e3ee392413e58cc823ece8daf3e669bea3e7f091c3f3e244f3f000080bf00000000011d78be0000000020fdebbf0000803f3372efbe22bcff3d0545c4bf0000803fd93ee0be0119a83eecc4a8bf0000803f5c16eabe1bd4343f000080bf00000000d37b07be00000000231ce1bf0000803f876d6bbef6c2b63da4aca7bf0000803fb71418be74589c3e40a882bf0000803f2e22a1bd917a323f000080bf00000000dde0f9bc000000009cd2d2bf0000803fd27521bc04a29f3de99485bf0000803f5b19f23d5cca9b3e4ae32fbf0000803fc30b893e083b333f000080bf00000000319c893d0000000079e6bfbf0000803f84174d3ecc2bb13dee203bbf0000803f0e98bc3edd30a43ed9eda4be0000803fbc27153f295f363f000080bf000000000001253e00000000e451a7bf0000803f3313cd3e5f0be63de2e6c2be0000803f1d8d193ffde7b33e47a6653d0000803f5b2b5c3fad473b3f000080bf00000000399f813e00000000137b87bf0000803fc01e183ff4941d3e9f9ed2b90000803f9aaa503f3ad1c93eaf39de3e0000803f6b0a8d3fd57d413f000080bf0000000052a1b03e000000003ce43cbf0000803f20c7483f0fea573ee0c3cb3e0000803f301b823f9444e53eb5434c3f0000803f67cda73ff0ad483f000080bf00000000ce62e03e00000000aef4a8be0000803ff836793ff15d913e1c3d4c3f0000803f16559a3f1efb023ff525913f0000803ff0babe3f049f503fb8c7ab3d5429523d2dc5023daa2ba43cf555513c6756073cfe1eb13b02166a3b",
+      "references": []
+    },
+    {
+      "name": "RepairRecursiveCoefficients",
+      "data": "000000c00000803fb1c0bebfeb951a3fd9e2443fd9e2443f",
+      "references": []
+    },
+    {
+      "name": "SampleRates",
+      "data": "401f0000112b0000e02e0000803e000022560000c05d0000007d000044ac000080bb000000fa0000885801000077010000f401008032020010b1020000ee0200",
+      "references": []
+    },
+    {
+      "name": "SourceSelection",
+      "data": "000000000000000000000000050000000000000006000000000000000600000000000000010000000000000001000000000000000500000000000000060000000000000005000000000000000500000000000000060000000000000005000000000000000100000000000000010000000000000002000000000000000100000000000000010000000000000001000000000000000200000000000000060000000000000006000000000000000500000000000000040000000000000001000000000000000500000000000000050000000000000004000000000000000400000000000000050000000000000006000000000000000100000000000000010000000000000002000000000000000100000000000000010000000000000001000000000000000000000000000000050000000000000006000000000000000600000000000000010000000000000001000000000000000500000000000000060000000000000005000000000000000500000000000000060000000000000005000000000000000100000000000000010000000000000002000000000000000100000000000000010000000000000001000000000000000000000000000000040000000000000006000000000000000500000000000000040000000000000001000000000000000500000000000000050000000000000004000000000000000400000000000000050000000000000006000000000000000100000000000000010000000000000002000000000000000100000000000000010000000000000001000000000000000000000000000000000000000000000006000000000000000600000000000000010000000000000001000000000000000500000000000000060000000000000005000000000000000500000000000000060000000000000005000000000000000100000000000000010000000000000002000000000000000100000000000000010000000000000001000000000000000000000000000000000000000000000006000000000000000500000000000000040000000000000001000000000000000500000000000000050000000000000004000000000000000400000000000000050000000000000006000000000000000100000000000000010000000000000002000000000000000100000000000000010000000000000001000000",
+      "references": [
+        {
+          "offset": 8,
+          "table": "BitrateRows1",
+          "within": 0
+        },
+        {
+          "offset": 16,
+          "table": "BitrateRows1",
+          "within": 40
+        },
+        {
+          "offset": 24,
+          "table": "BitrateRows1",
+          "within": 88
+        },
+        {
+          "offset": 32,
+          "table": "BitrateRows1",
+          "within": 112
+        },
+        {
+          "offset": 40,
+          "table": "BitrateRows1",
+          "within": 116
+        },
+        {
+          "offset": 48,
+          "table": "BitrateRows1",
+          "within": 120
+        },
+        {
+          "offset": 56,
+          "table": "BitrateRows1",
+          "within": 140
+        },
+        {
+          "offset": 64,
+          "table": "BitrateRows1",
+          "within": 164
+        },
+        {
+          "offset": 72,
+          "table": "BitrateRows1",
+          "within": 184
+        },
+        {
+          "offset": 80,
+          "table": "BitrateRows1",
+          "within": 204
+        },
+        {
+          "offset": 88,
+          "table": "BitrateRows1",
+          "within": 228
+        },
+        {
+          "offset": 96,
+          "table": "BitrateRows1",
+          "within": 268
+        },
+        {
+          "offset": 104,
+          "table": "BitrateRows1",
+          "within": 272
+        },
+        {
+          "offset": 112,
+          "table": "BitrateRows1",
+          "within": 276
+        },
+        {
+          "offset": 120,
+          "table": "BitrateRows1",
+          "within": 284
+        },
+        {
+          "offset": 128,
+          "table": "BitrateRows1",
+          "within": 288
+        },
+        {
+          "offset": 136,
+          "table": "BitrateRows1",
+          "within": 292
+        },
+        {
+          "offset": 144,
+          "table": "BitrateRows1",
+          "within": 296
+        },
+        {
+          "offset": 152,
+          "table": "BitrateRows1",
+          "within": 304
+        },
+        {
+          "offset": 160,
+          "table": "BitrateRows1",
+          "within": 344
+        },
+        {
+          "offset": 168,
+          "table": "BitrateRows1",
+          "within": 392
+        },
+        {
+          "offset": 176,
+          "table": "BitrateRows1",
+          "within": 412
+        },
+        {
+          "offset": 184,
+          "table": "BitrateRows1",
+          "within": 428
+        },
+        {
+          "offset": 192,
+          "table": "BitrateRows1",
+          "within": 432
+        },
+        {
+          "offset": 200,
+          "table": "BitrateRows1",
+          "within": 452
+        },
+        {
+          "offset": 208,
+          "table": "BitrateRows1",
+          "within": 472
+        },
+        {
+          "offset": 216,
+          "table": "BitrateRows1",
+          "within": 488
+        },
+        {
+          "offset": 224,
+          "table": "BitrateRows1",
+          "within": 504
+        },
+        {
+          "offset": 232,
+          "table": "BitrateRows1",
+          "within": 524
+        },
+        {
+          "offset": 240,
+          "table": "BitrateRows1",
+          "within": 572
+        },
+        {
+          "offset": 248,
+          "table": "BitrateRows1",
+          "within": 576
+        },
+        {
+          "offset": 256,
+          "table": "BitrateRows1",
+          "within": 580
+        },
+        {
+          "offset": 264,
+          "table": "BitrateRows1",
+          "within": 588
+        },
+        {
+          "offset": 272,
+          "table": "BitrateRows1",
+          "within": 592
+        },
+        {
+          "offset": 280,
+          "table": "BitrateRows1",
+          "within": 596
+        },
+        {
+          "offset": 296,
+          "table": "BitrateRows1",
+          "within": 20
+        },
+        {
+          "offset": 304,
+          "table": "BitrateRows1",
+          "within": 40
+        },
+        {
+          "offset": 312,
+          "table": "BitrateRows1",
+          "within": 88
+        },
+        {
+          "offset": 320,
+          "table": "BitrateRows1",
+          "within": 112
+        },
+        {
+          "offset": 328,
+          "table": "BitrateRows1",
+          "within": 116
+        },
+        {
+          "offset": 336,
+          "table": "BitrateRows1",
+          "within": 120
+        },
+        {
+          "offset": 344,
+          "table": "BitrateRows1",
+          "within": 140
+        },
+        {
+          "offset": 352,
+          "table": "BitrateRows1",
+          "within": 164
+        },
+        {
+          "offset": 360,
+          "table": "BitrateRows1",
+          "within": 184
+        },
+        {
+          "offset": 368,
+          "table": "BitrateRows1",
+          "within": 204
+        },
+        {
+          "offset": 376,
+          "table": "BitrateRows1",
+          "within": 228
+        },
+        {
+          "offset": 384,
+          "table": "BitrateRows1",
+          "within": 268
+        },
+        {
+          "offset": 392,
+          "table": "BitrateRows1",
+          "within": 272
+        },
+        {
+          "offset": 400,
+          "table": "BitrateRows1",
+          "within": 276
+        },
+        {
+          "offset": 408,
+          "table": "BitrateRows1",
+          "within": 284
+        },
+        {
+          "offset": 416,
+          "table": "BitrateRows1",
+          "within": 288
+        },
+        {
+          "offset": 424,
+          "table": "BitrateRows1",
+          "within": 292
+        },
+        {
+          "offset": 440,
+          "table": "BitrateRows1",
+          "within": 328
+        },
+        {
+          "offset": 448,
+          "table": "BitrateRows1",
+          "within": 344
+        },
+        {
+          "offset": 456,
+          "table": "BitrateRows1",
+          "within": 392
+        },
+        {
+          "offset": 464,
+          "table": "BitrateRows1",
+          "within": 412
+        },
+        {
+          "offset": 472,
+          "table": "BitrateRows1",
+          "within": 428
+        },
+        {
+          "offset": 480,
+          "table": "BitrateRows1",
+          "within": 432
+        },
+        {
+          "offset": 488,
+          "table": "BitrateRows1",
+          "within": 452
+        },
+        {
+          "offset": 496,
+          "table": "BitrateRows1",
+          "within": 472
+        },
+        {
+          "offset": 504,
+          "table": "BitrateRows1",
+          "within": 488
+        },
+        {
+          "offset": 512,
+          "table": "BitrateRows1",
+          "within": 504
+        },
+        {
+          "offset": 520,
+          "table": "BitrateRows1",
+          "within": 524
+        },
+        {
+          "offset": 528,
+          "table": "BitrateRows1",
+          "within": 572
+        },
+        {
+          "offset": 536,
+          "table": "BitrateRows1",
+          "within": 576
+        },
+        {
+          "offset": 544,
+          "table": "BitrateRows1",
+          "within": 580
+        },
+        {
+          "offset": 552,
+          "table": "BitrateRows1",
+          "within": 588
+        },
+        {
+          "offset": 560,
+          "table": "BitrateRows1",
+          "within": 592
+        },
+        {
+          "offset": 568,
+          "table": "BitrateRows1",
+          "within": 596
+        },
+        {
+          "offset": 592,
+          "table": "BitrateRows1",
+          "within": 64
+        },
+        {
+          "offset": 600,
+          "table": "BitrateRows1",
+          "within": 88
+        },
+        {
+          "offset": 608,
+          "table": "BitrateRows1",
+          "within": 112
+        },
+        {
+          "offset": 616,
+          "table": "BitrateRows1",
+          "within": 116
+        },
+        {
+          "offset": 624,
+          "table": "BitrateRows1",
+          "within": 120
+        },
+        {
+          "offset": 632,
+          "table": "BitrateRows1",
+          "within": 140
+        },
+        {
+          "offset": 640,
+          "table": "BitrateRows1",
+          "within": 164
+        },
+        {
+          "offset": 648,
+          "table": "BitrateRows1",
+          "within": 184
+        },
+        {
+          "offset": 656,
+          "table": "BitrateRows1",
+          "within": 204
+        },
+        {
+          "offset": 664,
+          "table": "BitrateRows1",
+          "within": 248
+        },
+        {
+          "offset": 672,
+          "table": "BitrateRows1",
+          "within": 268
+        },
+        {
+          "offset": 680,
+          "table": "BitrateRows1",
+          "within": 272
+        },
+        {
+          "offset": 688,
+          "table": "BitrateRows1",
+          "within": 276
+        },
+        {
+          "offset": 696,
+          "table": "BitrateRows1",
+          "within": 284
+        },
+        {
+          "offset": 704,
+          "table": "BitrateRows1",
+          "within": 288
+        },
+        {
+          "offset": 712,
+          "table": "BitrateRows1",
+          "within": 292
+        },
+        {
+          "offset": 736,
+          "table": "BitrateRows1",
+          "within": 368
+        },
+        {
+          "offset": 744,
+          "table": "BitrateRows1",
+          "within": 392
+        },
+        {
+          "offset": 752,
+          "table": "BitrateRows1",
+          "within": 412
+        },
+        {
+          "offset": 760,
+          "table": "BitrateRows1",
+          "within": 428
+        },
+        {
+          "offset": 768,
+          "table": "BitrateRows1",
+          "within": 432
+        },
+        {
+          "offset": 776,
+          "table": "BitrateRows1",
+          "within": 452
+        },
+        {
+          "offset": 784,
+          "table": "BitrateRows1",
+          "within": 472
+        },
+        {
+          "offset": 792,
+          "table": "BitrateRows1",
+          "within": 488
+        },
+        {
+          "offset": 800,
+          "table": "BitrateRows1",
+          "within": 504
+        },
+        {
+          "offset": 808,
+          "table": "BitrateRows1",
+          "within": 548
+        },
+        {
+          "offset": 816,
+          "table": "BitrateRows1",
+          "within": 572
+        },
+        {
+          "offset": 824,
+          "table": "BitrateRows1",
+          "within": 576
+        },
+        {
+          "offset": 832,
+          "table": "BitrateRows1",
+          "within": 580
+        },
+        {
+          "offset": 840,
+          "table": "BitrateRows1",
+          "within": 588
+        },
+        {
+          "offset": 848,
+          "table": "BitrateRows1",
+          "within": 592
+        },
+        {
+          "offset": 856,
+          "table": "BitrateRows1",
+          "within": 596
+        }
+      ]
+    },
+    {
+      "name": "SynthesisPrototype",
+      "data": "b301793a60429d3a8820f93ab57a383b88d7813b0e7daf3b7543e53b5b71113c79d6333cca45593ca480803c7a0e953c60c3a93c9008be3c0340d13ca2cbe23ce314f23c4294fe3c17ec033d79c5063d9ebb073d00000000",
+      "references": []
+    },
+    {
+      "name": "TenthsScale",
+      "data": "000000a09999b93f",
+      "references": []
+    }
+  ],
+  "symbols": [
+    {
+      "name": "AlternateMonoCbrSelection",
+      "table": "SourceSelection",
+      "within": 288
+    },
+    {
+      "name": "AlternateStereoCbrSelection",
+      "table": "SourceSelection",
+      "within": 432
+    },
+    {
+      "name": "BandWeightScales",
+      "table": "BandWeightScales",
+      "within": 0
+    },
+    {
+      "name": "CrossfadeWindow",
+      "table": "CrossfadeWindow",
+      "within": 0
+    },
+    {
+      "name": "DenormalLowerBound",
+      "table": "DenormalLowerBound",
+      "within": 0
+    },
+    {
+      "name": "DenormalUpperBound",
+      "table": "DenormalUpperBound",
+      "within": 0
+    },
+    {
+      "name": "EnergyNormalization",
+      "table": "EnergyNormalization",
+      "within": 0
+    },
+    {
+      "name": "ExcitationInterpolationDouble",
+      "table": "ExtensionSynthesisBanks",
+      "within": 3968
+    },
+    {
+      "name": "ExcitationInterpolationQuadruple",
+      "table": "ExtensionSynthesisBanks",
+      "within": 4040
+    },
+    {
+      "name": "ExcitationScale",
+      "table": "ExcitationScale",
+      "within": 0
+    },
+    {
+      "name": "ExponentScales",
+      "table": "ExponentScales",
+      "within": 0
+    },
+    {
+      "name": "ExtensionAnalysisBank",
+      "table": "ExtensionAnalysisBanks",
+      "within": 20
+    },
+    {
+      "name": "ExtensionBasisDouble",
+      "table": "ExtensionSynthesisBanks",
+      "within": 3168
+    },
+    {
+      "name": "ExtensionBasisQuadruple",
+      "table": "ExtensionSynthesisBanks",
+      "within": 3568
+    },
+    {
+      "name": "ExtensionPrototype44Double",
+      "table": "ExtensionSynthesisBanks",
+      "within": 0
+    },
+    {
+      "name": "ExtensionPrototype44Quadruple",
+      "table": "ExtensionSynthesisBanks",
+      "within": 1264
+    },
+    {
+      "name": "ExtensionPrototype48Double",
+      "table": "ExtensionSynthesisBanks",
+      "within": 632
+    },
+    {
+      "name": "ExtensionPrototype48Quadruple",
+      "table": "ExtensionSynthesisBanks",
+      "within": 2216
+    },
+    {
+      "name": "ExtensionRecursiveCoefficients",
+      "table": "ExtensionAnalysisBanks",
+      "within": 0
+    },
+    {
+      "name": "HighBandAnalysisBanks",
+      "table": "RepairAnalysisBanks",
+      "within": 544
+    },
+    {
+      "name": "HighBandAnalysisScales",
+      "table": "RepairAnalysisBanks",
+      "within": 1024
+    },
+    {
+      "name": "InitialEmphasisGain",
+      "table": "InitialEmphasisGain",
+      "within": 0
+    },
+    {
+      "name": "InputInterpolation44Double",
+      "table": "InputInterpolationBanks",
+      "within": 0
+    },
+    {
+      "name": "InputInterpolation44Quadruple",
+      "table": "InputInterpolationBanks",
+      "within": 272
+    },
+    {
+      "name": "InputInterpolation48Double",
+      "table": "InputInterpolationBanks",
+      "within": 136
+    },
+    {
+      "name": "InputInterpolation48Quadruple",
+      "table": "InputInterpolationBanks",
+      "within": 472
+    },
+    {
+      "name": "LogEnergyOffset",
+      "table": "LogEnergyOffset",
+      "within": 0
+    },
+    {
+      "name": "LogEnergyScale",
+      "table": "LogEnergyScale",
+      "within": 0
+    },
+    {
+      "name": "LowBandAnalysisBanks",
+      "table": "RepairAnalysisBanks",
+      "within": 0
+    },
+    {
+      "name": "LowBandAnalysisScales",
+      "table": "RepairAnalysisBanks",
+      "within": 480
+    },
+    {
+      "name": "MaximumEnergy",
+      "table": "MaximumEnergy",
+      "within": 0
+    },
+    {
+      "name": "MinimumEnergy",
+      "table": "MinimumEnergy",
+      "within": 0
+    },
+    {
+      "name": "ModulationAngleScale",
+      "table": "ModulationAngles",
+      "within": 0
+    },
+    {
+      "name": "ModulationAngleStep",
+      "table": "ModulationAngles",
+      "within": 8
+    },
+    {
+      "name": "MonoCbrSelection",
+      "table": "SourceSelection",
+      "within": 0
+    },
+    {
+      "name": "MonoVbrSelection",
+      "table": "SourceSelection",
+      "within": 576
+    },
+    {
+      "name": "PackedParameters",
+      "table": "PackedParameters",
+      "within": 0
+    },
+    {
+      "name": "PcmInputScale",
+      "table": "PcmInputScale",
+      "within": 0
+    },
+    {
+      "name": "PcmOutputScale",
+      "table": "PcmOutputScale",
+      "within": 0
+    },
+    {
+      "name": "PcmUpperBound",
+      "table": "PcmUpperBound",
+      "within": 0
+    },
+    {
+      "name": "PowerThreshold",
+      "table": "PowerThreshold",
+      "within": 0
+    },
+    {
+      "name": "RepairRecursiveCoefficients",
+      "table": "RepairRecursiveCoefficients",
+      "within": 0
+    },
+    {
+      "name": "SampleRates",
+      "table": "SampleRates",
+      "within": 0
+    },
+    {
+      "name": "StereoCbrSelection",
+      "table": "SourceSelection",
+      "within": 144
+    },
+    {
+      "name": "StereoVbrSelection",
+      "table": "SourceSelection",
+      "within": 720
+    },
+    {
+      "name": "SynthesisPrototype",
+      "table": "SynthesisPrototype",
+      "within": 0
+    },
+    {
+      "name": "TenthsScale",
+      "table": "TenthsScale",
+      "within": 0
+    }
+  ]
+}

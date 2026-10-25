@@ -31,6 +31,7 @@ namespace AudioPlayer.Playback;
 public sealed partial class PlaybackEngine : IDisposable
 {
     private readonly PlayerIpcService _ipc;
+    private readonly FftAnalyzer _fftAnalyzer;
 
     private const int FadeMs = 300; // 淡入/淡出斜坡时长
 
@@ -39,12 +40,13 @@ public sealed partial class PlaybackEngine : IDisposable
     private AtmosProbeCache? _atmosProbeCache;
     private int _dspPublishQueued;
 
-    // All session assignments use this hook, including fallback and device recovery.
+    // 所有会话赋值均经过此入口，包括回退和设备恢复。
     private void SetSession(Session? session)
     {
         if (_session?.Effects is { } oldEffects) oldEffects.StateChanged -= QueueDspState;
         _session = session;
         if (session?.Effects is { } effects) effects.StateChanged += QueueDspState;
+        _fftAnalyzer.Reset(session?.TimelineEpoch ?? 0, session?.Kind == RenderKind.Pcm ? session.SampleRate : 0);
         QueueDspState();
     }
 
@@ -57,8 +59,8 @@ public sealed partial class PlaybackEngine : IDisposable
             {
                 Interlocked.Exchange(ref engine._dspPublishQueued, 0);
                 if (Volatile.Read(ref engine._disposed) != 0) return;
-                // Read only after the mutation's stream lock has been released. Serializing
-                // read + publish also prevents a late worker from publishing an older state.
+                // 状态变更释放流锁后才读取；将读取与发布串行化，
+                // 也能防止迟到的工作线程发布较旧状态。
                 try { engine._ipc?.PublishDspState(engine.GetDspState()); }
                 catch (Exception ex) { Console.WriteLine($"DSP state publication failed: {ex.Message}"); }
             }
@@ -68,7 +70,7 @@ public sealed partial class PlaybackEngine : IDisposable
     private IAudioOutput? _output;
     private Timer? _endedWatchdog;
     private int _disposed;
-    private int _fadeBusy; // Interlocked：换曲淡出任务单飞行（在途时新请求只更新 MusicUrl）
+    private int _fadeBusy; // 使用 Interlocked 原子访问：换曲淡出任务单飞行（在途时新请求只更新 MusicUrl）
     private volatile bool _pauseFadeActive; // 暂停淡出进行中（音量同步让路）
     private int _pauseFadeToken; // 暂停淡出停机令牌：恢复播放/再次暂停递增，使在途延迟停机作废
     private long _playGen; // 用户操作代数（切歌/换设置/停止递增）：使在途失效恢复计划作废
@@ -89,6 +91,9 @@ public sealed partial class PlaybackEngine : IDisposable
     public string? WasapiEndpointId;
     public int BassASIODeviceId = 0;
     public int Latency = 300;
+    public SpectralEnhancementMode SpectralEnhancement;
+    private SpectralEnhancementMode EffectiveEnhancement => _dspSettings?.IsEnabled != false
+        ? SpectralEnhancement : SpectralEnhancementMode.Off;
     public bool IsDopEnabled;
     public bool ExperimentalSurround51;
     public bool ExperimentalAtmosPassthrough;
@@ -115,10 +120,33 @@ public sealed partial class PlaybackEngine : IDisposable
     public PlaybackEngine(PlayerIpcService ipc)
     {
         _ipc = ipc;
+        _fftAnalyzer = new FftAnalyzer(ipc.PublishFft);
         _endedWatchdog = new Timer(_ => WatchdogTick(), null, 50, 50);
         // "DirectSound 全自动"的设备侧：默认设备/端点格式变化主动通知（注册失败退化为渲染失效探测）
         if (!EndpointNotifications.Start()) Console.WriteLine("[engine] endpoint notifications unavailable");
     }
+
+    /// <summary>供后续可视化功能使用的入口，不重建音频输出。</summary>
+    public void SetFftEnabled(bool enabled)
+    {
+        lock (_streamLock)
+        {
+            if (enabled)
+            {
+                _fftAnalyzer.Reset(_session?.TimelineEpoch ?? 0, _session?.Kind == RenderKind.Pcm ? _session.SampleRate : 0);
+                _fftAnalyzer.SetEnabled(true);
+            }
+            else
+            {
+                _fftAnalyzer.SetEnabled(false);
+            }
+        }
+    }
+
+    internal void ResetFft(long epoch, int sampleRate) => _fftAnalyzer.Reset(epoch, sampleRate);
+
+    internal void CaptureFft(ReadOnlySpan<double> samples, int frames, int channels, uint channelMask, int sampleRate)
+        => _fftAnalyzer.Capture(samples, frames, channels, channelMask, sampleRate);
 
     // ─────────────── 文件类别 ───────────────
 
@@ -246,7 +274,7 @@ public sealed partial class PlaybackEngine : IDisposable
                 if (!string.Equals(wasapi.DeviceId, requestedEndpoint, StringComparison.OrdinalIgnoreCase)) return false;
             }
             else if (wasapi.DeviceIndex != requestedIndex) return false;
-            // Automatic exclusive pins a resolved ID, but the preference may still follow default.
+            // 自动独占模式固定已解析的设备 ID，但用户偏好仍可设为跟随默认设备。
             bool followsDefault = wasapi.FollowsDefaultDevice || (surround && requestedIndex < 0 && string.IsNullOrEmpty(requestedEndpoint));
             if (followsDefault && _lastDefaultDeviceId != null
                 && !string.Equals(_lastDefaultDeviceId, wasapi.DeviceId ?? "", StringComparison.OrdinalIgnoreCase))
@@ -302,12 +330,14 @@ public sealed partial class PlaybackEngine : IDisposable
     {
         if (_streamSlots.TryGetValue(_currentStream, out var remote) && remote.Source.Location == url)
         {
-            var mix = forceSharedFormat ? GetEndpointMixFormat(OutputMode == "DirectSound" || OutputMode == "ASIO" ? -1 : BassOutputDeviceId) : null;
-            if (forceSharedFormat && mix is null) return null;
+            bool needsMix = forceSharedFormat || (EffectiveEnhancement != SpectralEnhancementMode.Off && IsSharedMode(OutputMode));
+            var mix = needsMix ? GetEndpointMixFormat(OutputMode is "DirectSound" or "ASIO" ? -1 : BassOutputDeviceId) : null;
+            if (needsMix && mix is null) return null;
             var remoteKind = forceSharedFormat ? RenderKind.Pcm : kindOverride ?? StreamingKind(remote.Source);
             return Session.Open(this, url, remoteKind, DsdPcmFreq, DsdGain, Latency,
-                forcedRate: mix?.SampleRate, forcedChannels: mix?.Channels, maxChannels: 2,
-                source: remote.Source, cancellationToken: remote.Cancel.Token, playbackRate: EffectivePlaybackRate);
+                forcedRate: forceSharedFormat ? mix?.SampleRate : null, forcedChannels: forceSharedFormat ? mix?.Channels : null, maxChannels: 2,
+                source: remote.Source, cancellationToken: remote.Cancel.Token, playbackRate: EffectivePlaybackRate,
+                enhancement: EffectiveEnhancement, enhancementDeviceRate: mix?.SampleRate);
         }
         if (ExperimentalAtmosPassthrough && !forceSharedFormat && !_atmosUseSharedPcm && !_surroundFallback
             && kindOverride is null or RenderKind.Eac3)
@@ -364,7 +394,12 @@ public sealed partial class PlaybackEngine : IDisposable
             }
         }
         bool surround51 = ExperimentalSurround51 && !forceSharedFormat && !_atmosUseSharedPcm && !_surroundFallback && kind == RenderKind.Pcm;
-        var session = Session.Open(this, url, kind, DsdPcmFreq, DsdGain, Latency, forcedRate, forcedChannels, maxChannels, surround51, playbackRate: EffectivePlaybackRate);
+        int? enhancementMix = kind == RenderKind.Pcm ? EnhancementMixRate(forceSharedFormat) : null;
+        if (kind == RenderKind.Pcm && EffectiveEnhancement != SpectralEnhancementMode.Off
+            && (forceSharedFormat || IsSharedMode(OutputMode)) && enhancementMix == null) return null;
+        var session = Session.Open(this, url, kind, DsdPcmFreq, DsdGain, Latency, forcedRate, forcedChannels, maxChannels, surround51, playbackRate: EffectivePlaybackRate,
+            enhancement: _atmosUseSharedPcm ? SpectralEnhancementMode.Off : EffectiveEnhancement,
+            enhancementDeviceRate: enhancementMix);
         if (session != null)
         {
             session.ConfigureDsp(_deviceCorrections.Enabled
@@ -386,6 +421,10 @@ public sealed partial class PlaybackEngine : IDisposable
     /// <summary>淡出后等待端点缓冲排空的余量（渲染领先可闻播放 LatencyMs）。</summary>
     private int FadeDrainMs => Math.Min(1500, (_output?.LatencyMs ?? 0) + 100);
 
+    private int? EnhancementMixRate(bool forceShared = false)
+        => EffectiveEnhancement != SpectralEnhancementMode.Off && (forceShared || IsSharedMode(OutputMode))
+            ? GetEndpointMixFormat(OutputMode is "DirectSound" or "ASIO" ? -1 : BassOutputDeviceId)?.SampleRate : null;
+
     private static bool IsSharedMode(string mode) => mode is not ("WasapiExclusivePush" or "WasapiExclusiveEvent" or "ASIO");
 
     // 不缓存混音格式：系统改"输出音频格式"会变更混音格式而设备 ID 不变，陈旧缓存
@@ -399,6 +438,18 @@ public sealed partial class PlaybackEngine : IDisposable
     private void StartOutputAndPlay()
     {
         var session = _session!;
+        // 共享模式会话暂停期间混音格式可能变化，恢复播放前需重新协商。
+        if (session.EnhancementActive && IsSharedMode(OutputMode)
+            && EnhancementMixRate() is { } deviceRate
+            && session.SampleRate != SpectralEnhancementPolicy.OutputRate(44100, deviceRate))
+        {
+            long position = session.CurrentMs;
+            DisposeSession();
+            SetSession(OpenSession(MusicUrl!));
+            if (_session == null) { StopAndNotifyLocked(); return; }
+            _session.RequestSeek(position);
+            session = _session;
+        }
         if (session.Kind == RenderKind.Eac3 && session.DecodeFailure != null)
         {
             if (!ResolveAtmosEndpoint()) { StopAtmosForDeviceChange(); return; }
@@ -458,7 +509,7 @@ public sealed partial class PlaybackEngine : IDisposable
         }
     }
 
-    /// <summary>Control-lock only. Retry once as PCM, preserving audible position and user settings.</summary>
+    /// <summary>仅在控制锁内调用；保留可听位置和用户设置，以 PCM 模式重试一次。</summary>
     private bool RebuildBitstreamAsPcm(Session failed)
     {
         if (!ReferenceEquals(failed, _session) || failed.Kind != RenderKind.Eac3 || failed.DecodeFailure == null) return false;
@@ -488,7 +539,7 @@ public sealed partial class PlaybackEngine : IDisposable
                 output.Dispose();
                 return null;
             }
-            default: // DirectSound / WasapiShared → WASAPI 共享
+            default: // DirectSound 回退路径 / WasapiShared → WASAPI 共享
                 return CreateSharedOutput(session, OutputMode == "WasapiShared" ? BassOutputDeviceId : -1);
         }
     }
@@ -539,6 +590,7 @@ public sealed partial class PlaybackEngine : IDisposable
     /// 调用方持锁；失败时输出已被释放，由调用方走停机/重试路径。</summary>
     private bool SwapSharedOutput()
     {
+        if (_session is { EnhancementActive: true } enhanced) return TryRebuildOutput(enhanced.CurrentMs);
         CancelGapless();
         try { _output?.Dispose(); } catch { }
         _output = null;
@@ -771,7 +823,7 @@ public sealed partial class PlaybackEngine : IDisposable
                 bool restartCarrier = _session?.Kind == RenderKind.Eac3 && _output != null;
                 if (restartCarrier) { _output!.Dispose(); _output = null; }
                 _session?.RequestSeek(Math.Max(0, positionMs));
-                // Flush the old receiver carrier before starting a different burst sequence.
+                // 开始不同的突发包序列前，先排空接收器的旧载波。
                 if (restartCarrier && IsPlaying) StartOutputAndPlay();
             }
             catch { }
@@ -809,7 +861,7 @@ public sealed partial class PlaybackEngine : IDisposable
             case "ASIO":
                 session.Gain?.RampTo(Volume, 20); // PCM 才有 Gain；位流忽略
                 break;
-            default: // DirectSound
+            default: // DirectSound 回退路径
                 session.Gain?.RampTo(Volume, 20);
                 break;
         }
@@ -826,7 +878,7 @@ public sealed partial class PlaybackEngine : IDisposable
         return (cur, total);
     }
 
-    // Timer/control thread only. Skip busy device rebuilds instead of delaying commands/rendering.
+    // 仅供定时器或控制线程调用；设备正在重建时跳过，避免延误命令和渲染。
     public bool TryCaptureProgress(out ProgressSnapshot snapshot)
     {
         snapshot = default;
@@ -846,11 +898,13 @@ public sealed partial class PlaybackEngine : IDisposable
     {
         lock (_streamLock)
         {
+            if (!Enum.IsDefined(s.SpectralEnhancement)) throw new ArgumentException("Invalid enhancement mode.");
             if (s.OutputMode is not (null or "DirectSound" or "WasapiShared" or "WasapiExclusivePush" or "WasapiExclusiveEvent" or "ASIO"))
                 throw new ArgumentException("Unknown audio output mode", nameof(s));
             bool rebuild = OutputMode != (s.OutputMode ?? "DirectSound") || BassOutputDeviceId != s.BassOutputDeviceId
                 || WasapiEndpointId != s.WasapiEndpointId || BassASIODeviceId != s.BassASIODeviceId
                 || Latency != Math.Clamp(s.Latency, 10, 2000) || IsDopEnabled != s.IsDopEnabled
+                || SpectralEnhancement != s.SpectralEnhancement
                 || ExperimentalSurround51 != s.ExperimentalSurround51
                 || ExperimentalAtmosPassthrough != s.ExperimentalAtmosPassthrough || AtmosEndpointId != s.AtmosEndpointId
                 || DsdGain != Math.Clamp(s.DsdGain, -24, 24) || DsdPcmFreq != Math.Clamp(s.DsdPcmFreq, 8000, 768000);
@@ -859,6 +913,7 @@ public sealed partial class PlaybackEngine : IDisposable
             WasapiEndpointId = s.WasapiEndpointId;
             BassASIODeviceId = s.BassASIODeviceId;
             Latency = Math.Clamp(s.Latency, 10, 2000);
+            SpectralEnhancement = s.SpectralEnhancement;
             IsDopEnabled = s.IsDopEnabled;
             ExperimentalSurround51 = s.ExperimentalSurround51;
             ExperimentalAtmosPassthrough = s.ExperimentalAtmosPassthrough;
@@ -900,7 +955,7 @@ public sealed partial class PlaybackEngine : IDisposable
                 SetSession(OpenSession(url));
                 if (_session != null)
                 {
-                    _session.RequestSeek(curMs);
+                    if (_session.CanSeek) _session.RequestSeek(curMs);
                     if (wasPlaying || IsPlaying) StartOutputAndPlay();
                 }
                 else
@@ -976,11 +1031,14 @@ public sealed partial class PlaybackEngine : IDisposable
         {
             AdoptGapless();
             bool rateChanged = _session is { Kind: RenderKind.Pcm, CanSeek: true } pcm && pcm.PlaybackRate != (normalized.IsEnabled ? normalized.PlaybackRate : 1);
-            if (rateChanged || !normalized.GaplessPlayback) CancelGapless();
+            bool enhancementChanged = _session is { Kind: RenderKind.Pcm }
+                && SpectralEnhancement != SpectralEnhancementMode.Off
+                && (_dspSettings?.IsEnabled ?? true) != normalized.IsEnabled;
+            if (rateChanged || enhancementChanged || !normalized.GaplessPlayback) CancelGapless();
             _previewDeviceId = null;
             _previewSettings = null;
             _dspSettings = normalized;
-            if (rateChanged) ChangingSetting();
+            if (rateChanged || enhancementChanged) ChangingSetting();
             ApplyDspToSessions();
             QueueDspState();
         }
@@ -1118,7 +1176,7 @@ public sealed partial class PlaybackEngine : IDisposable
                     if (RebuildBitstreamAsPcm(session)) StartOutputAndPlay();
                     else StopAndNotifyLocked();
                 }
-                return; // A transport failure must never emit PlayEnded or advance the playlist.
+                return; // 传输失败不得触发 PlayEnded 或推进播放列表。
             }
             if (output is { IsFailed: true })
             {
@@ -1224,7 +1282,7 @@ public sealed partial class PlaybackEngine : IDisposable
             foreach (var (kind, deviceId) in events)
             {
                 if (!string.Equals(deviceId, wasapi.DeviceId, StringComparison.OrdinalIgnoreCase)) continue;
-                if (kind != EndpointEventKind.StateChanged) relevant = true; // Removed / FormatChanged
+                if (kind != EndpointEventKind.StateChanged) relevant = true; // 设备移除或格式改变。
             }
             if (IsSurroundSession(_session) || _surroundFallback)
             {
@@ -1240,8 +1298,8 @@ public sealed partial class PlaybackEngine : IDisposable
             {
                 foreach (var (_, deviceId) in events)
                     if (string.Equals(deviceId, wasapi.DeviceId, StringComparison.OrdinalIgnoreCase)) relevant = true;
-                // A default-route change requires a new user decision, not silent migration
-                // from an HDMI receiver to an unrelated speaker.
+                // 默认路由变化时需要用户重新决定，不能静默地从 HDMI 接收器
+                // 切换到无关的扬声器。
                 bool followsDefault = string.IsNullOrEmpty(AtmosEndpointId)
                     && (OutputMode == "DirectSound" || (BassOutputDeviceId < 0 && string.IsNullOrEmpty(WasapiEndpointId)));
                 if (followsDefault && defaultId != null
@@ -1361,6 +1419,7 @@ public sealed partial class PlaybackEngine : IDisposable
             IsPlaying = false;
             DisposeSession();
         }
+        _fftAnalyzer.Dispose();
         if (!StopGaplessAsync().Wait(1500))
             Console.WriteLine("[gapless] preload shutdown pending; worker retains decoder ownership");
     }

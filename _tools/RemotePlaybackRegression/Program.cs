@@ -44,9 +44,17 @@ static async Task RunAsync()
         sourceNotifications++;
     };
     int failures = 0;
+    int confirmedStarts = 0;
+    remote.PlaybackStarted += (music, snapshot, _) =>
+    {
+        Check(App.MainWindow.DispatcherQueue.HasThreadAccess && music.IsRemote && snapshot.Playing && snapshot.Epoch < 0,
+            "Last.fm WebDAV confirmation uses actual streaming state and UI dispatcher");
+        confirmedStarts++;
+    };
     remote.Failed += (_, _, _) => failures++;
     await coordinator.PlayAtAsync(0);
     await WaitAsync(() => state.IsPlaying);
+    Check(confirmedStarts == 1, "first real WebDAV playback confirms one Last.fm occurrence");
     Check((await peer.ReadAsync(0, 1023)).AsSpan().SequenceEqual(origin.Bytes.AsSpan(0, 1024)), "real streaming session supplies origin bytes");
     await origin.DisposeAsync();
     try { await peer.ReadAsync(2 * 1024 * 1024, 2 * 1024 * 1024 + 1023); }

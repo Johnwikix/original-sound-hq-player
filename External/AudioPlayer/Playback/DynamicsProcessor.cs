@@ -2,8 +2,8 @@ using BassPlayerIpc.Shared;
 
 namespace AudioPlayer.Playback;
 
-/// <summary>Linked peak compressor, 6 dB soft knee, makeup and a -1 dBFS sample-peak ceiling.
-/// Render thread owns history; immutable settings are published by the control thread.</summary>
+/// <summary>联动峰值压缩器，使用 6 dB 软拐点、补偿增益和 -1 dBFS 样本峰值上限。
+/// 渲染线程持有历史状态，控制线程发布不可变设置。</summary>
 internal sealed class DynamicsProcessor(int sampleRate, int channels)
 {
     private readonly double _attack = Math.Exp(-1.0 / (sampleRate * 0.005));
@@ -50,8 +50,8 @@ internal sealed class DynamicsProcessor(int sampleRate, int channels)
             double coefficient = reduction > _reductionDb ? _attack : _release;
             _reductionDb = coefficient * _reductionDb + (1 - coefficient) * reduction;
             double gain = Math.Pow(10, (settings.CompressorMakeupDb - _reductionDb) / 20);
-            // All channels receive the same gain, preserving the stereo/surround image.
-            // Instant limiter attack catches transients during the compressor's attack time.
+            // 所有声道使用相同增益，保持立体声或环绕声声像。
+            // 限幅器立即响应，捕捉压缩器起控期间的瞬态峰值。
             double limit = peak > 0 ? Math.Min(1, Ceiling / peak / gain) : 1;
             _limiterGain = limit < _limiterGain ? limit : _release * _limiterGain + (1 - _release) * limit;
             gain *= _limiterGain;

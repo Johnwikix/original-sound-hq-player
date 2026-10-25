@@ -1,0 +1,42 @@
+<UserControl x:Class="FontUiRegression.FontSettingsControl"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:controls="using:CommunityToolkit.WinUI.Controls"
+ xmlns:model="using:WinUIMusicPlayer.Model"
+ xmlns:tool="using:WinUIMusicPlayer.Utils">
+ <UserControl.Resources>
+  <DataTemplate x:Key="FontComboboxTemplate" x:DataType="model:FontInfo">
+   <TextBlock FontFamily="{x:Bind FontFamily}" Text="{x:Bind DisplayName}" />
+  </DataTemplate>
+ </UserControl.Resources>
+ <StackPanel><controls:SettingsCard xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:controls="using:CommunityToolkit.WinUI.Controls" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Header="{x:Bind tool:ToolUtils.GetString('ApplicationFont')}">
+                    <ComboBox x:Name="ApplicationFontComboBox" Width="300" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('ApplicationFont')}" ItemsSource="{x:Bind Preferences.FontFamilyList, Mode=OneWay}" SelectedItem="{x:Bind Preferences.ApplicationFontFamily, Mode=TwoWay}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate x:DataType="model:FontInfo">
+                                <TextBlock FontFamily="{x:Bind FontFamily}" Text="{x:Bind DisplayName}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </controls:SettingsCard>
+
+                <controls:SettingsCard xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:controls="using:CommunityToolkit.WinUI.Controls" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Description="{x:Bind tool:ToolUtils.GetString('IndependentLyricsFontDescription')}">
+                    <controls:SettingsCard.Header>
+                        <TextBlock x:Uid="LyricsFontFamily" TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <Grid Width="300" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                        <ToggleSwitch x:Name="IndependentLyricsFontToggle" MinWidth="0" VerticalAlignment="Center" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('UseIndependentLyricsFont')}" ToolTipService.ToolTip="{x:Bind tool:ToolUtils.GetString('UseIndependentLyricsFont')}" IsOn="{x:Bind Preferences.UseIndependentLyricsFont, Mode=TwoWay}" />
+                        <ComboBox x:Name="LyricsFontFamily" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('UseIndependentLyricsFont')}" IsEnabled="{x:Bind Preferences.UseIndependentLyricsFont, Mode=OneWay}" ItemTemplate="{StaticResource FontComboboxTemplate}" ItemsSource="{x:Bind Preferences.FontFamilyList, Mode=OneWay}" SelectedItem="{x:Bind Preferences.FontFamily, Mode=TwoWay}" />
+                    </Grid>
+                </controls:SettingsCard>
+
+                <controls:SettingsCard xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:controls="using:CommunityToolkit.WinUI.Controls" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Description="{x:Bind tool:ToolUtils.GetString('IndependentDesktopLyricsFontDescription')}">
+                    <controls:SettingsCard.Header>
+                        <TextBlock x:Uid="DesktopLyricsFontFamily" TextWrapping="Wrap" />
+                    </controls:SettingsCard.Header>
+                    <Grid Width="300" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                        <ToggleSwitch x:Name="IndependentDesktopLyricsFontToggle" MinWidth="0" VerticalAlignment="Center" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('UseIndependentDesktopLyricsFont')}" ToolTipService.ToolTip="{x:Bind tool:ToolUtils.GetString('UseIndependentDesktopLyricsFont')}" IsOn="{x:Bind Preferences.UseIndependentDesktopLyricsFont, Mode=TwoWay}" />
+                        <ComboBox x:Name="DesktopLyricsFontComboBox" Grid.Column="1" HorizontalAlignment="Stretch" VerticalAlignment="Center" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('UseIndependentDesktopLyricsFont')}" IsEnabled="{x:Bind Preferences.UseIndependentDesktopLyricsFont, Mode=OneWay}" ItemTemplate="{StaticResource FontComboboxTemplate}" ItemsSource="{x:Bind Preferences.FontFamilyList, Mode=OneWay}" SelectedItem="{x:Bind Preferences.DesktopLyricsFontFamily, Mode=TwoWay}" />
+                    </Grid>
+                </controls:SettingsCard>
+
+                </StackPanel></UserControl>

@@ -1,5 +1,4 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <!-- 拼装名 = 进程名：发布产物直接部署为 Player\AudioPlayer.exe -->
@@ -20,6 +19,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="AudioEnhancement/Coefficients/Assets/dsp-tables.bin" LogicalName="AudioPlayer.AudioEnhancement.Coefficients.dsp-tables.bin" />
     <Content Include="Assets\icon.ico" />
     <None Include="..\..\Libraries\WavPack\x64\wavpackdll.dll" Link="wavpackdll.dll"
           CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />

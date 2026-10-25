@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace AudioPlayer.Interop;
 
-/// <summary>WavPack 5 C ABI. Native DSD samples are MSB-first bytes in the low 8 bits of int32.</summary>
+/// <summary>WavPack 5 的 C ABI；原生 DSD 样本位于 int32 的低八位，字节内最高有效位优先。</summary>
 internal static unsafe class WavPackNative
 {
     private const string Library = "wavpackdll.dll";

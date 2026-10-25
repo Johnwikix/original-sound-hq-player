@@ -3,6 +3,7 @@ using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.UI;
+using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System;
 using System.IO;
@@ -21,70 +22,248 @@ namespace WinUIMusicPlayer.Helper
         private static readonly ILogger _logger = App.GetLogger<ImageHelperLogMarker>();
         private sealed class ImageHelperLogMarker { }
 
-        internal static async Task<BitmapImage?> DecodeFileToBitmapAsync(
+        internal static async Task<ImageSource?> DecodeFileToBitmapAsync(
             string path, CancellationToken token, uint maxPixelSize = 0)
         {
+            // BitmapImage has no deterministic disposal API; keep the decoded
+            // native frame behind SoftwareBitmapSource so ownership is explicit.
+            SoftwareBitmap? bitmap = null;
             try
             {
                 token.ThrowIfCancellationRequested();
-                var file = await StorageFile.GetFileFromPathAsync(path);
-                using var stream = await file.OpenReadAsync();
+                await using var fileStream = new FileStream(
+                    path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete,
+                    bufferSize: 64 * 1024, useAsync: true);
+                using var stream = fileStream.AsRandomAccessStream();
                 token.ThrowIfCancellationRequested();
-                var bitmap = new BitmapImage { DecodePixelType = DecodePixelType.Physical };
-                if (maxPixelSize > 0)
-                {
-                    var decoder = await BitmapDecoder.CreateAsync(stream);
-                    token.ThrowIfCancellationRequested();
-                    // 按 EXIF 方向后的最长边限制解码；小图保持原尺寸。
-                    if (Math.Max(decoder.OrientedPixelWidth, decoder.OrientedPixelHeight) > maxPixelSize)
-                    {
-                        if (decoder.OrientedPixelWidth >= decoder.OrientedPixelHeight)
-                            bitmap.DecodePixelWidth = checked((int)maxPixelSize);
-                        else
-                            bitmap.DecodePixelHeight = checked((int)maxPixelSize);
-                    }
-                    stream.Seek(0);
-                }
-                await bitmap.SetSourceAsync(stream);
+                var decoder = await BitmapDecoder.CreateAsync(stream);
                 token.ThrowIfCancellationRequested();
-                return bitmap;
+                var transform = CreateLongestSideTransform(
+                    decoder.PixelWidth,
+                    decoder.PixelHeight,
+                    maxPixelSize);
+                bitmap = await decoder.GetSoftwareBitmapAsync(
+                    BitmapPixelFormat.Bgra8,
+                    BitmapAlphaMode.Premultiplied,
+                    transform,
+                    ExifOrientationMode.RespectExifOrientation,
+                    ColorManagementMode.DoNotColorManage);
+                token.ThrowIfCancellationRequested();
+                var result = await CreateSoftwareBitmapSourceAsync(bitmap, token);
+                bitmap = null;
+                return result;
             }
-            catch (OperationCanceledException) { throw; }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "DecodeFileToBitmapAsync 失败");
                 return null;
             }
+            finally
+            {
+                bitmap?.Dispose();
+            }
         }
 
-        internal static async Task<BitmapImage?> DecodeToBitmapAsync(
+        internal static async Task<ImageSource?> DecodeToBitmapAsync(
             byte[]? bytes, int decodePixelWidth = 0, CancellationToken token = default)
         {
             if (bytes is not { Length: > 0 }) return null;
 
+            SoftwareBitmap? bitmap = null;
             try
             {
                 using var memStream = new MemoryStream(bytes, writable: false);
                 using var stream = memStream.AsRandomAccessStream();
 
-                if (token.IsCancellationRequested) return null;
-
-                var bitmap = new BitmapImage
-                {
-                    DecodePixelType = DecodePixelType.Logical
-                };
-
-                if (decodePixelWidth > 0)
-                    bitmap.DecodePixelWidth = decodePixelWidth;
-
-                await bitmap.SetSourceAsync(stream);
-                return bitmap;
+                token.ThrowIfCancellationRequested();
+                var decoder = await BitmapDecoder.CreateAsync(stream);
+                token.ThrowIfCancellationRequested();
+                var transform = CreateWidthLimitTransform(
+                    decoder.PixelWidth,
+                    decoder.PixelHeight,
+                    decodePixelWidth > 0 ? (uint)decodePixelWidth : 0);
+                bitmap = await decoder.GetSoftwareBitmapAsync(
+                    BitmapPixelFormat.Bgra8,
+                    BitmapAlphaMode.Premultiplied,
+                    transform,
+                    ExifOrientationMode.RespectExifOrientation,
+                    ColorManagementMode.DoNotColorManage);
+                token.ThrowIfCancellationRequested();
+                var result = await CreateSoftwareBitmapSourceAsync(bitmap, token);
+                bitmap = null;
+                return result;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "DecodeToBitmapAsync 失败");
                 return null;
             }
+            finally
+            {
+                bitmap?.Dispose();
+            }
+        }
+
+        internal static async Task<ImageSource?> DecodeApplicationAssetAsync(
+            string assetName, CancellationToken token)
+        {
+            SoftwareBitmap? bitmap = null;
+            try
+            {
+                token.ThrowIfCancellationRequested();
+                var path = Path.Combine(AppContext.BaseDirectory, "Assets", assetName);
+                if (File.Exists(path))
+                {
+                    await using var fileStream = new FileStream(
+                        path, FileMode.Open, FileAccess.Read, FileShare.Read | FileShare.Delete,
+                        bufferSize: 16 * 1024, useAsync: true);
+                    using var stream = fileStream.AsRandomAccessStream();
+                    bitmap = await DecodeAssetBitmapAsync(stream);
+                }
+                else
+                {
+                    var file = await StorageFile.GetFileFromApplicationUriAsync(
+                        new Uri($"ms-appx:///Assets/{assetName}"));
+                    using var stream = await file.OpenReadAsync();
+                    bitmap = await DecodeAssetBitmapAsync(stream);
+                }
+                token.ThrowIfCancellationRequested();
+                var result = await CreateSoftwareBitmapSourceAsync(bitmap, token);
+                bitmap = null;
+                return result;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "DecodeApplicationAssetAsync 失败");
+                return null;
+            }
+            finally
+            {
+                bitmap?.Dispose();
+            }
+        }
+
+        private static async Task<SoftwareBitmap> DecodeAssetBitmapAsync(IRandomAccessStream stream)
+        {
+            var decoder = await BitmapDecoder.CreateAsync(stream);
+            return await decoder.GetSoftwareBitmapAsync(
+                BitmapPixelFormat.Bgra8,
+                BitmapAlphaMode.Premultiplied,
+                new BitmapTransform { InterpolationMode = BitmapInterpolationMode.Fant },
+                ExifOrientationMode.RespectExifOrientation,
+                ColorManagementMode.DoNotColorManage);
+        }
+
+        // WIC 语义：ScaledWidth/Height 作用于未旋转的原始像素，EXIF 旋转在其后应用
+        // （与 PlaybackCoverImage 展示缓存一致）。传入原始宽高做等比缩放，
+        // 旋转类 EXIF 的图不会被非等比拉伸；宽高都显式给出，不依赖单侧 Scaled* 的默认行为。
+        internal static BitmapTransform CreateLongestSideTransform(
+            uint rawWidth, uint rawHeight, uint maxPixelSize)
+        {
+            var transform = new BitmapTransform
+            {
+                InterpolationMode = BitmapInterpolationMode.Fant
+            };
+            if (maxPixelSize > 0 && Math.Max(rawWidth, rawHeight) > maxPixelSize)
+            {
+                if (rawWidth >= rawHeight)
+                {
+                    transform.ScaledWidth = maxPixelSize;
+                    transform.ScaledHeight = ScaledDimension(maxPixelSize, rawWidth, rawHeight);
+                }
+                else
+                {
+                    transform.ScaledHeight = maxPixelSize;
+                    transform.ScaledWidth = ScaledDimension(maxPixelSize, rawHeight, rawWidth);
+                }
+            }
+            return transform;
+        }
+
+        // 目标宽解码，与缩略图像素缓存（固定宽 CoverSize）保持同一语义；窄图不上采样。
+        // 同样按原始宽高计算，见 CreateLongestSideTransform 的 WIC 语义说明。
+        internal static BitmapTransform CreateWidthLimitTransform(
+            uint rawWidth, uint rawHeight, uint targetWidth)
+        {
+            var transform = new BitmapTransform
+            {
+                InterpolationMode = BitmapInterpolationMode.Fant
+            };
+            if (targetWidth > 0 && rawWidth > targetWidth)
+            {
+                transform.ScaledWidth = targetWidth;
+                transform.ScaledHeight = ScaledDimension(targetWidth, rawWidth, rawHeight);
+            }
+            return transform;
+        }
+
+        private static uint ScaledDimension(uint target, uint scaleBase, uint other)
+            => Math.Max(1u, (uint)Math.Round((double)target * other / scaleBase));
+
+        private static async Task<ImageSource?> CreateSoftwareBitmapSourceAsync(
+            SoftwareBitmap bitmap, CancellationToken token)
+        {
+            SoftwareBitmapSource? source = null;
+            ImageSource? result = null;
+            try
+            {
+                await EnqueueOnDispatcherAsync(async () =>
+                {
+                    token.ThrowIfCancellationRequested();
+                    source = new SoftwareBitmapSource();
+                    await source.SetBitmapAsync(bitmap);
+                    result = source;
+                    source = null;
+                }, token);
+                token.ThrowIfCancellationRequested();
+                var completed = result;
+                result = null;
+                return completed;
+            }
+            finally
+            {
+                source?.Dispose();
+                (result as IDisposable)?.Dispose();
+            }
+        }
+
+        private static Task EnqueueOnDispatcherAsync(Func<Task> callback, CancellationToken token)
+        {
+            var completion = new TaskCompletionSource<object?>(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            if (!App.MainWindow.DispatcherQueue.TryEnqueue(async () =>
+            {
+                try
+                {
+                    await callback();
+                    completion.TrySetResult(null);
+                }
+                catch (OperationCanceledException) when (token.IsCancellationRequested)
+                {
+                    completion.TrySetCanceled(token);
+                }
+                catch (Exception ex)
+                {
+                    completion.TrySetException(ex);
+                }
+            }))
+            {
+                completion.TrySetException(new InvalidOperationException(
+                    "Image decode dispatcher rejected the callback."));
+            }
+            return completion.Task;
         }
 
         private static float blurAmount = 10.0f;

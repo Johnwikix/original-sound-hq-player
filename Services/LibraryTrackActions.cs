@@ -11,7 +11,7 @@ using WinUIMusicPlayer.Utils;
 namespace WinUIMusicPlayer.Services;
 
 /// <summary>库条目的网络歌词和扫描用例；固定输入后登记实际任务，退出不释放仍被使用的依赖。</summary>
-public sealed class LibraryTrackActions(AppState state, MusicDatabaseService database, ApplicationTasks tasks, ILogger<LibraryTrackActions> logger)
+public sealed class LibraryTrackActions(AppState state, MusicDatabaseService database, ApplicationTasks tasks, ILogger<LibraryTrackActions> logger, WinUIMusicPlayer.Services.Lyrics.LyricsOnlineSearch lyricsSearch)
 {
     public Task RefreshLyricsAsync(IEnumerable<Music> songs)
     {
@@ -24,12 +24,23 @@ public sealed class LibraryTrackActions(AppState state, MusicDatabaseService dat
                 foreach (var music in snapshot)
                 {
                     token.ThrowIfCancellationRequested();
-                    var (lyrics, translated) = await ToolUtils.GetLyricsFromNet(music);
-                    token.ThrowIfCancellationRequested();
-                    var (krc, translatedKrc) = await ToolUtils.GetKrcFromNet(music);
-                    token.ThrowIfCancellationRequested();
-                    await database.SaveLyricsAsync(music.Id, lyrics, translated, krc ?? "", translatedKrc ?? "");
-                    await database.UpdateMusicInfo(music);
+                    try
+                    {
+                        var stored = music.Id > 0 ? await database.Lyrics.GetAsync(music.Id, token) : null;
+                        long externalRevision = stored is null ? OneShotLyricsCache.Load(music.Path)?.Revision ?? 0 : 0;
+                        var document = await lyricsSearch.SearchAsync(music, true, token);
+                        token.ThrowIfCancellationRequested();
+                        if (document is null) { Report(new InvalidOperationException(ToolUtils.GetString("FailedObtainLyrics"))); continue; }
+                        if (stored is null)
+                        {
+                            if (!OneShotLyricsCache.SaveEdited(music.Path, document, externalRevision))
+                                Report(new InvalidOperationException(ToolUtils.GetString("LyricsEditConflict")));
+                        }
+                        else if (!await database.Lyrics.SaveAsync(music.Id, document, stored.Revision, "Online", token: token))
+                            Report(new InvalidOperationException(ToolUtils.GetString("LyricsEditConflict")));
+                    }
+                    catch (OperationCanceledException) when (token.IsCancellationRequested) { throw; }
+                    catch (Exception ex) { Report(ex); }
                 }
             }
             catch (OperationCanceledException) when (token.IsCancellationRequested) { }

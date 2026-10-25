@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using System;
 using Windows.UI;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
@@ -12,16 +12,46 @@ namespace WinUIMusicPlayer.State;
 /// <summary>Lyrics 领域偏好的可观察状态；不执行 I/O 或启动后台任务。</summary>
 public sealed class LyricsPreferencesState : ObservableObject
 {
-    public FontInfo DesktopLyricsFontFamily { get; set => SetProperty(ref field, value); } = null!;
+    public FontInfo FontFamily
+    {
+        get => field;
+        set
+        {
+            // ComboBox 更换 ItemsSource 时的临时空选择不能清除有效偏好。
+            if (value is not null) SetProperty(ref field, value);
+        }
+    } = FontInfo.CreateDefault();
+    public bool UseIndependentLyricsFont { get; set => SetProperty(ref field, value); }
+    public bool UseIndependentDesktopLyricsFont { get; set => SetProperty(ref field, value); }
+    public FontInfo DesktopLyricsFontFamily
+    {
+        get => field;
+        set
+        {
+            // 下拉框重建期间的空选择不能清除已保存的独立字体。
+            if (value is not null) SetProperty(ref field, value);
+        }
+    } = FontInfo.CreateDefault();
     public Thickness LyricsMargin { get; set => SetProperty(ref field, value); }
     public bool EnableAdvancedLyricsEffect { get; set => SetProperty(ref field, value); } = true;
+    public string LocalLyricsFormatOrder { get => field; set => SetProperty(ref field, WinUIMusicPlayer.Services.Lyrics.LyricsFilePolicy.NormalizeOrder(value)); } = "krc,qrc,lrc,ttml";
+    public bool PreferDatabaseLyrics { get; set => SetProperty(ref field, value); }
     public bool IsAutoLyricsEnabled { get; set => SetProperty(ref field, value); } = true;
+    public bool IsLyricsTranslationEnabled { get; set => SetProperty(ref field, value); } = true;
+    public bool IsLyricsPronunciationEnabled { get; set => SetProperty(ref field, value); } = true;
+    public bool IsMandarinPronunciationEnabled { get; set => SetProperty(ref field, value); } = true;
+    public bool IsCantonesePronunciationEnabled { get; set => SetProperty(ref field, value); } = true;
+    public bool IsJapanesePronunciationEnabled { get; set => SetProperty(ref field, value); } = true;
+    public bool IsKoreanPronunciationEnabled { get; set => SetProperty(ref field, value); } = true;
     public bool IsCustomLyricsColorEnabled { get; set => SetProperty(ref field, value); } = false;
     public Color LyricsCustomColor { get; set => SetProperty(ref field, value); } = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
     public double DesktopLyricsFontSize { get; set => SetProperty(ref field, value); } = 36;
+    /// <summary>任务栏歌词区域宽度（DIP）；宿主按任务栏 DPI 转换为窗口客户区像素。</summary>
+    public int DesktopLyricsTaskbarLyricsWidth { get => field; set { value = Math.Clamp(value, 240, 2400); SetProperty(ref field, value); } } = 640;
     public Color DesktopLyricsColor { get; set => SetProperty(ref field, value); } = Color.FromArgb(0xFF, 0xFF, 0xFF, 0xFF);
     public bool IsDesktopLyricsCustomColorEnabled { get; set => SetProperty(ref field, value); } = false;
     public bool IsDesktopLyricsTranslationEnabled { get; set => SetProperty(ref field, value); } = true;
+    public bool IsDesktopLyricsPronunciationEnabled { get; set => SetProperty(ref field, value); } = true;
     public bool IsDesktopLyricsGlowEnabled { get; set => SetProperty(ref field, value); } = true;
     public bool IsDesktopLyricsCharFloatEnabled { get; set => SetProperty(ref field, value); } = true;
     public bool IsDesktopLyricsCharScaleEnabled { get; set => SetProperty(ref field, value); } = true;

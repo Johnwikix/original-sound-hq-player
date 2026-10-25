@@ -57,6 +57,15 @@ namespace WinUIMusicPlayer.ViewModel
 
         public bool IsAutoLyricsEnabled { get => State.Preferences.IsAutoLyricsEnabled; set => State.Preferences.IsAutoLyricsEnabled = value; }
 
+        public bool IsLyricsTranslationEnabled { get => State.Preferences.IsLyricsTranslationEnabled; set => State.Preferences.IsLyricsTranslationEnabled = value; }
+
+        public bool IsLyricsPronunciationEnabled { get => State.Preferences.IsLyricsPronunciationEnabled; set => State.Preferences.IsLyricsPronunciationEnabled = value; }
+
+        public bool IsMandarinPronunciationEnabled { get => State.Preferences.IsMandarinPronunciationEnabled; set => State.Preferences.IsMandarinPronunciationEnabled = value; }
+        public bool IsCantonesePronunciationEnabled { get => State.Preferences.IsCantonesePronunciationEnabled; set => State.Preferences.IsCantonesePronunciationEnabled = value; }
+        public bool IsJapanesePronunciationEnabled { get => State.Preferences.IsJapanesePronunciationEnabled; set => State.Preferences.IsJapanesePronunciationEnabled = value; }
+        public bool IsKoreanPronunciationEnabled { get => State.Preferences.IsKoreanPronunciationEnabled; set => State.Preferences.IsKoreanPronunciationEnabled = value; }
+
         public string ArtistSplitSymbols { get => State.Preferences.ArtistSplitSymbols; set => State.Preferences.ArtistSplitSymbols = value; }
 
         public bool IsAutoCoverEnabled { get => State.Preferences.IsAutoCoverEnabled; set => State.Preferences.IsAutoCoverEnabled = value; }
@@ -100,6 +109,10 @@ namespace WinUIMusicPlayer.ViewModel
             set => SetProperty(ref field, value);
         }
 
+        public FontInfo ApplicationFontFamily { get => State.Preferences.ApplicationFontFamily; set => State.Preferences.ApplicationFontFamily = value; }
+
+        public bool UseIndependentLyricsFont { get => State.Preferences.UseIndependentLyricsFont; set => State.Preferences.UseIndependentLyricsFont = value; }
+
         public FontInfo FontFamily { get => State.Preferences.FontFamily; set => State.Preferences.FontFamily = value; }
 
         public bool IsColorPickerVisible { get => State.Shell.IsColorPickerVisible; set => State.Shell.IsColorPickerVisible = value; }
@@ -112,6 +125,10 @@ namespace WinUIMusicPlayer.ViewModel
 
         public double DesktopLyricsFontSize { get => State.Preferences.DesktopLyricsFontSize; set => State.Preferences.DesktopLyricsFontSize = value; }
 
+        public int DesktopLyricsTaskbarLyricsWidth { get => State.Preferences.DesktopLyricsTaskbarLyricsWidth; set => State.Preferences.DesktopLyricsTaskbarLyricsWidth = value; }
+
+        public bool UseIndependentDesktopLyricsFont { get => State.Preferences.UseIndependentDesktopLyricsFont; set => State.Preferences.UseIndependentDesktopLyricsFont = value; }
+
         public FontInfo DesktopLyricsFontFamily { get => State.Preferences.DesktopLyricsFontFamily; set => State.Preferences.DesktopLyricsFontFamily = value; }
 
         public Color DesktopLyricsColor { get => State.Preferences.DesktopLyricsColor; set => State.Preferences.DesktopLyricsColor = value; }
@@ -120,6 +137,8 @@ namespace WinUIMusicPlayer.ViewModel
         public bool IsDesktopLyricsCustomColorEnabled { get => State.Preferences.IsDesktopLyricsCustomColorEnabled; set => State.Preferences.IsDesktopLyricsCustomColorEnabled = value; }
 
         public bool IsDesktopLyricsTranslationEnabled { get => State.Preferences.IsDesktopLyricsTranslationEnabled; set => State.Preferences.IsDesktopLyricsTranslationEnabled = value; }
+
+        public bool IsDesktopLyricsPronunciationEnabled { get => State.Preferences.IsDesktopLyricsPronunciationEnabled; set => State.Preferences.IsDesktopLyricsPronunciationEnabled = value; }
 
         public bool IsDesktopLyricsGlowEnabled { get => State.Preferences.IsDesktopLyricsGlowEnabled; set => State.Preferences.IsDesktopLyricsGlowEnabled = value; }
 
@@ -199,6 +218,13 @@ namespace WinUIMusicPlayer.ViewModel
         public double LyricsFontSize { get => State.Preferences.LyricsFontSize; set => State.Preferences.LyricsFontSize = value; }
 
         public string MusicCoverCache { get => State.Preferences.MusicCoverCache; set => State.Preferences.MusicCoverCache = value; }
+
+        /// <summary>Gets or sets the enhancement ComboBox index and the underlying audio preference.</summary>
+        public int SpectralEnhancement
+        {
+            get => State.Preferences.Audio.SpectralEnhancement;
+            set => State.Preferences.Audio.SpectralEnhancement = Math.Clamp(value, 0, 2);
+        }
 
         public bool IsDopEnabled
         {
@@ -313,10 +339,6 @@ namespace WinUIMusicPlayer.ViewModel
 
         public bool EnableGlobalHotKey { get => State.Preferences.EnableGlobalHotKey; set => State.Preferences.EnableGlobalHotKey = value; }
 
-        public bool IsTrimOnHideEnabled { get => State.Preferences.IsTrimOnHideEnabled; set => State.Preferences.IsTrimOnHideEnabled = value; }
-
-        public bool IsTrimAfterPlaybackEnabled { get => State.Preferences.IsTrimAfterPlaybackEnabled; set => State.Preferences.IsTrimAfterPlaybackEnabled = value; }
-
         public bool HasGlobalHotKeyConflict => State.HotKeys.HasGlobalHotKeyConflict;
         public string GlobalHotKeyConflictTitle => State.HotKeys.GlobalHotKeyConflictTitle;
         public List<string> PlayOrPauseShortcut { get => State.HotKeys.PlayOrPauseShortcut; set => State.HotKeys.PlayOrPauseShortcut = value; }
@@ -360,7 +382,6 @@ namespace WinUIMusicPlayer.ViewModel
         public IRelayCommand OpenMainGitHubCommand => App.Services.GetRequiredService<SettingsActions>().OpenMainGitHubCommand;
         public IAsyncRelayCommand OpenCoverCacheLocationCommand => App.Services.GetRequiredService<SettingsActions>().OpenCoverCacheLocationCommand;
         public IAsyncRelayCommand ClearCoverCacheCommand => App.Services.GetRequiredService<SettingsActions>().ClearCoverCacheCommand;
-        public IAsyncRelayCommand TrimNowCommand => App.Services.GetRequiredService<SettingsActions>().TrimNowCommand;
         public IRelayCommand ResetWindowBoundsCommand => App.Services.GetRequiredService<SettingsActions>().ResetWindowBoundsCommand;
     }
 }

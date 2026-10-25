@@ -80,8 +80,8 @@ namespace WinUIMusicPlayer.Services
         {
             try
             {
-                var (lyricsText, _, krcText, _) = await App.Services.GetRequiredService<MusicDatabaseService>().GetLyricsAsync(music.Id);
-                string? lyrics = PickLyrics(lyricsText, krcText);
+                var document = await App.Services.GetRequiredService<MusicDatabaseService>().GetLyricsDocumentAsync(music);
+                string? lyrics = new WinUIMusicPlayer.Services.Lyrics.LyricsParser().ExportLrc(document);
                 byte[]? cover = await ToolUtils.GetRawImage(music);
                 return new ConversionMetadata
                 {
@@ -100,14 +100,6 @@ namespace WinUIMusicPlayer.Services
                 _logger.LogWarning(ex, $"BuildConversionMetadataAsync 元数据获取失败（转换继续，无元数据）: {music.Path}: {ex.Message}");
                 return null;
             }
-        }
-
-        /// <summary>歌词优先，其次 KRC；两者皆空返回 null。</summary>
-        private static string? PickLyrics(string? lyricsText, string? krcText)
-        {
-            if (!string.IsNullOrWhiteSpace(lyricsText)) return lyricsText;
-            if (!string.IsNullOrWhiteSpace(krcText)) return krcText;
-            return null;
         }
 
         private readonly FFmpegAudioConverter _converter;

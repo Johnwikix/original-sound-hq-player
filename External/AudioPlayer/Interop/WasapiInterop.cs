@@ -55,8 +55,8 @@ internal struct WAVEFORMATEXTENSIBLE
             wValidBitsPerSample = validBits,
             dwChannelMask = channels switch
             {
-                1 => 0x4,          // SPEAKER_FRONT_CENTER
-                2 => 0x3,          // SPEAKER_FRONT_LEFT | RIGHT
+                1 => 0x4,          // 前置中置声道
+                2 => 0x3,          // 前置左右声道
                 _ => 0,
             },
             SubFormat = subFormat,
@@ -210,7 +210,7 @@ internal sealed unsafe class RawAudioClient
     }
 }
 
-/// <summary>IAudioRenderClient。</summary>
+/// <summary>WASAPI 音频渲染客户端接口。</summary>
 internal sealed unsafe class RawRenderClient
 {
     private readonly IntPtr _self;
@@ -275,7 +275,7 @@ internal static class WasapiTypes
     public const int RoleMultimedia = 1;
     public const int RoleCommunications = 2;
 
-    // HRESULT
+    // HRESULT 返回值
     public const int SOk = 0;
     public const int SFalse = 1;
     public const int EPending = unchecked((int)0x8000000A);
@@ -366,14 +366,23 @@ internal sealed class WasapiDeviceList
         return list;
     }
 
-    public static string? GetFriendlyName(IMMDevice device)
+    public static unsafe string? GetFriendlyName(IMMDevice device)
     {
         try
         {
             if (device.OpenPropertyStore(0 /* STGM_READ */, out var store) != 0) return null;
             var key = WasapiTypes.PkeyDeviceFriendlyName;
-            store.GetValue(ref key, out var value);
-            return value.AsString();
+            PropVariant value = default;
+            try
+            {
+                store.GetValue(ref key, out value);
+                return value.AsString();
+            }
+            finally
+            {
+                // AsString 会复制 LPWSTR 字符串；属性存储返回的原生值仍需由此处释放。
+                Win32.PropVariantClear((IntPtr)(&value));
+            }
         }
         catch { return null; }
     }
@@ -435,7 +444,7 @@ internal sealed class WasapiDeviceList
         finally { Marshal.Release(enumPtr); if (apartment >= 0) Win32.CoUninitialize(); }
     }
 
-    /// <summary>Resolve an output once for automatic exclusive/PCM fallback. An invalid explicit index never falls back to default.</summary>
+    /// <summary>为自动独占输出及 PCM 回退一次性解析输出设备；显式索引无效时不回退到默认设备。</summary>
     public static string? ResolveStableDeviceId(int index, string? endpointId)
     {
         if (string.IsNullOrEmpty(endpointId) && index >= 0)
@@ -668,7 +677,7 @@ internal static unsafe class EndpointNotifications
         return defaultRenderId != null || events.Count > 0;
     }
 
-    // ─────────────── IUnknown ───────────────
+    // ─────────────── IUnknown 接口方法 ───────────────
 
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
     private static int QueryInterface(void* self, Guid* riid, void** ppv)
@@ -694,7 +703,7 @@ internal static unsafe class EndpointNotifications
         return (uint)Math.Max(0, n); // 静态单例：归零也不释放
     }
 
-    // ─────────────── IMMNotificationClient ───────────────
+    // ─────────────── IMMNotificationClient 通知接口 ───────────────
 
     [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
     private static int OnDeviceStateChanged(void* self, char* deviceId, uint newState)

@@ -45,7 +45,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
     private uint _bufferFrames;
     private int _pipelineFrames;
     private uint _channels;
-    private int _endpointKind; // FormatKind
+    private int _endpointKind; // 端点格式类别
     private volatile IRenderSource _source = null!; // 换曲复用会被引擎线程原子替换；渲染块每次只认一份快照
     private double[] _pcmScratch = [];
     private uint[] _dopScratch = [];
@@ -369,7 +369,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
 
     private bool InitializeEac3(IRenderSource source, int requestedFrames)
     {
-        // Never negotiate PCM for compressed bytes. Generic DD+ also carries unchanged JOC metadata.
+        // 压缩字节不能按 PCM 协商格式；通用 DD+ 路径同样保留未改动的 JOC 元数据。
         int attempts = source.IsAtmos ? 2 : 1;
         int frames = Math.Max(6144, (requestedFrames + 6143) / 6144 * 6144);
         for (int attempt = 0; attempt < attempts; attempt++)
@@ -380,7 +380,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
             LastError = hr == 0 ? unchecked((int)0x80004005) : hr;
             if (hr == 0 && _client!.GetBufferSize(out _bufferFrames) == 0)
             {
-                _endpointKind = FormatKind.Pcm16; // Carrier storage only; FillEndpoint bypasses PCM conversion.
+                _endpointKind = FormatKind.Pcm16; // 仅用于载波存储；FillEndpoint 跳过 PCM 转换。
                 _channels = 2;
                 Console.WriteLine($"[wasapi] experimental E-AC-3 HDMI passthrough Atmos={source.IsAtmos} buffer={_bufferFrames}");
                 return true;
@@ -448,8 +448,8 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
             int apartment = Win32.CoInitializeEx(IntPtr.Zero, Win32.COINIT_MULTITHREADED);
             try
             {
-                // Capability query and Initialize share the same pinned endpoint and
-                // timeout/retirement lifetime. A stalled driver cannot trap the control loop.
+                // 能力查询与 Initialize 共用同一个固定端点，以及
+                // 相同的超时和弃用生命周期，避免驱动阻塞控制循环。
                 hr = shareMode == WasapiTypes.ShareModeExclusive && pFmt->Format.cbSize == 34
                     ? client.IsExclusiveFormatSupported((WAVEFORMATEX*)pFmt) : 0;
                 if (hr == 0) hr = client.Initialize(shareMode, flags, bufferDuration, periodicity, (WAVEFORMATEX*)pFmt);

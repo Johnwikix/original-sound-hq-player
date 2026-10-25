@@ -25,7 +25,14 @@ public sealed class PendingMetadataWrite
     /// <summary>获取或设置歌词。</summary>
     public string? Lyrics { get; set; }
     /// <summary>获取或设置 KRC 歌词。</summary>
-    public string? Krc { get; set; }
+    public string? Krc { get; set; } // Legacy queue recovery only; new requests never write this field.
+    public string? LegacyLyrics { get; set; }
+    public int LyricsSchemaVersion { get; set; }
+    public LyricsFormat LyricsFormat { get; set; }
+    public string? TranslationLrc { get; set; }
+    public string? PronunciationLrc { get; set; }
+    /// <summary>Unchanged, unsupported lyrics must not block metadata writes or erase existing file lyrics.</summary>
+    public bool PreserveFileLyrics { get; set; }
     /// <summary>获取或设置已经报告的错误，避免重复通知。</summary>
     public string? LastError { get; set; }
 }
