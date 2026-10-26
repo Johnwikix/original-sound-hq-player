@@ -33,7 +33,7 @@ internal sealed class LoudnessMeter
         for (int bit = 0; bit < 32 && channelIndex < channels; bit++)
         {
             if (channels > 2 && (channelMask & (1u << bit)) == 0) continue;
-            _weights[channelIndex++] = channels <= 2 ? 1 : bit == 3 ? 0 : bit is 4 or 5 or 9 or 10 ? 1.41 : 1;
+            _weights[channelIndex++] = channels <= 2 ? 1 : bit == 3 ? 0 : bit is 4 or 5 or 8 or 9 or 10 ? 1.41 : 1;
         }
         _hop = (int)Math.Round(sampleRate * 0.1);
         _energyWindow = new double[_hop * 4];
