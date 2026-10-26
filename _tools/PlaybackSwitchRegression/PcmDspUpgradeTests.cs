@@ -245,6 +245,30 @@ internal static unsafe partial class Program
             }
             finally { File.Delete(path); }
         }
+        double[] invalidSamples = [double.NaN, double.PositiveInfinity, double.NegativeInfinity];
+        byte[] invalidOutput = new byte[32];
+        fixed (byte* destination = invalidOutput)
+        {
+            var formats = typeof(WasapiOutput).GetNestedType("FormatKind", BindingFlags.NonPublic)!;
+            foreach (string name in new[] { "Pcm16", "Pcm24Packed", "Pcm24In32", "Pcm32", "Float32" })
+            {
+                invalidOutput.AsSpan().Fill(0xFF);
+                int kind = (int)formats.GetField(name)!.GetRawConstantValue()!;
+                wasapiWrite(invalidSamples, destination, 3, kind);
+                int bytes = name == "Pcm16" ? 6 : name == "Pcm24Packed" ? 9 : 12;
+                Require(invalidOutput.AsSpan(0, bytes).IndexOfAnyExcept((byte)0) < 0, $"WASAPI {name} emitted non-finite input");
+            }
+            foreach (int type in new[] { AsioConstants.AsioStInt16Lsb, AsioConstants.AsioStInt24Lsb,
+                AsioConstants.AsioStInt32Lsb24, AsioConstants.AsioStInt32Lsb,
+                AsioConstants.AsioStFloat32Lsb, AsioConstants.AsioStFloat64Lsb })
+            {
+                invalidOutput.AsSpan().Fill(0xFF);
+                for (int i = 0; i < 3; i++) asioWrite(destination, type, i, invalidSamples[i]);
+                int bytes = type == AsioConstants.AsioStInt16Lsb ? 6 : type == AsioConstants.AsioStInt24Lsb ? 9
+                    : type == AsioConstants.AsioStFloat64Lsb ? 24 : 12;
+                Require(invalidOutput.AsSpan(0, bytes).IndexOfAnyExcept((byte)0) < 0, $"ASIO type {type} emitted non-finite input");
+            }
+        }
     }
 
     private static void CheckPcmResampling()
