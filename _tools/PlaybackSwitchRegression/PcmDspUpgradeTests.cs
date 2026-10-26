@@ -146,6 +146,12 @@ internal static unsafe partial class Program
             Require(Math.Abs(surround.Finish()!.IntegratedLufs - reference) < 1e-9, "Front-channel loudness changed");
             Require(lfeOnly.Finish() == null, "LFE contributed to integrated loudness");
             Require(Math.Abs(side.Finish()!.IntegratedLufs - reference - 10 * Math.Log10(1.41)) < 1e-9, "Surround weight wrong");
+            var backCenter = new LoudnessMeter(rate, 4, channelMask: 0x107);
+            var back = new double[frames * 4];
+            for (int i = 0; i < frames; i++) back[i * 4 + 3] = a[i];
+            backCenter.Add(back);
+            Require(Math.Abs(backCenter.Finish()!.IntegratedLufs - reference - 10 * Math.Log10(1.41)) < 1e-9,
+                "Back-center surround weight wrong");
         });
         Run("Session: limiter delay, convolution tail and seek drain correctly", CheckPcmDspTail);
         Run("Session: long convolution tail survives EOF and final limiter", CheckLongConvolutionTail);
