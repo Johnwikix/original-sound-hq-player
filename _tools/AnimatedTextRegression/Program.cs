@@ -230,8 +230,10 @@ public sealed partial class TestApp : Application
             await Until(() => Field(c, "_hoverLines") != null, "RTL hover");
             offset = HoverOffset(c, 0);
             Check(offset < 0, "RTL starts at the right end of text");
+            var retainedFormat = Field(c, "_textFormat");
             panel.Children.Remove(c);
-            await Until(() => !c.IsLoaded && Field(c, "_textFormat") == null, "unload cleanup");
+            await Until(() => !c.IsLoaded && !(bool)Field(c, "_isClockRegistered"), "unload stops clock");
+            Check(ReferenceEquals(retainedFormat, Field(c, "_textFormat")), "Temporary unload preserves reusable text resources");
             Check(Field(c, "_hoverLines") == null && !(bool)Field(c, "_isClockRegistered"), "Unload stops all rendering");
             panel.Children.Add(c);
             await Until(() => c.IsLoaded && Field(c, "_staticTextLayout") != null, "reload renders again");
@@ -373,7 +375,7 @@ public sealed partial class TestApp : Application
             Check(page.TitleControl.FontSize == 56 && page.InfoControl.FontSize == 34, "Binding continues to follow ViewModel font changes");
             _window.Content = panel;
             await Until(() => !page.TitleControl.IsLoaded && !page.InfoControl.IsLoaded
-                && Field(page.TitleControl, "_textFormat") == null && Field(page.InfoControl, "_textFormat") == null, "page completes Unloaded cleanup");
+                && !(bool)Field(page.TitleControl, "_isClockRegistered") && !(bool)Field(page.InfoControl, "_isClockRegistered"), "hidden page stops all clocks");
             _window.Content = page;
             await Until(() => page.TitleControl.IsLoaded && page.TitleControl.ActualHeight == 62 && page.InfoControl.ActualHeight == 84, "page reload restores both rows");
             await Until(() => Field(page.TitleControl, "_staticTextLayout") != null && Field(page.InfoControl, "_staticTextLayout") != null,
@@ -458,10 +460,11 @@ public sealed partial class TestApp : Application
             unified.OnSharedTick(TimeSpan.FromSeconds(6));
             await Until(() => !unified.IsAnimating, "changed layout animation completes");
             bool unloaded = false;
+            var retainedDocumentLayouts = Field(unified, "_documentLayouts");
             unified.Unloaded += (_, _) => unloaded = true;
             _window.Content = panel;
             await Until(() => unloaded, "unified control Unloaded event completes");
-            Check(Field(unified, "_documentLayouts") == null && !(bool)Field(unified, "_isClockRegistered"), "Unified unload releases paragraph layouts and stops clock");
+            Check(ReferenceEquals(retainedDocumentLayouts, Field(unified, "_documentLayouts")) && !(bool)Field(unified, "_isClockRegistered"), "Unified temporary unload preserves paragraph layouts and stops clock");
             _window.Content = documentPage;
             await Until(() => unified.IsLoaded && !unified.IsAnimating && Field(unified, "_documentLayouts") != null, "unified reload");
             Check(CanvasCount(documentPage) == 1, "Unified page re-entry retains exactly one canvas");
@@ -482,6 +485,14 @@ public sealed partial class TestApp : Application
                 LongText, LongText + "\r\nArtist 中文", 44, 30), 96, "Trimmed");
             await CheckEndpoint(unified, new TextDefaultEffect(), DocumentLayoutRegressionPage.CreateDocument(
                 "中文 😀 Music", "专辑 🌈 Album\r\nArtist 中文", 44, 30), 96, "Emoji");
+            foreach (var retiredControl in new[] { c, page.TitleControl, page.InfoControl, unified })
+            {
+                retiredControl.PrepareForShutdown();
+                retiredControl.PrepareForShutdown();
+                Check(Field(retiredControl, "_canvas") == null && Field(retiredControl, "_textFormat") == null
+                    && Field(retiredControl, "_documentLayouts") == null && !(bool)Field(retiredControl, "_isClockRegistered"),
+                    "Final shutdown releases native resources and the shared clock");
+            }
             File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "result.txt"), $"PASS: {_assertions} assertions; initial auto height={initial}; real WinUI layout/draw/transition/unload/reload.");
         }
         catch (Exception ex)

@@ -1,8 +1,10 @@
+﻿#nullable enable annotations
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using System;
+using AnimatedWin2dControls.Interop;
 
 namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 {
@@ -36,6 +38,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         }
 
         private CanvasAnimatedControl? _canvas;
+        private FrameEventSubscription? _updateSubscription;
         private readonly LyricsRenderCoordinator _coordinator = new();
 
         private bool _pausedByVisibility;
@@ -150,6 +153,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void OnControlLoaded(object sender, RoutedEventArgs e)
         {
+            if (_canvas is not null)
+                _updateSubscription ??= FrameEventSubscription.SubscribeUpdate(_canvas, OnCanvasUpdate);
             UpdateActiveState(_isActive);
         }
 
@@ -159,6 +164,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             // removed from the visual tree when the page is hidden. Keep native
             // resources reusable; PrepareForShutdown owns final cleanup.
             _canvas?.Paused = true;
+            var update = _updateSubscription;
+            _updateSubscription = null;
+            update?.Dispose();
             if (_coordinatorAttached)
             {
                 _coordinator.Detach();
@@ -200,7 +208,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void AttachCanvasEvents(CanvasAnimatedControl canvas)
         {
-            canvas.Update += OnCanvasUpdate;
+            _updateSubscription = FrameEventSubscription.SubscribeUpdate(canvas, OnCanvasUpdate);
             canvas.Draw += OnCanvasDraw;
             canvas.CreateResources += OnCanvasCreateResources;
             canvas.PointerWheelChanged += OnCanvasPointerWheelChanged;
@@ -212,7 +220,9 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         private void DetachCanvasEvents(CanvasAnimatedControl canvas)
         {
-            canvas.Update -= OnCanvasUpdate;
+            var update = _updateSubscription;
+            _updateSubscription = null;
+            update?.Dispose();
             canvas.Draw -= OnCanvasDraw;
             canvas.CreateResources -= OnCanvasCreateResources;
             canvas.PointerWheelChanged -= OnCanvasPointerWheelChanged;
@@ -225,10 +235,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private void OnCanvasCreateResources(CanvasAnimatedControl sender, Microsoft.Graphics.Canvas.UI.CanvasCreateResourcesEventArgs args)
             => _coordinator.OnCreateResources();
 
-        private void OnCanvasUpdate(ICanvasAnimatedControl sender, CanvasAnimatedUpdateEventArgs args)
+        private void OnCanvasUpdate(TimeSpan elapsedTime)
         {
             if (_isActive)
-                _coordinator.OnUpdate(sender, args);
+                _coordinator.OnUpdate(_canvas!, elapsedTime);
         }
 
         private void OnCanvasDraw(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs args)

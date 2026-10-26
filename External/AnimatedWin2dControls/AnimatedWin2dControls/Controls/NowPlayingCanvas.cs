@@ -1,5 +1,7 @@
+﻿#nullable enable annotations
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Renderer;
+using AnimatedWin2dControls.Interop;
 using AnimatedWin2dControls.Renderer.Background;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.UI;
@@ -156,6 +158,7 @@ namespace AnimatedWin2dControls.Controls
         // ── 私有字段 ──────────────────────────────────────────────────────────
 
         private CanvasAnimatedControl? _canvas;
+        private FrameEventSubscription? _updateSubscription;
         // 渲染器只在画布激活且设备资源可用时创建；调色板/封面先缓存在宿主。
         // volatile: 渲染线程在 OnCanvasUpdate/Draw 中以快照方式读取,UI 线程在 SwapBackgroundRenderer 中整体替换。
         private volatile BaseBackgroundRenderer? _background;
@@ -526,7 +529,7 @@ namespace AnimatedWin2dControls.Controls
                 _coordinator.LyricsRegion = LyricsRegion;
 
                 _canvas.CreateResources += OnCanvasCreateResources;
-                _canvas.Update += OnCanvasUpdate;
+                _updateSubscription = FrameEventSubscription.SubscribeUpdate(_canvas, OnCanvasUpdate);
                 _canvas.Draw += OnCanvasDraw;
 
                 // 简单歌词模式：宿主对指针透明，让上方 XAML 歌词覆层接管输入。
@@ -549,7 +552,9 @@ namespace AnimatedWin2dControls.Controls
                 _coordinatorAttached = false;
             }
             _canvas.CreateResources -= OnCanvasCreateResources;
-            _canvas.Update -= OnCanvasUpdate;
+            var update = _updateSubscription;
+            _updateSubscription = null;
+            update?.Dispose();
             _canvas.Draw -= OnCanvasDraw;
             _canvas.PointerWheelChanged -= OnCanvasPointerWheelChanged;
             _canvas.PointerMoved -= OnCanvasPointerMoved;
@@ -560,6 +565,8 @@ namespace AnimatedWin2dControls.Controls
 
         private void OnControlLoaded(object sender, RoutedEventArgs e)
         {
+            if (_canvas is not null)
+                _updateSubscription ??= FrameEventSubscription.SubscribeUpdate(_canvas, OnCanvasUpdate);
             UpdateActiveState(_isActive);
         }
 
@@ -570,6 +577,9 @@ namespace AnimatedWin2dControls.Controls
             // final shutdown is handled explicitly by PrepareForShutdown().
             if (_canvas is not null)
                 _canvas.Paused = true;
+            var update = _updateSubscription;
+            _updateSubscription = null;
+            update?.Dispose();
             if (_coordinatorAttached)
             {
                 _coordinator.Detach();
@@ -679,7 +689,7 @@ namespace AnimatedWin2dControls.Controls
             catch (Exception ex) { RaiseException(ex); }
         }
 
-        private void OnCanvasUpdate(ICanvasAnimatedControl sender, CanvasAnimatedUpdateEventArgs args)
+        private void OnCanvasUpdate(TimeSpan elapsed)
         {
             if (!_isActive) return;
 
@@ -691,8 +701,6 @@ namespace AnimatedWin2dControls.Controls
                 try
                 {
                     var bg = _background;
-                    var elapsed = args.Timing.ElapsedTime;
-
                     // 渲染线程：只读已缓存到渲染模块的状态，绝不访问依赖属性
                     bg?.Update(elapsed);
                     _fog.Update(elapsed.TotalSeconds);
@@ -702,7 +710,7 @@ namespace AnimatedWin2dControls.Controls
                 finally { Monitor.Exit(_cacheGate); }
 
                 if (_advanced)
-                    _coordinator.OnUpdate(sender, args);
+                    _coordinator.OnUpdate(_canvas!, elapsed);
             }
             catch (Exception ex)
             {

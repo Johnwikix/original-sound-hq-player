@@ -1,3 +1,12 @@
+## 2026-10-26 帧事件改用原始 ABI 订阅
+- `Interop/FrameEventSubscription.cs`：用源生成 COM 委托直接接收 Rendering/Win2D Update 指针，仅传递帧时间值；集中管理 token、源引用、异常 HRESULT、重复/回调内解绑及在途回调屏障。
+- `SharedAnimationClock.cs`：改用 ABI Rendering，保留 Stopwatch 和 100ms delta 上限；最后一项注销时解绑，分发期间注销不再移动活动项索引。
+- `NowPlayingCanvas`、`AdvanceLyricsCanvasControl`、`LyricsRenderCoordinator`、`CanvasLyricsRenderer`：生产 Update 改用 ABI，复用现有协调器、状态和 MVVM；临时卸载解绑、重载恢复，保留原帧率、暂停和 Draw 行为。
+- `CanvasLyricsRenderer`：关闭与 Update/Draw/设备资源重建共用屏障，排空回调后显式释放行与阴影资源并拆卸画布。
+- `_tools/FrameAbiRegression`、歌词/文字渲染回归：覆盖真实 WinUI/Win2D timing/线程对照、暂停/恢复、重订阅、跨线程与回调内解绑、失败/迟到回调、回调目标释放及宿主重载/关闭；文字回归分别断言临时卸载保留缓存和最终关闭释放资源。
+- 验证：主程序 Debug/Release x64 构建通过（含 Release 裁剪）；ABI 回归 Debug/Release 各 29 项、文字回归 87 项及完整歌词原生渲染回归通过，新增桥接无构建/裁剪警告。预热后各 10000 次桥接 Invoke 的当前线程托管分配为 0B；未做完整播放器长时间 Gen2/STW 采集。
+- 兼容性：按本次要求保留现有 CsWinRT pressure 补丁；Draw 与其他 WinRT 链路继续使用现有投影，不把此变更等同于全绘制链零分配或 Gen2 停顿已消除。
+
 ## 2026-10-26 修复后台恢复后当前行翻译/发音持续模糊
 - `LyricsAnimator.cs`：当前值仍为 0、旧目标非零且无新延迟时，显式取消陈旧模糊过渡；保留首行字浮依赖的同值 `Start` 语义及正常模糊回零动画。
 - `_tools/LyricsRenderRegression/MotionChecks`：新增“暂停发布→零时间 Draw→跨行恢复”回归，验证恢复后的当前行模糊值和目标均归零。

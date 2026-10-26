@@ -444,12 +444,16 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         // ── Update ──────────────────────────────────────────────────────────────
 
         public void OnUpdate(ICanvasAnimatedControl sender, CanvasAnimatedUpdateEventArgs args)
+            => OnUpdate(sender, args.Timing.ElapsedTime);
+
+        /// <summary>消费帧时间值；原始 ABI 宿主不需要构造托管 Update 事件参数。</summary>
+        public void OnUpdate(ICanvasResourceCreator sender, TimeSpan elapsedTime)
         {
             lock (_renderGate)
             {
                 if (_shutdown) return;
                 ApplyPendingLyrics();
-                UpdateCore(sender, args.Timing.ElapsedTime);
+                UpdateCore(sender, elapsedTime);
             }
         }
 

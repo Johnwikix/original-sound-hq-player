@@ -1,4 +1,5 @@
-using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+using AnimatedWin2dControls.Interop;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Brushes;
@@ -43,6 +44,8 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private const double FloatDurationMs = 450;
 
         private readonly CanvasAnimatedControl _canvas = new() { ClearColor = Colors.Transparent };
+        private readonly object _renderGate = new();
+        private FrameEventSubscription? _updateSubscription;
         private readonly LyricsLineRenderer _lineRenderer = new();
         private readonly LyricsAnimator _animator = new();
         private readonly List<RenderLyricsLine> _renderLineList = [];   // 单元素列表，供动画器驱动当前行
@@ -116,7 +119,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         {
             _canvas.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / TargetFrameRate);
             _canvas.CreateResources += OnCanvasCreateResources;
-            _canvas.Update += OnCanvasUpdate;
+            _updateSubscription = FrameEventSubscription.SubscribeUpdate(_canvas, OnCanvasUpdate);
             _canvas.Draw += OnCanvasDraw;
         }
 
@@ -171,35 +174,58 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         public void Dispose()
         {
-            if (_disposed) return;
-            _disposed = true;
-            // 先停循环、摘事件，再丢弃引用。注意：绝不能在 UI 线程释放行的 Win2D 资源——
-            // Paused=true 只阻止后续 tick，渲染线程可能正处于一次 Draw 的中段（关闭窗口与
-            // 渲染 tick 并发），此时释放 CachedFill/效果链/文本布局会被 DrawSecondaryText 等
-            // 访问到已释放的原生资源，抛出的异常在渲染线程上无法被 UI 线程的
-            // UnhandledException(Handled=true) 吞掉，直接终止进程。
-            // 资源交给 GC 与 Win2D 设备回收：窗口关闭后整窗资源一并消亡，无泄漏窗口期。
+            // 与 Draw/CreateResources 共用屏障：Paused/解绑本身不代表当前绘制已退出。
+            lock (_renderGate)
+            {
+                if (_disposed) return;
+                _disposed = true;
+            }
             _canvas.Paused = true;
-            _canvas.CreateResources -= OnCanvasCreateResources;
-            _canvas.Update -= OnCanvasUpdate;
-            _canvas.Draw -= OnCanvasDraw;
-            _currentLine = null;
-            _renderLineList.Clear();
+            var update = _updateSubscription;
+            _updateSubscription = null;
+            try { update?.Dispose(); }
+            finally
+            {
+                _canvas.CreateResources -= OnCanvasCreateResources;
+                _canvas.Draw -= OnCanvasDraw;
+                try
+                {
+                    lock (_renderGate)
+                    {
+                        DisposeCurrentLine();
+                        _lineRenderer.Line = null;
+                        _lyrics = null;
+                    }
+                }
+                finally { _canvas.RemoveFromVisualTree(); }
+            }
         }
 
         // ── Canvas 回调（渲染线程） ──────────────────────────────────────────
 
         private void OnCanvasCreateResources(CanvasAnimatedControl sender, Microsoft.Graphics.Canvas.UI.CanvasCreateResourcesEventArgs args)
         {
-            // 设备重建后全部 Win2D 资源失效：弃旧行，下帧整体重建（coordinator OnCreateResources 同款思路）
-            DisposeCurrentLine();
-            _currentIndex = -1;
-            _layoutDirty = true;
+            lock (_renderGate)
+            {
+                if (_disposed) return;
+                // 设备重建与关闭也走同一屏障，防止迟到回调重建已退休的资源。
+                DisposeCurrentLine();
+                _currentIndex = -1;
+                _layoutDirty = true;
+            }
         }
 
-        private void OnCanvasUpdate(ICanvasAnimatedControl sender, CanvasAnimatedUpdateEventArgs args)
+        private void OnCanvasUpdate(TimeSpan elapsedTime)
         {
-            if (_disposed) return;
+            lock (_renderGate)
+            {
+                if (_disposed) return;
+                UpdateCore(_canvas, elapsedTime);
+            }
+        }
+
+        private void UpdateCore(ICanvasAnimatedControl sender, TimeSpan elapsedTime)
+        {
             try
             {
                 if (_lyricsChanged)
@@ -220,7 +246,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                     if (!_timeSyncValid || Math.Abs(externalTimeMs - _internalTimeMs) > SyncThresholdMs)
                         _internalTimeMs = externalTimeMs;
                     else
-                        _internalTimeMs += args.Timing.ElapsedTime.TotalMilliseconds;
+                        _internalTimeMs += elapsedTime.TotalMilliseconds;
                     _timeSyncValid = true;
                 }
                 else
@@ -272,7 +298,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
                         lyricsScaleEffectLongSyllableDuration: _longSyllableThreshold,
                         blurAmountMax: 0,
                         canvasYScrollTransition: _scrollTransitionStub,
-                        elapsedTime: args.Timing.ElapsedTime,
+                        elapsedTime: elapsedTime,
                         isMouseScrolling: false,
                         isMouseScrollingChanged: false,
                         isLayoutChanged: _lineJustRebuilt,
@@ -291,7 +317,15 @@ namespace WinUIMusicPlayer.DesktopLyrics
 
         private void OnCanvasDraw(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs args)
         {
-            if (_disposed) return;
+            lock (_renderGate)
+            {
+                if (_disposed) return;
+                DrawCore(sender, args);
+            }
+        }
+
+        private void DrawCore(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs args)
+        {
             var ds = args.DrawingSession;
             ds.Clear(Colors.Transparent);
 

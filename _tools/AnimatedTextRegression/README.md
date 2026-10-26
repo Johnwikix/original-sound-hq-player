@@ -54,3 +54,7 @@ It keeps the offscreen fixture window alive for 45 seconds.
 Pointer presence is injected through reflection, and pointer exit invokes the actual
 handler. Physical mouse hit testing and visual quality on PlayingDetailPage at different
 DPI settings still require interactive verification.
+
+Temporary Unloaded preserves reusable text/document resources and stops the shared
+clock, matching the production page-cache contract. Final PrepareForShutdown is
+checked separately for canvas/layout/format release, clock removal and idempotence.
