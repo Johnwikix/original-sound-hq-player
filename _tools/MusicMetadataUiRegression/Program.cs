@@ -33,6 +33,7 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
         var window = new Window { Title = "Music metadata isolated regression" };
         try
         {
+            await LoadingRegression.RunAsync(window);
             var source = new Music { Id = 1, Title = "Original" };
             var panel = new MetadataPanel(source);
             window.Content = panel;
@@ -63,7 +64,7 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
             await Task.Delay(100);
             Check(((Expander)remote.FindName("OptionalTags")).IsExpanded, "Existing tags expand automatically");
             foreach (string name in names) Check(((TextBox)remote.FindName(name + "Input")).IsReadOnly, "Remote tag is read-only: " + name);
-            File.WriteAllText(ResultPath, "PASS: shipping optional-tag XAML compiled bindings; six editable fields; sparse default; localized labels/placeholders; layout; private draft; saved snapshot; populated expansion; remote read-only.");
+            File.WriteAllText(ResultPath, "PASS: shipping loading/content bindings after real old-database backfill; loading/save/failure transitions.\nPASS: shipping optional-tag XAML compiled bindings; six editable fields; sparse default; localized labels/placeholders; layout; private draft; saved snapshot; populated expansion; remote read-only.");
         }
         catch (Exception ex) { File.WriteAllText(ResultPath, "FAIL: " + ex); }
         window.Close();

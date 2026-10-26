@@ -1,3 +1,7 @@
+## 2026-10-27 修复歌曲属性窗口持续显示等待状态
+- `View/SubView/MusicDetailsWindow.xaml`：等待层和编辑区可见性改用 OneWay 绑定，响应标签补读结束及保存后的状态变化，修复新增标签后打开属性始终显示“正在处理保存”的回归。
+- `_tools/MusicMetadataUiRegression`：加入旧库不重扫、真实标签补读与 WinUI 可见性切换回归，覆盖保存失败与重试时的状态恢复。
+
 ## 2026-10-26 减少 IR 准备分配与暂停留存
 - `PreparedCorrectionCache`：文件 IR 按内容、采样率、声道和布局复用只读系数，LRU 同时限制四套与 16 MiB；完整响应频谱按自动前级/旧版自动余量需要生成，缓存仅弱持有分析结果。
 - `ConvolutionTier`：单声道 IR 跨输出声道共享只读系数，保留各声道独立历史与 FFT 工作区；准备过程补充取消检查。

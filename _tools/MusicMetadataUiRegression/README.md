@@ -2,6 +2,9 @@
 
 运行 `python _tools/MusicMetadataUiRegression/prepare_fixture.py`，再构建本项目并启动生成的 exe。
 窗口在屏幕外自动关闭，结果写入输出目录的 result.txt；不访问正式曲库或音乐文件。
-夹具直接提取生产 MusicDetailsWindow 的可选标签区域并保留 x:Bind；标签文本取自生产资源文件。
+夹具直接提取生产 MusicDetailsWindow 的等待层、编辑区可见性绑定和可选标签区域，保留 x:Bind 模式；标签文本取自生产资源文件。
 使用实际 Music、MusicMetadataEditorViewModel 和 WinUI 控件，验证六项双向绑定、空标签默认收起、
-已有标签展开、字段尺寸、草稿隔离和远程只读。此检查不代替完整属性窗口的文件写入回归。
+已有标签展开、字段尺寸、草稿隔离和远程只读。
+等待层回归从没有新增字段的旧 SQLite 库开始，链接生产迁移、ATL 标签补读和 ApplicationTasks；
+确认未重扫曲库时补读完成、草稿更新、UI 线程状态通知以及等待层/编辑区切换，并覆盖保存失败和重试时的状态恢复。
+隔离宿主只替换数据库初始化边界，不代替完整属性窗口、歌词加载或真实文件保存回归。

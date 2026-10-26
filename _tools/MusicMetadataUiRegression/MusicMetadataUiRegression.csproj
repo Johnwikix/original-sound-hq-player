@@ -12,7 +12,10 @@
     <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.261026.1-nogcpressure" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="sqlite-net-pcl" Version="1.11.285" />
+    <PackageReference Include="z440.atl.core" Version="7.18.0" />
     <Compile Include="../../Model/Music.cs;../../Model/AdditionalMusicMetadata.cs;../../ViewModel/Controls/MusicMetadataEditorViewModel.cs" />
+    <Compile Include="../../Services/MusicDatabaseService.AdditionalMetadata.cs;../../Services/MusicMetadataStorage.cs;../../Utils/AudioMetadataTags.cs" />
+    <Compile Include="../../Services/ApplicationTasks.cs;../../Services/AppLifecycle.cs" />
     <Compile Include="../MusicMetadataRegression/Adapters.cs" />
   </ItemGroup>
 </Project>

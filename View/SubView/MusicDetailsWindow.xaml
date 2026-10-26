@@ -18,7 +18,7 @@
     </winex:WindowEx.SystemBackdrop>
 
     <Grid tool:ApplicationFont.IsEnabled="True">
-        <Grid Visibility="{x:Bind BoolToVisibility(IsLoading)}">
+        <Grid Visibility="{x:Bind BoolToVisibility(IsLoading), Mode=OneWay}">
             <ProgressRing
                 Width="100"
                 Height="100"
@@ -49,7 +49,7 @@
         <Grid
             Margin="0,44,0,0"
             RowDefinitions="*,Auto"
-            Visibility="{x:Bind BoolToNVisibility(IsLoading)}">
+            Visibility="{x:Bind BoolToNVisibility(IsLoading), Mode=OneWay}">
 
             <ScrollViewer
                 Grid.Row="0"
