@@ -7,7 +7,8 @@ using FFmpeg.AutoGen;
 namespace WinUIMusicPlayer.Services.WebDav;
 
 public sealed record RemoteMetadata(string Title, string Artist, string Album, int Track, int Disc, int Year,
-    int SampleRate, int Channels, int BitDepth, int BitRate, double DurationMs);
+    int SampleRate, int Channels, int BitDepth, int BitRate, double DurationMs,
+    WinUIMusicPlayer.Model.AdditionalMusicMetadata? AdditionalMetadata = null);
 
 /// <summary>FFmpeg 仅通过调用方的有界只读流取数据；原生回调不允许异常跨越 ABI。</summary>
 public static unsafe class RemoteMetadataProbe
@@ -99,7 +100,9 @@ public static unsafe class RemoteMetadataProbe
                 ? parameters->bits_per_raw_sample : ffmpeg.av_get_bits_per_sample(parameters->codec_id);
             return new(Field("title"), Field("artist"), Field("album"), Number(Field("track")), Number(Field("disc")),
                 Number(Field("date")), sampleRate, parameters->ch_layout.nb_channels, bits,
-                (int)Math.Clamp((format->bit_rate > 0 ? format->bit_rate : parameters->bit_rate) / 1000, 0, int.MaxValue), duration);
+                (int)Math.Clamp((format->bit_rate > 0 ? format->bit_rate : parameters->bit_rate) / 1000, 0, int.MaxValue), duration,
+                // 使用 libavformat 已提供的统一键，不按容器猜测别名或补读扩展标签。
+                new(Field("album_artist"), Field("genre"), Field("composer"), Field("lyricist"), Field("conductor"), Field("catalognumber")));
         }
         finally
         {
@@ -124,7 +127,7 @@ public static unsafe class RemoteMetadataProbe
         if (file.SampleRate <= 0 || !double.IsFinite(file.DurationMs)) throw new WebDavException("MetadataUnsupported");
         return new(file.Title ?? "", file.Artist ?? "", file.Album ?? "", file.TrackNumber ?? 0, file.DiscNumber ?? 0,
             file.Year ?? 0, (int)file.SampleRate, file.ChannelsArrangement.NbChannels,
-            file.BitDepth, file.Bitrate, Math.Max(0, file.DurationMs));
+            file.BitDepth, file.Bitrate, Math.Max(0, file.DurationMs), Utils.AudioMetadataTags.Read(file));
     }
 
     private static bool IsDsdCodec(AVCodecID codec)

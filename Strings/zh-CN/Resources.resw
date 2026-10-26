@@ -2520,4 +2520,49 @@ SHA-256：{5}
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>默认关闭。用于处理后降低位深；开启会改变样本，原始位透明播放应关闭。</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed 截止频率（Hz）</value></data>
   <data name="DspCrossfeedAmount" xml:space="preserve"><value>Crossfeed 强度（%）</value></data>
+  <data name="MusicAdditionalTags.Header" xml:space="preserve">
+    <value>其他音乐信息</value>
+  </data>
+  <data name="SortOrderAlbumArtist" xml:space="preserve">
+    <value>专辑艺术家</value>
+  </data>
+  <data name="SortOrderGenre" xml:space="preserve">
+    <value>流派</value>
+  </data>
+  <data name="MusicTagAlbumArtist.Header" xml:space="preserve">
+    <value>专辑艺术家</value>
+  </data>
+  <data name="MusicTagAlbumArtist.PlaceholderText" xml:space="preserve">
+    <value>未提供（可选）</value>
+  </data>
+  <data name="MusicTagGenre.Header" xml:space="preserve">
+    <value>流派</value>
+  </data>
+  <data name="MusicTagGenre.PlaceholderText" xml:space="preserve">
+    <value>未提供（可选）</value>
+  </data>
+  <data name="MusicTagComposer.Header" xml:space="preserve">
+    <value>作曲者</value>
+  </data>
+  <data name="MusicTagComposer.PlaceholderText" xml:space="preserve">
+    <value>未提供（可选）</value>
+  </data>
+  <data name="MusicTagLyricist.Header" xml:space="preserve">
+    <value>作词者</value>
+  </data>
+  <data name="MusicTagLyricist.PlaceholderText" xml:space="preserve">
+    <value>未提供（可选）</value>
+  </data>
+  <data name="MusicTagConductor.Header" xml:space="preserve">
+    <value>指挥</value>
+  </data>
+  <data name="MusicTagConductor.PlaceholderText" xml:space="preserve">
+    <value>未提供（可选）</value>
+  </data>
+  <data name="MusicTagCatalogNumber.Header" xml:space="preserve">
+    <value>目录编号</value>
+  </data>
+  <data name="MusicTagCatalogNumber.PlaceholderText" xml:space="preserve">
+    <value>未提供（可选）</value>
+  </data>
 </root>

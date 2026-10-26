@@ -64,7 +64,7 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
                 .Select(name => (ComboBox)panel.FindName(name)).ToArray();
             var sourceCombos = new[] { "FirstLyricsSource", "SecondLyricsSource" }
                 .Select(name => (ComboBox)panel.FindName(name)).ToArray();
-            Check(pivot.Items.Count == 2, "two editor tabs");
+            Check(pivot.Items.Count == 3, "three editor tabs");
             settings.State.Preferences.LocalLyricsFormatOrder = "ttml,lrc,krc,qrc";
             await Task.Delay(100);
             Check(formatCombos.Select(combo => combo.SelectedIndex).SequenceEqual(new[] { 3, 2, 0, 1 }), "late settings restoration updates all four selections");
@@ -132,7 +132,7 @@ internal sealed partial class TestApplication : Application, IXamlMetadataProvid
             database.BeforeSave = null;
             Check(await editor.SaveAsync(), "retained draft saves against updated revision");
             await EditorRecoveryChecks.RunAsync(db, database, parser, tasks);
-            File.WriteAllText(file, "PASS: real WinUI compiled binding, 2 tabs, 4 format/2 source dropdowns, 24 permutations, 16 format swaps, source swaps, invalid selection guards, late restoration, stale network draft, SQLite edit conflict and edits during save; unknown-lyrics metadata save, raw legacy recovery, external clear/manual refresh and late-download clear persistence; manual LLM draft save and late-result conflict protection.\nREADY for UI Automation");
+            File.WriteAllText(file, "PASS: real WinUI compiled binding, 3 tabs, 4 format/2 source dropdowns, 24 permutations, 16 format swaps, source swaps, invalid selection guards, late restoration, stale network draft, SQLite edit conflict and edits during save; unknown-lyrics metadata save, raw legacy recovery, external clear/manual refresh and late-download clear persistence; manual LLM draft save and late-result conflict protection.\nREADY for UI Automation");
             if (Environment.GetCommandLineArgs().Contains("--uia")) await Task.Delay(TimeSpan.FromSeconds(90));
             editor.Dispose();
             lifecycle.TryBeginExit(out _);

@@ -95,6 +95,7 @@ namespace WinUIMusicPlayer.Services
                     await _dbConnection.ExecuteAsync("CREATE UNIQUE INDEX IF NOT EXISTS IX_RemoteTrack_Resource ON RemoteTrack(SourceId, Href COLLATE BINARY)");
                     await _dbConnection.CreateTableAsync<PendingMetadataWrite>();
                     await EnsurePendingMetadataLyricsColumnsAsync();
+                    await MusicMetadataStorage.EnsureSchemaAsync(_dbConnection);
                     await _dbConnection.ExecuteAsync("CREATE INDEX IF NOT EXISTS IX_Music_Path_NoCase ON Music(Path COLLATE NOCASE)");
                     await _dbConnection.CreateTableAsync<MusicLyrics>();
                     Lyrics = new WinUIMusicPlayer.Services.Lyrics.LyricsRepository(_dbConnection, _lyricsParser);

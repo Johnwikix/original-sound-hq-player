@@ -321,6 +321,8 @@ namespace WinUIMusicPlayer.Utils
                 DiscNumber = music.DiskNumber,
                 Year = music.Year
             };
+            if (music.AdditionalMetadataRead)
+                AudioMetadataTags.Write(theTrack, AdditionalMusicMetadata.From(music));
             if (pic is not null)
             {
                 theTrack.EmbeddedPictures.Clear();
@@ -570,6 +572,7 @@ namespace WinUIMusicPlayer.Utils
             }
             var info = new AudioFileInfo
             {
+                AdditionalMetadata = track is null ? null : AudioMetadataTags.Read(track),
                 Title = string.IsNullOrWhiteSpace(track?.Title) ? Path.GetFileNameWithoutExtension(file.Path) : track.Title,
                 Artist = string.IsNullOrWhiteSpace(track?.Artist) ? "未知艺术家" : track.Artist,
                 Album = string.IsNullOrWhiteSpace(track?.Album) ? "未知专辑" : track.Album,
@@ -1066,6 +1069,7 @@ namespace WinUIMusicPlayer.Utils
                     CreateTime = ToolUtils.GetSafeFileCreateTime(file.Path),
                     UpdateTime = ToolUtils.GetSafeFileUpdateTime(file.Path)
                 };
+                AudioMetadataTags.Read(track).ApplyTo(music);
                 return (music, lyrics);
             }
             catch (Exception ex)
@@ -1095,6 +1099,7 @@ namespace WinUIMusicPlayer.Utils
                         CreateTime = ToolUtils.GetSafeFileCreateTime(file.Path),
                         UpdateTime = ToolUtils.GetSafeFileUpdateTime(file.Path)
                     };
+                    wavFileInfo.AdditionalMetadata?.ApplyTo(music);
                     return (music, wavFileInfo.Lyrics);
                 }
                 catch (Exception innerEx)

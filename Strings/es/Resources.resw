@@ -2518,4 +2518,49 @@ SHA-256: {5}
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>Desactivado inicialmente. Para reducir profundidad tras DSP; desactívelo para reproducción transparente.</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Corte Crossfeed (Hz)</value></data>
   <data name="DspCrossfeedAmount" xml:space="preserve"><value>Intensidad Crossfeed (%)</value></data>
+  <data name="MusicAdditionalTags.Header" xml:space="preserve">
+    <value>Información musical adicional</value>
+  </data>
+  <data name="SortOrderAlbumArtist" xml:space="preserve">
+    <value>Artista del álbum</value>
+  </data>
+  <data name="SortOrderGenre" xml:space="preserve">
+    <value>Género</value>
+  </data>
+  <data name="MusicTagAlbumArtist.Header" xml:space="preserve">
+    <value>Artista del álbum</value>
+  </data>
+  <data name="MusicTagAlbumArtist.PlaceholderText" xml:space="preserve">
+    <value>Sin especificar (opcional)</value>
+  </data>
+  <data name="MusicTagGenre.Header" xml:space="preserve">
+    <value>Género</value>
+  </data>
+  <data name="MusicTagGenre.PlaceholderText" xml:space="preserve">
+    <value>Sin especificar (opcional)</value>
+  </data>
+  <data name="MusicTagComposer.Header" xml:space="preserve">
+    <value>Compositor</value>
+  </data>
+  <data name="MusicTagComposer.PlaceholderText" xml:space="preserve">
+    <value>Sin especificar (opcional)</value>
+  </data>
+  <data name="MusicTagLyricist.Header" xml:space="preserve">
+    <value>Letrista</value>
+  </data>
+  <data name="MusicTagLyricist.PlaceholderText" xml:space="preserve">
+    <value>Sin especificar (opcional)</value>
+  </data>
+  <data name="MusicTagConductor.Header" xml:space="preserve">
+    <value>Director</value>
+  </data>
+  <data name="MusicTagConductor.PlaceholderText" xml:space="preserve">
+    <value>Sin especificar (opcional)</value>
+  </data>
+  <data name="MusicTagCatalogNumber.Header" xml:space="preserve">
+    <value>Número de catálogo</value>
+  </data>
+  <data name="MusicTagCatalogNumber.PlaceholderText" xml:space="preserve">
+    <value>Sin especificar (opcional)</value>
+  </data>
 </root>

@@ -15,12 +15,15 @@ internal static class MetadataRegression
         await File.WriteAllTextAsync(filePath, "original");
         var db = new MusicDatabaseService(dbPath);
         await db.InitializeAsync();
-        var music = new Music { Path = filePath, Title = "first" };
+        var music = new Music { Path = filePath, Title = "first", AlbumArtist = "album artist", Genre = "Jazz", Composer = "composer", Lyricist = "lyricist", Conductor = "conductor", CatalogNumber = "CAT-1", AdditionalMetadataRead = true };
         await db.Connection.InsertAsync(music);
         var cover = new byte[] { 1, 2, 3 };
         var parser = new WinUIMusicPlayer.Services.Lyrics.LyricsParser();
         var revision = (await db.Lyrics.GetAsync(music.Id)).Revision;
         await db.QueueMetadataWriteAsync(music, cover, parser.Import("[00:01.00]lyrics", "[00:01.00]translation"), revision++);
+        var initialRequest = await db.Connection.FindAsync<PendingMetadataWrite>(filePath);
+        Check(initialRequest.MetadataVersion == 1 && initialRequest.AlbumArtist == "album artist" && initialRequest.CatalogNumber == "CAT-1", "additional tag snapshot persisted");
+        Check((await db.Connection.FindAsync<Music>(music.Id)).Genre == "Jazz", "additional tags stored with editor transaction");
         cover[0] = 9;
         Check((await db.Connection.FindAsync<PendingMetadataWrite>(filePath)).Cover![0] == 1, "cover snapshot");
         using (var held = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
@@ -39,6 +42,7 @@ internal static class MetadataRegression
         db = new MusicDatabaseService(dbPath);
         // Reopen the persisted queue without recreating test indexes.
         await db.FlushMetadataWritesAsync(default);
+        Check(ToolUtils.LastWrittenMusic is { AdditionalMetadataRead: true, Genre: "Jazz", CatalogNumber: "CAT-1" }, "restart restores all queued additional fields");
         Check(await File.ReadAllTextAsync(filePath) == "latest", "restart applies latest snapshot");
         Check(await db.Connection.Table<PendingMetadataWrite>().CountAsync() == 0, "success removes request");
         await db.QueueMetadataWriteAsync(music, null, LyricsDocument.Empty, revision++);
@@ -65,6 +69,7 @@ internal static class MetadataRegression
                 migrated.LegacyLyrics == "[00:01.00]line candidate" && migrated.Krc == "[1000,1000]word(1000,1000)", "legacy queue keeps both source snapshots while locked");
         }
         await db.FlushMetadataWritesAsync(default);
+        Check(ToolUtils.LastWrittenMusic is { AdditionalMetadataRead: false }, "legacy queue must preserve unrecorded optional file tags");
         await db.Connection.InsertAsync(new PendingMetadataWrite { Path = filePath, Title = "invalid queue", Lyrics = "untimed unknown" });
         await db.FlushMetadataWritesAsync(default);
         Check(await db.Connection.Table<PendingMetadataWrite>().CountAsync() == 1 && await File.ReadAllTextAsync(filePath) == "legacy queue", "unconvertible legacy lyrics cannot silently erase audio tags");
@@ -96,6 +101,19 @@ internal static class MetadataRegression
         await db.QueueMetadataWriteAsync(unknownMusic, null, LyricsDocument.Empty, savedUnknown.Revision);
         await db.FlushMetadataWritesAsync(default);
         Check(!ToolUtils.LastPreserveLyrics, "explicit clear still writes an empty lyric tag");
+        var queuedTags = new Music { Path = Path.Combine(root, "queued-tags.mp3"), Title = "first tag edit", Genre = "Jazz", AlbumArtist = "Album artist", AdditionalMetadataRead = true, PlayCount = 8 };
+        await File.WriteAllTextAsync(queuedTags.Path, "original");
+        await db.Connection.InsertAsync(queuedTags);
+        var queuedRevision = (await db.Lyrics.GetAsync(queuedTags.Id)).Revision;
+        await db.QueueMetadataWriteAsync(queuedTags, null, LyricsDocument.Empty, queuedRevision);
+        var unreadEditor = new Music { Id = queuedTags.Id, Path = queuedTags.Path, Title = "later core edit" };
+        queuedRevision = (await db.Lyrics.GetAsync(queuedTags.Id)).Revision;
+        await db.QueueMetadataWriteAsync(unreadEditor, null, LyricsDocument.Empty, queuedRevision);
+        var retainedTags = await db.Connection.FindAsync<PendingMetadataWrite>(queuedTags.Path);
+        Check(retainedTags.MetadataVersion == 1 && retainedTags.Genre == "Jazz", "unread window cannot replace queued optional tags with empty values");
+        await db.FlushMetadataWritesAsync(default);
+        Check(ToolUtils.LastWrittenMusic is { Genre: "Jazz", AdditionalMetadataRead: true } &&
+            (await db.Connection.FindAsync<Music>(queuedTags.Id)).PlayCount == 8, "replacement queue preserves tags and playback-owned columns");
         using var oneShot = new OneShotPlaybackService(new(), new(), db, new(),
             Microsoft.Extensions.Logging.Abstractions.NullLogger<OneShotPlaybackService>.Instance);
         var imported = new Music { Path = Path.Combine(root, "cleared-before-import.mp3") };

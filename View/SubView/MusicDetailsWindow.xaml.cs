@@ -9,6 +9,7 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Storage;
 using WinUIEx;
@@ -68,6 +69,8 @@ namespace WinUIMusicPlayer.View.SubView
             }
         } = false;
         public LyricsEditorViewModel LyricsEditor { get; }
+        public MusicMetadataEditorViewModel MetadataEditor { get; }
+        private readonly CancellationTokenSource _windowClosed = new();
         private NotificationService NotificationService { get; set; }
         private byte[] AlbumCoverData { get; set; } = null;
         private nint hwnd;
@@ -80,6 +83,8 @@ namespace WinUIMusicPlayer.View.SubView
         public MusicDetailsWindow(Music music)
         {
             MusicDetail = music;
+            MetadataEditor = new MusicMetadataEditorViewModel(music);
+            IsLoading = true;
             LyricsEditor = new LyricsEditorViewModel(music, App.Services.GetRequiredService<MusicDatabaseService>(),
                 App.Services.GetRequiredService<LyricsParser>(), App.Services.GetRequiredService<LyricsOnlineSearch>(),
                 App.Services.GetRequiredService<ApplicationTasks>(), App.Services.GetRequiredService<ILlmTranslationService>());
@@ -92,13 +97,17 @@ namespace WinUIMusicPlayer.View.SubView
             setWindow();
             _editorSession = App.Services.GetRequiredService<EditorSessions>().Attach(() =>
             {
+                _windowClosed.Cancel();
                 LyricsEditor.Dispose();
                 return Task.CompletedTask;
             });
             _ = App.Services.GetRequiredService<ApplicationTasks>().RunAsync(async token =>
             {
-                try { await InitalizeData(music); }
+                using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, _windowClosed.Token);
+                try { await InitalizeData(music, linked.Token); }
+                catch (OperationCanceledException) when (linked.IsCancellationRequested) { }
                 catch (Exception ex) { _logger.LogError(ex, "加载歌曲详情失败"); }
+                finally { if (!_closed) IsLoading = false; }
             });
             themeStyleHelper = new ThemeStyleHelper(this, this.AppWindow);
             themeStyleHelper.SetAppStyle();
@@ -134,6 +143,7 @@ namespace WinUIMusicPlayer.View.SubView
                 App.MainWindow.backdropInputState -= MainWindow_backdropInputState;
             }
             _closed = true;
+            _windowClosed.Cancel();
             LyricsEditor.Dispose();
             _editorSession?.Dispose();
             this.Closed -= MusicDetailWindow_Closed;
@@ -160,10 +170,17 @@ namespace WinUIMusicPlayer.View.SubView
             themeStyleHelper.SetAppTheme();
         }
 
-        private async Task InitalizeData(Music music)
+        private async Task InitalizeData(Music music, CancellationToken token)
         {
-            MusicDetail = music;
             await LyricsEditor.LoadAsync();
+            token.ThrowIfCancellationRequested();
+            var tags = await App.Services.GetRequiredService<MusicDatabaseService>().ReadAdditionalMetadataAsync(music, token);
+            token.ThrowIfCancellationRequested();
+            if (tags is { } loaded)
+            {
+                MetadataEditor.ApplyLoaded(loaded);
+                NotifyMetadataChanged();
+            }
             AlbumCoverData = await Task.Run(() => ToolUtils.GetRawImage(music, true));
             if (_closed || Content is null) return;
             AlbumCoverBitmap = await ToolUtils.ConvertByteArrayToBitmapImage(AlbumCoverData);
@@ -224,7 +241,10 @@ namespace WinUIMusicPlayer.View.SubView
         {
             try
             {
-                if (!await LyricsEditor.SaveAsync()) return;
+                var snapshot = MetadataEditor.Capture();
+                bool saved = await LyricsEditor.SaveAsync(metadataDraft: snapshot);
+                bool unchanged = PublishCommittedMetadata(snapshot);
+                if (!saved || !unchanged) return;
             }
             catch (Exception ex)
             {
@@ -238,10 +258,28 @@ namespace WinUIMusicPlayer.View.SubView
         private async Task<bool> UpdateFile(DateTime updateTime)
         {
             IsLoading = true;
-            MusicDetail.UpdateTime = updateTime;
-            bool saved = await LyricsEditor.SaveAsync(AlbumCoverData, queueMetadata: true);
-            if (saved) NotificationService.SendNotification(MusicDetail.Title, ToolUtils.GetString("MetadataWriteQueued"));
-            return saved;
+            var snapshot = MetadataEditor.Capture();
+            snapshot.UpdateTime = updateTime;
+            bool saved = await LyricsEditor.SaveAsync(AlbumCoverData, queueMetadata: true, metadataDraft: snapshot);
+            bool unchanged = PublishCommittedMetadata(snapshot);
+            if (!saved) return false;
+            NotificationService.SendNotification(snapshot.Title, ToolUtils.GetString("MetadataWriteQueued"));
+            return unchanged;
+        }
+
+        private bool PublishCommittedMetadata(Music snapshot)
+        {
+            if (!ReferenceEquals(LyricsEditor.LastCommittedMetadata, snapshot)) return false;
+            bool unchanged = MetadataEditor.AcceptSaved(snapshot);
+            NotifyMetadataChanged();
+            return unchanged;
+        }
+
+        private static void NotifyMetadataChanged()
+        {
+            var app = App.Services.GetRequiredService<AppViewModel>();
+            app.NotifySongsSourceChanged();
+            App.Services.GetRequiredService<LibraryProjectionService>().RequestRefresh();
         }
 
         private async void ConfirmButton_Click(object sender, RoutedEventArgs e)

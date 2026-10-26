@@ -1,4 +1,4 @@
-﻿using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
+using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl;
 using AnimatedWin2dControls.Messages;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -98,6 +98,8 @@ namespace WinUIMusicPlayer.ViewModel
             new SortOption("A-Z", "SortOrderA_Z"),
             new SortOption("Artist", "SortOrderArtist"),
             new SortOption("Album", "SortOrderAlbum"),
+            new SortOption("AlbumArtist", "SortOrderAlbumArtist"),
+            new SortOption("Genre", "SortOrderGenre"),
             new SortOption("CreateTimeASC", "SortOrderCreateTimeASC"),
             new SortOption("CreateTimeDESC", "SortOrderCreateTimeDESC"),
             new SortOption("UpdateTimeASC", "SortOrderUpdateTimeASC"),

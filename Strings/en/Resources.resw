@@ -2518,4 +2518,49 @@ SHA-256: {5}
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>Off by default. Useful when reducing bit depth after processing; disable for bit-transparent playback.</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed cutoff (Hz)</value></data>
   <data name="DspCrossfeedAmount" xml:space="preserve"><value>Crossfeed amount (%)</value></data>
+  <data name="MusicAdditionalTags.Header" xml:space="preserve">
+    <value>Additional music information</value>
+  </data>
+  <data name="SortOrderAlbumArtist" xml:space="preserve">
+    <value>Album artist</value>
+  </data>
+  <data name="SortOrderGenre" xml:space="preserve">
+    <value>Genre</value>
+  </data>
+  <data name="MusicTagAlbumArtist.Header" xml:space="preserve">
+    <value>Album artist</value>
+  </data>
+  <data name="MusicTagAlbumArtist.PlaceholderText" xml:space="preserve">
+    <value>Not provided (optional)</value>
+  </data>
+  <data name="MusicTagGenre.Header" xml:space="preserve">
+    <value>Genre</value>
+  </data>
+  <data name="MusicTagGenre.PlaceholderText" xml:space="preserve">
+    <value>Not provided (optional)</value>
+  </data>
+  <data name="MusicTagComposer.Header" xml:space="preserve">
+    <value>Composer</value>
+  </data>
+  <data name="MusicTagComposer.PlaceholderText" xml:space="preserve">
+    <value>Not provided (optional)</value>
+  </data>
+  <data name="MusicTagLyricist.Header" xml:space="preserve">
+    <value>Lyricist</value>
+  </data>
+  <data name="MusicTagLyricist.PlaceholderText" xml:space="preserve">
+    <value>Not provided (optional)</value>
+  </data>
+  <data name="MusicTagConductor.Header" xml:space="preserve">
+    <value>Conductor</value>
+  </data>
+  <data name="MusicTagConductor.PlaceholderText" xml:space="preserve">
+    <value>Not provided (optional)</value>
+  </data>
+  <data name="MusicTagCatalogNumber.Header" xml:space="preserve">
+    <value>Catalog number</value>
+  </data>
+  <data name="MusicTagCatalogNumber.PlaceholderText" xml:space="preserve">
+    <value>Not provided (optional)</value>
+  </data>
 </root>

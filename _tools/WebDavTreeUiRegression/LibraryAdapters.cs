@@ -60,7 +60,7 @@ namespace WinUIMusicPlayer.Services.WebDav
 {
     public sealed class RemoteAudioCache { public long GetSize() => 0; public void Clear() { } }
     public sealed record RemoteMetadata(string Title, string Artist, string Album, int Track, int Disc, int Year,
-        int SampleRate, int Channels, int BitDepth, int BitRate, double DurationMs);
+        int SampleRate, int Channels, int BitDepth, int BitRate, double DurationMs, AdditionalMusicMetadata? AdditionalMetadata = null);
 }
 namespace WinUIMusicPlayer.ViewModel
 {

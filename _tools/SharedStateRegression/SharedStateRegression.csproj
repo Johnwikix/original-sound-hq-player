@@ -28,4 +28,7 @@
     <Compile Include="../../State/LibraryState.cs" />
     <Compile Include="../../State/BrowseState.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../../Model/AdditionalMusicMetadata.cs" />
+  </ItemGroup>
 </Project>

@@ -2518,4 +2518,49 @@ SHA-256: {5}
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>По умолчанию выключен. Для уменьшения разрядности после DSP; выключите для побитовой передачи.</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Частота Crossfeed (Гц)</value></data>
   <data name="DspCrossfeedAmount" xml:space="preserve"><value>Интенсивность Crossfeed (%)</value></data>
+  <data name="MusicAdditionalTags.Header" xml:space="preserve">
+    <value>Дополнительные сведения</value>
+  </data>
+  <data name="SortOrderAlbumArtist" xml:space="preserve">
+    <value>Исполнитель альбома</value>
+  </data>
+  <data name="SortOrderGenre" xml:space="preserve">
+    <value>Жанр</value>
+  </data>
+  <data name="MusicTagAlbumArtist.Header" xml:space="preserve">
+    <value>Исполнитель альбома</value>
+  </data>
+  <data name="MusicTagAlbumArtist.PlaceholderText" xml:space="preserve">
+    <value>Не указано (необязательно)</value>
+  </data>
+  <data name="MusicTagGenre.Header" xml:space="preserve">
+    <value>Жанр</value>
+  </data>
+  <data name="MusicTagGenre.PlaceholderText" xml:space="preserve">
+    <value>Не указано (необязательно)</value>
+  </data>
+  <data name="MusicTagComposer.Header" xml:space="preserve">
+    <value>Композитор</value>
+  </data>
+  <data name="MusicTagComposer.PlaceholderText" xml:space="preserve">
+    <value>Не указано (необязательно)</value>
+  </data>
+  <data name="MusicTagLyricist.Header" xml:space="preserve">
+    <value>Автор текста</value>
+  </data>
+  <data name="MusicTagLyricist.PlaceholderText" xml:space="preserve">
+    <value>Не указано (необязательно)</value>
+  </data>
+  <data name="MusicTagConductor.Header" xml:space="preserve">
+    <value>Дирижёр</value>
+  </data>
+  <data name="MusicTagConductor.PlaceholderText" xml:space="preserve">
+    <value>Не указано (необязательно)</value>
+  </data>
+  <data name="MusicTagCatalogNumber.Header" xml:space="preserve">
+    <value>Каталожный номер</value>
+  </data>
+  <data name="MusicTagCatalogNumber.PlaceholderText" xml:space="preserve">
+    <value>Не указано (необязательно)</value>
+  </data>
 </root>

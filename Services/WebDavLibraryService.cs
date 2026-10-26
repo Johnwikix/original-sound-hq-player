@@ -309,6 +309,7 @@ public sealed partial class WebDavLibraryService(MusicDatabaseService database, 
             current.BitDepth = item.BitDepth; current.BitRate = item.BitRate; current.SampleRate = item.SampleRate;
             current.Channel = item.Channel; current.Duration = item.Duration; current.ImageHash = item.ImageHash;
             current.Extension = item.Extension;
+            if (item.AdditionalMetadataRead) AdditionalMusicMetadata.From(item).ApplyTo(current);
         }
         // 与本地扫描批次同口径：新增增量进当前列表，就地更新元数据即可；
         // 逐批 NotifySongsSourceChanged 会让曲目列表整表 Reset（扫描期间持续闪烁），

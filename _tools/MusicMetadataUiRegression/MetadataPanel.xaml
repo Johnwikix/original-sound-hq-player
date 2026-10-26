@@ -1,0 +1,12 @@
+<UserControl x:Class="MusicMetadataUiRegression.MetadataPanel" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"><Grid Padding="20"><Expander xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Margin="12,0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Stretch" IsExpanded="{x:Bind MetadataEditor.IsAdditionalExpanded, Mode=TwoWay}" Header="其他音乐信息" x:Name="OptionalTags">
+                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="14" RowSpacing="12">
+                            <TextBox Grid.Row="0" Grid.Column="0" IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.AlbumArtist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="专辑艺术家" PlaceholderText="未提供（可选）" x:Name="AlbumArtistInput" />
+                            <TextBox Grid.Row="0" Grid.Column="1" IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.Genre, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="流派" PlaceholderText="未提供（可选）" x:Name="GenreInput" />
+                            <TextBox Grid.Row="1" Grid.Column="0" IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.Composer, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="作曲者" PlaceholderText="未提供（可选）" x:Name="ComposerInput" />
+                            <TextBox Grid.Row="1" Grid.Column="1" IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.Lyricist, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="作词者" PlaceholderText="未提供（可选）" x:Name="LyricistInput" />
+                            <TextBox Grid.Row="2" Grid.Column="0" IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.Conductor, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="指挥" PlaceholderText="未提供（可选）" x:Name="ConductorInput" />
+                            <TextBox Grid.Row="2" Grid.Column="1" IsReadOnly="{x:Bind MusicDetail.IsRemote, Mode=OneWay}" Text="{x:Bind MetadataEditor.Draft.CatalogNumber, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Header="目录编号" PlaceholderText="未提供（可选）" x:Name="CatalogNumberInput" />
+                        </Grid>
+                    </Expander>
+
+                    </Grid></UserControl>

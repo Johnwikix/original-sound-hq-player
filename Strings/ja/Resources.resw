@@ -2518,4 +2518,49 @@ SHA-256: {5}
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>初期設定はオフ。処理後の量子化に使用します。ビット透過再生ではオフにしてください。</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed カットオフ（Hz）</value></data>
   <data name="DspCrossfeedAmount" xml:space="preserve"><value>Crossfeed 強度（%）</value></data>
+  <data name="MusicAdditionalTags.Header" xml:space="preserve">
+    <value>その他の楽曲情報</value>
+  </data>
+  <data name="SortOrderAlbumArtist" xml:space="preserve">
+    <value>アルバムアーティスト</value>
+  </data>
+  <data name="SortOrderGenre" xml:space="preserve">
+    <value>ジャンル</value>
+  </data>
+  <data name="MusicTagAlbumArtist.Header" xml:space="preserve">
+    <value>アルバムアーティスト</value>
+  </data>
+  <data name="MusicTagAlbumArtist.PlaceholderText" xml:space="preserve">
+    <value>未設定（任意）</value>
+  </data>
+  <data name="MusicTagGenre.Header" xml:space="preserve">
+    <value>ジャンル</value>
+  </data>
+  <data name="MusicTagGenre.PlaceholderText" xml:space="preserve">
+    <value>未設定（任意）</value>
+  </data>
+  <data name="MusicTagComposer.Header" xml:space="preserve">
+    <value>作曲者</value>
+  </data>
+  <data name="MusicTagComposer.PlaceholderText" xml:space="preserve">
+    <value>未設定（任意）</value>
+  </data>
+  <data name="MusicTagLyricist.Header" xml:space="preserve">
+    <value>作詞者</value>
+  </data>
+  <data name="MusicTagLyricist.PlaceholderText" xml:space="preserve">
+    <value>未設定（任意）</value>
+  </data>
+  <data name="MusicTagConductor.Header" xml:space="preserve">
+    <value>指揮者</value>
+  </data>
+  <data name="MusicTagConductor.PlaceholderText" xml:space="preserve">
+    <value>未設定（任意）</value>
+  </data>
+  <data name="MusicTagCatalogNumber.Header" xml:space="preserve">
+    <value>カタログ番号</value>
+  </data>
+  <data name="MusicTagCatalogNumber.PlaceholderText" xml:space="preserve">
+    <value>未設定（任意）</value>
+  </data>
 </root>

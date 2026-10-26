@@ -1,3 +1,10 @@
+## 2026-10-26 音乐可选标签与排序
+- 字段范围：专辑艺术家、流派、作曲者、作词者、指挥、目录编号；发行方因 ATL 7.18 的 WMA 直接写入无法读回而剔除，不引入扩展标签或自行适配。
+- `Model/Music.cs`、`Utils/AudioMetadataTags.cs`、`Services/MusicDatabaseService*`：补齐六项 ATL 直接标签的读取、持久化、旧库迁移和版本化延迟回写；缺失标签为空，存量曲目按需补读，不在启动时扫描全库。
+- `View/SubView/MusicDetailsWindow*`、`ViewModel/Controls/MusicMetadataEditorViewModel.cs`：属性窗口新增默认按内容展开的可选标签区域，草稿在保存成功后发布，关闭不提交标签编辑。
+- `Services/LibraryProjectionService.cs`、`ViewModel/AppViewModel.cs`、`Strings/*/Resources.resw`：新增字段参与搜索；新增专辑艺术家和流派排序，缺失专辑艺术家回退曲目艺术家，缺失流派排后并稳定排序。
+- `_tools/MusicMetadataRegression`、`_tools/FolderScanRegression`、`_tools/SharedStateRegression`：增加实际标签往返、迁移、队列保留、稀疏字段搜索和排序回归。
+
 ## 2026-10-26 修正整数 PCM 输出并补齐播放内核 DSP
 - `AudioPlayer/Interop`：统一有符号 PCM 缩放、偶数舍入、饱和；整数/浮点输出的非有限值统一静音，24-bit 出口不再预先钳位而掩盖异常输入；增加默认关闭的 TPDF，覆盖 WASAPI/ASIO 有效位与打包格式。
 - `AudioPlayer/Decode`、`Playback`：增加普通 PCM 采样率策略、独立四倍 True Peak 估计/5ms 前瞻保护、长 IR 分级卷积和 1–8 声道逐曲响度（含后中置环绕权重）；处理曲尾、seek、无缝历史及可闻进度。DSD 路径、十段 EQ 和既有输出开关边界保持现状。

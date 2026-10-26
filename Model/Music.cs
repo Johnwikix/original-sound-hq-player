@@ -1,4 +1,4 @@
-﻿using AnimatedWin2dControls.Messages;
+using AnimatedWin2dControls.Messages;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using SQLite;
@@ -38,6 +38,21 @@ namespace WinUIMusicPlayer.Model
         public string Author { get; set => SetProperty(ref field, value); } = string.Empty;
         public TimeSpan Duration { get; set; }
         public string Album { get; set => SetProperty(ref field, value); } = string.Empty;
+
+        /// <summary>获取或设置专辑艺术家；未提供时为空。</summary>
+        public string AlbumArtist { get; set => SetProperty(ref field, value ?? string.Empty); } = string.Empty;
+        /// <summary>获取或设置流派；未提供时为空。</summary>
+        public string Genre { get; set => SetProperty(ref field, value ?? string.Empty); } = string.Empty;
+        /// <summary>获取或设置作曲者；未提供时为空。</summary>
+        public string Composer { get; set => SetProperty(ref field, value ?? string.Empty); } = string.Empty;
+        /// <summary>获取或设置作词者；未提供时为空。</summary>
+        public string Lyricist { get; set => SetProperty(ref field, value ?? string.Empty); } = string.Empty;
+        /// <summary>获取或设置指挥；未提供时为空。</summary>
+        public string Conductor { get; set => SetProperty(ref field, value ?? string.Empty); } = string.Empty;
+        /// <summary>获取或设置目录编号；未提供时为空。</summary>
+        public string CatalogNumber { get; set => SetProperty(ref field, value ?? string.Empty); } = string.Empty;
+        /// <summary>获取或设置附加标签是否已读取；区分未补读与文件确实没有标签。</summary>
+        public bool AdditionalMetadataRead { get; set; }
 
         public string FolderPath { get; set; } = string.Empty;
         public string LastLevelFolderPath { get; set => SetProperty(ref field, value); } = string.Empty;

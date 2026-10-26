@@ -23,12 +23,14 @@ public partial class MusicDatabaseService
         var disk = music.DiskNumber;
         var year = music.Year;
         var updated = music.UpdateTime;
+        var additional = music.AdditionalMetadataRead ? AdditionalMusicMetadata.From(music) : (AdditionalMusicMetadata?)null;
         return _dbConnection.RunInTransactionAsync(db =>
         {
             token.ThrowIfCancellationRequested();
             LyricsRepository.SaveInTransaction(db, id, document, expectedRevision, "User", lyricsChanged);
             db.Execute("UPDATE Music SET Title=?,Author=?,Album=?,TrackNumber=?,DiskNumber=?,Year=?,UpdateTime=? WHERE Id=?",
                 title, author, album, track, disk, year, updated, id);
+            if (additional is { } tags) MusicMetadataStorage.Save(db, id, tags);
         });
     }
 
@@ -40,6 +42,8 @@ public partial class MusicDatabaseService
         {
             Path = Path.GetFullPath(music.Path), Title = music.Title, Album = music.Album,
             Author = music.Author, TrackNumber = music.TrackNumber, DiskNumber = music.DiskNumber,
+            AlbumArtist = music.AlbumArtist, Genre = music.Genre, Composer = music.Composer, Lyricist = music.Lyricist, Conductor = music.Conductor, CatalogNumber = music.CatalogNumber,
+            MetadataVersion = music.AdditionalMetadataRead ? 1 : 0,
             Year = music.Year, Cover = cover is null ? null : (byte[])cover.Clone(),
             Lyrics = document.Original.Content, LyricsFormat = document.Original.Format, TranslationLrc = document.TranslationLrc,
             PronunciationLrc = document.PronunciationLrc, LyricsSchemaVersion = 2
@@ -55,9 +59,22 @@ public partial class MusicDatabaseService
             {
                 token.ThrowIfCancellationRequested();
                 LyricsRepository.SaveInTransaction(db, musicId, document, expectedRevision, "User", lyricsChanged);
+                // 未补读的窗口不能用空快照替换已经排队的新标签。
+                if (request.MetadataVersion == 0 && db.Find<PendingMetadataWrite>(request.Path) is { MetadataVersion: 1 } previous)
+                {
+                    request.MetadataVersion = 1;
+                    request.AlbumArtist = previous.AlbumArtist;
+                    request.Genre = previous.Genre;
+                    request.Composer = previous.Composer;
+                    request.Lyricist = previous.Lyricist;
+                    request.Conductor = previous.Conductor;
+                    request.CatalogNumber = previous.CatalogNumber;
+                }
                 db.InsertOrReplace(request);
                 db.Execute("UPDATE Music SET Title=?,Author=?,Album=?,TrackNumber=?,DiskNumber=?,Year=?,UpdateTime=? WHERE Id=?",
                     request.Title, request.Author, request.Album, request.TrackNumber, request.DiskNumber, request.Year, updated, musicId);
+                if (request.MetadataVersion == 1)
+                    MusicMetadataStorage.Save(db, musicId, new(request.AlbumArtist, request.Genre, request.Composer, request.Lyricist, request.Conductor, request.CatalogNumber));
             });
         }
         finally { _metadataGate.Release(); }
@@ -75,6 +92,7 @@ public partial class MusicDatabaseService
                 cancellationToken.ThrowIfCancellationRequested();
                 try
                 {
+                    if (request.MetadataVersion > 1) throw new FormatException("Unsupported queued metadata version.");
                     if (request.LyricsSchemaVersion > 2) throw new FormatException("Unsupported queued lyrics schema version.");
                     var parser = new LyricsParser();
                     if (request.LyricsSchemaVersion < 2)
@@ -101,6 +119,8 @@ public partial class MusicDatabaseService
                     ToolUtils.SaveMetaData(new Music
                     {
                         Title = request.Title, Album = request.Album, Author = request.Author,
+                        AlbumArtist = request.AlbumArtist, Genre = request.Genre, Composer = request.Composer, Lyricist = request.Lyricist, Conductor = request.Conductor, CatalogNumber = request.CatalogNumber,
+                        AdditionalMetadataRead = request.MetadataVersion == 1,
                         TrackNumber = request.TrackNumber, DiskNumber = request.DiskNumber, Year = request.Year
                     }, request.Path, request.Cover, export, preserveLyrics: request.PreserveFileLyrics);
                     await _dbConnection.DeleteAsync(request);
