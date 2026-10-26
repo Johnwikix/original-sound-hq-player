@@ -1745,7 +1745,7 @@
     <value>Esperando el estado de reproducción. Los controles están temporalmente deshabilitados.</value>
   </data>
   <data name="DspStereoOnly" xml:space="preserve">
-    <value>Stereo effects are bypassed for this layout; supported multichannel convolution and loudness processing remain available.</value>
+    <value>Los efectos estéreo se omiten en esta disposición. La convolución y el análisis de sonoridad multicanal compatibles siguen disponibles.</value>
   </data>
   <data name="DspAnalyzing" xml:space="preserve">
     <value>Analizando la pista; se reproduce con una atenuación conservadora hasta aplicar suavemente y guardar la ganancia medida.</value>
@@ -1777,7 +1777,7 @@
   <data name="DspConvolutionSection.Text" xml:space="preserve"><value>Convolution correction</value></data>
   <data name="DspConvolution" xml:space="preserve"><value>Enable convolution correction</value></data>
   <data name="DspConvolutionToggle.AutomationProperties.Name" xml:space="preserve"><value>Enable convolution correction</value></data>
-  <data name="DspIrDescription.Text" xml:space="preserve"><value>WAV IR: 1–8 channels; mono applies to every output, otherwise channel counts must match. Maximum 2 s, 262144 taps/channel and 1048576 total output taps, including resampling. DSD bitstreams bypass DSP.</value></data>
+  <data name="DspIrDescription.Text" xml:space="preserve"><value>IR WAV de 1–8 canales. Mono se aplica a todas las salidas; los demás deben coincidir con la salida. Tras remuestreo: máximo 2 s, 262144 coeficientes por canal y 1048576 en total. DSD se omite.</value></data>
   <data name="DspIrFile" xml:space="preserve"><value>Impulse response file</value></data>
   <data name="DspIrImport.Content" xml:space="preserve"><value>Import WAV…</value></data>
   <data name="DspIrClear.Content" xml:space="preserve"><value>Remove</value></data>
@@ -1791,7 +1791,7 @@
   <data name="DspIrFailed" xml:space="preserve"><value>IR no disponible: archivo inválido, canales incompatibles o límite de duración/taps superado.</value></data>
   <data name="DspIrUnsupported" xml:space="preserve"><value>La convolución admite 1–8 canales PCM. La IR debe ser mono o coincidir con la salida.</value></data>
   <data name="DspIrOff" xml:space="preserve"><value>Convolution is inactive. Import an IR and enable correction to apply it during PCM playback.</value></data>
-  <data name="DspIrImportError" xml:space="preserve"><value>Use a valid WAV IR within the channel, duration and tap budgets.</value></data>
+  <data name="DspIrImportError" xml:space="preserve"><value>Seleccione una IR WAV válida dentro de los límites de canales, duración y coeficientes.</value></data>
   <data name="ResponseTitle.Text" xml:space="preserve"><value>Combined frequency response</value></data>
   <data name="ResponsePlotName" xml:space="preserve"><value>EQ and convolution frequency response. Frequency in Hz, gain in dB.</value></data>
   <data name="ResponseLeft.Content" xml:space="preserve"><value>Left</value></data>

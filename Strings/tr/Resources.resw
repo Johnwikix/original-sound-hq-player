@@ -1748,7 +1748,7 @@
     <value>Oynatma durumu bekleniyor. Efekt denetimleri geçici olarak kullanılamıyor.</value>
   </data>
   <data name="DspStereoOnly" xml:space="preserve">
-    <value>Stereo effects are bypassed for this layout; supported multichannel convolution and loudness processing remain available.</value>
+    <value>Bu düzende stereo efektler atlanır. Desteklenen çok kanallı evrişim ve ses yüksekliği analizi kullanılabilir.</value>
   </data>
   <data name="DspAnalyzing" xml:space="preserve">
     <value>Bu parça analiz ediliyor; ölçülen kazanç yumuşak biçimde uygulanıp önbelleğe alınana kadar temkinli zayıflatmayla çalınıyor.</value>
@@ -1780,7 +1780,7 @@
   <data name="DspConvolutionSection.Text" xml:space="preserve"><value>Evrişim düzeltmesi</value></data>
   <data name="DspConvolution" xml:space="preserve"><value>Evrişim düzeltmesini etkinleştir</value></data>
   <data name="DspConvolutionToggle.AutomationProperties.Name" xml:space="preserve"><value>Evrişim düzeltmesini etkinleştir</value></data>
-  <data name="DspIrDescription.Text" xml:space="preserve"><value>WAV IR: 1–8 channels; mono applies to every output, otherwise channel counts must match. Maximum 2 s, 262144 taps/channel and 1048576 total output taps, including resampling. DSD bitstreams bypass DSP.</value></data>
+  <data name="DspIrDescription.Text" xml:space="preserve"><value>1–8 kanallı WAV IR. Mono tüm çıkışlara uygulanır; diğer kanal sayıları çıkışla eşleşmelidir. Yeniden örnekleme sonrası da en fazla 2 sn, kanal başına 262144 ve tüm çıkışlarda toplam 1048576 tap. DSD atlanır.</value></data>
   <data name="DspIrFile" xml:space="preserve"><value>Darbe yanıtı dosyası</value></data>
   <data name="DspIrImport.Content" xml:space="preserve"><value>WAV içe aktar…</value></data>
   <data name="DspIrClear.Content" xml:space="preserve"><value>Kaldır</value></data>
@@ -1794,7 +1794,7 @@
   <data name="DspIrFailed" xml:space="preserve"><value>IR kullanılamıyor: dosya geçersiz, kanallar eşleşmiyor veya süre/tap sınırı aşıldı.</value></data>
   <data name="DspIrUnsupported" xml:space="preserve"><value>Evrişim 1–8 PCM kanalını destekler. IR mono olmalı veya çıkış kanallarıyla tam eşleşmelidir.</value></data>
   <data name="DspIrOff" xml:space="preserve"><value>Evrişim etkin değil. PCM çalma sırasında uygulamak için bir IR içe aktarın ve düzeltmeyi etkinleştirin.</value></data>
-  <data name="DspIrImportError" xml:space="preserve"><value>Use a valid WAV IR within the channel, duration and tap budgets.</value></data>
+  <data name="DspIrImportError" xml:space="preserve"><value>Kanal, süre ve tap sınırlarına uyan geçerli bir WAV IR seçin.</value></data>
   <data name="ResponseTitle.Text" xml:space="preserve"><value>Birleşik frekans yanıtı</value></data>
   <data name="ResponsePlotName" xml:space="preserve"><value>EQ ve evrişim frekans yanıtı. Frekans Hz, kazanç dB cinsindendir.</value></data>
   <data name="ResponseLeft.Content" xml:space="preserve"><value>Sol</value></data>
