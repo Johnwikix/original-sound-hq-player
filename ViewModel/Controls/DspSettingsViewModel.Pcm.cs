@@ -14,7 +14,7 @@ public partial class DspSettingsViewModel
 
     public bool ResampleTargetEditable => PcmConfigurationEditable && ResampleModeIndex != 0;
     public string ResampleTargetLabel => ToolUtils.GetString(ResampleModeIndex == 2 ? "DspPcmIntegerLimit" : "DspPcmTargetRate");
-    public bool PeakCeilingEditable => EffectsActive && (TruePeakLimiterEnabled || NormalizeEditable && NormalizeLoudness);
+    public bool PeakCeilingEditable => EffectsActive && (CompressorEnabled || TruePeakLimiterEnabled || NormalizeEditable && NormalizeLoudness);
     public bool CrossfeedControlsEditable => CrossfeedEditable && StereoSupported;
     public bool CrossfeedCutoffEditable => CrossfeedControlsEditable && CrossfeedAmount > 0;
 
@@ -80,7 +80,7 @@ public partial class DspSettingsViewModel
         }
     }
 
-    /// <summary>响度标准化与最终限幅共用的峰值上限，单位 dBTP；保留已有配置字段。</summary>
+    /// <summary>响度标准化、压限器与最终限幅共用的上限，单位 dB；保留已有配置字段。</summary>
     public double TruePeakCeilingDb
     {
         get => field;

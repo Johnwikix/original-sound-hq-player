@@ -14,7 +14,7 @@ public sealed record DspSettings
     public int ResampleTargetRate { get; init; } = 192000;
     /// <summary>获取是否启用最终 PCM 四倍 True Peak 前瞻保护。</summary>
     public bool TruePeakLimiterEnabled { get; init; }
-    /// <summary>获取响度标准化与最终 PCM 限幅共用的峰值上限，单位 dBTP。</summary>
+    /// <summary>响度标准化、压限器采样保护与最终 True Peak 保护共用的上限，单位 dB。</summary>
     public double TruePeakCeilingDb { get; init; } = -1;
     /// <summary>获取整数输出是否使用 TPDF 抖动；默认关闭以保留位透明路径。</summary>
     public bool DitherEnabled { get; init; }

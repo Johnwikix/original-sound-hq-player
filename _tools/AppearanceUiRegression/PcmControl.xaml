@@ -24,6 +24,9 @@
     <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('DspNormalizeDescription')}" Header="{x:Bind tool:ToolUtils.GetString('DspNormalize')}" IsEnabled="{x:Bind ViewModel.NormalizeEditable, Mode=OneWay}" x:Name="NormalizeCard">
         <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.NormalizeLoudness, Mode=TwoWay}" x:Name="Normalize" />
     </controls:SettingsCard>
+    <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspCompressor')}" Description="{x:Bind tool:ToolUtils.GetString('DspCompressorDescription')}" IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}" x:Name="CompressorCard">
+        <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.CompressorEnabled, Mode=TwoWay}" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('DspCompressor')}" x:Name="Compressor" />
+    </controls:SettingsCard>
     <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspTruePeakLimiter')}" Description="{x:Bind tool:ToolUtils.GetString('DspTruePeakHelp')}" IsEnabled="{x:Bind ViewModel.PcmConfigurationEditable, Mode=OneWay}" x:Name="LimiterCard">
         <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.TruePeakLimiterEnabled, Mode=TwoWay}" x:Name="Limiter" />
     </controls:SettingsCard>

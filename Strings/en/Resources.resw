@@ -2316,7 +2316,7 @@ SHA-256: {5}
     <value>Compressor / limiter</value>
   </data>
   <data name="DspCompressorDescription" xml:space="preserve">
-    <value>Reduce loud passages and lift quiet passages with makeup gain. Channels are linked; output sample peaks are limited to −1 dBFS.</value>
+    <value>Reduce loud passages and lift quiet passages with makeup gain. Channels are linked; sample peaks use the shared ceiling below.</value>
   </data>
   <data name="DspCompressorThreshold" xml:space="preserve">
     <value>Threshold (dBFS)</value>
@@ -2513,7 +2513,7 @@ SHA-256: {5}
   <data name="DspPcmTargetRate" xml:space="preserve"><value>Target sample rate</value></data>
   <data name="DspTruePeakLimiter" xml:space="preserve"><value>True Peak protection</value></data>
   <data name="DspTruePeakHelp" xml:space="preserve"><value>4× interpolation and 5 ms lookahead for final PCM; system mixing and device processing are outside its scope.</value></data>
-  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Shared peak ceiling (dBTP)</value></data>
+  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Shared peak ceiling (dB)</value></data>
   <data name="DspPcmDither" xml:space="preserve"><value>Integer output TPDF dither</value></data>
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>Off by default. Useful when reducing bit depth after processing; disable for bit-transparent playback.</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed cutoff (Hz)</value></data>
@@ -2564,6 +2564,6 @@ SHA-256: {5}
     <value>Not provided (optional)</value>
   </data>
   <data name="DspPcmIntegerLimit" xml:space="preserve"><value>Integer-multiple rate limit</value></data>
-  <data name="DspPeakCeilingHelp" xml:space="preserve"><value>Loudness normalization reserves source peak headroom at this ceiling. True Peak uses the same ceiling after EQ, convolution, compression and volume.</value></data>
+  <data name="DspPeakCeilingHelp" xml:space="preserve"><value>Loudness normalization caps estimated source true peaks. The compressor caps sample peaks before volume. True Peak caps estimated final PCM true peaks. All three use this ceiling.</value></data>
   <data name="DspCrossfeedCustom" xml:space="preserve"><value>Custom</value></data>
 </root>

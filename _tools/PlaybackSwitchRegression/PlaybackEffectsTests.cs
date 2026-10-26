@@ -51,6 +51,23 @@ internal static unsafe partial class Program
             limiter.Process(impulse, 1, settings with { CompressorMakeupDb = 18 });
             Require(impulse.All(x => double.IsFinite(x) && Math.Abs(x) <= 0.891251), "Invalid impulse output");
         });
+        Run("Dynamics: compressor-only processing follows the shared peak ceiling", () =>
+        {
+            foreach (double ceiling in new[] { -12.0, -6, -1, -0.1 })
+            {
+                var processor = new DynamicsProcessor(48000, 2);
+                var settings = new DspSettings { CompressorEnabled = true, CompressorRatio = 1,
+                    CompressorMakeupDb = 18, TruePeakCeilingDb = ceiling };
+                double[] audio = [1.5, -0.75, 1.5, -0.75];
+                processor.Process(audio, 2, settings);
+                double expected = Math.Pow(10, ceiling / 20);
+                Require(Math.Abs(audio[0] - expected) < 1e-12 && audio[1] == -audio[0] / 2,
+                    "Compressor retained a separate fixed ceiling or changed the channel ratio");
+                audio[0] = 1.5; audio[1] = -0.75;
+                processor.Process(audio, 1, settings with { TruePeakCeilingDb = -12 });
+                Require(audio[0] <= Math.Pow(10, -12.0 / 20) + 1e-12, "Lowered ceiling was not applied immediately");
+            }
+        });
         Run("Dynamics: bypass is bit-exact and active processing has no managed block allocations", () =>
         {
             var processor = new DynamicsProcessor(48000, 2);

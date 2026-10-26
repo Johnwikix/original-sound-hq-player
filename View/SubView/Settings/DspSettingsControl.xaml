@@ -102,30 +102,6 @@
                         <ComboBoxItem Content="5×" />
                     </ComboBox>
                 </controls:SettingsCard>
-                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspCompressor')}"
-                    Description="{x:Bind tool:ToolUtils.GetString('DspCompressorDescription')}"
-                    IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}">
-                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.CompressorEnabled, Mode=TwoWay}"
-                        AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('DspCompressor')}" />
-                </controls:SettingsCard>
-                <StackPanel Spacing="{StaticResource SettingsCardSpacing}"
-                    Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.CompressorEnabled), Mode=OneWay}">
-                    <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspCompressorThreshold')}" IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}">
-                        <NumberBox Width="220" Minimum="-40" Maximum="-3" SmallChange="1"
-                            SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.CompressorThresholdDb, Mode=TwoWay}"
-                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('DspCompressorThreshold')}" />
-                    </controls:SettingsCard>
-                    <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspCompressorRatio')}" IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}">
-                        <NumberBox Width="220" Minimum="1" Maximum="20" SmallChange="0.5"
-                            SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.CompressorRatio, Mode=TwoWay}"
-                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('DspCompressorRatio')}" />
-                    </controls:SettingsCard>
-                    <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspCompressorMakeup')}" IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}">
-                        <NumberBox Width="220" Minimum="0" Maximum="18" SmallChange="0.5"
-                            SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.CompressorMakeupDb, Mode=TwoWay}"
-                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('DspCompressorMakeup')}" />
-                    </controls:SettingsCard>
-                </StackPanel>
                 <controls:SettingsCard
                     Description="{x:Bind tool:ToolUtils.GetString('DspEqualizerDescription')}"
                     Header="{x:Bind tool:ToolUtils.GetString('DspEqualizer')}"
@@ -156,6 +132,30 @@
                     Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                     Text="{x:Bind ViewModel.AnalysisText, Mode=OneWay}"
                     TextWrapping="Wrap" />
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspCompressor')}"
+                    Description="{x:Bind tool:ToolUtils.GetString('DspCompressorDescription')}"
+                    IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}">
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.CompressorEnabled, Mode=TwoWay}"
+                        AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('DspCompressor')}" />
+                </controls:SettingsCard>
+                <StackPanel Spacing="{StaticResource SettingsCardSpacing}"
+                    Visibility="{x:Bind tool:BindUtils.BoolToVisibilityConverter(ViewModel.CompressorEnabled), Mode=OneWay}">
+                    <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspCompressorThreshold')}" IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}">
+                        <NumberBox Width="220" Minimum="-40" Maximum="-3" SmallChange="1"
+                            SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.CompressorThresholdDb, Mode=TwoWay}"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('DspCompressorThreshold')}" />
+                    </controls:SettingsCard>
+                    <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspCompressorRatio')}" IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}">
+                        <NumberBox Width="220" Minimum="1" Maximum="20" SmallChange="0.5"
+                            SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.CompressorRatio, Mode=TwoWay}"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('DspCompressorRatio')}" />
+                    </controls:SettingsCard>
+                    <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspCompressorMakeup')}" IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}">
+                        <NumberBox Width="220" Minimum="0" Maximum="18" SmallChange="0.5"
+                            SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.CompressorMakeupDb, Mode=TwoWay}"
+                            AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('DspCompressorMakeup')}" />
+                    </controls:SettingsCard>
+                </StackPanel>
                 <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspTruePeakLimiter')}"
                     Description="{x:Bind tool:ToolUtils.GetString('DspTruePeakHelp')}"
                     IsEnabled="{x:Bind ViewModel.PcmConfigurationEditable, Mode=OneWay}">

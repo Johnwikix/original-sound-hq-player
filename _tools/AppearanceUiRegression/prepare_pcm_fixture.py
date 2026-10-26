@@ -11,7 +11,7 @@ ET.register_namespace("x", x[1:-1])
 ET.register_namespace("controls", c[1:-1])
 source = ET.parse(root / "View/SubView/Settings/DspSettingsControl.xaml")
 keys = {"ResampleModeIndex": "ResampleMode", "ResampleTargetIndex": "ResampleTarget",
-        "NormalizeLoudness": "Normalize", "TruePeakLimiterEnabled": "Limiter", "TruePeakCeilingDb": "Ceiling",
+        "NormalizeLoudness": "Normalize", "CompressorEnabled": "Compressor", "TruePeakLimiterEnabled": "Limiter", "TruePeakCeilingDb": "Ceiling",
         "CrossfeedIndex": "CrossfeedPreset", "CrossfeedAmount": "CrossfeedAmount", "CrossfeedCutoffHz": "CrossfeedCutoff"}
 resources = {e.get("name"): e.findtext("value") for e in
              ET.parse(root / "Strings/en/Resources.resw").getroot().findall("data")}

@@ -29,14 +29,21 @@ internal static class PcmSettingsRegression
             Check(target.IsEnabled && vm.ResampleTargetLabel == "Integer-multiple rate limit", "Integer mode label did not update");
             mode.SelectedIndex = 0;
             Check(!target.IsEnabled && target.SelectedIndex == 3, "Source mode lost the stored target");
-            Check(!ceiling.IsEnabled, "Both peak consumers off must disable ceiling");
+            Check(!ceiling.IsEnabled, "All three peak consumers off must disable ceiling");
             vm.NormalizeLoudness = true;
             Check(ceiling.IsEnabled, "Normalization alone must enable shared ceiling");
             ceiling.Value = -6;
             Check(vm.TruePeakCeilingDb == -6, "Ceiling input did not reach the production ViewModel");
             vm.NormalizeLoudness = false;
+            var compressor = (ToggleSwitch)view.FindName("Compressor");
+            compressor.IsOn = true;
+            Check(ceiling.IsEnabled, "Compressor alone must enable the shared ceiling");
+            ceiling.Value = -9;
+            Check(vm.TruePeakCeilingDb == -9, "Compressor ceiling did not use the shared input");
+            compressor.IsOn = false;
+            Check(!ceiling.IsEnabled && ceiling.Value == -9, "Disabling compressor lost the shared preference");
             vm.TruePeakLimiterEnabled = true;
-            Check(ceiling.IsEnabled && ceiling.Value == -6, "Limiter alone lost the shared value");
+            Check(ceiling.IsEnabled && ceiling.Value == -9, "Limiter alone lost the shared value");
             vm.PublishPcmState(true, canSeek: false);
             Check(!((ToggleSwitch)view.FindName("Limiter")).IsEnabled && ceiling.IsEnabled,
                 "Nonseekable stream must retain hot ceiling editing without allowing topology changes");
@@ -49,7 +56,7 @@ internal static class PcmSettingsRegression
             vm.PublishPcmState(true, channels: 6);
             Check(!preset.IsEnabled && !amount.IsEnabled && !cutoff.IsEnabled, "Multichannel crossfeed controls remained editable");
             vm.PublishPcmState(false);
-            Check(!target.IsEnabled && !ceiling.IsEnabled && ceiling.Value == -6, "DSP bypass lost or exposed dependent settings");
+            Check(!target.IsEnabled && !ceiling.IsEnabled && ceiling.Value == -9, "DSP bypass lost or exposed dependent settings");
         }
         finally { host.Children.Remove(view); }
     }

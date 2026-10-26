@@ -1,3 +1,8 @@
+## 2026-10-26 压限器接入共用峰值上限
+- `DynamicsProcessor`：采样峰值保护改用共用上限，默认仍为 −1 dB；旧的非默认上限现在同时影响压限器，IPC 字段与版本不变。
+- `DspSettingsControl`、ViewModel 与七语言资源：压限器移至峰值保护区域，三项任一启用即可编辑上限，并说明采样峰值与 True Peak 的区别。
+- 播放回归 354/354、真实 WinUI 编译绑定、七语言资源及 CRLF 检查通过；覆盖仅开启压限器、修改上限、关闭后保留数值及即时降低峰值，重新发布 `Player/AudioPlayer.exe`。
+
 ## 2026-10-26 统一 DSP 峰值上限并补齐参数联动
 - `DspSettingsViewModel.Pcm`、`DspSettingsControl.xaml`：响度标准化与 True Peak 共用可输入的峰值上限，任一功能启用即可编辑；重采样目标随模式启用并区分目标/整数倍上限，Crossfeed 强度/截止频率统一双声道限制并显示自定义档位。
 - `LoudnessMeter`、`PcmEffects`：固定响度增益改用保存的峰值上限；保留默认 −1 dBTP、旧配置字段和 v7 协议，非默认旧上限现在也影响响度标准化；重新发布 `Player/AudioPlayer.exe`。

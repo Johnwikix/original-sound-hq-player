@@ -51,7 +51,12 @@ public partial class DspSettingsViewModel
     public bool CompressorEnabled
     {
         get => field;
-        set { if (SetProperty(ref field, value)) SettingChanged(LicenseFeature.None); }
+        set
+        {
+            if (!SetProperty(ref field, value)) return;
+            OnPropertyChanged(nameof(PeakCeilingEditable));
+            SettingChanged(LicenseFeature.None);
+        }
     }
 
     public double CompressorThresholdDb

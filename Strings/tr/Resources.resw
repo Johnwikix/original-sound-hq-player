@@ -2316,7 +2316,7 @@ SHA-256: {5}
     <value>Kompresör / sınırlayıcı</value>
   </data>
   <data name="DspCompressorDescription" xml:space="preserve">
-    <value>Yüksek sesli bölümleri kısar ve telafi kazancıyla sessiz bölümleri yükseltir. Kanallar bağlantılıdır; örnek tepe noktaları −1 dBFS ile sınırlıdır.</value>
+    <value>Yüksek sesli bölümleri kısar ve telafi kazancıyla sessiz bölümleri yükseltir. Kanallar bağlantılıdır; örnek tepeleri aşağıdaki ortak sınırı kullanır.</value>
   </data>
   <data name="DspCompressorThreshold" xml:space="preserve">
     <value>Eşik (dBFS)</value>
@@ -2513,7 +2513,7 @@ SHA-256: {5}
   <data name="DspPcmTargetRate" xml:space="preserve"><value>Hedef örnekleme hızı</value></data>
   <data name="DspTruePeakLimiter" xml:space="preserve"><value>True Peak koruması</value></data>
   <data name="DspTruePeakHelp" xml:space="preserve"><value>Son PCM için 4× enterpolasyon ve 5 ms öngörü; sistem karıştırıcısı ve aygıt işlemesi kapsam dışıdır.</value></data>
-  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Ortak tepe sınırı (dBTP)</value></data>
+  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Ortak tepe sınırı (dB)</value></data>
   <data name="DspPcmDither" xml:space="preserve"><value>Tamsayı çıkışı TPDF dither</value></data>
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>Varsayılan kapalıdır. DSP sonrası bit derinliğini azaltmak için; bit saydam çalma için kapatın.</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed kesim frekansı (Hz)</value></data>
@@ -2564,6 +2564,6 @@ SHA-256: {5}
     <value>Belirtilmemiş (isteğe bağlı)</value>
   </data>
   <data name="DspPcmIntegerLimit" xml:space="preserve"><value>Tam sayı katı hız sınırı</value></data>
-  <data name="DspPeakCeilingHelp" xml:space="preserve"><value>Ses yüksekliği normalleştirme, kaynak tepe noktaları için bu sınıra göre pay bırakır. True Peak; EQ, evrişim, sıkıştırma ve ses düzeyi işlemlerinden sonra aynı sınırı kullanır.</value></data>
+  <data name="DspPeakCeilingHelp" xml:space="preserve"><value>Bu ortak sınır; normalleştirmede tahmini kaynak tepe noktalarını, kompresörde ses düzeyinden önce örnek tepelerini ve True Peak ile son PCM gerçek tepe tahminlerini sınırlar.</value></data>
   <data name="DspCrossfeedCustom" xml:space="preserve"><value>Özel</value></data>
 </root>

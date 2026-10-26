@@ -2316,7 +2316,7 @@ SHA-256: {5}
     <value>Kompressor / Limiter</value>
   </data>
   <data name="DspCompressorDescription" xml:space="preserve">
-    <value>Laute Passagen absenken und leise Passagen mit Aufholverstärkung anheben. Gekoppelte Kanäle; Sample-Spitzen auf −1 dBFS begrenzt.</value>
+    <value>Laute Passagen absenken und leise Passagen mit Aufholverstärkung anheben. Die Kanäle sind gekoppelt; Sample-Spitzen nutzen die gemeinsame Obergrenze unten.</value>
   </data>
   <data name="DspCompressorThreshold" xml:space="preserve">
     <value>Schwellenwert (dBFS)</value>
@@ -2513,7 +2513,7 @@ SHA-256: {5}
   <data name="DspPcmTargetRate" xml:space="preserve"><value>Zielabtastrate</value></data>
   <data name="DspTruePeakLimiter" xml:space="preserve"><value>True-Peak-Schutz</value></data>
   <data name="DspTruePeakHelp" xml:space="preserve"><value>4-fache Interpolation und 5 ms Vorschau für finales PCM; Systemmixer und Geräteverarbeitung bleiben außerhalb.</value></data>
-  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Gemeinsame Spitzenobergrenze (dBTP)</value></data>
+  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Gemeinsame Spitzenobergrenze (dB)</value></data>
   <data name="DspPcmDither" xml:space="preserve"><value>TPDF-Dither für Integer-Ausgabe</value></data>
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>Standardmäßig aus. Zur Wortbreitenreduktion nach DSP; für bittransparente Wiedergabe ausschalten.</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed-Grenzfrequenz (Hz)</value></data>
@@ -2564,6 +2564,6 @@ SHA-256: {5}
     <value>Nicht angegeben (optional)</value>
   </data>
   <data name="DspPcmIntegerLimit" xml:space="preserve"><value>Obergrenze für ganzzahlige Vielfache</value></data>
-  <data name="DspPeakCeilingHelp" xml:space="preserve"><value>Die Lautheitsnormalisierung reserviert Spitzenreserve für die Quelle. True Peak nutzt dieselbe Obergrenze nach EQ, Faltung, Kompression und Lautstärke.</value></data>
+  <data name="DspPeakCeilingHelp" xml:space="preserve"><value>Diese Obergrenze gilt gemeinsam: Lautheitsnormalisierung begrenzt geschätzte Quellspitzen, der Kompressor Sample-Spitzen vor der Lautstärke und True Peak die geschätzten Spitzen des finalen PCM.</value></data>
   <data name="DspCrossfeedCustom" xml:space="preserve"><value>Benutzerdefiniert</value></data>
 </root>

@@ -2316,7 +2316,7 @@ SHA-256: {5}
     <value>Компрессор / лимитер</value>
   </data>
   <data name="DspCompressorDescription" xml:space="preserve">
-    <value>Приглушает громкие фрагменты и усиливает тихие компенсирующим усилением. Каналы связаны; пики отсчётов ограничены −1 dBFS.</value>
+    <value>Приглушает громкие фрагменты и усиливает тихие компенсирующим усилением. Каналы связаны; пики отсчётов используют общий потолок ниже.</value>
   </data>
   <data name="DspCompressorThreshold" xml:space="preserve">
     <value>Порог (dBFS)</value>
@@ -2513,7 +2513,7 @@ SHA-256: {5}
   <data name="DspPcmTargetRate" xml:space="preserve"><value>Целевая частота дискретизации</value></data>
   <data name="DspTruePeakLimiter" xml:space="preserve"><value>Защита True Peak</value></data>
   <data name="DspTruePeakHelp" xml:space="preserve"><value>Интерполяция 4× и упреждение 5 мс для итогового PCM; микшер ОС и обработка устройства не учитываются.</value></data>
-  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Общий потолок пика (dBTP)</value></data>
+  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Общий потолок пика (dB)</value></data>
   <data name="DspPcmDither" xml:space="preserve"><value>TPDF-дизеринг целого PCM</value></data>
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>По умолчанию выключен. Для уменьшения разрядности после DSP; выключите для побитовой передачи.</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Частота Crossfeed (Гц)</value></data>
@@ -2564,6 +2564,6 @@ SHA-256: {5}
     <value>Не указано (необязательно)</value>
   </data>
   <data name="DspPcmIntegerLimit" xml:space="preserve"><value>Предел целого кратного частоты</value></data>
-  <data name="DspPeakCeilingHelp" xml:space="preserve"><value>Нормализация оставляет запас для пиков источника. True Peak использует тот же потолок после эквалайзера, свёртки, компрессии и регулировки громкости.</value></data>
+  <data name="DspPeakCeilingHelp" xml:space="preserve"><value>Общий потолок используется нормализацией для оценки пиков источника, компрессором для пиков отсчётов до регулировки громкости и True Peak для оценки истинных пиков конечного PCM.</value></data>
   <data name="DspCrossfeedCustom" xml:space="preserve"><value>Пользовательский</value></data>
 </root>

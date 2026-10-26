@@ -2316,7 +2316,7 @@ SHA-256: {5}
     <value>コンプレッサー／リミッター</value>
   </data>
   <data name="DspCompressorDescription" xml:space="preserve">
-    <value>大きな音を抑え、補償ゲインで小さな音を持ち上げます。チャンネルを連動し、サンプルピークを −1 dBFS に制限します。</value>
+    <value>大きな音を抑え、補償ゲインで小さな音を持ち上げます。チャンネルを連動し、サンプルピークには下の共通上限を適用します。</value>
   </data>
   <data name="DspCompressorThreshold" xml:space="preserve">
     <value>しきい値（dBFS）</value>
@@ -2513,7 +2513,7 @@ SHA-256: {5}
   <data name="DspPcmTargetRate" xml:space="preserve"><value>目標サンプリング周波数</value></data>
   <data name="DspTruePeakLimiter" xml:space="preserve"><value>True Peak 保護</value></data>
   <data name="DspTruePeakHelp" xml:space="preserve"><value>4 倍補間と 5 ms 先読みによる最終 PCM の保護。システムミキサーや機器内部の処理は対象外です。</value></data>
-  <data name="DspTruePeakCeiling" xml:space="preserve"><value>共通ピーク上限（dBTP）</value></data>
+  <data name="DspTruePeakCeiling" xml:space="preserve"><value>共通ピーク上限（dB）</value></data>
   <data name="DspPcmDither" xml:space="preserve"><value>整数出力 TPDF ディザー</value></data>
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>初期設定はオフ。処理後の量子化に使用します。ビット透過再生ではオフにしてください。</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed カットオフ（Hz）</value></data>
@@ -2564,6 +2564,6 @@ SHA-256: {5}
     <value>未設定（任意）</value>
   </data>
   <data name="DspPcmIntegerLimit" xml:space="preserve"><value>整数倍サンプリング周波数の上限</value></data>
-  <data name="DspPeakCeilingHelp" xml:space="preserve"><value>ラウドネス正規化はこの上限に合わせて音源のピーク余裕を確保します。True Peak は EQ・畳み込み・圧縮・音量処理後に同じ上限で最終 PCM を保護します。</value></data>
+  <data name="DspPeakCeilingHelp" xml:space="preserve"><value>共通の上限です。ラウドネス正規化は音源の推定ピーク、コンプレッサーは音量処理前のサンプルピーク、True Peak は最終 PCM の推定トゥルーピークを制限します。</value></data>
   <data name="DspCrossfeedCustom" xml:space="preserve"><value>カスタム</value></data>
 </root>
