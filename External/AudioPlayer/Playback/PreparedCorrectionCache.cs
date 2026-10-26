@@ -21,15 +21,23 @@ internal static class PreparedCorrectionCache
         return node.Value.Value;
     }
 
-    internal static Prepared Get(DspSettings settings, int rate, int channels, CancellationToken token)
+    internal static Prepared Get(DspSettings settings, int rate, int channels, CancellationToken token, uint channelMask = 0)
     {
         bool cache = CorrectionCurve.UsesCurve(settings);
         var key = new Key(settings.CurvePoints, rate, channels);
         if (cache) lock (Gate) if (Entries.TryGetValue(key, out var found)) return Touch(found);
         token.ThrowIfCancellationRequested();
         var impulse = CorrectionCurve.Prepare(settings, rate, token);
-        var prepared = new Prepared(ConvolutionFilter.Prepare(impulse, rate, channels),
-            impulse.Channels.Select(ResponseMath.Spectrum).ToArray(), ResponseMath.AutoAttenuationDb(impulse));
+        var coefficients = ConvolutionFilter.Prepare(impulse, rate, channels, channelMask);
+        var spectra = new Complex[impulse.Channels.Length][];
+        double peak = 1;
+        for (int ch = 0; ch < spectra.Length; ch++)
+        {
+            token.ThrowIfCancellationRequested();
+            spectra[ch] = ResponseMath.Spectrum(impulse.Channels[ch]);
+            for (int i = 0; i <= spectra[ch].Length / 2; i++) peak = Math.Max(peak, spectra[ch][i].Magnitude);
+        }
+        var prepared = new Prepared(coefficients, spectra, -20 * Math.Log10(peak));
         token.ThrowIfCancellationRequested();
         if (cache)
         {

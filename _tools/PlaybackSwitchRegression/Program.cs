@@ -36,6 +36,18 @@ internal static unsafe partial class Program
             RunStartupTests();
             return _failures == 0 ? 0 : 1;
         }
+        if (args.Length == 2 && args[0] == "--test-published-pcm-player")
+        {
+            Run("NativeAOT player: DSP v7 handshake, settings, state and orderly shutdown", () => CheckPublishedPcmPlayer(args[1]));
+            return _failures == 0 ? 0 : 1;
+        }
+        if (args.Length == 1 && args[0] == "--test-pcm-dsp-upgrade")
+        {
+            FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
+            RunPcmDspUpgradeTests();
+            Console.WriteLine($"PCM DSP upgrade: {_tests - _failures}/{_tests} passed");
+            return _failures == 0 ? 0 : 1;
+        }
         if (args.Length == 1 && args[0] == "--measure-playback-memory")
         {
             FFmpeg.AutoGen.ffmpeg.RootPath = AppContext.BaseDirectory;
@@ -142,6 +154,7 @@ internal static unsafe partial class Program
         RunBufferPolicyTests();
         RunAsioNotificationTests();
         RunEqualizerQTests();
+        RunPcmDspUpgradeTests();
         RunDspTests();
         RunPlaybackEffectsTests();
         RunConvolutionTests();

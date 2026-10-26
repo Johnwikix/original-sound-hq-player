@@ -793,19 +793,20 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
 
     private static double ClampSample(double s) => s > 1.0 ? 1.0 : s < -1.0 ? -1.0 : s;
 
-    private static int ScaledInt(double sample, int bits)
+    private PcmQuantizer _quantizer;
+
+    private int ScaledInt(double sample, int bits)
     {
-        double max = bits switch { 16 => 32767.0, 24 => 8388607.0, _ => 2147483647.0 };
-        return (int)(ClampSample(sample) * max);
+        return _quantizer.Convert(sample, bits, _source.DitherEnabled);
     }
 
-    private static int AlignedI32(double sample, int validBits)
+    private int AlignedI32(double sample, int validBits)
     {
         int v = ScaledInt(sample, validBits);
         return validBits == 32 ? v : v << (32 - validBits);
     }
 
-    private static void WriteAsioSample(byte* buffer, int type, int frame, double sample)
+    private void WriteAsioSample(byte* buffer, int type, int frame, double sample)
     {
         switch (type)
         {

@@ -12,16 +12,17 @@ internal static class LoudnessScanner
     private static readonly SemaphoreSlim Gate = new(1, 1);
 
     internal static Task<LoudnessMeasurement?> ScanAsync(string path, int rate, int channels,
-        int dsdRate, int dsdGain, CancellationToken token, string? cacheDirectory = null, PlaybackSource? source = null)
-        => Task.Run(() => ScanCoreAsync(path, rate, channels, dsdRate, dsdGain, token, cacheDirectory, source), token);
+        int dsdRate, int dsdGain, CancellationToken token, string? cacheDirectory = null, PlaybackSource? source = null, uint channelMask = 0)
+        => Task.Run(() => ScanCoreAsync(path, rate, channels, dsdRate, dsdGain, token, cacheDirectory, source, channelMask), token);
 
     private static async Task<LoudnessMeasurement?> ScanCoreAsync(string path, int rate, int channels, int dsdRate, int dsdGain,
-        CancellationToken token, string? cacheDirectory, PlaybackSource? source)
+        CancellationToken token, string? cacheDirectory, PlaybackSource? source, uint channelMask)
     {
         token.ThrowIfCancellationRequested();
         bool remote = source?.Kind == PlaybackSourceKind.Http;
         var file = remote ? null : new FileInfo(path);
-        if ((!remote && !file!.Exists) || channels is < 1 or > 2 || rate < 8000) return null;
+        if ((!remote && !file!.Exists) || channels is < 1 or > 8 || rate < 8000) return null;
+        if (channels > 2 && (channelMask == 0 || System.Numerics.BitOperations.PopCount(channelMask) != channels)) return null;
         long length = remote ? source!.ContentLength : file!.Length;
         long modified = remote ? 0 : file!.LastWriteTimeUtc.Ticks;
         string remoteVersion = "";
@@ -35,18 +36,18 @@ internal static class LoudnessScanner
         string identity = remote
             ? $"http|{source!.ResourceId}|{remoteVersion}"
             : $"file|{file!.FullName.ToUpperInvariant()}|{length}|{modified}";
-        string key = $"v2|{identity}|{rate}|{channels}|{dsdRate}|{dsdGain}";
+        string key = $"v3|{identity}|{rate}|{channels}|{channelMask}|{dsdRate}|{dsdGain}";
         string directory = cacheDirectory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "WinUIMusicPlayer", "LoudnessCache");
         string cache = Path.Combine(directory, Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(key))) + ".bin");
         try
         {
             using var input = new BinaryReader(File.OpenRead(cache));
-            if (input.ReadInt32() == 1)
+            if (input.ReadInt32() == 2)
             {
-                var cached = new LoudnessMeasurement(input.ReadDouble(), input.ReadDouble());
+                var cached = new LoudnessMeasurement(input.ReadDouble(), input.ReadDouble(), input.ReadDouble());
                 if (double.IsFinite(cached.IntegratedLufs) && cached.IntegratedLufs is >= -70 and <= 100
-                    && double.IsFinite(cached.SamplePeak) && cached.SamplePeak > 0) return cached;
+                    && double.IsFinite(cached.SamplePeak) && cached.SamplePeak > 0 && double.IsFinite(cached.TruePeak) && cached.TruePeak >= cached.SamplePeak) return cached;
             }
         }
         catch (IOException) { }
@@ -58,7 +59,7 @@ internal static class LoudnessScanner
         {
             using var decoder = new PcmDecoder();
             if (!decoder.Open(path, dsdRate, dsdGain, rate, channels, source: source, cancellationToken: token)) return null;
-            var meter = new LoudnessMeter(rate, channels);
+            var meter = new LoudnessMeter(rate, channels, channelMask: channelMask);
             double[] scratch = ArrayPool<double>.Shared.Rent(16384 * channels);
             long frames = 0;
             try
@@ -91,7 +92,7 @@ internal static class LoudnessScanner
                 string temporary = cache + ".tmp";
                 using (var output = new BinaryWriter(File.Create(temporary)))
                 {
-                    output.Write(1); output.Write(result.IntegratedLufs); output.Write(result.SamplePeak);
+                    output.Write(2); output.Write(result.IntegratedLufs); output.Write(result.SamplePeak); output.Write(result.TruePeak);
                 }
                 File.Move(temporary, cache, true);
             }

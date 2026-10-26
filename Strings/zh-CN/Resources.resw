@@ -1750,7 +1750,7 @@
     <value>正在等待播放端状态，音效控件暂不可用。</value>
   </data>
   <data name="DspStereoOnly" xml:space="preserve">
-    <value>声道与耳机效果仅支持双声道；EQ 和响度分析支持单声道与双声道。</value>
+    <value>当前布局旁路双声道效果；多声道卷积和响度分析仍按支持情况生效。</value>
   </data>
   <data name="DspAnalyzing" xml:space="preserve">
     <value>正在后台分析当前歌曲；暂以保守衰减播放，完成后平滑调整并缓存。</value>
@@ -1782,7 +1782,7 @@
   <data name="DspConvolutionSection.Text" xml:space="preserve"><value>卷积校正</value></data>
   <data name="DspConvolution" xml:space="preserve"><value>启用卷积校正</value></data>
   <data name="DspConvolutionToggle.AutomationProperties.Name" xml:space="preserve"><value>启用卷积校正</value></data>
-  <data name="DspIrDescription.Text" xml:space="preserve"><value>导入耳机或房间校正的 WAV 脉冲响应（IR）。支持单声道或双声道，最多 8192 个采样点；会按输出采样率重采样，重采样后也须在此限制内。DSD 位流输出时自动旁路。</value></data>
+  <data name="DspIrDescription.Text" xml:space="preserve"><value>导入 1–8 声道 WAV IR；单声道用于所有输出，其余必须与输出声道数一致。含重采样后最多 2 秒、每声道 262144 点、总输出 1048576 点。DSD 位流旁路。</value></data>
   <data name="DspIrFile" xml:space="preserve"><value>脉冲响应文件</value></data>
   <data name="DspIrImport.Content" xml:space="preserve"><value>导入 WAV…</value></data>
   <data name="DspIrClear.Content" xml:space="preserve"><value>移除</value></data>
@@ -1793,10 +1793,10 @@
   <data name="DspIrBypass" xml:space="preserve"><value>卷积校正已旁路；已导入的文件和设置会保留。</value></data>
   <data name="DspIrLoading" xml:space="preserve"><value>正在加载并准备脉冲响应…</value></data>
   <data name="DspIrActive" xml:space="preserve"><value>卷积校正已生效。</value></data>
-  <data name="DspIrFailed" xml:space="preserve"><value>IR 无法用于当前输出：文件可能丢失、无效，或重采样后超过 8192 点。请重新导入。</value></data>
-  <data name="DspIrUnsupported" xml:space="preserve"><value>卷积校正仅支持单声道和双声道 PCM 输出。</value></data>
+  <data name="DspIrFailed" xml:space="preserve"><value>IR 无法用于当前输出：文件丢失、无效、声道不匹配，或超过时长／抽头预算。请重新导入。</value></data>
+  <data name="DspIrUnsupported" xml:space="preserve"><value>卷积支持 1–8 声道 PCM；IR 必须为单声道或与输出声道数一致。</value></data>
   <data name="DspIrOff" xml:space="preserve"><value>卷积校正未生效。导入 IR 并启用校正后，将在 PCM 播放时应用。</value></data>
-  <data name="DspIrImportError" xml:space="preserve"><value>导入失败。请选择有效的单声道或双声道 WAV（16/24/32 位 PCM 或 32/64 位浮点），最多 8192 点、4 MiB；原有配置已保留。</value></data>
+  <data name="DspIrImportError" xml:space="preserve"><value>请选择符合声道、时长和抽头预算的有效 WAV IR。</value></data>
   <data name="ResponseTitle.Text" xml:space="preserve"><value>合成频响</value></data>
   <data name="ResponsePlotName" xml:space="preserve"><value>EQ 与卷积合成频响图，横轴频率，纵轴分贝</value></data>
   <data name="ResponseLeft.Content" xml:space="preserve"><value>左声道</value></data>
@@ -2507,4 +2507,17 @@ SHA-256：{5}
   <data name="LastFmFavoriteResult" xml:space="preserve"><value>已加入上报队列 {0} 首；缺少歌曲或歌手信息 {1} 首。</value></data>
   <data name="LastFmCancelFavoriteImport" xml:space="preserve"><value>取消导入</value></data>
   <data name="LastFmFavoriteImportCanceled" xml:space="preserve"><value>已取消继续导入；已入队的收藏会继续上报。</value></data>
+  <data name="DspPcmResample" xml:space="preserve"><value>PCM 重采样</value></data>
+  <data name="DspPcmResampleHelp" xml:space="preserve"><value>更改时从当前进度重新缓冲；DSD 位流旁路，设备不支持时沿用现有回退。</value></data>
+  <data name="DspPcmSourceRate" xml:space="preserve"><value>保持源采样率</value></data>
+  <data name="DspPcmFixedRate" xml:space="preserve"><value>指定采样率</value></data>
+  <data name="DspPcmIntegerRate" xml:space="preserve"><value>源采样率整数倍</value></data>
+  <data name="DspPcmTargetRate" xml:space="preserve"><value>目标／整数倍上限</value></data>
+  <data name="DspTruePeakLimiter" xml:space="preserve"><value>True Peak 保护限幅</value></data>
+  <data name="DspTruePeakHelp" xml:space="preserve"><value>四倍插值检测与 5 ms 前瞻；作用于最终 PCM，不能约束系统混音或设备内部处理。</value></data>
+  <data name="DspTruePeakCeiling" xml:space="preserve"><value>峰值上限（dBTP）</value></data>
+  <data name="DspPcmDither" xml:space="preserve"><value>整数输出 TPDF 抖动</value></data>
+  <data name="DspPcmDitherHelp" xml:space="preserve"><value>默认关闭。用于处理后降低位深；开启会改变样本，原始位透明播放应关闭。</value></data>
+  <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed 截止频率（Hz）</value></data>
+  <data name="DspCrossfeedAmount" xml:space="preserve"><value>Crossfeed 强度（%）</value></data>
 </root>

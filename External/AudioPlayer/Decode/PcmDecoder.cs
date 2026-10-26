@@ -36,6 +36,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
     public int SampleRate { get; private set; }
     public int Channels { get; private set; }
     public uint ChannelMask { get; private set; }
+    internal uint AnalysisChannelMask { get; private set; }
     public long TotalMs => _totalMs;
     public bool IsDsdSource => _dsdSource;
     internal bool EnhancementActive => _enhancement != null;
@@ -56,7 +57,7 @@ internal sealed unsafe class PcmDecoder : IDisposable
     /// <param name="maxChannels">普通路径的声道上限；显式启用且识别出 5.1 时保留六声道，供自动独占输出。</param>
     public bool Open(string path, int dsdPcmFreq, int dsdGainDb, int? forceRate = null, int? forceChannels = null,
         int? maxChannels = null, bool experimentalSurround51 = false, PlaybackSource? source = null, CancellationToken cancellationToken = default,
-        SpectralEnhancementMode enhancement = SpectralEnhancementMode.Off, int? enhancementDeviceRate = null)
+        SpectralEnhancementMode enhancement = SpectralEnhancementMode.Off, int? enhancementDeviceRate = null, PcmResampleMode resampleMode = PcmResampleMode.Source, int resampleTargetRate = 192000)
     {
         try
         {
@@ -117,6 +118,12 @@ internal sealed unsafe class PcmDecoder : IDisposable
             // 识别到的 5.1 布局使用自动独占输出；其他布局保留常规声道数限制。
             Channels = surround51 ? 6 : forceChannels ?? (maxChannels is > 0 ? Math.Min(channels, maxChannels.Value) : channels);
 
+            if (Channels == channels && _dec->ch_layout.order == AVChannelOrder.AV_CHANNEL_ORDER_NATIVE)
+                AnalysisChannelMask = (uint)_dec->ch_layout.u.mask;
+            // DSD 以及设备兼容回退继续原有策略；新重采样只选择普通 PCM 目标。
+            if (!_dsdSource && forceRate == null)
+                SampleRate = PcmResampling.Resolve(resampleMode, inRate, resampleTargetRate);
+
             AVCodecDescriptor* descriptor = ffmpeg.avcodec_descriptor_get(par->codec_id);
             bool lossless = descriptor != null && (descriptor->props & ffmpeg.AV_CODEC_PROP_LOSSLESS) != 0;
             // 即使回退为解码后的立体声 PCM，E-AC-3/TrueHD 音源仍可能携带 Atmos 信息。
@@ -126,7 +133,8 @@ internal sealed unsafe class PcmDecoder : IDisposable
             _decodeRate = SampleRate;
             if (enhance)
             {
-                SampleRate = SpectralEnhancementPolicy.OutputRate(inRate, forceRate ?? enhancementDeviceRate);
+                SampleRate = resampleMode != PcmResampleMode.Source && forceRate == null ? SampleRate
+                    : SpectralEnhancementPolicy.OutputRate(inRate, forceRate ?? enhancementDeviceRate);
                 _decodeRate = inRate % 11025 == 0 ? 44100 : 48000;
                 int bits = par->bits_per_raw_sample is 8 or 16 or 20 or 24 or 32 ? par->bits_per_raw_sample : 16;
                 int bitrate = (int)Math.Clamp(par->bit_rate > 0 ? par->bit_rate : _fmt->bit_rate > 0 ? _fmt->bit_rate : 192000, 4000L, 1020000L);

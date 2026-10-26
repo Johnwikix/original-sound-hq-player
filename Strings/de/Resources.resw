@@ -1745,7 +1745,7 @@
     <value>Warten auf Wiedergabestatus. Effektsteuerung vorübergehend nicht verfügbar.</value>
   </data>
   <data name="DspStereoOnly" xml:space="preserve">
-    <value>Kanal-/Kopfhörereffekte benötigen Stereo; EQ und Lautheitsanalyse unterstützen Mono und Stereo.</value>
+    <value>Stereo effects are bypassed for this layout; supported multichannel convolution and loudness processing remain available.</value>
   </data>
   <data name="DspAnalyzing" xml:space="preserve">
     <value>Titel wird analysiert; vorläufig mit vorsichtiger Absenkung. Der gemessene Pegel wird sanft angewendet und gespeichert.</value>
@@ -1777,7 +1777,7 @@
   <data name="DspConvolutionSection.Text" xml:space="preserve"><value>Convolution correction</value></data>
   <data name="DspConvolution" xml:space="preserve"><value>Enable convolution correction</value></data>
   <data name="DspConvolutionToggle.AutomationProperties.Name" xml:space="preserve"><value>Enable convolution correction</value></data>
-  <data name="DspIrDescription.Text" xml:space="preserve"><value>Import a headphone or room correction WAV impulse response (IR). Mono or stereo, up to 8192 samples before and after resampling to the output rate. Automatically bypassed for DSD bitstream output.</value></data>
+  <data name="DspIrDescription.Text" xml:space="preserve"><value>WAV IR: 1–8 channels; mono applies to every output, otherwise channel counts must match. Maximum 2 s, 262144 taps/channel and 1048576 total output taps, including resampling. DSD bitstreams bypass DSP.</value></data>
   <data name="DspIrFile" xml:space="preserve"><value>Impulse response file</value></data>
   <data name="DspIrImport.Content" xml:space="preserve"><value>Import WAV…</value></data>
   <data name="DspIrClear.Content" xml:space="preserve"><value>Remove</value></data>
@@ -1788,10 +1788,10 @@
   <data name="DspIrBypass" xml:space="preserve"><value>Convolution is bypassed. The imported file and settings are retained.</value></data>
   <data name="DspIrLoading" xml:space="preserve"><value>Loading and preparing the impulse response…</value></data>
   <data name="DspIrActive" xml:space="preserve"><value>Convolution correction is active.</value></data>
-  <data name="DspIrFailed" xml:space="preserve"><value>The IR cannot be used for this output: it may be missing, invalid, or exceed 8192 samples after resampling. Import another IR.</value></data>
-  <data name="DspIrUnsupported" xml:space="preserve"><value>Convolution supports mono and stereo PCM output only.</value></data>
+  <data name="DspIrFailed" xml:space="preserve"><value>IR nicht verfügbar: Datei fehlt, ist ungültig, Kanäle passen nicht oder das Zeit-/Tap-Budget ist überschritten.</value></data>
+  <data name="DspIrUnsupported" xml:space="preserve"><value>Faltung unterstützt 1–8 PCM-Kanäle. IR muss mono sein oder genau zur Ausgabe passen.</value></data>
   <data name="DspIrOff" xml:space="preserve"><value>Convolution is inactive. Import an IR and enable correction to apply it during PCM playback.</value></data>
-  <data name="DspIrImportError" xml:space="preserve"><value>Import failed. Choose a valid mono or stereo WAV (16/24/32-bit PCM or 32/64-bit float), up to 8192 samples and 4 MiB. The previous configuration is retained.</value></data>
+  <data name="DspIrImportError" xml:space="preserve"><value>Use a valid WAV IR within the channel, duration and tap budgets.</value></data>
   <data name="ResponseTitle.Text" xml:space="preserve"><value>Combined frequency response</value></data>
   <data name="ResponsePlotName" xml:space="preserve"><value>EQ and convolution frequency response. Frequency in Hz, gain in dB.</value></data>
   <data name="ResponseLeft.Content" xml:space="preserve"><value>Left</value></data>
@@ -2505,4 +2505,17 @@ SHA-256: {5}
   <data name="LastFmFavoriteResult" xml:space="preserve"><value>{0} Titel eingereiht; bei {1} fehlen Titel- oder Künstlerangaben.</value></data>
   <data name="LastFmCancelFavoriteImport" xml:space="preserve"><value>Import abbrechen</value></data>
   <data name="LastFmFavoriteImportCanceled" xml:space="preserve"><value>Import abgebrochen; bereits eingereihte Favoriten werden weiterhin gemeldet.</value></data>
+  <data name="DspPcmResample" xml:space="preserve"><value>PCM-Resampling</value></data>
+  <data name="DspPcmResampleHelp" xml:space="preserve"><value>Puffert ab aktueller Position neu. DSD-Bitstreams werden umgangen; die bisherige Geräteausweichstrategie gilt.</value></data>
+  <data name="DspPcmSourceRate" xml:space="preserve"><value>Quell-Abtastrate</value></data>
+  <data name="DspPcmFixedRate" xml:space="preserve"><value>Feste Abtastrate</value></data>
+  <data name="DspPcmIntegerRate" xml:space="preserve"><value>Ganzzahliges Vielfaches</value></data>
+  <data name="DspPcmTargetRate" xml:space="preserve"><value>Ziel / Obergrenze</value></data>
+  <data name="DspTruePeakLimiter" xml:space="preserve"><value>True-Peak-Schutz</value></data>
+  <data name="DspTruePeakHelp" xml:space="preserve"><value>4-fache Interpolation und 5 ms Vorschau für finales PCM; Systemmixer und Geräteverarbeitung bleiben außerhalb.</value></data>
+  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Peak-Obergrenze (dBTP)</value></data>
+  <data name="DspPcmDither" xml:space="preserve"><value>TPDF-Dither für Integer-Ausgabe</value></data>
+  <data name="DspPcmDitherHelp" xml:space="preserve"><value>Standardmäßig aus. Zur Wortbreitenreduktion nach DSP; für bittransparente Wiedergabe ausschalten.</value></data>
+  <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed-Grenzfrequenz (Hz)</value></data>
+  <data name="DspCrossfeedAmount" xml:space="preserve"><value>Crossfeed-Stärke (%)</value></data>
 </root>

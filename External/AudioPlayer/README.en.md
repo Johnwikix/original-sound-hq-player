@@ -71,11 +71,11 @@ and disabling gapless still cancel preparation. The worker owns an unpublished s
 results. Shutdown stops new plans and awaits cleanup; a timed-out native open retains its owner until it
 returns. The audio callback only splices sources. PCM ring capacity and float64 storage are unchanged.
 
-**Full float64** end to end: decode (swr `AV_SAMPLE_FMT_DBL`) → `PcmRing`
+**Ordinary PCM uses float64** internally: decode (swr `AV_SAMPLE_FMT_DBL`) → `PcmRing`
 (double interleaved) → EQ/volume/fade-in-out (double domain) → per-device
 format conversion at the exit (float32 / 16/24/32-bit integer, DoP, DSD
 bitstream). Processing noise floor below -140 dBFS; 24-bit sources remain
-bit-transparent across the entire chain.
+bit-transparent only when DSP, resampling and dither are off, gain is unity and the output precision is compatible; actual decoder-to-endpoint byte regressions verify this condition.
 
 - **PCM**: FFmpeg decode with sample-accurate position (anchor + frames played)
 - **Experimental 5.1**: off by default, ASIO and WASAPI exclusive only. Preserves
@@ -235,3 +235,8 @@ Dump switch: set `AP_DUMP=<path>` to enable endpoint byte dumps
 | bassasio | `Interop\AsioInterop/AsioHost`: raw vtable + buffer candidates + sample-rate pivoting + message window |
 | bass_fx PeakEQ | `Playback\Dsp.Equalizer`: RBJ double, lock-free atomic-snapshot rendering |
 | DirectSound output | Maps to the shared pass-through path (DirectSound is itself a WASAPI-shared wrapper) |
+
+
+## PCM DSP update (2026-10-26)
+
+Integer PCM conversion now uses signed power-of-two scaling, round-to-even and saturation. Optional TPDF defaults off. Ordinary PCM supports source/fixed/integer-multiple rates. Independent 4x estimated True Peak protection uses 5 ms lookahead after final PCM gain; it is not an absolute guarantee for system mixing or analog reconstruction. Long WAV IRs support 1–8 channels with explicit mapping and two-second/per-channel/total-tap limits. Crossfeed adds continuous amount and cutoff controls; per-track loudness supports speaker-weighted multichannel analysis and estimated True Peak. Tail draining, gapless history, seek and audible progress account for processing latency. DSD bitstreams and the existing ten-band EQ remain unchanged. DSP settings v7 and pipe protocol v4 require deploying the UI and AudioPlayer together. See DSP.md and `--test-pcm-dsp-upgrade` / `--test-published-pcm-player` regressions.

@@ -105,3 +105,10 @@ Q 独立预设保存与缺失值回退、增益中心不变而带宽随 Q 改变
 更新、升降增益抵消，以及非法 Q 和低采样率的稳定性。完整套件 110 项。
 
 `WasapiStallTests.cs` 使用受控原生虚表，验证运行中不重复 Start、恢复前开放渲染门控、Start/Stop 失败上报、三种 WASAPI 模式的停滞检测、正常暂停和恢复窗口，以及初始化对齐/格式失败后释放并重新激活客户端。
+
+
+## PCM DSP 升级
+
+`--test-pcm-dsp-upgrade` 运行 16 项有边界证据的专项回归，包括全部 16-bit 值、24/32-bit 边界和随机值、真实 FFmpeg 到 WASAPI/ASIO 输出字节、可选 TPDF、DSP v6/v7、重采样 EOF/seek、长六声道卷积参考与预算、True Peak 及前瞻保护、LFE/环绕权重、曲尾和无缝历史、DSD 旁路、Crossfeed 参数。完整套件也包含这些检查。
+
+`--test-published-pcm-player <AudioPlayer.exe>` 使用随机 IPC scope 和独立存活 mutex 验证真实 NativeAOT 播放进程：协议 v4 握手、v7 设置、状态、非法配置拒绝和正常退出。不播放音乐、不打开输出设备；exe 同目录需有实际 FFmpeg DLL。不能替代声卡出声验证。

@@ -1,3 +1,10 @@
+## 2026-10-26 修正整数 PCM 输出并补齐播放内核 DSP
+- `AudioPlayer/Interop`：统一有符号 PCM 缩放、偶数舍入、饱和及非有限值静音；增加默认关闭的 TPDF，覆盖 WASAPI/ASIO 有效位与打包格式。
+- `AudioPlayer/Decode`、`Playback`：增加普通 PCM 采样率策略、独立四倍 True Peak 估计/5ms 前瞻保护、长 IR 分级卷积和 1–8 声道逐曲响度；处理曲尾、seek、无缝历史及可闻进度。DSD 路径、十段 EQ 和既有输出开关边界保持现状。
+- `BassPlayerIpc.Shared`、现有 DSP 设置页：设置 v7、管道 v4；新增重采样/保护/抖动与 Crossfeed 连续强度、截止频率，保留旧设置读取及默认旁路；更新七语言资源。
+- `_tools/PlaybackSwitchRegression`：增加 16 项真实解码/输出及 DSP 数学、生命周期、兼容和分配回归，并支持真实 NativeAOT 进程的无声卡 IPC 冒烟。发布时同步更新 `Player/AudioPlayer.exe`。
+- 兼容性：主程序和播放内核需同时更新；有限插值峰值估计不构成系统混音或任意 DAC 模拟输出的绝对峰值保证。
+
 ## 2026-10-26 更新本地 CsWinRT 并修正固定 pressure 配对
 - `D:/code/classLib/cswinrt/CsWinRT/src/WinRT.Runtime/ObjectReference.cs`：固定 `GC_PRESSURE_BASE` 的 Add/Remove 成对禁用，修正旧包只禁用 Add、Dispose 仍执行 Remove 的不匹配；其他按类型大小计量的 pressure 保持原样。
 - `WinUIMusicPlayer.csproj` 及 11 个回归项目：统一引用 `2.3.2-prerelease.261026.1-nogcpressure`；包基于最新源码 `c28d756` 构建并发布到 `D:/nugetLocal`，保留上游 AssemblyVersion `2.3.1.0`。

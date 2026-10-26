@@ -8,6 +8,18 @@ public sealed record DspSettings
 {
     /// <summary>获取或设置 DSP 总开关；默认开启以保留旧版音效偏好。</summary>
     public bool IsEnabled { get; init; } = true;
+    /// <summary>获取普通 PCM 重采样策略；默认保持源率。</summary>
+    public PcmResampleMode ResampleMode { get; init; }
+    /// <summary>获取重采样目标或整数倍上限，单位 Hz。</summary>
+    public int ResampleTargetRate { get; init; } = 192000;
+    /// <summary>获取是否启用最终 PCM 四倍 True Peak 前瞻保护。</summary>
+    public bool TruePeakLimiterEnabled { get; init; }
+    /// <summary>获取峰值保护上限，单位 dBTP。</summary>
+    public double TruePeakCeilingDb { get; init; } = -1;
+    /// <summary>获取整数输出是否使用 TPDF 抖动；默认关闭以保留位透明路径。</summary>
+    public bool DitherEnabled { get; init; }
+    /// <summary>获取 Crossfeed 低通截止频率，单位 Hz。</summary>
+    public double CrossfeedCutoffHz { get; init; } = 700;
     public bool GaplessPlayback { get; init; } = true;
     public double PlaybackRate { get; init; } = 1;
     public bool CompressorEnabled { get; init; }
@@ -52,6 +64,10 @@ public sealed record DspSettings
     /// <summary>返回经过有限值和范围校验的设置快照。</summary>
     public DspSettings Sanitize()
     {
+        var mode = Enum.IsDefined(ResampleMode) ? ResampleMode : PcmResampleMode.Source;
+        int targetRate = PcmResampling.ValidateTarget(ResampleTargetRate);
+        double ceiling = Finite(TruePeakCeilingDb, -12, -0.1, -1);
+        double cutoff = Finite(CrossfeedCutoffHz, 200, 2000, 700);
         string curve;
         try { curve = CorrectionCurve.Encode(CorrectionCurve.Parse(CurvePoints)); } catch (ArgumentException) { curve = CorrectionCurve.Flat; }
         var source = Enum.IsDefined(ConvolutionSource) ? ConvolutionSource : ConvolutionSource.Automatic;
@@ -67,10 +83,11 @@ public sealed record DspSettings
         double threshold = Finite(CompressorThresholdDb, -40, -3, -18);
         double ratio = Finite(CompressorRatio, 1, 20, 4);
         double makeup = Finite(CompressorMakeupDb, 0, 18, 6);
-        if (TargetLufs == target && HeadroomDb == headroom && Balance == balance
+        if (ResampleMode == mode && ResampleTargetRate == targetRate && TruePeakCeilingDb == ceiling && CrossfeedCutoffHz == cutoff
+            && TargetLufs == target && HeadroomDb == headroom && Balance == balance
             && PlaybackRate == rate && CompressorThresholdDb == threshold && CompressorRatio == ratio && CompressorMakeupDb == makeup
             && Crossfeed == crossfeed && StereoWidth == width && ConvolutionTrimDb == trim && ImpulsePath == path && CurvePoints == curve && ConvolutionSource == source) return this;
-        return this with { TargetLufs = target, HeadroomDb = headroom, Balance = balance,
+        return this with { ResampleMode = mode, ResampleTargetRate = targetRate, TruePeakCeilingDb = ceiling, CrossfeedCutoffHz = cutoff, TargetLufs = target, HeadroomDb = headroom, Balance = balance,
             PlaybackRate = rate, CompressorThresholdDb = threshold, CompressorRatio = ratio, CompressorMakeupDb = makeup,
             Crossfeed = crossfeed, StereoWidth = width, ConvolutionTrimDb = trim, ImpulsePath = path, CurvePoints = curve, ConvolutionSource = source };
     }
@@ -108,7 +125,7 @@ public readonly record struct DspState(byte RenderKind, bool EqualizerActive, in
 public static class DspProtocol
 {
     /// <summary>设置载荷字节数。</summary>
-    public const int SettingsSize = 1630;
+    public const int SettingsSize = 1654;
     /// <summary>状态载荷字节数。</summary>
     public const int StateSize = 320;
 
@@ -116,7 +133,13 @@ public static class DspProtocol
     public static void WriteSettings(Span<byte> data, DspSettings settings)
     {
         data[..SettingsSize].Clear();
-        data[0] = 6;
+        data[0] = 7;
+        data[1630] = (byte)settings.ResampleMode;
+        data[1631] = settings.TruePeakLimiterEnabled ? (byte)1 : (byte)0;
+        data[1632] = settings.DitherEnabled ? (byte)1 : (byte)0;
+        BinaryPrimitives.WriteInt32LittleEndian(data[1634..], settings.ResampleTargetRate);
+        BinaryPrimitives.WriteDoubleLittleEndian(data[1638..], settings.TruePeakCeilingDb);
+        BinaryPrimitives.WriteDoubleLittleEndian(data[1646..], settings.CrossfeedCutoffHz);
         data[1596] = settings.GaplessPlayback ? (byte)1 : (byte)0;
         data[1597] = settings.CompressorEnabled ? (byte)1 : (byte)0;
         BinaryPrimitives.WriteDoubleLittleEndian(data[1598..], settings.PlaybackRate);
@@ -154,7 +177,10 @@ public static class DspProtocol
         bool legacy = data.Length == 44 && data[0] == 1;
         bool v2 = data.Length == 45 && data[0] == 2;
         bool v3 = data.Length == 1080 && data[0] == 3;
-        bool v6 = data.Length == SettingsSize && data[0] == 6;
+        bool v7 = data.Length == SettingsSize && data[0] == 7;
+        if (v7 && (data[1630] > 2 || data[1631] > 1 || data[1632] > 1 || data[1633] != 0))
+            throw new ArgumentException("Invalid PCM DSP settings.");
+        bool v6 = (data.Length == 1630 && data[0] == 6) || v7;
         if (v6 && (data[1596] > 1 || data[1597] > 1)) throw new ArgumentException("Invalid playback effects flags.");
         bool v5 = (data.Length == 1596 && data[0] == 5) || v6;
         bool v4 = (data.Length == 1595 && data[0] == 4) || v5;
@@ -178,6 +204,12 @@ public static class DspProtocol
         }
         return new DspSettings
         {
+            ResampleMode = v7 ? (PcmResampleMode)data[1630] : PcmResampleMode.Source,
+            ResampleTargetRate = v7 ? BinaryPrimitives.ReadInt32LittleEndian(data[1634..]) : 192000,
+            TruePeakLimiterEnabled = v7 && data[1631] != 0,
+            DitherEnabled = v7 && data[1632] != 0,
+            TruePeakCeilingDb = v7 ? BinaryPrimitives.ReadDoubleLittleEndian(data[1638..]) : -1,
+            CrossfeedCutoffHz = v7 ? BinaryPrimitives.ReadDoubleLittleEndian(data[1646..]) : 700,
             GaplessPlayback = !v6 || data[1596] != 0,
             CompressorEnabled = v6 && data[1597] != 0,
             PlaybackRate = v6 ? BinaryPrimitives.ReadDoubleLittleEndian(data[1598..]) : 1,

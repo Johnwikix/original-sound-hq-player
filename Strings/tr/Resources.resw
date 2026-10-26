@@ -1748,7 +1748,7 @@
     <value>Oynatma durumu bekleniyor. Efekt denetimleri geçici olarak kullanılamıyor.</value>
   </data>
   <data name="DspStereoOnly" xml:space="preserve">
-    <value>Kanal/kulaklık efektleri stereo gerektirir; EQ ve ses düzeyi analizi mono ve stereo destekler.</value>
+    <value>Stereo effects are bypassed for this layout; supported multichannel convolution and loudness processing remain available.</value>
   </data>
   <data name="DspAnalyzing" xml:space="preserve">
     <value>Bu parça analiz ediliyor; ölçülen kazanç yumuşak biçimde uygulanıp önbelleğe alınana kadar temkinli zayıflatmayla çalınıyor.</value>
@@ -1780,7 +1780,7 @@
   <data name="DspConvolutionSection.Text" xml:space="preserve"><value>Evrişim düzeltmesi</value></data>
   <data name="DspConvolution" xml:space="preserve"><value>Evrişim düzeltmesini etkinleştir</value></data>
   <data name="DspConvolutionToggle.AutomationProperties.Name" xml:space="preserve"><value>Evrişim düzeltmesini etkinleştir</value></data>
-  <data name="DspIrDescription.Text" xml:space="preserve"><value>Kulaklık veya oda düzeltmesi için WAV darbe yanıtı (IR) içe aktarın. Mono veya stereo; çıkış örnekleme hızına yeniden örnekleme öncesi ve sonrasında en fazla 8192 örnek. DSD bit akışı çıkışında otomatik olarak atlanır.</value></data>
+  <data name="DspIrDescription.Text" xml:space="preserve"><value>WAV IR: 1–8 channels; mono applies to every output, otherwise channel counts must match. Maximum 2 s, 262144 taps/channel and 1048576 total output taps, including resampling. DSD bitstreams bypass DSP.</value></data>
   <data name="DspIrFile" xml:space="preserve"><value>Darbe yanıtı dosyası</value></data>
   <data name="DspIrImport.Content" xml:space="preserve"><value>WAV içe aktar…</value></data>
   <data name="DspIrClear.Content" xml:space="preserve"><value>Kaldır</value></data>
@@ -1791,10 +1791,10 @@
   <data name="DspIrBypass" xml:space="preserve"><value>Evrişim atlanıyor. İçe aktarılan dosya ve ayarlar korunur.</value></data>
   <data name="DspIrLoading" xml:space="preserve"><value>Darbe yanıtı yükleniyor ve hazırlanıyor…</value></data>
   <data name="DspIrActive" xml:space="preserve"><value>Evrişim düzeltmesi etkin.</value></data>
-  <data name="DspIrFailed" xml:space="preserve"><value>IR bu çıkış için kullanılamıyor: eksik veya geçersiz olabilir ya da yeniden örnekleme sonrasında 8192 örneği aşıyor olabilir. Başka bir IR içe aktarın.</value></data>
-  <data name="DspIrUnsupported" xml:space="preserve"><value>Evrişim yalnızca mono ve stereo PCM çıkışını destekler.</value></data>
+  <data name="DspIrFailed" xml:space="preserve"><value>IR kullanılamıyor: dosya geçersiz, kanallar eşleşmiyor veya süre/tap sınırı aşıldı.</value></data>
+  <data name="DspIrUnsupported" xml:space="preserve"><value>Evrişim 1–8 PCM kanalını destekler. IR mono olmalı veya çıkış kanallarıyla tam eşleşmelidir.</value></data>
   <data name="DspIrOff" xml:space="preserve"><value>Evrişim etkin değil. PCM çalma sırasında uygulamak için bir IR içe aktarın ve düzeltmeyi etkinleştirin.</value></data>
-  <data name="DspIrImportError" xml:space="preserve"><value>İçe aktarma başarısız oldu. Geçerli bir mono veya stereo WAV seçin (16/24/32 bit PCM veya 32/64 bit float); en fazla 8192 örnek ve 4 MiB. Önceki yapılandırma korunur.</value></data>
+  <data name="DspIrImportError" xml:space="preserve"><value>Use a valid WAV IR within the channel, duration and tap budgets.</value></data>
   <data name="ResponseTitle.Text" xml:space="preserve"><value>Birleşik frekans yanıtı</value></data>
   <data name="ResponsePlotName" xml:space="preserve"><value>EQ ve evrişim frekans yanıtı. Frekans Hz, kazanç dB cinsindendir.</value></data>
   <data name="ResponseLeft.Content" xml:space="preserve"><value>Sol</value></data>
@@ -2505,4 +2505,17 @@ SHA-256: {5}
   <data name="LastFmFavoriteResult" xml:space="preserve"><value>{0} parça sıraya alındı; {1} parçada ad veya sanatçı eksik.</value></data>
   <data name="LastFmCancelFavoriteImport" xml:space="preserve"><value>İçe aktarmayı iptal et</value></data>
   <data name="LastFmFavoriteImportCanceled" xml:space="preserve"><value>İçe aktarma iptal edildi; sıraya alınmış favoriler bildirilmeye devam edecek.</value></data>
+  <data name="DspPcmResample" xml:space="preserve"><value>PCM yeniden örnekleme</value></data>
+  <data name="DspPcmResampleHelp" xml:space="preserve"><value>Geçerli konumdan yeniden arabelleğe alır. DSD akışları atlanır; mevcut aygıt yedekleme davranışı korunur.</value></data>
+  <data name="DspPcmSourceRate" xml:space="preserve"><value>Kaynak örnekleme hızı</value></data>
+  <data name="DspPcmFixedRate" xml:space="preserve"><value>Sabit örnekleme hızı</value></data>
+  <data name="DspPcmIntegerRate" xml:space="preserve"><value>Kaynağın tam katı</value></data>
+  <data name="DspPcmTargetRate" xml:space="preserve"><value>Hedef / tam kat üst sınırı</value></data>
+  <data name="DspTruePeakLimiter" xml:space="preserve"><value>True Peak koruması</value></data>
+  <data name="DspTruePeakHelp" xml:space="preserve"><value>Son PCM için 4× enterpolasyon ve 5 ms öngörü; sistem karıştırıcısı ve aygıt işlemesi kapsam dışıdır.</value></data>
+  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Tepe sınırı (dBTP)</value></data>
+  <data name="DspPcmDither" xml:space="preserve"><value>Tamsayı çıkışı TPDF dither</value></data>
+  <data name="DspPcmDitherHelp" xml:space="preserve"><value>Varsayılan kapalıdır. DSP sonrası bit derinliğini azaltmak için; bit saydam çalma için kapatın.</value></data>
+  <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed kesim frekansı (Hz)</value></data>
+  <data name="DspCrossfeedAmount" xml:space="preserve"><value>Crossfeed yoğunluğu (%)</value></data>
 </root>
