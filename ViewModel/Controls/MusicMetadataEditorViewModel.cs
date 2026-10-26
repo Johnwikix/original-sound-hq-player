@@ -25,8 +25,10 @@ public sealed class MusicMetadataEditorViewModel : ObservableObject
     }
 
     /// <summary>在窗口尚未开放编辑时应用从文件补读且已入库的标签。</summary>
-    public void ApplyLoaded(AdditionalMusicMetadata tags)
+    /// <returns>标签值发生变化时为 <see langword="true" />；仅补齐已知空状态时为 <see langword="false" />。</returns>
+    public bool ApplyLoaded(AdditionalMusicMetadata tags)
     {
+        bool changed = AdditionalMusicMetadata.From(_source) != tags;
         tags.ApplyTo(_source);
         if (AdditionalMusicMetadata.From(Draft) == _initialAdditional)
         {
@@ -34,6 +36,7 @@ public sealed class MusicMetadataEditorViewModel : ObservableObject
             _initialAdditional = tags;
             IsAdditionalExpanded = !tags.IsEmpty;
         }
+        return changed;
     }
 
     /// <summary>生成与后续输入隔离的保存快照，未采集的空标签不会被当作清除指令。</summary>
