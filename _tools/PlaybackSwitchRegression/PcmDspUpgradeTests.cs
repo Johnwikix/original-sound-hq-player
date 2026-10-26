@@ -307,6 +307,21 @@ internal static unsafe partial class Program
         long before = GC.GetAllocatedBytesForCurrentThread();
         for (int i = 0; i < 100; i++) limiter.Process(silence, 512, -1);
         Require(before == GC.GetAllocatedBytesForCurrentThread(), "Limiter render allocated");
+        // A sudden gain step can create a new reconstructed peak before a future transient.
+        foreach (int burstRate in new[] { 44100, 48000, 96000 })
+        foreach (double frequency in new[] { 997, burstRate * 0.25, burstRate * 0.45 })
+        {
+            var burstLimiter = new TruePeakLimiter(burstRate, 1);
+            var burst = new double[burstRate / 2 + burstLimiter.DelayFrames + 64];
+            for (int i = 0; i < burstRate / 2; i++)
+                burst[i] = 0.88 * Math.Sin(i * 2 * Math.PI * frequency / burstRate + 0.31);
+            burst[burstRate / 4] = 8;
+            for (int i = 0; i < burst.Length; i += 127)
+                burstLimiter.Process(burst.AsSpan(i), Math.Min(127, burst.Length - i), -1);
+            var burstMeter = new TruePeakMeter(1); burstMeter.Add(burst);
+            double burstDb = 20 * Math.Log10(burstMeter.Finish());
+            Require(burstDb <= -0.99, $"Gain transition generated an intersample peak: {burstRate}/{frequency}: {burstDb} dBTP");
+        }
     }
 
     private static void CheckPcmDspTail()

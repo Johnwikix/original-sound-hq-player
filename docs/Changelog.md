@@ -2,6 +2,7 @@
 - `AudioPlayer/Interop`：统一有符号 PCM 缩放、偶数舍入、饱和及非有限值静音；增加默认关闭的 TPDF，覆盖 WASAPI/ASIO 有效位与打包格式。
 - `AudioPlayer/Decode`、`Playback`：增加普通 PCM 采样率策略、独立四倍 True Peak 估计/5ms 前瞻保护、长 IR 分级卷积和 1–8 声道逐曲响度；处理曲尾、seek、无缝历史及可闻进度。DSD 路径、十段 EQ 和既有输出开关边界保持现状。
 - `BassPlayerIpc.Shared`、现有 DSP 设置页：设置 v7、管道 v4；新增重采样/保护/抖动与 Crossfeed 连续强度、截止频率，保留旧设置读取及默认旁路；更新七语言资源。
+- `TruePeakLimiter`：前瞻窗口内用 1ms 线性下降代替硬切增益，避免突发峰值到达前自行产生插值过冲；回归覆盖三个采样率和三类频率的脉冲叠加。
 - `_tools/PlaybackSwitchRegression`：增加 16 项真实解码/输出及 DSP 数学、生命周期、兼容和分配回归，并支持真实 NativeAOT 进程的无声卡 IPC 冒烟。发布时同步更新 `Player/AudioPlayer.exe`。
 - 兼容性：主程序和播放内核需同时更新；有限插值峰值估计不构成系统混音或任意 DAC 模拟输出的绝对峰值保证。
 
