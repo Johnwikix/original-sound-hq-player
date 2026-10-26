@@ -178,8 +178,8 @@ namespace WinUIMusicPlayer.View.SubView
             token.ThrowIfCancellationRequested();
             if (tags is { } loaded)
             {
-                MetadataEditor.ApplyLoaded(loaded);
-                NotifyMetadataChanged();
+                // 大多数文件没有这些标签；仅确认空值时不重建音乐列表。
+                if (MetadataEditor.ApplyLoaded(loaded)) NotifyMetadataChanged();
             }
             AlbumCoverData = await Task.Run(() => ToolUtils.GetRawImage(music, true));
             if (_closed || Content is null) return;

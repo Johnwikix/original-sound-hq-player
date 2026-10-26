@@ -33,6 +33,7 @@ try
     Check(source.PlayCount == 7 && source.IsFavorite, "Metadata commit preserves playback-owned state");
     var emptyEditor = new MusicMetadataEditorViewModel(new Music { AdditionalMetadataRead = true });
     Check(emptyEditor.Capture().AdditionalMetadataRead && !emptyEditor.IsAdditionalExpanded, "Known-empty tags remain distinct from unread tags");
+    Check(!emptyEditor.ApplyLoaded(AdditionalMusicMetadata.From(new Music())), "Confirming absent tags does not request a library list rebuild");
     var loadingEditor = new MusicMetadataEditorViewModel(new Music());
     var tags = new AdditionalMusicMetadata("专辑艺术家", "Classical", "作曲者", "作词者", "指挥", "CAT-001");
     loadingEditor.ApplyLoaded(tags);
