@@ -51,6 +51,8 @@ if (!SpinWait.SpinUntil(() => states.CurrentDspState is not null, 5000)) throw n
 Console.WriteLine("[smoke] Pipe 握手及初始 DSP 推送完成");
 if (args.Contains("--hardware-dsp"))
     return HardwareDspProbe.Run(server, transport, states, mediaPath, outputMode, runSeconds);
+if (args.Contains("--memory-matrix"))
+    return MemoryMatrixProbe.Run(args, server, transport, states, mediaPath, outputMode, runSeconds);
 byte[] responseBuffer = new byte[IpcConstants.MaxResponseSize];
 
 MessageTypeId Send(CommandId cmd, ReadOnlySpan<byte> payload, out ReadOnlySpan<byte> respPayload)

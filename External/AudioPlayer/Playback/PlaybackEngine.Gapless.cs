@@ -151,6 +151,16 @@ public sealed partial class PlaybackEngine
             rendered.Pending?.ConfigureDsp(settings);
         }
         else _session?.ConfigureDsp(settings);
+        if (!settings.IsEnabled || !settings.ConvolutionEnabled) PreparedCorrectionCache.Clear();
+        RetireInactiveConvolution();
+    }
+
+    private void RetireInactiveConvolution()
+    {
+        if (IsPlaying || _pauseFadeActive) return;
+        if (_gaplessSource is { } source) source.RetireInactiveConvolution();
+        // 所有实际 PCM 输出均经 OutputSource 包装；无包装且无输出的会话尚未开始渲染。
+        else if (_output == null) _session?.Effects?.RetireInactiveConvolution();
     }
 
     public Task StopGaplessAsync()

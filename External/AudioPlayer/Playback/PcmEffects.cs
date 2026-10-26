@@ -13,8 +13,11 @@ internal sealed class PcmEffects : IDisposable
     private string? _impulsePath;
     private string? _curveKey;
     private bool _autoHeadroom;
+    private bool _requiresSpectrum;
     private double _autoGainDb;
     private System.Numerics.Complex[][]? _spectra;
+    // 缓存弱引用分析结果；只有需要自动前级/旧版余量的会话强持有完整频谱。
+    private PreparedCorrectionCache.Prepared? _prepared;
     private PeakCoefficients[] _equalizer = [];
     private double _preampDb = -1;
     private int _preampVersion;
@@ -129,7 +132,8 @@ internal sealed class PcmEffects : IDisposable
             if (next != null && _filter != null
                 && _curveKey == (curve ? next.CurvePoints : null)
                 && _impulsePath == (curve ? null : next.ImpulsePath)
-                && _autoHeadroom == (!next.AutoPreamp.HasValue && curve && next.AutoConvolutionHeadroom))
+                && _autoHeadroom == (!next.AutoPreamp.HasValue && curve && next.AutoConvolutionHeadroom)
+                && _requiresSpectrum == (next.AutoPreamp == true || !next.AutoPreamp.HasValue && curve && next.AutoConvolutionHeadroom))
             {
                 _filter.Reset();
                 ResetRenderState();
@@ -140,6 +144,7 @@ internal sealed class PcmEffects : IDisposable
             _impulsePath = _curveKey = null;
             _filter = _renderFilter = _oldFilter = null;
             _spectra = null;
+            _prepared = null;
             _autoGainDb = 0;
             ResetRenderState();
         }
@@ -155,6 +160,7 @@ internal sealed class PcmEffects : IDisposable
             ++_impulseVersion;
             _filter = null;
             _spectra = null;
+            _prepared = null;
             _impulsePath = _curveKey = null;
             _autoGainDb = 0;
             _convolutionStatus = ConvolutionStatus.Off;
@@ -165,8 +171,10 @@ internal sealed class PcmEffects : IDisposable
         string? curveKey = curve ? _settings.CurvePoints : null;
         string? path = curve ? null : _settings.ImpulsePath;
         bool autoHeadroom = !_settings.AutoPreamp.HasValue && curve && _settings.AutoConvolutionHeadroom;
-        if (_impulsePath == path && _curveKey == curveKey && _autoHeadroom == autoHeadroom) return;
+        bool requiresSpectrum = _settings.AutoPreamp == true || autoHeadroom;
+        if (_impulsePath == path && _curveKey == curveKey && _autoHeadroom == autoHeadroom && _requiresSpectrum == requiresSpectrum) return;
         _impulsePath = path; _curveKey = curveKey; _autoHeadroom = autoHeadroom;
+        _requiresSpectrum = requiresSpectrum;
         _prepareCancellation?.Cancel();
         _prepareCancellation?.Dispose();
         var cancellation = new CancellationTokenSource();
@@ -174,7 +182,7 @@ internal sealed class PcmEffects : IDisposable
         var token = cancellation.Token;
         int version = ++_impulseVersion;
         _convolutionStatus = ConvolutionStatus.Off;
-        if (!curve && string.IsNullOrEmpty(path)) { _filter = null; _spectra = null; _autoGainDb = 0; return; }
+        if (!curve && string.IsNullOrEmpty(path)) { _filter = null; _spectra = null; _prepared = null; _autoGainDb = 0; return; }
         if (_channels is < 1 or > 8) { _filter = null; _convolutionStatus = ConvolutionStatus.Unsupported; return; }
         _convolutionStatus = ConvolutionStatus.Loading;
         var settings = _settings;
@@ -183,9 +191,10 @@ internal sealed class PcmEffects : IDisposable
             ConvolutionFilter? filter = null;
             double autoGain = 0;
             System.Numerics.Complex[][]? spectra = null;
+            PreparedCorrectionCache.Prepared? prepared = null;
             try
             {
-                var prepared = PreparedCorrectionCache.Get(settings, _rate, _channels, token, _channelMask);
+                prepared = PreparedCorrectionCache.Get(settings, _rate, _channels, token, _channelMask);
                 spectra = prepared.Spectra;
                 if (autoHeadroom) autoGain = prepared.AutoGainDb;
                 token.ThrowIfCancellationRequested();
@@ -198,6 +207,7 @@ internal sealed class PcmEffects : IDisposable
                 if (_disposed || version != _impulseVersion) return;
                 _filter = filter;
                 _spectra = filter != null ? spectra : null;
+                _prepared = filter != null ? prepared : null;
                 _autoGainDb = autoGain;
                 _convolutionStatus = filter != null ? ConvolutionStatus.Active : ConvolutionStatus.Failed;
                 Publish();
@@ -291,6 +301,17 @@ internal sealed class PcmEffects : IDisposable
 
     /// <summary>seek 仅投递代数，滤波历史由渲染线程在下一块清空。</summary>
     internal void RequestReset() => Interlocked.Increment(ref _resetVersion);
+
+    /// <summary>仅在输出渲染屏障内调用。暂停后不再等待下一音频块来退休已关闭的卷积。</summary>
+    internal void RetireInactiveConvolution()
+    {
+        var target = Volatile.Read(ref _target);
+        if (target.Settings is { IsEnabled: true, ConvolutionEnabled: true }) return;
+        _renderTarget = null;
+        _renderFilter = _oldFilter = null;
+        _continuedFilter = _continuedTargetFilter = null;
+        _convolutionMix = 0;
+    }
 
     /// <summary>仅由渲染线程或停机屏障内调用；总开关旁路时同时退休卷积工作区。</summary>
     internal void ResetRenderState(bool releaseConvolution = false)

@@ -51,6 +51,7 @@ internal static unsafe partial class Program
     private static void RunPcmDspUpgradeTests()
     {
         RunDspMemoryLifetimeTests();
+        RunIrMemoryTests();
         Run("PCM: exhaustive 16-bit and boundary/random 24/32-bit integer round-trip", () =>
         {
             for (int sample = short.MinValue; sample <= short.MaxValue; sample++)

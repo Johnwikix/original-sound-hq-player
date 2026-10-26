@@ -667,11 +667,13 @@ public sealed partial class PlaybackEngine : IDisposable
                 lock (_streamLock)
                 {
                     // 令牌已递增（期间恢复了播放/再次暂停）或已回播放态 = 本次停机被取消
-                    if (token == _pauseFadeToken && !IsPlaying && _session != null)
+                    if (token != _pauseFadeToken) return;
+                    _pauseFadeActive = false;
+                    if (!IsPlaying && _session != null)
                     {
                         _output?.Pause();
+                        RetireInactiveConvolution();
                     }
-                    _pauseFadeActive = false;
                 }
             });
         }
@@ -679,6 +681,7 @@ public sealed partial class PlaybackEngine : IDisposable
         {
             _output?.Pause();
             IsPlaying = false;
+            RetireInactiveConvolution();
             _ipc.PlayStateUpdate(false);
         }
     }
@@ -810,6 +813,7 @@ public sealed partial class PlaybackEngine : IDisposable
             }
             catch { }
             IsPlaying = false;
+            RetireInactiveConvolution();
         }
     }
 
@@ -1425,6 +1429,7 @@ public sealed partial class PlaybackEngine : IDisposable
             _recovery = null;
             IsPlaying = false;
             DisposeSession();
+            PreparedCorrectionCache.Clear();
         }
         _fftAnalyzer.Dispose();
         if (!StopGaplessAsync().Wait(1500))

@@ -18,6 +18,7 @@ internal static class Program
             _ => throw new ArgumentException("AUDIOPLAYER_PROBE_LATENCY must be interactive or sustained.")
         };
         Console.WriteLine($"[gc-mode] {GCSettings.LatencyMode},server={GCSettings.IsServerGC}");
+        Console.WriteLine($"[runtime] {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}");
         using var collect = new EventWaitHandle(false, EventResetMode.AutoReset,
             "Local\\AudioPlayerMemory-" + Environment.GetEnvironmentVariable("ORIGINALSOUND_IPC_SCOPE"));
         using var stop = new CancellationTokenSource();
@@ -39,7 +40,9 @@ internal static class Program
                 long allocated = GC.GetTotalAllocatedBytes(true);
                 long heap = GC.GetTotalMemory(false);
                 var info = GC.GetGCMemoryInfo();
-                Console.WriteLine($"[memory] {Environment.TickCount64 - started},{allocated},{heap},{info.TotalCommittedBytes},{info.FragmentedBytes},{GC.CollectionCount(0)},{GC.CollectionCount(1)},{GC.CollectionCount(2)}");
+                long loh = info.GenerationInfo.Length > 3 ? info.GenerationInfo[3].SizeAfterBytes : 0;
+                long lohFragmented = info.GenerationInfo.Length > 3 ? info.GenerationInfo[3].FragmentationAfterBytes : 0;
+                Console.WriteLine($"[memory] {Environment.TickCount64 - started},{allocated},{heap},{info.TotalCommittedBytes},{info.FragmentedBytes},{GC.CollectionCount(0)},{GC.CollectionCount(1)},{GC.CollectionCount(2)},{info.HeapSizeBytes},{loh},{lohFragmented},{info.FinalizationPendingCount}");
                 Console.WriteLine($"[gc-pause] {Environment.TickCount64 - started},{GC.GetTotalPauseDuration().TotalMilliseconds:F4},{info.Index},{(info.PauseDurations.Length > 0 ? info.PauseDurations[0].TotalMilliseconds : 0):F4},{(info.PauseDurations.Length > 1 ? info.PauseDurations[1].TotalMilliseconds : 0):F4}");
                 WriteCollection(started, GCKind.Ephemeral, ref ephemeralIndex);
                 WriteCollection(started, GCKind.Background, ref backgroundIndex);

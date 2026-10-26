@@ -26,8 +26,7 @@ internal sealed class ConvolutionTier
     internal bool HasSameCoefficients(ConvolutionTier other)
     {
         if (ReferenceEquals(Prepared, other.Prepared)) return true;
-        // 文件脉冲响应不进入缓存。在曲目边界只比较一次有界且不可变的系数，
-        // 使内容未变的文件也能转移渲染历史。
+        // 缓存淘汰或预算外的 IR 在曲目边界仍可比较有界、不可变的系数。
         if (_channels != other._channels || _length != other._length || _partitions != other._partitions) return false;
         for (int ch = 0; ch < _channels; ch++)
         {
@@ -64,11 +63,11 @@ internal sealed class ConvolutionTier
         }
     }
 
-    internal static Coefficients Prepare(ImpulseResponse impulse, int rate, int channels, int block = 128, int? end = null, bool includeDirect = true)
+    internal static Coefficients Prepare(ImpulseResponse impulse, int rate, int channels, int block = 128, int? end = null, bool includeDirect = true, CancellationToken cancellation = default)
     {
         int Block = block, FftSize = block * 2;
         if (channels is < 1 or > 8) throw new InvalidDataException("Unsupported output channels.");
-        impulse = impulse.AtRate(rate);
+        impulse = impulse.AtRate(rate, cancellation);
         int count = Math.Min(impulse.Channels[0].Length, end ?? int.MaxValue);
         if (count > ImpulseResponse.MaxTaps) throw new InvalidDataException("Resampled IR exceeds 8192 taps.");
         int length = ((includeDirect ? Math.Min(count, Block) : Vector<double>.Count) + Vector<double>.Count - 1) / Vector<double>.Count * Vector<double>.Count;
@@ -78,6 +77,14 @@ internal sealed class ConvolutionTier
         var work = new Complex[FftSize];
         for (int ch = 0; ch < channels; ch++)
         {
+            cancellation.ThrowIfCancellationRequested();
+            // 单声道映射到多个输出时共享只读系数；历史和 FFT 工作区仍逐声道独占。
+            if (ch > 0 && impulse.Channels.Length == 1)
+            {
+                taps[ch] = taps[0];
+                kernels[ch] = kernels[0];
+                continue;
+            }
             taps[ch] = new double[length];
             kernels[ch] = new double[partitions][];
             for (int p = 0; p < partitions; p++) kernels[ch][p] = new double[FftSize * 2];
@@ -89,6 +96,7 @@ internal sealed class ConvolutionTier
             }
             foreach (var kernel in kernels[ch])
             {
+                cancellation.ThrowIfCancellationRequested();
                 for (int i = 0; i < FftSize; i++) work[i] = new Complex(kernel[i], 0);
                 ResponseMath.Fft(work, false);
                 Pack(work, kernel);

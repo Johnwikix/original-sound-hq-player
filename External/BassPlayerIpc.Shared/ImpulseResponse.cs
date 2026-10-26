@@ -22,7 +22,14 @@ public sealed record ImpulseResponse(int SampleRate, double[][] Channels)
     public static ImpulseResponse Read(string path)
     {
         using var stream = File.OpenRead(path);
-        using var reader = new BinaryReader(stream, Encoding.UTF8);
+        return Read(stream, default);
+    }
+
+    /// <summary>读取调用方拥有的可定位流，保留句柄用于同一文件快照的哈希与解析。</summary>
+    public static ImpulseResponse Read(Stream stream, CancellationToken cancellation)
+    {
+        cancellation.ThrowIfCancellationRequested();
+        using var reader = new BinaryReader(stream, Encoding.UTF8, leaveOpen: true);
         if (stream.Length > 64 * 1024 * 1024) throw new InvalidDataException("IR file exceeds 64 MiB.");
         if (stream.Length < 12 || reader.ReadUInt32() != 0x46464952) throw new InvalidDataException("Expected RIFF WAV.");
         long end = reader.ReadUInt32() + 8L;
@@ -68,6 +75,8 @@ public sealed record ImpulseResponse(int SampleRate, double[][] Channels)
         stream.Position = dataOffset;
         bool nonzero = false;
         for (int i = 0; i < count; i++)
+        {
+            if ((i & 1023) == 0) cancellation.ThrowIfCancellationRequested();
             for (int ch = 0; ch < channels; ch++)
             {
                 double value = format == 3 ? bits == 32 ? reader.ReadSingle() : reader.ReadDouble()
@@ -77,12 +86,16 @@ public sealed record ImpulseResponse(int SampleRate, double[][] Channels)
                 samples[ch][i] = value;
                 nonzero |= value != 0;
             }
+        }
         if (!nonzero) throw new InvalidDataException("Silent IR.");
         return new(rate, samples) { ChannelMask = channelMask };
     }
 
-    public ImpulseResponse AtRate(int rate)
+    public ImpulseResponse AtRate(int rate) => AtRate(rate, default);
+
+    public ImpulseResponse AtRate(int rate, CancellationToken cancellation)
     {
+        cancellation.ThrowIfCancellationRequested();
         if (Channels.Length is < 1 or > 8 || Channels[0].Length == 0
             || Channels.Any(c => c.Length != Channels[0].Length || c.Any(x => !double.IsFinite(x))))
             throw new InvalidDataException("Invalid IR coefficients.");
@@ -99,6 +112,7 @@ public sealed record ImpulseResponse(int SampleRate, double[][] Channels)
             result[ch] = new double[count];
             for (int i = 0; i < count; i++)
             {
+                if ((i & 1023) == 0) cancellation.ThrowIfCancellationRequested();
                 double x = i * ratio, value = 0;
                 for (int j = Math.Max(0, (int)x - radius); j <= Math.Min(Channels[ch].Length - 1, (int)x + radius); j++)
                 {

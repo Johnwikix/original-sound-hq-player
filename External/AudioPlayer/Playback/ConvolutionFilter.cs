@@ -27,13 +27,13 @@ internal sealed class ConvolutionFilter
         _sum = new double[_dry.Length]; _scratch = new double[_dry.Length];
     }
 
-    internal static Coefficients Prepare(ImpulseResponse impulse, int rate, int channels, uint outputMask = 0)
+    internal static Coefficients Prepare(ImpulseResponse impulse, int rate, int channels, uint outputMask = 0, CancellationToken cancellation = default)
     {
         if (channels is < 1 or > 8 || impulse.Channels.Length != 1 && impulse.Channels.Length != channels)
             throw new InvalidDataException("IR must be mono or match output channels exactly.");
         if (impulse.Channels.Length > 1 && impulse.ChannelMask != 0 && outputMask != 0 && impulse.ChannelMask != outputMask)
             throw new InvalidDataException("IR speaker layout does not match output.");
-        impulse = impulse.AtRate(rate);
+        impulse = impulse.AtRate(rate, cancellation);
         int count = impulse.Channels[0].Length;
         ImpulseResponse.ValidateBudget(rate, channels, count);
         using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
@@ -44,7 +44,8 @@ internal sealed class ConvolutionFilter
         for (int block = 128; ; block *= 4)
         {
             int end = block >= 2048 ? count : Math.Min(count, block * 4);
-            tiers.Add(ConvolutionTier.Prepare(impulse, rate, channels, block, end, block == 128));
+            cancellation.ThrowIfCancellationRequested();
+            tiers.Add(ConvolutionTier.Prepare(impulse, rate, channels, block, end, block == 128, cancellation));
             if (end == count) break;
         }
         return new(tiers.ToArray(), channels, count - 1, Convert.ToHexString(hash.GetHashAndReset()));

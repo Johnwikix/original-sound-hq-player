@@ -2,6 +2,25 @@
 
 诊断程序编译真实 AudioPlayer 源码，保持 NativeAOT、`EventSourceSupport=false`，默认使用 `Interactive`（与当前生产入口一致）；只替换入口，增加每秒一次托管计数/GC 类型采样和测试专用 GC 请求事件。不替换 `Player/AudioPlayer.exe`，不连接用户正在运行的播放器。SmokeTest 使用独立 IPC scope、静音及真实 WASAPI 共享输出。
 
+## 进程内存与 GC 场景矩阵
+
+`AudioPlayerSmokeTest --memory-matrix` 支持 `idle`、`off`、`baseline`、`trackswitch`、`limiter`、`resample`（192 kHz）、`ir`（96 kHz）、`ir-native`（保持源采样率）、`ir-switch`、`toggle`、`gapless`、`normalize`。每组启动独立进程，静音，预热 5 秒，随后逐秒记录进程 Private Bytes、Working Set、句柄、线程、CPU 与真实播放状态。切歌必须更新 epoch 并推进进度；无缝组必须至少发生两次真实交接。`--next` 指定另一首 600/660 秒歌曲，无缝组使用约 8 秒歌曲，避免只准备下一首却没有交接。
+
+```powershell
+dotnet build _tools/AudioPlayerSmokeTest -c Release
+dotnet publish _tools/AudioPlayerMemoryProbe -c Release -r win-x64 -o artifacts/audio-memory/probe
+dotnet _tools/AudioPlayerSmokeTest/bin/Release/net11.0/AudioPlayerSmokeTest.dll artifacts/audio-memory/probe/AudioPlayerMemoryProbe.exe <600秒歌曲.wav> 60 --memory-matrix --scenario=ir-switch --next=<660秒歌曲.wav> --ir=<长IR.wav> --result=artifacts/audio-memory/ir-switch.json --collect-after-stop > artifacts/audio-memory/ir-switch.log
+python _tools/AudioPlayerMemoryProbe/Summarize-Matrix.py artifacts/audio-memory
+```
+
+`--collect-after-stop` 在 MusicEnd 后执行诊断 GC，并在关闭 DSP 后重复；自然 GC 窗口只取 `[matrix-phase] measuring` 至 `stopped`。不加此参数可直接测原始发布 EXE，但它没有托管采样和诊断 GC 事件。`--mode=ASIO` 使用 ASIO 设备 0；必须核对 JSON 中的实际 Output，不能把共享回退当作 ASIO 测量。汇总脚本输出 CSV、JSON 和逐秒数据；计数/分配按相邻采样的实际时间差统计，各代计数是重叠累计值。
+
+`--auto-preamp` 可对同一 IR 场景开启自动前级，结果 Settings 中记录实际请求，便于核对按需频谱的内存成本；默认关闭以与原始矩阵对照。
+
+`[memory]` 在原有字段后追加最近 GC 的 HeapSizeBytes、LOH SizeAfterBytes、LOH FragmentationAfterBytes、FinalizationPendingCount。它们属于最近一次 GC 的快照；首次 GC 前为零不代表没有占用。停止保留会话；显式 GC 后仍存活的会话工作区不能直接解释为泄漏。
+
+需要事件级证据时另行发布 `-p:EventSourceSupport=true -o artifacts/audio-memory/probe-trace`，通过 `dotnet-trace collect --process-id <PID> --profile gc-verbose` 采集，避免与普通内存矩阵同时运行。用 `dotnet run --project _tools/AudioPlayerGcTrace -- <input.nettrace> <output.json>` 解析回收原因、采样类型/栈及 SuspendEEStart→RestartEEStop 暂停窗口。GC Start→End 仅为回收历时，后台 GC 不可按此计算 STW；AllocationTick 按类型归因的字节是采样估计。未解析到方法符号时应保留限制，不把空栈或未知符号解释成没有分配。
+
 从仓库根目录执行（.NET 11 SDK 与现有依赖）：
 
 ```powershell
