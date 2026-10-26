@@ -486,7 +486,7 @@ internal static class RegressionSuite
 
     private static void ProbeAudio(string root)
     {
-        string nativeRoot = Path.GetFullPath("bin/x64/Debug/net11.0-windows10.0.26100.0/win-x64");
+        string nativeRoot = Path.GetFullPath("Libraries/FFmpeg/x64");
         Check(File.Exists(Path.Combine(nativeRoot, "avformat-63.dll")), "build native FFmpeg binaries first");
         FFmpeg.AutoGen.ffmpeg.RootPath = nativeRoot;
         string wav = Path.Combine(root, "音频.wav");

@@ -20,6 +20,38 @@ internal static class EditorRecoveryChecks
         string root = Path.Combine(Path.GetTempPath(), "lyrics-editor-recovery-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(root);
 
+        await Scenario("metadata snapshots and edits during commit", async () =>
+        {
+            var music = new Music { Id = 20, Path = Path.Combine(root, "snapshot.flac"), Title = "Original" };
+            await db.InsertAsync(music);
+            using var editor = new LyricsEditorViewModel(music, database, parser, online, tasks);
+            await editor.LoadAsync();
+            var snapshot = new Music { Id = music.Id, SourceId = music.SourceId, Path = music.Path, Title = "Snapshot title" };
+            Check(await editor.SaveAsync(metadataDraft: snapshot), "private metadata snapshot saves");
+            Check(music.Title == "Original" && (await db.FindAsync<Music>(20)).Title == "Snapshot title" &&
+                ReferenceEquals(editor.LastCommittedMetadata, snapshot), "transaction saves the immutable draft without premature shared-model edits");
+            var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            database.BeforeSave = () => { entered.TrySetResult(); return release.Task; };
+            try
+            {
+                var next = new Music { Id = music.Id, SourceId = music.SourceId, Path = music.Path, Title = "Committed while typing" };
+                var save = editor.SaveAsync(metadataDraft: next);
+                await entered.Task;
+                editor.OriginalText = "[00:01.000]Newer lyric draft";
+                release.TrySetResult();
+                Check(!await save && ReferenceEquals(editor.LastCommittedMetadata, next) &&
+                    (await db.FindAsync<Music>(20)).Title == next.Title, "committed metadata remains publishable while newer lyrics keep the window open");
+            }
+            finally { release.TrySetResult(); database.BeforeSave = null; }
+            try
+            {
+                await editor.SaveAsync(metadataDraft: new Music { Id = 21, Path = music.Path });
+                throw new Exception("wrong-track metadata snapshot accepted");
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("different track")) { }
+        });
+
         await Scenario("metadata with unchanged unknown lyrics", async () =>
         {
             var music = new Music { Id = 2, Path = Path.Combine(root, "unknown.flac") };

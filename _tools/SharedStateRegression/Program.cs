@@ -47,6 +47,35 @@ static async Task RunAsync()
     await editors.StopAsync();
     Console.WriteLine("PASS: shared shortcut notifications; editor unsubscribe, actual drain, failure isolation and idempotence.");
 
+
+    var tagState = new AppState();
+    tagState.Library.Replace([
+        new Music(1, "one.flac") { Title = "Z", Author = "B", AlbumArtist = "", Genre = "" },
+        new Music(2, "two.flac") { Title = "A", Author = "Z", AlbumArtist = "A", Genre = "Jazz", Composer = "rare composer" },
+        new Music(3, "three.flac") { Title = "B", Author = "B", AlbumArtist = "", Genre = " " },
+        new Music(4, "four.flac") { Title = "C", Author = "A", AlbumArtist = "", Genre = "Classical", CatalogNumber = "CAT-rare" },
+        new Music(5, "five.flac") { Title = "D", Author = "", AlbumArtist = "", Genre = "" }
+    ]);
+    var tagProjection = new LibraryProjectionService(tagState, new LibraryQueries(tagState.Library),
+        Microsoft.Extensions.Logging.Abstractions.NullLogger<LibraryProjectionService>.Instance);
+    var tagList = new BulkObservableCollection<Music>();
+    tagState.Browse.SelectedSortOption = new SortOption { Tag = "AlbumArtist" };
+    await tagProjection.UpdateSongCollectionsAsync(tagList, SongViewType.All);
+    Check(tagList.Select(m => m.Id).SequenceEqual([2, 4, 3, 1, 5]), "Album artist sort falls back to track artist and puts missing effective names last.");
+    tagState.Browse.SelectedSortOption = new SortOption { Tag = "Genre" };
+    await tagProjection.UpdateSongCollectionsAsync(tagList, SongViewType.All);
+    Check(tagList.Select(m => m.Id).SequenceEqual([4, 2, 3, 5, 1]), "Genre sort puts absent/whitespace tags last and orders them by title.");
+    tagState.Browse.SearchText = "RARE COMPOSER";
+    await tagProjection.UpdateSongCollectionsAsync(tagList, SongViewType.All);
+    Check(tagList.Count == 1 && tagList[0].Id == 2, "New tags participate in case-insensitive projected search.");
+    Check(LibraryProjectionService.MusicMatchesSearch(tagState.Library.Songs[3], "CAT-rare"), "Playlist search uses the same additional metadata fields.");
+    tagState.Browse.SearchText = "";
+    tagState.Library.Replace(Enumerable.Range(0, 1000).Select(i => new Music(i + 1, i + ".flac") { Title = (1000 - i).ToString("D4"), Author = "" }).ToList());
+    await tagProjection.UpdateSongCollectionsAsync(tagList, SongViewType.All);
+    Check(tagList.Count == 1000 && tagList[0].Title == "0001" && tagList[^1].Title == "1000", "A library with no optional tags still has a deterministic useful order.");
+    await tagProjection.StopAsync();
+    Console.WriteLine("PASS: sparse optional metadata search, album artist fallback, unknown genres last, stable all-empty sorting.");
+
     var queue = new PlaybackQueueState();
     var first = new Music(1, "one.flac");
     var external = new Music(0, "external.flac");

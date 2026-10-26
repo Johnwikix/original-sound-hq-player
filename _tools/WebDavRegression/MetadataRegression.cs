@@ -4,6 +4,22 @@ internal static class MetadataRegression
 {
     public static async Task RunAsync(WebDavTransport transport)
     {
+        string path = Path.Combine(Path.GetTempPath(), "remote-tags-" + Guid.NewGuid().ToString("N") + ".mp3");
+        try
+        {
+            var frames = new byte[417 * 8];
+            for (int i = 0; i < 8; i++) new byte[] { 255, 251, 144, 192 }.CopyTo(frames, i * 417);
+            await File.WriteAllBytesAsync(path, frames);
+            var tags = new WinUIMusicPlayer.Model.AdditionalMusicMetadata("Album artist", "Jazz", "Composer", "Lyricist", "Conductor", "CAT-001");
+            var track = new ATL.Track(path);
+            WinUIMusicPlayer.Utils.AudioMetadataTags.Write(track, tags);
+            Check(track.Save(), "generated remote tag fixture saves");
+            using var input = File.OpenRead(path);
+            var metadata = RemoteMetadataProbe.ReadMetadata(input, ".mp3", default);
+            var exposed = new WinUIMusicPlayer.Model.AdditionalMusicMetadata("Album artist", "Jazz", "Composer", "", "", "CAT-001");
+            Check(metadata.AdditionalMetadata == exposed, "remote probe keeps directly exposed tags and does not guess unavailable role aliases");
+        }
+        finally { File.Delete(path); }
         foreach (int rate in new[] { 2822400, 5644800, 11289600 })
         {
             using var fixture = new DsfHttpFixture(dsdRate: rate);

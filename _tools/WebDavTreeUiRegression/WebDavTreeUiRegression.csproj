@@ -34,4 +34,8 @@
     <Page Include="../../View/SubView/WebDavBrowserDialog.xaml" Link="View/SubView/WebDavBrowserDialog.xaml" />
     <Page Include="../../View/SubView/WebDavConnectionDialog.xaml" Link="View/SubView/WebDavConnectionDialog.xaml" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="../../Model/AdditionalMusicMetadata.cs" />
+    <Compile Include="../../Services/MusicMetadataStorage.cs" />
+  </ItemGroup>
 </Project>

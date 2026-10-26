@@ -107,6 +107,8 @@ public partial class MusicDatabaseService
                             music.Title, music.Author, music.Album, music.Duration, music.FolderPath, music.LastLevelFolderPath,
                             music.Extension, music.BitDepth, music.BitRate, music.SampleRate, music.Channel,
                             music.TrackNumber, music.DiskNumber, music.Year, music.CreateTime, music.UpdateTime, music.Id);
+                        if (music.AdditionalMetadataRead)
+                            MusicMetadataStorage.Save(db, music.Id, AdditionalMusicMetadata.From(music));
                     }
                     if (embedded.TryGetValue(music, out var document))
                         WinUIMusicPlayer.Services.Lyrics.LyricsRepository.AddEmbeddedInTransaction(db, music.Id, document);

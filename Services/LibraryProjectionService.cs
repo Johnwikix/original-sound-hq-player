@@ -128,15 +128,16 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
     }
 
     private readonly record struct SongRow(Music Music, string? Title, string? Author, string? Album, string? Folder, string? Path,
-        int Disk, int Track, int Order, DateTime Created, DateTime Updated)
+        int Disk, int Track, int Order, DateTime Created, DateTime Updated, int Id, AdditionalMusicMetadata Additional)
     {
         public SongRow(Music music) : this(music, music.Title, music.Author, music.Album, music.LastLevelFolderPath, music.Path,
-            music.DiskNumber, music.TrackNumber, music.Order, music.CreateTime, music.UpdateTime)
+            music.DiskNumber, music.TrackNumber, music.Order, music.CreateTime, music.UpdateTime, music.Id, AdditionalMusicMetadata.From(music))
         { }
         public bool Matches(string search, bool folder) => string.IsNullOrWhiteSpace(search) ||
             (Title?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
             (Author?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
             (Album?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false) ||
+            Additional.Matches(search) ||
             FileNameMatchesSearch(Path, search) ||
             (folder && (Folder?.Contains(search, StringComparison.OrdinalIgnoreCase) ?? false));
         public static IComparer<SongRow> Comparer(string sort, SongViewType kind) => System.Collections.Generic.Comparer<SongRow>.Create((a, b) =>
@@ -144,6 +145,8 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
             int c;
             switch (sort)
             {
+                case "AlbumArtist": return CompareMetadata(a, b, byGenre: false);
+                case "Genre": return CompareMetadata(a, b, byGenre: true);
                 case "Artist": return CjkStringComparer.Compare(a.Author, b.Author);
                 case "Album":
                     c = CjkStringComparer.Compare(a.Album, b.Album);
@@ -259,6 +262,8 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
                 "A-Z" => _songByTitle,
                 "Artist" => _songByAuthor,
                 "Album" => _songByAlbum,
+                "AlbumArtist" => _songByAlbumArtist,
+                "Genre" => _songByGenre,
                 "CreateTimeASC" => _songByCreateTimeAsc,
                 "CreateTimeDESC" => _songByCreateTimeDesc,
                 "UpdateTimeASC" => _songByUpdateTimeAsc,
@@ -344,6 +349,7 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
         return (m.Title is not null && m.Title.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
                (m.Album is not null && m.Album.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
                (m.Author is not null && m.Author.Contains(search, StringComparison.OrdinalIgnoreCase)) ||
+               AdditionalMusicMetadata.From(m).Matches(search) ||
                FileNameMatchesSearch(m.Path, search);
     }
 
@@ -362,6 +368,38 @@ public sealed class LibraryProjectionService(AppState state, LibraryQueries quer
 
     private static readonly System.Collections.Generic.IComparer<PlayListMusicItem> _byPlayListOrderDesc =
         Comparer<PlayListMusicItem>.Create((a, b) => b.PlayListOrder.CompareTo(a.PlayListOrder));
+    // 空标签不会变成“未知”文本或新的身份；同键以曲目 ID/路径稳定排序。
+    private static int CompareMetadata(SongRow a, SongRow b, bool byGenre)
+    {
+        string? left = byGenre ? a.Additional.Genre :
+            string.IsNullOrWhiteSpace(a.Additional.AlbumArtist) ? a.Author : a.Additional.AlbumArtist;
+        string? right = byGenre ? b.Additional.Genre :
+            string.IsNullOrWhiteSpace(b.Additional.AlbumArtist) ? b.Author : b.Additional.AlbumArtist;
+        bool leftEmpty = string.IsNullOrWhiteSpace(left), rightEmpty = string.IsNullOrWhiteSpace(right);
+        int result = leftEmpty.CompareTo(rightEmpty); // 缺失值始终排在已知值之后。
+        if (result == 0 && !leftEmpty) result = CjkStringComparer.Compare(left, right);
+        if (result != 0) return result;
+        if (!byGenre)
+        {
+            result = CjkStringComparer.Compare(a.Album, b.Album);
+            if (result != 0) return result;
+            result = a.Disk.CompareTo(b.Disk);
+            if (result != 0) return result;
+            result = a.Track.CompareTo(b.Track);
+            if (result != 0) return result;
+        }
+        result = CjkStringComparer.Compare(a.Title, b.Title);
+        if (result != 0) return result;
+        result = CjkStringComparer.Compare(a.Author, b.Author);
+        if (result != 0) return result;
+        result = a.Id.CompareTo(b.Id);
+        return result != 0 ? result : string.Compare(a.Path, b.Path, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static readonly IComparer<Music> _songByAlbumArtist =
+        Comparer<Music>.Create((a, b) => CompareMetadata(new(a), new(b), byGenre: false));
+    private static readonly IComparer<Music> _songByGenre =
+        Comparer<Music>.Create((a, b) => CompareMetadata(new(a), new(b), byGenre: true));
     private static readonly IComparer<Music> _songByTitle =
         Comparer<Music>.Create((a, b) => CjkStringComparer.Compare(a.Title, b.Title));
     private static readonly IComparer<Music> _songByAuthor =
