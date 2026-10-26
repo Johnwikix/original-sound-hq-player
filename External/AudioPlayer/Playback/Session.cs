@@ -65,6 +65,14 @@ internal sealed class Session : IRenderSource, IDisposable
     internal readonly PcmEffects? Effects;
     private bool _dspEnabled = true;
     private int _dspResetVersion, _renderDspResetVersion;
+    private bool _tailStarted, _hasRenderedPcm;
+    private int _tailRemaining, _tailFramesRendered;
+    private long _renderedFrames;
+    internal bool PcmInputDrained => _pcmRing?.IsDrained == true;
+    internal bool DspReady => Effects?.IsPrepared ?? true;
+    internal bool TailStarted => _tailStarted;
+    internal long DspDelayMs => Kind == RenderKind.Pcm && Volatile.Read(ref _dspEnabled)
+        ? (long)Math.Ceiling(Math.Max(0, (Effects?.DelayFrames ?? 0) - (_tailStarted ? Volatile.Read(ref _tailFramesRendered) : 0)) * 1000.0 / SampleRate) : 0;
 
     /// <summary>发布音效设置；总开关关闭时音频块跳过整条效果链。</summary>
     internal void ConfigureDsp(BassPlayerIpc.Shared.DspSettings settings)
@@ -78,6 +86,7 @@ internal sealed class Session : IRenderSource, IDisposable
 
     public RenderKind Kind { get; }
     public int Channels { get; }
+    public bool DitherEnabled => Kind == RenderKind.Pcm && Volatile.Read(ref _dspEnabled) && Effects?.DitherEnabled == true;
     public uint ChannelMask { get; private init; }
     public bool IsAtmos { get; private init; }
     internal bool EnhancementActive { get; private init; }
@@ -129,7 +138,7 @@ internal sealed class Session : IRenderSource, IDisposable
     public static Session? Open(PlaybackEngine engine, string path, RenderKind kind,
         int dsdPcmFreq, int dsdGainDb, int latencyMs, int? forcedRate = null, int? forcedChannels = null,
         int? maxChannels = null, bool experimentalSurround51 = false, AtmosProbeCache? atmosProbeCache = null, PlaybackSource? source = null, CancellationToken cancellationToken = default, double playbackRate = 1,
-        SpectralEnhancementMode enhancement = SpectralEnhancementMode.Off, int? enhancementDeviceRate = null)
+        SpectralEnhancementMode enhancement = SpectralEnhancementMode.Off, int? enhancementDeviceRate = null, PcmResampleMode resampleMode = PcmResampleMode.Source, int resampleTargetRate = 192000)
     {
         Session? pending = null;
         IDisposable? input = null;
@@ -141,7 +150,7 @@ internal sealed class Session : IRenderSource, IDisposable
                 {
                     var dec = new PcmDecoder();
                     input = dec;
-                    if (!dec.Open(path, dsdPcmFreq, dsdGainDb, forcedRate, forcedChannels, maxChannels, experimentalSurround51, source, cancellationToken, enhancement, enhancementDeviceRate)) { dec.Dispose(); return null; }
+                    if (!dec.Open(path, dsdPcmFreq, dsdGainDb, forcedRate, forcedChannels, maxChannels, experimentalSurround51, source, cancellationToken, enhancement, enhancementDeviceRate, resampleMode, resampleTargetRate)) { dec.Dispose(); return null; }
                     // 不可定位的流在采样率变化后无法安全地从可听位置重建。
                     if (!dec.CanSeek) playbackRate = 1;
                     int rate = dec.SampleRate;
@@ -163,7 +172,7 @@ internal sealed class Session : IRenderSource, IDisposable
                         CanSeek = dec.CanSeek,
                         InitialBufferFrames = initialFrames,
                     };
-                    s.Effects!.SetFile(path, dsdPcmFreq, dsdGainDb, source);
+                    s.Effects!.SetFile(path, dsdPcmFreq, dsdGainDb, source, dec.AnalysisChannelMask);
                     pending = s;
                     s.StartThread(s.PcmDecodeProc);
                     return s;
@@ -268,10 +277,10 @@ internal sealed class Session : IRenderSource, IDisposable
 
     // ─────────────── 引擎侧控制 ───────────────
 
-    public long SubmittedFrames => FramesPlayed;
+    public long SubmittedFrames => Kind == RenderKind.Pcm ? Interlocked.Read(ref _renderedFrames) : FramesPlayed;
     public long FramesPlayed => _pcmRing?.FramesPlayed ?? _dopRing?.FramesPlayed ?? _dsdRing?.FramesPlayed ?? _iecRing?.FramesPlayed ?? 0;
     public int ReadyFrames => _pcmRing?.ReadyFrames ?? _dopRing?.ReadyFrames ?? _dsdRing?.ReadyFrames ?? _iecRing?.ReadyFrames ?? 0;
-    public bool IsDrained => DecodeFailure == null && (_pcmRing?.IsDrained ?? _dopRing?.IsDrained ?? _dsdRing?.IsDrained ?? _iecRing?.IsDrained ?? false);
+    public bool IsDrained => DecodeFailure == null && (_pcmRing != null ? _pcmRing.IsDrained && (!_hasRenderedPcm || _tailStarted && _tailRemaining == 0) : _dopRing?.IsDrained ?? _dsdRing?.IsDrained ?? _iecRing?.IsDrained ?? false);
 
     /// <summary>seek：立即重置环与锚点（进度条即时响应），解码线程随后转到新位置。</summary>
     public void RequestSeek(long targetMs, long seekId = 0)
@@ -531,20 +540,34 @@ internal sealed class Session : IRenderSource, IDisposable
         _renderDspResetVersion = Volatile.Read(ref _dspResetVersion);
     }
 
-    internal int RenderPcm(Span<double> buffer, int frames)
+    internal int RenderPcm(Span<double> buffer, int frames, bool drainTail = true)
     {
         if (_pcmRing == null || Gain == null) { buffer[..(frames * _channels)].Clear(); return 0; }
-        int audible = _pcmRing.Render(buffer, frames);
-        if (audible <= 0) return 0; // 预缓冲/欠载静音段：不推进 EQ 与增益斜坡
-        if (Volatile.Read(ref _dspEnabled))
+        int reset = Volatile.Read(ref _dspResetVersion);
+        if (reset != _renderDspResetVersion)
         {
-            int resetVersion = Volatile.Read(ref _dspResetVersion);
-            if (resetVersion != _renderDspResetVersion)
+            if (Volatile.Read(ref _dspEnabled)) { Eq.ResetHistory(); Effects?.ResetRenderState(); }
+            _tailStarted = _hasRenderedPcm = false; _tailRemaining = _tailFramesRendered = 0;
+            _renderDspResetVersion = reset;
+        }
+        int audible = _pcmRing.Render(buffer, frames);
+        if (audible > 0) _hasRenderedPcm = true;
+        bool enabled = Volatile.Read(ref _dspEnabled);
+        if (drainTail && _pcmRing.IsDrained)
+        {
+            if (!_tailStarted)
             {
-                Eq.ResetHistory();
-                Effects?.ResetRenderState();
-                _renderDspResetVersion = resetVersion;
+                _tailStarted = true;
+                _tailRemaining = _hasRenderedPcm && enabled ? (Effects?.TailFrames ?? 0) + (Effects?.DelayFrames ?? 0) : 0;
             }
+            _tailRemaining = Math.Min(_tailRemaining, enabled ? (Effects?.TailFrames ?? 0) + (Effects?.DelayFrames ?? 0) : 0);
+            int extra = Math.Min(frames - audible, _tailRemaining);
+            audible += extra; _tailRemaining -= extra;
+            _tailFramesRendered += extra;
+        }
+        if (audible <= 0) return 0; // 暂时欠载不推进处理历史。
+        if (enabled)
+        {
             Effects?.ApplyInput(buffer, audible);
             Eq.Process(buffer, audible, _channels);
             Effects?.ApplyConvolution(buffer, audible);
@@ -552,6 +575,8 @@ internal sealed class Session : IRenderSource, IDisposable
             Effects?.ApplyDynamics(buffer, audible);
         }
         Gain.Apply(buffer, audible, _channels);
+        if (enabled) Effects?.ApplyFinal(buffer, audible);
+        Interlocked.Add(ref _renderedFrames, audible);
         _engine.CaptureFft(buffer, audible, _channels, ChannelMask, SampleRate);
         return audible;
     }

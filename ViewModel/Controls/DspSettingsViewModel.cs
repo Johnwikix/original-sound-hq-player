@@ -122,10 +122,11 @@ public partial class DspSettingsViewModel : ObservableObject
     /// <summary>交叉馈送档位索引：0 关闭、1 轻度（0.2）、2 中度（0.4）。</summary>
     public int CrossfeedIndex
     {
-        get => field;
+        get => CrossfeedAmount switch { 0 => 0, 20 => 1, 40 => 2, _ => -1 };
         set
         {
-            if (SetProperty(ref field, value)) SettingChanged(LicenseFeature.Crossfeed);
+            if (_syncing || !_loaded || (uint)value > 2) return;
+            CrossfeedAmount = value switch { 1 => 20, 2 => 40, _ => 0 };
         }
     }
 
@@ -332,6 +333,7 @@ public partial class DspSettingsViewModel : ObservableObject
         _syncing = true;
         DspSettings settings = AppSettings.Dsp.ToUnifiedGain();
         bool effectsActive = _available && settings.IsEnabled;
+        LoadPcmValues(settings, effectsActive);
         GaplessPlayback = settings.GaplessPlayback;
         PlaybackRate = settings.PlaybackRate;
         CompressorEnabled = effectsActive && settings.CompressorEnabled;
@@ -349,7 +351,7 @@ public partial class DspSettingsViewModel : ObservableObject
         Balance = settings.Balance * 100;
         SwapChannels = effectsActive && settings.SwapChannels;
         Mono = effectsActive && settings.Mono;
-        CrossfeedIndex = !effectsActive || settings.Crossfeed == 0 ? 0 : settings.Crossfeed <= 0.2 ? 1 : 2;
+        OnPropertyChanged(nameof(CrossfeedIndex));
         StereoWidth = settings.StereoWidth * 100;
         _syncing = false;
     }
@@ -375,6 +377,7 @@ public partial class DspSettingsViewModel : ObservableObject
         bool editabilityChanged = EffectsActive != effectsActive || _lastRestrictedFeatures != _license.RestrictedFeatures;
         EffectsActive = effectsActive;
         OnPropertyChanged(nameof(PlaybackRateEditable));
+        OnPropertyChanged(nameof(PcmConfigurationEditable));
         _lastRestrictedFeatures = _license.RestrictedFeatures;
         if (editabilityChanged)
         {
@@ -446,6 +449,12 @@ public partial class DspSettingsViewModel : ObservableObject
         var saved = AppSettings.Dsp;
         var candidate = (saved with
         {
+            ResampleMode = (PcmResampleMode)ResampleModeIndex,
+            ResampleTargetRate = (uint)ResampleTargetIndex < PcmTargetRates.Length ? PcmTargetRates[ResampleTargetIndex] : saved.ResampleTargetRate,
+            TruePeakLimiterEnabled = TruePeakLimiterEnabled,
+            TruePeakCeilingDb = TruePeakCeilingDb,
+            DitherEnabled = DitherEnabled,
+            CrossfeedCutoffHz = CrossfeedCutoffHz,
             PlaybackRate = PlaybackRate,
             CompressorEnabled = CompressorEnabled,
             CompressorThresholdDb = CompressorThresholdDb,
@@ -458,7 +467,7 @@ public partial class DspSettingsViewModel : ObservableObject
             TargetLufs = double.IsFinite(TargetLufs) ? TargetLufs : AppSettings.Dsp.TargetLufs,
             HeadroomDb = double.IsFinite(HeadroomDb) ? HeadroomDb : AppSettings.Dsp.HeadroomDb,
             Balance = Balance / 100, SwapChannels = SwapChannels, Mono = Mono,
-            Crossfeed = CrossfeedIndex switch { 1 => 0.2, 2 => 0.4, _ => 0 },
+            Crossfeed = CrossfeedAmount / 100,
             StereoWidth = StereoWidth / 100
         }).Sanitize();
         AppSettings.Dsp = LicensePolicy.PreserveRestrictedPreferences(candidate, saved, _license.RestrictedFeatures);

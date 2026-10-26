@@ -101,6 +101,8 @@ public sealed partial class PlaybackEngine : IDisposable
     public string? MusicUrl;
     public int DsdGain = 6;
     public int DsdPcmFreq = 88200;
+    private PcmResampleMode EffectiveResampleMode => _dspSettings?.IsEnabled != false ? _dspSettings?.ResampleMode ?? PcmResampleMode.Source : PcmResampleMode.Source;
+    private int EffectiveResampleTarget => _dspSettings?.ResampleTargetRate ?? 192000;
     public bool IsEqualizerEnabled;
     public bool IsFadingEnabled;
     public float Volume = 0.5f;
@@ -337,7 +339,7 @@ public sealed partial class PlaybackEngine : IDisposable
             return Session.Open(this, url, remoteKind, DsdPcmFreq, DsdGain, Latency,
                 forcedRate: forceSharedFormat ? mix?.SampleRate : null, forcedChannels: forceSharedFormat ? mix?.Channels : null, maxChannels: 2,
                 source: remote.Source, cancellationToken: remote.Cancel.Token, playbackRate: EffectivePlaybackRate,
-                enhancement: EffectiveEnhancement, enhancementDeviceRate: mix?.SampleRate);
+                enhancement: EffectiveEnhancement, enhancementDeviceRate: mix?.SampleRate, resampleMode: EffectiveResampleMode, resampleTargetRate: EffectiveResampleTarget);
         }
         if (ExperimentalAtmosPassthrough && !forceSharedFormat && !_atmosUseSharedPcm && !_surroundFallback
             && kindOverride is null or RenderKind.Eac3)
@@ -399,7 +401,7 @@ public sealed partial class PlaybackEngine : IDisposable
             && (forceSharedFormat || IsSharedMode(OutputMode)) && enhancementMix == null) return null;
         var session = Session.Open(this, url, kind, DsdPcmFreq, DsdGain, Latency, forcedRate, forcedChannels, maxChannels, surround51, playbackRate: EffectivePlaybackRate,
             enhancement: _atmosUseSharedPcm ? SpectralEnhancementMode.Off : EffectiveEnhancement,
-            enhancementDeviceRate: enhancementMix);
+            enhancementDeviceRate: enhancementMix, resampleMode: EffectiveResampleMode, resampleTargetRate: EffectiveResampleTarget);
         if (session != null)
         {
             session.ConfigureDsp(_deviceCorrections.Enabled
@@ -873,7 +875,7 @@ public sealed partial class PlaybackEngine : IDisposable
         if (session == null) return (0, 0);
         long total = session.TotalMs;
         long anchor = session.FramesToMs(Volatile.Read(ref session.AnchorFrames));
-        long cur = Math.Min(Math.Max(anchor, session.CurrentMs - (long)((_output?.PendingAudioMs ?? 0) * session.PlaybackRate)),
+        long cur = Math.Min(Math.Max(anchor, session.CurrentMs - (long)(((_output?.PendingAudioMs ?? 0) + session.DspDelayMs) * session.PlaybackRate)),
             total > 0 ? total : long.MaxValue);
         return (cur, total);
     }
@@ -1031,14 +1033,19 @@ public sealed partial class PlaybackEngine : IDisposable
         {
             AdoptGapless();
             bool rateChanged = _session is { Kind: RenderKind.Pcm, CanSeek: true } pcm && pcm.PlaybackRate != (normalized.IsEnabled ? normalized.PlaybackRate : 1);
+            bool topologyChanged = _session is { Kind: RenderKind.Pcm, CanSeek: true }
+                && (EffectiveResampleMode != (normalized.IsEnabled ? normalized.ResampleMode : PcmResampleMode.Source)
+                    || normalized.IsEnabled && normalized.ResampleMode != PcmResampleMode.Source && EffectiveResampleTarget != normalized.ResampleTargetRate
+                    || ((_dspSettings?.IsEnabled ?? true) && (_dspSettings?.TruePeakLimiterEnabled ?? false))
+                        != (normalized.IsEnabled && normalized.TruePeakLimiterEnabled));
             bool enhancementChanged = _session is { Kind: RenderKind.Pcm }
                 && SpectralEnhancement != SpectralEnhancementMode.Off
                 && (_dspSettings?.IsEnabled ?? true) != normalized.IsEnabled;
-            if (rateChanged || enhancementChanged || !normalized.GaplessPlayback) CancelGapless();
+            if (rateChanged || topologyChanged || enhancementChanged || !normalized.GaplessPlayback) CancelGapless();
             _previewDeviceId = null;
             _previewSettings = null;
             _dspSettings = normalized;
-            if (rateChanged || enhancementChanged) ChangingSetting();
+            if (rateChanged || topologyChanged || enhancementChanged) ChangingSetting();
             ApplyDspToSessions();
             QueueDspState();
         }

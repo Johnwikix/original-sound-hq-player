@@ -632,8 +632,10 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
         _drain.CompleteBlock((int)frames, Math.Max(0, source.SubmittedFrames - before), Math.Max(_pipelineFrames, (int)_bufferFrames));
     }
 
-    private static void ConvertDoubleToEndpoint(double[] src, byte* dst, int total, int kind)
+    private PcmQuantizer _quantizer;
+    private void ConvertDoubleToEndpoint(double[] src, byte* dst, int total, int kind)
     {
+        bool dither = _source.DitherEnabled;
         fixed (double* p = src)
         {
             switch (kind)
@@ -651,7 +653,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                         for (int i = 0; i < total; i++)
                         {
                             double s = ClampSample(p[i]);
-                            d[i] = (int)(s * 8388607.0) << 8;
+                            d[i] = _quantizer.Convert(s, 24, dither) << 8;
                         }
                         break;
                     }
@@ -660,7 +662,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                         for (int i = 0; i < total; i++)
                         {
                             double s = ClampSample(p[i]);
-                            int v = (int)(s * 8388607.0);
+                            int v = _quantizer.Convert(s, 24, dither);
                             dst[i * 3] = (byte)(v & 0xff);
                             dst[i * 3 + 1] = (byte)((v >> 8) & 0xff);
                             dst[i * 3 + 2] = (byte)((v >> 16) & 0xff);
@@ -671,14 +673,14 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                     {
                         int* d = (int*)dst;
                         for (int i = 0; i < total; i++)
-                            d[i] = (int)(ClampSample(p[i]) * 2147483647.0);
+                            d[i] = _quantizer.Convert(p[i], 32, dither);
                         break;
                     }
                 case FormatKind.Pcm16:
                     {
                         short* d = (short*)dst;
                         for (int i = 0; i < total; i++)
-                            d[i] = (short)(ClampSample(p[i]) * 32767.0);
+                            d[i] = (short)_quantizer.Convert(p[i], 16, dither);
                         break;
                     }
             }

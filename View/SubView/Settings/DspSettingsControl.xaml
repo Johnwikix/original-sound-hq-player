@@ -54,6 +54,46 @@
                     </ComboBox>
                 </controls:SettingsCard>
 
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspPcmResample')}"
+                    Description="{x:Bind tool:ToolUtils.GetString('DspPcmResampleHelp')}"
+                    IsEnabled="{x:Bind ViewModel.PcmConfigurationEditable, Mode=OneWay}">
+                    <ComboBox Width="220" SelectedIndex="{x:Bind ViewModel.ResampleModeIndex, Mode=TwoWay}">
+                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('DspPcmSourceRate')}" />
+                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('DspPcmFixedRate')}" />
+                        <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('DspPcmIntegerRate')}" />
+                    </ComboBox>
+                </controls:SettingsCard>
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspPcmTargetRate')}"
+                    IsEnabled="{x:Bind ViewModel.PcmConfigurationEditable, Mode=OneWay}">
+                    <ComboBox Width="220" SelectedIndex="{x:Bind ViewModel.ResampleTargetIndex, Mode=TwoWay}">
+                        <ComboBoxItem Content="44100 Hz" />
+                        <ComboBoxItem Content="48000 Hz" />
+                        <ComboBoxItem Content="88200 Hz" />
+                        <ComboBoxItem Content="96000 Hz" />
+                        <ComboBoxItem Content="176400 Hz" />
+                        <ComboBoxItem Content="192000 Hz" />
+                        <ComboBoxItem Content="352800 Hz" />
+                        <ComboBoxItem Content="384000 Hz" />
+                        <ComboBoxItem Content="705600 Hz" />
+                        <ComboBoxItem Content="768000 Hz" />
+                    </ComboBox>
+                </controls:SettingsCard>
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspTruePeakLimiter')}"
+                    Description="{x:Bind tool:ToolUtils.GetString('DspTruePeakHelp')}"
+                    IsEnabled="{x:Bind ViewModel.PcmConfigurationEditable, Mode=OneWay}">
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.TruePeakLimiterEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspTruePeakCeiling')}"
+                    IsEnabled="{x:Bind ViewModel.PcmConfigurationEditable, Mode=OneWay}">
+                    <NumberBox Width="220" Minimum="-12" Maximum="-0.1" SmallChange="0.1"
+                        SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.TruePeakCeilingDb, Mode=TwoWay}" />
+                </controls:SettingsCard>
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspPcmDither')}"
+                    Description="{x:Bind tool:ToolUtils.GetString('DspPcmDitherHelp')}"
+                    IsEnabled="{x:Bind ViewModel.EffectsActive, Mode=OneWay}">
+                    <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.DitherEnabled, Mode=TwoWay}" />
+                </controls:SettingsCard>
+
                 <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspPlaybackRate')}"
                     Description="{x:Bind tool:ToolUtils.GetString('DspPlaybackRateDescription')}"
                     IsEnabled="{x:Bind ViewModel.PlaybackRateEditable, Mode=OneWay}">
@@ -273,6 +313,16 @@
                             StepFrequency="1"
                             Value="{x:Bind ViewModel.StereoWidth, Mode=TwoWay}" />
                     </Grid>
+                </controls:SettingsCard>
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspCrossfeedAmount')}"
+                    IsEnabled="{x:Bind ViewModel.CrossfeedEditable, Mode=OneWay}">
+                    <NumberBox Width="220" Minimum="0" Maximum="50" SmallChange="1"
+                        SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.CrossfeedAmount, Mode=TwoWay}" />
+                </controls:SettingsCard>
+                <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspCrossfeedCutoff')}"
+                    IsEnabled="{x:Bind ViewModel.CrossfeedEditable, Mode=OneWay}">
+                    <NumberBox Width="220" Minimum="200" Maximum="2000" SmallChange="50"
+                        SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.CrossfeedCutoffHz, Mode=TwoWay}" />
                 </controls:SettingsCard>
                 <Button
                     x:Uid="DspReset"

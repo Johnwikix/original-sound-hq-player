@@ -7,6 +7,8 @@ namespace AudioPlayer.Playback;
 /// <summary>计算单/双声道 BS.1770 K 加权综合响度和源采样峰值，完全不修改样本。</summary>
 internal sealed class LoudnessMeter
 {
+    private readonly TruePeakMeter _truePeak;
+    private readonly double[] _weights;
     private readonly Biquad[] _shelf;
     private readonly Biquad[] _highPass;
     private readonly double[] _energyWindow;
@@ -19,10 +21,20 @@ internal sealed class LoudnessMeter
     private readonly bool _useStereoSimd;
     private StereoBiquad _stereoShelf, _stereoHighPass;
 
-    internal LoudnessMeter(int sampleRate, int channels, bool useSimd = true)
+    internal LoudnessMeter(int sampleRate, int channels, bool useSimd = true, uint channelMask = 0)
     {
-        if (sampleRate < 8000 || channels is < 1 or > 2) throw new ArgumentOutOfRangeException(nameof(channels));
+        if (sampleRate < 8000 || channels is < 1 or > 8) throw new ArgumentOutOfRangeException(nameof(channels));
+        if (channels > 2 && (channelMask == 0 || System.Numerics.BitOperations.PopCount(channelMask) != channels))
+            throw new ArgumentException("Multichannel loudness needs an exact speaker mask.");
         _channels = channels;
+        _truePeak = new(channels);
+        _weights = new double[channels];
+        int channelIndex = 0;
+        for (int bit = 0; bit < 32 && channelIndex < channels; bit++)
+        {
+            if (channels > 2 && (channelMask & (1u << bit)) == 0) continue;
+            _weights[channelIndex++] = channels <= 2 ? 1 : bit == 3 ? 0 : bit is 4 or 5 or 9 or 10 ? 1.41 : 1;
+        }
         _hop = (int)Math.Round(sampleRate * 0.1);
         _energyWindow = new double[_hop * 4];
         _untilBlock = _energyWindow.Length;
@@ -53,6 +65,7 @@ internal sealed class LoudnessMeter
     {
         if (samples.Length % _channels != 0) throw new ArgumentException("Audio block must contain complete frames.", nameof(samples));
         if (_invalid) return;
+        _truePeak.Add(samples);
         if (_useStereoSimd) { AddStereo(samples); return; }
         for (int offset = 0; offset < samples.Length; offset += _channels)
         {
@@ -63,7 +76,7 @@ internal sealed class LoudnessMeter
                 if (!double.IsFinite(sample)) { _invalid = true; return; }
                 _peak = Math.Max(_peak, Math.Abs(sample));
                 double filtered = _highPass[ch].Process(_shelf[ch].Process(sample));
-                energy += filtered * filtered;
+                energy += filtered * filtered * _weights[ch];
             }
             AccumulateEnergy(energy);
         }
@@ -121,7 +134,7 @@ internal sealed class LoudnessMeter
         foreach (double energy in _blocks)
             if (energy >= threshold) { sum += energy; count++; }
         double lufs = -0.691 + 10 * Math.Log10(sum / count);
-        return double.IsFinite(lufs) ? new(lufs, _peak) : null;
+        return double.IsFinite(lufs) ? new(lufs, _peak, _truePeak.Finish()) : null;
     }
 
     private struct Biquad(double b0, double b1, double b2, double a1, double a2)
@@ -154,8 +167,8 @@ internal sealed class LoudnessMeter
 }
 
 /// <summary>保存整曲测量值，以固定衰减替代动态压缩来保留峰值余量。</summary>
-internal sealed record LoudnessMeasurement(double IntegratedLufs, double SamplePeak)
+internal sealed record LoudnessMeasurement(double IntegratedLufs, double SamplePeak, double TruePeak = double.NaN)
 {
     internal double GainDb(double targetLufs) => Math.Min(
-        Math.Clamp(targetLufs - IntegratedLufs, -60, 24), -1 - 20 * Math.Log10(SamplePeak));
+        Math.Clamp(targetLufs - IntegratedLufs, -60, 24), -1 - 20 * Math.Log10(double.IsFinite(TruePeak) ? Math.Max(SamplePeak, TruePeak) : SamplePeak));
 }

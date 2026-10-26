@@ -110,7 +110,7 @@ public sealed partial class PlaybackEngine
             var (position, duration) = GetTimeProgress();
             if (duration > 0 && (duration - position) / current.PlaybackRate > GaplessLeadTimeMs) return;
             preloader.Start(new(request, current, source, DsdPcmFreq, DsdGain, Latency,
-                ExperimentalSurround51, EffectivePlaybackRate, IsDopEnabled && !IsSharedMode(OutputMode), EffectiveEnhancement, EnhancementMixRate()));
+                ExperimentalSurround51, EffectivePlaybackRate, IsDopEnabled && !IsSharedMode(OutputMode), EffectiveEnhancement, EnhancementMixRate(), EffectiveResampleMode, EffectiveResampleTarget));
         }
     }
 
@@ -124,7 +124,7 @@ public sealed partial class PlaybackEngine
             maxChannels: preparation.Current.Channels <= 2 ? 2 : null,
             experimentalSurround51: preparation.Surround, cancellationToken: token,
             playbackRate: preparation.PlaybackRate, enhancement: preparation.Enhancement,
-            enhancementDeviceRate: preparation.EnhancementDeviceRate);
+            enhancementDeviceRate: preparation.EnhancementDeviceRate, resampleMode: preparation.ResampleMode, resampleTargetRate: preparation.ResampleTargetRate);
     }
 
     // 由预加载器在流锁内调用，避免渲染或释放与所有权转移发生竞争。

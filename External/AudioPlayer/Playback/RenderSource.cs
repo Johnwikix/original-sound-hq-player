@@ -19,6 +19,8 @@ internal interface IRenderSource
     /// <summary>设备侧速率：PCM=采样率；DoP=DoP 帧率(DSD/16)；NativeDsd=DSD 位率。</summary>
     int SampleRate { get; }
     int Channels { get; }
+    /// <summary>仅 PCM 整数输出可选 TPDF 抖动；位流始终关闭。</summary>
+    bool DitherEnabled => false;
     /// <summary>实验性 5.1 的原生扬声器掩码；0 保留旧输出行为。</summary>
     uint ChannelMask => 0;
     bool IsAtmos => false;

@@ -72,7 +72,7 @@ public static class CorrectionCurve
         for (int i = 0; i < size; i++) spectrum[i] = Complex.Exp(spectrum[i]);
         ResponseMath.Fft(spectrum, true);
         cancellation.ThrowIfCancellationRequested();
-        var taps = new double[ImpulseResponse.MaxTaps];
+        var taps = new double[8192];
         for (int i = 0; i < taps.Length; i++)
         {
             double window = i < taps.Length - 512 ? 1 : 0.5 + 0.5 * Math.Cos(Math.PI * (i - (taps.Length - 512)) / 511);
@@ -88,7 +88,7 @@ public static class ResponseMath
     /// <summary>Normalize the maximum combined EQ/FIR magnitude across both channels to -1 dB.
     /// This is static response compensation, not a signal limiter or loudness normalizer.
     /// A dense linear grid captures FIR ripples; a logarithmic grid captures low-frequency high-Q EQ.</summary>
-    public static double AutoPreampDb(PeakCoefficients[] eq, Complex[][]? spectra, int rate)
+    public static double AutoPreampDb(PeakCoefficients[] eq, Complex[][]? spectra, int rate, CancellationToken cancellation = default)
     {
         double peak = double.NegativeInfinity;
         void Measure(double hz)
@@ -98,7 +98,12 @@ public static class ResponseMath
             if (spectra == null) peak = Math.Max(peak, equalizer);
             else foreach (var channel in spectra) peak = Math.Max(peak, equalizer + MagnitudeDb(channel, rate, hz));
         }
-        for (int i = 0; i <= 16384; i++) Measure(i * (double)rate / 32768);
+        int bins = spectra is { Length: > 0 } ? Math.Max(16384, spectra[0].Length / 2) : 16384;
+        for (int i = 0; i <= bins; i++)
+        {
+            if ((i & 1023) == 0) cancellation.ThrowIfCancellationRequested();
+            Measure(i * (double)rate / (bins * 2));
+        }
         for (int i = 0; i <= 4096; i++) Measure(10 * Math.Pow(rate / 20.0, i / 4096.0));
         // An empty/zero IR must never request unbounded amplification.
         return Math.Clamp(-1 - peak, -120, 24);
@@ -132,7 +137,9 @@ public static class ResponseMath
 
     public static Complex[] Spectrum(double[] taps)
     {
-        var data = new Complex[32768];
+        int size = 32768;
+        while (size < taps.Length * 2) size *= 2;
+        var data = new Complex[size];
         for (int i = 0; i < taps.Length; i++) data[i] = new(taps[i], 0);
         Fft(data, false); return data;
     }
