@@ -1745,7 +1745,7 @@
     <value>Ожидание состояния проигрывателя. Управление эффектами временно недоступно.</value>
   </data>
   <data name="DspStereoOnly" xml:space="preserve">
-    <value>Stereo effects are bypassed for this layout; supported multichannel convolution and loudness processing remain available.</value>
+    <value>Для этой схемы стереоэффекты обходятся. Поддерживаемая многоканальная свёртка и анализ громкости остаются доступны.</value>
   </data>
   <data name="DspAnalyzing" xml:space="preserve">
     <value>Трек анализируется; пока действует осторожное ослабление. Измеренное усиление будет плавно применено и сохранено.</value>
@@ -1777,7 +1777,7 @@
   <data name="DspConvolutionSection.Text" xml:space="preserve"><value>Convolution correction</value></data>
   <data name="DspConvolution" xml:space="preserve"><value>Enable convolution correction</value></data>
   <data name="DspConvolutionToggle.AutomationProperties.Name" xml:space="preserve"><value>Enable convolution correction</value></data>
-  <data name="DspIrDescription.Text" xml:space="preserve"><value>WAV IR: 1–8 channels; mono applies to every output, otherwise channel counts must match. Maximum 2 s, 262144 taps/channel and 1048576 total output taps, including resampling. DSD bitstreams bypass DSP.</value></data>
+  <data name="DspIrDescription.Text" xml:space="preserve"><value>WAV IR: 1–8 каналов. Моно применяется ко всем выходам, иначе число каналов должно совпадать. С учётом ресемплинга: не более 2 с, 262144 отсчётов на канал и 1048576 на все выходы. DSD обходит DSP.</value></data>
   <data name="DspIrFile" xml:space="preserve"><value>Impulse response file</value></data>
   <data name="DspIrImport.Content" xml:space="preserve"><value>Import WAV…</value></data>
   <data name="DspIrClear.Content" xml:space="preserve"><value>Remove</value></data>
@@ -1791,7 +1791,7 @@
   <data name="DspIrFailed" xml:space="preserve"><value>IR недоступен: файл отсутствует, неверен, каналы не совпадают или превышен предел длины/отсчётов.</value></data>
   <data name="DspIrUnsupported" xml:space="preserve"><value>Свёртка поддерживает 1–8 каналов PCM. IR должен быть моно или совпадать с выходом.</value></data>
   <data name="DspIrOff" xml:space="preserve"><value>Convolution is inactive. Import an IR and enable correction to apply it during PCM playback.</value></data>
-  <data name="DspIrImportError" xml:space="preserve"><value>Use a valid WAV IR within the channel, duration and tap budgets.</value></data>
+  <data name="DspIrImportError" xml:space="preserve"><value>Выберите корректный WAV IR в пределах числа каналов, длительности и отсчётов.</value></data>
   <data name="ResponseTitle.Text" xml:space="preserve"><value>Combined frequency response</value></data>
   <data name="ResponsePlotName" xml:space="preserve"><value>EQ and convolution frequency response. Frequency in Hz, gain in dB.</value></data>
   <data name="ResponseLeft.Content" xml:space="preserve"><value>Left</value></data>

@@ -1745,7 +1745,7 @@
     <value>再生状態を確認中です。音響効果の操作は一時的に無効です。</value>
   </data>
   <data name="DspStereoOnly" xml:space="preserve">
-    <value>Stereo effects are bypassed for this layout; supported multichannel convolution and loudness processing remain available.</value>
+    <value>この構成ではステレオ効果をバイパスします。対応するマルチチャンネル畳み込みとラウドネス解析は使用できます。</value>
   </data>
   <data name="DspAnalyzing" xml:space="preserve">
     <value>曲を解析中です。完了までは控えめに減衰して再生し、測定したゲインへ滑らかに移行して保存します。</value>
@@ -1777,7 +1777,7 @@
   <data name="DspConvolutionSection.Text" xml:space="preserve"><value>Convolution correction</value></data>
   <data name="DspConvolution" xml:space="preserve"><value>Enable convolution correction</value></data>
   <data name="DspConvolutionToggle.AutomationProperties.Name" xml:space="preserve"><value>Enable convolution correction</value></data>
-  <data name="DspIrDescription.Text" xml:space="preserve"><value>WAV IR: 1–8 channels; mono applies to every output, otherwise channel counts must match. Maximum 2 s, 262144 taps/channel and 1048576 total output taps, including resampling. DSD bitstreams bypass DSP.</value></data>
+  <data name="DspIrDescription.Text" xml:space="preserve"><value>WAV IR は 1～8 チャンネルに対応します。モノラルは全出力に適用し、それ以外は出力チャンネル数と一致させます。再サンプリング後も最大 2 秒、各チャンネル 262144 タップ、出力全体 1048576 タップ。DSD はバイパスします。</value></data>
   <data name="DspIrFile" xml:space="preserve"><value>Impulse response file</value></data>
   <data name="DspIrImport.Content" xml:space="preserve"><value>Import WAV…</value></data>
   <data name="DspIrClear.Content" xml:space="preserve"><value>Remove</value></data>
@@ -1791,7 +1791,7 @@
   <data name="DspIrFailed" xml:space="preserve"><value>IR を使用できません。ファイル、チャンネル数、時間またはタップ数の上限を確認して再読み込みしてください。</value></data>
   <data name="DspIrUnsupported" xml:space="preserve"><value>畳み込みは 1～8 PCM チャンネルに対応。IR はモノラルか出力と同じチャンネル数が必要です。</value></data>
   <data name="DspIrOff" xml:space="preserve"><value>Convolution is inactive. Import an IR and enable correction to apply it during PCM playback.</value></data>
-  <data name="DspIrImportError" xml:space="preserve"><value>Use a valid WAV IR within the channel, duration and tap budgets.</value></data>
+  <data name="DspIrImportError" xml:space="preserve"><value>チャンネル数、時間、タップ数の上限を満たす有効な WAV IR を選択してください。</value></data>
   <data name="ResponseTitle.Text" xml:space="preserve"><value>Combined frequency response</value></data>
   <data name="ResponsePlotName" xml:space="preserve"><value>EQ and convolution frequency response. Frequency in Hz, gain in dB.</value></data>
   <data name="ResponseLeft.Content" xml:space="preserve"><value>Left</value></data>
