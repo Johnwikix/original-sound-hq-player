@@ -5,6 +5,16 @@
 - `Services/LibraryProjectionService.cs`、`ViewModel/AppViewModel.cs`、`Strings/*/Resources.resw`：新增字段参与搜索；新增专辑艺术家和流派排序，缺失专辑艺术家回退曲目艺术家，缺失流派排后并稳定排序。
 - `_tools/MusicMetadataRegression`、`_tools/FolderScanRegression`、`_tools/SharedStateRegression`：增加实际标签往返、迁移、队列保留、稀疏字段搜索和排序回归。
 
+## 2026-10-26 按采集结果减少 Draw 与指针投影分配
+- `Interop/CanvasDrawContext.cs`、`FrameEventSubscription.cs`：Draw、DrawingSession、layer 和中间目标会话改用作用域化原始 ABI；保留原生 HRESULT、主会话 EndDraw 所有权、在途回调屏障和弱所有者，保留原托管绘制 API 的兼容入口。
+- `NowPlayingCanvas`、高级歌词控件、桌面歌词及背景/歌词渲染器：接入同一绘制桥接；临时卸载解绑 Update/Draw，重载恢复，最终关闭排空回调后释放资源，保留页面缓存和 MVVM。
+- `PointerPointScope.cs`、`LyricsRenderCoordinator.cs`、`ValueTransition.cs`：位置和滚轮快照不创建 PointerPoint/Properties RCW；保留坐标、Handled、悬停、滚轮与 seek 入口，泛型相等比较消除过渡启动装箱，索引遍历消除每帧 IList 枚举器装箱。
+- `RenderLyricsChar.cs`：字符裁剪/模糊效果首次绘制时创建、随后复用；缓存退休时仅释放已创建资源，并允许设备/布局重建后重新创建。
+- `_tools/DrawPathProbe`、帧 ABI 回归：新增真实 WinUI/Win2D 精确线程分配计数、EventPipe 分配栈、96/144 DPI 像素对照、缓存重建和真实 Draw 自行解绑；指针使用 C# SendInput 自动驱动并逐事件核对正负滚轮和位置，不依赖 Computer Use。
+- 测量：标准 .NET 11 RC2 隔离宿主三轮稳定歌词场景，Draw+Update 约 952 B/帧降至 0 B/帧，旋转背景 1536→96 B/次；40 行歌词冷重建约 1.94→1.23–1.24 MB/次。原始指针 getter 重放及最终移动/滚轮回调体测得 0 B，不包含框架派发事件参数；首次资源创建、换行等仍有分配。扫描已有有界管线与真实 FFmpeg/SQLite 回归通过，本次不改扫描生产逻辑。
+- 验证：主程序 Debug/Release x64（含裁剪）0 错误，仍有项目/分析器/裁剪警告；ABI 两种配置各 47 项、完整歌词原生渲染、文字 87 项、原生像素/缓存及自动指针回归通过。文字测试依赖与生产对齐，并等待最终静态 Draw 后再检查临时卸载缓存身份。
+- 边界：数据仅指上述场景的托管分配，不等于原生/GPU 零分配；宿主不替代完整播放器 SatoriGC 发布进程，未做自然 Gen2/STW、长时间播放与 ARM64 测量。
+
 ## 2026-10-26 修正整数 PCM 输出并补齐播放内核 DSP
 - `AudioPlayer/Interop`：统一有符号 PCM 缩放、偶数舍入、饱和；整数/浮点输出的非有限值统一静音，24-bit 出口不再预先钳位而掩盖异常输入；增加默认关闭的 TPDF，覆盖 WASAPI/ASIO 有效位与打包格式。
 - `AudioPlayer/Decode`、`Playback`：增加普通 PCM 采样率策略、独立四倍 True Peak 估计/5ms 前瞻保护、长 IR 分级卷积和 1–8 声道逐曲响度（含后中置环绕权重）；处理曲尾、seek、无缝历史及可闻进度。DSD 路径、十段 EQ 和既有输出开关边界保持现状。

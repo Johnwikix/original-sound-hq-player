@@ -9,6 +9,9 @@ using WinRT;
 
 namespace AnimatedWin2dControls.Interop;
 
+/// <summary>在当前 Draw 回调作用域内同步消费原始绘制上下文。</summary>
+public delegate void CanvasDrawHandler(CanvasDrawContext context);
+
 /// <summary>订阅高频帧事件，回调参数保持原始 ABI 指针，不创建逐帧 CsWinRT 包装。</summary>
 /// <remarks>
 /// 所有者必须显式释放订阅。Dispose 禁止新工作并等待在途回调；从回调内部释放时，
@@ -23,6 +26,7 @@ public sealed unsafe class FrameEventSubscription : IDisposable
     private IObjectReference? _source;
     private Action? _rendering;
     private Action<TimeSpan>? _update;
+    private CanvasDrawHandler? _draw;
     private readonly int _removeSlot;
     private long _token;
     private int _stopping;
@@ -97,6 +101,30 @@ public sealed unsafe class FrameEventSubscription : IDisposable
     private static IObjectReference OwnSource(nint source, Guid iid)
         => ComWrappersSupport.GetObjectReferenceForInterface(source, iid, requireQI: false);
 
+    /// <summary>订阅 Win2D Draw，事件参数和主绘制会话均不创建 RCW。</summary>
+    public static FrameEventSubscription SubscribeDraw(CanvasAnimatedControl canvas, CanvasDrawHandler callback)
+    {
+        ArgumentNullException.ThrowIfNull(canvas);
+        ArgumentNullException.ThrowIfNull(callback);
+        var native = ((IWinRTObject)canvas).NativeObject;
+        Guid iid = CanvasAnimatedControlInterface;
+        Marshal.ThrowExceptionForHR(native.TryAs(iid, out nint source));
+        try
+        {
+            var subscription = new FrameEventSubscription(OwnSource(source, iid), 11, null, null) { _draw = callback };
+            try
+            {
+                var handler = new RawCanvasDrawHandler(subscription);
+                void* pointer = ComInterfaceMarshaller<IRawCanvasDrawHandler>.ConvertToUnmanaged(handler);
+                try { subscription.Register(10, (nint)pointer); }
+                finally { ComInterfaceMarshaller<IRawCanvasDrawHandler>.Free(pointer); }
+                return subscription;
+            }
+            catch { subscription.Dispose(); throw; }
+        }
+        finally { Marshal.Release(source); GC.KeepAlive(canvas); }
+    }
+
     private void Register(int addSlot, nint handler)
     {
         // 注册期间也可能已有游戏循环；先发布 token/注册状态，再允许其他线程进入回调。
@@ -118,6 +146,7 @@ public sealed unsafe class FrameEventSubscription : IDisposable
                 _source = null;
                 _rendering = null;
                 _update = null;
+                _draw = null;
                 throw;
             }
         }
@@ -131,7 +160,18 @@ public sealed unsafe class FrameEventSubscription : IDisposable
             _callbackDepth++;
             try
             {
-                if (_update is { } update)
+                if (_draw is { } draw)
+                {
+                    if (args == 0) return unchecked((int)0x80004003);
+                    nint session = 0;
+                    int hr = ((delegate* unmanaged[Stdcall]<nint, nint*, int>)(*(nint**)args)[6])(args, &session);
+                    if (hr < 0) return hr;
+                    if (session == 0) return unchecked((int)0x80004003);
+                    try { draw(new CanvasDrawContext(session)); }
+                    // 主交换链会话由 Win2D 在回调返回后 EndDraw；这里只释放 getter 的引用。
+                    finally { Marshal.Release(session); }
+                }
+                else if (_update is { } update)
                 {
                     // Win2D 的 TypedEventHandler 参数即默认接口指针。三个 INT64 + 一个 ABI boolean；
                     // .NET 11 热路径只读该结构，不创建事件参数/时间信息 RCW。
@@ -211,6 +251,7 @@ public sealed unsafe class FrameEventSubscription : IDisposable
     {
         _rendering = null;
         _update = null;
+        _draw = null;
         var source = _source;
         _source = null;
         source?.Dispose();
@@ -244,6 +285,14 @@ internal partial interface IRawCanvasUpdateHandler
 }
 
 [GeneratedComInterface(Options = ComInterfaceOptions.ManagedObjectWrapper)]
+[Guid("00ddd999-594e-5c0f-b4a0-52b01171dcd6")]
+internal partial interface IRawCanvasDrawHandler
+{
+    [PreserveSig]
+    int Invoke(nint sender, nint args);
+}
+
+[GeneratedComInterface(Options = ComInterfaceOptions.ManagedObjectWrapper)]
 [Guid("94ea2b94-e9cc-49e0-c0ff-ee64ca8f5b90")]
 internal partial interface IRawAgileObject { }
 
@@ -258,6 +307,14 @@ internal sealed partial class RawRenderingHandler(FrameEventSubscription owner) 
 /// <summary>允许 Win2D 游戏循环直接调用的原始参数委托。</summary>
 [GeneratedComClass]
 internal sealed partial class RawCanvasUpdateHandler(FrameEventSubscription owner) : IRawCanvasUpdateHandler, IRawAgileObject
+{
+    private readonly WeakReference<FrameEventSubscription> _owner = new(owner);
+    public int Invoke(nint sender, nint args) => _owner.TryGetTarget(out var owner) ? owner.Invoke(args) : 0;
+}
+
+/// <summary>原生 Draw 委托不强根住订阅所有者。</summary>
+[GeneratedComClass]
+internal sealed partial class RawCanvasDrawHandler(FrameEventSubscription owner) : IRawCanvasDrawHandler, IRawAgileObject
 {
     private readonly WeakReference<FrameEventSubscription> _owner = new(owner);
     public int Invoke(nint sender, nint args) => _owner.TryGetTarget(out var owner) ? owner.Invoke(args) : 0;

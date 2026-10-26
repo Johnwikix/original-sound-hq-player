@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Interop;
 using AnimatedWin2dControls.Impressionist;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.UI.Xaml;
@@ -35,6 +36,10 @@ namespace AnimatedWin2dControls.Renderer.Background
         public abstract void LoadResources();
         public abstract void Update(TimeSpan deltaTime);
         public abstract void Draw(ICanvasAnimatedControl control, CanvasDrawingSession ds);
+
+        /// <summary>Draws using a scoped native session, retaining the legacy extension contract.</summary>
+        public virtual void Draw(ICanvasAnimatedControl control, CanvasDrawContext ds)
+            => Draw(control, ds.GetManagedSessionForCompatibility());
         public abstract void Dispose();
 
         // ── 颜色入口 ─────────────────────────────────────────────────────

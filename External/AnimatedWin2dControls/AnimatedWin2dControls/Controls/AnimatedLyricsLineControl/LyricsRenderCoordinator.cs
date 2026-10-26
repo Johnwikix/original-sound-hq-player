@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Interop;
 using AnimatedWin2dControls.Controls.AnimatedLyricsLineControl.Advance;
 using AnimatedWin2dControls.Messages;
 using Microsoft.Graphics.Canvas;
@@ -761,6 +762,13 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
 
         public void OnDraw(ICanvasAnimatedControl sender, CanvasDrawingSession ds)
         {
+            using var scope = CanvasDrawingSessionScope.Borrow(ds);
+            OnDraw(sender, scope.Context);
+        }
+
+        /// <summary>Draws production lyric state using the scoped ABI context.</summary>
+        public void OnDraw(ICanvasAnimatedControl sender, CanvasDrawContext ds)
+        {
             lock (_renderGate)
             {
                 if (_shutdown) return;
@@ -770,7 +778,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
         }
 
-        private void DrawCore(ICanvasAnimatedControl sender, CanvasDrawingSession ds)
+        private void DrawCore(ICanvasAnimatedControl sender, CanvasDrawContext ds)
         {
             if (_renderLines.Count == 0) return;
 
@@ -800,7 +808,7 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             }
         }
 
-        private void DrawLyricsContent(ICanvasAnimatedControl sender, CanvasDrawingSession ds, double rx, double ry, double rw, double rh)
+        private void DrawLyricsContent(ICanvasAnimatedControl sender, CanvasDrawContext ds, double rx, double ry, double rw, double rh)
         {
             var lines = _renderLines;
             if (lines.Count == 0) return;
@@ -916,9 +924,10 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         private void OnPointerWheelChangedCore(PointerRoutedEventArgs e)
         {
             if (_renderLines.Count == 0) return;
-            if (!IsPointerInLyricsRegion(e.GetCurrentPoint(Canvas).Position)) return;
-            var props = e.GetCurrentPoint(Canvas).Properties;
-            double delta = props.MouseWheelDelta * WheelScrollPixels * _cachedScrollSensitivity / 120.0;
+            // 同一事件使用一个有作用域的原生快照，避免 PointerPoint/Properties 投影。
+            using var point = PointerPointScope.GetCurrentPoint(e, Canvas);
+            if (!IsPointerInLyricsRegion(point.Position)) return;
+            double delta = point.MouseWheelDelta * WheelScrollPixels * _cachedScrollSensitivity / 120.0;
             _pendingMouseScrollY += delta;
             _mouseYScrollTransition.Start(_pendingMouseScrollY);
             _isUserScrollingChanged = !_userScrolling;
@@ -931,7 +940,8 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
         public void OnPointerMoved(object sender, PointerRoutedEventArgs e)
         {
             if (Canvas == null) return;
-            var pos = e.GetCurrentPoint(Canvas).Position;
+            using var point = PointerPointScope.GetCurrentPoint(e, Canvas);
+            var pos = point.Position;
             _lastMousePos = pos;
             _hoverDirty = true;
             // 持续追踪：_isMouseInLyricsArea 跟随当前指针位置更新，不依赖
@@ -952,7 +962,12 @@ namespace AnimatedWin2dControls.Controls.AnimatedLyricsLineControl
             // 兜底：刚跨进画布时 _isMouseInLyricsArea 还没被 OnPointerMoved 刷新过
             // （跨进画布后的第一帧 OnPointerMoved 在 Entered 之后才到）。真正的持续追踪
             // 在 OnPointerMoved 里。
-            _isMouseInLyricsArea = Canvas != null && IsPointerInLyricsRegion(e.GetCurrentPoint(Canvas).Position);
+            if (Canvas is { } canvas)
+            {
+                using var point = PointerPointScope.GetCurrentPoint(e, canvas);
+                _isMouseInLyricsArea = IsPointerInLyricsRegion(point.Position);
+            }
+            else _isMouseInLyricsArea = false;
             _hoverDirty = true;
         }
 

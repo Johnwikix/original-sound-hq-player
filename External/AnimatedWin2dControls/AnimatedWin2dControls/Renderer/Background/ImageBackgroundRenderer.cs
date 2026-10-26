@@ -1,3 +1,4 @@
+using AnimatedWin2dControls.Interop;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.Effects;
 using Microsoft.Graphics.Canvas.UI.Xaml;
@@ -186,6 +187,13 @@ namespace AnimatedWin2dControls.Renderer.Background
         }
 
         public override void Draw(ICanvasAnimatedControl control, CanvasDrawingSession ds)
+        {
+            using var scope = CanvasDrawingSessionScope.Borrow(ds);
+            Draw(control, scope.Context);
+        }
+
+        /// <summary>Draws through the scoped native session ABI.</summary>
+        public override void Draw(ICanvasAnimatedControl control, CanvasDrawContext ds)
         {
             // SwapBackgroundRenderer pauses the host before replacement, but Win2D can
             // already have entered this callback. Skip instead of racing Dispose.

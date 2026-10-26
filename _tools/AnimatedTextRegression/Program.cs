@@ -459,12 +459,15 @@ public sealed partial class TestApp : Application
                 "Layout changes retain animation source and cluster progress data");
             unified.OnSharedTick(TimeSpan.FromSeconds(6));
             await Until(() => !unified.IsAnimating, "changed layout animation completes");
+            // Idle 会请求最后一帧静态重建；先等这帧完成，再记录卸载应保留的缓存。
+            await Until(() => !(bool)Field(unified, "_documentLayoutDirty") && Field(unified, "_documentLayouts") != null,
+                "final static document draw completes before unload");
             bool unloaded = false;
             var retainedDocumentLayouts = Field(unified, "_documentLayouts");
             unified.Unloaded += (_, _) => unloaded = true;
             _window.Content = panel;
             await Until(() => unloaded, "unified control Unloaded event completes");
-            Check(ReferenceEquals(retainedDocumentLayouts, Field(unified, "_documentLayouts")) && !(bool)Field(unified, "_isClockRegistered"), "Unified temporary unload preserves paragraph layouts and stops clock");
+            Check(ReferenceEquals(retainedDocumentLayouts, Field(unified, "_documentLayouts")) && !(bool)Field(unified, "_isClockRegistered"), "Unified temporary unload preserves paragraph layouts and stops clock: retained=" + ReferenceEquals(retainedDocumentLayouts, Field(unified, "_documentLayouts")) + "; clock=" + Field(unified, "_isClockRegistered"));
             _window.Content = documentPage;
             await Until(() => unified.IsLoaded && !unified.IsAnimating && Field(unified, "_documentLayouts") != null, "unified reload");
             Check(CanvasCount(documentPage) == 1, "Unified page re-entry retains exactly one canvas");

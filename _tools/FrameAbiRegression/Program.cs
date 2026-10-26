@@ -54,6 +54,8 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             Resources.MergedDictionaries.Add(new XamlControlsResources());
             await NativeBoundaryChecks.RunAsync();
             await CheckLiveUpdateAsync(canvas, window);
+            await CheckLiveDrawAsync(canvas);
+            await canvas.RunOnGameLoopThreadAsync(() => NativeBoundaryChecks.CheckDraw(canvas));
             await CheckClockAsync();
             await CheckHostsAsync(window);
             File.WriteAllText(result, $"PASS: {_checks} checks; raw COM invoke/timing/HRESULT, registration failure, late callbacks, self/concurrent unsubscription, warmed callback allocation, real Rendering/Update equality, pause/resume, reattach, host unload/reload/shutdown.");
@@ -193,22 +195,78 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         }
     }
 
+    private static async Task CheckLiveDrawAsync(CanvasAnimatedControl canvas)
+    {
+        canvas.Paused = false;
+        int frames = 0;
+        using var subscription = FrameEventSubscription.SubscribeDraw(canvas, context =>
+        {
+            context.Clear(Microsoft.UI.Colors.Transparent);
+            if (!canvas.HasGameLoopThreadAccess) throw new InvalidOperationException("Draw thread changed");
+            Interlocked.Increment(ref frames);
+        });
+        await UntilAsync(() => Volatile.Read(ref frames) > 4, "Raw Draw did not arrive");
+        Check(frames > 4, "Raw Draw did not render real frames");
+        subscription.Dispose();
+        int stopped = Volatile.Read(ref frames);
+        await Task.Delay(80);
+        Check(frames == stopped, "Draw arrived after unsubscription returned");
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        bool exited = false;
+        using var blocking = FrameEventSubscription.SubscribeDraw(canvas, context =>
+        {
+            context.Clear(Microsoft.UI.Colors.Transparent);
+            entered.Set();
+            if (!release.Wait(5000)) throw new TimeoutException("Draw barrier was not released");
+            exited = true;
+        });
+        await UntilAsync(() => entered.IsSet, "Blocking Draw did not enter");
+        var releaser = Task.Run(async () => { await Task.Delay(100); release.Set(); });
+        try
+        {
+            blocking.Dispose();
+            Check(exited, "Draw unsubscription returned before its callback exited");
+        }
+        finally { release.Set(); }
+        await releaser;
+        FrameEventSubscription? self = null;
+        int selfCalls = 0;
+        self = FrameEventSubscription.SubscribeDraw(canvas, context =>
+        {
+            if (self is null) return;
+            context.Clear(Microsoft.UI.Colors.Transparent);
+            self.Dispose();
+            Interlocked.Increment(ref selfCalls);
+        });
+        await UntilAsync(() => Volatile.Read(ref selfCalls) > 0, "Real Draw did not self-unsubscribe");
+        await Task.Delay(50);
+        Check(selfCalls == 1, "Self-disposed real Draw was invoked again");
+        self.Dispose();
+        canvas.Paused = true;
+    }
+
     private static async Task CheckHostsAsync(Window window)
     {
         foreach (Control host in new Control[] { new NowPlayingCanvas { EnableAdvancedLyrics = false }, new AdvanceLyricsCanvasControl() })
         {
             var field = host.GetType().GetField("_updateSubscription", BindingFlags.Instance | BindingFlags.NonPublic)!;
+            var drawField = host.GetType().GetField("_drawSubscription", BindingFlags.Instance | BindingFlags.NonPublic)!;
             window.Content = host;
             await UntilAsync(() => host.IsLoaded && field.GetValue(host) is not null, "Host did not subscribe");
+            Check(drawField.GetValue(host) is not null, "Host did not subscribe raw Draw");
             var original = field.GetValue(host);
             window.Content = new Grid();
             await UntilAsync(() => !host.IsLoaded && field.GetValue(host) is null, "Unloaded host retained Update");
+            Check(drawField.GetValue(host) is null, "Unloaded host retained Draw");
             window.Content = host;
             await UntilAsync(() => host.IsLoaded && field.GetValue(host) is not null, "Reload did not subscribe");
+            Check(drawField.GetValue(host) is not null, "Reload did not restore Draw");
             Check(!ReferenceEquals(original, field.GetValue(host)), "Reload reused a retired subscription");
             if (host is NowPlayingCanvas combined) combined.PrepareForShutdown();
             else ((AdvanceLyricsCanvasControl)host).PrepareForShutdown();
             Check(field.GetValue(host) is null, "Shutdown retained Update");
+            Check(drawField.GetValue(host) is null, "Shutdown retained Draw");
             window.Content = new Grid();
         }
     }
@@ -234,23 +292,60 @@ internal static class NativeBoundaryChecks
     private static readonly Action<FrameEventSubscription, int, nint> Register = typeof(FrameEventSubscription).GetMethod("Register", BindingFlags.Instance | BindingFlags.NonPublic)!.CreateDelegate<Action<FrameEventSubscription, int, nint>>();
     private static readonly StrategyBasedComWrappers Wrappers = new();
 
-    private static unsafe FrameEventSubscription Subscribe(TestSource source, Action? callback, Action<TimeSpan>? update = null)
+    private static unsafe FrameEventSubscription Subscribe(TestSource source, Action? callback, Action<TimeSpan>? update = null, CanvasDrawHandler? draw = null)
     {
         void* pointer = ComInterfaceMarshaller<ITestSource>.ConvertToUnmanaged(source);
         IObjectReference reference;
         try { reference = ComWrappersSupport.GetObjectReferenceForInterface((nint)pointer); }
         finally { ComInterfaceMarshaller<ITestSource>.Free(pointer); }
         var owner = (FrameEventSubscription)Constructor.Invoke([reference, 7, callback, update]);
-        string name = update is null ? "RawRenderingHandler" : "RawCanvasUpdateHandler";
+        if (draw is not null) typeof(FrameEventSubscription).GetField("_draw", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(owner, draw);
+        string name = draw is not null ? "RawCanvasDrawHandler" : update is null ? "RawRenderingHandler" : "RawCanvasUpdateHandler";
         object handler = Activator.CreateInstance(typeof(FrameEventSubscription).Assembly.GetType("AnimatedWin2dControls.Interop." + name)!, owner)!;
         nint unknown = Wrappers.GetOrCreateComInterfaceForObject(handler, CreateComInterfaceFlags.None);
-        Guid iid = new(update is null ? "c50898f6-c536-5f47-8583-8b2c2438a13b" : "f3505553-11e9-548c-80b6-33e56d2e673b");
+        Guid iid = new(draw is not null ? "00ddd999-594e-5c0f-b4a0-52b01171dcd6" : update is null ? "c50898f6-c536-5f47-8583-8b2c2438a13b" : "f3505553-11e9-548c-80b6-33e56d2e673b");
         Marshal.ThrowExceptionForHR(Marshal.QueryInterface(unknown, in iid, out nint sink));
         Marshal.Release(unknown);
         try { Register(owner, 6, sink); }
         catch { owner.Dispose(); throw; }
         finally { Marshal.Release(sink); }
         return owner;
+    }
+
+    internal static unsafe void CheckDraw(CanvasAnimatedControl canvas)
+    {
+        using var target = new Microsoft.Graphics.Canvas.CanvasRenderTarget(canvas, 64, 64);
+        using var drawing = target.CreateDrawingSession();
+        Guid iid = new("f60afd09-e623-4be0-b750-578aa920b1db");
+        Marshal.ThrowExceptionForHR(((IWinRTObject)drawing).NativeObject.TryAs(iid, out nint session));
+        var args = new TestDrawArgs { Session = session };
+        void* pointer = ComInterfaceMarshaller<ITestDrawArgs>.ConvertToUnmanaged(args);
+        try
+        {
+            using var source = new TestSource { FailRemove = true };
+            var subscription = Subscribe(source, null, draw: context => context.Clear(Microsoft.UI.Colors.Transparent));
+            RegressionApp.Check(source.Fire((nint)pointer) == 0 && args.Reads == 1, "Draw did not read the real session");
+            RegressionApp.Check(source.Fire(0) == unchecked((int)0x80004003), "Null Draw args HRESULT changed");
+            args.FailRead = true;
+            RegressionApp.Check(source.Fire((nint)pointer) == unchecked((int)0x80004005), "Draw session getter error was ignored");
+            args.FailRead = false;
+            for (int i = 0; i < 1000; i++) source.Fire((nint)pointer);
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            for (int i = 0; i < 10000; i++) source.Fire((nint)pointer);
+            RegressionApp.Check(GC.GetAllocatedBytesForCurrentThread() == before, "Raw Draw bridge allocated after warmup");
+            subscription.Dispose();
+            RegressionApp.Check(source.Fire(1) == 0, "Late Draw read retired args after remove failure");
+            using var selfSource = new TestSource();
+            FrameEventSubscription? self = null;
+            self = Subscribe(selfSource, null, draw: context => { context.Clear(Microsoft.UI.Colors.Transparent); self!.Dispose(); });
+            RegressionApp.Check(selfSource.Fire((nint)pointer) == 0 && selfSource.Removes == 1, "Self-disposed Draw failed");
+            self.Dispose();
+        }
+        finally
+        {
+            ComInterfaceMarshaller<ITestDrawArgs>.Free(pointer);
+            Marshal.Release(session);
+        }
     }
 
     internal static async Task RunAsync()
@@ -416,5 +511,35 @@ internal sealed partial class TestSource : ITestSource, ITestAgile, IDisposable
             _handler = 0;
         }
         Removed.Dispose();
+    }
+}
+
+[GeneratedComInterface(Options = ComInterfaceOptions.ManagedObjectWrapper)]
+[Guid("f34ea77c-5325-4b1b-80fa-b32319a0d267")]
+internal partial interface ITestDrawArgs
+{
+    [PreserveSig] int Reserved0();
+    [PreserveSig] int Reserved1();
+    [PreserveSig] int Reserved2();
+    [PreserveSig] int GetDrawingSession(out nint session);
+}
+
+/// <summary>Preserves native getter AddRef ownership while substituting only event args.</summary>
+[GeneratedComClass]
+internal sealed partial class TestDrawArgs : ITestDrawArgs, ITestAgile
+{
+    internal nint Session;
+    internal int Reads;
+    internal bool FailRead;
+    public int Reserved0() => 0;
+    public int Reserved1() => 0;
+    public int Reserved2() => 0;
+    public int GetDrawingSession(out nint session)
+    {
+        Reads++;
+        session = FailRead ? 0 : Session;
+        if (FailRead) return unchecked((int)0x80004005);
+        Marshal.AddRef(session);
+        return 0;
     }
 }

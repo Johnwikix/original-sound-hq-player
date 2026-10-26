@@ -46,6 +46,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         private readonly CanvasAnimatedControl _canvas = new() { ClearColor = Colors.Transparent };
         private readonly object _renderGate = new();
         private FrameEventSubscription? _updateSubscription;
+        private FrameEventSubscription? _drawSubscription;
         private readonly LyricsLineRenderer _lineRenderer = new();
         private readonly LyricsAnimator _animator = new();
         private readonly List<RenderLyricsLine> _renderLineList = [];   // 单元素列表，供动画器驱动当前行
@@ -120,7 +121,13 @@ namespace WinUIMusicPlayer.DesktopLyrics
             _canvas.TargetElapsedTime = TimeSpan.FromMilliseconds(1000.0 / TargetFrameRate);
             _canvas.CreateResources += OnCanvasCreateResources;
             _updateSubscription = FrameEventSubscription.SubscribeUpdate(_canvas, OnCanvasUpdate);
-            _canvas.Draw += OnCanvasDraw;
+            try { _drawSubscription = FrameEventSubscription.SubscribeDraw(_canvas, OnCanvasDraw); }
+            catch
+            {
+                _updateSubscription.Dispose();
+                _updateSubscription = null;
+                throw;
+            }
         }
 
         public UIElement Content => _canvas;
@@ -181,13 +188,18 @@ namespace WinUIMusicPlayer.DesktopLyrics
                 _disposed = true;
             }
             _canvas.Paused = true;
+            var draw = _drawSubscription;
             var update = _updateSubscription;
+            _drawSubscription = null;
             _updateSubscription = null;
-            try { update?.Dispose(); }
+            try
+            {
+                try { draw?.Dispose(); }
+                finally { update?.Dispose(); }
+            }
             finally
             {
                 _canvas.CreateResources -= OnCanvasCreateResources;
-                _canvas.Draw -= OnCanvasDraw;
                 try
                 {
                     lock (_renderGate)
@@ -315,18 +327,17 @@ namespace WinUIMusicPlayer.DesktopLyrics
             }
         }
 
-        private void OnCanvasDraw(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs args)
+        private void OnCanvasDraw(CanvasDrawContext ds)
         {
             lock (_renderGate)
             {
                 if (_disposed) return;
-                DrawCore(sender, args);
+                DrawCore(_canvas, ds);
             }
         }
 
-        private void DrawCore(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs args)
+        private void DrawCore(ICanvasAnimatedControl sender, CanvasDrawContext ds)
         {
-            var ds = args.DrawingSession;
             ds.Clear(Colors.Transparent);
 
             var line = _currentLine;
@@ -592,7 +603,7 @@ namespace WinUIMusicPlayer.DesktopLyrics
         /// <summary>画当前行的软阴影剪影（须在填充文字之前、与文字同一 offsetY 变换下调用）。
         /// 画笔颜色每帧同步为当前文字色的反相：换色逐帧生效，无需重建剪影。
         /// 强度 ≤1 单层绘制；>1 叠加第二遍（整体不透明度上限 1，超出部分靠二次叠加加深光晕）。</summary>
-        private void DrawTextShadow(CanvasDrawingSession ds)
+        private void DrawTextShadow(CanvasDrawContext ds)
         {
             if (_shadowStrength <= 0) return;   // 阴影关闭：直接跳过本绘制 pass
             var line = _currentLine;

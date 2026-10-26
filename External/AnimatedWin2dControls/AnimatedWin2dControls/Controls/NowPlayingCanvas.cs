@@ -159,6 +159,7 @@ namespace AnimatedWin2dControls.Controls
 
         private CanvasAnimatedControl? _canvas;
         private FrameEventSubscription? _updateSubscription;
+        private FrameEventSubscription? _drawSubscription;
         // 渲染器只在画布激活且设备资源可用时创建；调色板/封面先缓存在宿主。
         // volatile: 渲染线程在 OnCanvasUpdate/Draw 中以快照方式读取,UI 线程在 SwapBackgroundRenderer 中整体替换。
         private volatile BaseBackgroundRenderer? _background;
@@ -529,8 +530,7 @@ namespace AnimatedWin2dControls.Controls
                 _coordinator.LyricsRegion = LyricsRegion;
 
                 _canvas.CreateResources += OnCanvasCreateResources;
-                _updateSubscription = FrameEventSubscription.SubscribeUpdate(_canvas, OnCanvasUpdate);
-                _canvas.Draw += OnCanvasDraw;
+                AttachFrameEvents();
 
                 // 简单歌词模式：宿主对指针透明，让上方 XAML 歌词覆层接管输入。
                 UpdateAdvancedLyricsState(_advanced);
@@ -546,16 +546,14 @@ namespace AnimatedWin2dControls.Controls
         private void DetachCanvasEvents()
         {
             if (_canvas is null) return;
+            _canvas.Paused = true;
             if (_coordinatorAttached)
             {
                 _coordinator.Detach();
                 _coordinatorAttached = false;
             }
             _canvas.CreateResources -= OnCanvasCreateResources;
-            var update = _updateSubscription;
-            _updateSubscription = null;
-            update?.Dispose();
-            _canvas.Draw -= OnCanvasDraw;
+            DetachFrameEvents();
             _canvas.PointerWheelChanged -= OnCanvasPointerWheelChanged;
             _canvas.PointerMoved -= OnCanvasPointerMoved;
             _canvas.PointerExited -= OnCanvasPointerExited;
@@ -563,10 +561,33 @@ namespace AnimatedWin2dControls.Controls
             _canvas.Tapped -= OnCanvasTapped;
         }
 
+        private void AttachFrameEvents()
+        {
+            if (_canvas is null) return;
+            _updateSubscription ??= FrameEventSubscription.SubscribeUpdate(_canvas, OnCanvasUpdate);
+            try { _drawSubscription ??= FrameEventSubscription.SubscribeDraw(_canvas, OnCanvasDraw); }
+            catch
+            {
+                var update = _updateSubscription;
+                _updateSubscription = null;
+                update?.Dispose();
+                throw;
+            }
+        }
+
+        private void DetachFrameEvents()
+        {
+            var draw = _drawSubscription;
+            var update = _updateSubscription;
+            _drawSubscription = null;
+            _updateSubscription = null;
+            try { draw?.Dispose(); }
+            finally { update?.Dispose(); }
+        }
+
         private void OnControlLoaded(object sender, RoutedEventArgs e)
         {
-            if (_canvas is not null)
-                _updateSubscription ??= FrameEventSubscription.SubscribeUpdate(_canvas, OnCanvasUpdate);
+            AttachFrameEvents();
             UpdateActiveState(_isActive);
         }
 
@@ -577,9 +598,7 @@ namespace AnimatedWin2dControls.Controls
             // final shutdown is handled explicitly by PrepareForShutdown().
             if (_canvas is not null)
                 _canvas.Paused = true;
-            var update = _updateSubscription;
-            _updateSubscription = null;
-            update?.Dispose();
+            DetachFrameEvents();
             if (_coordinatorAttached)
             {
                 _coordinator.Detach();
@@ -721,16 +740,16 @@ namespace AnimatedWin2dControls.Controls
             }
         }
 
-        private void OnCanvasDraw(ICanvasAnimatedControl sender, CanvasAnimatedDrawEventArgs args)
+        private void OnCanvasDraw(CanvasDrawContext ds)
         {
+            var sender = _canvas;
+            if (sender is null) return;
             if (!_isActive) return;
 
             // 绘制阶段同步异常截停 + 记录（限流）。注意：主交换链会话的 EndDraw 在
             // Win2D 内部（本方法返回之后），那一层由 App 的 first-chance 过滤兜底记录。
             try
             {
-                var ds = args.DrawingSession;
-
                 DrawBackground(sender, ds);
 
                 if (_advanced)
@@ -751,7 +770,7 @@ namespace AnimatedWin2dControls.Controls
 
         // 背景以 (skip+1) 帧为周期重绘到不透明合成缓存，其余帧复用缓存 blit。
         // 流体恒为满屏不透明，缓存整面覆盖交换链，故无需清屏；歌词层每帧叠加其上。
-        private void DrawBackground(ICanvasAnimatedControl sender, CanvasDrawingSession ds)
+        private void DrawBackground(ICanvasAnimatedControl sender, CanvasDrawContext ds)
         {
             _frameCounter++;
 
@@ -798,7 +817,8 @@ namespace AnimatedWin2dControls.Controls
 
                 if (renderBg)
                 {
-                    using var cds = _bgCache!.CreateDrawingSession();
+                    using var cacheSession = CanvasDrawingSessionScope.Create(_bgCache!);
+                    var cds = cacheSession.Context;
                     bg?.Draw(sender, cds);
                     _snow.Draw(sender, cds);
                     _fog.Draw(sender, cds);
