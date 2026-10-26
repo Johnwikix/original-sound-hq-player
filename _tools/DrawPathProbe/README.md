@@ -37,3 +37,7 @@ dotnet run --project _tools/DrawPathProbe/TraceAnalysis -c Release -- <input.net
 `PointerPointScope` 在同一 UI 回调中读取 Position/MouseWheelDelta 并释放全部原生引用；协调器保留 Handled、悬停、滚轮过渡及 MVVM 入口。已验证 getter 重放从约 400 B（位置）/约 1.2 KB（原双点加滚轮）降至 0 B；生产移动回调体从约 300–346 B/事件降至 0 B。滚轮初次接入剩余 24 B 来自 ValueTransition 的 object.Equals 装箱，改用泛型相等比较保持原有守卫和延迟语义。最终一轮自动采集在预热后取得 75 次移动、15 次正负滚轮，逐事件对照值一致，两个生产回调体均为 0 B。计数不包含 WinUI 在进入处理器前创建事件参数的开销，也不代表硬件输入率。
 
 扫描使用现有 `FolderScanRegression` 的真实临时 SQLite、FFmpeg 文件/句柄与取消、背压回归。10 万条合成调度测量中，已有有界管线约 590 KB，对照旧式每文件任务约 9.20 MB；这排除实际标签读取、数据库和 UI 成本，也不是本次新增收益。当前没有足够证据支持把扫描改成 ABI 链路。
+
+## 有界生命周期压力测量
+
+构建后直接运行 `DrawPathProbe.exe --lifetime --seconds=300`。使用生产协调器、真实游戏循环、原生中间会话与 layer，每三秒重建歌词；结果逐十秒覆盖写入 `result.json`。自然 GC 样本与最后清理资源后的显式回收样本分开记录。工作集和 Private Bytes 包含托管与原生部分，不能当作原生堆或显存分项；GPU 进程计数器需按结果 PID 单独采样。此宿主使用标准运行时，不等同于完整播放器的 SatoriGC/用户设备长时播放。

@@ -1,0 +1,47 @@
+<UserControl x:Class="AppearanceUiRegression.PcmControl" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:tool="using:WinUIMusicPlayer.Utils"><ScrollViewer>
+<StackPanel xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:controls="using:CommunityToolkit.WinUI.Controls" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Spacing="4">
+    <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspPcmResample')}" Description="{x:Bind tool:ToolUtils.GetString('DspPcmResampleHelp')}" IsEnabled="{x:Bind ViewModel.PcmConfigurationEditable, Mode=OneWay}" x:Name="ResampleModeCard">
+        <ComboBox Width="220" SelectedIndex="{x:Bind ViewModel.ResampleModeIndex, Mode=TwoWay}" x:Name="ResampleMode">
+            <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('DspPcmSourceRate')}" />
+            <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('DspPcmFixedRate')}" />
+            <ComboBoxItem Content="{x:Bind tool:ToolUtils.GetString('DspPcmIntegerRate')}" />
+        </ComboBox>
+    </controls:SettingsCard>
+    <controls:SettingsCard Header="{x:Bind ViewModel.ResampleTargetLabel, Mode=OneWay}" IsEnabled="{x:Bind ViewModel.ResampleTargetEditable, Mode=OneWay}" x:Name="ResampleTargetCard">
+        <ComboBox Width="220" SelectedIndex="{x:Bind ViewModel.ResampleTargetIndex, Mode=TwoWay}" x:Name="ResampleTarget">
+            <ComboBoxItem Content="44100 Hz" />
+            <ComboBoxItem Content="48000 Hz" />
+            <ComboBoxItem Content="88200 Hz" />
+            <ComboBoxItem Content="96000 Hz" />
+            <ComboBoxItem Content="176400 Hz" />
+            <ComboBoxItem Content="192000 Hz" />
+            <ComboBoxItem Content="352800 Hz" />
+            <ComboBoxItem Content="384000 Hz" />
+            <ComboBoxItem Content="705600 Hz" />
+            <ComboBoxItem Content="768000 Hz" />
+        </ComboBox>
+    </controls:SettingsCard>
+    <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('DspNormalizeDescription')}" Header="{x:Bind tool:ToolUtils.GetString('DspNormalize')}" IsEnabled="{x:Bind ViewModel.NormalizeEditable, Mode=OneWay}" x:Name="NormalizeCard">
+        <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.NormalizeLoudness, Mode=TwoWay}" x:Name="Normalize" />
+    </controls:SettingsCard>
+    <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspTruePeakLimiter')}" Description="{x:Bind tool:ToolUtils.GetString('DspTruePeakHelp')}" IsEnabled="{x:Bind ViewModel.PcmConfigurationEditable, Mode=OneWay}" x:Name="LimiterCard">
+        <ToggleSwitch MinWidth="0" IsOn="{x:Bind ViewModel.TruePeakLimiterEnabled, Mode=TwoWay}" x:Name="Limiter" />
+    </controls:SettingsCard>
+    <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspTruePeakCeiling')}" Description="{x:Bind tool:ToolUtils.GetString('DspPeakCeilingHelp')}" IsEnabled="{x:Bind ViewModel.PeakCeilingEditable, Mode=OneWay}" x:Name="CeilingCard">
+        <NumberBox Width="220" Minimum="-12" Maximum="-0.1" SmallChange="0.1" SpinButtonPlacementMode="Inline" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('DspTruePeakCeiling')}" Value="{x:Bind ViewModel.TruePeakCeilingDb, Mode=TwoWay}" x:Name="Ceiling" />
+    </controls:SettingsCard>
+    <controls:SettingsCard Description="{x:Bind tool:ToolUtils.GetString('DspCrossfeedDescription')}" Header="{x:Bind tool:ToolUtils.GetString('DspCrossfeed')}" IsEnabled="{x:Bind ViewModel.CrossfeedControlsEditable, Mode=OneWay}" x:Name="CrossfeedPresetCard">
+        <ComboBox Width="220" SelectedIndex="{x:Bind ViewModel.CrossfeedIndex, Mode=TwoWay}" PlaceholderText="{x:Bind tool:ToolUtils.GetString('DspCrossfeedCustom')}" AutomationProperties.Name="{x:Bind tool:ToolUtils.GetString('DspCrossfeed')}" x:Name="CrossfeedPreset">
+            <ComboBoxItem Content="Off" />
+            <ComboBoxItem Content="Light" />
+            <ComboBoxItem Content="Moderate" />
+        </ComboBox>
+    </controls:SettingsCard>
+    <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspCrossfeedAmount')}" IsEnabled="{x:Bind ViewModel.CrossfeedControlsEditable, Mode=OneWay}" x:Name="CrossfeedAmountCard">
+        <NumberBox Width="220" Minimum="0" Maximum="50" SmallChange="1" SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.CrossfeedAmount, Mode=TwoWay}" x:Name="CrossfeedAmount" />
+    </controls:SettingsCard>
+    <controls:SettingsCard Header="{x:Bind tool:ToolUtils.GetString('DspCrossfeedCutoff')}" IsEnabled="{x:Bind ViewModel.CrossfeedCutoffEditable, Mode=OneWay}" x:Name="CrossfeedCutoffCard">
+        <NumberBox Width="220" Minimum="200" Maximum="2000" SmallChange="50" SpinButtonPlacementMode="Inline" Value="{x:Bind ViewModel.CrossfeedCutoffHz, Mode=TwoWay}" x:Name="CrossfeedCutoff" />
+    </controls:SettingsCard>
+</StackPanel>
+</ScrollViewer></UserControl>

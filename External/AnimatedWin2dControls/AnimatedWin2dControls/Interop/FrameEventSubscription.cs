@@ -34,13 +34,19 @@ public sealed unsafe class FrameEventSubscription : IDisposable
     private int _callbackDepth;
     private bool _detached;
     private bool _registered;
+    private RawFrameHandler? _handler;
+    private readonly Guid _sourceIid;
+    private readonly bool _usesActivationFactory;
 
-    private FrameEventSubscription(IObjectReference source, int removeSlot, Action? rendering, Action<TimeSpan>? update)
+    private FrameEventSubscription(IObjectReference source, int removeSlot, Action? rendering, Action<TimeSpan>? update,
+        Guid? sourceIid = null, bool usesActivationFactory = false)
     {
         _source = source;
         _removeSlot = removeSlot;
         _rendering = rendering;
         _update = update;
+        _sourceIid = sourceIid ?? CanvasAnimatedControlInterface;
+        _usesActivationFactory = usesActivationFactory;
     }
 
     /// <summary>在当前 XAML UI 线程订阅 Rendering，忽略原生 sender/args。</summary>
@@ -49,7 +55,7 @@ public sealed unsafe class FrameEventSubscription : IDisposable
         ArgumentNullException.ThrowIfNull(callback);
         // 仅在冷路径使用运行时工厂解析，保留 unpackaged/reg-free WinUI 的激活回退。
         var source = ActivationFactory.Get("Microsoft.UI.Xaml.Media.CompositionTarget", CompositionTargetStatics);
-        var subscription = new FrameEventSubscription(source, 7, callback, null);
+        var subscription = new FrameEventSubscription(source, 7, callback, null, CompositionTargetStatics, true);
         try
         {
             var handler = new RawRenderingHandler(subscription);
@@ -139,6 +145,7 @@ public sealed unsafe class FrameEventSubscription : IDisposable
                 Marshal.ThrowExceptionForHR(hr);
                 _token = token;
                 _registered = true;
+                _handler?.Registered(token, _removeSlot, _sourceIid, _usesActivationFactory);
             }
             catch
             {
@@ -151,6 +158,8 @@ public sealed unsafe class FrameEventSubscription : IDisposable
             }
         }
     }
+
+    internal void TrackHandler(RawFrameHandler handler) => _handler = handler;
 
     internal int Invoke(nint args)
     {
@@ -216,11 +225,16 @@ public sealed unsafe class FrameEventSubscription : IDisposable
                     int hr = ((delegate* unmanaged[Stdcall]<nint, long, int>)(*(nint**)source)[_removeSlot])(source, _token);
                     GC.KeepAlive(reference);
                     if (hr < 0)
+                    {
+                        _handler?.RequestRevoke();
                         Trace.TraceError("Frame event unsubscription failed: 0x{0:X8}", hr);
+                    }
+                    else _handler?.Unregistered();
                 }
             }
             catch (Exception error)
             {
+                _handler?.RequestRevoke();
                 // 源已关闭/设备退出时 remove 也可能失败；仍须排空回调并释放其余资源。
                 Trace.TraceError("Frame event unsubscription failed: {0}", error);
             }
@@ -252,6 +266,7 @@ public sealed unsafe class FrameEventSubscription : IDisposable
         _rendering = null;
         _update = null;
         _draw = null;
+        _handler = null;
         var source = _source;
         _source = null;
         source?.Dispose();
@@ -296,26 +311,92 @@ internal partial interface IRawCanvasDrawHandler
 [Guid("94ea2b94-e9cc-49e0-c0ff-ee64ca8f5b90")]
 internal partial interface IRawAgileObject { }
 
+/// <summary>记录撤销所需的值，不持有事件源；失效的原生 sink 在源线程下一次回调时自行撤销。</summary>
+internal abstract unsafe class RawFrameHandler
+{
+    private readonly WeakReference<FrameEventSubscription> _owner;
+    private Guid _sourceIid;
+    private long _token;
+    private int _removeSlot, _registered, _revokePending, _revoking, _retryTicks;
+    private bool _usesActivationFactory;
+
+    protected RawFrameHandler(FrameEventSubscription owner)
+    {
+        _owner = new(owner);
+        owner.TrackHandler(this);
+    }
+
+    internal void Registered(long token, int removeSlot, Guid sourceIid, bool usesActivationFactory)
+    {
+        _token = token;
+        _removeSlot = removeSlot;
+        _sourceIid = sourceIid;
+        _usesActivationFactory = usesActivationFactory;
+        Volatile.Write(ref _registered, 1);
+    }
+
+    internal void RequestRevoke() => Volatile.Write(ref _revokePending, 1);
+    internal void Unregistered() => Volatile.Write(ref _registered, 0);
+
+    protected int InvokeCore(nint sender, nint args)
+    {
+        if (Volatile.Read(ref _revokePending) == 0 && _owner.TryGetTarget(out var owner))
+            return owner.Invoke(args);
+        // remove 失败或所有者已回收：不读取已经退休的 args，也不重新根住控件。
+        TryRevoke(sender);
+        return 0;
+    }
+
+    private void TryRevoke(nint sender)
+    {
+        // 永久错误时限制重试频率；首次迟到回调立即重试，之后每 64 次回调重试一次。
+        if (Volatile.Read(ref _registered) == 0 || (Interlocked.Increment(ref _retryTicks) & 63) != 1
+            || Interlocked.CompareExchange(ref _revoking, 1, 0) != 0) return;
+        try
+        {
+            if (_usesActivationFactory)
+            {
+                // Rendering 的 sender 可为空；在事件所属 UI 线程重新取得静态工厂。
+                using var source = ActivationFactory.Get("Microsoft.UI.Xaml.Media.CompositionTarget", _sourceIid);
+                Remove(source.ThisPtr);
+            }
+            else if (sender != 0 && Marshal.QueryInterface(sender, in _sourceIid, out nint source) >= 0)
+            {
+                try { Remove(source); }
+                finally { Marshal.Release(source); }
+            }
+        }
+        catch (Exception)
+        {
+            // 设备/源退出时仍允许已持有委托引用的迟到调用安全返回。
+        }
+        finally { Volatile.Write(ref _revoking, 0); }
+    }
+
+    private void Remove(nint source)
+    {
+        int hr = ((delegate* unmanaged[Stdcall]<nint, long, int>)(*(nint**)source)[_removeSlot])(source, _token);
+        if (hr >= 0) Volatile.Write(ref _registered, 0);
+    }
+}
+
 /// <summary>原生事件源只持有弱所有者，遗漏释放也不会把宿主及其资源永久根住。</summary>
 [GeneratedComClass]
-internal sealed partial class RawRenderingHandler(FrameEventSubscription owner) : IRawRenderingHandler, IRawAgileObject
+internal sealed partial class RawRenderingHandler(FrameEventSubscription owner) : RawFrameHandler(owner), IRawRenderingHandler, IRawAgileObject
 {
-    private readonly WeakReference<FrameEventSubscription> _owner = new(owner);
-    public int Invoke(nint sender, nint args) => _owner.TryGetTarget(out var owner) ? owner.Invoke(args) : 0;
+    public int Invoke(nint sender, nint args) => InvokeCore(sender, args);
 }
 
 /// <summary>允许 Win2D 游戏循环直接调用的原始参数委托。</summary>
 [GeneratedComClass]
-internal sealed partial class RawCanvasUpdateHandler(FrameEventSubscription owner) : IRawCanvasUpdateHandler, IRawAgileObject
+internal sealed partial class RawCanvasUpdateHandler(FrameEventSubscription owner) : RawFrameHandler(owner), IRawCanvasUpdateHandler, IRawAgileObject
 {
-    private readonly WeakReference<FrameEventSubscription> _owner = new(owner);
-    public int Invoke(nint sender, nint args) => _owner.TryGetTarget(out var owner) ? owner.Invoke(args) : 0;
+    public int Invoke(nint sender, nint args) => InvokeCore(sender, args);
 }
 
 /// <summary>原生 Draw 委托不强根住订阅所有者。</summary>
 [GeneratedComClass]
-internal sealed partial class RawCanvasDrawHandler(FrameEventSubscription owner) : IRawCanvasDrawHandler, IRawAgileObject
+internal sealed partial class RawCanvasDrawHandler(FrameEventSubscription owner) : RawFrameHandler(owner), IRawCanvasDrawHandler, IRawAgileObject
 {
-    private readonly WeakReference<FrameEventSubscription> _owner = new(owner);
-    public int Invoke(nint sender, nint args) => _owner.TryGetTarget(out var owner) ? owner.Invoke(args) : 0;
+    public int Invoke(nint sender, nint args) => InvokeCore(sender, args);
 }

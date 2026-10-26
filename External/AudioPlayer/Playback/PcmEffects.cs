@@ -50,7 +50,7 @@ internal sealed class PcmEffects : IDisposable
     private PlaybackSource? _source;
     private int _dsdRate, _dsdGain;
     private uint _channelMask;
-    private readonly TruePeakLimiter? _limiter;
+    private TruePeakLimiter? _limiter;
     private bool _limiterActive;
     internal bool IsPrepared
     {
@@ -76,7 +76,6 @@ internal sealed class PcmEffects : IDisposable
     {
         _rate = rate; _channels = channels;
         _dryConvolution = new double[512 * channels]; _oldConvolution = new double[_dryConvolution.Length];
-        if (channels is >= 1 and <= 8) _limiter = new(rate, channels);
         _dynamics = new(rate, channels);
         _lowPassAlpha = 1 - Math.Exp(-2 * Math.PI * 700 / rate);
         _parameterStep = 1.0 / Math.Max(1, rate / 50);
@@ -93,6 +92,9 @@ internal sealed class PcmEffects : IDisposable
         lock (_control)
         {
             if (_disposed) return;
+            // 控制线程先准备完整实例，再发布启用快照；默认旁路不创建前瞻缓冲。
+            if (settings.IsEnabled && settings.TruePeakLimiterEnabled && _limiter == null && _channels is >= 1 and <= 8)
+                Volatile.Write(ref _limiter, new TruePeakLimiter(_rate, _channels));
             _settings = settings;
             ConfigureConvolution();
             if (!settings.IsEnabled || !settings.NormalizeLoudness)
@@ -145,8 +147,20 @@ internal sealed class PcmEffects : IDisposable
 
     private void ConfigureConvolution()
     {
-        // 旁路时保留已准备系数，但不为未使用的曲线启动后台计算。
-        if (!_settings.ConvolutionEnabled) return;
+        if (!_settings.IsEnabled || !_settings.ConvolutionEnabled)
+        {
+            _prepareCancellation?.Cancel();
+            _prepareCancellation?.Dispose();
+            _prepareCancellation = null;
+            ++_impulseVersion;
+            _filter = null;
+            _spectra = null;
+            _impulsePath = _curveKey = null;
+            _autoGainDb = 0;
+            _convolutionStatus = ConvolutionStatus.Off;
+            // 渲染历史由音频线程淡出或在总开关代数变更后退休。
+            return;
+        }
         bool curve = CorrectionCurve.UsesCurve(_settings);
         string? curveKey = curve ? _settings.CurvePoints : null;
         string? path = curve ? null : _settings.ImpulsePath;
@@ -222,7 +236,7 @@ internal sealed class PcmEffects : IDisposable
         PublishTarget();
         int version = ++_preampVersion;
         _preampCancellation?.Cancel(); _preampCancellation?.Dispose(); _preampCancellation = null;
-        if (_settings.AutoPreamp != true) return;
+        if (!_settings.IsEnabled || _settings.AutoPreamp != true) return;
         _preampCancellation = new CancellationTokenSource();
         var cancellation = _preampCancellation.Token;
         var eq = _channels <= 2 ? _equalizer : [];
@@ -247,13 +261,13 @@ internal sealed class PcmEffects : IDisposable
         double normalization = NormalizationGainDb;
         if (_settings.IsEnabled && _settings.NormalizeLoudness && _measurement != null)
         {
-            normalization = _measurement.GainDb(_settings.TargetLufs);
+            normalization = _measurement.GainDb(_settings.TargetLufs, _settings.TruePeakCeilingDb);
             _status = normalization < _settings.TargetLufs - _measurement.IntegratedLufs - 0.01
                 ? LoudnessStatus.PeakLimited : LoudnessStatus.Applied;
         }
         Volatile.Write(ref _target, new Target(_settings, _settings.IsEnabled
             ? Math.Pow(10, (normalization + (_settings.AutoPreamp == true ? _preampDb : _settings.HeadroomDb)) / 20) : 1,
-            _settings.ConvolutionEnabled ? _filter : null, _settings.AutoPreamp.HasValue ? 1 : Math.Pow(10, (_settings.ConvolutionTrimDb + _autoGainDb) / 20),
+            _settings.IsEnabled && _settings.ConvolutionEnabled ? _filter : null, _settings.AutoPreamp.HasValue ? 1 : Math.Pow(10, (_settings.ConvolutionTrimDb + _autoGainDb) / 20),
             1 - Math.Exp(-2 * Math.PI * Math.Min(_settings.CrossfeedCutoffHz, _rate * 0.45) / _rate), _convolutionStatus));
     }
 
@@ -263,7 +277,7 @@ internal sealed class PcmEffects : IDisposable
     /// </summary>
     private double NormalizationGainDb => !_settings.IsEnabled || !_settings.NormalizeLoudness
         ? 0
-        : _measurement?.GainDb(_settings.TargetLufs)
+        : _measurement?.GainDb(_settings.TargetLufs, _settings.TruePeakCeilingDb)
             ?? (_source?.Kind == PlaybackSourceKind.Http ? 0 : Math.Min(-12, _settings.TargetLufs + 6));
 
     internal DspState GetState(byte kind, bool eq)
@@ -278,19 +292,34 @@ internal sealed class PcmEffects : IDisposable
     /// <summary>seek 仅投递代数，滤波历史由渲染线程在下一块清空。</summary>
     internal void RequestReset() => Interlocked.Increment(ref _resetVersion);
 
-    /// <summary>仅由渲染线程在重新启用 DSP 时调用，丢弃旁路前的平滑值和尾音。</summary>
-    internal void ResetRenderState()
+    /// <summary>仅由渲染线程或停机屏障内调用；总开关旁路时同时退休卷积工作区。</summary>
+    internal void ResetRenderState(bool releaseConvolution = false)
     {
         _continuedFilter = _continuedTargetFilter = null;
         _dynamics.Reset();
         _limiter?.Reset(); _limiterActive = false;
         _renderTarget = null;
-        _renderFilter?.Reset();
+        if (releaseConvolution) _renderFilter = null;
+        else _renderFilter?.Reset();
         _oldFilter = null;
         _convolutionMix = 0;
         _gainFrames = 0;
         _gain = 1;
         _gainStep = _lowLeft = _lowRight = 0;
+    }
+
+    /// <summary>控制线程在取得 gapless 渲染快照后收敛目标所有权，不修改在用滤波历史。</summary>
+    internal void CompleteContinuation()
+    {
+        lock (_control)
+        {
+            var expected = Volatile.Read(ref _continuedTargetFilter);
+            var continued = Volatile.Read(ref _continuedFilter);
+            if (_disposed || expected == null || continued == null || !ReferenceEquals(_filter, expected)) return;
+            _filter = continued;
+            PublishTarget();
+            // 下一音频块以已转移实例为目标，自然清除映射并释放未使用的新工作区。
+        }
     }
 
     /// <summary>跨无缝播放边界转移渲染历史，并保留各曲目自身的响度目标。
@@ -417,12 +446,13 @@ internal sealed class PcmEffects : IDisposable
     internal void ApplyFinal(Span<double> samples, int frames)
     {
         var settings = Volatile.Read(ref _target).Settings;
-        if (settings.IsEnabled && settings.TruePeakLimiterEnabled && _limiter != null)
+        var limiter = Volatile.Read(ref _limiter);
+        if (settings.IsEnabled && settings.TruePeakLimiterEnabled && limiter != null)
         {
-            _limiter.Process(samples, frames, settings.TruePeakCeilingDb);
+            limiter.Process(samples, frames, settings.TruePeakCeilingDb);
             _limiterActive = true;
         }
-        else if (_limiterActive) { _limiter?.Reset(); _limiterActive = false; }
+        else if (_limiterActive) { limiter?.Reset(); _limiterActive = false; }
     }
 
     internal void ApplyConvolution(Span<double> samples, int frames)

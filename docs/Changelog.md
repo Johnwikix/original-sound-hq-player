@@ -1,3 +1,14 @@
+## 2026-10-26 统一 DSP 峰值上限并补齐参数联动
+- `DspSettingsViewModel.Pcm`、`DspSettingsControl.xaml`：响度标准化与 True Peak 共用可输入的峰值上限，任一功能启用即可编辑；重采样目标随模式启用并区分目标/整数倍上限，Crossfeed 强度/截止频率统一双声道限制并显示自定义档位。
+- `LoudnessMeter`、`PcmEffects`：固定响度增益改用保存的峰值上限；保留默认 −1 dBTP、旧配置字段和 v7 协议，非默认旧上限现在也影响响度标准化；重新发布 `Player/AudioPlayer.exe`。
+- `PcmEffects`、`Session`、`PlaybackEngine.Gapless`：限幅缓冲按需创建；关闭 DSP/卷积取消在途准备并在音频线程退休渲染引用；无缝接管收敛到已转移滤波器，释放重复工作区并保留历史。
+- `FrameEventSubscription`：解绑失败或所有者回收后，原生 handler 在下一次源线程回调自行撤销，不强持有事件源；永久失败时节流重试，保留在途回调屏障和 HRESULT 语义。
+- `_tools/FrameAbiRegression`、界面与播放回归：覆盖失败恢复、真实 Rendering/Update/Draw 孤立 handler 回收、绘制会话引用计数、生产编译绑定与共享上限。
+- `_tools/DrawPathProbe --lifetime`、音频设备探针：5 分钟真实绘制和每 3 秒资源重建，补充自然 GC、进程内存/句柄及外部 GPU 计数；实际 WASAPI 共享、独占及兼容回退分别记录；已连接 FiiO ASIO 的 44.1/96/176.4 kHz 换率、一分钟切歌和长 IR/True Peak 无缝交接通过且未回退，模拟端峰值仍需外部设备测量。
+
+- 独立内存复测：48 kHz 双声道默认构造分配 25,912→17,288 B；96 kHz 六声道长 IR 无缝交接额外数组留存 37.1 MiB→0，500 个退休实例可回收；数字为标准 .NET 对象/数组测量，不等同于进程工作集降幅。
+- 验证：完整播放回归 353/353、真实帧 ABI 59 项及生产 PCM 编译绑定通过；Release x64 使用 `AppxSymbolPackageEnabled=false` 构建通过（本机 MSIX PDB 符号打包任务仍报参数错误）。
+
 ## 2026-10-26 音乐可选标签与排序
 - 字段范围：专辑艺术家、流派、作曲者、作词者、指挥、目录编号；发行方因 ATL 7.18 的 WMA 直接写入无法读回而剔除，不引入扩展标签或自行适配。
 - `Model/Music.cs`、`Utils/AudioMetadataTags.cs`、`Services/MusicDatabaseService*`：补齐六项 ATL 直接标签的读取、持久化、旧库迁移和版本化延迟回写；缺失标签为空，存量曲目按需补读，不在启动时扫描全库。

@@ -54,6 +54,7 @@ public sealed partial class PlaybackEngine
         if (rendered.Current == _session || rendered.CompletedToken == 0) return;
         var old = _session;
         var request = _gaplessPreloader?.Request;
+        rendered.Current.Effects?.CompleteContinuation();
         SetSession(rendered.Current);
         if (request != null && request.Token == rendered.CompletedToken)
         {

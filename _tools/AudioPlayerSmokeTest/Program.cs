@@ -49,6 +49,8 @@ states.NotificationReceived += (type, _) =>
 states.Start();
 if (!SpinWait.SpinUntil(() => states.CurrentDspState is not null, 5000)) throw new InvalidOperationException("Initial DSP state missing");
 Console.WriteLine("[smoke] Pipe 握手及初始 DSP 推送完成");
+if (args.Contains("--hardware-dsp"))
+    return HardwareDspProbe.Run(server, transport, states, mediaPath, outputMode, runSeconds);
 byte[] responseBuffer = new byte[IpcConstants.MaxResponseSize];
 
 MessageTypeId Send(CommandId cmd, ReadOnlySpan<byte> payload, out ReadOnlySpan<byte> respPayload)
@@ -301,11 +303,17 @@ if (args.Contains("--gapless"))
         if (!double.IsFinite(rate) || rate is < 0.25 or > 5) throw new ArgumentOutOfRangeException(nameof(rate));
         int drainTimeout = (int)Math.Ceiling(10000 / Math.Min(1, rate));
         Span<byte> dsp = stackalloc byte[DspProtocol.SettingsSize];
-        DspProtocol.WriteSettings(dsp, new DspSettings { PlaybackRate = rate, CompressorEnabled = true });
+        string? impulsePath = args.FirstOrDefault(a => a.StartsWith("--ir="))?[5..];
+        if (impulsePath != null) impulsePath = Path.GetFullPath(impulsePath);
+        DspProtocol.WriteSettings(dsp, new DspSettings { PlaybackRate = rate, CompressorEnabled = true,
+            ConvolutionEnabled = impulsePath != null, ConvolutionSource = ConvolutionSource.Wave, ImpulsePath = impulsePath ?? "",
+            AutoPreamp = impulsePath == null ? null : false, TruePeakLimiterEnabled = impulsePath != null });
         if (Send(CommandId.UpdateDsp, dsp, out _) != MessageTypeId.Success)
             throw new InvalidOperationException("DSP settings rejected");
         if (!SpinWait.SpinUntil(() => states.TryGetProgress(out var p) && p.PlaybackRate == rate && p.Playing, 5000))
             throw new InvalidOperationException("Speed change did not reach output telemetry");
+        if (impulsePath != null && !SpinWait.SpinUntil(() => states.CurrentDspState?.State.Convolution == ConvolutionStatus.Active, 5000))
+            throw new InvalidOperationException("Real-device convolution preparation did not complete");
         states.TryGetProgress(out var initial);
         long outputGeneration = states.CurrentDspState!.State.OutputGeneration;
         var queue = new GaplessRequest(initial.Epoch, 77, mediaPath);

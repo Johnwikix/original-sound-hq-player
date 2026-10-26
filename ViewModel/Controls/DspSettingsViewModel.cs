@@ -63,15 +63,6 @@ public partial class DspSettingsViewModel : ObservableObject
         }
     }
 
-    public bool NormalizeLoudness
-    {
-        get => field;
-        set
-        {
-            if (SetProperty(ref field, value)) SettingChanged(LicenseFeature.LoudnessNormalization);
-        }
-    }
-
     /// <summary>NumberBox 输入非法时会推送 NaN，忽略该次写回，保留旧有效值。</summary>
     public double TargetLufs
     {
@@ -116,17 +107,6 @@ public partial class DspSettingsViewModel : ObservableObject
         set
         {
             if (SetProperty(ref field, value)) SettingChanged(LicenseFeature.Mono);
-        }
-    }
-
-    /// <summary>交叉馈送档位索引：0 关闭、1 轻度（0.2）、2 中度（0.4）。</summary>
-    public int CrossfeedIndex
-    {
-        get => CrossfeedAmount switch { 0 => 0, 20 => 1, 40 => 2, _ => -1 };
-        set
-        {
-            if (_syncing || !_loaded || (uint)value > 2) return;
-            CrossfeedAmount = value switch { 1 => 20, 2 => 40, _ => 0 };
         }
     }
 
@@ -396,6 +376,7 @@ public partial class DspSettingsViewModel : ObservableObject
             RetryCorrectionCommand.NotifyCanExecuteChanged();
         }
         StereoSupported = available && state!.Value.Channels is 0 or 2;
+        RefreshPcmAvailability();
         bool unsupported = available && state!.Value.Channels != 0 && state.Value.Channels != 2;
         InfoMessage = ToolUtils.GetString(state == null ? "DspStateUnavailable"
             : state.Value.RenderKind == 3 ? "DspAtmosBitstreamBypass"

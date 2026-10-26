@@ -169,6 +169,6 @@ internal sealed class LoudnessMeter
 /// <summary>保存整曲测量值，以固定衰减替代动态压缩来保留峰值余量。</summary>
 internal sealed record LoudnessMeasurement(double IntegratedLufs, double SamplePeak, double TruePeak = double.NaN)
 {
-    internal double GainDb(double targetLufs) => Math.Min(
-        Math.Clamp(targetLufs - IntegratedLufs, -60, 24), -1 - 20 * Math.Log10(double.IsFinite(TruePeak) ? Math.Max(SamplePeak, TruePeak) : SamplePeak));
+    internal double GainDb(double targetLufs, double ceilingDb = -1) => Math.Min(
+        Math.Clamp(targetLufs - IntegratedLufs, -60, 24), ceilingDb - 20 * Math.Log10(double.IsFinite(TruePeak) ? Math.Max(SamplePeak, TruePeak) : SamplePeak));
 }

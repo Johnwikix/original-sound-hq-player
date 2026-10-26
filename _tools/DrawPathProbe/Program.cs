@@ -86,6 +86,14 @@ internal sealed partial class ProbeApplication : Application, IXamlMetadataProvi
             window.Activate();
             await _ready.Task.WaitAsync(TimeSpan.FromSeconds(10));
             _canvas.Paused = true;
+            if (Environment.GetCommandLineArgs().Contains("--lifetime"))
+            {
+                update.Dispose();
+                update = null;
+                _canvas.Draw -= OnLiveDraw;
+                await RunLifetimeProbeAsync(resultPath);
+                return;
+            }
             if (Environment.GetCommandLineArgs().Contains("--input"))
             {
                 await RunInputProbeAsync(window, resultPath);

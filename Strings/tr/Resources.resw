@@ -2510,10 +2510,10 @@ SHA-256: {5}
   <data name="DspPcmSourceRate" xml:space="preserve"><value>Kaynak örnekleme hızı</value></data>
   <data name="DspPcmFixedRate" xml:space="preserve"><value>Sabit örnekleme hızı</value></data>
   <data name="DspPcmIntegerRate" xml:space="preserve"><value>Kaynağın tam katı</value></data>
-  <data name="DspPcmTargetRate" xml:space="preserve"><value>Hedef / tam kat üst sınırı</value></data>
+  <data name="DspPcmTargetRate" xml:space="preserve"><value>Hedef örnekleme hızı</value></data>
   <data name="DspTruePeakLimiter" xml:space="preserve"><value>True Peak koruması</value></data>
   <data name="DspTruePeakHelp" xml:space="preserve"><value>Son PCM için 4× enterpolasyon ve 5 ms öngörü; sistem karıştırıcısı ve aygıt işlemesi kapsam dışıdır.</value></data>
-  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Tepe sınırı (dBTP)</value></data>
+  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Ortak tepe sınırı (dBTP)</value></data>
   <data name="DspPcmDither" xml:space="preserve"><value>Tamsayı çıkışı TPDF dither</value></data>
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>Varsayılan kapalıdır. DSP sonrası bit derinliğini azaltmak için; bit saydam çalma için kapatın.</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed kesim frekansı (Hz)</value></data>
@@ -2563,4 +2563,7 @@ SHA-256: {5}
   <data name="MusicTagCatalogNumber.PlaceholderText" xml:space="preserve">
     <value>Belirtilmemiş (isteğe bağlı)</value>
   </data>
+  <data name="DspPcmIntegerLimit" xml:space="preserve"><value>Tam sayı katı hız sınırı</value></data>
+  <data name="DspPeakCeilingHelp" xml:space="preserve"><value>Ses yüksekliği normalleştirme, kaynak tepe noktaları için bu sınıra göre pay bırakır. True Peak; EQ, evrişim, sıkıştırma ve ses düzeyi işlemlerinden sonra aynı sınırı kullanır.</value></data>
+  <data name="DspCrossfeedCustom" xml:space="preserve"><value>Özel</value></data>
 </root>

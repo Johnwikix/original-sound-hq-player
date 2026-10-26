@@ -2510,10 +2510,10 @@ SHA-256: {5}
   <data name="DspPcmSourceRate" xml:space="preserve"><value>Quell-Abtastrate</value></data>
   <data name="DspPcmFixedRate" xml:space="preserve"><value>Feste Abtastrate</value></data>
   <data name="DspPcmIntegerRate" xml:space="preserve"><value>Ganzzahliges Vielfaches</value></data>
-  <data name="DspPcmTargetRate" xml:space="preserve"><value>Ziel / Obergrenze</value></data>
+  <data name="DspPcmTargetRate" xml:space="preserve"><value>Zielabtastrate</value></data>
   <data name="DspTruePeakLimiter" xml:space="preserve"><value>True-Peak-Schutz</value></data>
   <data name="DspTruePeakHelp" xml:space="preserve"><value>4-fache Interpolation und 5 ms Vorschau für finales PCM; Systemmixer und Geräteverarbeitung bleiben außerhalb.</value></data>
-  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Peak-Obergrenze (dBTP)</value></data>
+  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Gemeinsame Spitzenobergrenze (dBTP)</value></data>
   <data name="DspPcmDither" xml:space="preserve"><value>TPDF-Dither für Integer-Ausgabe</value></data>
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>Standardmäßig aus. Zur Wortbreitenreduktion nach DSP; für bittransparente Wiedergabe ausschalten.</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed-Grenzfrequenz (Hz)</value></data>
@@ -2563,4 +2563,7 @@ SHA-256: {5}
   <data name="MusicTagCatalogNumber.PlaceholderText" xml:space="preserve">
     <value>Nicht angegeben (optional)</value>
   </data>
+  <data name="DspPcmIntegerLimit" xml:space="preserve"><value>Obergrenze für ganzzahlige Vielfache</value></data>
+  <data name="DspPeakCeilingHelp" xml:space="preserve"><value>Die Lautheitsnormalisierung reserviert Spitzenreserve für die Quelle. True Peak nutzt dieselbe Obergrenze nach EQ, Faltung, Kompression und Lautstärke.</value></data>
+  <data name="DspCrossfeedCustom" xml:space="preserve"><value>Benutzerdefiniert</value></data>
 </root>

@@ -2510,10 +2510,10 @@ SHA-256: {5}
   <data name="DspPcmSourceRate" xml:space="preserve"><value>元のサンプルレート</value></data>
   <data name="DspPcmFixedRate" xml:space="preserve"><value>指定サンプルレート</value></data>
   <data name="DspPcmIntegerRate" xml:space="preserve"><value>元の整数倍</value></data>
-  <data name="DspPcmTargetRate" xml:space="preserve"><value>目標／整数倍の上限</value></data>
+  <data name="DspPcmTargetRate" xml:space="preserve"><value>目標サンプリング周波数</value></data>
   <data name="DspTruePeakLimiter" xml:space="preserve"><value>True Peak 保護</value></data>
   <data name="DspTruePeakHelp" xml:space="preserve"><value>4 倍補間と 5 ms 先読みによる最終 PCM の保護。システムミキサーや機器内部の処理は対象外です。</value></data>
-  <data name="DspTruePeakCeiling" xml:space="preserve"><value>ピーク上限（dBTP）</value></data>
+  <data name="DspTruePeakCeiling" xml:space="preserve"><value>共通ピーク上限（dBTP）</value></data>
   <data name="DspPcmDither" xml:space="preserve"><value>整数出力 TPDF ディザー</value></data>
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>初期設定はオフ。処理後の量子化に使用します。ビット透過再生ではオフにしてください。</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed カットオフ（Hz）</value></data>
@@ -2563,4 +2563,7 @@ SHA-256: {5}
   <data name="MusicTagCatalogNumber.PlaceholderText" xml:space="preserve">
     <value>未設定（任意）</value>
   </data>
+  <data name="DspPcmIntegerLimit" xml:space="preserve"><value>整数倍サンプリング周波数の上限</value></data>
+  <data name="DspPeakCeilingHelp" xml:space="preserve"><value>ラウドネス正規化はこの上限に合わせて音源のピーク余裕を確保します。True Peak は EQ・畳み込み・圧縮・音量処理後に同じ上限で最終 PCM を保護します。</value></data>
+  <data name="DspCrossfeedCustom" xml:space="preserve"><value>カスタム</value></data>
 </root>

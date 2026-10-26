@@ -57,6 +57,7 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
             await CheckLiveDrawAsync(canvas);
             await canvas.RunOnGameLoopThreadAsync(() => NativeBoundaryChecks.CheckDraw(canvas));
             await CheckClockAsync();
+            await CheckAbandonedNativeHandlersAsync(canvas);
             await CheckHostsAsync(window);
             File.WriteAllText(result, $"PASS: {_checks} checks; raw COM invoke/timing/HRESULT, registration failure, late callbacks, self/concurrent unsubscription, warmed callback allocation, real Rendering/Update equality, pause/resume, reattach, host unload/reload/shutdown.");
         }
@@ -271,6 +272,34 @@ internal sealed partial class RegressionApp : Application, IXamlMetadataProvider
         }
     }
 
+    private static async Task CheckAbandonedNativeHandlersAsync(CanvasAnimatedControl canvas)
+    {
+        canvas.Paused = false;
+        foreach (int kind in new[] { 0, 1, 2 })
+        {
+            var (owner, handler) = CreateAbandonedNativeHandler(canvas, kind);
+            NativeBoundaryChecks.CollectForOwnershipCheck();
+            Check(!owner.IsAlive, "Real native source rooted its abandoned subscription");
+            await Task.Delay(150);
+            NativeBoundaryChecks.CollectForOwnershipCheck();
+            Check(!handler.IsAlive, "Real native source retained its orphan handler: " + kind);
+        }
+        canvas.Paused = true;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static (WeakReference Owner, WeakReference Handler) CreateAbandonedNativeHandler(CanvasAnimatedControl canvas, int kind)
+    {
+        var subscription = kind switch
+        {
+            0 => FrameEventSubscription.SubscribeRendering(() => { }),
+            1 => FrameEventSubscription.SubscribeUpdate(canvas, _ => { }),
+            _ => FrameEventSubscription.SubscribeDraw(canvas, _ => { })
+        };
+        var handler = typeof(FrameEventSubscription).GetField("_handler", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(subscription)!;
+        return (new(subscription), new(handler));
+    }
+
     private sealed class Tickable : ISharedTickable
     {
         internal Action? Tick;
@@ -298,7 +327,7 @@ internal static class NativeBoundaryChecks
         IObjectReference reference;
         try { reference = ComWrappersSupport.GetObjectReferenceForInterface((nint)pointer); }
         finally { ComInterfaceMarshaller<ITestSource>.Free(pointer); }
-        var owner = (FrameEventSubscription)Constructor.Invoke([reference, 7, callback, update]);
+        var owner = (FrameEventSubscription)Constructor.Invoke([reference, 7, callback, update, typeof(ITestSource).GUID, false]);
         if (draw is not null) typeof(FrameEventSubscription).GetField("_draw", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(owner, draw);
         string name = draw is not null ? "RawCanvasDrawHandler" : update is null ? "RawRenderingHandler" : "RawCanvasUpdateHandler";
         object handler = Activator.CreateInstance(typeof(FrameEventSubscription).Assembly.GetType("AnimatedWin2dControls.Interop." + name)!, owner)!;
@@ -329,10 +358,15 @@ internal static class NativeBoundaryChecks
             args.FailRead = true;
             RegressionApp.Check(source.Fire((nint)pointer) == unchecked((int)0x80004005), "Draw session getter error was ignored");
             args.FailRead = false;
+            int references = Marshal.AddRef(session);
+            Marshal.Release(session);
             for (int i = 0; i < 1000; i++) source.Fire((nint)pointer);
             long before = GC.GetAllocatedBytesForCurrentThread();
             for (int i = 0; i < 10000; i++) source.Fire((nint)pointer);
             RegressionApp.Check(GC.GetAllocatedBytesForCurrentThread() == before, "Raw Draw bridge allocated after warmup");
+            int after = Marshal.AddRef(session);
+            Marshal.Release(session);
+            RegressionApp.Check(after == references, "Draw getter leaked native session references");
             subscription.Dispose();
             RegressionApp.Check(source.Fire(1) == 0, "Late Draw read retired args after remove failure");
             using var selfSource = new TestSource();
@@ -395,6 +429,10 @@ internal static class NativeBoundaryChecks
             var subscription = Subscribe(source, () => calls++);
             subscription.Dispose();
             RegressionApp.Check(source.Fire(1) == 0 && calls == 0, "Late callback accessed retired state after failed remove");
+            RegressionApp.Check(source.HasHandler, "Fixture lost the handler despite remove failure");
+            source.FailRemove = false;
+            for (int i = 0; i < 64 && source.HasHandler; i++) source.Fire(1);
+            RegressionApp.Check(!source.HasHandler, "Late callback did not reclaim the failed native registration");
         }
         using (var source = new TestSource())
         {
@@ -434,6 +472,30 @@ internal static class NativeBoundaryChecks
             RegressionApp.Check(source.Fire(1) == 0, "Late native call failed after callback target collection");
             GC.KeepAlive(subscription);
         }
+        using (var source = new TestSource())
+        {
+            var (owner, handler) = CreateAbandonedSubscription(source);
+            CollectForOwnershipCheck();
+            RegressionApp.Check(!owner.IsAlive && source.HasHandler, "Native handler rooted its abandoned subscription");
+            RegressionApp.Check(source.Fire(1) == 0 && !source.HasHandler, "Orphan handler did not revoke on the next native callback");
+            CollectForOwnershipCheck();
+            RegressionApp.Check(!handler.IsAlive, "Revoked native handler was not collectible");
+        }
+    }
+
+    internal static void CollectForOwnershipCheck()
+    {
+        GC.Collect();
+        GC.WaitForPendingFinalizers();
+        GC.Collect();
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static (WeakReference Owner, WeakReference Handler) CreateAbandonedSubscription(TestSource source)
+    {
+        var subscription = Subscribe(source, () => { });
+        var handler = typeof(FrameEventSubscription).GetField("_handler", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(subscription)!;
+        return (new(subscription), new(handler));
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -464,16 +526,19 @@ internal sealed partial class TestSource : ITestSource, ITestAgile, IDisposable
 {
     private readonly object _gate = new();
     private nint _handler;
+    private nint _sender;
     internal bool FailAdd, FailRemove;
     internal int Removes;
+    internal bool HasHandler { get { lock (_gate) return _handler != 0; } }
     internal ManualResetEventSlim Removed { get; } = new();
     public int Reserved0() => 0;
     public int Reserved1() => 0;
     public int Reserved2() => 0;
-    public int Add(nint handler, out long token)
+    public unsafe int Add(nint handler, out long token)
     {
         token = 42;
         if (FailAdd) return unchecked((int)0x80004005);
+        if (_sender == 0) _sender = (nint)ComInterfaceMarshaller<ITestSource>.ConvertToUnmanaged(this);
         Marshal.AddRef(handler);
         _handler = handler;
         return 0;
@@ -500,16 +565,18 @@ internal sealed partial class TestSource : ITestSource, ITestAgile, IDisposable
             if (handler == 0) return 0;
             Marshal.AddRef(handler);
         }
-        try { return ((delegate* unmanaged[Stdcall]<nint, nint, nint, int>)(*(nint**)handler)[3])(handler, 0, args); }
+        try { return ((delegate* unmanaged[Stdcall]<nint, nint, nint, int>)(*(nint**)handler)[3])(handler, _sender, args); }
         finally { Marshal.Release(handler); }
     }
-    public void Dispose()
+    public unsafe void Dispose()
     {
         lock (_gate)
         {
             if (_handler != 0) Marshal.Release(_handler);
             _handler = 0;
         }
+        if (_sender != 0) ComInterfaceMarshaller<ITestSource>.Free((void*)_sender);
+        _sender = 0;
         Removed.Dispose();
     }
 }

@@ -33,3 +33,9 @@ dotnet run --project _tools/PlaybackSwitchRegression -c Release --no-restore -- 
 ```
 
 这些测试使用真实播放器服务和 IPC，在子进程的原生库加载边界阻塞/释放，验证解码依赖就绪前不会完成握手；输出设备行为另由上述发布 EXE 测试覆盖。
+
+## 实际设备 DSP 与内存边界
+
+`<AudioPlayer.exe> <合成WAV> 60 --hardware-dsp --mode=WasapiShared` 验证源率、固定 96 kHz、共享峰值预算改变 3 dB、整数倍 176.4 kHz 与重复切歌，并在 artifacts 保存进程内存/句柄和实际输出模式。`WasapiExclusiveEvent` 与 `ASIO` 分别探测对应设备；明确记录共享兼容回退，不将回退算作目标模式通过。使用低电平夹具，播放器会话音量为 0.02，不更改系统混音格式。`--mode=ListAsio` 仅列出可用 ASIO 驱动。
+
+`<AudioPlayer.exe> <六秒WAV> 6 --gapless --rate=1.5 --vol=0.02 --ir=<WAV-IR>` 额外启用真实卷积和 True Peak，验证同一输出上的无缝接管、暂停/恢复与曲尾排空。IR 路径按调用工作目录解析为绝对路径。以上检查不代表 DAC 模拟输出测量或听感验收。

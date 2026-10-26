@@ -2510,10 +2510,10 @@ SHA-256: {5}
   <data name="DspPcmSourceRate" xml:space="preserve"><value>Frecuencia original</value></data>
   <data name="DspPcmFixedRate" xml:space="preserve"><value>Frecuencia fija</value></data>
   <data name="DspPcmIntegerRate" xml:space="preserve"><value>Múltiplo entero del origen</value></data>
-  <data name="DspPcmTargetRate" xml:space="preserve"><value>Objetivo / límite del múltiplo</value></data>
+  <data name="DspPcmTargetRate" xml:space="preserve"><value>Frecuencia de muestreo objetivo</value></data>
   <data name="DspTruePeakLimiter" xml:space="preserve"><value>Protección True Peak</value></data>
   <data name="DspTruePeakHelp" xml:space="preserve"><value>Interpolación 4× y anticipación de 5 ms para PCM final; no cubre la mezcla del sistema ni el dispositivo.</value></data>
-  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Límite de pico (dBTP)</value></data>
+  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Techo de pico compartido (dBTP)</value></data>
   <data name="DspPcmDither" xml:space="preserve"><value>Dither TPDF en salida entera</value></data>
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>Desactivado inicialmente. Para reducir profundidad tras DSP; desactívelo para reproducción transparente.</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Corte Crossfeed (Hz)</value></data>
@@ -2563,4 +2563,7 @@ SHA-256: {5}
   <data name="MusicTagCatalogNumber.PlaceholderText" xml:space="preserve">
     <value>Sin especificar (opcional)</value>
   </data>
+  <data name="DspPcmIntegerLimit" xml:space="preserve"><value>Límite de múltiplos enteros</value></data>
+  <data name="DspPeakCeilingHelp" xml:space="preserve"><value>La normalización reserva margen para los picos de la fuente. True Peak usa el mismo techo después de la ecualización, convolución, compresión y volumen.</value></data>
+  <data name="DspCrossfeedCustom" xml:space="preserve"><value>Personalizado</value></data>
 </root>

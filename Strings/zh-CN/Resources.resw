@@ -2512,10 +2512,10 @@ SHA-256：{5}
   <data name="DspPcmSourceRate" xml:space="preserve"><value>保持源采样率</value></data>
   <data name="DspPcmFixedRate" xml:space="preserve"><value>指定采样率</value></data>
   <data name="DspPcmIntegerRate" xml:space="preserve"><value>源采样率整数倍</value></data>
-  <data name="DspPcmTargetRate" xml:space="preserve"><value>目标／整数倍上限</value></data>
+  <data name="DspPcmTargetRate" xml:space="preserve"><value>目标采样率</value></data>
   <data name="DspTruePeakLimiter" xml:space="preserve"><value>True Peak 保护限幅</value></data>
   <data name="DspTruePeakHelp" xml:space="preserve"><value>四倍插值检测与 5 ms 前瞻；作用于最终 PCM，不能约束系统混音或设备内部处理。</value></data>
-  <data name="DspTruePeakCeiling" xml:space="preserve"><value>峰值上限（dBTP）</value></data>
+  <data name="DspTruePeakCeiling" xml:space="preserve"><value>共用峰值上限（dBTP）</value></data>
   <data name="DspPcmDither" xml:space="preserve"><value>整数输出 TPDF 抖动</value></data>
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>默认关闭。用于处理后降低位深；开启会改变样本，原始位透明播放应关闭。</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed 截止频率（Hz）</value></data>
@@ -2565,4 +2565,7 @@ SHA-256：{5}
   <data name="MusicTagCatalogNumber.PlaceholderText" xml:space="preserve">
     <value>未提供（可选）</value>
   </data>
+  <data name="DspPcmIntegerLimit" xml:space="preserve"><value>整数倍采样率上限</value></data>
+  <data name="DspPeakCeilingHelp" xml:space="preserve"><value>响度标准化按此上限预留源峰值余量；True Peak 在 EQ、卷积、压缩和音量处理后按相同上限保护最终 PCM。</value></data>
+  <data name="DspCrossfeedCustom" xml:space="preserve"><value>自定义</value></data>
 </root>

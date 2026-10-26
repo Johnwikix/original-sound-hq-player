@@ -14,6 +14,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="../../ViewModel/Controls/DspSettingsViewModel.Playback.cs" />
+    <Compile Include="../../ViewModel/Controls/DspSettingsViewModel.Pcm.cs" />
     <Compile Include="../../Controls/WindowBackgroundImage.cs" />
     <ProjectReference Include="../../External/BassPlayerIpc.Shared/BassPlayerIpc.Shared.csproj" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
@@ -24,5 +25,6 @@
     <None Include="../../View/SubView/Settings/GeneralSettingsControl.xaml"
           Link="Fixtures/GeneralSettingsControl.xaml" CopyToOutputDirectory="Always" />
     <None Include="../../View/SubView/Settings/DspSettingsControl.xaml" Link="Fixtures/DspSettingsControl.xaml" CopyToOutputDirectory="Always" />
+    <None Include="../../Strings/en/Resources.resw" Link="Fixtures/DspResources.resw" CopyToOutputDirectory="Always" />
   </ItemGroup>
 </Project>

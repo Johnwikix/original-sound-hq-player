@@ -2510,10 +2510,10 @@ SHA-256: {5}
   <data name="DspPcmSourceRate" xml:space="preserve"><value>Source sample rate</value></data>
   <data name="DspPcmFixedRate" xml:space="preserve"><value>Fixed sample rate</value></data>
   <data name="DspPcmIntegerRate" xml:space="preserve"><value>Integer multiple of source</value></data>
-  <data name="DspPcmTargetRate" xml:space="preserve"><value>Target / integer-multiple ceiling</value></data>
+  <data name="DspPcmTargetRate" xml:space="preserve"><value>Target sample rate</value></data>
   <data name="DspTruePeakLimiter" xml:space="preserve"><value>True Peak protection</value></data>
   <data name="DspTruePeakHelp" xml:space="preserve"><value>4× interpolation and 5 ms lookahead for final PCM; system mixing and device processing are outside its scope.</value></data>
-  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Peak ceiling (dBTP)</value></data>
+  <data name="DspTruePeakCeiling" xml:space="preserve"><value>Shared peak ceiling (dBTP)</value></data>
   <data name="DspPcmDither" xml:space="preserve"><value>Integer output TPDF dither</value></data>
   <data name="DspPcmDitherHelp" xml:space="preserve"><value>Off by default. Useful when reducing bit depth after processing; disable for bit-transparent playback.</value></data>
   <data name="DspCrossfeedCutoff" xml:space="preserve"><value>Crossfeed cutoff (Hz)</value></data>
@@ -2563,4 +2563,7 @@ SHA-256: {5}
   <data name="MusicTagCatalogNumber.PlaceholderText" xml:space="preserve">
     <value>Not provided (optional)</value>
   </data>
+  <data name="DspPcmIntegerLimit" xml:space="preserve"><value>Integer-multiple rate limit</value></data>
+  <data name="DspPeakCeilingHelp" xml:space="preserve"><value>Loudness normalization reserves source peak headroom at this ceiling. True Peak uses the same ceiling after EQ, convolution, compression and volume.</value></data>
+  <data name="DspCrossfeedCustom" xml:space="preserve"><value>Custom</value></data>
 </root>

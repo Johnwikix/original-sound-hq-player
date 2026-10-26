@@ -50,6 +50,7 @@ internal static unsafe partial class Program
 
     private static void RunPcmDspUpgradeTests()
     {
+        RunDspMemoryLifetimeTests();
         Run("PCM: exhaustive 16-bit and boundary/random 24/32-bit integer round-trip", () =>
         {
             for (int sample = short.MinValue; sample <= short.MaxValue; sample++)
@@ -129,6 +130,38 @@ internal static unsafe partial class Program
             meter.Reset(); meter.Add(new double[1024]); Require(meter.Finish() == 0, "Meter reset leaked history");
         });
         Run("True Peak limiter: linked channels, ceiling, finite output and zero render allocation", CheckTruePeakLimiter);
+        Run("Shared peak ceiling: normalization, final limiter and state use the saved value", () =>
+        {
+            var measurement = new LoudnessMeasurement(-20, 0.5, 0.8);
+            foreach (double ceiling in new[] { -12.0, -6, -1, -0.1 })
+            foreach (bool limiter in new[] { false, true })
+            {
+                using var effects = new PcmEffects(48000, 2);
+                Set(effects, "_measurement", measurement);
+                effects.Configure(new() { NormalizeLoudness = true, TargetLufs = -8, TruePeakCeilingDb = ceiling,
+                    TruePeakLimiterEnabled = limiter });
+                double expected = ceiling - 20 * Math.Log10(0.8);
+                Require(Math.Abs(effects.GetState(0, false).GainDb - expected) < 1e-12, "State ignored the shared ceiling");
+                double[] block = [0.8, 0.8];
+                effects.ApplyInput(block, 1);
+                Require(Math.Abs(20 * Math.Log10(block[0]) - ceiling) < 1e-10, "Normalization ignored the shared ceiling");
+                effects.Configure(new() { NormalizeLoudness = true, TargetLufs = -8, TruePeakCeilingDb = -3,
+                    TruePeakLimiterEnabled = limiter });
+                Require(Math.Abs(effects.GetState(0, false).GainDb - (-3 - 20 * Math.Log10(0.8))) < 1e-12,
+                    "Changing only the ceiling did not update normalization");
+                effects.Configure(new() { TruePeakLimiterEnabled = limiter, TruePeakCeilingDb = ceiling });
+                effects.ResetRenderState();
+                var signal = new double[24000];
+                for (int i = 0; i < 20000; i++) signal[i] = 1.5 * Math.Sin(i * Math.PI / 2 + Math.PI / 4);
+                effects.ApplyFinal(signal, signal.Length / 2);
+                if (limiter)
+                {
+                    var meter = new TruePeakMeter(2); meter.Add(signal);
+                    Require(20 * Math.Log10(meter.Finish()) <= ceiling + 0.02, "Final limiter ignored the shared ceiling");
+                }
+                else Require(signal[0] != 0, "Disabled limiter changed the signal");
+            }
+        });
         Run("Loudness: multichannel LFE exclusion and surround weighting", () =>
         {
             const int rate = 48000, frames = rate;

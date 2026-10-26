@@ -546,7 +546,9 @@ internal sealed class Session : IRenderSource, IDisposable
         int reset = Volatile.Read(ref _dspResetVersion);
         if (reset != _renderDspResetVersion)
         {
-            if (Volatile.Read(ref _dspEnabled)) { Eq.ResetHistory(); Effects?.ResetRenderState(); }
+            bool dspEnabled = Volatile.Read(ref _dspEnabled);
+            if (dspEnabled) Eq.ResetHistory();
+            Effects?.ResetRenderState(releaseConvolution: !dspEnabled);
             _tailStarted = _hasRenderedPcm = false; _tailRemaining = _tailFramesRendered = 0;
             _renderDspResetVersion = reset;
         }

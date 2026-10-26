@@ -10,3 +10,5 @@
 - 在同一线程预热 1000 次后执行 10000 次原始 Invoke，检查 Rendering 和 Update 桥接本身的托管分配；Update 重用一个真实 Win2D 原生 event args。此结果不代表整个绘制链零分配，也不是自然 GC/STW 基准。
 
 反射仅用于连接生产订阅的私有注册入口与受控 COM 源，不替换回调、COM 生命周期或并发屏障。真实 WinUI/Win2D 验证直接使用公开订阅入口。运行时为项目现有 CsWinRT 包，本回归不修改 pressure 补丁。Draw 另覆盖 getter 失败、空参数、自行/跨线程解绑、remove 失败后的迟到调用及预热 10000 次回调分配；`DrawPathProbe` 做 96/144 DPI 原生像素对照。
+
+失败解绑新增恢复检查：事件源继续持有原生 handler 时，恢复 remove 并投递迟到回调，确认 token 被撤销；遗忘 Dispose 的真实 Rendering/Update/Draw 订阅在下一帧自动撤销，WeakReference 验证 handler 可回收。真实 DrawingSession 的 11000 次 getter/Release 前后引用计数相等。强制 GC 仅用于确定资源所有权，不混入自然 GC 性能测量。
