@@ -652,7 +652,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                         int* d = (int*)dst;
                         for (int i = 0; i < total; i++)
                         {
-                            double s = ClampSample(p[i]);
+                            double s = p[i];
                             d[i] = _quantizer.Convert(s, 24, dither) << 8;
                         }
                         break;
@@ -661,7 +661,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
                     {
                         for (int i = 0; i < total; i++)
                         {
-                            double s = ClampSample(p[i]);
+                            double s = p[i];
                             int v = _quantizer.Convert(s, 24, dither);
                             dst[i * 3] = (byte)(v & 0xff);
                             dst[i * 3 + 1] = (byte)((v >> 8) & 0xff);
@@ -714,7 +714,7 @@ internal sealed unsafe class WasapiOutput : IAudioOutput, IDisposable
         }
     }
 
-    private static double ClampSample(double s) => s > 1.0 ? 1.0 : s < -1.0 ? -1.0 : s;
+    private static double ClampSample(double s) => !double.IsFinite(s) ? 0 : s > 1.0 ? 1.0 : s < -1.0 ? -1.0 : s;
 
     public void Dispose()
     {

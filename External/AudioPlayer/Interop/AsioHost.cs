@@ -791,7 +791,7 @@ internal sealed unsafe class AsioOutput : IAudioOutput, IDisposable
     private static void WriteU24Le(byte* p, int v) { p[0] = (byte)(v & 0xff); p[1] = (byte)((v >> 8) & 0xff); p[2] = (byte)((v >> 16) & 0xff); }
     private static void WriteU32Be(byte* p, uint v) { p[0] = (byte)(v >> 24); p[1] = (byte)(v >> 16); p[2] = (byte)(v >> 8); p[3] = (byte)v; }
 
-    private static double ClampSample(double s) => s > 1.0 ? 1.0 : s < -1.0 ? -1.0 : s;
+    private static double ClampSample(double s) => !double.IsFinite(s) ? 0 : s > 1.0 ? 1.0 : s < -1.0 ? -1.0 : s;
 
     private PcmQuantizer _quantizer;
 

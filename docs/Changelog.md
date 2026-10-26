@@ -1,5 +1,5 @@
 ## 2026-10-26 修正整数 PCM 输出并补齐播放内核 DSP
-- `AudioPlayer/Interop`：统一有符号 PCM 缩放、偶数舍入、饱和及非有限值静音；增加默认关闭的 TPDF，覆盖 WASAPI/ASIO 有效位与打包格式。
+- `AudioPlayer/Interop`：统一有符号 PCM 缩放、偶数舍入、饱和；整数/浮点输出的非有限值统一静音，24-bit 出口不再预先钳位而掩盖异常输入；增加默认关闭的 TPDF，覆盖 WASAPI/ASIO 有效位与打包格式。
 - `AudioPlayer/Decode`、`Playback`：增加普通 PCM 采样率策略、独立四倍 True Peak 估计/5ms 前瞻保护、长 IR 分级卷积和 1–8 声道逐曲响度（含后中置环绕权重）；处理曲尾、seek、无缝历史及可闻进度。DSD 路径、十段 EQ 和既有输出开关边界保持现状。
 - `BassPlayerIpc.Shared`、现有 DSP 设置页：设置 v7、管道 v4；新增重采样/保护/抖动与 Crossfeed 连续强度、截止频率，保留旧设置读取及默认旁路；更新七语言资源。
 - `TruePeakLimiter`：前瞻窗口内用 1ms 线性下降代替硬切增益，避免突发峰值到达前自行产生插值过冲；回归覆盖三个采样率和三类频率的脉冲叠加。
