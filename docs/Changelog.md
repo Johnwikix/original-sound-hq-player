@@ -1,3 +1,11 @@
+## 2026-10-26 更新本地 CsWinRT 并修正固定 pressure 配对
+- `D:/code/classLib/cswinrt/CsWinRT/src/WinRT.Runtime/ObjectReference.cs`：固定 `GC_PRESSURE_BASE` 的 Add/Remove 成对禁用，修正旧包只禁用 Add、Dispose 仍执行 Remove 的不匹配；其他按类型大小计量的 pressure 保持原样。
+- `WinUIMusicPlayer.csproj` 及 11 个回归项目：统一引用 `2.3.2-prerelease.261026.1-nogcpressure`；包基于最新源码 `c28d756` 构建并发布到 `D:/nugetLocal`，保留上游 AssemblyVersion `2.3.1.0`。
+- 包内容：重新构建 runtime、源生成器、投影工具及 x86/x64 原生宿主；托管 runtime 为 AnyCPU，本机缺少 ARM64 编译器，未提供 ARM64 原生 WinRT.Host。
+- 验证：三个 runtime 目标构建 0 警告/0 错误；新旧 nupkg 的 IL 确认旧包只剩 Remove、新包固定 Add/Remove 均不存在，嵌入源码与 net8/net9 二进制均已核对；12 个引用的实际还原版本、XML 与 CRLF 检查通过。
+- 验证：主程序 Debug/Release x64（含裁剪）构建通过、仍有分析器/项目/裁剪警告；新包下 ABI Debug/Release 各 29 项、歌词原生渲染 141 帧、外观 Composition 和字体 99 项回归通过，测试输出 runtime 哈希均与新包一致。外观图片加载在沙箱内失败，相同二进制在沙箱外通过。
+- 性能边界：本次修正未配对的 Remove，没有进一步减少旧包已经禁用的固定 Add；未做自然 GC/Gen2/STW 对照采集，不宣称停顿进一步下降。
+
 ## 2026-10-26 帧事件改用原始 ABI 订阅
 - `Interop/FrameEventSubscription.cs`：用源生成 COM 委托直接接收 Rendering/Win2D Update 指针，仅传递帧时间值；集中管理 token、源引用、异常 HRESULT、重复/回调内解绑及在途回调屏障。
 - `SharedAnimationClock.cs`：改用 ABI Rendering，保留 Stopwatch 和 100ms delta 上限；最后一项注销时解绑，分发期间注销不再移动活动项索引。

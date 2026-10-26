@@ -3,7 +3,7 @@
 <ItemGroup>
 <ProjectReference Include="../LyricsUnificationRegression/LyricsUnificationRegression.csproj" />
 <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
-<PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.260804.1" />
+<PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.261026.1-nogcpressure" />
 <PackageReference Include="CommunityToolkit.WinUI.Controls.SettingsControls" Version="8.2.251219" />
 <Compile Include="../../ViewModel/Controls/LyricsEditorViewModel.cs;../../ViewModel/Pages/SettingsViewModel.cs;../../Services/ApplicationTasks.cs;../../Services/AppLifecycle.cs" />
 </ItemGroup></Project>

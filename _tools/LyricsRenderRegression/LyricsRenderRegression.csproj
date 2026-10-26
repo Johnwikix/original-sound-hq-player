@@ -21,7 +21,7 @@
     <PackageReference Include="LibNMeCab.IpaDicBin" Version="0.10.0" />
     <ProjectReference Include="../../External/AnimatedWin2dControls/AnimatedWin2dControls/AnimatedWin2dControls.csproj" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
-    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.260804.1" />
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.261026.1-nogcpressure" />
     <Compile Include="../../DesktopLyrics/CanvasLyricsRenderer.cs;../../DesktopLyrics/DesktopLyricsStyle.cs;../../DesktopLyrics/IDesktopLyricsRenderer.cs" />
     <Compile Include="../../Model/LyricsDocument.cs;../../Services/Lyrics/LyricsParser*.cs;../../Services/Lyrics/LyricsFilePolicy.cs;../../Services/Lyrics/LyricsExporter.cs;../../Services/Lyrics/LyricsLanguagePolicy.cs;../../Services/Lyrics/LyricsRomanizer.cs;../../Services/Lyrics/KoreanRomanizer.cs;../../Services/LyricsRefreshService.cs" />
     <None Include="../LyricsUnificationRegression/Fixtures/story-of-us.qrc.txt" Link="Fixtures/story-of-us.qrc.txt" CopyToOutputDirectory="PreserveNewest" />

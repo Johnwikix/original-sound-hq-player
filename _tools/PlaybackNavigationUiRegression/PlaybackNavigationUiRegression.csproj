@@ -16,7 +16,7 @@
     <Compile Include="../../State/PlaybackState.cs;../../Services/WebDav/WebDavAvailability.cs" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
-    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.260804.1" />
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.2-prerelease.261026.1-nogcpressure" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <Compile Include="../PlaybackNavigationRegression/Adapters.cs;../PlaybackNavigationRegression/Program.cs" />
     <Compile Include="../../Services/PlaybackCoordinator.cs;../../Services/PlaybackCommands.cs;../../Services/ApplicationTasks.cs;../../Services/AppLifecycle.cs;../../Services/ShutdownCoordinator.cs" />
